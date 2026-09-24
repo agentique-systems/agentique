@@ -1,0 +1,43 @@
+{
+  "format": "agentique-watchdog-summary/1",
+  "commands": [
+    {
+      "name": "semantic-closure-combined16",
+      "command": [
+        "verification/generated/final-audit-semantic-closure/systems-runner.exe",
+        "--cache=verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--profile=operational-v3",
+        "--audit-only",
+        "--documents=Actions,Attributes,Calculations,Cases,Connections,Constraints,Flows,Interfaces,Items,Metadata,Parts,Ports,Requirements,States,SysML,VerificationCases",
+        "--checkpoint=verification/generated/final-audit-semantic-closure/combined16-frontiers",
+        "--checkpoint-interval=0",
+        "--output=verification/generated/final-audit-semantic-closure/combined16/report.json"
+      ],
+      "source_commit": "3b31430eb18414f4c30b770d27988e5bf170b233",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {},
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/semantic-closure-combined16",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 1820,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": 2707337216,
+      "safety_stop": null,
+      "duration_seconds": 4219.063,
+      "peak_rss_bytes": 5874094080,
+      "peak_private_bytes": 5979533312,
+      "samples": 4215,
+      "limits": {
+        "wall_seconds": 5400.0,
+        "private_bytes": 6979321856,
+        "sample_seconds": 1,
+        "min_free_disk_bytes": 1073741824,
+        "stall_seconds": 0
+      },
+      "output_sha256": "5dcb56b72c52775664962efd6ed4f42d6897b2009f16b1d2ea43241474468905"
+    }
+  ]
+}

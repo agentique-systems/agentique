@@ -1,0 +1,126 @@
+{
+  "format": "agq-systems-effective-audit-profile/1",
+  "journal": {
+    "path": "verification\\generated\\final-audit-semantic-closure\\combined16\\report.effective-audit\\audit-events.jsonl",
+    "sha256": "3baebbde98f0666a3652b6903ad0e261854b6aa179a8b6505128ea3e6fab71da",
+    "bytes": 1212140
+  },
+  "journal_consistent": true,
+  "semantic_authority": false,
+  "publication_authority": false,
+  "timing_acceptance_threshold": null,
+  "integrity": {
+    "completed_batches": 1616,
+    "missing_batch_indexes": [],
+    "unmatched_batch_begins": [],
+    "unmatched_batch_ends": [],
+    "completed_stages": []
+  },
+  "worker_policy": {
+    "workers": 2,
+    "batch_subject_limit": 8,
+    "ordered_windows": true,
+    "join_order": "ascending_batch_index"
+  },
+  "subject_population": {
+    "declared_total": 12925,
+    "observed_total": 12925,
+    "first_subject": "000172f4-2b94-5c4a-9bf0-53a27297dbb1",
+    "last_subject": "fff88b95-ae87-5adc-92f5-78b78d2057de",
+    "consistent": true,
+    "scope": "logged counts and endpoint ranges; interior subject identities are not logged"
+  },
+  "overall_effective_elapsed_micros": 1018726785,
+  "overall_effective_elapsed_source": "first_batch_begin_to_last_batch_end",
+  "observed_batch_span_micros": 1018726785,
+  "batch_elapsed_micros": {
+    "total": 1109653601,
+    "median": 54.0,
+    "p95": 3972488,
+    "max": 11462427,
+    "p95_method": "nearest_rank"
+  },
+  "batch_findings_observed": 0,
+  "slowest_batches": [
+    {
+      "batch_index": 844,
+      "first_subject": "86c6b5c9-113c-5be2-a809-302732526a00",
+      "last_subject": "86e36f31-6aed-5875-91fb-8a1978c152d1",
+      "subjects": 8,
+      "elapsed_micros": 11462427,
+      "findings": 0
+    },
+    {
+      "batch_index": 600,
+      "first_subject": "5f5928df-3810-5843-b728-ac833261cd69",
+      "last_subject": "5f796c52-f57b-5bb0-831a-1643adce61dd",
+      "subjects": 8,
+      "elapsed_micros": 9905645,
+      "findings": 0
+    },
+    {
+      "batch_index": 594,
+      "first_subject": "5e5994fa-7630-5c44-9e41-b810b7d80a14",
+      "last_subject": "5e756f07-e2c7-56e7-8a4c-7b5283d66543",
+      "subjects": 8,
+      "elapsed_micros": 9777922,
+      "findings": 0
+    },
+    {
+      "batch_index": 596,
+      "first_subject": "5ec82633-f2d4-5e14-a9b1-eb992bac8298",
+      "last_subject": "5ee4868b-6781-576d-903a-16a975894b8a",
+      "subjects": 8,
+      "elapsed_micros": 9772643,
+      "findings": 0
+    },
+    {
+      "batch_index": 933,
+      "first_subject": "9456392e-4b4f-56d8-8c8b-dea69a5db13a",
+      "last_subject": "946464b4-1f31-59ea-94e1-297a0c086c0a",
+      "subjects": 8,
+      "elapsed_micros": 9268550,
+      "findings": 0
+    },
+    {
+      "batch_index": 1212,
+      "first_subject": "c0a8f395-768d-523c-8573-ab2d37029ca6",
+      "last_subject": "c0d4d6d6-49e6-5df5-858d-f26ed88e0f6a",
+      "subjects": 8,
+      "elapsed_micros": 8384473,
+      "findings": 0
+    },
+    {
+      "batch_index": 435,
+      "first_subject": "453f488f-82c1-5766-8920-f35d7e260497",
+      "last_subject": "455859af-e53c-57ce-be8c-3190f7bff1b3",
+      "subjects": 8,
+      "elapsed_micros": 8056632,
+      "findings": 0
+    },
+    {
+      "batch_index": 1346,
+      "first_subject": "d4fc991a-377e-5f6d-9c7b-ab91d3e22dab",
+      "last_subject": "d50f9ed2-aaae-5ef1-9fab-e1bec46f0243",
+      "subjects": 8,
+      "elapsed_micros": 7908185,
+      "findings": 0
+    },
+    {
+      "batch_index": 1372,
+      "first_subject": "d927d5f5-413a-5f64-871b-1a5e8295c890",
+      "last_subject": "d9525129-09bf-56c2-9ef4-aada111d9db8",
+      "subjects": 8,
+      "elapsed_micros": 7875254,
+      "findings": 0
+    },
+    {
+      "batch_index": 163,
+      "first_subject": "19e20167-315d-55d1-82d9-7c79c8bf43a4",
+      "last_subject": "1a027fcb-8023-59ee-b4ea-e3226d3abbb6",
+      "subjects": 8,
+      "elapsed_micros": 7692783,
+      "findings": 0
+    }
+  ]
+}

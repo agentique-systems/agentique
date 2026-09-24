@@ -71,8 +71,31 @@ and forbids slices. Only the authenticated direct finalizer can then issue the
 accepted facade and atomic artifact bundle after all audits pass. Explicit v2/v3
 selection is authenticated independently of the checkpoint and cache contents.
 
-Fresh targeted, medium, full closure and finalization outcomes are pending.
-No accepted Systems receipt or default-profile change is claimed here.
+The fresh combined H1–H3 [16-document gate](combined16-gate.json) passes:
+1,236/1,236 mandatory references Complete, 25,766/25,766 producer pairs and
+447,858 semantic requirements closed, with zero producer diagnostics. The strict
+effective audit checks all 12,925 local canonical subjects with **zero findings**.
+The explicit corpus witnesses also pass for all seven EnumerationDefinitions,
+21 EnumerationUsage literals, two interface subjects, three cyclic FlowUsages,
+and the two exact HappensDuring ConnectionUsages. They verify canonical typing,
+source identity, retained inherited identities/order and effective completeness.
+This combined source population covers all 50 prior diagnostic subjects through
+47 local subjects and three accepted dependency targets; the accepted dependency
+is shared and is not reconstructed. The [new classification](combined16-classification.json)
+has zero weighted findings, distinct diagnostics and subjects; `Other = 0`.
+
+The combined command completed in 4,219.063 seconds, with peak process-tree
+private memory of 5,702.5 MiB. Construction/reference-report time was 3,187.982
+seconds; the effective audit took 1,021.273 seconds using two workers. Its
+[timing profile](combined16-audit-profile.json) verifies 1,616 complete ordered
+batches with no missing events. Timings describe execution and do not establish
+semantic acceptance. One classifier invocation used an incorrect retained
+subject-file path and failed before reading evidence; the corrected invocation
+passed. Both commands remain in the ledger.
+
+The exact 13-document medium candidate is running after this gate. Its strict
+effective audit, the fresh full closure, and authenticated finalization remain
+pending. No accepted Systems receipt or default-profile change is claimed here.
 
 ## Platform boundary
 
@@ -80,6 +103,9 @@ The [held workspace review](workspace-integration-review.md) records exact sourc
 commits and the effective-query validation gap that must be resolved after the
 language gates pass. ADR 0026 remains proposed; ADR 0027 remains proposed research.
 Self-model acceptance and production workspace integration remain gated.
+The prepared occurrence/connection effective API assertions compile; all four
+ordinary self-model tests pass. The accepted-cache test remains ignored until
+publication, as recorded in [accepted-core-preparation.md](accepted-core-preparation.md).
 
 ## Verification
 

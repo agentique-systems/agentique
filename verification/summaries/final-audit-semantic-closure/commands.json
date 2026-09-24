@@ -857,6 +857,136 @@
         "CARGO_BUILD_JOBS": "2",
         "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace"
       }
+    },
+    {
+      "name": "prepared-self-model-core-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--lib",
+        "agentique_",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "bd4ea3e6bc46e74106583f35a97d1187af8253a7",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "c552ce5801512547d6cca792093bf3d0d0f19487b945964422c971b68cf4cdf0",
+      "duration_seconds": 28.81,
+      "output": "verification/generated/final-audit-semantic-closure/prepared-self-model-core-tests.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace"
+      }
+    },
+    {
+      "name": "release-stale-build-cache",
+      "command": [
+        "cargo",
+        "clean",
+        "--target-dir",
+        "target/platform-finalization"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "bd4ea3e6bc46e74106583f35a97d1187af8253a7",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "21f33d01c7d47928a3a34859ef031201690468334ce090101149aed7d63a5f8c",
+      "duration_seconds": 0.33,
+      "output": "verification/generated/final-audit-semantic-closure/release-stale-build-cache.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "combined16-semantic-gate",
+      "command": [
+        "python",
+        "verification/scripts/systems_semantic_slice_gate.py",
+        "--slice",
+        "H1-H3-combined",
+        "--report",
+        "verification/generated/final-audit-semantic-closure/combined16/report.json",
+        "--output",
+        "verification/summaries/final-audit-semantic-closure/combined16-gate.json"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "bd4ea3e6bc46e74106583f35a97d1187af8253a7",
+      "working_changes_sha256": "ced8e75249f87d56a473729fd1487d52a791372741791df39eb4d733531b56be",
+      "output_sha256": "79815a86656451428fb0dd00672cc93fe4925ed5d794a6b79a1c539d29778b47",
+      "duration_seconds": 0.11,
+      "output": "verification/generated/final-audit-semantic-closure/combined16-semantic-gate.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "combined16-classification",
+      "command": [
+        "python",
+        "verification/scripts/classify_systems_final_audit.py",
+        "--report",
+        "verification/generated/final-audit-semantic-closure/combined16/report.json",
+        "--subjects",
+        "verification/generated/systems-finalization/.accepted.candidate-20172988-64ac-4178-9654-be4bb021a245/finding-subjects.json",
+        "--output",
+        "verification/summaries/final-audit-semantic-closure/combined16-classification.json",
+        "--require-clean"
+      ],
+      "exit_code": 1,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "bd4ea3e6bc46e74106583f35a97d1187af8253a7",
+      "working_changes_sha256": "6eec82f7c1a2caa77ae2c5b664f78061d6af2abdf0241612d6842d1f2715ca81",
+      "output_sha256": "4c560a519cd0aa1437a125d14972b1a8324aee3b2acdfceed6f0879062f34a12",
+      "duration_seconds": 0.09,
+      "output": "verification/generated/final-audit-semantic-closure/combined16-classification.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "combined16-audit-profile",
+      "command": [
+        "python",
+        "verification/scripts/profile_systems_effective_audit.py",
+        "--journal",
+        "verification/generated/final-audit-semantic-closure/combined16/report.effective-audit/audit-events.jsonl",
+        "--output",
+        "verification/summaries/final-audit-semantic-closure/combined16-audit-profile.json"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "bd4ea3e6bc46e74106583f35a97d1187af8253a7",
+      "working_changes_sha256": "6eec82f7c1a2caa77ae2c5b664f78061d6af2abdf0241612d6842d1f2715ca81",
+      "output_sha256": "2e52e3f811f31ff14bc45fb5fc45610b0dee3b1824a9a817328d6b7b24bd7dd5",
+      "duration_seconds": 0.16,
+      "output": "verification/generated/final-audit-semantic-closure/combined16-audit-profile.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "combined16-classification-corrected-path",
+      "command": [
+        "python",
+        "verification/scripts/classify_systems_final_audit.py",
+        "--report",
+        "verification/generated/final-audit-semantic-closure/combined16/report.json",
+        "--subjects",
+        "verification/generated/systems-finalization/finding-subjects.json",
+        "--output",
+        "verification/summaries/final-audit-semantic-closure/combined16-classification.json",
+        "--require-clean"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "bd4ea3e6bc46e74106583f35a97d1187af8253a7",
+      "working_changes_sha256": "21318519440d6afb077778329f8ad66b931b88fec489c8615224b38b97ac7acd",
+      "output_sha256": "5218ea21c5bbc02129165fd6d4a435b835e82bcb4bfe13d5f5aaa4ca623bcfee",
+      "duration_seconds": 0.09,
+      "output": "verification/generated/final-audit-semantic-closure/combined16-classification-corrected-path.log",
+      "environment_overrides": {}
     }
   ]
 }

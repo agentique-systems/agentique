@@ -1,0 +1,361 @@
+{
+  "format": "agq-final-audit-classification/1",
+  "publication_authority": false,
+  "report_sha256": "5a0bfe7bb0fd084a39dba59add1df69ce195c00bb114b76eb2618fa2404256c7",
+  "subjects_sha256": "9bcbed5a094f31aec007277c2b6bee07177fc17b09d805f34834cb87e96ea4e6",
+  "accepted_kerml_graph_sha256": null,
+  "summary": {
+    "weighted_findings": 0,
+    "distinct_diagnostics": 0,
+    "subjects": 0,
+    "categories": {
+      "EnumerationConstruction": {
+        "distinct_diagnostics": 0,
+        "weighted_findings": 0
+      },
+      "VariationNaming": {
+        "distinct_diagnostics": 0,
+        "weighted_findings": 0
+      },
+      "TypedProjection": {
+        "distinct_diagnostics": 0,
+        "weighted_findings": 0
+      },
+      "InheritedEndSuppression": {
+        "distinct_diagnostics": 0,
+        "weighted_findings": 0
+      },
+      "ResultCycle": {
+        "distinct_diagnostics": 0,
+        "weighted_findings": 0
+      },
+      "EndCycle": {
+        "distinct_diagnostics": 0,
+        "weighted_findings": 0
+      },
+      "ConnectionAuthority": {
+        "distinct_diagnostics": 0,
+        "weighted_findings": 0
+      },
+      "Other": {
+        "distinct_diagnostics": 0,
+        "weighted_findings": 0
+      }
+    }
+  },
+  "subjects": {
+    "0da1cb76-eed1-5f6f-aba7-0de8aff65f98": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "0df9add9-7323-573a-8427-e742241ec733": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "12bb4729-06c1-51b0-9974-891634003445": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "trigger"
+        }
+      }
+    },
+    "140ef6ea-f727-51a0-89f6-61d454cb48c7": {
+      "class": "OCCURRENCE_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "target"
+        }
+      }
+    },
+    "18da1d9a-37e3-547a-ac0e-bf9793f724b4": {
+      "class": "FLOW_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "messages"
+        }
+      }
+    },
+    "1c103c62-f7bc-5d06-90d5-71b210ddde11": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "requirement"
+        }
+      }
+    },
+    "1efd3834-9efb-585f-acae-295d328dfa6d": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "guard"
+        }
+      }
+    },
+    "21234846-e44e-505e-ac35-424bc23fa18b": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "error"
+        }
+      }
+    },
+    "221542a4-584d-5f0b-9142-50dff2e8763d": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "29480f97-23d3-5c60-8e2d-11d822639e86": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "295d6c7a-fffd-5727-85e7-03deffb83594": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "at"
+        }
+      }
+    },
+    "3b9fab91-096f-5012-841c-ad946c367fdf": {
+      "class": "FLOW_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "flows"
+        }
+      }
+    },
+    "3d57badd-1709-5fb8-a860-e80f3b411ae2": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "3dbf09d5-eb9a-5eca-9b34-9091ee102a4c": {
+      "class": "OCCURRENCE_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "source"
+        }
+      }
+    },
+    "48f9c5fd-08f3-5c26-b486-52114a5a2ffe": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "assumption"
+        }
+      }
+    },
+    "515638fd-0ff9-53fc-a6ba-05e1d820e62c": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "5e756f07-e2c7-56e7-8a4c-7b5283d66543": {
+      "class": "FLOW_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "successionFlows"
+        }
+      }
+    },
+    "5ec82633-f2d4-5e14-a9b1-eb992bac8298": {
+      "class": "OCCURRENCE_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "target"
+        }
+      }
+    },
+    "5fde4cef-fba6-5dae-8dc7-8851a3483a12": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "snapshot"
+        }
+      }
+    },
+    "6184d023-2020-50f5-9d59-ba219191a308": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "pass"
+        }
+      }
+    },
+    "643d02aa-0e56-5d10-9b3c-f301561f4487": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "6687c3b3-3fa7-5c18-8ecc-b011e89eae80": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "do"
+        }
+      }
+    },
+    "75c57429-f867-5e06-8c5a-cb4666c48ade": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "7e26cc61-c229-5031-ac43-20946f5108b9": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "timeslice"
+        }
+      }
+    },
+    "86de7286-c609-59e0-87ed-46cf6c3f4548": {
+      "class": "OCCURRENCE_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "source"
+        }
+      }
+    },
+    "888cda79-aaa5-5d72-a654-b35603802e37": {
+      "class": "OCCURRENCE_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "source"
+        }
+      }
+    },
+    "8ce7e6db-fd66-5ba1-9cd9-a09a77092859": {
+      "class": "INTERFACE_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "binaryInterfaces"
+        }
+      }
+    },
+    "8e5fc3a7-4224-5f80-8c41-801c3bb1b6ca": {
+      "class": "CONNECTION_USAGE",
+      "name": null
+    },
+    "8f6ef46c-b509-5108-a9a7-b9f90142f5c9": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "fail"
+        }
+      }
+    },
+    "949099ff-2b5a-567f-9f7a-1d130c14ea43": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "inspect"
+        }
+      }
+    },
+    "94b023c4-1fe6-5248-9e28-81c0a78f2872": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "effect"
+        }
+      }
+    },
+    "9f0f359c-0538-55f5-ad28-13fd27caee32": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "a2119528-2e45-5c59-82c5-25828219bcde": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "a84a5d47-666c-55ad-910a-665d3ca8e364": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "b269c9a9-c168-57ca-bb1e-7de2462caa89": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "b271e4e7-bb49-5551-936a-c88d1bbbd546": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "after"
+        }
+      }
+    },
+    "b525bc8d-bc1a-51ad-bd4d-a044ecd377ce": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "entry"
+        }
+      }
+    },
+    "c7138546-28c0-5788-9519-0297d7a38d7d": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "analyze"
+        }
+      }
+    },
+    "c72d52b7-ed09-54bb-97cf-90ef40d66741": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "exit"
+        }
+      }
+    },
+    "c8860228-be93-5116-8bf1-c22a2efbbbf2": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "demo"
+        }
+      }
+    },
+    "d33b74d9-03dd-5f67-8b2d-6a621603eb0d": {
+      "class": "OCCURRENCE_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "target"
+        }
+      }
+    },
+    "e5222938-6eec-512d-a197-244f755feede": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "when"
+        }
+      }
+    },
+    "e76d30a1-2f36-584d-8dce-409db017b746": {
+      "class": "CONNECTION_USAGE",
+      "name": null
+    },
+    "f0fa074a-e058-5df1-80d2-1f352aafc916": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "f45a71f0-8f41-5522-8bfc-e5ff8407fbcc": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "test"
+        }
+      }
+    },
+    "f61de17e-ffe3-5853-8589-9759b63a7daf": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "fd38864c-604f-5b3a-b5c1-8e40d7a4da3f": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "inconclusive"
+        }
+      }
+    }
+  },
+  "diagnostics": []
+}
