@@ -4,9 +4,18 @@ Base: fetched `origin/main` at `bc0ffc0e957e2ea605fa8717720faeb8dae83569`,
 with a clean initial worktree. Branch:
 `platform/modeling-platform-phase2-repository-service-api`.
 
-Implementation acceptance remains pending the integrated cache, fresh-process
-self-model, durable scale, HTTP, and final workspace gates. Command completion
-alone does not establish acceptance. Failed attempts remain in the evidence.
+Milestone acceptance is incomplete. At the user's request, long-running
+verification was stopped after the code edits and normal checks. Durable source
+restoration, the legacy authenticated cache, fresh-process self-model and two
+branches passed. The compact version 2 cache rerun was interrupted after successful
+authenticated restoration and several source-fallback paths. The semantic
+100-document durable scale fixture and accepted-cache HTTP fixture were not run.
+Failed and interrupted attempts remain in the evidence.
+
+Normal checks passed: 47 focused platform tests, 1,005 workspace tests, workspace
+Clippy with verification features, strict Rustdoc for the five new crates and the
+workspace, formatting, frontend check/build/tests, standards integrity, dependency
+boundaries and the offline metamodel stale check. No browser integration was made.
 
 The platform adds immutable durable project history above the accepted Phase1V1
 workspace. Prepared source edits become durable revisions through an atomic

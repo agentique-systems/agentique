@@ -1,8 +1,8 @@
 {
   "format": "agentique-modeling-platform-phase2-performance/1",
-  "scope": "Storage characterization only; semantic correctness and other product performance classes are recorded separately.",
+  "scope": "Product performance classes measured separately; wall time is characterization, exact semantics is acceptance.",
   "storage_characterization": {
-    "status": "measured legacy v1 JSON cache payload; actual v2 codec measurement pending",
+    "status": "measured legacy storage and implemented v2 codec",
     "input": {
       "database": "verification/generated/modeling-platform-phase2/agentique-dogfood.sqlite",
       "state": "Agentique self-model after R1 durable commit: one project, main branch, initial empty R0 and authored R1",
@@ -98,20 +98,131 @@
       "One run per compression level while the root Rust workspace build and self-model child were active; not isolated CPU or disk measurements.",
       "Local reads may use the operating-system cache; these numbers do not measure cold repository open or cold semantic restoration.",
       "Memory covers only the bounded benchmark process, not the existing service's large JSON serialization/deserialization allocations.",
-      "This compresses the legacy JSON envelope with a zlib wrapper, not the planned v2 ZIP metadata-plus-raw-frontier representation; actual v2 size, encode/decode time and memory remain unmeasured.",
-      "The repository fixture may gain R2 later. Reproduction pins the immutable R1 cache digest; database inventory can then differ."
+      "The repository fixture may gain R2 later. Reproduction pins the immutable R1 cache digest; database inventory can then differ.",
+      "The initial zlib rows measure the legacy JSON envelope. actual_v2_codec measures the implemented ZIP metadata/raw-frontier representation separately."
     ],
     "decision": {
       "storage": "Retain transactional SQLite blobs: only 309992 bytes of this measured database lie outside blob payloads; separate CAS files do not address the dominant cache encoding cost.",
       "codec_direction": "Introduce a versioned service cache using ZIP deflate level 1 with separate metadata JSON and raw kernel-frontier entries; retain the legacy v1 decoder and source fallback.",
       "correctness": "Compression changes a discardable cache representation only; source/publication/context/closure authentication remains required.",
-      "acceptance": "Measure the actual v2 implementation before reporting its product-level performance."
+      "acceptance": "Actual v2 codec measured with exact byte/metadata roundtrip. Service authentication and source fallback are checked in the dedicated runtime gate."
     },
     "reproduction": {
       "original_execution": "Two inline PowerShell here-strings piped to python -; no standalone script file existed during the recorded measurement.",
       "script_path": "verification/scripts/modeling_storage_characterization.py",
       "command": "python verification/scripts/modeling_storage_characterization.py --database verification/generated/modeling-platform-phase2/agentique-dogfood.sqlite --blob-digest 5217513f21602dad8b0496a7c1c429e3963117754b1a485b60279020a84ee340 --levels 1 6",
       "note": "Equivalent reusable read-only benchmark added afterward. The exact R1 cache digest is fixed; later repository inventory may include R2. The script has not rerun compression, so its existence does not create another measurement."
+    },
+    "actual_v2_codec": {
+      "runtime_record": "runtime.json#phase2-cache-codec-characterization",
+      "test": "cache_codec::tests::characterize_legacy_cache_encoding",
+      "exit_code": 0,
+      "input_legacy_sha256": "5217513f21602dad8b0496a7c1c429e3963117754b1a485b60279020a84ee340",
+      "legacy_bytes": 213603609,
+      "raw_frontier_bytes": 64166343,
+      "v2_bytes": 13435749,
+      "v2_sha256": "f4fa488835272b902f830eb99deb5c61b89fb659b604a090b75c645362e0a402",
+      "size_reduction_percent": 93.71,
+      "legacy_decode_ms": 935,
+      "v2_encode_ms": 201,
+      "v2_decode_ms": 138,
+      "exact_metadata_and_frontier_bytes_equal": true,
+      "peak_private_bytes": 323317760,
+      "limitation": "Codec-only test against exact R1 cache; semantic restoration is a separate runtime gate. Concurrent workspace unit tests; no publication load."
     }
+  },
+  "hardware": {
+    "cpu": "AMD Ryzen 5 5600X (6 cores, 12 logical processors)",
+    "physical_memory_bytes": 17093017600,
+    "os": "Windows 10 Home 10.0.19045",
+    "rust": "1.92.0",
+    "build": "release, LTO disabled; see commands.json",
+    "limitations": [
+      "One local machine, single observations unless explicitly stated.",
+      "Cold process does not imply flushed operating-system file cache.",
+      "Accepted runtime processes are serialized; ordinary workspace tests/builds can run concurrently."
+    ]
+  },
+  "classes": {
+    "cold_repository_open": {
+      "ms": [
+        7,
+        7,
+        11,
+        312
+      ],
+      "fixtures": [
+        "small lifecycle open/reopen",
+        "self-model parent/child"
+      ],
+      "includes_standard_load": false
+    },
+    "cold_revision_restore_from_source": {
+      "ms": 55170,
+      "fixture": "small durable lifecycle",
+      "command_record": "commands.json#phase2-durable-focused",
+      "includes_standard_load": false
+    },
+    "restore_from_valid_semantic_cache": {
+      "legacy_v1_small_ms": 53463,
+      "legacy_v1_self_model_ms": 127960,
+      "includes_standard_load": false,
+      "v2": {
+        "small_ms": 53397,
+        "cache_bytes": 34549,
+        "sqlite_commit_ms": 2,
+        "runtime_record": "runtime.json#phase2-semantic-cache-v2",
+        "full_gate_passed": false,
+        "note": "Measured successful authenticated restore before requested interruption; remaining gate assertions not completed."
+      }
+    },
+    "single_document_edit_full_rebuild": {
+      "fixture": "three mixed documents; identical parsed identities",
+      "ms_by_class": {
+        "attribute-value": 87864,
+        "attribute-type": 86705,
+        "multiplicity": 86039,
+        "rename": 107805,
+        "add-part": 95220,
+        "remove-connection": 81001,
+        "add-connection": 95737
+      },
+      "limitation": "Full authored semantic reconstruction, not cold reparsing of source."
+    },
+    "single_document_edit_incremental": {
+      "fixture": "same independent edit classes",
+      "ms_by_class": {
+        "attribute-value": 152647,
+        "attribute-type": 138245,
+        "multiplicity": 135928,
+        "rename": 147376,
+        "add-part": 167012,
+        "remove-connection": 130313,
+        "add-connection": 141311
+      },
+      "work_evidence": "frontend-acceptance.json#incremental_semantic_oracle",
+      "conclusion": "Lowering visits reduced from 6 to 1 and local value-edit lowered records from 92 to 38; kernel and effective audit remain broad. No wall-time speedup demonstrated."
+    },
+    "validation": {
+      "self_model_ms": 5883,
+      "actual_contract": "Working -> Validated Phase1V1; publications already loaded"
+    },
+    "api_element_page_query": {
+      "status": "not measured; HTTP fixture skipped at user request",
+      "service_only_projection_ms": 11,
+      "service_projection_elements": 14,
+      "note": "Service projection is not HTTP API timing."
+    },
+    "parallel_immutable_reads": {
+      "small_lifecycle_four_readers_ms": 2614,
+      "durable_scale": "not measured; long-running fixture skipped at user request"
+    }
+  },
+  "memory": {
+    "seven_edit_oracle_peak_private_bytes": 5078302720,
+    "legacy_cache_gate_peak_private_bytes": 5248036864,
+    "self_model_peak_private_bytes": 6672723968,
+    "compact_cache_interrupted_gate_peak_private_bytes": 5246382080,
+    "scope": "Whole monitored fixture processes, including accepted publications; not isolated per-edit peaks."
   }
 }

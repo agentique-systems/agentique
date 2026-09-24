@@ -1,7 +1,5 @@
 {
   "format": "agentique-modeling-platform-phase2-api-evidence/1",
-  "source_commit": "7765e0741be2787c43ad8d5c08fdc501e452ffa6",
-  "scope_inputs_sha256": "dc1f6c5c14e25d52cb23c29c5c4f8eed49e7cf9fbb872aaf00befe0ad36856bb",
   "inventory": "standards/gen2-api-coverage.json",
   "mapping": "standards/gen2-api-mapping.json",
   "counts": {
@@ -52,13 +50,14 @@
     {
       "command_record": "commands.json#phase2-service-api-check",
       "exit_code": 0,
-      "output_summary": "cargo check --offline -p agq-modeling-service -p agq-modeling-http --all-targets passed. Later page-URL and test refinements require the focused rerun."
+      "output_summary": "Initial typecheck passed; later integrated 6 API / 3 HTTP tests and whole-workspace tests passed (commands.json)."
     }
   ],
   "runtime": {
-    "focused_crate_tests": "pending_on_integrated_tree",
-    "http_accepted_cache_fixture": "pending",
-    "strict_rustdoc": "pending"
+    "focused_crate_tests": "passed: 6 API and 3 HTTP unit tests",
+    "http_accepted_cache_fixture": "not run at user request to avoid long verification",
+    "strict_rustdoc": "passed with warnings and missing public docs denied",
+    "full_workspace": "passed 1005 tests"
   },
   "http": {
     "prefix": "/api/gen2",
@@ -86,5 +85,10 @@
     "metadata_catalog_changes": "Explicit stale cursor rejection",
     "semantic_branch_movement": "Continuation remains bound to the original immutable revision"
   },
-  "acceptance": "pending_runtime_and_final_integrated_gates"
+  "acceptance": "protocol inventory and focused tests passed; accepted-cache HTTP runtime gate not run",
+  "historical_inventory_review": {
+    "source_commit": "7765e0741be2787c43ad8d5c08fdc501e452ffa6",
+    "scope_inputs_sha256": "dc1f6c5c14e25d52cb23c29c5c4f8eed49e7cf9fbb872aaf00befe0ad36856bb"
+  },
+  "integrated_source_commit": "733238d9e0874f41f51be44ea11a1eb3d732c1f9"
 }

@@ -79,36 +79,47 @@ impl ProjectRevision {
     pub fn project(&self) -> ProjectId {
         self.compilation.inputs().project()
     }
+    /// Immutable workspace-history identity, distinct from the kernel revision.
     pub fn revision(&self) -> ProjectRevisionId {
         self.revision
     }
+    /// Sole parent revision, or none for an initial workspace.
     pub fn parent(&self) -> Option<ProjectRevisionId> {
         self.parent
     }
+    /// Kernel identity of the compiled frontier, when available.
     pub fn kernel_revision(&self) -> Option<RevisionId> {
         self.compilation.kernel_revision()
     }
+    /// Canonical root of the authored project.
     pub fn root(&self) -> ElementId {
         self.compilation.inputs().root()
     }
+    /// Authored documents with their current path labels and stable identities.
     pub fn documents(&self) -> impl Iterator<Item = (&str, &ProjectDocument)> {
         self.compilation.inputs().documents()
     }
+    /// Find an authored document by its path label in this revision.
     pub fn document_at(&self, path: &str) -> Option<&ProjectDocument> {
         self.compilation.inputs().document_at(path)
     }
+    /// Find an authored document by stable identity.
     pub fn document(&self, document: DocumentId) -> Option<&ProjectDocument> {
         self.compilation.inputs().document(document)
     }
+    /// Strict declared snapshot, if construction completed successfully.
     pub fn strict_snapshot(&self) -> Option<&Snapshot> {
         self.compilation.strict_snapshot()
     }
+    /// Inspect an unfinished construction frontier when no strict snapshot exists.
     pub fn construction(&self) -> Option<&ConstructionView> {
         self.compilation.construction()
     }
+    /// Canonical semantic frontier available for this revision.
     pub fn semantic_model(&self) -> Option<&ModelView> {
         self.compilation.semantic_model()
     }
+    /// Source and construction diagnostics bound to this revision.
     pub fn diagnostics(&self) -> &[SourceDiagnostic] {
         self.compilation.diagnostics()
     }
@@ -116,30 +127,39 @@ impl ProjectRevision {
     pub fn effective_audit(&self) -> Option<&SourceEffectiveAudit> {
         self.compilation.effective_audit()
     }
+    /// Authored reference assertions and their exact resolution evidence.
     pub fn references(&self) -> &[agq_kerml_text::ReferenceAssertion] {
         self.compilation.references()
     }
+    /// Observed authored producer convergence and completeness.
     pub fn producer_status(&self) -> Option<&AuthoredProducerStatus> {
         self.compilation.producer_status()
     }
+    /// Closure certificate for this exact semantic frontier, when available.
     pub fn producer_closure(&self) -> Option<&Arc<ProducerClosureCertificate>> {
         self.compilation.producer_closure()
     }
+    /// Borrow KerML queries bound to this immutable revision and context.
     pub fn kerml_queries(&self) -> Result<KerMlQueries<'_>, QueryUnavailable> {
         self.compilation.kerml_queries()
     }
+    /// Borrow SysML queries bound to this immutable revision and context.
     pub fn sysml_queries(&self) -> Result<SysmlQueries<'_>, QueryUnavailable> {
         self.compilation.sysml_queries()
     }
+    /// Authored source origin for a canonical fact, when one is recorded.
     pub fn source_for_fact(&self, fact: FactKey) -> Option<&SourceOrigin> {
         self.compilation.source_map().get(&fact)
     }
+    /// Look up a canonical record in the available semantic frontier.
     pub fn element(&self, element: ElementId) -> Option<&ElementRecord> {
         self.semantic_model()?.element(element)
     }
+    /// Shared immutable accepted Systems publication used by this revision.
     pub fn accepted_sysml(&self) -> &Arc<CanonicalSysmlSystemsLibrary> {
         self.compilation.inputs().accepted_sysml()
     }
+    /// Shared immutable accepted KerML publication underlying Systems.
     pub fn accepted_kerml(&self) -> &Arc<CanonicalKermlStandardLibraries> {
         self.accepted_sysml().accepted_kerml()
     }
@@ -236,18 +256,23 @@ impl ValidatedProjectRevision {
     pub fn acceptance_contract(&self) -> PlatformAcceptanceContract {
         self.contract
     }
+    /// Exact Working handle that passed the acceptance transition.
     pub fn working(&self) -> &Arc<WorkingProjectRevision> {
         &self.working
     }
+    /// Immutable workspace-history identity, distinct from the kernel revision.
     pub fn revision(&self) -> ProjectRevisionId {
         self.working.revision()
     }
+    /// Canonical semantic graph guaranteed by successful validation.
     pub fn semantic_model(&self) -> &ModelView {
         self.working.semantic_model().expect("validated graph")
     }
+    /// KerML queries over the validated semantic context.
     pub fn kerml_queries(&self) -> KerMlQueries<'_> {
         self.working.kerml_queries().expect("validated context")
     }
+    /// SysML queries over the validated semantic context.
     pub fn sysml_queries(&self) -> SysmlQueries<'_> {
         self.working
             .sysml_queries()
@@ -258,9 +283,11 @@ impl ValidatedProjectRevision {
 /// Versioned authored platform acceptance; this does not assert full language conformance.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum PlatformAcceptanceContract {
+    /// Adopted Phase 1 platform slice: strict construction, closure and effective audit.
     Phase1V1,
 }
 impl PlatformAcceptanceContract {
+    /// Stable external identifier for the adopted acceptance contract.
     pub fn id(self) -> &'static str {
         match self {
             Self::Phase1V1 => "agentique-modeling-workspace-phase1/1",
@@ -268,35 +295,52 @@ impl PlatformAcceptanceContract {
     }
 }
 
+/// A failed obligation of the versioned platform acceptance contract.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ValidationFinding {
+    /// At least one document did not parse completely.
     Syntax,
+    /// Source or construction diagnostics remain.
     Diagnostics,
+    /// No strict declared snapshot is available.
     Construction,
+    /// Authored producers did not converge completely.
     ProducerClosure,
+    /// The certificate does not establish full closure of this graph.
     Certificate,
+    /// An authored reference is unresolved or incomplete.
     References,
+    /// The semantic query context is unavailable or incompatible.
     Context,
     /// Missing, context-mismatched or failing applicable effective query audit.
     EffectiveAudit,
 }
+/// Failed acceptance of one immutable Working revision.
 #[derive(Clone, Debug, thiserror::Error)]
 #[error("revision {revision:?} does not satisfy the platform contract: {findings:?}")]
 pub struct ValidationFailure {
+    /// Revision on which these findings were observed.
     pub revision: ProjectRevisionId,
+    /// Every failed platform obligation discovered during validation.
     pub findings: Vec<ValidationFinding>,
 }
 
+/// Failures that prevent construction or acknowledgement of a workspace revision.
 #[derive(Debug, thiserror::Error)]
 pub enum WorkspaceError {
+    /// The supplied expected head is no longer current.
     #[error("workspace head changed since {0:?}")]
     StaleRevision(ProjectRevisionId),
+    /// The path does not select a supported source language.
     #[error("document extension is not .kerml or .sysml: {0}")]
     UnsupportedExtension(String),
+    /// Candidate project or parent does not match this workspace head.
     #[error("candidate does not continue this project head")]
     ForeignCandidate,
+    /// Source edit or document identity reconciliation failed.
     #[error(transparent)]
     Edit(#[from] ProjectError),
+    /// Semantic construction or publication attachment failed.
     #[error(transparent)]
     Build(#[from] LibraryLoadError),
 }
@@ -314,6 +358,7 @@ impl ProjectWorkspace {
             head,
         }
     }
+    /// Construct an empty workspace using a shared accepted Systems publication.
     pub fn open(publication: Arc<CanonicalSysmlSystemsLibrary>) -> Result<Self, WorkspaceError> {
         let inputs = Arc::new(SourceInputs::with_accepted_sysml(publication)?);
         let compilation = inputs.compile(None)?;
@@ -329,12 +374,15 @@ impl ProjectWorkspace {
             head,
         })
     }
+    /// Current acknowledged in-memory head.
     pub fn head(&self) -> &Arc<WorkingProjectRevision> {
         &self.head
     }
+    /// Look up an immutable revision retained by this workspace.
     pub fn revision(&self, revision: ProjectRevisionId) -> Option<&Arc<WorkingProjectRevision>> {
         self.revisions.get(&revision)
     }
+    /// Retained immutable revisions in identity order, not chronological order.
     pub fn revisions(&self) -> impl Iterator<Item = &Arc<WorkingProjectRevision>> {
         self.revisions.values()
     }
@@ -387,6 +435,7 @@ impl ProjectWorkspace {
         self.acknowledge(expected, candidate.clone())?;
         Ok(candidate)
     }
+    /// Construct and acknowledge an in-memory revision adding a KerML document.
     pub fn add_kerml(
         &mut self,
         expected: ProjectRevisionId,
@@ -402,6 +451,7 @@ impl ProjectWorkspace {
             }],
         )
     }
+    /// Construct and acknowledge an in-memory revision adding a SysML document.
     pub fn add_sysml(
         &mut self,
         expected: ProjectRevisionId,
@@ -417,6 +467,7 @@ impl ProjectWorkspace {
             }],
         )
     }
+    /// Select KerML or SysML from the path extension and add an in-memory revision.
     pub fn add_document(
         &mut self,
         expected: ProjectRevisionId,
@@ -431,6 +482,7 @@ impl ProjectWorkspace {
             Err(WorkspaceError::UnsupportedExtension(path.into()))
         }
     }
+    /// Apply a source byte-range edit and acknowledge its in-memory revision.
     pub fn edit_document(
         &mut self,
         expected: ProjectRevisionId,
@@ -439,6 +491,7 @@ impl ProjectWorkspace {
     ) -> Result<Arc<WorkingProjectRevision>, WorkspaceError> {
         self.apply(expected, [ProjectChange::Edit { document, edit }])
     }
+    /// Remove a document by identity and acknowledge its in-memory revision.
     pub fn remove_document(
         &mut self,
         expected: ProjectRevisionId,

@@ -1,0 +1,147 @@
+{
+  "format": "agentique-modeling-platform-phase2-acceptance/1",
+  "status": "incomplete acceptance; long-running verification stopped at user request",
+  "base_commit": "bc0ffc0e957e2ea605fa8717720faeb8dae83569",
+  "branch": "platform/modeling-platform-phase2-repository-service-api",
+  "architecture": "ADR 0028; repository consumes workspace, service coordinates both, adapters consume inward contracts",
+  "foundation": [
+    "KerML Operational v9",
+    "SysML Systems Operational v3",
+    "ADR 0024 Phase1V1",
+    "ADR 0026"
+  ],
+  "repository_contract": {
+    "status": "passed focused tests",
+    "manifest_version": 1,
+    "identities": [
+      "RepositoryId",
+      "ProjectId",
+      "BranchId",
+      "ProjectRevisionId",
+      "DocumentId",
+      "SourceRevisionId",
+      "kernel RevisionId",
+      "ElementId"
+    ],
+    "history": "immutable one-parent same-project revisions",
+    "source": "Exact UTF-8 blobs plus independently versioned source/syntax/semantic identity checkpoints; SHA-256 addressed",
+    "standards": "Exact external accepted-publication bindings, no per-revision standard graphs",
+    "validation": "Working distinct from Validated Phase1V1 receipt; actual transition rerun on restore"
+  },
+  "sqlite": {
+    "status": "passed 19 focused tests",
+    "durability": "FULL synchronous WAL; candidate registration, CAS head update and operation receipt in one immediate transaction",
+    "idempotence": "Prepared OperationId binds exact request; lost acknowledgement replays original receipt, including after later head movement",
+    "faults": "Six injected boundaries and six abruptly terminated child processes; see durability-sqlite.json",
+    "concurrency": "Independent connections produce one committed winner and one explicit Conflict; no silent retry",
+    "integrity": "Hashes, indexed identities, parent cycles, head resolution, receipts, optional-cache discardability, schema refusal"
+  },
+  "service": {
+    "status": "passed focused durable lifecycle",
+    "evidence": "commands.json#phase2-durable-focused",
+    "queries": "Request resolves branch once and retains immutable revision; owned typed values preserve IDs, context, completeness, diagnostics and evidence",
+    "current_effective": "Explicit declared/current graph and effective language query operations",
+    "source": "Element-to-origin and source-position-to-Missing/Unique/Ambiguous elements",
+    "commands": "Source-backed workspace construction precedes repository commit; inspectable candidates survive conflicts",
+    "diff": "Identity-based documents/elements/relationships/occurrences, UTF-8 changed ranges, declared versus derived consequences and persisted validation status",
+    "integrity": "Semantic verification bypasses resident cache, checks every retained revision and preserves storage/enumeration findings"
+  },
+  "restoration": {
+    "status": "durable source, legacy cache and cold-process self-model passed; compact v2 gate interrupted by user request",
+    "durable_source": "Exact source identities and semantic answers match prior revision",
+    "cache": "Exact source/publication/profile/descriptor/rules/context/closure binding; valid, missing, corrupt, stale and unknown cache paths tested",
+    "stored_working": "Never promoted by cache or database flag",
+    "forged_receipt": "Rejected",
+    "mandatory_source_missing": "Rejected even with valid cache",
+    "v2_observations": {
+      "exit_code": 124,
+      "safety_stop": "requested",
+      "full_gate_passed": false,
+      "observed": [
+        "Durable candidate commit",
+        "Authenticated compact cache restore",
+        "Missing, corrupt, stale and unknown-format source restoration paths"
+      ],
+      "uncompleted": "Remaining fallback/receipt/integrity assertions; prior complete v1 gate remains separately recorded."
+    }
+  },
+  "incrementality": {
+    "status": "passed seven-class exact semantic oracle",
+    "evidence": "frontend-acceptance.json",
+    "work_reduction": "Unchanged syntax and immutable lowering fragments reused; affected producer work uses existing read/effect invalidation",
+    "fallback": "Broad kernel reconstruction/effective audits remain conservative; inability to prove reuse cannot retain stale facts",
+    "wall_time": "No speedup demonstrated; measured reduction is in lowering work"
+  },
+  "scale": {
+    "status": "implemented; semantic durable fixture not run at user request",
+    "required": {
+      "projects": 1,
+      "branches": 2,
+      "mixed_documents": 100,
+      "authored_revisions": 10,
+      "states": [
+        "Working",
+        "Validated"
+      ],
+      "parallel_readers": 4,
+      "fresh_process_restart": true,
+      "concurrent_cas": true
+    },
+    "storage_only_fixture": "passed separately; does not establish semantic durable scale acceptance"
+  },
+  "http": {
+    "status": "implemented; 9 API/HTTP unit tests passed; accepted-cache HTTP fixture not run at user request",
+    "inventory": "35 operations: 6 supported, 7 partial, 22 unsupported",
+    "scope": "Standalone /api/gen2 router; standard DTOs project canonical semantics; source-backed service remains only edit boundary",
+    "excluded": [
+      "Automatic merge",
+      "Arbitrary semantic mutation",
+      "Gen1 migration",
+      "Browser integration",
+      "Full API conformance"
+    ]
+  },
+  "verification": {
+    "focused_platform_tests": {
+      "passed": 47,
+      "failed": 0,
+      "record": "commands.json#phase2-focused-tests (latest)"
+    },
+    "full_workspace": {
+      "status": "passed",
+      "exit_code": 0,
+      "command_record": "commands.json#phase2-workspace-tests (latest)",
+      "passed": 1005,
+      "ignored": 8,
+      "scope": "Default workspace suite; accepted-cache runtime gates run explicitly and independently."
+    },
+    "clippy_final": {
+      "status": "passed",
+      "record": "commands.json#phase2-clippy",
+      "exit_code": 0
+    },
+    "strict_rustdoc_final": {
+      "status": "passed",
+      "record": "commands.json#phase2-strict-docs (latest)",
+      "exit_code": 0,
+      "scope": "Five new Gen2 platform crates plus modeling workspace; warnings and missing public docs denied."
+    },
+    "format": "passed",
+    "frontend": "npm check/build/test passed",
+    "standards": "standards integrity and metamodel stale checks passed; accepted-input manifest refreshed, no publication rebuilt",
+    "browser_e2e": "Not applicable to standalone router under milestone condition",
+    "self_model_focused": {
+      "status": "passed",
+      "exit_code": 0,
+      "passed": 4,
+      "record": "commands.json#phase2-self-model-focused"
+    }
+  },
+  "attempt_history": "Commands and runtime summaries retain earlier fixture failures, corrected cache export boundary, disk/link interruption, and a stopped duplicate-feature release build. Only passed acceptance gates establish success.",
+  "stop_instruction": "Do not do long running verifications; finish code edits and normal tests, then stop.",
+  "remaining_acceptance": [
+    "Finish compact v2 cache authentication gate",
+    "Run 100 mixed document / 10 revision durable semantic scale fixture",
+    "Run accepted-cache HTTP vertical fixture"
+  ]
+}

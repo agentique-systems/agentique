@@ -1,0 +1,58 @@
+{
+  "format": "agentique-phase2-self-model/1",
+  "status": "passed",
+  "runtime_record": "runtime.json#phase2-self-model",
+  "source_commit": "aa4f5eb88525eceb0ac725197ae40054ed54ea67",
+  "exit_code": 0,
+  "fixture": "models/agentique/",
+  "retained_repository": "verification/generated/modeling-platform-phase2/agentique-dogfood.sqlite",
+  "project_id": "a7b4faee-2ff8-4658-962b-7a489dd17f84",
+  "authored_documents": 5,
+  "authored_revisions": 2,
+  "initial_empty_revision": true,
+  "branches": {
+    "main": "cf72b0c8-2d3b-45d6-aa20-67da04005f8f",
+    "architecture-experiment": "02dcd9b7-95db-47e0-ab4a-9e524065adc0"
+  },
+  "revision_1": "cf72b0c8-2d3b-45d6-aa20-67da04005f8f",
+  "validation": "Both authored revisions pass Phase1V1; restored Validated handle requires matching receipt and rerun validation.",
+  "cache_format": "agq-project-semantic-cache/1; legacy reader retained by service codec v2",
+  "accepted_publications": {
+    "kerml": "815573353973607bc62a25195ed4461645182027407f8476be521ffc99174f12",
+    "sysml": "25aeddb099be16462b553d6debcad97f43bf22e89ce8a9bbb53cf72eb7d193fa"
+  },
+  "cold_restart": {
+    "all_parent_workspace_and_publication_handles_dropped": true,
+    "fresh_subprocess": true,
+    "standard_catalogue_restore_ms": 70402,
+    "sqlite_open_ms": 312,
+    "revision_restore_ms": 127960,
+    "validation_ms": 5883,
+    "child_scenario_total_ms": 482086
+  },
+  "comparisons": [
+    "ProjectRevisionId, parent, DocumentIds and SourceRevisionIds",
+    "Canonical graph and ElementIds",
+    "Qualified names, relationship identities, effective names/members",
+    "Completeness, provenance and evidence digests",
+    "Accepted publication identities and exact validation receipt",
+    "Main and R1 retained after experiment branch commits R2"
+  ],
+  "architecture": [
+    "ModelRepository depends on ProjectWorkspace",
+    "ModelingService depends on ModelRepository, ProjectWorkspace and QueryService",
+    "SystemsModelingApiAdapter depends on ModelingService"
+  ],
+  "peak_private_bytes": 6672723968,
+  "limitations": [
+    "Source and caches are inputs; no accepted standard publication rebuilt.",
+    "Fresh process does not imply OS file-cache flush.",
+    "Codec v2 equivalence and authentication are recorded separately."
+  ],
+  "normal_architecture_fixture": {
+    "status": "passed",
+    "tests": 4,
+    "record": "commands.json#phase2-self-model-focused",
+    "scope": "Independent programmatic equivalence, inward dependencies, source identity and implementation traceability"
+  }
+}
