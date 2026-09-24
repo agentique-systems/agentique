@@ -1,10 +1,12 @@
 # ADR 0024: generation-2 in-memory modeling workspace
 
-Status: proposed pending workspace runtime acceptance. The implementation is
-integrated after the [language-foundation gate](../../verification/summaries/final-language-acceptance/semantic-closure-readiness.md)
-passed and ADR 0026 was adopted. Eleven of twelve accepted-cache workspace tests
-have passed, including the required self-model and validated-scale gates. The
-last recovery-scale test and final integration decision remain pending.
+Status: adopted for the bounded generation-2 in-memory Phase 1 workspace. The
+[language-foundation gate](../../verification/summaries/final-language-acceptance/semantic-closure-readiness.md)
+passed and ADR 0026 was adopted before integration. All twelve accepted-cache
+workspace tests now pass, including self-model edits, validated scale and
+recovery at scale. The [runtime acceptance record](../../verification/summaries/final-audit-semantic-closure/workspace-runtime-acceptance.md)
+and [architectural retrospective](../../verification/summaries/final-audit-semantic-closure/core-foundation-retrospective.md#final-architectural-disposition)
+record the evidence and bounded adoption decision.
 
 ## Context and reuse audit
 
@@ -34,13 +36,13 @@ identity reservations through Working states. The
 [frontend boundary review](../modeling-workspace-frontend-boundary.md) records the
 design and the strict frontend's original limitations.
 
-## Proposed decision
+## Decision
 
 The integrated `agq-modeling-workspace` follows the accepted KerML v9 and Systems
 v3 publications and the passing effective authored language vertical. Keep
-`agq-workspace` operational and unchanged. At the `108de93` evidence snapshot,
-only the recovery-scale runtime test remains unresolved; this ADR stays proposed
-until that result and final integration review.
+`agq-workspace` operational and unchanged. The adopted Phase1V1 Working/Validated
+revision contract is supported by all twelve accepted-cache tests.
+This decision covers in-memory atomic visibility and shared immutable standards.
 The additive name makes the generation boundary visible to consumers.
 
 The new crate depends inward on the kernel, textual frontend and KerML/SysML
@@ -152,6 +154,8 @@ The [runtime record](../../verification/summaries/final-audit-semantic-closure/w
 now establishes the real workspace self-model, five Working-state tests, four
 edit/recovery lifecycle tests and five Validated revisions with 100 mixed
 documents each and four parallel readers. The malformed-typing case also passed
-on the forked evaluator. The separate five-revision recovery-scale test, whose
-fourth revision is Working with 99 documents, remains pending. ADR adoption
-awaits that final outcome and integration review.
+on the forked evaluator. The separate five-revision recovery-scale test also
+passes: revision 4 is Working with 99 documents, revision 5 repairs to Validated
+with 100, and four readers complete eight passes and 160 revision comparisons.
+The earlier failed assertions and allocation-failed command remain recorded.
+These results establish this bounded adoption; ADR 0027 remains proposed research.

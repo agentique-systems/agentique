@@ -460,7 +460,10 @@ observations. The [runtime record](../verification/summaries/final-audit-semanti
 also establishes four edit/recovery lifecycle tests and five Validated revisions
 with 100 mixed documents each and four parallel readers. Their shared tables,
 zero copied dependency entries and zero accepted producer replay pass. The
-separate recovery-scale test and full workspace acceptance remain pending.
+separate recovery-scale test also passes with a Working revision, repaired
+Validated revision and all 160 revision comparisons across four readers. All
+12 accepted-cache workspace tests passed; ADR 0024 adopts the bounded in-memory
+Phase 1 contract. These observations establish no edit-time performance guarantee.
 Deep containment/evidence graphs use iterative cycle detection.
 No arena, global interner, unsafe code, async runtime or interior-mutability scheme
 is required. Snapshot and overlay types are tested as Send + Sync.

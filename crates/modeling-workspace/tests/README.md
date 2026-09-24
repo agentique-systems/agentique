@@ -3,16 +3,15 @@
 These integration tests exercise the additive `agq-modeling-workspace` boundary
 selected by ADR 0024. Its production implementation, manifest and root workspace
 membership are integrated. The language foundation passed and ADR 0026 is
-adopted. At evidence snapshot `108de93`, 11 of 12 unique accepted-cache tests
-have passed; the last recovery-scale result and full workspace acceptance remain
-pending. ADR 0024 is proposed. There is no Gen1 adapter.
+adopted. All 12 unique accepted-cache tests passed, and ADR 0024 is adopted
+for bounded in-memory Phase 1. There is no Gen1 adapter.
 
 The documented contract for the implemented interface is
 [the phase-1 design](../../../docs/modeling-workspace-phase1-design.md) and
 [the frontend boundary](../../../docs/modeling-workspace-frontend-boundary.md).
 The symbols below describe the implementation and its observable assertions.
 
-## Measured runtime acceptance and remaining test
+## Measured runtime acceptance
 
 The explicit accepted-publication command is
 
@@ -21,12 +20,15 @@ cargo test --locked --offline -p agq-modeling-workspace --features verification 
 ```
 
 The suite contains 12 accepted-cache tests: six in `phase1`, one in `self_model`
-and five in `working_states`. Eleven passed: all five Working-state tests, the
-workspace self-model, four phase-1 edit/recovery lifecycle tests, and the scale
-fixture with five Validated revisions of 100 documents and four parallel readers.
-The malformed-typing test also passed again on the forked evaluator; the rerun
-is not another unique test. The separate five-revision recovery-scale case
-remains pending after its original allocation failure. See the
+and five in `working_states`. All twelve passed: five Working-state tests, the
+workspace self-model, four phase-1 edit/recovery lifecycle tests, the scale
+fixture with five Validated revisions of 100 documents and four parallel readers,
+and the separate five-revision recovery-scale case. The malformed-typing test
+also passed again on the forked evaluator; the rerun is not another unique test.
+Recovery at scale retains a Working fourth revision with 99 documents, repairs
+revision 5 to Validated with 100, and completes all 160 revision comparisons
+across four readers making eight passes. The original allocation failure remains
+recorded separately from the passing streamed-diagnostics rerun. See the
 [runtime record](../../../verification/summaries/final-audit-semantic-closure/workspace-runtime-acceptance.md)
 and [command ledger](../../../verification/summaries/final-audit-semantic-closure/commands.json)
 for exact outputs, failed commands and tested source identities.
@@ -116,7 +118,8 @@ sharing; the separate storage observer tests that base maps, indexes and proof
 tables were not copied. There is no speed threshold. Rebuilding authored
 semantics remains permitted; copying accepted graphs or rerunning their producers
 does not. The passed validated-scale gate establishes those observations for
-its five Validated revisions; the separate recovery-scale gate remains pending.
+its five Validated revisions; the separate recovery-scale gate also passes
+with its Working revision retained and all eight reader passes complete.
 
 The separate `agq-kerml-text --test workspace_edit_inputs` preflight runs
 against the real production frontend. It covers all base/edited/recovered fixture
@@ -124,5 +127,6 @@ texts and 100 generated documents. It establishes syntax suitability only.
 
 This suite supplements the passed Agentique self-model/rich programmatic-equivalence
 [language gate](../../../verification/summaries/final-language-acceptance/semantic-closure-readiness.md).
-Full workspace acceptance awaits the remaining recovery-scale result and final
-integration review; the 11 measured passes do not count that pending test.
+All twelve accepted-cache tests establish the bounded in-memory Phase 1
+acceptance recorded by ADR 0024. This does not extend the contract to durable
+persistence, application migration, full language conformance or execution.

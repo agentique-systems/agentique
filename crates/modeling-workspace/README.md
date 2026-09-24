@@ -5,11 +5,11 @@ authenticated accepted KerML and Systems publications. The measured
 [language readiness decision](../../verification/summaries/final-language-acceptance/semantic-closure-readiness.md)
 adopts ADR 0026 and authorizes this integration. The
 [runtime record](../../verification/summaries/final-audit-semantic-closure/workspace-runtime-acceptance.md)
-establishes 11 of 12 unique accepted-cache test passes: workspace self-model,
-five Working-state tests, four edit/recovery lifecycle tests and five Validated
-revisions with 100 mixed documents each and four parallel readers. The separate
-recovery-scale test and full workspace acceptance remain pending; ADR 0024
-remains proposed.
+establishes all 12 unique accepted-cache test passes: workspace self-model,
+five Working-state tests, four edit/recovery lifecycle tests, five Validated
+revisions with 100 mixed documents each and four parallel readers, and the
+separate recovery-scale sequence with a Working fourth revision and repaired
+fifth revision. ADR 0024 is adopted for this bounded in-memory Phase 1 contract.
 
 Document operations check an expected head, prepare exact source/syntax inputs,
 compile the current document set, then publish one new revision atomically.

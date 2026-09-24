@@ -1,13 +1,13 @@
 # In-memory modeling workspace phase 1
 
-Status at evidence snapshot `108de93`: production implementation integrated;
-11 of 12 accepted-cache workspace tests passed. The last recovery-scale test
-and full workspace acceptance remain pending; ADR 0024 is proposed. The
+Status: bounded in-memory Phase 1 accepted; all 12 accepted-cache workspace tests
+passed and ADR 0024 is adopted. The
 [language-readiness gate](../verification/summaries/final-language-acceptance/semantic-closure-readiness.md)
 passed and [ADR 0026](adr/0026-language-foundation-stability-contract.md) is adopted.
 Kernel invariants and exact accepted-cache restoration on the shared-storage
 representation have passed. The self-model, Working-state, four edit/recovery
-lifecycle and five-Validated-revision scale results are measured in the
+lifecycle, five-Validated-revision scale and separate recovery-scale results are
+measured in the
 [runtime record](../verification/summaries/final-audit-semantic-closure/workspace-runtime-acceptance.md);
 the [earlier Phase 1 summary](../verification/summaries/modeling-workspace-phase1/README.md)
 remains historical preparation evidence.
@@ -35,7 +35,7 @@ five-validated-revision scale fixture. Its pieces are:
 | Identity retirement | Kernel `DeclaredConstructionHistory` retains reservations through incomplete construction; explicit source deletion retires identities. |
 | Immutable dependencies | Kernel shared-base maps, indexes, proof/search storage and sparse local projections retain accepted standard allocations. |
 | Revision queries | Borrowed KerML/SysML evaluators, semantic element/source lookup, metadata and native completeness/evidence. |
-| Verification | Eleven of twelve accepted-cache tests passed: the self-model, five Working-state tests, four phase-1 lifecycle tests and the scale case with 100 documents in each of five Validated revisions and four parallel readers. The separate recovery-scale case remains pending. |
+| Verification | All twelve accepted-cache tests passed: the self-model, five Working-state tests, four phase-1 lifecycle tests, five Validated revisions each with 100 documents and four parallel readers, and the separate recovery-scale case with a Working fourth revision, repaired fifth revision and four readers making eight passes. |
 
 The ordinary API offers `add_document`, explicit `add_kerml`/`add_sysml`,
 `edit_document`, `remove_document` and atomic batches of `ProjectChange`. A stale
@@ -45,8 +45,7 @@ authentication is performed by the language facade before workspace construction
 
 The following sections preserve the original design and review rationale. Their
 statements about unimplemented storage/frontend seams describe the pre-integration
-baseline, not the integrated implementation above. Full workspace acceptance
-awaits the last recovery-scale result and final integration review. Phase 2
+baseline, not the accepted Phase 1 implementation above. Phase 2
 is specified separately in the [roadmap](modeling-platform-phase2-roadmap.md).
 
 ## Ownership and identity
@@ -211,9 +210,10 @@ recorded source. The integrated kernel now uses immutable shared base tables and
 local storage; kernel invariants and exact accepted-cache identity restoration
 have passed. Workspace self-model, Working-state and validated-scale tests
 observe physical shared standard tables, original record identities, zero copied
-dependency entries and zero accepted producer replay. The recovery-scale test
-remains pending. Facade Arc equality alone is insufficient, and authored index
-rebuilding remains an explicit initial limitation. The earlier
+dependency entries and zero accepted producer replay. Recovery at scale also
+passes with old revision answers intact. Facade Arc equality alone is
+insufficient, and authored index rebuilding remains an explicit initial
+limitation. The earlier
 construction-lifetime analysis and its unmeasured savings remain historical.
 
 ### Minimum shared-storage implementation

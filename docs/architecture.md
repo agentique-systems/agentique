@@ -194,9 +194,12 @@ five Working-state tests and the real workspace self-model's two Validated
 revisions with immutable old answers and physically shared standards. The
 [runtime record](../verification/summaries/final-audit-semantic-closure/workspace-runtime-acceptance.md)
 also establishes four edit/recovery lifecycle tests and five Validated revisions
-with 100 mixed documents each and four parallel readers: 11 of 12 unique tests
-passed. The separate recovery-scale result and full workspace acceptance remain
-pending; ADR 0024 remains proposed.
+with 100 mixed documents each and four parallel readers. The separate
+recovery-scale test also passes with a Working fourth revision, repaired fifth
+revision and four readers making eight passes: all 12 unique tests passed.
+[ADR 0024](adr/0024-gen2-modeling-workspace.md) is adopted for this bounded Phase 1
+workspace. The [architectural retrospective](../verification/summaries/final-audit-semantic-closure/core-foundation-retrospective.md#final-architectural-disposition)
+closes the foundation review with these measured results.
 This workspace promises in-memory atomic visibility, without durable persistence.
 ADR 0027 remains proposed research. The future [footprint invalidation roadmap](modeling-workspace-phase1-design.md#future-semantic-recomputation-after-an-authored-edit)
 reuses compositional research without depending on component sealing.

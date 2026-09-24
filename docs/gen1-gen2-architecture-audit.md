@@ -2,7 +2,7 @@
 
 ## Current integration note
 
-At evidence snapshot `108de93`, accepted KerML Operational v9 and Systems
+At completion of bounded Phase 1 acceptance, KerML Operational v9 and Systems
 Operational v3 are shared dependencies of the integrated `agq-modeling-workspace`.
 The [language-readiness gate](../verification/summaries/final-language-acceptance/semantic-closure-readiness.md)
 passed and ADR 0026 is adopted. `SourceInputs`/`SourceCompilation` provide the
@@ -21,9 +21,12 @@ authored identities and physical standard sharing. Four edit/recovery lifecycle
 tests and the five-Validated-revision scale test also passed. The latter retains
 100 mixed documents per revision and checks four parallel readers and shared
 standard tables. The [runtime record](../verification/summaries/final-audit-semantic-closure/workspace-runtime-acceptance.md)
-therefore records 11 of 12 unique passes; the separate recovery-scale test and
-full workspace acceptance remain pending. The current 20-package dependency
-audit remains clean. ADR 0024 remains proposed.
+also establishes the separate recovery-scale pass: a Working fourth revision,
+repaired fifth revision and four readers making eight passes. All 12 unique
+accepted-cache tests passed. The current 20-package dependency audit remains
+clean. ADR 0024 is adopted for bounded in-memory Phase 1, and the
+[final retrospective](../verification/summaries/final-audit-semantic-closure/core-foundation-retrospective.md#final-architectural-disposition)
+closes the foundation review.
 
 No Gen1 engine or release obligation is replaced by these results. The workspace
 provides in-memory atomic visibility, not durable persistence, application/server

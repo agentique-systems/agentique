@@ -1,15 +1,16 @@
 # Core-foundation architectural retrospective
 
-Current disposition at evidence snapshot `108de93`: the effective-audit gap is
-resolved, and 11 of 12 unique workspace runtime tests passed, including required
-self-model dogfooding and validated scale. The last recovery-scale result and
-final architectural acceptance remain pending; ADR 0024 is proposed.
+Current disposition: the effective-audit gap is resolved and all 12 unique
+accepted-cache workspace tests passed, including self-model dogfooding, validated
+scale and recovery at scale. ADR 0024 is adopted for bounded in-memory Phase 1.
+The [final architectural disposition](#final-architectural-disposition) closes
+this retrospective; it does not claim full conformance, persistence or execution.
 
-The original review and later
-[integrated correction and Working-state result](#integrated-correction-and-working-state-resolution)
-are preserved at their source baselines. The
-[current runtime reconciliation](#runtime-reconciliation-at-108de93) records which
-additional pending checks have since passed.
+The original review,
+[integrated correction and Working-state result](#integrated-correction-and-working-state-resolution),
+and [eleven-test snapshot](#runtime-reconciliation-at-108de93) remain preserved
+at their source baselines. Their pending statements describe those earlier
+observations; the final disposition below records the completed gates.
 
 Reviewed production source: `0fcc0ff`, after the held workspace and exact accepted
 v3 dependency integration. This is a bounded code and dependency review of the
@@ -282,3 +283,78 @@ There is no durable repository, Gen1 migration, new KerML acceptance, full
 conformance claim or execution engine. ADR 0026 remains adopted, and ADR 0027
 remains proposed research. This update reads existing evidence only; it runs no
 build, accepted-cache load, producer or runtime test.
+
+## Final architectural disposition
+
+**The bounded core-foundation retrospective is complete.** The reviewed
+effective-audit gap is corrected and all **12 unique accepted-cache workspace
+tests passed**. Adopt [ADR 0024](../../../docs/adr/0024-gen2-modeling-workspace.md)
+for the in-memory Phase 1 workspace. The earlier reviews, eleven-test snapshot,
+incorrect exact-one-port assertion and allocation-failed command remain
+historical evidence; they are not converted into successful runs.
+
+The final recovery-scale command was:
+
+```text
+cargo test --release --locked --offline -p agq-modeling-workspace --features verification --test phase1 hundred_documents_five_revisions_and_parallel_borrowed_reads -- --ignored --exact --nocapture --test-threads=1
+```
+
+It exited **0**: **1 passed, 0 failed, 0 ignored, 7 filtered out**, in **2,346.29
+seconds test time** and **2,346.97 seconds command time**. The tested source was
+`9a50888aa1890b8416f3941ed7063ba87a79bd97`, with empty working-change SHA-256
+`e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+The ledger entry is `workspace-recovery-scale-streamed-diagnostics`; its log is
+`verification/generated/final-audit-semantic-closure/workspace-recovery-scale-streamed-diagnostics.log`,
+SHA-256 `4dbf578837a2d3f53e91ed3d4c8f2b61e1900626b08ec717aff2c46adf77ae7e`.
+The raw hash and all 32 distinct reader/pass completions were independently
+checked while preparing this update.
+
+Revision 4 remains Working with **99 documents, 33,612 diagnostics and 102
+references** after provider removal. Revision 5 repairs to **Validated with 100
+documents, zero diagnostics and 102 references**. All four readers complete
+eight passes over five retained revisions: **160 revision comparisons**, including
+the old Working state. This result supplements the independently passed scale
+fixture whose five revisions are all Validated and each retains 100 documents.
+
+The real Working revision's signature streams **34,631,669,193 diagnostic Debug
+bytes** and **594,549,739 reference Debug bytes** in **58.184028 seconds**. These
+are formatted byte counts, not canonical graph sizes or retained-memory
+measurements. They corroborate the large diagnostic-String expansion hypothesis
+for the earlier allocation failure; that failed process did not provide a
+diagnostic backtrace identifying the allocation site. The fixture now streams
+the same formatted inputs into SHA-256 plus byte counts rather than retaining
+those enormous Strings. It retains all 160 comparisons and semantic assertions;
+no producer, query, acceptance condition or timing threshold changed. This is
+not an edit-latency or throughput acceptance claim.
+
+The final disposition follows the original principles:
+
+- Syntax/source revisions remain distinct from canonical declarations, derived
+  facts and semantic identity. The language-neutral kernel retains first-class
+  relationships and declared identity history; Rust storage does not mirror the
+  metamodel artificially.
+- Immutable revision handles retain their source, graph, diagnostics, contexts
+  and original inherited identities. Failed operational edits publish nothing;
+  semantic failures remain inspectable Working revisions and cannot become
+  Validated until the actual context passes every gate.
+- Negative conclusions retain closure and search evidence. The effective audit
+  uses the strict applicable dispatcher over all local canonical subjects,
+  including derived records, with an exact matching context. Producer convergence
+  cannot bypass invalid effective typing or unsupported capabilities.
+- Accepted publications remain immutable shared dependencies. Physical table
+  and record observations establish zero copied dependency entries and zero
+  accepted producer replay for the exercised revisions. SysML composes KerML
+  on the same graph; there is no copied inherited population or second semantic
+  store.
+- Execution remains a separate future IR. Phase 1 promises in-memory atomic
+  visibility and permits authored semantic reconstruction and local copy-on-write.
+  It adds no durable persistence, Gen1 application migration or full language
+  conformance claim.
+
+No unresolved architectural drift was found within this bounded review after the
+correction and measured gates. The original review's general conformance and
+future incrementality work do not become new foundation acceptance requirements.
+KerML Operational v9 acceptance is unchanged. ADR 0026 remains adopted and ADR
+0027 remains proposed research. The [runtime record](workspace-runtime-acceptance.md)
+and command ledger retain the exact tests, failed attempts and tested identities.
+No build, cache load or runtime test was run to write this final disposition.

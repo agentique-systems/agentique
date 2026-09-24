@@ -1,8 +1,7 @@
 # Working source revisions: frontend boundary
 
-Status at evidence snapshot `108de93`: additive frontend and workspace integrated;
-11 of 12 accepted-cache runtime tests passed. The last recovery-scale test
-and full workspace acceptance remain pending; ADR 0024 is proposed. The
+Status: additive frontend and bounded in-memory workspace Phase 1 accepted;
+all 12 accepted-cache runtime tests passed and ADR 0024 is adopted. The
 [language foundation](../verification/summaries/final-language-acceptance/semantic-closure-readiness.md)
 passed and ADR 0026 is adopted. The sections below retain their historical design
 and source baselines; the current implementation is summarized first.
@@ -45,10 +44,12 @@ separate those results from prerequisite and failed commands.
 
 The validated-scale fixture passed: five Validated revisions each retain 100
 mixed documents, with four synchronized readers, immutable old answers and
-physically shared accepted standards. The original recovery-scale sequence,
-which has a 99-document Working fourth revision, remains pending after its
-allocation-failed run. Thus 11 of the 12 unique accepted-cache tests have passed;
-the successful validated-scale fixture does not substitute for recovery at scale.
+physically shared accepted standards. The separate recovery-scale sequence also
+passed: revision 4 remains Working with 99 documents, revision 5 repairs to
+Validated with 100, and four readers complete eight passes and 160 revision
+comparisons. All 12 unique accepted-cache tests passed. Its original allocation
+failure remains recorded; bounded diagnostic streaming retains the full
+comparison input and changes no production semantic or validation contract.
 
 ## Historical reuse audit and design requirements
 
@@ -369,7 +370,7 @@ building standards or substituting `SourceProject` for the missing workspace.
 This section preserves the pre-integration observations at their exact baseline.
 The current shared-base implementation and passed workspace sharing observations
 are described above; the recorded copies below are not current implementation
-claims. The independent recovery-scale result remains pending.
+claims. The independent recovery-scale fixture also passed.
 
 Read-only inspection at `b49afe5`; no accepted cache was loaded and no scaling
 result is claimed. The existing code shares canonical record/proof payloads,
