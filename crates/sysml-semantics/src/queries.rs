@@ -128,6 +128,17 @@ impl<'m> SysmlQueries<'m> {
     pub fn context(&self) -> &SysmlSemanticContextId {
         &self.context
     }
+    /// Start a fresh evaluator over the same borrowed model, authenticated
+    /// context and bindings. Query caches are independent; graph fingerprints,
+    /// producer closure and dependency identities are preserved without rebinding.
+    pub fn fork(&self) -> Self {
+        Self {
+            model: self.model,
+            kerml: self.kerml.fork(),
+            context: self.context.clone(),
+            bindings: self.bindings.clone(),
+        }
+    }
     pub fn kerml(&self) -> &KerMlQueries<'m> {
         &self.kerml
     }

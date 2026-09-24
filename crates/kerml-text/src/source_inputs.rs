@@ -229,11 +229,11 @@ impl SourceInputs {
         // Audit the final current graph, including derived local elements that
         // have no direct source-map entry. The accepted dependency is borrowed,
         // never reevaluated as an authored population.
-        let q = result
+        let bound_queries = result
             .sysml_queries()
             .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))?;
-        let context = q.context().clone();
-        let mut subjects: Vec<_> = q
+        let context = bound_queries.context().clone();
+        let mut subjects: Vec<_> = bound_queries
             .model()
             .elements()
             .filter(|record| {
@@ -247,14 +247,12 @@ impl SourceInputs {
             .map(|record| record.id())
             .collect();
         subjects.sort_unstable();
-        drop(q);
         let mut report = SystemsPublicationAudit::default();
         let mut capabilities = Vec::new();
-        // Bound evaluator memoization while preserving deterministic audit order.
+        // Bind the immutable graph once, then bound evaluator memoization without
+        // repeating graph authentication for each deterministic audit batch.
         for batch in subjects.chunks(32) {
-            let q = result
-                .sysml_queries()
-                .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))?;
+            let q = bound_queries.fork();
             if q.context() != &context {
                 return Err(LibraryLoadError::Interpretation(
                     "authored effective audit context changed within an immutable compilation"
@@ -299,6 +297,7 @@ impl SourceInputs {
                 finding: Box::new(finding.clone()),
             });
         }
+        drop(bound_queries);
         result.diagnostics.extend(capabilities);
         result.effective_audit = Some(SourceEffectiveAudit {
             context,
