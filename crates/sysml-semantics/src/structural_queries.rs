@@ -207,6 +207,15 @@ impl SysmlQueries<'_> {
         self.pending_implications(&mut out, usage);
         out
     }
+    /// Closed OccurrenceUsage typing with its profile-specific domain contract.
+    pub fn effective_occurrence_definitions(
+        &self,
+        usage: ElementId,
+    ) -> SysmlQueryResult<Vec<ElementId>> {
+        let mut out = self.current_occurrence_definitions(usage);
+        self.pending_implications(&mut out, usage);
+        out
+    }
     /// Closed ItemUsage typing selecting KerML Structure.
     pub fn effective_item_definitions(&self, usage: ElementId) -> SysmlQueryResult<Vec<ElementId>> {
         let mut out = self.current_item_definitions(usage);
@@ -216,6 +225,15 @@ impl SysmlQueries<'_> {
     /// Closed PartUsage typing selecting PartDefinition.
     pub fn effective_part_definitions(&self, usage: ElementId) -> SysmlQueryResult<Vec<ElementId>> {
         let mut out = self.current_part_definitions(usage);
+        self.pending_implications(&mut out, usage);
+        out
+    }
+    /// Closed ConnectionUsage AssociationStructure definition population.
+    pub fn effective_connection_definitions(
+        &self,
+        usage: ElementId,
+    ) -> SysmlQueryResult<Vec<ElementId>> {
+        let mut out = self.current_connection_definitions(usage);
         self.pending_implications(&mut out, usage);
         out
     }

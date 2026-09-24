@@ -141,6 +141,103 @@ fn queries(snapshot: &Snapshot) -> SysmlQueries<'_> {
     SysmlQueries::new(crate::context::fixture_context(snapshot, BTreeSet::new()))
 }
 
+fn profile_queries(snapshot: &Snapshot, profile: SysmlBaselineProfile) -> SysmlQueries<'_> {
+    let mut context = crate::context::fixture_context(snapshot, BTreeSet::new());
+    context.id.dependencies =
+        SysmlDependencyContract::checked_in_for_profile(&context.bindings, profile).unwrap();
+    SysmlQueries::new(context)
+}
+
+#[test]
+fn connection_plain_association_has_an_explicit_versioned_domain_decision() {
+    // The exact Flows cases have this shape: a plain KerML Association direct
+    // type coexists with the ConnectionDefinition supplied by base subsetting.
+    // Names are deliberately arbitrary: metaclasses establish the decision.
+    let snapshot = fixture(
+        sc::CONNECTION_USAGE,
+        &[(10, kc::ASSOCIATION), (11, sc::CONNECTION_DEFINITION)],
+        None,
+    );
+    for profile in [
+        SysmlBaselineProfile::PUBLISHED,
+        SysmlBaselineProfile::OPERATIONAL_V1,
+        SysmlBaselineProfile::OPERATIONAL_V2,
+        SysmlBaselineProfile::OPERATIONAL_V3,
+    ] {
+        let q = profile_queries(&snapshot, profile);
+        assert_eq!(q.current_usage_types(id(1)).value(), &[id(10), id(11)]);
+        for answer in [
+            q.current_occurrence_definitions(id(1)),
+            q.current_item_definitions(id(1)),
+            q.current_part_definitions(id(1)),
+            q.current_connection_definitions(id(1)),
+        ] {
+            assert_eq!(answer.value(), &[id(11)]);
+            if profile == SysmlBaselineProfile::OPERATIONAL_V3 {
+                assert_eq!(answer.completeness(), Completeness::Complete, "{answer:?}");
+                assert!(answer.rejected_targets.is_empty());
+                assert_eq!(answer.filtered_targets, BTreeSet::from([id(10)]));
+                assert!(answer.observations.contains_key(&FactKey::Element(id(10))));
+            } else {
+                assert_eq!(answer.completeness(), Completeness::Invalid);
+                assert_eq!(answer.rejected_targets, BTreeSet::from([id(10)]));
+            }
+        }
+        // The actual publication API retains the historical rejection, and a
+        // correct current v3 projection cannot manufacture a closure certificate.
+        for answer in [
+            q.effective_occurrence_definitions(id(1)),
+            q.effective_item_definitions(id(1)),
+            q.effective_part_definitions(id(1)),
+            q.effective_connection_definitions(id(1)),
+        ] {
+            assert_eq!(
+                answer.completeness(),
+                if profile == SysmlBaselineProfile::OPERATIONAL_V3 {
+                    Completeness::Incomplete
+                } else {
+                    Completeness::Invalid
+                }
+            );
+            assert!(
+                answer
+                    .pending
+                    .contains(&(id(1), PendingSysmlRule::ProducerClosure))
+            );
+        }
+    }
+}
+
+#[test]
+fn connection_authority_does_not_relax_other_narrowed_domains() {
+    for (usage, target) in [
+        (sc::OCCURRENCE_USAGE, kc::ASSOCIATION),
+        (sc::ITEM_USAGE, kc::ASSOCIATION),
+        (sc::PART_USAGE, kc::ASSOCIATION),
+        (sc::CONNECTION_USAGE, kc::DATA_TYPE),
+    ] {
+        let snapshot = fixture(usage, &[(10, target)], None);
+        let q = profile_queries(&snapshot, SysmlBaselineProfile::OPERATIONAL_V3);
+        let answer = q.current_occurrence_definitions(id(1));
+        assert_eq!(answer.completeness(), Completeness::Invalid);
+        assert_eq!(answer.rejected_targets, BTreeSet::from([id(10)]));
+    }
+    for (usage, target) in [
+        (sc::ATTRIBUTE_USAGE, kc::CLASS),
+        (sc::PORT_USAGE, kc::STRUCTURE),
+    ] {
+        let snapshot = fixture(usage, &[(10, target)], None);
+        let q = profile_queries(&snapshot, SysmlBaselineProfile::OPERATIONAL_V3);
+        let answer = if usage == sc::ATTRIBUTE_USAGE {
+            q.current_attribute_definitions(id(1))
+        } else {
+            q.current_port_definitions(id(1))
+        };
+        assert_eq!(answer.completeness(), Completeness::Invalid);
+        assert_eq!(answer.rejected_targets, BTreeSet::from([id(10)]));
+    }
+}
+
 #[test]
 fn part_and_item_are_subsets_not_narrowed_domains() {
     let snapshot = fixture(

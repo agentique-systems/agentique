@@ -1,0 +1,61 @@
+{
+  "format": "agentique-sysml-semantic-corrections/1",
+  "profile": "agentique-sysml-2.0-operational/3",
+  "published_profile": "omg-sysml-2.0-published/1",
+  "supersedes": "agentique-sysml-2.0-operational/2",
+  "specification": {
+    "path": "SysML.pdf",
+    "sha256": "46e6c0476a6f1f34f367d57e039d56659bff75e41d2e4b3d37ca4cadea84a83a"
+  },
+  "systems_library_sha256": "df7d8b2c6e08232ca7ce123a63148949c383fcbeaeba8d89c27ceece43793a1f",
+  "grammar_compatibility_manifest": "standards/grammar/sysml-2.0-operational-v1.json",
+  "corrections": [
+    {
+      "id": "AGQ-SYSML20-001",
+      "rule": "Systems-Items-ItemUsage-checkItemUsageSubitemSpecialization",
+      "published_target": "Items::Item::subitem",
+      "operational_target": "Items::Item::subitems",
+      "antecedent": "isComposite and owningType <> null and (owningType.oclIsKindOf(ItemDefinition) or owningType.oclIsKindOf(ItemUsage))",
+      "authority": "Inherited explicit milestone authorization; pinned Items.sysml declaration; OMG SYSML21-46 identifies subitems",
+      "scope": "Target substitution only. Retain the exact antecedent and canonical declaration identity. No alias or source edit."
+    },
+    {
+      "id": "AGQ-SYSML20-002 / SYSML21-301",
+      "rule": "checkViewpointDefinitionSpecialization",
+      "published_target": "Views::Viewpoint",
+      "operational_target": "Views::ViewpointCheck",
+      "antecedent": "unchanged formal rule antecedent",
+      "authority": "Explicit Systems Library publication milestone authorization, SYSML21-301.",
+      "scope": "Apply only to this rule. Use the existing declared ViewpointCheck identity; do not create Views::Viewpoint, an alias, or alter other View semantics."
+    },
+    {
+      "id": "AGQ-SYSML20-003 / SYSML21-301",
+      "rule": "checkViewpointUsageSpecialization",
+      "published_target": "Views::viewpoints",
+      "operational_target": "Views::viewpointChecks",
+      "antecedent": "unchanged formal rule antecedent",
+      "authority": "Explicit Systems Library publication milestone authorization, SYSML21-301.",
+      "scope": "Apply only to this rule. Use the existing declared viewpointChecks Usage identity; do not fabricate viewpoints."
+    },
+    {
+      "id": "AGQ-SYSML20-004 / SYSML21-348",
+      "rule": "checkConnectionDefinitionBinarySpecialization",
+      "published_target": "Connections::BinaryConnections",
+      "operational_target": "Connections::BinaryConnection",
+      "antecedent": "ownedEndFeature->size() = 2",
+      "authority": "Explicit Systems Library publication milestone authorization, SYSML21-348.",
+      "scope": "Apply only to this rule and retain the exact binary-end antecedent. Use the existing declared BinaryConnection identity; do not invent BinaryConnections."
+    },
+    {
+      "id": "AGQ-SYSML20-005",
+      "rule": "ConnectionUsage inherited definition domains",
+      "published_contract": "OccurrenceUsage::occurrenceDefinition redefines Usage::definition with Class domain; ConnectionUsage::connectionDefinition redefines Connector::association with AssociationStructure domain.",
+      "operational_contract": "On ConnectionUsage and its subtypes only, canonical plain Association classifier types remain in the broad Usage definition population and are excluded from the Class occurrenceDefinition projection and its itemDefinition, partDefinition, and connectionDefinition subsets.",
+      "antecedent": "subject.oclIsKindOf(ConnectionUsage) and target.oclIsKindOf(Association) and not target.oclIsKindOf(Class)",
+      "authority": "Explicit bounded milestone authorization after pinned SysML 2.0 PDF/XMI versus Flows.sysml contradiction and independent current pilot source/runtime review.",
+      "evidence": "verification/summaries/final-audit-semantic-closure/connection-authority.md",
+      "scope": "Only this non-Class Association domain conflict. No canonical source/FeatureTyping edits, no metamodel descriptor changes, no general weakening of OccurrenceUsage, AttributeUsage or PortUsage domains, no enumeration operational interpretation. Published and Operational v1/v2 remain unchanged."
+    }
+  ],
+  "identity_encoding": "SHA-256 of UTF-8 manifest bytes with CRLF normalized to LF"
+}

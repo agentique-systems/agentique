@@ -620,7 +620,7 @@ fn actual_base_edge_discharges_only_its_specific_implication() {
 }
 
 #[test]
-fn variant_membership_does_not_claim_complete_ordinary_names() {
+fn explicit_variant_names_are_independent_of_structural_typing_closure() {
     let mut f = Fixture::new();
     f.create(1, sc::PART_DEFINITION, "Choices");
     f.value(
@@ -631,13 +631,42 @@ fn variant_membership_does_not_claim_complete_ordinary_names() {
     f.create(2, sc::PART_USAGE, "aVariant");
     f.member(1, 2, 102, sc::VARIANT_MEMBERSHIP);
     let snapshot = f.finish();
-    let answer = q(&snapshot).effective_names(id(2));
+    let query = q(&snapshot);
+    let current = query.current_names(id(2));
+    assert_eq!(current.completeness(), Completeness::Complete);
+    assert_eq!(
+        current.value(),
+        &agq_kerml_semantics::EffectiveNames::Determinate(BTreeSet::from(["aVariant".into()]))
+    );
+    let answer = query.effective_names(id(2));
     assert_eq!(answer.completeness(), Completeness::Incomplete);
     assert!(
-        answer
+        !answer
             .pending
             .contains(&(id(2), PendingSysmlRule::Variation))
     );
+    assert!(
+        answer
+            .pending
+            .contains(&(id(2), PendingSysmlRule::ProducerClosure))
+    );
+    // A known name cannot hide the missing canonical variant typing.
+    assert!(
+        query
+            .effective_usage_types(id(2))
+            .pending
+            .contains(&(id(2), PendingSysmlRule::Variation))
+    );
+    assert_eq!(
+        query.current_names(id(1)).completeness(),
+        Completeness::Complete
+    );
+    assert!(answer.kerml.positive_dependencies.contains(
+        &agq_kernel::provenance::FactKey::Property {
+            element: id(2),
+            property: kp::ELEMENT_DECLARED_NAME,
+        }
+    ));
 }
 
 #[test]

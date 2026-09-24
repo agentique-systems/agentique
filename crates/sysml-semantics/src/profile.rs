@@ -8,18 +8,21 @@ pub enum SysmlBaselineProfile {
     Published,
     OperationalV1,
     OperationalV2,
+    OperationalV3,
 }
 
 impl SysmlBaselineProfile {
     pub const PUBLISHED: Self = Self::Published;
     pub const OPERATIONAL_V1: Self = Self::OperationalV1;
     pub const OPERATIONAL_V2: Self = Self::OperationalV2;
+    pub const OPERATIONAL_V3: Self = Self::OperationalV3;
 
     pub const fn id(self) -> &'static str {
         match self {
             Self::Published => "omg-sysml-2.0-published/1",
             Self::OperationalV1 => "agentique-sysml-2.0-operational/1",
             Self::OperationalV2 => "agentique-sysml-2.0-operational/2",
+            Self::OperationalV3 => "agentique-sysml-2.0-operational/3",
         }
     }
 
@@ -28,7 +31,7 @@ impl SysmlBaselineProfile {
         match self {
             Self::Published => &["Items", "Item", "subitem"],
             Self::OperationalV1 => &["Items", "Item", "subitems"],
-            Self::OperationalV2 => &["Items", "Item", "subitems"],
+            Self::OperationalV2 | Self::OperationalV3 => &["Items", "Item", "subitems"],
         }
     }
 
@@ -41,15 +44,29 @@ impl SysmlBaselineProfile {
             Self::OperationalV2 => Some(manifest_digest(include_str!(
                 "../../../standards/sysml-2.0-operational-semantic-v2.json"
             ))),
+            Self::OperationalV3 => Some(manifest_digest(include_str!(
+                "../../../standards/sysml-2.0-operational-semantic-v3.json"
+            ))),
         }
     }
 
     pub fn grammar_compatibility_manifest_digest(self) -> Option<[u8; 32]> {
-        matches!(self, Self::OperationalV1 | Self::OperationalV2).then(|| {
+        matches!(
+            self,
+            Self::OperationalV1 | Self::OperationalV2 | Self::OperationalV3
+        )
+        .then(|| {
             manifest_digest(include_str!(
                 "../../../standards/grammar/sysml-2.0-operational-v1.json"
             ))
         })
+    }
+
+    /// AGQ-SYSML20-005 permits plain Association classifiers on ConnectionUsage
+    /// while retaining the narrowed domains of its typed definition projections.
+    /// Published and earlier operational interpretations remain unchanged.
+    pub const fn permits_connection_association_types(self) -> bool {
+        matches!(self, Self::OperationalV3)
     }
 
     /// Versioned semantic rule identity, distinct from source and syntax IDs.

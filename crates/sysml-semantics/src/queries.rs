@@ -304,9 +304,19 @@ impl<'m> SysmlQueries<'m> {
     ) -> SysmlQueryResult<Vec<ElementId>> {
         self.current_typed_domain(usage, sc::ATTRIBUTE_USAGE, kc::DATA_TYPE)
     }
+    /// OccurrenceUsage::occurrenceDefinition narrows Usage::definition to Class.
+    /// Operational v3 separately resolves the bounded ConnectionUsage plain
+    /// Association conflict; other incompatible classifiers remain Invalid.
+    pub fn current_occurrence_definitions(
+        &self,
+        usage: ElementId,
+    ) -> SysmlQueryResult<Vec<ElementId>> {
+        self.current_typed_domain(usage, sc::OCCURRENCE_USAGE, kc::CLASS)
+    }
     /// ItemUsage::itemDefinition selects Structure, including ordinary KerML Structure.
     pub fn current_item_definitions(&self, usage: ElementId) -> SysmlQueryResult<Vec<ElementId>> {
-        let mut out = self.current_typed_domain(usage, sc::ITEM_USAGE, kc::CLASS);
+        let mut out = self.current_occurrence_definitions(usage);
+        self.check(&mut out, usage, &[sc::ITEM_USAGE]);
         self.select_type_subset(&mut out, kc::STRUCTURE);
         out
     }
@@ -330,6 +340,18 @@ impl<'m> SysmlQueries<'m> {
     }
     pub fn current_port_definitions(&self, usage: ElementId) -> SysmlQueryResult<Vec<ElementId>> {
         self.current_typed_domain(usage, sc::PORT_USAGE, sc::PORT_DEFINITION)
+    }
+    /// ConnectionUsage::connectionDefinition is the AssociationStructure subset
+    /// of itemDefinition and narrows Connector::association. The occurrence
+    /// domain check preserves its inherited validation obligations.
+    pub fn current_connection_definitions(
+        &self,
+        usage: ElementId,
+    ) -> SysmlQueryResult<Vec<ElementId>> {
+        let mut out = self.current_item_definitions(usage);
+        self.check(&mut out, usage, &[sc::CONNECTION_USAGE]);
+        self.select_type_subset(&mut out, kc::ASSOCIATION_STRUCTURE);
+        out
     }
 
     /// KerML's producer-safe feature_types deliberately prunes canonical edges.
@@ -377,6 +399,19 @@ impl<'m> SysmlQueries<'m> {
             self.observe(&mut out, FactKey::Element(target));
             if self.is(target, domain) {
                 out.kerml.value.push(target);
+            } else if domain == kc::CLASS
+                && self
+                    .context
+                    .dependencies
+                    .sysml_profile
+                    .permits_connection_association_types()
+                && self.is(usage, sc::CONNECTION_USAGE)
+                && self.is(target, kc::ASSOCIATION)
+            {
+                // AGQ-SYSML20-005: the pinned Flows library uses a plain
+                // Association here. Preserve its canonical typing and the broad
+                // definition result; only this typed projection excludes it.
+                out.filtered_targets.insert(target);
             } else if untyped && self.is(target, kc::CLASSIFIER) {
                 // The required SysML library base can supply a more specific type
                 // to an untyped usage. Retain the nonconforming candidate as
@@ -401,6 +436,7 @@ impl<'m> SysmlQueries<'m> {
     ) {
         let values = std::mem::take(&mut out.kerml.value);
         for target in values {
+            self.observe(out, FactKey::Element(target));
             if self.is(target, selected) {
                 out.kerml.value.push(target);
             } else {
@@ -494,31 +530,44 @@ impl<'m> SysmlQueries<'m> {
         self.check(&mut out, connection, &[sc::CONNECTOR_AS_USAGE]);
         out
     }
-    /// Current-graph names compose KerML. A variant naming override remains
-    /// pending rather than inheriting a falsely complete ordinary answer.
+    /// Current-graph names compose the KerML evaluator with SysML namingFeature
+    /// overrides. Variation typing obligations do not change name completeness.
     pub fn current_names(&self, element: ElementId) -> SysmlQueryResult<EffectiveNames> {
         let mut out = self.wrap(self.kerml.effective_names(element));
-        if self.check(&mut out, element, &[sc::DEFINITION, sc::USAGE]) {
-            let property = if self.is(element, sc::USAGE) {
-                sp::USAGE_IS_VARIATION
-            } else {
-                sp::DEFINITION_IS_VARIATION
-            };
-            if self.boolean(&mut out, element, property) == Some(true) {
-                out.pending.insert((element, PendingSysmlRule::Variation));
-            }
-            self.variant_membership(&mut out, element);
-        }
+        self.check(&mut out, element, &[sc::DEFINITION, sc::USAGE]);
         out
     }
 
-    fn variant_membership<T>(&self, out: &mut SysmlQueryResult<T>, element: ElementId) {
+    fn variant_membership<T>(
+        &self,
+        out: &mut SysmlQueryResult<T>,
+        element: ElementId,
+        producer_closed: bool,
+    ) {
         let relationship = self.kerml.owning_relationship(element);
         if relationship
             .value
             .is_some_and(|id| self.is(id, sc::VARIANT_MEMBERSHIP))
         {
-            out.pending.insert((element, PendingSysmlRule::Variation));
+            let owner = self.kerml.owner(element);
+            let mut established = false;
+            if let Some(owner) = owner.value {
+                self.observe(out, FactKey::Element(owner));
+                if self.is(owner, sc::DEFINITION)
+                    && self.boolean(out, owner, sp::DEFINITION_IS_VARIATION) == Some(true)
+                {
+                    // checkUsageVariationDefinitionSpecialization is a canonical
+                    // specialization obligation. A query cannot supply its type.
+                    let ancestors = self.kerml.all_supertypes(element);
+                    established = producer_closed && ancestors.value.contains(&owner);
+                    out.supporting_queries.push(ancestors);
+                }
+            }
+            out.supporting_queries
+                .push(owner.map(|id| id.into_iter().collect()));
+            if !established {
+                out.pending.insert((element, PendingSysmlRule::Variation));
+            }
         }
         out.supporting_queries
             .push(relationship.map(|id| id.into_iter().collect()));
@@ -545,9 +594,6 @@ impl<'m> SysmlQueries<'m> {
                     "Cyclic canonical ownership cannot establish a qualified name",
                 );
                 return out;
-            }
-            if self.is(id, sc::USAGE) {
-                self.variant_membership(&mut out, id);
             }
             let membership = self.kerml.owning_relationship(id);
             let owned_member = membership
@@ -733,11 +779,16 @@ impl<'m> SysmlQueries<'m> {
         } else {
             sp::DEFINITION_IS_VARIATION
         };
-        if self.boolean(out, subject, variation) == Some(true) {
+        if self.boolean(out, subject, variation) == Some(true)
+            && (!producer_closed || self.is(subject, sc::USAGE))
+        {
+            // Definition-owned variant specialization is implemented and its
+            // canonical effects are closed by the certificate. Variation Usage
+            // featuring/specialization is still a separate unfinished boundary.
             out.pending.insert((subject, PendingSysmlRule::Variation));
         }
         if self.is(subject, sc::USAGE) {
-            self.variant_membership(out, subject);
+            self.variant_membership(out, subject, producer_closed);
         }
         let individual = if self.is(subject, sc::OCCURRENCE_USAGE) {
             Some(sp::OCCURRENCE_USAGE_IS_INDIVIDUAL)

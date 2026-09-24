@@ -1,0 +1,119 @@
+{
+  "reference_commit": "5cca16d846016e62bb1e54e0e50e675254a022ef",
+  "reference_commit_date": "2026-09-12T20:52:27Z",
+  "inspection_date": "2026-09-24",
+  "source_files": [
+    {
+      "path": "org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/setting/Usage_definition_SettingDelegate.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/setting/Usage_definition_SettingDelegate.java",
+      "sha256": "81c1d69257c55f38f44a9d3d30463d2d4b2c350b5c327c330037f4751fef03f3"
+    },
+    {
+      "path": "org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/setting/OccurrenceUsage_occurrenceDefinition_SettingDelegate.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/setting/OccurrenceUsage_occurrenceDefinition_SettingDelegate.java",
+      "sha256": "6774882078b79a2bff59fdae6e507fb515e4253032383f517ff9e99c93331f0d"
+    },
+    {
+      "path": "org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/setting/ItemUsage_itemDefinition_SettingDelegate.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/setting/ItemUsage_itemDefinition_SettingDelegate.java",
+      "sha256": "fcf1d18f5a71544d13b937e203325553e7def8957470009d77b82309f2978d9d"
+    },
+    {
+      "path": "org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/setting/PartUsage_partDefinition_SettingDelegate.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/setting/PartUsage_partDefinition_SettingDelegate.java",
+      "sha256": "e310c72fa429761bf008b2e1fe27826eb7420c3099d9479644907efedb82c6f6"
+    },
+    {
+      "path": "org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/setting/ConnectionUsage_connectionDefinition_SettingDelegate.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/delegate/setting/ConnectionUsage_connectionDefinition_SettingDelegate.java",
+      "sha256": "50136270869efed399c69c7ad3a7cd9a400f7387e2ab84114b14b5a6c5cc978d"
+    },
+    {
+      "path": "org.omg.sysml.logic/src/main/java/org/omg/sysml/util/FeatureUtil.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.logic/src/main/java/org/omg/sysml/util/FeatureUtil.java",
+      "sha256": "332080c8e258a9e27feacb71d963a7d9d51425f9802e42c9e0ade2d18d7f7780"
+    },
+    {
+      "path": "org.omg.sysml.model/src/main/java/org/omg/sysml/lang/sysml/impl/OccurrenceUsageImpl.java",
+      "url": "https://raw.githubusercontent.com/Systems-Modeling/SysML-v2-Pilot-Implementation/5cca16d846016e62bb1e54e0e50e675254a022ef/org.omg.sysml.model/src/main/java/org/omg/sysml/lang/sysml/impl/OccurrenceUsageImpl.java",
+      "sha256": "8667269a8afe8ba8a20009d7e2d0213fdf38df62dea5c8b01d0df930c013eee5"
+    }
+  ],
+  "runtime": "SysML pilot 0.59.0 (2026-04)",
+  "runtime_jar_sha256": "7d6f1f2d555ddde2538a2b4f726709ba261567aa6c7eb172ad7db762d01efbaf",
+  "runtime_is_current_source_build": false,
+  "parse_errors": 0,
+  "validation_errors": 0,
+  "validation_warnings": 3,
+  "connection_type_errors": 0,
+  "runtime_projection_observations": [
+    {
+      "owner": "Flows::Message",
+      "directTypes": [
+        "Association:Occurrences::HappensDuring"
+      ],
+      "rawFeatureTypes": [
+        "Association:Occurrences::HappensDuring",
+        "ConnectionDefinition:Connections::Connection",
+        "AssociationStructure:Objects::BinaryLinkObject"
+      ],
+      "definition": [
+        "ConnectionDefinition:Connections::Connection",
+        "AssociationStructure:Objects::BinaryLinkObject"
+      ],
+      "occurrenceDefinition": [
+        "ConnectionDefinition:Connections::Connection",
+        "AssociationStructure:Objects::BinaryLinkObject"
+      ],
+      "itemDefinition": [
+        "ConnectionDefinition:Connections::Connection",
+        "AssociationStructure:Objects::BinaryLinkObject"
+      ],
+      "partDefinition": [
+        "ConnectionDefinition:Connections::Connection"
+      ],
+      "connectionDefinition": [
+        "ConnectionDefinition:Connections::Connection",
+        "AssociationStructure:Objects::BinaryLinkObject"
+      ],
+      "ends": [
+        "ReferenceUsage:null",
+        "ReferenceUsage:null"
+      ]
+    },
+    {
+      "owner": "Flows::Message",
+      "directTypes": [
+        "Association:Occurrences::HappensDuring"
+      ],
+      "rawFeatureTypes": [
+        "Association:Occurrences::HappensDuring",
+        "ConnectionDefinition:Connections::Connection",
+        "AssociationStructure:Objects::BinaryLinkObject"
+      ],
+      "definition": [
+        "ConnectionDefinition:Connections::Connection",
+        "AssociationStructure:Objects::BinaryLinkObject"
+      ],
+      "occurrenceDefinition": [
+        "ConnectionDefinition:Connections::Connection",
+        "AssociationStructure:Objects::BinaryLinkObject"
+      ],
+      "itemDefinition": [
+        "ConnectionDefinition:Connections::Connection",
+        "AssociationStructure:Objects::BinaryLinkObject"
+      ],
+      "partDefinition": [
+        "ConnectionDefinition:Connections::Connection"
+      ],
+      "connectionDefinition": [
+        "ConnectionDefinition:Connections::Connection",
+        "AssociationStructure:Objects::BinaryLinkObject"
+      ],
+      "ends": [
+        "ReferenceUsage:null",
+        "ReferenceUsage:null"
+      ]
+    }
+  ]
+}
