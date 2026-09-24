@@ -105,6 +105,7 @@ pub(crate) struct LoweringCache {
     pub(crate) documents_reused: usize,
     pub(crate) records_lowered: usize,
     pub(crate) records_rebuilt: usize,
+    pub(crate) preparatory_producer_subjects_evaluated: usize,
     pub(crate) allow_reuse: bool,
 }
 impl Default for LoweringCache {
@@ -115,6 +116,7 @@ impl Default for LoweringCache {
             documents_reused: 0,
             records_lowered: 0,
             records_rebuilt: 0,
+            preparatory_producer_subjects_evaluated: 0,
             allow_reuse: true,
         }
     }
@@ -253,7 +255,12 @@ impl Builder {
             let default_root = local.records[&root.0].slots.clone();
             // Traversal has access only to this document and the immutable
             // descriptor registry. Completion and resolved endpoints are absent.
-            if local.lower_document(input, Some(root)).is_err() {
+            let lowered = local.lower_document(input, Some(root));
+            // Count trial work even when its unproven shared-root effects force
+            // an ordinary reconstruction of this document immediately below.
+            cache.documents_lowered += 1;
+            cache.records_lowered += local.records.len().saturating_sub(1);
+            if lowered.is_err() {
                 return Ok(false);
             }
             let mut root_record = local.records.remove(&root.0).expect("fragment root");
@@ -268,8 +275,6 @@ impl Builder {
                 return Ok(false);
             }
             local.order.retain(|id| *id != root.0);
-            cache.documents_lowered += 1;
-            cache.records_lowered += local.records.len();
             let fragment = Arc::new(LoweredDocument {
                 records: local.records,
                 order: local.order,

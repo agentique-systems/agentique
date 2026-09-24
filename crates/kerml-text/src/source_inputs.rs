@@ -354,8 +354,14 @@ impl SourceInputs {
             records_lowered: result.lowering_cache.records_lowered,
             records_rebuilt: result.lowering_cache.records_rebuilt,
             producer_subjects_evaluated: result
-                .producer_status()
-                .map_or(0, |status| status.counters.subjects_evaluated),
+                .lowering_cache
+                .preparatory_producer_subjects_evaluated
+                + match &result.frontier {
+                    SourceFrontier::Strict(model) => model
+                        .producer_status()
+                        .map_or(0, |status| status.counters.subjects_evaluated),
+                    SourceFrontier::Construction { .. } => 0,
+                },
             effective_audit_subjects_evaluated: result
                 .effective_audit
                 .as_ref()

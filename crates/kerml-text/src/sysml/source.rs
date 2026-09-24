@@ -283,6 +283,10 @@ pub(crate) fn prepare_accepted_source(
                         |_| {},
                     )
                     .map_err(LibraryLoadError::ProducerClosure)?;
+                    if let Some(cache) = cache {
+                        cache.borrow_mut().preparatory_producer_subjects_evaluated +=
+                            closed.counters.subjects_evaluated;
+                    }
                     if let Some(certificate) = &closed.certificate {
                         let context = dependency
                             .mounted
