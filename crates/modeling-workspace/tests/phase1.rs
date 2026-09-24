@@ -7,10 +7,12 @@ use agq_kerml_syntax::production::Production;
 use agq_kerml_text::{DocumentStatus, ProjectChange, SourceLanguage};
 use agq_kernel::{
     DocumentId, ElementId,
-    provenance::{Dependency, FactKey, Origin},
+    provenance::{DeclaredOrigin, Dependency, FactKey, Origin},
 };
 use agq_modeling_workspace::{ValidatedProjectRevision, WorkingProjectRevision};
-use agq_sysml_semantics::{SysmlQueryResult, SysmlSemanticContextId};
+use agq_sysml_semantics::{
+    StandardSysmlRole, SysmlQueries, SysmlQueryResult, SysmlSemanticContextId,
+};
 use std::{
     collections::{BTreeMap, BTreeSet},
     fmt::Write,
@@ -478,12 +480,7 @@ fn hundred_documents_five_revisions_and_parallel_borrowed_reads() {
         let q = s3.sysml_queries().unwrap();
         let specialized = element(&s3, &["Workbench025", "SpecializedWorker"]);
         let inherited = q.effective_ports(specialized);
-        assert_eq!(inherited.completeness(), Completeness::Complete);
-        assert_eq!(
-            inherited.value(),
-            &vec![bus],
-            "the one inherited port retains its original identity without copies"
-        );
+        assert_inherited_worker_ports(&s3, &q, &inherited, bus);
         let owner = q.kerml().owning_type(bus);
         assert_eq!(owner.completeness, Completeness::Complete);
         assert_eq!(owner.value, Some(element(&s3, &["Workbench025", "Worker"])));
@@ -616,6 +613,61 @@ fn hundred_documents_five_revisions_and_parallel_borrowed_reads() {
         "workspace scaling elapsed={:?}; authored reconstruction remains permitted; no speed threshold",
         started.elapsed()
     );
+}
+
+fn assert_inherited_worker_ports(
+    revision: &WorkingProjectRevision,
+    q: &SysmlQueries<'_>,
+    ports: &SysmlQueryResult<Vec<ElementId>>,
+    bus: ElementId,
+) {
+    assert_eq!(ports.completeness(), Completeness::Complete);
+    let accepted = revision.accepted_sysml();
+    let owned_ports = accepted
+        .bindings()
+        .get(StandardSysmlRole::OwnedPorts)
+        .expect("accepted Parts::Part::ownedPorts anchor");
+    assert_ne!(owned_ports, bus);
+    // effective_ports filters the effective feature identity set, whose carrier
+    // is in ID order. It does not restrict the population to concrete/user ports:
+    // Parts::Part::ownedPorts remains inherited when bus only subsets it.
+    let expected: Vec<_> = BTreeSet::from([owned_ports, bus]).into_iter().collect();
+    assert_eq!(ports.value(), &expected);
+
+    let standard_record = accepted.overlay().model().element(owned_ports).unwrap();
+    assert!(std::ptr::eq(
+        q.model().element(owned_ports).unwrap(),
+        standard_record
+    ));
+    assert_eq!(
+        standard_record.origin(),
+        &Origin::Declared(DeclaredOrigin::StandardLibrary {
+            library: accepted.bindings().identity().library,
+        })
+    );
+    let source = accepted
+        .bindings()
+        .declaration_sources()
+        .get(&owned_ports)
+        .expect("accepted anchor retains its verified original source");
+    assert_eq!(
+        accepted.source_map().get(&FactKey::Element(owned_ports)),
+        Some(source)
+    );
+    let standard_owner = q.kerml().owning_type(owned_ports);
+    assert_eq!(standard_owner.completeness, Completeness::Complete);
+    assert_eq!(
+        standard_owner.value,
+        accepted.bindings().get(StandardSysmlRole::Part)
+    );
+    let subsetted = q.effective_subsetted_features(bus);
+    assert_eq!(subsetted.completeness(), Completeness::Complete);
+    assert!(subsetted.value().contains(&owned_ports));
+    let redefined = q.effective_redefined_features(bus);
+    assert_eq!(redefined.completeness(), Completeness::Complete);
+    assert!(!redefined.value().contains(&owned_ports));
+    // The callers also run assert_shared, which checks physical dependency
+    // tables, zero copied entries and zero accepted producer subjects.
 }
 
 // Retain only evidence anchored at the selected authored owner and engine.
@@ -942,8 +994,7 @@ fn hundred_documents_five_validated_revisions_and_four_parallel_readers() {
         let owner = element(&specialized, &[&package, "SpecializedWorker"]);
         let bus = element(&with_port, &[&package, "Worker", "bus"]);
         let ports = q.effective_ports(owner);
-        assert_eq!(ports.completeness(), Completeness::Complete);
-        assert_eq!(ports.value(), &vec![bus]);
+        assert_inherited_worker_ports(&specialized, &q, &ports, bus);
         let owning_type = q.kerml().owning_type(bus);
         assert_eq!(owning_type.completeness, Completeness::Complete);
         assert_eq!(owning_type.value, Some(original_owner));

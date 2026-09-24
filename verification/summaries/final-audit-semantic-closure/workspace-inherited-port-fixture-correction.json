@@ -1,0 +1,110 @@
+{
+  "format": "agq.workspace-inherited-port-fixture-correction/v1",
+  "base_commit": "61f2147660110dc5b027db4a784ffb249dd656e6",
+  "prior_acceptance_failure": {
+    "name": "workspace-validated-scale-acceptance",
+    "command": [
+      "cargo",
+      "test",
+      "--release",
+      "--locked",
+      "--offline",
+      "-p",
+      "agq-modeling-workspace",
+      "--features",
+      "verification",
+      "--test",
+      "phase1",
+      "hundred_documents_five_validated_revisions_and_four_parallel_readers",
+      "--",
+      "--ignored",
+      "--exact",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "exit_code": 101,
+    "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+    "source_commit": "61f2147660110dc5b027db4a784ffb249dd656e6",
+    "working_changes_sha256": "7f283880bd9e2bbd590a9605d392941a5d87bc60f8ec69ffa3587b55a511302b",
+    "output_sha256": "4ddaf179e4f5d1f070d60e3fe9a16124e1d74065cfad9d83e72130fd9bc45db8",
+    "duration_seconds": 678.38,
+    "output": "verification/generated/final-audit-semantic-closure/workspace-validated-scale-acceptance.log",
+    "environment_overrides": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace",
+      "CARGO_PROFILE_RELEASE_LTO": "false",
+      "AGENTIQUE_KERML_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/kerml-v9-publication/canonical.publication.zip",
+      "AGENTIQUE_SYSTEMS_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/final-audit-semantic-closure/accepted/canonical.publication.zip"
+    }
+  },
+  "prior_test_elapsed_seconds": 677.42,
+  "prior_actual_output": "    Finished `release` profile [optimized] target(s) in 0.16s\n     Running tests\\phase1.rs (target\\platform-workspace\\release\\deps\\phase1-b1de8cea44b31eea.exe)\n\nrunning 1 test\ntest hundred_documents_five_validated_revisions_and_four_parallel_readers ... validated scale: restoring accepted dependencies complete; constructing 100 mixed documents\nvalidated scale revision=ProjectRevisionId(RevisionId(140461226338548814159824019902668543185)) documents=100 kerml=50 sysml=50 signature_bytes=1245908 selected_query_fact_keys=72 selected_query_searches=210\nvalidated scale revision=ProjectRevisionId(RevisionId(278041062962695339155067251341551933434)) documents=100 kerml=50 sysml=50 signature_bytes=1247523 selected_query_fact_keys=72 selected_query_searches=210\nvalidated scale revision=ProjectRevisionId(RevisionId(261019480745298536688376036673053140317)) documents=100 kerml=50 sysml=50 signature_bytes=1252399 selected_query_fact_keys=72 selected_query_searches=210\n\nthread 'hundred_documents_five_validated_revisions_and_four_parallel_readers' (3188) panicked at crates\\modeling-workspace\\tests\\phase1.rs:946:9:\nassertion `left == right` failed\n  left: [ElementId(163302429808096864407160516110258208178), ElementId(258255284312200499903117990553597784848)]\n right: [ElementId(258255284312200499903117990553597784848)]\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\nFAILED\n\nfailures:\n\nfailures:\n    hundred_documents_five_validated_revisions_and_four_parallel_readers\n\ntest result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 6 filtered out; finished in 677.42s\n\nerror: test failed, to rerun pass `-p agq-modeling-workspace --test phase1`\n",
+  "diagnosis": "Three hundred-document revisions validated before an incorrect exact-one-port fixture assertion. The second canonical port is the accepted inherited Parts::Part::ownedPorts, not an extra copied or invalid feature. The source bus subsets this anchor; it does not redefine/suppress it.",
+  "authority": {
+    "artifact": "standards/artifacts/Systems-Library.kpar",
+    "artifact_sha256": "df7d8b2c6e08232ca7ce123a63148949c383fcbeaeba8d89c27ceece43793a1f",
+    "source": "Systems Library/Parts.sysml",
+    "source_sha256": "ccaaee608c1eb372c47cfdfc011c5f4f48cc5bcca5fb8b2441587ec26fd0fdaa",
+    "line": 31,
+    "declaration": "abstract port ownedPorts: Port[0..*] :> ports, timeEnclosedOccurrences",
+    "accepted_role": "OwnedPorts",
+    "accepted_element": "7adae769-a6bb-5eb2-a1fb-2fdda0a6fdb2",
+    "binding_fixture": "standards/sysml-standard-bindings.json",
+    "api_order": "KerML effective_features documents an identity set in ID order, not normative feature ordering. SysML current_effective_usages documents a set carrier; effective_ports selects PortUsage without changing that order.",
+    "api_sources": [
+      "crates/kerml-semantics/src/inheritance.rs:6",
+      "crates/sysml-semantics/src/queries.rs:479",
+      "crates/sysml-semantics/src/structural_queries.rs:196"
+    ]
+  },
+  "change": "Both legacy recovery-scale and new validated-scale fixtures require exact duplicate-sensitive ID-sorted [accepted OwnedPorts anchor, original bus]. Completeness, original bus owner, engine redefinition suppression and immutable original records remain asserted. Added anchor record sharing, exact StandardLibrary origin, source-map/binding source agreement, anchor Part owner and complete bus subsetting/non-redefinition checks. No production change.",
+  "source_sha256": "dbb198ae99818c73e4cf251038eceacf2073a0ef3c70f679854711543496fb7f",
+  "commands": [
+    {
+      "command": "cargo check --locked --offline -p agq-modeling-workspace --features verification --test phase1",
+      "environment": {
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\target\\workspace-scale-check",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1"
+      },
+      "exit_code": 0,
+      "elapsed_seconds": 0.981,
+      "output": "verification\\generated\\final-closure-projections\\workspace-inherited-port-fixture-1.log",
+      "output_sha256": "e6645e2ae988058cd9233a8e7e1c9d1de034d2c0792e172161a6ca112e29b14b",
+      "actual_output": "    Checking agq-modeling-workspace v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\modeling-workspace)\n    Finished `dev` profile [unoptimized] target(s) in 0.90s\n"
+    },
+    {
+      "command": "cargo clippy --locked --offline -p agq-modeling-workspace --features verification --all-targets -- -D warnings",
+      "environment": {
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\target\\workspace-scale-check",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1"
+      },
+      "exit_code": 0,
+      "elapsed_seconds": 0.772,
+      "output": "verification\\generated\\final-closure-projections\\workspace-inherited-port-fixture-2.log",
+      "output_sha256": "39a5aa56faca229d9bee246953a82c080fa598d53656b65599c6456f46cb7666",
+      "actual_output": "    Checking agq-modeling-workspace v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\modeling-workspace)\n    Finished `dev` profile [unoptimized] target(s) in 0.58s\n"
+    },
+    {
+      "command": "rustfmt --edition 2024 --check crates/modeling-workspace/tests/phase1.rs",
+      "exit_code": 0,
+      "elapsed_seconds": 0.088,
+      "actual_output": ""
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "elapsed_seconds": 0.043,
+      "actual_output": ""
+    }
+  ],
+  "accepted_runtime_rerun": false
+}
