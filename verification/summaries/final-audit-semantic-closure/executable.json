@@ -1,0 +1,11 @@
+﻿{
+    "format":  "agq-publication-executable-evidence/1",
+    "executable":  "verification/generated/final-audit-semantic-closure/systems-runner.exe",
+    "sha256":  "a0e82359935820cc6a0092816c8d86072ce4ee6ab61530c9e89b9d15945fab7d",
+    "bytes":  20046336,
+    "source_commit":  "95f04ac5c454f6d431044a4f27aa815dfce4226b",
+    "build_command":  "scoped-corpus-witness-runner",
+    "build_source_commit":  "a397384df163bb6cb61035451501b3afe277e88d",
+    "profile":  "agentique-sysml-2.0-operational/3",
+    "purpose":  "Fresh scoped producer closure and strict effective audit; then fresh full closure and authenticated direct finalization."
+}
