@@ -27,7 +27,7 @@ fn accepted() -> Arc<CanonicalSysmlSystemsLibrary> {
     )
     .unwrap();
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let sources = VerifiedLibrarySet::load_from_directory(root).unwrap();
+    let sources = VerifiedLibrarySet::load_from_directory(&root).unwrap();
     let kerml = Arc::new(CanonicalKermlStandardLibraries::restore_cache(kerml, &sources).unwrap());
     Arc::new(CanonicalSysmlSystemsLibrary::restore_cache(systems, &sources, kerml).unwrap())
 }
