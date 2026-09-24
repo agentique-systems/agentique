@@ -40,6 +40,22 @@
     "max": 11462427,
     "p95_method": "nearest_rank"
   },
+  "bounded_window_timing": {
+    "windows": 808,
+    "two_batch_windows": 808,
+    "sum_window_max_micros": 1016620485,
+    "sum_window_min_micros": 93033116,
+    "sum_window_imbalance_micros": 923587369,
+    "imbalance_basis": "max minus min across scheduled batches in each window; singleton windows contribute zero",
+    "observed_elapsed_outside_window_maxima_micros": 2106300,
+    "outside_maxima_interpretation": "residual includes journaling, scheduling, merging and imperfect overlap; not isolated overhead",
+    "windows_pairing_gt_1s_with_lt_1ms": 197,
+    "timing_occupancy_proxy": {
+      "value": 0.5446276751229232,
+      "formula": "sum_batch_elapsed_micros / (workers * observed_batch_span_micros)",
+      "interpretation": "wall-timing capacity proxy; not measured CPU utilization or serial speedup"
+    }
+  },
   "batch_findings_observed": 0,
   "slowest_batches": [
     {

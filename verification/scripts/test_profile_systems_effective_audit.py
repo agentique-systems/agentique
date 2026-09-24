@@ -54,6 +54,48 @@ class ProfileTests(unittest.TestCase):
         self.assertEqual(report["overall_effective_elapsed_micros"], 700)
         self.assertFalse(report["publication_authority"])
 
+    def test_window_imbalance_uses_batch_timers_and_observed_span_not_cpu_time(self):
+        events = fixture(enclosing=False)
+        # One very uneven two-worker window, followed by a singleton tail.
+        timestamps = [100, 200, 2_100_300, 2_100_400, 2_100_500, 2_101_600]
+        elapsed = {0: 2_000_000, 1: 500, 2: 1_000}
+        for event, timestamp in zip(events, timestamps):
+            event["run_elapsed_micros"] = timestamp
+            if event["event"] == "end":
+                event["elapsed_micros"] = elapsed[event["batch_index"]]
+        report = profile(encode(events))
+        timing = report["bounded_window_timing"]
+        self.assertEqual(timing["windows"], 2)
+        self.assertEqual(timing["two_batch_windows"], 1)
+        self.assertEqual(timing["sum_window_max_micros"], 2_001_000)
+        self.assertEqual(timing["sum_window_min_micros"], 1_500)
+        self.assertEqual(timing["sum_window_imbalance_micros"], 1_999_500)
+        self.assertEqual(timing["observed_elapsed_outside_window_maxima_micros"], 100_500)
+        self.assertEqual(timing["windows_pairing_gt_1s_with_lt_1ms"], 1)
+        occupancy = timing["timing_occupancy_proxy"]
+        self.assertAlmostEqual(occupancy["value"], 2_001_500 / (2 * 2_101_500))
+        self.assertIn("not measured CPU utilization or serial speedup", occupancy["interpretation"])
+        self.assertFalse(report["semantic_authority"])
+        # The threshold is strict; exactly one second is not greater than it.
+        events[2]["elapsed_micros"] = 1_000_000
+        self.assertEqual(profile(encode(events))["bounded_window_timing"]
+                         ["windows_pairing_gt_1s_with_lt_1ms"], 0)
+
+    def test_serial_windows_have_zero_peer_imbalance_and_zero_span_has_no_ratio(self):
+        events = fixture(workers=1, enclosing=False)
+        timing = profile(encode(events))["bounded_window_timing"]
+        self.assertEqual(timing["sum_window_max_micros"], 150)
+        self.assertEqual(timing["sum_window_min_micros"], 150)
+        self.assertEqual(timing["sum_window_imbalance_micros"], 0)
+        self.assertEqual(timing["two_batch_windows"], 0)
+        self.assertEqual(timing["timing_occupancy_proxy"]["value"], 150 / 500)
+        for event in events:
+            event["run_elapsed_micros"] = 0
+            if event["event"] == "end":
+                event["elapsed_micros"] = 0
+        self.assertIsNone(profile(encode(events))["bounded_window_timing"]
+                          ["timing_occupancy_proxy"]["value"])
+
     def test_scoped_serial_span_is_labeled_and_findings_do_not_reject_profile(self):
         events = fixture(workers=1, enclosing=False)
         events[1]["findings"] = 27

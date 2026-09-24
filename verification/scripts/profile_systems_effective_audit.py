@@ -143,6 +143,31 @@ def profile(raw, journal="<memory>"):
     else:
         require(not stages, "batch-only scoped journal unexpectedly contains finalization stages")
     durations = sorted(row["elapsed_micros"] for row in rows)
+    windows = [rows[index:index + workers] for index in range(0, count, workers)]
+    maxima = [max(row["elapsed_micros"] for row in window) for window in windows]
+    minima = [min(row["elapsed_micros"] for row in window) for window in windows]
+    sum_maxima, sum_minima = sum(maxima), sum(minima)
+    # Timers cover each batch's wall duration, not CPU time. A short last window
+    # uses only its scheduled batch when computing extrema and imbalance.
+    window_timing = {
+        "windows": len(windows),
+        "two_batch_windows": sum(len(window) == 2 for window in windows),
+        "sum_window_max_micros": sum_maxima,
+        "sum_window_min_micros": sum_minima,
+        "sum_window_imbalance_micros": sum_maxima - sum_minima,
+        "imbalance_basis": "max minus min across scheduled batches in each window; singleton windows contribute zero",
+        "observed_elapsed_outside_window_maxima_micros": span - sum_maxima,
+        "outside_maxima_interpretation": "residual includes journaling, scheduling, merging and imperfect overlap; not isolated overhead",
+        "windows_pairing_gt_1s_with_lt_1ms": sum(
+            len(window) == 2 and maximum > 1_000_000 and minimum < 1_000
+            for window, maximum, minimum in zip(windows, maxima, minima)
+        ),
+        "timing_occupancy_proxy": {
+            "value": sum(durations) / (workers * span) if span else None,
+            "formula": "sum_batch_elapsed_micros / (workers * observed_batch_span_micros)",
+            "interpretation": "wall-timing capacity proxy; not measured CPU utilization or serial speedup",
+        },
+    }
     return {
         "format": PROFILE_FORMAT,
         "journal": {"path": str(journal), "sha256": hashlib.sha256(raw).hexdigest(), "bytes": len(raw)},
@@ -164,6 +189,7 @@ def profile(raw, journal="<memory>"):
         "batch_elapsed_micros": {"total": sum(durations), "median": median(durations),
                                  "p95": durations[(95 * count + 99) // 100 - 1], "max": durations[-1],
                                  "p95_method": "nearest_rank"},
+        "bounded_window_timing": window_timing,
         "batch_findings_observed": sum(row["findings"] for row in rows),
         "slowest_batches": sorted(rows, key=lambda row: (-row["elapsed_micros"], row["batch_index"]))[:10],
     }
