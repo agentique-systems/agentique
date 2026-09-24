@@ -184,8 +184,29 @@ fn case_acceptance_fixture_uses_real_frontend_and_explicit_standard_redefinition
     }
 }
 
+#[track_caller]
 fn complete<T: std::fmt::Debug>(answer: &SysmlQueryResult<T>) {
-    assert_eq!(answer.completeness(), Completeness::Complete, "{answer:?}");
+    if answer.completeness() != Completeness::Complete {
+        let supporting: BTreeSet<_> = answer
+            .supporting_queries
+            .iter()
+            .flat_map(|query| &query.diagnostics)
+            .chain(
+                answer
+                    .supporting_names
+                    .iter()
+                    .flat_map(|query| &query.diagnostics),
+            )
+            .collect();
+        panic!(
+            "expected Complete; got {:?}; value={:?}; pending={:?}; diagnostics={:?}; kernel={:?}; supporting={supporting:?}",
+            answer.completeness(),
+            answer.value(),
+            answer.pending,
+            answer.diagnostics,
+            answer.kerml.diagnostics,
+        );
+    }
 }
 
 fn authored_named(model: &ModelView, name: &str) -> ElementId {
@@ -1153,11 +1174,15 @@ fn accepted_agentique_self_model_closes_queries_edits_and_matches_programmatic_s
         accepted.context().dependencies.sysml_profile,
         agq_sysml_semantics::SysmlBaselineProfile::OPERATIONAL_V3
     );
+    eprintln!("accepted self-model: exact shared publications restored");
     // These independent fixtures do not need the retained authored history.
     // Finish them before allocating r0/r1 and keep only equivalence observations.
     accepted_case_roles(&accepted);
+    eprintln!("accepted self-model: case roles passed");
     accepted_view_metadata(&accepted);
+    eprintln!("accepted self-model: View/Metadata passed");
     let programmatic = programmatic_semantics(&accepted);
+    eprintln!("accepted self-model: programmatic effective core passed");
     let mut project =
         SourceProject::with_accepted_sysml_standard_libraries(accepted.clone()).unwrap();
     let r1 = project
@@ -1177,6 +1202,7 @@ fn accepted_agentique_self_model_closes_queries_edits_and_matches_programmatic_s
     accepted_trigger_and_message(&r1, &accepted);
     let original = rich_summary(&r1.sysml_queries().unwrap(), accepted.overlay().model());
     assert_eq!(original, programmatic.summary);
+    eprintln!("accepted self-model: authored architecture and semantic equivalence passed");
     assert_ne!(
         authored_named(r1.semantic_model(), "workspaceQuery"),
         programmatic.workspace_query
@@ -1195,6 +1221,7 @@ fn accepted_agentique_self_model_closes_queries_edits_and_matches_programmatic_s
         "        port auditPort : ArchitectureContracts::SemanticQuery;\n",
     );
     assert_revision(&r2, &accepted);
+    eprintln!("accepted self-model: second revision closed");
     assert_eq!(
         authored_named(r2.semantic_model(), "workspaceQuery"),
         retained_query
@@ -1219,6 +1246,7 @@ fn accepted_agentique_self_model_closes_queries_edits_and_matches_programmatic_s
         "        port auditedPort : ArchitectureContracts::SemanticQuery :>> ProjectWorkspace::auditPort;\n",
     );
     assert_revision(&r3, &accepted);
+    eprintln!("accepted self-model: third revision closed");
     assert_eq!(
         authored_named(r3.semantic_model(), "workspaceQuery"),
         retained_query

@@ -182,6 +182,19 @@ The prepared occurrence/connection effective API assertions compile; all four
 ordinary self-model tests pass. The accepted-cache test remains ignored until
 publication, as recorded in [accepted-core-preparation.md](accepted-core-preparation.md).
 
+After publication, the actual accepted self-model gate ran and failed after
+373.30 seconds in the independent programmatic fixture's qualified-name query.
+The [retained diagnostic](self-model-first-failure.json) is
+`SQ_QUALIFIED_NAME_SELECTION`: resolving explicit `acceptedRevision` demanded
+full-name selection for an unrelated derived sibling whose complete effective
+name population is `snapshots`. This is a sibling absence-proof boundary;
+the explicit authored name is present. The Systems publication and successful
+trusted-cache gate remain accepted. ADR 0026 and workspace integration stay
+gated while this authored effective-query defect is corrected and rerun.
+The failed log retains the full original result; subsequent test diagnostics
+report the actual caller, value and diagnostic sets without dumping the complete
+standard proof graph, and add stage progress without changing assertions.
+
 ## Verification
 
 [commands.json](commands.json),

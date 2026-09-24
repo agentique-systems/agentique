@@ -1,0 +1,11 @@
+{
+  "status": "failed",
+  "gate": "accepted-agentique-self-model-v3",
+  "output_sha256": "8a7d8d46c47d6ce686e222b59aa2272c88f77edfc7bd1af4b16120e7e94c035d",
+  "assertion": "expected Complete, observed Incomplete",
+  "code": "SQ_QUALIFIED_NAME_SELECTION",
+  "diagnostic_excerpt": " property: PropertyId(166544067143831749892366948650811436474) })} }, pending: {}, diagnostics: {Diagnostic { code: \"SQ_QUALIFIED_NAME_SELECTION\", subject: ElementId(226305158359298341353479760028081596476), message: \"The effective full name is not established independently of short-name alternatives\" }}, rejected_targets: {}, filtered_targets: {}, supporting_queries: [QueryResult { producer_evidence: false, producer_expanded_facts: {Element(ElementId(910079))}, shared_search_dependencies: {}, context: SemanticCont",
+  "programmatic_root": 910000,
+  "publication_acceptance_changed": false,
+  "workspace_integration_permitted": false
+}

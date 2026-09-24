@@ -1247,6 +1247,60 @@
         "AGENTIQUE_KERML_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/kerml-v9-publication/canonical.publication.zip",
         "AGENTIQUE_SYSTEMS_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/final-audit-semantic-closure/accepted/canonical.publication.zip"
       }
+    },
+    {
+      "name": "accepted-agentique-self-model-v3",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--lib",
+        "sysml::tests::accepted_self_model::accepted_agentique_self_model_closes_queries_edits_and_matches_programmatic_semantics",
+        "--",
+        "--ignored",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "00a871cfefab519cafd9ccd5a1410afc19d0f086",
+      "working_changes_sha256": "9ec01af7f43b780c491f64040d9724bf29e8d6224b66e4a05b6de284b5c2efa7",
+      "output_sha256": "8a7d8d46c47d6ce686e222b59aa2272c88f77edfc7bd1af4b16120e7e94c035d",
+      "duration_seconds": 462.78,
+      "output": "verification/generated/final-audit-semantic-closure/accepted-agentique-self-model-v3.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace",
+        "CARGO_PROFILE_RELEASE_LTO": "false",
+        "AGENTIQUE_KERML_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "AGENTIQUE_SYSTEMS_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/final-audit-semantic-closure/accepted/canonical.publication.zip"
+      }
+    },
+    {
+      "name": "self-model-diagnostic-format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "ffdf5f7c04f67b8afb0f92ef324f216de06328df",
+      "working_changes_sha256": "7a092cedfd271fd0186b7dbdcf6d2a63b5ed6cce9238ce09efaedcd11f600c56",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.56,
+      "output": "verification/generated/final-audit-semantic-closure/self-model-diagnostic-format.log",
+      "environment_overrides": {}
     }
   ]
 }
