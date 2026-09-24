@@ -185,8 +185,15 @@ passed. The five authored documents have 67 Complete mandatory references and
 Complete producer closure; independent programmatic equivalence, three immutable
 revisions, inherited redefinition and shared standards are verified. The recorded
 decision is **AGENTIQUE LANGUAGE FOUNDATION STABLE — MODELING PLATFORM MAY PROCEED**.
-Only the in-memory modeling workspace is authorized; its production integration,
-Working/Validated revision boundary and scale gates remain separate work.
+The in-memory `agq-modeling-workspace` is now integrated. Its revision-bound
+validation retains the strict applicable effective audit over local declared and
+derived subjects and requires a matching context and finding-free report. The
+[current integration evidence](../verification/summaries/final-audit-semantic-closure/README.md)
+records 139 shared-kernel tests, exact accepted-cache identity restoration, all
+five Working-state tests and the real workspace self-model's two Validated
+revisions with immutable old answers and physically shared standards. Scale and
+remaining workspace acceptance gates are still pending; ADR 0024 remains proposed.
+This workspace promises in-memory atomic visibility, without durable persistence.
 ADR 0027 remains proposed research. The future [footprint invalidation roadmap](modeling-workspace-phase1-design.md#future-semantic-recomputation-after-an-authored-edit)
 reuses compositional research without depending on component sealing.
 

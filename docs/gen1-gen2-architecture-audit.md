@@ -1,5 +1,34 @@
 # Generation 1 / generation 2 architecture disposition
 
+## Current integration note
+
+At reviewed source `42bcc89`, accepted KerML Operational v9 and Systems
+Operational v3 are shared dependencies of the integrated `agq-modeling-workspace`.
+The [language-readiness gate](../verification/summaries/final-language-acceptance/semantic-closure-readiness.md)
+passed and ADR 0026 is adopted. `SourceInputs`/`SourceCompilation` provide the
+additive recovery/construction boundary while the existing strict `SourceProject`
+contract remains intact. Workspace revisions retain their exact declared/derived
+graph, references, closure evidence and effective audit; validation requires a
+finding-free report matching that revision's semantic context.
+
+Immutable kernel base tables retain standard graph, index, proof/search and
+reservation allocations. Local copy-on-write and authored reconstruction remain
+permitted. The [current integration evidence](../verification/summaries/final-audit-semantic-closure/README.md)
+records 139 passing kernel tests, exact issued-cache identity restoration, five
+passing Working-state tests and the passing real workspace self-model gate.
+The latter validates two revisions after an edit and checks old answers,
+authored identities and physical standard sharing. The current 20-package
+dependency audit remains clean. Scale and remaining workspace acceptance gates
+are pending, so ADR 0024 remains proposed.
+
+No Gen1 engine or release obligation is replaced by these results. The workspace
+provides in-memory atomic visibility, not durable persistence, application/server
+migration, full language conformance or execution. KerML acceptance is unchanged;
+ADR 0027 remains proposed research. The original source audit below is preserved
+at its explicit baseline; its future-tense integration descriptions are historical.
+
+## Historical source audit
+
 This audit inspected the source implementations and manifests at main
 `0fbdf3ee19788a260b99d89e71dbd28f432d8243`. The functioning Gen1 product stays in
 service. Generation 2 becomes an additive modeling foundation after the explicit

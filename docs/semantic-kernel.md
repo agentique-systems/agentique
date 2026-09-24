@@ -431,18 +431,39 @@ Selective invalidation and query caching remain deferred.
 
 ## Extension and cost model
 
-Snapshots use immutable `Arc` records and a shared registry. Applying changes clones
-ordered map structure and identity history, copies edited records, validates the
-candidate, and rebuilds indexes. Ancestor/effective-property sets are precomputed;
-class queries index exact classes and all supertypes. Storage costs are currently
-linear in elements plus references (and their metaclass memberships), with ordered
-map lookup costs. Deep containment/evidence graphs use iterative cycle detection.
+Snapshots use immutable `Arc` records and a shared registry. The integrated
+`SharedMap` representation retains accepted record, association, navigation,
+proof/search and reservation tables behind immutable base allocations. A project
+mount starts local deltas; it does not copy the standard tables. Map clones share
+their local allocation until mutation requires copy-on-write. Edited local
+records and their slots are copied as needed, and local identity history remains
+revision-specific. Kernel dependency and ownership guards authorize writes;
+the storage container itself is not an acceptance boundary.
+
+Candidate construction validates the combined view and rebuilds local indexes
+over the shared immutable index base. Local relationships can require sparse
+inverse/navigation projections involving a standard element; touched association
+groups retain their original occurrence identities and semantic order. Those local
+projections do not copy canonical standard records or mutate the publication's
+own view. Lookup follows ordered maps and dependency layers; iteration merges
+their populations deterministically. Ancestor/effective-property sets are
+precomputed, and class queries index exact classes and all supertypes.
+
+Authored edits still reconstruct local semantics and retain local source,
+identity, evidence and index data. Validation and context authentication can
+traverse accepted inputs read-only. Shared storage therefore does not imply
+constant-time edits or fully incremental semantic closure. The
+[current integration evidence](../verification/summaries/final-audit-semantic-closure/README.md)
+records 139 kernel tests, exact issued-cache identity restoration, five Working
+tests and workspace self-model revisions with physical dependency-sharing
+observations. Scale and final workspace acceptance remain pending.
+Deep containment/evidence graphs use iterative cycle detection.
 No arena, global interner, unsafe code, async runtime or interior-mutability scheme
 is required. Snapshot and overlay types are tested as Send + Sync.
 
-Public queries return borrowed records/values and deterministic iterators. Persistent
-maps, finer sharing of large slots, incremental validation and indexes can replace
-the initial implementation without changing semantic identity or query contracts.
+Public queries return borrowed records/values and deterministic iterators. Other
+persistent representations, finer sharing of large slots, incremental validation
+and indexes may evolve without changing semantic identity or query contracts.
 Debug output is diagnostic, not a serialization contract. No interchange is exposed.
 
 A generated `agq_kerml::views::Feature<'m>` holds only
