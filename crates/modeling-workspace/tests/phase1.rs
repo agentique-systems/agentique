@@ -396,7 +396,9 @@ fn operational_failures_publish_nothing_and_independent_projects_share_only_stan
 #[ignore = "requires the accepted publication caches; never rebuilds standards"]
 fn hundred_documents_five_revisions_and_parallel_borrowed_reads() {
     let started = Instant::now();
+    eprintln!("recovery scale: opening accepted dependencies");
     let mut workspace = open();
+    eprintln!("recovery scale: accepted dependencies restored; starting 100-document history");
     assert_shared(workspace.head());
     let mut changes = Vec::with_capacity(100);
     for index in 0..50 {
@@ -411,14 +413,16 @@ fn hundred_documents_five_revisions_and_parallel_borrowed_reads() {
             &inputs::worker(index),
         ));
     }
+    eprintln!("recovery scale r1: applying 100 documents");
     let s1 = workspace
         .apply(workspace.head().revision(), changes)
         .unwrap();
+    eprintln!("recovery scale r1: apply complete; checking validation");
     assert_valid(&s1);
     assert_eq!(s1.documents().count(), 100);
     // Capture before the next mutation, not after all revisions exist.
-    let mut baseline = vec![immutable_signature(&s1)];
-    let mut projections = vec![[0, 25, 49].map(|group| group_projection(&s1, group))];
+    let mut baseline = vec![capture_recovery_signature(&s1, "r1")];
+    let mut projections = vec![capture_recovery_projections(&s1, "r1")];
     let original_engine = element(&s1, &["Workbench025", "Worker", "engine"]);
     let original_engine_syntax = syntax_id(
         &s1,
@@ -428,6 +432,7 @@ fn hundred_documents_five_revisions_and_parallel_borrowed_reads() {
     );
     let original = inputs::worker(25);
     let insertion = original.find("part engine;").unwrap() + "part engine;".len();
+    eprintln!("recovery scale r2: adding port");
     let s2 = workspace
         .apply(
             s1.revision(),
@@ -440,11 +445,13 @@ fn hundred_documents_five_revisions_and_parallel_borrowed_reads() {
             )],
         )
         .unwrap();
+    eprintln!("recovery scale r2: apply complete; checking validation");
     assert_valid(&s2);
-    baseline.push(immutable_signature(&s2));
-    projections.push([0, 25, 49].map(|group| group_projection(&s2, group)));
+    baseline.push(capture_recovery_signature(&s2, "r2"));
+    projections.push(capture_recovery_projections(&s2, "r2"));
     let source = s2.document_at("Worker025.sysml").unwrap().source();
     let insertion = source.rfind('}').unwrap();
+    eprintln!("recovery scale r3: adding specialization");
     let s3 = workspace
         .apply(
             s2.revision(),
@@ -457,9 +464,10 @@ fn hundred_documents_five_revisions_and_parallel_borrowed_reads() {
             )],
         )
         .unwrap();
+    eprintln!("recovery scale r3: apply complete; checking validation");
     assert_valid(&s3);
-    baseline.push(immutable_signature(&s3));
-    projections.push([0, 25, 49].map(|group| group_projection(&s3, group)));
+    baseline.push(capture_recovery_signature(&s3, "r3"));
+    projections.push(capture_recovery_projections(&s3, "r3"));
     for revision in [&s2, &s3] {
         assert_eq!(
             element(revision, &["Workbench025", "Worker", "engine"]),
@@ -503,6 +511,7 @@ fn hundred_documents_five_revisions_and_parallel_borrowed_reads() {
     }
     let provider = element(&s3, &["Contracts025", "RevisionValue"]);
     let old_document = s3.document_at("Contracts025.kerml").unwrap().id();
+    eprintln!("recovery scale r4: removing provider");
     let s4 = workspace
         .apply(
             s3.revision(),
@@ -511,17 +520,20 @@ fn hundred_documents_five_revisions_and_parallel_borrowed_reads() {
             }],
         )
         .unwrap();
+    eprintln!("recovery scale r4: apply complete; checking Working state");
     assert_unresolved(&s4, Some(provider));
     assert_eq!(s4.documents().count(), 99);
-    baseline.push(immutable_signature(&s4));
-    projections.push([0, 25, 49].map(|group| group_projection(&s4, group)));
+    baseline.push(capture_recovery_signature(&s4, "r4"));
+    projections.push(capture_recovery_projections(&s4, "r4"));
+    eprintln!("recovery scale r5: restoring provider");
     let s5 = workspace
         .add_kerml(s4.revision(), "Contracts025.kerml", &inputs::contracts(25))
         .unwrap();
+    eprintln!("recovery scale r5: apply complete; checking validation");
     assert_valid(&s5);
     assert_eq!(s5.documents().count(), 100);
-    baseline.push(immutable_signature(&s5));
-    projections.push([0, 25, 49].map(|group| group_projection(&s5, group)));
+    baseline.push(capture_recovery_signature(&s5, "r5"));
+    projections.push(capture_recovery_projections(&s5, "r5"));
     assert_ne!(
         s5.document_at("Contracts025.kerml").unwrap().id(),
         old_document
@@ -552,12 +564,13 @@ fn hundred_documents_five_revisions_and_parallel_borrowed_reads() {
         }
     }
     std::thread::scope(|scope| {
-        for _ in 0..4 {
+        for reader in 0..4 {
             let revisions = &revisions;
             let baseline = &baseline;
             let projections = &projections;
             scope.spawn(move || {
-                for _ in 0..8 {
+                for pass in 0..8 {
+                    eprintln!("recovery scale reader={reader} pass={pass}: begin");
                     for (index, revision) in revisions.iter().enumerate() {
                         assert_eq!(immutable_signature(revision), baseline[index]);
                         assert_eq!(
@@ -585,6 +598,7 @@ fn hundred_documents_five_revisions_and_parallel_borrowed_reads() {
                             assert!(children.value().contains(&engine));
                         }
                     }
+                    eprintln!("recovery scale reader={reader} pass={pass}: complete");
                 }
             });
         }
@@ -613,6 +627,37 @@ fn hundred_documents_five_revisions_and_parallel_borrowed_reads() {
         "workspace scaling elapsed={:?}; authored reconstruction remains permitted; no speed threshold",
         started.elapsed()
     );
+}
+
+fn capture_recovery_signature(
+    revision: &WorkingProjectRevision,
+    stage: &str,
+) -> ImmutableSignature {
+    let started = Instant::now();
+    eprintln!(
+        "recovery scale {stage}: signature begin; documents={} diagnostics={} references={}",
+        revision.documents().count(),
+        revision.diagnostics().len(),
+        revision.references().len()
+    );
+    let signature = immutable_signature(revision);
+    let (diagnostics, references) = signature.evidence_debug_bytes();
+    eprintln!(
+        "recovery scale {stage}: signature complete; diagnostic_debug_bytes={diagnostics} reference_debug_bytes={references} elapsed={:?}",
+        started.elapsed()
+    );
+    signature
+}
+
+fn capture_recovery_projections(revision: &WorkingProjectRevision, stage: &str) -> [String; 3] {
+    let started = Instant::now();
+    eprintln!("recovery scale {stage}: projections begin");
+    let projections = [0, 25, 49].map(|group| group_projection(revision, group));
+    eprintln!(
+        "recovery scale {stage}: projections complete; elapsed={:?}",
+        started.elapsed()
+    );
+    projections
 }
 
 fn assert_inherited_worker_ports(

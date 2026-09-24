@@ -256,10 +256,16 @@ pub struct DocumentSignature {
 #[derive(Debug, PartialEq, Eq)]
 pub struct ImmutableSignature {
     documents: Vec<DocumentSignature>,
-    diagnostics: String,
+    diagnostics: DebugSignature,
     references: DebugSignature,
     semantic_context: Option<SemanticContextId>,
     closure_digest: Option<[u8; 32]>,
+}
+
+impl ImmutableSignature {
+    pub fn evidence_debug_bytes(&self) -> (usize, usize) {
+        (self.diagnostics.bytes, self.references.bytes)
+    }
 }
 
 #[derive(Debug, PartialEq, Eq)]
@@ -285,8 +291,8 @@ fn debug_signature<T: fmt::Debug + ?Sized>(value: &T) -> DebugSignature {
         hash: Sha256::new(),
     };
     // Exactly the former non-pretty Debug byte sequence, including every field
-    // of each reference and its query evidence. Stream it instead of retaining
-    // one large proof string per revision and four more during parallel reads.
+    // of each reference/diagnostic and its query evidence. Stream it instead of
+    // retaining one large proof string per revision and four more during reads.
     write!(&mut stream, "{value:?}").expect("infallible digest writer");
     DebugSignature {
         bytes: stream.bytes,
@@ -328,6 +334,44 @@ fn immutable_reference_signature_matches_exact_debug_bytes_and_evidence() {
     );
 }
 
+#[test]
+fn immutable_diagnostic_signature_matches_native_capability_fields() {
+    use agq_kerml_semantics::Diagnostic;
+    use agq_kerml_text::{
+        SourceDiagnostic,
+        sysml::{SystemsPublicationFamily, SystemsPublicationFinding},
+    };
+    // This is the native effective-audit capability diagnostic, requiring no
+    // accepted cache or manufactured SysML query context. The reference test
+    // separately exercises the same writer over complete native query evidence.
+    let mut diagnostics = vec![SourceDiagnostic::EffectiveAudit {
+        origin: None,
+        finding: Box::new(SystemsPublicationFinding::Capability {
+            family: SystemsPublicationFamily::DefinitionUsage,
+            diagnostic: Diagnostic {
+                code: "SQ_PRODUCER_CLOSURE",
+                subject: ElementId::from_u128(41),
+                message: "Unresolved référence".into(),
+            },
+        }),
+    }];
+    let exact = format!("{diagnostics:?}");
+    let before = debug_signature(&diagnostics);
+    assert_eq!(before.bytes, exact.len());
+    assert_eq!(
+        before.sha256,
+        <[u8; 32]>::from(Sha256::digest(exact.as_bytes()))
+    );
+    let SourceDiagnostic::EffectiveAudit { finding, .. } = &mut diagnostics[0] else {
+        unreachable!()
+    };
+    let SystemsPublicationFinding::Capability { diagnostic, .. } = finding.as_mut() else {
+        unreachable!()
+    };
+    diagnostic.subject = ElementId::from_u128(42);
+    assert_ne!(debug_signature(&diagnostics), before);
+}
+
 pub fn immutable_signature(revision: &WorkingProjectRevision) -> ImmutableSignature {
     ImmutableSignature {
         documents: revision
@@ -345,7 +389,7 @@ pub fn immutable_signature(revision: &WorkingProjectRevision) -> ImmutableSignat
                     .collect(),
             })
             .collect(),
-        diagnostics: format!("{:?}", revision.diagnostics()),
+        diagnostics: debug_signature(revision.diagnostics()),
         references: debug_signature(revision.references()),
         semantic_context: revision.kerml_queries().ok().map(|q| q.context().clone()),
         closure_digest: revision

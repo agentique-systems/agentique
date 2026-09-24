@@ -1,0 +1,121 @@
+{
+  "format": "agq.workspace-diagnostic-signature-verification/v1",
+  "base_commit": "5c5b09be7ffa00166767a531184353d08d2b4a4b",
+  "prior_failed_command": {
+    "name": "workspace-phase1-remaining-acceptance",
+    "command": [
+      "cargo",
+      "test",
+      "--release",
+      "--locked",
+      "--offline",
+      "-p",
+      "agq-modeling-workspace",
+      "--features",
+      "verification",
+      "--test",
+      "phase1",
+      "--",
+      "--ignored",
+      "--skip",
+      "hundred_documents_five_validated_revisions_and_four_parallel_readers",
+      "--nocapture",
+      "--test-threads=1"
+    ],
+    "exit_code": 3221226505,
+    "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+    "source_commit": "65c1bf261512772a7f4b592f3749f6b430556c3d",
+    "working_changes_sha256": "24c5bed541a456892bc12d58492d2b7d334e1daa15364acfb95375f3f8086fb9",
+    "output_sha256": "61d81945fdd3275bae56e56552ed987b8e6bbaf54001cb114b34ce15d3453f49",
+    "duration_seconds": 916.59,
+    "output": "verification/generated/final-audit-semantic-closure/workspace-phase1-remaining-acceptance.log",
+    "environment_overrides": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_BUILD_JOBS": "2",
+      "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace",
+      "CARGO_PROFILE_RELEASE_LTO": "false",
+      "AGENTIQUE_KERML_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/kerml-v9-publication/canonical.publication.zip",
+      "AGENTIQUE_SYSTEMS_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/final-audit-semantic-closure/accepted/canonical.publication.zip"
+    }
+  },
+  "prior_actual_output": "    Finished `release` profile [optimized] target(s) in 0.21s\n     Running tests\\phase1.rs (target\\platform-workspace\\release\\deps\\phase1-b1de8cea44b31eea.exe)\n\nrunning 5 tests\ntest hundred_documents_five_revisions_and_parallel_borrowed_reads ... memory allocation of 8589934592 bytes failed\nerror: test failed, to rerun pass `-p agq-modeling-workspace --test phase1`\n\nCaused by:\n  process didn't exit successfully: `C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace\\release\\deps\\phase1-b1de8cea44b31eea.exe --ignored --skip hundred_documents_five_validated_revisions_and_four_parallel_readers --nocapture --test-threads=1` (exit code: 0xc0000409, STATUS_STACK_BUFFER_OVERRUN)\n",
+  "diagnosis": {
+    "observed": "First legacy100-document recovery test aborted while requesting an 8589934592-byte allocation. No assertion or stack identifies the allocation site; the remaining four tests did not execute in that command.",
+    "candidate_cause": "support::immutable_signature unconditionally materialized Debug of all SourceDiagnostic values. Capability stores boxed full SysmlQueryResult. The r4 Working signature is captured after removing a provider and before repair/readers. This is the only unconditional full diagnostic-string materialization found in this path. Independent structural review agrees, but the failed log does not prove that site.",
+    "other_paths": "group_projection formats only status and IDs; QueryUnavailable is Context(String). Working audit report Debug contains compact findings rather than native query answers. SourceInputs retains native capability answers without formatting them. Some assertion-failure messages can format full reference/query evidence, but the abort log does not establish an assertion failure."
+  },
+  "change": "Only test signature storage and progress reporting. Diagnostics now use the identical non-pretty Debug UTF-8 stream SHA-256 and byte count, as references already do. All fields, revision identities, histories, and 4 readers x 8 passes x 5 revisions = 160 comparisons remain. No production change.",
+  "observability": [
+    "Accepted restore, every source apply, validation/Working checks, signature capture and group projection stages.",
+    "Per revision: diagnostic/reference population counts, exact Debug byte counts and signature elapsed time.",
+    "Every reader/pass start and completion, retaining all existing read assertions."
+  ],
+  "time_risk": "Streaming removes the giant diagnostic String allocation, not formatting/hash work. If Working r4 diagnostics exceed4GiB, 32reader captures hash morethan128GiB in addition to initial capture. The next realrun must measure bytes/time before considering a full structured-evidence alternative; no count or field was removed.",
+  "regressions": "Two cache-free tests: exact Debug bytes/hash/UTF8 and native QueryResult evidence mutation through a real KerML ReferenceAssertion; native SourceDiagnostic::EffectiveAudit Capability fields and subject mutation. No accepted dependency context was fabricated.",
+  "commands": [
+    {
+      "command": "cargo check --locked --offline -p agq-modeling-workspace --features verification --test phase1",
+      "environment": {
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\target\\workspace-scale-check",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1"
+      },
+      "exit_code": 0,
+      "elapsed_seconds": 0.73,
+      "output": "verification\\generated\\final-closure-projections\\workspace-diagnostic-signature-1.log",
+      "output_sha256": "6cd9b65123be8be755ef5e587c12fcb844866f5b281d1972365a2bc13e216d91",
+      "actual_output": "    Checking agq-modeling-workspace v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\modeling-workspace)\n    Finished `dev` profile [unoptimized] target(s) in 0.65s\n"
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-modeling-workspace --features verification --test phase1 support::immutable_ -- --nocapture",
+      "environment": {
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\target\\workspace-scale-check",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1"
+      },
+      "exit_code": 0,
+      "elapsed_seconds": 4.019,
+      "output": "verification\\generated\\final-closure-projections\\workspace-diagnostic-signature-2.log",
+      "output_sha256": "aca11d0b10eab78807cf303cf7ac589ddc9a2297d4b209d0429c8194afbbd850",
+      "actual_output": "   Compiling agq-modeling-workspace v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\modeling-workspace)\n    Finished `test` profile [unoptimized] target(s) in 3.14s\n     Running tests\\phase1.rs (target\\workspace-scale-check\\debug\\deps\\phase1-b841dcf8251e2aef.exe)\n\nrunning 2 tests\ntest support::immutable_diagnostic_signature_matches_native_capability_fields ... ok\ntest support::immutable_reference_signature_matches_exact_debug_bytes_and_evidence ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.32s\n\n"
+    },
+    {
+      "command": "cargo clippy --locked --offline -p agq-modeling-workspace --features verification --all-targets -- -D warnings",
+      "environment": {
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\target\\workspace-scale-check",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1"
+      },
+      "exit_code": 0,
+      "elapsed_seconds": 1.172,
+      "output": "verification\\generated\\final-closure-projections\\workspace-diagnostic-signature-3.log",
+      "output_sha256": "adb253146288cbed5c47eb68fbcf54742f8b470cd8702958252be4c6d51dc817",
+      "actual_output": "    Checking agq-modeling-workspace v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\modeling-workspace)\n    Finished `dev` profile [unoptimized] target(s) in 0.97s\n"
+    },
+    {
+      "command": "rustfmt --edition 2024 --check crates/modeling-workspace/tests/support/mod.rs crates/modeling-workspace/tests/phase1.rs",
+      "exit_code": 0,
+      "elapsed_seconds": 0.094,
+      "actual_output": ""
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "elapsed_seconds": 0.046,
+      "actual_output": ""
+    }
+  ],
+  "source_sha256": {
+    "crates/modeling-workspace/tests/support/mod.rs": "46db280e9bf04d3116ff57afa487d9916b77f32b499b69d6d67ee70eecfaec72",
+    "crates/modeling-workspace/tests/phase1.rs": "ad41ee4ce3659e6ff1b68b3fc62ae6ba547455dbbd886d4c3e5bd3b33df6f489"
+  },
+  "accepted_runtime_rerun": false
+}
