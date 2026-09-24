@@ -26,11 +26,20 @@ semantics could pass validation. Stored Validated status additionally requires
 matching graph, context and closure identities and the actual checked Phase1V1
 transition. This is supported platform acceptance, not whole-language conformance.
 
+Validated candidates may carry a versioned cache of local effective facts. An
+unavailable cache exporter leaves the source-backed candidate committable. Restoration
+authenticates exact source identities, accepted publications, descriptor/profile/
+producer context and closure identities, then repeats producer and effective-query
+audits. It checks the persisted validation receipt independently. Missing, corrupt,
+stale or unknown caches reconstruct from mandatory durable source instead. A valid
+cache cannot substitute for missing source, or promote a stored Working revision.
+
 The bounded revision cache is optional and evictable. Each entry binds the exact
 revision, accepted publications and semantic context. Unqueryable Working revisions
 can bypass it; a cache optimization cannot turn a durable success into failure.
 `check_integrity` composes storage verification with reconstruction of all retained
-revisions, including detached histories. It can be expensive by design.
+revisions, including detached histories. It bypasses resident revision handles and
+reports unusable cache references separately. It can be expensive by design.
 Enumeration failures remain findings in that report, preserving earlier storage
 errors instead of discarding them. `BoundRevision::load_path` reports actual source,
 persisted-cache or immutable-memory reuse separately from validation authority.

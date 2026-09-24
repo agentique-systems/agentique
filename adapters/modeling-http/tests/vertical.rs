@@ -114,7 +114,7 @@ async fn durable_project_revision_http_vertical_and_stable_continuation() {
     let project_id: ProjectId = project["@id"].as_str().unwrap().parse().unwrap();
     let (status, _, projects) = request(&app, "GET", "/api/gen2/projects", None).await;
     assert_eq!(status, StatusCode::OK);
-    assert_eq!(projects.as_array().unwrap(), &[project.clone()]);
+    assert_eq!(projects.as_array().unwrap(), std::slice::from_ref(&project));
     assert_eq!(
         request(
             &app,
@@ -177,8 +177,13 @@ async fn durable_project_revision_http_vertical_and_stable_continuation() {
         branches
     );
     let elements = format!("{prefix}/commits/{first}/elements");
+    let page_started = std::time::Instant::now();
     let (status, headers, first_page) =
         request(&app, "GET", &format!("{elements}?page%5Bsize%5D=1"), None).await;
+    eprintln!(
+        "api_element_page_query_us={}",
+        page_started.elapsed().as_micros()
+    );
     assert_eq!(status, StatusCode::OK, "{first_page}");
     assert_eq!(first_page.as_array().unwrap().len(), 1);
     assert_eq!(headers["x-agentique-revision"], first.to_string());

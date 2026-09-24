@@ -8,13 +8,18 @@ fn restored_arena_authenticates_shape_and_unique_identity() {
         production::parse(
             document,
             revision,
-            "namespace P { type A; type B; }",
+            "package P { datatype A; datatype B; }",
             Default::default(),
         )
         .unwrap()
     };
     let original = parse();
+    assert!(original.is_complete(), "{:?}", original.diagnostics());
     let checkpoint = original.identity_checkpoint();
+    assert!(
+        checkpoint.len() > 1,
+        "fixture must exercise duplicate identities"
+    );
     let restored = parse().restore_identities(&checkpoint).unwrap();
     assert_eq!(restored.identity_checkpoint(), checkpoint);
     assert_eq!(restored.source(), original.source());

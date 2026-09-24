@@ -9,13 +9,16 @@ use agq_kerml_text::{ProjectChange, sysml::CanonicalSysmlSystemsLibrary};
 pub use agq_modeling_repository as repository;
 use agq_modeling_repository::*;
 use agq_modeling_workspace::{
-    ProjectRevisionCheckpoint, ProjectWorkspace, ValidatedProjectRevision, WorkingProjectRevision,
+    ProjectRevisionCheckpoint, ProjectSemanticCache, ProjectWorkspace, ValidatedProjectRevision,
+    WorkingProjectRevision,
 };
 pub use query::*;
 use std::{
     collections::{BTreeMap, VecDeque},
     sync::{Arc, Mutex},
 };
+
+const SEMANTIC_CACHE_FORMAT: &str = "agq-project-semantic-cache/1";
 
 /// Resolve exactly one immutable revision at request start.
 #[derive(Clone, Copy, Debug)]
@@ -34,7 +37,7 @@ pub enum ServiceError {
     Repository(#[from] RepositoryError),
     /// Source preparation failed before persistence.
     #[error(transparent)]
-    Workspace(#[from] agq_modeling_workspace::WorkspaceError),
+    Workspace(Box<agq_modeling_workspace::WorkspaceError>),
     /// Actual Phase1V1 acceptance failed.
     #[error(transparent)]
     Validation(#[from] agq_modeling_workspace::ValidationFailure),
@@ -44,6 +47,11 @@ pub enum ServiceError {
     /// Representation encoding failed.
     #[error(transparent)]
     Encoding(#[from] serde_json::Error),
+}
+impl From<agq_modeling_workspace::WorkspaceError> for ServiceError {
+    fn from(error: agq_modeling_workspace::WorkspaceError) -> Self {
+        Self::Workspace(Box::new(error))
+    }
 }
 
 /// One request's immutable source, semantic and persisted validation binding.
@@ -189,6 +197,11 @@ impl ModelingService {
             }
         }
         let checkpoint_bytes = self.repository.read_blob(manifest.checkpoint_digest)?;
+        if ContentDigest::of(&checkpoint_bytes) != manifest.checkpoint_digest {
+            return Err(ServiceError::Invalid(
+                "identity checkpoint checksum mismatch".into(),
+            ));
+        }
         let checkpoint: ProjectRevisionCheckpoint = serde_json::from_slice(&checkpoint_bytes)?;
         let mut sources = BTreeMap::new();
         for document in &manifest.documents {
@@ -199,11 +212,16 @@ impl ModelingService {
                     .map_err(|_| ServiceError::Invalid("non-UTF8 source blob".into()))?,
             );
         }
-        // Optional cache formats without an authenticated decoder are deliberately
-        // discarded. Durable source and identities remain the reconstruction oracle.
-        let working = checkpoint
-            .restore(self.publication.clone(), &sources)
-            .map_err(|error| ServiceError::Invalid(error.to_string()))?;
+        let (working, load_path) =
+            match self.restore_semantic_cache(&manifest, &checkpoint, &sources) {
+                Some(working) => (working, RevisionLoadPath::AuthenticatedSemanticCache),
+                None => (
+                    checkpoint
+                        .restore(self.publication.clone(), &sources)
+                        .map_err(|error| ServiceError::Invalid(error.to_string()))?,
+                    RevisionLoadPath::DurableSource,
+                ),
+            };
         verify_restored_documents(&manifest, &working)?;
         let validated = match &manifest.validation {
             ValidationState::Working => None,
@@ -225,13 +243,62 @@ impl ModelingService {
             manifest: Arc::new(manifest),
             working,
             validated,
-            load_path: RevisionLoadPath::DurableSource,
+            load_path,
         };
         self.cache
             .lock()
             .expect("revision cache")
             .insert(bound.clone());
         Ok(bound)
+    }
+    fn restore_semantic_cache(
+        &self,
+        manifest: &RevisionManifest,
+        checkpoint: &ProjectRevisionCheckpoint,
+        sources: &BTreeMap<DocumentId, String>,
+    ) -> Option<Arc<WorkingProjectRevision>> {
+        // Cache failure never grants validation or removes the durable source path.
+        let reference = manifest.semantic_cache.as_ref()?;
+        if reference.format != SEMANTIC_CACHE_FORMAT
+            || reference.source_binding != manifest.source_binding().ok()?
+        {
+            return None;
+        }
+        if let ValidationState::Validated(receipt) = &manifest.validation
+            && (reference.semantic_context != receipt.semantic_context
+                || reference.closure_digest != receipt.closure_digest)
+        {
+            return None;
+        }
+        let bytes = self.repository.read_blob(reference.content_digest).ok()?;
+        if ContentDigest::of(&bytes) != reference.content_digest {
+            return None;
+        }
+        let cache: ProjectSemanticCache = serde_json::from_slice(&bytes).ok()?;
+        if let ValidationState::Validated(receipt) = &manifest.validation
+            && receipt.semantic_digest != ContentDigest(cache.source.model_digest)
+        {
+            return None;
+        }
+        if ContentDigest(cache.source.context_contract_digest) != reference.semantic_context
+            || ContentDigest(cache.source.semantic_closure_digest) != reference.closure_digest
+        {
+            return None;
+        }
+        let working = checkpoint
+            .restore_cached(self.publication.clone(), sources, &cache)
+            .ok()?;
+        if !working.compilation_work().semantic_cache_used
+            || context_digest(&working).ok()? != reference.semantic_context
+            || working
+                .producer_closure()
+                .map(|closure| ContentDigest(closure.digest()))
+                != Some(reference.closure_digest)
+            || graph_digest(&working).ok()? != ContentDigest(cache.source.model_digest)
+        {
+            return None;
+        }
+        Some(working)
     }
     /// Create a project with a real parentless empty Working revision and main head.
     /// Retain a prepared project instead when lost acknowledgement must be retried.
@@ -438,6 +505,9 @@ impl ModelingService {
     /// Offline structural checks plus authentic restoration of every retained revision.
     pub fn check_integrity(&self) -> Result<IntegrityReport, ServiceError> {
         let mut report = self.repository.check_integrity()?;
+        // An offline audit must inspect durable inputs even when this service
+        // already retains a valid immutable handle for the same revision.
+        let checker = Self::new(self.repository.clone(), self.publication.clone(), 0);
         let mut seen = std::collections::BTreeSet::new();
         let projects = match self.repository.list_projects() {
             Ok(projects) => projects,
@@ -457,17 +527,26 @@ impl ModelingService {
                 }
             };
             for manifest in revisions {
-                if seen.insert(manifest.revision_id) {
-                    if let Err(error) =
-                        self.resolve(project.id, RevisionSelector::Revision(manifest.revision_id))
+                if !seen.insert(manifest.revision_id) {
+                    continue;
+                }
+                match checker.resolve(project.id, RevisionSelector::Revision(manifest.revision_id))
+                {
+                    Ok(bound)
+                        if manifest.semantic_cache.is_some()
+                            && bound.load_path() == RevisionLoadPath::DurableSource =>
                     {
-                        report
-                            .errors
-                            .push(format!("{}: {error}", manifest.revision_id));
+                        report.discardable_caches.push(manifest.revision_id);
                     }
+                    Ok(_) => {}
+                    Err(error) => report
+                        .errors
+                        .push(format!("{}: {error}", manifest.revision_id)),
                 }
             }
         }
+        report.discardable_caches.sort();
+        report.discardable_caches.dedup();
         Ok(report)
     }
 }
@@ -556,14 +635,17 @@ fn context_digest(revision: &WorkingProjectRevision) -> Result<ContentDigest, Se
             .closure_contract_digest(),
     ))
 }
-/// Export exact source bytes and the deliberate identity checkpoint; never serialize graphs.
+/// Export exact durable sources and identities, plus a disposable validated graph cache.
+/// Accepted standard graphs remain external authenticated dependencies.
 pub fn prepare_candidate(
     revision: &Arc<WorkingProjectRevision>,
     validate: bool,
 ) -> Result<CandidateRevision, ServiceError> {
-    if validate {
-        revision.validate()?;
-    }
+    let validated = if validate {
+        Some(revision.validate()?)
+    } else {
+        None
+    };
     let checkpoint = serde_json::to_vec(&revision.checkpoint())?;
     let checkpoint_digest = ContentDigest::of(&checkpoint);
     let mut blobs = BTreeMap::from([(checkpoint_digest, checkpoint)]);
@@ -609,6 +691,22 @@ pub fn prepare_candidate(
                     .digest(),
             ),
         });
+    }
+    // A cache is optional: unsupported archive boundaries must not prevent
+    // committing otherwise validated, reconstructible durable source.
+    if let Some(validated) = validated
+        && let Ok(cache) = validated.semantic_cache()
+    {
+        let bytes = serde_json::to_vec(&cache)?;
+        let content_digest = ContentDigest::of(&bytes);
+        manifest.semantic_cache = Some(SemanticCacheReference {
+            format: SEMANTIC_CACHE_FORMAT.into(),
+            content_digest,
+            source_binding: manifest.source_binding()?,
+            semantic_context: ContentDigest(cache.source.context_contract_digest),
+            closure_digest: ContentDigest(cache.source.semantic_closure_digest),
+        });
+        blobs.insert(content_digest, bytes);
     }
     let candidate = CandidateRevision { manifest, blobs };
     candidate.verify()?;

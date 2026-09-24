@@ -1,0 +1,44 @@
+{
+  "format": "agentique-watchdog-summary/1",
+  "commands": [
+    {
+      "name": "phase2-semantic-cache",
+      "command": [
+        "target/platform-workspace/release/deps/durable_platform-c057a6e056c6672a.exe",
+        "--exact",
+        "durable_cache_and_failure_authentication",
+        "--ignored",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "source_commit": "d9dad27d2300cf0e8616ee1c8bd29ec4807e8455",
+      "working_changes_sha256": "342a72681e561ed97683bcb0816c170800841510bb1310c85cb6eb9cb56450e4",
+      "environment_overrides": {
+        "AGENTIQUE_KERML_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "AGENTIQUE_SYSTEMS_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/final-audit-semantic-closure/accepted/canonical.publication.zip"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/phase2-semantic-cache",
+      "exit_code": 101,
+      "command_exit_code": 101,
+      "command_pid": 15836,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 262.641,
+      "peak_rss_bytes": 4920303616,
+      "peak_private_bytes": 5246722048,
+      "samples": 263,
+      "limits": {
+        "wall_seconds": 3600.0,
+        "private_bytes": 10485760000,
+        "sample_seconds": 1.0,
+        "min_free_disk_bytes": 0,
+        "stall_seconds": 0
+      },
+      "output_sha256": "3a871473d6dfe2bffe1ba642541c08459e4938983b9047f1252008ba635a4f8c"
+    }
+  ]
+}

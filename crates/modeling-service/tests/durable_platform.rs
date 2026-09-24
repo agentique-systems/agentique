@@ -52,6 +52,14 @@ fn open(path: &Path, capacity: usize) -> ModelingService {
     eprintln!("cold_repository_open_ms={}", start.elapsed().as_millis());
     ModelingService::new(repository, accepted(), capacity)
 }
+fn report_restore(bound: &BoundRevision, started: Instant) {
+    let class = match bound.load_path() {
+        RevisionLoadPath::DurableSource => "cold_revision_restore_from_source",
+        RevisionLoadPath::AuthenticatedSemanticCache => "restore_from_authenticated_semantic_cache",
+        RevisionLoadPath::ImmutableMemory => "restore_from_immutable_memory",
+    };
+    eprintln!("{class}_ms={}", started.elapsed().as_millis());
+}
 fn add(path: &str, language: SourceLanguage, source: &str) -> ProjectChange {
     ProjectChange::Add {
         path: path.into(),
@@ -153,12 +161,21 @@ fn durable_cache_and_failure_authentication() {
         initial
     );
     assert_eq!(store.list_revisions(project.id).unwrap().len(), 1);
+    let started = Instant::now();
     let receipt = service.commit_prepared(&prepared).unwrap();
+    eprintln!(
+        "durable_revision_commit_ms={}",
+        started.elapsed().as_millis()
+    );
     let manifest = prepared.request().candidate.manifest.clone();
     let cache = manifest
         .semantic_cache
         .clone()
         .expect("validated candidate persisted its cache");
+    eprintln!(
+        "semantic_cache_blob_bytes={}",
+        prepared.request().candidate.blobs[&cache.content_digest].len()
+    );
     let checkpoint = prepared.revision().checkpoint();
     let fingerprint = prepared.revision().semantic_fingerprint().unwrap();
     let started = Instant::now();
@@ -172,6 +189,10 @@ fn durable_cache_and_failure_authentication() {
     assert_eq!(
         cached.load_path(),
         RevisionLoadPath::AuthenticatedSemanticCache
+    );
+    eprintln!(
+        "authenticated_cache_restore_work={}",
+        serde_json::to_string(cached.revision().compilation_work()).unwrap()
     );
     assert_eq!(cached.revision().checkpoint(), checkpoint);
     assert_eq!(
@@ -214,6 +235,10 @@ fn durable_cache_and_failure_authentication() {
         eprintln!(
             "semantic_cache_fallback={scenario} source_restore_ms={}",
             started.elapsed().as_millis()
+        );
+        eprintln!(
+            "source_restore_work={}",
+            serde_json::to_string(restored.revision().compilation_work()).unwrap()
         );
         assert_eq!(
             restored.load_path(),
@@ -443,10 +468,7 @@ fn internal_cold_repository_restore_child() {
             RevisionSelector::Revision(expected.manifest.revision_id),
         )
         .unwrap();
-    eprintln!(
-        "cold_revision_restore_from_source_ms={}",
-        started.elapsed().as_millis()
-    );
+    report_restore(&restored, started);
     assert_eq!(restored.manifest(), &expected.manifest);
     assert_eq!(restored.revision().checkpoint(), expected.checkpoint);
     assert_eq!(
@@ -597,10 +619,7 @@ fn durable_restore_branch_binding_diff_and_cas() {
     let restored = service
         .resolve(project.id, RevisionSelector::Revision(first.revision_id))
         .unwrap();
-    eprintln!(
-        "cold_revision_restore_from_source_ms={}",
-        started.elapsed().as_millis()
-    );
+    report_restore(&restored, started);
     assert_eq!(restored.revision().checkpoint(), checkpoint);
     assert_eq!(
         restored.revision().semantic_fingerprint().unwrap(),
@@ -883,7 +902,12 @@ fn durable_scale_100_mixed_documents_10_revisions_four_readers() {
                 add(
                     &format!("doc{i}.sysml"),
                     SourceLanguage::SysMl,
-                    &format!("package S{i} {{ part def P{i}; }}"),
+                    &if i == 1 {
+                        "package S1 { part def P1 { attribute count : ScalarValues::Integer = 1; } }"
+                            .into()
+                    } else {
+                        format!("package S{i} {{ part def P{i}; }}")
+                    },
                 )
             }
         })
@@ -902,25 +926,86 @@ fn durable_scale_100_mixed_documents_10_revisions_four_readers() {
     let mut last = first.revision_id;
     let mut history = vec![last];
     for index in 2..=10 {
+        let started = Instant::now();
         let bound = service
             .resolve(project.id, RevisionSelector::Revision(last))
             .unwrap();
         let changed = replace(
             &bound,
             "doc1.sysml",
-            "part def P1;",
-            &format!("part def P1; // revision {index}\n"),
+            &format!("= {};", index - 1),
+            &format!("= {index};"),
         );
-        last = apply(
-            &service,
-            &project,
-            branch.id,
-            last,
-            vec![changed],
-            index % 3 != 0 && index != 10,
-        )
-        .revision_id;
+        last = if index == 10 {
+            // Both writers construct against R9. Exactly one candidate becomes
+            // R10; the other remains inspectable without registering a revision.
+            let left = service
+                .prepare_changes(ApplyDocumentChanges {
+                    operation_id: OperationId::new(),
+                    project: project.id,
+                    branch: branch.id,
+                    expected_head: last,
+                    changes: vec![changed.clone()],
+                    validate: false,
+                })
+                .unwrap();
+            let right = service
+                .prepare_changes(ApplyDocumentChanges {
+                    operation_id: OperationId::new(),
+                    project: project.id,
+                    branch: branch.id,
+                    expected_head: last,
+                    changes: vec![changed],
+                    validate: false,
+                })
+                .unwrap();
+            assert_ne!(left.revision().revision(), right.revision().revision());
+            let barrier = std::sync::Barrier::new(2);
+            let results = std::thread::scope(|scope| {
+                let a = scope.spawn(|| {
+                    barrier.wait();
+                    service.commit_prepared(&left)
+                });
+                let b = scope.spawn(|| {
+                    barrier.wait();
+                    service.commit_prepared(&right)
+                });
+                [a.join().unwrap(), b.join().unwrap()]
+            });
+            assert_eq!(results.iter().filter(|result| result.is_ok()).count(), 1);
+            let winner = results
+                .iter()
+                .find_map(|result| result.as_ref().ok())
+                .unwrap();
+            let loser = results
+                .iter()
+                .find_map(|result| result.as_ref().err())
+                .unwrap();
+            assert!(matches!(
+                loser,
+                ServiceError::Repository(RepositoryError::Conflict { expected, actual })
+                    if *expected == last && *actual == winner.revision_id
+            ));
+            assert_eq!(left.revision().documents().count(), 100);
+            assert_eq!(right.revision().documents().count(), 100);
+            eprintln!("durable_scale_concurrent_cas_winners=1 conflicts=1");
+            winner.revision_id
+        } else {
+            apply(
+                &service,
+                &project,
+                branch.id,
+                last,
+                vec![changed],
+                index % 3 != 0,
+            )
+            .revision_id
+        };
         history.push(last);
+        eprintln!(
+            "durable_scale_revision={index} edit_and_commit_ms={}",
+            started.elapsed().as_millis()
+        );
     }
     let bound = service
         .resolve(project.id, RevisionSelector::Revision(last))
@@ -989,6 +1074,26 @@ fn durable_scale_100_mixed_documents_10_revisions_four_readers() {
     assert_eq!(repository.list_revisions(project.id).unwrap().len(), 11);
     assert_eq!(repository.list_branches(project.id).unwrap().len(), 2);
     assert!(repository.check_integrity().unwrap().is_ok());
+    let cache_digests: std::collections::BTreeSet<_> = revisions
+        .iter()
+        .filter_map(|manifest| {
+            manifest
+                .semantic_cache
+                .as_ref()
+                .map(|cache| cache.content_digest)
+        })
+        .collect();
+    let cache_sizes: Vec<_> = cache_digests
+        .iter()
+        .map(|digest| repository.read_blob(*digest).unwrap().len())
+        .collect();
+    eprintln!(
+        "durable_scale_cache_blobs={} cache_total_bytes={} cache_max_bytes={} sqlite_database_bytes={}",
+        cache_sizes.len(),
+        cache_sizes.iter().sum::<usize>(),
+        cache_sizes.iter().max().copied().unwrap_or(0),
+        std::fs::metadata(&database).unwrap().len()
+    );
     eprintln!(
         "durable_scale_documents=100 authored_revisions=10 initial_empty_revisions=1 branches=2 readers=4 unique_source_blobs=109 cold_process_restart=true"
     );

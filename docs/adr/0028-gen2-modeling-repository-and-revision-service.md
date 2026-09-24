@@ -45,8 +45,9 @@ they do not turn untrusted rows into accepted language authority.
 An optional semantic cache must bind source/identity inputs, accepted publications,
 language/descriptor/rule context, closure certificate and cache format. Missing,
 corrupt or incompatible caches are discardable and rebuild from durable source.
-The first implementation may conservatively rebuild when no authenticated cache
-decoder exists. Cache support is reported separately from source restoration.
+The implementation provides an authenticated local-frontier decoder and
+conservatively rebuilds for unknown formats. Cached graphs exclude accepted
+dependency records. Cache support is verified separately from source restoration.
 The in-memory revision cache retains immutable handles keyed by exact revision,
 publication and semantic-context identity; eviction cannot remove durable data.
 
