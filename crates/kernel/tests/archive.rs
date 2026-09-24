@@ -431,6 +431,134 @@ fn corruption_rejects_missing_proofs_missing_dependencies_cycles_and_declared_re
     );
 }
 
+#[test]
+fn bound_local_frontier_roundtrips_nested_protected_dependencies_without_copying_them() {
+    let root = Arc::new(overlay());
+    let middle_base = Snapshot::with_immutable_dependency(root);
+    let middle_id = ElementId::from_u128(7100);
+    let retired = ElementId::from_u128(7101);
+    let mut middle_edit = middle_base.change_set();
+    middle_edit.create(middle_id, PART_DEF, authored());
+    middle_edit.set(
+        middle_id,
+        NAME,
+        text("protected middle publication"),
+        authored(),
+    );
+    middle_edit.create(retired, PART_DEF, authored());
+    let middle = middle_base.apply(&middle_edit).unwrap();
+    let mut retire = middle.change_set();
+    retire.remove(retired);
+    let dependency = Arc::new(
+        DerivationBuilder::new(middle.apply(&retire).unwrap())
+            .build()
+            .unwrap(),
+    );
+
+    let base = Snapshot::with_immutable_dependency(dependency.clone());
+    let local = ElementId::from_u128(7200);
+    let mut edit = base.change_set();
+    edit.create(local, PART_DEF, authored());
+    edit.set(local, NAME, text("local authored cache"), authored());
+    let declared = base.apply(&edit).unwrap();
+    let mut builder = DerivationBuilder::new(declared.clone());
+    let generated = DerivationKey {
+        subject: local,
+        output: OutputKey::from_u128(17),
+        rule: RuleId::from_u128(80),
+    };
+    let explanation = Explanation {
+        rule: generated.rule,
+        dependencies: BTreeSet::from([Dependency::Declared(FactKey::Element(local))]),
+    };
+    builder.element(
+        generated,
+        PART_DEF,
+        [(NAME, text("local effective cache"))],
+        explanation.dependencies.clone(),
+    );
+    builder.searches_shared(
+        FactKey::Element(generated.element_id()),
+        Arc::new(BTreeSet::from([StructuralSearch::Element(middle_id)])),
+    );
+    let original = builder.build().unwrap();
+    assert!(
+        write_publication_frontier(&original, Vec::new()).is_err(),
+        "historical root dependency boundary stays intact"
+    );
+    let identity = [23; 32];
+    let mut bytes = Vec::new();
+    write_bound_frontier(&original, identity, &mut bytes).unwrap();
+    let entries: Vec<serde_json::Value> = String::from_utf8(bytes.clone())
+        .unwrap()
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+    assert_eq!(
+        entries[0]["DependentHeader"]["format"],
+        "agq-kernel-bound-publication-frontier/1"
+    );
+    assert_eq!(
+        entries[1]["Snapshot"]["used_ids"].as_array().unwrap(),
+        &[serde_json::to_value(local).unwrap()]
+    );
+    assert!(
+        entries[1]["Snapshot"]["used_links"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+    let record_ids: BTreeSet<_> = entries
+        .iter()
+        .filter_map(|entry| entry.get("Record"))
+        .map(|record| serde_json::from_value::<ElementId>(record["id"].clone()).unwrap())
+        .collect();
+    assert_eq!(record_ids, BTreeSet::from([local, generated.element_id()]));
+    let restored = read_bound_frontier_on(Cursor::new(&bytes), declared.clone(), identity).unwrap();
+    assert!(Arc::ptr_eq(
+        restored.declared().immutable_dependency().unwrap(),
+        &dependency
+    ));
+    assert!(restored.model().elements().eq(original.model().elements()));
+    assert!(
+        restored
+            .model()
+            .association_occurrences()
+            .eq(original.model().association_occurrences())
+    );
+    assert!(
+        restored
+            .model()
+            .computation_searches()
+            .eq(original.model().computation_searches())
+    );
+    assert_eq!(
+        restored.explain(FactKey::Element(generated.element_id())),
+        Some(&explanation)
+    );
+    let mut forbidden = restored.declared().change_set();
+    forbidden.create(retired, PART_DEF, authored());
+    assert!(
+        restored.declared().apply(&forbidden).is_err(),
+        "external retired identities stay protected without serialization"
+    );
+    assert!(read_bound_frontier_on(Cursor::new(&bytes), declared.clone(), [24; 32]).is_err());
+    assert!(read_publication_frontier_on(Cursor::new(&bytes), declared.clone()).is_err());
+    let mut changed = declared.change_set();
+    changed.set(local, NAME, text("different source"), authored());
+    assert!(
+        read_bound_frontier_on(
+            Cursor::new(&bytes),
+            declared.apply(&changed).unwrap(),
+            identity
+        )
+        .is_err()
+    );
+    let mut rewritten = Vec::new();
+    write_bound_frontier(&restored, identity, &mut rewritten).unwrap();
+    assert_eq!(bytes, rewritten);
+}
+
 const ASSOCIATION: AssociationId = AssociationId::from_u128(400);
 const LEFT: PropertyId = PropertyId::from_u128(401);
 const RIGHT: PropertyId = PropertyId::from_u128(402);

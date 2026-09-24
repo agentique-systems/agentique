@@ -494,6 +494,10 @@ pub(crate) fn write_source_frontier(
             "missing source overlay",
         ))?;
     let mut bytes = Vec::new();
-    agq_kernel::archive::write_publication_frontier(&effective.overlay, &mut bytes)?;
+    agq_kernel::archive::write_bound_frontier(
+        &effective.overlay,
+        crate::SourceSemanticCache::dependency_identity(&effective.dependency.publication),
+        &mut bytes,
+    )?;
     Ok(bytes)
 }

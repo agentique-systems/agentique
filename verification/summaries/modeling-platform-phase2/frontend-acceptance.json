@@ -84,6 +84,30 @@
       "tests_passed": 1,
       "edit_cases_passed": 7,
       "output": "All seven exact canonical graph/query/provenance/diagnostic/closure comparisons passed."
+    },
+    {
+      "command": "cargo test --release --config profile.release.lto=false --offline -p agq-kernel --test archive -j 1 -- --nocapture",
+      "exit_code": 1,
+      "output": "Initial new test fixture used ChangeSet::delete and supplied Explanation instead of dependency set; both test-only API uses corrected."
+    },
+    {
+      "command": "cargo test --release --config profile.release.lto=false --offline -p agq-kernel --test archive -j 1 -- --nocapture",
+      "exit_code": 0,
+      "compile_seconds": 25.5,
+      "test_duration_seconds": 0.01,
+      "tests_passed": 13,
+      "output": "All historical archive tests and the new bound local frontier nested-dependency test passed."
+    },
+    {
+      "command": "cargo check --offline -p agq-modeling-workspace --features verification --tests -j 1",
+      "exit_code": 0,
+      "duration_seconds": 12.77,
+      "output": "New kernel bound-frontier source-cache writer/reader and workspace fixtures typechecked."
+    },
+    {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0,
+      "output": "Passed after bound-frontier fix."
     }
   ],
   "incremental_semantic_oracle": {
@@ -290,7 +314,16 @@
     "implementation_commit": "fcad622",
     "typecheck": "passed",
     "runtime": "delegated to integrated modeling-service durable_cache_and_failure_authentication gate; no frontend runtime acceptance claim",
-    "contract": "Disposable local effective graph bound to exact source checkpoint, language/descriptor/producer/context/closure identities, with fresh producer and effective audits. Accepted standard graphs are excluded. Restores Working; service authenticates receipts and validation separately."
+    "contract": "Disposable local effective graph bound to exact source checkpoint, language/descriptor/producer/context/closure identities, with fresh producer and effective audits. Accepted standard graphs are excluded. Restores Working; service authenticates receipts and validation separately.",
+    "archive_boundary_fix": {
+      "format": "agq-kernel-bound-publication-frontier/1",
+      "reason": "Integrated export exposed that historical frontier dependency hashing requires a root archive and correctly refuses nested protected Systems/KerML graphs.",
+      "binding": "Domain-separated exact accepted KerML semantic digest and SysML publication digest; kernel header uses its own bound-frontier dependency domain.",
+      "storage": "Only local records, effective evidence and local reservations. Protected dependency records and reservation sets remain external and shared.",
+      "compatibility": "Historical root/dependent/frontier encodings are unchanged.",
+      "focused_tests": "13 kernel archive tests passed, including nested protected dependencies, exact source declarations, wrong dependency identity, local-only record/reservation bytes, preserved retired dependency IDs and old-format separation.",
+      "runtime": "Integrated accepted service cache gate must rerun; no accepted publications rebuilt."
+    }
   },
   "reporting_followups": {
     "measured_work_counters": "bba840b",

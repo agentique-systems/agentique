@@ -77,6 +77,13 @@ impl SourceCompilation {
 }
 
 impl SourceSemanticCache {
+    pub(crate) fn dependency_identity(publication: &CanonicalSysmlSystemsLibrary) -> [u8; 32] {
+        let mut hash = Sha256::new();
+        hash.update(b"agq-authored-cache-publications/1\0");
+        hash.update(publication.accepted_kerml().semantic_digest());
+        hash.update(publication.publication_digest());
+        hash.finalize().into()
+    }
     pub(crate) fn restore_frontier(
         &self,
         declared: Snapshot,
@@ -102,9 +109,10 @@ impl SourceSemanticCache {
         // The existing kernel reader compares exact declarations, source origins,
         // ordered values and retired reservations against this source-derived input.
         // Decoded standard records cannot replace the protected dependency.
-        let overlay = agq_kernel::archive::read_publication_frontier_on(
+        let overlay = agq_kernel::archive::read_bound_frontier_on(
             std::io::Cursor::new(&self.kernel_frontier),
             declared,
+            Self::dependency_identity(&dependency.publication),
         )
         .map_err(|error| LibraryLoadError::Interpretation(error.to_string()))?;
         let context = dependency
