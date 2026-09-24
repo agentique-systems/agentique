@@ -290,6 +290,26 @@ fork regression and successful self-model gate establish compatibility for the
 implementation freshness update. Scale and remaining acceptance executions are
 recorded separately below when complete.
 
+The first validated-scale execution exits 101 after three 100-document revisions
+successfully validate. Its exact-one-port assertion is incorrect: the returned
+additional identity `7adae769-a6bb-5eb2-a1fb-2fdda0a6fdb2` is the accepted
+`Parts::Part::ownedPorts` anchor. The pinned Systems KPAR declares this abstract
+PortUsage, and `effective_ports` promises the full inherited PortUsage population.
+The authored `bus` subsets that feature; it does not redefine or suppress it.
+The fixture must require the two exact original identities, rather than changing
+the query to discard a valid inherited standard member. This failed 677.42-second
+run remains recorded and is not counted as scale acceptance.
+
+The corrected scale gate passes in 1,227.48 seconds: five Validated revisions,
+each with 50 KerML and 50 SysML documents, and four synchronized readers making
+two passes over all retained revisions. Both original port identities, source
+provenance, subsetting without redefinition, original owners and inherited
+record identities pass. Physical dependency tables remain shared, copied
+dependency entries are zero, and no accepted producer subject is replayed.
+The malformed-typing case also passes on the forked evaluator in 308.84 seconds.
+The [workspace runtime record](workspace-runtime-acceptance.md) distinguishes
+these measured N1/N2 results from the five remaining phase-1 tests still running.
+
 [commands.json](commands.json),
 [projection-verification.json](projection-verification.json), and the
 [enumeration command ledger](../enumeration-closure/commands.json) record actual
