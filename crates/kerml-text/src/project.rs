@@ -416,7 +416,7 @@ impl SourceProject {
             None,
         )
     }
-    /// Enable Operational v2 authored semantics over exact accepted KerML and
+    /// Enable the accepted Systems interpretation over its exact KerML and
     /// Systems publications. Each revision closes its local combined producers;
     /// immutable standard graphs and their accepted bindings are shared.
     pub fn with_accepted_sysml_standard_libraries(
