@@ -35,7 +35,8 @@ KERML11-4 owning-Namespace and KERML11-3 cross-multiplicity interpretations.
 Published through v8 retain their semantics. Accepted canonical publication
 permits advancing the operational default to v9. All 31 accepted bindings and
 actual two-project authored integration have passed. The substrate is complete;
-SysML textual and semantic foundation work has begun. See
+the SysML Systems publication now also passes its strict acceptance contract,
+as described below. See
 [ADR 0023](adr/0023-operational-multiplicity-context-v9.md) and the
 [v9 evidence](../verification/summaries/kerml-v9-publication/README.md).
 See the historical
@@ -113,11 +114,13 @@ syntax, unresolved references and unimplemented semantic rules remain explicit.
 The SysML dialect extends the existing lossless production arena in
 `agq-kerml-syntax`; `agq-kerml-text` uses reusable Definition/Usage family contracts
 and the existing kernel construction machinery. All 21 pinned Systems Library
-documents parse under explicit Operational v2 with zero recovery and unchanged
+documents parse under explicit Operational v3 with zero recovery and unchanged
 source bytes. The separately selectable Published grammar retains 13 complete
 parses and its eight exact failures. All 21 documents support declared canonical
 construction, producing 7,591 elements and 1,327 source reference assertions;
-those counts do not establish endpoint or semantic completeness.
+the independent publication audit now establishes all 1,327 endpoints Complete.
+Operational v3 retains the grammar used by v1/v2; its additional authority decision
+concerns the exact ConnectionUsage definition-domain conflict.
 
 `agq-sysml-semantics` has no parser dependency. Its 13-field dependency contract
 binds the accepted KerML Operational v9 publication, profiles, descriptor graphs,
@@ -131,16 +134,27 @@ subsetting, redefinition and names reuse KerML queries. Attribute/Item/Part
 projections and structural Port/Connector projections retain their evidence.
 Current-graph answers do not certify unfinished SysML producer closure.
 
-No Systems publication is accepted. The final monolithic run reached Complete
-producer closure and saved a converged frontier. Its authenticated read-only
-finalizer subsequently completed all 1,327 mandatory references, but rejected
-the effective SysML population audit with 674 findings. The retained graph lacks
-the enumeration-owner typing needed to discharge its structural variation
-obligations. No producer was replayed and no accepted artifacts were issued; see
-the [finalization evidence](../verification/summaries/systems-finalization/README.md).
-Operational v2 records the three bounded canonical target
-corrections while Published and Operational v1 remain reproducible.
-The immediate acceptance path is the monolithic dependency-driven scheduler and
+The canonical Systems Library is accepted under SysML Operational v3. A fresh
+monolithic closure completed 27,177 producer pairs and 452,172 semantic requirements.
+The authenticated direct finalizer then passed every gate, including all 1,327
+mandatory references and the strict effective audit over 13,644 local subjects,
+with zero findings. It issued 69 accepted SysML bindings and the cache, receipt
+and report through atomic artifact promotion, with no producer replay. See the
+[semantic closure and publication evidence](../verification/summaries/final-audit-semantic-closure/README.md).
+The independently checked artifact bundle now backs the accepted catalogue and
+`SysmlBaselineProfile::OPERATIONAL` selects v3. Explicit Published selection and
+the Published profile enum default remain available.
+
+The earlier v2 finalizer correctly rejected 674 weighted findings, 238 distinct
+diagnostics and 50 subjects. That [historical rejection](../verification/summaries/systems-finalization/README.md)
+remains evidence; its obsolete checkpoint was not reused after enumeration
+construction and query semantics changed. Enumeration defaults and owner typing,
+typed subset projections, transitive inherited-end suppression and proven cyclic
+collections are ordinary semantic implementation. Only AGQ-SYSML20-005, the
+bounded ConnectionUsage/Association conflict, required Operational v3. Published,
+v1 and v2 remain reproducible, and KerML Operational v9 remains frozen.
+
+The acceptance path remains the monolithic dependency-driven scheduler and
 its existing Structural, StableProperties and ContextualBindings strata.
 Incremental certificate input reuse retains the complete causal/requirement
 fixed point and its full rebuild oracle. An authenticated frontier checkpoint
@@ -164,10 +178,12 @@ the historical [language stability bridge evidence](../verification/summaries/la
 and the historical
 [Phase 1 foundation evidence](../verification/summaries/sysml-semantic-foundation/README.md).
 
-[ADR 0026](adr/0026-language-foundation-stability-contract.md) remains proposed
-until accepted Systems restoration, Agentique's self-model and the effective
-SysML API gate pass. Its [conditional adoption review](../verification/summaries/final-language-acceptance/stability-adoption-review.md)
-does not declare readiness. Once those measured gates pass, only the in-memory
+[ADR 0026](adr/0026-language-foundation-stability-contract.md) still requires its
+separate adoption decision after accepted Systems integration, Agentique's
+self-model and the effective SysML API gate pass. Systems publication alone does
+not declare language stability or completion of a modeling workspace. Its
+[conditional adoption review](../verification/summaries/final-language-acceptance/stability-adoption-review.md)
+retains those obligations. Once those measured gates pass, only the in-memory
 modeling workspace is authorized. Its future [footprint invalidation roadmap](modeling-workspace-phase1-design.md#future-semantic-recomputation-after-an-authored-edit)
 reuses compositional research without depending on component sealing.
 

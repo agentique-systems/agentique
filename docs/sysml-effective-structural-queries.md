@@ -27,8 +27,8 @@ and binds `TransitionAction::acceptedMessage` to `accepter.acceptedMessage`.
 Find that feature through the closed `effective_usages` population and the shared
 KerML member lookup (`queries.kerml().lookup_path`). It is not the payload parameter
 or a new AcceptActionUsage metamodel property. The permanent regression keeps
-these IDs separate; the accepted-library harness must prove the actual library
-path after publication. Payload/receiver argument expression derivations and
+these IDs separate; the accepted-library integration gate must independently prove
+the actual library path. Payload/receiver argument expression derivations and
 runtime message values are not claimed by these structural projections.
 
 Effective answers require scheduler-issued closure evidence for the exact
@@ -51,8 +51,10 @@ interpretation retains plain Association typing on ConnectionUsage in the broad
 Usage population while excluding it from the narrower Class projection. This
 bounded exception is documented in the
 [Connection authority review](../verification/summaries/final-audit-semantic-closure/connection-authority.md).
-Earlier profiles retain their own interpretation; v3 is not an accepted Systems
-publication merely because these query APIs are available.
+Earlier profiles retain their own interpretation. The v3 Systems publication has
+now passed strict finalization; API availability alone was never its acceptance
+evidence. The additional authority interpretation is AGQ-SYSML20-005, independently
+of the ordinary enumeration, naming and inheritance implementation corrections.
 
 EnumerationDefinition construction records its normative variation and abstract
 values. The generic owning-variation rule produces a canonical FeatureTyping for
@@ -84,5 +86,11 @@ Focused tests cover all 13 usage families, ordered connector/interface ends,
 typing domains, membership roles, inherited identity, negative closure evidence
 and immutable revision changes. Actual combined-scheduler Actions fixtures prove
 that supported effective answers become Complete with a compatible certificate,
-while an unsupported variation remains Incomplete. Accepted Systems and authored
-self-model integration remain separate readiness gates.
+while an unsupported variation remains Incomplete. The fresh full Systems graph
+then passed the unchanged strict effective publication audit with zero findings
+over 13,644 local subjects, after complete producer closure and all 1,327 mandatory
+references. See the [publication evidence](../verification/summaries/final-audit-semantic-closure/README.md).
+The earlier 674 weighted findings, 238 distinct diagnostics and 50 subjects remain
+in the [historical rejection](../verification/summaries/systems-finalization/README.md).
+Accepted-dependency authored self-model and effective-core integration remain
+separate readiness gates; this result does not claim their completion.

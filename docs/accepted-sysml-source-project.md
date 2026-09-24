@@ -2,8 +2,15 @@
 
 `SourceProject::with_accepted_sysml_standard_libraries` consumes an
 `Arc<CanonicalSysmlSystemsLibrary>`. The facade retains its accepted KerML
-publication. This additive language-consumer entry point selects Operational v2
-explicitly; existing source constructors retain their earlier behavior.
+publication. The standard dependency carries its exact accepted profile and query
+contract; profile compatibility is checked independently from graph restoration.
+The newly accepted Systems publication uses SysML Operational v3 and
+`agq-sysml-query/6`, with the unchanged accepted KerML Operational v9 dependency.
+Its receipt and bindings are in the accepted catalogue after independent exported
+artifact verification; the operational alias advances to v3 only after acceptance.
+Its only new authority interpretation is AGQ-SYSML20-005 for the bounded
+ConnectionUsage definition-domain conflict. Existing source constructors retain
+their separately defined contracts.
 
 Each successful source operation records immutable document syntax revisions,
 the canonical declared snapshot, a separate derived semantic overlay, mandatory
@@ -34,6 +41,11 @@ source-recovery contract. Producer incompleteness and diagnostics remain visible
 effective query results retain their own pending capability findings. A complete
 source slice does not mean full SysML conformance or executable semantics.
 
-The constructor alone establishes no acceptance of the Agentique model. The
-separate exact-cache acceptance fixture must parse, close, and query that model
-against an actually accepted Systems publication before the readiness gate passes.
+The full Systems publication has passed strict finalization: 1,327/1,327 mandatory
+references Complete, 69 accepted SysML bindings and zero effective findings, with
+atomic artifact issuance and no producer replay. See the
+[publication evidence](../verification/summaries/final-audit-semantic-closure/README.md).
+The constructor alone establishes no acceptance of the Agentique model. Its
+separate exact-cache fixture must still parse, close and query that model against
+the accepted dependency before the language-readiness gate passes. This document
+does not claim ADR 0026 adoption or completion of a production modeling workspace.

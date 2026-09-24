@@ -95,21 +95,30 @@ and failed or incomplete observations. SysML projections reuse that evidence
 without copying inherited usages. Direct and current-graph queries remain
 distinct from effective queries with unfinished producer obligations.
 
-Operational v2 (reusing the frozen Operational v1 grammar) parses all 21 exact Systems sources without recovery, and generic
+Operational v3 (reusing the frozen Operational v1 grammar) parses all 21 exact Systems sources without recovery, and generic
 lowering constructs 7,591 declared elements with 1,327 reference assertions while
 retaining StandardLibrary source provenance. Published grammar behavior remains
 13 complete parses and eight retained failures. The public Systems facade gates
 identity, provenance, bindings, mandatory references, capabilities and producer
-closure before acceptance. The final monolithic scheduler reached Complete with
-26,532 closed producer pairs and 452,052 closed requirements. An authenticated
-read-only finalizer restored that exact frontier without producer replay and
-completed all 1,327 mandatory references. Its effective SysML population audit
-rejected acceptance with 674 findings, including missing enumeration-owner typing.
-No accepted artifacts were issued. The three bounded authority decisions remain
-recorded in the immutable Operational v2 correction manifest.
-Neither declared construction nor context attachment
-certifies a Systems publication. See the
-[finalization evidence](../verification/summaries/systems-finalization/README.md).
+closure before acceptance. The fresh monolithic scheduler reached Complete with
+27,177 closed producer pairs and 452,172 closed requirements. The authenticated
+direct finalizer restored that exact frontier without producer replay, completed
+all 1,327 mandatory references, and passed the effective SysML audit over 13,644
+local subjects with zero findings. The accepted facade, 69 SysML bindings, cache,
+receipt and report were issued through the existing atomic artifact path. See the
+[publication evidence](../verification/summaries/final-audit-semantic-closure/README.md).
+
+The earlier [v2 finalization rejection](../verification/summaries/systems-finalization/README.md)
+remains historical evidence: its 674 weighted findings were not waived and its
+obsolete checkpoint was not reused. Query contract `agq-sysml-query/6` retains
+canonical enumeration typing, explicit literal naming, formal typed projections,
+transitive inherited suppression and finite proofs for cyclic structural results.
+Empty cyclic returns expose their complete population evidence. Incomplete sources
+and ambiguous order remain Incomplete. The v2 correction manifest is unchanged;
+v3 adds only AGQ-SYSML20-005 for the exact ConnectionUsage definition-domain conflict.
+Neither declared construction nor context attachment certifies a Systems publication,
+and Systems publication does not itself adopt ADR 0026 or establish authored
+self-model and modeling-workspace readiness.
 
 The KerML `CanonicalPublicationBuilder` starts from declared producer subjects
 under Operational v9 by default, with explicit historical profile selection.
@@ -464,10 +473,13 @@ milestones; their historical limitations are not the current capability boundary
 The preceding bounded milestone left association storage, numeric domains,
 constraints, imports, inherited name resolution, multi-document projects and
 library ingestion open. Later structural and canonical-publication milestones
-supersede those limits. The current SysML foundation composes the accepted KerML
-publication and shared textual frontend; its remaining reference, producer and
-authority gates are recorded in the
-[language stability bridge evidence](../verification/summaries/language-stability-bridge/README.md).
+supersede those limits. The current SysML foundation composes accepted KerML v9
+and Systems v3 publications through the shared textual frontend. The
+[current publication evidence](../verification/summaries/final-audit-semantic-closure/README.md)
+supersedes the publication blockers in the historical
+[language stability bridge](../verification/summaries/language-stability-bridge/README.md).
+Accepted-dependency self-model and effective API integration remain distinct
+language-readiness obligations.
 Application migration, persistence, API and execution remain separate future work.
 
 
