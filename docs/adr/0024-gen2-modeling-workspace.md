@@ -2,8 +2,9 @@
 
 Status: proposed pending workspace runtime acceptance. The implementation is
 integrated after the [language-foundation gate](../../verification/summaries/final-language-acceptance/semantic-closure-readiness.md)
-passed and ADR 0026 was adopted. Integration does not establish completion of
-the workspace's own acceptance suite.
+passed and ADR 0026 was adopted. Eleven of twelve accepted-cache workspace tests
+have passed, including the required self-model and validated-scale gates. The
+last recovery-scale test and final integration decision remain pending.
 
 ## Context and reuse audit
 
@@ -37,8 +38,9 @@ design and the strict frontend's original limitations.
 
 The integrated `agq-modeling-workspace` follows the accepted KerML v9 and Systems
 v3 publications and the passing effective authored language vertical. Keep
-`agq-workspace` operational and unchanged. Actual workspace runtime acceptance
-remains pending at reviewed source `5bdbc60`.
+`agq-workspace` operational and unchanged. At the `108de93` evidence snapshot,
+only the recovery-scale runtime test remains unresolved; this ADR stays proposed
+until that result and final integration review.
 The additive name makes the generation boundary visible to consumers.
 
 The new crate depends inward on the kernel, textual frontend and KerML/SysML
@@ -146,5 +148,10 @@ authored recomputation. ADR 0027 component sealing is not a prerequisite.
 The language-foundation prerequisite passed before integration. Kernel invariants
 and exact accepted-cache identity restoration on the shared-storage representation
 have also passed; see the [current command ledger](../../verification/summaries/final-audit-semantic-closure/commands.json).
-Workspace self-model, Working/Validated and scale runtime acceptance remain
-separate pending gates. ADR adoption awaits those results.
+The [runtime record](../../verification/summaries/final-audit-semantic-closure/workspace-runtime-acceptance.md)
+now establishes the real workspace self-model, five Working-state tests, four
+edit/recovery lifecycle tests and five Validated revisions with 100 mixed
+documents each and four parallel readers. The malformed-typing case also passed
+on the forked evaluator. The separate five-revision recovery-scale test, whose
+fourth revision is Working with 99 documents, remains pending. ADR adoption
+awaits that final outcome and integration review.

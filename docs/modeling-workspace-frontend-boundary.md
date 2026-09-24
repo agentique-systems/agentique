@@ -1,7 +1,8 @@
 # Working source revisions: frontend boundary
 
-Status: additive frontend and workspace implementation integrated at reviewed
-source `5bdbc60`; workspace runtime acceptance remains pending. The
+Status at evidence snapshot `108de93`: additive frontend and workspace integrated;
+11 of 12 accepted-cache runtime tests passed. The last recovery-scale test
+and full workspace acceptance remain pending; ADR 0024 is proposed. The
 [language foundation](../verification/summaries/final-language-acceptance/semantic-closure-readiness.md)
 passed and ADR 0026 is adopted. The sections below retain their historical design
 and source baselines; the current implementation is summarized first.
@@ -34,15 +35,20 @@ Kernel `DeclaredConstructionHistory` distinguishes temporary omission from
 explicit deletion. Immutable base tables share accepted graph, index, proof and
 search storage with local deltas and project-local inverse projections. Kernel
 invariants and exact trusted restoration of the issued cache have passed on this
-representation; actual workspace revision sharing, dogfooding, Working/Validated
-and scale tests remain pending. The
-[command ledger](../verification/summaries/final-audit-semantic-closure/commands.json)
-records prerequisites separately from those runtime results.
+representation. The workspace self-model and five Working-state tests passed,
+including revision immutability, physical standard sharing and malformed-typing
+rejection followed by repair. That negative typing test also passed on the
+forked evaluator. Four phase-1 edit/recovery lifecycle tests passed separately.
+The [runtime record](../verification/summaries/final-audit-semantic-closure/workspace-runtime-acceptance.md)
+and [command ledger](../verification/summaries/final-audit-semantic-closure/commands.json)
+separate those results from prerequisite and failed commands.
 
-The current suite has 12 prepared acceptance tests. In addition to the original
-five-revision recovery sequence, which has a 99-document Working fourth revision,
-a separate fixture requires five Validated revisions with 100 mixed documents
-each and four parallel readers. Neither fixture is reported as passed here.
+The validated-scale fixture passed: five Validated revisions each retain 100
+mixed documents, with four synchronized readers, immutable old answers and
+physically shared accepted standards. The original recovery-scale sequence,
+which has a 99-document Working fourth revision, remains pending after its
+allocation-failed run. Thus 11 of the 12 unique accepted-cache tests have passed;
+the successful validated-scale fixture does not substitute for recovery at scale.
 
 ## Historical reuse audit and design requirements
 
@@ -361,8 +367,9 @@ building standards or substituting `SourceProject` for the missing workspace.
 ## Shared dependency storage review
 
 This section preserves the pre-integration observations at their exact baseline.
-The current shared-base implementation and pending workspace sharing gate are
-described above; the recorded copies below are not assertions about `5bdbc60`.
+The current shared-base implementation and passed workspace sharing observations
+are described above; the recorded copies below are not current implementation
+claims. The independent recovery-scale result remains pending.
 
 Read-only inspection at `b49afe5`; no accepted cache was loaded and no scaling
 result is claimed. The existing code shares canonical record/proof payloads,

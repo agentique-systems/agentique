@@ -1,12 +1,14 @@
 # In-memory modeling workspace phase 1
 
-Status: production implementation integrated at reviewed source `5bdbc60`;
-workspace runtime acceptance remains pending. The
+Status at evidence snapshot `108de93`: production implementation integrated;
+11 of 12 accepted-cache workspace tests passed. The last recovery-scale test
+and full workspace acceptance remain pending; ADR 0024 is proposed. The
 [language-readiness gate](../verification/summaries/final-language-acceptance/semantic-closure-readiness.md)
 passed and [ADR 0026](adr/0026-language-foundation-stability-contract.md) is adopted.
 Kernel invariants and exact accepted-cache restoration on the shared-storage
-representation have passed. Current results belong in the
-[milestone evidence](../verification/summaries/final-audit-semantic-closure/README.md);
+representation have passed. The self-model, Working-state, four edit/recovery
+lifecycle and five-Validated-revision scale results are measured in the
+[runtime record](../verification/summaries/final-audit-semantic-closure/workspace-runtime-acceptance.md);
 the [earlier Phase 1 summary](../verification/summaries/modeling-workspace-phase1/README.md)
 remains historical preparation evidence.
 [ADR 0024](adr/0024-gen2-modeling-workspace.md) selects the additive
@@ -33,7 +35,7 @@ five-validated-revision scale fixture. Its pieces are:
 | Identity retirement | Kernel `DeclaredConstructionHistory` retains reservations through incomplete construction; explicit source deletion retires identities. |
 | Immutable dependencies | Kernel shared-base maps, indexes, proof/search storage and sparse local projections retain accepted standard allocations. |
 | Revision queries | Borrowed KerML/SysML evaluators, semantic element/source lookup, metadata and native completeness/evidence. |
-| Verification | Twelve prepared accepted-cache tests: six phase-1, one five-document self-model and five Working-state tests. Separate scale cases cover recovery across five retained revisions and 100 documents in each of five Validated revisions with four parallel readers. Runtime completion remains pending. |
+| Verification | Eleven of twelve accepted-cache tests passed: the self-model, five Working-state tests, four phase-1 lifecycle tests and the scale case with 100 documents in each of five Validated revisions and four parallel readers. The separate recovery-scale case remains pending. |
 
 The ordinary API offers `add_document`, explicit `add_kerml`/`add_sysml`,
 `edit_document`, `remove_document` and atomic batches of `ProjectChange`. A stale
@@ -43,8 +45,8 @@ authentication is performed by the language facade before workspace construction
 
 The following sections preserve the original design and review rationale. Their
 statements about unimplemented storage/frontend seams describe the pre-integration
-baseline, not the integrated implementation above. Concrete workspace acceptance remains
-unproven until the recorded tests pass against real accepted dependencies. Phase 2
+baseline, not the integrated implementation above. Full workspace acceptance
+awaits the last recovery-scale result and final integration review. Phase 2
 is specified separately in the [roadmap](modeling-platform-phase2-roadmap.md).
 
 ## Ownership and identity
@@ -150,7 +152,7 @@ query-cache interior behavior need not become part of the public workspace
 contract. Only head/history mutation requires exclusive access. This phase has
 no async executor, HTTP transport, database, event log or durable-commit promise.
 
-## Acceptance contract and pending runtime tests
+## Acceptance contract and runtime evidence
 
 | Test | Concrete stimulus | Independent observable assertion |
 | --- | --- | --- |
@@ -207,9 +209,11 @@ The historical [storage review](modeling-workspace-frontend-boundary.md#shared-d
 found shared record/proof payloads but full standard map/index replication at its
 recorded source. The integrated kernel now uses immutable shared base tables and
 local storage; kernel invariants and exact accepted-cache identity restoration
-have passed. Physical sharing across the actual workspace's retained revisions
-remains a runtime acceptance obligation. Facade Arc equality alone is insufficient,
-and authored index rebuilding remains an explicit initial limitation. The earlier
+have passed. Workspace self-model, Working-state and validated-scale tests
+observe physical shared standard tables, original record identities, zero copied
+dependency entries and zero accepted producer replay. The recovery-scale test
+remains pending. Facade Arc equality alone is insufficient, and authored index
+rebuilding remains an explicit initial limitation. The earlier
 construction-lifetime analysis and its unmeasured savings remain historical.
 
 ### Minimum shared-storage implementation

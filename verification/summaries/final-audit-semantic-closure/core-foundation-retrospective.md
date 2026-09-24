@@ -1,8 +1,15 @@
 # Core-foundation architectural retrospective
 
-The original review below is retained at its source baseline. The later
+Current disposition at evidence snapshot `108de93`: the effective-audit gap is
+resolved, and 11 of 12 unique workspace runtime tests passed, including required
+self-model dogfooding and validated scale. The last recovery-scale result and
+final architectural acceptance remain pending; ADR 0024 is proposed.
+
+The original review and later
 [integrated correction and Working-state result](#integrated-correction-and-working-state-resolution)
-records which findings and pending checks have since been resolved.
+are preserved at their source baselines. The
+[current runtime reconciliation](#runtime-reconciliation-at-108de93) records which
+additional pending checks have since passed.
 
 Reviewed production source: `0fcc0ff`, after the held workspace and exact accepted
 v3 dependency integration. This is a bounded code and dependency review of the
@@ -223,3 +230,55 @@ repository verification remain pending. In particular, five Validated revisions
 with 100 documents each and four readers are not established by the Working-state
 suite. ADR 0024 is not adopted by this update. Language foundation acceptance and
 adopted ADR 0026 remain established independently.
+
+## Runtime reconciliation at 108de93
+
+The [runtime acceptance record](workspace-runtime-acceptance.md) now establishes
+**11 of 12 unique accepted-cache workspace tests passed**. This update resolves
+the additional pending items below; it does not rewrite the original review or
+the earlier Working-state result as observations made on a later source.
+
+| Architectural boundary | Subsequent measured evidence |
+| --- | --- |
+| Self-model dogfooding and immutable revisions | The actual five-document Agentique workspace self-model validates revision 1, edits it and validates revision 2. Old source and semantic answers, authored identities and shared standard records remain intact. The gate passed in 840.84 seconds test time. |
+| Validated scale and parallel reads | Five Validated revisions each retain 50 KerML and 50 SysML documents. Four synchronized readers make two passes across all five revisions; selected identities, facts and search evidence match the captured baselines. The gate passed in 1,227.48 seconds test time. |
+| Physical standard sharing | The self-model and validated-scale observations retain original accepted table/record identities, zero copied dependency entries and zero accepted producer replay. Authored reconstruction and local copy-on-write remain permitted. |
+| Effective validation and immutable rejection | The malformed AttributeUsage-to-PartDefinition case also passes with the forked evaluator, in 308.84 seconds. Closed producers and Complete references still do not allow invalid effective typing to validate. Repair validates a new context while the old Invalid answer remains unchanged. |
+| Edit lifecycle and identity retirement | Four further phase-1 tests pass: mixed-document edits preserve old revisions and inherited IDs; operational failures publish nothing; recovered/unresolved edits remain Working until repaired; removing and re-adding a path does not resurrect retired identity. |
+
+The four lifecycle tests used the existing accepted dependencies and command:
+
+```text
+cargo test --release --locked --offline -p agq-modeling-workspace --features verification --test phase1 -- --ignored --skip hundred_documents --nocapture --test-threads=1
+```
+
+The command exited **0**, with **4 passed, 0 failed, 0 ignored** in **1,802.72
+seconds test time** and **1,803.44 seconds command time**. The tested source was
+`5c5b09be7ffa00166767a531184353d08d2b4a4b`, with empty working-change SHA-256
+`e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+The command ledger entry is `workspace-phase1-four-edit-gates`; its output is
+`verification/generated/final-audit-semantic-closure/workspace-phase1-four-edit-gates.log`,
+SHA-256 `2b62ce15e1e9eda5444ee0790b74bff0ac01415e971dc5bf8e9067f6b83ac5da`.
+The earlier Working suite, self-model, validated-scale and malformed-typing
+rerun retain their own tested source identities in the runtime record.
+
+The remaining recovery-scale case is distinct: its fourth revision has 99
+documents and remains Working after provider removal, followed by a repaired
+fifth revision and four readers making eight passes. Its original command
+aborted on an allocation failure without a semantic assertion result. The
+streamed-diagnostics rerun is still pending at this snapshot. Neither the
+validated-scale pass nor interim progress establishes this final result.
+
+The observed results support the reviewed parser/model, declared/derived,
+source/semantic identity, immutable revision and shared-standard boundaries.
+The full applicable effective dispatcher remains bound to the exact local
+canonical population and context; no standard finalization gate is weakened.
+No new architectural inversion or requirement to mirror metamodel classes in
+Rust is introduced. Final architectural acceptance and ADR 0024 adoption remain
+pending the last runtime result and integration review.
+
+Scope remains in-memory atomic visibility with authored semantic reconstruction.
+There is no durable repository, Gen1 migration, new KerML acceptance, full
+conformance claim or execution engine. ADR 0026 remains adopted, and ADR 0027
+remains proposed research. This update reads existing evidence only; it runs no
+build, accepted-cache load, producer or runtime test.

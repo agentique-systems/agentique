@@ -456,7 +456,11 @@ constant-time edits or fully incremental semantic closure. The
 [current integration evidence](../verification/summaries/final-audit-semantic-closure/README.md)
 records 139 kernel tests, exact issued-cache identity restoration, five Working
 tests and workspace self-model revisions with physical dependency-sharing
-observations. Scale and final workspace acceptance remain pending.
+observations. The [runtime record](../verification/summaries/final-audit-semantic-closure/workspace-runtime-acceptance.md)
+also establishes four edit/recovery lifecycle tests and five Validated revisions
+with 100 mixed documents each and four parallel readers. Their shared tables,
+zero copied dependency entries and zero accepted producer replay pass. The
+separate recovery-scale test and full workspace acceptance remain pending.
 Deep containment/evidence graphs use iterative cycle detection.
 No arena, global interner, unsafe code, async runtime or interior-mutability scheme
 is required. Snapshot and overlay types are tested as Send + Sync.
