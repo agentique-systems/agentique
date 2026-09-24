@@ -1301,6 +1301,140 @@
       "duration_seconds": 2.56,
       "output": "verification/generated/final-audit-semantic-closure/self-model-diagnostic-format.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "qualified-name-proof-freshness-capture",
+      "command": [
+        "node",
+        "tools/sysml-publication-stale.mjs",
+        "--capture"
+      ],
+      "exit_code": 0,
+      "tool_version": "v22.11.0",
+      "source_commit": "63dd44c8ac59380828ababc94077b6b614470d3f",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "e8fa2c39a819b1a95623a702fe00c1940da0b976e2c1bfc0fd8a8917c03ec535",
+      "duration_seconds": 0.16,
+      "output": "verification/generated/final-audit-semantic-closure/qualified-name-proof-freshness-capture.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "accepted-language-generation-boundary",
+      "command": [
+        "python",
+        "verification/scripts/generation_boundary.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "63dd44c8ac59380828ababc94077b6b614470d3f",
+      "working_changes_sha256": "9ea4c77d66eaf51b83bf590dbc0e960b3cbff4592542a0563ca3b606fa2aa520",
+      "output_sha256": "4b46c49f77531a7a4652e7a79f7004a097d42001186db5c21968bfc8afb2ce13",
+      "duration_seconds": 0.19,
+      "output": "verification/generated/final-audit-semantic-closure/accepted-language-generation-boundary.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "reclaim-inactive-qualified-query-build",
+      "command": [
+        "cargo",
+        "clean",
+        "--target-dir",
+        "C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\target\\qualified-names"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "63dd44c8ac59380828ababc94077b6b614470d3f",
+      "working_changes_sha256": "9ea4c77d66eaf51b83bf590dbc0e960b3cbff4592542a0563ca3b606fa2aa520",
+      "output_sha256": "91425f8aeca59f8960b24b3ba623f476f209a956e656850905e15b5811824bcd",
+      "duration_seconds": 0.23,
+      "output": "verification/generated/final-audit-semantic-closure/reclaim-inactive-qualified-query-build.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "reclaim-obsolete-debug-builds",
+      "command": [
+        "cargo",
+        "clean",
+        "--profile",
+        "dev",
+        "--target-dir",
+        "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "63dd44c8ac59380828ababc94077b6b614470d3f",
+      "working_changes_sha256": "9ea4c77d66eaf51b83bf590dbc0e960b3cbff4592542a0563ca3b606fa2aa520",
+      "output_sha256": "f57732586a7c484c6106a7c85fb8e3fbb9c5d3256c0e652692ce63e50e843178",
+      "duration_seconds": 1.14,
+      "output": "verification/generated/final-audit-semantic-closure/reclaim-obsolete-debug-builds.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "accepted-agentique-self-model-qualified-names",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--lib",
+        "sysml::tests::accepted_self_model::accepted_agentique_self_model_closes_queries_edits_and_matches_programmatic_semantics",
+        "--",
+        "--ignored",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "63dd44c8ac59380828ababc94077b6b614470d3f",
+      "working_changes_sha256": "dc07e7c551cf1a920ceb87c29d9b640d234ba75af31b065c2c8d69b7a78b0d63",
+      "output_sha256": "6790e075a8a8773d023e2369ee9e8a9234331065d388d1ffc263f77f0361de17",
+      "duration_seconds": 941.56,
+      "output": "verification/generated/final-audit-semantic-closure/accepted-agentique-self-model-qualified-names.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace",
+        "CARGO_PROFILE_RELEASE_LTO": "false",
+        "AGENTIQUE_KERML_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "AGENTIQUE_SYSTEMS_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/final-audit-semantic-closure/accepted/canonical.publication.zip"
+      }
+    },
+    {
+      "name": "accepted-self-model-ordinary-fixtures",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--lib",
+        "agentique_",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "63dd44c8ac59380828ababc94077b6b614470d3f",
+      "working_changes_sha256": "9ea4c77d66eaf51b83bf590dbc0e960b3cbff4592542a0563ca3b606fa2aa520",
+      "output_sha256": "c0eacfb21eebe78214e3a9509860158bad4fde79ab12084e81021e3c0dcc4f03",
+      "duration_seconds": 1.2,
+      "output": "verification/generated/final-audit-semantic-closure/accepted-self-model-ordinary-fixtures.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace",
+        "CARGO_PROFILE_RELEASE_LTO": "false"
+      }
     }
   ]
 }

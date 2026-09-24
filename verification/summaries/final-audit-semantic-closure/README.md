@@ -175,12 +175,16 @@ entries, bindings, extra/duplicate entries and truncation.
 ## Platform boundary
 
 The [held workspace review](workspace-integration-review.md) records exact source
-commits and the effective-query validation gap that must be resolved after the
-language gates pass. ADR 0026 remains proposed; ADR 0027 remains proposed research.
-Self-model acceptance and production workspace integration remain gated.
-The prepared occurrence/connection effective API assertions compile; all four
-ordinary self-model tests pass. The accepted-cache test remains ignored until
-publication, as recorded in [accepted-core-preparation.md](accepted-core-preparation.md).
+commits and the effective-query validation gap that must be resolved during
+workspace integration. The accepted self-model gate now passes as recorded below;
+the [language readiness decision](../final-language-acceptance/semantic-closure-readiness.md)
+controls adoption of ADR 0026. ADR 0027 remains proposed research. Workspace
+implementation and scale acceptance remain separate gates.
+Before publication, the prepared occurrence/connection effective API assertions
+compiled and all four ordinary self-model tests passed. The accepted-dependency
+fixture was then intentionally unrun, as recorded in
+[accepted-core-preparation.md](accepted-core-preparation.md). Actual
+post-publication results are recorded above and below.
 
 After publication, the actual accepted self-model gate ran and failed after
 373.30 seconds in the independent programmatic fixture's qualified-name query.
@@ -194,6 +198,33 @@ gated while this authored effective-query defect is corrected and rerun.
 The failed log retains the full original result; subsequent test diagnostics
 report the actual caller, value and diagnostic sets without dumping the complete
 standard proof graph, and add stage progress without changing assertions.
+
+The [qualified-name correction and compatibility review](qualified-name-negative-proof.md)
+now prove exclusion from a Complete, Determinate disjoint sibling-name population,
+with all naming-source, ancestor and searched-owner closure retained by the
+effective API. Existing Complete paths, ambiguous/overlapping cases and target
+name-selection limits remain unchanged. No producer, profile, registry, canonical
+publication identity or finalizer operation changes. Seven focused tests and all
+101 SysML unit tests pass, as do focused Clippy and formatting; the
+[ledger](qualified-name-verification.json) retains the fixture-development
+failures.
+
+The integrated `accepted-agentique-self-model-qualified-names` command exits 0:
+one explicitly requested ignored acceptance test executed, zero failures,
+839.39 seconds test time. All five real Agentique documents and 67 mandatory
+references are Complete. Case roles, View/Metadata, programmatic effective core,
+authored architecture and semantic equivalence pass, followed by three immutable
+revisions, inherited-port redefinition, retained old query results, shared
+accepted standards and parallel borrowed readers. The four ordinary self-model
+fixtures also pass. The generation-boundary audit checks all declared dependency
+kinds across 19 packages and reports no violations. The previous rejection and
+its correction remain recorded above; neither is relabeled as a passing run.
+
+During this gate, Cargo reclaimed inactive agent query-test artifacts and the
+lead's obsolete debug build profile to relieve memory/pagefile disk pressure.
+The active optimized test, accepted artifacts, checkpoints, original authority
+bytes and verification logs were retained. Both cleanup commands and their
+actual outputs are in the command ledger.
 
 ## Verification
 
