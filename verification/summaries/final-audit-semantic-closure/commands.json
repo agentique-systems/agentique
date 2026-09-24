@@ -166,6 +166,231 @@
       "duration_seconds": 2.78,
       "output": "verification/generated/final-audit-semantic-closure/frontend-build.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "generation-boundary",
+      "command": [
+        "python",
+        "verification/scripts/generation_boundary.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "9a481995ae6b17abcc85a9cafa19ff581e48ce00",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "4b46c49f77531a7a4652e7a79f7004a097d42001186db5c21968bfc8afb2ce13",
+      "duration_seconds": 0.22,
+      "output": "verification/generated/final-audit-semantic-closure/generation-boundary.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "kerml-grammar",
+      "command": [
+        "python",
+        "tools/kerml-grammar/generate.py",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "9a481995ae6b17abcc85a9cafa19ff581e48ce00",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "f3a599a056523d9072af76571f2157b7cc271a5afa80cad15b482498f51df7c6",
+      "duration_seconds": 0.3,
+      "output": "verification/generated/final-audit-semantic-closure/kerml-grammar.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "sysml-grammar",
+      "command": [
+        "python",
+        "tools/sysml-grammar/generate.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "9a481995ae6b17abcc85a9cafa19ff581e48ce00",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "29106a270ab4b808a4289843a999b02e9f3950df2ba0954fb1a90611cea9d2b4",
+      "duration_seconds": 0.56,
+      "output": "verification/generated/final-audit-semantic-closure/sysml-grammar.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "standards",
+      "command": [
+        "npm",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "9a481995ae6b17abcc85a9cafa19ff581e48ce00",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "7ef73609c4cba22eb91c9615d1d6a90eb74294909b954ee47b7a6e95d44d20bd",
+      "duration_seconds": 0.62,
+      "output": "verification/generated/final-audit-semantic-closure/standards.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "finalization-cli-guards",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "9a481995ae6b17abcc85a9cafa19ff581e48ce00",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "e6bdadbba05408e352b0371dbda350810e31d230013952b08bd871f010b7dcbb",
+      "duration_seconds": 17.08,
+      "output": "verification/generated/final-audit-semantic-closure/finalization-cli-guards.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace"
+      }
+    },
+    {
+      "name": "cache-identity-guards",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--lib",
+        "sysml::publication::cache::restoration::tests"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "9a481995ae6b17abcc85a9cafa19ff581e48ce00",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "92c00d68a7e4c7cd8dfb297cd6477bfecca49e436f04303ac1b50cbbc59853e6",
+      "duration_seconds": 11.09,
+      "output": "verification/generated/final-audit-semantic-closure/cache-identity-guards.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace"
+      }
+    },
+    {
+      "name": "browser-e2e",
+      "command": [
+        "npm",
+        "run",
+        "test:e2e"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "9a481995ae6b17abcc85a9cafa19ff581e48ce00",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "de67959531dec32dbe9d20001cbe7dc1046669e4490e68fa1526c2d0a72580a6",
+      "duration_seconds": 59.25,
+      "output": "verification/generated/final-audit-semantic-closure/browser-e2e.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace"
+      }
+    },
+    {
+      "name": "metamodel-stale",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "9a481995ae6b17abcc85a9cafa19ff581e48ce00",
+      "working_changes_sha256": "5c4efa1d286a44282074820244f22e8fdd44e61ce09d32baf20dd56f4ab4e815",
+      "output_sha256": "89d5fd7b5455f8d1da66a7102a01335093f5b648fd082543837c51994eb053c9",
+      "duration_seconds": 4.67,
+      "output": "verification/generated/final-audit-semantic-closure/metamodel-stale.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace"
+      }
+    },
+    {
+      "name": "kerml-1.0-runtime",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--check",
+        "--baseline",
+        "kerml-1.0",
+        "--require-runtime"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "9a481995ae6b17abcc85a9cafa19ff581e48ce00",
+      "working_changes_sha256": "5c4efa1d286a44282074820244f22e8fdd44e61ce09d32baf20dd56f4ab4e815",
+      "output_sha256": "7a7d51c104fbaed7597fa6c4795f92dde36011f57da66277b80341b31a9ef124",
+      "duration_seconds": 1.56,
+      "output": "verification/generated/final-audit-semantic-closure/kerml-1.0-runtime.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace"
+      }
+    },
+    {
+      "name": "sysml-2.0-runtime",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--check",
+        "--baseline",
+        "sysml-2.0",
+        "--require-runtime"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "9a481995ae6b17abcc85a9cafa19ff581e48ce00",
+      "working_changes_sha256": "5c4efa1d286a44282074820244f22e8fdd44e61ce09d32baf20dd56f4ab4e815",
+      "output_sha256": "155f325ade1edd4f20ab36f2b0a47471ffe5afcbf8deddb22e1d7bb596223131",
+      "duration_seconds": 3.02,
+      "output": "verification/generated/final-audit-semantic-closure/sysml-2.0-runtime.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace"
+      }
     }
   ]
 }

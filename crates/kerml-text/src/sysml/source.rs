@@ -29,6 +29,22 @@ pub(crate) struct AcceptedSourceDependency {
     mounted: Arc<ProducerClosedDependency>,
 }
 impl AcceptedSourceDependency {
+    pub(crate) fn syntax_profile(&self) -> production::SysmlSyntaxProfile {
+        match self.publication.identity().dependencies.sysml_profile {
+            agq_sysml_semantics::SysmlBaselineProfile::Published => {
+                production::SysmlSyntaxProfile::Published
+            }
+            agq_sysml_semantics::SysmlBaselineProfile::OperationalV1 => {
+                production::SysmlSyntaxProfile::OperationalV1
+            }
+            agq_sysml_semantics::SysmlBaselineProfile::OperationalV2 => {
+                production::SysmlSyntaxProfile::OperationalV2
+            }
+            agq_sysml_semantics::SysmlBaselineProfile::OperationalV3 => {
+                production::SysmlSyntaxProfile::OperationalV3
+            }
+        }
+    }
     pub(crate) fn new(
         publication: Arc<CanonicalSysmlSystemsLibrary>,
     ) -> Result<Arc<Self>, LibraryLoadError> {

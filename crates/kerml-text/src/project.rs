@@ -535,7 +535,7 @@ impl SourceProject {
                         self.production_frontend,
                         self.accepted_sysml
                             .as_ref()
-                            .map(|_| syntax::production::SysmlSyntaxProfile::OperationalV2),
+                            .map(|dependency| dependency.syntax_profile()),
                     )?),
                 );
                 continue;
@@ -566,7 +566,7 @@ impl SourceProject {
                         self.production_frontend,
                         self.accepted_sysml
                             .as_ref()
-                            .map(|_| syntax::production::SysmlSyntaxProfile::OperationalV2),
+                            .map(|dependency| dependency.syntax_profile()),
                     )?;
                     documents.insert(path, Arc::new(next));
                 }
