@@ -18,14 +18,23 @@ The launch instructions and release claims below describe **generation 1**:
 `agq-model`, `agq-syntax`, `agq-semantics` and the integrated workspace, simulation,
 application, server and Console. They have not been migrated to generation 2.
 
-**Generation 2** is the standards-driven language engine under active development:
+**Generation 2** is the standards-driven language foundation:
 `agq-kernel`, `agq-kerml`, `agq-kerml-semantics`, `agq-kerml-syntax`,
-`agq-kerml-text` and the normative metamodel generator. New language work targets
-this architecture, including the planned SysML layer. Its bounded capabilities
-and gaps are tracked separately in [generation-2 status](standards/v2-coverage.json).
+`agq-kerml-text`, `agq-sysml`, `agq-sysml-semantics` and the normative metamodel
+generator. KerML Operational v9 and SysML Systems Operational v3 publications
+are accepted, and the [language-readiness gate](verification/summaries/final-language-acceptance/semantic-closure-readiness.md)
+has passed. New language work targets this architecture. Its bounded capabilities
+and remaining gaps are tracked separately in [generation-2 status](standards/v2-coverage.json).
 See the [dependency diagram](docs/architecture.md) and
 [semantic kernel guide](docs/semantic-kernel.md). Descriptor support, semantic
 queries, text support and execution are separate claims.
+
+The integrated `agq-modeling-workspace` provides in-memory Working/Validated
+revisions over shared accepted standards. Its self-model editing gate and scale
+gate with 100 documents, five Validated revisions and four parallel readers have
+passed. Full workspace runtime acceptance and ADR 0024 adoption remain pending in the
+[runtime record](verification/summaries/final-audit-semantic-closure/workspace-runtime-acceptance.md).
+This does not provide Gen2 persistence, application migration or execution.
 
 Prerequisites: Rust/rustup with the pinned 1.92.0 toolchain, Node 22.11 or newer,
 npm, and a native C/C++ build toolchain for Rust and bundled SQLite. On Windows,
