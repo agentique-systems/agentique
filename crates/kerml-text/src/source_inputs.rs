@@ -537,6 +537,8 @@ pub struct SourceEditFrontier {
     pub syntax_nodes_added: BTreeSet<agq_kernel::SyntaxNodeId>,
     /// Removed syntax identities, including nodes replaced by an edit.
     pub syntax_nodes_removed: BTreeSet<agq_kernel::SyntaxNodeId>,
+    /// Retained syntax identities whose kind, range, content or ordered children changed.
+    pub syntax_nodes_changed: BTreeSet<agq_kernel::SyntaxNodeId>,
     /// New declared canonical facts, excluding producer-generated consequences.
     pub declared_facts_added: BTreeSet<FactKey>,
     /// Removed declared canonical facts.
@@ -569,6 +571,23 @@ impl SourceEditFrontier {
         };
         let old_nodes = previous.map(nodes).unwrap_or_default();
         let new_nodes = nodes(next);
+        let mut syntax_nodes_changed = BTreeSet::new();
+        if let Some(previous) = previous {
+            let old_documents: BTreeMap<_, _> = previous
+                .inputs
+                .documents()
+                .map(|(_, document)| (document.id(), document))
+                .collect();
+            for (_, document) in next.inputs.documents() {
+                if let Some(old) = old_documents.get(&document.id())
+                    && !std::ptr::eq(*old, document)
+                    && let (Some(before), Some(after)) =
+                        (old.production_syntax(), document.production_syntax())
+                {
+                    syntax_nodes_changed.extend(changed_document_syntax(before, after));
+                }
+            }
+        }
         let before_facts = previous.map(declared_facts).unwrap_or_default();
         let after_facts = declared_facts(next);
         Self {
@@ -582,6 +601,7 @@ impl SourceEditFrontier {
                 .collect(),
             syntax_nodes_added: new_nodes.difference(&old_nodes).copied().collect(),
             syntax_nodes_removed: old_nodes.difference(&new_nodes).copied().collect(),
+            syntax_nodes_changed,
             declared_facts_added: after_facts
                 .keys()
                 .filter(|fact| !before_facts.contains_key(fact))
@@ -600,6 +620,44 @@ impl SourceEditFrontier {
         }
     }
 }
+
+/// Exact retained-node comparison without copying or repeatedly scanning nested
+/// source slices. Byte mismatches are indexed once per changed document; each
+/// node compares only its own shape and direct ordered child identities.
+fn changed_document_syntax(
+    before: &syntax::production::Document,
+    after: &syntax::production::Document,
+) -> BTreeSet<agq_kernel::SyntaxNodeId> {
+    let old: BTreeMap<_, _> = before.nodes().map(|node| (node.id(), node)).collect();
+    let changed_bytes: Vec<_> = before
+        .source()
+        .bytes()
+        .zip(after.source().bytes())
+        .enumerate()
+        .filter_map(|(index, (a, b))| (a != b).then_some(index as u64))
+        .collect();
+    after
+        .nodes()
+        .filter_map(|node| {
+            let prior = old.get(&node.id())?;
+            let range = node.range();
+            let different = prior.kind() != node.kind()
+                || prior.range() != range
+                || !prior
+                    .children()
+                    .map(|child| child.id())
+                    .eq(node.children().map(|child| child.id()))
+                || changed_bytes
+                    .get(changed_bytes.partition_point(|index| *index < range.start()))
+                    .is_some_and(|index| *index < range.end());
+            different.then_some(node.id())
+        })
+        .collect()
+}
+
+#[cfg(test)]
+#[path = "source_frontier_tests.rs"]
+mod frontier_tests;
 #[derive(PartialEq, Eq)]
 enum DeclaredFactValue<'a> {
     Element(agq_kernel::MetaclassId, &'a agq_kernel::provenance::Origin),
