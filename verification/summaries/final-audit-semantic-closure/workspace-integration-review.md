@@ -51,6 +51,27 @@ the application result.
 - Replace historical preparation status with actual new command results only
   after accepted-cache execution. Preserve historical failed or held outcomes.
 
+The follow-up read-only review identifies a direct reuse boundary: expose an
+internal `agq-kerml-text` wrapper over `sysml/publication.rs::audit_sysml_population`
+and call it from `SourceInputs::compile` on the revision's own queries and all
+local canonical subjects, including derived local records. Accepted dependency
+records stay excluded. Retain the report and its exact `SysmlSemanticContextId`
+on immutable `SourceCompilation`, map findings to blocking source diagnostics,
+and require a current, finding-free report during workspace validation. This is
+authored-model validation; it must not invoke Systems publication, exact corpus
+counts, binding issuance or artifact transactions.
+
+A targeted negative fixture can declare `part def NotADataType;` followed by
+`attribute broken : NotADataType;`. Require preserved canonical FeatureTyping
+and resolved references, an Invalid effective attribute-definition query with
+the incompatible target retained in its diagnostics, and failed validation.
+If the real frontend closes its producer certificate, assert that explicitly
+to establish that closure alone is insufficient. If an earlier gate rejects it,
+record that fact rather than claiming it isolates the new audit. Repairing the
+definition to `attribute def` should validate a new immutable revision without
+changing the rejected revision or shared standard storage. This fixture is
+prepared guidance, not an executed gate.
+
 ## Architectural assessment
 
 | Principle | Reviewed implementation |
