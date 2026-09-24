@@ -23,6 +23,20 @@ v9, its accepted graph and the original standard/library bytes remain unchanged.
 - Structural cycle and inherited-end fixes require actual effective API evidence;
   static graph projections do not establish query completeness.
 
+The integrated SysML semantic library suite passes all 97 tests. The canonical
+lowering gate passes both enumeration tests, covering the arbitrary Color fixture
+and all seven definitions / 21 literals from the exact library sources. The
+initial focused lowering command used a filter that selected zero tests; its
+successful process exit is not counted as verification. The corrected filter
+ran both tests. The finalizer CLI's six transactional/profile tests also pass.
+
+[Structural evidence](../semantic-closure-structural/README.md) distinguishes the
+real Flow parameter-cycle failures from connection ends, which were already
+Complete. The corrected parameter proof retains the same inherited canonical
+identities and verifies the ordinary ordering/suppression equations. Focused
+certified fixtures exercise the publication APIs; retained-graph probes remain
+diagnostic only and cannot substitute for a fresh certificate.
+
 The deterministic [classifier](../../scripts/classify_systems_final_audit.py)
 reproduces **674 weighted findings, 238 distinct diagnostics, 50 subjects** from
 the retained failed report. Every diagnostic is assigned a root family;
