@@ -318,3 +318,82 @@ commands, exits and tested source identities. Full logs remain in ignored
 are retained and are not counted as successful gates.
 
 Generation-1 release coverage and traceability are separate, unchanged obligations.
+
+## Completed platform launch and final disposition
+
+The final recovery-scale rerun passes: one requested test, zero failures,
+2,346.29 seconds test time. All four readers complete eight passes across all
+five retained revisions, including the 99-document Working revision and its
+100-document repair. The [final runtime gate](workspace-final-runtime-gate.json)
+verifies all 32 reader/pass completions and authenticates the five passing logs
+that establish **12 of 12 unique accepted-cache workspace tests passed**.
+The [runtime record](workspace-runtime-acceptance.md) preserves exact commands,
+tested source identities, output digests and the earlier failed attempts.
+
+The prior allocation failure is resolved by streaming the test's exact Debug
+evidence into SHA-256 plus byte count. The real Working revision produces
+34,631,669,193 diagnostic Debug bytes, streamed in 58.184028 seconds along with
+594,549,739 reference bytes. This corroborates the oversized-String diagnosis;
+the original abort had no stack trace. No diagnostic field, reader comparison,
+production semantic rule or acceptance gate was removed. The original allocation
+failure and incorrect inherited-port fixture expectation remain recorded.
+
+The bounded in-memory `ProjectWorkspace` is accepted and ADR 0024 is adopted.
+N1 uses the five real Agentique self-model documents, validates revision 1,
+edits the model and validates revision 2 without changing old answers. N2 passes
+100 documents (50 KerML, 50 SysML) in each of five Validated revisions with four
+synchronized readers. Actual accepted backing tables remain shared, copied
+authoritative dependency entries are zero, and accepted producers are not replayed.
+The separate recovery-scale success does not relabel its Working revision as
+Validated. Authored reconstruction and expensive validation remain measured costs;
+this phase provides no durable persistence or interactive-performance guarantee.
+
+The [architectural retrospective](core-foundation-retrospective.md) is closed.
+Its one actionable gap was fixed: private Validated construction requires a
+finding-free applicable effective audit over the exact local declared/derived
+population and semantic context, in addition to closure, reference, syntax and
+kernel validity. The invalid-typing/repair fixture proves that closed producers
+alone cannot validate a model. The original parser/model, kernel, first-class
+relationship, declared/derived, immutable revision, source/semantic identity,
+provenance, inheritance-without-copies, negative-evidence, shared-standard,
+SysML-composition and separate-execution boundaries remain intact.
+
+The final production implementation passed 953 ordinary workspace tests, full
+workspace and verification-feature Clippy with warnings denied, formatting and
+strict Rustdoc for eight public language/workspace crates. Frontend check/build,
+frontend tests and four E2E tests passed, as did grammar, metamodel, runtime,
+standards and the 20-package dependency boundary. Later changes affect test
+signature storage and documentation; their focused regressions, verification
+Clippy, formatting and coverage checks passed separately. No subsequent Rust or
+dependency change occurred after the final accepted-cache execution's source.
+
+| Root family | Final disposition |
+| --- | --- |
+| Enumeration construction | Canonical variation/abstract semantics and owning EnumerationDefinition FeatureTyping complete for all seven families and 21 literals, retaining VariantMembership and DataValue semantics. |
+| Typed projection | Formal subset/select projections exclude nonmatching kinds; actual narrowed-domain violations retain diagnostics. Naming completeness is independent of structural variation closure. |
+| Interface-end suppression | Candidate-first transitive redefinition suppression returns original inherited PortUsage identities without copying. |
+| Result cycles | Proven empty and nonempty structural fixed points complete; incomplete sources and unproven ordering remain Incomplete. |
+| End cycles | Real evaluation located the Flow failures in parameter inheritance. Those cyclic populations now close with evidence; actual connection ends were already Complete. |
+| ConnectionUsage authority | The exact pinned conflict is resolved only by the independently reviewed AGQ-SYSML20-005 Operational v3 interpretation. KerML v9 remains unchanged. |
+
+| Effective audit | Weighted findings | Distinct diagnostics | Affected subjects |
+| --- | ---: | ---: | ---: |
+| Prior rejected frontier | 674 | 238 | 50 |
+| Fresh accepted Systems publication | 0 | 0 | 0 |
+
+Fresh producer closure is Complete: 27,177/27,177 producer pairs,
+452,172/452,172 semantic requirements, zero producer diagnostics and zero pending
+work. Strict authenticated finalization passes all 1,327 mandatory references,
+capability, provenance, authority, binding, effective-population and final
+identity audits. Atomic issuance creates the accepted facade, bindings, cache,
+receipt and report without producer replay. Finalizer acceptance was not lowered;
+typed-projection audit coverage was strengthened. No obsolete frontier was reused.
+
+**SYSML SYSTEMS LIBRARY CANONICAL PUBLICATION COMPLETE**
+
+**AGENTIQUE LANGUAGE FOUNDATION STABLE — MODELING PLATFORM MAY PROCEED**
+
+ADR 0026 is adopted, ADR 0027 remains proposed, and the in-memory modeling
+workspace phase has proceeded and passed. Full conformance, Gen1 migration and
+execution remain separate obligations. Original authority/library bytes and
+Gen1 release registers are unchanged.

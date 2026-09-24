@@ -32,8 +32,9 @@ queries, text support and execution are separate claims.
 The integrated `agq-modeling-workspace` provides in-memory Working/Validated
 revisions over shared accepted standards. Its self-model editing gate and scale
 gate with 100 documents, five Validated revisions and four parallel readers have
-passed. Full workspace runtime acceptance and ADR 0024 adoption remain pending in the
-[runtime record](verification/summaries/final-audit-semantic-closure/workspace-runtime-acceptance.md).
+passed. All 12 accepted-cache workspace tests passed and ADR 0024 is adopted;
+the [runtime record](verification/summaries/final-audit-semantic-closure/workspace-runtime-acceptance.md)
+retains the exact results, failures and measured costs.
 This does not provide Gen2 persistence, application migration or execution.
 
 Prerequisites: Rust/rustup with the pinned 1.92.0 toolchain, Node 22.11 or newer,

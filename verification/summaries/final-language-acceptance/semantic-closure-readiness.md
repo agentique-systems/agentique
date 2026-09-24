@@ -1,5 +1,9 @@
 # Semantic closure language readiness
 
+This records the phase M language decision. The subsequent phase N workspace
+acceptance is recorded separately at the end; earlier phase-specific statements
+retain their original scope.
+
 **SYSML SYSTEMS LIBRARY CANONICAL PUBLICATION COMPLETE**
 
 **AGENTIQUE LANGUAGE FOUNDATION STABLE — MODELING PLATFORM MAY PROCEED**
@@ -133,3 +137,32 @@ actual results are recorded below.
 | `git diff --check` | 0 | No whitespace errors. The initial run reported only Git's CRLF-to-LF normalization notice for the coverage JSON; the final staged check is clean. |
 | `git diff --quiet 63dd44c -- verification/summaries/final-language-acceptance/readiness.md verification/summaries/final-language-acceptance/stability-adoption-review.md verification/summaries/language-foundation-accepted/README.md docs/adr/0027-compositional-semantic-publication.md standards/coverage.json verification/traceability.json` | 0 | Empty; historical readiness, research status and Gen1 registers unchanged. |
 | `python -c "import json,pathlib; d=json.loads(pathlib.Path('standards/v2-coverage.json').read_text()); assert d['modeling_platform_gate']['result']=='passed'; assert pathlib.Path(d['modeling_platform_gate']['evidence']).is_file(); print('PASS: coverage JSON and readiness link')"` | 0 | `PASS: coverage JSON and readiness link` |
+
+## Subsequent modeling-workspace acceptance
+
+Phase N is now accepted independently of the original language gate above.
+The real `agq-modeling-workspace` passes all **12 unique accepted-cache runtime
+tests**. Its five-document Agentique self-model validates revision 1, is edited,
+and validates revision 2 while retaining the old revision. Its N2 scale fixture
+retains **100 mixed KerML/SysML documents in each of five Validated revisions**,
+with four synchronized readers. The separate recovery fixture also passes four
+readers making eight passes over five retained revisions, including a 99-document
+Working revision followed by repair. Physical standard tables remain shared,
+with zero copied dependency entries and zero accepted producer replay.
+
+The [runtime record](../final-audit-semantic-closure/workspace-runtime-acceptance.md)
+and [authenticated execution summary](../final-audit-semantic-closure/workspace-final-runtime-gate.json)
+retain exact commands, source identities, output digests and earlier failures.
+[ADR 0024](../../../docs/adr/0024-gen2-modeling-workspace.md) is adopted for this
+bounded in-memory contract. The
+[core-foundation retrospective](../final-audit-semantic-closure/core-foundation-retrospective.md)
+closes the validation-coverage gap by requiring the exact applicable effective
+audit before Validated promotion. Required repository, frontend, grammar,
+metamodel, Rustdoc and dependency checks passed; their commands remain in the
+integration ledger.
+
+Authored edits may reconstruct semantics and have substantial measured cost.
+This acceptance does not add persistence, interactive-performance guarantees,
+application migration, full conformance or execution. The accepted KerML and
+Systems publications and Gen1 obligations remain unchanged. ADR 0027 remains
+proposed research.

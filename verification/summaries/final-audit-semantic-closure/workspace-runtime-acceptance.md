@@ -1,10 +1,11 @@
 # Workspace runtime acceptance
 
-Current disposition: **11 of 12 unique accepted-cache workspace tests have
-passed**. All four smaller phase-1 tests passed separately. The recovery-scale
-rerun with streamed diagnostic signatures is running; the original allocation
-failure remains recorded below. N1 and N2 remain passed, and ADR 0024 remains
-proposed until the final runtime result and integration review.
+Current disposition: **12 of 12 unique accepted-cache workspace tests passed**.
+Required N1 self-model dogfooding and N2 validated scale passed, followed by all
+remaining recovery/lifecycle tests. The [final measured gate](workspace-final-runtime-gate.json)
+verifies every passing log digest and all 32 final reader/pass completions.
+The bounded in-memory workspace is accepted and ADR 0024 is adopted. Earlier
+failures and source-specific intermediate dispositions remain below as history.
 
 Initial measured record at integration source `65c1bf2`: **7 of 12 unique
 accepted-cache workspace tests have passed**. The required phase N1 self-model
@@ -245,3 +246,60 @@ running. It preserves every diagnostic/reference field and all 160 reader
 comparisons, while streaming the same Debug bytes into SHA-256 plus byte count.
 Stage markers measure each revision, signature and reader pass. This is a
 test-memory change, not a production semantic change or a passed scale result.
+
+## Final recovery-scale result and workspace acceptance
+
+`workspace-recovery-scale-streamed-diagnostics` exited **0** with **1 passed,
+0 failed, 0 ignored**, in **2346.29 seconds test time / 2346.97 seconds command
+time**. The exact command was:
+
+```text
+cargo test --release --locked --offline -p agq-modeling-workspace --features verification --test phase1 hundred_documents_five_revisions_and_parallel_borrowed_reads -- --ignored --exact --nocapture --test-threads=1
+```
+
+It tested `9a50888aa1890b8416f3941ed7063ba87a79bd97`, with empty working-change
+SHA-256 `e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`.
+The output SHA-256 is
+`4dbf578837a2d3f53e91ed3d4c8f2b61e1900626b08ec717aff2c46adf77ae7e`.
+The ledger retains its exact accepted-cache paths and execution settings.
+The last production semantic change predates these executions; subsequent
+signature changes affect test storage only. Rust sources and dependency manifests
+are unchanged between this final tested source and the integration review.
+
+All four readers completed all eight passes across five retained revisions:
+**160 revision comparisons**. Revisions 1, 2, 3 and 5 each have 100 documents and
+validate. Revision 4 has 99 documents and remains Working after provider removal;
+revision 5 repairs the reference with fresh document/semantic identities. Every
+retained baseline, original inherited identity, complete diagnostic/reference
+signature and asserted effective projection remains unchanged. Physical shared
+standard tables, zero copied dependency entries and zero accepted producer replay
+pass for this history too. This complements the distinct N2 fixture, whose five
+revisions all remain Validated with 100 mixed documents.
+
+The actual Working revision contains 33,612 diagnostics and 102 references.
+Its signature streams **34,631,669,193 diagnostic Debug bytes** and **594,549,739
+reference Debug bytes** in **58.184028 seconds**. The previous harness attempted
+to retain that diagnostic output in one String. This measured expansion
+corroborates the allocation diagnosis; the original abort did not provide a
+stack trace. The streaming rerun retains every field and comparison and passes
+without that allocation. Both the allocation failure and earlier incorrect port
+expectation remain failed historical commands, not passing evidence.
+
+The [final runtime record](workspace-final-runtime-gate.json) authenticates the
+five passing command outputs establishing 12 unique tests. The malformed-typing
+rerun and two exact signature regressions are additional checks, not additional
+unique acceptance tests. Their successful results do not erase earlier failures.
+
+Together with the completed kernel/cache, strict authored effective audit,
+language foundation and repository gates, these results accept phase 1 and adopt
+[ADR 0024](../../../docs/adr/0024-gen2-modeling-workspace.md). The
+[architectural retrospective](core-foundation-retrospective.md) closes its
+identified audit gap and remaining runtime obligations. ADR 0026 remains adopted;
+ADR 0027 remains proposed research.
+
+The accepted scope is an in-memory modeling workspace. Authored semantic
+reconstruction, large native evidence populations and expensive validation are
+measured limitations; no interactive-performance or fully incremental compilation
+claim is made. Durable persistence, application migration, full conformance and
+execution remain later work. Accepted standard identities, original authority
+bytes and Gen1 release obligations remain unchanged.

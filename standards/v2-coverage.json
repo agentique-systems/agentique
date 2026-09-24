@@ -16,7 +16,7 @@
     "medium_compositional_equivalence": "not run; compositional execution remains unimplemented",
     "systems_publication": "accepted by monolithic closure and strict direct finalization; compositional execution remains unimplemented",
     "blocking_proof_obligation": "Existing non-typing requirement guards remain global even for disjoint subject-scoped writers. Complete bounded requirement/provider footprints and future-writer exclusion are not established; planning success cannot authorize sealing.",
-    "production_modeling_workspace": "in-memory integration authorized by adopted ADR 0026; implementation and acceptance gates remain separate; no compositional sealing prerequisite",
+    "production_modeling_workspace": "in-memory phase 1 accepted with 12/12 runtime tests and adopted ADR 0024; compositional sealing remains unimplemented and is not a prerequisite",
     "accepted_kerml": "unchanged Operational v9",
     "generation_1_release_obligations": "unchanged"
   },
@@ -137,7 +137,7 @@
     "KerML": "1.0",
     "SysML": "2.0"
   },
-  "claim": "Complete generation-2 structural runtime and accepted canonical KerML Operational v9 and SysML Systems Operational v3 publications. Fresh Systems closure passed strict finalization with 1327/1327 mandatory references, zero effective findings on 13644 subjects, 69 accepted SysML bindings and atomic artifacts, without producer replay. Trusted restoration and the accepted Agentique self-model/effective-core gate pass: 5 documents, 67 Complete references, programmatic equivalence, 3 immutable revisions and shared standards. ADR 0026 is adopted; the stable language foundation authorizes in-memory modeling workspace integration, whose implementation and scale gates remain separate. Prior failures are preserved. No full conformance, application migration or execution claim.",
+  "claim": "Complete generation-2 structural runtime and accepted canonical KerML Operational v9 and SysML Systems Operational v3 publications. Fresh Systems closure passed strict finalization with 1327/1327 mandatory references, zero effective findings on 13644 subjects, 69 accepted SysML bindings and atomic artifacts, without producer replay. Trusted restoration and the accepted Agentique self-model/effective-core gate pass. ADR 0026 is adopted. The subsequent in-memory modeling workspace passes all 12 accepted-cache tests, self-model revision editing and 100 mixed documents in each of five Validated revisions with four parallel readers; ADR 0024 is adopted. Original standard graphs are physically shared with zero copied dependency entries and no accepted producer replay. Prior failures are preserved. Authored reconstruction remains expensive; no interactive-performance, persistence, full conformance, application migration or execution claim.",
   "legacy_release_register": "standards/coverage.json",
   "runtime_sysml_gate": {
     "stage": "structural-runtime-v3",
@@ -166,7 +166,7 @@
       "generation-dependency-boundary",
       "adr-0026-adoption"
     ],
-    "reason": "KerML v9 and Systems v3 are accepted; trusted restoration, authored and programmatic effective integration, independent implementation traceability, immutable revisions and shared standards passed. ADR 0026 is adopted. The language foundation is stable and phase N in-memory ProjectWorkspace integration may proceed. Working/Validated workspace revisions and the 100-document/five-revision/four-reader gate are not established by language acceptance. ADR 0027 remains proposed research; no broad conformance gate is added.",
+    "reason": "KerML v9 and Systems v3 are accepted; trusted restoration, authored and programmatic effective integration, independent implementation traceability, immutable revisions and shared standards passed. ADR 0026 is adopted. This language-readiness gate authorized phase N; the subsequent workspace acceptance is recorded separately in modeling_workspace. ADR 0027 remains proposed research; no broad conformance gate is added.",
     "previous_milestone": {
       "stage": "prerequisite",
       "result": "blocked",
@@ -257,8 +257,7 @@
       ],
       "gaps": [
         "Full language conformance beyond the pinned corpus and explicitly supported authored constructions",
-        "Unsupported source and unresolved/recovered constructs retain diagnostics and block Validated promotion where applicable",
-        "Full workspace runtime acceptance remains pending; passed self-model and validated-scale gates do not establish every recovery/edit case"
+        "Unsupported source and unresolved/recovered constructs retain diagnostics and block Validated promotion where applicable"
       ]
     },
     {
@@ -868,7 +867,7 @@
       "effective_findings": 0,
       "effective_subjects": 13644,
       "evidence": "verification/summaries/final-audit-semantic-closure/accepted-artifact-gate.json",
-      "boundary": "Whole-corpus canonical publication accepted. Separate trusted restoration, authored self-model/effective-core integration and language stability passed; ADR 0026 is adopted. Workspace self-model and five-Validated-revision/100-document/four-reader gates also passed independently. Full workspace runtime acceptance and ADR 0024 adoption remain pending; none of these results claims full conformance or execution."
+      "boundary": "Whole-corpus canonical publication accepted. Separate trusted restoration, authored self-model/effective-core integration and language stability passed; ADR 0026 is adopted. Subsequent in-memory workspace acceptance passed all 12 unique accepted-cache tests, including self-model editing, five Validated revisions with 100 mixed documents each and four readers, and recovery at scale; ADR 0024 is adopted. Publication and workspace acceptance remain distinct from full conformance, persistence and execution."
     },
     "historical_focused_corrections": "Actions 534/534 and medium 695/695 scoped gates pass with zero obligations, diagnostics or authority conflicts and fully closed certificates. The inherited-result ExpressionResult population correction and Systems-only 64-round budget are verified. Exact-content producer-read atom sharing fixes measured duplication; allocation/negative/provider/rehydration controls and 153 producer regressions pass without removing semantic evidence. The historical language-stability bridge's final full retry remained below its private-memory limit but did not finish within 35 minutes. Current incremental certificate input reuse and authenticated frontier continuation pass the exact medium equivalence gate.",
     "accepted_binding_roles": 69,
@@ -918,5 +917,44 @@
       "independent_artifact_gate": "verification/summaries/final-audit-semantic-closure/accepted-artifact-gate.json",
       "independent_artifact_gate_passed": true
     }
+  },
+  "modeling_workspace": {
+    "stage": "in-memory-phase1",
+    "result": "accepted",
+    "contract": "docs/adr/0024-gen2-modeling-workspace.md",
+    "evidence": "verification/summaries/final-audit-semantic-closure/workspace-runtime-acceptance.md",
+    "measured_gate": "verification/summaries/final-audit-semantic-closure/workspace-final-runtime-gate.json",
+    "unique_accepted_cache_tests_passed": 12,
+    "self_model": {
+      "documents": 5,
+      "validated_revisions": 2,
+      "edit_and_old_revision_immutability": "passed"
+    },
+    "validated_scale": {
+      "documents_per_revision": 100,
+      "kerml_documents": 50,
+      "sysml_documents": 50,
+      "validated_revisions": 5,
+      "parallel_readers": 4,
+      "passes_per_reader": 2
+    },
+    "recovery_scale": {
+      "documents_per_revision": [
+        100,
+        100,
+        100,
+        99,
+        100
+      ],
+      "fourth_revision": "Working",
+      "fifth_revision": "Validated after repair",
+      "parallel_readers": 4,
+      "passes_per_reader": 8,
+      "revision_comparisons": 160
+    },
+    "validation": "Strict kernel/source/reference/context and full producer-certificate gates plus a finding-free applicable effective audit bound to the exact local declared/derived population and semantic context; invalid or incomplete semantics remain Working.",
+    "standard_storage": "Physical accepted backing tables and original record identities shared; zero copied authoritative dependency entries and zero accepted producer replay in observed tests.",
+    "retrospective": "verification/summaries/final-audit-semantic-closure/core-foundation-retrospective.md",
+    "boundary": "Atomic in-memory visibility and immutable revision history. Authored reconstruction and costly evidence/validation remain; no persistence, interactive-performance, full conformance, Gen1 migration or execution claim."
   }
 }

@@ -2774,6 +2774,248 @@
         "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace",
         "CARGO_PROFILE_RELEASE_LTO": "false"
       }
+    },
+    {
+      "name": "platform-current-coverage-standards-check",
+      "command": [
+        "npm",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "108de930daab9fbb08c7ef63728dbb4b1584c51e",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "c25e1806abef0d95afe5c58d52daf1fa6d174d20225ee64f5712f920168f3e94",
+      "duration_seconds": 0.72,
+      "output": "verification/generated/final-audit-semantic-closure/platform-current-coverage-standards-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "platform-current-coverage-frontend-tests",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "108de930daab9fbb08c7ef63728dbb4b1584c51e",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "fbfbbb7399441cc5dc0b3fbdd9a931db6b3a9fb76c26179bfee3f5e9c99579c5",
+      "duration_seconds": 1.12,
+      "output": "verification/generated/final-audit-semantic-closure/platform-current-coverage-frontend-tests.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "reclaim-completed-projection-test-build",
+      "command": [
+        "cargo",
+        "clean",
+        "--target-dir",
+        "C:/Users/phili/github/agentique-systems/agentique-closure-projections/target/workspace-scale-check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "108de930daab9fbb08c7ef63728dbb4b1584c51e",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "79a4ee219b8d4060d31469e3fc83a0a921d789122bcd5052fdd23bde45cd2bac",
+      "duration_seconds": 0.44,
+      "output": "verification/generated/final-audit-semantic-closure/reclaim-completed-projection-test-build.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "reclaim-completed-structural-audit-build",
+      "command": [
+        "cargo",
+        "clean",
+        "--target-dir",
+        "C:/Users/phili/github/agentique-systems/agentique-closure-structural/target/authored-effective-audit"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "108de930daab9fbb08c7ef63728dbb4b1584c51e",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "c9596a6ada808926b6352ed725ecd4e7dfb40617cbcf95c50c4eaffbb3db8d41",
+      "duration_seconds": 0.45,
+      "output": "verification/generated/final-audit-semantic-closure/reclaim-completed-structural-audit-build.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "workspace-recovery-scale-streamed-diagnostics",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-modeling-workspace",
+        "--features",
+        "verification",
+        "--test",
+        "phase1",
+        "hundred_documents_five_revisions_and_parallel_borrowed_reads",
+        "--",
+        "--ignored",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "9a50888aa1890b8416f3941ed7063ba87a79bd97",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "4dbf578837a2d3f53e91ed3d4c8f2b61e1900626b08ec717aff2c46adf77ae7e",
+      "duration_seconds": 2346.97,
+      "output": "verification/generated/final-audit-semantic-closure/workspace-recovery-scale-streamed-diagnostics.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace",
+        "CARGO_PROFILE_RELEASE_LTO": "false",
+        "AGENTIQUE_KERML_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "AGENTIQUE_SYSTEMS_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/final-audit-semantic-closure/accepted/canonical.publication.zip"
+      }
+    },
+    {
+      "name": "workspace-final-runtime-record",
+      "command": [
+        "python",
+        "verification/generated/final-audit-semantic-closure/record-workspace-runtime.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "cf12614d292d398348357103f3e6d42dc39ca7dd",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "80e309833cb69b095ed9bbc157767c7fd82479b26c022d2f0e95dfbc556fdb06",
+      "duration_seconds": 0.12,
+      "output": "verification/generated/final-audit-semantic-closure/workspace-final-runtime-record.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "platform-launch-final-dependency-boundary",
+      "command": [
+        "python",
+        "verification/scripts/generation_boundary.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "cf12614d292d398348357103f3e6d42dc39ca7dd",
+      "working_changes_sha256": "b153bc9c67ea8fa71d3ee3a06a4b3338bfd9ef8e878de0ddeeaefba9ebbff243",
+      "output_sha256": "ac7f89edc52250602dd16a8dbbd1f35f84b7f24f4a8f48bc436054bdf30bb52d",
+      "duration_seconds": 0.17,
+      "output": "verification/generated/final-audit-semantic-closure/platform-launch-final-dependency-boundary.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "platform-launch-final-standards",
+      "command": [
+        "npm",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "cf12614d292d398348357103f3e6d42dc39ca7dd",
+      "working_changes_sha256": "b153bc9c67ea8fa71d3ee3a06a4b3338bfd9ef8e878de0ddeeaefba9ebbff243",
+      "output_sha256": "8ad2c9bd7f6e4108924f1cc287c1960861188bd0408d5725db98fb0cd17a379f",
+      "duration_seconds": 0.72,
+      "output": "verification/generated/final-audit-semantic-closure/platform-launch-final-standards.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "platform-launch-final-frontend-tests",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "cf12614d292d398348357103f3e6d42dc39ca7dd",
+      "working_changes_sha256": "b153bc9c67ea8fa71d3ee3a06a4b3338bfd9ef8e878de0ddeeaefba9ebbff243",
+      "output_sha256": "56aef13e8d5ebacc86023da4179db29b56dd62feb5960ba38f176deac168812e",
+      "duration_seconds": 1.06,
+      "output": "verification/generated/final-audit-semantic-closure/platform-launch-final-frontend-tests.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "platform-launch-final-format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "cf12614d292d398348357103f3e6d42dc39ca7dd",
+      "working_changes_sha256": "b153bc9c67ea8fa71d3ee3a06a4b3338bfd9ef8e878de0ddeeaefba9ebbff243",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 3.05,
+      "output": "verification/generated/final-audit-semantic-closure/platform-launch-final-format.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "platform-launch-authority-preservation",
+      "command": [
+        "git",
+        "diff",
+        "--exit-code",
+        "b3cc853ab7ae763a9bdf07347437f665c444e2bf",
+        "--",
+        "standards/artifacts",
+        "standards/normative",
+        "standards/libraries",
+        "standards/libraries-2026-04",
+        "standards/coverage.json",
+        "verification/traceability.json",
+        "docs/adr/0027-compositional-semantic-publication.md",
+        "standards/kerml-accepted-publication.json",
+        "standards/kerml-standard-bindings.json"
+      ],
+      "exit_code": 0,
+      "tool_version": "git version 2.42.0.windows.2",
+      "source_commit": "cf12614d292d398348357103f3e6d42dc39ca7dd",
+      "working_changes_sha256": "b153bc9c67ea8fa71d3ee3a06a4b3338bfd9ef8e878de0ddeeaefba9ebbff243",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 0.02,
+      "output": "verification/generated/final-audit-semantic-closure/platform-launch-authority-preservation.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "platform-launch-final-report-links",
+      "command": [
+        "python",
+        "-c",
+        "import pathlib,re,json\npaths=['README.md','verification/summaries/final-audit-semantic-closure/README.md','verification/summaries/final-audit-semantic-closure/workspace-runtime-acceptance.md','verification/summaries/final-language-acceptance/semantic-closure-readiness.md']\ncount=0\nfor name in paths:\n p=pathlib.Path(name)\n for link in re.findall(r'\\]\\(([^)]+)\\)',p.read_text(encoding='utf-8')):\n  if link.startswith(('http:','https:','mailto:','#')): continue\n  target=(p.parent/link.split('#')[0])\n  assert target.exists(),(name,link)\n  count+=1\ncoverage=json.loads(pathlib.Path('standards/v2-coverage.json').read_text())\nassert coverage['modeling_workspace']['result']=='accepted'\nassert coverage['modeling_workspace']['unique_accepted_cache_tests_passed']==12\nassert coverage['modeling_platform_gate']['result']=='passed'\nprint(str(count)+' local final-report links valid; separate M/N coverage consistent')"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "cf12614d292d398348357103f3e6d42dc39ca7dd",
+      "working_changes_sha256": "b153bc9c67ea8fa71d3ee3a06a4b3338bfd9ef8e878de0ddeeaefba9ebbff243",
+      "output_sha256": "922f139ef82619203e7a8234440a88527ff4ba7cc9713577ba2c7d76c165030e",
+      "duration_seconds": 0.06,
+      "output": "verification/generated/final-audit-semantic-closure/platform-launch-final-report-links.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "platform-launch-final-consistency",
+      "command": [
+        "python",
+        "-c",
+        "import json,pathlib,subprocess\nroot=pathlib.Path('.')\nassert 'Status: adopted' in (root/'docs/adr/0024-gen2-modeling-workspace.md').read_text()\nassert 'Status: adopted' in (root/'docs/adr/0026-language-foundation-stability-contract.md').read_text()\nassert 'Status: proposed' in (root/'docs/adr/0027-compositional-semantic-publication.md').read_text()\ncurrent=json.loads((root/'standards/v2-coverage.json').read_text())\nprior=json.loads(subprocess.check_output(['git','show','cf12614:standards/v2-coverage.json']))\nfor key in ['historical_capability_snapshot','kerml_standard_library_bootstrap','language_core_foundation','runtime_sysml_gate']:\n assert current[key]==prior[key],key\nfor key in ['historical_focused_corrections','accepted_binding_roles']:\n assert current['sysml_systems_library_publication'][key]==prior['sysml_systems_library_publication'][key],key\nassert current['modeling_platform_gate']['previous_milestone']==prior['modeling_platform_gate']['previous_milestone']\nassert not subprocess.check_output(['git','diff','9a50888','--',':(glob)**/*.rs',':(glob)**/Cargo.toml','Cargo.toml','Cargo.lock'])\nprint('ADR 0024/0026 adopted; ADR 0027 proposed; historical coverage preserved')\nprint('Rust source and dependencies unchanged since final accepted-cache test')"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "3eadd676eb1e2213218e22b8414604830f13a025",
+      "working_changes_sha256": "b153bc9c67ea8fa71d3ee3a06a4b3338bfd9ef8e878de0ddeeaefba9ebbff243",
+      "output_sha256": "dce931c9fd92c79a2a08467dac8c9c065cb8355ace26c53dcf2d7352047c17fa",
+      "duration_seconds": 0.14,
+      "output": "verification/generated/final-audit-semantic-closure/platform-launch-final-consistency.log",
+      "environment_overrides": {}
     }
   ]
 }
