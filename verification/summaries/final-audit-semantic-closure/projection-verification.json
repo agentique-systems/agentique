@@ -14,20 +14,23 @@
       "result": "Retrieved current commit independently; exact URLs and SHA-256 identities retained in connection-reference-review.json. Acquisition is not a build step."
     },
     {
-      "command": "java -Xmx1g --class-path <existing pilot-0.59.0-all.jar> verification/scripts/InspectConnectionDefinitions.java <root>/standards/libraries <pinned Flows.sysml> verification/generated/final-closure-projections/pilot-definitions.json",
+      "command": "& 'C:/Users/phili/github/agentique-systems/agentique/.cache/jdk-21.0.12.1+1/bin/java.exe' -Xmx1g --class-path 'C:/Users/phili/github/agentique-systems/agentique/.cache/pilot-0.59.0/share/jupyter/kernels/sysml/jupyter-sysml-kernel-0.59.0-all.jar' verification/scripts/InspectConnectionDefinitions.java 'C:/Users/phili/github/agentique-systems/agentique/standards/libraries' 'standards/libraries/Systems-Library/Systems Library/Flows.sysml' verification/generated/final-closure-projections/pilot-definitions.json",
       "exit_code": 1,
-      "result": "Inspected HappensDuring connections: 0. Initial library directory layout was not the pilot's flattened input format; this was not semantic acceptance."
+      "result": "Inspected HappensDuring connections: 0. Initial library directory layout was not the pilot's flattened input format; this was not semantic acceptance.",
+      "working_directory": "C:/Users/phili/github/agentique-systems/agentique-closure-projections"
     },
     {
-      "command": "java -Xmx1g --class-path <existing pilot-0.59.0-all.jar> verification/scripts/InspectConnectionDefinitions.java <root>/.cache/pilot-libraries-f03ae80164d700ef <pinned Flows.sysml> verification/generated/final-closure-projections/pilot-definitions.json",
+      "command": "& 'C:/Users/phili/github/agentique-systems/agentique/.cache/jdk-21.0.12.1+1/bin/java.exe' -Xmx1g --class-path 'C:/Users/phili/github/agentique-systems/agentique/.cache/pilot-0.59.0/share/jupyter/kernels/sysml/jupyter-sysml-kernel-0.59.0-all.jar' verification/scripts/InspectConnectionDefinitions.java 'C:/Users/phili/github/agentique-systems/agentique/.cache/pilot-libraries-f03ae80164d700ef' 'standards/libraries/Systems-Library/Systems Library/Flows.sysml' verification/generated/final-closure-projections/pilot-definitions.json",
       "exit_code": 0,
-      "result": "After using the existing byte-identical pinned library staging: 2 exact connections inspected, parse errors 0."
+      "result": "After using the existing byte-identical pinned library staging: 2 exact connections inspected, parse errors 0.",
+      "working_directory": "C:/Users/phili/github/agentique-systems/agentique-closure-projections"
     },
     {
-      "command": "java -Xmx1g --class-path <existing pilot-0.59.0-all.jar> verification/scripts/InspectConnectionDefinitions.java <root>/.cache/pilot-libraries-f03ae80164d700ef <pinned Flows.sysml> verification/generated/final-closure-projections/pilot-definitions.json",
+      "command": "& 'C:/Users/phili/github/agentique-systems/agentique/.cache/jdk-21.0.12.1+1/bin/java.exe' -Xmx1g --class-path 'C:/Users/phili/github/agentique-systems/agentique/.cache/pilot-0.59.0/share/jupyter/kernels/sysml/jupyter-sysml-kernel-0.59.0-all.jar' verification/scripts/InspectConnectionDefinitions.java 'C:/Users/phili/github/agentique-systems/agentique/.cache/pilot-libraries-f03ae80164d700ef' 'standards/libraries/Systems-Library/Systems Library/Flows.sysml' verification/generated/final-closure-projections/pilot-definitions.json",
       "exit_code": 0,
       "result": "Final harness added raw feature-type and CheckMode.ALL validation inspection: 2 exact connections, 0 parse errors, 0 validation errors, 3 unrelated warnings. Canonical Association retained; runtime typed getters filter it.",
-      "output": "verification/generated/final-closure-projections/pilot-inspection.log"
+      "output": "verification/generated/final-closure-projections/pilot-inspection.log",
+      "working_directory": "C:/Users/phili/github/agentique-systems/agentique-closure-projections"
     },
     {
       "command": "rustfmt --edition 2024 crates/sysml-semantics/src/profile.rs crates/sysml-semantics/src/queries.rs crates/sysml-semantics/src/projection_tests.rs crates/sysml-semantics/src/structural_queries.rs crates/sysml-semantics/src/tests.rs",
@@ -38,8 +41,18 @@
       "command": "git diff --check",
       "exit_code": 0,
       "result": "No whitespace errors."
+    },
+    {
+      "command": "python verification/scripts/inspect-sysml-definition-authority.py > verification/generated/final-closure-projections/pinned-definition-contracts.json",
+      "exit_code": 0,
+      "result": "Reproducible local formal inventory, including enumeration/variation and narrowed/filtered definition contracts."
     }
   ],
   "rust_gate": "Delegated to coordinated shared-target integration with enumeration agent; no Rust pass is claimed by this authority inspection summary.",
-  "publication": "Not established by this bounded review or the independent pilot result."
+  "publication": "Not established by this bounded review or the independent pilot result.",
+  "tools": {
+    "python": "3.12.10",
+    "rustfmt": "1.8.0-stable (ded5c06cf2 2025-12-08)",
+    "java": "Temurin 21.0.12.1+1-LTS"
+  }
 }
