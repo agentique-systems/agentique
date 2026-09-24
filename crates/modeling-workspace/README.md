@@ -54,12 +54,26 @@ receipt and call the actual platform validation conversion independently.
 Kernel revision labels are freshly allocated; canonical graph/provenance,
 semantic-contract and closure fingerprints are independently comparable.
 
+Validated revisions can additionally export `ProjectSemanticCache`. Its local
+kernel frontier excludes accepted standard records and source bytes. Restore
+checks the exact source-checkpoint digest, cache checksum, language/descriptor/
+producer dependencies, canonical graph and closure identities. It reconstructs
+source declarations, revalidates cached effective facts against them, and reruns
+the producer scheduler and every effective-audit subject. It returns Working;
+the service independently verifies its persisted receipt before validation.
+Any cache failure permits ordinary source reconstruction. This conservative
+cache reduces repeated effective-fact construction, not source parsing or audit
+work; it is disposable and supplies no independent semantic authority.
+
 `compilation_work` separates documents reparsed/lowered, lowering cache hits,
 records lowered, declared records submitted across construction passes, producer subjects and audited
 subjects. It does not claim incremental kernel construction or audit reuse.
 `edit_frontier` separates source/syntax changes and declared fact changes from
 derived consequences. The verification-only `full_rebuild` bypasses lowering
-and prior producer caches while retaining identical source identity inputs.
+and prior producer caches while retaining identical parsed source identity inputs.
+The oracle rebuilds all authored lowering, kernel records, producers and audits;
+it does not allocate different syntax identities. The separate durable restore
+gate reparses source bytes and checks/restores their exact syntax identities.
 
 The `verification` feature records actual producer evaluations and inspects
 physical kernel table ownership. It supplies no acceptance authority. See

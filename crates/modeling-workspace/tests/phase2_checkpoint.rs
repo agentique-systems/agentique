@@ -113,6 +113,85 @@ fn project_id_and_revision_id_roundtrip_without_aliasing() {
     );
 }
 
+#[test]
+#[ignore = "requires accepted publication caches; never rebuilds standards"]
+fn persisted_semantic_cache_authenticates_exact_source_and_closure() {
+    use agq_modeling_workspace::ProjectSemanticCache;
+    let accepted = support::accepted();
+    let mut workspace = ProjectWorkspace::open(accepted.clone()).unwrap();
+    let candidate = workspace
+        .apply(
+            workspace.head().revision(),
+            [support::add(
+                "Cache.sysml",
+                SourceLanguage::SysMl,
+                "package Platform { part def Repository; part repository : Repository; }",
+            )],
+        )
+        .unwrap();
+    let validated = candidate.validate().unwrap();
+    let checkpoint = candidate.checkpoint();
+    let sources: BTreeMap<_, _> = candidate
+        .documents()
+        .map(|(_, doc)| (doc.id(), doc.source().to_owned()))
+        .collect();
+    let fingerprint = candidate.semantic_fingerprint().unwrap();
+    let element = support::element(&candidate, &["Platform", "repository"]);
+    let cache = validated.semantic_cache().unwrap();
+    let cache_bytes = serde_json::to_vec(&cache).unwrap();
+    eprintln!(
+        "semantic_cache_bytes={} kernel_frontier_bytes={}",
+        cache_bytes.len(),
+        cache.source.kernel_frontier.len()
+    );
+    drop(cache);
+    drop(validated);
+    drop(candidate);
+    drop(workspace);
+    let cache: ProjectSemanticCache = serde_json::from_slice(&cache_bytes).unwrap();
+    let started = Instant::now();
+    let restored = checkpoint
+        .restore_cached(accepted.clone(), &sources, &cache)
+        .unwrap();
+    eprintln!(
+        "authenticated_cache_restore_ms={} work={:?}",
+        started.elapsed().as_millis(),
+        restored.compilation_work()
+    );
+    assert!(restored.compilation_work().semantic_cache_used);
+    assert_eq!(restored.checkpoint(), checkpoint);
+    assert_eq!(restored.semantic_fingerprint().unwrap(), fingerprint);
+    assert_eq!(
+        support::element(&restored, &["Platform", "repository"]),
+        element
+    );
+    restored.validate().unwrap();
+    drop(restored);
+    let mut stale = cache.clone();
+    stale.source.source_identity_digest[0] ^= 1;
+    assert!(
+        checkpoint
+            .restore_cached(accepted.clone(), &sources, &stale)
+            .is_err()
+    );
+    let mut corrupt = cache;
+    corrupt.source.kernel_frontier[0] ^= 1;
+    assert!(
+        checkpoint
+            .restore_cached(accepted.clone(), &sources, &corrupt)
+            .is_err()
+    );
+    let started = Instant::now();
+    let rebuilt = checkpoint.restore(accepted, &sources).unwrap();
+    eprintln!(
+        "source_fallback_restore_ms={}",
+        started.elapsed().as_millis()
+    );
+    assert!(!rebuilt.compilation_work().semantic_cache_used);
+    assert_eq!(rebuilt.semantic_fingerprint().unwrap(), fingerprint);
+    rebuilt.validate().unwrap();
+}
+
 fn assert_query<T: std::fmt::Debug + PartialEq>(
     left: &agq_kerml_semantics::QueryResult<T>,
     right: &agq_kerml_semantics::QueryResult<T>,

@@ -40,6 +40,10 @@ pub enum SourceCheckpointError {
     Kernel(#[from] agq_kernel::ModelError),
     #[error(transparent)]
     Build(#[from] LibraryLoadError),
+    #[error(transparent)]
+    Archive(#[from] agq_kernel::archive::ArchiveError),
+    #[error(transparent)]
+    Json(#[from] serde_json::Error),
 }
 
 impl SourceCompilation {
@@ -81,12 +85,45 @@ impl SourceCompilation {
 }
 
 impl SourceIdentityCheckpoint {
+    /// Content identity of the deliberate identity representation and source digests.
+    pub fn digest(&self) -> Result<[u8; 32], serde_json::Error> {
+        Ok(Sha256::digest(serde_json::to_vec(self)?).into())
+    }
     /// Reparse authenticated bytes, restore checked syntax/retirement identities,
     /// and perform full authored reconstruction. This creates a Working result.
     pub fn restore(
         &self,
         publication: Arc<CanonicalSysmlSystemsLibrary>,
         sources: &BTreeMap<DocumentId, String>,
+    ) -> Result<SourceCompilation, SourceCheckpointError> {
+        self.restore_maybe_cached(publication, sources, None)
+    }
+    /// Restore authenticated local effective facts, then rerun producer and audit
+    /// validation. Any mismatch is an error; the caller may rebuild from source.
+    pub fn restore_cached(
+        &self,
+        publication: Arc<CanonicalSysmlSystemsLibrary>,
+        sources: &BTreeMap<DocumentId, String>,
+        cache: &SourceSemanticCache,
+    ) -> Result<SourceCompilation, SourceCheckpointError> {
+        if cache.format_version != 1 || cache.source_identity_digest != self.digest()? {
+            return Err(SourceCheckpointError::Mismatch(
+                "semantic cache source identity or format",
+            ));
+        }
+        let digest: [u8; 32] = Sha256::digest(&cache.kernel_frontier).into();
+        if digest != cache.kernel_frontier_digest {
+            return Err(SourceCheckpointError::Mismatch(
+                "semantic cache archive checksum",
+            ));
+        }
+        self.restore_maybe_cached(publication, sources, Some(cache))
+    }
+    fn restore_maybe_cached(
+        &self,
+        publication: Arc<CanonicalSysmlSystemsLibrary>,
+        sources: &BTreeMap<DocumentId, String>,
+        cache: Option<&SourceSemanticCache>,
     ) -> Result<SourceCompilation, SourceCheckpointError> {
         use SourceCheckpointError::Mismatch;
         if self.format_version != 1 {
@@ -167,6 +204,6 @@ impl SourceIdentityCheckpoint {
         if ledger.len() != self.identity_sources.len() {
             return Err(Mismatch("duplicate identity origin"));
         }
-        Ok(Arc::new(inputs).compile_with_history(None, Some((history, ledger)), false)?)
+        Ok(Arc::new(inputs).compile_with_history(None, Some((history, ledger)), false, cache)?)
     }
 }

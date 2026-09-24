@@ -15,6 +15,9 @@ use std::collections::BTreeSet;
 #[path = "source_checkpoint.rs"]
 mod checkpoint;
 pub use checkpoint::*;
+#[path = "source_semantic_cache.rs"]
+mod semantic_cache;
+pub use semantic_cache::*;
 
 /// Exact source inputs. Applying edits shares every unchanged document and syntax arena.
 #[derive(Clone, Debug)]
@@ -99,13 +102,14 @@ impl SourceInputs {
         self: &Arc<Self>,
         previous: Option<&SourceCompilation>,
     ) -> Result<SourceCompilation, LibraryLoadError> {
-        self.compile_with_history(previous, None, true)
+        self.compile_with_history(previous, None, true, None)
     }
     fn compile_with_history(
         self: &Arc<Self>,
         previous: Option<&SourceCompilation>,
         restored: Option<(DeclaredConstructionHistory, LibrarySourceMap)>,
         incremental: bool,
+        semantic_cache: Option<&SourceSemanticCache>,
     ) -> Result<SourceCompilation, LibraryLoadError> {
         if previous.is_some_and(|previous| {
             previous.inputs.project != self.project
@@ -212,6 +216,7 @@ impl SourceInputs {
                 self.root,
                 self.dependency.clone(),
                 Some(snapshot),
+                semantic_cache,
             )?;
             diagnostics.extend(
                 model
@@ -222,6 +227,11 @@ impl SourceInputs {
             );
             SourceFrontier::Strict(Box::new(model))
         } else {
+            if semantic_cache.is_some() {
+                return Err(LibraryLoadError::Interpretation(
+                    "semantic cache requires strict source declarations".into(),
+                ));
+            }
             let q = KerMlQueries::new(self.dependency.candidate_context_with_pending(
                 &prepared.draft,
                 self.root,
@@ -348,6 +358,7 @@ impl SourceInputs {
             report,
         });
         result.work = CompilationWork {
+            semantic_cache_used: semantic_cache.is_some(),
             documents_reparsed: self.documents_reparsed,
             documents_lowered: result.lowering_cache.documents_lowered,
             lowering_cache_hits: result.lowering_cache.documents_reused,
@@ -493,6 +504,8 @@ enum SourceFrontier {
 /// Immutable declared/derived frontier, certificate, source evidence and checked identity history.
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct CompilationWork {
+    /// Authenticated persisted effective facts were revalidated on current declarations.
+    pub semantic_cache_used: bool,
     pub documents_reparsed: usize,
     /// Actual lowering traversals, including repeated full reference-refinement passes.
     pub documents_lowered: usize,
@@ -652,6 +665,7 @@ impl SourceCompilation {
             None,
             Some((self.history.clone(), self.identities.clone())),
             false,
+            None,
         )?;
         // The oracle deliberately retains the same parsed source identity inputs.
         rebuilt.work.documents_reparsed = 0;
