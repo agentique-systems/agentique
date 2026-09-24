@@ -153,6 +153,7 @@ dependencies = [
  "agq-kernel",
  "agq-standard-libraries",
  "agq-sysml-semantics",
+ "sha2",
  "thiserror",
 ]
 

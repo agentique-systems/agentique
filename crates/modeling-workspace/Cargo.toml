@@ -19,6 +19,7 @@ thiserror.workspace = true
 agq-kerml = { path = "../kerml" }
 agq-kerml-syntax = { path = "../kerml-syntax" }
 agq-standard-libraries = { path = "../standard-libraries" }
+sha2.workspace = true
 
 [[test]]
 name = "phase1"

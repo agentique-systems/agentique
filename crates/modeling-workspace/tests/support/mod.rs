@@ -12,8 +12,10 @@ use agq_kerml_text::{
 use agq_kernel::{DocumentId, ElementId, SourceRevisionId, SyntaxNodeId, provenance::ByteRange};
 use agq_modeling_workspace::{ProjectWorkspace, WorkingProjectRevision};
 use agq_standard_libraries::VerifiedLibrarySet;
+use sha2::{Digest, Sha256};
 use std::{
     collections::BTreeSet,
+    fmt::{self, Write},
     fs::File,
     path::Path,
     sync::{Arc, OnceLock},
@@ -255,9 +257,75 @@ pub struct DocumentSignature {
 pub struct ImmutableSignature {
     documents: Vec<DocumentSignature>,
     diagnostics: String,
-    references: String,
+    references: DebugSignature,
     semantic_context: Option<SemanticContextId>,
     closure_digest: Option<[u8; 32]>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct DebugSignature {
+    bytes: usize,
+    sha256: [u8; 32],
+}
+
+fn debug_signature<T: fmt::Debug + ?Sized>(value: &T) -> DebugSignature {
+    struct Stream {
+        bytes: usize,
+        hash: Sha256,
+    }
+    impl Write for Stream {
+        fn write_str(&mut self, value: &str) -> fmt::Result {
+            self.bytes += value.len();
+            self.hash.update(value.as_bytes());
+            Ok(())
+        }
+    }
+    let mut stream = Stream {
+        bytes: 0,
+        hash: Sha256::new(),
+    };
+    // Exactly the former non-pretty Debug byte sequence, including every field
+    // of each reference and its query evidence. Stream it instead of retaining
+    // one large proof string per revision and four more during parallel reads.
+    write!(&mut stream, "{value:?}").expect("infallible digest writer");
+    DebugSignature {
+        bytes: stream.bytes,
+        sha256: stream.hash.finalize().into(),
+    }
+}
+
+#[test]
+fn immutable_reference_signature_matches_exact_debug_bytes_and_evidence() {
+    let document = agq_kerml_text::Document::new(
+        "namespace Signature { type Base; type Child specializes Base; }",
+    )
+    .unwrap();
+    let references = document.current().references();
+    assert_eq!(references.len(), 1);
+    let exact = format!("{references:?}");
+    let baseline = debug_signature(references);
+    assert_eq!(baseline.bytes, exact.len());
+    assert_eq!(
+        baseline.sha256,
+        <[u8; 32]>::from(Sha256::digest(exact.as_bytes()))
+    );
+
+    let mut changed = references.to_vec();
+    changed[0].resolution.search_dependencies.insert(
+        agq_kerml_semantics::SearchDependency::ValidationRule("signature-evidence-change"),
+    );
+    assert_eq!(changed[0].resolution.value, references[0].resolution.value);
+    assert_ne!(debug_signature(changed.as_slice()), baseline);
+
+    // Byte counts and the digest follow UTF-8 bytes, not character counts.
+    changed[0].name.segments.push("référence".into());
+    let exact = format!("{changed:?}");
+    let unicode = debug_signature(changed.as_slice());
+    assert_eq!(unicode.bytes, exact.len());
+    assert_eq!(
+        unicode.sha256,
+        <[u8; 32]>::from(Sha256::digest(exact.as_bytes()))
+    );
 }
 
 pub fn immutable_signature(revision: &WorkingProjectRevision) -> ImmutableSignature {
@@ -278,7 +346,7 @@ pub fn immutable_signature(revision: &WorkingProjectRevision) -> ImmutableSignat
             })
             .collect(),
         diagnostics: format!("{:?}", revision.diagnostics()),
-        references: format!("{:?}", revision.references()),
+        references: debug_signature(revision.references()),
         semantic_context: revision.kerml_queries().ok().map(|q| q.context().clone()),
         closure_digest: revision
             .producer_closure()

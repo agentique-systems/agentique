@@ -1,0 +1,63 @@
+{
+  "format": "agq.workspace-reference-signature-verification/v1",
+  "base_commit": "80dea6dbd6e477cdbe34daddabd4fb0b015a4c1e",
+  "scope": "Test-only serialization of the complete non-pretty Debug byte sequence for reference assertions. No production query, profile, facade, fixture identity, or comparison count changes.",
+  "reference_capture": "SHA-256 and exact UTF-8 byte count streamed through std::fmt::Write; the former format!(\"{:?}\", references) sequence is unchanged.",
+  "prior_risk": "Five retained reference proof Strings plus up to four transient reader Strings. 4 readers * 8 passes * 5 revisions = 160 repeated full serializations. QueryResult Debug expands shared evidence into text. Actual full-corpus String sizes have not been measured.",
+  "retained_coverage": [
+    "All fields formerly covered by reference Debug, including resolution evidence and fully qualified canonical/publication/context identities.",
+    "All original source/document/syntax/diagnostic/context/closure signature fields.",
+    "All original caller loops, comparison counts, fixture histories, and expected statuses."
+  ],
+  "dependency": "Existing locked sha2 0.10.9 added as modeling-workspace dev-dependency only; no new package version or acquisition.",
+  "source_sha256": {
+    "crates\\modeling-workspace\\tests\\support\\mod.rs": "a661b54c30280e5445a6b9c5d355b2c4f1d41f83fbc6914df85888b6cd38afdc",
+    "crates\\modeling-workspace\\Cargo.toml": "b4ce2d64bad52fb3ce00c147d282e3a87befd5672d9bfc840517c2e06ee7aa87",
+    "Cargo.lock": "516f2f72c360c1a7d898320137480c9490709846af35cff6fdf05f6b3cd71639"
+  },
+  "commands": [
+    {
+      "command": "cargo check --locked --offline -p agq-modeling-workspace --features verification --test phase1",
+      "environment": {
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\target\\workspace-scale-check",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1"
+      },
+      "exit_code": 0,
+      "elapsed_seconds": 3.644,
+      "output": "verification\\generated\\final-closure-projections\\workspace-reference-signature-1.log",
+      "output_sha256": "7ea3ce2d2a91b98d08441da6790faadd7b6bc3b6c0dcac752a70dd72587fd89b",
+      "actual_output": "    Checking agq-sysml-semantics v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\sysml-semantics)\n    Checking agq-kerml-text v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\kerml-text)\n    Checking agq-modeling-workspace v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\modeling-workspace)\n    Finished `dev` profile [unoptimized] target(s) in 3.56s\n"
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-modeling-workspace --features verification --test phase1 support::immutable_reference_signature_matches_exact_debug_bytes_and_evidence -- --exact --nocapture",
+      "environment": {
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\target\\workspace-scale-check",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1"
+      },
+      "exit_code": 0,
+      "elapsed_seconds": 63.576,
+      "output": "verification\\generated\\final-closure-projections\\workspace-reference-signature-2.log",
+      "output_sha256": "cd0ec80cfb000624fcac1f91effe222f889d98294d4507e39c193e7b27f50235",
+      "actual_output": "   Compiling cfg-if v1.0.5\n   Compiling typenum v1.20.1\n   Compiling generic-array v0.14.7\n   Compiling serde_core v1.0.229\n   Compiling num-traits v0.2.19\n   Compiling crypto-common v0.1.7\n   Compiling block-buffer v0.10.4\n   Compiling memchr v2.8.3\n   Compiling serde v1.0.229\n   Compiling thiserror v2.0.20\n   Compiling digest v0.10.7\n   Compiling num-integer v0.1.47\n   Compiling zmij v1.0.23\n   Compiling getrandom v0.4.3\n   Compiling cpufeatures v0.2.17\n   Compiling itoa v1.0.18\n   Compiling sha1_smol v1.0.1\n   Compiling uuid v1.26.1\n   Compiling serde_json v1.0.151\n   Compiling sha2 v0.10.9\n   Compiling num-bigint v0.4.8\n   Compiling simd-adler32 v0.3.10\n   Compiling agq-kernel v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\kernel)\n   Compiling crc32fast v1.5.2\n   Compiling adler2 v2.0.1\n   Compiling miniz_oxide v0.9.1\n   Compiling hashbrown v0.17.1\n   Compiling equivalent v1.0.2\n   Compiling log v0.4.34\n   Compiling bumpalo v3.20.3\n   Compiling zopfli v0.8.3\n   Compiling indexmap v2.14.2\n   Compiling flate2 v1.1.10\n   Compiling zip v2.4.2\n   Compiling agq-kerml v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\kerml)\n   Compiling agq-sysml v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\sysml)\n   Compiling agq-kerml-semantics v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\kerml-semantics)\n   Compiling agq-standard-libraries v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\standard-libraries)\n   Compiling agq-sysml-semantics v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\sysml-semantics)\n   Compiling agq-kerml-syntax v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\kerml-syntax)\n   Compiling agq-kerml-text v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\kerml-text)\n   Compiling agq-modeling-workspace v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\modeling-workspace)\n    Finished `test` profile [unoptimized] target(s) in 1m 02s\n     Running tests\\phase1.rs (target\\workspace-scale-check\\debug\\deps\\phase1-b841dcf8251e2aef.exe)\n\nrunning 1 test\ntest support::immutable_reference_signature_matches_exact_debug_bytes_and_evidence ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 6 filtered out; finished in 0.30s\n\n"
+    },
+    {
+      "command": "rustfmt --edition 2024 --check crates/modeling-workspace/tests/support/mod.rs",
+      "exit_code": 0,
+      "elapsed_seconds": 0.082,
+      "actual_output": ""
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "elapsed_seconds": 0.044,
+      "actual_output": ""
+    }
+  ],
+  "accepted_runtime_run": false
+}
