@@ -116,9 +116,11 @@ transitive inherited suppression and finite proofs for cyclic structural results
 Empty cyclic returns expose their complete population evidence. Incomplete sources
 and ambiguous order remain Incomplete. The v2 correction manifest is unchanged;
 v3 adds only AGQ-SYSML20-005 for the exact ConnectionUsage definition-domain conflict.
-Neither declared construction nor context attachment certifies a Systems publication,
-and Systems publication does not itself adopt ADR 0026 or establish authored
-self-model and modeling-workspace readiness.
+Neither declared construction nor context attachment certifies a Systems publication.
+The separate accepted-cache and authored self-model/effective-core gates have now
+passed, establishing the [language readiness decision](../verification/summaries/final-language-acceptance/semantic-closure-readiness.md)
+and adoption of ADR 0026. Modeling-workspace implementation and acceptance remain
+separate from these language gates.
 
 The KerML `CanonicalPublicationBuilder` starts from declared producer subjects
 under Operational v9 by default, with explicit historical profile selection.
@@ -478,8 +480,11 @@ and Systems v3 publications through the shared textual frontend. The
 [current publication evidence](../verification/summaries/final-audit-semantic-closure/README.md)
 supersedes the publication blockers in the historical
 [language stability bridge](../verification/summaries/language-stability-bridge/README.md).
-Accepted-dependency self-model and effective API integration remain distinct
-language-readiness obligations.
+Accepted-dependency self-model and effective API integration have passed their
+distinct [language-readiness gate](../verification/summaries/final-language-acceptance/semantic-closure-readiness.md):
+five documents, 67 Complete references, independent programmatic equivalence,
+three immutable revisions and shared standards. ADR 0026 is adopted and authorizes
+the in-memory modeling workspace; it does not establish workspace acceptance.
 Application migration, persistence, API and execution remain separate future work.
 
 
@@ -527,5 +532,5 @@ graph, producer registry and certificate state before continuing the monolithic
 fixed point. An independently accepted language facade instead authenticates a
 trusted standard cache and restores its accepted evidence without producer replay.
 Matching graph counts or aggregate digests alone cannot replace either check.
-See [ADR 0026](adr/0026-language-foundation-stability-contract.md); its adoption
-still requires the separate language-readiness decision.
+See adopted [ADR 0026](adr/0026-language-foundation-stability-contract.md) and its
+measured [language-readiness decision](../verification/summaries/final-language-acceptance/semantic-closure-readiness.md).

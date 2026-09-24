@@ -1,8 +1,12 @@
 # ADR 0026: language foundation stability contract
 
-Status: proposed; adoption requires the recorded language-foundation readiness
-gate below. This document does not accept the Systems Library or authorize
-production workspace integration by itself.
+Status: adopted for the generation-2 language foundation. The measured
+[readiness decision](../../verification/summaries/final-language-acceptance/semantic-closure-readiness.md)
+records accepted KerML v9 and Systems v3 publications and passing authored
+integration gates. This authorizes the in-memory modeling workspace scope below;
+it does not claim that workspace implementation or its acceptance gates passed.
+Full language conformance remains separately incomplete. ADR 0027 remains
+proposed research and is not current publication authority.
 
 ## Context and scope
 
@@ -138,8 +142,11 @@ The integration owner adopts this ADR only with a concise readiness record under
 
 The [conditional adoption review](../../verification/summaries/final-language-acceptance/stability-adoption-review.md)
 maps these contracts to the implemented monolithic path and names the remaining
-measured gates. It is not the readiness decision. Earlier language-stability
-bridge summaries remain historical evidence and are not rewritten as successes.
+measured gates at its historical source. Its proposed v2 activation and readiness
+filename are superseded by the actual v3 acceptance and the
+[semantic closure readiness decision](../../verification/summaries/final-language-acceptance/semantic-closure-readiness.md).
+Earlier readiness failures and language-stability bridge summaries remain
+historical evidence and are not rewritten as successes.
 
 The record must distinguish measured acceptance from proposed behavior. Failed or
 unrun gates keep this ADR proposed and [ADR 0024](0024-gen2-modeling-workspace.md)

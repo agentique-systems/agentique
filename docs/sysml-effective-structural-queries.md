@@ -87,10 +87,16 @@ typing domains, membership roles, inherited identity, negative closure evidence
 and immutable revision changes. Actual combined-scheduler Actions fixtures prove
 that supported effective answers become Complete with a compatible certificate,
 while an unsupported variation remains Incomplete. The fresh full Systems graph
-then passed the unchanged strict effective publication audit with zero findings
+then passed the strict effective publication audit with zero findings
 over 13,644 local subjects, after complete producer closure and all 1,327 mandatory
 references. See the [publication evidence](../verification/summaries/final-audit-semantic-closure/README.md).
 The earlier 674 weighted findings, 238 distinct diagnostics and 50 subjects remain
 in the [historical rejection](../verification/summaries/systems-finalization/README.md).
-Accepted-dependency authored self-model and effective-core integration remain
-separate readiness gates; this result does not claim their completion.
+The separate accepted-dependency authored self-model and effective-core gate has
+also passed. Definition/Usage, Attribute/Item/Part, Port/Connection/Interface,
+Occurrence/Action/State, Requirement/Constraint/Case and View/Metadata fixtures
+retain Complete answers, canonical identities and evidence; the rich authored
+model matches the independent programmatic fixture. The qualified-name sibling
+exclusion proof preserves negative naming closure without changing the accepted
+publication. See the [measured readiness decision](../verification/summaries/final-language-acceptance/semantic-closure-readiness.md).
+ADR 0026 is adopted; workspace acceptance remains a separate gate.

@@ -45,7 +45,12 @@ The full Systems publication has passed strict finalization: 1,327/1,327 mandato
 references Complete, 69 accepted SysML bindings and zero effective findings, with
 atomic artifact issuance and no producer replay. See the
 [publication evidence](../verification/summaries/final-audit-semantic-closure/README.md).
-The constructor alone establishes no acceptance of the Agentique model. Its
-separate exact-cache fixture must still parse, close and query that model against
-the accepted dependency before the language-readiness gate passes. This document
-does not claim ADR 0026 adoption or completion of a production modeling workspace.
+The separate exact-cache fixture has also passed for the Agentique model: five
+documents, 67 Complete mandatory references, Complete producer closure and semantic
+architecture assertions. Its effective API answers match an independently built
+programmatic model. Three retained revisions verify edits, inherited redefinition,
+old-revision immutability, standard identity sharing and concurrent readers.
+The [readiness decision](../verification/summaries/final-language-acceptance/semantic-closure-readiness.md)
+adopts ADR 0026 and authorizes in-memory modeling workspace integration. This
+source-project result does not establish the separate Working/Validated workspace
+boundary or its 100-document, five-revision, four-reader acceptance gate.

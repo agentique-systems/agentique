@@ -16,7 +16,7 @@
     "medium_compositional_equivalence": "not run; compositional execution remains unimplemented",
     "systems_publication": "accepted by monolithic closure and strict direct finalization; compositional execution remains unimplemented",
     "blocking_proof_obligation": "Existing non-typing requirement guards remain global even for disjoint subject-scoped writers. Complete bounded requirement/provider footprints and future-writer exclusion are not established; planning success cannot authorize sealing.",
-    "production_modeling_workspace": "gated; ADR 0026 remains proposed",
+    "production_modeling_workspace": "in-memory integration authorized by adopted ADR 0026; implementation and acceptance gates remain separate; no compositional sealing prerequisite",
     "accepted_kerml": "unchanged Operational v9",
     "generation_1_release_obligations": "unchanged"
   },
@@ -137,7 +137,7 @@
     "KerML": "1.0",
     "SysML": "2.0"
   },
-  "claim": "Complete generation-2 structural runtime and accepted canonical KerML Operational v9 and SysML Systems Operational v3 publications. A fresh complete Systems closure passed unchanged strict finalization with 1327/1327 mandatory references, zero effective findings on 13644 subjects, 69 accepted SysML bindings and atomic artifacts, without producer replay. The prior 674 weighted findings remain historical rejection evidence. Accepted-dependency self-model/effective-core integration, ADR 0026 adoption and modeling workspace readiness remain separate gates. No full conformance, application migration or execution claim.",
+  "claim": "Complete generation-2 structural runtime and accepted canonical KerML Operational v9 and SysML Systems Operational v3 publications. Fresh Systems closure passed strict finalization with 1327/1327 mandatory references, zero effective findings on 13644 subjects, 69 accepted SysML bindings and atomic artifacts, without producer replay. Trusted restoration and the accepted Agentique self-model/effective-core gate pass: 5 documents, 67 Complete references, programmatic equivalence, 3 immutable revisions and shared standards. ADR 0026 is adopted; the stable language foundation authorizes in-memory modeling workspace integration, whose implementation and scale gates remain separate. Prior failures are preserved. No full conformance, application migration or execution claim.",
   "legacy_release_register": "standards/coverage.json",
   "runtime_sysml_gate": {
     "stage": "structural-runtime-v3",
@@ -155,10 +155,18 @@
   },
   "modeling_platform_gate": {
     "stage": "language-foundation-readiness",
-    "result": "gated",
-    "evidence": "verification/summaries/language-foundation-accepted/README.md",
-    "completed_stages": [],
-    "reason": "KerML v9 and Systems v3 canonical publications are accepted. Strict Systems finalization completed all mandatory references and returned zero effective findings after the semantic root causes were corrected. Accepted-dependency self-model/effective-core integration, the ADR 0026 adoption decision and production ProjectWorkspace integration remain separate gates; no broad conformance gate is added.",
+    "result": "passed",
+    "evidence": "verification/summaries/final-language-acceptance/semantic-closure-readiness.md",
+    "completed_stages": [
+      "accepted-kerml-publication",
+      "accepted-systems-publication",
+      "trusted-systems-restoration",
+      "agentique-self-model",
+      "effective-sysml-core",
+      "generation-dependency-boundary",
+      "adr-0026-adoption"
+    ],
+    "reason": "KerML v9 and Systems v3 are accepted; trusted restoration, authored and programmatic effective integration, independent implementation traceability, immutable revisions and shared standards passed. ADR 0026 is adopted. The language foundation is stable and phase N in-memory ProjectWorkspace integration may proceed. Working/Validated workspace revisions and the 100-document/five-revision/four-reader gate are not established by language acceptance. ADR 0027 remains proposed research; no broad conformance gate is added.",
     "previous_milestone": {
       "stage": "prerequisite",
       "result": "blocked",
@@ -612,7 +620,7 @@
     "systems_publication": "accepted",
     "accepted_bindings": true,
     "trusted_receipt_catalogue": "standards/sysml-accepted-publication.json; exact accepted receipt and bindings activated after the independent exported-artifact gate passed",
-    "effective_authored_acceptance": "accepted Systems dependency available; Agentique self-model/effective-core integration remains a separate readiness gate",
+    "effective_authored_acceptance": "passed against exact accepted v3/KerML v9 caches: five Agentique documents, 67 Complete mandatory references, Complete producer closure, architecture assertions, all effective-core families, independent programmatic equivalence, three immutable revisions, inherited redefinition, shared standards and parallel readers; see verification/summaries/final-language-acceptance/semantic-closure-readiness.md",
     "sysml_conformance_coverage": "incomplete; separate from publication capabilities",
     "generation_1_release_obligations": "unchanged",
     "previous_milestone": {
