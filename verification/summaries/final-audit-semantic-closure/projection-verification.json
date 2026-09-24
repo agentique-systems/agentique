@@ -1,0 +1,45 @@
+{
+  "source_commit": "5da45ce",
+  "scope": "Bounded projection authority review and naming corrections; full publication gates are owned by the milestone lead.",
+  "raw_output_directory": "verification/generated/final-closure-projections",
+  "commands": [
+    {
+      "command": "python inline ElementTree inspection of standards/normative/sysml-2.0/SysML.xmi, followed by pinned PDF text and exact Flows source inspection",
+      "exit_code": 0,
+      "result": "Confirmed narrowed redefinitions versus selectByKind subsets; exact ConnectionUsage/HappensDuring contradiction. Formal property identities and bodies retained in connection-authority.md."
+    },
+    {
+      "command": "python urllib inspection of SysML-v2-Pilot-Implementation master commit and five setting delegates, FeatureUtil and OccurrenceUsageImpl at 5cca16d846016e62bb1e54e0e50e675254a022ef",
+      "exit_code": 0,
+      "result": "Retrieved current commit independently; exact URLs and SHA-256 identities retained in connection-reference-review.json. Acquisition is not a build step."
+    },
+    {
+      "command": "java -Xmx1g --class-path <existing pilot-0.59.0-all.jar> verification/scripts/InspectConnectionDefinitions.java <root>/standards/libraries <pinned Flows.sysml> verification/generated/final-closure-projections/pilot-definitions.json",
+      "exit_code": 1,
+      "result": "Inspected HappensDuring connections: 0. Initial library directory layout was not the pilot's flattened input format; this was not semantic acceptance."
+    },
+    {
+      "command": "java -Xmx1g --class-path <existing pilot-0.59.0-all.jar> verification/scripts/InspectConnectionDefinitions.java <root>/.cache/pilot-libraries-f03ae80164d700ef <pinned Flows.sysml> verification/generated/final-closure-projections/pilot-definitions.json",
+      "exit_code": 0,
+      "result": "After using the existing byte-identical pinned library staging: 2 exact connections inspected, parse errors 0."
+    },
+    {
+      "command": "java -Xmx1g --class-path <existing pilot-0.59.0-all.jar> verification/scripts/InspectConnectionDefinitions.java <root>/.cache/pilot-libraries-f03ae80164d700ef <pinned Flows.sysml> verification/generated/final-closure-projections/pilot-definitions.json",
+      "exit_code": 0,
+      "result": "Final harness added raw feature-type and CheckMode.ALL validation inspection: 2 exact connections, 0 parse errors, 0 validation errors, 3 unrelated warnings. Canonical Association retained; runtime typed getters filter it.",
+      "output": "verification/generated/final-closure-projections/pilot-inspection.log"
+    },
+    {
+      "command": "rustfmt --edition 2024 crates/sysml-semantics/src/profile.rs crates/sysml-semantics/src/queries.rs crates/sysml-semantics/src/projection_tests.rs crates/sysml-semantics/src/structural_queries.rs crates/sysml-semantics/src/tests.rs",
+      "exit_code": 0,
+      "result": "Formatted changed Rust modules."
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "result": "No whitespace errors."
+    }
+  ],
+  "rust_gate": "Delegated to coordinated shared-target integration with enumeration agent; no Rust pass is claimed by this authority inspection summary.",
+  "publication": "Not established by this bounded review or the independent pilot result."
+}
