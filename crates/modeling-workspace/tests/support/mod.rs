@@ -34,7 +34,7 @@ pub fn accepted() -> Arc<CanonicalSysmlSystemsLibrary> {
             // KerML restore. A requested but unavailable gate fails immediately.
             let kerml_file = File::open(kerml_path).unwrap();
             let systems_file = File::open(systems_path).unwrap();
-            TrustedPublicationReceipt::checked_in("sysml-systems-operational-v2")
+            TrustedPublicationReceipt::checked_in("sysml-systems-operational-v3")
                 .expect("requested workspace acceptance requires an accepted Systems receipt");
             let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
             let sources = VerifiedLibrarySet::load_from_directory(&root).unwrap();
