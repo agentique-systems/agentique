@@ -109,11 +109,12 @@ class GateTests(unittest.TestCase):
             gate.accept_report(report)
 
     def test_cache_and_receipt_corruption_fail_closed(self):
-        for profile in gate.PROFILES:
-            with self.subTest(profile=profile):
-                self.check_cache_and_receipt_corruption(profile)
+        for profile, (rule_sets, _) in gate.PROFILES.items():
+            for rule_set in rule_sets:
+                with self.subTest(profile=profile, rule_set=rule_set):
+                    self.check_cache_and_receipt_corruption(profile, rule_set)
 
-    def check_cache_and_receipt_corruption(self, profile):
+    def check_cache_and_receipt_corruption(self, profile, rule_set):
         root = Path(__file__).resolve().parents[2]
         with tempfile.TemporaryDirectory() as directory:
             directory = Path(directory)
@@ -128,7 +129,7 @@ class GateTests(unittest.TestCase):
             docs = {doc["document"]: dict(path=doc["path"], sha256=doc["sha256"], raw=b"x", revision=origin["revision"])}
             identity = dict(publication_digest=[1] * 32, semantic_digest=[1] * 32, accepted_kerml_digest=[1] * 32,
                 systems_kpar="22" * 32, systems_source_content_set=[0] * 32, operational_profile=profile,
-                rule_set=gate.PROFILES[profile][0], producer_registry_digest=[1] * 32, producer_closure_digest=[1] * 32,
+                rule_set=rule_set, producer_registry_digest=[1] * 32, producer_closure_digest=[1] * 32,
                 producer_context_contract_digest=[1] * 32, dependency_contract_digest=[1] * 32, combined_descriptor_graph=[1] * 32)
             for field, path in (("grammar_compatibility_manifest", "standards/grammar/sysml-2.0-operational-v1.json"),
                                 ("semantic_correction_manifest", gate.PROFILES[profile][1])):
@@ -166,6 +167,22 @@ class GateTests(unittest.TestCase):
                  patch.object(gate, "checkpoint_evidence", return_value=graph_data):
                 write_cache(entries)
                 self.assertTrue(gate.validate(report_path, root)["passed"])
+                # Updating both documents and their digest cannot authorize an
+                # unsupported profile/rule-set combination. The independent
+                # certificate and graph checks remain required below.
+                for unsupported in ("agq-sysml-query/4", "agq-sysml-query/7", "agq-sysml-query/5"):
+                    if unsupported in gate.PROFILES[profile][0]:
+                        continue
+                    changed_receipt, changed_bindings = copy.deepcopy(receipt), copy.deepcopy(bindings)
+                    changed_receipt["identity"]["rule_set"] = unsupported
+                    changed_bindings["rule_set"] = unsupported
+                    changed_receipt["binding_manifest_sha256"] = list(bytes.fromhex(gate.sha(gate.encoded(changed_bindings))))
+                    receipt_path.write_bytes(gate.encoded(changed_receipt))
+                    (directory / "standard-bindings.json").write_bytes(gate.encoded(changed_bindings))
+                    with self.subTest(unsupported=unsupported), self.assertRaisesRegex(ValueError, "interpretation profile"):
+                        gate.validate(report_path, root)
+                receipt_path.write_bytes(gate.encoded(receipt))
+                (directory / "standard-bindings.json").write_bytes(gate.encoded(bindings))
                 # Consistently altered report/document profiles cannot re-label
                 # a receipt issued under a different explicit interpretation.
                 other = next(p for p in gate.PROFILES if p != profile)

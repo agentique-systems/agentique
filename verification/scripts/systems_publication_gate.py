@@ -15,8 +15,11 @@ from frontier_artifact_evidence import checkpoint_evidence, graph_evidence, pin,
 
 PROFILE = "agentique-sysml-2.0-operational/2"
 PROFILES = {
-    PROFILE: ("agq-sysml-query/5", "standards/sysml-2.0-operational-semantic-v2.json"),
-    "agentique-sysml-2.0-operational/3": ("agq-sysml-query/6", "standards/sysml-2.0-operational-semantic-v3.json"),
+    # Published-semantics implementation completion changed the query/producer
+    # identity independently of the operational interpretation. Retain exact
+    # historical v2 evidence as well as current v2; v3 begins with query/6.
+    PROFILE: (("agq-sysml-query/5", "agq-sysml-query/6"), "standards/sysml-2.0-operational-semantic-v2.json"),
+    "agentique-sysml-2.0-operational/3": (("agq-sysml-query/6",), "standards/sysml-2.0-operational-semantic-v3.json"),
 }
 FAMILIES = set("Syntax CanonicalLowering NamespacesImports DefinitionUsage AttributeItemPart "
                "OccurrenceActionState CalculationConstraintRequirementCase PortConnectionInterfaceFlow "
@@ -190,9 +193,9 @@ def validate(report_path, root):
         require(identity[a] is not None and identity[a] == bindings[b], f"receipt binding {a}")
     for field in ("publication_digest", "semantic_digest", "accepted_kerml_digest"):
         require(identity[field] == report[field], f"receipt report {field}")
-    rule_set, semantic_manifest = PROFILES[report["sysml_profile"]]
+    rule_sets, semantic_manifest = PROFILES[report["sysml_profile"]]
     require(identity["operational_profile"] == report["sysml_profile"]
-            and identity["rule_set"] == rule_set, "interpretation profile")
+            and identity["rule_set"] in rule_sets, "interpretation profile")
     require(identity["systems_kpar"] == kpar and bindings["systems_library"] == library
             and pin(identity["systems_source_content_set"]) == source_set.removeprefix("sha256:"), "Systems identity")
     for field in ("dependency_contract_digest", "combined_descriptor_graph"):

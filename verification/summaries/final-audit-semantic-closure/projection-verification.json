@@ -74,6 +74,12 @@
       "exit_code": 0,
       "result": "Pinned standards integrity passed. Systems accepted_publication remains not-accepted; no catalogue activated.",
       "output": "verification/generated/final-closure-projections/standards-check.log"
+    },
+    {
+      "command": "python -m unittest discover -s verification/scripts -p test_systems_publication_gate.py",
+      "exit_code": 0,
+      "result": "5 tests passed in 0.383 seconds. Full receipt/cache corruption fixture exercised under historical v2 /5, current v2 /6 and v3 /6. Unsupported /4 and /7 rejected for every profile, and v3 /5 rejected even with consistently rewritten binding and receipt digests.",
+      "output": "verification/generated/final-closure-projections/publication-gate-rule-set-tests.log"
     }
   ],
   "rust_gate": "Enumeration owner ran cargo test -p agq-sysml-semantics --lib on combined projection + enumeration + /6 context changes: 96 passed, 0 failed, exit 0, 130.43 seconds. Includes real scheduler Color effective typing/names and projection/naming regressions. Raw command evidence belongs to verification/summaries/enumeration-closure/commands.json.",
