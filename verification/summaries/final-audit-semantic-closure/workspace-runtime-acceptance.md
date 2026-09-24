@@ -1,10 +1,10 @@
 # Workspace runtime acceptance
 
-Current disposition: **7 of 12 unique accepted-cache workspace tests have
-passed**. The subsequent recovery-scale run aborted on a memory allocation
-failure; its result remains unresolved. Four smaller phase-1 tests are now
-running separately. N1 and N2 remain passed, and ADR 0024 remains proposed.
-The resource-interruption update below records the exact evidence.
+Current disposition: **11 of 12 unique accepted-cache workspace tests have
+passed**. All four smaller phase-1 tests passed separately. The recovery-scale
+rerun with streamed diagnostic signatures is running; the original allocation
+failure remains recorded below. N1 and N2 remain passed, and ADR 0024 remains
+proposed until the final runtime result and integration review.
 
 Initial measured record at integration source `65c1bf2`: **7 of 12 unique
 accepted-cache workspace tests have passed**. The required phase N1 self-model
@@ -222,3 +222,26 @@ passed. Full workspace acceptance and ADR 0024 adoption remain pending.
 Update verification: `git diff --check` exited 0 with empty output, and the
 local-link command above exited 0 with `7 local links valid`. No build, cache
 load, producer, or runtime test was run to prepare this update.
+
+## Four lifecycle tests completed
+
+`workspace-phase1-four-edit-gates` exited **0** with **4 passed, 0 failed,
+0 ignored**, in **1802.72 seconds test time / 1803.44 seconds command time**.
+It explicitly selected the four non-scale ignored `phase1` tests with
+`--ignored --skip hundred_documents --nocapture --test-threads=1`. Mixed edits,
+operational failures/independent sharing, syntax/unresolved recovery and repair,
+and removal/re-addition identity retirement all passed. The command tested
+`5c5b09be7ffa00166767a531184353d08d2b4a4b` with an empty working change
+(`e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855`);
+its output SHA-256 is
+`2b62ce15e1e9eda5444ee0790b74bff0ac01415e971dc5bf8e9067f6b83ac5da`.
+These results establish **11 of 12 unique workspace acceptance tests passed**.
+
+After that executable exited, the diagnostic-streaming fixture was rebuilt.
+The two exact evidence-signature regressions passed on the integration checkout
+(`workspace-streamed-evidence-signature-regressions`, 0.06 seconds test time).
+The final `workspace-recovery-scale-streamed-diagnostics` execution is now
+running. It preserves every diagnostic/reference field and all 160 reader
+comparisons, while streaming the same Debug bytes into SHA-256 plus byte count.
+Stage markers measure each revision, signature and reader pass. This is a
+test-memory change, not a production semantic change or a passed scale result.

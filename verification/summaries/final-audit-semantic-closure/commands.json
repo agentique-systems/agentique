@@ -2612,6 +2612,168 @@
         "AGENTIQUE_KERML_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/kerml-v9-publication/canonical.publication.zip",
         "AGENTIQUE_SYSTEMS_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/final-audit-semantic-closure/accepted/canonical.publication.zip"
       }
+    },
+    {
+      "name": "workspace-phase1-remaining-acceptance",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-modeling-workspace",
+        "--features",
+        "verification",
+        "--test",
+        "phase1",
+        "--",
+        "--ignored",
+        "--skip",
+        "hundred_documents_five_validated_revisions_and_four_parallel_readers",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 3221226505,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "65c1bf261512772a7f4b592f3749f6b430556c3d",
+      "working_changes_sha256": "24c5bed541a456892bc12d58492d2b7d334e1daa15364acfb95375f3f8086fb9",
+      "output_sha256": "61d81945fdd3275bae56e56552ed987b8e6bbaf54001cb114b34ce15d3453f49",
+      "duration_seconds": 916.59,
+      "output": "verification/generated/final-audit-semantic-closure/workspace-phase1-remaining-acceptance.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace",
+        "CARGO_PROFILE_RELEASE_LTO": "false",
+        "AGENTIQUE_KERML_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "AGENTIQUE_SYSTEMS_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/final-audit-semantic-closure/accepted/canonical.publication.zip"
+      }
+    },
+    {
+      "name": "workspace-streamed-diagnostic-format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "3af2afd2e7daebe2197959d1d996ed611ae2c488",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.92,
+      "output": "verification/generated/final-audit-semantic-closure/workspace-streamed-diagnostic-format.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "workspace-phase1-four-edit-gates",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-modeling-workspace",
+        "--features",
+        "verification",
+        "--test",
+        "phase1",
+        "--",
+        "--ignored",
+        "--skip",
+        "hundred_documents",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5c5b09be7ffa00166767a531184353d08d2b4a4b",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "2b62ce15e1e9eda5444ee0790b74bff0ac01415e971dc5bf8e9067f6b83ac5da",
+      "duration_seconds": 1803.44,
+      "output": "verification/generated/final-audit-semantic-closure/workspace-phase1-four-edit-gates.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace",
+        "CARGO_PROFILE_RELEASE_LTO": "false",
+        "AGENTIQUE_KERML_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "AGENTIQUE_SYSTEMS_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/final-audit-semantic-closure/accepted/canonical.publication.zip"
+      }
+    },
+    {
+      "name": "workspace-streamed-diagnostic-recovery-build",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-modeling-workspace",
+        "--features",
+        "verification",
+        "--test",
+        "phase1",
+        "--no-run"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "9a50888aa1890b8416f3941ed7063ba87a79bd97",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "b8d3a262ed5fed83023db0451689697a8b2be82b4bcf159e7d04680a9bd3f4a9",
+      "duration_seconds": 15.75,
+      "output": "verification/generated/final-audit-semantic-closure/workspace-streamed-diagnostic-recovery-build.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace",
+        "CARGO_PROFILE_RELEASE_LTO": "false"
+      }
+    },
+    {
+      "name": "workspace-streamed-evidence-signature-regressions",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-modeling-workspace",
+        "--features",
+        "verification",
+        "--test",
+        "phase1",
+        "support::immutable_",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "9a50888aa1890b8416f3941ed7063ba87a79bd97",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "46ca217fc0790ed78189231f1d8e39e861e7bca2ca1bad0bc33f2dda8f3bd2de",
+      "duration_seconds": 0.59,
+      "output": "verification/generated/final-audit-semantic-closure/workspace-streamed-evidence-signature-regressions.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace",
+        "CARGO_PROFILE_RELEASE_LTO": "false"
+      }
     }
   ]
 }
