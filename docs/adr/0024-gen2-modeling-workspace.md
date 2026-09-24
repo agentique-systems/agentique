@@ -1,6 +1,9 @@
 # ADR 0024: generation-2 in-memory modeling workspace
 
-Status: proposed; implementation prepared in isolation, pending the language-foundation and workspace acceptance gates.
+Status: proposed pending workspace runtime acceptance. The implementation is
+integrated after the [language-foundation gate](../../verification/summaries/final-language-acceptance/semantic-closure-readiness.md)
+passed and ADR 0026 was adopted. Integration does not establish completion of
+the workspace's own acceptance suite.
 
 ## Context and reuse audit
 
@@ -21,7 +24,7 @@ language crates, and persistence is outside this first workspace phase.
 Generation 2 already has useful source infrastructure in
 `agq-kerml-text::SourceProject`: immutable document revisions, explicit languages,
 stable document identities, edit reconciliation, source maps and shared accepted
-KerML dependencies. The prepared accepted-SysML constructor also mounts the
+KerML dependencies. The accepted-SysML constructor also mounts the
 authenticated Systems dependency and supplies effective language contexts.
 The additive `SourceInputs`/`SourceCompilation` boundary retains recovered inputs,
 construction obligations and unresolved endpoints without changing the existing
@@ -32,9 +35,10 @@ design and the strict frontend's original limitations.
 
 ## Proposed decision
 
-Integrate the prepared `agq-modeling-workspace` after both standard publications
-and the effective authored language vertical pass. Keep `agq-workspace`
-operational and unchanged.
+The integrated `agq-modeling-workspace` follows the accepted KerML v9 and Systems
+v3 publications and the passing effective authored language vertical. Keep
+`agq-workspace` operational and unchanged. Actual workspace runtime acceptance
+remains pending at reviewed source `5bdbc60`.
 The additive name makes the generation boundary visible to consumers.
 
 The new crate depends inward on the kernel, textual frontend and KerML/SysML
@@ -74,7 +78,12 @@ or strict declared graph, derived frontier, diagnostics, reference results,
 closure certificate and authenticated standard dependencies. Validation is a
 checked transition requiring strict kernel validity, mandatory-reference
 completeness, matching canonical endpoints, no blocking diagnostics, authenticated
-KerML and SysML contexts, and the applicable effective-query certificates.
+KerML and SysML contexts, fully closed producer certificates and a finding-free
+applicable effective-query audit bound to the exact SysML semantic context.
+The retained audit covers every local canonical subject, including derived
+records, through the strict finalizer's effective-query dispatcher. It excludes
+accepted dependency subjects and issues no standard publication. Missing or
+mismatched audit context and Invalid/Incomplete effective results block validation.
 A `ValidatedProjectRevision` has a private constructor and retains the exact
 validated working revision. A successful source edit or stored snapshot alone
 does not create this type.
@@ -103,8 +112,12 @@ remains readable and unchanged. Standard ElementIds and publication Arcs remain
 identical. Unchanged authored identities are preserved where syntax reconciliation
 permits. An unresolved edit produces Working, and cannot produce Validated.
 
-The permanent ten-test workspace suite also covers 100 mixed documents over five
-revisions and four concurrent immutable readers. Verification-only observers
+The permanent 12-test workspace suite has six phase-1 tests, one self-model test
+and five Working-state tests. Its validated scale fixture requires 100 mixed
+documents in each of five Validated revisions and four concurrent immutable
+readers. The separate recovery-scale fixture retains a fourth Working revision
+with 99 documents; it does not substitute for the validated scale gate.
+Verification-only observers
 check actual standard table/index/proof storage and scheduler evaluations;
 publication Arc equality alone does not establish absence of graph copies or
 producer replay. Accepted-cache tests are explicit, fail when their dependencies
@@ -130,5 +143,8 @@ separate cost; Phase 1 may recompute authored semantics on edits while sharing
 standards. Future provider-footprint invalidation must remain equivalent to full
 authored recomputation. ADR 0027 component sealing is not a prerequisite.
 
-No platform production code may integrate before the language-foundation
-readiness summary passes. This proposal does not claim that gate passed.
+The language-foundation prerequisite passed before integration. Kernel invariants
+and exact accepted-cache identity restoration on the shared-storage representation
+have also passed; see the [current command ledger](../../verification/summaries/final-audit-semantic-closure/commands.json).
+Workspace self-model, Working/Validated and scale runtime acceptance remain
+separate pending gates. ADR adoption awaits those results.

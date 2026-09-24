@@ -1,10 +1,50 @@
 # Working source revisions: frontend boundary
 
-Status: preparation for ADR 0024; production workspace integration remains gated.
-This reviews the prepared `SourceProject::with_accepted_sysml_standard_libraries`
-path in the authored-integration workstream. It adds no production API.
+Status: additive frontend and workspace implementation integrated at reviewed
+source `5bdbc60`; workspace runtime acceptance remains pending. The
+[language foundation](../verification/summaries/final-language-acceptance/semantic-closure-readiness.md)
+passed and ADR 0026 is adopted. The sections below retain their historical design
+and source baselines; the current implementation is summarized first.
 
-## Reuse and remaining gaps
+## Current implementation contract
+
+`SourceInputs` owns immutable authored documents and the accepted Systems v3
+dependency with nested KerML v9. `SourceCompilation` owns the exact current
+strict or construction frontier, references, diagnostics, checked declared
+identity history and semantic query contexts. It preserves recovered inputs
+without substituting a prior graph. The existing strict `SourceProject` API keeps
+its separate contract; workspace head/history belongs to `ProjectWorkspace`.
+
+Compilation now retains `SourceEffectiveAudit`, containing the exact
+`SysmlSemanticContextId`, sorted local canonical subjects including derived
+records, and the applicable operation report. It invokes the strict finalizer's
+effective-query dispatcher in bounded batches on that revision. Accepted
+dependency subjects are excluded. Canonical diagnostic identities and available
+source origins remain inspectable; an absent direct origin for a derived subject
+is not fabricated. The audit neither issues a publication nor replays standards.
+
+Workspace validation requires the existing syntax, strict construction,
+reference, producer-certificate and context gates plus a matching finding-free
+effective audit. Missing or mismatched context and Invalid/Incomplete effective
+results remain blocking. The malformed attribute-to-PartDefinition fixture
+requires closed producers and complete references, rejection by the actual typed
+query/audit, and a repaired new revision that leaves the old rejection unchanged.
+
+Kernel `DeclaredConstructionHistory` distinguishes temporary omission from
+explicit deletion. Immutable base tables share accepted graph, index, proof and
+search storage with local deltas and project-local inverse projections. Kernel
+invariants and exact trusted restoration of the issued cache have passed on this
+representation; actual workspace revision sharing, dogfooding, Working/Validated
+and scale tests remain pending. The
+[command ledger](../verification/summaries/final-audit-semantic-closure/commands.json)
+records prerequisites separately from those runtime results.
+
+The current suite has 12 prepared acceptance tests. In addition to the original
+five-revision recovery sequence, which has a 99-document Working fourth revision,
+a separate fixture requires five Validated revisions with 100 mixed documents
+each and four parallel readers. Neither fixture is reported as passed here.
+
+## Historical reuse audit and design requirements
 
 The accepted constructor already supplies the right semantic dependency:
 `AcceptedSourceDependency` mounts the accepted Systems overlay, which retains
@@ -319,6 +359,10 @@ then restored through the existing shared test support; there is no fallback to
 building standards or substituting `SourceProject` for the missing workspace.
 
 ## Shared dependency storage review
+
+This section preserves the pre-integration observations at their exact baseline.
+The current shared-base implementation and pending workspace sharing gate are
+described above; the recorded copies below are not assertions about `5bdbc60`.
 
 Read-only inspection at `b49afe5`; no accepted cache was loaded and no scaling
 result is claimed. The existing code shares canonical record/proof payloads,

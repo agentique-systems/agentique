@@ -1,26 +1,30 @@
-# Held phase-1 integration tests
+# Phase-1 integration test contract
 
 These integration tests exercise the additive `agq-modeling-workspace` boundary
 selected by ADR 0024. Its production implementation, manifest and root workspace
-membership are prepared in an isolated worktree. Integration remains gated by
-the language readiness contract. There is no Gen1 adapter.
+membership are integrated. The language foundation passed and ADR 0026 is
+adopted; workspace runtime acceptance remains pending at reviewed source
+`5bdbc60`. There is no Gen1 adapter.
 
-The authority for the prospective interface is
+The documented contract for the implemented interface is
 [the phase-1 design](../../../docs/modeling-workspace-phase1-design.md) and
 [the frontend boundary](../../../docs/modeling-workspace-frontend-boundary.md).
 The symbols below describe the implementation and its observable assertions.
 
-## Current blockers and execution
+## Pending runtime acceptance and execution
 
-After language readiness, the explicit accepted-publication command is
+The explicit accepted-publication command is
 
 ```powershell
 cargo test --locked --offline -p agq-modeling-workspace --features verification -- --ignored --test-threads=1
 ```
 
-This runs the mixed-document, recovery, scale and self-model dogfooding tests.
-Accepted-cache semantic tests have not yet run; their status is recorded in the
-final-language-acceptance verification ledger separately from compilation.
+The suite contains 12 prepared acceptance tests: six in `phase1`, one in
+`self_model` and five in `working_states`. It covers mixed documents, recovery,
+invalid effective typing, scale and self-model dogfooding. No passing workspace
+runtime result is claimed here; actual results belong in the
+[current command ledger](../../../verification/summaries/final-audit-semantic-closure/commands.json),
+separately from compilation and passing storage/cache prerequisite checks.
 The tests require `AGENTIQUE_KERML_CACHE` and `AGENTIQUE_SYSTEMS_CACHE`, both exact
 trusted accepted publications. Missing paths, invalid receipts or unavailable
 accepted Systems restoration fail the requested test; they never skip a test,
@@ -36,14 +40,15 @@ API. Kernel-owned identity history distinguishes temporary omission from
 deletion, including deletion while the current revision remains Working.
 Verification-only observers record actual scheduler evaluations and retained
 kernel table ownership. Trusted Systems restoration still requires an accepted
-receipt; the existing language acceptance harness remains independently gated.
+receipt. The separate language self-model/effective-core harness has passed;
+it does not establish these workspace tests.
 
 ## Facade used by the tests
 
 All fallible operations return typed errors with Debug implementations. These
 tests do not freeze error formatting or invent a semantic DTO representation.
 
-| Receiver | Proposed surface |
+| Receiver | Implemented surface |
 | --- | --- |
 | `ProjectWorkspace` | `open(Arc<CanonicalSysmlSystemsLibrary>)`; authenticate its nested accepted KerML publication. |
 | Workspace history | `head() -> &Arc<WorkingProjectRevision>`, `revision(ProjectRevisionId) -> Option<&Arc<WorkingProjectRevision>>`. |
@@ -52,6 +57,7 @@ tests do not freeze error formatting or invent a semantic DTO representation.
 | Documents | `document_at(&str) -> Option<&ProjectDocument>`, `documents() -> impl Iterator<Item = (&str, &ProjectDocument)>`; reuse current exact frontend source/syntax identities. |
 | Revision graph | `strict_snapshot() -> Option<&Snapshot>`, `semantic_model() -> Option<&ModelView>`; an unavailable current graph never falls back to an earlier revision. |
 | Revision evidence | `diagnostics()`, `references() -> &[ReferenceAssertion]`, `producer_status() -> Option<&AuthoredProducerStatus>`, `producer_closure() -> Option<&Arc<ProducerClosureCertificate>>`. |
+| Effective audit | `effective_audit() -> Option<&SourceEffectiveAudit>` retains the exact `SysmlSemanticContextId`, sorted local canonical subjects including derived records, applicable operation counts and all findings. Accepted dependency subjects are excluded. |
 | Query facade | `kerml_queries() -> Result<KerMlQueries<'_>, QueryUnavailable>`, `sysml_queries() -> Result<SysmlQueries<'_>, QueryUnavailable>` borrowing the exact revision graph. |
 | Shared dependencies | `accepted_sysml() -> &Arc<CanonicalSysmlSystemsLibrary>`, `accepted_kerml() -> &Arc<CanonicalKermlStandardLibraries>`. |
 | Validation | `validate(self: &Arc<WorkingProjectRevision>) -> Result<ValidatedProjectRevision, ValidationFailure>`; `ValidatedProjectRevision::working() -> &Arc<WorkingProjectRevision>`; no public unchecked constructor. |
@@ -89,22 +95,27 @@ representation may change with the kernel.
 | Recovery and repair | Recovered bytes become a Working head; no stale provider or Complete negative lookup; repair uses the same document identity; parsed unresolved names also remain Working and repair to Validated. |
 | Removal/re-addition | Removal succeeds as a Working revision, references lose the removed endpoint, old revision still resolves it, re-added path gets a fresh document and semantic identity. |
 | Operational failures and sharing | Stale head, unknown document, duplicate path and invalid UTF-8 edit publish nothing; independent authored projects get different authored IDs while sharing standards. |
-| 100-document scaling | Fifty KerML/SysML pairs, port edit, redefinition, provider removal and repair; capture each revision's baseline before the next edit, then retain all five; four readers perform eight passes over groups 000/025/049, including explicit Working/unavailable projections; record source/syntax size, closure size, producer counters and elapsed time. |
+| 100-document recovery sequence | `hundred_documents_five_revisions_and_parallel_borrowed_reads`: fifty KerML/SysML pairs, port edit, redefinition, provider removal and repair; r4 has 99 documents and is Working, while r1/r2/r3/r5 have 100 documents and validate. Four readers perform eight passes over the five retained revisions, including Working/unavailable projections. This is not the five-validated-revision gate. |
+| Five validated 100-document revisions | `hundred_documents_five_validated_revisions_and_four_parallel_readers`: every retained revision has 50 KerML and 50 SysML documents and a Validated handle. Port/redefinition edits in groups 025 and 049 preserve earlier baselines; four barrier-synchronized readers compare values, canonical IDs, contexts and bounded evidence across all five revisions in two passes. |
 | Supplemental Working states | Targeted recovery preserves an unaffected same-document declaration through repair; removal/re-addition retires its identity; unresolved references retain exact source origins; an unsupported variation remains Working even when producers converge and the graph has a full closure certificate. |
+| Invalid effective typing and repair | A parsed attribute typed by a PartDefinition retains its canonical typing, Complete references and closed producer certificate, but the effective attribute-definition query is Invalid and the retained audit blocks validation. Changing the definition to an AttributeDefinition must validate a new context while leaving the earlier revision and rejection unchanged. |
 
-Every proposed Validated revision must carry a certificate fully closed over its
+Every Validated revision must carry a certificate fully closed over its
 actual semantic graph, in addition to Complete producer status and references.
-This is necessary but not sufficient: independent unsupported semantic
-capabilities still prevent validation. Pointer assertions cover payload/syntax
+It also requires a finding-free applicable effective audit matching that exact
+SysML context. The audit reuses the strict publication query dispatcher without
+issuing a standard publication. Missing, mismatched, Invalid or Incomplete audit
+evidence and independent unsupported capabilities prevent validation.
+Pointer assertions cover payload/syntax
 sharing; the separate storage observer tests that base maps, indexes and proof
 tables were not copied. There is no speed threshold. Rebuilding authored
 semantics remains permitted; copying accepted graphs or rerunning their producers
 does not. Prepared assertions are not passed workspace acceptance checks.
 
-The separate `agq-kerml-text --test workspace_edit_inputs` preflight runs now
+The separate `agq-kerml-text --test workspace_edit_inputs` preflight runs
 against the real production frontend. It covers all base/edited/recovered fixture
 texts and 100 generated documents. It establishes syntax suitability only.
 
-This suite supplements the held Agentique self-model/rich programmatic-equivalence
-language gate. It does not replace those semantic acceptance obligations or claim
-that the language readiness gate passed.
+This suite supplements the passed Agentique self-model/rich programmatic-equivalence
+[language gate](../../../verification/summaries/final-language-acceptance/semantic-closure-readiness.md).
+Workspace completion requires execution of this suite against the accepted caches.

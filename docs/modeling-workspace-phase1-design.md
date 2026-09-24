@@ -1,32 +1,39 @@
 # In-memory modeling workspace phase 1
 
-Status: implementation prepared in isolation; production integration remains
-gated by [ADR 0026](adr/0026-language-foundation-stability-contract.md). Accepted
-Systems cache execution is a separate measured gate, not established by compiling
-the implementation. Current results belong in the
-[Phase 1 summary](../verification/summaries/modeling-workspace-phase1/README.md).
+Status: production implementation integrated at reviewed source `5bdbc60`;
+workspace runtime acceptance remains pending. The
+[language-readiness gate](../verification/summaries/final-language-acceptance/semantic-closure-readiness.md)
+passed and [ADR 0026](adr/0026-language-foundation-stability-contract.md) is adopted.
+Kernel invariants and exact accepted-cache restoration on the shared-storage
+representation have passed. Current results belong in the
+[milestone evidence](../verification/summaries/final-audit-semantic-closure/README.md);
+the [earlier Phase 1 summary](../verification/summaries/modeling-workspace-phase1/README.md)
+remains historical preparation evidence.
 [ADR 0024](adr/0024-gen2-modeling-workspace.md) selects the additive
 `agq-modeling-workspace` boundary; the
 [generation audit](gen1-gen2-architecture-audit.md) explains the reuse choices.
 
-## Prepared implementation
+## Integrated implementation
 
 The implementation was recovered from the actual retained branch
 `foundation/workspace-authenticated-frontier-held`, commit
 `e5a65f8b3f6413b3d2094dc88c172cbba6435c3d` (parent
 `7223938437dc8ab7c684961bfb76eaba6c6c92f0`). It does not depend on an unavailable
-short Git object. Its pieces are:
+short Git object. The reviewed recovery was integrated and reconciled with the
+accepted v3 profile, then extended with the full authored effective audit and
+five-validated-revision scale fixture. Its pieces are:
 
 | Boundary | Implemented carrier |
 | --- | --- |
 | Authored history/head | `agq-modeling-workspace::ProjectWorkspace`, with opaque `ProjectRevisionId`, retained parents and immutable revision handles. |
 | Exact source state | `agq-kerml-text::SourceInputs` shares unchanged `ProjectDocument`/syntax values; source edits produce fresh source revisions. |
 | Working semantics | `SourceCompilation` binds strict or construction-backed current graphs, references, diagnostics and closure evidence. Recovery is retained without using old graph answers. |
-| Checked validation | `WorkingProjectRevision::validate` issues only the private-construction `ValidatedProjectRevision` for the exact accepted handle under `Phase1V1`. |
+| Checked validation | `WorkingProjectRevision::validate` issues only the private-construction `ValidatedProjectRevision` for the exact accepted handle under `Phase1V1`, after all structural/reference/closure/context gates and its matching finding-free effective audit. |
+| Effective audit | `SourceCompilation` retains `SourceEffectiveAudit`: exact SysML semantic context, sorted local canonical subjects including derived records, operation counts and findings from the strict finalizer's effective-query dispatcher. Accepted dependency subjects are excluded; source origins and canonical diagnostic identities are retained. |
 | Identity retirement | Kernel `DeclaredConstructionHistory` retains reservations through incomplete construction; explicit source deletion retires identities. |
 | Immutable dependencies | Kernel shared-base maps, indexes, proof/search storage and sparse local projections retain accepted standard allocations. |
 | Revision queries | Borrowed KerML/SysML evaluators, semantic element/source lookup, metadata and native completeness/evidence. |
-| Verification | Ten explicit accepted-cache tests; the five-document self-model; mixed edits; invalid Working repair; 100 documents, five revisions, four concurrent readers. |
+| Verification | Twelve prepared accepted-cache tests: six phase-1, one five-document self-model and five Working-state tests. Separate scale cases cover recovery across five retained revisions and 100 documents in each of five Validated revisions with four parallel readers. Runtime completion remains pending. |
 
 The ordinary API offers `add_document`, explicit `add_kerml`/`add_sysml`,
 `edit_document`, `remove_document` and atomic batches of `ProjectChange`. A stale
@@ -36,7 +43,7 @@ authentication is performed by the language facade before workspace construction
 
 The following sections preserve the original design and review rationale. Their
 statements about unimplemented storage/frontend seams describe the pre-integration
-baseline, not the prepared implementation above. Concrete acceptance remains
+baseline, not the integrated implementation above. Concrete workspace acceptance remains
 unproven until the recorded tests pass against real accepted dependencies. Phase 2
 is specified separately in the [roadmap](modeling-platform-phase2-roadmap.md).
 
@@ -81,7 +88,7 @@ or producer APIs.
 
 The [frontend boundary review](modeling-workspace-frontend-boundary.md) specifies
 the additive immutable source-input/result carrier, query facade, recovery
-scope evidence and concrete 100-document fixture. It reuses the prepared accepted
+scope evidence and concrete 100-document fixtures. It reuses the accepted
 Systems constructor while preserving the existing strict SourceProject API.
 
 The sequence is: check expected head and edit validity; construct candidate
@@ -96,10 +103,11 @@ revision with diagnostics. It is not an operational edit failure. Old validated
 handles remain valid for their exact old inputs, but are never exposed as the
 current edit's graph. There is no silent fallback to the previous head's answers.
 
-The current mixed `SourceProject::apply` rejects recovered production syntax;
-`sysml::lower_source` requires `draft.strict_snapshot()`. Reuse its parsing,
-document identity and reconciliation machinery, while adding an explicit
-construction result boundary in the frontend for this phase. Working revisions
+The strict mixed `SourceProject::apply` still rejects recovered production syntax;
+its strict lowering requires a snapshot. The additive `SourceInputs`/
+`SourceCompilation` implementation reuses parsing, document identity and
+reconciliation while retaining an explicit construction result boundary.
+Working revisions
 may expose a `ConstructionView` and obligations, an optional strict snapshot,
 and an optional partial derived overlay/certificate. If syntax cannot produce
 any safe construction, retain source/syntax diagnostics and report semantic
@@ -117,6 +125,8 @@ acceptance result. Validation requires:
 - all mandatory authored references Complete, with one endpoint agreeing with
   the graph and zero unresolved, ambiguous, invalid or mismatching results;
 - authenticated accepted standard dependency identities and bindings;
+- a retained finding-free applicable effective audit matching the revision's
+  exact SysML semantic context, covering local declared and derived subjects;
 - no blocking diagnostics under the explicit platform acceptance contract.
 
 Unimplemented unrelated conformance validators are reported as coverage, not
@@ -140,7 +150,7 @@ query-cache interior behavior need not become part of the public workspace
 contract. Only head/history mutation requires exclusive access. This phase has
 no async executor, HTTP transport, database, event log or durable-commit promise.
 
-## Acceptance tests to implement after the gate
+## Acceptance contract and pending runtime tests
 
 | Test | Concrete stimulus | Independent observable assertion |
 | --- | --- | --- |
@@ -154,8 +164,10 @@ no async executor, HTTP transport, database, event log or durable-commit promise
 | Shared standards | Open two workspaces and create several revisions of each. | Standard publication handles/record sharing and exact IDs remain unchanged; authored queries cannot mutate library ownership or make library roots see authored names. |
 | Trusted dependencies | Open with exact trusted publication restoration; alter one bound profile/registry/source/publication identity in a negative fixture. | Exact restore does not rerun library producers; mismatched receipt/context is rejected before constructing an accepted workspace dependency. |
 | Validation type boundary | Try to validate incomplete closure, unresolved endpoint, recovered syntax and blocking diagnostics individually. | None produces `ValidatedProjectRevision`; an accepted fixture does. No public constructor or mutation bypass exists. |
+| Effective typing rejection | Declare an AttributeUsage typed by a PartDefinition, then repair the definition to AttributeDefinition. | The invalid revision retains its canonical typing and complete producer/reference evidence but cannot validate; the repaired audit has a new exact context, and the old Invalid answer is unchanged. |
 | Programmatic equivalence | Build equivalent rich subsystem declarations with kernel/language builders and via authored source. | Compare semantic projections and relationships modulo authored-ID mapping, preserving standard IDs and evidence/completeness obligations. Equal text-generated IDs alone is not the oracle. |
-| Scaling/read isolation | Create 100 small mixed documents, retain several revisions, and query old/new heads on parallel threads with independent evaluators. | Deterministic revision-specific answers, shared standard records, no accepted-library producer replay. Record elapsed time, retained inputs and local producer scope; no hard speed threshold. |
+| Validated scaling/read isolation | Create 50 KerML and 50 SysML documents, retain five Validated revisions after port/redefinition edits, and read all five with four barrier-synchronized independent readers. | Each revision retains 100 documents; values, canonical identities, context and bounded evidence match baselines captured before later edits. Observe physical shared standard storage and no accepted-library producer replay; no hard speed threshold. |
+| Recovery at scale | Retain the original five-revision removal/repair fixture, whose fourth revision has 99 documents and is Working. | Current unresolved evidence and old immutable answers remain correct. This supplements the five-validated-revision fixture rather than counting its Working state as Validated. |
 
 The permanent self-model semantic tests remain in the language acceptance layer;
 workspace editing tests consume it as a fixture. Implementation traceability and
@@ -191,16 +203,20 @@ accepted standards must remain shareable. Tiny edits must not copy whole standar
 graphs or rerun their producers. Observe local producer evaluation counts and
 standard record sharing in the scaling test, not timing alone.
 
-The [storage review](modeling-workspace-frontend-boundary.md#shared-dependency-storage-review)
-finds shared record/proof payloads but full standard map/index replication in the
-current snapshot mount and revision builders. Phase I8 remains unverified; Arc
-pointer checks do not prove its no-copy requirement. Plan an additive shared-base
-view with local storage before claiming that requirement, while leaving authored
-index rebuilding as an explicit initial limitation. The review also identifies
-construction-draft lifetime reductions for the accepted authored fixture; it does
-not claim measured savings or authorize production workspace integration early.
+The historical [storage review](modeling-workspace-frontend-boundary.md#shared-dependency-storage-review)
+found shared record/proof payloads but full standard map/index replication at its
+recorded source. The integrated kernel now uses immutable shared base tables and
+local storage; kernel invariants and exact accepted-cache identity restoration
+have passed. Physical sharing across the actual workspace's retained revisions
+remains a runtime acceptance obligation. Facade Arc equality alone is insufficient,
+and authored index rebuilding remains an explicit initial limitation. The earlier
+construction-lifetime analysis and its unmeasured savings remain historical.
 
 ### Minimum shared-storage implementation
+
+The following implementation plan and ownership handoffs are retained historical
+design rationale. Current implementation status is recorded above; these proposed
+private type names and pre-integration gaps are not additional unfinished gates.
 
 Read-only design review updated against `695e67e`, including selected contribution
 and sealed dependency proof support; no storage implementation or benchmark is
