@@ -206,9 +206,40 @@ reuses compositional research without depending on component sealing.
 
 Normative targets are KerML 1.0 and SysML 2.0. Metamodel import, runtime descriptor
 closure, semantic queries, textual grammar and library ingestion have distinct
-coverage. Generation 2 has no application migration, persistence repository,
-Systems Modeling API or execution. See the foundation details below and
+coverage. Generation 2 has no application migration or execution. The additive
+Phase 2 repository/service/API implementation follows the boundary below; its
+acceptance is separate from the stable foundation. See the foundation details and
 [semantic kernel guide](semantic-kernel.md), including ADRs 0001–0006.
+
+## Generation 2: durable modeling platform
+
+[ADR 0028](adr/0028-gen2-modeling-repository-and-revision-service.md) adopts the
+durable project-history contract. Consumer arrows point inward:
+
+```text
+agq-modeling-http -> agq-modeling-api -> agq-modeling-service
+agq-modeling-service -> agq-modeling-repository -> agq-modeling-workspace
+agq-modeling-sqlite -> agq-modeling-repository
+agq-modeling-workspace -> accepted language/query contracts -> agq-kernel
+```
+
+Immutable revision manifests reference deduplicated exact source blobs and a
+versioned identity checkpoint. They bind accepted standards by identity without
+copying publication graphs. Restoring a Validated revision reconstructs sources,
+authenticates graph/context/closure receipt identity and checks Phase1V1 again.
+SQLite atomically registers a revision and compares-and-sets its branch head;
+operation receipts support an exact retry after lost acknowledgement. Source
+candidate construction precedes durability and never advances an acknowledged
+service head. Branch deletion retains revisions; merge and GC are deferred.
+
+The service binds a request to one immutable revision. Current graph projections,
+effective evidence-bearing queries, provenance and identity-based diffs retain
+their separate contracts. The Systems Modeling API inventory is independent of
+Gen1; partial and unsupported operations remain explicit. HTTP is additive under
+`/api/gen2` and is not wired into the Gen1 browser-visible server. The
+[Phase 2 evidence](../verification/summaries/modeling-platform-phase2/README.md)
+records actual gates and limitations. The [Phase 3 roadmap](modeling-platform-phase3-roadmap.md)
+covers projections, diagrams and reviewed source reconciliation.
 
 ## Generation 1: integrated v0.1 application
 

@@ -1,0 +1,24 @@
+[package]
+name = "agq-modeling-http"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+agq-modeling-api = { path = "../modeling-api" }
+agq-modeling-repository = { path = "../../crates/modeling-repository" }
+agq-kernel = { path = "../../crates/kernel" }
+axum.workspace = true
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
+sha2.workspace = true
+
+[dev-dependencies]
+tower = { version = "0.5.2", features = ["util"] }
+agq-modeling-service = { path = "../../crates/modeling-service" }
+agq-modeling-sqlite = { path = "../modeling-sqlite" }
+agq-kerml-text = { path = "../../crates/kerml-text" }
+agq-standard-libraries = { path = "../../crates/standard-libraries" }
+tempfile.workspace = true

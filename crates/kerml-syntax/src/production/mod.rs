@@ -168,7 +168,51 @@ pub struct Document {
     diagnostics: Vec<SyntaxDiagnostic>,
     discrepancies: Vec<GrammarDiscrepancy>,
 }
+/// Identity-only carrier checked against a freshly parsed production arena.
+/// It contains neither grammar decisions nor semantic assertions.
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct NodeIdentity {
+    pub id: SyntaxNodeId,
+    pub production: String,
+    pub range: ByteRange,
+    pub children: Vec<usize>,
+}
 impl Document {
+    /// Export production shape and persistent identities independently of source bytes.
+    pub fn identity_checkpoint(&self) -> Vec<NodeIdentity> {
+        self.nodes
+            .iter()
+            .map(|node| NodeIdentity {
+                id: node.id,
+                production: node.kind.name().into(),
+                range: node.range,
+                children: node.children.iter().map(|child| child.0).collect(),
+            })
+            .collect()
+    }
+    /// Attach identities only when every parsed node has the exact recorded shape.
+    /// The caller authenticates the source bytes and grammar profile separately.
+    pub fn restore_identities(mut self, identities: &[NodeIdentity]) -> Result<Self, SourceError> {
+        let unique: std::collections::BTreeSet<_> = identities.iter().map(|node| node.id).collect();
+        if self.nodes.len() != identities.len()
+            || unique.len() != identities.len()
+            || self.nodes.iter().zip(identities).any(|(node, saved)| {
+                node.kind.name() != saved.production
+                    || node.range != saved.range
+                    || !node
+                        .children
+                        .iter()
+                        .map(|child| child.0)
+                        .eq(saved.children.iter().copied())
+            })
+        {
+            return Err(SourceError::InvalidEdit);
+        }
+        for (node, saved) in self.nodes.iter_mut().zip(identities) {
+            node.id = saved.id;
+        }
+        Ok(self)
+    }
     /// Reparse one edit against this exact source revision. Unchanged nodes outside
     /// the edited range retain identity; overlapping or ambiguous nodes are fresh.
     /// This conservative syntax policy does not reconcile semantic library IDs.

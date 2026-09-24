@@ -32,8 +32,48 @@ conformance or execution support.
 Both handles expose the existing KerML and SysML query contracts. Element/source
 lookup and diagnostics are revision-bound; there is no second semantic DTO
 model. Accepted standards remain shared, immutable dependencies. Authored
-construction is rebuilt for each edit; future provider-footprint invalidation
-can reduce recomputation without changing revision or acceptance contracts.
+construction still passes full kernel validation for each edit. Unchanged
+documents share immutable syntax and pre-resolution lowering fragments. Global
+structural completion and reference refinement run on the assembled current
+declarations; native producer checkpoints revalidate query/provider reads before
+retaining an evaluation. Broad namespace/search dependencies reopen work
+conservatively. Every final local subject is still effectively audited.
+
+Repository callers use `prepare` to construct a detached candidate and call
+`acknowledge` only after their durable transaction commits. `from_revision` opens
+an independent branch workspace without copying graphs. `apply` remains the
+Phase 1 in-memory convenience operation.
+
+`ProjectRevisionCheckpoint` is an explicit versioned identity carrier. Source
+bytes are supplied separately by DocumentId and checked against SHA-256 digests.
+Restore reparses those bytes, checks every syntax-node shape before restoring
+its identity, restores active/retired reservations against the authenticated
+standards, and reconstructs semantics through the ordinary language engine.
+Only a Working handle is returned. A repository must authenticate its validation
+receipt and call the actual platform validation conversion independently.
+Kernel revision labels are freshly allocated; canonical graph/provenance,
+semantic-contract and closure fingerprints are independently comparable.
+
+Validated revisions can additionally export `ProjectSemanticCache`. Its local
+kernel frontier excludes accepted standard records and source bytes. Restore
+checks the exact source-checkpoint digest, cache checksum, language/descriptor/
+producer dependencies, canonical graph and closure identities. It reconstructs
+source declarations, revalidates cached effective facts against them, and reruns
+the producer scheduler and every effective-audit subject. It returns Working;
+the service independently verifies its persisted receipt before validation.
+Any cache failure permits ordinary source reconstruction. This conservative
+cache reuses persisted effective facts while retaining source parsing and audit
+work; it is disposable and supplies no independent semantic authority.
+
+`compilation_work` separates documents reparsed/lowered, lowering cache hits,
+records lowered, declared records submitted across construction passes, producer subjects and audited
+subjects. It does not claim incremental kernel construction or audit reuse.
+`edit_frontier` separates source/syntax changes and declared fact changes from
+derived consequences. The verification-only `full_rebuild` bypasses lowering
+and prior producer caches while retaining identical parsed source identity inputs.
+The oracle rebuilds all authored lowering, kernel records, producers and audits;
+it does not allocate different syntax identities. The separate durable restore
+gate reparses source bytes and checks/restores their exact syntax identities.
 
 The `verification` feature records actual producer evaluations and inspects
 physical kernel table ownership. It supplies no acceptance authority. See

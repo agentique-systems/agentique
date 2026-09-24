@@ -24,6 +24,7 @@ enum ArchiveFormat {
     Legacy,
     Frontier,
     DependentEvidence,
+    BoundFrontier([u8; 32]),
 }
 impl ArchiveFormat {
     fn identity(self, construction: bool, dependent: bool) -> &'static str {
@@ -32,6 +33,7 @@ impl ArchiveFormat {
             Self::Legacy => FORMAT,
             Self::Frontier => frontier_format(construction, dependent),
             Self::DependentEvidence => DEPENDENT_EVIDENCE_FORMAT,
+            Self::BoundFrontier(_) => "agq-kernel-bound-publication-frontier/1",
         }
     }
     fn preserves_contributions(self) -> bool {
@@ -404,6 +406,26 @@ pub fn write_publication_frontier(
     )
 }
 
+/// Stream only local strict facts and reservations over an independently
+/// authenticated dependency, including a dependency that itself has protected
+/// layers. The caller supplies that dependency's exact content identity. It must
+/// authenticate the same identity before using [`read_bound_frontier_on`].
+/// This format neither serializes nor flattens any protected dependency and
+/// confers no publication or language authority. Historical formats are unchanged.
+pub fn write_bound_frontier(
+    overlay: &DerivedOverlay,
+    dependency_identity: [u8; 32],
+    writer: impl Write,
+) -> Result<(), ArchiveError> {
+    write_input(
+        &DerivationInput::Strict(overlay.declared().clone()),
+        Some(overlay.model()),
+        true,
+        ArchiveFormat::BoundFrontier(dependency_identity),
+        writer,
+    )
+}
+
 /// Stream an unpublished construction frontier, including missing lower bounds.
 /// Every declaration, inferred proof/search and ordered contribution is retained.
 pub fn write_construction_frontier(
@@ -442,6 +464,12 @@ fn dependency_digest(
     dependency: &DerivedOverlay,
     format: ArchiveFormat,
 ) -> Result<[u8; 32], ArchiveError> {
+    if let ArchiveFormat::BoundFrontier(identity) = format {
+        let mut hash = Sha256::new();
+        hash.update(b"agq-kernel-bound-frontier-dependency/1\0");
+        hash.update(identity);
+        return Ok(hash.finalize().into());
+    }
     let mut writer = ArchiveDigest(Sha256::new());
     if matches!(format, ArchiveFormat::DependentEvidence) {
         writer.write_all(b"agq-kernel-dependent-evidence-dependency/1\0")?;
@@ -524,6 +552,10 @@ fn write_input(
             }
             .iter()
             .copied()
+            .filter(|id| {
+                !matches!(format, ArchiveFormat::BoundFrontier(_))
+                    || dependency.is_none_or(|d| !d.element_reservations().contains(id))
+            })
             .collect(),
             used_links: match snapshot {
                 DerivationInput::Strict(v) => &v.inner.used_links,
@@ -531,6 +563,10 @@ fn write_input(
             }
             .iter()
             .copied()
+            .filter(|id| {
+                !matches!(format, ArchiveFormat::BoundFrontier(_))
+                    || dependency.is_none_or(|d| !d.occurrence_reservations().contains(id))
+            })
             .collect(),
         },
     )?;
@@ -855,6 +891,34 @@ pub fn read_publication_frontier_on(
     }
 }
 
+/// Restore a local frontier against exact source-derived declarations and the
+/// caller's independently authenticated dependency identity. Protected facts and
+/// reservations come only from that supplied dependency, which remains shared.
+/// Exact declared assertions, registry, provenance, reservations and ordinary
+/// overlay validation remain mandatory. The result is unaccepted cache data.
+pub fn read_bound_frontier_on(
+    mut reader: impl BufRead,
+    declared: Snapshot,
+    dependency_identity: [u8; 32],
+) -> Result<DerivedOverlay, ArchiveError> {
+    if declared.immutable_dependency().is_none() {
+        return Err(ArchiveError::Invalid("missing immutable dependency"));
+    }
+    match read_input_on(
+        &mut reader,
+        declared.model().registry.clone(),
+        declared.immutable_dependency().cloned(),
+        false,
+        ArchiveFormat::BoundFrontier(dependency_identity),
+        Some(DerivationInput::Strict(declared)),
+    )?
+    .1
+    {
+        Some(Frontier::Strict(overlay)) => Ok(overlay),
+        _ => Err(ArchiveError::Invalid("expected strict bound frontier")),
+    }
+}
+
 /// Restore an unaccepted construction frontier on the original candidate Arc.
 /// Exact declared input authentication includes lower-bound obligations and
 /// retired identity reservations. Fresh revision labels are permitted; changed
@@ -1090,12 +1154,30 @@ fn read_input_on(
     };
     let Entry::Snapshot {
         revision,
-        used_ids,
-        used_links,
+        mut used_ids,
+        mut used_links,
     } = next(reader, &mut line)?
     else {
         return Err(ArchiveError::Invalid("snapshot header"));
     };
+    if matches!(archive_format, ArchiveFormat::BoundFrontier(_)) {
+        let dependency = dependency
+            .as_ref()
+            .ok_or(ArchiveError::Invalid("missing immutable dependency"))?;
+        if used_ids
+            .iter()
+            .any(|id| dependency.element_reservations().contains(id))
+            || used_links
+                .iter()
+                .any(|id| dependency.occurrence_reservations().contains(id))
+        {
+            return Err(ArchiveError::Invalid(
+                "protected reservation in local frontier",
+            ));
+        }
+        used_ids.extend(dependency.element_reservations().iter().copied());
+        used_links.extend(dependency.occurrence_reservations().iter().copied());
+    }
     let mut restorer = Restorer {
         proofs: vec![],
         proof_pool: ExplanationPool::default(),

@@ -1,0 +1,124 @@
+{
+    "format":  "agentique-modeling-platform-phase2-durability/1",
+    "scope":  "Gen2 SQLite storage adapter; synthetic manifests do not establish semantic restoration or platform validation",
+    "source_base":  "7d0c20e",
+    "crate":  "agq-modeling-sqlite",
+    "raw_logs":  "verification/generated/modeling-platform-phase2/sqlite-*.log (ignored)",
+    "commands":  [
+                     {
+                         "command":  "cargo fmt -p agq-modeling-sqlite -- --check",
+                         "exit_code":  0,
+                         "output":  "no formatting differences"
+                     },
+                     {
+                         "command":  "cargo clippy -p agq-modeling-sqlite --all-targets --offline -- -D warnings",
+                         "exit_code":  0,
+                         "output":  "Finished dev profile in 1.35s"
+                     },
+                     {
+                         "command":  "cargo test -p agq-modeling-sqlite --locked --offline",
+                         "exit_code":  0,
+                         "output":  "16 passed; 0 failed; 1 ignored subprocess helper; finished in 0.78s; helper executed by six child processes"
+                     },
+                     {
+                         "command":  "RUSTDOCFLAGS=\u0027-D warnings -D missing-docs\u0027 cargo doc -p agq-modeling-sqlite --no-deps --locked --offline",
+                         "exit_code":  0,
+                         "output":  "Generated agq_modeling_sqlite/index.html; Finished dev profile in 2.02s"
+                     }
+                 ],
+    "fault_boundaries":  [
+                             "after source blob write",
+                             "after revision manifest write",
+                             "before head update",
+                             "after head update SQL statement",
+                             "before transaction commit",
+                             "after durable commit before acknowledgement"
+                         ],
+    "fault_results":  {
+                          "injected_errors":  "all six boundaries passed; precommit rollback and postcommit OutcomeUnknown distinguished",
+                          "abrupt_process_exit":  "six child processes exit 86 without unwinding SQLite transactions; reopen integrity and exact retry pass",
+                          "initial_project_atomicity":  "all six boundaries passed",
+                          "lost_acknowledgement_retry":  "same operation receipt replays exactly once, including after a subsequent branch move",
+                          "competing_connections":  "two synchronized independent SQLite writers; exactly one success and one explicit head conflict"
+                      },
+    "storage_scale":  {
+                          "projects":  1,
+                          "branches":  2,
+                          "documents_per_revision":  100,
+                          "languages":  [
+                                            "KerML",
+                                            "SysML"
+                                        ],
+                          "revisions":  10,
+                          "persisted_states":  [
+                                                   "Working",
+                                                   "Validated receipt"
+                                               ],
+                          "parallel_readers":  4,
+                          "reopened":  true,
+                          "unique_blobs":  110,
+                          "blob_breakdown":  "100 original source blobs + 9 changed source blobs + 1 synthetic identity checkpoint",
+                          "accepted_standards":  "references only; no standard graphs serialized",
+                          "semantic_acceptance":  false
+                      },
+    "integrity":  [
+                      "manifest and source checksums",
+                      "branch/project/revision indexed identity consistency",
+                      "parent existence and same-project constraints",
+                      "forged parent cycle detection",
+                      "document/source revision identity collision refusal",
+                      "operation receipt checksums and collision refusal",
+                      "unknown and foreign schema refusal without version rewrite",
+                      "optional corrupt or missing cache is discardable",
+                      "corrupt mandatory source is fatal",
+                      "branch deletion retains every revision"
+                  ],
+    "integrated_focused_run": {
+        "evidence_summary": "verification/summaries/modeling-platform-phase2/commands.json",
+        "command_name": "phase2-platform-crate-tests",
+        "raw_log": "verification/generated/modeling-platform-phase2/phase2-platform-crate-tests-2.log",
+        "output_sha256": "25bb5f100e546421d64e85288b669ae130a711e92b3f03f37608a0b4b2d66092",
+        "source_commit": "7765e0741be2787c43ad8d5c08fdc501e452ffa6",
+        "working_changes_sha256": "0553767d9cb8c1278bcb8e9537e35bd6b972013768c01d9ed9509ff7ef1be72a",
+        "exit_code": 0,
+        "duration_seconds": 70.33,
+        "tests_passed": 44,
+        "tests_failed": 0,
+        "tests_ignored": 7,
+        "passed_by_crate": {
+            "agq-modeling-repository": 12,
+            "agq-modeling-sqlite": 19,
+            "agq-modeling-service": 4,
+            "agq-modeling-api": 6,
+            "agq-modeling-http": 3
+        },
+        "sqlite_test_duration_seconds": 0.26,
+        "sqlite_ignored_helper": "process_fault_child remains ignored for direct discovery and was exercised by crash_recovery_at_every_durability_boundary",
+        "acceptance_limit": "This focused run excludes six accepted-publication runtime gates/helpers; it does not establish semantic cache restoration, durable self-model, HTTP runtime vertical or semantic 100-document scale acceptance.",
+        "earlier_attempt": {
+            "raw_log": "verification/generated/modeling-platform-phase2/phase2-platform-crate-tests.log",
+            "exit_code": 101,
+            "output": "Compilation failed with six E0599 missing Project/Branch.verify errors while metadata changes overlapped the build; the separate completed rerun above passed."
+        },
+        "historical_evidence": "The earlier standalone adapter command, 16-test count, source_base and adapter_input_tree_sha256 above remain historical and are not replaced by this integrated run.",
+        "metadata_contract": [
+            "Project, branch and revision creation timestamps must parse as RFC 3339 without rewriting valid timestamp spelling.",
+            "Project and branch names must be nonblank on writes and reads.",
+            "Rejected initial metadata leaves projects, revisions, branches, blobs and operation receipts absent.",
+            "Rejected branch or child revision metadata preserves committed heads and history.",
+            "Invalid metadata remains detectable by reads and offline integrity checks even when row checksums are recomputed."
+        ],
+        "metadata_tests_passed": [
+            "resource_metadata_requires_rfc3339_without_rewriting_valid_timestamps",
+            "invalid_revision_metadata_is_rejected_even_with_valid_sources_and_receipt",
+            "invalid_initial_metadata_never_persists_project_revision_or_blobs",
+            "invalid_branch_and_child_revision_metadata_leave_committed_history_unchanged",
+            "checksummed_invalid_metadata_is_detected_on_read_and_integrity_check"
+        ]
+    },
+    "tool_versions":  {
+                          "rustc":  "1.92.0 (ded5c06cf 2025-12-08)",
+                          "cargo":  "1.92.0 (344c4567c 2025-10-21)"
+                      },
+    "adapter_input_tree_sha256":  "18dcb96ccf4e1f17dffe0a2225ff089a54825f9515c496c3979e04a06b3de827"
+}

@@ -1,0 +1,94 @@
+{
+  "format": "agentique-modeling-platform-phase2-api-evidence/1",
+  "inventory": "standards/gen2-api-coverage.json",
+  "mapping": "standards/gen2-api-mapping.json",
+  "counts": {
+    "total": 35,
+    "supported": 6,
+    "partially_supported": 7,
+    "unsupported": 22
+  },
+  "conformance": "not_claimed",
+  "authority": [
+    {
+      "path": "SysAPI.pdf",
+      "document_id": "formal/2026-03-04",
+      "sha256": "1a93ffb9214573ec38b00b89f7ce4c7b7ff6559ccbff534a6a97e08e1f145e0a"
+    },
+    {
+      "path": "standards/artifacts/OpenAPI.json",
+      "document_id": "ptc/25-02-30",
+      "sha256": "17e7e8586df6c51ada09d802f48bec6dd68d141454fae05d3f45e9b9879e01ab"
+    },
+    {
+      "path": "standards/artifacts/Schema.json",
+      "document_id": "ptc/25-02-31",
+      "sha256": "cd1d74359d275fdb5c9182a390daffbff51c9c8c30f2a8955b2d9e4eb7589274"
+    }
+  ],
+  "observed_checks": [
+    {
+      "command": [
+        "node",
+        "tools/gen2-api-inventory.mjs",
+        "--check"
+      ],
+      "tool_version": "v22.11.0",
+      "exit_code": 0,
+      "output_summary": "Generation-2 API inventory: 35 pinned operations."
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "tools/gen2-api-inventory.test.mjs"
+      ],
+      "tool_version": "v22.11.0",
+      "exit_code": 0,
+      "output_summary": "1 test passed; 0 failed. Exact operation IDs, schema shapes, authority hashes and unsupported commit/merge decisions checked."
+    },
+    {
+      "command_record": "commands.json#phase2-service-api-check",
+      "exit_code": 0,
+      "output_summary": "Initial typecheck passed; later integrated 6 API / 3 HTTP tests and whole-workspace tests passed (commands.json)."
+    }
+  ],
+  "runtime": {
+    "focused_crate_tests": "passed: 6 API and 3 HTTP unit tests",
+    "http_accepted_cache_fixture": "not run at user request to avoid long verification",
+    "strict_rustdoc": "passed with warnings and missing public docs denied",
+    "full_workspace": "passed 1005 tests"
+  },
+  "http": {
+    "prefix": "/api/gen2",
+    "boundary": "Standalone Axum router; no listener and no Gen1/browser server integration.",
+    "access_control": "Embedding host supplies authentication/authorization.",
+    "body_limit_bytes": 1048576,
+    "blocking_jobs": "bounded by caller-configured semaphore; excess requests return 503",
+    "browser_e2e": "Not required by this milestone: adapter is not integrated into the browser-visible server."
+  },
+  "partial_scope": [
+    "Concrete element @type and present canonical typed properties are projected; required absent/effective schema fields are not fabricated.",
+    "Project creation rejects explicit defaultBranch and aliases; branch creation rejects null heads, aliases and descriptions.",
+    "Relationship direction filtering supports both only; in/out are explicitly unsupported.",
+    "Diff projects canonical element changes into DataDifference pairs; occurrence/source-range/validation details remain in the modeling service.",
+    "POST commit payload mutation, automatic merge, tags, queries, datatype catalogue and API deletion lifecycles remain unsupported."
+  ],
+  "pagination": {
+    "binding": [
+      "project",
+      "immutable revision",
+      "operation and filters",
+      "page size"
+    ],
+    "wire": "Array bodies, Link headers, percent-encoded preceding/succeeding page URLs carrying provider cursors.",
+    "metadata_catalog_changes": "Explicit stale cursor rejection",
+    "semantic_branch_movement": "Continuation remains bound to the original immutable revision"
+  },
+  "acceptance": "protocol inventory and focused tests passed; accepted-cache HTTP runtime gate not run",
+  "historical_inventory_review": {
+    "source_commit": "7765e0741be2787c43ad8d5c08fdc501e452ffa6",
+    "scope_inputs_sha256": "dc1f6c5c14e25d52cb23c29c5c4f8eed49e7cf9fbb872aaf00befe0ad36856bb"
+  },
+  "integrated_source_commit": "733238d9e0874f41f51be44ea11a1eb3d732c1f9"
+}

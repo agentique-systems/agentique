@@ -28,6 +28,17 @@ package PlatformArchitecture {
     part def Repository {
         port repositoryRevisions : ArchitectureContracts::ModelRevision;
     }
+    part def ModelRepository :> Repository {
+        ref part workspaceContract : ProjectWorkspace;
+    }
+    part def ModelingService {
+        ref part durableHistory : ModelRepository;
+        ref part authoredWorkspace : ProjectWorkspace;
+        ref part revisionQueries : QueryService;
+    }
+    part def SystemsModelingApiAdapter {
+        ref part applicationContract : ModelingService;
+    }
     part def Client {
         port clientQuery : ArchitectureContracts::SemanticQuery;
     }
@@ -49,7 +60,9 @@ package PlatformArchitecture {
         part queryService : QueryService;
         part validationService : ValidationService;
         part views : ViewService;
-        part repository : Repository;
+        part repository : ModelRepository;
+        part modelingService : ModelingService;
+        part systemsModelingApi : SystemsModelingApiAdapter;
         part client : Client;
         port platformQueries : ArchitectureContracts::SemanticQuery;
         port clientQueries : ArchitectureContracts::SemanticQuery;

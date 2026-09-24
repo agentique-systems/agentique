@@ -1,0 +1,17 @@
+[package]
+name = "agq-modeling-repository"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Storage-neutral immutable Gen2 project repository contracts"
+
+[dependencies]
+agq-modeling-workspace = { path = "../modeling-workspace" }
+agq-kerml-text = { path = "../kerml-text" }
+agq-kernel = { path = "../kernel" }
+chrono.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+uuid.workspace = true
+thiserror.workspace = true

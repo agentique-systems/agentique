@@ -3,10 +3,18 @@ use super::*;
 
 /// Explicitly deleted declarations, supplied by the source identity ledger.
 /// Temporary omission from a construction is not deletion.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct DeclaredIdentitySet {
     pub elements: BTreeSet<ElementId>,
     pub occurrences: BTreeSet<AssociationOccurrenceId>,
+}
+
+/// Language-neutral identity reservations. This carries no model or acceptance.
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct DeclaredIdentityCheckpoint {
+    pub elements: Vec<(ElementId, MetaclassId, DeclaredOrigin)>,
+    pub occurrences: Vec<(AssociationOccurrenceId, AssociationId, DeclaredOrigin)>,
+    pub retired: DeclaredIdentitySet,
 }
 
 /// Kernel-owned reservations; this carries no query answers or acceptance.
@@ -30,6 +38,60 @@ fn continues(before: &DeclaredOrigin, after: &DeclaredOrigin) -> bool {
 }
 
 impl DeclaredConstructionHistory {
+    /// Export local reservations without copying the immutable dependency graph.
+    pub fn identity_checkpoint(&self) -> DeclaredIdentityCheckpoint {
+        DeclaredIdentityCheckpoint {
+            elements: self
+                .elements
+                .iter()
+                .map(|(id, (class, origin))| (*id, *class, origin.clone()))
+                .collect(),
+            occurrences: self
+                .occurrences
+                .iter()
+                .map(|(id, (association, origin))| (*id, *association, origin.clone()))
+                .collect(),
+            retired: self.retired.clone(),
+        }
+    }
+    /// Restore reservations against an independently authenticated anchor.
+    /// Existing dependency identities cannot be replaced or retired. Semantic
+    /// facts must still be reconstructed and reconciled through ordinary validation.
+    pub fn restore_identities(
+        anchor: &Snapshot,
+        checkpoint: &DeclaredIdentityCheckpoint,
+    ) -> Result<Self, ModelError> {
+        let mut result = Self::from_snapshot(anchor).retire(&checkpoint.retired)?;
+        for (id, class, origin) in &checkpoint.elements {
+            if result.protected_element(*id)
+                || result.retired.elements.contains(id)
+                || result
+                    .elements
+                    .insert(*id, (*class, origin.clone()))
+                    .is_some()
+            {
+                return Err(ModelError::ConstructionHistory(
+                    "duplicate or protected element reservation",
+                ));
+            }
+            anchor.model().registry().class(*class)?;
+        }
+        for (id, association, origin) in &checkpoint.occurrences {
+            if result.protected_occurrence(*id)
+                || result.retired.occurrences.contains(id)
+                || result
+                    .occurrences
+                    .insert(*id, (*association, origin.clone()))
+                    .is_some()
+            {
+                return Err(ModelError::ConstructionHistory(
+                    "duplicate or protected occurrence reservation",
+                ));
+            }
+            anchor.model().registry().association(*association)?;
+        }
+        Ok(result)
+    }
     /// Start from an existing declared history without importing caller-created
     /// reservation data. Existing retired identities stay retired.
     pub fn from_snapshot(snapshot: &Snapshot) -> Self {

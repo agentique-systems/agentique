@@ -1,4 +1,4 @@
-# Phase-1 integration test contract
+# Workspace integration test contracts
 
 These integration tests exercise the additive `agq-modeling-workspace` boundary
 selected by ADR 0024. Its production implementation, manifest and root workspace
@@ -130,3 +130,36 @@ This suite supplements the passed Agentique self-model/rich programmatic-equival
 All twelve accepted-cache tests establish the bounded in-memory Phase 1
 acceptance recorded by ADR 0024. This does not extend the contract to durable
 persistence, application migration, full language conformance or execution.
+
+## Phase-2 checkpoint, cache and incremental gates
+
+`phase2_checkpoint` uses the same authenticated publications without producing
+new standards. Its ordinary tests check source fixture parsing and distinct
+portable project/revision identities. Explicit accepted-cache tests cover:
+
+- Detached candidate construction and acknowledgement, followed by dropping
+  workspace state and exact source restoration, including syntax reservations,
+  canonical graph/provenance and closure identities.
+- Seven local edit classes compared with an uncached full authored semantic
+  rebuild: attribute value/type, multiplicity, declaration rename, part addition,
+  and connection removal/addition. Identical parsed identity inputs are retained
+  so equality tests canonical identity rather than unrelated random allocations.
+  Native query values, completeness, diagnostics, evidence and relationship order
+  are compared alongside graph and closure fingerprints.
+- A serialized local semantic cache round trip authenticated against restored
+  source declarations, with fresh producer/effective audits, corrupt/stale cache
+  rejection and an exact source-rebuild fallback.
+
+Run the bounded new suite explicitly and serially:
+
+```powershell
+cargo test --locked --offline --release --config profile.release.lto=false -p agq-modeling-workspace --features verification --test phase2_checkpoint -- --ignored --test-threads=1 --nocapture
+```
+
+Only one accepted-publication runtime should execute at a time on the current
+verification host; concurrent runtimes exhausted its pagefile disk margin.
+The [frontend acceptance summary](../../../verification/summaries/modeling-platform-phase2/frontend-acceptance.json)
+records actual tested commits, status, work counts and measurements. Test presence
+does not imply that a pending gate has passed. Cache restoration remains Working
+until the actual platform conversion succeeds; durable receipts are checked by
+the repository/service integration suite.

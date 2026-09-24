@@ -1,0 +1,242 @@
+{
+  "format": "agentique-generation-2-api-support-decisions/1",
+  "operations": {
+    "getProjects": {
+      "status": "supported",
+      "reason": "Durable repository metadata mapped to exact pinned response shape; cursor paging refuses mixed catalog snapshots.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    "postProject": {
+      "status": "partially_supported",
+      "reason": "Name and description create a source-backed initial revision and default branch. Explicit defaultBranch and aliases are rejected.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    "getProjectById": {
+      "status": "supported",
+      "reason": "Durable repository metadata mapped to exact pinned response shape; cursor paging refuses mixed catalog snapshots.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    "putProjectById": {
+      "status": "unsupported",
+      "reason": "Not implemented in the Phase 2 vertical; no full API conformance claim."
+    },
+    "deleteProjectById": {
+      "status": "unsupported",
+      "reason": "Not implemented in the Phase 2 vertical; no full API conformance claim."
+    },
+    "getBranchesByProject": {
+      "status": "supported",
+      "reason": "Durable repository metadata mapped to exact pinned response shape; cursor paging refuses mixed catalog snapshots.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    "postBranchByProject": {
+      "status": "partially_supported",
+      "reason": "Non-null head and name map to create-at-revision. Null heads, aliases and descriptions are explicitly rejected.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    "getBranchesByProjectAndId": {
+      "status": "supported",
+      "reason": "Durable repository metadata mapped to exact pinned response shape; cursor paging refuses mixed catalog snapshots.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    "deleteBranchByProjectAndId": {
+      "status": "unsupported",
+      "reason": "Repository head deletion is implemented, but the normative deleted Branch response requires a durable deletion-metadata/tombstone contract; the adapter explicitly rejects deletion in this profile."
+    },
+    "getTagsByProject": {
+      "status": "unsupported",
+      "reason": "Tags and their immutable commit-reference lifecycle are deferred; no tag objects are synthesized from branches."
+    },
+    "postTagByProject": {
+      "status": "unsupported",
+      "reason": "Tags and their immutable commit-reference lifecycle are deferred; no tag objects are synthesized from branches."
+    },
+    "getTagByProjectAndId": {
+      "status": "unsupported",
+      "reason": "Tags and their immutable commit-reference lifecycle are deferred; no tag objects are synthesized from branches."
+    },
+    "deleteTagByProjectAndId": {
+      "status": "unsupported",
+      "reason": "Tags and their immutable commit-reference lifecycle are deferred; no tag objects are synthesized from branches."
+    },
+    "getCommitsByProject": {
+      "status": "supported",
+      "reason": "Durable repository metadata mapped to exact pinned response shape; cursor paging refuses mixed catalog snapshots.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    "postCommitByProject": {
+      "status": "unsupported",
+      "reason": "Normative CommitRequest.change contains DataVersion payload mutation; source-backed document edits do not implement this contract."
+    },
+    "getCommitByProjectAndId": {
+      "status": "supported",
+      "reason": "Durable repository metadata mapped to exact pinned response shape; cursor paging refuses mixed catalog snapshots.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    "getChangesByProjectCommit": {
+      "status": "unsupported",
+      "reason": "A durable normative DataVersion change registry is not implemented; the identity-driven revision diff is a separate partial operation."
+    },
+    "getChangeByProjectCommitId": {
+      "status": "unsupported",
+      "reason": "A durable normative DataVersion change registry is not implemented; the identity-driven revision diff is a separate partial operation."
+    },
+    "getElementsByProjectCommit": {
+      "status": "partially_supported",
+      "reason": "Revision-bound current canonical records preserve concrete metaclass and present typed slots. Required absent/effective schema properties and ProjectUsage expansion are not fabricated; synthetic workspace root is excluded.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    "getElementByProjectCommitId": {
+      "status": "partially_supported",
+      "reason": "Canonical identity lookup and current typed slots; concrete metaclass required absent/effective schema properties are not fabricated.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    "getProjectUsageByProjectCommitElement": {
+      "status": "unsupported",
+      "reason": "Accepted standard publications are authenticated dependencies, not fabricated Systems Modeling API ProjectUsage records."
+    },
+    "getRootsByProjectCommit": {
+      "status": "partially_supported",
+      "reason": "Complete revision-bound owned root population excludes the private workspace root; element wire properties remain partial.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    "getRelationshipsByProjectCommitRelatedElement": {
+      "status": "partially_supported",
+      "reason": "Canonical Relationship elements incident to the related element, with partial element properties. Only direction=both is implemented; other directions return unsupported.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    "diff": {
+      "status": "partially_supported",
+      "reason": "Identity-driven service diff projected as DataDifference/DataVersion pairs. Element payload properties remain partial; association occurrences, source ranges and validation consequences remain service-level data.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    "merge": {
+      "status": "unsupported",
+      "reason": "Automatic source and identity reconciliation requires a reviewed merge contract; Phase 2 deliberately rejects merges."
+    },
+    "getQueriesByProject": {
+      "status": "unsupported",
+      "reason": "The normative query language and saved-query lifecycle are outside this source-backed read/revision vertical."
+    },
+    "postQueryByProject": {
+      "status": "unsupported",
+      "reason": "The normative query language and saved-query lifecycle are outside this source-backed read/revision vertical."
+    },
+    "getQueryByProjectAndId": {
+      "status": "unsupported",
+      "reason": "The normative query language and saved-query lifecycle are outside this source-backed read/revision vertical."
+    },
+    "putQueryByProjectAndId": {
+      "status": "unsupported",
+      "reason": "The normative query language and saved-query lifecycle are outside this source-backed read/revision vertical."
+    },
+    "deleteQueryByProjectAndId": {
+      "status": "unsupported",
+      "reason": "The normative query language and saved-query lifecycle are outside this source-backed read/revision vertical."
+    },
+    "getQueryResultsByProjectIdQueryId": {
+      "status": "unsupported",
+      "reason": "The normative query language and saved-query lifecycle are outside this source-backed read/revision vertical."
+    },
+    "getQueryResultsByProjectIdQuery": {
+      "status": "unsupported",
+      "reason": "The normative query language and saved-query lifecycle are outside this source-backed read/revision vertical."
+    },
+    "getQueryResultsByProjectIdQueryPost": {
+      "status": "unsupported",
+      "reason": "The normative query language and saved-query lifecycle are outside this source-backed read/revision vertical."
+    },
+    "getDatatypes": {
+      "status": "unsupported",
+      "reason": "Serving the normative datatype catalogue is deferred until element projections cover all required schema properties."
+    },
+    "getDatatypeById": {
+      "status": "unsupported",
+      "reason": "Serving the normative datatype catalogue is deferred until element projections cover all required schema properties."
+    }
+  }
+}

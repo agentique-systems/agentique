@@ -17,6 +17,17 @@ def dependency(name, **options):
 
 
 class GenerationBoundaryTests(unittest.TestCase):
+    def test_repository_cannot_leak_into_language_or_workspace(self):
+        for origin in ("agq-kernel", "agq-kerml-text", "agq-modeling-workspace"):
+            report = audit(metadata({origin: [dependency("agq-modeling-repository")]}))
+            self.assertTrue(any(v["rule"] == "language-workspace-must-not-depend-on-platform-adapters"
+                                for v in report["violations"]))
+
+    def test_platform_generation_remains_separate_from_gen1(self):
+        report = audit(metadata({"agq-modeling-service": [dependency("agq-application")]}))
+        self.assertIn({"rule": "gen2-must-not-depend-on-gen1",
+                       "path": ["agq-modeling-service", "agq-application"]}, report["violations"])
+
     def test_inward_language_and_platform_dependencies_are_permitted(self):
         report = audit(metadata({
             "agq-kerml": [dependency("agq-kernel")],

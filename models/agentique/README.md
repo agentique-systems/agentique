@@ -1,7 +1,7 @@
 # Agentique architectural acceptance model
 
 These five SysML 2.0 documents model Agentique as a system. They are real inputs
-to the Operational v2 frontend and canonical construction tests. They describe
+to the accepted Operational v3 frontend and canonical construction tests. They describe
 conceptual contracts, not a one-to-one mapping of Rust types.
 
 `Agentique.sysml` composes the language engine, modeling platform and planned
@@ -16,8 +16,14 @@ The platform document is also the rich authored regression: items, attributes,
 ports, interface ends and connections, inherited workspace structure,
 redefinition, action parameters, state entry/do/exit, a requirement subject and
 an unimplemented constraint. `preservesPriorState` is a modeled obligation, not
-an executable proof or a passing verification result. The execution, repository,
-client and view components remain architectural plans.
+an executable proof or a passing verification result. ModelRepository,
+ModelingService and SystemsModelingApiAdapter model the Phase 2 implementation
+boundaries. Execution, client and view components remain architectural plans.
+
+The durable self-model gate in `crates/modeling-service/tests/durable_platform.rs`
+commits these exact five documents, drops the service/workspace state, restores
+their canonical identities, and edits the architecture-experiment branch while
+main remains unchanged. Its actual outcome is recorded in the Phase 2 summary.
 
 `implementation-map.json` provides separately tested implementation traceability.
 An empty path list denotes planned work. The language engine does not inspect

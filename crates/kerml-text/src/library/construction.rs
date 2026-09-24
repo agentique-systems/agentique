@@ -23,6 +23,7 @@ pub(crate) fn check_supported_sysml(syntax: &production::Document) -> Result<(),
     Ok(())
 }
 
+#[derive(Clone, Debug)]
 struct Record {
     class: MetaclassId,
     origin: DeclaredOrigin,
@@ -88,6 +89,61 @@ struct Builder {
     roots: Vec<ElementId>,
     parents: BTreeMap<ElementId, ElementId>,
 }
+/// Immutable pre-resolution document fragments. Contextual completion and all
+/// global reference/producer work remain downstream of fragment assembly.
+#[derive(Clone, Debug)]
+pub(crate) struct LoweringCache {
+    documents: BTreeMap<
+        (
+            agq_kernel::DocumentId,
+            agq_kernel::SourceRevisionId,
+            ElementId,
+        ),
+        Arc<LoweredDocument>,
+    >,
+    pub(crate) documents_lowered: usize,
+    pub(crate) documents_reused: usize,
+    pub(crate) records_lowered: usize,
+    pub(crate) records_rebuilt: usize,
+    pub(crate) preparatory_producer_subjects_evaluated: usize,
+    pub(crate) allow_reuse: bool,
+}
+impl Default for LoweringCache {
+    fn default() -> Self {
+        Self {
+            documents: BTreeMap::new(),
+            documents_lowered: 0,
+            documents_reused: 0,
+            records_lowered: 0,
+            records_rebuilt: 0,
+            preparatory_producer_subjects_evaluated: 0,
+            allow_reuse: true,
+        }
+    }
+}
+#[derive(Debug)]
+struct LoweredDocument {
+    records: BTreeMap<ElementId, Record>,
+    order: Vec<ElementId>,
+    references: Vec<PendingLibraryReference>,
+    parents: BTreeMap<ElementId, ElementId>,
+    root_relationships: Vec<Value>,
+}
+impl LoweringCache {
+    pub(crate) fn next_revision(&self) -> Self {
+        Self {
+            documents: self.documents.clone(),
+            ..Default::default()
+        }
+    }
+    pub(crate) fn retain_documents(
+        &mut self,
+        live: &std::collections::BTreeSet<(agq_kernel::DocumentId, agq_kernel::SourceRevisionId)>,
+    ) {
+        self.documents
+            .retain(|(document, revision, _), _| live.contains(&(*document, *revision)));
+    }
+}
 #[derive(Clone, Copy)]
 struct Job<'a> {
     node: Node<'a>,
@@ -124,6 +180,17 @@ pub(crate) fn construct_on(
     base: Snapshot,
     project_root: Option<(ElementId, DeclaredOrigin)>,
 ) -> Result<LibraryDraft, LibraryLoadError> {
+    construct_on_cached(inputs, resolved, profile, base, project_root, None)
+}
+
+pub(crate) fn construct_on_cached(
+    inputs: &[SourceInput<'_>],
+    resolved: &BTreeMap<(ElementId, PropertyId), ElementId>,
+    profile: agq_kerml::BaselineProfile,
+    base: Snapshot,
+    project_root: Option<(ElementId, DeclaredOrigin)>,
+    mut cache: Option<&mut LoweringCache>,
+) -> Result<LibraryDraft, LibraryLoadError> {
     let mut builder = Builder {
         profile,
         base,
@@ -138,13 +205,118 @@ pub(crate) fn construct_on(
         builder.roots.push(*root);
     }
     for input in inputs {
+        if let (Some(cache), Some(root)) = (cache.as_deref_mut(), project_root.as_ref())
+            && cache.allow_reuse
+            && input.library.is_none()
+            && builder.lower_cached_document(input, root, cache)?
+        {
+            continue;
+        }
+        let before = builder.order.len();
+        builder.lower_document(input, project_root.as_ref())?;
+        if let Some(cache) = cache.as_deref_mut() {
+            cache.documents_lowered += 1;
+            cache.records_lowered += builder.order.len() - before;
+        }
+    }
+    builder.sysml_structural_completion(inputs)?;
+    for ((id, property), target) in resolved {
+        builder.set(*id, *property, Value::Reference(*target))?;
+    }
+    builder.expression_results(inputs)?;
+    if let Some(cache) = cache {
+        cache.records_rebuilt += builder.records.len();
+    }
+    builder.publish()
+}
+
+impl Builder {
+    fn lower_cached_document(
+        &mut self,
+        input: &SourceInput<'_>,
+        root: &(ElementId, DeclaredOrigin),
+        cache: &mut LoweringCache,
+    ) -> Result<bool, LibraryLoadError> {
+        let key = (input.syntax.document(), input.syntax.revision(), root.0);
+        let fragment = if let Some(fragment) = cache.documents.get(&key) {
+            cache.documents_reused += 1;
+            fragment.clone()
+        } else {
+            let mut local = Self {
+                profile: self.profile,
+                base: self.base.clone(),
+                records: BTreeMap::new(),
+                order: Vec::new(),
+                references: Vec::new(),
+                roots: vec![root.0],
+                parents: BTreeMap::new(),
+            };
+            local.create(root.0, c::NAMESPACE, root.1.clone(), None)?;
+            let default_root = local.records[&root.0].slots.clone();
+            // Traversal has access only to this document and the immutable
+            // descriptor registry. Completion and resolved endpoints are absent.
+            let lowered = local.lower_document(input, Some(root));
+            // Count trial work even when its unproven shared-root effects force
+            // an ordinary reconstruction of this document immediately below.
+            cache.documents_lowered += 1;
+            cache.records_lowered += local.records.len().saturating_sub(1);
+            if lowered.is_err() {
+                return Ok(false);
+            }
+            let mut root_record = local.records.remove(&root.0).expect("fragment root");
+            let root_relationships = match root_record.slots.remove(&p::ELEMENT_OWNED_RELATIONSHIP)
+            {
+                Some(SlotValue::Ordered(values)) => values,
+                None => Vec::new(),
+                _ => return Ok(false),
+            };
+            if root_record.slots != default_root || local.roots != [root.0] {
+                // Unproven effects on a shared root use ordinary reconstruction.
+                return Ok(false);
+            }
+            local.order.retain(|id| *id != root.0);
+            let fragment = Arc::new(LoweredDocument {
+                records: local.records,
+                order: local.order,
+                references: local.references,
+                parents: local.parents,
+                root_relationships,
+            });
+            cache.documents.insert(key, fragment.clone());
+            fragment
+        };
+        for (id, record) in &fragment.records {
+            if self.records.insert(*id, record.clone()).is_some() {
+                return Err(LibraryLoadError::Interpretation(
+                    "duplicate fragment identity".into(),
+                ));
+            }
+        }
+        self.order.extend(fragment.order.iter().copied());
+        self.references.extend(fragment.references.iter().cloned());
+        self.parents
+            .extend(fragment.parents.iter().map(|(id, owner)| (*id, *owner)));
+        for value in &fragment.root_relationships {
+            let Value::Reference(target) = value else {
+                unreachable!("owned relationship reference")
+            };
+            self.link(root.0, p::ELEMENT_OWNED_RELATIONSHIP, *target);
+        }
+        Ok(true)
+    }
+    fn lower_document(
+        &mut self,
+        input: &SourceInput<'_>,
+        project_root: Option<&(ElementId, DeclaredOrigin)>,
+    ) -> Result<(), LibraryLoadError> {
+        let builder = self;
         let mut ordinals = BTreeMap::<(u64, u64, &'static str), u32>::new();
         let mut jobs: Vec<_> = input
             .syntax
             .roots()
             .map(|node| Job {
                 node,
-                owner: project_root.as_ref().map(|(root, _)| *root),
+                owner: project_root.map(|(root, _)| *root),
                 target: None,
                 expression: false,
                 inline_chain: false,
@@ -334,13 +506,8 @@ pub(crate) fn construct_on(
             }
             jobs.extend(next.into_iter().rev());
         }
+        Ok(())
     }
-    builder.sysml_structural_completion(inputs)?;
-    for ((id, property), target) in resolved {
-        builder.set(*id, *property, Value::Reference(*target))?;
-    }
-    builder.expression_results(inputs)?;
-    builder.publish()
 }
 
 fn explicit_endpoint_property(production: P, ordinal: usize) -> Option<PropertyId> {

@@ -1,0 +1,31 @@
+[package]
+name = "agq-modeling-service"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Revision-bound Gen2 modeling application and source edit service"
+
+[dependencies]
+agq-modeling-repository = { path = "../modeling-repository" }
+agq-modeling-workspace = { path = "../modeling-workspace" }
+agq-kerml-text = { path = "../kerml-text" }
+agq-kerml-semantics = { path = "../kerml-semantics" }
+agq-kerml = { path = "../kerml" }
+agq-kernel = { path = "../kernel" }
+serde.workspace = true
+serde_json.workspace = true
+chrono.workspace = true
+thiserror.workspace = true
+zip.workspace = true
+
+[dev-dependencies]
+agq-modeling-sqlite = { path = "../../adapters/modeling-sqlite" }
+agq-standard-libraries = { path = "../standard-libraries" }
+tempfile.workspace = true
+
+[features]
+verification = ["agq-modeling-workspace/verification"]
+
+[[test]]
+name = "durable_platform"
+required-features = ["verification"]

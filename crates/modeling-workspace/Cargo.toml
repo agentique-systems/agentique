@@ -14,6 +14,9 @@ agq-kerml-text = { path = "../kerml-text" }
 agq-kerml-semantics = { path = "../kerml-semantics" }
 agq-sysml-semantics = { path = "../sysml-semantics" }
 thiserror.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+uuid.workspace = true
 
 [dev-dependencies]
 agq-kerml = { path = "../kerml" }
@@ -31,4 +34,8 @@ required-features = ["verification"]
 
 [[test]]
 name = "self_model"
+required-features = ["verification"]
+
+[[test]]
+name = "phase2_checkpoint"
 required-features = ["verification"]

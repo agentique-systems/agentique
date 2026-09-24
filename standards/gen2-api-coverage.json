@@ -1,0 +1,1796 @@
+{
+  "format": "agentique-generation-2-systems-modeling-api-coverage/1",
+  "generation": 2,
+  "prefix": "/api/gen2",
+  "conformance": "not_claimed",
+  "authority": [
+    {
+      "path": "SysAPI.pdf",
+      "document_id": "formal/2026-03-04",
+      "sha256": "1a93ffb9214573ec38b00b89f7ce4c7b7ff6559ccbff534a6a97e08e1f145e0a"
+    },
+    {
+      "path": "standards/artifacts/OpenAPI.json",
+      "document_id": "ptc/25-02-30",
+      "sha256": "17e7e8586df6c51ada09d802f48bec6dd68d141454fae05d3f45e9b9879e01ab"
+    },
+    {
+      "path": "standards/artifacts/Schema.json",
+      "document_id": "ptc/25-02-31",
+      "sha256": "cd1d74359d275fdb5c9182a390daffbff51c9c8c30f2a8955b2d9e4eb7589274"
+    }
+  ],
+  "counts": {
+    "total": 35,
+    "supported": 6,
+    "partially_supported": 7,
+    "unsupported": 22
+  },
+  "operations": [
+    {
+      "operation_id": "getProjects",
+      "method": "GET",
+      "path": "/projects",
+      "parameters": [
+        {
+          "name": "page[after]",
+          "in": "query",
+          "description": "Page after",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[before]",
+          "in": "query",
+          "description": "Page before",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[size]",
+          "in": "query",
+          "description": "Page size",
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/Project"
+          }
+        }
+      },
+      "status": "supported",
+      "reason": "Durable repository metadata mapped to exact pinned response shape; cursor paging refuses mixed catalog snapshots.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    {
+      "operation_id": "postProject",
+      "method": "POST",
+      "path": "/projects",
+      "parameters": [],
+      "request_schema": {
+        "$ref": "#/components/schemas/ProjectRequest"
+      },
+      "response_schemas": {
+        "201": {
+          "$ref": "#/components/schemas/Project"
+        }
+      },
+      "status": "partially_supported",
+      "reason": "Name and description create a source-backed initial revision and default branch. Explicit defaultBranch and aliases are rejected.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    {
+      "operation_id": "getProjectById",
+      "method": "GET",
+      "path": "/projects/{projectId}",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "$ref": "#/components/schemas/Project"
+        }
+      },
+      "status": "supported",
+      "reason": "Durable repository metadata mapped to exact pinned response shape; cursor paging refuses mixed catalog snapshots.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    {
+      "operation_id": "putProjectById",
+      "method": "PUT",
+      "path": "/projects/{projectId}",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "request_schema": {
+        "$ref": "#/components/schemas/ProjectRequest"
+      },
+      "response_schemas": {
+        "200": {
+          "$ref": "#/components/schemas/Project"
+        }
+      },
+      "status": "unsupported",
+      "reason": "Not implemented in the Phase 2 vertical; no full API conformance claim."
+    },
+    {
+      "operation_id": "deleteProjectById",
+      "method": "DELETE",
+      "path": "/projects/{projectId}",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "$ref": "#/components/schemas/Project"
+        },
+        "204": null
+      },
+      "status": "unsupported",
+      "reason": "Not implemented in the Phase 2 vertical; no full API conformance claim."
+    },
+    {
+      "operation_id": "getBranchesByProject",
+      "method": "GET",
+      "path": "/projects/{projectId}/branches",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "page[after]",
+          "in": "query",
+          "description": "Page after",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[before]",
+          "in": "query",
+          "description": "Page before",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[size]",
+          "in": "query",
+          "description": "Page size",
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/Branch"
+          }
+        }
+      },
+      "status": "supported",
+      "reason": "Durable repository metadata mapped to exact pinned response shape; cursor paging refuses mixed catalog snapshots.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    {
+      "operation_id": "postBranchByProject",
+      "method": "POST",
+      "path": "/projects/{projectId}/branches",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "request_schema": {
+        "$ref": "#/components/schemas/BranchRequest"
+      },
+      "response_schemas": {
+        "201": {
+          "$ref": "#/components/schemas/Branch"
+        }
+      },
+      "status": "partially_supported",
+      "reason": "Non-null head and name map to create-at-revision. Null heads, aliases and descriptions are explicitly rejected.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    {
+      "operation_id": "getBranchesByProjectAndId",
+      "method": "GET",
+      "path": "/projects/{projectId}/branches/{branchId}",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "branchId",
+          "in": "path",
+          "description": "ID of the branch",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "$ref": "#/components/schemas/Branch"
+        }
+      },
+      "status": "supported",
+      "reason": "Durable repository metadata mapped to exact pinned response shape; cursor paging refuses mixed catalog snapshots.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    {
+      "operation_id": "deleteBranchByProjectAndId",
+      "method": "DELETE",
+      "path": "/projects/{projectId}/branches/{branchId}",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "branchId",
+          "in": "path",
+          "description": "ID of the branch",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "$ref": "#/components/schemas/Branch"
+        },
+        "204": null
+      },
+      "status": "unsupported",
+      "reason": "Repository head deletion is implemented, but the normative deleted Branch response requires a durable deletion-metadata/tombstone contract; the adapter explicitly rejects deletion in this profile."
+    },
+    {
+      "operation_id": "getTagsByProject",
+      "method": "GET",
+      "path": "/projects/{projectId}/tags",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "page[after]",
+          "in": "query",
+          "description": "Page after",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[before]",
+          "in": "query",
+          "description": "Page before",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[size]",
+          "in": "query",
+          "description": "Page size",
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/Tag"
+          }
+        }
+      },
+      "status": "unsupported",
+      "reason": "Tags and their immutable commit-reference lifecycle are deferred; no tag objects are synthesized from branches."
+    },
+    {
+      "operation_id": "postTagByProject",
+      "method": "POST",
+      "path": "/projects/{projectId}/tags",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "request_schema": {
+        "$ref": "#/components/schemas/TagRequest"
+      },
+      "response_schemas": {
+        "201": {
+          "$ref": "#/components/schemas/Tag"
+        }
+      },
+      "status": "unsupported",
+      "reason": "Tags and their immutable commit-reference lifecycle are deferred; no tag objects are synthesized from branches."
+    },
+    {
+      "operation_id": "getTagByProjectAndId",
+      "method": "GET",
+      "path": "/projects/{projectId}/tags/{tagId}",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "tagId",
+          "in": "path",
+          "description": "ID of the tag",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "$ref": "#/components/schemas/Tag"
+        }
+      },
+      "status": "unsupported",
+      "reason": "Tags and their immutable commit-reference lifecycle are deferred; no tag objects are synthesized from branches."
+    },
+    {
+      "operation_id": "deleteTagByProjectAndId",
+      "method": "DELETE",
+      "path": "/projects/{projectId}/tags/{tagId}",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "tagId",
+          "in": "path",
+          "description": "ID of the tag",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "$ref": "#/components/schemas/Tag"
+        },
+        "204": null
+      },
+      "status": "unsupported",
+      "reason": "Tags and their immutable commit-reference lifecycle are deferred; no tag objects are synthesized from branches."
+    },
+    {
+      "operation_id": "getCommitsByProject",
+      "method": "GET",
+      "path": "/projects/{projectId}/commits",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "page[after]",
+          "in": "query",
+          "description": "Page after",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[before]",
+          "in": "query",
+          "description": "Page before",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[size]",
+          "in": "query",
+          "description": "Page size",
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/Commit"
+          }
+        }
+      },
+      "status": "supported",
+      "reason": "Durable repository metadata mapped to exact pinned response shape; cursor paging refuses mixed catalog snapshots.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    {
+      "operation_id": "postCommitByProject",
+      "method": "POST",
+      "path": "/projects/{projectId}/commits",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "branchId",
+          "in": "query",
+          "description": "ID of the branch - project's default branch if unspecified",
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "request_schema": {
+        "$ref": "#/components/schemas/CommitRequest"
+      },
+      "response_schemas": {
+        "201": {
+          "$ref": "#/components/schemas/Commit"
+        }
+      },
+      "status": "unsupported",
+      "reason": "Normative CommitRequest.change contains DataVersion payload mutation; source-backed document edits do not implement this contract."
+    },
+    {
+      "operation_id": "getCommitByProjectAndId",
+      "method": "GET",
+      "path": "/projects/{projectId}/commits/{commitId}",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "commitId",
+          "in": "path",
+          "description": "ID of the commit",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "$ref": "#/components/schemas/Commit"
+        }
+      },
+      "status": "supported",
+      "reason": "Durable repository metadata mapped to exact pinned response shape; cursor paging refuses mixed catalog snapshots.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    {
+      "operation_id": "getChangesByProjectCommit",
+      "method": "GET",
+      "path": "/projects/{projectId}/commits/{commitId}/changes",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "commitId",
+          "in": "path",
+          "description": "ID of the commit",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "page[after]",
+          "in": "query",
+          "description": "Page after",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[before]",
+          "in": "query",
+          "description": "Page before",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[size]",
+          "in": "query",
+          "description": "Page size",
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/DataVersion"
+          }
+        }
+      },
+      "status": "unsupported",
+      "reason": "A durable normative DataVersion change registry is not implemented; the identity-driven revision diff is a separate partial operation."
+    },
+    {
+      "operation_id": "getChangeByProjectCommitId",
+      "method": "GET",
+      "path": "/projects/{projectId}/commits/{commitId}/changes/{changeId}",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "commitId",
+          "in": "path",
+          "description": "ID of the commit",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "changeId",
+          "in": "path",
+          "description": "ID of the change (DataVersion)",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "$ref": "#/components/schemas/DataVersion"
+        }
+      },
+      "status": "unsupported",
+      "reason": "A durable normative DataVersion change registry is not implemented; the identity-driven revision diff is a separate partial operation."
+    },
+    {
+      "operation_id": "getElementsByProjectCommit",
+      "method": "GET",
+      "path": "/projects/{projectId}/commits/{commitId}/elements",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "commitId",
+          "in": "path",
+          "description": "ID of the commit",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "excludeUsed",
+          "in": "query",
+          "description": "Exclude Data from ProjectUsages",
+          "schema": {
+            "type": "boolean"
+          }
+        },
+        {
+          "name": "page[after]",
+          "in": "query",
+          "description": "Page after",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[before]",
+          "in": "query",
+          "description": "Page before",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[size]",
+          "in": "query",
+          "description": "Page size",
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/Element"
+          }
+        }
+      },
+      "status": "partially_supported",
+      "reason": "Revision-bound current canonical records preserve concrete metaclass and present typed slots. Required absent/effective schema properties and ProjectUsage expansion are not fabricated; synthetic workspace root is excluded.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    {
+      "operation_id": "getElementByProjectCommitId",
+      "method": "GET",
+      "path": "/projects/{projectId}/commits/{commitId}/elements/{elementId}",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "commitId",
+          "in": "path",
+          "description": "ID of the commit",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "elementId",
+          "in": "path",
+          "description": "ID of the element",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "excludeUsed",
+          "in": "query",
+          "description": "Exclude Data from ProjectUsages",
+          "schema": {
+            "type": "boolean"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "$ref": "#/components/schemas/Element"
+        }
+      },
+      "status": "partially_supported",
+      "reason": "Canonical identity lookup and current typed slots; concrete metaclass required absent/effective schema properties are not fabricated.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    {
+      "operation_id": "getProjectUsageByProjectCommitElement",
+      "method": "GET",
+      "path": "/projects/{projectId}/commits/{commitId}/elements/{elementId}/projectUsage",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "commitId",
+          "in": "path",
+          "description": "ID of the commit",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "elementId",
+          "in": "path",
+          "description": "ID of the element",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "$ref": "#/components/schemas/ProjectUsage"
+        }
+      },
+      "status": "unsupported",
+      "reason": "Accepted standard publications are authenticated dependencies, not fabricated Systems Modeling API ProjectUsage records."
+    },
+    {
+      "operation_id": "getRootsByProjectCommit",
+      "method": "GET",
+      "path": "/projects/{projectId}/commits/{commitId}/roots",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "commitId",
+          "in": "path",
+          "description": "ID of the commit",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "excludeUsed",
+          "in": "query",
+          "description": "Exclude Data from ProjectUsages",
+          "schema": {
+            "type": "boolean"
+          }
+        },
+        {
+          "name": "page[after]",
+          "in": "query",
+          "description": "Page after",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[before]",
+          "in": "query",
+          "description": "Page before",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[size]",
+          "in": "query",
+          "description": "Page size",
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/Element"
+          }
+        }
+      },
+      "status": "partially_supported",
+      "reason": "Complete revision-bound owned root population excludes the private workspace root; element wire properties remain partial.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    {
+      "operation_id": "getRelationshipsByProjectCommitRelatedElement",
+      "method": "GET",
+      "path": "/projects/{projectId}/commits/{commitId}/elements/{relatedElementId}/relationships",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "commitId",
+          "in": "path",
+          "description": "ID of the commit",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "relatedElementId",
+          "in": "path",
+          "description": "ID of the related element",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "direction",
+          "in": "query",
+          "description": "Filter for relationships that are incoming (in), outgoing (out), or both relative to the related element",
+          "schema": {
+            "type": "string",
+            "default": "both",
+            "enum": [
+              "in",
+              "out",
+              "both"
+            ]
+          }
+        },
+        {
+          "name": "excludeUsed",
+          "in": "query",
+          "description": "Exclude Data from ProjectUsages",
+          "schema": {
+            "type": "boolean"
+          }
+        },
+        {
+          "name": "page[after]",
+          "in": "query",
+          "description": "Page after",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[before]",
+          "in": "query",
+          "description": "Page before",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[size]",
+          "in": "query",
+          "description": "Page size",
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/Relationship"
+          }
+        }
+      },
+      "status": "partially_supported",
+      "reason": "Canonical Relationship elements incident to the related element, with partial element properties. Only direction=both is implemented; other directions return unsupported.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    {
+      "operation_id": "diff",
+      "method": "GET",
+      "path": "/projects/{projectId}/commits/{compareCommitId}/diff",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "baseCommitId",
+          "in": "query",
+          "description": "ID of the base commit",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "compareCommitId",
+          "in": "path",
+          "description": "ID of the compare commit",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "page[after]",
+          "in": "query",
+          "description": "Page after",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[before]",
+          "in": "query",
+          "description": "Page before",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[size]",
+          "in": "query",
+          "description": "Page size",
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/DataDifference"
+          }
+        }
+      },
+      "status": "partially_supported",
+      "reason": "Identity-driven service diff projected as DataDifference/DataVersion pairs. Element payload properties remain partial; association occurrences, source ranges and validation consequences remain service-level data.",
+      "implementation": [
+        "adapters/modeling-api/src/service.rs",
+        "adapters/modeling-http/src/lib.rs"
+      ],
+      "tests": [
+        "adapters/modeling-http/tests/vertical.rs"
+      ]
+    },
+    {
+      "operation_id": "merge",
+      "method": "POST",
+      "path": "/projects/{projectId}/branches/{targetBranchId}/merge",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "sourceCommitId",
+          "in": "query",
+          "description": "ID(s) of the source commit(s) - comma separated",
+          "required": true,
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "style": "form",
+          "explode": false
+        },
+        {
+          "name": "targetBranchId",
+          "in": "path",
+          "description": "ID of the target branch",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "description",
+          "in": "query",
+          "description": "Description of merge commit - in case one is created",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[after]",
+          "in": "query",
+          "description": "Page after",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[before]",
+          "in": "query",
+          "description": "Page before",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[size]",
+          "in": "query",
+          "description": "Page size",
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "request_schema": {
+        "oneOf": [
+          {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Data"
+            }
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "response_schemas": {
+        "201": {
+          "$ref": "#/components/schemas/Commit"
+        }
+      },
+      "status": "unsupported",
+      "reason": "Automatic source and identity reconciliation requires a reviewed merge contract; Phase 2 deliberately rejects merges."
+    },
+    {
+      "operation_id": "getQueriesByProject",
+      "method": "GET",
+      "path": "/projects/{projectId}/queries",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "page[after]",
+          "in": "query",
+          "description": "Page after",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[before]",
+          "in": "query",
+          "description": "Page before",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[size]",
+          "in": "query",
+          "description": "Page size",
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/Query"
+          }
+        }
+      },
+      "status": "unsupported",
+      "reason": "The normative query language and saved-query lifecycle are outside this source-backed read/revision vertical."
+    },
+    {
+      "operation_id": "postQueryByProject",
+      "method": "POST",
+      "path": "/projects/{projectId}/queries",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "request_schema": {
+        "$ref": "#/components/schemas/QueryRequest"
+      },
+      "response_schemas": {
+        "201": {
+          "$ref": "#/components/schemas/Query"
+        }
+      },
+      "status": "unsupported",
+      "reason": "The normative query language and saved-query lifecycle are outside this source-backed read/revision vertical."
+    },
+    {
+      "operation_id": "getQueryByProjectAndId",
+      "method": "GET",
+      "path": "/projects/{projectId}/queries/{queryId}",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "queryId",
+          "in": "path",
+          "description": "ID of the query",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "$ref": "#/components/schemas/Query"
+        }
+      },
+      "status": "unsupported",
+      "reason": "The normative query language and saved-query lifecycle are outside this source-backed read/revision vertical."
+    },
+    {
+      "operation_id": "putQueryByProjectAndId",
+      "method": "PUT",
+      "path": "/projects/{projectId}/queries/{queryId}",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "queryId",
+          "in": "path",
+          "description": "ID of the query",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "request_schema": {
+        "$ref": "#/components/schemas/QueryRequest"
+      },
+      "response_schemas": {
+        "200": {
+          "$ref": "#/components/schemas/Query"
+        }
+      },
+      "status": "unsupported",
+      "reason": "The normative query language and saved-query lifecycle are outside this source-backed read/revision vertical."
+    },
+    {
+      "operation_id": "deleteQueryByProjectAndId",
+      "method": "DELETE",
+      "path": "/projects/{projectId}/queries/{queryId}",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "queryId",
+          "in": "path",
+          "description": "ID of the query",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "$ref": "#/components/schemas/Query"
+        },
+        "204": null
+      },
+      "status": "unsupported",
+      "reason": "The normative query language and saved-query lifecycle are outside this source-backed read/revision vertical."
+    },
+    {
+      "operation_id": "getQueryResultsByProjectIdQueryId",
+      "method": "GET",
+      "path": "/projects/{projectId}/queries/{queryId}/results",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "queryId",
+          "in": "path",
+          "description": "ID of the query",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "commitId",
+          "in": "query",
+          "description": "ID of the commit - defaults to head of project",
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "page[after]",
+          "in": "query",
+          "description": "Page after",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[before]",
+          "in": "query",
+          "description": "Page before",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[size]",
+          "in": "query",
+          "description": "Page size",
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/Data"
+          }
+        }
+      },
+      "status": "unsupported",
+      "reason": "The normative query language and saved-query lifecycle are outside this source-backed read/revision vertical."
+    },
+    {
+      "operation_id": "getQueryResultsByProjectIdQuery",
+      "method": "GET",
+      "path": "/projects/{projectId}/query-results",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "commitId",
+          "in": "query",
+          "description": "ID of the commit - defaults to head of project",
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "page[after]",
+          "in": "query",
+          "description": "Page after",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[before]",
+          "in": "query",
+          "description": "Page before",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[size]",
+          "in": "query",
+          "description": "Page size",
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "request_schema": {
+        "$ref": "#/components/schemas/QueryRequest"
+      },
+      "response_schemas": {
+        "200": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/Data"
+          }
+        }
+      },
+      "status": "unsupported",
+      "reason": "The normative query language and saved-query lifecycle are outside this source-backed read/revision vertical."
+    },
+    {
+      "operation_id": "getQueryResultsByProjectIdQueryPost",
+      "method": "POST",
+      "path": "/projects/{projectId}/query-results",
+      "parameters": [
+        {
+          "name": "projectId",
+          "in": "path",
+          "description": "ID of the project",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "commitId",
+          "in": "query",
+          "description": "ID of the commit - defaults to head of project",
+          "schema": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        {
+          "name": "page[after]",
+          "in": "query",
+          "description": "Page after",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[before]",
+          "in": "query",
+          "description": "Page before",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[size]",
+          "in": "query",
+          "description": "Page size",
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "request_schema": {
+        "$ref": "#/components/schemas/QueryRequest"
+      },
+      "response_schemas": {
+        "200": {
+          "type": "array",
+          "items": {
+            "$ref": "#/components/schemas/Data"
+          }
+        }
+      },
+      "status": "unsupported",
+      "reason": "The normative query language and saved-query lifecycle are outside this source-backed read/revision vertical."
+    },
+    {
+      "operation_id": "getDatatypes",
+      "method": "GET",
+      "path": "/meta/datatypes",
+      "parameters": [
+        {
+          "name": "page[after]",
+          "in": "query",
+          "description": "Page after",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[before]",
+          "in": "query",
+          "description": "Page before",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "page[size]",
+          "in": "query",
+          "description": "Page size",
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "$schema": {
+              "type": "string",
+              "const": "https://json-schema.org/draft/2020-12/schema"
+            },
+            "$defs": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "required": [
+            "$schema",
+            "$defs"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "status": "unsupported",
+      "reason": "Serving the normative datatype catalogue is deferred until element projections cover all required schema properties."
+    },
+    {
+      "operation_id": "getDatatypeById",
+      "method": "GET",
+      "path": "/meta/datatypes/{datatypeId}",
+      "parameters": [
+        {
+          "name": "datatypeId",
+          "in": "path",
+          "description": "ID of the datatype",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      ],
+      "request_schema": null,
+      "response_schemas": {
+        "200": {
+          "type": "object",
+          "properties": {
+            "$schema": {
+              "type": "string",
+              "const": "https://json-schema.org/draft/2020-12/schema"
+            },
+            "$id": {
+              "type": "string",
+              "format": "uri"
+            },
+            "$defs": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "title": {
+              "type": "string"
+            },
+            "type": {
+              "type": "string"
+            },
+            "properties": {
+              "type": "object",
+              "additionalProperties": true
+            },
+            "required": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "additionalProperties": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "$schema",
+            "$id",
+            "title",
+            "type",
+            "properties"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "status": "unsupported",
+      "reason": "Serving the normative datatype catalogue is deferred until element projections cover all required schema properties."
+    }
+  ]
+}

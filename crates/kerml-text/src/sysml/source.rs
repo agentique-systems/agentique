@@ -179,6 +179,7 @@ fn interpretation(error: impl std::fmt::Debug) -> LibraryLoadError {
     LibraryLoadError::Interpretation(format!("{error:?}"))
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn prepare_accepted_source(
     inputs: &[SourceInput<'_>],
     root: ElementId,
@@ -186,6 +187,7 @@ pub(crate) fn prepare_accepted_source(
     dependency: Arc<AcceptedSourceDependency>,
     pending: &BTreeSet<ElementId>,
     history: Option<&agq_kernel::DeclaredConstructionHistory>,
+    cache: Option<&std::cell::RefCell<construction::LoweringCache>>,
 ) -> Result<PreparedSource, LibraryLoadError> {
     let base = dependency.mounted.project_snapshot();
     let profile = dependency.publication.accepted_kerml().profile();
@@ -194,12 +196,14 @@ pub(crate) fn prepare_accepted_source(
     let mut reopened_evaluations = 0;
     let mut status = None;
     let construct = |resolved: &BTreeMap<(ElementId, agq_kernel::PropertyId), ElementId>| {
-        let draft = construction::construct_on(
+        let mut cache = cache.map(std::cell::RefCell::borrow_mut);
+        let draft = construction::construct_on_cached(
             inputs,
             resolved,
             profile,
             base.clone(),
             Some((root, origin.clone())),
+            cache.as_deref_mut(),
         )?;
         if let Some(history) = history {
             Ok(draft.reconcile_declared(history)?.1)
@@ -279,6 +283,10 @@ pub(crate) fn prepare_accepted_source(
                         |_| {},
                     )
                     .map_err(LibraryLoadError::ProducerClosure)?;
+                    if let Some(cache) = cache {
+                        cache.borrow_mut().preparatory_producer_subjects_evaluated +=
+                            closed.counters.subjects_evaluated;
+                    }
                     if let Some(certificate) = &closed.certificate {
                         let context = dependency
                             .mounted
@@ -347,8 +355,9 @@ pub(crate) fn lower_accepted_source(
         dependency.clone(),
         &BTreeSet::new(),
         None,
+        None,
     )?;
-    finish_accepted_source(inputs, prepared, previous, root, dependency, None)
+    finish_accepted_source(inputs, prepared, previous, root, dependency, None, None)
 }
 
 pub(crate) fn finish_accepted_source(
@@ -358,6 +367,7 @@ pub(crate) fn finish_accepted_source(
     root: ElementId,
     dependency: Arc<AcceptedSourceDependency>,
     desired: Option<Snapshot>,
+    semantic_cache: Option<&crate::SourceSemanticCache>,
 ) -> Result<SourceModel, LibraryLoadError> {
     let PreparedSource {
         draft,
@@ -398,31 +408,48 @@ pub(crate) fn finish_accepted_source(
     let pending_references = draft.references().to_vec();
     let source_map = draft.source_map().clone();
     drop(draft);
-    let closed = agq_kerml_semantics::close_result_structure_with_extension(
-        &snapshot,
-        Default::default(),
-        |overlay| {
-            let context = dependency
-                .mounted
-                .project_overlay_context(overlay, &[root])
-                .map_err(PublicationOverlayError::Context)?;
-            if let Some(previous) = seed.take() {
-                let rebound = previous
-                    .rebind(&context, &registry)
-                    .map_err(PublicationOverlayError::Context)?;
-                retained_evaluations += rebound.retained_evaluations;
-                reopened_evaluations += rebound.reopened_evaluations;
-                context
-                    .with_producer_closure(rebound.certificate)
+    let closed = if let Some(cache) = semantic_cache {
+        let overlay = cache.restore_frontier(snapshot.clone(), &dependency, root)?;
+        agq_kerml_semantics::close_result_structure_on_overlay_with_extension(
+            overlay,
+            Default::default(),
+            |overlay| {
+                dependency
+                    .mounted
+                    .project_overlay_context(overlay, &[root])
                     .map_err(PublicationOverlayError::Context)
-            } else {
-                Ok(context)
-            }
-        },
-        &dependency.extension(root, true),
-        |_, _, _, _| {},
-        |_| {},
-    )
+            },
+            &dependency.extension(root, true),
+            |_, _, _, _| {},
+            |_| {},
+        )
+    } else {
+        agq_kerml_semantics::close_result_structure_with_extension(
+            &snapshot,
+            Default::default(),
+            |overlay| {
+                let context = dependency
+                    .mounted
+                    .project_overlay_context(overlay, &[root])
+                    .map_err(PublicationOverlayError::Context)?;
+                if let Some(previous) = seed.take() {
+                    let rebound = previous
+                        .rebind(&context, &registry)
+                        .map_err(PublicationOverlayError::Context)?;
+                    retained_evaluations += rebound.retained_evaluations;
+                    reopened_evaluations += rebound.reopened_evaluations;
+                    context
+                        .with_producer_closure(rebound.certificate)
+                        .map_err(PublicationOverlayError::Context)
+                } else {
+                    Ok(context)
+                }
+            },
+            &dependency.extension(root, true),
+            |_, _, _, _| {},
+            |_| {},
+        )
+    }
     .map_err(LibraryLoadError::ProducerClosure)?;
     let effective = EffectiveSourceModel {
         dependency: dependency.clone(),
@@ -438,6 +465,9 @@ pub(crate) fn finish_accepted_source(
         },
     };
     let queries = KerMlQueries::new(effective.context(root));
+    if let Some(cache) = semantic_cache {
+        cache.verify_closed(queries.context(), effective.certificate.as_deref())?;
+    }
     let (references, diagnostics) =
         source_references(inputs, &pending_references, &source_map, root, &queries)?;
     drop(queries);
@@ -450,4 +480,24 @@ pub(crate) fn finish_accepted_source(
         source_map,
         effective: Some(Box::new(effective)),
     })
+}
+
+/// Only authored effective records are cached; accepted dependency bytes are
+/// excluded by the kernel's versioned local-frontier archive contract.
+pub(crate) fn write_source_frontier(
+    model: &SourceModel,
+) -> Result<Vec<u8>, agq_kernel::archive::ArchiveError> {
+    let effective = model
+        .effective
+        .as_ref()
+        .ok_or(agq_kernel::archive::ArchiveError::Invalid(
+            "missing source overlay",
+        ))?;
+    let mut bytes = Vec::new();
+    agq_kernel::archive::write_bound_frontier(
+        &effective.overlay,
+        crate::SourceSemanticCache::dependency_identity(&effective.dependency.publication),
+        &mut bytes,
+    )?;
+    Ok(bytes)
 }
