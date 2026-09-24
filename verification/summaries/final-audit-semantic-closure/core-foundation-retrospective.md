@@ -1,5 +1,9 @@
 # Core-foundation architectural retrospective
 
+The original review below is retained at its source baseline. The later
+[integrated correction and Working-state result](#integrated-correction-and-working-state-resolution)
+records which findings and pending checks have since been resolved.
+
 Reviewed production source: `0fcc0ff`, after the held workspace and exact accepted
 v3 dependency integration. This is a bounded code and dependency review of the
 original architectural principles, not another standard-rule audit. The
@@ -148,3 +152,74 @@ Documentation checks also passed:
 | --- | --- | --- |
 | `git diff --check` | 0 | Empty |
 | `python -c "import pathlib,re; p=pathlib.Path('verification/summaries/final-audit-semantic-closure/core-foundation-retrospective.md'); links=re.findall(r'\]\(([^)]+)\)',p.read_text()); assert all((p.parent/link.split('#')[0]).is_file() for link in links); print(str(len(links))+' local links valid')"` | 0 | `10 local links valid` |
+
+## Integrated correction and Working-state resolution
+
+The authored validation gap identified in the `0fcc0ff` review is corrected in
+the integrated implementation. `SourceCompilation` now retains the applicable
+effective audit over every local canonical subject, including derived local
+records, while excluding accepted dependency subjects. It delegates to the same
+strict effective-query dispatcher used by publication. The report retains its
+exact `SysmlSemanticContextId`, subject population, operation counts and canonical
+diagnostics with available source origins. Validation requires a matching,
+finding-free report in addition to the existing syntax, strict construction,
+reference, certificate and context gates. There is no replacement semantic graph
+or stale-query fallback. See the
+[implementation and focused checks](../semantic-closure-structural/authored-effective-audit.md).
+
+The actual accepted-cache `working_states` suite has now passed all five tests:
+
+- Malformed attribute typing remains Working despite strict construction,
+  Complete producers, fully closed certificate and Complete references. Its
+  canonical AttributeUsage typing still points to the PartDefinition, and the
+  effective attribute-definition query is Invalid. Repairing the definition to
+  AttributeDefinition validates a new revision/context; the old revision's
+  graph, report and Invalid answer remain immutable.
+- Unsupported variation remains Working even when producers finish.
+- Temporary recovery preserves reconciled identity until explicit removal.
+- Unresolved references, provider removal and repair never resurrect the retired
+  endpoint.
+- Unsupported source retains its exact origin and stays Working until repaired.
+
+These executions also passed the physical sharing assertions for their inspected
+empty, Working and repaired revisions: the retained standard backing-table set
+matches the accepted publication, copied authoritative dependency entries are
+zero, original standard records retain identity, and scheduler observations
+contain no accepted standard producer subject. This is observed sharing evidence
+for these fixtures, not a result for the still-pending scale fixture.
+
+The [integration command ledger](commands.json) records the exact command:
+
+```text
+cargo test --release --locked --offline -p agq-modeling-workspace --features verification --test working_states -- --ignored --nocapture --test-threads=1
+```
+
+It exited **0**: **5 passed, 0 failed, 0 ignored**, in 2,341.71 seconds test time
+and 2,342.64 seconds command time. The tested source was
+`5bdbc60a6f6c59fa4fa9b6caa3515fe3584b4a8c`, with working-change SHA-256
+`8d8850168f1ef9eea9541c43c49e0e03cffb9a894b584f9f2588df93a34b9620`.
+The original output is
+`verification/generated/final-audit-semantic-closure/workspace-working-state-acceptance.log`,
+SHA-256 `4e8f00ed3ffcee61e0e4fdf662ab8f0de6e9bf233150c89937d681f8c972ebca`.
+The ledger preserves both original accepted cache paths and execution settings.
+
+This runtime result used the audit implementation before the evaluator-fork
+optimization in `80dea6d`. The
+[later batching change](../semantic-closure-structural/authored-audit-batching.md)
+binds the immutable context once and forks fresh evaluator caches for each
+bounded batch, retaining the same dispatcher, population and context check.
+The preceding heavy-suite result is not represented as a rerun on that change.
+
+The integrated shared-storage kernel prerequisite also passed 139 tests, and
+the exact accepted-cache identity/restoration test passed in 232.37 seconds test
+time, preserving the issued publication identity and zero producer replay. Their
+ledger entries are `workspace-shared-kernel-invariants` and
+`workspace-storage-accepted-cache-identity`. These results supersede those
+specific pending items in the original review above; its historical observations
+remain intact.
+
+Workspace self-model dogfooding, phase-1/scale acceptance and final integrated
+repository verification remain pending. In particular, five Validated revisions
+with 100 documents each and four readers are not established by the Working-state
+suite. ADR 0024 is not adopted by this update. Language foundation acceptance and
+adopted ADR 0026 remain established independently.
