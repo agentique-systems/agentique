@@ -134,6 +134,23 @@ impl SystemsLibraryCandidate {
         &self,
         mode: SystemsFinalizationAuditMode,
     ) -> Result<SystemsPublicationAudit, SystemsPublicationError> {
+        self.audit_effective_population_observed(&mut AuditLog::disabled_with_mode(mode))
+    }
+
+    /// The identical scoped query gate with durable per-batch timing and finding
+    /// observations. The directory must be fresh; its journal has no authority.
+    pub fn audit_effective_population_with_progress(
+        &self,
+        mode: SystemsFinalizationAuditMode,
+        directory: impl AsRef<std::path::Path>,
+    ) -> Result<SystemsPublicationAudit, SystemsPublicationError> {
+        self.audit_effective_population_observed(&mut AuditLog::create(directory.as_ref(), mode)?)
+    }
+
+    fn audit_effective_population_observed(
+        &self,
+        observer: &mut AuditLog,
+    ) -> Result<SystemsPublicationAudit, SystemsPublicationError> {
         let draft = self.draft();
         let overlay = draft.semantic_candidate().ok_or_else(|| {
             SystemsPublicationError::Rejected(Box::new(SystemsPublicationAudit {
@@ -172,17 +189,12 @@ impl SystemsLibraryCandidate {
             .filter(|record| !draft.candidate().is_dependency_element(record.id()))
             .map(|record| record.id())
             .collect();
-        audit_population_batches(
-            &subjects,
-            &mut audit,
-            &mut AuditLog::disabled_with_mode(mode),
-            |batch| {
-                let q = SysmlQueries::new(context.fork());
-                let mut findings = SystemsPublicationAudit::default();
-                audit_sysml_population(&q, batch, &mut findings);
-                findings
-            },
-        )?;
+        audit_population_batches(&subjects, &mut audit, observer, |batch| {
+            let q = SysmlQueries::new(context.fork());
+            let mut findings = SystemsPublicationAudit::default();
+            audit_sysml_population(&q, batch, &mut findings);
+            findings
+        })?;
         Ok(audit)
     }
 }

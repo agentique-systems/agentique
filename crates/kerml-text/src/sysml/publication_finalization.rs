@@ -48,7 +48,7 @@ impl AuditLog {
     pub(super) fn effective_workers(&self) -> usize {
         self.effective_mode.workers()
     }
-    fn create(
+    pub(super) fn create(
         directory: &Path,
         effective_mode: SystemsFinalizationAuditMode,
     ) -> std::io::Result<Self> {

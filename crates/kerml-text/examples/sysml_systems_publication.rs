@@ -536,11 +536,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if audit_only {
         println!("Systems: scoped strict effective population audit");
         let audit_started = Instant::now();
-        let effective =
-            candidate.audit_effective_population(SystemsFinalizationAuditMode::ParallelTwo)?;
+        let effective_directory = output.with_extension("effective-audit");
+        let effective = candidate.audit_effective_population_with_progress(
+            SystemsFinalizationAuditMode::ParallelTwo,
+            &effective_directory,
+        )?;
         report["effective_sysml_audit"] = json!({
             "elapsed_seconds":audit_started.elapsed().as_secs_f64(),
             "workers":2,
+            "audit_directory":effective_directory,
             "checked":effective.checked.iter().map(|(family,count)| (format!("{family:?}"), *count)).collect::<BTreeMap<_,_>>(),
             "findings":effective.findings.iter().map(|finding|format!("{finding:?}")).collect::<Vec<_>>(),
             "publication_authority":false,
