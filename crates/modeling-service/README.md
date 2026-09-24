@@ -34,6 +34,19 @@ audits. It checks the persisted validation receipt independently. Missing, corru
 stale or unknown caches reconstruct from mandatory durable source instead. A valid
 cache cannot substitute for missing source, or promote a stored Working revision.
 
+The service writes `agq-project-semantic-cache/2`: a deterministic ZIP containing
+small identity metadata and raw local-frontier bytes, with deflate level 1. The
+legacy version 1 JSON decoder remains available. Both formats authenticate the
+same workspace cache identities; neither changes the repository manifest or
+language archive contract. Metadata is limited to 64 KiB, and compressed and
+uncompressed cache payloads to 512 MiB each. Unsupported or oversized caches are
+omitted on export or discarded on restore; mandatory source remains durable.
+
+SQLite retains the cache transactionally. The measured legacy self-model database
+spent 99.66% of its bytes on the cache payload and only 0.145% outside blobs.
+Separate cache files would not address that encoding cost. Actual codec and
+restoration measurements are recorded in the Phase 2 performance evidence.
+
 The bounded revision cache is optional and evictable. Each entry binds the exact
 revision, accepted publications and semantic context. Unqueryable Working revisions
 can bypass it; a cache optimization cannot turn a durable success into failure.

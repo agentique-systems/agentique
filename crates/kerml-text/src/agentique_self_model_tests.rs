@@ -167,6 +167,12 @@ fn agentique_self_model_parses_lowers_and_checks_architectural_dependencies() {
             vec!["StandardLibraryManager", "SysMLEngine"],
         ),
         ("ViewService", vec!["QueryService"]),
+        ("ModelRepository", vec!["ProjectWorkspace"]),
+        (
+            "ModelingService",
+            vec!["ModelRepository", "ProjectWorkspace", "QueryService"],
+        ),
+        ("SystemsModelingApiAdapter", vec!["ModelingService"]),
         ("ExecutionCompiler", vec!["ValidationService"]),
         ("SimulationRuntime", vec!["ExecutionIR"]),
     ] {
@@ -354,6 +360,7 @@ fn agentique_rich_platform_matches_independent_programmatic_semantics() {
         for (specific, general) in [
             ("ValidatedSemanticState", "SemanticState"),
             ("IncrementalWorkspace", "ProjectWorkspace"),
+            ("ModelRepository", "Repository"),
         ] {
             let relationships =
                 query.owned_relationships_of_type(named(model, specific), c::SUBCLASSIFICATION);
@@ -373,6 +380,9 @@ fn agentique_rich_platform_matches_independent_programmatic_semantics() {
             summary.insert(format!("parents/{specific}"), names(model, parents.value));
         }
         for owner in [
+            "ModelRepository",
+            "ModelingService",
+            "SystemsModelingApiAdapter",
             "ProjectWorkspace",
             "IncrementalWorkspace",
             "ModelingPlatform",

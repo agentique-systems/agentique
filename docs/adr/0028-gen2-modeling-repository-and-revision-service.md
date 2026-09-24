@@ -51,6 +51,16 @@ dependency records. Cache support is verified separately from source restoration
 The in-memory revision cache retains immutable handles keyed by exact revision,
 publication and semantic-context identity; eviction cannot remove durable data.
 
+Cache storage initially remains inside the SQLite transaction. Measurement of the
+durable self-model found 213,603,609 cache bytes in a 214,327,296-byte database;
+only 309,992 bytes lay outside blob payloads. The dominant cost was the version 1
+JSON byte-array representation. Service cache version 2 separates metadata from
+raw frontier bytes in a deterministic ZIP using deflate level 1, retaining the
+version 1 reader. Bounded cache decoding and optional export preserve source
+fallback. External cache files remain a measured future choice, not a second
+durability mechanism introduced without benefit. This changes only a disposable
+service encoding; repository manifest and accepted language contracts are intact.
+
 ## Service and protocol
 
 A request resolves its explicit revision or branch once and retains that immutable

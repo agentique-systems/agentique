@@ -432,6 +432,21 @@ fn programmatic_platform_with_builder(mut builder: VehicleBuilder) -> Snapshot {
         ),
         ("PlatformArchitecture", "ViewService", s::PART_DEFINITION),
         ("PlatformArchitecture", "Repository", s::PART_DEFINITION),
+        (
+            "PlatformArchitecture",
+            "ModelRepository",
+            s::PART_DEFINITION,
+        ),
+        (
+            "PlatformArchitecture",
+            "ModelingService",
+            s::PART_DEFINITION,
+        ),
+        (
+            "PlatformArchitecture",
+            "SystemsModelingApiAdapter",
+            s::PART_DEFINITION,
+        ),
         ("PlatformArchitecture", "Client", s::PART_DEFINITION),
         (
             "PlatformArchitecture",
@@ -465,6 +480,62 @@ fn programmatic_platform_with_builder(mut builder: VehicleBuilder) -> Snapshot {
         );
     }
     for (owner, name, class, definition, composite) in [
+        (
+            "Repository",
+            "repositoryRevisions",
+            s::PORT_USAGE,
+            "ModelRevision",
+            true,
+        ),
+        (
+            "ModelRepository",
+            "workspaceContract",
+            s::PART_USAGE,
+            "ProjectWorkspace",
+            false,
+        ),
+        (
+            "ModelingService",
+            "durableHistory",
+            s::PART_USAGE,
+            "ModelRepository",
+            false,
+        ),
+        (
+            "ModelingService",
+            "authoredWorkspace",
+            s::PART_USAGE,
+            "ProjectWorkspace",
+            false,
+        ),
+        (
+            "ModelingService",
+            "revisionQueries",
+            s::PART_USAGE,
+            "QueryService",
+            false,
+        ),
+        (
+            "SystemsModelingApiAdapter",
+            "applicationContract",
+            s::PART_USAGE,
+            "ModelingService",
+            false,
+        ),
+        (
+            "ModelingPlatform",
+            "modelingService",
+            s::PART_USAGE,
+            "ModelingService",
+            true,
+        ),
+        (
+            "ModelingPlatform",
+            "systemsModelingApi",
+            s::PART_USAGE,
+            "SystemsModelingApiAdapter",
+            true,
+        ),
         (
             "ProjectWorkspace",
             "kermlPublication",
@@ -567,7 +638,7 @@ fn programmatic_platform_with_builder(mut builder: VehicleBuilder) -> Snapshot {
             "ModelingPlatform",
             "repository",
             s::PART_USAGE,
-            "Repository",
+            "ModelRepository",
             true,
         ),
         ("ModelingPlatform", "client", s::PART_USAGE, "Client", true),
@@ -640,6 +711,7 @@ fn programmatic_platform_with_builder(mut builder: VehicleBuilder) -> Snapshot {
     }
     for (specific, general) in [
         ("IncrementalWorkspace", "ProjectWorkspace"),
+        ("ModelRepository", "Repository"),
         ("ValidatedSemanticState", "SemanticState"),
     ] {
         builder.relationship(

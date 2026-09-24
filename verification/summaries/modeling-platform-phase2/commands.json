@@ -749,6 +749,212 @@
         "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace",
         "CARGO_PROFILE_RELEASE_LTO": "false"
       }
+    },
+    {
+      "name": "phase2-publication-inputs",
+      "command": [
+        "node",
+        "tools/sysml-publication-stale.mjs",
+        "--capture"
+      ],
+      "exit_code": 0,
+      "tool_version": "v22.11.0",
+      "source_commit": "aa4f5eb88525eceb0ac725197ae40054ed54ea67",
+      "working_changes_sha256": "09670fb0d67655937595412e9940287dae7e67831b20b990f953c1212db313db",
+      "output_sha256": "e8fa2c39a819b1a95623a702fe00c1940da0b976e2c1bfc0fd8a8917c03ec535",
+      "duration_seconds": 0.23,
+      "output": "verification/generated/modeling-platform-phase2/phase2-publication-inputs.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "phase2-standards-check",
+      "command": [
+        "npm",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "aa4f5eb88525eceb0ac725197ae40054ed54ea67",
+      "working_changes_sha256": "45bcea01cadd3297e86aca3c3559386aadad8a090c1124ef952818d961b0dfb3",
+      "output_sha256": "3e60025383579841a36f5fe5f3ecb7b57c29c7d1de7783ec43572cdc3ff4d1f6",
+      "duration_seconds": 1.2,
+      "output": "verification/generated/modeling-platform-phase2/phase2-standards-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "phase2-node-tests",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "aa4f5eb88525eceb0ac725197ae40054ed54ea67",
+      "working_changes_sha256": "45bcea01cadd3297e86aca3c3559386aadad8a090c1124ef952818d961b0dfb3",
+      "output_sha256": "ec8a59a2d7cf988b5efe9ce76442d8215fb1568063107eaee0bef7f8e514be73",
+      "duration_seconds": 1.61,
+      "output": "verification/generated/modeling-platform-phase2/phase2-node-tests-2.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "phase2-workspace-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace",
+        "--locked",
+        "--offline"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "aa4f5eb88525eceb0ac725197ae40054ed54ea67",
+      "working_changes_sha256": "45bcea01cadd3297e86aca3c3559386aadad8a090c1124ef952818d961b0dfb3",
+      "output_sha256": "ee3d23a71625b9bc5c0e643d619fcc9501204316472e3f6d8196c33854a7ac9f",
+      "duration_seconds": 666.83,
+      "output": "verification/generated/modeling-platform-phase2/phase2-workspace-tests-3.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace",
+        "CARGO_PROFILE_DEV_STRIP": "symbols",
+        "CARGO_PROFILE_TEST_STRIP": "symbols"
+      }
+    },
+    {
+      "name": "phase2-cache-codec-focused",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "--offline",
+        "-p",
+        "agq-modeling-service",
+        "--features",
+        "verification",
+        "--lib"
+      ],
+      "exit_code": 1,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "aa4f5eb88525eceb0ac725197ae40054ed54ea67",
+      "working_changes_sha256": "e89d88fbe517c5b3d2e4ec4a32fa5e1b81655871e5d6c0ee758585587ced8ecc",
+      "output_sha256": "8d44c9b1803c6d93ad5c89ade8a75721a07be9447d33db7e173bc99950327cda",
+      "duration_seconds": 180.5,
+      "output": "verification/generated/modeling-platform-phase2/phase2-cache-codec-focused.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace",
+        "CARGO_PROFILE_RELEASE_LTO": "false"
+      }
+    },
+    {
+      "name": "phase2-publication-inputs",
+      "command": [
+        "node",
+        "tools/sysml-publication-stale.mjs",
+        "--capture"
+      ],
+      "exit_code": 0,
+      "tool_version": "v22.11.0",
+      "source_commit": "aa4f5eb88525eceb0ac725197ae40054ed54ea67",
+      "working_changes_sha256": "d8087a02e224e19aa70d23d7e7459e9f9cbb92853a79114d7582692ce5151f56",
+      "output_sha256": "e8fa2c39a819b1a95623a702fe00c1940da0b976e2c1bfc0fd8a8917c03ec535",
+      "duration_seconds": 0.17,
+      "output": "verification/generated/modeling-platform-phase2/phase2-publication-inputs-2.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "phase2-standards-integrity",
+      "command": [
+        "npm",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "aa4f5eb88525eceb0ac725197ae40054ed54ea67",
+      "working_changes_sha256": "8363b02f0ceff79af71b2f5113497a9381776d3bf5760651476947022b00068b",
+      "output_sha256": "d74f9cc9cb15ae8e87389913569ef8de6f488dbc6ab05c6337bdb2d23b86f15d",
+      "duration_seconds": 0.7,
+      "output": "verification/generated/modeling-platform-phase2/phase2-standards-integrity.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "phase2-node-tests",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "aa4f5eb88525eceb0ac725197ae40054ed54ea67",
+      "working_changes_sha256": "8363b02f0ceff79af71b2f5113497a9381776d3bf5760651476947022b00068b",
+      "output_sha256": "cbea147ecaef7b3aa3a37be99138a089f6dc8038b65aa79f25af4eb3b0cef7f2",
+      "duration_seconds": 1.36,
+      "output": "verification/generated/modeling-platform-phase2/phase2-node-tests-3.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "phase2-format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "aa4f5eb88525eceb0ac725197ae40054ed54ea67",
+      "working_changes_sha256": "ce97dcaf91bd818ede9b5b7a9079f7d3bbfebff850a4e7cf1088c47ef99ec575",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 3.11,
+      "output": "verification/generated/modeling-platform-phase2/phase2-format.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "phase2-focused-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-modeling-repository",
+        "-p",
+        "agq-modeling-sqlite",
+        "-p",
+        "agq-modeling-service",
+        "-p",
+        "agq-modeling-api",
+        "-p",
+        "agq-modeling-http",
+        "--features",
+        "agq-modeling-service/verification",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "aa4f5eb88525eceb0ac725197ae40054ed54ea67",
+      "working_changes_sha256": "d8087a02e224e19aa70d23d7e7459e9f9cbb92853a79114d7582692ce5151f56",
+      "output_sha256": "c78f8221361e1ef80603fbd8e8d2a02c8993a859558ad5482b46e3898182733e",
+      "duration_seconds": 120.88,
+      "output": "verification/generated/modeling-platform-phase2/phase2-focused-tests-2.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace",
+        "CARGO_PROFILE_RELEASE_LTO": "false"
+      }
     }
   ]
 }

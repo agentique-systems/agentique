@@ -4,21 +4,19 @@
 //! candidate before persistence; no acknowledged head precedes durable commit.
 #![forbid(unsafe_code)]
 
+mod cache_codec;
 mod query;
 use agq_kerml_text::{ProjectChange, sysml::CanonicalSysmlSystemsLibrary};
 pub use agq_modeling_repository as repository;
 use agq_modeling_repository::*;
 use agq_modeling_workspace::{
-    ProjectRevisionCheckpoint, ProjectSemanticCache, ProjectWorkspace, ValidatedProjectRevision,
-    WorkingProjectRevision,
+    ProjectRevisionCheckpoint, ProjectWorkspace, ValidatedProjectRevision, WorkingProjectRevision,
 };
 pub use query::*;
 use std::{
     collections::{BTreeMap, VecDeque},
     sync::{Arc, Mutex},
 };
-
-const SEMANTIC_CACHE_FORMAT: &str = "agq-project-semantic-cache/1";
 
 /// Resolve exactly one immutable revision at request start.
 #[derive(Clone, Copy, Debug)]
@@ -259,9 +257,7 @@ impl ModelingService {
     ) -> Option<Arc<WorkingProjectRevision>> {
         // Cache failure never grants validation or removes the durable source path.
         let reference = manifest.semantic_cache.as_ref()?;
-        if reference.format != SEMANTIC_CACHE_FORMAT
-            || reference.source_binding != manifest.source_binding().ok()?
-        {
+        if reference.source_binding != manifest.source_binding().ok()? {
             return None;
         }
         if let ValidationState::Validated(receipt) = &manifest.validation
@@ -274,7 +270,7 @@ impl ModelingService {
         if ContentDigest::of(&bytes) != reference.content_digest {
             return None;
         }
-        let cache: ProjectSemanticCache = serde_json::from_slice(&bytes).ok()?;
+        let cache = cache_codec::decode(&reference.format, &bytes)?;
         if let ValidationState::Validated(receipt) = &manifest.validation
             && receipt.semantic_digest != ContentDigest(cache.source.model_digest)
         {
@@ -696,11 +692,11 @@ pub fn prepare_candidate(
     // committing otherwise validated, reconstructible durable source.
     if let Some(validated) = validated
         && let Ok(cache) = validated.semantic_cache()
+        && let Some(bytes) = cache_codec::encode(&cache)
     {
-        let bytes = serde_json::to_vec(&cache)?;
         let content_digest = ContentDigest::of(&bytes);
         manifest.semantic_cache = Some(SemanticCacheReference {
-            format: SEMANTIC_CACHE_FORMAT.into(),
+            format: cache_codec::FORMAT.into(),
             content_digest,
             source_binding: manifest.source_binding()?,
             semantic_context: ContentDigest(cache.source.context_contract_digest),

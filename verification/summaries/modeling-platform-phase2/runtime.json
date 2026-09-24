@@ -39,6 +39,123 @@
         "stall_seconds": 0
       },
       "output_sha256": "3a871473d6dfe2bffe1ba642541c08459e4938983b9047f1252008ba635a4f8c"
+    },
+    {
+      "name": "phase2-semantic-cache",
+      "command": [
+        "target/platform-workspace/release/deps/durable_platform-c057a6e056c6672a.exe",
+        "--exact",
+        "durable_cache_and_failure_authentication",
+        "--ignored",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "source_commit": "aa4f5eb88525eceb0ac725197ae40054ed54ea67",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {
+        "AGENTIQUE_KERML_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "AGENTIQUE_SYSTEMS_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/final-audit-semantic-closure/accepted/canonical.publication.zip"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/phase2-semantic-cache-2",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 31572,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 719.687,
+      "peak_rss_bytes": 5114134528,
+      "peak_private_bytes": 5248036864,
+      "samples": 720,
+      "limits": {
+        "wall_seconds": 3600.0,
+        "private_bytes": 10485760000,
+        "sample_seconds": 1.0,
+        "min_free_disk_bytes": 0,
+        "stall_seconds": 0
+      },
+      "output_sha256": "996e257f5e8450569a6670b1a94beeb4189eb2f16ba3acfc12892b163c50e9cb"
+    },
+    {
+      "name": "phase2-self-model",
+      "command": [
+        "target/platform-workspace/release/deps/durable_platform-c057a6e056c6672a.exe",
+        "--exact",
+        "agentique_durable_self_model_two_branches",
+        "--ignored",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "source_commit": "aa4f5eb88525eceb0ac725197ae40054ed54ea67",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "environment_overrides": {
+        "AGENTIQUE_KERML_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "AGENTIQUE_SYSTEMS_CACHE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/final-audit-semantic-closure/accepted/canonical.publication.zip",
+        "AGENTIQUE_SELF_MODEL_DB": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/modeling-platform-phase2/agentique-dogfood.sqlite"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/phase2-self-model",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 10260,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 814.047,
+      "peak_rss_bytes": 5971656704,
+      "peak_private_bytes": 6672723968,
+      "samples": 814,
+      "limits": {
+        "wall_seconds": 7200.0,
+        "private_bytes": 10485760000,
+        "sample_seconds": 1.0,
+        "min_free_disk_bytes": 0,
+        "stall_seconds": 0
+      },
+      "output_sha256": "4ad78fd909976cdfa505174cbbd33ad19d7ea9dc64f06690852718b7ec22dc59"
+    },
+    {
+      "name": "phase2-cache-codec-characterization",
+      "command": [
+        "target/platform-workspace/release/deps/agq_modeling_service-71673b2aa1d86310.exe",
+        "--exact",
+        "cache_codec::tests::characterize_legacy_cache_encoding",
+        "--ignored",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "source_commit": "aa4f5eb88525eceb0ac725197ae40054ed54ea67",
+      "working_changes_sha256": "383a9ba853d84c45d2417e36f1e49c976d189bd25e2ebbbe87f56e94b7017f2f",
+      "environment_overrides": {
+        "AGENTIQUE_LEGACY_CACHE_FILE": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/modeling-platform-phase2/legacy-self-model-cache.json"
+      },
+      "watchdog_python": "3.12.10",
+      "progress_pattern": null,
+      "output": "verification/generated/overnight-convergence/phase2-cache-codec-characterization",
+      "exit_code": 0,
+      "command_exit_code": 0,
+      "command_pid": 9816,
+      "monitor_error": null,
+      "last_progress": null,
+      "minimum_free_disk_bytes": null,
+      "safety_stop": null,
+      "duration_seconds": 1.453,
+      "peak_rss_bytes": 298336256,
+      "peak_private_bytes": 323317760,
+      "samples": 15,
+      "limits": {
+        "wall_seconds": 300.0,
+        "private_bytes": 2147483648,
+        "sample_seconds": 0.1,
+        "min_free_disk_bytes": 0,
+        "stall_seconds": 0
+      },
+      "output_sha256": "fe71600a1f7ca59f5da5d1230cbb08bb47137676a8dd1b19ddad136339cb2fc8"
     }
   ]
 }

@@ -1,0 +1,117 @@
+{
+  "format": "agentique-modeling-platform-phase2-performance/1",
+  "scope": "Storage characterization only; semantic correctness and other product performance classes are recorded separately.",
+  "storage_characterization": {
+    "status": "measured legacy v1 JSON cache payload; actual v2 codec measurement pending",
+    "input": {
+      "database": "verification/generated/modeling-platform-phase2/agentique-dogfood.sqlite",
+      "state": "Agentique self-model after R1 durable commit: one project, main branch, initial empty R0 and authored R1",
+      "cache_sha256": "5217513f21602dad8b0496a7c1c429e3963117754b1a485b60279020a84ee340",
+      "cache_bytes": 213603609,
+      "cache_encoding": "Legacy ProjectSemanticCache JSON, including a decimal-number array for kernel_frontier bytes",
+      "database_is_mutable_fixture": true
+    },
+    "commands": [
+      {
+        "command": "PowerShell here-string containing read-only SQLite inventory script | python -",
+        "exit_code": 0,
+        "output": "1 project, 1 branch, 2 revisions, 5 document rows, 5 source revisions, 8 blobs, 1 semantic cache"
+      },
+      {
+        "command": "PowerShell here-string containing read-only SQLite blobopen and zlib.compressobj levels 1 and 6 script | python -",
+        "exit_code": 0,
+        "output": "Both streamed input SHA-256 checks matched the exact cache digest; results below"
+      },
+      {
+        "command": "PowerShell here-string reporting platform.python_version(), sqlite3.sqlite_version, zlib.ZLIB_VERSION and zlib.ZLIB_RUNTIME_VERSION | python -",
+        "exit_code": 0,
+        "output": "Python 3.12.10; SQLite 3.49.1; zlib compile/runtime 1.3.1/1.3.1"
+      }
+    ],
+    "tools": {
+      "python": "3.12.10",
+      "sqlite": "3.49.1",
+      "zlib_compile": "1.3.1",
+      "zlib_runtime": "1.3.1",
+      "operating_system": "Windows",
+      "memory_measurement": "Windows GetProcessMemoryInfo for the benchmark Python process"
+    },
+    "inventory": {
+      "database_file_bytes": 214327296,
+      "wal_file_bytes": 0,
+      "page_size_bytes": 4096,
+      "page_count": 52326,
+      "freelist_pages": 0,
+      "authored_documents": 5,
+      "authored_source_blob_bytes": 5714,
+      "initial_checkpoint_bytes": 777,
+      "authored_checkpoint_bytes": 407204,
+      "semantic_cache_blob_bytes": 213603609,
+      "total_blob_payload_bytes": 214017304,
+      "non_blob_database_bytes": 309992,
+      "non_blob_database_percent": 0.145,
+      "cache_share_of_database_percent": 99.66
+    },
+    "method": {
+      "read_only": true,
+      "chunk_bytes": 1048576,
+      "compressed_output": "counted then discarded in memory; no output artifact written",
+      "giant_json_array_decoded": false,
+      "sql_blob_access": "sqlite3.Connection.blobopen(..., readonly=True) under a read snapshot",
+      "compression_times_exclude": "SQLite reads and SHA-256 input checks; total loop wall time is reported separately",
+      "baseline_working_set_bytes": 23052288,
+      "baseline_peak_working_set_bytes": 23056384,
+      "database_mutations": false,
+      "rust_builds": false
+    },
+    "results": [
+      {
+        "codec": "zlib-deflate",
+        "level": 1,
+        "raw_bytes": 213603609,
+        "compressed_bytes": 28860450,
+        "raw_to_compressed_ratio": 7.4,
+        "size_reduction_percent": 86.49,
+        "compression_seconds": 1.316,
+        "sqlite_read_seconds": 0.407,
+        "wall_seconds": 1.829,
+        "working_set_bytes": 24391680,
+        "peak_working_set_bytes": 26607616,
+        "peak_pagefile_bytes": 13643776
+      },
+      {
+        "codec": "zlib-deflate",
+        "level": 6,
+        "raw_bytes": 213603609,
+        "compressed_bytes": 17806039,
+        "raw_to_compressed_ratio": 12,
+        "size_reduction_percent": 91.66,
+        "compression_seconds": 7.487,
+        "sqlite_read_seconds": 0.249,
+        "wall_seconds": 7.844,
+        "working_set_bytes": 24027136,
+        "peak_working_set_bytes": 26767360,
+        "peak_pagefile_bytes": 13844480
+      }
+    ],
+    "limitations": [
+      "One run per compression level while the root Rust workspace build and self-model child were active; not isolated CPU or disk measurements.",
+      "Local reads may use the operating-system cache; these numbers do not measure cold repository open or cold semantic restoration.",
+      "Memory covers only the bounded benchmark process, not the existing service's large JSON serialization/deserialization allocations.",
+      "This compresses the legacy JSON envelope with a zlib wrapper, not the planned v2 ZIP metadata-plus-raw-frontier representation; actual v2 size, encode/decode time and memory remain unmeasured.",
+      "The repository fixture may gain R2 later. Reproduction pins the immutable R1 cache digest; database inventory can then differ."
+    ],
+    "decision": {
+      "storage": "Retain transactional SQLite blobs: only 309992 bytes of this measured database lie outside blob payloads; separate CAS files do not address the dominant cache encoding cost.",
+      "codec_direction": "Introduce a versioned service cache using ZIP deflate level 1 with separate metadata JSON and raw kernel-frontier entries; retain the legacy v1 decoder and source fallback.",
+      "correctness": "Compression changes a discardable cache representation only; source/publication/context/closure authentication remains required.",
+      "acceptance": "Measure the actual v2 implementation before reporting its product-level performance."
+    },
+    "reproduction": {
+      "original_execution": "Two inline PowerShell here-strings piped to python -; no standalone script file existed during the recorded measurement.",
+      "script_path": "verification/scripts/modeling_storage_characterization.py",
+      "command": "python verification/scripts/modeling_storage_characterization.py --database verification/generated/modeling-platform-phase2/agentique-dogfood.sqlite --blob-digest 5217513f21602dad8b0496a7c1c429e3963117754b1a485b60279020a84ee340 --levels 1 6",
+      "note": "Equivalent reusable read-only benchmark added afterward. The exact R1 cache digest is fixed; later repository inventory may include R2. The script has not rerun compression, so its existence does not create another measurement."
+    }
+  }
+}
