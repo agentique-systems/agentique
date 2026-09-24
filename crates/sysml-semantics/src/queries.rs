@@ -580,11 +580,20 @@ impl<'m> SysmlQueries<'m> {
         &self,
         element: ElementId,
     ) -> SysmlQueryResult<Option<QualifiedNamePath>> {
+        self.qualified_name(element, false)
+    }
+
+    pub(super) fn qualified_name(
+        &self,
+        element: ElementId,
+        effective: bool,
+    ) -> SysmlQueryResult<Option<QualifiedNamePath>> {
         let mut out = self.wrap(self.kerml.owner(element).map(|_| None));
         self.check(&mut out, element, &[kc::ELEMENT]);
         let mut current = Some(element);
         let mut visited = BTreeSet::new();
         let mut segments = Vec::new();
+        let mut closed_name_subjects = BTreeSet::new();
         while let Some(id) = current {
             if !visited.insert(id) {
                 out.problem(
@@ -614,7 +623,13 @@ impl<'m> SysmlQueries<'m> {
             let Some(name) = self.qualified_segment(&mut out, id) else {
                 return out;
             };
-            if !self.unique_qualified_segment(&mut out, namespace, id, &name) {
+            if !self.unique_qualified_segment(
+                &mut out,
+                namespace,
+                id,
+                &name,
+                effective.then_some(&mut closed_name_subjects),
+            ) {
                 return out;
             }
             segments.push(BTreeSet::from([name]));
@@ -642,6 +657,25 @@ impl<'m> SysmlQueries<'m> {
         out: &mut SysmlQueryResult<T>,
         element: ElementId,
     ) -> Option<String> {
+        if let Some(name) = self.declared_qualified_segment(out, element) {
+            return Some(name);
+        }
+        // KerML's current naming answer combines effective long and short names.
+        // It cannot prove which nonempty inherited/short-name choice is name.
+        let names = self.kerml.effective_names(element);
+        if !matches!(&names.value, EffectiveNames::Determinate(names) if names.is_empty()) {
+            out.problem(Completeness::Incomplete, "SQ_QUALIFIED_NAME_SELECTION", element,
+                "The effective full name is not established independently of short-name alternatives");
+        }
+        out.supporting_names.push(names);
+        None
+    }
+
+    fn declared_qualified_segment<T>(
+        &self,
+        out: &mut SysmlQueryResult<T>,
+        element: ElementId,
+    ) -> Option<String> {
         self.observe(
             out,
             FactKey::Property {
@@ -656,14 +690,6 @@ impl<'m> SysmlQueries<'m> {
         {
             return Some(name.clone());
         }
-        // KerML's current naming answer combines effective long and short names.
-        // It cannot prove which nonempty inherited/short-name choice is name.
-        let names = self.kerml.effective_names(element);
-        if !matches!(&names.value, EffectiveNames::Determinate(names) if names.is_empty()) {
-            out.problem(Completeness::Incomplete, "SQ_QUALIFIED_NAME_SELECTION", element,
-                "The effective full name is not established independently of short-name alternatives");
-        }
-        out.supporting_names.push(names);
         None
     }
 
@@ -673,6 +699,7 @@ impl<'m> SysmlQueries<'m> {
         namespace: ElementId,
         element: ElementId,
         name: &str,
+        mut closed_name_subjects: Option<&mut BTreeSet<ElementId>>,
     ) -> bool {
         if self
             .kerml
@@ -701,9 +728,31 @@ impl<'m> SysmlQueries<'m> {
             }
             let member = self.kerml.member(membership);
             if let Some(target) = member.value {
-                let other_name = self.qualified_segment(out, target);
-                if other_name.as_deref() == Some(name) {
-                    matches.insert(target);
+                if let Some(other_name) = self.declared_qualified_segment(out, target) {
+                    if other_name == name {
+                        matches.insert(target);
+                    }
+                } else {
+                    let names = self.kerml.effective_names(target);
+                    // A complete full/short-name population can exclude a
+                    // sibling without selecting which alternative is its full
+                    // name. Empty-name and explicit-name paths are unchanged.
+                    let excluded = names.completeness == Completeness::Complete
+                        && matches!(&names.value, EffectiveNames::Determinate(names)
+                            if !names.is_empty() && !names.contains(name));
+                    if excluded {
+                        if let Some(closed_name_subjects) = &mut closed_name_subjects {
+                            self.close_qualified_name_sources(
+                                out,
+                                target,
+                                &names,
+                                closed_name_subjects,
+                            );
+                        }
+                        out.supporting_names.push(names);
+                    } else {
+                        let _ = self.qualified_segment(out, target);
+                    }
                 }
             }
             out.supporting_queries
@@ -716,6 +765,61 @@ impl<'m> SysmlQueries<'m> {
             return false;
         }
         out.completeness() == Completeness::Complete
+    }
+
+    fn qualified_name_sources(
+        sibling: ElementId,
+        names: &QueryResult<EffectiveNames>,
+    ) -> BTreeSet<ElementId> {
+        let mut sources = BTreeSet::from([sibling]);
+        for conclusion in names.explanations.keys() {
+            if conclusion.query == agq_kerml_semantics::QueryKind::NamingSource {
+                sources.extend([conclusion.subject, conclusion.value]);
+            }
+        }
+        sources
+    }
+
+    fn close_qualified_name_sources<T>(
+        &self,
+        out: &mut SysmlQueryResult<T>,
+        sibling: ElementId,
+        names: &QueryResult<EffectiveNames>,
+        closed_name_subjects: &mut BTreeSet<ElementId>,
+    ) {
+        use agq_kerml_semantics::{SearchDependency, SemanticClosureRequirement as Closure};
+        let sources = Self::qualified_name_sources(sibling, names);
+        let mut subjects = sources.clone();
+        for source in sources {
+            // Packages and other ordinary Elements can be owned siblings too.
+            if self.is(source, kc::TYPE) {
+                let ancestors = self.kerml.all_supertypes(source);
+                subjects.extend(ancestors.value.iter().copied());
+                out.supporting_queries.push(ancestors);
+            }
+        }
+        // Naming overrides can inspect another owner's members before choosing
+        // a source (or falling back), notably transition inputs and payloads.
+        let owners: BTreeSet<_> = names
+            .search_dependencies
+            .iter()
+            .filter_map(|search| match search {
+                SearchDependency::OwnedRelationships { owner, .. }
+                | SearchDependency::OwnedRelationshipsExcluding { owner, .. }
+                | SearchDependency::StructuralFeaturePopulation { owner, .. } => Some(*owner),
+                SearchDependency::NamespaceMembers { namespace } => Some(*namespace),
+                SearchDependency::SourceRelationships { source, .. } => Some(*source),
+                SearchDependency::PropertySet { element, .. } => Some(*element),
+                SearchDependency::Incoming { target } => Some(*target),
+                _ => None,
+            })
+            .collect();
+        subjects.extend(owners);
+        for subject in subjects {
+            if closed_name_subjects.insert(subject) {
+                self.require_closure(out, subject, &Closure::ALL);
+            }
+        }
     }
 
     fn pending_implications<T>(&self, out: &mut SysmlQueryResult<T>, subject: ElementId) {

@@ -536,7 +536,7 @@ impl SysmlQueries<'_> {
         &self,
         element: ElementId,
     ) -> SysmlQueryResult<Option<QualifiedNamePath>> {
-        let mut out = self.current_qualified_name(element);
+        let mut out = self.qualified_name(element, true);
         let mut current = Some(element);
         let mut visited = BTreeSet::new();
         while let Some(id) = current {

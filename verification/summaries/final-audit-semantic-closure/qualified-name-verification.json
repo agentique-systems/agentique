@@ -1,0 +1,127 @@
+{
+  "format": "agq.qualified-name-negative-proof-verification/v1",
+  "base_commit": "ffdf5f7c04f67b8afb0f92ef324f216de06328df",
+  "worktree": "C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections",
+  "scope": "Qualified-name proof completion only; no standards replay, cache activation, profile change, finalizer change, or phase M acceptance claim.",
+  "final_source_sha256": {
+    "crates/sysml-semantics/src/queries.rs": "17ca21377a9ae1532108ceb11a4705f5f19cf1026284edfa1421989a2496f188",
+    "crates/sysml-semantics/src/structural_queries.rs": "710e23bed843b99d96790297cf5594021bf3ee2abd28ec0859896f72a7ddcfa3",
+    "crates/sysml-semantics/src/qualified_names_tests.rs": "7ecb609007602614efad698fc130b4c6ab7d3a9f2455a2ecf704091199eb3154"
+  },
+  "commands": [
+    {
+      "command": "cargo test --locked --offline -p agq-sysml-semantics --lib qualified_names_tests -- --nocapture",
+      "exit_code": 101,
+      "elapsed_seconds": 52.843,
+      "output_sha256": "3e73ef72a734ff7729d19b887051cc092b7c7c9861e73e467fab33aca9dafe88",
+      "environment": {
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\target\\qualified-names",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2"
+      },
+      "output": "verification/generated/final-closure-projections/qualified-names-tests.log",
+      "outcome": "Initial regression-fixture construction lacked the mandatory Redefinition.redefiningFeature endpoint; three new fixtures failed kernel validation. Fixed the fixture carrier without changing the production proof.",
+      "actual_output": "   Compiling proc-macro2 v1.0.107\n   Compiling unicode-ident v1.0.24\n   Compiling quote v1.0.47\n   Compiling cfg-if v1.0.5\n   Compiling version_check v0.9.5\n   Compiling generic-array v0.14.7\n   Compiling syn v3.0.5\n   Compiling serde_core v1.0.229\n   Compiling typenum v1.20.1\n   Compiling autocfg v1.5.1\n   Compiling num-traits v0.2.19\n   Compiling zmij v1.0.23\n   Compiling getrandom v0.4.3\n   Compiling serde v1.0.229\n   Compiling thiserror v2.0.20\n   Compiling thiserror-impl v2.0.20\n   Compiling serde_derive v1.0.229\n   Compiling block-buffer v0.10.4\n   Compiling crypto-common v0.1.7\n   Compiling crc32fast v1.5.2\n   Compiling memchr v2.8.3\n   Compiling serde_json v1.0.151\n   Compiling digest v0.10.7\n   Compiling num-integer v0.1.47\n   Compiling sha1_smol v1.0.1\n   Compiling cpufeatures v0.2.17\n   Compiling itoa v1.0.18\n   Compiling simd-adler32 v0.3.10\n   Compiling uuid v1.26.1\n   Compiling sha2 v0.10.9\n   Compiling num-bigint v0.4.8\n   Compiling adler2 v2.0.1\n   Compiling miniz_oxide v0.9.1\n   Compiling agq-kernel v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\kernel)\n   Compiling log v0.4.34\n   Compiling hashbrown v0.17.1\n   Compiling zip v2.4.2\n   Compiling equivalent v1.0.2\n   Compiling bumpalo v3.20.3\n   Compiling zopfli v0.8.3\n   Compiling indexmap v2.14.2\n   Compiling flate2 v1.1.10\n   Compiling displaydoc v0.2.7\n   Compiling agq-kerml v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\kerml)\n   Compiling agq-standard-libraries v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\standard-libraries)\n   Compiling agq-sysml v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\sysml)\n   Compiling agq-kerml-semantics v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\kerml-semantics)\n   Compiling agq-sysml-semantics v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\sysml-semantics)\n    Finished `test` profile [unoptimized] target(s) in 51.51s\n     Running unittests src\\lib.rs (target\\qualified-names\\debug\\deps\\agq_sysml_semantics-036894bc20eb0a09.exe)\n\nrunning 6 tests\n\nthread 'queries::qualified_names_tests::unrelated_inherited_sibling_names_have_a_bounded_negative_proof' (31668) panicked at crates\\sysml-semantics\\src\\qualified_names_tests.rs:258:26:\ncalled `Result::unwrap()` on an `Err` value: Multiplicity { element: ElementId(54), property: PropertyId(18642155770789187597659381389808210064), required: Multiplicity { lower: 1, upper: Some(1) }, actual: 0 }\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\ntest queries::qualified_names_tests::unrelated_inherited_sibling_names_have_a_bounded_negative_proof ... FAILED\n\nthread 'queries::qualified_names_tests::overlapping_or_incomplete_sibling_names_do_not_prove_exclusion' (21208) panicked at crates\\sysml-semantics\\src\\qualified_names_tests.rs:258:26:\ncalled `Result::unwrap()` on an `Err` value: Multiplicity { element: ElementId(54), property: PropertyId(18642155770789187597659381389808210064), required: Multiplicity { lower: 1, upper: Some(1) }, actual: 0 }\n\nthread 'queries::qualified_names_tests::a_short_only_sibling_suppresses_its_inherited_full_name' (25824) panicked at crates\\sysml-semantics\\src\\qualified_names_tests.rs:258:26:\ncalled `Result::unwrap()` on an `Err` value: Multiplicity { element: ElementId(54), property: PropertyId(18642155770789187597659381389808210064), required: Multiplicity { lower: 1, upper: Some(1) }, actual: 0 }\ntest queries::qualified_names_tests::overlapping_or_incomplete_sibling_names_do_not_prove_exclusion ... FAILED\ntest queries::qualified_names_tests::a_short_only_sibling_suppresses_its_inherited_full_name ... FAILED\ntest queries::qualified_names_tests::qualified_name_uses_full_name_without_promoting_short_name ... ok\ntest queries::qualified_names_tests::qualified_name_excludes_named_and_unnamed_root_namespace ... ok\ntest queries::qualified_names_tests::qualified_name_does_not_choose_duplicate_siblings_or_incomplete_population ... ok\n\nfailures:\n\nfailures:\n    queries::qualified_names_tests::a_short_only_sibling_suppresses_its_inherited_full_name\n    queries::qualified_names_tests::overlapping_or_incomplete_sibling_names_do_not_prove_exclusion\n    queries::qualified_names_tests::unrelated_inherited_sibling_names_have_a_bounded_negative_proof\n\ntest result: FAILED. 3 passed; 3 failed; 0 ignored; 0 measured; 94 filtered out; finished in 0.90s\n\nerror: test failed, to rerun pass `-p agq-sysml-semantics --lib`\n"
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-sysml-semantics --lib qualified_names_tests -- --nocapture",
+      "exit_code": 101,
+      "elapsed_seconds": 25.406,
+      "output_sha256": "8efae13deff74d86d38eb69e4338ce8bc98795650772cae2ca899f2a304af1f4",
+      "output": "verification/generated/final-closure-projections/qualified-names-tests-2.log",
+      "outcome": "Five tests passed; one evidence assertion expected a class-filtered OwnedRelationships search. Actual unfiltered owned_relationships retains PropertySet(Element.ownedRelationship). Corrected the assertion to the actual canonical search.",
+      "environment": {
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\target\\qualified-names",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2"
+      },
+      "actual_output": "   Compiling agq-sysml-semantics v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\sysml-semantics)\n    Finished `test` profile [unoptimized] target(s) in 24.03s\n     Running unittests src\\lib.rs (target\\qualified-names\\debug\\deps\\agq_sysml_semantics-036894bc20eb0a09.exe)\n\nrunning 6 tests\ntest queries::qualified_names_tests::a_short_only_sibling_suppresses_its_inherited_full_name ... ok\ntest queries::qualified_names_tests::qualified_name_uses_full_name_without_promoting_short_name ... ok\n\nthread 'queries::qualified_names_tests::unrelated_inherited_sibling_names_have_a_bounded_negative_proof' (30324) panicked at crates\\sysml-semantics\\src\\qualified_names_tests.rs:299:5:\nassertion failed: names.search_dependencies.iter().any(|search|\n        matches!(search, SearchDependency::OwnedRelationships { owner, .. } if\n            *owner == id(5)))\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\ntest queries::qualified_names_tests::unrelated_inherited_sibling_names_have_a_bounded_negative_proof ... FAILED\ntest queries::qualified_names_tests::overlapping_or_incomplete_sibling_names_do_not_prove_exclusion ... ok\ntest queries::qualified_names_tests::qualified_name_excludes_named_and_unnamed_root_namespace ... ok\ntest queries::qualified_names_tests::qualified_name_does_not_choose_duplicate_siblings_or_incomplete_population ... ok\n\nfailures:\n\nfailures:\n    queries::qualified_names_tests::unrelated_inherited_sibling_names_have_a_bounded_negative_proof\n\ntest result: FAILED. 5 passed; 1 failed; 0 ignored; 0 measured; 94 filtered out; finished in 0.95s\n\nerror: test failed, to rerun pass `-p agq-sysml-semantics --lib`\n"
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-sysml-semantics --lib qualified_names_tests -- --nocapture",
+      "exit_code": 101,
+      "elapsed_seconds": 24.704,
+      "output_sha256": "110132f1309005320b634ad54614aff5668257aaeb98b8ccbff649cd086f5fce",
+      "output": "verification/generated/final-closure-projections/qualified-names-tests-3.log",
+      "outcome": "Six tests passed; the added closure fixture expected a PartDefinition owner parameter search that the ReferenceUsage naming override never performs. Changed that fixture owner to TransitionUsage so it actually searches input parameters before fallback.",
+      "environment": {
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\target\\qualified-names",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2"
+      },
+      "actual_output": "   Compiling agq-sysml-semantics v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\sysml-semantics)\n    Finished `test` profile [unoptimized] target(s) in 23.31s\n     Running unittests src\\lib.rs (target\\qualified-names\\debug\\deps\\agq_sysml_semantics-036894bc20eb0a09.exe)\n\nrunning 7 tests\n\nthread 'queries::qualified_names_tests::effective_sibling_exclusion_closes_type_ancestors_and_naming_search_owners' (28632) panicked at crates\\sysml-semantics\\src\\qualified_names_tests.rs:440:13:\nmissing ElementId(2) EffectiveTyping\nnote: run with `RUST_BACKTRACE=1` environment variable to display a backtrace\ntest queries::qualified_names_tests::effective_sibling_exclusion_closes_type_ancestors_and_naming_search_owners ... FAILED\ntest queries::qualified_names_tests::a_short_only_sibling_suppresses_its_inherited_full_name ... ok\ntest queries::qualified_names_tests::qualified_name_uses_full_name_without_promoting_short_name ... ok\ntest queries::qualified_names_tests::unrelated_inherited_sibling_names_have_a_bounded_negative_proof ... ok\ntest queries::qualified_names_tests::overlapping_or_incomplete_sibling_names_do_not_prove_exclusion ... ok\ntest queries::qualified_names_tests::qualified_name_excludes_named_and_unnamed_root_namespace ... ok\ntest queries::qualified_names_tests::qualified_name_does_not_choose_duplicate_siblings_or_incomplete_population ... ok\n\nfailures:\n\nfailures:\n    queries::qualified_names_tests::effective_sibling_exclusion_closes_type_ancestors_and_naming_search_owners\n\ntest result: FAILED. 6 passed; 1 failed; 0 ignored; 0 measured; 94 filtered out; finished in 0.97s\n\nerror: test failed, to rerun pass `-p agq-sysml-semantics --lib`\n"
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-sysml-semantics --lib qualified_names_tests -- --nocapture",
+      "environment": {
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\target\\qualified-names",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2"
+      },
+      "exit_code": 0,
+      "elapsed_seconds": 25.264,
+      "output": "verification/generated/final-closure-projections/qualified-names-tests-4.log",
+      "output_sha256": "3ffa4e22374acee820aa5a85b5470e5f9f6ba1c1b627bee5933366133f5bd114",
+      "outcome": "All seven focused qualified-name tests passed, including prior explicit-name contracts and new negative-proof evidence/closure controls.",
+      "actual_output": "   Compiling agq-sysml-semantics v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\sysml-semantics)\n    Finished `test` profile [unoptimized] target(s) in 23.88s\n     Running unittests src\\lib.rs (target\\qualified-names\\debug\\deps\\agq_sysml_semantics-036894bc20eb0a09.exe)\n\nrunning 7 tests\ntest queries::qualified_names_tests::a_short_only_sibling_suppresses_its_inherited_full_name ... ok\ntest queries::qualified_names_tests::effective_sibling_exclusion_closes_type_ancestors_and_naming_search_owners ... ok\ntest queries::qualified_names_tests::qualified_name_uses_full_name_without_promoting_short_name ... ok\ntest queries::qualified_names_tests::unrelated_inherited_sibling_names_have_a_bounded_negative_proof ... ok\ntest queries::qualified_names_tests::overlapping_or_incomplete_sibling_names_do_not_prove_exclusion ... ok\ntest queries::qualified_names_tests::qualified_name_excludes_named_and_unnamed_root_namespace ... ok\ntest queries::qualified_names_tests::qualified_name_does_not_choose_duplicate_siblings_or_incomplete_population ... ok\n\ntest result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 94 filtered out; finished in 0.95s\n\n"
+    },
+    {
+      "command": "cargo clippy --locked --offline -p agq-sysml-semantics --lib --tests -- -D warnings",
+      "environment": {
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\target\\qualified-names",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2"
+      },
+      "exit_code": 0,
+      "elapsed_seconds": 13.258,
+      "output": "verification/generated/final-closure-projections/qualified-names-clippy.log",
+      "output_sha256": "c94cd5c0791686b8567e4fbd886a5aadaf1e61024044081c06fffcad772d908d",
+      "outcome": "Focused library and test Clippy passed with warnings denied.",
+      "actual_output_tail": "    Checking cfg-if v1.0.5\n    Checking typenum v1.20.1\n    Checking serde_core v1.0.229\n    Checking generic-array v0.14.7\n    Checking num-traits v0.2.19\n    Checking block-buffer v0.10.4\n    Checking crypto-common v0.1.7\n    Checking memchr v2.8.3\n    Checking digest v0.10.7\n    Checking thiserror v2.0.20\n    Checking serde v1.0.229\n    Checking num-integer v0.1.47\n    Checking getrandom v0.4.3\n    Checking zmij v1.0.23\n    Checking itoa v1.0.18\n    Checking cpufeatures v0.2.17\n    Checking sha1_smol v1.0.1\n    Checking simd-adler32 v0.3.10\n    Checking uuid v1.26.1\n    Checking serde_json v1.0.151\n    Checking sha2 v0.10.9\n    Checking num-bigint v0.4.8\n    Checking crc32fast v1.5.2\n    Checking adler2 v2.0.1\n    Checking miniz_oxide v0.9.1\n    Checking equivalent v1.0.2\n    Checking bumpalo v3.20.3\n    Checking agq-kernel v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\kernel)\n    Checking log v0.4.34\n    Checking hashbrown v0.17.1\n    Checking indexmap v2.14.2\n    Checking zopfli v0.8.3\n    Checking flate2 v1.1.10\n    Checking zip v2.4.2\n    Checking agq-kerml v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\kerml)\n    Checking agq-standard-libraries v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\standard-libraries)\n    Checking agq-kerml-semantics v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\kerml-semantics)\n    Checking agq-sysml v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\sysml)\n    Checking agq-sysml-semantics v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\sysml-semantics)\n    Finished `dev` profile [unoptimized] target(s) in 13.07s\n"
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-sysml-semantics --lib",
+      "environment": {
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\target\\qualified-names",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2"
+      },
+      "exit_code": 0,
+      "elapsed_seconds": 113.709,
+      "output": "verification/generated/final-closure-projections/qualified-names-sysml-lib.log",
+      "output_sha256": "3deb1f1c13456e9acbde842d89129154efc966c2f1a30ae0a4a170111e4c0c0e",
+      "outcome": "All 101 SysML semantics unit tests passed; none ignored.",
+      "actual_output_tail": "lude_inherited_parameter_identities ... ok\ntest tests::transition_tests::transition_payload_specialization_materializes_ordered_chain_and_is_idempotent ... ok\ntest tests::unbound_systems_identity_cannot_change_the_pinned_kpar ... ok\ntest tests::transition_tests::transition_naming_preserves_explicit_names_and_distinguishes_null_from_pending ... ok\ntest tests::producer_tests::root_usage_absent_owner_closes_with_combined_producers ... ok\ntest tests::producer_tests::producer_closure_does_not_erase_unsupported_variation_semantics ... ok\ntest tests::producer_tests::untyped_sysml_anchor_population_closes_over_a_genuinely_closed_kernel_layer ... ok\ntest tests::producer_tests::expression_usage_tests::views_satisfaction_tests::view_requirement_satisfaction_subject_value_and_required_constraint_close ... ok\ntest tests::producer_tests::structural_fixed_point_tests::finalizer_structural_apis_close_cycles_and_inherited_interface_candidates ... ok\ntest tests::producer_tests::unnamed_assertion_body_closes_with_inherited_result_and_expression_binding ... ok\ntest tests::producer_tests::unnamed_constraint_and_connection_usages_close_under_occurrence_owner ... ok\ntest tests::producer_tests::expression_usage_tests::verification_case_tests::verification_case_objective_subject_and_requirement_chain_close has been running for over 60 seconds\ntest tests::producer_tests::input_action_body_closes_under_while_loop_with_nested_actions ... ok\ntest tests::producer_tests::trigger_tests::trigger_receiver_node_parameter_closes_with_nested_feature_value ... ok\ntest tests::producer_tests::expression_usage_tests::verification_case_tests::verification_case_objective_subject_and_requirement_chain_close ... ok\n\ntest result: ok. 101 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 113.45s\n\n"
+    },
+    {
+      "command": "cargo fmt --all -- --check",
+      "exit_code": 0,
+      "elapsed_seconds": 10.743,
+      "output": "verification/generated/final-closure-projections/qualified-names-fmt.log",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outcome": "Workspace formatting check passed with no output.",
+      "actual_output_tail": ""
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "elapsed_seconds": 0.161,
+      "output": "verification/generated/final-closure-projections/qualified-names-diff-check.log",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "outcome": "Patch whitespace check passed with no output.",
+      "actual_output_tail": ""
+    }
+  ]
+}
