@@ -98,6 +98,7 @@ fn project(connection: &Connection, id: ProjectId) -> Result<Project, Repository
         .map_err(storage)?;
     let (data, digest) = row.ok_or_else(|| RepositoryError::NotFound(format!("project {id:?}")))?;
     let value: Project = checked(data, digest)?;
+    value.verify()?;
     if value.id != id {
         return Err(RepositoryError::Integrity(
             "project identity mismatch".into(),
@@ -122,6 +123,7 @@ fn branch(
     let (data, digest, name, head) =
         row.ok_or_else(|| RepositoryError::NotFound(format!("branch {id}")))?;
     let value: Branch = checked(data, digest)?;
+    value.verify()?;
     if value.id != id
         || value.project_id != project
         || value.name != name
@@ -223,9 +225,7 @@ fn store_receipt(
 }
 
 fn store_branch(connection: &Connection, branch: &Branch) -> Result<(), RepositoryError> {
-    if branch.name.trim().is_empty() {
-        return Err(RepositoryError::Integrity("empty branch name".into()));
-    }
+    branch.verify()?;
     let exists: bool = connection
         .query_row(
             "SELECT EXISTS(SELECT 1 FROM branches WHERE id=? OR (project_id=? AND name=?))",
@@ -364,13 +364,14 @@ impl ModelingRepository for SqliteRepository {
     }
 
     fn create_project(&self, request: &CreateProject) -> Result<CommitReceipt, RepositoryError> {
+        request.project.verify()?;
+        request.branch.verify()?;
         request.initial.verify()?;
         if request.project.id != request.initial.manifest.project_id
             || request.project.id != request.branch.project_id
             || request.project.default_branch != request.branch.id
             || request.branch.head != request.initial.manifest.revision_id
             || request.initial.manifest.parent_revision_id.is_some()
-            || request.project.name.trim().is_empty()
         {
             return Err(RepositoryError::Integrity(
                 "inconsistent initial project binding".into(),
@@ -449,6 +450,7 @@ impl ModelingRepository for SqliteRepository {
     }
 
     fn create_branch(&self, value: &Branch) -> Result<(), RepositoryError> {
+        value.verify()?;
         let mut connection = self.lock()?;
         let transaction = connection
             .transaction_with_behavior(TransactionBehavior::Immediate)

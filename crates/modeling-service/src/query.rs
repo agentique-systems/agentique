@@ -513,6 +513,16 @@ pub(crate) fn revision_diff(
         .map(|r| r.id())
         .filter(|id| !before.is_standard(*id))
         .collect();
+    record_graph_changes(&mut diff, left, right, ids);
+    Ok(diff)
+}
+
+fn record_graph_changes(
+    diff: &mut RevisionDiff,
+    left: &ModelView,
+    right: &ModelView,
+    ids: impl IntoIterator<Item = ElementId>,
+) {
     for id in ids {
         let a = left.element(id);
         let b = right.element(id);
@@ -594,7 +604,6 @@ pub(crate) fn revision_diff(
             _ => diff.relationships_changed.push(id),
         }
     }
-    Ok(diff)
 }
 fn changed_ranges(a: &str, b: &str) -> ((usize, usize), (usize, usize)) {
     let mut start = a.bytes().zip(b.bytes()).take_while(|(a, b)| a == b).count();
@@ -616,6 +625,154 @@ fn changed_ranges(a: &str, b: &str) -> ((usize, usize), (usize, usize)) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use agq_kernel::{
+        RuleId, Snapshot,
+        derived::{DerivationBuilder, DerivedOverlay},
+        metamodel::ValueKind,
+        provenance::Explanation,
+    };
+
+    const SUBJECT: ElementId = ElementId::from_u128(0x28_0001);
+
+    fn authored() -> DeclaredOrigin {
+        DeclaredOrigin::Authored { source: None }
+    }
+
+    /// Tiny canonical graph over the pinned descriptors. No accepted publication
+    /// or source compiler is needed to exercise language-neutral diff categories.
+    fn declared_package() -> Snapshot {
+        let registry = Arc::new(agq_kerml::registry().unwrap());
+        let base = Snapshot::new(registry.clone());
+        let mut changes = base.change_set();
+        changes.create(SUBJECT, classes::PACKAGE, authored());
+        for property in registry
+            .effective_properties(classes::PACKAGE)
+            .unwrap()
+            .filter(|property| !property.derived && property.multiplicity.lower > 0)
+        {
+            let value = match registry.storage_kind(property.value_kind).unwrap() {
+                ValueKind::Boolean => Value::Boolean(false),
+                ValueKind::String => Value::String("fixture-package".into()),
+                ValueKind::Enumeration(domain) => Value::Enumeration(
+                    *registry
+                        .enumeration(domain)
+                        .unwrap()
+                        .literals
+                        .keys()
+                        .next()
+                        .unwrap(),
+                ),
+                unexpected => panic!("unexpected required Package property: {unexpected:?}"),
+            };
+            changes.set(SUBJECT, property.id, SlotValue::Scalar(value), authored());
+        }
+        changes.set(
+            SUBJECT,
+            properties::ELEMENT_DECLARED_NAME,
+            SlotValue::Scalar(Value::String("authored".into())),
+            authored(),
+        );
+        base.apply(&changes).unwrap()
+    }
+
+    fn computed_name(declared: Snapshot, name: &str, rule: u128) -> DerivedOverlay {
+        let mut builder = DerivationBuilder::new(declared);
+        // This is an explicit test producer assertion, not a naming-rule implementation.
+        builder.property(
+            SUBJECT,
+            properties::ELEMENT_NAME,
+            SlotValue::Scalar(Value::String(name.into())),
+            Explanation {
+                rule: RuleId::from_u128(rule),
+                dependencies: BTreeSet::from([Dependency::Declared(FactKey::Property {
+                    element: SUBJECT,
+                    property: properties::ELEMENT_DECLARED_NAME,
+                })]),
+            },
+        );
+        builder.build().unwrap()
+    }
+
+    fn graph_changes(left: &ModelView, right: &ModelView) -> RevisionDiff {
+        let mut diff = RevisionDiff {
+            from: ProjectRevisionId::new(),
+            to: ProjectRevisionId::new(),
+            documents: Vec::new(),
+            declared: ElementChanges::default(),
+            derived: ElementChanges::default(),
+            relationships_added: Vec::new(),
+            relationships_removed: Vec::new(),
+            relationships_changed: Vec::new(),
+            validation_changed: false,
+        };
+        let ids = left
+            .elements()
+            .chain(right.elements())
+            .map(|record| record.id())
+            .collect::<BTreeSet<_>>();
+        record_graph_changes(&mut diff, left, right, ids);
+        diff
+    }
+
+    #[test]
+    fn derived_only_slot_change_does_not_claim_an_authored_change() {
+        let declared = declared_package();
+        let before = computed_name(declared.clone(), "first computed value", 1);
+        let after = computed_name(declared.clone(), "second computed value", 1);
+        assert_eq!(before.declared().revision(), after.declared().revision());
+        assert!(
+            declared
+                .model()
+                .element(SUBJECT)
+                .unwrap()
+                .slot(properties::ELEMENT_NAME)
+                .is_none()
+        );
+        for (left, right) in [
+            (before.model(), after.model()),
+            (declared.model(), after.model()),
+            (after.model(), declared.model()),
+        ] {
+            let diff = graph_changes(left, right);
+            assert_eq!(diff.declared, ElementChanges::default());
+            assert_eq!(diff.derived.changed, vec![SUBJECT]);
+            assert!(diff.derived.added.is_empty());
+            assert!(diff.derived.removed.is_empty());
+            assert!(diff.relationships_added.is_empty());
+            assert!(diff.relationships_removed.is_empty());
+        }
+    }
+
+    #[test]
+    fn declared_property_edit_remains_an_authored_change() {
+        let declared = declared_package();
+        let mut edits = declared.change_set();
+        edits.set(
+            SUBJECT,
+            properties::ELEMENT_DECLARED_NAME,
+            SlotValue::Scalar(Value::String("renamed declaration".into())),
+            authored(),
+        );
+        let renamed = declared.apply(&edits).unwrap();
+        let before = computed_name(declared, "unchanged computed value", 1);
+        let after = computed_name(renamed, "unchanged computed value", 1);
+        let diff = graph_changes(before.model(), after.model());
+        assert_eq!(diff.declared.changed, vec![SUBJECT]);
+        assert!(diff.declared.added.is_empty());
+        assert!(diff.declared.removed.is_empty());
+        assert_eq!(diff.derived, ElementChanges::default());
+    }
+
+    #[test]
+    fn changed_producer_evidence_remains_a_derived_consequence() {
+        let declared = declared_package();
+        let before = computed_name(declared.clone(), "same value", 1);
+        let after = computed_name(declared, "same value", 2);
+        let diff = graph_changes(before.model(), after.model());
+        assert_eq!(diff.declared, ElementChanges::default());
+        assert_eq!(diff.derived.changed, vec![SUBJECT]);
+    }
+
     #[test]
     fn changed_range_respects_unicode_and_insertions() {
         assert_eq!(changed_ranges("AöB", "AåB"), ((1, 3), (1, 3)));

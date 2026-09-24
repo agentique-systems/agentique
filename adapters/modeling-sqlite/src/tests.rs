@@ -153,6 +153,140 @@ fn exact_restart_history_and_source_bytes() {
     assert!(repository.check_integrity().unwrap().is_ok());
 }
 
+fn invalidate_metadata(request: &mut CreateProject, target: &str) {
+    match target {
+        "project timestamp" => request.project.metadata.created = "2026-09-24".into(),
+        "branch timestamp" => request.branch.metadata.created = "not a timestamp".into(),
+        "revision timestamp" => request.initial.manifest.metadata.created.clear(),
+        "project name" => request.project.name = " \t".into(),
+        "branch name" => request.branch.name = " \t".into(),
+        _ => unreachable!(),
+    }
+}
+
+const INVALID_METADATA: [&str; 5] = [
+    "project timestamp",
+    "branch timestamp",
+    "revision timestamp",
+    "project name",
+    "branch name",
+];
+
+#[test]
+fn invalid_initial_metadata_never_persists_project_revision_or_blobs() {
+    for target in INVALID_METADATA {
+        let directory = tempfile::tempdir().unwrap();
+        let repository = SqliteRepository::open(directory.path().join("repository.db")).unwrap();
+        let mut initial = fixture(2);
+        invalidate_metadata(&mut initial, target);
+        assert!(
+            matches!(
+                repository.create_project(&initial),
+                Err(RepositoryError::Integrity(_))
+            ),
+            "accepted invalid {target}"
+        );
+        assert!(repository.list_projects().unwrap().is_empty());
+        let counts: (usize, usize, usize, usize) = repository
+            .lock()
+            .unwrap()
+            .query_row(
+                "SELECT (SELECT COUNT(*) FROM revisions), (SELECT COUNT(*) FROM branches), \
+                 (SELECT COUNT(*) FROM blobs), (SELECT COUNT(*) FROM operation_receipts)",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?)),
+            )
+            .unwrap();
+        assert_eq!(counts, (0, 0, 0, 0), "persisted invalid {target}");
+    }
+}
+
+#[test]
+fn invalid_branch_and_child_revision_metadata_leave_committed_history_unchanged() {
+    let directory = tempfile::tempdir().unwrap();
+    let repository = SqliteRepository::open(directory.path().join("repository.db")).unwrap();
+    let initial = fixture(2);
+    repository.create_project(&initial).unwrap();
+    for target in ["branch timestamp", "branch name"] {
+        let mut invalid = initial.clone();
+        invalid.branch.id = BranchId::new();
+        invalid.branch.name = "experiment".into();
+        invalidate_metadata(&mut invalid, target);
+        assert!(matches!(
+            repository.create_branch(&invalid.branch),
+            Err(RepositoryError::Integrity(_))
+        ));
+    }
+    let mut request = child(&initial.initial, initial.branch.id, 1);
+    request.candidate.manifest.metadata.created = "2026-02-29T00:00:00Z".into();
+    assert!(matches!(
+        repository.commit_revision(&request),
+        Err(RepositoryError::Integrity(_))
+    ));
+    assert_eq!(
+        repository.list_branches(initial.project.id).unwrap(),
+        vec![initial.branch]
+    );
+    assert_eq!(
+        repository.list_revisions(initial.project.id).unwrap(),
+        vec![initial.initial.manifest]
+    );
+    assert!(repository.check_integrity().unwrap().is_ok());
+}
+
+#[test]
+fn checksummed_invalid_metadata_is_detected_on_read_and_integrity_check() {
+    for target in INVALID_METADATA {
+        let directory = tempfile::tempdir().unwrap();
+        let path = directory.path().join("repository.db");
+        let repository = SqliteRepository::open(&path).unwrap();
+        let initial = fixture(2);
+        repository.create_project(&initial).unwrap();
+        let mut forged = initial.clone();
+        invalidate_metadata(&mut forged, target);
+        let raw = Connection::open(path).unwrap();
+        let result = if target.starts_with("project") {
+            let (data, digest) = encoded(&forged.project).unwrap();
+            raw.execute("UPDATE projects SET data=?,digest=?", params![data, digest])
+                .unwrap();
+            repository.get_project(initial.project.id).map(|_| ())
+        } else if target.starts_with("branch") {
+            let (data, digest) = encoded(&forged.branch).unwrap();
+            raw.execute(
+                "UPDATE branches SET data=?,digest=?,name=?",
+                params![data, digest, forged.branch.name],
+            )
+            .unwrap();
+            repository
+                .get_branch(initial.project.id, initial.branch.id)
+                .map(|_| ())
+        } else {
+            let (data, digest) = encoded(&forged.initial.manifest).unwrap();
+            raw.execute(
+                "UPDATE revisions SET manifest=?,digest=?",
+                params![data, digest],
+            )
+            .unwrap();
+            repository
+                .load_revision(initial.project.id, initial.branch.head)
+                .map(|_| ())
+        };
+        assert!(
+            matches!(result, Err(RepositoryError::Integrity(_))),
+            "accepted invalid {target}"
+        );
+        let report = repository.check_integrity().unwrap();
+        assert!(
+            report
+                .errors
+                .iter()
+                .any(|error| error.contains("timestamp") || error.contains("empty")),
+            "missed invalid {target}: {:?}",
+            report.errors
+        );
+    }
+}
+
 #[test]
 fn all_precommit_failures_roll_back_and_lost_acknowledgement_replays() {
     for point in POINTS {

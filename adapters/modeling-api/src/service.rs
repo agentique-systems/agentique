@@ -153,6 +153,9 @@ impl ModelingApi {
     }
     /// Create a project through the application's source-backed initial revision.
     pub fn create_project(&self, request: dto::ProjectRequest) -> Result<dto::Project, ApiError> {
+        if request.name.trim().is_empty() {
+            return Err(ApiError::bad_request("project name must not be blank"));
+        }
         if request
             .kind
             .as_deref()
@@ -199,6 +202,9 @@ impl ModelingApi {
         project_id: ProjectId,
         request: dto::BranchRequest,
     ) -> Result<dto::Branch, ApiError> {
+        if request.name.trim().is_empty() {
+            return Err(ApiError::bad_request("branch name must not be blank"));
+        }
         if request.kind.as_deref().is_some_and(|kind| kind != "Branch") {
             return Err(ApiError::bad_request("@type must be Branch"));
         }
@@ -380,7 +386,7 @@ fn service_error(error: agq_modeling_service::ServiceError) -> ApiError {
 
 fn data_version(value: &ElementDto) -> Result<dto::DataVersion, ApiError> {
     let payload = element(value)?;
-    let bytes = serde_json::to_vec(&(value.id, value.metaclass, &value.properties))
+    let bytes = serde_json::to_vec(&(value.id, value.metaclass, &value.properties, &payload))
         .map_err(|_| ApiError::bad_request("DataVersion projection failed"))?;
     let namespace = Uuid::from_u128(0x4f3193d7_0473_5278_ad36_6f0edaa8ba75);
     Ok(dto::DataVersion {
@@ -528,12 +534,50 @@ mod tests {
     }
 
     #[test]
+    fn data_version_identity_binds_payload_without_binding_unchanged_revision() {
+        let mut value = ElementDto {
+            id: ElementId::from_u128(1),
+            revision_id: Uuid::from_u128(2).to_string().parse().unwrap(),
+            metaclass: agq_kernel::MetaclassId::from_u128(3),
+            metaclass_name: "Package".into(),
+            declared_qualified_name: Some("Before::Nested".into()),
+            properties: vec![],
+            source: None,
+            origin: agq_modeling_service::OriginDto::Declared(
+                agq_kernel::provenance::DeclaredOrigin::Generated {
+                    generator: agq_kernel::GeneratorId::from_u128(4),
+                },
+            ),
+        };
+        let original = data_version(&value).unwrap();
+        value.revision_id = Uuid::from_u128(5).to_string().parse().unwrap();
+        assert_eq!(data_version(&value).unwrap().id, original.id);
+        value.declared_qualified_name = Some("After::Nested".into());
+        let changed = data_version(&value).unwrap();
+        assert_ne!(changed.id, original.id);
+        assert_eq!(changed.identity.id, original.identity.id);
+    }
+
+    #[test]
     fn malformed_and_unknown_mutation_fields_are_rejected_before_service() {
         assert!(
             serde_json::from_str::<dto::BranchRequest>(r#"{"head":null,"name":"empty"}"#).is_err()
         );
         assert!(
             serde_json::from_str::<dto::ProjectRequest>(r#"{"name":"p","elements":[]}"#).is_err()
+        );
+        for body in [
+            r#"{"name":"p","@type":null}"#,
+            r#"{"name":"p","defaultBranch":null}"#,
+        ] {
+            assert!(serde_json::from_str::<dto::ProjectRequest>(body).is_err());
+        }
+        assert!(serde_json::from_str::<dto::BranchRequest>(
+            r#"{"name":"b","@type":null,"head":{"@id":"00000000-0000-0000-0000-000000000001"}}"#,
+        ).is_err());
+        assert!(
+            serde_json::from_str::<dto::ProjectRequest>(r#"{"name":"p","description":null}"#)
+                .is_ok()
         );
     }
 }

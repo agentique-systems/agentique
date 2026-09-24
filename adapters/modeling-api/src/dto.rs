@@ -3,6 +3,14 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+fn supplied_non_null<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+    T: Deserialize<'de>,
+{
+    T::deserialize(deserializer).map(Some)
+}
+
 /// Identity-only reference, matching the normative `Identified` shape.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -92,12 +100,13 @@ pub struct Commit {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct ProjectRequest {
     /// Optional discriminator; if supplied it must be `Project`.
-    #[serde(rename = "@type")]
+    #[serde(rename = "@type", default, deserialize_with = "supplied_non_null")]
     pub kind: Option<String>,
     /// Optional alternate names.
     #[serde(default)]
     pub alias: Vec<String>,
     /// Optional explicit default branch; creation cannot reference a foreign branch.
+    #[serde(default, deserialize_with = "supplied_non_null")]
     pub default_branch: Option<Identified>,
     /// Optional description.
     pub description: Option<String>,
@@ -110,7 +119,7 @@ pub struct ProjectRequest {
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct BranchRequest {
     /// Optional discriminator; if supplied it must be `Branch`.
-    #[serde(rename = "@type")]
+    #[serde(rename = "@type", default, deserialize_with = "supplied_non_null")]
     pub kind: Option<String>,
     /// Optional alternate names.
     #[serde(default)]

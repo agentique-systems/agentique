@@ -17,6 +17,8 @@ an unknown acknowledgement. The convenience `apply_document_changes` performs
 both steps; retrying it reconstructs a different candidate and is not the lost-ack
 recovery protocol. Initial project creation allocates an empty Working R0; authored
 R1 and later source-backed edits follow the ordinary commit contract.
+`prepare_project` and `commit_project` provide the same stable-request retry path
+for initial creation; `create_project` is their convenience composition.
 
 Restoration authenticates source/identity/publication bindings and reconstructs
 the workspace. Stored Working status remains Working even when the reconstructed
@@ -29,6 +31,9 @@ revision, accepted publications and semantic context. Unqueryable Working revisi
 can bypass it; a cache optimization cannot turn a durable success into failure.
 `check_integrity` composes storage verification with reconstruction of all retained
 revisions, including detached histories. It can be expensive by design.
+Enumeration failures remain findings in that report, preserving earlier storage
+errors instead of discarding them. `BoundRevision::load_path` reports actual source,
+persisted-cache or immutable-memory reuse separately from validation authority.
 
 The API adapter projects these owned values against the pinned Systems Modeling
 API 1.0 shapes. Arbitrary semantic mutation, source/programmatic reconciliation,

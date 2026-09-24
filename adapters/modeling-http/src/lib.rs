@@ -116,7 +116,40 @@ pub fn router(api: Arc<ModelingApi>, maximum_concurrent_jobs: usize) -> Router {
             api,
             jobs: Arc::new(Semaphore::new(maximum_concurrent_jobs.max(1))),
         });
-    Router::new().nest("/api/gen2", routes)
+    Router::new()
+        .nest("/api/gen2", routes)
+        .layer(axum::middleware::map_response(normalize_transport_error))
+}
+
+async fn normalize_transport_error(response: Response) -> Response {
+    if !(response.status().is_client_error() || response.status().is_server_error())
+        || response
+            .headers()
+            .get(header::CONTENT_TYPE)
+            .is_some_and(|value| {
+                value
+                    .to_str()
+                    .is_ok_and(|value| value.starts_with("application/json"))
+            })
+    {
+        return response;
+    }
+    let (mut parts, body) = response.into_parts();
+    let description = match axum::body::to_bytes(body, 4096).await {
+        Ok(bytes) if !bytes.is_empty() => String::from_utf8_lossy(&bytes).into_owned(),
+        _ => parts
+            .status
+            .canonical_reason()
+            .unwrap_or("Request failed")
+            .into(),
+    };
+    parts.headers.remove(header::CONTENT_LENGTH);
+    parts.headers.insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static("application/json"),
+    );
+    let error = serde_json::json!({"@type": "Error", "description": description});
+    Response::from_parts(parts, axum::body::Body::from(error.to_string()))
 }
 
 #[derive(Debug)]
@@ -209,6 +242,42 @@ fn revision_binding(
     })
 }
 
+fn encode_page_url(path: &str, cursor: &str) -> String {
+    let value = format!("{path}#agentique-page={cursor}");
+    let mut encoded = String::new();
+    for byte in value.bytes() {
+        if byte.is_ascii_alphanumeric() || b"-._~".contains(&byte) {
+            encoded.push(char::from(byte));
+        } else {
+            use std::fmt::Write;
+            write!(&mut encoded, "%{byte:02X}").expect("String write");
+        }
+    }
+    encoded
+}
+
+fn cursor_from_page_url<'a>(
+    uri: &Uri,
+    value: Option<&'a str>,
+) -> Result<Option<&'a str>, HttpError> {
+    value
+        .map(|value| {
+            let (path, cursor) = value.split_once("#agentique-page=").ok_or_else(|| {
+                ApiError::bad_request(
+                    "continuation must use the page URL supplied by the Link header",
+                )
+            })?;
+            if path != uri.path() {
+                return Err(ApiError::bad_request(
+                    "continuation page URL belongs to another collection",
+                )
+                .into());
+            }
+            Ok(cursor)
+        })
+        .transpose()
+}
+
 fn collection<T: Serialize>(
     values: &[T],
     binding: PageBinding,
@@ -226,8 +295,8 @@ fn collection<T: Serialize>(
         values,
         &binding,
         query.size,
-        query.after.as_deref(),
-        query.before.as_deref(),
+        cursor_from_page_url(&uri, query.after.as_deref())?,
+        cursor_from_page_url(&uri, query.before.as_deref())?,
     )
     .map_err(|error| ApiError::bad_request(error.to_string()))?;
     let mut response = Json(page.values).into_response();
@@ -239,14 +308,16 @@ fn collection<T: Serialize>(
         .unwrap_or_default();
     if let Some(cursor) = page.next {
         links.push(format!(
-            "<{}?page[after]={cursor}{extra}>; rel=\"next\"",
-            uri.path()
+            "<{}?page%5Bafter%5D={}{extra}>; rel=\"next\"",
+            uri.path(),
+            encode_page_url(uri.path(), &cursor)
         ));
     }
     if let Some(cursor) = page.previous {
         links.push(format!(
-            "<{}?page[before]={cursor}{extra}>; rel=\"prev\"",
-            uri.path()
+            "<{}?page%5Bbefore%5D={}{extra}>; rel=\"prev\"",
+            uri.path(),
+            encode_page_url(uri.path(), &cursor)
         ));
     }
     if !links.is_empty() {
@@ -497,12 +568,16 @@ mod tests {
             binding.revision.to_string()
         );
         let link = response.headers()[header::LINK].to_str().unwrap();
-        let cursor = link
-            .split("page[after]=")
-            .nth(1)
-            .unwrap()
+        let page_url = link
             .split('>')
             .next()
+            .unwrap()
+            .trim_start_matches('<')
+            .parse::<Uri>()
+            .unwrap();
+        let Query(query) = Query::<PageQuery>::try_from_uri(&page_url).unwrap();
+        let cursor = cursor_from_page_url(&page_url, query.after.as_deref())
+            .unwrap()
             .unwrap();
         assert_eq!(paging::continuation_binding(cursor).unwrap(), binding);
         let body = axum::body::to_bytes(response.into_body(), 1024)
@@ -522,5 +597,23 @@ mod tests {
         assert_eq!(value["@type"], "Error");
         assert!(value["description"].is_string());
         assert_eq!(value.as_object().unwrap().len(), 2);
+    }
+
+    #[tokio::test]
+    async fn transport_rejections_preserve_status_and_use_normative_error_shape() {
+        let response = normalize_transport_error(
+            (StatusCode::PAYLOAD_TOO_LARGE, "body limit exceeded").into_response(),
+        )
+        .await;
+        assert_eq!(response.status(), StatusCode::PAYLOAD_TOO_LARGE);
+        assert_eq!(response.headers()[header::CONTENT_TYPE], "application/json");
+        let body = axum::body::to_bytes(response.into_body(), 4096)
+            .await
+            .unwrap();
+        let error: serde_json::Value = serde_json::from_slice(&body).unwrap();
+        assert_eq!(
+            error,
+            serde_json::json!({"@type":"Error","description":"body limit exceeded"})
+        );
     }
 }

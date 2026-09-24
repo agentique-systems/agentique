@@ -52,8 +52,23 @@ pub struct BoundRevision {
     manifest: Arc<RevisionManifest>,
     working: Arc<WorkingProjectRevision>,
     validated: Option<ValidatedProjectRevision>,
+    load_path: RevisionLoadPath,
+}
+/// Observed reconstruction path, separate from semantic or validation authority.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RevisionLoadPath {
+    /// Reconstructed from exact durable source and identity checkpoints.
+    DurableSource,
+    /// Restored from a persisted cache after authenticating all semantic inputs.
+    AuthenticatedSemanticCache,
+    /// Reused an already authenticated immutable revision in this service.
+    ImmutableMemory,
 }
 impl BoundRevision {
+    /// Report the actual path for cache diagnostics and performance measurement.
+    pub fn load_path(&self) -> RevisionLoadPath {
+        self.load_path
+    }
     /// Exact immutable handle for this request; branch movement cannot replace it.
     pub fn revision(&self) -> &Arc<WorkingProjectRevision> {
         &self.working
@@ -168,7 +183,9 @@ impl ModelingService {
                 .find(|bound| bound.manifest.as_ref() == &manifest)
             {
                 // Each cached entry was authenticated against its immutable semantic context.
-                return Ok(bound.clone());
+                let mut bound = bound.clone();
+                bound.load_path = RevisionLoadPath::ImmutableMemory;
+                return Ok(bound);
             }
         }
         let checkpoint_bytes = self.repository.read_blob(manifest.checkpoint_digest)?;
@@ -208,6 +225,7 @@ impl ModelingService {
             manifest: Arc::new(manifest),
             working,
             validated,
+            load_path: RevisionLoadPath::DurableSource,
         };
         self.cache
             .lock()
@@ -216,13 +234,22 @@ impl ModelingService {
         Ok(bound)
     }
     /// Create a project with a real parentless empty Working revision and main head.
+    /// Retain a prepared project instead when lost acknowledgement must be retried.
     pub fn create_project(
         &self,
         name: &str,
         description: Option<String>,
     ) -> Result<Project, ServiceError> {
+        self.commit_project(&self.prepare_project(name, description)?)
+    }
+    /// Prepare a new project without storing it or acknowledging any branch head.
+    pub fn prepare_project(
+        &self,
+        name: &str,
+        description: Option<String>,
+    ) -> Result<PreparedProject, ServiceError> {
         let workspace = ProjectWorkspace::open(self.publication.clone())?;
-        self.create_from_revision(name, description, workspace.head().clone(), false)
+        self.prepare_project_from_revision(name, description, workspace.head().clone(), false)
     }
     /// Import an initial workspace revision without inventing a new semantic identity.
     ///
@@ -235,6 +262,21 @@ impl ModelingService {
         initial: Arc<WorkingProjectRevision>,
         validate: bool,
     ) -> Result<Project, ServiceError> {
+        self.commit_project(&self.prepare_project_from_revision(
+            name,
+            description,
+            initial,
+            validate,
+        )?)
+    }
+    /// Prepare an initial workspace import with a stable operation identity.
+    pub fn prepare_project_from_revision(
+        &self,
+        name: &str,
+        description: Option<String>,
+        initial: Arc<WorkingProjectRevision>,
+        validate: bool,
+    ) -> Result<PreparedProject, ServiceError> {
         if name.trim().is_empty() || initial.parent().is_some() {
             return Err(ServiceError::Invalid(
                 "project requires a name and parentless initial revision".into(),
@@ -265,14 +307,26 @@ impl ModelingService {
             metadata,
         };
         let candidate = prepare_candidate(&initial, validate)?;
-        self.repository.create_project(&CreateProject {
-            operation_id: OperationId::new(),
-            project: project.clone(),
-            branch,
-            initial: candidate.clone(),
-        })?;
-        self.cache_committed(candidate.manifest, initial, validated);
-        Ok(project)
+        Ok(PreparedProject {
+            request: CreateProject {
+                operation_id: OperationId::new(),
+                project,
+                branch,
+                initial: candidate,
+            },
+            working: initial,
+            validated,
+        })
+    }
+    /// Durably create exactly the prepared project; replay after lost acknowledgement.
+    pub fn commit_project(&self, prepared: &PreparedProject) -> Result<Project, ServiceError> {
+        self.repository.create_project(&prepared.request)?;
+        self.cache_committed(
+            prepared.request.initial.manifest.clone(),
+            prepared.working.clone(),
+            prepared.validated.clone(),
+        );
+        Ok(prepared.request.project.clone())
     }
     /// Create an independent head at an existing same-project revision.
     pub fn create_branch(
@@ -367,6 +421,7 @@ impl ModelingService {
                 manifest: Arc::new(manifest),
                 working,
                 validated,
+                load_path: RevisionLoadPath::ImmutableMemory,
             })
     }
     /// Identity-driven diff of two explicitly bound revisions.
@@ -384,8 +439,24 @@ impl ModelingService {
     pub fn check_integrity(&self) -> Result<IntegrityReport, ServiceError> {
         let mut report = self.repository.check_integrity()?;
         let mut seen = std::collections::BTreeSet::new();
-        for project in self.repository.list_projects()? {
-            for manifest in self.repository.list_revisions(project.id)? {
+        let projects = match self.repository.list_projects() {
+            Ok(projects) => projects,
+            Err(error) => {
+                report.errors.push(format!("project enumeration: {error}"));
+                return Ok(report);
+            }
+        };
+        for project in projects {
+            let revisions = match self.repository.list_revisions(project.id) {
+                Ok(revisions) => revisions,
+                Err(error) => {
+                    report
+                        .errors
+                        .push(format!("{} revision enumeration: {error}", project.id));
+                    continue;
+                }
+            };
+            for manifest in revisions {
                 if seen.insert(manifest.revision_id) {
                     if let Err(error) =
                         self.resolve(project.id, RevisionSelector::Revision(manifest.revision_id))
@@ -415,6 +486,26 @@ pub struct ApplyDocumentChanges {
     pub changes: Vec<ProjectChange>,
     /// Require Phase1V1 before persistence; otherwise persist Working.
     pub validate: bool,
+}
+/// Initial project candidate retained across durability or acknowledgement failures.
+pub struct PreparedProject {
+    request: CreateProject,
+    working: Arc<WorkingProjectRevision>,
+    validated: Option<ValidatedProjectRevision>,
+}
+impl PreparedProject {
+    /// Stable project identity and metadata allocated during preparation.
+    pub fn project(&self) -> &Project {
+        &self.request.project
+    }
+    /// Exact replayable initial persistence request.
+    pub fn request(&self) -> &CreateProject {
+        &self.request
+    }
+    /// Immutable candidate before or after durable creation.
+    pub fn revision(&self) -> &Arc<WorkingProjectRevision> {
+        &self.working
+    }
 }
 /// Inspectable candidate survives CAS conflicts and durability errors.
 pub struct PreparedChanges {

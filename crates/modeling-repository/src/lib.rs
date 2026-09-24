@@ -60,10 +60,13 @@ identity!(
     "Idempotency identity binding one exact durable operation."
 );
 
-/// SHA-256 identity of exact bytes; the private representation rejects malformed digests.
+/// SHA-256 identity of exact bytes; deserialization rejects malformed digests.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(try_from = "String", into = "String")]
-pub struct ContentDigest(pub [u8; 32]);
+pub struct ContentDigest(
+    /// Exact SHA-256 bytes, encoded as canonical lowercase hexadecimal by serde.
+    pub [u8; 32],
+);
 impl From<ContentDigest> for String {
     fn from(value: ContentDigest) -> Self {
         value.hex()
@@ -214,6 +217,7 @@ impl RevisionManifest {
         if self.format_version != Self::FORMAT_VERSION {
             return Err(RepositoryError::UnsupportedFormat(self.format_version));
         }
+        self.metadata.verify()?;
         if self.parent_revision_id == Some(self.revision_id) {
             return Err(RepositoryError::Integrity(
                 "revision is its own parent".into(),
@@ -300,6 +304,15 @@ pub struct Project {
     /// Creation and optional descriptive metadata.
     pub metadata: ResourceMetadata,
 }
+impl Project {
+    /// Check the required display name and descriptive metadata before storage or use.
+    pub fn verify(&self) -> Result<(), RepositoryError> {
+        if self.name.trim().is_empty() {
+            return Err(RepositoryError::Integrity("empty project name".into()));
+        }
+        self.metadata.verify()
+    }
+}
 /// One named immutable-revision reference.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Branch {
@@ -314,6 +327,15 @@ pub struct Branch {
     /// Creation and optional descriptive metadata.
     pub metadata: ResourceMetadata,
 }
+impl Branch {
+    /// Check the required display name and descriptive metadata before storage or use.
+    pub fn verify(&self) -> Result<(), RepositoryError> {
+        if self.name.trim().is_empty() {
+            return Err(RepositoryError::Integrity("empty branch name".into()));
+        }
+        self.metadata.verify()
+    }
+}
 /// Descriptive metadata projected by protocol adapters, never semantic graph facts.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ResourceMetadata {
@@ -325,6 +347,14 @@ pub struct ResourceMetadata {
     pub description: Option<String>,
     /// Alternative human-readable identifiers.
     pub alias: Vec<String>,
+}
+impl ResourceMetadata {
+    /// Require a complete RFC 3339 creation timestamp, preserving its exact spelling.
+    pub fn verify(&self) -> Result<(), RepositoryError> {
+        chrono::DateTime::parse_from_rfc3339(&self.created)
+            .map_err(|_| RepositoryError::Integrity("creation timestamp is not RFC 3339".into()))?;
+        Ok(())
+    }
 }
 /// Initial project publication is atomic with its first revision and main branch.
 #[derive(Clone, Debug)]
@@ -396,7 +426,9 @@ pub enum RepositoryError {
     /// Explicit head race; no retry or overwrite was performed.
     #[error("head conflict: expected {expected:?}, actual {actual:?}")]
     Conflict {
+        /// Head the caller used to construct its candidate.
         expected: ProjectRevisionId,
+        /// Head observed atomically by the repository.
         actual: ProjectRevisionId,
     },
     /// Operation identity was reused for different content.

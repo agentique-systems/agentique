@@ -13,6 +13,17 @@ The generator checks every shared schema shape against both machine-readable
 artifacts, accounting for their different reference URI spellings. Generation-1
 coverage remains historical and independent.
 
+The vertical implements six metadata reads with complete pinned response shapes:
+`getProjects`, `getProjectById`, `getBranchesByProject`,
+`getBranchesByProjectAndId`, `getCommitsByProject`, and
+`getCommitByProjectAndId`. Seven operations have explicit partial coverage:
+`postProject`, `postBranchByProject`, `getElementsByProjectCommit`,
+`getElementByProjectCommitId`, `getRootsByProjectCommit`,
+`getRelationshipsByProjectCommitRelatedElement`, and `diff`.
+The other 22 inventoried operations return unsupported behavior. These counts
+describe implementation scope; the generated inventory and milestone verification
+record establish the checked result, and no full API conformance is claimed.
+
 ## Repository mapping
 
 PDF 7.1.2 and 7.2.3 map Project to a repository project, Branch to a mutable
@@ -74,6 +85,18 @@ resolution occurs before the first query; a continuation carries the original
 revision and cannot silently read a newer branch head. The cursor checksum
 detects corruption and is not an authorization credential. Repository access
 must be authorized separately by an embedding host.
+
+The HTTP adapter carries the opaque cursor in a provider page URL inside the
+before/after query value, percent-encodes that URL, and verifies its collection
+path before interpreting the cursor. Metadata catalog paging detects concurrent
+catalog changes and rejects stale continuations; immutable revision pages remain
+available after branch movement. Collection bodies are arrays, with revision and
+partial-projection status in headers. A one-megabyte JSON body limit and bounded
+blocking-job permits reject excess requests before unbounded work accumulates.
+
+API branch deletion is deferred even though repository branch deletion is
+available: the standard's returned deleted Branch needs a durable deletion
+metadata policy. The adapter does not fabricate a persistent tombstone.
 
 ## Following platform work
 

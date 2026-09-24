@@ -94,6 +94,56 @@ fn future_manifest_versions_and_self_parent_are_rejected() {
 }
 
 #[test]
+fn resource_metadata_requires_rfc3339_without_rewriting_valid_timestamps() {
+    for created in [
+        "2026-09-24T00:00:00Z",
+        "2026-09-24T02:30:00.123456789+02:30",
+        "2024-02-29T12:30:45-05:00",
+    ] {
+        let metadata = ResourceMetadata {
+            created: created.into(),
+            ..Default::default()
+        };
+        metadata.verify().unwrap();
+        assert_eq!(metadata.created, created);
+    }
+    for created in [
+        "",
+        "not a timestamp",
+        "2026-09-24",
+        "2026-09-24T00:00:00",
+        "2026-02-29T00:00:00Z",
+        "2026-09-24T24:00:00Z",
+        "2026-09-24T00:00:00+25:00",
+        " 2026-09-24T00:00:00Z",
+        "2026-09-24T00:00:00Z trailing",
+    ] {
+        let metadata = ResourceMetadata {
+            created: created.into(),
+            ..Default::default()
+        };
+        assert!(
+            matches!(metadata.verify(), Err(RepositoryError::Integrity(_))),
+            "accepted malformed timestamp {created:?}"
+        );
+    }
+}
+
+#[test]
+fn invalid_revision_metadata_is_rejected_even_with_valid_sources_and_receipt() {
+    let mut value = candidate();
+    value.manifest = with_receipt(value.manifest);
+    value.manifest.metadata.created = "2026-09-24".into();
+    assert!(matches!(value.verify(), Err(RepositoryError::Integrity(_))));
+    // Metadata remains outside the semantic source binding, but it must satisfy
+    // its own storage contract before a checksum can authenticate the revision.
+    assert!(matches!(
+        value.manifest.verify(),
+        Err(RepositoryError::Integrity(_))
+    ));
+}
+
+#[test]
 fn document_identity_path_and_source_revision_populations_are_unique() {
     let value = candidate();
     let original = value.manifest.documents[0].clone();

@@ -357,7 +357,7 @@
         "204": null
       },
       "status": "unsupported",
-      "reason": "Not implemented in the Phase 2 vertical; no full API conformance claim."
+      "reason": "Repository head deletion is implemented, but the normative deleted Branch response requires a durable deletion-metadata/tombstone contract; the adapter explicitly rejects deletion in this profile."
     },
     {
       "operation_id": "getTagsByProject",
@@ -409,7 +409,7 @@
         }
       },
       "status": "unsupported",
-      "reason": "Not implemented in the Phase 2 vertical; no full API conformance claim."
+      "reason": "Tags and their immutable commit-reference lifecycle are deferred; no tag objects are synthesized from branches."
     },
     {
       "operation_id": "postTagByProject",
@@ -436,7 +436,7 @@
         }
       },
       "status": "unsupported",
-      "reason": "Not implemented in the Phase 2 vertical; no full API conformance claim."
+      "reason": "Tags and their immutable commit-reference lifecycle are deferred; no tag objects are synthesized from branches."
     },
     {
       "operation_id": "getTagByProjectAndId",
@@ -471,7 +471,7 @@
         }
       },
       "status": "unsupported",
-      "reason": "Not implemented in the Phase 2 vertical; no full API conformance claim."
+      "reason": "Tags and their immutable commit-reference lifecycle are deferred; no tag objects are synthesized from branches."
     },
     {
       "operation_id": "deleteTagByProjectAndId",
@@ -507,7 +507,7 @@
         "204": null
       },
       "status": "unsupported",
-      "reason": "Not implemented in the Phase 2 vertical; no full API conformance claim."
+      "reason": "Tags and their immutable commit-reference lifecycle are deferred; no tag objects are synthesized from branches."
     },
     {
       "operation_id": "getCommitsByProject",
@@ -708,7 +708,7 @@
         }
       },
       "status": "unsupported",
-      "reason": "Not implemented in the Phase 2 vertical; no full API conformance claim."
+      "reason": "A durable normative DataVersion change registry is not implemented; the identity-driven revision diff is a separate partial operation."
     },
     {
       "operation_id": "getChangeByProjectCommitId",
@@ -753,7 +753,7 @@
         }
       },
       "status": "unsupported",
-      "reason": "Not implemented in the Phase 2 vertical; no full API conformance claim."
+      "reason": "A durable normative DataVersion change registry is not implemented; the identity-driven revision diff is a separate partial operation."
     },
     {
       "operation_id": "getElementsByProjectCommit",
@@ -935,7 +935,7 @@
         }
       },
       "status": "unsupported",
-      "reason": "Not implemented in the Phase 2 vertical; no full API conformance claim."
+      "reason": "Accepted standard publications are authenticated dependencies, not fabricated Systems Modeling API ProjectUsage records."
     },
     {
       "operation_id": "getRootsByProjectCommit",
@@ -1338,7 +1338,7 @@
         }
       },
       "status": "unsupported",
-      "reason": "Not implemented in the Phase 2 vertical; no full API conformance claim."
+      "reason": "The normative query language and saved-query lifecycle are outside this source-backed read/revision vertical."
     },
     {
       "operation_id": "postQueryByProject",
@@ -1365,7 +1365,7 @@
         }
       },
       "status": "unsupported",
-      "reason": "Not implemented in the Phase 2 vertical; no full API conformance claim."
+      "reason": "The normative query language and saved-query lifecycle are outside this source-backed read/revision vertical."
     },
     {
       "operation_id": "getQueryByProjectAndId",
@@ -1400,7 +1400,7 @@
         }
       },
       "status": "unsupported",
-      "reason": "Not implemented in the Phase 2 vertical; no full API conformance claim."
+      "reason": "The normative query language and saved-query lifecycle are outside this source-backed read/revision vertical."
     },
     {
       "operation_id": "putQueryByProjectAndId",
@@ -1437,7 +1437,7 @@
         }
       },
       "status": "unsupported",
-      "reason": "Not implemented in the Phase 2 vertical; no full API conformance claim."
+      "reason": "The normative query language and saved-query lifecycle are outside this source-backed read/revision vertical."
     },
     {
       "operation_id": "deleteQueryByProjectAndId",
@@ -1473,7 +1473,7 @@
         "204": null
       },
       "status": "unsupported",
-      "reason": "Not implemented in the Phase 2 vertical; no full API conformance claim."
+      "reason": "The normative query language and saved-query lifecycle are outside this source-backed read/revision vertical."
     },
     {
       "operation_id": "getQueryResultsByProjectIdQueryId",
@@ -1544,7 +1544,7 @@
         }
       },
       "status": "unsupported",
-      "reason": "Not implemented in the Phase 2 vertical; no full API conformance claim."
+      "reason": "The normative query language and saved-query lifecycle are outside this source-backed read/revision vertical."
     },
     {
       "operation_id": "getQueryResultsByProjectIdQuery",
@@ -1607,7 +1607,7 @@
         }
       },
       "status": "unsupported",
-      "reason": "Not implemented in the Phase 2 vertical; no full API conformance claim."
+      "reason": "The normative query language and saved-query lifecycle are outside this source-backed read/revision vertical."
     },
     {
       "operation_id": "getQueryResultsByProjectIdQueryPost",
@@ -1670,7 +1670,7 @@
         }
       },
       "status": "unsupported",
-      "reason": "Not implemented in the Phase 2 vertical; no full API conformance claim."
+      "reason": "The normative query language and saved-query lifecycle are outside this source-backed read/revision vertical."
     },
     {
       "operation_id": "getDatatypes",
@@ -1724,7 +1724,7 @@
         }
       },
       "status": "unsupported",
-      "reason": "Not implemented in the Phase 2 vertical; no full API conformance claim."
+      "reason": "Serving the normative datatype catalogue is deferred until element projections cover all required schema properties."
     },
     {
       "operation_id": "getDatatypeById",
@@ -1790,7 +1790,7 @@
         }
       },
       "status": "unsupported",
-      "reason": "Not implemented in the Phase 2 vertical; no full API conformance claim."
+      "reason": "Serving the normative datatype catalogue is deferred until element projections cover all required schema properties."
     }
   ]
 }

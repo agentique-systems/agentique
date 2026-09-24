@@ -67,6 +67,42 @@ async fn durable_project_revision_http_vertical_and_stable_continuation() {
         Arc::new(SqliteRepository::open(temporary.path().join("platform.sqlite")).unwrap());
     let service = Arc::new(ModelingService::new(repository, publication, 8));
     let app = agq_modeling_http::router(Arc::new(ModelingApi::new(service.clone())), 2);
+    let (status, _, oversized) = request(
+        &app,
+        "POST",
+        "/api/gen2/projects",
+        Some(json!({"name": "x".repeat(1024 * 1024 + 1)})),
+    )
+    .await;
+    assert_eq!(status, StatusCode::PAYLOAD_TOO_LARGE);
+    assert_eq!(oversized["@type"], "Error");
+    for (body, expected) in [
+        (
+            json!({"name":" ","description":null}),
+            StatusCode::BAD_REQUEST,
+        ),
+        (
+            json!({"name":"Invalid","@type":null}),
+            StatusCode::UNPROCESSABLE_ENTITY,
+        ),
+        (
+            json!({"name":"Invalid","defaultBranch":null}),
+            StatusCode::UNPROCESSABLE_ENTITY,
+        ),
+    ] {
+        let (status, _, error) = request(&app, "POST", "/api/gen2/projects", Some(body)).await;
+        assert_eq!(status, expected, "{error}");
+        assert_eq!(error["@type"], "Error");
+    }
+    let (status, _, error) = request(
+        &app,
+        "GET",
+        "/api/gen2/projects?page%5Bsize%5D=invalid",
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    assert_eq!(error["@type"], "Error");
     let (status, _, project) = request(
         &app,
         "POST",
@@ -76,6 +112,20 @@ async fn durable_project_revision_http_vertical_and_stable_continuation() {
     .await;
     assert_eq!(status, StatusCode::CREATED, "{project}");
     let project_id: ProjectId = project["@id"].as_str().unwrap().parse().unwrap();
+    let (status, _, projects) = request(&app, "GET", "/api/gen2/projects", None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(projects.as_array().unwrap(), &[project.clone()]);
+    assert_eq!(
+        request(
+            &app,
+            "GET",
+            &format!("/api/gen2/projects/{project_id}"),
+            None
+        )
+        .await
+        .2,
+        project
+    );
     let main = project["defaultBranch"]["@id"]
         .as_str()
         .unwrap()
@@ -112,6 +162,20 @@ async fn durable_project_revision_http_vertical_and_stable_continuation() {
     assert_eq!(status, StatusCode::CREATED, "{branches}");
     assert_eq!(branches["head"], branches["referencedCommit"]);
     let experiment = branches["@id"].as_str().unwrap().parse().unwrap();
+    let (status, _, branch_list) = request(&app, "GET", &format!("{prefix}/branches"), None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(branch_list.as_array().unwrap().len(), 2);
+    assert_eq!(
+        request(
+            &app,
+            "GET",
+            &format!("{prefix}/branches/{experiment}"),
+            None
+        )
+        .await
+        .2,
+        branches
+    );
     let elements = format!("{prefix}/commits/{first}/elements");
     let (status, headers, first_page) =
         request(&app, "GET", &format!("{elements}?page%5Bsize%5D=1"), None).await;
@@ -158,6 +222,22 @@ async fn durable_project_revision_http_vertical_and_stable_continuation() {
         request(&app, "GET", &foreign_cursor, None).await.0,
         StatusCode::BAD_REQUEST
     );
+    let wrong_query = next.replace("/elements?", "/roots?");
+    assert_eq!(
+        request(&app, "GET", &wrong_query, None).await.0,
+        StatusCode::BAD_REQUEST
+    );
+    let (status, _, commits) = request(&app, "GET", &format!("{prefix}/commits"), None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(commits.as_array().unwrap().len(), 3);
+    let (status, _, commit) =
+        request(&app, "GET", &format!("{prefix}/commits/{second}"), None).await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(commit["@type"], "Commit");
+    assert_eq!(
+        commit["previousCommit"],
+        json!([{"@id": first.to_string()}])
+    );
     let (status, _, roots) = request(
         &app,
         "GET",
@@ -184,6 +264,17 @@ async fn durable_project_revision_http_vertical_and_stable_continuation() {
         .await
         .0,
         StatusCode::OK
+    );
+    assert_eq!(
+        request(
+            &app,
+            "GET",
+            &format!("{prefix}/commits/{first}/elements/{root_id}/relationships?direction=in"),
+            None
+        )
+        .await
+        .0,
+        StatusCode::NOT_IMPLEMENTED
     );
     assert_eq!(
         request(
