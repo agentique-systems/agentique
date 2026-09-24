@@ -1,6 +1,12 @@
 # Workspace runtime acceptance
 
-Current measured record at integration source `65c1bf2`: **7 of 12 unique
+Current disposition: **7 of 12 unique accepted-cache workspace tests have
+passed**. The subsequent recovery-scale run aborted on a memory allocation
+failure; its result remains unresolved. Four smaller phase-1 tests are now
+running separately. N1 and N2 remain passed, and ADR 0024 remains proposed.
+The resource-interruption update below records the exact evidence.
+
+Initial measured record at integration source `65c1bf2`: **7 of 12 unique
 accepted-cache workspace tests have passed**. The required phase N1 self-model
 dogfooding and N2 validated-scale gates have passed. The malformed-typing test
 also passed again with the forked evaluator; that rerun is not an eighth unique
@@ -128,8 +134,8 @@ documentation commits; the failed and successful scale logs are separate files.
 
 ## Remaining five runtime tests
 
-The remaining `phase1` run is in progress. No completed exit or passing result
-is asserted here for:
+At the initial snapshot, the remaining `phase1` run was in progress. No
+completed exit or passing result was asserted for:
 
 - `hundred_documents_five_revisions_and_parallel_borrowed_reads`
 - `mixed_documents_and_edits_retain_old_revisions_and_inherited_ids`
@@ -167,3 +173,52 @@ below exited 0 and printed `7 local links valid`:
 ```text
 python -c "import pathlib,re; p=pathlib.Path('verification/summaries/final-audit-semantic-closure/workspace-runtime-acceptance.md'); links=re.findall(r'\]\(([^)]+)\)',p.read_text()); assert all((p.parent/link.split('#')[0]).is_file() for link in links); print(str(len(links))+' local links valid')"
 ```
+
+## Resource-interruption update
+
+The subsequent `workspace-phase1-remaining-acceptance` command terminated after
+**916.59 seconds of command time**, with exit **3221226505**. It began the first
+of the five selected tests,
+`hundred_documents_five_revisions_and_parallel_borrowed_reads`, and logged:
+
+```text
+memory allocation of 8589934592 bytes failed
+```
+
+The log contains no semantic assertion failure, completed test result, or
+passing test count. This is a failed command with an unresolved recovery-scale
+test, not evidence that any of the five selected tests passed. Allocation
+failure alone does not establish the underlying cause or the semantic outcome.
+Static review is investigating expansion of diagnostic `Debug` output into a
+`String`; that is a hypothesis, not a cause confirmed by a runtime trace.
+
+The command was:
+
+```text
+cargo test --release --locked --offline -p agq-modeling-workspace --features verification --test phase1 -- --ignored --skip hundred_documents_five_validated_revisions_and_four_parallel_readers --nocapture --test-threads=1
+```
+
+| Evidence field | Recorded value |
+| --- | --- |
+| Source commit | `65c1bf261512772a7f4b592f3749f6b430556c3d` |
+| Working-change SHA-256 | `24c5bed541a456892bc12d58492d2b7d334e1daa15364acfb95375f3f8086fb9` |
+| Output SHA-256 | `61d81945fdd3275bae56e56552ed987b8e6bbaf54001cb114b34ce15d3453f49` |
+| Raw output | `verification/generated/final-audit-semantic-closure/workspace-phase1-remaining-acceptance.log` |
+| Command duration | 916.59 seconds |
+| Exit | 3221226505 |
+
+The raw output SHA-256 was independently recomputed and matches the command
+ledger. The previous measured records, including the rejected and corrected N2
+scale runs, remain intact.
+
+The four smaller tests listed above are now running separately under
+`workspace-phase1-four-edit-gates`; the observed log starts with `running 4 tests`
+and the mixed-document test. No completed exit or passing result is claimed for
+that command here. The recovery-scale test remains pending investigation and a
+successful rerun. Thus the current count remains **7 of 12 unique tests passed**,
+plus the already-recorded malformed-typing rerun. Required N1 and N2 remain
+passed. Full workspace acceptance and ADR 0024 adoption remain pending.
+
+Update verification: `git diff --check` exited 0 with empty output, and the
+local-link command above exited 0 with `7 local links valid`. No build, cache
+load, producer, or runtime test was run to prepare this update.
