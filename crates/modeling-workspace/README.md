@@ -62,7 +62,7 @@ source declarations, revalidates cached effective facts against them, and reruns
 the producer scheduler and every effective-audit subject. It returns Working;
 the service independently verifies its persisted receipt before validation.
 Any cache failure permits ordinary source reconstruction. This conservative
-cache reduces repeated effective-fact construction, not source parsing or audit
+cache reuses persisted effective facts while retaining source parsing and audit
 work; it is disposable and supplies no independent semantic authority.
 
 `compilation_work` separates documents reparsed/lowered, lowering cache hits,

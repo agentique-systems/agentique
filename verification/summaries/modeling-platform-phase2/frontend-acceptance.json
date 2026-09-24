@@ -58,8 +58,243 @@
       "test_duration_seconds": 0.01,
       "tests_passed": 1,
       "output": "All corrected oracle documents parse without recovery."
+    },
+    {
+      "command": "cargo check -p agq-modeling-workspace --features verification --tests -j 1",
+      "source_changes": [
+        "bba840b",
+        "fcad622"
+      ],
+      "exit_code": 0,
+      "duration_seconds": 4.57,
+      "output": "Cache and checkpoint API, counter fixes and integration tests typechecked."
+    },
+    {
+      "command": "cargo clippy -p agq-kerml-text -p agq-modeling-workspace --all-targets --features verification --offline -j 1 -- -D warnings",
+      "tested_commit": "fcad622",
+      "exit_code": 1,
+      "output": "New ArchiveError increased CheckpointError size; result_large_err in three workspace checkpoint methods. New archive payload boxed in 2dd53c9; integrated lead owns rerun."
+    },
+    {
+      "command": "phase2_checkpoint-e1c976a890825d4a.exe local_edit_classes --ignored --nocapture",
+      "tested_commit": "068fc4412452f5faf9f8fee6fdba0dfb1328d951",
+      "executable_sha256": "7fe0b0562727951336535d79f9b0067e0f959e55e8f90f41e7e2343e344b90ef",
+      "exit_code": 0,
+      "test_duration_seconds": 2025.91,
+      "tests_passed": 1,
+      "edit_cases_passed": 7,
+      "output": "All seven exact canonical graph/query/provenance/diagnostic/closure comparisons passed."
     }
   ],
-  "incremental_semantic_oracle": "pending",
-  "persisted_semantic_cache": "pending"
+  "incremental_semantic_oracle": {
+    "status": "passed",
+    "tested_commit": "068fc4412452f5faf9f8fee6fdba0dfb1328d951",
+    "executable_sha256": "7fe0b0562727951336535d79f9b0067e0f959e55e8f90f41e7e2343e344b90ef",
+    "fixture": "Three mixed-language documents; baseline must pass Phase1V1 validation before seven independent edits.",
+    "equality": [
+      "canonical graph and ElementIds",
+      "relationship identity and order",
+      "declared and derived provenance",
+      "native query values and completeness",
+      "native diagnostics and proof/search dependencies",
+      "closure certificate semantic digest",
+      "reference assertions and source origins"
+    ],
+    "oracle_boundary": "Identical parsed source/syntax identities; no lowering fragment or previous producer cache. All authored lowering, kernel records, producer closure and effective audits are reconstructed. Separate durable source restore reparses bytes and restores exact syntax identities.",
+    "cases": [
+      {
+        "edit": "attribute-value",
+        "exact_semantic_equivalence": "passed",
+        "incremental_ms": 152647,
+        "full_authored_semantic_rebuild_ms": 87864,
+        "incremental_work": {
+          "documents_reparsed": 1,
+          "documents_lowered": 1,
+          "lowering_cache_hits": 5,
+          "records_lowered": 38,
+          "records_rebuilt": 102,
+          "effective_audit_subjects_evaluated": 109,
+          "final_closure_producer_subjects_evaluated": 133
+        },
+        "full_work": {
+          "documents_reparsed": 0,
+          "documents_lowered": 6,
+          "lowering_cache_hits": 0,
+          "records_lowered": 92,
+          "records_rebuilt": 102,
+          "effective_audit_subjects_evaluated": 109,
+          "final_closure_producer_subjects_evaluated": 133
+        }
+      },
+      {
+        "edit": "attribute-type",
+        "exact_semantic_equivalence": "passed",
+        "incremental_ms": 138245,
+        "full_authored_semantic_rebuild_ms": 86705,
+        "incremental_work": {
+          "documents_reparsed": 1,
+          "documents_lowered": 1,
+          "lowering_cache_hits": 5,
+          "records_lowered": 38,
+          "records_rebuilt": 102,
+          "effective_audit_subjects_evaluated": 109,
+          "final_closure_producer_subjects_evaluated": 133
+        },
+        "full_work": {
+          "documents_reparsed": 0,
+          "documents_lowered": 6,
+          "lowering_cache_hits": 0,
+          "records_lowered": 92,
+          "records_rebuilt": 102,
+          "effective_audit_subjects_evaluated": 109,
+          "final_closure_producer_subjects_evaluated": 133
+        }
+      },
+      {
+        "edit": "multiplicity",
+        "exact_semantic_equivalence": "passed",
+        "incremental_ms": 135928,
+        "full_authored_semantic_rebuild_ms": 86039,
+        "incremental_work": {
+          "documents_reparsed": 1,
+          "documents_lowered": 1,
+          "lowering_cache_hits": 5,
+          "records_lowered": 38,
+          "records_rebuilt": 102,
+          "effective_audit_subjects_evaluated": 109,
+          "final_closure_producer_subjects_evaluated": 133
+        },
+        "full_work": {
+          "documents_reparsed": 0,
+          "documents_lowered": 6,
+          "lowering_cache_hits": 0,
+          "records_lowered": 92,
+          "records_rebuilt": 102,
+          "effective_audit_subjects_evaluated": 109,
+          "final_closure_producer_subjects_evaluated": 133
+        }
+      },
+      {
+        "edit": "rename",
+        "exact_semantic_equivalence": "passed",
+        "incremental_ms": 147376,
+        "full_authored_semantic_rebuild_ms": 107805,
+        "incremental_work": {
+          "documents_reparsed": 1,
+          "documents_lowered": 1,
+          "lowering_cache_hits": 5,
+          "records_lowered": 38,
+          "records_rebuilt": 102,
+          "effective_audit_subjects_evaluated": 109,
+          "final_closure_producer_subjects_evaluated": 133
+        },
+        "full_work": {
+          "documents_reparsed": 0,
+          "documents_lowered": 6,
+          "lowering_cache_hits": 0,
+          "records_lowered": 92,
+          "records_rebuilt": 102,
+          "effective_audit_subjects_evaluated": 109,
+          "final_closure_producer_subjects_evaluated": 133
+        }
+      },
+      {
+        "edit": "add-part",
+        "exact_semantic_equivalence": "passed",
+        "incremental_ms": 167012,
+        "full_authored_semantic_rebuild_ms": 95220,
+        "incremental_work": {
+          "documents_reparsed": 1,
+          "documents_lowered": 1,
+          "lowering_cache_hits": 5,
+          "records_lowered": 41,
+          "records_rebuilt": 108,
+          "effective_audit_subjects_evaluated": 116,
+          "final_closure_producer_subjects_evaluated": 141
+        },
+        "full_work": {
+          "documents_reparsed": 0,
+          "documents_lowered": 6,
+          "lowering_cache_hits": 0,
+          "records_lowered": 98,
+          "records_rebuilt": 108,
+          "effective_audit_subjects_evaluated": 116,
+          "final_closure_producer_subjects_evaluated": 141
+        }
+      },
+      {
+        "edit": "remove-connection",
+        "exact_semantic_equivalence": "passed",
+        "incremental_ms": 130313,
+        "full_authored_semantic_rebuild_ms": 81001,
+        "incremental_work": {
+          "documents_reparsed": 1,
+          "documents_lowered": 1,
+          "lowering_cache_hits": 5,
+          "records_lowered": 29,
+          "records_rebuilt": 84,
+          "effective_audit_subjects_evaluated": 85,
+          "final_closure_producer_subjects_evaluated": 103
+        },
+        "full_work": {
+          "documents_reparsed": 0,
+          "documents_lowered": 6,
+          "lowering_cache_hits": 0,
+          "records_lowered": 74,
+          "records_rebuilt": 84,
+          "effective_audit_subjects_evaluated": 85,
+          "final_closure_producer_subjects_evaluated": 103
+        }
+      },
+      {
+        "edit": "add-connection",
+        "exact_semantic_equivalence": "passed",
+        "incremental_ms": 141311,
+        "full_authored_semantic_rebuild_ms": 95737,
+        "incremental_work": {
+          "documents_reparsed": 1,
+          "documents_lowered": 1,
+          "lowering_cache_hits": 5,
+          "records_lowered": 47,
+          "records_rebuilt": 120,
+          "effective_audit_subjects_evaluated": 133,
+          "final_closure_producer_subjects_evaluated": 163
+        },
+        "full_work": {
+          "documents_reparsed": 0,
+          "documents_lowered": 6,
+          "lowering_cache_hits": 0,
+          "records_lowered": 110,
+          "records_rebuilt": 120,
+          "effective_audit_subjects_evaluated": 133,
+          "final_closure_producer_subjects_evaluated": 163
+        }
+      }
+    ],
+    "work_conclusion": "Every edit lowers one document versus six traversals across two full refinement passes; kernel reconstruction and final effective audit remain conservative.",
+    "latency_conclusion": "Incremental wall time exceeded full authored semantic reconstruction in all seven cases; no latency improvement is claimed.",
+    "counter_limit": "The tested 068fc44 binary reports only final closure producer subjects. These fields are labelled accordingly here. Commit bba840b aggregates preparatory producer passes and rejected lowering trials; corrected aggregate metrics require the integrated follow-up gate.",
+    "run": {
+      "exit_code": 0,
+      "tests_passed": 1,
+      "edit_cases_passed": 7,
+      "test_duration_seconds": 2025.91,
+      "wall_seconds": 2026.532,
+      "maximum_process_peak_working_set_bytes": 5078302720,
+      "sampled_process_tree_peak_resident_bytes": 5068386304,
+      "sample_interval_seconds": 0.25,
+      "memory_scope": "Entire accepted-publication/baseline/incremental/oracle process; not a per-edit allocation measurement."
+    }
+  },
+  "persisted_semantic_cache": {
+    "implementation_commit": "fcad622",
+    "typecheck": "passed",
+    "runtime": "delegated to integrated modeling-service durable_cache_and_failure_authentication gate; no frontend runtime acceptance claim",
+    "contract": "Disposable local effective graph bound to exact source checkpoint, language/descriptor/producer/context/closure identities, with fresh producer and effective audits. Accepted standard graphs are excluded. Restores Working; service authenticates receipts and validation separately."
+  },
+  "reporting_followups": {
+    "measured_work_counters": "bba840b",
+    "retained_changed_syntax_nodes": "a7357bb",
+    "syntax_frontier_focused_test": "retained_syntax_frontier_reports_exact_content_ranges_and_children; integrated lead owns execution"
+  }
 }
