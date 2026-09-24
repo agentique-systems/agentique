@@ -665,6 +665,14 @@ fn rich_summary(q: &SysmlQueries<'_>, dependency: &ModelView) -> RichSummary {
             q.effective_usage_types(authored_named(q.model(), "workspace")),
         ),
         (
+            "occurrence-definition",
+            q.effective_occurrence_definitions(authored_named(q.model(), "workspace")),
+        ),
+        (
+            "connection-definition",
+            q.effective_connection_definitions(authored_named(q.model(), "queryConnection")),
+        ),
+        (
             "port-definition",
             q.effective_port_definitions(authored_named(q.model(), "workspaceQuery")),
         ),
@@ -738,7 +746,8 @@ fn rich_summary(q: &SysmlQueries<'_>, dependency: &ModelView) -> RichSummary {
             "nested" => &["semanticAnswer"],
             "subparts" | "subitems" => &["workspace"],
             "attribute" => &["RevisionNumber"],
-            "part" | "usage-types" => &["ProjectWorkspace"],
+            "part" | "usage-types" | "occurrence-definition" => &["ProjectWorkspace"],
+            "connection-definition" => &["SemanticAccess"],
             "item" => &["ValidatedSemanticState"],
             "port-definition" => &["SemanticQuery"],
             "subsetting" | "redefinition" => &["revisionNumber"],
