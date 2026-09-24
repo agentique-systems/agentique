@@ -73,6 +73,49 @@
                       "corrupt mandatory source is fatal",
                       "branch deletion retains every revision"
                   ],
+    "integrated_focused_run": {
+        "evidence_summary": "verification/summaries/modeling-platform-phase2/commands.json",
+        "command_name": "phase2-platform-crate-tests",
+        "raw_log": "verification/generated/modeling-platform-phase2/phase2-platform-crate-tests-2.log",
+        "output_sha256": "25bb5f100e546421d64e85288b669ae130a711e92b3f03f37608a0b4b2d66092",
+        "source_commit": "7765e0741be2787c43ad8d5c08fdc501e452ffa6",
+        "working_changes_sha256": "0553767d9cb8c1278bcb8e9537e35bd6b972013768c01d9ed9509ff7ef1be72a",
+        "exit_code": 0,
+        "duration_seconds": 70.33,
+        "tests_passed": 44,
+        "tests_failed": 0,
+        "tests_ignored": 7,
+        "passed_by_crate": {
+            "agq-modeling-repository": 12,
+            "agq-modeling-sqlite": 19,
+            "agq-modeling-service": 4,
+            "agq-modeling-api": 6,
+            "agq-modeling-http": 3
+        },
+        "sqlite_test_duration_seconds": 0.26,
+        "sqlite_ignored_helper": "process_fault_child remains ignored for direct discovery and was exercised by crash_recovery_at_every_durability_boundary",
+        "acceptance_limit": "This focused run excludes six accepted-publication runtime gates/helpers; it does not establish semantic cache restoration, durable self-model, HTTP runtime vertical or semantic 100-document scale acceptance.",
+        "earlier_attempt": {
+            "raw_log": "verification/generated/modeling-platform-phase2/phase2-platform-crate-tests.log",
+            "exit_code": 101,
+            "output": "Compilation failed with six E0599 missing Project/Branch.verify errors while metadata changes overlapped the build; the separate completed rerun above passed."
+        },
+        "historical_evidence": "The earlier standalone adapter command, 16-test count, source_base and adapter_input_tree_sha256 above remain historical and are not replaced by this integrated run.",
+        "metadata_contract": [
+            "Project, branch and revision creation timestamps must parse as RFC 3339 without rewriting valid timestamp spelling.",
+            "Project and branch names must be nonblank on writes and reads.",
+            "Rejected initial metadata leaves projects, revisions, branches, blobs and operation receipts absent.",
+            "Rejected branch or child revision metadata preserves committed heads and history.",
+            "Invalid metadata remains detectable by reads and offline integrity checks even when row checksums are recomputed."
+        ],
+        "metadata_tests_passed": [
+            "resource_metadata_requires_rfc3339_without_rewriting_valid_timestamps",
+            "invalid_revision_metadata_is_rejected_even_with_valid_sources_and_receipt",
+            "invalid_initial_metadata_never_persists_project_revision_or_blobs",
+            "invalid_branch_and_child_revision_metadata_leave_committed_history_unchanged",
+            "checksummed_invalid_metadata_is_detected_on_read_and_integrity_check"
+        ]
+    },
     "tool_versions":  {
                           "rustc":  "1.92.0 (ded5c06cf 2025-12-08)",
                           "cargo":  "1.92.0 (344c4567c 2025-10-21)"
