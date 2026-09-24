@@ -310,3 +310,154 @@ fn feature_chain_terminal_type_supplies_positional_end_population() {
         }));
     }
 }
+
+fn cycle_queries(snapshot: &Snapshot, pending: BTreeSet<ElementId>) -> KerMlQueries<'_> {
+    KerMlQueries::new(
+        SemanticContext::for_project_snapshot(
+            snapshot,
+            Default::default(),
+            BTreeSet::new(),
+            pending.clone(),
+            pending,
+        )
+        .unwrap()
+        .with_semantic_extension_identity("fixture-result-cycles/1", [31; 32])
+        .unwrap(),
+    )
+}
+
+#[test]
+fn empty_return_cycle_retains_complete_negative_population_evidence() {
+    let mut f = Fixture::new();
+    for owner in [1, 2, 3] {
+        f.create(owner, c::FUNCTION);
+    }
+    general(&mut f, 1, 101, 2);
+    general(&mut f, 2, 102, 1);
+    general(&mut f, 1, 103, 3);
+    let snapshot = f.finish();
+    let answer = cycle_queries(&snapshot, BTreeSet::new()).result_parameters(id(1));
+    assert_eq!(answer.completeness, Completeness::Complete, "{answer:?}");
+    assert!(answer.value.is_empty());
+    for owner in [1, 2, 3] {
+        assert!(
+            answer
+                .search_dependencies
+                .contains(&SearchDependency::OwnedRelationships {
+                    owner: id(owner),
+                    class: c::RETURN_PARAMETER_MEMBERSHIP,
+                })
+        );
+        assert!(
+            answer
+                .search_dependencies
+                .contains(&SearchDependency::OwnedRelationships {
+                    owner: id(owner),
+                    class: c::SPECIALIZATION,
+                })
+        );
+    }
+    let pending = cycle_queries(&snapshot, BTreeSet::from([id(3)])).result_parameters(id(1));
+    assert_eq!(pending.completeness, Completeness::Incomplete);
+    let historical = KerMlQueries::new(
+        SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new()).unwrap(),
+    );
+    assert_eq!(
+        historical.result_parameters(id(1)).completeness,
+        Completeness::Incomplete
+    );
+}
+
+#[test]
+fn nonempty_return_cycles_preserve_owned_redefinition_and_inherited_identity() {
+    for second_result in [false, true] {
+        let mut f = Fixture::new();
+        for owner in [1, 2, 3] {
+            f.create(owner, c::FUNCTION);
+        }
+        general(&mut f, 1, 201, 2);
+        general(&mut f, 2, 202, 1);
+        general(&mut f, 3, 203, 2);
+        result(&mut f, 1, 101, 11, "apple");
+        if second_result {
+            result(&mut f, 2, 102, 12, "pear");
+        }
+        let snapshot = f.finish();
+        let q = cycle_queries(&snapshot, BTreeSet::new());
+        for (owner, feature) in [
+            (1, 11),
+            (2, if second_result { 12 } else { 11 }),
+            (3, if second_result { 12 } else { 11 }),
+        ] {
+            let answer = q.result_parameters(id(owner));
+            assert_eq!(answer.completeness, Completeness::Complete, "{answer:?}");
+            assert_eq!(answer.value, vec![id(feature)]);
+        }
+        assert_eq!(q.owning_type(id(11)).value, Some(id(1)));
+    }
+}
+
+#[test]
+fn cyclic_return_candidates_apply_inherited_transitive_redefinition_before_ordering() {
+    let mut f = Fixture::new();
+    for owner in [1, 2, 3, 4, 5] {
+        f.create(owner, c::TYPE);
+    }
+    general(&mut f, 1, 201, 2);
+    general(&mut f, 2, 202, 1);
+    general(&mut f, 1, 203, 3);
+    general(&mut f, 2, 204, 5);
+    for (owner, membership, feature) in [(3, 103, 31), (4, 104, 41), (5, 105, 51)] {
+        result(&mut f, owner, membership, feature, "result");
+    }
+    for (specific, general, relationship) in [(51, 41, 251), (41, 31, 241)] {
+        f.create(relationship, c::REDEFINITION);
+        f.value(
+            relationship,
+            p::REDEFINITION_REDEFINING_FEATURE,
+            Value::Reference(id(specific)),
+        );
+        f.value(
+            relationship,
+            p::REDEFINITION_REDEFINED_FEATURE,
+            Value::Reference(id(general)),
+        );
+        f.own(specific, relationship);
+    }
+    let snapshot = f.finish();
+    let q = cycle_queries(&snapshot, BTreeSet::new());
+    for owner in [1, 2] {
+        let answer = q.result_parameters(id(owner));
+        assert_eq!(answer.completeness, Completeness::Complete, "{answer:?}");
+        assert_eq!(answer.value, vec![id(51)]);
+        assert!(
+            answer
+                .positive_dependencies
+                .contains(&FactKey::Element(id(241)))
+        );
+    }
+    assert_eq!(q.owning_type(id(51)).value, Some(id(5)));
+}
+
+#[test]
+fn cyclic_return_order_without_a_stable_semantic_vector_remains_incomplete() {
+    let mut f = Fixture::new();
+    for owner in [1, 2, 3, 4] {
+        f.create(owner, c::TYPE);
+    }
+    general(&mut f, 1, 201, 2);
+    general(&mut f, 2, 202, 1);
+    general(&mut f, 1, 203, 3);
+    general(&mut f, 2, 204, 4);
+    result(&mut f, 3, 103, 31, "first");
+    result(&mut f, 4, 104, 41, "second");
+    let snapshot = f.finish();
+    let answer = cycle_queries(&snapshot, BTreeSet::new()).result_parameters(id(1));
+    assert_eq!(answer.completeness, Completeness::Incomplete);
+    assert!(
+        answer
+            .diagnostics
+            .iter()
+            .any(|d| d.code == "KQ_RESULT_INHERITANCE_CYCLE")
+    );
+}

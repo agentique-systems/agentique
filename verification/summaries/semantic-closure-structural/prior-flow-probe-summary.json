@@ -1,0 +1,1000 @@
+{
+  "raw_output_sha256": "e9d5b7c19ad9a272c0d09d5cec7b7d5b6d0c7e3756b66be3e725bc6d072d3eba",
+  "raw_output_bytes": 662940580,
+  "records": [
+    {
+      "name": "messages",
+      "publication_authority": false,
+      "subject": "18da1d9a-37e3-547a-ac0e-bf9793f724b4",
+      "diagnostic_codes": [
+        "KQ_PRODUCER_CLOSURE"
+      ],
+      "cycle_diagnostics": [],
+      "kernel_value_and_completeness": "value: [ElementId(181506360191657060597911507471096098359), ElementId(280775822578492171372375194059659275021)], completeness: Complete, diagnostics:",
+      "raw_debug_characters": 99240867
+    },
+    {
+      "generals": [
+        "6a26e6c7-abde-598c-a1fb-f63ad3b08bee",
+        "79768ad2-8cdb-5182-9eab-cf8fd48aee75",
+        "7d679e1b-7e10-5e69-87f0-06365af4dc62",
+        "3b9fab91-096f-5012-841c-ad946c367fdf"
+      ],
+      "name": "messages",
+      "node": "18da1d9a-37e3-547a-ac0e-bf9793f724b4",
+      "owned": [
+        "888cda79-aaa5-5d72-a654-b35603802e37",
+        "d33b74d9-03dd-5f67-8b2d-6a621603eb0d"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "18da1d9a-37e3-547a-ac0e-bf9793f724b4"
+    },
+    {
+      "generals": [
+        "c8c33f44-2529-564a-b60e-2e37f611771a",
+        "18da1d9a-37e3-547a-ac0e-bf9793f724b4",
+        "e909cd59-6625-5b42-b196-8a3b7eec7cfd"
+      ],
+      "name": "flows",
+      "node": "3b9fab91-096f-5012-841c-ad946c367fdf",
+      "owned": [
+        "3dbf09d5-eb9a-5eca-9b34-9091ee102a4c",
+        "140ef6ea-f727-51a0-89f6-61d454cb48c7"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "18da1d9a-37e3-547a-ac0e-bf9793f724b4"
+    },
+    {
+      "generals": [
+        "e0cf76f3-1318-5ada-96d3-178d5642239e",
+        "79768ad2-8cdb-5182-9eab-cf8fd48aee75"
+      ],
+      "name": "flowTransfers",
+      "node": "e909cd59-6625-5b42-b196-8a3b7eec7cfd",
+      "owned": [
+        "b723c112-8914-5713-8bf5-980c23528512",
+        "e4342f21-1aab-5e74-9b24-300c0ba76c92"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "18da1d9a-37e3-547a-ac0e-bf9793f724b4"
+    },
+    {
+      "generals": [
+        "f2e1538f-6db9-5c8a-a34b-61e56011eb42",
+        "66ef9507-4c0b-5a78-93db-e907945d78d6",
+        "88ad855c-efb1-5906-9c84-b37039f30b9d"
+      ],
+      "name": "transfers",
+      "node": "79768ad2-8cdb-5182-9eab-cf8fd48aee75",
+      "owned": [
+        "2c5b60b2-a3ce-5f43-b907-e80ce1d229fc",
+        "36997286-8a5f-513f-bb77-22224d2fe9c5"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "18da1d9a-37e3-547a-ac0e-bf9793f724b4"
+    },
+    {
+      "generals": [
+        "4bb338f9-cace-57cf-a884-a187b0610873",
+        "012863c9-0e1b-54b0-bfd2-6e159a2ce4e1"
+      ],
+      "name": "binaryLinks",
+      "node": "88ad855c-efb1-5906-9c84-b37039f30b9d",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "18da1d9a-37e3-547a-ac0e-bf9793f724b4"
+    },
+    {
+      "generals": [
+        "88fcca71-118c-5fd8-908c-e84ae1174053",
+        "f08c85e0-4042-5665-bd45-ce73cb6c74b2"
+      ],
+      "name": "links",
+      "node": "012863c9-0e1b-54b0-bfd2-6e159a2ce4e1",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "18da1d9a-37e3-547a-ac0e-bf9793f724b4"
+    },
+    {
+      "generals": [
+        "6f13209e-37d6-5a92-829e-125adb0d5f4f"
+      ],
+      "name": "things",
+      "node": "f08c85e0-4042-5665-bd45-ce73cb6c74b2",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "18da1d9a-37e3-547a-ac0e-bf9793f724b4"
+    },
+    {
+      "generals": [],
+      "name": "Anything",
+      "node": "6f13209e-37d6-5a92-829e-125adb0d5f4f",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "18da1d9a-37e3-547a-ac0e-bf9793f724b4"
+    },
+    {
+      "generals": [
+        "6f13209e-37d6-5a92-829e-125adb0d5f4f"
+      ],
+      "name": "Link",
+      "node": "88fcca71-118c-5fd8-908c-e84ae1174053",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "18da1d9a-37e3-547a-ac0e-bf9793f724b4"
+    },
+    {
+      "generals": [
+        "88fcca71-118c-5fd8-908c-e84ae1174053"
+      ],
+      "name": "BinaryLink",
+      "node": "4bb338f9-cace-57cf-a884-a187b0610873",
+      "owned": [
+        "cdcb027b-1d54-52bb-be1f-f48f1a8361f1",
+        "4167e261-a897-5f30-a4cb-0bc37f94b0ec"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "18da1d9a-37e3-547a-ac0e-bf9793f724b4"
+    },
+    {
+      "generals": [
+        "33dbd2ff-f8ba-56f8-93d1-9538121af870",
+        "8a1cb0f4-a94c-5763-9351-5d390c4d3d37"
+      ],
+      "name": "performances",
+      "node": "66ef9507-4c0b-5a78-93db-e907945d78d6",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "18da1d9a-37e3-547a-ac0e-bf9793f724b4"
+    },
+    {
+      "generals": [
+        "dcced8c6-8802-5b1c-bb99-698a22eaed4c",
+        "f08c85e0-4042-5665-bd45-ce73cb6c74b2"
+      ],
+      "name": "occurrences",
+      "node": "8a1cb0f4-a94c-5763-9351-5d390c4d3d37",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "18da1d9a-37e3-547a-ac0e-bf9793f724b4"
+    },
+    {
+      "generals": [
+        "6f13209e-37d6-5a92-829e-125adb0d5f4f"
+      ],
+      "name": "Occurrence",
+      "node": "dcced8c6-8802-5b1c-bb99-698a22eaed4c",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "18da1d9a-37e3-547a-ac0e-bf9793f724b4"
+    },
+    {
+      "generals": [
+        "dcced8c6-8802-5b1c-bb99-698a22eaed4c"
+      ],
+      "name": "Performance",
+      "node": "33dbd2ff-f8ba-56f8-93d1-9538121af870",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "18da1d9a-37e3-547a-ac0e-bf9793f724b4"
+    },
+    {
+      "generals": [
+        "33dbd2ff-f8ba-56f8-93d1-9538121af870",
+        "4bb338f9-cace-57cf-a884-a187b0610873"
+      ],
+      "name": "Transfer",
+      "node": "f2e1538f-6db9-5c8a-a34b-61e56011eb42",
+      "owned": [
+        "cd06ad72-da32-5297-ae8c-d6236538890f",
+        "3ad50588-28d0-56af-9345-339f7589cb49"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "18da1d9a-37e3-547a-ac0e-bf9793f724b4"
+    },
+    {
+      "generals": [
+        "f2e1538f-6db9-5c8a-a34b-61e56011eb42"
+      ],
+      "name": "FlowTransfer",
+      "node": "e0cf76f3-1318-5ada-96d3-178d5642239e",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "18da1d9a-37e3-547a-ac0e-bf9793f724b4"
+    },
+    {
+      "generals": [
+        "6a26e6c7-abde-598c-a1fb-f63ad3b08bee",
+        "e0cf76f3-1318-5ada-96d3-178d5642239e"
+      ],
+      "name": "Flow",
+      "node": "c8c33f44-2529-564a-b60e-2e37f611771a",
+      "owned": [
+        "f819aecf-745b-5edc-8846-34e18d2ae14e",
+        "ca319765-d9b9-5e23-819b-2ebb8b2025dd"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "18da1d9a-37e3-547a-ac0e-bf9793f724b4"
+    },
+    {
+      "generals": [
+        "ad7c05d7-1a24-5a9c-9675-785d8ec50397",
+        "f2e1538f-6db9-5c8a-a34b-61e56011eb42"
+      ],
+      "name": "Message",
+      "node": "6a26e6c7-abde-598c-a1fb-f63ad3b08bee",
+      "owned": [
+        "30cd75d2-39d8-5b10-9416-a331f0c93e95",
+        "fa159f6c-8718-5bc9-83bb-450568cb80f8"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "18da1d9a-37e3-547a-ac0e-bf9793f724b4"
+    },
+    {
+      "generals": [
+        "24fc51a2-8308-5ba3-8f73-687e62344c75",
+        "88fcca71-118c-5fd8-908c-e84ae1174053"
+      ],
+      "name": "MessageAction",
+      "node": "ad7c05d7-1a24-5a9c-9675-785d8ec50397",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "18da1d9a-37e3-547a-ac0e-bf9793f724b4"
+    },
+    {
+      "generals": [
+        "33dbd2ff-f8ba-56f8-93d1-9538121af870"
+      ],
+      "name": "Action",
+      "node": "24fc51a2-8308-5ba3-8f73-687e62344c75",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "18da1d9a-37e3-547a-ac0e-bf9793f724b4"
+    },
+    {
+      "generals": [
+        "24fc51a2-8308-5ba3-8f73-687e62344c75",
+        "66ef9507-4c0b-5a78-93db-e907945d78d6"
+      ],
+      "name": "actions",
+      "node": "7d679e1b-7e10-5e69-87f0-06365af4dc62",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "18da1d9a-37e3-547a-ac0e-bf9793f724b4"
+    },
+    {
+      "name": "flows",
+      "publication_authority": false,
+      "subject": "3b9fab91-096f-5012-841c-ad946c367fdf",
+      "diagnostic_codes": [
+        "KQ_PRODUCER_CLOSURE"
+      ],
+      "cycle_diagnostics": [],
+      "kernel_value_and_completeness": "value: [ElementId(82074835933060668251631437836419344972), ElementId(26662260160360662699597463606992259271)], completeness: Complete, diagnostics:",
+      "raw_debug_characters": 99241117
+    },
+    {
+      "generals": [
+        "c8c33f44-2529-564a-b60e-2e37f611771a",
+        "18da1d9a-37e3-547a-ac0e-bf9793f724b4",
+        "e909cd59-6625-5b42-b196-8a3b7eec7cfd"
+      ],
+      "name": "flows",
+      "node": "3b9fab91-096f-5012-841c-ad946c367fdf",
+      "owned": [
+        "3dbf09d5-eb9a-5eca-9b34-9091ee102a4c",
+        "140ef6ea-f727-51a0-89f6-61d454cb48c7"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "3b9fab91-096f-5012-841c-ad946c367fdf"
+    },
+    {
+      "generals": [
+        "e0cf76f3-1318-5ada-96d3-178d5642239e",
+        "79768ad2-8cdb-5182-9eab-cf8fd48aee75"
+      ],
+      "name": "flowTransfers",
+      "node": "e909cd59-6625-5b42-b196-8a3b7eec7cfd",
+      "owned": [
+        "b723c112-8914-5713-8bf5-980c23528512",
+        "e4342f21-1aab-5e74-9b24-300c0ba76c92"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "3b9fab91-096f-5012-841c-ad946c367fdf"
+    },
+    {
+      "generals": [
+        "f2e1538f-6db9-5c8a-a34b-61e56011eb42",
+        "66ef9507-4c0b-5a78-93db-e907945d78d6",
+        "88ad855c-efb1-5906-9c84-b37039f30b9d"
+      ],
+      "name": "transfers",
+      "node": "79768ad2-8cdb-5182-9eab-cf8fd48aee75",
+      "owned": [
+        "2c5b60b2-a3ce-5f43-b907-e80ce1d229fc",
+        "36997286-8a5f-513f-bb77-22224d2fe9c5"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "3b9fab91-096f-5012-841c-ad946c367fdf"
+    },
+    {
+      "generals": [
+        "4bb338f9-cace-57cf-a884-a187b0610873",
+        "012863c9-0e1b-54b0-bfd2-6e159a2ce4e1"
+      ],
+      "name": "binaryLinks",
+      "node": "88ad855c-efb1-5906-9c84-b37039f30b9d",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "3b9fab91-096f-5012-841c-ad946c367fdf"
+    },
+    {
+      "generals": [
+        "88fcca71-118c-5fd8-908c-e84ae1174053",
+        "f08c85e0-4042-5665-bd45-ce73cb6c74b2"
+      ],
+      "name": "links",
+      "node": "012863c9-0e1b-54b0-bfd2-6e159a2ce4e1",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "3b9fab91-096f-5012-841c-ad946c367fdf"
+    },
+    {
+      "generals": [
+        "6f13209e-37d6-5a92-829e-125adb0d5f4f"
+      ],
+      "name": "things",
+      "node": "f08c85e0-4042-5665-bd45-ce73cb6c74b2",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "3b9fab91-096f-5012-841c-ad946c367fdf"
+    },
+    {
+      "generals": [],
+      "name": "Anything",
+      "node": "6f13209e-37d6-5a92-829e-125adb0d5f4f",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "3b9fab91-096f-5012-841c-ad946c367fdf"
+    },
+    {
+      "generals": [
+        "6f13209e-37d6-5a92-829e-125adb0d5f4f"
+      ],
+      "name": "Link",
+      "node": "88fcca71-118c-5fd8-908c-e84ae1174053",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "3b9fab91-096f-5012-841c-ad946c367fdf"
+    },
+    {
+      "generals": [
+        "88fcca71-118c-5fd8-908c-e84ae1174053"
+      ],
+      "name": "BinaryLink",
+      "node": "4bb338f9-cace-57cf-a884-a187b0610873",
+      "owned": [
+        "cdcb027b-1d54-52bb-be1f-f48f1a8361f1",
+        "4167e261-a897-5f30-a4cb-0bc37f94b0ec"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "3b9fab91-096f-5012-841c-ad946c367fdf"
+    },
+    {
+      "generals": [
+        "33dbd2ff-f8ba-56f8-93d1-9538121af870",
+        "8a1cb0f4-a94c-5763-9351-5d390c4d3d37"
+      ],
+      "name": "performances",
+      "node": "66ef9507-4c0b-5a78-93db-e907945d78d6",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "3b9fab91-096f-5012-841c-ad946c367fdf"
+    },
+    {
+      "generals": [
+        "dcced8c6-8802-5b1c-bb99-698a22eaed4c",
+        "f08c85e0-4042-5665-bd45-ce73cb6c74b2"
+      ],
+      "name": "occurrences",
+      "node": "8a1cb0f4-a94c-5763-9351-5d390c4d3d37",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "3b9fab91-096f-5012-841c-ad946c367fdf"
+    },
+    {
+      "generals": [
+        "6f13209e-37d6-5a92-829e-125adb0d5f4f"
+      ],
+      "name": "Occurrence",
+      "node": "dcced8c6-8802-5b1c-bb99-698a22eaed4c",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "3b9fab91-096f-5012-841c-ad946c367fdf"
+    },
+    {
+      "generals": [
+        "dcced8c6-8802-5b1c-bb99-698a22eaed4c"
+      ],
+      "name": "Performance",
+      "node": "33dbd2ff-f8ba-56f8-93d1-9538121af870",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "3b9fab91-096f-5012-841c-ad946c367fdf"
+    },
+    {
+      "generals": [
+        "33dbd2ff-f8ba-56f8-93d1-9538121af870",
+        "4bb338f9-cace-57cf-a884-a187b0610873"
+      ],
+      "name": "Transfer",
+      "node": "f2e1538f-6db9-5c8a-a34b-61e56011eb42",
+      "owned": [
+        "cd06ad72-da32-5297-ae8c-d6236538890f",
+        "3ad50588-28d0-56af-9345-339f7589cb49"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "3b9fab91-096f-5012-841c-ad946c367fdf"
+    },
+    {
+      "generals": [
+        "f2e1538f-6db9-5c8a-a34b-61e56011eb42"
+      ],
+      "name": "FlowTransfer",
+      "node": "e0cf76f3-1318-5ada-96d3-178d5642239e",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "3b9fab91-096f-5012-841c-ad946c367fdf"
+    },
+    {
+      "generals": [
+        "6a26e6c7-abde-598c-a1fb-f63ad3b08bee",
+        "79768ad2-8cdb-5182-9eab-cf8fd48aee75",
+        "7d679e1b-7e10-5e69-87f0-06365af4dc62",
+        "3b9fab91-096f-5012-841c-ad946c367fdf"
+      ],
+      "name": "messages",
+      "node": "18da1d9a-37e3-547a-ac0e-bf9793f724b4",
+      "owned": [
+        "888cda79-aaa5-5d72-a654-b35603802e37",
+        "d33b74d9-03dd-5f67-8b2d-6a621603eb0d"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "3b9fab91-096f-5012-841c-ad946c367fdf"
+    },
+    {
+      "generals": [
+        "24fc51a2-8308-5ba3-8f73-687e62344c75",
+        "66ef9507-4c0b-5a78-93db-e907945d78d6"
+      ],
+      "name": "actions",
+      "node": "7d679e1b-7e10-5e69-87f0-06365af4dc62",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "3b9fab91-096f-5012-841c-ad946c367fdf"
+    },
+    {
+      "generals": [
+        "33dbd2ff-f8ba-56f8-93d1-9538121af870"
+      ],
+      "name": "Action",
+      "node": "24fc51a2-8308-5ba3-8f73-687e62344c75",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "3b9fab91-096f-5012-841c-ad946c367fdf"
+    },
+    {
+      "generals": [
+        "ad7c05d7-1a24-5a9c-9675-785d8ec50397",
+        "f2e1538f-6db9-5c8a-a34b-61e56011eb42"
+      ],
+      "name": "Message",
+      "node": "6a26e6c7-abde-598c-a1fb-f63ad3b08bee",
+      "owned": [
+        "30cd75d2-39d8-5b10-9416-a331f0c93e95",
+        "fa159f6c-8718-5bc9-83bb-450568cb80f8"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "3b9fab91-096f-5012-841c-ad946c367fdf"
+    },
+    {
+      "generals": [
+        "24fc51a2-8308-5ba3-8f73-687e62344c75",
+        "88fcca71-118c-5fd8-908c-e84ae1174053"
+      ],
+      "name": "MessageAction",
+      "node": "ad7c05d7-1a24-5a9c-9675-785d8ec50397",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "3b9fab91-096f-5012-841c-ad946c367fdf"
+    },
+    {
+      "generals": [
+        "6a26e6c7-abde-598c-a1fb-f63ad3b08bee",
+        "e0cf76f3-1318-5ada-96d3-178d5642239e"
+      ],
+      "name": "Flow",
+      "node": "c8c33f44-2529-564a-b60e-2e37f611771a",
+      "owned": [
+        "f819aecf-745b-5edc-8846-34e18d2ae14e",
+        "ca319765-d9b9-5e23-819b-2ebb8b2025dd"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "3b9fab91-096f-5012-841c-ad946c367fdf"
+    },
+    {
+      "name": "successionFlows",
+      "publication_authority": false,
+      "subject": "5e756f07-e2c7-56e7-8a4c-7b5283d66543",
+      "diagnostic_codes": [
+        "KQ_PRODUCER_CLOSURE"
+      ],
+      "cycle_diagnostics": [],
+      "kernel_value_and_completeness": "value: [ElementId(179271564210331388613978549584920528200), ElementId(125986665822842393503757182942145446552)], completeness: Complete, diagnostics:",
+      "raw_debug_characters": 132951690
+    },
+    {
+      "generals": [
+        "4402e5e4-e8b6-5cec-886e-7525d3061040",
+        "3b9fab91-096f-5012-841c-ad946c367fdf",
+        "f453f403-73fb-5bd0-bf43-be4bc1c12b49"
+      ],
+      "name": "successionFlows",
+      "node": "5e756f07-e2c7-56e7-8a4c-7b5283d66543",
+      "owned": [
+        "86de7286-c609-59e0-87ed-46cf6c3f4548",
+        "5ec82633-f2d4-5e14-a9b1-eb992bac8298"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "dee5584a-350e-52cc-9dba-a8544df78b6d",
+        "e909cd59-6625-5b42-b196-8a3b7eec7cfd",
+        "88dcb443-1c23-5148-b38b-628a1447554d"
+      ],
+      "name": "flowTransfersBefore",
+      "node": "f453f403-73fb-5bd0-bf43-be4bc1c12b49",
+      "owned": [
+        "ade466e8-c9fb-5f0a-a944-caeedc69b668",
+        "3254b428-72f0-5ad5-ba04-6df998dce825"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "f3e7cec7-394d-55e2-9f40-6255ed51cc17",
+        "79768ad2-8cdb-5182-9eab-cf8fd48aee75",
+        "34eddd09-c3ce-5f4a-80a3-03d5c0809980"
+      ],
+      "name": "transfersBefore",
+      "node": "88dcb443-1c23-5148-b38b-628a1447554d",
+      "owned": [
+        "38fc1c81-d202-547e-b73b-e37a1727abae",
+        "7fab57f5-edea-5b67-b026-33a5da8f311d"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "8326f573-f818-50dc-9ed9-5175a0dfe2a0",
+        "88ad855c-efb1-5906-9c84-b37039f30b9d"
+      ],
+      "name": "happensBeforeLinks",
+      "node": "34eddd09-c3ce-5f4a-80a3-03d5c0809980",
+      "owned": [
+        "709bc644-20e0-5e03-be03-ad67385a0355",
+        "9b72d4c0-35d1-5922-baf6-dbe32b3c0c14"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "4bb338f9-cace-57cf-a884-a187b0610873",
+        "012863c9-0e1b-54b0-bfd2-6e159a2ce4e1"
+      ],
+      "name": "binaryLinks",
+      "node": "88ad855c-efb1-5906-9c84-b37039f30b9d",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "88fcca71-118c-5fd8-908c-e84ae1174053",
+        "f08c85e0-4042-5665-bd45-ce73cb6c74b2"
+      ],
+      "name": "links",
+      "node": "012863c9-0e1b-54b0-bfd2-6e159a2ce4e1",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "6f13209e-37d6-5a92-829e-125adb0d5f4f"
+      ],
+      "name": "things",
+      "node": "f08c85e0-4042-5665-bd45-ce73cb6c74b2",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [],
+      "name": "Anything",
+      "node": "6f13209e-37d6-5a92-829e-125adb0d5f4f",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "6f13209e-37d6-5a92-829e-125adb0d5f4f"
+      ],
+      "name": "Link",
+      "node": "88fcca71-118c-5fd8-908c-e84ae1174053",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "88fcca71-118c-5fd8-908c-e84ae1174053"
+      ],
+      "name": "BinaryLink",
+      "node": "4bb338f9-cace-57cf-a884-a187b0610873",
+      "owned": [
+        "cdcb027b-1d54-52bb-be1f-f48f1a8361f1",
+        "4167e261-a897-5f30-a4cb-0bc37f94b0ec"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "dc360c3b-b555-566a-b948-46b2c05982da",
+        "ffa79cd2-4c57-52ff-8e18-8531054aa677"
+      ],
+      "name": "HappensBefore",
+      "node": "8326f573-f818-50dc-9ed9-5175a0dfe2a0",
+      "owned": [
+        "abda79b5-1408-52c7-9eea-c31e836364ea",
+        "6b1aa420-06a9-531b-b14e-fac6890a9dba"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "4bb338f9-cace-57cf-a884-a187b0610873"
+      ],
+      "name": "Without",
+      "node": "ffa79cd2-4c57-52ff-8e18-8531054aa677",
+      "owned": [
+        "13c63c41-dc31-53fc-b72a-604e0868f648",
+        "8a86e5a3-3286-51f5-acdf-a8e5655f8d59"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "4bb338f9-cace-57cf-a884-a187b0610873"
+      ],
+      "name": "HappensLink",
+      "node": "dc360c3b-b555-566a-b948-46b2c05982da",
+      "owned": [
+        "e31ab960-6cd0-51d6-a8fa-869545eda25c",
+        "415b4a3f-53ec-5e91-a705-3a4b77644266"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "f2e1538f-6db9-5c8a-a34b-61e56011eb42",
+        "66ef9507-4c0b-5a78-93db-e907945d78d6",
+        "88ad855c-efb1-5906-9c84-b37039f30b9d"
+      ],
+      "name": "transfers",
+      "node": "79768ad2-8cdb-5182-9eab-cf8fd48aee75",
+      "owned": [
+        "2c5b60b2-a3ce-5f43-b907-e80ce1d229fc",
+        "36997286-8a5f-513f-bb77-22224d2fe9c5"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "33dbd2ff-f8ba-56f8-93d1-9538121af870",
+        "8a1cb0f4-a94c-5763-9351-5d390c4d3d37"
+      ],
+      "name": "performances",
+      "node": "66ef9507-4c0b-5a78-93db-e907945d78d6",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "dcced8c6-8802-5b1c-bb99-698a22eaed4c",
+        "f08c85e0-4042-5665-bd45-ce73cb6c74b2"
+      ],
+      "name": "occurrences",
+      "node": "8a1cb0f4-a94c-5763-9351-5d390c4d3d37",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "6f13209e-37d6-5a92-829e-125adb0d5f4f"
+      ],
+      "name": "Occurrence",
+      "node": "dcced8c6-8802-5b1c-bb99-698a22eaed4c",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "dcced8c6-8802-5b1c-bb99-698a22eaed4c"
+      ],
+      "name": "Performance",
+      "node": "33dbd2ff-f8ba-56f8-93d1-9538121af870",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "33dbd2ff-f8ba-56f8-93d1-9538121af870",
+        "4bb338f9-cace-57cf-a884-a187b0610873"
+      ],
+      "name": "Transfer",
+      "node": "f2e1538f-6db9-5c8a-a34b-61e56011eb42",
+      "owned": [
+        "cd06ad72-da32-5297-ae8c-d6236538890f",
+        "3ad50588-28d0-56af-9345-339f7589cb49"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "f2e1538f-6db9-5c8a-a34b-61e56011eb42",
+        "8326f573-f818-50dc-9ed9-5175a0dfe2a0"
+      ],
+      "name": "TransferBefore",
+      "node": "f3e7cec7-394d-55e2-9f40-6255ed51cc17",
+      "owned": [
+        "1125f78c-707f-5490-9110-3effa38752c0",
+        "187318cf-2502-5a15-b37f-0a842cc4ba8a"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "e0cf76f3-1318-5ada-96d3-178d5642239e",
+        "79768ad2-8cdb-5182-9eab-cf8fd48aee75"
+      ],
+      "name": "flowTransfers",
+      "node": "e909cd59-6625-5b42-b196-8a3b7eec7cfd",
+      "owned": [
+        "b723c112-8914-5713-8bf5-980c23528512",
+        "e4342f21-1aab-5e74-9b24-300c0ba76c92"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "f2e1538f-6db9-5c8a-a34b-61e56011eb42"
+      ],
+      "name": "FlowTransfer",
+      "node": "e0cf76f3-1318-5ada-96d3-178d5642239e",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "e0cf76f3-1318-5ada-96d3-178d5642239e",
+        "f3e7cec7-394d-55e2-9f40-6255ed51cc17"
+      ],
+      "name": "FlowTransferBefore",
+      "node": "dee5584a-350e-52cc-9dba-a8544df78b6d",
+      "owned": [
+        "59abb3be-f51e-59e0-9cde-a3ff50e30391",
+        "17bf152a-275d-535b-9cf5-71a853715639"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "c8c33f44-2529-564a-b60e-2e37f611771a",
+        "18da1d9a-37e3-547a-ac0e-bf9793f724b4",
+        "e909cd59-6625-5b42-b196-8a3b7eec7cfd"
+      ],
+      "name": "flows",
+      "node": "3b9fab91-096f-5012-841c-ad946c367fdf",
+      "owned": [
+        "3dbf09d5-eb9a-5eca-9b34-9091ee102a4c",
+        "140ef6ea-f727-51a0-89f6-61d454cb48c7"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "6a26e6c7-abde-598c-a1fb-f63ad3b08bee",
+        "79768ad2-8cdb-5182-9eab-cf8fd48aee75",
+        "7d679e1b-7e10-5e69-87f0-06365af4dc62",
+        "3b9fab91-096f-5012-841c-ad946c367fdf"
+      ],
+      "name": "messages",
+      "node": "18da1d9a-37e3-547a-ac0e-bf9793f724b4",
+      "owned": [
+        "888cda79-aaa5-5d72-a654-b35603802e37",
+        "d33b74d9-03dd-5f67-8b2d-6a621603eb0d"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "24fc51a2-8308-5ba3-8f73-687e62344c75",
+        "66ef9507-4c0b-5a78-93db-e907945d78d6"
+      ],
+      "name": "actions",
+      "node": "7d679e1b-7e10-5e69-87f0-06365af4dc62",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "33dbd2ff-f8ba-56f8-93d1-9538121af870"
+      ],
+      "name": "Action",
+      "node": "24fc51a2-8308-5ba3-8f73-687e62344c75",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "ad7c05d7-1a24-5a9c-9675-785d8ec50397",
+        "f2e1538f-6db9-5c8a-a34b-61e56011eb42"
+      ],
+      "name": "Message",
+      "node": "6a26e6c7-abde-598c-a1fb-f63ad3b08bee",
+      "owned": [
+        "30cd75d2-39d8-5b10-9416-a331f0c93e95",
+        "fa159f6c-8718-5bc9-83bb-450568cb80f8"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "24fc51a2-8308-5ba3-8f73-687e62344c75",
+        "88fcca71-118c-5fd8-908c-e84ae1174053"
+      ],
+      "name": "MessageAction",
+      "node": "ad7c05d7-1a24-5a9c-9675-785d8ec50397",
+      "owned": [],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "6a26e6c7-abde-598c-a1fb-f63ad3b08bee",
+        "e0cf76f3-1318-5ada-96d3-178d5642239e"
+      ],
+      "name": "Flow",
+      "node": "c8c33f44-2529-564a-b60e-2e37f611771a",
+      "owned": [
+        "f819aecf-745b-5edc-8846-34e18d2ae14e",
+        "ca319765-d9b9-5e23-819b-2ebb8b2025dd"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    },
+    {
+      "generals": [
+        "c8c33f44-2529-564a-b60e-2e37f611771a",
+        "dee5584a-350e-52cc-9dba-a8544df78b6d"
+      ],
+      "name": "SuccessionFlow",
+      "node": "4402e5e4-e8b6-5cec-886e-7525d3061040",
+      "owned": [
+        "0ac89139-3750-54d3-99e9-0a35fb757df9",
+        "8c32599d-3748-5a65-a65f-12b49b1f1d28"
+      ],
+      "owned_completeness": "Complete",
+      "owned_diagnostics": "{}",
+      "root": "5e756f07-e2c7-56e7-8a4c-7b5283d66543"
+    }
+  ]
+}

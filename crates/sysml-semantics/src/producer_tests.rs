@@ -5,6 +5,8 @@ mod end_usage_tests;
 mod enumeration_tests;
 #[path = "producer_expression_usage_tests.rs"]
 mod expression_usage_tests;
+#[path = "structural_fixed_point_tests.rs"]
+mod structural_fixed_point_tests;
 #[path = "producer_trigger_tests.rs"]
 mod trigger_tests;
 use agq_kerml_semantics::{

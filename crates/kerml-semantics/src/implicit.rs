@@ -9,6 +9,7 @@ mod argument_population_tests;
 mod positioned_guard_tests;
 use agq_kerml::{classes as c, properties as p};
 use agq_kernel::{ElementId, provenance::FactKey, value::Value};
+use std::collections::{BTreeMap, BTreeSet};
 
 #[derive(Clone, Copy)]
 enum Position {
@@ -629,7 +630,12 @@ impl KerMlQueries<'_> {
         ty: ElementId,
         position: Position,
     ) -> QueryResult<Vec<ElementId>> {
-        use std::collections::{BTreeMap, BTreeSet, VecDeque};
+        use std::collections::VecDeque;
+        let population = if matches!(position, Position::Parameter) {
+            "parameter"
+        } else {
+            "end"
+        };
         let mut out = self.result(vec![]);
         let mut graph = BTreeMap::new();
         let mut owned = BTreeMap::new();
@@ -637,6 +643,19 @@ impl KerMlQueries<'_> {
         while let Some(current) = queue.pop_front() {
             if graph.contains_key(&current) {
                 continue;
+            }
+            if self.context().pending_namespace_scopes.contains(&current)
+                || self
+                    .context()
+                    .pending_specialization_scopes
+                    .contains(&current)
+            {
+                out.problem(
+                    Completeness::Incomplete,
+                    "KQ_POSITION_POPULATION",
+                    current,
+                    "Pending memberships or generals prevent a closed positioned-feature population",
+                );
             }
             let ends = self.positioned_features(&mut out, current, position);
             owned.insert(current, ends);
@@ -689,66 +708,178 @@ impl KerMlQueries<'_> {
                 // Language extensions authenticate their own rule-set identity.
                 // Keep the sealed KerML-only interpretation reproducible.
                 if !self.context().semantic_extensions.is_empty()
-                    && complete_owned_position_cycles(&graph, &owned, &mut values)
+                    && (complete_owned_position_cycles(&graph, &owned, &mut values)
+                        || self.complete_uniform_inherited_position_cycles(
+                            &graph,
+                            &owned,
+                            &mut values,
+                            &mut out,
+                        ))
                 {
                     continue;
                 }
+                let unresolved: Vec<_> = crate::ordering::unresolved_inheritance_components(
+                    &graph,
+                    &values.keys().copied().collect(),
+                )
+                .into_iter()
+                .map(|component| {
+                    component
+                        .into_iter()
+                        .map(|member| {
+                            let generals: Vec<_> = graph[&member]
+                                .iter()
+                                .map(|general| (*general, values.get(general).map(Vec::len)))
+                                .collect();
+                            (member, owned[&member].len(), generals)
+                        })
+                        .collect::<Vec<_>>()
+                })
+                .collect();
                 out.problem(
                     Completeness::Incomplete,
                     "KQ_END_CYCLE",
                     ty,
-                    "Cyclic specialization prevents complete structural end ordering",
+                    format!("Cyclic specialization prevents complete structural {population} ordering; \
+                        component members (identity, owned count, general resolved counts): {unresolved:?}"),
                 );
                 return out;
             }
             for current in ready {
-                let mut ends = owned[&current].clone();
-                let mut suppressed = BTreeSet::new();
-                // If positional redefinition already replaces every inherited
-                // end, unresolved explicit targets cannot affect this end set.
-                let covered = graph[&current]
-                    .iter()
-                    .all(|g| values[g].len() <= ends.len());
-                for feature in ends.iter().filter(|_| !covered) {
-                    let mut pending = vec![*feature];
-                    let mut seen = BTreeSet::new();
-                    while let Some(f) = pending.pop() {
-                        if !seen.insert(f) {
-                            continue;
-                        }
-                        let explicit = self.targets(f, QueryKind::RedefinedFeatures);
-                        suppressed.extend(explicit.value.iter().copied());
-                        pending.extend(explicit.value.iter().copied());
-                        out.merge(explicit);
-                    }
-                }
-                // Every owned end position implies redefinition of that position
-                // in each direct general, independently of its declared name.
-                for general in &graph[&current] {
-                    suppressed.extend(values[general].iter().take(ends.len()).copied());
-                }
-                for general in &graph[&current] {
-                    for &feature in &values[general] {
-                        let membership = self.owning_relationship(feature);
-                        let visible = membership.value.is_some_and(|m| {
-                            self.visible(
-                                &mut out,
-                                m,
-                                p::MEMBERSHIP_VISIBILITY,
-                                MemberAccess::NonPrivate,
-                            )
-                        });
-                        out.merge(membership);
-                        if visible && !suppressed.contains(&feature) && !ends.contains(&feature) {
-                            ends.push(feature);
-                        }
-                    }
-                }
+                let ends = self.select_positioned_features(
+                    &owned[&current],
+                    &graph[&current],
+                    &values,
+                    &mut out,
+                );
                 values.insert(current, ends);
             }
         }
         out.value = values.remove(&ty).unwrap_or_default();
         out
+    }
+    fn select_positioned_features(
+        &self,
+        owned: &[ElementId],
+        generals: &[ElementId],
+        values: &BTreeMap<ElementId, Vec<ElementId>>,
+        out: &mut QueryResult<Vec<ElementId>>,
+    ) -> Vec<ElementId> {
+        let mut ends = owned.to_vec();
+        let mut suppressed = BTreeSet::new();
+        // Every owned position replaces the corresponding position in
+        // each direct general, independently of its declared name.
+        for general in generals {
+            suppressed.extend(values[general].iter().take(ends.len()).copied());
+        }
+        let mut candidates = Vec::new();
+        for general in generals {
+            for &feature in &values[general] {
+                if suppressed.contains(&feature) || candidates.contains(&feature) {
+                    continue;
+                }
+                let membership = self.owning_relationship(feature);
+                let visible = membership.value.is_some_and(|m| {
+                    self.visible(out, m, p::MEMBERSHIP_VISIBILITY, MemberAccess::NonPrivate)
+                });
+                out.merge(membership);
+                if visible {
+                    candidates.push(feature);
+                }
+            }
+        }
+        // Type::removeRedefinedFeatures also applies between inherited
+        // candidates from different branches. A type need not own any
+        // positions for an inherited end to replace an ancestral end.
+        // If positional coverage removed all inherited candidates,
+        // explicit targets cannot affect the remaining local vector.
+        for feature in ends
+            .iter()
+            .chain(&candidates)
+            .filter(|_| !candidates.is_empty())
+        {
+            let mut pending = vec![*feature];
+            let mut seen = BTreeSet::new();
+            while let Some(f) = pending.pop() {
+                if !seen.insert(f) {
+                    continue;
+                }
+                let explicit = self.targets(f, QueryKind::RedefinedFeatures);
+                suppressed.extend(explicit.value.iter().copied());
+                pending.extend(explicit.value.iter().copied());
+                out.merge(explicit);
+            }
+        }
+        for feature in candidates {
+            if !suppressed.contains(&feature) && !ends.contains(&feature) {
+                ends.push(feature);
+            }
+        }
+        ends
+    }
+
+    /// A zero-owned SCC can inherit one common nonempty external vector.
+    /// Its monotone identity fixed point is that vector on every member; all
+    /// paths impose the same order. Re-run the ordinary transfer to prove
+    /// visibility and transitive redefinition leave that vector unchanged.
+    /// Different external orders/populations and uncovered local positions
+    /// remain unproved, rather than choosing an order by ID or traversal.
+    fn complete_uniform_inherited_position_cycles(
+        &self,
+        graph: &BTreeMap<ElementId, Vec<ElementId>>,
+        owned: &BTreeMap<ElementId, Vec<ElementId>>,
+        values: &mut BTreeMap<ElementId, Vec<ElementId>>,
+        out: &mut QueryResult<Vec<ElementId>>,
+    ) -> bool {
+        let mut completed = false;
+        for component in crate::ordering::unresolved_inheritance_components(
+            graph,
+            &values.keys().copied().collect(),
+        ) {
+            if component.iter().any(|id| {
+                !owned[id].is_empty()
+                    || graph[id].iter().any(|general| {
+                        !component.contains(general) && !values.contains_key(general)
+                    })
+            }) {
+                continue;
+            }
+            let mut common = Vec::new();
+            let mut consistent = true;
+            for general in component
+                .iter()
+                .flat_map(|id| graph[id].iter())
+                .filter(|general| !component.contains(general))
+            {
+                let external = self.select_positioned_features(&[], &[*general], values, out);
+                if external.is_empty() {
+                    continue;
+                }
+                if common.is_empty() {
+                    common = external;
+                } else if common != external {
+                    consistent = false;
+                    break;
+                }
+            }
+            if !consistent {
+                continue;
+            }
+            let mut candidate = values.clone();
+            for &id in &component {
+                candidate.insert(id, common.clone());
+            }
+            if !component.iter().all(|id| {
+                self.select_positioned_features(&[], &graph[id], &candidate, out) == common
+            }) {
+                continue;
+            }
+            for id in component {
+                values.insert(id, common.clone());
+            }
+            completed = true;
+        }
+        completed
     }
 }
 
@@ -763,55 +894,11 @@ fn complete_owned_position_cycles(
     owned: &std::collections::BTreeMap<ElementId, Vec<ElementId>>,
     values: &mut std::collections::BTreeMap<ElementId, Vec<ElementId>>,
 ) -> bool {
-    use std::collections::{BTreeMap, BTreeSet};
-
-    // Iterative Kosaraju over unresolved vertices. Already resolved generals
-    // remain boundary inputs, so unrelated cyclic ancestors cannot be assumed
-    // to have the same cardinality as this component.
-    let unresolved: BTreeSet<_> = graph
-        .keys()
-        .copied()
-        .filter(|id| !values.contains_key(id))
-        .collect();
-    let mut reverse = BTreeMap::<ElementId, Vec<ElementId>>::new();
-    let mut seen = BTreeSet::new();
-    let mut finish = Vec::with_capacity(unresolved.len());
-    for &id in &unresolved {
-        for &general in &graph[&id] {
-            if unresolved.contains(&general) {
-                reverse.entry(general).or_default().push(id);
-            }
-        }
-        let mut pending = vec![(id, false)];
-        while let Some((current, expanded)) = pending.pop() {
-            if expanded {
-                finish.push(current);
-            } else if seen.insert(current) {
-                pending.push((current, true));
-                pending.extend(
-                    graph[&current]
-                        .iter()
-                        .rev()
-                        .filter(|general| unresolved.contains(general))
-                        .map(|&general| (general, false)),
-                );
-            }
-        }
-    }
-    let mut assigned = BTreeSet::new();
     let mut completed = false;
-    for seed in finish.into_iter().rev() {
-        let mut component = BTreeSet::new();
-        let mut pending = vec![seed];
-        while let Some(current) = pending.pop() {
-            if assigned.insert(current) {
-                component.insert(current);
-                pending.extend(reverse.get(&current).into_iter().flatten().copied());
-            }
-        }
-        if component.is_empty() {
-            continue;
-        }
+    for component in
+        crate::ordering::unresolved_inheritance_components(graph, &values.keys().copied().collect())
+    {
+        let seed = *component.first().expect("nonempty component");
         let count = owned[&seed].len();
         let covered = component.iter().all(|id| {
             owned[id].len() == count

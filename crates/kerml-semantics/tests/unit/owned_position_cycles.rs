@@ -132,7 +132,7 @@ fn sealed_kerml_only_cycle_interpretation_stays_incomplete() {
 }
 
 #[test]
-fn empty_parameter_cycle_is_complete_only_with_empty_external_positions() {
+fn zero_owned_parameter_cycle_inherits_a_proven_common_external_vector() {
     let snapshot = cycle(false, &[12, 11], &[21, 22], &[31]);
     let answer = queries(&snapshot, true).structural_parameter_features(id(1));
     assert_eq!(answer.completeness, Completeness::Complete);
@@ -168,7 +168,8 @@ fn empty_parameter_cycle_is_complete_only_with_empty_external_positions() {
     );
     let directed = snapshot.apply(&changes).unwrap();
     let answer = queries(&directed, true).structural_parameter_features(id(1));
-    assert_eq!(answer.completeness, Completeness::Incomplete);
+    assert_eq!(answer.completeness, Completeness::Complete);
+    assert_eq!(answer.value, vec![id(31)]);
 }
 
 #[test]
@@ -176,12 +177,66 @@ fn uncovered_cyclic_positions_do_not_guess_an_inherited_order() {
     for (a, b, external) in [
         (vec![12, 11], vec![21], vec![]),
         (vec![12, 11], vec![21, 22], vec![31, 32, 33]),
-        (vec![], vec![], vec![31]),
     ] {
         let snapshot = cycle(false, &a, &b, &external);
         let answer = queries(&snapshot, true).structural_end_features(id(1));
         assert_eq!(answer.completeness, Completeness::Incomplete);
         assert!(answer.diagnostics.iter().any(|d| d.code == "KQ_END_CYCLE"));
+    }
+}
+
+#[test]
+fn zero_owned_cycles_require_consistent_external_order_and_closed_sources() {
+    let mut fixture = Fixture::new();
+    for owner in [1, 2, 3, 4, 5, 6] {
+        fixture.create(owner, c::CONNECTOR);
+    }
+    end(&mut fixture, 5, 51);
+    end(&mut fixture, 6, 61);
+    for (specific, general, relationship) in [
+        (1, 2, 101),
+        (2, 1, 102),
+        (1, 3, 103),
+        (2, 4, 104),
+        (3, 5, 305),
+        (3, 6, 306),
+        (4, 6, 406),
+        (4, 5, 405),
+    ] {
+        subset(&mut fixture, specific, general, relationship);
+    }
+    let snapshot = fixture.finish();
+    let q = queries(&snapshot, true);
+    assert_eq!(q.structural_end_features(id(3)).value, vec![id(51), id(61)]);
+    assert_eq!(q.structural_end_features(id(4)).value, vec![id(61), id(51)]);
+    let answer = q.structural_end_features(id(1));
+    assert_eq!(answer.completeness, Completeness::Incomplete);
+    assert!(answer.diagnostics.iter().any(|d| d.code == "KQ_END_CYCLE"));
+
+    let snapshot = cycle(false, &[], &[], &[31]);
+    let complete = queries(&snapshot, true).structural_end_features(id(1));
+    assert_eq!(complete.completeness, Completeness::Complete);
+    assert_eq!(complete.value, vec![id(31)]);
+    for (pending_specializations, pending_namespaces) in [
+        (BTreeSet::from([id(3)]), BTreeSet::new()),
+        (BTreeSet::new(), BTreeSet::from([id(1)])),
+    ] {
+        let q = KerMlQueries::new(
+            SemanticContext::for_project_snapshot(
+                &snapshot,
+                Default::default(),
+                BTreeSet::new(),
+                pending_specializations,
+                pending_namespaces,
+            )
+            .unwrap()
+            .with_semantic_extension_identity("test-ordered-positions/1", [17; 32])
+            .unwrap(),
+        );
+        assert_eq!(
+            q.structural_end_features(id(1)).completeness,
+            Completeness::Incomplete
+        );
     }
 }
 
@@ -206,4 +261,46 @@ fn resolved_component_feeds_acyclic_descendants_without_copying_positions() {
         answer.diagnostics
     );
     assert_eq!(answer.value, vec![id(12), id(11)]);
+}
+
+#[test]
+fn inherited_candidates_suppress_transitively_without_owned_positions() {
+    let mut fixture = Fixture::new();
+    for owner in [1, 2, 3, 4, 5] {
+        fixture.create(owner, c::CONNECTOR);
+    }
+    for (owner, first, second) in [(1, 11, 12), (2, 21, 22), (3, 31, 32), (5, 51, 52)] {
+        end(&mut fixture, owner, first);
+        end(&mut fixture, owner, second);
+    }
+    for (specific, general, relationship) in
+        [(31, 21, 301), (32, 22, 302), (21, 11, 201), (22, 12, 202)]
+    {
+        redefine(&mut fixture, specific, general, relationship);
+    }
+    for (general, relationship) in [(1, 401), (2, 402), (3, 403), (5, 405)] {
+        subset(&mut fixture, 4, general, relationship);
+    }
+    let snapshot = fixture.finish();
+    let q = queries(&snapshot, true);
+    let answer = q.structural_end_features(id(4));
+    assert_eq!(answer.completeness, Completeness::Complete, "{answer:?}");
+    assert_eq!(answer.value, vec![id(31), id(32), id(51), id(52)]);
+    for relationship in [201, 202, 301, 302] {
+        assert!(
+            answer
+                .positive_dependencies
+                .contains(&FactKey::Element(id(relationship)))
+        );
+    }
+    for owner in [1, 2, 3, 4, 5] {
+        assert!(answer.search_dependencies.contains(
+            &SearchDependency::StructuralFeaturePopulation {
+                owner: id(owner),
+                kind: FeaturePopulationKind::End,
+            }
+        ));
+    }
+    assert_eq!(q.owning_type(id(31)).value, Some(id(3)));
+    assert_eq!(q.owning_type(id(51)).value, Some(id(5)));
 }
