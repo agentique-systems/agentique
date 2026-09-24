@@ -22,7 +22,9 @@ pub(crate) use derivation_input::DerivationInput;
 
 #[path = "declared_history.rs"]
 mod declared_history;
-pub use declared_history::{DeclaredConstructionHistory, DeclaredIdentitySet};
+pub use declared_history::{
+    DeclaredConstructionHistory, DeclaredIdentityCheckpoint, DeclaredIdentitySet,
+};
 
 type StagedRecords = (
     SharedMap<ElementId, Arc<ElementRecord>>,

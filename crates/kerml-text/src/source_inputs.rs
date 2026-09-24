@@ -12,6 +12,9 @@ use agq_sysml_semantics::{
     SysmlQueries, SysmlQueryResult, SysmlSemanticContext, SysmlSemanticContextId,
 };
 use std::collections::BTreeSet;
+#[path = "source_checkpoint.rs"]
+mod checkpoint;
+pub use checkpoint::*;
 
 /// Exact source inputs. Applying edits shares every unchanged document and syntax arena.
 #[derive(Clone, Debug)]
@@ -81,6 +84,13 @@ impl SourceInputs {
         self: &Arc<Self>,
         previous: Option<&SourceCompilation>,
     ) -> Result<SourceCompilation, LibraryLoadError> {
+        self.compile_with_history(previous, None)
+    }
+    fn compile_with_history(
+        self: &Arc<Self>,
+        previous: Option<&SourceCompilation>,
+        restored: Option<(DeclaredConstructionHistory, LibrarySourceMap)>,
+    ) -> Result<SourceCompilation, LibraryLoadError> {
         if previous.is_some_and(|previous| {
             previous.inputs.project != self.project
                 || !Arc::ptr_eq(&previous.inputs.dependency, &self.dependency)
@@ -99,11 +109,13 @@ impl SourceInputs {
             },
             |previous| previous.history.clone(),
         );
-        let (history, mut ledger) = prepare_identity_history(
-            &self.documents,
-            &history,
-            previous.map_or_else(BTreeMap::new, |previous| previous.identities.clone()),
-        )?;
+        let (history, ledger) = restored.unwrap_or_else(|| {
+            (
+                history,
+                previous.map_or_else(BTreeMap::new, |previous| previous.identities.clone()),
+            )
+        });
+        let (history, mut ledger) = prepare_identity_history(&self.documents, &history, ledger)?;
         let mut diagnostics = Vec::new();
         let mut omitted = BTreeSet::new();
         for document in self.documents.values() {

@@ -9,11 +9,44 @@ mod source_inputs;
 pub use source_inputs::*;
 
 /// Project identity is allocated independently of paths, document and semantic IDs.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
+#[serde(transparent)]
 pub struct ProjectId(GeneratorId);
+impl ProjectId {
+    /// Construct an externally allocated portable project identity.
+    pub const fn from_u128(value: u128) -> Self {
+        Self(GeneratorId::from_u128(value))
+    }
+    /// Obtain the portable identity representation.
+    pub const fn as_u128(self) -> u128 {
+        self.0.as_u128()
+    }
+    /// Allocate a project identity independently of repository labels.
+    pub fn new() -> Self {
+        Self(GeneratorId::new())
+    }
+}
+impl Default for ProjectId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+impl std::fmt::Display for ProjectId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+impl std::str::FromStr for ProjectId {
+    type Err = uuid::Error;
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        uuid::Uuid::parse_str(value).map(|id| Self(GeneratorId::from_u128(id.as_u128())))
+    }
+}
 
 /// Explicit document language; an extension never determines semantic identity.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum SourceLanguage {
     KerMl,
     SysMl,

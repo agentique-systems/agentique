@@ -47,8 +47,8 @@ pub use ids::*;
 pub use model::archive;
 pub use model::{
     ChangeSet, ConstructionObligation, ConstructionView, DeclaredConstructionHistory,
-    DeclaredIdentitySet, ElementRecord, ModelError, ModelView, ReferenceCarrier,
-    ReferenceOccurrence, Slot, SlotShape, Snapshot,
+    DeclaredIdentityCheckpoint, DeclaredIdentitySet, ElementRecord, ModelError, ModelView,
+    ReferenceCarrier, ReferenceOccurrence, Slot, SlotShape, Snapshot,
 };
 
 #[cfg(any(test, feature = "verification"))]

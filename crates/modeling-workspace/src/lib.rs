@@ -3,8 +3,9 @@
 //! Document edits publish a new Working revision atomically. Validation is a
 //! separate checked conversion and never claims full language conformance or
 //! execution support. Retained revisions and their borrowed query answers remain
-//! independent of later edits. There is no persistence or application adapter.
+//! independent of later edits. Source checkpoints retain identity for an outer repository.
 #![forbid(unsafe_code)]
+mod checkpoint;
 use agq_kerml_semantics::{Completeness, KerMlQueries, ProducerClosureCertificate, Resolution};
 pub use agq_kerml_text::QueryUnavailable;
 use agq_kerml_text::library::{CanonicalKermlStandardLibraries, LibraryLoadError};
@@ -18,11 +19,45 @@ use agq_kernel::{
     ConstructionView, DocumentId, ElementId, ElementRecord, ModelView, RevisionId, Snapshot,
 };
 use agq_sysml_semantics::SysmlQueries;
+pub use checkpoint::*;
 use std::{collections::BTreeMap, ops::Deref, sync::Arc};
 
 /// Workspace history identity, distinct from kernel and source revision IDs.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(
+    Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
+#[serde(transparent)]
 pub struct ProjectRevisionId(RevisionId);
+impl ProjectRevisionId {
+    /// Construct an externally allocated portable project revision identity.
+    pub const fn from_u128(value: u128) -> Self {
+        Self(RevisionId::from_u128(value))
+    }
+    /// Obtain the portable identity representation.
+    pub const fn as_u128(self) -> u128 {
+        self.0.as_u128()
+    }
+    /// Allocate a workspace-history identity independently of kernel revision identity.
+    pub fn new() -> Self {
+        Self(RevisionId::new())
+    }
+}
+impl Default for ProjectRevisionId {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+impl std::fmt::Display for ProjectRevisionId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.0.fmt(f)
+    }
+}
+impl std::str::FromStr for ProjectRevisionId {
+    type Err = uuid::Error;
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        uuid::Uuid::parse_str(value).map(|id| Self(RevisionId::from_u128(id.as_u128())))
+    }
+}
 
 /// One immutable source/declared/derived/evidence binding. Fields cannot be replaced.
 #[derive(Debug)]
@@ -213,7 +248,7 @@ impl ValidatedProjectRevision {
 }
 
 /// Versioned authored platform acceptance; this does not assert full language conformance.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum PlatformAcceptanceContract {
     Phase1V1,
 }
@@ -250,6 +285,8 @@ pub enum WorkspaceError {
     StaleRevision(ProjectRevisionId),
     #[error("document extension is not .kerml or .sysml: {0}")]
     UnsupportedExtension(String),
+    #[error("candidate does not continue this project head")]
+    ForeignCandidate,
     #[error(transparent)]
     Edit(#[from] ProjectError),
     #[error(transparent)]
@@ -262,6 +299,13 @@ pub struct ProjectWorkspace {
     revisions: BTreeMap<ProjectRevisionId, Arc<WorkingProjectRevision>>,
 }
 impl ProjectWorkspace {
+    /// Open an independent workspace at an immutable retained revision.
+    pub fn from_revision(head: Arc<WorkingProjectRevision>) -> Self {
+        Self {
+            revisions: BTreeMap::from([(head.revision(), head.clone())]),
+            head,
+        }
+    }
     pub fn open(publication: Arc<CanonicalSysmlSystemsLibrary>) -> Result<Self, WorkspaceError> {
         let inputs = Arc::new(SourceInputs::with_accepted_sysml(publication)?);
         let compilation = inputs.compile(None)?;
@@ -286,9 +330,9 @@ impl ProjectWorkspace {
     pub fn revisions(&self) -> impl Iterator<Item = &Arc<WorkingProjectRevision>> {
         self.revisions.values()
     }
-    /// All preparation and compilation precede head/history mutation.
-    pub fn apply(
-        &mut self,
+    /// Construct a candidate without acknowledging or moving the workspace head.
+    pub fn prepare(
+        &self,
         expected: ProjectRevisionId,
         changes: impl IntoIterator<Item = ProjectChange>,
     ) -> Result<Arc<WorkingProjectRevision>, WorkspaceError> {
@@ -305,9 +349,35 @@ impl ProjectWorkspace {
                 compilation,
             },
         });
-        self.revisions.insert(revision.revision(), revision.clone());
-        self.head = revision.clone();
         Ok(revision)
+    }
+    /// Acknowledge a candidate after the caller's durable commit succeeds.
+    /// This operation performs no persistence and rejects foreign histories.
+    pub fn acknowledge(
+        &mut self,
+        expected: ProjectRevisionId,
+        candidate: Arc<WorkingProjectRevision>,
+    ) -> Result<(), WorkspaceError> {
+        if expected != self.head.revision() {
+            return Err(WorkspaceError::StaleRevision(expected));
+        }
+        if candidate.project() != self.head.project() || candidate.parent() != Some(expected) {
+            return Err(WorkspaceError::ForeignCandidate);
+        }
+        self.revisions
+            .insert(candidate.revision(), candidate.clone());
+        self.head = candidate;
+        Ok(())
+    }
+    /// In-memory convenience; durable callers use prepare, commit, acknowledge.
+    pub fn apply(
+        &mut self,
+        expected: ProjectRevisionId,
+        changes: impl IntoIterator<Item = ProjectChange>,
+    ) -> Result<Arc<WorkingProjectRevision>, WorkspaceError> {
+        let candidate = self.prepare(expected, changes)?;
+        self.acknowledge(expected, candidate.clone())?;
+        Ok(candidate)
     }
     pub fn add_kerml(
         &mut self,

@@ -80,6 +80,7 @@ version = "0.1.0"
 dependencies = [
  "agq-kernel",
  "agq-standard-libraries",
+ "serde",
  "serde_json",
  "thiserror",
  "uuid",
@@ -153,8 +154,11 @@ dependencies = [
  "agq-kernel",
  "agq-standard-libraries",
  "agq-sysml-semantics",
+ "serde",
+ "serde_json",
  "sha2",
  "thiserror",
+ "uuid",
 ]
 
 [[package]]
