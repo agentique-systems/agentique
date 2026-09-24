@@ -498,6 +498,308 @@
         "CARGO_BUILD_JOBS": "2",
         "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace"
       }
+    },
+    {
+      "name": "integrated-slice-gate-tests",
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "verification/scripts",
+        "-p",
+        "test_systems_semantic_slice_gate.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "3d4de889b13fff5a6b49998fb6df0301b8584eef",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "19005e531cfc920928167e284a406cfd96dbb97e83df4c74902fd795e5f23ccc",
+      "duration_seconds": 0.3,
+      "output": "verification/generated/final-audit-semantic-closure/integrated-slice-gate-tests.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "semantic-closure-release-runner",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--config",
+        "profile.release.lto=false",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "e9486edb1e2d59dba3d29a1c70b446ae22ffd4dc",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "bdc793926a8df1daa1963b8e00ccc9f1ac51975ef90e112f0005719774fe60ac",
+      "duration_seconds": 67.81,
+      "output": "verification/generated/final-audit-semantic-closure/semantic-closure-release-runner.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-finalization"
+      }
+    },
+    {
+      "name": "integrated-effective-audit-profiler",
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "verification/scripts",
+        "-p",
+        "test_profile_systems_effective_audit.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "5e66c0f2f8a8a8d85ce2a8d6e7ed00ed1d14d0fa",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "3b5cc740f36f33f4918da014266e5ceb0460f691618a388e56afb37bd6fa86f7",
+      "duration_seconds": 0.44,
+      "output": "verification/generated/final-audit-semantic-closure/integrated-effective-audit-profiler.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "original-normative-bytes-unchanged",
+      "command": [
+        "git",
+        "diff",
+        "--exit-code",
+        "origin/main",
+        "--",
+        "standards/artifacts",
+        "standards/normative"
+      ],
+      "exit_code": 0,
+      "tool_version": "git version 2.42.0.windows.2",
+      "source_commit": "5e66c0f2f8a8a8d85ce2a8d6e7ed00ed1d14d0fa",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 0.03,
+      "output": "verification/generated/final-audit-semantic-closure/original-normative-bytes-unchanged.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "post-coverage-standards-check",
+      "command": [
+        "npm.cmd",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "5e66c0f2f8a8a8d85ce2a8d6e7ed00ed1d14d0fa",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "af7cfb347b942f4fafdd7d431d174a68ea578b825e360293c49dc09becd22c34",
+      "duration_seconds": 0.61,
+      "output": "verification/generated/final-audit-semantic-closure/post-coverage-standards-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "semantic-closure-release-runner-isolated",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--config",
+        "profile.release.lto=false",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "e9486edb1e2d59dba3d29a1c70b446ae22ffd4dc",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "d6c215a05e1aca75bbef52fada8ec066dd5af6fbabd24fff5751ed942806e504",
+      "duration_seconds": 410.7,
+      "output": "verification/generated/final-audit-semantic-closure/semantic-closure-release-runner-isolated.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace"
+      }
+    },
+    {
+      "name": "integrated-language-rustdoc",
+      "command": [
+        "cargo",
+        "doc",
+        "--locked",
+        "--offline",
+        "--no-deps",
+        "-p",
+        "agq-kernel",
+        "-p",
+        "agq-kerml",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-kerml-syntax",
+        "-p",
+        "agq-kerml-text",
+        "-p",
+        "agq-sysml",
+        "-p",
+        "agq-sysml-semantics"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5e66c0f2f8a8a8d85ce2a8d6e7ed00ed1d14d0fa",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "86488915b28a386c4764e65da53e503ad70beb0a08c7d315c0517ccf83f31d43",
+      "duration_seconds": 9.28,
+      "output": "verification/generated/final-audit-semantic-closure/integrated-language-rustdoc.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace",
+        "RUSTDOCFLAGS": "-D warnings"
+      }
+    },
+    {
+      "name": "pre-corpus-workspace-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5e66c0f2f8a8a8d85ce2a8d6e7ed00ed1d14d0fa",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "7e2ea3b6602df9dc55b4270892134a0f16de2f1240295f07023798dead95762f",
+      "duration_seconds": 19.38,
+      "output": "verification/generated/final-audit-semantic-closure/pre-corpus-workspace-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace"
+      }
+    },
+    {
+      "name": "scoped-corpus-witness-runner",
+      "command": [
+        "cargo",
+        "build",
+        "--release",
+        "--config",
+        "profile.release.lto=false",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "a397384df163bb6cb61035451501b3afe277e88d",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "ff5ab27bee9c8f45bb19f877873f4074262b7496fc03efceb307e53ce091371e",
+      "duration_seconds": 57.8,
+      "output": "verification/generated/final-audit-semantic-closure/scoped-corpus-witness-runner.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace"
+      }
+    },
+    {
+      "name": "scoped-witness-report-negative-tests",
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "verification/scripts",
+        "-p",
+        "test_systems_semantic_slice_gate.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "0493a547477b9c0a6517c18be0795db2295aeeee",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "610bd01248ee03086861402ca2921b5118168ee240128a30417b6d98f45bcf40",
+      "duration_seconds": 0.38,
+      "output": "verification/generated/final-audit-semantic-closure/scoped-witness-report-negative-tests.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "scoped-corpus-witness-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "0493a547477b9c0a6517c18be0795db2295aeeee",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "4d7bf1013aee27abf579b0a45f2d17f41a92905e7a4358937332ba503d3dc394",
+      "duration_seconds": 11.81,
+      "output": "verification/generated/final-audit-semantic-closure/scoped-corpus-witness-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace"
+      }
+    },
+    {
+      "name": "pre-corpus-format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "0493a547477b9c0a6517c18be0795db2295aeeee",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 2.72,
+      "output": "verification/generated/final-audit-semantic-closure/pre-corpus-format.log",
+      "environment_overrides": {}
     }
   ]
 }
