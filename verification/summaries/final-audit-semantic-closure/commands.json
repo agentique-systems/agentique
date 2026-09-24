@@ -119,6 +119,53 @@
         "CARGO_BUILD_JOBS": "2",
         "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-finalization"
       }
+    },
+    {
+      "name": "node-tests",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "7903065ee23a5b714db81360eaeb7919448d3514",
+      "working_changes_sha256": "7b5a9b2223970cebd354031af126d728ef8718fbe3e927c99073abe977df3adf",
+      "output_sha256": "f4728eec743e7e4b044623e5387af6c4b357e84e25d1c3c2d635b327b2bb91aa",
+      "duration_seconds": 1.28,
+      "output": "verification/generated/final-audit-semantic-closure/node-tests.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "frontend-check",
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "7903065ee23a5b714db81360eaeb7919448d3514",
+      "working_changes_sha256": "7b5a9b2223970cebd354031af126d728ef8718fbe3e927c99073abe977df3adf",
+      "output_sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "duration_seconds": 2.52,
+      "output": "verification/generated/final-audit-semantic-closure/frontend-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "frontend-build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "7903065ee23a5b714db81360eaeb7919448d3514",
+      "working_changes_sha256": "7b5a9b2223970cebd354031af126d728ef8718fbe3e927c99073abe977df3adf",
+      "output_sha256": "27cd1122452e0b978b6dafd33a903ea5a6c96649f9b4eda0eb6800b6f1fb605a",
+      "duration_seconds": 2.78,
+      "output": "verification/generated/final-audit-semantic-closure/frontend-build.log",
+      "environment_overrides": {}
     }
   ]
 }
