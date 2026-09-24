@@ -156,6 +156,22 @@ explicit and unaccepted; the enum's Published default remains reproducible.
 Compiled trusted-cache restoration and authored stability are separate gates
 below; artifact verification alone does not establish them.
 
+The first post-activation cache gate used an unoptimized test binary and was
+manually interrupted after 501.70 seconds during restoration, with no assertion
+failure reported. Its exit code and output are retained. The replacement uses
+the same test and assertions in Cargo's optimized release profile with LTO
+disabled; this changes execution cost, not the acceptance contract. The ordinary
+workspace test profile remains part of final verification. The post-activation
+standards check passes, including all 143 publication freshness inputs.
+
+The optimized `accepted_systems_cache_roundtrip_and_tampering` gate passes:
+one requested ignored test executed, zero failures, 237.95 seconds test time
+(372.52 seconds including compilation). It verifies the exact compiled v3
+receipt, 1,327 Complete references, 21 documents, shared original KerML records,
+fully closed requirements, exact graph/context/bindings/selected evidence through
+round-trip restoration, zero producer replay, and rejection of changed archive
+entries, bindings, extra/duplicate entries and truncation.
+
 ## Platform boundary
 
 The [held workspace review](workspace-integration-review.md) records exact source
