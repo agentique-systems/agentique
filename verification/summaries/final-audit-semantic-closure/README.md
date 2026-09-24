@@ -228,6 +228,25 @@ actual outputs are in the command ledger.
 
 ## Verification
 
+The reviewed workspace implementation is now integrated after ADR 0026 adoption.
+Conflicts retained the accepted v3 parser/profile mapping and all historical
+verification commands. The kernel's shared-base storage passes 139 tests with
+verification observers enabled. The exact issued Systems cache then passes
+round-trip identity and tamper rejection again: one requested test, zero failures,
+232.37 seconds test time. The storage refactor preserves accepted graph/context,
+bindings and selected evidence and performs no accepted producer replay.
+
+The new authored audit consumes the existing strict effective dispatcher over
+all local canonical identities and stores its exact immutable context. It changes
+neither canonical producers nor the standard finalizer's acceptance semantics.
+This compatibility review and successful cache gate justify updating the
+implementation freshness record; the accepted receipt and artifacts remain
+unchanged. The initial frontend test run correctly failed the stale-input check
+before this review and capture. The integrated 20-package generation dependency
+audit, frontend check/build and four browser tests pass. Workspace runtime
+dogfooding, invalid-typing repair and scale execution remain pending at this
+stage; their actual results will be recorded separately.
+
 [commands.json](commands.json),
 [projection-verification.json](projection-verification.json), and the
 [enumeration command ledger](../enumeration-closure/commands.json) record actual

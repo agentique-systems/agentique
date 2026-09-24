@@ -1,9 +1,10 @@
 # In-memory Gen2 modeling workspace
 
 `ProjectWorkspace` owns one Working head and immutable revision history over
-authenticated accepted KerML and Systems publications. Integration remains gated
-by the language foundation acceptance contract; implementation and test
-compilation do not establish Systems publication or platform acceptance.
+authenticated accepted KerML and Systems publications. The measured
+[language readiness decision](../../verification/summaries/final-language-acceptance/semantic-closure-readiness.md)
+adopts ADR 0026 and authorizes this integration. Workspace runtime acceptance is
+a separate gate; implementation and test compilation alone do not establish it.
 
 Document operations check an expected head, prepare exact source/syntax inputs,
 compile the current document set, then publish one new revision atomically.
@@ -16,8 +17,11 @@ evidence. They never fall back to an earlier revision's graph.
 `WorkingProjectRevision::validate` returns a `ValidatedProjectRevision` for the
 same immutable handle only after the Phase1V1 contract passes: complete parsed
 inputs, a strict declared graph, no blocking diagnostics, Complete converged
-producer closure, a fully closed certificate attached to the exact context and
-complete mandatory references. Validation does not claim full language
+producer closure, a fully closed certificate attached to the exact context,
+complete mandatory references, and a finding-free effective-query audit bound to
+that revision. The audit reuses the strict Systems effective dispatcher on every
+local canonical identity, including derived local records, in bounded batches.
+It excludes the shared accepted dependency population. Validation does not claim full language
 conformance or execution support.
 
 Both handles expose the existing KerML and SysML query contracts. Element/source
