@@ -80,6 +80,12 @@
       "exit_code": 0,
       "result": "5 tests passed in 0.383 seconds. Full receipt/cache corruption fixture exercised under historical v2 /5, current v2 /6 and v3 /6. Unsupported /4 and /7 rejected for every profile, and v3 /5 rejected even with consistently rewritten binding and receipt digests.",
       "output": "verification/generated/final-closure-projections/publication-gate-rule-set-tests.log"
+    },
+    {
+      "command": "python -m unittest discover -s verification/scripts -p test_systems_semantic_slice_gate.py",
+      "exit_code": 0,
+      "result": "Initial run: 7 tests passed in 0.159 seconds. After adding a document/global reference-population mismatch negative, final run: 7 tests passed in 0.124 seconds. Both reviewed scope fixtures verify pinned original sources and report evidence; negative cases reject scope/source substitutions, incomplete references/producer closure/effective audits, false publication authority and modified classification/mapping fixtures. Synthetic reports are not executed semantic gates.",
+      "output": "verification/generated/final-closure-projections/semantic-slice-gate-tests.log"
     }
   ],
   "rust_gate": "Enumeration owner ran cargo test -p agq-sysml-semantics --lib on combined projection + enumeration + /6 context changes: 96 passed, 0 failed, exit 0, 130.43 seconds. Includes real scheduler Color effective typing/names and projection/naming regressions. Raw command evidence belongs to verification/summaries/enumeration-closure/commands.json.",
