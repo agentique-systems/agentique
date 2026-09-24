@@ -501,20 +501,25 @@ enum SourceFrontier {
     Strict(Box<crate::sysml::SourceModel>),
 }
 
-/// Immutable declared/derived frontier, certificate, source evidence and checked identity history.
+/// Measured work for one authored reconstruction, independent of wall-clock timing.
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct CompilationWork {
     /// Authenticated persisted effective facts were revalidated on current declarations.
     pub semantic_cache_used: bool,
+    /// Actual frontend parse calls while applying this source change batch.
     pub documents_reparsed: usize,
     /// Actual lowering traversals, including repeated full reference-refinement passes.
     pub documents_lowered: usize,
+    /// Reused immutable document fragments across all refinement passes.
     pub lowering_cache_hits: usize,
+    /// Local declared records traversed by lowering, including rejected trial work.
     pub records_lowered: usize,
     /// Declared local records submitted to kernel construction across all passes.
     /// Cached lowering still undergoes kernel validation; this includes the root.
     pub records_rebuilt: usize,
+    /// Subject evaluations across every preparatory and final producer schedule.
     pub producer_subjects_evaluated: usize,
+    /// Current local canonical subjects visited by the final effective audit.
     pub effective_audit_subjects_evaluated: usize,
 }
 
@@ -522,15 +527,21 @@ pub struct CompilationWork {
 /// native query/provider reads, including negative-search populations.
 #[derive(Clone, Debug, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct SourceEditFrontier {
+    /// Changed documents with old/new source revisions; absent sides mean add/remove.
     pub source_revisions: Vec<(
         DocumentId,
         Option<SourceRevisionId>,
         Option<SourceRevisionId>,
     )>,
+    /// New reconciled syntax identities, including replacement nodes.
     pub syntax_nodes_added: BTreeSet<agq_kernel::SyntaxNodeId>,
+    /// Removed syntax identities, including nodes replaced by an edit.
     pub syntax_nodes_removed: BTreeSet<agq_kernel::SyntaxNodeId>,
+    /// New declared canonical facts, excluding producer-generated consequences.
     pub declared_facts_added: BTreeSet<FactKey>,
+    /// Removed declared canonical facts.
     pub declared_facts_removed: BTreeSet<FactKey>,
+    /// Retained declared fact identities whose values or origins changed.
     pub declared_facts_changed: BTreeSet<FactKey>,
 }
 impl SourceEditFrontier {

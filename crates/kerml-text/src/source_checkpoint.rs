@@ -7,11 +7,17 @@ use sha2::{Digest, Sha256};
 /// Identity/shape carrier for one document. Bytes are supplied by the source store.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DocumentIdentityCheckpoint {
+    /// Stable authored document identity, independent of its path label.
     pub document_id: DocumentId,
+    /// Exact immutable source version parsed for this revision.
     pub source_revision_id: SourceRevisionId,
+    /// User-visible label retained for source navigation, not semantic identity.
     pub path: String,
+    /// Parser/lowering language selected for the authored bytes.
     pub language: SourceLanguage,
+    /// SHA-256 of the separately stored exact UTF-8 source bytes.
     pub content_digest: [u8; 32],
+    /// Checked production shapes and reconciled syntax identities.
     pub syntax_nodes: Vec<syntax::production::NodeIdentity>,
 }
 
@@ -19,13 +25,21 @@ pub struct DocumentIdentityCheckpoint {
 /// The authenticated publications and source blobs are external immutable inputs.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SourceIdentityCheckpoint {
+    /// Representation version; currently one.
     pub format_version: u32,
+    /// Stable source project identity.
     pub project_id: ProjectId,
+    /// Canonical authored root identity.
     pub root: ElementId,
+    /// Accepted KerML semantic publication digest.
     pub accepted_kerml: [u8; 32],
+    /// Accepted SysML Systems publication digest.
     pub accepted_sysml: [u8; 32],
+    /// Exact authored document population, excluding standard library sources.
     pub documents: Vec<DocumentIdentityCheckpoint>,
+    /// Active and retired declared identity reservations; contains no graph values.
     pub identity_history: DeclaredIdentityCheckpoint,
+    /// Source origins used to retire deleted syntax identities on subsequent edits.
     pub identity_sources: Vec<(FactKey, SourceOrigin)>,
 }
 
