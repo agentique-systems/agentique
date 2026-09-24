@@ -523,6 +523,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     });
     drop(queries);
     if audit_only {
+        println!("Systems: scoped strict effective population audit");
+        let audit_started = Instant::now();
+        let effective =
+            candidate.audit_effective_population(SystemsFinalizationAuditMode::ParallelTwo)?;
+        report["effective_sysml_audit"] = json!({
+            "elapsed_seconds":audit_started.elapsed().as_secs_f64(),
+            "workers":2,
+            "checked":effective.checked.iter().map(|(family,count)| (format!("{family:?}"), *count)).collect::<BTreeMap<_,_>>(),
+            "findings":effective.findings.iter().map(|finding|format!("{finding:?}")).collect::<Vec<_>>(),
+            "publication_authority":false,
+        });
         let passed = candidate.construction_complete()
             && draft
                 .producer_closure()
@@ -533,7 +544,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     && production.completeness == Completeness::Complete
             })
             && failures.is_empty()
-            && authority_conflicts.is_empty();
+            && authority_conflicts.is_empty()
+            && effective.findings.is_empty();
         report["scoped_preflight_passed"] = json!(passed);
         report["publication_attempted"] = json!(false);
         write_report(&output, &report)?;

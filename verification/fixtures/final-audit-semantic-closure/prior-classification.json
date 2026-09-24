@@ -1,0 +1,2924 @@
+{
+  "format": "agq-final-audit-classification/1",
+  "publication_authority": false,
+  "report_sha256": "ee3d60d52ded97fbc409e32d4b156ea846e9f393bb4502a8c70d6d035b7ca12a",
+  "subjects_sha256": "9bcbed5a094f31aec007277c2b6bee07177fc17b09d805f34834cb87e96ea4e6",
+  "accepted_kerml_graph_sha256": "87af0c3a395b91968eb35b0ec85399599eccaa80a97e32d448e0f24e57dc6dde",
+  "summary": {
+    "weighted_findings": 674,
+    "distinct_diagnostics": 238,
+    "subjects": 50,
+    "categories": {
+      "EnumerationConstruction": {
+        "distinct_diagnostics": 157,
+        "weighted_findings": 451
+      },
+      "VariationNaming": {
+        "distinct_diagnostics": 21,
+        "weighted_findings": 63
+      },
+      "TypedProjection": {
+        "distinct_diagnostics": 8,
+        "weighted_findings": 32
+      },
+      "InheritedEndSuppression": {
+        "distinct_diagnostics": 3,
+        "weighted_findings": 12
+      },
+      "ResultCycle": {
+        "distinct_diagnostics": 42,
+        "weighted_findings": 66
+      },
+      "EndCycle": {
+        "distinct_diagnostics": 6,
+        "weighted_findings": 18
+      },
+      "ConnectionAuthority": {
+        "distinct_diagnostics": 1,
+        "weighted_findings": 32
+      },
+      "Other": {
+        "distinct_diagnostics": 0,
+        "weighted_findings": 0
+      }
+    }
+  },
+  "subjects": {
+    "0da1cb76-eed1-5f6f-aba7-0de8aff65f98": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "0df9add9-7323-573a-8427-e742241ec733": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "12bb4729-06c1-51b0-9974-891634003445": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "trigger"
+        }
+      }
+    },
+    "140ef6ea-f727-51a0-89f6-61d454cb48c7": {
+      "class": "OCCURRENCE_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "target"
+        }
+      }
+    },
+    "18da1d9a-37e3-547a-ac0e-bf9793f724b4": {
+      "class": "FLOW_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "messages"
+        }
+      }
+    },
+    "1c103c62-f7bc-5d06-90d5-71b210ddde11": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "requirement"
+        }
+      }
+    },
+    "1efd3834-9efb-585f-acae-295d328dfa6d": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "guard"
+        }
+      }
+    },
+    "21234846-e44e-505e-ac35-424bc23fa18b": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "error"
+        }
+      }
+    },
+    "221542a4-584d-5f0b-9142-50dff2e8763d": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "29480f97-23d3-5c60-8e2d-11d822639e86": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "295d6c7a-fffd-5727-85e7-03deffb83594": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "at"
+        }
+      }
+    },
+    "3b9fab91-096f-5012-841c-ad946c367fdf": {
+      "class": "FLOW_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "flows"
+        }
+      }
+    },
+    "3d57badd-1709-5fb8-a860-e80f3b411ae2": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "3dbf09d5-eb9a-5eca-9b34-9091ee102a4c": {
+      "class": "OCCURRENCE_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "source"
+        }
+      }
+    },
+    "48f9c5fd-08f3-5c26-b486-52114a5a2ffe": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "assumption"
+        }
+      }
+    },
+    "515638fd-0ff9-53fc-a6ba-05e1d820e62c": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "5e756f07-e2c7-56e7-8a4c-7b5283d66543": {
+      "class": "FLOW_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "successionFlows"
+        }
+      }
+    },
+    "5ec82633-f2d4-5e14-a9b1-eb992bac8298": {
+      "class": "OCCURRENCE_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "target"
+        }
+      }
+    },
+    "5fde4cef-fba6-5dae-8dc7-8851a3483a12": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "snapshot"
+        }
+      }
+    },
+    "6184d023-2020-50f5-9d59-ba219191a308": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "pass"
+        }
+      }
+    },
+    "643d02aa-0e56-5d10-9b3c-f301561f4487": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "6687c3b3-3fa7-5c18-8ecc-b011e89eae80": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "do"
+        }
+      }
+    },
+    "75c57429-f867-5e06-8c5a-cb4666c48ade": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "7e26cc61-c229-5031-ac43-20946f5108b9": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "timeslice"
+        }
+      }
+    },
+    "86de7286-c609-59e0-87ed-46cf6c3f4548": {
+      "class": "OCCURRENCE_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "source"
+        }
+      }
+    },
+    "888cda79-aaa5-5d72-a654-b35603802e37": {
+      "class": "OCCURRENCE_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "source"
+        }
+      }
+    },
+    "8ce7e6db-fd66-5ba1-9cd9-a09a77092859": {
+      "class": "INTERFACE_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "binaryInterfaces"
+        }
+      }
+    },
+    "8e5fc3a7-4224-5f80-8c41-801c3bb1b6ca": {
+      "class": "CONNECTION_USAGE",
+      "name": null
+    },
+    "8f6ef46c-b509-5108-a9a7-b9f90142f5c9": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "fail"
+        }
+      }
+    },
+    "949099ff-2b5a-567f-9f7a-1d130c14ea43": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "inspect"
+        }
+      }
+    },
+    "94b023c4-1fe6-5248-9e28-81c0a78f2872": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "effect"
+        }
+      }
+    },
+    "9f0f359c-0538-55f5-ad28-13fd27caee32": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "a2119528-2e45-5c59-82c5-25828219bcde": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "a84a5d47-666c-55ad-910a-665d3ca8e364": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "b269c9a9-c168-57ca-bb1e-7de2462caa89": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "b271e4e7-bb49-5551-936a-c88d1bbbd546": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "after"
+        }
+      }
+    },
+    "b525bc8d-bc1a-51ad-bd4d-a044ecd377ce": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "entry"
+        }
+      }
+    },
+    "c7138546-28c0-5788-9519-0297d7a38d7d": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "analyze"
+        }
+      }
+    },
+    "c72d52b7-ed09-54bb-97cf-90ef40d66741": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "exit"
+        }
+      }
+    },
+    "c8860228-be93-5116-8bf1-c22a2efbbbf2": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "demo"
+        }
+      }
+    },
+    "d33b74d9-03dd-5f67-8b2d-6a621603eb0d": {
+      "class": "OCCURRENCE_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "target"
+        }
+      }
+    },
+    "e5222938-6eec-512d-a197-244f755feede": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "when"
+        }
+      }
+    },
+    "e76d30a1-2f36-584d-8dce-409db017b746": {
+      "class": "CONNECTION_USAGE",
+      "name": null
+    },
+    "f0fa074a-e058-5df1-80d2-1f352aafc916": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "f45a71f0-8f41-5522-8bfc-e5ff8407fbcc": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "test"
+        }
+      }
+    },
+    "f61de17e-ffe3-5853-8589-9759b63a7daf": {
+      "class": "REFERENCE_USAGE",
+      "name": null
+    },
+    "fd38864c-604f-5b3a-b5c1-8e40d7a4da3f": {
+      "class": "ENUMERATION_USAGE",
+      "name": {
+        "Scalar": {
+          "String": "inconclusive"
+        }
+      }
+    },
+    "4167e261-a897-5f30-a4cb-0bc37f94b0ec": {
+      "class": "FEATURE",
+      "name": "target"
+    },
+    "51a76600-2466-5695-8c53-8e327f6302de": {
+      "class": "ASSOCIATION",
+      "name": "HappensDuring"
+    },
+    "cdcb027b-1d54-52bb-be1f-f48f1a8361f1": {
+      "class": "FEATURE",
+      "name": "source"
+    }
+  },
+  "diagnostics": [
+    {
+      "code": "KQ_END_CYCLE",
+      "subject": "18da1d9a-37e3-547a-ac0e-bf9793f724b4",
+      "message": "Cyclic specialization prevents complete structural end ordering",
+      "families": {
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1,
+        "PortConnectionInterfaceFlow": 1
+      },
+      "category": "EndCycle"
+    },
+    {
+      "code": "KQ_END_CYCLE",
+      "subject": "3b9fab91-096f-5012-841c-ad946c367fdf",
+      "message": "Cyclic specialization prevents complete structural end ordering",
+      "families": {
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1,
+        "PortConnectionInterfaceFlow": 1
+      },
+      "category": "EndCycle"
+    },
+    {
+      "code": "KQ_END_CYCLE",
+      "subject": "5e756f07-e2c7-56e7-8a4c-7b5283d66543",
+      "message": "Cyclic specialization prevents complete structural end ordering",
+      "families": {
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1,
+        "PortConnectionInterfaceFlow": 1
+      },
+      "category": "EndCycle"
+    },
+    {
+      "code": "KQ_RESULT_INHERITANCE_CYCLE",
+      "subject": "0da1cb76-eed1-5f6f-aba7-0de8aff65f98",
+      "message": "Cyclic result inheritance requires an established membership fixed point",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "KQ_RESULT_INHERITANCE_CYCLE",
+      "subject": "0df9add9-7323-573a-8427-e742241ec733",
+      "message": "Cyclic result inheritance requires an established membership fixed point",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "KQ_RESULT_INHERITANCE_CYCLE",
+      "subject": "140ef6ea-f727-51a0-89f6-61d454cb48c7",
+      "message": "Cyclic result inheritance requires an established membership fixed point",
+      "families": {
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "KQ_RESULT_INHERITANCE_CYCLE",
+      "subject": "18da1d9a-37e3-547a-ac0e-bf9793f724b4",
+      "message": "Cyclic result inheritance requires an established membership fixed point",
+      "families": {
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1,
+        "PortConnectionInterfaceFlow": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "KQ_RESULT_INHERITANCE_CYCLE",
+      "subject": "221542a4-584d-5f0b-9142-50dff2e8763d",
+      "message": "Cyclic result inheritance requires an established membership fixed point",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "KQ_RESULT_INHERITANCE_CYCLE",
+      "subject": "29480f97-23d3-5c60-8e2d-11d822639e86",
+      "message": "Cyclic result inheritance requires an established membership fixed point",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "KQ_RESULT_INHERITANCE_CYCLE",
+      "subject": "3b9fab91-096f-5012-841c-ad946c367fdf",
+      "message": "Cyclic result inheritance requires an established membership fixed point",
+      "families": {
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1,
+        "PortConnectionInterfaceFlow": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "KQ_RESULT_INHERITANCE_CYCLE",
+      "subject": "3dbf09d5-eb9a-5eca-9b34-9091ee102a4c",
+      "message": "Cyclic result inheritance requires an established membership fixed point",
+      "families": {
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "KQ_RESULT_INHERITANCE_CYCLE",
+      "subject": "515638fd-0ff9-53fc-a6ba-05e1d820e62c",
+      "message": "Cyclic result inheritance requires an established membership fixed point",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "KQ_RESULT_INHERITANCE_CYCLE",
+      "subject": "5e756f07-e2c7-56e7-8a4c-7b5283d66543",
+      "message": "Cyclic result inheritance requires an established membership fixed point",
+      "families": {
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1,
+        "PortConnectionInterfaceFlow": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "KQ_RESULT_INHERITANCE_CYCLE",
+      "subject": "5ec82633-f2d4-5e14-a9b1-eb992bac8298",
+      "message": "Cyclic result inheritance requires an established membership fixed point",
+      "families": {
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "KQ_RESULT_INHERITANCE_CYCLE",
+      "subject": "643d02aa-0e56-5d10-9b3c-f301561f4487",
+      "message": "Cyclic result inheritance requires an established membership fixed point",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "KQ_RESULT_INHERITANCE_CYCLE",
+      "subject": "75c57429-f867-5e06-8c5a-cb4666c48ade",
+      "message": "Cyclic result inheritance requires an established membership fixed point",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "KQ_RESULT_INHERITANCE_CYCLE",
+      "subject": "86de7286-c609-59e0-87ed-46cf6c3f4548",
+      "message": "Cyclic result inheritance requires an established membership fixed point",
+      "families": {
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "KQ_RESULT_INHERITANCE_CYCLE",
+      "subject": "888cda79-aaa5-5d72-a654-b35603802e37",
+      "message": "Cyclic result inheritance requires an established membership fixed point",
+      "families": {
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "KQ_RESULT_INHERITANCE_CYCLE",
+      "subject": "9f0f359c-0538-55f5-ad28-13fd27caee32",
+      "message": "Cyclic result inheritance requires an established membership fixed point",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "KQ_RESULT_INHERITANCE_CYCLE",
+      "subject": "a2119528-2e45-5c59-82c5-25828219bcde",
+      "message": "Cyclic result inheritance requires an established membership fixed point",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "KQ_RESULT_INHERITANCE_CYCLE",
+      "subject": "a84a5d47-666c-55ad-910a-665d3ca8e364",
+      "message": "Cyclic result inheritance requires an established membership fixed point",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "KQ_RESULT_INHERITANCE_CYCLE",
+      "subject": "b269c9a9-c168-57ca-bb1e-7de2462caa89",
+      "message": "Cyclic result inheritance requires an established membership fixed point",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "KQ_RESULT_INHERITANCE_CYCLE",
+      "subject": "d33b74d9-03dd-5f67-8b2d-6a621603eb0d",
+      "message": "Cyclic result inheritance requires an established membership fixed point",
+      "families": {
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "KQ_RESULT_INHERITANCE_CYCLE",
+      "subject": "f0fa074a-e058-5df1-80d2-1f352aafc916",
+      "message": "Cyclic result inheritance requires an established membership fixed point",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "SQ_ELEMENT_KIND",
+      "subject": "4167e261-a897-5f30-a4cb-0bc37f94b0ec",
+      "message": "Canonical element has the wrong SysML metaclass",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1,
+        "PortConnectionInterfaceFlow": 1
+      },
+      "category": "InheritedEndSuppression"
+    },
+    {
+      "code": "SQ_ELEMENT_KIND",
+      "subject": "51a76600-2466-5695-8c53-8e327f6302de",
+      "message": "Canonical element has the wrong SysML metaclass",
+      "families": {
+        "AttributeItemPart": 8,
+        "DefinitionUsage": 8,
+        "OccurrenceActionState": 8,
+        "PortConnectionInterfaceFlow": 8
+      },
+      "category": "ConnectionAuthority"
+    },
+    {
+      "code": "SQ_ELEMENT_KIND",
+      "subject": "cdcb027b-1d54-52bb-be1f-f48f1a8361f1",
+      "message": "Canonical element has the wrong SysML metaclass",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1,
+        "PortConnectionInterfaceFlow": 1
+      },
+      "category": "InheritedEndSuppression"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "0da1cb76-eed1-5f6f-aba7-0de8aff65f98",
+      "message": "effective return parameters is Incomplete; pending implications: {}",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "0df9add9-7323-573a-8427-e742241ec733",
+      "message": "effective return parameters is Incomplete; pending implications: {}",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "12bb4729-06c1-51b0-9974-891634003445",
+      "message": "effective attribute definitions is Incomplete; pending implications: {(ElementId(24898506738201639343725048459520128069), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "12bb4729-06c1-51b0-9974-891634003445",
+      "message": "effective names is Incomplete; pending implications: {(ElementId(24898506738201639343725048459520128069), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "VariationNaming"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "12bb4729-06c1-51b0-9974-891634003445",
+      "message": "effective ports is Incomplete; pending implications: {(ElementId(24898506738201639343725048459520128069), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "12bb4729-06c1-51b0-9974-891634003445",
+      "message": "effective redefinition is Incomplete; pending implications: {(ElementId(24898506738201639343725048459520128069), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "12bb4729-06c1-51b0-9974-891634003445",
+      "message": "effective return parameters is Incomplete; pending implications: {(ElementId(24898506738201639343725048459520128069), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "12bb4729-06c1-51b0-9974-891634003445",
+      "message": "effective subsetting is Incomplete; pending implications: {(ElementId(24898506738201639343725048459520128069), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "12bb4729-06c1-51b0-9974-891634003445",
+      "message": "effective usage types is Incomplete; pending implications: {(ElementId(24898506738201639343725048459520128069), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "12bb4729-06c1-51b0-9974-891634003445",
+      "message": "effective usages is Incomplete; pending implications: {(ElementId(24898506738201639343725048459520128069), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "140ef6ea-f727-51a0-89f6-61d454cb48c7",
+      "message": "effective return parameters is Incomplete; pending implications: {}",
+      "families": {
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "18da1d9a-37e3-547a-ac0e-bf9793f724b4",
+      "message": "effective parameters is Incomplete; pending implications: {}",
+      "families": {
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1,
+        "PortConnectionInterfaceFlow": 1
+      },
+      "category": "EndCycle"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "18da1d9a-37e3-547a-ac0e-bf9793f724b4",
+      "message": "effective return parameters is Incomplete; pending implications: {}",
+      "families": {
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1,
+        "PortConnectionInterfaceFlow": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "1c103c62-f7bc-5d06-90d5-71b210ddde11",
+      "message": "effective attribute definitions is Incomplete; pending implications: {(ElementId(37302685417320861962653132931731414545), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "1c103c62-f7bc-5d06-90d5-71b210ddde11",
+      "message": "effective names is Incomplete; pending implications: {(ElementId(37302685417320861962653132931731414545), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "VariationNaming"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "1c103c62-f7bc-5d06-90d5-71b210ddde11",
+      "message": "effective ports is Incomplete; pending implications: {(ElementId(37302685417320861962653132931731414545), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "1c103c62-f7bc-5d06-90d5-71b210ddde11",
+      "message": "effective redefinition is Incomplete; pending implications: {(ElementId(37302685417320861962653132931731414545), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "1c103c62-f7bc-5d06-90d5-71b210ddde11",
+      "message": "effective return parameters is Incomplete; pending implications: {(ElementId(37302685417320861962653132931731414545), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "1c103c62-f7bc-5d06-90d5-71b210ddde11",
+      "message": "effective subsetting is Incomplete; pending implications: {(ElementId(37302685417320861962653132931731414545), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "1c103c62-f7bc-5d06-90d5-71b210ddde11",
+      "message": "effective usage types is Incomplete; pending implications: {(ElementId(37302685417320861962653132931731414545), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "1c103c62-f7bc-5d06-90d5-71b210ddde11",
+      "message": "effective usages is Incomplete; pending implications: {(ElementId(37302685417320861962653132931731414545), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "1efd3834-9efb-585f-acae-295d328dfa6d",
+      "message": "effective attribute definitions is Incomplete; pending implications: {(ElementId(41191630962761532078051623903341443693), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "1efd3834-9efb-585f-acae-295d328dfa6d",
+      "message": "effective names is Incomplete; pending implications: {(ElementId(41191630962761532078051623903341443693), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "VariationNaming"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "1efd3834-9efb-585f-acae-295d328dfa6d",
+      "message": "effective ports is Incomplete; pending implications: {(ElementId(41191630962761532078051623903341443693), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "1efd3834-9efb-585f-acae-295d328dfa6d",
+      "message": "effective redefinition is Incomplete; pending implications: {(ElementId(41191630962761532078051623903341443693), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "1efd3834-9efb-585f-acae-295d328dfa6d",
+      "message": "effective return parameters is Incomplete; pending implications: {(ElementId(41191630962761532078051623903341443693), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "1efd3834-9efb-585f-acae-295d328dfa6d",
+      "message": "effective subsetting is Incomplete; pending implications: {(ElementId(41191630962761532078051623903341443693), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "1efd3834-9efb-585f-acae-295d328dfa6d",
+      "message": "effective usage types is Incomplete; pending implications: {(ElementId(41191630962761532078051623903341443693), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "1efd3834-9efb-585f-acae-295d328dfa6d",
+      "message": "effective usages is Incomplete; pending implications: {(ElementId(41191630962761532078051623903341443693), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "21234846-e44e-505e-ac35-424bc23fa18b",
+      "message": "effective attribute definitions is Incomplete; pending implications: {(ElementId(44047720201071039680516442597573501323), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "21234846-e44e-505e-ac35-424bc23fa18b",
+      "message": "effective names is Incomplete; pending implications: {(ElementId(44047720201071039680516442597573501323), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "VariationNaming"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "21234846-e44e-505e-ac35-424bc23fa18b",
+      "message": "effective ports is Incomplete; pending implications: {(ElementId(44047720201071039680516442597573501323), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "21234846-e44e-505e-ac35-424bc23fa18b",
+      "message": "effective redefinition is Incomplete; pending implications: {(ElementId(44047720201071039680516442597573501323), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "21234846-e44e-505e-ac35-424bc23fa18b",
+      "message": "effective return parameters is Incomplete; pending implications: {(ElementId(44047720201071039680516442597573501323), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "21234846-e44e-505e-ac35-424bc23fa18b",
+      "message": "effective subsetting is Incomplete; pending implications: {(ElementId(44047720201071039680516442597573501323), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "21234846-e44e-505e-ac35-424bc23fa18b",
+      "message": "effective usage types is Incomplete; pending implications: {(ElementId(44047720201071039680516442597573501323), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "21234846-e44e-505e-ac35-424bc23fa18b",
+      "message": "effective usages is Incomplete; pending implications: {(ElementId(44047720201071039680516442597573501323), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "221542a4-584d-5f0b-9142-50dff2e8763d",
+      "message": "effective return parameters is Incomplete; pending implications: {}",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "29480f97-23d3-5c60-8e2d-11d822639e86",
+      "message": "effective return parameters is Incomplete; pending implications: {}",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "295d6c7a-fffd-5727-85e7-03deffb83594",
+      "message": "effective attribute definitions is Incomplete; pending implications: {(ElementId(54983431680323258190925605568410826132), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "295d6c7a-fffd-5727-85e7-03deffb83594",
+      "message": "effective names is Incomplete; pending implications: {(ElementId(54983431680323258190925605568410826132), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "VariationNaming"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "295d6c7a-fffd-5727-85e7-03deffb83594",
+      "message": "effective ports is Incomplete; pending implications: {(ElementId(54983431680323258190925605568410826132), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "295d6c7a-fffd-5727-85e7-03deffb83594",
+      "message": "effective redefinition is Incomplete; pending implications: {(ElementId(54983431680323258190925605568410826132), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "295d6c7a-fffd-5727-85e7-03deffb83594",
+      "message": "effective return parameters is Incomplete; pending implications: {(ElementId(54983431680323258190925605568410826132), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "295d6c7a-fffd-5727-85e7-03deffb83594",
+      "message": "effective subsetting is Incomplete; pending implications: {(ElementId(54983431680323258190925605568410826132), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "295d6c7a-fffd-5727-85e7-03deffb83594",
+      "message": "effective usage types is Incomplete; pending implications: {(ElementId(54983431680323258190925605568410826132), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "295d6c7a-fffd-5727-85e7-03deffb83594",
+      "message": "effective usages is Incomplete; pending implications: {(ElementId(54983431680323258190925605568410826132), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "3b9fab91-096f-5012-841c-ad946c367fdf",
+      "message": "effective parameters is Incomplete; pending implications: {}",
+      "families": {
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1,
+        "PortConnectionInterfaceFlow": 1
+      },
+      "category": "EndCycle"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "3b9fab91-096f-5012-841c-ad946c367fdf",
+      "message": "effective return parameters is Incomplete; pending implications: {}",
+      "families": {
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1,
+        "PortConnectionInterfaceFlow": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "3d57badd-1709-5fb8-a860-e80f3b411ae2",
+      "message": "effective ports is Incomplete; pending implications: {(ElementId(129624720300589272725955243318417924872), Variation)}",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "3d57badd-1709-5fb8-a860-e80f3b411ae2",
+      "message": "effective redefinition is Incomplete; pending implications: {(ElementId(129624720300589272725955243318417924872), Variation)}",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "3d57badd-1709-5fb8-a860-e80f3b411ae2",
+      "message": "effective return parameters is Incomplete; pending implications: {(ElementId(129624720300589272725955243318417924872), Variation)}",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "3d57badd-1709-5fb8-a860-e80f3b411ae2",
+      "message": "effective subsetting is Incomplete; pending implications: {(ElementId(129624720300589272725955243318417924872), Variation)}",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "3d57badd-1709-5fb8-a860-e80f3b411ae2",
+      "message": "effective usages is Incomplete; pending implications: {(ElementId(129624720300589272725955243318417924872), Variation)}",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "3dbf09d5-eb9a-5eca-9b34-9091ee102a4c",
+      "message": "effective return parameters is Incomplete; pending implications: {}",
+      "families": {
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "48f9c5fd-08f3-5c26-b486-52114a5a2ffe",
+      "message": "effective attribute definitions is Incomplete; pending implications: {(ElementId(97001313296476234640967119756779466750), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "48f9c5fd-08f3-5c26-b486-52114a5a2ffe",
+      "message": "effective names is Incomplete; pending implications: {(ElementId(97001313296476234640967119756779466750), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "VariationNaming"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "48f9c5fd-08f3-5c26-b486-52114a5a2ffe",
+      "message": "effective ports is Incomplete; pending implications: {(ElementId(97001313296476234640967119756779466750), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "48f9c5fd-08f3-5c26-b486-52114a5a2ffe",
+      "message": "effective redefinition is Incomplete; pending implications: {(ElementId(97001313296476234640967119756779466750), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "48f9c5fd-08f3-5c26-b486-52114a5a2ffe",
+      "message": "effective return parameters is Incomplete; pending implications: {(ElementId(97001313296476234640967119756779466750), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "48f9c5fd-08f3-5c26-b486-52114a5a2ffe",
+      "message": "effective subsetting is Incomplete; pending implications: {(ElementId(97001313296476234640967119756779466750), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "48f9c5fd-08f3-5c26-b486-52114a5a2ffe",
+      "message": "effective usage types is Incomplete; pending implications: {(ElementId(97001313296476234640967119756779466750), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "48f9c5fd-08f3-5c26-b486-52114a5a2ffe",
+      "message": "effective usages is Incomplete; pending implications: {(ElementId(97001313296476234640967119756779466750), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "515638fd-0ff9-53fc-a6ba-05e1d820e62c",
+      "message": "effective return parameters is Incomplete; pending implications: {}",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "5e756f07-e2c7-56e7-8a4c-7b5283d66543",
+      "message": "effective parameters is Incomplete; pending implications: {}",
+      "families": {
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1,
+        "PortConnectionInterfaceFlow": 1
+      },
+      "category": "EndCycle"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "5e756f07-e2c7-56e7-8a4c-7b5283d66543",
+      "message": "effective return parameters is Incomplete; pending implications: {}",
+      "families": {
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1,
+        "PortConnectionInterfaceFlow": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "5ec82633-f2d4-5e14-a9b1-eb992bac8298",
+      "message": "effective return parameters is Incomplete; pending implications: {}",
+      "families": {
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "5fde4cef-fba6-5dae-8dc7-8851a3483a12",
+      "message": "effective attribute definitions is Incomplete; pending implications: {(ElementId(127430909978704319646770646319135996434), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "5fde4cef-fba6-5dae-8dc7-8851a3483a12",
+      "message": "effective names is Incomplete; pending implications: {(ElementId(127430909978704319646770646319135996434), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "VariationNaming"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "5fde4cef-fba6-5dae-8dc7-8851a3483a12",
+      "message": "effective ports is Incomplete; pending implications: {(ElementId(127430909978704319646770646319135996434), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "5fde4cef-fba6-5dae-8dc7-8851a3483a12",
+      "message": "effective redefinition is Incomplete; pending implications: {(ElementId(127430909978704319646770646319135996434), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "5fde4cef-fba6-5dae-8dc7-8851a3483a12",
+      "message": "effective return parameters is Incomplete; pending implications: {(ElementId(127430909978704319646770646319135996434), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "5fde4cef-fba6-5dae-8dc7-8851a3483a12",
+      "message": "effective subsetting is Incomplete; pending implications: {(ElementId(127430909978704319646770646319135996434), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "5fde4cef-fba6-5dae-8dc7-8851a3483a12",
+      "message": "effective usage types is Incomplete; pending implications: {(ElementId(127430909978704319646770646319135996434), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "5fde4cef-fba6-5dae-8dc7-8851a3483a12",
+      "message": "effective usages is Incomplete; pending implications: {(ElementId(127430909978704319646770646319135996434), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "6184d023-2020-50f5-9d59-ba219191a308",
+      "message": "effective attribute definitions is Incomplete; pending implications: {(ElementId(129624720300589272725955243318417924872), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "6184d023-2020-50f5-9d59-ba219191a308",
+      "message": "effective names is Incomplete; pending implications: {(ElementId(129624720300589272725955243318417924872), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "VariationNaming"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "6184d023-2020-50f5-9d59-ba219191a308",
+      "message": "effective ports is Incomplete; pending implications: {(ElementId(129624720300589272725955243318417924872), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "6184d023-2020-50f5-9d59-ba219191a308",
+      "message": "effective redefinition is Incomplete; pending implications: {(ElementId(129624720300589272725955243318417924872), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "6184d023-2020-50f5-9d59-ba219191a308",
+      "message": "effective return parameters is Incomplete; pending implications: {(ElementId(129624720300589272725955243318417924872), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "6184d023-2020-50f5-9d59-ba219191a308",
+      "message": "effective subsetting is Incomplete; pending implications: {(ElementId(129624720300589272725955243318417924872), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "6184d023-2020-50f5-9d59-ba219191a308",
+      "message": "effective usage types is Incomplete; pending implications: {(ElementId(129624720300589272725955243318417924872), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "6184d023-2020-50f5-9d59-ba219191a308",
+      "message": "effective usages is Incomplete; pending implications: {(ElementId(129624720300589272725955243318417924872), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "643d02aa-0e56-5d10-9b3c-f301561f4487",
+      "message": "effective return parameters is Incomplete; pending implications: {}",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "6687c3b3-3fa7-5c18-8ecc-b011e89eae80",
+      "message": "effective attribute definitions is Incomplete; pending implications: {(ElementId(136286184917377304036437493129232166528), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "6687c3b3-3fa7-5c18-8ecc-b011e89eae80",
+      "message": "effective names is Incomplete; pending implications: {(ElementId(136286184917377304036437493129232166528), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "VariationNaming"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "6687c3b3-3fa7-5c18-8ecc-b011e89eae80",
+      "message": "effective ports is Incomplete; pending implications: {(ElementId(136286184917377304036437493129232166528), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "6687c3b3-3fa7-5c18-8ecc-b011e89eae80",
+      "message": "effective redefinition is Incomplete; pending implications: {(ElementId(136286184917377304036437493129232166528), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "6687c3b3-3fa7-5c18-8ecc-b011e89eae80",
+      "message": "effective return parameters is Incomplete; pending implications: {(ElementId(136286184917377304036437493129232166528), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "6687c3b3-3fa7-5c18-8ecc-b011e89eae80",
+      "message": "effective subsetting is Incomplete; pending implications: {(ElementId(136286184917377304036437493129232166528), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "6687c3b3-3fa7-5c18-8ecc-b011e89eae80",
+      "message": "effective usage types is Incomplete; pending implications: {(ElementId(136286184917377304036437493129232166528), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "6687c3b3-3fa7-5c18-8ecc-b011e89eae80",
+      "message": "effective usages is Incomplete; pending implications: {(ElementId(136286184917377304036437493129232166528), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "75c57429-f867-5e06-8c5a-cb4666c48ade",
+      "message": "effective return parameters is Incomplete; pending implications: {}",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "7e26cc61-c229-5031-ac43-20946f5108b9",
+      "message": "effective attribute definitions is Incomplete; pending implications: {(ElementId(167684180106304668829738113400872962233), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "7e26cc61-c229-5031-ac43-20946f5108b9",
+      "message": "effective names is Incomplete; pending implications: {(ElementId(167684180106304668829738113400872962233), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "VariationNaming"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "7e26cc61-c229-5031-ac43-20946f5108b9",
+      "message": "effective ports is Incomplete; pending implications: {(ElementId(167684180106304668829738113400872962233), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "7e26cc61-c229-5031-ac43-20946f5108b9",
+      "message": "effective redefinition is Incomplete; pending implications: {(ElementId(167684180106304668829738113400872962233), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "7e26cc61-c229-5031-ac43-20946f5108b9",
+      "message": "effective return parameters is Incomplete; pending implications: {(ElementId(167684180106304668829738113400872962233), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "7e26cc61-c229-5031-ac43-20946f5108b9",
+      "message": "effective subsetting is Incomplete; pending implications: {(ElementId(167684180106304668829738113400872962233), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "7e26cc61-c229-5031-ac43-20946f5108b9",
+      "message": "effective usage types is Incomplete; pending implications: {(ElementId(167684180106304668829738113400872962233), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "7e26cc61-c229-5031-ac43-20946f5108b9",
+      "message": "effective usages is Incomplete; pending implications: {(ElementId(167684180106304668829738113400872962233), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "86de7286-c609-59e0-87ed-46cf6c3f4548",
+      "message": "effective return parameters is Incomplete; pending implications: {}",
+      "families": {
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "888cda79-aaa5-5d72-a654-b35603802e37",
+      "message": "effective return parameters is Incomplete; pending implications: {}",
+      "families": {
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "8ce7e6db-fd66-5ba1-9cd9-a09a77092859",
+      "message": "effective interface ends is Invalid; pending implications: {}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1,
+        "PortConnectionInterfaceFlow": 1
+      },
+      "category": "InheritedEndSuppression"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "8e5fc3a7-4224-5f80-8c41-801c3bb1b6ca",
+      "message": "current item definitions is Invalid; pending implications: {}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1,
+        "PortConnectionInterfaceFlow": 1
+      },
+      "category": "TypedProjection"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "8e5fc3a7-4224-5f80-8c41-801c3bb1b6ca",
+      "message": "current part definitions is Invalid; pending implications: {}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1,
+        "PortConnectionInterfaceFlow": 1
+      },
+      "category": "TypedProjection"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "8e5fc3a7-4224-5f80-8c41-801c3bb1b6ca",
+      "message": "effective item definitions is Invalid; pending implications: {}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1,
+        "PortConnectionInterfaceFlow": 1
+      },
+      "category": "TypedProjection"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "8e5fc3a7-4224-5f80-8c41-801c3bb1b6ca",
+      "message": "effective part definitions is Invalid; pending implications: {}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1,
+        "PortConnectionInterfaceFlow": 1
+      },
+      "category": "TypedProjection"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "8f6ef46c-b509-5108-a9a7-b9f90142f5c9",
+      "message": "effective attribute definitions is Incomplete; pending implications: {(ElementId(190655713572294693194038665773700019657), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "8f6ef46c-b509-5108-a9a7-b9f90142f5c9",
+      "message": "effective names is Incomplete; pending implications: {(ElementId(190655713572294693194038665773700019657), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "VariationNaming"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "8f6ef46c-b509-5108-a9a7-b9f90142f5c9",
+      "message": "effective ports is Incomplete; pending implications: {(ElementId(190655713572294693194038665773700019657), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "8f6ef46c-b509-5108-a9a7-b9f90142f5c9",
+      "message": "effective redefinition is Incomplete; pending implications: {(ElementId(190655713572294693194038665773700019657), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "8f6ef46c-b509-5108-a9a7-b9f90142f5c9",
+      "message": "effective return parameters is Incomplete; pending implications: {(ElementId(190655713572294693194038665773700019657), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "8f6ef46c-b509-5108-a9a7-b9f90142f5c9",
+      "message": "effective subsetting is Incomplete; pending implications: {(ElementId(190655713572294693194038665773700019657), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "8f6ef46c-b509-5108-a9a7-b9f90142f5c9",
+      "message": "effective usage types is Incomplete; pending implications: {(ElementId(190655713572294693194038665773700019657), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "8f6ef46c-b509-5108-a9a7-b9f90142f5c9",
+      "message": "effective usages is Incomplete; pending implications: {(ElementId(190655713572294693194038665773700019657), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "949099ff-2b5a-567f-9f7a-1d130c14ea43",
+      "message": "effective attribute definitions is Incomplete; pending implications: {(ElementId(197476557549064431435081494774376884803), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "949099ff-2b5a-567f-9f7a-1d130c14ea43",
+      "message": "effective names is Incomplete; pending implications: {(ElementId(197476557549064431435081494774376884803), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "VariationNaming"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "949099ff-2b5a-567f-9f7a-1d130c14ea43",
+      "message": "effective ports is Incomplete; pending implications: {(ElementId(197476557549064431435081494774376884803), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "949099ff-2b5a-567f-9f7a-1d130c14ea43",
+      "message": "effective redefinition is Incomplete; pending implications: {(ElementId(197476557549064431435081494774376884803), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "949099ff-2b5a-567f-9f7a-1d130c14ea43",
+      "message": "effective return parameters is Incomplete; pending implications: {(ElementId(197476557549064431435081494774376884803), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "949099ff-2b5a-567f-9f7a-1d130c14ea43",
+      "message": "effective subsetting is Incomplete; pending implications: {(ElementId(197476557549064431435081494774376884803), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "949099ff-2b5a-567f-9f7a-1d130c14ea43",
+      "message": "effective usage types is Incomplete; pending implications: {(ElementId(197476557549064431435081494774376884803), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "949099ff-2b5a-567f-9f7a-1d130c14ea43",
+      "message": "effective usages is Incomplete; pending implications: {(ElementId(197476557549064431435081494774376884803), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "94b023c4-1fe6-5248-9e28-81c0a78f2872",
+      "message": "effective attribute definitions is Incomplete; pending implications: {(ElementId(197640313046198136273246550743994804338), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "94b023c4-1fe6-5248-9e28-81c0a78f2872",
+      "message": "effective names is Incomplete; pending implications: {(ElementId(197640313046198136273246550743994804338), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "VariationNaming"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "94b023c4-1fe6-5248-9e28-81c0a78f2872",
+      "message": "effective ports is Incomplete; pending implications: {(ElementId(197640313046198136273246550743994804338), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "94b023c4-1fe6-5248-9e28-81c0a78f2872",
+      "message": "effective redefinition is Incomplete; pending implications: {(ElementId(197640313046198136273246550743994804338), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "94b023c4-1fe6-5248-9e28-81c0a78f2872",
+      "message": "effective return parameters is Incomplete; pending implications: {(ElementId(197640313046198136273246550743994804338), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "94b023c4-1fe6-5248-9e28-81c0a78f2872",
+      "message": "effective subsetting is Incomplete; pending implications: {(ElementId(197640313046198136273246550743994804338), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "94b023c4-1fe6-5248-9e28-81c0a78f2872",
+      "message": "effective usage types is Incomplete; pending implications: {(ElementId(197640313046198136273246550743994804338), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "94b023c4-1fe6-5248-9e28-81c0a78f2872",
+      "message": "effective usages is Incomplete; pending implications: {(ElementId(197640313046198136273246550743994804338), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "9f0f359c-0538-55f5-ad28-13fd27caee32",
+      "message": "effective return parameters is Incomplete; pending implications: {}",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "a2119528-2e45-5c59-82c5-25828219bcde",
+      "message": "effective return parameters is Incomplete; pending implications: {}",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "a84a5d47-666c-55ad-910a-665d3ca8e364",
+      "message": "effective return parameters is Incomplete; pending implications: {}",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "b269c9a9-c168-57ca-bb1e-7de2462caa89",
+      "message": "effective return parameters is Incomplete; pending implications: {}",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "b271e4e7-bb49-5551-936a-c88d1bbbd546",
+      "message": "effective attribute definitions is Incomplete; pending implications: {(ElementId(237193955543786985602203479748141372742), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "b271e4e7-bb49-5551-936a-c88d1bbbd546",
+      "message": "effective names is Incomplete; pending implications: {(ElementId(237193955543786985602203479748141372742), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "VariationNaming"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "b271e4e7-bb49-5551-936a-c88d1bbbd546",
+      "message": "effective ports is Incomplete; pending implications: {(ElementId(237193955543786985602203479748141372742), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "b271e4e7-bb49-5551-936a-c88d1bbbd546",
+      "message": "effective redefinition is Incomplete; pending implications: {(ElementId(237193955543786985602203479748141372742), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "b271e4e7-bb49-5551-936a-c88d1bbbd546",
+      "message": "effective return parameters is Incomplete; pending implications: {(ElementId(237193955543786985602203479748141372742), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "b271e4e7-bb49-5551-936a-c88d1bbbd546",
+      "message": "effective subsetting is Incomplete; pending implications: {(ElementId(237193955543786985602203479748141372742), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "b271e4e7-bb49-5551-936a-c88d1bbbd546",
+      "message": "effective usage types is Incomplete; pending implications: {(ElementId(237193955543786985602203479748141372742), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "b271e4e7-bb49-5551-936a-c88d1bbbd546",
+      "message": "effective usages is Incomplete; pending implications: {(ElementId(237193955543786985602203479748141372742), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "b525bc8d-bc1a-51ad-bd4d-a044ecd377ce",
+      "message": "effective attribute definitions is Incomplete; pending implications: {(ElementId(240786206543226962277491434583944820686), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "b525bc8d-bc1a-51ad-bd4d-a044ecd377ce",
+      "message": "effective names is Incomplete; pending implications: {(ElementId(240786206543226962277491434583944820686), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "VariationNaming"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "b525bc8d-bc1a-51ad-bd4d-a044ecd377ce",
+      "message": "effective ports is Incomplete; pending implications: {(ElementId(240786206543226962277491434583944820686), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "b525bc8d-bc1a-51ad-bd4d-a044ecd377ce",
+      "message": "effective redefinition is Incomplete; pending implications: {(ElementId(240786206543226962277491434583944820686), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "b525bc8d-bc1a-51ad-bd4d-a044ecd377ce",
+      "message": "effective return parameters is Incomplete; pending implications: {(ElementId(240786206543226962277491434583944820686), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "b525bc8d-bc1a-51ad-bd4d-a044ecd377ce",
+      "message": "effective subsetting is Incomplete; pending implications: {(ElementId(240786206543226962277491434583944820686), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "b525bc8d-bc1a-51ad-bd4d-a044ecd377ce",
+      "message": "effective usage types is Incomplete; pending implications: {(ElementId(240786206543226962277491434583944820686), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "b525bc8d-bc1a-51ad-bd4d-a044ecd377ce",
+      "message": "effective usages is Incomplete; pending implications: {(ElementId(240786206543226962277491434583944820686), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "c7138546-28c0-5788-9519-0297d7a38d7d",
+      "message": "effective attribute definitions is Incomplete; pending implications: {(ElementId(264617727920571009619074337429958921597), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "c7138546-28c0-5788-9519-0297d7a38d7d",
+      "message": "effective names is Incomplete; pending implications: {(ElementId(264617727920571009619074337429958921597), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "VariationNaming"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "c7138546-28c0-5788-9519-0297d7a38d7d",
+      "message": "effective ports is Incomplete; pending implications: {(ElementId(264617727920571009619074337429958921597), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "c7138546-28c0-5788-9519-0297d7a38d7d",
+      "message": "effective redefinition is Incomplete; pending implications: {(ElementId(264617727920571009619074337429958921597), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "c7138546-28c0-5788-9519-0297d7a38d7d",
+      "message": "effective return parameters is Incomplete; pending implications: {(ElementId(264617727920571009619074337429958921597), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "c7138546-28c0-5788-9519-0297d7a38d7d",
+      "message": "effective subsetting is Incomplete; pending implications: {(ElementId(264617727920571009619074337429958921597), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "c7138546-28c0-5788-9519-0297d7a38d7d",
+      "message": "effective usage types is Incomplete; pending implications: {(ElementId(264617727920571009619074337429958921597), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "c7138546-28c0-5788-9519-0297d7a38d7d",
+      "message": "effective usages is Incomplete; pending implications: {(ElementId(264617727920571009619074337429958921597), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "c72d52b7-ed09-54bb-97cf-90ef40d66741",
+      "message": "effective attribute definitions is Incomplete; pending implications: {(ElementId(264751702249532793297790157785147008833), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "c72d52b7-ed09-54bb-97cf-90ef40d66741",
+      "message": "effective names is Incomplete; pending implications: {(ElementId(264751702249532793297790157785147008833), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "VariationNaming"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "c72d52b7-ed09-54bb-97cf-90ef40d66741",
+      "message": "effective ports is Incomplete; pending implications: {(ElementId(264751702249532793297790157785147008833), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "c72d52b7-ed09-54bb-97cf-90ef40d66741",
+      "message": "effective redefinition is Incomplete; pending implications: {(ElementId(264751702249532793297790157785147008833), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "c72d52b7-ed09-54bb-97cf-90ef40d66741",
+      "message": "effective return parameters is Incomplete; pending implications: {(ElementId(264751702249532793297790157785147008833), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "c72d52b7-ed09-54bb-97cf-90ef40d66741",
+      "message": "effective subsetting is Incomplete; pending implications: {(ElementId(264751702249532793297790157785147008833), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "c72d52b7-ed09-54bb-97cf-90ef40d66741",
+      "message": "effective usage types is Incomplete; pending implications: {(ElementId(264751702249532793297790157785147008833), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "c72d52b7-ed09-54bb-97cf-90ef40d66741",
+      "message": "effective usages is Incomplete; pending implications: {(ElementId(264751702249532793297790157785147008833), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "c8860228-be93-5116-8bf1-c22a2efbbbf2",
+      "message": "effective attribute definitions is Incomplete; pending implications: {(ElementId(266541410728952796246035300336799562738), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "c8860228-be93-5116-8bf1-c22a2efbbbf2",
+      "message": "effective names is Incomplete; pending implications: {(ElementId(266541410728952796246035300336799562738), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "VariationNaming"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "c8860228-be93-5116-8bf1-c22a2efbbbf2",
+      "message": "effective ports is Incomplete; pending implications: {(ElementId(266541410728952796246035300336799562738), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "c8860228-be93-5116-8bf1-c22a2efbbbf2",
+      "message": "effective redefinition is Incomplete; pending implications: {(ElementId(266541410728952796246035300336799562738), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "c8860228-be93-5116-8bf1-c22a2efbbbf2",
+      "message": "effective return parameters is Incomplete; pending implications: {(ElementId(266541410728952796246035300336799562738), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "c8860228-be93-5116-8bf1-c22a2efbbbf2",
+      "message": "effective subsetting is Incomplete; pending implications: {(ElementId(266541410728952796246035300336799562738), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "c8860228-be93-5116-8bf1-c22a2efbbbf2",
+      "message": "effective usage types is Incomplete; pending implications: {(ElementId(266541410728952796246035300336799562738), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "c8860228-be93-5116-8bf1-c22a2efbbbf2",
+      "message": "effective usages is Incomplete; pending implications: {(ElementId(266541410728952796246035300336799562738), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "d33b74d9-03dd-5f67-8b2d-6a621603eb0d",
+      "message": "effective return parameters is Incomplete; pending implications: {}",
+      "families": {
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "e5222938-6eec-512d-a197-244f755feede",
+      "message": "effective attribute definitions is Incomplete; pending implications: {(ElementId(304570585177835810478841561843584986846), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "e5222938-6eec-512d-a197-244f755feede",
+      "message": "effective names is Incomplete; pending implications: {(ElementId(304570585177835810478841561843584986846), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "VariationNaming"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "e5222938-6eec-512d-a197-244f755feede",
+      "message": "effective ports is Incomplete; pending implications: {(ElementId(304570585177835810478841561843584986846), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "e5222938-6eec-512d-a197-244f755feede",
+      "message": "effective redefinition is Incomplete; pending implications: {(ElementId(304570585177835810478841561843584986846), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "e5222938-6eec-512d-a197-244f755feede",
+      "message": "effective return parameters is Incomplete; pending implications: {(ElementId(304570585177835810478841561843584986846), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "e5222938-6eec-512d-a197-244f755feede",
+      "message": "effective subsetting is Incomplete; pending implications: {(ElementId(304570585177835810478841561843584986846), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "e5222938-6eec-512d-a197-244f755feede",
+      "message": "effective usage types is Incomplete; pending implications: {(ElementId(304570585177835810478841561843584986846), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "e5222938-6eec-512d-a197-244f755feede",
+      "message": "effective usages is Incomplete; pending implications: {(ElementId(304570585177835810478841561843584986846), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "e76d30a1-2f36-584d-8dce-409db017b746",
+      "message": "current item definitions is Invalid; pending implications: {}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1,
+        "PortConnectionInterfaceFlow": 1
+      },
+      "category": "TypedProjection"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "e76d30a1-2f36-584d-8dce-409db017b746",
+      "message": "current part definitions is Invalid; pending implications: {}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1,
+        "PortConnectionInterfaceFlow": 1
+      },
+      "category": "TypedProjection"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "e76d30a1-2f36-584d-8dce-409db017b746",
+      "message": "effective item definitions is Invalid; pending implications: {}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1,
+        "PortConnectionInterfaceFlow": 1
+      },
+      "category": "TypedProjection"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "e76d30a1-2f36-584d-8dce-409db017b746",
+      "message": "effective part definitions is Invalid; pending implications: {}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "OccurrenceActionState": 1,
+        "PortConnectionInterfaceFlow": 1
+      },
+      "category": "TypedProjection"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "f0fa074a-e058-5df1-80d2-1f352aafc916",
+      "message": "effective return parameters is Incomplete; pending implications: {}",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "ResultCycle"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "f45a71f0-8f41-5522-8bfc-e5ff8407fbcc",
+      "message": "effective attribute definitions is Incomplete; pending implications: {(ElementId(324801248660167162158450424168942402508), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "f45a71f0-8f41-5522-8bfc-e5ff8407fbcc",
+      "message": "effective names is Incomplete; pending implications: {(ElementId(324801248660167162158450424168942402508), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "VariationNaming"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "f45a71f0-8f41-5522-8bfc-e5ff8407fbcc",
+      "message": "effective ports is Incomplete; pending implications: {(ElementId(324801248660167162158450424168942402508), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "f45a71f0-8f41-5522-8bfc-e5ff8407fbcc",
+      "message": "effective redefinition is Incomplete; pending implications: {(ElementId(324801248660167162158450424168942402508), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "f45a71f0-8f41-5522-8bfc-e5ff8407fbcc",
+      "message": "effective return parameters is Incomplete; pending implications: {(ElementId(324801248660167162158450424168942402508), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "f45a71f0-8f41-5522-8bfc-e5ff8407fbcc",
+      "message": "effective subsetting is Incomplete; pending implications: {(ElementId(324801248660167162158450424168942402508), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "f45a71f0-8f41-5522-8bfc-e5ff8407fbcc",
+      "message": "effective usage types is Incomplete; pending implications: {(ElementId(324801248660167162158450424168942402508), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "f45a71f0-8f41-5522-8bfc-e5ff8407fbcc",
+      "message": "effective usages is Incomplete; pending implications: {(ElementId(324801248660167162158450424168942402508), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "f61de17e-ffe3-5853-8589-9759b63a7daf",
+      "message": "effective ports is Incomplete; pending implications: {(ElementId(190655713572294693194038665773700019657), Variation)}",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "f61de17e-ffe3-5853-8589-9759b63a7daf",
+      "message": "effective redefinition is Incomplete; pending implications: {(ElementId(190655713572294693194038665773700019657), Variation)}",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "f61de17e-ffe3-5853-8589-9759b63a7daf",
+      "message": "effective return parameters is Incomplete; pending implications: {(ElementId(190655713572294693194038665773700019657), Variation)}",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "f61de17e-ffe3-5853-8589-9759b63a7daf",
+      "message": "effective subsetting is Incomplete; pending implications: {(ElementId(190655713572294693194038665773700019657), Variation)}",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "f61de17e-ffe3-5853-8589-9759b63a7daf",
+      "message": "effective usages is Incomplete; pending implications: {(ElementId(190655713572294693194038665773700019657), Variation)}",
+      "families": {
+        "DefinitionUsage": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "fd38864c-604f-5b3a-b5c1-8e40d7a4da3f",
+      "message": "effective attribute definitions is Incomplete; pending implications: {(ElementId(336588175451695403500744045402142333503), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "fd38864c-604f-5b3a-b5c1-8e40d7a4da3f",
+      "message": "effective names is Incomplete; pending implications: {(ElementId(336588175451695403500744045402142333503), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "VariationNaming"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "fd38864c-604f-5b3a-b5c1-8e40d7a4da3f",
+      "message": "effective ports is Incomplete; pending implications: {(ElementId(336588175451695403500744045402142333503), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "fd38864c-604f-5b3a-b5c1-8e40d7a4da3f",
+      "message": "effective redefinition is Incomplete; pending implications: {(ElementId(336588175451695403500744045402142333503), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "fd38864c-604f-5b3a-b5c1-8e40d7a4da3f",
+      "message": "effective return parameters is Incomplete; pending implications: {(ElementId(336588175451695403500744045402142333503), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "fd38864c-604f-5b3a-b5c1-8e40d7a4da3f",
+      "message": "effective subsetting is Incomplete; pending implications: {(ElementId(336588175451695403500744045402142333503), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "fd38864c-604f-5b3a-b5c1-8e40d7a4da3f",
+      "message": "effective usage types is Incomplete; pending implications: {(ElementId(336588175451695403500744045402142333503), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    },
+    {
+      "code": "SQ_PUBLICATION_TYPED_QUERY",
+      "subject": "fd38864c-604f-5b3a-b5c1-8e40d7a4da3f",
+      "message": "effective usages is Incomplete; pending implications: {(ElementId(336588175451695403500744045402142333503), Variation)}",
+      "families": {
+        "AttributeItemPart": 1,
+        "DefinitionUsage": 1,
+        "ViewMetadata": 1
+      },
+      "category": "EnumerationConstruction"
+    }
+  ]
+}

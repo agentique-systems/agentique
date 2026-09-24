@@ -125,6 +125,68 @@ impl SystemsPublicationAudit {
     }
 }
 
+impl SystemsLibraryCandidate {
+    /// Run every effective SysML publication operation on the local candidate
+    /// population. This is a scoped regression gate, never publication authority.
+    /// It uses the candidate's exact scheduler certificate and dependency contract;
+    /// missing closure evidence cannot be substituted with a successful query run.
+    pub fn audit_effective_population(
+        &self,
+        mode: SystemsFinalizationAuditMode,
+    ) -> Result<SystemsPublicationAudit, SystemsPublicationError> {
+        let draft = self.draft();
+        let overlay = draft.semantic_candidate().ok_or_else(|| {
+            SystemsPublicationError::Rejected(Box::new(SystemsPublicationAudit {
+                findings: vec![SystemsPublicationFinding::Identity(
+                    "semantic candidate missing",
+                )],
+                ..Default::default()
+            }))
+        })?;
+        let certificate = draft.producer_closure().ok_or_else(|| {
+            SystemsPublicationError::Rejected(Box::new(SystemsPublicationAudit {
+                findings: vec![SystemsPublicationFinding::Identity(
+                    "scheduler closure certificate missing",
+                )],
+                ..Default::default()
+            }))
+        })?;
+        let contract = self.dependency_contract();
+        let context = SysmlSemanticContext::for_producer_construction_overlay(
+            overlay,
+            self.accepted_kerml().complete_overlay(),
+            draft.roots(),
+            contract,
+            StandardSysmlBindings::unbound(contract.systems_library.clone()),
+        )?
+        .with_producer_closure(certificate.clone())?;
+        let mut audit = SystemsPublicationAudit::default();
+        if !certificate.is_fully_closed(context.model()) {
+            audit
+                .findings
+                .push(SystemsPublicationFinding::ProducerClosureRequirements);
+        }
+        let subjects: Vec<_> = context
+            .model()
+            .elements()
+            .filter(|record| !draft.candidate().is_dependency_element(record.id()))
+            .map(|record| record.id())
+            .collect();
+        audit_population_batches(
+            &subjects,
+            &mut audit,
+            &mut AuditLog::disabled_with_mode(mode),
+            |batch| {
+                let q = SysmlQueries::new(context.fork());
+                let mut findings = SystemsPublicationAudit::default();
+                audit_sysml_population(&q, batch, &mut findings);
+                findings
+            },
+        )?;
+        Ok(audit)
+    }
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum SystemsPublicationError {
     #[error(transparent)]

@@ -1,0 +1,97 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "prior-audit-classification",
+      "command": [
+        "python",
+        "verification/scripts/classify_systems_final_audit.py",
+        "--report",
+        "verification/generated/systems-finalization/.accepted.candidate-20172988-64ac-4178-9654-be4bb021a245/report.json",
+        "--subjects",
+        "verification/generated/systems-finalization/finding-subjects.json",
+        "--output",
+        "verification/fixtures/final-audit-semantic-closure/prior-classification.json"
+      ],
+      "exit_code": 1,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "b3cc853ab7ae763a9bdf07347437f665c444e2bf",
+      "working_changes_sha256": "7dabf837c991edef9836980f6489f2028b85fed447c68ab7eb47cfcc6502d199",
+      "output_sha256": "0a6bb6db85ca07be2b230ce8c63fa27dcad2792109596a41a956fa6bad18c3db",
+      "duration_seconds": 0.09,
+      "output": "verification/generated/final-audit-semantic-closure/prior-audit-classification.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "scoped-audit-compile",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "b3cc853ab7ae763a9bdf07347437f665c444e2bf",
+      "working_changes_sha256": "441b17633347e5d6bc45ab5ea8761d383fdce918e0536c7589239e42612b43c8",
+      "output_sha256": "8e118a831bf8275e503067dbc5fabb123ef8074743c01a90185727fea61c5c80",
+      "duration_seconds": 4.33,
+      "output": "verification/generated/final-audit-semantic-closure/scoped-audit-compile.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-finalization"
+      }
+    },
+    {
+      "name": "prior-audit-classification-complete",
+      "command": [
+        "python",
+        "verification/scripts/classify_systems_final_audit.py",
+        "--report",
+        "verification/generated/systems-finalization/.accepted.candidate-20172988-64ac-4178-9654-be4bb021a245/report.json",
+        "--subjects",
+        "verification/generated/systems-finalization/finding-subjects.json",
+        "--dependency-cache",
+        "verification/generated/kerml-v9-publication/canonical.publication.zip",
+        "--output",
+        "verification/fixtures/final-audit-semantic-closure/prior-classification.json"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "b3cc853ab7ae763a9bdf07347437f665c444e2bf",
+      "working_changes_sha256": "6c814da298002993901a6e21df65a3248d95bafbc1c4a398971c4d18b2fef5ad",
+      "output_sha256": "12bd9c953184456c6f9e46a6835afb48a786e5f64607a5c8011a66cdb27f7067",
+      "duration_seconds": 18.73,
+      "output": "verification/generated/final-audit-semantic-closure/prior-audit-classification-complete.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "audit-classifier-regressions",
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "verification/scripts",
+        "-p",
+        "test_classify_systems_final_audit.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "b3cc853ab7ae763a9bdf07347437f665c444e2bf",
+      "working_changes_sha256": "ec66838394f8732d22a027a98afa814a0c07640b16594718b530635463942f71",
+      "output_sha256": "7d4980533fb9ded4fe611c54f097468c3583a27125b4c3362d7bfb3a3b399d3c",
+      "duration_seconds": 0.28,
+      "output": "verification/generated/final-audit-semantic-closure/audit-classifier-regressions.log",
+      "environment_overrides": {}
+    }
+  ]
+}
