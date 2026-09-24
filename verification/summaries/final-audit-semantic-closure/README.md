@@ -30,6 +30,18 @@ initial focused lowering command used a filter that selected zero tests; its
 successful process exit is not counted as verification. The corrected filter
 ran both tests. The finalizer CLI's six transactional/profile tests also pass.
 
+Pre-corpus integration gates pass: workspace formatting, Clippy over all targets
+with warnings denied, the full workspace test suite, and strict Rustdoc for all
+seven public language crates. The updated corpus witness runner compiles and its
+focused Clippy check passes. Eleven report-gate tests and eight timing-profiler
+tests reject incomplete or inconsistent observational evidence. The original
+normative/artifact directories and generation-1 release records are unchanged.
+
+One attempted release build reused an old parser artifact from another worktree's
+target and failed. The successful build uses the integration checkout's own
+target directory; its copied executable and SHA-256 are retained in
+[executable.json](executable.json). No corpus run used the failed build.
+
 [Structural evidence](../semantic-closure-structural/README.md) distinguishes the
 real Flow parameter-cycle failures from connection ends, which were already
 Complete. The corrected parameter proof retains the same inherited canonical

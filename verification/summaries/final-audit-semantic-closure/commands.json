@@ -800,6 +800,63 @@
       "duration_seconds": 2.72,
       "output": "verification/generated/final-audit-semantic-closure/pre-corpus-format.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "obsolete-package-build-cleanup",
+      "command": [
+        "cargo",
+        "clean",
+        "--locked",
+        "--offline",
+        "--target-dir",
+        "C:/Users/phili/github/agentique-systems/agentique/target/platform-finalization",
+        "-p",
+        "agq-kernel",
+        "-p",
+        "agq-kerml",
+        "-p",
+        "agq-kerml-semantics",
+        "-p",
+        "agq-kerml-syntax",
+        "-p",
+        "agq-kerml-text",
+        "-p",
+        "agq-sysml",
+        "-p",
+        "agq-sysml-semantics",
+        "-p",
+        "agq-standard-libraries"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "3b31430eb18414f4c30b770d27988e5bf170b233",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "6522aaba4baf4a557d7bbe88b38b25552037a158dd5788dcdd328f724d17f59b",
+      "duration_seconds": 1.5,
+      "output": "verification/generated/final-audit-semantic-closure/obsolete-package-build-cleanup.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "pre-corpus-workspace-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "5e66c0f2f8a8a8d85ce2a8d6e7ed00ed1d14d0fa",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "41d57794fc1b6aa1c23fac029bea82c94886392b7b3af4fa189e6c04e855b86b",
+      "duration_seconds": 610.12,
+      "output": "verification/generated/final-audit-semantic-closure/pre-corpus-workspace-tests.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-workspace"
+      }
     }
   ]
 }

@@ -1,6 +1,6 @@
 # Effective SysML structural queries
 
-`agq-sysml-semantics` query contract `agq-sysml-query/5` composes KerML queries
+`agq-sysml-semantics` query contract `agq-sysml-query/6` composes KerML queries
 over the same canonical graph. Every result carries its context, completeness,
 canonical fact observations and supporting query evidence. Returned `ElementId`s
 are the original declarations or derived elements; inheritance never copies them.
@@ -10,7 +10,7 @@ are the original declarations or derived elements; inheritance never copies them
 | Definition/Usage members | `owned_usages`, `effective_usages`, `nested_usages`, `effective_nested_usages` |
 | Attribute, Item, Part, Port, Connection, Interface, Occurrence, Action, State, Requirement, Constraint, Case, VerificationCase populations | `owned_usages_of_kind`, `effective_usages_of_kind`, `UsageKind` |
 | Composite children | `effective_composite_usages`, `effective_subitems`, `effective_subparts`, `effective_subactions` |
-| Typing | `effective_usage_types`, `effective_attribute_definitions`, `effective_item_definitions`, `effective_part_definitions`, `effective_port_definitions` |
+| Typing | `effective_usage_types`, `effective_occurrence_definitions`, `effective_attribute_definitions`, `effective_item_definitions`, `effective_part_definitions`, `effective_port_definitions`, `effective_connection_definitions` |
 | Relationships | `effective_supertypes`, `effective_subsetted_features`, `effective_redefined_features` |
 | Ports and connections | `effective_ports`, `effective_connection_ends`, `effective_interface_ends`, `effective_connection_related_features` |
 | Actions and states | `effective_parameters`, `effective_return_parameters`, `state_actions`, `transition_features`, `accept_action_payload_parameter` |
@@ -21,7 +21,7 @@ The accepter, payload and accepted message are distinct structural identities.
 `transition_features(Trigger)` returns the AcceptActionUsage serving as a
 transition's accepter; `accept_action_payload_parameter` projects its first
 effective parameter, matching `AcceptActionUsage::payloadParameter`. The pinned
-[Actions library](<../standards/libraries/Systems-Library/Systems Library/Actions.sysml>)
+[Actions document in the pinned Systems Library](../standards/normative/sysml-2.0/library-set.json)
 separately declares the undirected `AcceptMessageAction::acceptedMessage` feature
 and binds `TransitionAction::acceptedMessage` to `accepter.acceptedMessage`.
 Find that feature through the closed `effective_usages` population and the shared
@@ -43,8 +43,35 @@ also retain this existing meaning. Contract /4 adds `current_names` and
 `current_qualified_name`, and requires closure on the effective naming variants;
 this is a versioned semantic distinction, not an optimization.
 
+Typed definitions follow their individual formal contracts. Item and Part
+definitions select subsets of broader populations; a nonmatching classifier is
+excluded without making that selection Invalid. Narrowed Occurrence, Attribute
+and Port domains retain their required kind checks. The explicit Operational v3
+interpretation retains plain Association typing on ConnectionUsage in the broad
+Usage population while excluding it from the narrower Class projection. This
+bounded exception is documented in the
+[Connection authority review](../verification/summaries/final-audit-semantic-closure/connection-authority.md).
+Earlier profiles retain their own interpretation; v3 is not an accepted Systems
+publication merely because these query APIs are available.
+
+EnumerationDefinition construction records its normative variation and abstract
+values. The generic owning-variation rule produces a canonical FeatureTyping for
+an applicable nested variant; queries never inject the owner as a result. Explicit
+literal naming has its own completeness evidence, independently of variation
+typing closure. Unsupported variation-Usage featuring remains pending.
+
+Positioned inheritance collects inherited candidates before applying transitive
+redefinition between them. A receiver need not own an end to suppress an inherited
+ancestor. Cyclic structural collections require a finite proof: return populations
+must satisfy the ordered inheritance equations, and positioned cycles must have
+sufficient owned coverage or a common inherited sequence preserved by the ordinary
+transfer. Empty cyclic returns expose a ResultPopulation fixed-point conclusion
+with the checked population searches. Pending sources and ambiguous order remain
+Incomplete. These extension-context proofs preserve the frozen KerML-only query
+behavior and return the original canonical identities.
+
 These APIs select structural populations. They do not execute actions, verify
-requirements, or claim all formal validators are implemented. Variation,
+requirements, or claim all formal validators are implemented. Unsupported variation,
 individual, portion and unresolved published-authority semantics remain explicit
 pending capabilities even when implemented producers close. State and transition
 queries return plural, ordered membership-role projections. The final SysML 2.0
