@@ -11,7 +11,7 @@ use agq_kerml_text::library::{CanonicalKermlStandardLibraries, LibraryLoadError}
 use agq_kerml_text::sysml::{AuthoredProducerStatus, CanonicalSysmlSystemsLibrary};
 use agq_kerml_text::{
     ProjectChange, ProjectDocument, ProjectError, ProjectId, SourceCompilation, SourceDiagnostic,
-    SourceInputs, SourceLanguage,
+    SourceEffectiveAudit, SourceInputs, SourceLanguage,
 };
 use agq_kernel::provenance::{FactKey, SourceOrigin};
 use agq_kernel::{
@@ -68,6 +68,10 @@ impl ProjectRevision {
     }
     pub fn diagnostics(&self) -> &[SourceDiagnostic] {
         self.compilation.diagnostics()
+    }
+    /// Applicable effective queries over this revision's entire local graph.
+    pub fn effective_audit(&self) -> Option<&SourceEffectiveAudit> {
+        self.compilation.effective_audit()
     }
     pub fn references(&self) -> &[agq_kerml_text::ReferenceAssertion] {
         self.compilation.references()
@@ -150,8 +154,19 @@ impl WorkingProjectRevision {
                 }) => {}
             _ => findings.push(ValidationFinding::Context),
         }
-        if self.sysml_queries().is_err() && !findings.contains(&ValidationFinding::Context) {
-            findings.push(ValidationFinding::Context);
+        match self.sysml_queries() {
+            Ok(queries) => {
+                if self.effective_audit().is_none_or(|audit| {
+                    audit.context() != queries.context() || !audit.report().findings.is_empty()
+                }) {
+                    findings.push(ValidationFinding::EffectiveAudit);
+                }
+            }
+            Err(_) => {
+                if !findings.contains(&ValidationFinding::Context) {
+                    findings.push(ValidationFinding::Context);
+                }
+            }
         }
         if findings.is_empty() {
             Ok(ValidatedProjectRevision {
@@ -219,6 +234,8 @@ pub enum ValidationFinding {
     Certificate,
     References,
     Context,
+    /// Missing, context-mismatched or failing applicable effective query audit.
+    EffectiveAudit,
 }
 #[derive(Clone, Debug, thiserror::Error)]
 #[error("revision {revision:?} does not satisfy the platform contract: {findings:?}")]

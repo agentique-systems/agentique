@@ -21,6 +21,7 @@ use agq_kernel::{
 use agq_standard_libraries::{LibraryLanguage, VerifiedLibrarySet};
 use std::{collections::BTreeSet, sync::Arc};
 mod publication;
+pub(crate) use publication::audit_authored_effective_population;
 pub use publication::*;
 pub(crate) mod source;
 pub(crate) use source::{AcceptedSourceDependency, lower_accepted_source};

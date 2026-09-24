@@ -12,6 +12,142 @@ use agq_sysml_semantics::PendingSysmlRule;
 use std::sync::Arc;
 use support::*;
 
+#[test]
+#[ignore = "requires the accepted publication caches; never rebuilds standards"]
+fn closed_malformed_attribute_typing_stays_working_until_repaired() {
+    use agq_kerml_text::{SourceDiagnostic, sysml::SystemsPublicationFinding};
+    use agq_kernel::provenance::Origin;
+    use agq_modeling_workspace::ValidationFinding;
+    use std::collections::BTreeSet;
+
+    const SOURCE: &str =
+        "package TypedTargetGate { part def NotADataType; attribute broken : NotADataType; }";
+    let mut workspace = open();
+    let previous = workspace.head().clone();
+    assert_valid(&previous);
+    let before = immutable_signature(&previous);
+    let working = workspace
+        .add_sysml(previous.revision(), "TypedTarget.sysml", SOURCE)
+        .unwrap();
+    let document = working.document_at("TypedTarget.sysml").unwrap();
+    assert_eq!(document.status(), DocumentStatus::Parsed);
+    assert!(working.strict_snapshot().is_some());
+    let production = working.producer_status().unwrap();
+    assert!(production.converged, "{production:?}");
+    assert_eq!(production.completeness, Completeness::Complete);
+    assert!(
+        working
+            .producer_closure()
+            .unwrap()
+            .is_fully_closed(working.semantic_model().unwrap())
+    );
+    assert!(working.references().iter().all(|reference| {
+        reference.resolution.completeness == Completeness::Complete
+            && matches!(reference.resolution.value, Resolution::Resolved(_))
+    }));
+    let usage = element(&working, &["TypedTargetGate", "broken"]);
+    let wrong_type = element(&working, &["TypedTargetGate", "NotADataType"]);
+    let queries = working.sysml_queries().unwrap();
+    let direct = queries.direct_usage_types(usage);
+    assert_eq!(direct.completeness(), Completeness::Complete, "{direct:?}");
+    assert_eq!(direct.value(), &[wrong_type]);
+    let answer = queries.effective_attribute_definitions(usage);
+    assert_eq!(answer.completeness(), Completeness::Invalid, "{answer:?}");
+    assert!(answer.rejected_targets.contains(&wrong_type));
+    assert!(answer.diagnostics.iter().any(|diagnostic| {
+        diagnostic.code == "SQ_ELEMENT_KIND" && diagnostic.subject == wrong_type
+    }));
+    let audit = working.effective_audit().unwrap();
+    assert_eq!(audit.context(), queries.context());
+    let local: BTreeSet<_> = queries
+        .model()
+        .elements()
+        .filter(|record| {
+            working
+                .accepted_sysml()
+                .overlay()
+                .model()
+                .element(record.id())
+                .is_none()
+        })
+        .map(|record| record.id())
+        .collect();
+    assert_eq!(
+        audit.subjects().iter().copied().collect::<BTreeSet<_>>(),
+        local
+    );
+    assert!(local.iter().any(|subject| matches!(
+        queries.model().element(*subject).unwrap().origin(),
+        Origin::Derived(_)
+    )));
+    assert!(working.diagnostics().iter().any(|diagnostic| matches!(
+        diagnostic,
+        SourceDiagnostic::EffectiveAudit { origin: Some(origin), finding }
+            if origin.document == document.id() && origin.revision == document.revision()
+                && matches!(finding.as_ref(), SystemsPublicationFinding::Capability { diagnostic, .. }
+                    if diagnostic.subject == usage
+                        && diagnostic.code == "SQ_PUBLICATION_TYPED_QUERY"
+                        && diagnostic.message.contains("effective attribute definitions is Invalid"))
+    )));
+    assert!(
+        working
+            .validate()
+            .unwrap_err()
+            .findings
+            .contains(&ValidationFinding::EffectiveAudit)
+    );
+    assert_shared(&working);
+    let signature = immutable_signature(&working);
+    let rejected_context = audit.context().clone();
+    let rejected_report = format!("{:?}", audit.report());
+    let start = SOURCE.find("part def").unwrap();
+    let repaired = workspace
+        .apply(
+            working.revision(),
+            [edit(
+                &working,
+                "TypedTarget.sysml",
+                start,
+                start + "part".len(),
+                "attribute",
+            )],
+        )
+        .unwrap();
+    assert_valid(&repaired);
+    let repaired_usage = element(&repaired, &["TypedTargetGate", "broken"]);
+    let repaired_type = element(&repaired, &["TypedTargetGate", "NotADataType"]);
+    let repaired_queries = repaired.sysml_queries().unwrap();
+    let repaired_answer = repaired_queries.effective_attribute_definitions(repaired_usage);
+    assert_eq!(
+        repaired_answer.completeness(),
+        Completeness::Complete,
+        "{repaired_answer:?}"
+    );
+    assert!(repaired_answer.value().contains(&repaired_type));
+    let repaired_audit = repaired.effective_audit().unwrap();
+    assert_eq!(repaired_audit.context(), repaired_queries.context());
+    assert!(repaired_audit.report().findings.is_empty());
+    assert_ne!(repaired_audit.context(), &rejected_context);
+    assert_eq!(immutable_signature(&working), signature);
+    assert_eq!(immutable_signature(&previous), before);
+    assert_eq!(
+        working.effective_audit().unwrap().context(),
+        &rejected_context
+    );
+    assert_eq!(
+        format!("{:?}", working.effective_audit().unwrap().report()),
+        rejected_report
+    );
+    assert_eq!(
+        queries
+            .effective_attribute_definitions(usage)
+            .completeness(),
+        Completeness::Invalid
+    );
+    assert!(working.validate().is_err());
+    assert_shared(&repaired);
+}
+
 fn retained_node(document: &ProjectDocument) -> SyntaxNodeId {
     document
         .production_syntax()

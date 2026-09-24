@@ -3,11 +3,14 @@ use super::*;
 use crate::library::{LibraryDraft, LibraryLoadError, LibrarySourceMap, construction::SourceInput};
 use crate::sysml::{
     AcceptedSourceDependency, AuthoredProducerStatus, CanonicalSysmlSystemsLibrary,
+    SystemsPublicationAudit, SystemsPublicationFinding, audit_authored_effective_population,
 };
 use agq_kerml_semantics::{Completeness, ProducerClosureCertificate};
 use agq_kernel::provenance::{DeclaredOrigin, FactKey, SourceOrigin};
 use agq_kernel::{ConstructionView, DeclaredConstructionHistory, DeclaredIdentitySet, ModelView};
-use agq_sysml_semantics::{SysmlQueries, SysmlQueryResult, SysmlSemanticContext};
+use agq_sysml_semantics::{
+    SysmlQueries, SysmlQueryResult, SysmlSemanticContext, SysmlSemanticContextId,
+};
 use std::collections::BTreeSet;
 
 /// Exact source inputs. Applying edits shares every unchanged document and syntax arena.
@@ -219,47 +222,89 @@ impl SourceInputs {
             diagnostics,
             history,
             identities: ledger,
+            effective_audit: None,
             #[cfg(feature = "verification")]
             producer_subjects: observation.finish(),
         };
-        // The capability query preserves unsupported variation and other pending
-        // implications even when producer closure itself is Complete.
+        // Audit the final current graph, including derived local elements that
+        // have no direct source-map entry. The accepted dependency is borrowed,
+        // never reevaluated as an authored population.
         let q = result
             .sysml_queries()
             .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))?;
+        let context = q.context().clone();
+        let mut subjects: Vec<_> = q
+            .model()
+            .elements()
+            .filter(|record| {
+                self.dependency
+                    .publication
+                    .overlay()
+                    .model()
+                    .element(record.id())
+                    .is_none()
+            })
+            .map(|record| record.id())
+            .collect();
+        subjects.sort_unstable();
+        drop(q);
+        let mut report = SystemsPublicationAudit::default();
         let mut capabilities = Vec::new();
-        for record in q.model().elements().filter(|record| {
-            self.dependency
-                .publication
-                .overlay()
-                .model()
-                .element(record.id())
-                .is_none()
-        }) {
-            if [agq_sysml::classes::DEFINITION, agq_sysml::classes::USAGE]
-                .into_iter()
-                .any(|class| {
-                    q.model()
-                        .registry()
-                        .is_subtype(record.metaclass(), class)
-                        .unwrap_or(false)
-                })
-            {
-                let answer = q.effective_usages(record.id());
-                if answer.completeness() != Completeness::Complete {
-                    capabilities.push(SourceDiagnostic::Capability {
-                        subject: record.id(),
-                        origin: result
-                            .source_map()
-                            .get(&FactKey::Element(record.id()))
-                            .cloned(),
-                        answer: Box::new(answer),
-                    });
+        // Bound evaluator memoization while preserving deterministic audit order.
+        for batch in subjects.chunks(32) {
+            let q = result
+                .sysml_queries()
+                .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))?;
+            if q.context() != &context {
+                return Err(LibraryLoadError::Interpretation(
+                    "authored effective audit context changed within an immutable compilation"
+                        .into(),
+                ));
+            }
+            audit_authored_effective_population(&q, batch, &mut report);
+            // Retain the existing native capability answer, including its full
+            // proof/search evidence, for consumers of Working diagnostics.
+            for &subject in batch {
+                let record = q.model().element(subject).expect("local audit subject");
+                if [agq_sysml::classes::DEFINITION, agq_sysml::classes::USAGE]
+                    .into_iter()
+                    .any(|class| {
+                        q.model()
+                            .registry()
+                            .is_subtype(record.metaclass(), class)
+                            .unwrap_or(false)
+                    })
+                {
+                    let answer = q.effective_usages(subject);
+                    if answer.completeness() != Completeness::Complete {
+                        capabilities.push(SourceDiagnostic::Capability {
+                            subject,
+                            origin: result.source_map().get(&FactKey::Element(subject)).cloned(),
+                            answer: Box::new(answer),
+                        });
+                    }
                 }
             }
         }
-        drop(q);
+        for finding in &report.findings {
+            let origin = match finding {
+                SystemsPublicationFinding::Capability { diagnostic, .. } => result
+                    .source_map()
+                    .get(&FactKey::Element(diagnostic.subject))
+                    .cloned(),
+                _ => None,
+            };
+            capabilities.push(SourceDiagnostic::EffectiveAudit {
+                origin,
+                finding: Box::new(finding.clone()),
+            });
+        }
         result.diagnostics.extend(capabilities);
+        result.effective_audit = Some(SourceEffectiveAudit {
+            context,
+            subjects,
+            report,
+        });
         Ok(result)
     }
     fn lowering_inputs(&self, omitted: &BTreeSet<DocumentId>) -> Vec<SourceInput<'_>> {
@@ -331,6 +376,39 @@ pub enum SourceDiagnostic {
         origin: Option<SourceOrigin>,
         answer: Box<SysmlQueryResult<Vec<ElementId>>>,
     },
+    /// A failed applicable effective operation on this exact authored graph.
+    /// Derived subjects can lack a direct source origin; the finding preserves
+    /// their canonical identity and native diagnostic instead of inventing one.
+    EffectiveAudit {
+        origin: Option<SourceOrigin>,
+        finding: Box<SystemsPublicationFinding>,
+    },
+}
+
+/// Immutable authored query audit, constructed only by [`SourceInputs::compile`].
+/// This reuses the standard finalizer's effective operations, without conferring
+/// standard publication or full language conformance on an authored revision.
+#[derive(Debug)]
+pub struct SourceEffectiveAudit {
+    context: SysmlSemanticContextId,
+    subjects: Vec<ElementId>,
+    report: SystemsPublicationAudit,
+}
+impl SourceEffectiveAudit {
+    /// Exact semantic revision and accepted dependencies used by every batch.
+    pub fn context(&self) -> &SysmlSemanticContextId {
+        &self.context
+    }
+    /// Every local canonical identity inspected, including derived local records.
+    /// Accepted dependency identities are excluded; order is deterministic.
+    pub fn subjects(&self) -> &[ElementId] {
+        &self.subjects
+    }
+    /// Applicable query counts and all failures; zero findings alone does not
+    /// replace source, reference, construction or producer-certificate gates.
+    pub fn report(&self) -> &SystemsPublicationAudit {
+        &self.report
+    }
 }
 
 /// Query factory failure for this exact compilation, never an earlier graph.
@@ -358,6 +436,7 @@ pub struct SourceCompilation {
     diagnostics: Vec<SourceDiagnostic>,
     history: DeclaredConstructionHistory,
     identities: LibrarySourceMap,
+    effective_audit: Option<SourceEffectiveAudit>,
     #[cfg(feature = "verification")]
     producer_subjects: BTreeSet<ElementId>,
 }
@@ -390,6 +469,10 @@ impl SourceCompilation {
     }
     pub fn diagnostics(&self) -> &[SourceDiagnostic] {
         &self.diagnostics
+    }
+    /// Effective-operation audit bound to this compilation's immutable context.
+    pub fn effective_audit(&self) -> Option<&SourceEffectiveAudit> {
+        self.effective_audit.as_ref()
     }
     pub fn references(&self) -> &[ReferenceAssertion] {
         match &self.frontier {

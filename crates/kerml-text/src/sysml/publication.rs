@@ -1090,6 +1090,17 @@ fn audit_population_batches(
     Ok(())
 }
 
+/// Reuse the strict effective query dispatcher for an authored local population.
+/// This neither authenticates nor issues a standard publication. The caller
+/// supplies its exact revision-bound query context and retains the report.
+pub(crate) fn audit_authored_effective_population(
+    queries: &SysmlQueries<'_>,
+    subjects: &[ElementId],
+    audit: &mut SystemsPublicationAudit,
+) {
+    audit_sysml_population(queries, subjects, audit);
+}
+
 fn audit_sysml_population<'m>(
     q: &SysmlQueries<'m>,
     subjects: &[ElementId],
