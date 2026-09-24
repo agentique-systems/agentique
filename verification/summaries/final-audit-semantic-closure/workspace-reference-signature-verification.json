@@ -57,6 +57,22 @@
       "exit_code": 0,
       "elapsed_seconds": 0.044,
       "actual_output": ""
+    },
+    {
+      "command": "cargo clippy --locked --offline -p agq-modeling-workspace --features verification --all-targets -- -D warnings",
+      "environment": {
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\target\\workspace-scale-check",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "1"
+      },
+      "source_commit": "4f10dc4b23d13ca6f0b1734da6d4ee4473cae4c9",
+      "exit_code": 0,
+      "elapsed_seconds": 16.266,
+      "output": "verification\\generated\\final-closure-projections\\workspace-reference-signature-clippy.log",
+      "output_sha256": "686110083c1e732f9fa1b07a98aa4a07c04bbeb72aa14b24b113296d45a49daf",
+      "actual_output": "    Checking agq-kernel v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\kernel)\n    Checking agq-kerml v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\kerml)\n    Checking agq-kerml-semantics v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\kerml-semantics)\n    Checking agq-sysml v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\sysml)\n    Checking agq-standard-libraries v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\standard-libraries)\n    Checking agq-sysml-semantics v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\sysml-semantics)\n    Checking agq-kerml-syntax v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\kerml-syntax)\n    Checking agq-kerml-text v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\kerml-text)\n    Checking agq-modeling-workspace v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-closure-projections\\crates\\modeling-workspace)\n    Finished `dev` profile [unoptimized] target(s) in 16.09s\n"
     }
   ],
   "accepted_runtime_run": false
