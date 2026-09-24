@@ -20,7 +20,7 @@ const canonical = (value) =>
         )
       : v,
   );
-function fixture(t) {
+function fixture(t, version = 2) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "agq-systems-stale-"));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const write = (name, value) => {
@@ -64,7 +64,7 @@ function fixture(t) {
   const manifest = "{}\n",
     manifestPin = [...Buffer.from(hash(Buffer.from(manifest)), "hex")];
   write("standards/grammar/sysml-2.0-operational-v1.json", manifest);
-  write("standards/sysml-2.0-operational-semantic-v2.json", manifest);
+  write(`standards/sysml-2.0-operational-semantic-v${version}.json`, manifest);
   const identity = Object.fromEntries(
     [
       "publication_digest",
@@ -80,7 +80,7 @@ function fixture(t) {
   Object.assign(identity, {
     systems_kpar: kpar,
     systems_source_content_set: sourcePin,
-    operational_profile: "agentique-sysml-2.0-operational/2",
+    operational_profile: `agentique-sysml-2.0-operational/${version}`,
     rule_set: "agq-sysml-query/5",
     grammar_compatibility_manifest: manifestPin,
     semantic_correction_manifest: manifestPin,
@@ -121,6 +121,38 @@ test("accepted Systems freshness binds interpretation population and identities"
     () => verifySystemsPublicationFreshness(root),
     /stale accepted Systems/,
   );
+});
+
+test("v3 freshness authenticates the v3 manifest while preserving v2 fixtures", (t) => {
+  const { root, write, receipt, bindings } = fixture(t, 3);
+  assert.equal(
+    verifySystemsPublicationFreshness(root).status,
+    "accepted-inputs-current",
+  );
+  const v3 = "standards/sysml-2.0-operational-semantic-v3.json";
+  assert(v3 in capturePublicationInputs(root).inputs);
+  // A matching v2 manifest is not a substitute for the receipt's v3 identity.
+  write("standards/sysml-2.0-operational-semantic-v2.json", "{}\n");
+  write(v3, "changed v3 interpretation\n");
+  assert.throws(
+    () => capturePublicationInputs(root),
+    /stale Systems semantic_correction_manifest/,
+  );
+  write(v3, "{}\n");
+  for (const profile of ["agentique-sysml-2.0-operational/4", "changed"]) {
+    const alteredBindings = { ...bindings, operational_profile: profile };
+    const alteredReceipt = structuredClone(receipt);
+    alteredReceipt.identity.operational_profile = profile;
+    alteredReceipt.binding_manifest_sha256 = [
+      ...Buffer.from(hash(Buffer.from(canonical(alteredBindings))), "hex"),
+    ];
+    write(bindingsPath, alteredBindings);
+    write(receiptPath, alteredReceipt);
+    assert.throws(
+      () => capturePublicationInputs(root),
+      /unsupported Systems operational profile/,
+    );
+  }
 });
 
 test("descriptor, registry, profile and source changes fail the repository stale gate", (t) => {
@@ -180,25 +212,26 @@ test("partial authority installation fails closed", (t) => {
   assert.equal(verifySystemsPublicationFreshness(root).status, "not-accepted");
 });
 
-test("deleting all authority artifacts after compiled Systems activation fails closed", (t) => {
-  const { root, write } = fixture(t);
-  write(
-    "crates/kerml-semantics/src/trusted_publication.rs",
-    `
+for (const version of [2, 3])
+  test(`deleting all authority artifacts after compiled Systems v${version} activation fails closed`, (t) => {
+    const { root, write } = fixture(t, version);
+    write(
+      "crates/kerml-semantics/src/trusted_publication.rs",
+      `
     const CATALOGUE: &[CatalogueEntry<'static>] = &[CatalogueEntry {
-      id: "sysml-systems-operational-v2",
+      id: "sysml-systems-operational-v${version}",
       receipt_format: "agq-sysml-accepted-publication/1",
       receipt: include_str!("../../../standards/sysml-accepted-publication.json"),
       bindings: include_str!("../../../standards/sysml-standard-bindings.json"),
     }];`,
-  );
-  for (const file of [receiptPath, bindingsPath, inputsPath])
-    fs.unlinkSync(path.join(root, file));
-  assert.throws(
-    () => verifySystemsPublicationFreshness(root),
-    /compiled Systems authority requires/,
-  );
-});
+    );
+    for (const file of [receiptPath, bindingsPath, inputsPath])
+      fs.unlinkSync(path.join(root, file));
+    assert.throws(
+      () => verifySystemsPublicationFreshness(root),
+      /compiled Systems authority requires/,
+    );
+  });
 
 test("comments, strings and test module entries do not activate compiled authority", (t) => {
   const { root, write } = fixture(t);

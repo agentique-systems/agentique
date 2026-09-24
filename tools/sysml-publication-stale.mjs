@@ -24,8 +24,17 @@ const manifests = [
   "standards/kerml-standard-bindings.json",
   "standards/normative/sysml-2.0/library-set.json",
   "standards/grammar/sysml-2.0-operational-v1.json",
-  "standards/sysml-2.0-operational-semantic-v2.json",
 ];
+const semanticManifests = new Map([
+  [
+    "agentique-sysml-2.0-operational/2",
+    "standards/sysml-2.0-operational-semantic-v2.json",
+  ],
+  [
+    "agentique-sysml-2.0-operational/3",
+    "standards/sysml-2.0-operational-semantic-v3.json",
+  ],
+]);
 const canonical = (value) =>
   JSON.stringify(value, (_, v) =>
     v && typeof v === "object" && !Array.isArray(v)
@@ -106,10 +115,8 @@ export function publicationDocuments(root) {
     assert.notEqual(identity[a], undefined, `missing ${a}`);
     assert.deepEqual(identity[a], bindings[b], `stale Systems ${a}`);
   }
-  assert.equal(
-    identity.operational_profile,
-    "agentique-sysml-2.0-operational/2",
-  );
+  const semanticManifest = semanticManifests.get(identity.operational_profile);
+  assert(semanticManifest, "unsupported Systems operational profile");
   const sourceSet = JSON.parse(
     fs.readFileSync(
       safePath(root, "standards/normative/sysml-2.0/library-set.json"),
@@ -140,10 +147,7 @@ export function publicationDocuments(root) {
       "grammar_compatibility_manifest",
       "standards/grammar/sysml-2.0-operational-v1.json",
     ],
-    [
-      "semantic_correction_manifest",
-      "standards/sysml-2.0-operational-semantic-v2.json",
-    ],
+    ["semantic_correction_manifest", semanticManifest],
   ]) {
     assert.equal(
       digest(identity[field]),
@@ -301,7 +305,11 @@ function compiledSystemsAuthority(root) {
           "compiled catalogue entry separator",
         );
     }
-    return ids.includes("sysml-systems-operational-v2");
+    return ids.some((id) =>
+      ["sysml-systems-operational-v2", "sysml-systems-operational-v3"].includes(
+        id,
+      ),
+    );
   }
   throw new Error("compiled publication catalogue declaration is missing");
 }

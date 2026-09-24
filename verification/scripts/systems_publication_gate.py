@@ -14,6 +14,10 @@ import zipfile
 from frontier_artifact_evidence import checkpoint_evidence, graph_evidence, pin, require
 
 PROFILE = "agentique-sysml-2.0-operational/2"
+PROFILES = {
+    PROFILE: ("agq-sysml-query/5", "standards/sysml-2.0-operational-semantic-v2.json"),
+    "agentique-sysml-2.0-operational/3": ("agq-sysml-query/6", "standards/sysml-2.0-operational-semantic-v3.json"),
+}
 FAMILIES = set("Syntax CanonicalLowering NamespacesImports DefinitionUsage AttributeItemPart "
                "OccurrenceActionState CalculationConstraintRequirementCase PortConnectionInterfaceFlow "
                "ViewMetadata TypingSpecializationSubsettingRedefinition MayTimeVary StandardBindings "
@@ -73,7 +77,7 @@ def accept_report(report):
             "strict publication was not accepted")
     require("publication_error" not in report, "publication error")
     require(report["reference_audit_scope"] == "accepted_publication", "strict reference audit")
-    require(report["sysml_profile"] == PROFILE and report["construction_complete"] is True,
+    require(report["sysml_profile"] in PROFILES and report["construction_complete"] is True,
             "profile/construction")
     for key in ("systems_documents_parsed", "systems_documents_constructed", "systems_documents_byte_exact"):
         require(type(report[key]) is int and report[key] == 21, key)
@@ -116,7 +120,7 @@ def accept_report(report):
     require(len(documents) == len({d["path"] for d in documents}) == 21, "document population")
     for doc in documents:
         identifier(doc["document"])
-        require(doc["profile"] == PROFILE and doc["parsed"] is True and doc["byte_exact"] is True
+        require(doc["profile"] == report["sysml_profile"] and doc["parsed"] is True and doc["byte_exact"] is True
                 and type(doc["recovery_count"]) is int and doc["recovery_count"] == 0
                 and doc["construction_gap"] is None, "document status")
         natural(doc["production_count"], "production count", True)
@@ -186,13 +190,15 @@ def validate(report_path, root):
         require(identity[a] is not None and identity[a] == bindings[b], f"receipt binding {a}")
     for field in ("publication_digest", "semantic_digest", "accepted_kerml_digest"):
         require(identity[field] == report[field], f"receipt report {field}")
-    require(identity["operational_profile"] == PROFILE and identity["rule_set"] == "agq-sysml-query/5", "interpretation profile")
+    rule_set, semantic_manifest = PROFILES[report["sysml_profile"]]
+    require(identity["operational_profile"] == report["sysml_profile"]
+            and identity["rule_set"] == rule_set, "interpretation profile")
     require(identity["systems_kpar"] == kpar and bindings["systems_library"] == library
             and pin(identity["systems_source_content_set"]) == source_set.removeprefix("sha256:"), "Systems identity")
     for field in ("dependency_contract_digest", "combined_descriptor_graph"):
         pin(identity[field])
     for field, path in (("grammar_compatibility_manifest", "standards/grammar/sysml-2.0-operational-v1.json"),
-                        ("semantic_correction_manifest", "standards/sysml-2.0-operational-semantic-v2.json")):
+                        ("semantic_correction_manifest", semantic_manifest)):
         require(pin(identity[field]) == sha((root / path).read_bytes().replace(b"\r\n", b"\n")), field)
     for a, b in (("producer_registry_digest", "producer_registry_digest"), ("producer_closure_digest", "digest"),
                  ("producer_context_contract_digest", "context_contract_digest")):

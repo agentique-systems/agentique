@@ -46,13 +46,44 @@
       "command": "python verification/scripts/inspect-sysml-definition-authority.py > verification/generated/final-closure-projections/pinned-definition-contracts.json",
       "exit_code": 0,
       "result": "Reproducible local formal inventory, including enumeration/variation and narrowed/filtered definition contracts."
+    },
+    {
+      "command": "node --test tools/sysml-publication-stale.test.mjs",
+      "exit_code": 0,
+      "result": "9 tests passed, 0 failed, including v2/v3 authority deletion and v3 manifest/unsupported-profile negatives.",
+      "output": "verification/generated/final-closure-projections/stale-tests.log"
+    },
+    {
+      "command": "python -m unittest discover -s verification/scripts -p test_systems_publication_gate.py",
+      "exit_code": 0,
+      "result": "5 tests passed; cache/receipt corruption cases exercised under both v2 /5 and v3 /6, mismatched report/document/receipt profiles rejected.",
+      "output": "verification/generated/final-closure-projections/publication-gate-tests.log"
+    },
+    {
+      "command": "npm run standards:check",
+      "exit_code": 1,
+      "result": "Initial isolated-worktree run could not resolve existing dependency fflate; ERR_MODULE_NOT_FOUND. No semantic check ran."
+    },
+    {
+      "command": "New-Item -ItemType Junction -Path node_modules/fflate -Target C:/Users/phili/github/agentique-systems/agentique/node_modules/fflate",
+      "exit_code": 0,
+      "result": "Mounted existing installed dependency without download or modification of its bytes."
+    },
+    {
+      "command": "npm run standards:check",
+      "exit_code": 0,
+      "result": "Pinned standards integrity passed. Systems accepted_publication remains not-accepted; no catalogue activated.",
+      "output": "verification/generated/final-closure-projections/standards-check.log"
     }
   ],
-  "rust_gate": "Delegated to coordinated shared-target integration with enumeration agent; no Rust pass is claimed by this authority inspection summary.",
+  "rust_gate": "Enumeration owner ran cargo test -p agq-sysml-semantics --lib on combined projection + enumeration + /6 context changes: 96 passed, 0 failed, exit 0, 130.43 seconds. Includes real scheduler Color effective typing/names and projection/naming regressions. Raw command evidence belongs to verification/summaries/enumeration-closure/commands.json.",
   "publication": "Not established by this bounded review or the independent pilot result.",
   "tools": {
     "python": "3.12.10",
     "rustfmt": "1.8.0-stable (ded5c06cf2 2025-12-08)",
-    "java": "Temurin 21.0.12.1+1-LTS"
-  }
+    "java": "Temurin 21.0.12.1+1-LTS",
+    "node": "v22.11.0"
+  },
+  "tooling_tested_commit": "c2c808e",
+  "tooling_patch_sha256": "7539f7b3d08f5e1e343ebed73c7aaffdb9a2a1aa56946774f7e9dcdf5b763f20"
 }

@@ -11,11 +11,11 @@ import zipfile
 import systems_publication_gate as gate
 
 
-def report_fixture():
+def report_fixture(profile=gate.PROFILE):
     checked = {family: 1 for family in gate.FAMILIES}
     checked.update(Syntax=21, CanonicalLowering=21, StandardBindings=69)
     documents = [dict(path=f"fixture/{i}.sysml", document=str(gate.uuid.UUID(int=i + 1)),
-        sha256="00" * 32, profile=gate.PROFILE, parsed=True, byte_exact=True,
+        sha256="00" * 32, profile=profile, parsed=True, byte_exact=True,
         recovery_count=0, production_count=1, construction_gap=None) for i in range(21)]
     certificate = dict(fully_closed=True, incomplete_pairs=0, applicable_pairs=100,
         closed_pairs=100, required_requirements=200, closed_requirements=200)
@@ -23,7 +23,7 @@ def report_fixture():
                        "semantic_closure_digest", "revalidation_digest")})
     return dict(format="agq-sysml-systems-publication-audit/1", scope=None,
         publication_attempted=True, publication_accepted=True, reference_audit_scope="accepted_publication",
-        sysml_profile=gate.PROFILE, construction_complete=True, systems_documents_parsed=21,
+        sysml_profile=profile, construction_complete=True, systems_documents_parsed=21,
         systems_documents_constructed=21, systems_documents_byte_exact=21,
         kernel_obligations=0, kernel_obligation_details=[], authority_conflicts=[], kerml_producers_replayed=False,
         mandatory_references=dict(total=1327, failures=[], counts=dict(complete=1327, unresolved=0,
@@ -58,6 +58,17 @@ class GateTests(unittest.TestCase):
         report["documents"][0]["sha256"] = "00" * 32
         with self.assertRaisesRegex(ValueError, "source bytes"):
             gate.source_pins(root, report)
+
+    def test_v3_report_requires_one_explicit_supported_profile(self):
+        for profile in gate.PROFILES:
+            report = report_fixture(profile)
+            gate.accept_report(report)
+            report["documents"][0]["profile"] = "mismatched-profile"
+            with self.assertRaisesRegex(ValueError, "document status"):
+                gate.accept_report(report)
+        report = report_fixture("agentique-sysml-2.0-operational/4")
+        with self.assertRaisesRegex(ValueError, "profile/construction"):
+            gate.accept_report(report)
 
     def test_equal_counts_cannot_mask_missing_or_failed_acceptance(self):
         mutations = [
@@ -98,10 +109,15 @@ class GateTests(unittest.TestCase):
             gate.accept_report(report)
 
     def test_cache_and_receipt_corruption_fail_closed(self):
+        for profile in gate.PROFILES:
+            with self.subTest(profile=profile):
+                self.check_cache_and_receipt_corruption(profile)
+
+    def check_cache_and_receipt_corruption(self, profile):
         root = Path(__file__).resolve().parents[2]
         with tempfile.TemporaryDirectory() as directory:
             directory = Path(directory)
-            report = report_fixture()
+            report = report_fixture(profile)
             report["exported_cache"] = str(directory / "canonical.publication.zip")
             report_path = directory / "report.json"
             report_path.write_bytes(gate.encoded(report))
@@ -111,11 +127,11 @@ class GateTests(unittest.TestCase):
                           syntax_node=str(gate.uuid.UUID(int=300)), range=dict(start=0, end=1))
             docs = {doc["document"]: dict(path=doc["path"], sha256=doc["sha256"], raw=b"x", revision=origin["revision"])}
             identity = dict(publication_digest=[1] * 32, semantic_digest=[1] * 32, accepted_kerml_digest=[1] * 32,
-                systems_kpar="22" * 32, systems_source_content_set=[0] * 32, operational_profile=gate.PROFILE,
-                rule_set="agq-sysml-query/5", producer_registry_digest=[1] * 32, producer_closure_digest=[1] * 32,
+                systems_kpar="22" * 32, systems_source_content_set=[0] * 32, operational_profile=profile,
+                rule_set=gate.PROFILES[profile][0], producer_registry_digest=[1] * 32, producer_closure_digest=[1] * 32,
                 producer_context_contract_digest=[1] * 32, dependency_contract_digest=[1] * 32, combined_descriptor_graph=[1] * 32)
             for field, path in (("grammar_compatibility_manifest", "standards/grammar/sysml-2.0-operational-v1.json"),
-                                ("semantic_correction_manifest", "standards/sysml-2.0-operational-semantic-v2.json")):
+                                ("semantic_correction_manifest", gate.PROFILES[profile][1])):
                 identity[field] = list(bytes.fromhex(gate.sha((root / path).read_bytes().replace(b"\r\n", b"\n"))))
             bindings = copy.deepcopy(identity)
             bindings.update(format="agq-sysml-accepted-bindings/1", source_content_set="sha256:" + "00" * 32,
@@ -150,6 +166,15 @@ class GateTests(unittest.TestCase):
                  patch.object(gate, "checkpoint_evidence", return_value=graph_data):
                 write_cache(entries)
                 self.assertTrue(gate.validate(report_path, root)["passed"])
+                # Consistently altered report/document profiles cannot re-label
+                # a receipt issued under a different explicit interpretation.
+                other = next(p for p in gate.PROFILES if p != profile)
+                changed_report = report_fixture(other)
+                changed_report["exported_cache"] = report["exported_cache"]
+                report_path.write_bytes(gate.encoded(changed_report))
+                with self.assertRaisesRegex(ValueError, "interpretation profile"):
+                    gate.validate(report_path, root)
+                report_path.write_bytes(gate.encoded(report))
                 for name in entries:
                     changed = dict(entries)
                     changed[name] += b" "
