@@ -245,17 +245,63 @@ impl PublicationInputs {
         }
     }
 }
+
+/// Unaccepted strict scheduler result. It exposes evidence for checkpointing and
+/// observation but cannot be used as an accepted standard dependency or cache.
+pub struct SystemsFinalizationFrontier {
+    closure: agq_kerml_semantics::PublicationClosure,
+    inputs: PublicationInputs,
+    contract: SysmlDependencyContract,
+    bindings: StandardSysmlBindings,
+    audit: SystemsPublicationAudit,
+}
+impl SystemsFinalizationFrontier {
+    /// The scheduler's actual result, including incomplete or failed evaluations.
+    pub fn closure(&self) -> &agq_kerml_semantics::PublicationClosure {
+        &self.closure
+    }
+}
+
 impl CanonicalSysmlSystemsLibrary {
     /// Revalidate strict storage and rerun the combined scheduler on all local
     /// records, including existing generated outputs. Neither an earlier
     /// construction result nor a restricted population establishes acceptance.
     pub fn publish(
-        mut candidate: SystemsLibraryCandidate,
+        candidate: SystemsLibraryCandidate,
         sources: &VerifiedLibrarySet,
         options: PublicationClosureOptions,
         batch_progress: impl FnMut(usize, usize, usize, usize),
         stage_progress: impl FnMut(&PublicationStage),
     ) -> Result<Self, SystemsPublicationError> {
+        let frontier = Self::close_for_finalization(
+            candidate,
+            sources,
+            options,
+            batch_progress,
+            stage_progress,
+        )?;
+        Self::accept_closed(
+            frontier.closure,
+            frontier.inputs,
+            sources,
+            frontier.contract,
+            frontier.bindings,
+            frontier.audit,
+            &mut AuditLog::disabled(),
+        )
+    }
+
+    /// Run the same strict full-population scheduler used by [`Self::publish`].
+    /// No publication is issued. When checkpointing is enabled, the separate
+    /// authenticated direct finalizer can audit its durable converged frontier
+    /// without replaying producers. All pre-scheduler input gates remain required.
+    pub fn close_for_finalization(
+        mut candidate: SystemsLibraryCandidate,
+        sources: &VerifiedLibrarySet,
+        options: PublicationClosureOptions,
+        batch_progress: impl FnMut(usize, usize, usize, usize),
+        stage_progress: impl FnMut(&PublicationStage),
+    ) -> Result<SystemsFinalizationFrontier, SystemsPublicationError> {
         let mut audit = SystemsPublicationAudit::default();
         let profile = match candidate.syntax_profile() {
             SysmlSyntaxProfile::Published => SysmlBaselineProfile::Published,
@@ -362,15 +408,13 @@ impl CanonicalSysmlSystemsLibrary {
             batch_progress,
             stage_progress,
         )?;
-        Self::accept_closed(
+        Ok(SystemsFinalizationFrontier {
             closure,
             inputs,
-            sources,
             contract,
-            producer_bindings,
+            bindings: producer_bindings,
             audit,
-            &mut AuditLog::disabled(),
-        )
+        })
     }
 
     #[allow(clippy::too_many_arguments)]

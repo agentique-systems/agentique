@@ -92,6 +92,33 @@
       "duration_seconds": 0.28,
       "output": "verification/generated/final-audit-semantic-closure/audit-classifier-regressions.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "v3-finalization-compile",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "--example",
+        "sysml_systems_publication"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "218c8fdc6ab28da08efea0aba77fb9a1a6a6abe3",
+      "working_changes_sha256": "8ae5a382a03bd8a2dc3c5ac7cad965a2f5eb161131d8c03671b4cfbaec738d39",
+      "output_sha256": "5ed30737bc831d1f17b18e8930350192295e20fe806c8e77251834ba79a33a84",
+      "duration_seconds": 2.66,
+      "output": "verification/generated/final-audit-semantic-closure/v3-finalization-compile.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-finalization"
+      }
     }
   ]
 }

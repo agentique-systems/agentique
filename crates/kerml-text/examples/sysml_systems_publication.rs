@@ -37,7 +37,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let output = argument("--output=").ok_or("--output=<report path> is required")?;
     let finalize_journal = argument("--finalize-converged=");
     let audit_mode = parse_audit_workers(std::env::args(), finalize_journal.is_some())?;
+    let profile = parse_profile(std::env::args())?;
     let audit_only = std::env::args().any(|arg| arg == "--audit-only");
+    let close_only = std::env::args().any(|arg| arg == "--close-only");
     let checkpoint_directory = argument("--checkpoint=");
     let resume_journal = argument("--resume=");
     let resume_pin =
@@ -57,6 +59,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if checkpoint_directory.is_some()
             || resume_journal.is_some()
             || audit_only
+            || close_only
             || argument("--documents=").is_some()
             || contextual_interval != 0
         {
@@ -73,6 +76,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )?,
             )?,
             audit_mode,
+            profile,
         );
     }
     if resume_journal.is_some() != resume_pin.is_some() {
@@ -80,7 +84,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             "--resume and independently retained --resume-sha256 are required together".into(),
         );
     }
-    let transaction = if audit_only {
+    if close_only
+        && (audit_only
+            || (checkpoint_directory.is_none() && resume_journal.is_none())
+            || argument("--documents=").is_some())
+    {
+        return Err("--close-only requires full population and --checkpoint or --resume, without --audit-only".into());
+    }
+    let transaction = if audit_only || close_only {
         None
     } else {
         Some(artifacts::ArtifactTransaction::begin(&output)?)
@@ -140,7 +151,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let source_identity = systems_frontier_source_identity(
         &sources,
         &accepted,
-        SysmlSyntaxProfile::OperationalV2,
+        profile,
         audit_only.then_some(&paths),
     );
     let checkpoints = if let Some(directory) = checkpoint_directory {
@@ -234,7 +245,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         prepare_systems_library_with_frontier_checkpoints(
             &sources,
             accepted.clone(),
-            SysmlSyntaxProfile::OperationalV2,
+            profile,
             audit_only.then_some(&paths),
             session.clone(),
             reference_progress,
@@ -245,7 +256,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         prepare_systems_library_slice_with_semantic_progress(
             &sources,
             accepted.clone(),
-            SysmlSyntaxProfile::OperationalV2,
+            profile,
             &paths,
             reference_progress,
             batch_progress,
@@ -255,7 +266,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         prepare_systems_library_with_semantic_progress(
             &sources,
             accepted.clone(),
-            SysmlSyntaxProfile::OperationalV2,
+            profile,
             reference_progress,
             batch_progress,
             producer_progress,
@@ -268,7 +279,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 &output,
                 &json!({
                     "format":"agq-sysml-systems-publication-audit/1",
-                    "sysml_profile":SysmlSyntaxProfile::OperationalV2.id(),
+                    "sysml_profile":profile.id(),
                     "scope":paths,
                     "accepted_kerml_digest":accepted.semantic_digest(),
                     "publication_attempted":false,"publication_accepted":false,
@@ -555,6 +566,74 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
     report["publication_attempted"] = json!(true);
+    if close_only {
+        report["publication_attempted"] = json!(false);
+        let frontier = agq_kerml_text::sysml::CanonicalSysmlSystemsLibrary::close_for_finalization(
+            candidate,
+            &sources,
+            agq_kerml_semantics::PublicationClosureOptions {
+                max_rounds: SYSTEMS_PUBLICATION_MAX_ROUNDS,
+                frontier_checkpoints: checkpoints.clone(),
+                ..Default::default()
+            },
+            |round, done, total, planned| {
+                if done.is_multiple_of(256) || done == total {
+                    println!(
+                        "Systems publication: round={round} evaluated={done}/{total} planned={planned} elapsed={:.3}s",
+                        started.elapsed().as_secs_f64()
+                    );
+                }
+            },
+            |stage| {
+                let evidence = json!({"phase":"publication", "stage":stage.stage,
+                    "completeness":format!("{:?}",stage.completeness),
+                    "closure_counters":closure_counters(&stage.counters),
+                    "diagnostics":stage.diagnostics.iter().map(|d|json!({"code":d.code,"subject":d.subject,"message":d.message})).collect::<Vec<_>>()});
+                writeln!(stages, "{evidence}").expect("write strict closure evidence");
+                stages.flush().expect("flush strict closure evidence");
+                println!(
+                    "Systems publication: frontier={} completeness={:?} closed_pairs={} elapsed={:.3}s",
+                    stage.stage,
+                    stage.completeness,
+                    stage.counters.closed_producer_pairs,
+                    started.elapsed().as_secs_f64()
+                );
+            },
+        )?;
+        let closure = frontier.closure();
+        report["strict_producer_closure"] = closure
+            .certificate
+            .as_ref()
+            .map(|c| closure_report(c, closure.overlay.model()))
+            .unwrap_or(json!(null));
+        let diagnostics: Vec<_> = closure
+            .stages
+            .last()
+            .into_iter()
+            .flat_map(|stage| stage.diagnostics.iter())
+            .collect();
+        let passed = closure.converged
+            && closure.completeness == Completeness::Complete
+            && diagnostics.is_empty()
+            && closure
+                .certificate
+                .as_ref()
+                .is_some_and(|c| c.is_fully_closed(closure.overlay.model()));
+        report["strict_closure_complete"] = json!(passed);
+        report["strict_producer_diagnostics"] = json!(
+            diagnostics
+                .iter()
+                .map(|d| json!({"code":d.code,"subject":d.subject,"message":d.message}))
+                .collect::<Vec<_>>()
+        );
+        report["checkpoint_session"] = checkpoint_report(checkpoints.as_deref())?;
+        report["elapsed_seconds"] = json!(started.elapsed().as_secs_f64());
+        write_report(&output, &report)?;
+        if !passed {
+            return Err("strict scheduler closure incomplete; publication not attempted".into());
+        }
+        return Ok(());
+    }
     println!("Systems: evaluating immutable publication acceptance");
     match agq_kerml_text::sysml::CanonicalSysmlSystemsLibrary::publish(
         candidate,
@@ -665,6 +744,7 @@ fn finalize_converged(
     journal: &std::path::Path,
     journal_digest: [u8; 32],
     audit_mode: SystemsFinalizationAuditMode,
+    profile: SysmlSyntaxProfile,
 ) -> Result<(), Box<dyn std::error::Error>> {
     // This branch deliberately precedes all prepare_* and publish() calls.
     // An invalid/nonconverged checkpoint fails here without a scheduler fallback.
@@ -679,13 +759,14 @@ fn finalize_converged(
         )?)
     })?);
     let publication =
-        match agq_kerml_text::sysml::CanonicalSysmlSystemsLibrary::finalize_from_converged_frontier_with_audit_mode(
+        match agq_kerml_text::sysml::CanonicalSysmlSystemsLibrary::finalize_from_converged_frontier_with_profile(
             &sources,
             accepted.clone(),
             journal,
             journal_digest,
             &transaction.audits,
             audit_mode,
+            profile,
         ) {
             Ok(publication) => publication,
             Err(error) => {
@@ -712,7 +793,7 @@ fn finalize_converged(
     })).collect();
     let mut report = json!({
         "format":"agq-sysml-systems-publication-audit/1","scope":null,
-        "sysml_profile":SysmlSyntaxProfile::OperationalV2.id(),
+        "sysml_profile":profile.id(),
         "accepted_kerml_digest":accepted.semantic_digest(),"accepted_kerml_profile":accepted.profile().id(),
         "kerml_producers_replayed":false,"systems_producers_replayed":false,
         "converged_checkpoint_authenticated":true,
@@ -801,6 +882,25 @@ fn parse_digest(value: &str) -> Result<[u8; 32], Box<dyn std::error::Error>> {
         *byte = u8::from_str_radix(&value[index * 2..index * 2 + 2], 16)?;
     }
     Ok(digest)
+}
+
+fn parse_profile(
+    args: impl IntoIterator<Item = impl AsRef<str>>,
+) -> Result<SysmlSyntaxProfile, String> {
+    let mut selected = None;
+    for arg in args {
+        if let Some(value) = arg.as_ref().strip_prefix("--profile=") {
+            if selected.is_some() {
+                return Err("--profile must be specified once".into());
+            }
+            selected = Some(match value {
+                "operational-v2" => SysmlSyntaxProfile::OperationalV2,
+                "operational-v3" => SysmlSyntaxProfile::OperationalV3,
+                _ => return Err("--profile requires operational-v2 or operational-v3".into()),
+            });
+        }
+    }
+    Ok(selected.unwrap_or(SysmlSyntaxProfile::OperationalV2))
 }
 
 fn parse_audit_workers(
@@ -893,6 +993,20 @@ fn closure_counters(counters: &agq_kerml_semantics::PublicationCounters) -> serd
 #[cfg(test)]
 mod audit_worker_option_tests {
     use super::*;
+
+    #[test]
+    fn interpretation_selection_is_explicit_and_rejects_unknown_or_duplicate_profiles() {
+        assert_eq!(
+            parse_profile(std::iter::empty::<&str>()),
+            Ok(SysmlSyntaxProfile::OperationalV2)
+        );
+        assert_eq!(
+            parse_profile(["--profile=operational-v3"]),
+            Ok(SysmlSyntaxProfile::OperationalV3)
+        );
+        assert!(parse_profile(["--profile=operational-v9"]).is_err());
+        assert!(parse_profile(["--profile=operational-v2", "--profile=operational-v3"]).is_err());
+    }
 
     #[test]
     fn serial_default_and_explicit_bounded_workers() {

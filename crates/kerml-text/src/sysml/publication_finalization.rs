@@ -173,14 +173,32 @@ impl CanonicalSysmlSystemsLibrary {
         audit_directory: impl AsRef<Path>,
         audit_mode: SystemsFinalizationAuditMode,
     ) -> Result<Self, SystemsPublicationError> {
+        Self::finalize_from_converged_frontier_with_profile(
+            sources,
+            accepted_kerml,
+            journal,
+            expected_journal_sha256,
+            audit_directory,
+            audit_mode,
+            SysmlSyntaxProfile::OperationalV2,
+        )
+    }
+
+    /// Authenticate the requested interpretation independently of checkpoint
+    /// contents. Every strict finalization gate is identical for v2 and v3.
+    pub fn finalize_from_converged_frontier_with_profile(
+        sources: &VerifiedLibrarySet,
+        accepted_kerml: Arc<CanonicalKermlStandardLibraries>,
+        journal: impl AsRef<Path>,
+        expected_journal_sha256: [u8; 32],
+        audit_directory: impl AsRef<Path>,
+        audit_mode: SystemsFinalizationAuditMode,
+        profile: SysmlSyntaxProfile,
+    ) -> Result<Self, SystemsPublicationError> {
         let mut observer = AuditLog::create(audit_directory.as_ref(), audit_mode)?;
         let started = observer.begin("frontier_authentication")?;
-        let source_identity = super::super::systems_frontier_source_identity(
-            sources,
-            &accepted_kerml,
-            SysmlSyntaxProfile::OperationalV2,
-            None,
-        );
+        let source_identity =
+            super::super::systems_frontier_source_identity(sources, &accepted_kerml, profile, None);
         let session = PublicationFrontierSession::resume(
             journal,
             expected_journal_sha256,
@@ -196,7 +214,8 @@ impl CanonicalSysmlSystemsLibrary {
         )?;
         observer.end("graph_restore", started, 0)?;
         let started = observer.begin("source_context_reconstruction")?;
-        let candidate = reconstruct_source_metadata(sources, accepted_kerml, frontier.overlay())?;
+        let candidate =
+            reconstruct_source_metadata(sources, accepted_kerml, frontier.overlay(), profile)?;
         let mut contract = candidate.dependency_contract().clone();
         let mut audit = SystemsPublicationAudit::default();
         audit_inputs(&candidate, sources, &contract, &mut audit);
@@ -210,7 +229,7 @@ impl CanonicalSysmlSystemsLibrary {
             frontier.overlay().declared(),
             candidate.draft().source_map(),
             library,
-            SysmlSyntaxProfile::OperationalV2,
+            profile,
             &mut audit,
         );
         if !audit.findings.is_empty() {
@@ -292,6 +311,7 @@ fn reconstruct_source_metadata(
     sources: &VerifiedLibrarySet,
     publication: Arc<CanonicalKermlStandardLibraries>,
     overlay: &DerivedOverlay,
+    profile: SysmlSyntaxProfile,
 ) -> Result<SystemsLibraryCandidate, SystemsPublicationError> {
     let mut parsed = Vec::new();
     let mut documents = Vec::new();
@@ -300,7 +320,7 @@ fn reconstruct_source_metadata(
         .filter(|source| source.language() == LibraryLanguage::SysMl)
     {
         let syntax = production::parse_sysml_with_profile(
-            SysmlSyntaxProfile::OperationalV2,
+            profile,
             source.document(),
             source.revision(),
             source.source(),
@@ -314,7 +334,7 @@ fn reconstruct_source_metadata(
             path: source.path().into(),
             document: source.document(),
             source_sha256: source.sha256().into(),
-            profile: SysmlSyntaxProfile::OperationalV2,
+            profile,
             parsed: syntax.is_complete(),
             byte_exact: syntax
                 .tokens()
@@ -394,14 +414,19 @@ fn reconstruct_source_metadata(
         &StandardSysmlBindings::unbound(SystemsLibraryIdentity::pinned(
             SystemsLibraryIdentity::SOURCE_CONTENT_SET,
         )),
-        SysmlBaselineProfile::OPERATIONAL_V2,
+        match profile {
+            SysmlSyntaxProfile::Published => SysmlBaselineProfile::PUBLISHED,
+            SysmlSyntaxProfile::OperationalV1 => SysmlBaselineProfile::OPERATIONAL_V1,
+            SysmlSyntaxProfile::OperationalV2 => SysmlBaselineProfile::OPERATIONAL_V2,
+            SysmlSyntaxProfile::OperationalV3 => SysmlBaselineProfile::OPERATIONAL_V3,
+        },
     )?;
     Ok(SystemsLibraryCandidate {
         draft,
         documents,
         publication,
         source_content_set: sources.content_set_id().into(),
-        syntax_profile: SysmlSyntaxProfile::OperationalV2,
+        syntax_profile: profile,
         production: None,
         dependency_contract,
     })

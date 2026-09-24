@@ -48,6 +48,23 @@ enum ReceiptAuthority {
     },
 }
 impl ReceiptAuthority {
+    fn profile(
+        &self,
+    ) -> Result<(SysmlBaselineProfile, SysmlSyntaxProfile), SystemsPublicationCacheError> {
+        match self.identity()["operational_profile"].as_str() {
+            Some("agentique-sysml-2.0-operational/2") => Ok((
+                SysmlBaselineProfile::OPERATIONAL_V2,
+                SysmlSyntaxProfile::OperationalV2,
+            )),
+            Some("agentique-sysml-2.0-operational/3") => Ok((
+                SysmlBaselineProfile::OPERATIONAL_V3,
+                SysmlSyntaxProfile::OperationalV3,
+            )),
+            _ => Err(SystemsPublicationCacheError::Mismatch(
+                "receipt SysML interpretation",
+            )),
+        }
+    }
     fn identity(&self) -> &Value {
         match self {
             Self::Trusted(receipt) => receipt.identity(),
@@ -142,9 +159,37 @@ impl CanonicalSysmlSystemsLibrary {
         sources: &VerifiedLibrarySet,
         accepted_kerml: Arc<CanonicalKermlStandardLibraries>,
     ) -> Result<Self, SystemsPublicationCacheError> {
-        let receipt = ReceiptAuthority::Trusted(TrustedPublicationReceipt::checked_in(
-            "sysml-systems-operational-v2",
-        )?);
+        Self::restore_cache_for_profile(
+            reader,
+            sources,
+            accepted_kerml,
+            SysmlBaselineProfile::OPERATIONAL_V2,
+        )
+    }
+
+    /// Restore a specific separately accepted interpretation. Selecting a
+    /// profile cannot create catalogue authority or substitute another receipt.
+    pub fn restore_cache_for_profile(
+        reader: impl Read + Seek,
+        sources: &VerifiedLibrarySet,
+        accepted_kerml: Arc<CanonicalKermlStandardLibraries>,
+        profile: SysmlBaselineProfile,
+    ) -> Result<Self, SystemsPublicationCacheError> {
+        let id = match profile {
+            SysmlBaselineProfile::OperationalV2 => "sysml-systems-operational-v2",
+            SysmlBaselineProfile::OperationalV3 => "sysml-systems-operational-v3",
+            _ => {
+                return Err(SystemsPublicationCacheError::Mismatch(
+                    "receipt SysML interpretation",
+                ));
+            }
+        };
+        let receipt = ReceiptAuthority::Trusted(TrustedPublicationReceipt::checked_in(id)?);
+        if receipt.profile()?.0 != profile {
+            return Err(SystemsPublicationCacheError::Mismatch(
+                "receipt SysML interpretation",
+            ));
+        }
         Self::restore_with_authority(reader, sources, accepted_kerml, receipt)
     }
 
@@ -197,17 +242,16 @@ impl CanonicalSysmlSystemsLibrary {
         receipt: ReceiptAuthority,
     ) -> Result<Self, SystemsPublicationCacheError> {
         let identity = SystemsLibraryIdentity::pinned(SystemsLibraryIdentity::SOURCE_CONTENT_SET);
+        let (profile, syntax_profile) = receipt.profile()?;
         let empty_bindings = StandardSysmlBindings::unbound(identity.clone());
-        let initial_contract = SysmlDependencyContract::checked_in_for_profile(
-            &empty_bindings,
-            SysmlBaselineProfile::OPERATIONAL_V2,
-        )?;
+        let initial_contract =
+            SysmlDependencyContract::checked_in_for_profile(&empty_bindings, profile)?;
         check_interpretation(&receipt, sources, &accepted_kerml, &initial_contract)?;
         let mut archive = ZipArchive::new(reader)?;
         check_entries(&mut archive)?;
         let metadata = authenticated_bytes(&mut archive, &receipt, "facade.json")?;
         let metadata: FacadeMetadata = serde_json::from_slice(&metadata)?;
-        metadata.validate(sources)?;
+        metadata.validate(sources, syntax_profile)?;
         // Hash the compressed entry before allocating decoded graph records.
         let graph_bytes = receipt.entry_bytes("kernel.jsonl")?;
         let digest = entry_digest(&mut archive, "kernel.jsonl", graph_bytes)?;
@@ -261,10 +305,7 @@ impl CanonicalSysmlSystemsLibrary {
         .with_verified_sources(library, &source_map)?;
         drop(queries);
         drop(current);
-        let contract = SysmlDependencyContract::checked_in_for_profile(
-            &bindings,
-            SysmlBaselineProfile::OPERATIONAL_V2,
-        )?;
+        let contract = SysmlDependencyContract::checked_in_for_profile(&bindings, profile)?;
         if receipt.identity()["dependency_contract_digest"]
             != json!(contract.context_identity_digest())
         {
@@ -323,7 +364,7 @@ impl CanonicalSysmlSystemsLibrary {
                     path: doc.path,
                     document: doc.document,
                     source_sha256: doc.sha256,
-                    profile: SysmlSyntaxProfile::OperationalV2,
+                    profile: syntax_profile,
                     parsed: doc.parsed,
                     byte_exact: doc.byte_exact,
                     recovery_count: doc.recovery_count,
@@ -447,7 +488,11 @@ fn check_receipt_documents(
 }
 
 impl FacadeMetadata {
-    fn validate(&self, sources: &VerifiedLibrarySet) -> Result<(), SystemsPublicationCacheError> {
+    fn validate(
+        &self,
+        sources: &VerifiedLibrarySet,
+        profile: SysmlSyntaxProfile,
+    ) -> Result<(), SystemsPublicationCacheError> {
         let documents: BTreeMap<_, _> = sources
             .documents()
             .filter(|source| source.language() == LibraryLanguage::SysMl)
@@ -473,7 +518,7 @@ impl FacadeMetadata {
             ));
         }
         for doc in &self.documents {
-            if doc.profile != SysmlSyntaxProfile::OperationalV2.id()
+            if doc.profile != profile.id()
                 || !doc.parsed
                 || !doc.byte_exact
                 || doc.recovery_count != 0
@@ -852,24 +897,68 @@ mod tests {
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
         let sources = VerifiedLibrarySet::load_from_directory(&root).unwrap();
         let good = metadata(&sources);
-        good.validate(&sources).unwrap();
+        good.validate(&sources, SysmlSyntaxProfile::OperationalV2)
+            .unwrap();
+        assert!(
+            good.validate(&sources, SysmlSyntaxProfile::OperationalV3)
+                .is_err()
+        );
+        let mut v3 = good.clone();
+        for doc in &mut v3.documents {
+            doc.profile = SysmlSyntaxProfile::OperationalV3.id().into();
+        }
+        v3.validate(&sources, SysmlSyntaxProfile::OperationalV3)
+            .unwrap();
+        assert!(
+            v3.validate(&sources, SysmlSyntaxProfile::OperationalV2)
+                .is_err()
+        );
+        v3.documents[0].profile = SysmlSyntaxProfile::OperationalV2.id().into();
+        assert!(
+            v3.validate(&sources, SysmlSyntaxProfile::OperationalV3)
+                .is_err()
+        );
         let mut omitted = good.clone();
         omitted.documents.pop();
-        assert!(omitted.validate(&sources).is_err());
+        assert!(
+            omitted
+                .validate(&sources, SysmlSyntaxProfile::OperationalV2)
+                .is_err()
+        );
         let mut repeated = good.clone();
         repeated.documents[1] = repeated.documents[0].clone();
-        assert!(repeated.validate(&sources).is_err());
+        assert!(
+            repeated
+                .validate(&sources, SysmlSyntaxProfile::OperationalV2)
+                .is_err()
+        );
         let mut stale = good.clone();
         stale.documents[0].sha256 = "0".repeat(64);
-        assert!(stale.validate(&sources).is_err());
+        assert!(
+            stale
+                .validate(&sources, SysmlSyntaxProfile::OperationalV2)
+                .is_err()
+        );
         let mut reference = good.clone();
         reference.complete_references -= 1;
-        assert!(reference.validate(&sources).is_err());
+        assert!(
+            reference
+                .validate(&sources, SysmlSyntaxProfile::OperationalV2)
+                .is_err()
+        );
         let mut family = good.clone();
         family.checked.remove("IdentityProvenance");
-        assert!(family.validate(&sources).is_err());
+        assert!(
+            family
+                .validate(&sources, SysmlSyntaxProfile::OperationalV2)
+                .is_err()
+        );
         let mut duplicate_root = good;
         duplicate_root.roots.push(duplicate_root.roots[0]);
-        assert!(duplicate_root.validate(&sources).is_err());
+        assert!(
+            duplicate_root
+                .validate(&sources, SysmlSyntaxProfile::OperationalV2)
+                .is_err()
+        );
     }
 }

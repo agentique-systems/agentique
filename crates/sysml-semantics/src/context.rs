@@ -225,7 +225,16 @@ impl<'m> SysmlSemanticContext<'m> {
         receipt: &agq_kerml_semantics::TrustedPublicationReceipt,
         reader: impl std::io::Read,
     ) -> Result<Self, SysmlContextError> {
-        if receipt.id() != "sysml-systems-operational-v2" {
+        let expected_receipt = match self.id.dependencies.sysml_profile {
+            SysmlBaselineProfile::OperationalV2 => "sysml-systems-operational-v2",
+            SysmlBaselineProfile::OperationalV3 => "sysml-systems-operational-v3",
+            _ => {
+                return Err(SysmlContextError::IdentityMismatch(
+                    "Systems receipt profile",
+                ));
+            }
+        };
+        if receipt.id() != expected_receipt {
             return Err(SysmlContextError::IdentityMismatch(
                 "Systems receipt authority",
             ));
