@@ -5,6 +5,8 @@ mod end_usage_tests;
 mod expression_usage_tests;
 #[path = "producer_trigger_tests.rs"]
 mod trigger_tests;
+#[path = "producer_enumeration_tests.rs"]
+mod enumeration_tests;
 use agq_kerml_semantics::{
     LibrarySetIdentity, SearchDependency, StandardLibraryArtifact, StandardRole,
 };

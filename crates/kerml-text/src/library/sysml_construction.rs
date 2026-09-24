@@ -436,6 +436,12 @@ impl Builder {
             .collect();
         for id in ids {
             let class = self.records[&id].class;
+            if self.is_class(class, s::ENUMERATION_DEFINITION) {
+                // An enum is a variation by construction. The pinned
+                // validateDefinitionVariationIsAbstract obligation applies to
+                // it as well; its textual production has no abstract modifier.
+                self.set(id, p::TYPE_IS_ABSTRACT, Value::Boolean(true))?;
+            }
             for (base, property) in [
                 (s::DEFINITION, sp::DEFINITION_IS_VARIATION),
                 (s::USAGE, sp::USAGE_IS_VARIATION),
@@ -455,7 +461,14 @@ impl Builder {
                         .expect("SysML base property");
                     if !descriptor.derived && !self.records[&id].slots.contains_key(&descriptor.id)
                     {
-                        self.set(id, property, Value::Boolean(false))?;
+                        // SysML 2.0 EnumerationDefinition::isVariation is a
+                        // nonderived redefinition with the explicit default
+                        // true (8.3.8.2), also required by its validation rule.
+                        // This source-backed construction default is distinct
+                        // from the false default on an ordinary Definition.
+                        let value = property == sp::DEFINITION_IS_VARIATION
+                            && self.is_class(class, s::ENUMERATION_DEFINITION);
+                        self.set(id, property, Value::Boolean(value))?;
                     }
                 }
             }

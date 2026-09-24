@@ -129,6 +129,8 @@ fn actions_trigger_lowering_preserves_input_parameter_defaults() {
 
 #[path = "sysml_authority_tests.rs"]
 mod authority;
+#[path = "sysml_enumeration_tests.rs"]
+mod enumeration;
 
 #[path = "sysml_rich_vertical_tests.rs"]
 mod rich_vertical;

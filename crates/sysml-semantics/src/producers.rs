@@ -120,6 +120,7 @@ pub fn sysml_producer_rule_ids(profile: SysmlBaselineProfile) -> BTreeSet<RuleId
             "checkFlowUsageFlowSpecialization",
             "deriveUsageMayTimeVary",
             "checkTransitionUsagePayloadSpecialization",
+            "checkUsageVariationDefinitionSpecialization",
         ])
         .map(|rule| profile.rule_id(rule))
         .collect()
@@ -184,7 +185,13 @@ pub fn sysml_producer_descriptors() -> Vec<agq_kerml_semantics::ProducerDescript
             &["checkInterfaceUsageBinarySpecialization"][..],
         ),
         (sc::FLOW_USAGE, &["checkFlowUsageFlowSpecialization"][..]),
-        (sc::USAGE, &["deriveUsageMayTimeVary"][..]),
+        (
+            sc::USAGE,
+            &[
+                "deriveUsageMayTimeVary",
+                "checkUsageVariationDefinitionSpecialization",
+            ][..],
+        ),
     ] {
         for &rule in rules {
             families.entry(rule).or_default().push(class);
@@ -201,6 +208,9 @@ pub fn sysml_producer_descriptors() -> Vec<agq_kerml_semantics::ProducerDescript
                     ProducerEffect::Scalar(sp::USAGE_MAY_TIME_VARY),
                 ],
                 "checkTransitionUsagePayloadSpecialization" => vec![ProducerEffect::Subsetting],
+                "checkUsageVariationDefinitionSpecialization" => {
+                    vec![ProducerEffect::Specialization, ProducerEffect::Typing]
+                }
                 // A Usage contributes Subsetting; a Definition contributes
                 // Subclassification. Both are Specialization relationships.
                 _ => vec![ProducerEffect::Specialization, ProducerEffect::Subsetting],
@@ -224,6 +234,9 @@ pub fn sysml_producer_descriptors() -> Vec<agq_kerml_semantics::ProducerDescript
                     Some(BTreeSet::from([kc::SUBSETTING, kc::FEATURE_CHAINING]));
             } else {
                 descriptor.scope = agq_kerml_semantics::ProducerEffectScope::Subject;
+            }
+            if rule == "checkUsageVariationDefinitionSpecialization" {
+                descriptor.relationship_classes = Some(BTreeSet::from([kc::FEATURE_TYPING]));
             }
             if rule == "deriveUsageMayTimeVary" {
                 descriptor.minimum_stratum = ResultStructureStratum::StableProperties;
@@ -278,6 +291,10 @@ pub fn plan_sysml_producers(
                 .push(evaluator.specialize(result, subject, target));
         }
     }
+    if evaluator.is(subject, sc::USAGE) {
+        plan.results
+            .push(evaluator.variation_definition_specialization(subject));
+    }
     for &(class, owner_classes, rule, target) in COMPOSITE_RULES {
         if !evaluator.is(subject, class) {
             continue;
@@ -305,6 +322,7 @@ pub fn plan_sysml_producers(
                             profile,
                             SysmlBaselineProfile::OPERATIONAL_V1
                                 | SysmlBaselineProfile::OPERATIONAL_V2
+                                | SysmlBaselineProfile::OPERATIONAL_V3
                         ) {
                         Target::Sysml(R::Subitems)
                     } else {
@@ -1235,6 +1253,80 @@ impl Evaluator<'_, '_> {
             }
         }
     }
+    fn variation_definition_specialization(&self, subject: ElementId) -> SysmlProducerResult {
+        let mut result = self.result(subject, "checkUsageVariationDefinitionSpecialization");
+        let membership = self.queries.owning_relationship(subject);
+        let membership_id = membership.value;
+        result
+            .evidence
+            .merge_evidence(membership)
+            .expect("same producer context");
+        let Some(membership) = membership_id else {
+            return result;
+        };
+        result
+            .evidence
+            .merge_evidence(
+                self.queries
+                    .canonical_fact_evidence(FactKey::Element(membership)),
+            )
+            .expect("same producer context");
+        if !self.is(membership, sc::VARIANT_MEMBERSHIP) {
+            return result;
+        }
+        // VariantMembership is an OwningMembership, not a FeatureMembership:
+        // Feature::owningType deliberately cannot establish this owner.
+        let owner = self.queries.owning_related_element(membership);
+        let owner_id = owner.value;
+        result
+            .evidence
+            .merge_evidence(owner)
+            .expect("same producer context");
+        let Some(owner) = owner_id else {
+            return result;
+        };
+        result
+            .evidence
+            .merge_evidence(
+                self.queries
+                    .canonical_fact_evidence(FactKey::Element(owner)),
+            )
+            .expect("same producer context");
+        if !self.is(owner, sc::DEFINITION) {
+            return result;
+        }
+        if self.boolean(&mut result.evidence, owner, sp::DEFINITION_IS_VARIATION) != Some(true) {
+            return result;
+        }
+        if let Some(witness) = self
+            .queries
+            .canonical_specialization_witness(subject, owner)
+        {
+            result
+                .evidence
+                .merge_evidence(witness)
+                .expect("same producer context");
+        } else if result.evidence.completeness == Completeness::Complete {
+            // The pinned constraint requires specializes(owningVariationDefinition).
+            // Its endpoints are a Feature and a Classifier: FeatureTyping is
+            // the canonical specialization carrier, not Subsetting. In an enum
+            // this same edge supplies the inherited Feature::type population
+            // redefined by Usage::definition and EnumerationUsage::enumerationDefinition.
+            result.relationships.push(SysmlRelationshipProposal {
+                key: DerivationKey {
+                    rule: self.profile.rule_id(result.rule),
+                    subject,
+                    output: crate::profile::output_key("variation-definition", owner.as_u128()),
+                },
+                metaclass: kc::FEATURE_TYPING,
+                specific: subject,
+                general: owner,
+                source_property: kp::FEATURE_TYPING_TYPED_FEATURE,
+                target_property: kp::FEATURE_TYPING_TYPE,
+            });
+        }
+        result
+    }
     fn specialize(
         &self,
         mut result: SysmlProducerResult,
@@ -1359,7 +1451,10 @@ impl Evaluator<'_, '_> {
             ),
             Target::MissingViewpoint => self.path(
                 subject,
-                if self.profile == SysmlBaselineProfile::OPERATIONAL_V2 {
+                if matches!(
+                    self.profile,
+                    SysmlBaselineProfile::OPERATIONAL_V2 | SysmlBaselineProfile::OPERATIONAL_V3
+                ) {
                     &["Views", "ViewpointCheck"]
                 } else {
                     &["Views", "Viewpoint"]
@@ -1370,7 +1465,10 @@ impl Evaluator<'_, '_> {
             ),
             Target::MissingViewpoints => self.path(
                 subject,
-                if self.profile == SysmlBaselineProfile::OPERATIONAL_V2 {
+                if matches!(
+                    self.profile,
+                    SysmlBaselineProfile::OPERATIONAL_V2 | SysmlBaselineProfile::OPERATIONAL_V3
+                ) {
                     &["Views", "viewpointChecks"]
                 } else {
                     &["Views", "viewpoints"]
@@ -1381,7 +1479,10 @@ impl Evaluator<'_, '_> {
             ),
             Target::MissingBinaryConnections => self.path(
                 subject,
-                if self.profile == SysmlBaselineProfile::OPERATIONAL_V2 {
+                if matches!(
+                    self.profile,
+                    SysmlBaselineProfile::OPERATIONAL_V2 | SysmlBaselineProfile::OPERATIONAL_V3
+                ) {
                     &["Connections", "BinaryConnection"]
                 } else {
                     &["Connections", "BinaryConnections"]

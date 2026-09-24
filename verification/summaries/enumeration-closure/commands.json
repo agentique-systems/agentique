@@ -1,0 +1,214 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "enumeration-producer-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics",
+        "enumeration_",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "b3cc853ab7ae763a9bdf07347437f665c444e2bf",
+      "working_changes_sha256": "80f964f0631e8345d6fa4252d1b89f764bb3c0f5b486ae569ce5abc39698682f",
+      "output_sha256": "4e9f31725cf6c562e66e1891769b9824a22aeb89cc3c53999d2c860dc23ebd86",
+      "duration_seconds": 27.02,
+      "output": "verification/generated/enumeration-closure/enumeration-producer-tests.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-finalization"
+      }
+    },
+    {
+      "name": "enumeration-producer-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics",
+        "enumeration_",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "b3cc853ab7ae763a9bdf07347437f665c444e2bf",
+      "working_changes_sha256": "1deb7dda490336e9441f71fc74dc2e3ec765ca53d33dbb5e7052cb95967e0130",
+      "output_sha256": "e920cd27924805188116d6935d94dae247e5915ddcd281696dacaae3a4262076",
+      "duration_seconds": 27.77,
+      "output": "verification/generated/enumeration-closure/enumeration-producer-tests-2.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-finalization"
+      }
+    },
+    {
+      "name": "enumeration-lowering-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "enumeration_",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "b3cc853ab7ae763a9bdf07347437f665c444e2bf",
+      "working_changes_sha256": "1deb7dda490336e9441f71fc74dc2e3ec765ca53d33dbb5e7052cb95967e0130",
+      "output_sha256": "b681662e23f31bed550e929ea8d427ab9aacc1b586732b0d447ae4a8c8e4d508",
+      "duration_seconds": 30.0,
+      "output": "verification/generated/enumeration-closure/enumeration-lowering-tests.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-finalization"
+      }
+    },
+    {
+      "name": "enumeration-combined-focused",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "-p",
+        "agq-sysml-semantics",
+        "enumeration",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "1a51f189d94ffaf8ce263b12298d6f4234a728c9",
+      "working_changes_sha256": "c2a1a6b0cf5950842ebf1af1c84cb0ec63d838c6086fd23a4a7c82ceb8651206",
+      "output_sha256": "055e99ebe897c4ab166aa88d3117e7c21eb80fb59516de29029a6e1974e63852",
+      "duration_seconds": 89.06,
+      "output": "verification/generated/enumeration-closure/enumeration-combined-focused.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-finalization"
+      }
+    },
+    {
+      "name": "enumeration-format",
+      "command": [
+        "rustfmt",
+        "--edition",
+        "2024",
+        "--check",
+        "crates/sysml-semantics/src/producers.rs",
+        "crates/sysml-semantics/src/producer_enumeration_tests.rs",
+        "crates/kerml-text/src/library/sysml_construction.rs",
+        "crates/kerml-text/src/sysml_enumeration_tests.rs"
+      ],
+      "exit_code": 0,
+      "tool_version": "rustfmt 1.8.0-stable (ded5c06cf2 2025-12-08)",
+      "source_commit": "669905796bd6ec97bbed4e2530468e2dc8b03a46",
+      "working_changes_sha256": "813d6e32c696a2441a029e876bb0979f9adb102989501483daaf2b36bd00e571",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 0.47,
+      "output": "verification/generated/enumeration-closure/enumeration-format.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "sysml-semantics-package",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "669905796bd6ec97bbed4e2530468e2dc8b03a46",
+      "working_changes_sha256": "813d6e32c696a2441a029e876bb0979f9adb102989501483daaf2b36bd00e571",
+      "output_sha256": "9dfe10ab2bd7a358fe364304c3a7be3e43dba9ae8559ec997a84bae7bf2911e9",
+      "duration_seconds": 155.66,
+      "output": "verification/generated/enumeration-closure/sysml-semantics-package.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-finalization"
+      }
+    },
+    {
+      "name": "enumeration-final-focused",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-sysml-semantics",
+        "enumeration",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "669905796bd6ec97bbed4e2530468e2dc8b03a46",
+      "working_changes_sha256": "133f8a2366f198a89d78c6ad8f02f9da86f4bf09325ee9946a439c14c4dcf80c",
+      "output_sha256": "21fdcc25a00d304b3600401dc524e477ffb09e5d0e8670707bd12f26ddcb63ea",
+      "duration_seconds": 28.72,
+      "output": "verification/generated/enumeration-closure/enumeration-final-focused.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\platform-finalization"
+      }
+    },
+    {
+      "name": "enumeration-final-format",
+      "command": [
+        "rustfmt",
+        "--edition",
+        "2024",
+        "--check",
+        "crates/sysml-semantics/src/producers.rs",
+        "crates/sysml-semantics/src/producer_enumeration_tests.rs",
+        "crates/kerml-text/src/library/sysml_construction.rs",
+        "crates/kerml-text/src/sysml_enumeration_tests.rs"
+      ],
+      "exit_code": 0,
+      "tool_version": "rustfmt 1.8.0-stable (ded5c06cf2 2025-12-08)",
+      "source_commit": "669905796bd6ec97bbed4e2530468e2dc8b03a46",
+      "working_changes_sha256": "133f8a2366f198a89d78c6ad8f02f9da86f4bf09325ee9946a439c14c4dcf80c",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 0.09,
+      "output": "verification/generated/enumeration-closure/enumeration-final-format.log",
+      "environment_overrides": {}
+    }
+  ]
+}
