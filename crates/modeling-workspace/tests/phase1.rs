@@ -1,10 +1,22 @@
 //! Accepted-publication integration tests; integration remains gated by language readiness.
 mod support;
-use agq_kerml_semantics::{Completeness, QualifiedName};
+use agq_kerml_semantics::{
+    Completeness, QualifiedName, QueryResult, SearchDependency, SemanticClosureRequirement,
+};
 use agq_kerml_syntax::production::Production;
 use agq_kerml_text::{DocumentStatus, ProjectChange, SourceLanguage};
-use agq_kernel::DocumentId;
-use std::{collections::BTreeSet, sync::Arc, time::Instant};
+use agq_kernel::{
+    DocumentId, ElementId,
+    provenance::{Dependency, FactKey, Origin},
+};
+use agq_modeling_workspace::{ValidatedProjectRevision, WorkingProjectRevision};
+use agq_sysml_semantics::{SysmlQueryResult, SysmlSemanticContextId};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    fmt::Write,
+    sync::{Arc, Barrier},
+    time::Instant,
+};
 use support::*;
 
 #[test]
@@ -602,6 +614,403 @@ fn hundred_documents_five_revisions_and_parallel_borrowed_reads() {
     }
     eprintln!(
         "workspace scaling elapsed={:?}; authored reconstruction remains permitted; no speed threshold",
+        started.elapsed()
+    );
+}
+
+// Retain only evidence anchored at the selected authored owner and engine.
+// Accepted proof DAGs remain shared; readers never clone complete query answers
+// or serialize their potentially large transitive explanations.
+#[derive(Debug, PartialEq, Eq)]
+struct ScalePopulationProof {
+    context: SysmlSemanticContextId,
+    values: Vec<ElementId>,
+    facts: BTreeSet<FactKey>,
+    canonical_dependencies: BTreeSet<Dependency>,
+    origins: BTreeMap<FactKey, Arc<Origin>>,
+    searches: BTreeSet<SearchDependency>,
+}
+
+fn scale_fact_subject(fact: FactKey) -> Option<ElementId> {
+    match fact {
+        FactKey::Element(element) | FactKey::Property { element, .. } => Some(element),
+        FactKey::AssociationOccurrence(_) => None,
+    }
+}
+
+fn retain_scale_evidence<T>(
+    proof: &mut ScalePopulationProof,
+    query: &QueryResult<T>,
+    selected: &[ElementId; 2],
+) {
+    let relevant =
+        |fact: FactKey| scale_fact_subject(fact).is_some_and(|subject| selected.contains(&subject));
+    proof.facts.extend(
+        query
+            .positive_dependencies
+            .iter()
+            .copied()
+            .filter(|&fact| relevant(fact)),
+    );
+    proof
+        .canonical_dependencies
+        .extend(query.canonical_dependencies.iter().copied().filter(
+            |dependency| match dependency {
+                Dependency::Declared(fact) | Dependency::Derived(fact) => relevant(*fact),
+            },
+        ));
+    proof.origins.extend(
+        query
+            .fact_origins
+            .iter()
+            .filter(|(fact, _)| relevant(**fact))
+            .map(|(fact, origin)| (*fact, Arc::clone(origin))),
+    );
+    proof.searches.extend(
+        query
+            .search_dependencies
+            .iter()
+            .filter(|search| {
+                let subject = match search {
+                    SearchDependency::ProducerClosure { subject, .. }
+                    | SearchDependency::Element(subject) => *subject,
+                    SearchDependency::PropertySet { element, .. } => *element,
+                    SearchDependency::Incoming { target } => *target,
+                    SearchDependency::SourceRelationships { source, .. } => *source,
+                    SearchDependency::OwnedRelationships { owner, .. }
+                    | SearchDependency::OwnedRelationshipsExcluding { owner, .. }
+                    | SearchDependency::StructuralFeaturePopulation { owner, .. } => *owner,
+                    SearchDependency::NamespaceMembers { namespace } => *namespace,
+                    _ => return false,
+                };
+                selected.contains(&subject)
+            })
+            .cloned(),
+    );
+}
+
+fn scale_population_proof(
+    answer: SysmlQueryResult<Vec<ElementId>>,
+    owner: ElementId,
+    engine: ElementId,
+) -> ScalePopulationProof {
+    assert_eq!(answer.completeness(), Completeness::Complete);
+    let mut proof = ScalePopulationProof {
+        context: answer.context.clone(),
+        values: answer.value().clone(),
+        facts: BTreeSet::new(),
+        canonical_dependencies: BTreeSet::new(),
+        origins: BTreeMap::new(),
+        searches: BTreeSet::new(),
+    };
+    let selected = [owner, engine];
+    retain_scale_evidence(&mut proof, &answer.kerml, &selected);
+    for query in &answer.supporting_queries {
+        retain_scale_evidence(&mut proof, query, &selected);
+    }
+    for query in &answer.supporting_names {
+        retain_scale_evidence(&mut proof, query, &selected);
+    }
+    for query in answer.observations.values() {
+        retain_scale_evidence(&mut proof, query, &selected);
+    }
+    assert!(proof.facts.contains(&FactKey::Element(owner)));
+    assert!(proof.origins.contains_key(&FactKey::Element(owner)));
+    assert!(proof.searches.iter().any(|search| matches!(search,
+        SearchDependency::ProducerClosure {
+            subject,
+            requirement: SemanticClosureRequirement::EffectiveMembership,
+            certificate_digest: Some(_),
+            ..
+        } if *subject == owner)));
+    assert!(proof.searches.iter().any(|search| matches!(search,
+        SearchDependency::NamespaceMembers { namespace } if *namespace == owner)
+        || matches!(search, SearchDependency::PropertySet { element, property }
+            if *element == owner && *property == agq_kerml::properties::ELEMENT_OWNED_RELATIONSHIP)
+        || matches!(search, SearchDependency::OwnedRelationships { owner: observed, .. }
+            if *observed == owner)));
+    proof
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct ScaleGroupProof {
+    owner: ElementId,
+    engine: ElementId,
+    usages: ScalePopulationProof,
+    ports: ScalePopulationProof,
+}
+
+fn scale_group_proof(revision: &ValidatedProjectRevision, group: usize) -> ScaleGroupProof {
+    let q = revision.sysml_queries();
+    assert!(std::ptr::eq(q.model(), revision.semantic_model()));
+    let package = format!("Workbench{group:03}");
+    let root = revision.working().root();
+    let owner = path(q.kerml(), root, &[&package, "Worker"]);
+    let engine = path(q.kerml(), root, &[&package, "Worker", "engine"]);
+    let usages = scale_population_proof(q.effective_usages(owner), owner, engine);
+    assert!(usages.values.contains(&engine));
+    let ports = scale_population_proof(q.effective_ports(owner), owner, engine);
+    ScaleGroupProof {
+        owner,
+        engine,
+        usages,
+        ports,
+    }
+}
+
+fn scale_revision_signature(revision: &WorkingProjectRevision) -> String {
+    // The older recovery fixture's signature includes full reference proof
+    // Debug output. Keep this larger fixture exact for its source/identity and
+    // reference assertions without serializing standard proof DAGs.
+    assert!(revision.diagnostics().is_empty());
+    let mut signature = String::new();
+    writeln!(
+        signature,
+        "revision={:?} parent={:?} context={:?} closure={:?}",
+        revision.revision(),
+        revision.parent(),
+        revision.kerml_queries().unwrap().context(),
+        revision.producer_closure().unwrap().digest()
+    )
+    .unwrap();
+    for (path, document) in revision.documents() {
+        writeln!(
+            signature,
+            "document={path:?} id={:?} revision={:?} language={:?} source={:?}",
+            document.id(),
+            document.revision(),
+            document.language(),
+            document.source()
+        )
+        .unwrap();
+        for node in document.production_syntax().unwrap().nodes() {
+            writeln!(signature, "node={:?} range={:?}", node.id(), node.range()).unwrap();
+        }
+    }
+    for reference in revision.references() {
+        assert_eq!(reference.resolution.completeness, Completeness::Complete);
+        assert!(matches!(
+            reference.resolution.value,
+            agq_kerml_semantics::Resolution::Resolved(_)
+        ));
+        writeln!(
+            signature,
+            "reference={:?} specific={:?} kind={:?} name={:?} origin={:?} target={:?} alias={:?} visibility={:?}",
+            reference.relationship,
+            reference.specific,
+            reference.kind,
+            reference.name,
+            reference.origin,
+            reference.resolution.value,
+            reference.alias(),
+            reference.visibility()
+        )
+        .unwrap();
+    }
+    signature
+}
+
+fn capture_validated_scale_revision(
+    revision: &Arc<WorkingProjectRevision>,
+) -> (ValidatedProjectRevision, String, [ScaleGroupProof; 3]) {
+    assert_valid(revision);
+    assert_eq!(revision.documents().count(), 100);
+    for language in [SourceLanguage::KerMl, SourceLanguage::SysMl] {
+        assert_eq!(
+            revision
+                .documents()
+                .filter(|(_, document)| document.language() == language)
+                .count(),
+            50
+        );
+    }
+    let validated = revision.validate().unwrap();
+    assert!(Arc::ptr_eq(validated.working(), revision));
+    let signature = scale_revision_signature(revision);
+    let queries = [0, 25, 49].map(|group| scale_group_proof(&validated, group));
+    eprintln!(
+        "validated scale revision={:?} documents=100 kerml=50 sysml=50 signature_bytes={} selected_query_fact_keys={} selected_query_searches={}",
+        revision.revision(),
+        signature.len(),
+        queries
+            .iter()
+            .map(|proof| proof.usages.facts.len() + proof.ports.facts.len())
+            .sum::<usize>(),
+        queries
+            .iter()
+            .map(|proof| proof.usages.searches.len() + proof.ports.searches.len())
+            .sum::<usize>()
+    );
+    (validated, signature, queries)
+}
+
+#[test]
+#[ignore = "requires the accepted publication caches; never rebuilds standards"]
+fn hundred_documents_five_validated_revisions_and_four_parallel_readers() {
+    let started = Instant::now();
+    let mut workspace = open();
+    eprintln!(
+        "validated scale: restoring accepted dependencies complete; constructing 100 mixed documents"
+    );
+    let mut changes = Vec::with_capacity(100);
+    for group in 0..50 {
+        changes.push(add(
+            &format!("Contracts{group:03}.kerml"),
+            SourceLanguage::KerMl,
+            &inputs::contracts(group),
+        ));
+        changes.push(add(
+            &format!("Worker{group:03}.sysml"),
+            SourceLanguage::SysMl,
+            &inputs::worker(group),
+        ));
+    }
+    let first = workspace
+        .apply(workspace.head().revision(), changes)
+        .unwrap();
+    // Each baseline and validated handle exists before the next source edit.
+    let mut retained = vec![capture_validated_scale_revision(&first)];
+    let original_engines = [25, 49].map(|group| {
+        (
+            element(
+                &first,
+                &[&format!("Workbench{group:03}"), "Worker", "engine"],
+            ),
+            syntax_id(
+                &first,
+                &format!("Worker{group:03}.sysml"),
+                Production::PartUsage,
+                "part engine;",
+            ),
+        )
+    });
+    for (index, group) in [25, 49].into_iter().enumerate() {
+        let previous = retained.last().unwrap().0.working();
+        let document_path = format!("Worker{group:03}.sysml");
+        let source = previous.document_at(&document_path).unwrap().source();
+        let insertion = source.find("part engine;").unwrap() + "part engine;".len();
+        let with_port = workspace
+            .apply(
+                previous.revision(),
+                [edit(
+                    previous,
+                    &document_path,
+                    insertion,
+                    insertion,
+                    " port bus;",
+                )],
+            )
+            .unwrap();
+        retained.push(capture_validated_scale_revision(&with_port));
+        let source = with_port.document_at(&document_path).unwrap().source();
+        let insertion = source.rfind('}').unwrap();
+        let specialized = workspace
+            .apply(
+                with_port.revision(),
+                [edit(
+                    &with_port,
+                    &document_path,
+                    insertion,
+                    insertion,
+                    "part def SpecializedWorker :> Worker { part :>> engine; } ",
+                )],
+            )
+            .unwrap();
+        retained.push(capture_validated_scale_revision(&specialized));
+        let package = format!("Workbench{group:03}");
+        for revision in [&with_port, &specialized] {
+            assert_eq!(
+                element(revision, &[&package, "Worker", "engine"]),
+                original_engines[index].0
+            );
+            assert_eq!(
+                syntax_id(
+                    revision,
+                    &document_path,
+                    Production::PartUsage,
+                    "part engine;"
+                ),
+                original_engines[index].1
+            );
+            assert_eq!(
+                revision.document_at(&document_path).unwrap().id(),
+                first.document_at(&document_path).unwrap().id()
+            );
+        }
+        let q = specialized.sysml_queries().unwrap();
+        let original_owner = element(&specialized, &[&package, "Worker"]);
+        let owner = element(&specialized, &[&package, "SpecializedWorker"]);
+        let bus = element(&with_port, &[&package, "Worker", "bus"]);
+        let ports = q.effective_ports(owner);
+        assert_eq!(ports.completeness(), Completeness::Complete);
+        assert_eq!(ports.value(), &vec![bus]);
+        let owning_type = q.kerml().owning_type(bus);
+        assert_eq!(owning_type.completeness, Completeness::Complete);
+        assert_eq!(owning_type.value, Some(original_owner));
+        let replacement = element(&specialized, &[&package, "SpecializedWorker", "engine"]);
+        let redefined = q.effective_redefined_features(replacement);
+        assert_eq!(redefined.completeness(), Completeness::Complete);
+        assert!(redefined.value().contains(&original_engines[index].0));
+        let children = q.effective_usages(owner);
+        assert_eq!(children.completeness(), Completeness::Complete);
+        assert!(children.value().contains(&replacement));
+        assert!(!children.value().contains(&original_engines[index].0));
+        assert!(q.model().element(original_engines[index].0).is_some());
+    }
+    assert_eq!(retained.len(), 5);
+    for consecutive in retained.windows(2) {
+        assert_eq!(
+            consecutive[1].0.working().parent(),
+            Some(consecutive[0].0.revision())
+        );
+    }
+    for (revision, signature, _) in &retained {
+        let working = revision.working();
+        assert!(
+            scale_revision_signature(working) == *signature,
+            "a retained validated revision changed"
+        );
+        assert!(Arc::ptr_eq(
+            workspace.revision(revision.revision()).unwrap(),
+            working
+        ));
+        assert!(std::ptr::eq(
+            first.document_at("Worker000.sysml").unwrap(),
+            working.document_at("Worker000.sysml").unwrap()
+        ));
+        assert_shared(working);
+    }
+    assert!(Arc::ptr_eq(
+        workspace.head(),
+        retained.last().unwrap().0.working()
+    ));
+    let barrier = Barrier::new(4);
+    std::thread::scope(|scope| {
+        for _ in 0..4 {
+            let retained = &retained;
+            let barrier = &barrier;
+            scope.spawn(move || {
+                barrier.wait();
+                for _ in 0..2 {
+                    for (revision, signature, proofs) in retained {
+                        assert!(
+                            scale_revision_signature(revision.working()) == *signature,
+                            "a retained validated revision changed"
+                        );
+                        for (group, proof) in [0, 25, 49].into_iter().zip(proofs) {
+                            assert!(
+                                scale_group_proof(revision, group) == *proof,
+                                "query values, identities, context or bounded evidence changed"
+                            );
+                        }
+                    }
+                }
+            });
+        }
+    });
+    eprintln!(
+        "validated scale: revisions={} documents_each=100 kerml_each=50 sysml_each=50 parallel_readers=4 read_passes=2 elapsed={:?}; physical dependency sharing and zero accepted producer replay asserted",
+        retained.len(),
         started.elapsed()
     );
 }

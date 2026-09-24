@@ -1,0 +1,39 @@
+{
+  "format": "agq.workspace-validated-scale-preparation/v1",
+  "base_commit": "0fcc0ffc1965e0166d9e6423f9eb3e958107b259",
+  "file": "crates/modeling-workspace/tests/phase1.rs",
+  "sha256": "e037144ff90cbf47604cdfa9e3f25a41dc9214b30e9dcb794a98eee188698c8e",
+  "commands": [
+    {
+      "command": "rustfmt --edition 2024 crates/modeling-workspace/tests/phase1.rs",
+      "exit_code": 0,
+      "elapsed_seconds": 0.092,
+      "output": ""
+    },
+    {
+      "command": "rustfmt --edition 2024 --check crates/modeling-workspace/tests/phase1.rs",
+      "exit_code": 0,
+      "elapsed_seconds": 0.103,
+      "output": ""
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "elapsed_seconds": 0.044,
+      "output": ""
+    }
+  ],
+  "rust_compilation_run": false,
+  "accepted_cache_test_run": false,
+  "execution_owner": "lead, after integrated structural validation audit",
+  "planned_gate": "cargo test --locked --offline -p agq-modeling-workspace --features verification --test phase1 hundred_documents_five_validated_revisions_and_four_parallel_readers -- --ignored --exact --nocapture --test-threads=1",
+  "assertions": [
+    "Five retained ValidatedProjectRevision handles captured before subsequent edits; 100 documents each: 50 KerML and 50 SysML.",
+    "Four barrier-started scoped readers, two complete passes across all five revisions.",
+    "Exact bounded values, contexts, canonical evidence, shared origins, population searches and authenticated closure searches for groups 0,25,49.",
+    "Exact source/document/syntax/reference/context/closure signatures without transitive proof Debug serialization.",
+    "Original engine syntax/canonical identities, original inherited port identity and owner, redefinition suppression without removing original record.",
+    "Physical accepted dependency table sharing, zero copied entries, actual producer subjects disjoint from accepted standards via existing assert_shared.",
+    "Existing five-revision removal/recovery test remains intact."
+  ]
+}
