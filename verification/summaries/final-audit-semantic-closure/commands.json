@@ -987,6 +987,68 @@
       "duration_seconds": 0.09,
       "output": "verification/generated/final-audit-semantic-closure/combined16-classification-corrected-path.log",
       "environment_overrides": {}
+    },
+    {
+      "name": "medium13-semantic-gate",
+      "command": [
+        "python",
+        "verification/scripts/systems_semantic_slice_gate.py",
+        "--slice",
+        "H4-medium",
+        "--report",
+        "verification/generated/final-audit-semantic-closure/medium13/report.json",
+        "--output",
+        "verification/summaries/final-audit-semantic-closure/medium13-gate.json"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "29ac1f08cde5fd9b6d42e3d1e12f987327dbaef7",
+      "working_changes_sha256": "16d3728be40a81cb0bc8a56871a328a528429c382c0ee97f880be9ce37f74a8e",
+      "output_sha256": "73e27295d8279a2c5e2673d4fc46796067bf855eac07070f3277552bdba4d98e",
+      "duration_seconds": 0.11,
+      "output": "verification/generated/final-audit-semantic-closure/medium13-semantic-gate.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "medium13-classification",
+      "command": [
+        "python",
+        "verification/scripts/classify_systems_final_audit.py",
+        "--report",
+        "verification/generated/final-audit-semantic-closure/medium13/report.json",
+        "--subjects",
+        "verification/generated/systems-finalization/finding-subjects.json",
+        "--output",
+        "verification/summaries/final-audit-semantic-closure/medium13-classification.json",
+        "--require-clean"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "29ac1f08cde5fd9b6d42e3d1e12f987327dbaef7",
+      "working_changes_sha256": "eecc6c48cb9a572a353fc70289175014f660dc70cb387b9303a0351aee10ea1a",
+      "output_sha256": "5218ea21c5bbc02129165fd6d4a435b835e82bcb4bfe13d5f5aaa4ca623bcfee",
+      "duration_seconds": 0.09,
+      "output": "verification/generated/final-audit-semantic-closure/medium13-classification.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "medium13-audit-profile",
+      "command": [
+        "python",
+        "verification/scripts/profile_systems_effective_audit.py",
+        "--journal",
+        "verification/generated/final-audit-semantic-closure/medium13/report.effective-audit/audit-events.jsonl",
+        "--output",
+        "verification/summaries/final-audit-semantic-closure/medium13-audit-profile.json"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "29ac1f08cde5fd9b6d42e3d1e12f987327dbaef7",
+      "working_changes_sha256": "b8dbdda392248e6f8477d1066e61f0e31a731fb42dc6f58635175e639bbe252d",
+      "output_sha256": "028e54bc31ba4fb83eafafcf348d9de41c70cfce97d7998bf89a297b6ab78ada",
+      "duration_seconds": 0.12,
+      "output": "verification/generated/final-audit-semantic-closure/medium13-audit-profile.log",
+      "environment_overrides": {}
     }
   ]
 }

@@ -1,0 +1,142 @@
+{
+  "format": "agq-systems-effective-audit-profile/1",
+  "journal": {
+    "path": "verification\\generated\\final-audit-semantic-closure\\medium13\\report.effective-audit\\audit-events.jsonl",
+    "sha256": "052a89d8a99ef93e797d66e600d165640245c2d782f71737aa88ec2eebd0cbfd",
+    "bytes": 738479
+  },
+  "journal_consistent": true,
+  "semantic_authority": false,
+  "publication_authority": false,
+  "timing_acceptance_threshold": null,
+  "integrity": {
+    "completed_batches": 989,
+    "missing_batch_indexes": [],
+    "unmatched_batch_begins": [],
+    "unmatched_batch_ends": [],
+    "completed_stages": []
+  },
+  "worker_policy": {
+    "workers": 2,
+    "batch_subject_limit": 8,
+    "ordered_windows": true,
+    "join_order": "ascending_batch_index"
+  },
+  "subject_population": {
+    "declared_total": 7912,
+    "observed_total": 7912,
+    "first_subject": "000172f4-2b94-5c4a-9bf0-53a27297dbb1",
+    "last_subject": "fff8799b-ac1c-504b-9f1e-54d5d4a2d285",
+    "consistent": true,
+    "scope": "logged counts and endpoint ranges; interior subject identities are not logged"
+  },
+  "overall_effective_elapsed_micros": 331217385,
+  "overall_effective_elapsed_source": "first_batch_begin_to_last_batch_end",
+  "observed_batch_span_micros": 331217385,
+  "batch_elapsed_micros": {
+    "total": 362450714,
+    "median": 53,
+    "p95": 1801900,
+    "max": 11277760,
+    "p95_method": "nearest_rank"
+  },
+  "bounded_window_timing": {
+    "windows": 495,
+    "two_batch_windows": 494,
+    "sum_window_max_micros": 329944537,
+    "sum_window_min_micros": 33499675,
+    "sum_window_imbalance_micros": 296444862,
+    "imbalance_basis": "max minus min across scheduled batches in each window; singleton windows contribute zero",
+    "observed_elapsed_outside_window_maxima_micros": 1272848,
+    "outside_maxima_interpretation": "residual includes journaling, scheduling, merging and imperfect overlap; not isolated overhead",
+    "windows_pairing_gt_1s_with_lt_1ms": 68,
+    "timing_occupancy_proxy": {
+      "value": 0.547149289884044,
+      "formula": "sum_batch_elapsed_micros / (workers * observed_batch_span_micros)",
+      "interpretation": "wall-timing capacity proxy; not measured CPU utilization or serial speedup"
+    }
+  },
+  "batch_findings_observed": 0,
+  "slowest_batches": [
+    {
+      "batch_index": 522,
+      "first_subject": "86ae39d2-2cdc-5d00-a49a-3ab9e1dc3c02",
+      "last_subject": "86e72579-6bb0-59d6-af52-95728d3d8188",
+      "subjects": 8,
+      "elapsed_micros": 11277760,
+      "findings": 0
+    },
+    {
+      "batch_index": 363,
+      "first_subject": "5e5994fa-7630-5c44-9e41-b810b7d80a14",
+      "last_subject": "5e86bf03-742d-5acc-aaa3-5982228ef851",
+      "subjects": 8,
+      "elapsed_micros": 9615924,
+      "findings": 0
+    },
+    {
+      "batch_index": 364,
+      "first_subject": "5e879f14-7c14-5cfe-acb8-62db4be9ba3e",
+      "last_subject": "5ed9fd58-d910-5c63-9a25-500d119b57b9",
+      "subjects": 8,
+      "elapsed_micros": 9197458,
+      "findings": 0
+    },
+    {
+      "batch_index": 225,
+      "first_subject": "3b825a29-e366-5549-a0d2-85f24ae83d2b",
+      "last_subject": "3bcff44f-db64-5187-8cf0-359e71f7e8f6",
+      "subjects": 8,
+      "elapsed_micros": 6092474,
+      "findings": 0
+    },
+    {
+      "batch_index": 95,
+      "first_subject": "18da1d9a-37e3-547a-ac0e-bf9793f724b4",
+      "last_subject": "192383df-4c07-5ab4-8ca7-b63faba3dbb2",
+      "subjects": 8,
+      "elapsed_micros": 6089985,
+      "findings": 0
+    },
+    {
+      "batch_index": 820,
+      "first_subject": "d30cdedd-9b9d-55cd-aae7-0d7012c0ef0e",
+      "last_subject": "d33fd350-de6b-5702-a523-01c1e94a66ca",
+      "subjects": 8,
+      "elapsed_micros": 5625688,
+      "findings": 0
+    },
+    {
+      "batch_index": 233,
+      "first_subject": "3d80b96c-e918-531e-8ebf-b581c5f9c226",
+      "last_subject": "3dc7c7b8-ff33-517c-a18f-fdc0f29d5cbc",
+      "subjects": 8,
+      "elapsed_micros": 5614270,
+      "findings": 0
+    },
+    {
+      "batch_index": 529,
+      "first_subject": "886ad40f-e3a1-515b-afba-a9c6c25288e7",
+      "last_subject": "88c1222a-4f03-551e-84b9-8cc8767fd75b",
+      "subjects": 8,
+      "elapsed_micros": 5611062,
+      "findings": 0
+    },
+    {
+      "batch_index": 76,
+      "first_subject": "13de2d90-ee57-5701-8994-f70fceb3c8f3",
+      "last_subject": "14317a9c-2d01-57d0-ac72-6d077b029c7c",
+      "subjects": 8,
+      "elapsed_micros": 5610565,
+      "findings": 0
+    },
+    {
+      "batch_index": 548,
+      "first_subject": "8ce9776b-8611-50cc-9ce5-f8d7731f0475",
+      "last_subject": "8d145885-c94e-5bd4-9092-e36dc44a2fc6",
+      "subjects": 8,
+      "elapsed_micros": 4141988,
+      "findings": 0
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "format": "agq-systems-semantic-slice-gate/1",
+  "passed": true,
+  "publication_authority": false,
+  "slice": "H4-medium",
+  "documents": 13,
+  "mandatory_references_complete": 695,
+  "reference_count_basis": "retained exact medium13 count",
+  "closed_producer_pairs": 15154,
+  "closed_requirements": 417780,
+  "effective_findings": 0,
+  "effective_checked": {
+    "AttributeItemPart": 896,
+    "CalculationConstraintRequirementCase": 461,
+    "DefinitionUsage": 4534,
+    "MayTimeVary": 363,
+    "OccurrenceActionState": 2747,
+    "PortConnectionInterfaceFlow": 387,
+    "ViewMetadata": 308
+  },
+  "corpus_witness_counts": {
+    "enumeration_definitions": 0,
+    "enumeration_literals": 0,
+    "interface_subjects": 2,
+    "flow_subjects": 3,
+    "connection_subjects": 2
+  },
+  "corpus_witness_digest": "0c2f033096bb74f2dfff1a768a93d64cef8a50d04de583ecebc56e75b3bccbd2",
+  "effective_audit_elapsed_seconds": 333.5731404,
+  "construction_report_elapsed_seconds": 1962.6214988,
+  "workers": 2,
+  "prior_classification": {
+    "weighted_findings": 674,
+    "distinct_diagnostics": 238,
+    "subjects": 50,
+    "categories": {
+      "EnumerationConstruction": {
+        "distinct_diagnostics": 157,
+        "weighted_findings": 451
+      },
+      "VariationNaming": {
+        "distinct_diagnostics": 21,
+        "weighted_findings": 63
+      },
+      "TypedProjection": {
+        "distinct_diagnostics": 8,
+        "weighted_findings": 32
+      },
+      "InheritedEndSuppression": {
+        "distinct_diagnostics": 3,
+        "weighted_findings": 12
+      },
+      "ResultCycle": {
+        "distinct_diagnostics": 42,
+        "weighted_findings": 66
+      },
+      "EndCycle": {
+        "distinct_diagnostics": 6,
+        "weighted_findings": 18
+      },
+      "ConnectionAuthority": {
+        "distinct_diagnostics": 1,
+        "weighted_findings": 32
+      },
+      "Other": {
+        "distinct_diagnostics": 0,
+        "weighted_findings": 0
+      }
+    }
+  },
+  "prior_subject_coverage": {
+    "local": 24,
+    "accepted_dependency_targets": 3,
+    "total": 27,
+    "meaning": "source/dependency coverage; not individual diagnostic closure evidence"
+  },
+  "certificate_digests": {
+    "model_digest": "eac5cfdd2b97810ca9a40bc09c27f11e4f41fc0d729f7df4d89e8040c246cbfc",
+    "digest": "2420aa1db1bb06a961f027aa92af27c62d624e29c3997716e964601d3e84d140",
+    "semantic_closure_digest": "a23c0b1c7e5acf022226bedf9c4600a98e1eb915ae4836bad72b6c085705c64f",
+    "revalidation_digest": "1344867a6ab88aaa1d75e4e2a4ad43062aa3cfcf8c8505aa86ae376e5084a5f3",
+    "producer_registry_digest": "8760378e0f9d555b8d2689d86b1f914f2f01bcf0e746e397dc6adbd97ca33de5",
+    "context_contract_digest": "17bc83c84503e752055e8902080d038994ef831f3b9ea481808dfddeec196f11"
+  },
+  "reference_results_digest": "43b85a21eea20b87d7620568859dd391eb40b22f7197051ae92246d937cbeeeb",
+  "sysml_profile": "agentique-sysml-2.0-operational/3",
+  "source_content_set": "sha256:6cceb50286d6edd411f327201b6016b5651744d4a30175c78e019810d482e928",
+  "systems_kpar_sha256": "df7d8b2c6e08232ca7ce123a63148949c383fcbeaeba8d89c27ceece43793a1f",
+  "accepted_kerml_digest": "815573353973607bc62a25195ed4461645182027407f8476be521ffc99174f12",
+  "evidence": [
+    {
+      "path": "verification\\generated\\final-audit-semantic-closure\\medium13\\report.json",
+      "sha256": "d292f95b9ba08a10db76bea40952b3ae0b236f5fffc6e209c605187ecaa09a47"
+    },
+    {
+      "path": "verification\\fixtures\\final-audit-semantic-closure\\slices.json",
+      "sha256": "c9c57849014330778dcca69348912c1fe4182b170ce0e49d0e5b5ae80490cc03",
+      "content_digest": "33f6b44287893562c9952d28b646f3ebc96c219dbc6ede86d546487dfcaa7b8a"
+    },
+    {
+      "path": "verification\\fixtures\\final-audit-semantic-closure\\prior-classification.json",
+      "sha256": "b8f24aa717b4664071efa8e50911a608c150bc15575af635bad13e06bfa47a78",
+      "content_digest": "a52798aa16e4dfa8c236712d16c1344897d97b76ce56f46b7e68a40b2da0c2f9"
+    }
+  ]
+}

@@ -93,9 +93,30 @@ semantic acceptance. One classifier invocation used an incorrect retained
 subject-file path and failed before reading evidence; the corrected invocation
 passed. Both commands remain in the ledger.
 
-The exact 13-document medium candidate is running after this gate. Its strict
-effective audit, the fresh full closure, and authenticated finalization remain
-pending. No accepted Systems receipt or default-profile change is claimed here.
+The exact [13-document medium gate](medium13-gate.json) also passes: all 695
+mandatory references Complete, 15,154 producer pairs and 417,780 requirements
+closed, with zero producer diagnostics. All 7,912 local canonical subjects pass
+the strict effective audit with zero findings, as do its interface, Flow and
+ConnectionUsage witnesses. This scope contains no enumeration declarations;
+their real-corpus evidence comes from the combined gate above. The medium
+[classification](medium13-classification.json) is zero in every category.
+The command completed in 2,304.079 seconds, with peak private memory of
+5,102.4 MiB; construction/reference-report time was 1,962.621 seconds.
+
+The medium [effective audit profile](medium13-audit-profile.json) records
+333.573 seconds for the complete operation and 331.217 seconds across its 989
+ordered batches. Median batch time is 53 microseconds, p95 is 1.802 seconds,
+and maximum is 11.278 seconds. Fixed two-worker windows are imbalanced:
+68 pair a batch exceeding one second with one below a millisecond. The wall-time
+occupancy proxy is 54.7%; this is neither measured CPU utilization nor a serial
+speedup. The 1.273 seconds outside summed window maxima is not an isolated
+overhead measurement. The deterministic bounded worker implementation remains
+unchanged for full acceptance. Scope and population differ from the old full
+audit, so these durations are not a before/after performance comparison.
+
+Both scoped gates are green before the fresh full run. Full closure and
+authenticated finalization remain pending. No accepted Systems receipt or
+default-profile change is claimed here.
 
 ## Platform boundary
 
