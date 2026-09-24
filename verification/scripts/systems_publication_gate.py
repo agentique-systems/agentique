@@ -163,7 +163,11 @@ def source_origin(origin, docs):
     doc = docs[origin["document"]]
     require(origin["revision"] == doc["revision"], "source revision")
     identifier(origin["syntax_node"])
-    start, end = origin["range"]["start"], origin["range"]["end"]
+    # ByteRange's Serialize implementation emits a two-element u64 tuple.
+    # Match that authoritative transport shape before checking source bounds.
+    byte_range = origin["range"]
+    require(type(byte_range) is list and len(byte_range) == 2, "source range encoding")
+    start, end = byte_range
     natural(start, "source start")
     natural(end, "source end")
     require(start <= end <= len(doc["raw"]), "source range")

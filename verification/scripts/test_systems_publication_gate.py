@@ -70,6 +70,49 @@ class GateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "profile/construction"):
             gate.accept_report(report)
 
+    def test_issued_binding_tuple_range_matches_original_pinned_source(self):
+        root = Path(__file__).resolve().parents[2]
+        fixture = json.loads((root / "verification/fixtures/final-audit-semantic-closure/emitted-binding-source.json").read_bytes())
+        binding = fixture["binding"]
+        manifest = json.loads((root / "standards/normative/sysml-2.0/library-set.json").read_bytes())
+        systems, = [a for a in manifest["artifacts"] if a["specification"] == "SysML"]
+        kerml = json.loads((root / "standards/kerml-accepted-publication.json").read_bytes())
+        identity = kerml["complete_overlay"]["identity"]
+        report = dict(accepted_kerml_profile=identity["operational_profile"],
+            accepted_kerml_digest=identity["semantic_digest"], documents=[
+                dict(path=e["path"], sha256=e["sha256"], document=gate.stable_id([
+                    "agentique-library-document/1", binding["library"], e["path"], e["sha256"]]))
+                for e in systems["entries"] if e["path"].endswith(".sysml")])
+        _, _, library, docs = gate.source_pins(root, report)
+        self.assertEqual(binding["library"], library)
+        origin = binding["source"]
+        doc = gate.source_origin(origin, docs)
+        self.assertEqual((doc["path"], doc["sha256"]),
+                         (binding["source_path"], binding["source_sha256"]))
+        start, end = origin["range"]
+        self.assertIn(b"item def Item", doc["raw"][start:end])
+        for malformed in ({"start": start, "end": end}, None, [], [start],
+                          [start, end, end], [True, end], [start, False],
+                          [float(start), end], [start, str(end)], [-1, end],
+                          [end, start], [start, len(doc["raw"]) + 1]):
+            with self.subTest(range=malformed), self.assertRaises(ValueError):
+                changed = copy.deepcopy(origin)
+                changed["range"] = malformed
+                gate.source_origin(changed, docs)
+        for key, value in (("revision", str(gate.uuid.UUID(int=1))), ("syntax_node", "bad-id")):
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                gate.source_origin(dict(origin, **{key: value}), docs)
+        with self.assertRaises(KeyError):
+            gate.source_origin(dict(origin, document=str(gate.uuid.UUID(int=1))), docs)
+
+    def test_tuple_range_keeps_utf8_boundaries_checked(self):
+        origin = dict(document="doc", revision="rev", syntax_node=str(gate.uuid.UUID(int=1)), range=[0, 2])
+        docs = {"doc": dict(revision="rev", raw="\u00e9".encode("utf-8"))}
+        self.assertIs(gate.source_origin(origin, docs), docs["doc"])
+        for byte_range in ([0, 1], [1, 2]):
+            with self.subTest(range=byte_range), self.assertRaises(UnicodeDecodeError):
+                gate.source_origin(dict(origin, range=byte_range), docs)
+
     def test_equal_counts_cannot_mask_missing_or_failed_acceptance(self):
         mutations = [
             ("scope", []), ("publication_accepted", False), ("reference_audit_scope", "construction"),
@@ -125,7 +168,7 @@ class GateTests(unittest.TestCase):
             doc = report["documents"][0]
             library = str(gate.uuid.UUID(int=100))
             origin = dict(document=doc["document"], revision=str(gate.uuid.UUID(int=200)),
-                          syntax_node=str(gate.uuid.UUID(int=300)), range=dict(start=0, end=1))
+                          syntax_node=str(gate.uuid.UUID(int=300)), range=[0, 1])
             docs = {doc["document"]: dict(path=doc["path"], sha256=doc["sha256"], raw=b"x", revision=origin["revision"])}
             identity = dict(publication_digest=[1] * 32, semantic_digest=[1] * 32, accepted_kerml_digest=[1] * 32,
                 systems_kpar="22" * 32, systems_source_content_set=[0] * 32, operational_profile=profile,

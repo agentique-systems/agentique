@@ -1,0 +1,25 @@
+{
+  "format": "agq-issued-binding-source-regression/1",
+  "evidence": {
+    "report_sha256": "ebd7cdc9478363d94a02d5a916dbbef312202ea64b9380dcb9808975a4e19b7c",
+    "bindings_sha256": "dbd794bba9ebdfdea5af433945f6bb5d0475f0f05ad1d229cd004f5b57045789",
+    "serialization": "crates/kernel/src/provenance.rs: ByteRange::serialize"
+  },
+  "binding": {
+    "element": "97449103-846f-514a-833c-1455f0d16835",
+    "expected_metaclass": "c2a51e5d-df4e-515d-9324-5a4e8da82473",
+    "library": "6c418b74-7704-5af0-bce2-28b92196cb15",
+    "metaclass": "c2a51e5d-df4e-515d-9324-5a4e8da82473",
+    "qualified_path": ["Items", "Item"],
+    "role": "Item",
+    "source": {
+      "document": "58deefe8-d1ca-5a88-83d9-efb8b07e074e",
+      "range": [779, 3501],
+      "revision": "4798e317-3ea6-5532-b02a-24a088bd3632",
+      "syntax_node": "68fcd633-6612-58b5-861b-b0056017ba9d"
+    },
+    "source_path": "Systems Library/Items.sysml",
+    "source_sha256": "3a344edb7def2276fa15e410c363531e5098d93bdf33a583418151fa87f538b3",
+    "visibility": "public"
+  }
+}
