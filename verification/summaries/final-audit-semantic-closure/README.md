@@ -247,6 +247,49 @@ audit, frontend check/build and four browser tests pass. Workspace runtime
 dogfooding, invalid-typing repair and scale execution remain pending at this
 stage; their actual results will be recorded separately.
 
+The first integrated ordinary workspace suite passes 952 tests, with zero
+failures and five separately requested acceptance tests ignored. A later
+[bounded audit optimization](../semantic-closure-structural/authored-audit-batching.md)
+authenticates the immutable context once and forks fresh query caches for each
+32-subject batch. Complete and pending answers retain their complete public
+evidence in the focused regression. It changes no producer, profile, canonical
+fact, audit dispatcher or accepted dependency identity. Final-tree verification
+and authored acceptance remain separate from that focused check.
+
+While the earlier Working-state binary was still running on Windows, the first
+all-tests rebuild after this optimization was manually interrupted to avoid
+replacing its active executable. No acceptance test was stopped. The replacement
+build names only the inactive self-model and phase-1 binaries; the interrupted
+command's exit 1 is retained and is not counted as a passed build. NTFS compression
+of build artifacts recovered disk space without changing their bytes; no
+publication artifacts, checkpoints or verification logs were removed.
+
+The complete Working-state suite subsequently passes all five requested tests
+in 2,341.71 seconds. The real workspace self-model gate also passes, using the
+forked audit evaluator: five actual documents, validated revision 1, an edit to
+ModelingPlatform, validated revision 2, unchanged old source/query results,
+retained authored identities and physically shared accepted standard storage.
+It takes 840.84 seconds, with zero failures. These are explicit accepted-cache
+runs; they are not inferred from ordinary test-suite completion.
+
+The updated semantic implementation passes 953 ordinary workspace tests, zero
+failures, with five separately requested language acceptance tests ignored by
+that command. Final formatting, workspace and verification-feature Clippy, and
+strict Rustdoc for all eight public language/workspace crates pass. Completed
+debug artifacts were reclaimed after these checks to preserve disk reserve for
+the remaining optimized acceptance runs.
+
+Before scale execution, the legacy test's reference-proof comparison was changed
+from large retained Debug strings to streaming the identical bytes into SHA-256
+plus byte count. All fields and all 160 comparisons remain. Its actual reference
+fixture verifies byte equivalence, UTF-8 and sensitivity to changed search
+evidence; compilation and verification-feature Clippy pass. This test-only
+change adds an existing locked SHA-256 dependency edge, without changing a
+package version, producer, profile or publication identity. The source-context
+fork regression and successful self-model gate establish compatibility for the
+implementation freshness update. Scale and remaining acceptance executions are
+recorded separately below when complete.
+
 [commands.json](commands.json),
 [projection-verification.json](projection-verification.json), and the
 [enumeration command ledger](../enumeration-closure/commands.json) record actual
