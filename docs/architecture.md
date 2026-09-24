@@ -241,6 +241,14 @@ Gen1; partial and unsupported operations remain explicit. HTTP is additive under
 records actual gates and limitations. The [Phase 3 roadmap](modeling-platform-phase3-roadmap.md)
 covers projections, diagrams and reviewed source reconciliation.
 
+The additive [Agentique Studio](agentique-studio.md) surface now uses Generation 2
+directly through `agq-modeling-view` and `agq-modeling-agent`, hosted by
+`agq-studio`. Canonical identities remain in the kernel; projections, layouts,
+agent decisions and saved view definitions do not own semantic truth.
+[ADR 0029](adr/0029-agentique-studio-semantic-worlds.md) defines revision binding,
+source-backed candidates, authority and the current local-host scope. Actual
+accepted-publication runtime acceptance is recorded separately from implementation.
+
 ## Generation 1: integrated v0.1 application
 
 The Engine is implemented here. It does not wrap a modelling application. Language

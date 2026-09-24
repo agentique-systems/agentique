@@ -450,7 +450,8 @@ pub struct RevisionDiff {
     /// Whether the persisted Working or Validated state variant changed.
     pub validation_changed: bool,
 }
-pub(crate) fn revision_diff(
+/// Compare exact immutable bindings, including an uncommitted candidate binding.
+pub fn revision_diff(
     before: &BoundRevision,
     after: &BoundRevision,
 ) -> Result<RevisionDiff, ServiceError> {

@@ -105,6 +105,9 @@ pub(crate) struct LoweringCache {
     pub(crate) documents_reused: usize,
     pub(crate) records_lowered: usize,
     pub(crate) records_rebuilt: usize,
+    pub(crate) records_reused: usize,
+    /// Previous strict declared frontier, never an effective/derived overlay.
+    pub(crate) reconstruction_base: Option<Snapshot>,
     pub(crate) preparatory_producer_subjects_evaluated: usize,
     pub(crate) allow_reuse: bool,
 }
@@ -116,6 +119,8 @@ impl Default for LoweringCache {
             documents_reused: 0,
             records_lowered: 0,
             records_rebuilt: 0,
+            records_reused: 0,
+            reconstruction_base: None,
             preparatory_producer_subjects_evaluated: 0,
             allow_reuse: true,
         }
@@ -224,10 +229,16 @@ pub(crate) fn construct_on_cached(
         builder.set(*id, *property, Value::Reference(*target))?;
     }
     builder.expression_results(inputs)?;
+    let reconstruction_base = cache
+        .as_ref()
+        .filter(|cache| cache.allow_reuse)
+        .and_then(|cache| cache.reconstruction_base.clone());
+    let (draft, rebuilt, reused) = builder.publish(reconstruction_base)?;
     if let Some(cache) = cache {
-        cache.records_rebuilt += builder.records.len();
+        cache.records_rebuilt += rebuilt;
+        cache.records_reused += reused;
     }
-    builder.publish()
+    Ok(draft)
 }
 
 impl Builder {
@@ -1014,18 +1025,67 @@ impl Builder {
         }
         Ok(())
     }
-    fn publish(self) -> Result<LibraryDraft, LibraryLoadError> {
+    fn publish(
+        self,
+        reconstruction_base: Option<Snapshot>,
+    ) -> Result<(LibraryDraft, usize, usize), LibraryLoadError> {
         let registry = self.base.model().registry();
         let reference_sources: BTreeMap<_, _> = self
             .references
             .iter()
             .map(|r| ((r.relationship, r.property), &r.origin))
             .collect();
-        let mut changes = self.base.change_set();
+        // Only the transaction seed changes. All desired declarations, source
+        // maps, reference assertions, indexes and construction obligations are
+        // still rebuilt/checked against the current authored inputs. In
+        // particular, old resolved endpoints absent from this pass are cleared.
+        let incremental = reconstruction_base.is_some();
+        let reconstruction_base = reconstruction_base.as_ref().unwrap_or(&self.base);
+        let mut changes = reconstruction_base.change_set();
+        let mut rebuilt = 0;
+        let mut reused = 0;
+        let mut occurrences = std::collections::BTreeSet::new();
+        if incremental {
+            for old in reconstruction_base.model().elements() {
+                if !reconstruction_base.is_dependency_element(old.id())
+                    && !self.records.contains_key(&old.id())
+                {
+                    changes.remove(old.id());
+                    rebuilt += 1;
+                }
+            }
+        }
         let mut source_map = BTreeMap::new();
         for id in &self.order {
             let record = &self.records[id];
-            changes.create(*id, record.class, record.origin.clone());
+            // Full construction deliberately creates every identity. It must
+            // retain the kernel's collision rejection even when the supplied
+            // base already contains a same-shaped declaration.
+            let old = incremental
+                .then(|| reconstruction_base.model().element(*id))
+                .flatten();
+            let mut changed = false;
+            if let Some(old) = old {
+                if old.metaclass() != record.class {
+                    return Err(LibraryLoadError::Interpretation(
+                        "retained declared identity changed metaclass".into(),
+                    ));
+                }
+                if old.origin() != &agq_kernel::provenance::Origin::Declared(record.origin.clone())
+                {
+                    changes.set_origin(*id, record.origin.clone());
+                    changed = true;
+                }
+                for (property, _) in old.slots() {
+                    if !record.slots.contains_key(&property) {
+                        changes.clear(*id, property);
+                        changed = true;
+                    }
+                }
+            } else {
+                changes.create(*id, record.class, record.origin.clone());
+                changed = true;
+            }
             if let Some(source) = &record.source {
                 source_map.insert(FactKey::Element(*id), source.clone());
             }
@@ -1056,20 +1116,43 @@ impl Builder {
                         )
                         .as_u128(),
                     );
-                    changes.link(
-                        link,
-                        association,
-                        BTreeMap::from([(property, *target), (opposite, *id)]),
-                        BTreeMap::new(),
-                        record.origin.clone(),
-                    );
+                    occurrences.insert(link);
+                    let ends = BTreeMap::from([(property, *target), (opposite, *id)]);
+                    if incremental
+                        && let Some(old) = reconstruction_base.model().association_occurrence(link)
+                    {
+                        if old.association() != association || old.ends() != &ends {
+                            return Err(LibraryLoadError::Interpretation(
+                                "retained declared occurrence changed endpoints".into(),
+                            ));
+                        }
+                        if old.declared_origin() != Some(&record.origin)
+                            || !old.positions().is_empty()
+                        {
+                            changes.reorder_link(link, BTreeMap::new(), record.origin.clone());
+                        }
+                    } else {
+                        changes.link(
+                            link,
+                            association,
+                            ends,
+                            BTreeMap::new(),
+                            record.origin.clone(),
+                        );
+                    }
                     if let Some(source) = &record.source {
                         source_map.insert(FactKey::AssociationOccurrence(link), source.clone());
                     }
                     continue;
                 }
-                let value = slot.clone();
-                changes.set(*id, property, value, record.origin.clone());
+                if old.and_then(|old| old.slot(property)).is_none_or(|prior| {
+                    prior.value() != slot
+                        || prior.origin()
+                            != &agq_kernel::provenance::Origin::Declared(record.origin.clone())
+                }) {
+                    changes.set(*id, property, slot.clone(), record.origin.clone());
+                    changed = true;
+                }
                 if let Some(source) = reference_sources
                     .get(&(*id, property))
                     .copied()
@@ -1084,19 +1167,37 @@ impl Builder {
                     );
                 }
             }
+            if changed {
+                rebuilt += 1;
+            } else {
+                reused += 1;
+            }
         }
-        let candidate = self.base.preview(&changes)?;
-        Ok(LibraryDraft {
-            base: self.base,
-            profile: self.profile,
-            candidate: std::sync::Arc::new(candidate),
-            semantic_candidate: None,
-            producer_closure: None,
-            source_map,
-            roots: self.roots,
-            references: self.references,
-            superseded_references: vec![],
-        })
+        if incremental {
+            for old in reconstruction_base.model().association_occurrences() {
+                if self.base.model().association_occurrence(old.id()).is_none()
+                    && !occurrences.contains(&old.id())
+                {
+                    changes.unlink(old.id());
+                }
+            }
+        }
+        let candidate = reconstruction_base.preview(&changes)?;
+        Ok((
+            LibraryDraft {
+                base: self.base,
+                profile: self.profile,
+                candidate: std::sync::Arc::new(candidate),
+                semantic_candidate: None,
+                producer_closure: None,
+                source_map,
+                roots: self.roots,
+                references: self.references,
+                superseded_references: vec![],
+            },
+            rebuilt,
+            reused,
+        ))
     }
 }
 

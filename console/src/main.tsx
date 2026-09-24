@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./style.css";
 import { BehaviorGraph } from "./BehaviorGraph";
 import { ModelEdits } from "./ModelEdits";
+import { Studio } from "./studio/Studio";
 
 type Json = any;
 type Element = {
@@ -1244,4 +1245,6 @@ function App() {
     </>
   );
 }
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  location.pathname.startsWith("/expert") ? <App /> : <Studio />,
+);

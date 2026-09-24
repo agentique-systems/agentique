@@ -1,0 +1,21 @@
+[package]
+name = "agq-modeling-view"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Revision-bound semantic projections for Agentique Studio"
+
+[dependencies]
+agq-modeling-workspace = { path = "../modeling-workspace" }
+agq-kernel = { path = "../kernel" }
+agq-kerml = { path = "../kerml" }
+agq-sysml = { path = "../sysml" }
+agq-kerml-semantics = { path = "../kerml-semantics" }
+agq-sysml-semantics = { path = "../sysml-semantics" }
+serde.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+agq-kerml-text = { path = "../kerml-text" }
+agq-standard-libraries = { path = "../standard-libraries" }

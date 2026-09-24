@@ -1,0 +1,20 @@
+[package]
+name = "agq-modeling-agent"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Provider-neutral agent observations, decisions and reviewed source commands"
+
+[dependencies]
+agq-modeling-service = { path = "../modeling-service" }
+agq-modeling-view = { path = "../modeling-view" }
+agq-modeling-workspace = { path = "../modeling-workspace" }
+agq-modeling-repository = { path = "../modeling-repository" }
+agq-kernel = { path = "../kernel" }
+agq-kerml = { path = "../kerml" }
+agq-sysml = { path = "../sysml" }
+agq-kerml-text = { path = "../kerml-text" }
+agq-kerml-syntax = { path = "../kerml-syntax" }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true

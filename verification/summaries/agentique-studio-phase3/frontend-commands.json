@@ -1,0 +1,219 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "studio-frontend-check",
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "7da8b7be676c1186ede40a2f25051b2ba9d82d76c1a6dc0096e5a2fc5c4db297",
+      "output_sha256": "520f4f85e4a612b83945d701e2495ad6f730f8bfaa460452fbf97008e4817929",
+      "duration_seconds": 7.12,
+      "output": "verification/generated/agentique-studio-phase3/studio-frontend-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "studio-artifact-preflight",
+      "command": [
+        "python",
+        "verification/scripts/studio_artifact_preflight.py"
+      ],
+      "exit_code": 2,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "9723e240740f5d16515786ef096c4247141f93e137b1b59678203b60cd73f2ed",
+      "output_sha256": "b420b66a1631ebc081a482c6a791bd6ee199ff43e6a507732bcaf59910873354",
+      "duration_seconds": 0.06,
+      "output": "verification/generated/agentique-studio-phase3/studio-artifact-preflight.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "studio-browser-contracts",
+      "command": [
+        "npx",
+        "playwright",
+        "test",
+        "--config",
+        "playwright.studio.config.ts"
+      ],
+      "exit_code": 1,
+      "tool_version": "10.9.0",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "54b9c62c450b9b9cc15445743b9be5602788f73159c09495ad466625167f748c",
+      "output_sha256": "8d1a1d0a696fa1b3655675df31d5d27ffb822fed1f6df5980ff0668cb6f1af43",
+      "duration_seconds": 22.05,
+      "output": "verification/generated/agentique-studio-phase3/studio-browser-contracts.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "studio-frontend-check",
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "54b9c62c450b9b9cc15445743b9be5602788f73159c09495ad466625167f748c",
+      "output_sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "duration_seconds": 5.17,
+      "output": "verification/generated/agentique-studio-phase3/studio-frontend-check-2.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "studio-node-tests",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit_code": 1,
+      "tool_version": "10.9.0",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "54b9c62c450b9b9cc15445743b9be5602788f73159c09495ad466625167f748c",
+      "output_sha256": "a2771aa9e2b7b3e8a35b1cd39300ae14a0e4164d175b7adb2540929bd3a0d022",
+      "duration_seconds": 4.98,
+      "output": "verification/generated/agentique-studio-phase3/studio-node-tests.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "studio-frontend-build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "54b9c62c450b9b9cc15445743b9be5602788f73159c09495ad466625167f748c",
+      "output_sha256": "37dd73bf73853f9fa1996e83ff641337acdcb07521d644bd68a8dfd42283271c",
+      "duration_seconds": 5.66,
+      "output": "verification/generated/agentique-studio-phase3/studio-frontend-build.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "studio-browser-contracts",
+      "command": [
+        "npx",
+        "playwright",
+        "test",
+        "--config",
+        "playwright.studio.config.ts"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "6171ce4b029bfe384d4d79449afe92ad354142e68bdfeb9814641876280b7bee",
+      "output_sha256": "b05884d45d4b87db2cad5b2f7088d289ce4c6bf895f18b26a55275b15f244ca5",
+      "duration_seconds": 31.48,
+      "output": "verification/generated/agentique-studio-phase3/studio-browser-contracts-2.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "studio-frontend-check",
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "e3d207651b3fe23e4e63c10160c61b14984b5cc580306a8867a2afde84956ad5",
+      "output_sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "duration_seconds": 4.06,
+      "output": "verification/generated/agentique-studio-phase3/studio-frontend-check-3.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "studio-frontend-build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "e3d207651b3fe23e4e63c10160c61b14984b5cc580306a8867a2afde84956ad5",
+      "output_sha256": "ddea16e68ecddf024408b2002a6a486643010993b3bbdfdbfb8cbf5609744b18",
+      "duration_seconds": 4.7,
+      "output": "verification/generated/agentique-studio-phase3/studio-frontend-build-2.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "studio-browser-contracts",
+      "command": [
+        "npx",
+        "playwright",
+        "test",
+        "--config",
+        "playwright.studio.config.ts"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "e3d207651b3fe23e4e63c10160c61b14984b5cc580306a8867a2afde84956ad5",
+      "output_sha256": "322efcb6f01fbe42fa4becf24de516ab55896c134b941e33c4dacc1592156ea0",
+      "duration_seconds": 16.36,
+      "output": "verification/generated/agentique-studio-phase3/studio-browser-contracts-3.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "studio-frontend-build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "15aa9da8521eccd27fdc50ab357bd01c0dd3410e95a24f64004ce8fe4157877b",
+      "output_sha256": "97e766a1731f2aa5a6018020f57175227902dc692967a591d59e113172d37035",
+      "duration_seconds": 2.02,
+      "output": "verification/generated/agentique-studio-phase3/studio-frontend-build-3.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "studio-frontend-check",
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "15aa9da8521eccd27fdc50ab357bd01c0dd3410e95a24f64004ce8fe4157877b",
+      "output_sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "duration_seconds": 2.25,
+      "output": "verification/generated/agentique-studio-phase3/studio-frontend-check-4.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "studio-browser-contracts",
+      "command": [
+        "npx",
+        "playwright",
+        "test",
+        "--config",
+        "playwright.studio.config.ts"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "15aa9da8521eccd27fdc50ab357bd01c0dd3410e95a24f64004ce8fe4157877b",
+      "output_sha256": "0f7b4b9a4b958a757f4ea04b344819603da6bb9eb0209b605e330f4630835dd4",
+      "duration_seconds": 7.64,
+      "output": "verification/generated/agentique-studio-phase3/studio-browser-contracts-4.log",
+      "environment_overrides": {}
+    }
+  ]
+}

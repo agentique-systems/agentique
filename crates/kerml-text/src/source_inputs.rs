@@ -140,6 +140,10 @@ impl SourceInputs {
             previous.lowering_cache.next_revision()
         }));
         cache.borrow_mut().allow_reuse = incremental;
+        cache.borrow_mut().reconstruction_base = previous
+            .filter(|_| incremental)
+            .and_then(SourceCompilation::strict_snapshot)
+            .cloned();
         cache.borrow_mut().retain_documents(
             &self
                 .documents
@@ -279,6 +283,10 @@ impl SourceInputs {
             #[cfg(feature = "verification")]
             producer_subjects: observation.finish(),
         };
+        // The result already shares unchanged records. Retaining the previous
+        // snapshot here would keep obsolete indexes alive without serving the
+        // next compilation, which selects its own immediate strict predecessor.
+        result.lowering_cache.reconstruction_base = None;
         // Audit the final current graph, including derived local elements that
         // have no direct source-map entry. The accepted dependency is borrowed,
         // never reevaluated as an authored population.
@@ -364,6 +372,7 @@ impl SourceInputs {
             lowering_cache_hits: result.lowering_cache.documents_reused,
             records_lowered: result.lowering_cache.records_lowered,
             records_rebuilt: result.lowering_cache.records_rebuilt,
+            records_reused: result.lowering_cache.records_reused,
             producer_subjects_evaluated: result
                 .lowering_cache
                 .preparatory_producer_subjects_evaluated
@@ -514,9 +523,13 @@ pub struct CompilationWork {
     pub lowering_cache_hits: usize,
     /// Local declared records traversed by lowering, including rejected trial work.
     pub records_lowered: usize,
-    /// Declared local records submitted to kernel construction across all passes.
-    /// Cached lowering still undergoes kernel validation; this includes the root.
+    /// Local records created, changed or removed in kernel transactions across
+    /// all passes. Every resulting record still undergoes kernel validation.
     pub records_rebuilt: usize,
+    /// Unchanged declared records retained from the previous strict snapshot
+    /// across construction passes; no record/slot mutations were submitted.
+    #[serde(default)]
+    pub records_reused: usize,
     /// Subject evaluations across every preparatory and final producer schedule.
     pub producer_subjects_evaluated: usize,
     /// Current local canonical subjects visited by the final effective audit.

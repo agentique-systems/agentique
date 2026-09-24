@@ -1,0 +1,477 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "studio-focused",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-studio",
+        "-p",
+        "agq-modeling-agent"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "ce01fa53edd6b03b1e2c8ad8ff6de5cd09341dbbabc93c7eb6ed5371b1bf13a7",
+      "output_sha256": "8b3a4d36b7aa83c8fccfe9bfbf4cb523aaefbea34d915e8c6cc430b151a43764",
+      "duration_seconds": 48.78,
+      "output": "verification/generated/agentique-studio-phase3/studio-focused.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "studio-check",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-studio"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "796006d8b4d411930df747dabbe96dcdb94263427fd92512fe9a51af27bdfb6b",
+      "output_sha256": "f122e8344f8cfd80430b1cf2274661f76e5a79722b04459c8d6dfcc0cd9f127b",
+      "duration_seconds": 1.84,
+      "output": "verification/generated/agentique-studio-phase3/studio-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "generation-boundary",
+      "command": [
+        "python",
+        "verification/scripts/generation_boundary.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "eb03482e9a76acdbaf8c390d7aa960b07e180cea5d5ebc477b0e67f3c7916489",
+      "output_sha256": "058d2051530c85b4f301eb9abb7b36837d304efbb905ca46eb0719645cbf4fce",
+      "duration_seconds": 0.17,
+      "output": "verification/generated/agentique-studio-phase3/generation-boundary.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "workspace-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "2ecc977a831251d9fbe2c467d963118351a04ecf4641d03d074b1527875b57fd",
+      "output_sha256": "1f99b26c392c598a6523599385a8303b17338d6d1f6e4cbed25e986b1ef902ce",
+      "duration_seconds": 22.86,
+      "output": "verification/generated/agentique-studio-phase3/workspace-clippy.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "boundary-regressions",
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "verification/scripts",
+        "-p",
+        "test_generation_boundary.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "6019c42299592fbbe237bf4681b0c20b8bfc9293d7d0018d39bc083cddaba72e",
+      "output_sha256": "ebf45a56fb525dded78b98e038e365ebce1c1f7d87ba7d0c48bbe4cd173c081d",
+      "duration_seconds": 0.89,
+      "output": "verification/generated/agentique-studio-phase3/boundary-regressions.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "workspace-format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "6a6e9589553b66cc343d6274c1d515d8749e669d871d98fd852741d832517670",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 6.55,
+      "output": "verification/generated/agentique-studio-phase3/workspace-format.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "metamodel-check",
+      "command": [
+        "cargo",
+        "run",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-metamodel-gen",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "43bba3e574d4d19ec7bd85592e4e1a5fbe850125608d912a7b17afd605e81c70",
+      "output_sha256": "38e31b75f5c81b9ddf35eea22afd3050b5ded0c28984c4482dad0c4868235ee0",
+      "duration_seconds": 74.58,
+      "output": "verification/generated/agentique-studio-phase3/metamodel-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "studio-rustdoc",
+      "command": [
+        "cargo",
+        "doc",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-modeling-view",
+        "-p",
+        "agq-modeling-agent",
+        "-p",
+        "agq-studio",
+        "--no-deps"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "6a6e9589553b66cc343d6274c1d515d8749e669d871d98fd852741d832517670",
+      "output_sha256": "1f7ddc1383680b8f37f6de9c3528a91a65b13aff94564691f42bc0191d530209",
+      "duration_seconds": 16.17,
+      "output": "verification/generated/agentique-studio-phase3/studio-rustdoc.log",
+      "environment_overrides": {
+        "RUSTDOCFLAGS": "-D warnings"
+      }
+    },
+    {
+      "name": "reviewed-publication-input-capture",
+      "command": [
+        "node",
+        "tools/sysml-publication-stale.mjs",
+        "--capture"
+      ],
+      "exit_code": 0,
+      "tool_version": "v22.11.0",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "78baf844c36929e4174fce8c84a602a12b3b9041b14b330ed3c33f0bb2680980",
+      "output_sha256": "e8fa2c39a819b1a95623a702fe00c1940da0b976e2c1bfc0fd8a8917c03ec535",
+      "duration_seconds": 0.17,
+      "output": "verification/generated/agentique-studio-phase3/reviewed-publication-input-capture.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "generation-boundary-final",
+      "command": [
+        "python",
+        "verification/scripts/generation_boundary.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "5baaece4c89351cd7664e628b4c0a33bcc5de66677c97f47dd308494fa1f46e5",
+      "output_sha256": "0c90d5077d992bbe46be7987e7d3c8aede79c7c3a22fc65454003089c8224cd5",
+      "duration_seconds": 0.22,
+      "output": "verification/generated/agentique-studio-phase3/generation-boundary-final.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "standards-integrity",
+      "command": [
+        "npm",
+        "run",
+        "standards:check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "5baaece4c89351cd7664e628b4c0a33bcc5de66677c97f47dd308494fa1f46e5",
+      "output_sha256": "1c7d6c85c919fbcb10ed22f241e268e09b93a50c7a053d4e043df9712f483c83",
+      "duration_seconds": 0.78,
+      "output": "verification/generated/agentique-studio-phase3/standards-integrity.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "node-tests-reviewed-inputs",
+      "command": [
+        "npm",
+        "test"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "5baaece4c89351cd7664e628b4c0a33bcc5de66677c97f47dd308494fa1f46e5",
+      "output_sha256": "fc24000f3ec77dec1a90b5baddae7fa642056cc5175976ccb80eedadf96b4c74",
+      "duration_seconds": 1.23,
+      "output": "verification/generated/agentique-studio-phase3/node-tests-reviewed-inputs.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "studio-host-build",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-studio"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "9a887a4b40ecb678369765e8c644657e5182256da968ce05ad61f128896d1b2d",
+      "output_sha256": "344ecb559ab20fa5f6645df467814250b103b01c9b5c4a293e9b41cecae2d518",
+      "duration_seconds": 20.03,
+      "output": "verification/generated/agentique-studio-phase3/studio-host-build.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "studio-real-host-startup",
+      "command": [
+        "python",
+        "verification/scripts/studio_host_smoke.py"
+      ],
+      "exit_code": 1,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "ed88f2156d3cafaf6b914e464ddc74a6249cc222aee47b6a5a2f28071e369580",
+      "output_sha256": "7e38c63e4a8d6c7e0d62b6bdc6ce7cf835327ae1350e1c4edf70160a30affbba",
+      "duration_seconds": 20.97,
+      "output": "verification/generated/agentique-studio-phase3/studio-real-host-startup.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "studio-host-route-fix",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-studio",
+        "-p",
+        "agq-server"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "9bb55596d4816d6bcb97499b328623ac461f17706a3861e57eb971724a3b33e3",
+      "output_sha256": "5ffc4c06bc0265704c0cf66a1c334ff6474e88ace739d20549a7d4240a701dcf",
+      "duration_seconds": 13.64,
+      "output": "verification/generated/agentique-studio-phase3/studio-host-route-fix.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "browser-e2e",
+      "command": [
+        "npm",
+        "run",
+        "test:e2e"
+      ],
+      "exit_code": 1,
+      "tool_version": "10.9.0",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "9a887a4b40ecb678369765e8c644657e5182256da968ce05ad61f128896d1b2d",
+      "output_sha256": "cef79bea58910c919ab7f296a3332243b9953a568f5dd7d4d2444854f98b7742",
+      "duration_seconds": 178.55,
+      "output": "verification/generated/agentique-studio-phase3/browser-e2e.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "studio-real-host-startup",
+      "command": [
+        "python",
+        "verification/scripts/studio_host_smoke.py"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "9bb55596d4816d6bcb97499b328623ac461f17706a3861e57eb971724a3b33e3",
+      "output_sha256": "cda7d0a3531a062dea01ca7f84a4a6ee775d473deafb2082cc03557615a73bc8",
+      "duration_seconds": 0.59,
+      "output": "verification/generated/agentique-studio-phase3/studio-real-host-startup-2.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-host-check",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-studio",
+        "-p",
+        "agq-server",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "9bb55596d4816d6bcb97499b328623ac461f17706a3861e57eb971724a3b33e3",
+      "output_sha256": "970703fa5aef28aa9fbd5a01674e5608daadb48d700e82979d62d05682992b4f",
+      "duration_seconds": 4.48,
+      "output": "verification/generated/agentique-studio-phase3/final-host-check.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "browser-e2e-route-fix",
+      "command": [
+        "npm",
+        "run",
+        "test:e2e"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "9bb55596d4816d6bcb97499b328623ac461f17706a3861e57eb971724a3b33e3",
+      "output_sha256": "1f01f9965dee29a8dacb7282b41b3ee90b79385fccddc3fbfc0a7b205dd16284",
+      "duration_seconds": 54.73,
+      "output": "verification/generated/agentique-studio-phase3/browser-e2e-route-fix.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-types",
+      "command": [
+        "npm",
+        "run",
+        "check"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "75f4a66f389a574d214399ddfb489f0821743fc895cd8b058df0c73d8f4176e2",
+      "output_sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+      "duration_seconds": 12.47,
+      "output": "verification/generated/agentique-studio-phase3/final-types.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-frontend-build",
+      "command": [
+        "npm",
+        "run",
+        "build"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "75f4a66f389a574d214399ddfb489f0821743fc895cd8b058df0c73d8f4176e2",
+      "output_sha256": "8c9129f9cb08ea971cda370674a39c22516f7da0d5539ab7f0610430302a82d1",
+      "duration_seconds": 14.69,
+      "output": "verification/generated/agentique-studio-phase3/final-frontend-build.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-studio-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-studio"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "75f4a66f389a574d214399ddfb489f0821743fc895cd8b058df0c73d8f4176e2",
+      "output_sha256": "f0776721d82d89ccfbc549926d4a5abcd4a09f864a5845c3ff9d932757c9cfac",
+      "duration_seconds": 29.02,
+      "output": "verification/generated/agentique-studio-phase3/final-studio-tests.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-studio-browser",
+      "command": [
+        "npx",
+        "playwright",
+        "test",
+        "--config",
+        "playwright.studio.config.ts"
+      ],
+      "exit_code": 0,
+      "tool_version": "10.9.0",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "75f4a66f389a574d214399ddfb489f0821743fc895cd8b058df0c73d8f4176e2",
+      "output_sha256": "bd49375d5f13a9d9999c68f306ddd15ebd2a6c3d3a505902adacf32e02283ae7",
+      "duration_seconds": 43.03,
+      "output": "verification/generated/agentique-studio-phase3/final-studio-browser.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "final-format",
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "3e4aa2858845aafb4bbc6f2bfb4d9b880588f53200ae8a4916f692649556c7ab",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 3.38,
+      "output": "verification/generated/agentique-studio-phase3/final-format.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "candidate-gate-compilation",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-studio"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "3e4aa2858845aafb4bbc6f2bfb4d9b880588f53200ae8a4916f692649556c7ab",
+      "output_sha256": "01d0a499d82d0b546671f26d6ba96333cf1cb8eb6e1f85c49539b7d0974bbd4a",
+      "duration_seconds": 5.64,
+      "output": "verification/generated/agentique-studio-phase3/candidate-gate-compilation.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "workspace-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "4ab612e1232cfbff6d879e4b72cba0d2447ee47d",
+      "working_changes_sha256": "1d71253c6efd22e5c0e0e5adc4051aef112f0d978fb0291c1fb118ba3e3fa1ef",
+      "output_sha256": "4a08ac1ecdb2bf1d89873a0a6e24675581824aea0ff4a7f942b68aea59efd25f",
+      "duration_seconds": 832.25,
+      "output": "verification/generated/agentique-studio-phase3/workspace-tests.log",
+      "environment_overrides": {}
+    }
+  ]
+}

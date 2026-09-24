@@ -90,7 +90,7 @@ test("Cancellable model work and paged history use durable Engine results", asyn
     action: { op: "commit_change", proposal_id: proposed.proposal_id },
     approval_id: null,
   });
-  await page.goto("/#token=" + token);
+  await page.goto("/expert#token=" + token);
   await page
     .getByText("Edit scenario inputs, bindings and limits", { exact: true })
     .click();
@@ -146,7 +146,7 @@ test("Console lifecycle, source navigation, shared context and reviewed Assistan
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await page.goto("/#token=" + token);
+  await page.goto("/expert#token=" + token);
   await expect(
     page.getByRole("heading", { name: "A model we can run." }),
   ).toBeVisible();
@@ -331,7 +331,7 @@ test("Keyboard inspection and recoverable source drafts", async ({
   page,
   request,
 }) => {
-  await page.goto("/#token=" + token);
+  await page.goto("/expert#token=" + token);
   await expect(
     page.getByRole("heading", { name: "A model we can run." }),
   ).toBeVisible();

@@ -19,7 +19,7 @@ fn self_model_revision_edit_preserves_architecture_and_old_queries() {
         })
         .collect::<Vec<_>>();
     documents.sort();
-    assert_eq!(documents.len(), 5);
+    assert_eq!(documents.len(), 6);
     let changes = documents
         .iter()
         .map(|path| ProjectChange::Add {

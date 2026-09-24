@@ -14,6 +14,12 @@ See [baseline discrepancies](docs/standards-discrepancies.md) and
 
 ## Setup and launch
 
+The new **Generation 2 Agentique Studio** has its own local host and semantic
+viewport. See [Studio launch and operator workflow](docs/agentique-studio.md).
+It requires the existing accepted KerML and Systems publication cache artifacts;
+the [Phase 3 evidence](verification/summaries/agentique-studio-phase3/README.md)
+distinguishes implemented surfaces from verified durable runtime acceptance.
+
 The launch instructions and release claims below describe **generation 1**:
 `agq-model`, `agq-syntax`, `agq-semantics` and the integrated workspace, simulation,
 application, server and Console. They have not been migrated to generation 2.
@@ -49,7 +55,7 @@ npm run build
 cargo run --locked -p agq-server -- --workspace .workspaces/local.db
 ```
 
-Open the Console URL printed by the server, including its session fragment. It
+Open `/expert` on the Console URL printed by the server, retaining its session fragment. It
 binds to `127.0.0.1:7331`; `--port` selects another port. By default the Assistant
 is visibly in deterministic **TEST MODE**. The Engine and Surface are fully live.
 The local database accepts one Engine process at a time. Stop the server before

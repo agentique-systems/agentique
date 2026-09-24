@@ -1,0 +1,26 @@
+[
+    {
+        "command":  "cargo fmt -p agq-modeling-view -- --check",
+        "exit_code":  0,
+        "elapsed_seconds":  0.34229339999999997,
+        "output":  ""
+    },
+    {
+        "command":  "cargo clippy -p agq-modeling-view --all-targets -- -D warnings",
+        "exit_code":  0,
+        "elapsed_seconds":  12.3170729,
+        "output":  "    Blocking waiting for file lock on build directory\r\n    Checking agq-modeling-workspace v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique\\crates\\modeling-workspace)\r\n    Checking agq-modeling-view v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique\\crates\\modeling-view)\r\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 12.05s\r\n"
+    },
+    {
+        "command":  "cargo test -p agq-modeling-view",
+        "exit_code":  0,
+        "elapsed_seconds":  0.54086479999999992,
+        "output":  "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s\r\n     Running unittests src\\lib.rs (target\\debug\\deps\\agq_modeling_view-02ad8a26178b52af.exe)\r\n\r\nrunning 6 tests\r\ntest projection::tests::architecture_expansion_preserves_usage_and_type_as_distinct_nodes ... ok\r\ntest projection::tests::neighborhood_is_bounded_stable_and_handles_cycles ... ok\r\ntest projection::tests::definitions_are_selection_metadata_and_preserve_hidden_identity ... ok\r\ntest explain::tests::explanation_retains_rule_revision_and_explicitly_marks_display_links ... ok\r\ntest projection::tests::ownership_projection_reads_canonical_memberships_and_keeps_revision_identity ... ok\r\ntest projection::tests::canonical_sysml_ownership_typing_and_feature_counts_resolve_effective_properties ... ok\r\n\r\ntest result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s\r\n\r\n     Running tests\\accepted_views.rs (target\\debug\\deps\\accepted_views-e38ba107e2df7926.exe)\r\n\r\nrunning 1 test\r\ntest authored_view_inspector_proof_and_second_revision_keep_exact_semantic_identity ... ignored, requires accepted KerML and Systems caches; never rebuilds publications\r\n\r\ntest result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s\r\n\r\n   Doc-tests agq_modeling_view\r\n\r\nrunning 0 tests\r\n\r\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\r\n\r\n"
+    },
+    {
+        "command":  "cargo doc -p agq-modeling-view --no-deps",
+        "exit_code":  0,
+        "elapsed_seconds":  2.3062971,
+        "output":  "    Checking agq-kerml-text v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique\\crates\\kerml-text)\r\n    Checking agq-modeling-workspace v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique\\crates\\modeling-workspace)\r\n Documenting agq-modeling-view v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique\\crates\\modeling-view)\r\n    Finished `dev` profile [unoptimized + debuginfo] target(s) in 2.22s\r\n   Generated C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\doc\\agq_modeling_view\\index.html\r\n"
+    }
+]

@@ -1,0 +1,35 @@
+{
+  "format": "agentique-studio-phase3-agent-review-commands/1",
+  "commands": [
+    {
+      "command": "cargo fmt -p agq-modeling-agent -p agq-modeling-service",
+      "exit_code": 0,
+      "output": "No output."
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-modeling-agent --lib",
+      "exit_code": 1,
+      "output": "5 passed; 1 failed. selected_definition_check_rejects_a_valid_but_different_canonical_target failed its positive case, exposing FeatureTyping endpoint properties must be resolved through metaclass property redefinitions. Fixed helper to use registry.resolve_property before canonical navigation."
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-modeling-agent --lib",
+      "exit_code": 0,
+      "output": "6 passed; 0 failed; 0 ignored; finished in 0.06s. Covers decision routing, authority separation, exact selected declaration range, comment/CRLF preservation, semicolon body conversion and canonical selected-definition check."
+    },
+    {
+      "command": "cargo clippy --locked --offline -p agq-modeling-agent -p agq-modeling-service --lib --tests -- -D warnings",
+      "exit_code": 0,
+      "output": "Finished dev profile in 2.41s; no warnings."
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "output": "No output."
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-modeling-service --lib",
+      "exit_code": 0,
+      "output": "7 passed; 0 failed; 1 legacy-codec characterization ignored; finished in 0.02s."
+    }
+  ]
+}

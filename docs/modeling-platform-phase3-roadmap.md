@@ -1,5 +1,18 @@
 # Modeling platform Phase 3 roadmap
 
+The first Studio implementation is described in [ADR 0029](adr/0029-agentique-studio-semantic-worlds.md)
+and [the operator guide](agentique-studio.md). This historical roadmap's exclusions
+below predate the explicitly authorized Studio mission; source-backed candidates,
+semantic views and deterministic agent proposals now have bounded implementations.
+Live autonomous agents and behavioral execution remain future work.
+
+Ordinary Agentique architecture concepts now include AgentRuntime, Agent,
+GenerativeAgent, DecisionAgent, DecisionModel, AgentPolicy, AgentObservation and
+AgentAction in `models/agentique/AgentFabric.sysml`. Future modeled systems may
+combine these with deterministic logic, states, continuous dynamics and human
+operators. These are system concepts, not SysML language extensions, and no new
+execution support is claimed.
+
 Phase 2 establishes immutable source-backed revision and branch contracts. Its
 measured acceptance record determines what is available; this roadmap does not
 waive unfinished Phase 2 gates.

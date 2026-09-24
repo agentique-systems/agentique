@@ -589,6 +589,36 @@ pub struct PreparedChanges {
     validated: Option<ValidatedProjectRevision>,
 }
 impl PreparedChanges {
+    /// Query an uncommitted candidate without granting durability or branch authority.
+    pub fn bound_revision(&self) -> BoundRevision {
+        BoundRevision {
+            manifest: Arc::new(self.request.candidate.manifest.clone()),
+            working: self.working.clone(),
+            validated: self.validated.clone(),
+            load_path: RevisionLoadPath::ImmutableMemory,
+        }
+    }
+    /// Validate this exact candidate; source and project revision identity are unchanged.
+    pub fn validate(&self) -> Result<Self, ServiceError> {
+        if self.validated.is_some() {
+            // Preserve the exact durable request after validation, including
+            // metadata and cache bytes. Rebuilding it would change the payload
+            // under the same operation ID and break lost-acknowledgement retry.
+            return Ok(Self {
+                request: self.request.clone(),
+                working: self.working.clone(),
+                validated: self.validated.clone(),
+            });
+        }
+        let candidate = prepare_candidate(&self.working, true)?;
+        let mut request = self.request.clone();
+        request.candidate = candidate;
+        Ok(Self {
+            request,
+            working: self.working.clone(),
+            validated: Some(self.working.validate()?),
+        })
+    }
     /// Exact immutable semantic candidate.
     pub fn revision(&self) -> &Arc<WorkingProjectRevision> {
         &self.working

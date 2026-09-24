@@ -33,7 +33,12 @@ Both handles expose the existing KerML and SysML query contracts. Element/source
 lookup and diagnostics are revision-bound; there is no second semantic DTO
 model. Accepted standards remain shared, immutable dependencies. Authored
 construction still passes full kernel validation for each edit. Unchanged
-documents share immutable syntax and pre-resolution lowering fragments. Global
+documents share immutable syntax and pre-resolution lowering fragments. When
+the prior authored frontier is strict, construction submits only the new,
+changed and removed declared records to an ordinary kernel transaction;
+unchanged records retain their shared allocations. A reference-refinement pass
+still clears any old endpoint that its current declarations have not resolved.
+Incomplete predecessors use full reconstruction. Global
 structural completion and reference refinement run on the assembled current
 declarations; native producer checkpoints revalidate query/provider reads before
 retaining an evaluation. Broad namespace/search dependencies reopen work
@@ -66,8 +71,11 @@ cache reuses persisted effective facts while retaining source parsing and audit
 work; it is disposable and supplies no independent semantic authority.
 
 `compilation_work` separates documents reparsed/lowered, lowering cache hits,
-records lowered, declared records submitted across construction passes, producer subjects and audited
-subjects. It does not claim incremental kernel construction or audit reuse.
+records lowered, declared records changed/removed versus retained across
+construction passes, producer subjects and audited subjects. The reconstruction
+frontier reduces record mutation/allocation work; index reconstruction and kernel
+validation still visit the complete candidate. It does not claim effective audit
+reuse or an interactive latency improvement.
 `edit_frontier` separates source/syntax changes and declared fact changes from
 derived consequences. The verification-only `full_rebuild` bypasses lowering
 and prior producer caches while retaining identical parsed source identity inputs.

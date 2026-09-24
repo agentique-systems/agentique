@@ -31,7 +31,7 @@ def language(name):
 
 def protected(name):
     return language(name) or name.startswith("agq-modeling-") or name in {
-        "agq-kernel", "agq-standard-libraries", "agq-modeling-workspace",
+        "agq-kernel", "agq-standard-libraries", "agq-modeling-workspace", "agq-studio",
     }
 
 
@@ -64,12 +64,12 @@ def audit(metadata):
                     violations.append({"rule": "gen2-must-not-depend-on-gen1",
                                        "path": list(next_path)})
                 if origin == "agq-kernel" and (language(target) or target in {
-                        "agq-standard-libraries", "agq-modeling-workspace"}
+                        "agq-standard-libraries", "agq-modeling-workspace", "agq-studio"}
                         or target.startswith("agq-modeling-")):
                     violations.append({"rule": "kernel-must-remain-language-agnostic",
                                        "path": list(next_path)})
                 if (language(origin) or origin in {"agq-kernel", "agq-standard-libraries", "agq-modeling-workspace"}) and target in {
-                        "agq-modeling-repository", "agq-modeling-service", "agq-modeling-api", "agq-modeling-http", "agq-modeling-sqlite", "rusqlite", "axum"}:
+                        "agq-modeling-repository", "agq-modeling-service", "agq-modeling-api", "agq-modeling-http", "agq-modeling-sqlite", "agq-modeling-agent", "agq-modeling-view", "agq-studio", "rusqlite", "axum"}:
                     violations.append({"rule": "language-workspace-must-not-depend-on-platform-adapters",
                                        "path": list(next_path)})
                 pending.append(next_path)

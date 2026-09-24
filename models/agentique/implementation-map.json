@@ -12,9 +12,9 @@
     "PlatformArchitecture::SystemsModelingApiAdapter": { "status": "implemented-gen2", "paths": ["adapters/modeling-api", "adapters/modeling-http"] },
     "PlatformArchitecture::QueryService": { "status": "language-contract", "paths": ["crates/kerml-semantics", "crates/sysml-semantics"] },
     "PlatformArchitecture::ValidationService": { "status": "language-contract", "paths": ["crates/kerml-semantics", "crates/sysml-semantics"] },
-    "PlatformArchitecture::ViewService": { "status": "planned-gen2", "paths": [] },
+    "PlatformArchitecture::ViewService": { "status": "implemented-gen2-runtime-acceptance-pending", "paths": ["crates/modeling-view"] },
     "PlatformArchitecture::Repository": { "status": "planned-gen2", "paths": [] },
-    "PlatformArchitecture::Client": { "status": "planned-gen2", "paths": [] },
+    "PlatformArchitecture::Client": { "status": "implemented-gen2-runtime-acceptance-pending", "paths": ["crates/studio", "console/src/studio"] },
     "ExecutionArchitecture::ExecutionCompiler": { "status": "planned-gen2", "paths": [] },
     "ExecutionArchitecture::ExecutionIR": { "status": "planned-gen2", "paths": [] },
     "ExecutionArchitecture::SimulationRuntime": { "status": "planned-gen2", "paths": [] }

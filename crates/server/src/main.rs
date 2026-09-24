@@ -318,14 +318,17 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let router = api
         .fallback_service(
             tower_http::services::ServeDir::new(&args.console)
-                .append_index_html_on_directories(true),
+                .append_index_html_on_directories(true)
+                .fallback(tower_http::services::ServeFile::new(
+                    args.console.join("index.html"),
+                )),
         )
         .layer(axum::extract::DefaultBodyLimit::max(2 * 1024 * 1024))
         .with_state(s);
     let listener =
         tokio::net::TcpListener::bind((std::net::Ipv4Addr::LOCALHOST, args.port)).await?;
     println!(
-        "Agentique Console: http://127.0.0.1:{}/#token={}\nWorkspace: {}\nAssistant: {}",
+        "Agentique Console: http://127.0.0.1:{}/expert#token={}\nWorkspace: {}\nAssistant: {}",
         args.port,
         token,
         args.workspace.display(),

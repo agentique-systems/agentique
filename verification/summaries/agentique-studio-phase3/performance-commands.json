@@ -1,0 +1,111 @@
+{
+  "format": "agentique-studio-phase3-performance-commands/1",
+  "commands": [
+    {
+      "command": "cargo fmt -p agq-kerml-text",
+      "exit_code": 0,
+      "output": "No output."
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-text --lib unchanged_document_lowering -- --nocapture",
+      "exit_code": 0,
+      "output": "Finished test profile in 42.92s. 1 passed; 0 failed; 0 ignored; 62 filtered out; finished in 0.24s.",
+      "scope": "Initial frontier implementation, before adding new frontier oracle tests."
+    },
+    {
+      "command": "cargo fmt -p agq-kerml-text",
+      "exit_code": 1,
+      "output": "Failed to load workspace member crates/studio: Cargo.toml did not yet exist during concurrent scaffold creation."
+    },
+    {
+      "command": "rustfmt --edition 2024 crates/kerml-text/src/library/construction.rs crates/kerml-text/src/library/incremental_fragment_tests.rs crates/kerml-text/src/source_inputs.rs",
+      "exit_code": 0,
+      "output": "No output."
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-text --lib incremental_fragment_tests -- --nocapture",
+      "exit_code": 1,
+      "output": "The lock file Cargo.lock needs to be updated but --locked was passed to prevent this.",
+      "attempts": 2,
+      "scope": "Blocked by new workspace members during shared development; no test cases executed."
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "output": "No output."
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-text --lib incremental_fragment_tests -- --nocapture",
+      "exit_code": 1,
+      "output": "error[E0277]: Arc<str>: From<&String> is not satisfied at incremental_fragment_tests.rs:276; fixture format string passed as &String. Corrected to owned String."
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-text --lib incremental_fragment_tests -- --nocapture",
+      "exit_code": 1,
+      "output": "error[E0451]: field documents of LoweringCache is private at fixture struct-update expressions. Corrected fixtures to use next_revision() with allow_reuse=false."
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-text --lib incremental_fragment_tests -- --nocapture",
+      "exit_code": 1,
+      "output": "1 passed; 2 failed. Exact canonical comparisons passed; work-count assertions incorrectly assumed rename retained edited declaration IDs. Conservative syntax reconciliation produced rename changed/removed=14 vs full=12, retained=4; 100-doc changed/removed=9 vs full=401, retained=396. Assertions corrected to report tiny-case overhead and require >40x reduction only on the 100-document population.",
+      "attempts": 2
+    },
+    {
+      "command": "cargo fmt -p agq-kerml-text",
+      "exit_code": 0,
+      "output": "No output."
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-text --lib incremental_fragment_tests -- --nocapture",
+      "exit_code": 0,
+      "output": "3 passed; 0 failed; 62 filtered out; finished in 0.94s.\nrename: incremental_records=14 full_records=12 retained_records=4 incremental_us=5087 full_us=6194\nadd-part: incremental_records=16 full_records=14 retained_records=4 incremental_us=6864 full_us=7005\nremove-part: incremental_records=12 full_records=9 retained_records=4 incremental_us=3456 full_us=5509\nremove-typing: incremental_records=14 full_records=11 retained_records=4 incremental_us=3882 full_us=4815\nunresolved-reference: incremental_records=15 full_records=12 retained_records=4 incremental_us=4440 full_us=5183\n100-documents: incremental_records=9 full_records=401 retained_records=396 incremental_us=24721 full_us=161748; declared construction only, no accepted publication or semantic closure."
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-text --lib",
+      "exit_code": 0,
+      "output": "test sysml::publication::tests::all_systems_declared_fact_sources_match_exact_operational_syntax_nodes ... ok\ntest sysml::tests::all_pinned_systems_documents_construct_with_source_provenance ... ok\ntest sysml::tests::enumeration::all_systems_enumerations_lower_as_variations_and_retain_literal_memberships ... ok\n\ntest result: ok. 63 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 15.05s\n\n"
+    },
+    {
+      "command": "cargo clippy --locked --offline -p agq-kerml-text --lib --tests -- -D warnings",
+      "exit_code": 0,
+      "output": "Checking agq-kerml-text; Finished dev profile in 3.32s."
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "output": "No output."
+    },
+    {
+      "command": "cargo fmt -p agq-kerml-text -- --check",
+      "exit_code": 0,
+      "output": "No output."
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-text --lib incremental_fragment_tests -- --nocapture",
+      "exit_code": 0,
+      "output": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 42.46s\n     Running unittests src\\lib.rs (target\\debug\\deps\\agq_kerml_text-ccb5bfc013a9b245.exe)\n\nrunning 4 tests\ntest library::incremental_fragment_tests::full_construction_rejects_existing_identity_instead_of_reusing_it ... ok\nrename: incremental_records=14 full_records=12 retained_records=4 incremental_us=9019 full_us=10475\nadd-part: incremental_records=16 full_records=14 retained_records=4 incremental_us=9675 full_us=12910\nremove-part: incremental_records=12 full_records=9 retained_records=4 incremental_us=5080 full_us=9695\nremove-typing: incremental_records=14 full_records=11 retained_records=4 incremental_us=6837 full_us=9260\nunresolved-reference: incremental_records=15 full_records=12 retained_records=4 incremental_us=8522 full_us=10706\ntest library::incremental_fragment_tests::declared_reconstruction_frontier_matches_full_and_shares_unchanged_records ... ok\ntest library::incremental_fragment_tests::unchanged_document_lowering_is_reused_with_exact_full_reconstruction ... ok\ntest library::incremental_fragment_tests::hundred_document_declared_reconstruction_frontier_is_bounded ... ok\n\ntest result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 62 filtered out; finished in 3.20s\n\n100-documents: incremental_records=9 full_records=401 retained_records=396 incremental_us=96606 full_us=461696; declared construction only, no accepted publication or semantic closure\n",
+      "scope": "After restricting old element/occurrence reuse to explicit incremental reconstruction and adding full-path collision regression."
+    },
+    {
+      "command": "cargo test --locked --offline -p agq-kerml-text --lib",
+      "exit_code": 0,
+      "output": "64 passed; 0 failed; 2 accepted-cache tests ignored; finished in 19.95s.",
+      "scope": "Full library regression after full-path collision correction."
+    },
+    {
+      "command": "cargo clippy --locked --offline -p agq-kerml-text --lib --tests -- -D warnings",
+      "exit_code": 0,
+      "output": "Checking agq-kerml-text; Finished dev profile in 2.21s; no warnings."
+    },
+    {
+      "command": "cargo fmt -p agq-kerml-text -- --check",
+      "exit_code": 0,
+      "output": "No output."
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "output": "No output."
+    }
+  ]
+}
