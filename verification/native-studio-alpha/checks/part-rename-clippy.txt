@@ -1,0 +1,4 @@
+    Checking agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\modeling-service)
+    Checking agq-modeling-agent v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\modeling-agent)
+    Checking agq-studio-platform v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\studio-platform)
+    Finished `dev` profile [unoptimized] target(s) in 4.97s

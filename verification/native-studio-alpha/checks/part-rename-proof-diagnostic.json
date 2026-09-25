@@ -1,0 +1,28 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-modeling-service",
+    "--lib",
+    "part_rename::tests::rename_preserves",
+    "--target-dir",
+    "C:/Users/phili/github/agentique-systems/agentique/target",
+    "--",
+    "--nocapture"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-editperf",
+  "started_utc": "2026-09-25T17:39:22.200044+00:00",
+  "elapsed_seconds": 2.75,
+  "exit_code": 101,
+  "output": "verification/native-studio-alpha/checks/part-rename-proof-diagnostic.txt",
+  "output_sha256": "1702951dd0386598dcdab0b1c3baec29dd7915d7243ba24c231ccc9b7aa6e39e",
+  "build_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "1"
+  }
+}

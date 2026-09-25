@@ -1,7 +1,6 @@
 //! Service-verified identity continuity for one appended authored PartUsage.
 //! Caller text is input; callers cannot supply a checkpoint or an identity map.
 use super::*;
-use agq_kerml::properties;
 use agq_kerml_semantics::Completeness;
 use agq_kerml_syntax::{
     TextEdit, TokenKind,
@@ -9,9 +8,11 @@ use agq_kerml_syntax::{
 };
 use agq_kernel::{
     ElementId, SyntaxNodeId,
-    provenance::{ByteRange, DeclaredOrigin, FactKey, Origin},
+    provenance::{ByteRange, FactKey},
 };
 use std::collections::BTreeSet;
+
+use super::source_identity::{self, Mutation, mapped_range};
 
 const POLICY: &str = "agentique-source-identity/part-insertion/1";
 
@@ -91,30 +92,8 @@ impl ModelingService {
             })
             .ok_or_else(|| invalid("owner declaration provenance does not match"))?;
         let proof = prove_insertion(syntax, owner_node.id(), edit)?;
-        let before_checkpoint = base.revision().checkpoint();
-        let mut checkpoint = before_checkpoint.clone();
-        checkpoint.project_revision_id = ProjectRevisionId::new();
-        checkpoint.parent_revision_id = Some(command.expected_head);
-        let saved = checkpoint
-            .source
-            .documents
-            .iter_mut()
-            .find(|saved| saved.document_id == *document)
-            .ok_or_else(|| invalid("authored source checkpoint is missing"))?;
-        saved.source_revision_id = proof.parsed.revision();
-        saved.content_digest = ContentDigest::of(proof.parsed.source().as_bytes()).0;
-        saved.syntax_nodes = proof.identities;
-        // Every other document, source root, publication and identity reservation
-        // is cloned from the authenticated predecessor, never supplied by a caller.
-        let mut sources: BTreeMap<_, _> = base
-            .revision()
-            .documents()
-            .map(|(_, document)| (document.id(), document.source().to_owned()))
-            .collect();
-        sources.insert(*document, proof.parsed.source().into());
-        let working = checkpoint
-            .restore(base.revision().accepted_sysml().clone(), &sources)
-            .map_err(|error| invalid(&format!("ordinary reconstruction failed: {error}")))?;
+        let (working, checkpoint) =
+            source_identity::reconstruct(base.revision(), &proof.parsed, proof.identities)?;
         verify_continuity(
             base.revision(),
             &working,
@@ -122,19 +101,6 @@ impl ModelingService {
             *document,
             proof.added_part,
         )?;
-        let after_history = &working.checkpoint().source.identity_history;
-        let before_history = &before_checkpoint.source.identity_history;
-        if !before_history
-            .retired
-            .elements
-            .is_subset(&after_history.retired.elements)
-            || !before_history
-                .retired
-                .occurrences
-                .is_subset(&after_history.retired.occurrences)
-        {
-            return Err(invalid("retired identities were lost"));
-        }
         let evidence = serde_json::json!({
             "policy": POLICY,
             "mode": "full-source-reconstruction",
@@ -180,24 +146,6 @@ impl ModelingService {
             working,
             validated,
         })
-    }
-}
-
-fn mapped_range(range: ByteRange, edit: &TextEdit) -> Result<ByteRange, ServiceError> {
-    let delta = edit.replacement.len() as i64 - (edit.range.end() - edit.range.start()) as i64;
-    if range.end() <= edit.range.start() {
-        Ok(range)
-    } else if range.start() >= edit.range.end() {
-        ByteRange::new(
-            (range.start() as i64 + delta) as u64,
-            (range.end() as i64 + delta) as u64,
-        )
-        .map_err(|_| invalid("shifted node range is invalid"))
-    } else if range.start() <= edit.range.start() && range.end() >= edit.range.end() {
-        ByteRange::new(range.start(), (range.end() as i64 + delta) as u64)
-            .map_err(|_| invalid("containing node range is invalid"))
-    } else {
-        Err(invalid("edit partially replaces an existing production"))
     }
 }
 
@@ -411,97 +359,14 @@ fn verify_continuity(
     document: DocumentId,
     added_part: SyntaxNodeId,
 ) -> Result<(), ServiceError> {
-    let old = before
-        .strict_snapshot()
-        .ok_or_else(|| invalid("predecessor declared graph unavailable"))?
-        .model();
+    source_identity::verify_existing(before, after, Mutation::AppendMember { owner })?;
     let next = after
         .strict_snapshot()
         .ok_or_else(|| invalid("candidate declared graph unavailable"))?
         .model();
-    let old_queries = before
-        .kerml_queries()
-        .map_err(|error| invalid(&format!("predecessor query: {error:?}")))?;
     let queries = after
         .kerml_queries()
         .map_err(|error| invalid(&format!("candidate query: {error:?}")))?;
-    for record in old.elements().filter(|record| {
-        matches!(
-            record.origin(),
-            Origin::Declared(DeclaredOrigin::Authored { source: Some(_) })
-        )
-    }) {
-        let replacement = next
-            .element(record.id())
-            .ok_or_else(|| invalid("an existing declared identity disappeared"))?;
-        if replacement.metaclass() != record.metaclass() {
-            return Err(invalid("an existing declared kind changed"));
-        }
-        let before_owner = old_queries.owner(record.id());
-        let after_owner = queries.owner(record.id());
-        if before_owner.completeness != Completeness::Complete
-            || after_owner.completeness != Completeness::Complete
-            || before_owner.value != after_owner.value
-        {
-            return Err(invalid(
-                "existing declared ownership changed or became incomplete",
-            ));
-        }
-        let before_slots: BTreeMap<_, _> = record
-            .slots()
-            .filter(|(property, _)| {
-                record.id() != owner || *property != properties::ELEMENT_OWNED_RELATIONSHIP
-            })
-            .map(|(p, slot)| (p, slot.value()))
-            .collect();
-        let after_slots: BTreeMap<_, _> = replacement
-            .slots()
-            .filter(|(property, _)| {
-                record.id() != owner || *property != properties::ELEMENT_OWNED_RELATIONSHIP
-            })
-            .map(|(p, slot)| (p, slot.value()))
-            .collect();
-        if before_slots != after_slots {
-            return Err(invalid(
-                "an existing declaration changed beyond adding the owner's member",
-            ));
-        }
-        if record.id() == owner {
-            let previous: Vec<_> = record
-                .slot(properties::ELEMENT_OWNED_RELATIONSHIP)
-                .into_iter()
-                .flat_map(|slot| slot.value().values())
-                .collect();
-            let current: Vec<_> = replacement
-                .slot(properties::ELEMENT_OWNED_RELATIONSHIP)
-                .into_iter()
-                .flat_map(|slot| slot.value().values())
-                .collect();
-            if !current.starts_with(&previous) {
-                return Err(invalid("existing owner member order changed"));
-            }
-        }
-    }
-    let references: BTreeMap<_, _> = after
-        .references()
-        .iter()
-        .map(|reference| (reference.relationship, reference))
-        .collect();
-    for reference in before.references() {
-        let next = references
-            .get(&reference.relationship)
-            .ok_or_else(|| invalid("an existing reference disappeared"))?;
-        if reference.name != next.name
-            || reference.specific != next.specific
-            || reference.resolution.value != next.resolution.value
-            || reference.resolution.completeness != next.resolution.completeness
-            || next.resolution.completeness != Completeness::Complete
-        {
-            return Err(invalid(
-                "an existing reference changed target; the new name may shadow a binding",
-            ));
-        }
-    }
     let added: Vec<_> = next
         .elements()
         .filter(|record| {
@@ -524,16 +389,6 @@ fn verify_continuity(
         return Err(invalid(
             "new PartUsage does not belong to the original selected owner",
         ));
-    }
-    let retired = &before.checkpoint().source.identity_history.retired;
-    if next
-        .elements()
-        .any(|record| retired.elements.contains(&record.id()))
-        || next
-            .association_occurrences()
-            .any(|record| retired.occurrences.contains(&record.id()))
-    {
-        return Err(invalid("a retired canonical identity was resurrected"));
     }
     Ok(())
 }

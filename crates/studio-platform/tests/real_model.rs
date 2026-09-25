@@ -290,6 +290,7 @@ fn native_in_process_self_model_candidate_commit_and_restore() {
     drop(database);
 
     let runtime = agq_runtime_publications::load(&config.runtime, &config.root, |_| {}).unwrap();
+    let accepted_systems = runtime.systems.clone();
     let repository =
         std::sync::Arc::new(agq_modeling_sqlite::SqliteRepository::open(&config.database).unwrap());
     let service = std::sync::Arc::new(agq_modeling_service::ModelingService::new(
@@ -397,5 +398,196 @@ fn native_in_process_self_model_candidate_commit_and_restore() {
             .unwrap()
             .head,
         second_receipt.revision_id
+    );
+
+    // Rename is deliberately bounded: a typed reference to ProjectWorkspace
+    // cannot be silently rewritten or rebound by renaming that definition.
+    let rename_context = AgentContext {
+        project: project.id,
+        branch: project.default_branch,
+        revision: second_receipt.revision_id,
+        selection: vec![added],
+    };
+    let referenced_definition = graph
+        .nodes
+        .iter()
+        .find(|node| node.name == "ProjectWorkspace" && node.semantic_kind == "PartDefinition")
+        .unwrap()
+        .id;
+    assert!(
+        source_platform
+            .propose(
+                rename_context.clone(),
+                ModelCommand::RenameElement {
+                    element: referenced_definition,
+                    name: "RenamedWorkspaceDefinition".into(),
+                },
+                &definition
+            )
+            .is_err(),
+        "rename refuses a change that breaks an existing typed reference"
+    );
+    let sibling_name = second
+        .projection
+        .nodes
+        .iter()
+        .find(|node| {
+            node.owner == Some(owner)
+                && node.id != added
+                && node.origin == ViewOrigin::Authored
+                && node.semantic_kind == "PartUsage"
+        })
+        .unwrap()
+        .name
+        .clone();
+    assert!(
+        source_platform
+            .propose(
+                rename_context.clone(),
+                ModelCommand::RenameElement {
+                    element: added,
+                    name: sibling_name,
+                },
+                &definition
+            )
+            .is_err(),
+        "direct sibling names remain unique"
+    );
+    let renamed = source_platform
+        .propose(
+            rename_context,
+            ModelCommand::RenameElement {
+                element: added,
+                name: "nativeObserverRenamed".into(),
+            },
+            &definition,
+        )
+        .unwrap();
+    assert_eq!(renamed.phase, CandidatePhase::Working);
+    assert!(renamed.changes.declared.added.is_empty());
+    assert!(renamed.changes.declared.removed.is_empty());
+    assert!(renamed.changes.declared.changed.contains(&added));
+    assert_eq!(
+        renamed
+            .projection
+            .nodes
+            .iter()
+            .map(|node| node.id)
+            .collect::<std::collections::BTreeSet<_>>(),
+        second.projection.nodes.iter().map(|node| node.id).collect()
+    );
+    let renamed_part = renamed
+        .projection
+        .nodes
+        .iter()
+        .find(|node| node.id == added)
+        .unwrap();
+    assert_eq!(renamed_part.owner, Some(owner));
+    assert_eq!(renamed_part.name, "nativeObserverRenamed");
+    assert_eq!(
+        renamed
+            .projection
+            .nodes
+            .iter()
+            .find(|node| node.id == second_added.id)
+            .unwrap()
+            .owner,
+        Some(added)
+    );
+    assert!(
+        source_platform.commit(renamed.id).is_err(),
+        "rename still needs explicit validation"
+    );
+    source_platform.validate(renamed.id, &definition).unwrap();
+    let rename_receipt = source_platform.commit(renamed.id).unwrap();
+    assert_eq!(rename_receipt, source_platform.commit(renamed.id).unwrap());
+    let before_rename = RevisionBinding {
+        project: project.id,
+        revision: second_receipt.revision_id,
+    };
+    assert_eq!(
+        source_platform.project(before_rename, &definition).unwrap(),
+        second.projection
+    );
+    let rename_history = source_platform.history(project.id).unwrap();
+    let rename_manifest = rename_history
+        .revisions
+        .iter()
+        .find(|manifest| manifest.revision_id == rename_receipt.revision_id)
+        .unwrap();
+    assert!(
+        rename_manifest
+            .metadata
+            .alias
+            .iter()
+            .any(|alias| alias == "agentique-source-identity/part-rename/1")
+    );
+    let rename_cache = rename_manifest
+        .semantic_cache
+        .as_ref()
+        .unwrap()
+        .content_digest;
+    assert_ne!(rename_cache, rename_manifest.checkpoint_digest);
+    assert!(
+        rename_manifest
+            .documents
+            .iter()
+            .all(|document| document.content_digest != rename_cache)
+    );
+    drop(source_platform);
+    drop(from_source);
+    let database = rusqlite::Connection::open(&config.database).unwrap();
+    assert_eq!(
+        database
+            .execute("DELETE FROM blobs WHERE digest=?1", [rename_cache.hex()])
+            .unwrap(),
+        1
+    );
+    drop(database);
+    // Recreate the service without any project revisions in memory. The immutable
+    // accepted standard publication is reused after its earlier authentication.
+    let restarted_service = std::sync::Arc::new(agq_modeling_service::ModelingService::new(
+        std::sync::Arc::new(agq_modeling_sqlite::SqliteRepository::open(&config.database).unwrap()),
+        accepted_systems,
+        8,
+    ));
+    let renamed_bound = restarted_service
+        .resolve(
+            project.id,
+            agq_modeling_service::RevisionSelector::Revision(rename_receipt.revision_id),
+        )
+        .unwrap();
+    assert_eq!(
+        renamed_bound.load_path(),
+        agq_modeling_service::RevisionLoadPath::DurableSource
+    );
+    assert!(renamed_bound.validated().is_some());
+    let restarted_platform = agq_studio_platform::StudioPlatform::new(
+        restarted_service,
+        agq_modeling_agent::AgentPolicy::operator(),
+    );
+    let durable_rename = restarted_platform
+        .project(
+            RevisionBinding {
+                project: project.id,
+                revision: rename_receipt.revision_id,
+            },
+            &definition,
+        )
+        .unwrap();
+    assert_eq!(
+        durable_rename, renamed.projection,
+        "source-only restart retains the renamed canonical identity, owner and child"
+    );
+    assert_eq!(
+        restarted_platform
+            .history(project.id)
+            .unwrap()
+            .branches
+            .iter()
+            .find(|branch| branch.id == project.default_branch)
+            .unwrap()
+            .head,
+        rename_receipt.revision_id
     );
 }

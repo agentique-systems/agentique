@@ -20,9 +20,13 @@ must discard stale worker responses when their selected binding changes.
 
 `propose(AgentContext, ModelCommand, ViewDefinition)` returns a process-local
 `CandidateId` plus a Working revision projection, source preview and semantic
-diff. Only the reviewed `CreatePartUsage` source mapping is supported by the
-existing modeling-agent contract. Unsupported rename/delete/connection commands
-are rejected by that contract. `candidate`, `inspect_candidate` and
+diff. `CreatePartUsage` and bounded `RenameElement` for authored Parts use
+service-proven source identity mappings. Rename supports plain ASCII declared
+names on `part [def] Name`, optionally with a simple qualified type, and preserves
+the canonical element identity. Short names, modifiers and complex headers are
+explicitly refused. Existing references are never rewritten: if a rename changes
+a reference target or other effective graph value, the candidate is refused.
+Delete and connection commands remain unsupported. `candidate`, `inspect_candidate` and
 `explain_candidate` and `source_candidate` address the candidate revision without pretending it is a
 durable branch head. `validate` requires independent validation authority;
 `commit` requires commit authority and an actually validated candidate.

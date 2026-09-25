@@ -9,7 +9,8 @@ use agq_modeling_service::{
 };
 use serde::{Deserialize, Serialize};
 
-/// Typed intent vocabulary. Only CreatePartUsage has a reviewed source mapping in v1.
+/// Typed intent vocabulary. CreatePartUsage and bounded authored Part renaming
+/// have service-proven source mappings.
 /// Unsupported operations fail before constructing any candidate.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "kind", deny_unknown_fields)]
@@ -94,6 +95,50 @@ pub fn propose(
 ) -> Result<AgentCandidate, AgentError> {
     policy.require(Authority::Read)?;
     policy.require(Authority::Propose)?;
+    if let ModelCommand::RenameElement { element, name } = &command {
+        let bound = service.resolve(
+            context.project,
+            RevisionSelector::Revision(context.revision),
+        )?;
+        let origin = bound
+            .current_element(*element)?
+            .source
+            .ok_or_else(|| AgentError::Invalid("element has no authored source".into()))?;
+        let (path, document) = bound
+            .revision()
+            .documents()
+            .find(|(_, document)| document.id() == origin.document)
+            .ok_or_else(|| {
+                AgentError::Invalid("standard-library and generated records are read-only".into())
+            })?;
+        let prepared = service.prepare_part_rename(agq_modeling_service::RenamePart {
+            operation_id: OperationId::new(),
+            project: context.project,
+            branch: context.branch,
+            expected_head: context.revision,
+            element: *element,
+            name: name.clone(),
+            validate: false,
+        })?;
+        let after = prepared
+            .revision()
+            .document(origin.document)
+            .ok_or_else(|| {
+                AgentError::Invalid("renamed candidate lost its source document".into())
+            })?;
+        let source_preview = SourcePreview {
+            path: path.into(),
+            before: document.source().into(),
+            after: after.source().into(),
+        };
+        return Ok(AgentCandidate {
+            context,
+            actor: policy.actor.clone(),
+            command,
+            source_preview,
+            prepared,
+        });
+    }
     let ModelCommand::CreatePartUsage {
         owner,
         name,

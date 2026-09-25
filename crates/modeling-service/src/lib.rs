@@ -6,6 +6,9 @@
 
 mod cache_codec;
 mod part_insertion;
+mod part_rename;
+mod source_identity;
+pub use part_rename::RenamePart;
 mod query;
 use agq_kerml_text::{ProjectChange, sysml::CanonicalSysmlSystemsLibrary};
 pub use agq_modeling_repository as repository;
