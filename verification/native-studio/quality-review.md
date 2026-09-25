@@ -110,6 +110,16 @@ after these runs; no hash of the current executable is attributed to either run.
 
 ## Product judgment and limits
 
+The final visibility optimization was followed by another successful 37-stage
+native run (`native-vertical-accepted`, exit 0). Its executable SHA-256 is retained
+in `interaction-acceptance.json`. A fresh actual System World GPU capture
+(`native-system-accepted`, exit 0) is byte-identical to the retained System World
+PNG: `4d8c09a7752bc6c1afa2277bfec121072028db142ad86178423c3dcc87399f0b`.
+This supplements structural, geometry and input assertions; it is not the sole
+correctness check. The missing-runtime setup was also reviewed and refined to
+show a clear installation path with optional technical details, while its scene
+contains zero objects and submits zero scene draws.
+
 The retained System World screenshot is a credible beginning of a serious
 engineering environment: hierarchy reads immediately, the selection is
 unambiguous, the view has spatial continuity, and the inspector communicates

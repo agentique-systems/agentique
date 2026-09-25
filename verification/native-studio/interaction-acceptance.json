@@ -13,7 +13,7 @@
   "passed": true,
   "assertion_count": 37,
   "adapter": "AdapterInfo { name: \"NVIDIA GeForce RTX 3060 Ti\", vendor: 4318, device: 9353, device_type: DiscreteGpu, driver: \"NVIDIA\", driver_info: \"616.92\", backend: Vulkan }",
-  "binary_identity_note": "The executable was rebuilt after these runs. No current executable hash is attributed to either tested run.",
+  "binary_identity_note": "Earlier run binaries were rebuilt; only the final accepted run below binds the retained current executable hash.",
   "runs": [
     {
       "run": "4",
@@ -58,6 +58,31 @@
       "report_sha256": "e90f0dda72946dcd35c89c89e5e6fbc45ba9b0334fe41233e974aad472ae78a8",
       "passed_assertions": 37,
       "failed_assertions": 0
+    },
+    {
+      "run": "accepted-after-visibility-optimization",
+      "command": [
+        "target/release/agq-studio-native.exe",
+        "--fixture",
+        "architecture",
+        "--no-restore",
+        "--scenario",
+        "vertical",
+        "--scenario-report",
+        "verification/generated/native-studio/interaction-accepted.json"
+      ],
+      "working_directory": "repository root",
+      "exit_code": 0,
+      "elapsed_seconds": 13.031,
+      "utc": "2026-09-25T07:58:07.646858+00:00",
+      "process_record": "verification/summaries/native-studio/native-vertical-accepted.json",
+      "report": "verification/generated/native-studio/interaction-accepted.json",
+      "report_sha256": "e90f0dda72946dcd35c89c89e5e6fbc45ba9b0334fe41233e974aad472ae78a8",
+      "assertion_count": 37,
+      "passed_assertions": 37,
+      "failed_assertions": 0,
+      "source_commit": "f4f6356261c4b05595f824f5ebb86e662f92d54d",
+      "executable_sha256": "284b522bd38818655aedd5004cb8eaeda71f05d2629cf097aa3cc7e44a77a717"
     }
   ],
   "assertions": [

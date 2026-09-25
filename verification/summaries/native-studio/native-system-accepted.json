@@ -1,0 +1,14 @@
+{
+  "command": [
+    "target/release/agq-studio-native.exe",
+    "--fixture",
+    "architecture",
+    "--no-restore",
+    "--screenshot",
+    "verification/generated/native-studio/system-accepted.png"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 0.922,
+  "utc": "2026-09-25T07:58:23.873987+00:00",
+  "output": "verification/generated/native-studio/native-system-accepted.txt"
+}

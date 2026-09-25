@@ -1,0 +1,19 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--offline",
+    "--release",
+    "--config",
+    "profile.release.lto=false",
+    "--manifest-path",
+    "crates/studio-native/Cargo.toml",
+    "--target-dir",
+    "target"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 11.922,
+  "utc": "2026-09-25T07:55:59.666494+00:00",
+  "output": "verification/generated/native-studio/native-visibility-release.txt"
+}

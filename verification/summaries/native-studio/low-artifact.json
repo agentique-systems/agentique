@@ -213,6 +213,60 @@
         "CARGO_BUILD_JOBS": "2",
         "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target"
       }
+    },
+    {
+      "name": "native-visibility-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--manifest-path",
+        "crates/studio-native/Cargo.toml"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "f4f6356261c4b05595f824f5ebb86e662f92d54d",
+      "working_changes_sha256": "1f64b7d4f6e88b1044cd6552101ef0825fe44b6791b322658cd1a849b8da00ad",
+      "output_sha256": "285870abe7cbb93fb7980c0d424f7ddf6f8ae3e89a7636e32be722426c8c4700",
+      "duration_seconds": 3.78,
+      "output": "verification/generated/native-studio/native-visibility-tests.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target"
+      }
+    },
+    {
+      "name": "native-visibility-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "--manifest-path",
+        "crates/studio-native/Cargo.toml",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "f4f6356261c4b05595f824f5ebb86e662f92d54d",
+      "working_changes_sha256": "1f64b7d4f6e88b1044cd6552101ef0825fe44b6791b322658cd1a849b8da00ad",
+      "output_sha256": "322fac6fe5d3e36dedd029a63b6fa1af637cc505a1191024892f27206c00399a",
+      "duration_seconds": 1.56,
+      "output": "verification/generated/native-studio/native-visibility-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target"
+      }
     }
   ]
 }

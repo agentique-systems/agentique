@@ -1,0 +1,16 @@
+{
+  "command": [
+    "target/release/agq-studio-native.exe",
+    "--fixture",
+    "stress1000",
+    "--scenario",
+    "stress",
+    "--scenario-report",
+    "verification/generated/native-studio/stress1000-input-visibility.json",
+    "--no-restore"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 8.438,
+  "utc": "2026-09-25T07:56:44.509880+00:00",
+  "output": "verification/generated/native-studio/native-stress-1000-visibility.txt"
+}
