@@ -28,6 +28,14 @@ impl StudioApp {
                 Err(error) => {
                     self.setup_reason = error.clone();
                     self.status = error;
+                    // A disposable saved focus may no longer be usable. Retry
+                    // its authenticated revision once with the same World and
+                    // no focus; a failed restoration never exposes fixtures.
+                    if reply.request == self.scene_request && self.restore.take().is_some() {
+                        self.focus = None;
+                        self.request_projection();
+                        continue;
+                    }
                     if reply.mutation
                         && let Some(id) = self.candidate.as_ref().and_then(|c| c.id)
                     {
@@ -74,11 +82,16 @@ impl StudioApp {
                             revision,
                         });
                         self.branch = Some(branch.id);
-                        self.history = Some(history);
                         self.fixture = None;
-                        self.ready = true;
-                        self.focus = None;
-                        self.world = World::System;
+                        self.ready = false;
+                        self.setup_reason = "Loading the selected project revision".into();
+                        let restored = self.restore.as_ref().filter(|session| {
+                            session.project == Some(history.project.id)
+                                && session.revision == revision
+                        });
+                        self.focus = restored.and_then(|session| session.focus);
+                        self.world = restored.map_or(World::System, |session| session.world);
+                        self.history = Some(history);
                         self.navigation = Navigation::default();
                         self.candidate = None;
                         self.compare_before = None;
@@ -90,6 +103,7 @@ impl StudioApp {
                         self.expanded = None;
                         self.dependencies = None;
                         self.collapsed.clear();
+                        self.fit_pending = true;
                         self.request_projection();
                     }
                 }
@@ -100,21 +114,10 @@ impl StudioApp {
                             .is_some_and(|binding| binding.revision == projection.revision_id) =>
                 {
                     self.projection = projection;
+                    self.ready = true;
                     self.rebuild();
                     self.fit_pending = true;
-                    if let Some(restore) = self.restore.take()
-                        && restore.project == self.project_id()
-                        && restore.revision == self.projection.revision_id
-                    {
-                        self.world = restore.world;
-                        self.focus = restore
-                            .focus
-                            .filter(|id| self.projection.nodes.iter().any(|n| n.id == *id));
-                        self.camera = restore.camera;
-                        self.layout = restore.layout;
-                        self.rebuild();
-                        self.fit_pending = false;
-                    }
+                    self.apply_pending_presentation();
                     self.record_location();
                     self.status = "Revision restored in process".into();
                 }
@@ -198,9 +201,15 @@ impl StudioApp {
                         current.after = candidate.projection;
                         current.phase = Some(candidate.phase);
                     }
+                    if reply.mutation {
+                        self.comparison = ComparisonMode::Diff;
+                        self.status =
+                            "Candidate validated; review its revision-bound difference".into();
+                    }
                     self.invalidate_inspection();
                     self.rebuild();
                     self.fit_pending = true;
+                    self.apply_pending_presentation();
                 }
                 Ok(Output::Committed(receipt))
                     if reply.mutation
@@ -241,6 +250,20 @@ impl StudioApp {
                 }
                 Ok(_) => {} // Superseded read requests cannot populate another view/selection.
             }
+        }
+    }
+    fn apply_pending_presentation(&mut self) {
+        if let Some(restore) = self.restore.take()
+            && restoration_matches(&restore, self.binding, self.world, self.focus)
+        {
+            self.camera = restore.camera;
+            self.camera_target = None;
+            self.layout = restore.layout;
+            // Set the world before rebuilding, so the per-world memory swap
+            // cannot discard the newly restored layout.
+            self.layout_world = self.world;
+            self.rebuild();
+            self.fit_pending = false;
         }
     }
     pub fn open_project(&mut self, id: agq_modeling_repository::ProjectId) {
@@ -315,5 +338,80 @@ impl StudioApp {
             println!("{report}");
             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
         }
+    }
+}
+
+fn restoration_matches(
+    session: &crate::session::Session,
+    binding: Option<RevisionBinding>,
+    world: World,
+    focus: Option<agq_kernel::ElementId>,
+) -> bool {
+    binding.is_some_and(|binding| {
+        session.project == Some(binding.project)
+            && session.revision == binding.revision
+            && session.world == world
+            && session.focus == focus
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn presentation_restore_requires_exact_revision_world_and_focus() {
+        let binding = RevisionBinding {
+            project: agq_modeling_repository::ProjectId::new(),
+            revision: agq_modeling_workspace::ProjectRevisionId::new(),
+        };
+        let focus = Some(agq_kernel::ElementId::from_u128(42));
+        let mut session = crate::session::Session {
+            version: 1,
+            project: Some(binding.project),
+            revision: binding.revision,
+            fixture: None,
+            world: World::Graph,
+            focus,
+            camera: agq_studio_scene::Camera2D::default(),
+            layout: Default::default(),
+            dark: true,
+            high_contrast: false,
+            reduced_motion: false,
+        };
+        assert!(restoration_matches(
+            &session,
+            Some(binding),
+            World::Graph,
+            focus
+        ));
+        assert!(!restoration_matches(
+            &session,
+            Some(binding),
+            World::System,
+            focus
+        ));
+        assert!(!restoration_matches(
+            &session,
+            Some(binding),
+            World::Graph,
+            None
+        ));
+        assert!(!restoration_matches(&session, None, World::Graph, focus));
+        session.revision = agq_modeling_workspace::ProjectRevisionId::new();
+        assert!(!restoration_matches(
+            &session,
+            Some(binding),
+            World::Graph,
+            focus
+        ));
+        session.revision = binding.revision;
+        session.project = Some(agq_modeling_repository::ProjectId::new());
+        assert!(!restoration_matches(
+            &session,
+            Some(binding),
+            World::Graph,
+            focus
+        ));
     }
 }

@@ -9,7 +9,7 @@ use agq_modeling_view::{
     FeatureCounts, RelationshipFamily, ViewDefinition, ViewEdge, ViewNode, ViewOrigin,
 };
 use agq_modeling_workspace::ProjectRevisionId;
-use agq_studio_scene::{Point, SceneTarget, fixtures};
+use agq_studio_scene::{NeighborhoodDirection, Point, SceneTarget, fixtures};
 use eframe::egui::{self, Key, Modifiers};
 use std::collections::BTreeSet;
 
@@ -116,6 +116,7 @@ impl StudioApp {
         self.invalidate_inspection();
         self.scene_request = 0;
         self.selection.clear();
+        self.fit_pending = true;
         if let Some(binding) = self.binding {
             if !self
                 .history
@@ -247,12 +248,35 @@ impl StudioApp {
         self.world = location.world;
         self.focus = location.focus;
         self.expanded = None;
-        if let Some(binding) = self.binding
-            && binding.revision != location.revision
-        {
+        if let Some(binding) = self.binding {
             self.binding = Some(agq_studio_platform::RevisionBinding {
                 revision: location.revision,
                 ..binding
+            });
+            // Apply the navigation camera after the asynchronous lens query.
+            // This is the same disposable presentation restoration used at startup.
+            let mut camera = self.camera;
+            camera.center = Point::new(location.center[0], location.center[1]);
+            camera.zoom = location.zoom;
+            self.restore = Some(crate::session::Session {
+                version: 1,
+                project: Some(binding.project),
+                revision: location.revision,
+                fixture: None,
+                world: location.world,
+                focus: location.focus,
+                camera,
+                layout: if self.layout_world == location.world {
+                    self.layout.clone()
+                } else {
+                    self.layouts
+                        .get(&location.world)
+                        .cloned()
+                        .unwrap_or_default()
+                },
+                dark: self.theme.dark,
+                high_contrast: self.theme.contrast,
+                reduced_motion: self.reduced_motion,
             });
             self.request_projection();
         } else {
@@ -489,6 +513,7 @@ impl StudioApp {
                     view.depth = 2;
                     view.include_standard_library = standards;
                     view.relationship_families = families;
+                    self.fit_pending = true;
                     self.scene_request = self.enqueue(Box::new(move |p| {
                         if let Some(id) = candidate {
                             crate::bridge::candidate_view(p, id, &view)
@@ -510,22 +535,15 @@ impl StudioApp {
                     self.world = World::Graph;
                     self.focus = None;
                     self.show_agent = true;
-                    let mut ids = BTreeSet::from([id]);
-                    for e in &self.active_projection().edges {
-                        if e.source == id || e.target == id {
-                            ids.extend([e.source, e.target]);
-                        }
-                    }
-                    // Feature ports keep their owning element visible in the temporary lens.
-                    if let Some(node) = self.active_projection().nodes.iter().find(|n| n.id == id) {
-                        ids.extend(node.features.iter().map(|f| f.id));
-                    }
-                    for e in &self.active_projection().edges {
-                        if ids.contains(&e.source) || ids.contains(&e.target) {
-                            ids.extend([e.source, e.target]);
-                        }
-                    }
-                    self.dependencies = Some(ids.clone());
+                    self.dependencies = Some(
+                        agq_studio_scene::expand_neighborhood(
+                            self.active_projection(),
+                            &BTreeSet::from([id]),
+                            &self.families,
+                            NeighborhoodDirection::Both,
+                        )
+                        .elements,
+                    );
                     self.expanded = None;
                     self.rebuild();
                     self.fit_pending = true;
@@ -534,18 +552,22 @@ impl StudioApp {
             }
             ExpandIncoming | ExpandOutgoing | Neighbors => {
                 if let Some(selected) = self.selected_element() {
-                    let mut ids = BTreeSet::from([selected]);
-                    for e in &self.active_projection().edges {
-                        if (id == Neighbors || id == ExpandOutgoing) && e.source == selected {
-                            ids.insert(e.target);
-                        }
-                        if (id == Neighbors || id == ExpandIncoming) && e.target == selected {
-                            ids.insert(e.source);
-                        }
-                    }
+                    let direction = match id {
+                        ExpandIncoming => NeighborhoodDirection::Incoming,
+                        ExpandOutgoing => NeighborhoodDirection::Outgoing,
+                        _ => NeighborhoodDirection::Both,
+                    };
+                    let ids = agq_studio_scene::expand_neighborhood(
+                        self.active_projection(),
+                        &BTreeSet::from([selected]),
+                        &self.families,
+                        direction,
+                    )
+                    .elements;
                     if id == Neighbors {
-                        self.selection
-                            .replace(ids.into_iter().map(SceneTarget::Node));
+                        let targets = neighborhood_selection(&self.scene, &self.lookup, ids);
+                        self.selection.replace(targets);
+                        self.invalidate_inspection();
                         self.batch_key = None;
                     } else {
                         self.expanded.get_or_insert_with(BTreeSet::new).extend(ids);
@@ -561,8 +583,9 @@ impl StudioApp {
             Validate => {
                 if let Some(id) = self.candidate.as_ref().and_then(|c| c.id) {
                     let view = self.definition();
-                    self.enqueue_mutation(Box::new(move |p| {
-                        p.validate(id, &view).map(Output::Candidate)
+                    self.scene_request = self.enqueue_mutation(Box::new(move |p| {
+                        p.validate(id, &view)?;
+                        crate::bridge::candidate_view(p, id, &view)
                     }));
                 }
             }
@@ -780,6 +803,79 @@ impl StudioApp {
                 SceneTarget::Node(self.scene.nodes[self.outliner_order[next]].id()),
                 false,
             );
+        }
+    }
+}
+
+fn neighborhood_selection(
+    scene: &agq_studio_scene::SemanticScene,
+    lookup: &agq_studio_scene::SceneLookup,
+    elements: BTreeSet<ElementId>,
+) -> Vec<SceneTarget> {
+    elements
+        .into_iter()
+        .filter_map(|id| {
+            if lookup.port(scene, id).is_some() {
+                Some(SceneTarget::Port(id))
+            } else {
+                lookup.node(scene, id).map(|node| {
+                    if node.is_container {
+                        SceneTarget::Container(id)
+                    } else {
+                        SceneTarget::Node(id)
+                    }
+                })
+            }
+        })
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn neighbor_selection_preserves_real_ports_and_visible_endpoint_owners() {
+        let projection = fixtures::architecture();
+        let scene = agq_studio_scene::SemanticScene::from_projection(
+            &projection,
+            &agq_studio_scene::SceneOptions::default(),
+            None,
+        )
+        .unwrap();
+        let lookup = agq_studio_scene::SceneLookup::build(&scene);
+        let owner = projection
+            .nodes
+            .iter()
+            .find(|n| n.name == "ModelRepository")
+            .unwrap()
+            .id;
+        let neighborhood = agq_studio_scene::expand_neighborhood(
+            &projection,
+            &BTreeSet::from([owner]),
+            &RelationshipFamily::all().into_iter().collect(),
+            NeighborhoodDirection::Both,
+        );
+        let targets = neighborhood_selection(&scene, &lookup, neighborhood.elements);
+        assert!(
+            targets
+                .iter()
+                .any(|target| matches!(target, SceneTarget::Port(_)))
+        );
+        assert!(
+            targets
+                .iter()
+                .all(|target| scene.target_bounds(target).is_some())
+        );
+        for target in &targets {
+            if let SceneTarget::Port(id) = target {
+                let port = lookup.port(&scene, *id).unwrap();
+                assert!(
+                    targets
+                        .iter()
+                        .any(|target| target.element_id() == Some(port.owner))
+                );
+            }
         }
     }
 }
