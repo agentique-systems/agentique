@@ -81,7 +81,7 @@ competing builds against the shared target. Local `rustfmt --edition 2024
 crates/modeling-agent/tests/create_part_performance.rs` completed successfully;
 integrated check results must be recorded before this gate is called verified.
 
-## RenameElement feasibility
+## RenameElement feasibility at the initial audit
 
 The parser's `production::Document::edit` deliberately assigns fresh identities
 to nodes overlapping an edit; `authored_id` derives the canonical ElementId from
@@ -90,8 +90,74 @@ its identity and may also replace overlapping ancestor declarations. An arbitrar
 text replacement is not a stable-identity RenameElement command.
 
 A sound command needs explicit declaration identity reconciliation bound to the
-old exact source revision, collision and scope checks, reference-use updates
-covering qualified names/imports/aliases and shadowing, and exact full-rebuild
-comparison under the authorized identity mapping. Current frontend behavior
-provides neither a reviewed rename mapping nor that proof. Rename remains
-unsupported; no command is enabled by this analysis.
+old exact source revision, collision and scope checks, and exact full-rebuild
+comparison under the authorized identity mapping. That initial audit did not
+enable rename. The later service-owned `part_rename.rs` proof now supports a
+bounded plain-name Part rename with zero additions/removals and exact previous
+reference targets. It refuses renames requiring a reference rewrite. Its
+source-only restart and real-runtime checks remain separate gates; it is not an
+incremental performance result.
+
+## Current identity-preserving command path
+
+The service's `source_identity::reconstruct` clones the prior source checkpoint,
+installs its internally proven syntax arena for the edited document, and calls
+`ProjectRevisionCheckpoint::restore`. That reaches
+`SourceIdentityCheckpoint::restore_maybe_cached`, which:
+
+1. Checks the accepted KerML/SysML identities and source population.
+2. Calls `SourceInputs::with_accepted_sysml`, mounting a newly authenticated
+   `ProducerClosedDependency` over the same immutable publication overlay.
+3. Checks every source digest, reparses every document, and restores each checked
+   syntax identity arena. No inherited elements are copied by this mount.
+4. Restores identity reservations and the source ledger.
+5. Calls `compile_with_history(None, ..., false, None)`: no predecessor lowering
+   cache, no incremental producer reuse and no source semantic cache.
+6. Runs service continuity postchecks and serializes the Working candidate.
+
+The command oracle correctly labels this a full source reconstruction. Its
+`full_rebuild` comparison reuses the exact parsed input and already mounted
+dependency, disables lowering/producer reuse, and repeats the semantic compile.
+Thus `command_prepare_ms / full_rebuild_ms` is **not** an incremental speedup
+ratio. Compare the two compile totals separately from command overhead.
+
+The compile timers start after the dependency mount, source authentication and
+parsing. `command_prepare_ms - command_compile_ms` includes those operations,
+source proof, continuity checks, repository reads and candidate serialization.
+It cannot be reported as dependency-mount time. Source preparation contains the
+declared construction, reference refinement and preparatory producer timers;
+do not add those nested values again to the total.
+
+## Reuse boundary and measurable candidates
+
+There is no currently exposed API for restoring service-proven identities while
+sharing the predecessor's mounted dependency. `SourceInputs`' dependency,
+project/root and document fields and `compile_with_history` are private.
+`ProjectChange` has no authenticated-arena variant. Ordinary `workspace.prepare`
+uses `Document::edit`, which replaces overlapping ancestor syntax identities;
+substituting it would violate the insertion proof's owner continuity contract.
+`source_checkpoint.rs`, `source_inputs.rs`, `sysml/source.rs` and the publication
+facade are frozen publication inputs. No changes to those files are proposed
+during accepted runtime installation.
+
+One bounded opportunity exists outside those files: service
+`prepare_candidate(validate=true)` performs `WorkingProjectRevision::validate`
+and obtains a genuine `ValidatedProjectRevision`, then callers such as
+`PreparedChanges::validate`, `prepare_changes`, and `prepare_part_insertion`
+validate the exact same immutable `Arc` again. A private service helper returning
+both the candidate and that checked handle could remove the duplicate call
+without skipping any check. The handle must remain bound to the exact Arc;
+callers must never supply a validation boolean as substitute evidence. Source
+reconstruction, effective audit, cache authentication, candidate verification,
+and durable CAS would all remain mandatory. This is only a candidate for
+measurement: its wall-time significance is unknown, and it cannot by itself
+establish incremental reconstruction speedup.
+
+Once the runtime installation gates finish, run the retained command oracle
+serially before changing code. Retain command/compile/full/validation time and
+phase data, exact-equivalence assertions and externally sampled process memory.
+If command overhead dominates, add service-boundary observations around source
+proof, checkpoint restoration, continuity checks and candidate packaging. If
+compilation dominates, identify the largest non-overlapping phase; do not infer
+that audit or certificate work is reusable merely because source changes are
+small. This review ran no builds and consumed no accepted runtime assets.
