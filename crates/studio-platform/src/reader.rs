@@ -1,4 +1,8 @@
 use crate::*;
+use std::{io::Write, time::Instant};
+
+mod inspector_cache;
+use inspector_cache::InspectorCache;
 
 /// Read capability for one already resolved immutable revision.
 ///
@@ -9,6 +13,7 @@ use crate::*;
 /// invalidates presentation access when its runtime or selected revision changes.
 pub struct StudioRevisionReader {
     bound: BoundRevision,
+    inspectors: InspectorCache,
 }
 
 impl StudioRevisionReader {
@@ -21,8 +26,32 @@ impl StudioRevisionReader {
     }
 
     /// Inspect canonical engineering meaning in the retained immutable model.
+    /// Successful results are reused within this reader's bounded cache. Every
+    /// caller receives its own DTO; query completeness is preserved verbatim.
     pub fn inspect(&self, element: ElementId) -> Result<ElementInspector> {
-        Ok(agq_modeling_view::inspect(self.bound.revision(), element)?)
+        let started = std::env::var_os("AGENTIQUE_VIEW_PROFILE")
+            .is_some_and(|value| value == "1")
+            .then(Instant::now);
+        let (hit, result) = self.inspectors.read(element, || {
+            Ok(agq_modeling_view::inspect(self.bound.revision(), element)?)
+        });
+        if let Some(started) = started {
+            let elapsed_ms = started.elapsed().as_secs_f64() * 1000.0;
+            let binding = self.binding();
+            let record = serde_json::json!({
+                "format": "agentique-studio-inspector-cache/1",
+                "operation": "revision_reader_inspect",
+                "project": binding.project,
+                "revision": binding.revision,
+                "element": element,
+                "cache": if hit { "hit" } else { "miss" },
+                "outcome": if result.is_ok() { "ok" } else { "error" },
+                "elapsed_ms": elapsed_ms,
+                "timing_contract": "Reader call wall time including lookup and DTO clone; a miss includes modeling-view computation. Excludes queue wait and JSON emission. Not a query-phase, GPU or input-latency measurement."
+            });
+            let _ = writeln!(std::io::stderr().lock(), "{record}");
+        }
+        result
     }
 
     /// Explain actual semantic evidence from the retained immutable model.
@@ -50,7 +79,12 @@ fn authorize_reader(
     resolve: impl FnOnce() -> Result<BoundRevision>,
 ) -> Result<StudioRevisionReader> {
     policy.require(Authority::Read)?;
-    Ok(StudioRevisionReader { bound: resolve()? })
+    let bound = resolve()?;
+    let inspectors = InspectorCache::new(RevisionBinding {
+        project: bound.manifest().project_id,
+        revision: bound.manifest().revision_id,
+    });
+    Ok(StudioRevisionReader { bound, inspectors })
 }
 
 #[cfg(test)]

@@ -67,10 +67,24 @@ fn native_in_process_self_model_candidate_commit_and_restore() {
         preserved_hierarchy.len() >= 2,
         "the real model gate must cover an ancestor as well as the selected owner"
     );
+    let ordinary_inspector = platform.inspect(binding, owner).unwrap();
+    assert_eq!(ordinary_inspector.revision_id, revision);
+    let reader = platform.revision_reader(binding).unwrap();
+    assert_eq!(reader.binding(), binding);
+    let first_inspection = reader.inspect(owner).unwrap();
+    let repeated_inspection = reader.inspect(owner).unwrap();
+    assert_eq!(first_inspection, ordinary_inspector);
+    assert_eq!(repeated_inspection, ordinary_inspector);
     assert_eq!(
-        platform.inspect(binding, owner).unwrap().revision_id,
-        revision
+        serde_json::to_vec(&repeated_inspection).unwrap(),
+        serde_json::to_vec(&ordinary_inspector).unwrap(),
+        "completed Inspector reuse retains every real field and ordering"
     );
+    let mut caller_copy = repeated_inspection;
+    caller_copy.element.name.push_str(" caller-only copy");
+    assert_ne!(caller_copy, ordinary_inspector);
+    assert_eq!(reader.inspect(owner).unwrap(), ordinary_inspector);
+    drop(reader);
     let relation = graph
         .edges
         .iter()
