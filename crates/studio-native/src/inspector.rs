@@ -42,6 +42,41 @@ impl StudioApp {
         }
     }
 
+    fn inherited_feature_link(&mut self, ui: &mut egui::Ui, feature: &FeatureSummary) {
+        let theme = self.theme;
+        ui.horizontal_wrapped(|ui| {
+            self.feature_link(ui, feature);
+            ui.label(muted("Inherited", theme).small()).on_hover_text(
+                "The effective feature retains its original identity and declaring owner.",
+            );
+        });
+        // Ownership comes from the canonical projection, never the part whose
+        // effective features happen to include this port or interface.
+        let owner = self
+            .active_projection()
+            .nodes
+            .iter()
+            .find(|node| node.id == feature.id)
+            .and_then(|node| node.owner)
+            .and_then(|id| {
+                self.active_projection()
+                    .nodes
+                    .iter()
+                    .find(|node| node.id == id)
+            })
+            .map(|node| FeatureSummary {
+                id: node.id,
+                name: node.name.clone(),
+                semantic_kind: node.semantic_kind.clone(),
+            });
+        if let Some(owner) = owner {
+            ui.horizontal_wrapped(|ui| {
+                ui.label(muted("From", theme).small());
+                self.feature_link(ui, &owner);
+            });
+        }
+    }
+
     fn endpoint_name(&self, id: ElementId) -> String {
         self.lookup
             .port(&self.scene, id)
@@ -309,18 +344,19 @@ impl StudioApp {
                 ("REQUIREMENTS", &[NodeCategory::Requirement][..]),
                 ("BEHAVIOR", &[NodeCategory::Action, NodeCategory::State][..]),
             ] {
-                let features: Vec<_> = inspector
-                    .owned_features
-                    .iter()
-                    .filter(|feature| {
-                        categories
-                            .contains(&NodeCategory::from_semantic_kind(&feature.semantic_kind))
-                    })
-                    .collect();
+                let features = section_features(
+                    &inspector.owned_features,
+                    &inspector.effective_features,
+                    categories,
+                );
                 if !features.is_empty() {
                     theme.section(ui, title);
-                    for feature in features {
-                        self.feature_link(ui, feature);
+                    for (feature, inherited) in features {
+                        if inherited {
+                            self.inherited_feature_link(ui, feature);
+                        } else {
+                            self.feature_link(ui, feature);
+                        }
                     }
                 }
             }
@@ -616,6 +652,37 @@ impl StudioApp {
         }
     }
 }
+
+/// The main engineering sections include effective ports/interfaces, retaining
+/// their original canonical IDs. Owned features take precedence; equal names
+/// are not equal identities. Other inherited details stay in Effective semantics.
+fn section_features<'a>(
+    owned: &'a [FeatureSummary],
+    effective: &'a [FeatureSummary],
+    categories: &[NodeCategory],
+) -> Vec<(&'a FeatureSummary, bool)> {
+    let mut seen = std::collections::BTreeSet::new();
+    owned
+        .iter()
+        .map(|feature| (feature, false))
+        .chain(
+            effective
+                .iter()
+                .filter(|feature| {
+                    matches!(
+                        NodeCategory::from_semantic_kind(&feature.semantic_kind),
+                        NodeCategory::Port | NodeCategory::Interface
+                    )
+                })
+                .map(|feature| (feature, true)),
+        )
+        .filter(|(feature, _)| {
+            categories.contains(&NodeCategory::from_semantic_kind(&feature.semantic_kind))
+                && seen.insert(feature.id)
+        })
+        .collect()
+}
+
 fn value(ui: &mut egui::Ui, key: &str, value: &str, theme: crate::theme::Theme) {
     ui.horizontal_wrapped(|ui| {
         ui.label(muted(key, theme));
@@ -638,6 +705,17 @@ fn explanation_summary(explanation: &ExplanationProjection) -> String {
         ViewOrigin::Authored => "This fact comes directly from the project's authored model. No semantic producer is asserted for this fact.".into(),
         ViewOrigin::Standard => "This fact belongs to the accepted standard library used by this revision.".into(),
         ViewOrigin::Generated => "This is a generated model fact. Inspect its exact identity and publication context below.".into(),
+    }
+}
+
+fn explanation_display_label<'a>(
+    node: &'a agq_modeling_view::ExplanationNode,
+    rule_name: Option<&str>,
+) -> &'a str {
+    if node.kind == ExplanationNodeKind::Rule && rule_name.is_none() {
+        "Semantic derivation rule"
+    } else {
+        &node.label
     }
 }
 
@@ -740,8 +818,10 @@ fn explanation_diagram(
                     FontId::proportional(10.0),
                     theme.muted,
                 );
+                let display_label =
+                    explanation_display_label(node, explanation.rule_name.as_deref());
                 let mut job = egui::text::LayoutJob::simple(
-                    node.label.clone(),
+                    display_label.to_owned(),
                     FontId::proportional(12.0),
                     theme.text,
                     card.width() - 20.0,
@@ -756,7 +836,7 @@ fn explanation_diagram(
                     egui::WidgetInfo::labeled(
                         egui::WidgetType::Label,
                         true,
-                        format!("{heading}: {}", node.label),
+                        format!("{heading}: {display_label}"),
                     )
                 });
                 response.on_hover_text(format!("{}\n{}", node.label, node.id));
@@ -785,5 +865,72 @@ fn kind_label(kind: &str) -> &str {
         "AttributeDefinition" => "Attribute definition",
         "AttributeUsage" => "Attribute usage",
         _ => kind,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn feature(id: u128, name: &str, kind: &str) -> FeatureSummary {
+        FeatureSummary {
+            id: ElementId::from_u128(id),
+            name: name.into(),
+            semantic_kind: kind.into(),
+        }
+    }
+
+    #[test]
+    fn main_port_section_preserves_inherited_identity_and_same_name_distinctions() {
+        let owned = vec![feature(1, "revisions", "PortUsage")];
+        let effective = vec![
+            owned[0].clone(),
+            feature(2, "revisions", "PortUsage"),
+            feature(2, "revisions", "PortUsage"),
+            feature(3, "access", "InterfaceUsage"),
+            feature(4, "implementation", "PartUsage"),
+        ];
+        let rows = section_features(
+            &owned,
+            &effective,
+            &[NodeCategory::Port, NodeCategory::Interface],
+        );
+        let actual: Vec<_> = rows
+            .iter()
+            .map(|(f, inherited)| (f.id, *inherited))
+            .collect();
+        assert_eq!(
+            actual,
+            vec![
+                (ElementId::from_u128(1), false),
+                (ElementId::from_u128(2), true),
+                (ElementId::from_u128(3), true),
+            ]
+        );
+        assert!(std::ptr::eq(rows[0].0, &owned[0]));
+        assert!(std::ptr::eq(rows[1].0, &effective[1]));
+        assert!(section_features(&owned, &effective, &[NodeCategory::Part]).is_empty());
+    }
+
+    #[test]
+    fn unnamed_rule_summary_preserves_exact_evidence_and_other_labels() {
+        let mut node = agq_modeling_view::ExplanationNode {
+            id: "rule:00000000-0000-0000-0000-000000000123".into(),
+            element_id: None,
+            label: "Semantic producer 00000000-0000-0000-0000-000000000123".into(),
+            kind: ExplanationNodeKind::Rule,
+        };
+        let evidence = node.clone();
+        assert_eq!(
+            explanation_display_label(&node, None),
+            "Semantic derivation rule"
+        );
+        assert_eq!(node, evidence);
+        assert_eq!(
+            explanation_display_label(&node, Some("known rule")),
+            node.label
+        );
+        node.kind = ExplanationNodeKind::Fact;
+        assert_eq!(explanation_display_label(&node, None), node.label);
     }
 }
