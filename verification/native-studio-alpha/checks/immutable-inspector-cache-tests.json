@@ -1,0 +1,25 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--release",
+    "--config",
+    "profile.release.lto=false",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "agq-studio-platform",
+    "--lib",
+    "reader::",
+    "--",
+    "--nocapture"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T21:06:20.104626+00:00",
+  "elapsed_seconds": 79.109,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/immutable-inspector-cache-tests.txt",
+  "output_sha256": "3c7bf863d50a698dd176d3deb5015dab0f4fe97f9431b1bafa48448ef8f2421e",
+  "build_environment": {}
+}
