@@ -3,11 +3,11 @@
 These measurements exercise deterministic visual fixtures. They do not establish
 semantic acceptance of the real Agentique model or its runtime publication.
 
-Both native camera scenarios passed their assertions and exited 0. The 1k scene
-sustained roughly 16.7 ms intervals through pan and zoom; the 10k scene had similar
-medians but active P95 intervals near 28 ms in a quiet repeat (29.5 ms with
-background workspace tests). This is a measured tail-latency
-limitation, not evidence of 60 FPS throughout every 10k interaction.
+Both final native camera scenarios passed their assertions and exited 0. The 1k
+scene sustained roughly 16.7 ms intervals through pan and zoom. Reusing ordered
+visible objects and removing redundant checks reduced the quiet 10k pan P95 from
+26.8 to 20.1 ms and zoom P95 from 28.0 to 19.3 ms. These are single-run comparisons;
+remaining tails do not establish 60 FPS throughout every 10k interaction.
 
 The native shell renders through its retained wgpu scene on Windows, using an
 NVIDIA GeForce RTX 3060 Ti (Vulkan, driver 616.92) and AMD Ryzen 5 5600X. Vsync is
@@ -20,7 +20,7 @@ Build from the primary checkout so path dependencies reuse their existing build
 artifacts. The GPU application has an independent Cargo workspace and lockfile:
 
 ```text
-cargo build --release --locked --manifest-path crates/studio-native/Cargo.toml --target-dir target
+cargo build --locked --offline --release --config profile.release.lto=false --manifest-path crates/studio-native/Cargo.toml --target-dir target
 target/release/agq-studio-native.exe --fixture stress1000 --scenario stress --scenario-report verification/generated/native-studio/stress1000-input.json --no-restore
 target/release/agq-studio-native.exe --fixture stress10000 --scenario stress --scenario-report verification/generated/native-studio/stress10000-input.json --no-restore
 ```
@@ -35,7 +35,47 @@ enter egui's ordinary RawInput route. It asserts camera displacement, meaningful
 zoom, the maximum off-center pointer-anchor error throughout zoom, and a reduction
 in the visible node count. Failure produces a failed report and nonzero exit.
 
-## Measured native camera run
+## Final native camera results after visibility reuse
+
+The final release binary is identified by SHA-256
+`284b522bd38818655aedd5004cb8eaeda71f05d2629cf097aa3cc7e44a77a717`, built from
+clean source commit `f4f6356261c4b05595f824f5ebb86e662f92d54d`. It uses the exact
+release/LTO override shown above. Both runs were serial after compilation and
+workspace tests completed, with no competing native window.
+
+| Final visual fixture / phase | Median interval | P95 interval | Samples |
+| --- | ---: | ---: | ---: |
+| 1k / steady | 16.667 ms | 16.999 ms | 120 |
+| 1k / pan | 16.662 ms | 16.921 ms | 120 |
+| 1k / zoom | 16.664 ms | 16.922 ms | 120 |
+| 10k / steady | 16.670 ms | 16.955 ms | 120 |
+| 10k / pan | 16.690 ms | 20.052 ms | 120 |
+| 10k / zoom | 16.677 ms | 19.280 ms | 120 |
+
+| Final native metric | 1k nodes / 2k edges | 10k nodes / 20k edges |
+| --- | ---: | ---: |
+| Scene build including layout/index | 15.207 ms | 139.833 ms |
+| Hit-test median / P95 | 3.1 / 5.1 us | 3.95 / 9.5 us |
+| Handled pan to next UI update median / P95 | 16.501 / 16.811 ms | 16.517 / 19.903 ms |
+| Handled zoom to next UI update median / P95 | 16.509 / 16.774 ms | 16.482 / 19.139 ms |
+| Minimum visible nodes | 168 | 1,440 |
+| Maximum zoom anchor error | 0.001465 world units | 0.002013 world units |
+| Latest batch CPU upload | 0.293 ms | 4.223 ms |
+| Latest batch bytes / instances | 650,240 / 8,128 | 6,416,000 / 80,200 |
+| Draw calls | 2 | 2 |
+
+The viewport now resolves ordered visible records once per frame, shares the
+borrowed result between geometry and label/accessibility passes, and borrows
+selected relationship IDs. Revision checks, containment order, LOD, selection
+and GPU passes remain intact. The existing 21 native tests and strict Clippy
+passed after this change, and both final camera assertion scenarios exited 0.
+
+The observed quiet 10k pan and zoom P95 reductions are approximately 25% and 31%.
+There are no timing distributions for upload or scene construction, so their
+individual sample variation must not be presented as an optimization result.
+GPU execution duration and physical input-to-photon latency remain unavailable.
+
+## Earlier native camera runs before visibility optimization
 
 Actual phase summaries and command exits are retained in
 [performance-metrics.json](performance-metrics.json), including the executable
@@ -93,19 +133,20 @@ The separate [scene benchmark](scene-summary.md) measures layout directly:
 concurrent development load and must not be subtracted from this native run to
 infer a renderer stage cost.
 
-## Bounded review of active 10k tails
+## Bounded review and follow-up for active 10k tails
 
 Source inspection identifies plausible allocation and packing costs, not a
-measured breakdown of the 28–29.5 ms tail. A changed visibility set rebuilds the
-visible batch. `SceneLookup::visible` sorts visible indices twice in a rebuild
-frame, once for geometry and again for labels/accessibility. Already-resolved
-edges then clone relationship IDs for membership checks. GPU preparation copies
-the four pass vectors into a new contiguous vector before queue submission.
+measured breakdown of the original 28–29.5 ms tail. Before the bounded change,
+`SceneLookup::visible` sorted visible indices twice in a rebuild frame, and
+already-resolved edges cloned relationship IDs for membership checks. The final
+change removed those duplicate operations. A changed visibility set still
+rebuilds the visible batch, and GPU preparation still copies the four pass
+vectors into a new contiguous vector before queue submission.
 
-The follow-up is to time visibility query/order, batch construction, and CPU
-packing separately, then evaluate reuse of ordered visible indices and upload
-storage. The retained two-draw stress renderer and semantic identity boundary do
-not need a speculative architecture change. GPU execution time remains unknown.
+The remaining follow-up is to time visibility query/order, batch construction,
+and CPU packing separately, then evaluate reuse across frames and upload storage.
+The retained two-draw stress renderer and semantic identity boundary do not need
+a speculative architecture change. GPU execution time remains unknown.
 
 ## Meaning of the counters
 
