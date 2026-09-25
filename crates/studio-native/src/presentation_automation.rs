@@ -225,7 +225,7 @@ enum Action {
 enum Check {
     Ready,
     Menu,
-    Name,
+    Name(&'static str),
     Saved,
     Renamed,
     Closed,
@@ -267,7 +267,7 @@ fn steps(restart: bool) -> Vec<Step> {
         Step {
             name: "enter view name",
             action: Action::Edit(ORIGINAL),
-            check: Check::Name,
+            check: Check::Name(ORIGINAL),
         },
         Step {
             name: "save current view through menu",
@@ -277,7 +277,7 @@ fn steps(restart: bool) -> Vec<Step> {
         Step {
             name: "enter replacement view name",
             action: Action::Edit(RENAMED),
-            check: Check::Name,
+            check: Check::Name(RENAMED),
         },
         Step {
             name: "rename selected view without altering presentation",
@@ -406,7 +406,12 @@ impl Runner {
             }) {
                 let directory = app.args.gallery.as_ref().ok_or("Gallery path missing")?;
                 std::fs::create_dir_all(directory).map_err(|e| e.to_string())?;
-                let path = directory.join(format!("{}.png", self.report.scenario));
+                let suffix = if self.report.failure.is_some() {
+                    "-failed"
+                } else {
+                    ""
+                };
+                let path = directory.join(format!("{}{suffix}.png", self.report.scenario));
                 let bytes: Vec<_> = image
                     .pixels
                     .iter()
@@ -420,7 +425,7 @@ impl Runner {
                     image::ColorType::Rgba8,
                 )
                 .map_err(|e| e.to_string())?;
-                let evidence = serde_json::json!({"scope":self.report.scope,"state":State::of(app),"image_sha256":ContentDigest::of(&std::fs::read(&path).map_err(|e|e.to_string())?),"adapter":app.adapter});
+                let evidence = serde_json::json!({"scope":self.report.scope,"state":State::of(app),"failure":self.report.failure,"view_name":crate::presentation::local_view_name(ctx),"image_sha256":ContentDigest::of(&std::fs::read(&path).map_err(|e|e.to_string())?),"adapter":app.adapter});
                 std::fs::write(
                     path.with_extension("json"),
                     serde_json::to_vec_pretty(&evidence).map_err(|e| e.to_string())?,
@@ -429,7 +434,11 @@ impl Runner {
                 self.report.gallery.push(path.display().to_string());
                 self.dirty = true;
                 self.capture = None;
-                return Ok(ScenarioStatus::Complete);
+                return if let Some(failure) = &self.report.failure {
+                    Err(failure.clone())
+                } else {
+                    Ok(ScenarioStatus::Complete)
+                };
             }
             if *age > 120 {
                 return Err("Native presentation screenshot did not arrive".into());
@@ -469,10 +478,15 @@ impl Runner {
                 });
                 self.dirty = true;
                 if !passed {
-                    return Err(format!(
+                    self.report.failure = Some(format!(
                         "Presentation assertion failed: {}; status={}",
                         step.name, app.status
                     ));
+                    self.capture = Some(0);
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(
+                        egui::UserData::default(),
+                    ));
+                    return Ok(ScenarioStatus::Running);
                 }
                 self.index += 1;
                 self.age = 0;
@@ -599,7 +613,11 @@ impl Runner {
         Ok(match check {
             Check::Ready => app.world == World::System && !app.scene.nodes.is_empty(),
             Check::Menu => target(ctx, Target::Name).is_ok(),
-            Check::Name => ctx.wants_keyboard_input(),
+            Check::Name(expected) => {
+                target(ctx, Target::Name).is_ok()
+                    && ctx.wants_keyboard_input()
+                    && crate::presentation::local_view_name(ctx).as_deref() == Some(expected)
+            }
             Check::Closed => target(ctx, Target::Name).is_err(),
             Check::ClosedPreservingSelection => {
                 target(ctx, Target::Name).is_err()

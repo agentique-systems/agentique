@@ -70,3 +70,24 @@ ordinary menus. The integration lead owns the keyboard fix. This scenario now
 requires Escape to dismiss the first menu while retaining the existing nonempty
 canvas selection; the second dismissal exercises the ordinary toolbar toggle.
 The driver therefore depends on integrating that keyboard-precedence fix.
+
+## First actual native run: form closed on its own input
+
+The integrated first run (`checks/presentation-actual-journey.json`, executable
+SHA-256 `b941acf10802e3189883032ba150f894bd476fa192d84ae162cb982ddcc0eb11`)
+exited 2 in 4.344 seconds. It opened Local views successfully, then failed the
+name-entry assertion. The report retained the click at `[834.0, 283.5]` on frames
+226/227, Ctrl+A at frame 229 and text at frame 230.
+
+The cause is the ordinary form menu: egui 0.33.3's `ui.menu_button` inherits
+`PopupCloseBehavior::CloseOnClick`, which closes on an internal click as well as
+an external one. Clicking the text field closed the form before text arrived.
+The form now uses explicit `MenuButton` configuration with
+`CloseOnClickOutside`. Open still closes explicitly, and Escape remains handled
+by egui. Save, rename, selection and update can keep the form open.
+
+The driver now checks exact retained editor text in addition to current geometry
+and keyboard focus. Assertion failures retain a native `*-failed.png` with state,
+actual editor text and image identity before exiting nonzero. No persisted-model
+or semantic assertion was weakened. The repair is formatted; integrated compile
+and native rerun are delegated to the lead to preserve the shared build cache.

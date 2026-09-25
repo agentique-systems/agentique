@@ -21,7 +21,12 @@ impl StudioApp {
             .ctx()
             .data(|data| data.get_temp::<ViewEditor>(memory))
             .unwrap_or_default();
-        let menu = ui.menu_button("Local views", |ui| {
+        // This menu contains an editor and multi-step bookmark operations.
+        // egui's default menu closes on every click, including inside TextEdit.
+        let (menu, _) = egui::containers::menu::MenuButton::new("Local views")
+            .config(egui::containers::menu::MenuConfig::new()
+                .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside))
+            .ui(ui, |ui| {
             ui.set_min_width(330.0);
             ui.set_max_width(460.0);
             let scope = self.view_binding().ok();
@@ -104,7 +109,7 @@ impl StudioApp {
             }
             if let Some(error) = &editor.error { ui.label(RichText::new(error).color(self.theme.amber)); }
         });
-        record(ui.ctx(), Target::Menu, menu.response.rect);
+        record(ui.ctx(), Target::Menu, menu.rect);
         ui.ctx().data_mut(|data| data.insert_temp(memory, editor));
     }
 
@@ -400,6 +405,12 @@ struct ViewEditor {
     name: String,
     views: Vec<SavedView>,
     error: Option<String>,
+}
+
+/// Read-only observation of the ordinary editor, used by native input assertions.
+pub(crate) fn local_view_name(ctx: &eframe::egui::Context) -> Option<String> {
+    ctx.data(|data| data.get_temp::<ViewEditor>(eframe::egui::Id::new("local-view-editor")))
+        .map(|editor| editor.name)
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
