@@ -1,5 +1,42 @@
 # Native Studio release and accessibility qualification
 
+## Latest qualification snapshot
+
+Reconciled against committed records and current source on 2026-09-25. This
+update ran no tests or runtime consumers. **Partial Windows qualification:** the
+bounded fixture keyboard/UIA journeys pass, and a real accepted-model semantic
+baseline was reached. A complete real semantic operator journey is not established
+by these records. Physical device failure, mixed DPI, real IME composition,
+screen-reader speech/usability and macOS/Linux remain unqualified.
+
+| Area | Latest status | Evidence and practical limit |
+|---|---|---|
+| Native Windows / real model | Actual semantic baseline reached; complete real journey pending | [Real run diagnosis](real-run01/diagnosis.md) and [journey](real-run01/journey.json): accepted KerML v9 / Systems v3, six real sources, Validated head and Complete closure. Process exited 2 after scenario/screenshot scheduling failure; no real screenshot, candidate or candidate commit from that run. |
+| AccessKit names, focus and port actions | Bounded fixture smoke passed | [Integrated UIA](accessibility/integrated-uia-native-window.json): seven checks, named search/palette, owner-qualified port Buttons, focus and Invoke. Does not qualify every edge, zoom level or engineering action. |
+| Keyboard operation | Fixture visual journey passed; real semantic journey unqualified | [Integrated keyboard](accessibility/integrated-keyboard.json): 21 assertions without pointer events, including navigation, Explain and visual candidate review/cancel. Fixture validation/commit stays prohibited; this is not a keyboard-only real commit. |
+| Narrator | Coexistence/action smoke passed; speech unqualified | [Narrator coexistence](accessibility/narrator-coexistence.json): eight assertions with Narrator alive. Spoken output was not listened to or assessed. |
+| Resize / minimize | Bounded native smoke passed | [Integrated UIA](accessibility/integrated-uia-native-window.json) exercised minimize/restore and four sizes. This is not resize stress, mixed-DPI movement or device recovery. |
+| Surface loss / timeout / OOM | Recovery logic unit-tested; physical fault handling unqualified | [Four state/callback tests](checks/surface-recovery-native-tests.txt) passed. [Current implementation](../../crates/studio-native/src/surface_recovery.rs) bounds retries, reconfigures Lost/Outdated surfaces and exposes stop/restart guidance. No physical GPU/surface/OOM fault was induced. |
+| Device loss | Explicit restart-required state implemented; physical recovery unqualified | Current callback records device loss and preserves an OS-title message; it does not recreate a device or renderer in process. Callback unit tests do not qualify physical device removal. |
+| Reduced motion | Fixture toggle plus current camera/toolkit control | [Keyboard evidence](accessibility/integrated-keyboard.json), [app initialization](../../crates/studio-native/src/app.rs) and [actions](../../crates/studio-native/src/actions.rs) cover camera and toolkit animation settings. Broader accessibility adequacy and OS preference following remain unqualified. |
+| High contrast | Fixture toggle passed; adequacy unqualified | [Round 03](round-03-after/journey.json) retains the toggle assertion. No complete contrast, color-vision or OS high-contrast qualification. |
+| Unicode / DPI | Long-name/Unicode fixture exercised; physical DPI unqualified | [Typography journey](typography-width-after/journey.json) passed. No guarantee for every script/font face; no 125/150/200% or mixed-monitor transition qualification. |
+| IME | Composition guard implemented; real composition unqualified | Current [keyboard handler](../../crates/studio-native/src/actions.rs) yields while composing, and app input tracks preedit/commit. No real composition, candidate-window placement or cancellation test occurred. |
+| Presentation restoration | Bounded unit checks passed; crash/power-loss qualification absent | [Native unit output](checks/presentation-state-native-tests.txt) includes session roundtrip, invalid-state rejection and interrupted/oversized replacement checks. No physical crash/power-loss injection is claimed. |
+| macOS / Linux | Unqualified | No native build or runtime result for either platform is retained in this audit. |
+
+Current source also has filtered Explorer arrow navigation, focus-to-selection
+for canvas labels, named disclosure controls and Ctrl/Cmd+Z mapped to presentation
+Back. That shortcut does not undo durable semantic history. These supersede the
+initial source gaps below; implementation alone does not extend measured keyboard
+or assistive-technology qualification beyond the linked scenarios.
+
+## Historical initial audit (superseded where noted)
+
+The following initial observations, matrix, risks and proposed next checks are
+preserved as historical evidence for their recorded binary. They do not describe
+the latest implementation where the snapshot above or dated addenda differ.
+
 Audit date: 2026-09-25. This is a bounded Windows source inspection and actual
 Windows UI Automation smoke test, not a release certification. No native source,
 model, installed input method, accessibility setting, or driver was changed by
@@ -42,7 +79,7 @@ See the dated addendum at the end of this record.
 - Available font files: Segoe UI (955,804 bytes), Segoe UI Symbol (2,454,728 bytes),
   Microsoft YaHei collection (19,704,352 bytes).
 
-## Qualification matrix
+## Historical initial qualification matrix
 
 | Area | Status | Evidence and limit |
 |---|---|---|
@@ -109,7 +146,7 @@ Process accountability:
 - Final audit query found all three PIDs absent and Narrator absent. No general
   process-name termination was used; no other Studio instance was closed.
 
-## Concrete remaining risks
+## Historical initial risks
 
 1. **Device loss and exhaustion have no operator recovery experience.**
    [main.rs](../../crates/studio-native/src/main.rs) maps `Lost`/`Outdated` to
@@ -274,7 +311,7 @@ Final process queries: `Get-Process -Id 24428,30476,26240` and
 `Get-Process -Name Narrator` with missing-process errors suppressed produced no
 processes. Exit 0. No spoken-output pass is claimed.
 
-## Required next qualification
+## Historical next-qualification list
 
 Retest the rebuilt binary's actual UIA action patterns, names and Tab/Enter
 selection after the reported defects are fixed. Complete one all-keyboard
