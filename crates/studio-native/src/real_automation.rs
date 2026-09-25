@@ -13,7 +13,10 @@ use agq_kernel::ElementId;
 use agq_modeling_repository::{
     BranchId, ContentDigest, ProjectId, ProjectRevisionId, RevisionManifest, ValidationState,
 };
-use agq_modeling_view::{ExplanationNodeKind, ViewKind, ViewOrigin, ViewProjection};
+use agq_modeling_view::{
+    ElementInspector, ExplanationNodeKind, RelationshipFamily, ViewEdge, ViewKind, ViewOrigin,
+    ViewProjection,
+};
 use agq_studio_platform::{CandidatePhase, RevisionBinding};
 use agq_studio_scene::{DiffMark, NodeCategory, Point, SceneTarget};
 use eframe::egui::{self, Event, Key, Modifiers, PointerButton, Pos2, Rect, Vec2};
@@ -351,8 +354,20 @@ struct Report {
     background_pan_observed: bool,
     #[serde(default)]
     preparation_responsiveness: PreparationResponsiveness,
+    #[serde(default)]
+    engineering_evidence: EngineeringEvidence,
     metrics: serde_json::Value,
     last_state: State,
+}
+
+/// Exact responses observed through ordinary Inspector and World interactions.
+/// These are review evidence, not an alternate semantic authority.
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+struct EngineeringEvidence {
+    repository_interfaces: Option<ElementInspector>,
+    inherited_port: Option<ElementInspector>,
+    connected_port: Option<ElementInspector>,
+    requirement_subject_path: Vec<ViewEdge>,
 }
 
 /// Native input-hook cadence during submission through candidate response delivery.
@@ -451,8 +466,11 @@ const PART: Named = Named {
 };
 
 fn named(app: &StudioApp, named: Named) -> Result<ElementId, String> {
-    let ids: Vec<_> = app
-        .active_projection()
+    projection_named(app.active_projection(), named)
+}
+
+fn projection_named(projection: &ViewProjection, named: Named) -> Result<ElementId, String> {
+    let ids: Vec<_> = projection
         .nodes
         .iter()
         .filter(|n| n.name == named.name && n.semantic_kind == named.kind)
@@ -469,10 +487,206 @@ fn named(app: &StudioApp, named: Named) -> Result<ElementId, String> {
     }
 }
 
+fn inspector_feature(inspector: &ElementInspector, name: &str) -> Result<ElementId, String> {
+    let ids: std::collections::BTreeSet<_> = inspector
+        .owned_features
+        .iter()
+        .chain(&inspector.effective_features)
+        .filter(|feature| feature.name == name && feature.semantic_kind == "PortUsage")
+        .map(|feature| feature.id)
+        .collect();
+    if ids.len() == 1 {
+        Ok(*ids.first().expect("one feature"))
+    } else {
+        Err(format!(
+            "Expected one canonical Inspector port {name}, found {}",
+            ids.len()
+        ))
+    }
+}
+
+fn complete_query(inspector: &ElementInspector, name: &str) -> bool {
+    inspector
+        .queries
+        .iter()
+        .any(|query| query.name == name && query.completeness == "Complete")
+}
+
+fn requirement_subject_path(projection: &ViewProjection) -> Result<Vec<ViewEdge>, String> {
+    let requirement = projection_named(
+        projection,
+        Named {
+            name: "ImmutableRevisions",
+            kind: "RequirementDefinition",
+        },
+    )?;
+    let subject = projection
+        .nodes
+        .iter()
+        .filter(|node| node.name == "subjectWorkspace" && node.owner == Some(requirement))
+        .collect::<Vec<_>>();
+    let [subject] = subject.as_slice() else {
+        return Err(
+            "ImmutableRevisions has no unique canonical subjectWorkspace in this Requirements view"
+                .into(),
+        );
+    };
+    let architecture = projection_named(
+        projection,
+        Named {
+            name: "ProjectWorkspace",
+            kind: "PartDefinition",
+        },
+    )?;
+    let mut path = vec![];
+    for (kind, source, target) in [
+        ("SubjectMembership", requirement, subject.id),
+        ("FeatureTyping", subject.id, architecture),
+    ] {
+        let edges: Vec<_> = projection
+            .edges
+            .iter()
+            .filter(|edge| {
+                edge.semantic_kind == kind
+                    && edge.source == source
+                    && edge.target == target
+                    && edge.revision_id == projection.revision_id
+                    && edge.relationship_id.is_some()
+            })
+            .collect();
+        let [edge] = edges.as_slice() else {
+            return Err(format!(
+                "Requirements view lacks one exact canonical {kind} from {source} to {target}"
+            ));
+        };
+        path.push((**edge).clone());
+    }
+    if path[0].relationship_id == path[1].relationship_id || path[0].id == path[1].id {
+        return Err(
+            "Requirement subject and typing must retain distinct canonical relationship identities"
+                .into(),
+        );
+    }
+    Ok(path)
+}
+
+fn platform_connection<'a>(
+    projection: &'a ViewProjection,
+    inspector: &'a ElementInspector,
+) -> Result<&'a ViewEdge, String> {
+    let source = projection_named(
+        projection,
+        Named {
+            name: "clientQueries",
+            kind: "PortUsage",
+        },
+    )?;
+    let target = projection_named(
+        projection,
+        Named {
+            name: "platformQueries",
+            kind: "PortUsage",
+        },
+    )?;
+    let connectors: Vec<_> = projection
+        .nodes
+        .iter()
+        .filter(|node| {
+            node.name == "queryConnection"
+                && node.origin == ViewOrigin::Authored
+                && node.source_available
+        })
+        .collect();
+    let [connector] = connectors.as_slice() else {
+        return Err(
+            "Focused architecture lacks the unique source-backed queryConnection identity".into(),
+        );
+    };
+    let edges: Vec<_> = inspector
+        .relationships
+        .iter()
+        .filter(|edge| {
+            edge.family == RelationshipFamily::Connection
+                && edge.relationship_id == Some(connector.id)
+                && edge.semantic_kind == connector.semantic_kind
+                && edge.revision_id == projection.revision_id
+                && ((edge.source == source && edge.target == target)
+                    || (edge.source == target && edge.target == source))
+                && projection.edges.contains(edge)
+        })
+        .collect();
+    let [edge] = edges.as_slice() else {
+        return Err("Port Inspector and focused architecture disagree on the exact queryConnection and its two canonical port endpoints".into());
+    };
+    if !complete_query(
+        inspector,
+        &format!("Connection endpoints: queryConnection [{}]", connector.id),
+    ) {
+        return Err("Port Inspector lacks a complete queryConnection endpoint query".into());
+    }
+    Ok(edge)
+}
+
+fn assert_port_inspector<'a>(
+    app: &'a StudioApp,
+    expected_id: ElementId,
+    name: &'static str,
+    owner: Named,
+    interface: Named,
+) -> Result<&'a ElementInspector, String> {
+    let inspector = app.inspector.as_ref().ok_or("Port Inspector unavailable")?;
+    let owner = named(app, owner)?;
+    // Port definitions are canonical Inspector references, not boundary ports in
+    // System World. Do not require a fabricated scene node to prove the type.
+    let interfaces: Vec<_> = inspector
+        .effective_types
+        .iter()
+        .filter(|feature| feature.name == interface.name && feature.semantic_kind == interface.kind)
+        .collect();
+    let revision = app.active_projection().revision_id;
+    if app.selected_element() != Some(expected_id)
+        || inspector.element.id != expected_id
+        || inspector.element.name != name
+        || inspector.element.semantic_kind != "PortUsage"
+        || inspector.element.origin != ViewOrigin::Authored
+        || !inspector.element.source_available
+        || inspector.revision_id != revision
+        || inspector.element.revision_id != revision
+        || inspector.element.owner != Some(owner)
+        || inspector.owner.as_ref().map(|owner| owner.id) != Some(owner)
+        || interfaces.len() != 1
+        || !complete_query(inspector, "Owner")
+        || !complete_query(inspector, "Effective types")
+        || app
+            .lookup
+            .port(&app.scene, expected_id)
+            .is_none_or(|port| port.owner != owner)
+    {
+        return Err(format!(
+            "Clicked {name} did not retain its canonical port identity, original owner, effective interface and complete query answers"
+        ));
+    }
+    let source = inspector
+        .source
+        .as_ref()
+        .ok_or("Authored port has no source provenance")?;
+    if source.start >= source.end
+        || !current_manifest(app)?.documents.iter().any(|document| {
+            document.document_id == source.document_id
+                && document.source_revision_id == source.source_revision_id
+                && source.path.as_ref() == Some(&document.path)
+        })
+    {
+        return Err("Port source does not belong to the actual selected revision manifest".into());
+    }
+    Ok(inspector)
+}
+
 #[derive(Clone, Debug)]
 enum Action {
     OpenProject,
     Select(Named),
+    InspectFeature(&'static str),
     Palette(&'static str),
     Key(Key),
     Standards,
@@ -498,6 +712,9 @@ enum Check {
     Selected(Named),
     FocusedPlatform,
     RepositoryInterfaces,
+    FocusedRepository,
+    InheritedPort,
+    ConnectedPort,
     Home,
     World(World),
     GraphOverview,
@@ -572,15 +789,33 @@ fn steps(restart: bool) -> Vec<Step> {
             Some("02-focused-subsystem"),
         ),
         step(
-            "return through project architecture to its component definitions",
-            Action::Palette("Home"),
-            Check::Home,
+            "inspect a platform port and its actual query connection",
+            Action::InspectFeature("clientQueries"),
+            Check::ConnectedPort,
+            Some("02a-platform-port"),
+        ),
+        step(
+            "select ModelRepository inside the focused ModelingPlatform",
+            Action::Select(REPOSITORY),
+            Check::RepositoryInterfaces,
             None,
         ),
         step(
-            "inspect ModelRepository and inherited interfaces",
+            "enter ModelRepository without leaving its containing subsystem",
+            Action::Key(Key::F),
+            Check::FocusedRepository,
+            Some("02b-focused-repository"),
+        ),
+        step(
+            "inspect the original inherited repositoryRevisions port",
+            Action::InspectFeature("repositoryRevisions"),
+            Check::InheritedPort,
+            Some("02c-repository-port"),
+        ),
+        step(
+            "select repository as the dependency inquiry subject",
             Action::Select(REPOSITORY),
-            Check::RepositoryInterfaces,
+            Check::Selected(REPOSITORY),
             None,
         ),
         step(
@@ -761,6 +996,7 @@ struct Runner {
     candidate_id: Option<agq_studio_platform::CandidateId>,
     candidate_revision: Option<ProjectRevisionId>,
     preparation_clock: Option<PreparationClock>,
+    inspected_feature: Option<ElementId>,
 }
 impl Runner {
     fn new(app: &StudioApp) -> Result<Self, String> {
@@ -791,12 +1027,14 @@ impl Runner {
                 added_name: PART_NAME.into(), assertions: vec![], gallery: vec![], failure: None,
                 elapsed_ms: 0, background_frames: 0, background_pan_observed: false,
                 preparation_responsiveness: PreparationResponsiveness::default(),
+                engineering_evidence: EngineeringEvidence::default(),
                 metrics: serde_json::Value::Null, last_state: State::of(app),
             },
             steps: steps(restart), index: 0, age: 0, started: Instant::now(), step_started: Instant::now(),
             before: None, point: None, events: vec![], capture: None, dirty: true, last_write: Instant::now(),
             background_pan: None, candidate_id: None, candidate_revision: None,
             preparation_clock: None,
+            inspected_feature: None,
         })
     }
 
@@ -961,6 +1199,7 @@ impl Runner {
                 "format": "agentique-native-real-gallery/1", "semantic_data": "real authenticated models/agentique",
                 "fixture": null, "checkpoint": capture.name, "state": capture.state,
                 "baseline": self.report.baseline, "committed": self.report.committed,
+                "engineering_evidence": self.report.engineering_evidence,
                 "image_size": image.size, "image_digest": ContentDigest::of(&std::fs::read(&path).map_err(|e| e.to_string())?),
                 "adapter": app.adapter, "metrics": app.metrics_report(),
             });
@@ -1027,6 +1266,22 @@ impl Runner {
                 }
                 _ => {}
             },
+            Action::InspectFeature(name) => {
+                let point = if let Some(point) = self.point {
+                    point
+                } else {
+                    let inspector = app
+                        .inspector
+                        .as_ref()
+                        .ok_or("No real Inspector to navigate from")?;
+                    let id = inspector_feature(inspector, name)?;
+                    self.inspected_feature = Some(id);
+                    let point = real_targets::target(ctx, Target::InspectorElement(id))?.center();
+                    self.point = Some(point);
+                    point
+                };
+                click(input, point, frame == 0);
+            }
             Action::Palette(query) => match frame {
                 0 => key(input, Key::K, Modifiers::COMMAND),
                 5 | 6 => click(
@@ -1239,25 +1494,118 @@ impl Runner {
                 Ok(())
             }
             Check::FocusedPlatform => require(
-                app.world == World::System && app.focus == Some(named(app, PLATFORM)?),
-                "System focus did not enter ModelingPlatform",
+                app.world == World::System
+                    && app.active_projection().view.kind == ViewKind::Architecture
+                    && app.focus == Some(named(app, PLATFORM)?)
+                    && app.active_projection().view.focus == app.focus
+                    && app.scene.node(named(app, REPOSITORY)?).is_some(),
+                "Focused ModelingPlatform must expose the real ModelRepository for navigation without returning Home",
             ),
             Check::RepositoryInterfaces => {
+                self.check(&Check::FocusedPlatform, app, ctx)?;
                 self.check(&Check::Selected(REPOSITORY), app, ctx)?;
                 let inspector = app
                     .inspector
                     .as_ref()
                     .ok_or("Repository Inspector unavailable")?;
+                let inherited = inspector_feature(inspector, "repositoryRevisions")?;
                 require(
-                    inspector
-                        .owned_features
-                        .iter()
-                        .chain(&inspector.effective_features)
-                        .any(|f| {
-                            matches!(f.semantic_kind.as_str(), "PortUsage" | "PortDefinition")
-                        }),
-                    "ModelRepository has no modeled interface in its effective Inspector",
+                    complete_query(inspector, "Effective features")
+                        && complete_query(inspector, "Owned features")
+                        && inspector
+                            .effective_features
+                            .iter()
+                            .any(|feature| feature.id == inherited)
+                        && !inspector
+                            .owned_features
+                            .iter()
+                            .any(|feature| feature.id == inherited),
+                    "Repository Inspector must identify repositoryRevisions as an effective, inherited canonical port",
+                )?;
+                self.report.engineering_evidence.repository_interfaces = Some(inspector.clone());
+                Ok(())
+            }
+            Check::FocusedRepository => {
+                self.check(&Check::Selected(REPOSITORY), app, ctx)?;
+                let inspector = app
+                    .inspector
+                    .as_ref()
+                    .ok_or("Repository Inspector unavailable")?;
+                let inherited = inspector_feature(inspector, "repositoryRevisions")?;
+                let previous = self
+                    .report
+                    .engineering_evidence
+                    .repository_interfaces
+                    .as_ref()
+                    .ok_or("Inherited interface observation missing")?;
+                require(
+                    app.world == World::System
+                        && app.active_projection().view.kind == ViewKind::Architecture
+                        && app.focus == Some(named(app, REPOSITORY)?)
+                        && app.active_projection().view.focus == app.focus
+                        && inherited == inspector_feature(previous, "repositoryRevisions")?
+                        && app.lookup.port(&app.scene, inherited).is_some()
+                        && real_targets::target(ctx, Target::InspectorElement(inherited)).is_ok(),
+                    "Entering ModelRepository must expose its original inherited port through a visible ordinary Inspector link",
                 )
+            }
+            Check::InheritedPort => {
+                let inherited = inspector_feature(
+                    self.report
+                        .engineering_evidence
+                        .repository_interfaces
+                        .as_ref()
+                        .ok_or("Inherited interface observation missing")?,
+                    "repositoryRevisions",
+                )?;
+                require(
+                    self.inspected_feature == Some(inherited)
+                        && app.focus == Some(named(app, REPOSITORY)?),
+                    "Inherited port click changed canonical identity or left focused ModelRepository",
+                )?;
+                let inspector = assert_port_inspector(
+                    app,
+                    inherited,
+                    "repositoryRevisions",
+                    Named {
+                        name: "Repository",
+                        kind: "PartDefinition",
+                    },
+                    Named {
+                        name: "ModelRevision",
+                        kind: "PortDefinition",
+                    },
+                )?;
+                self.report.engineering_evidence.inherited_port = Some(inspector.clone());
+                Ok(())
+            }
+            Check::ConnectedPort => {
+                self.check(&Check::FocusedPlatform, app, ctx)?;
+                let id = self
+                    .inspected_feature
+                    .ok_or("No ordinary platform port click was recorded")?;
+                let inspector = assert_port_inspector(
+                    app,
+                    id,
+                    "clientQueries",
+                    PLATFORM,
+                    Named {
+                        name: "SemanticQuery",
+                        kind: "PortDefinition",
+                    },
+                )?;
+                let edge = platform_connection(app.active_projection(), inspector)?;
+                require(
+                    app.scene.edges.iter().any(|item| item.semantic == *edge)
+                        && real_targets::target(
+                            ctx,
+                            Target::InspectorRelationship(edge.id.clone()),
+                        )
+                        .is_ok(),
+                    "Actual port connection must be visible in the scene and ordinary Inspector",
+                )?;
+                self.report.engineering_evidence.connected_port = Some(inspector.clone());
+                Ok(())
             }
             Check::Home => require(
                 app.world == World::System
@@ -1286,6 +1634,13 @@ impl Runner {
                                 .any(|n| n.category == NodeCategory::Requirement),
                         "Requirements World has no actual modeled requirements",
                     )?;
+                    let path = requirement_subject_path(app.active_projection())?;
+                    require(
+                        path.iter()
+                            .all(|edge| app.scene.edges.iter().any(|item| item.semantic == *edge)),
+                        "Requirements scene omits a canonical edge of ImmutableRevisions -> subjectWorkspace -> ProjectWorkspace",
+                    )?;
+                    self.report.engineering_evidence.requirement_subject_path = path;
                 }
                 require(
                     !app.scene.nodes.is_empty() && !app.scene.edges.is_empty(),
@@ -1802,6 +2157,125 @@ pub fn drive(
 mod tests {
     use super::*;
     use clap::Parser;
+
+    #[test]
+    fn requirement_architecture_acceptance_requires_both_canonical_hops() {
+        let mut projection = agq_studio_scene::fixtures::architecture();
+        projection.nodes.truncate(3);
+        let requirement = projection.nodes[0].id;
+        let subject = projection.nodes[1].id;
+        let architecture = projection.nodes[2].id;
+        projection.nodes[0].name = "ImmutableRevisions".into();
+        projection.nodes[0].semantic_kind = "RequirementDefinition".into();
+        projection.nodes[1].name = "subjectWorkspace".into();
+        projection.nodes[1].owner = Some(requirement);
+        projection.nodes[2].name = "ProjectWorkspace".into();
+        projection.nodes[2].semantic_kind = "PartDefinition".into();
+        projection.edges.truncate(2);
+        projection.edges[0].semantic_kind = "SubjectMembership".into();
+        projection.edges[0].source = requirement;
+        projection.edges[0].target = subject;
+        projection.edges[1].semantic_kind = "FeatureTyping".into();
+        projection.edges[1].source = subject;
+        projection.edges[1].target = architecture;
+        assert_eq!(
+            requirement_subject_path(&projection).unwrap(),
+            projection.edges
+        );
+        // Presentation family classification does not erase exact metaclass identity.
+        projection.edges[0].family = RelationshipFamily::Requirement;
+        assert!(requirement_subject_path(&projection).is_ok());
+        for invalid in 0..7 {
+            let mut changed = projection.clone();
+            match invalid {
+                0 => {
+                    changed.edges.pop();
+                }
+                1 => changed.edges[1].source = requirement, // invented direct shortcut
+                2 => changed.edges[1].relationship_id = None,
+                3 => changed.edges[1].relationship_id = changed.edges[0].relationship_id,
+                4 => changed.edges[0].semantic_kind = "OwningMembership".into(),
+                5 => changed.nodes[1].owner = Some(architecture),
+                6 => changed.edges[1].revision_id = ProjectRevisionId::new(),
+                _ => unreachable!(),
+            }
+            assert!(
+                requirement_subject_path(&changed).is_err(),
+                "Accepted invalid requirement path {invalid}"
+            );
+        }
+    }
+
+    #[test]
+    fn port_connection_acceptance_rejects_wrong_identity_endpoint_or_incomplete_query() {
+        let mut projection = agq_studio_scene::fixtures::architecture();
+        projection.nodes.truncate(3);
+        for (node, name) in
+            projection
+                .nodes
+                .iter_mut()
+                .zip(["clientQueries", "platformQueries", "queryConnection"])
+        {
+            node.name = name.into();
+            node.semantic_kind = if name == "queryConnection" {
+                "InterfaceUsage"
+            } else {
+                "PortUsage"
+            }
+            .into();
+            node.origin = ViewOrigin::Authored;
+            node.source_available = true;
+        }
+        let connector = projection.nodes[2].id;
+        let mut edge = projection.edges[0].clone();
+        edge.family = RelationshipFamily::Connection;
+        edge.semantic_kind = "InterfaceUsage".into();
+        edge.source = projection.nodes[0].id;
+        edge.target = projection.nodes[1].id;
+        edge.relationship_id = Some(connector);
+        projection.edges = vec![edge.clone()];
+        let inspector = ElementInspector {
+            revision_id: projection.revision_id,
+            element: projection.nodes[0].clone(),
+            owner: None,
+            effective_types: vec![],
+            owned_features: vec![],
+            effective_features: vec![],
+            specializations: vec![],
+            subsettings: vec![],
+            redefinitions: vec![],
+            relationships: vec![edge.clone()],
+            multiplicity: None,
+            source: None,
+            queries: vec![agq_modeling_view::QuerySummary {
+                name: format!("Connection endpoints: queryConnection [{connector}]"),
+                completeness: "Complete".into(),
+                diagnostics: vec![],
+                positive_dependency_count: 0,
+                search_dependency_count: 0,
+            }],
+            profile: "Test-only counterexample; never runtime acceptance".into(),
+        };
+        assert_eq!(platform_connection(&projection, &inspector).unwrap(), &edge);
+        for invalid in 0..5 {
+            let mut changed = inspector.clone();
+            let mut changed_projection = projection.clone();
+            match invalid {
+                0 => changed.relationships[0].relationship_id = Some(projection.nodes[0].id),
+                1 => changed.relationships[0].target = connector,
+                2 => changed.queries[0].completeness = "Incomplete".into(),
+                3 => changed.queries[0].name = "Connection endpoints: unrelated".into(),
+                4 => changed.relationships[0].family = RelationshipFamily::Typing,
+                _ => unreachable!(),
+            }
+            // Even two agreeing DTOs must not substitute a different relationship.
+            changed_projection.edges = changed.relationships.clone();
+            assert!(
+                platform_connection(&changed_projection, &changed).is_err(),
+                "Accepted invalid connection {invalid}"
+            );
+        }
+    }
 
     fn resume_fixture() -> (Args, Report) {
         let mut args = isolated_args();
