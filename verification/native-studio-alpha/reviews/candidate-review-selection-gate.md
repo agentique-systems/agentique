@@ -23,6 +23,14 @@ to return when present, forbids its appearance in Current, and requires focus
 continuity. Candidate identity, exact revision, matching before/after lens and
 added-object diff assertions remain mandatory.
 
+Independent source review caught a necessary detail in the initial correction:
+raw selected-target identity does not prove that its geometric target exists.
+The final later-review check retains `app.selected_element() == Some(added)`,
+which resolves the target in the exact active scene. Current also rejects the
+created ID anywhere in multi-selection, including a secondary target. Regression
+counterexamples cover a Part ID disguised as an absent port, an absent node
+target and a leaked secondary selection.
+
 No production selection behavior changes. Forcing an automatic new-part selection
 would override the operator's valid background inquiry merely to satisfy a faulty
 test. The first-process and restart step lists, launch/report/source/resume guards

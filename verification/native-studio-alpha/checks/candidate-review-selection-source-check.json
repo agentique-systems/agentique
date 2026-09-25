@@ -81,5 +81,35 @@
       "stdout": "",
       "stderr": ""
     }
-  ]
+  ],
+  "source_review_followup": {
+    "checked_at": "2026-09-25T22:09:58.520937+00:00",
+    "reviewed_commit": "eebd8a6",
+    "change": "Preserve actual scene-resolved selected-element assertion and exclude candidate ID from all Current selection targets",
+    "checks": [
+      {
+        "command": [
+          "rustfmt",
+          "--edition",
+          "2024",
+          "--check",
+          "crates/studio-native/src/real_automation.rs"
+        ],
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "command": [
+          "git",
+          "diff",
+          "--check"
+        ],
+        "exit_code": 0,
+        "stdout": "",
+        "stderr": ""
+      }
+    ],
+    "runtime_or_build_executed": false
+  }
 }

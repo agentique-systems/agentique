@@ -1136,6 +1136,23 @@ fn assert_candidate_review_selection(
     Ok(())
 }
 
+fn assert_explicit_part_in_review_scene(
+    app: &StudioApp,
+    mode: ComparisonMode,
+    added: ElementId,
+) -> Result<(), String> {
+    if mode == ComparisonMode::Current {
+        if app.scene.node(added).is_some() || app.selection.contains(added) {
+            return Err("Candidate-only object leaked into Current scene or selection".into());
+        }
+    } else if app.selected_element() != Some(added) {
+        // Raw target identity is insufficient: this also resolves its geometry
+        // and checks the selection's exact active scene revision.
+        return Err("Explicit candidate selection has no matching object in this scene".into());
+    }
+    Ok(())
+}
+
 #[derive(Clone)]
 struct Runner {
     report: Report,
@@ -2171,11 +2188,10 @@ impl Runner {
                     .ok_or("Created part identity was not retained")?;
                 if *mode == ComparisonMode::Current {
                     require(
-                        self.explicitly_selected_candidate_part == Some(added)
-                            && app.scene.node(added).is_none()
-                            && app.selected_element() != Some(added),
-                        "Candidate-only object leaked into Current or was never explicitly selected",
+                        self.explicitly_selected_candidate_part == Some(added),
+                        "Created part was never explicitly selected before Current review",
                     )?;
+                    assert_explicit_part_in_review_scene(app, *mode, added)?;
                 } else {
                     assert_candidate_review_selection(
                         before,
@@ -2184,6 +2200,9 @@ impl Runner {
                         added,
                         self.explicitly_selected_candidate_part,
                     )?;
+                    if self.explicitly_selected_candidate_part.is_some() {
+                        assert_explicit_part_in_review_scene(app, *mode, added)?;
+                    }
                 }
                 if *mode == ComparisonMode::Diff {
                     require(
@@ -3008,6 +3027,25 @@ mod tests {
             .is_ok()
         );
         assert_eq!(app.focus, Some(owner));
+        assert!(assert_explicit_part_in_review_scene(&app, ComparisonMode::Diff, added).is_ok());
+        app.selection.select(SceneTarget::Port(added), false);
+        assert!(
+            assert_explicit_part_in_review_scene(&app, ComparisonMode::Candidate, added).is_err(),
+            "A Part ID disguised as a nonexistent port cannot satisfy scene selection"
+        );
+        app.change_comparison(ComparisonMode::Current);
+        assert!(assert_explicit_part_in_review_scene(&app, ComparisonMode::Current, added).is_ok());
+        app.selection.select(SceneTarget::Node(added), false);
+        assert!(
+            assert_explicit_part_in_review_scene(&app, ComparisonMode::Candidate, added).is_err(),
+            "A raw target cannot restore an element absent from the scene"
+        );
+        app.selection.select(SceneTarget::Node(observed), true);
+        assert_eq!(app.selected_element(), Some(observed));
+        assert!(
+            assert_explicit_part_in_review_scene(&app, ComparisonMode::Current, added).is_err(),
+            "A secondary candidate target must not leak into Current selection"
+        );
     }
 
     #[test]
