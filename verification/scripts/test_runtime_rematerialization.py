@@ -12,6 +12,57 @@ ROOT = pathlib.Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location("restore_transport", ROOT / "tools/restore-accepted-kerml-transport.py")
 TOOL = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(TOOL)
+COMPARE_SPEC = importlib.util.spec_from_file_location(
+    "compare_systems", ROOT / "tools/runtime-recovery/compare_systems_contract.py")
+COMPARE = importlib.util.module_from_spec(COMPARE_SPEC)
+COMPARE_SPEC.loader.exec_module(COMPARE)
+
+
+class SystemsContractComparison(unittest.TestCase):
+    def setUp(self):
+        self.accepted = {
+            "identity": {"semantic_digest": [1] * 32},
+            "status": "accepted",
+            "entries": {name: {"bytes": 5, "sha256": [2] * 32}
+                        for name in ("closure.json", "facade.json", "kernel.jsonl")},
+        }
+        self.generated = copy.deepcopy(self.accepted)
+        self.bindings = {"anchors": [{"id": "canonical"}]}
+
+    def compare(self, new_bindings=None):
+        return COMPARE.compare_contract(self.accepted, self.generated, self.bindings,
+                                        self.bindings if new_bindings is None else new_bindings)
+
+    def test_transport_difference_does_not_authorize_runtime(self):
+        self.generated["entries"]["kernel.jsonl"]["sha256"][0] ^= 1
+        result = self.compare()
+        self.assertTrue(result["semantic_contract_equal"])
+        self.assertTrue(result["transport_entry_schema_equal"])
+        self.assertFalse(result["original_transport_entries_equal"])
+        self.assertFalse(result["runtime_accepted"])
+        self.assertTrue(result["ordinary_facade_authentication_required"])
+
+    def test_semantic_additions_omissions_and_changes_fail(self):
+        for mode in ("add", "omit", "change"):
+            self.generated = copy.deepcopy(self.accepted)
+            if mode == "add":
+                self.generated["unreviewed_authority"] = None
+            elif mode == "omit":
+                del self.generated["identity"]
+            else:
+                self.generated["identity"]["semantic_digest"][0] ^= 1
+            self.assertFalse(self.compare()["semantic_contract_equal"], mode)
+
+    def test_complete_binding_manifest_must_match(self):
+        self.assertFalse(self.compare({"anchors": []})["accepted_bindings_equal"])
+
+    def test_transport_receipt_shape_stays_exact(self):
+        for mutation in (None, {}, {"attacker": {"bytes": 5, "sha256": [2] * 32}}):
+            self.generated["entries"] = mutation
+            self.assertFalse(self.compare()["transport_entry_schema_equal"])
+        self.generated = copy.deepcopy(self.accepted)
+        self.generated["entries"]["kernel.jsonl"]["sha256"][0] = True
+        self.assertFalse(self.compare()["transport_entry_schema_equal"])
 
 
 class ExactTransportRecovery(unittest.TestCase):

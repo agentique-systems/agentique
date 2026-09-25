@@ -1,0 +1,18 @@
+{
+  "command": [
+    "python",
+    "verification/scripts/test_runtime_rematerialization.py"
+  ],
+  "cwd": "C:/Users/phili/github/agentique-systems/agentique-alpha-runtime",
+  "started_utc": "2026-09-25T16:08:42.597654+00:00",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "source_commit": "1564547255d1887e1ae72e14837608711ea9b5db",
+  "working_diff_sha256": "23130cc8d604bb4f675a1f242f2d49736886ad7c7616df60d9d8bc51d6b4cc61",
+  "exit_code": 0,
+  "elapsed_seconds": 1.093,
+  "peak_rss_bytes": 1536000,
+  "peak_private_bytes": 397312,
+  "memory_scope": "direct child process sampled at 1 second; excludes descendant compilers",
+  "output_sha256": "41f3c2374c1f0800048f6b547beef8e36db866dc4b790039041b8f5fa02efc02",
+  "raw_output": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\native-studio-alpha\\runtime\\transport-contract-recovery-tests.log"
+}

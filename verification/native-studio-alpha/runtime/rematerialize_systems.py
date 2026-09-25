@@ -35,6 +35,9 @@ if build["exit_code"] != 0:
 actual = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=HISTORICAL, text=True).strip()
 if actual != "4ac9b8e58695ad837fed6643b0cedfac05d15635" or subprocess.check_output(["git", "diff", "HEAD"], cwd=HISTORICAL):
     raise SystemExit("Systems producer differs from the original accepted producer")
+producer = json.loads((HERE / "rematerialization-producer.json").read_text())
+if hashlib.sha256((TARGET / "sysml_systems_publication.exe").read_bytes()).hexdigest() != producer["systems_binary_sha256"]:
+    raise SystemExit("Systems executable differs from retained producer provenance")
 receipt = KERML / "canonical.publication.receipt.json"
 read_when_complete(receipt)
 run("kerml-exact-transport-recovery", [sys.executable, str(ROOT / "tools/restore-accepted-kerml-transport.py"),
@@ -63,17 +66,8 @@ run("systems-independent-artifact-gate", [sys.executable,
     str(ROOT / "verification/scripts/systems_publication_gate.py"),
     "--report", str(SYSTEMS / "finalized/report.json"), "--repository", str(ROOT),
     "--output", str(ARTIFACTS / "systems-independent-artifact-gate.json")], ROOT)
-accepted = json.loads((ROOT / "standards/sysml-accepted-publication.json").read_text())
-generated = json.loads((SYSTEMS / "finalized/accepted-publication.json").read_text())
-original_bindings = json.loads((ROOT / "standards/sysml-standard-bindings.json").read_text())
-new_bindings = json.loads((SYSTEMS / "finalized/standard-bindings.json").read_text())
-semantic_fields = {key: generated.get(key) == value for key, value in accepted.items() if key != "entries"}
-comparison = {"semantic_contract_equal": all(semantic_fields.values()),
-              "semantic_fields": semantic_fields,
-              "accepted_bindings_equal": original_bindings == new_bindings,
-              "original_transport_entries_equal": generated["entries"] == accepted["entries"],
-              "ordinary_facade_authentication_required": True, "accepted_receipt_changed": False}
-(HERE / "systems-existing-contract-comparison.json").write_text(json.dumps(comparison, indent=2))
-if not comparison["semantic_contract_equal"] or not comparison["accepted_bindings_equal"]:
-    raise SystemExit("Real semantic mismatch with existing Systems acceptance; runtime stream paused")
-print(json.dumps(comparison), flush=True)
+run("systems-existing-contract-comparison", [sys.executable,
+    str(ROOT / "tools/runtime-recovery/compare_systems_contract.py"),
+    "--generated-receipt", str(SYSTEMS / "finalized/accepted-publication.json"),
+    "--generated-bindings", str(SYSTEMS / "finalized/standard-bindings.json"),
+    "--output", str(ARTIFACTS / "systems-existing-contract-comparison.json")], ROOT)

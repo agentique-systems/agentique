@@ -1,5 +1,6 @@
 """Run the exact historical producer without replacing any trusted authority."""
 import json
+import hashlib
 import pathlib
 import subprocess
 import sys
@@ -28,5 +29,11 @@ wrapper = ROOT / "tools/runtime-recovery/kerml_rematerialize.rs"
 copied = HISTORICAL / "crates/kerml-text/examples/kerml_rematerialize.rs"
 if copied.read_bytes() != wrapper.read_bytes():
     raise SystemExit("Recovery wrapper must match the retained reviewed source")
-run("historical-kerml-rematerialize", [str(HISTORICAL / "target/release/examples/kerml_rematerialize.exe"),
+producer = json.loads((HERE / "rematerialization-producer.json").read_text())
+binary = HISTORICAL / "target/release/examples/kerml_rematerialize.exe"
+if (producer["producer_commit"] != expected
+        or hashlib.sha256(wrapper.read_bytes()).hexdigest() != producer["wrapper_sha256"]
+        or hashlib.sha256(binary.read_bytes()).hexdigest() != producer["wrapper_binary_sha256"]):
+    raise SystemExit("Recovery source or executable differs from retained producer provenance")
+run("historical-kerml-rematerialize", [str(binary),
     "--authority-root=" + str(ROOT), "--output=" + str(ARTIFACTS / "canonical.json")])
