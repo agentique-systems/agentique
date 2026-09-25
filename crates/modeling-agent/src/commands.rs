@@ -166,17 +166,20 @@ pub fn propose(
         before,
         after,
     };
-    let prepared = service.prepare_changes(ApplyDocumentChanges {
-        operation_id: OperationId::new(),
-        project: context.project,
-        branch: context.branch,
-        expected_head: context.revision,
-        changes: vec![ProjectChange::Edit {
-            document: origin.document,
-            edit,
-        }],
-        validate: false,
-    })?;
+    let prepared = service.prepare_part_insertion(
+        ApplyDocumentChanges {
+            operation_id: OperationId::new(),
+            project: context.project,
+            branch: context.branch,
+            expected_head: context.revision,
+            changes: vec![ProjectChange::Edit {
+                document: origin.document,
+                edit,
+            }],
+            validate: false,
+        },
+        *owner,
+    )?;
     if let Some(definition) = definition {
         let candidate = prepared.revision();
         let document = candidate

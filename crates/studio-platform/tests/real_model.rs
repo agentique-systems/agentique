@@ -43,6 +43,30 @@ fn native_in_process_self_model_candidate_commit_and_restore() {
         .find(|node| node.name == "ModelingPlatform" && node.semantic_kind == "PartDefinition")
         .unwrap()
         .id;
+    let mut preserved_hierarchy = Vec::new();
+    let mut current = Some(owner);
+    while let Some(id) = current {
+        let Some(node) = graph.nodes.iter().find(|node| node.id == id) else {
+            break;
+        };
+        assert!(
+            !preserved_hierarchy
+                .iter()
+                .any(|(previous, _, _, _)| *previous == id),
+            "real source ownership must not cycle"
+        );
+        preserved_hierarchy.push((
+            node.id,
+            node.owner,
+            node.name.clone(),
+            node.semantic_kind.clone(),
+        ));
+        current = node.owner;
+    }
+    assert!(
+        preserved_hierarchy.len() >= 2,
+        "the real model gate must cover an ancestor as well as the selected owner"
+    );
     assert_eq!(
         platform.inspect(binding, owner).unwrap().revision_id,
         revision
@@ -86,6 +110,25 @@ fn native_in_process_self_model_candidate_commit_and_restore() {
         )
         .unwrap();
     assert_eq!(candidate.phase, CandidatePhase::Working);
+    for (id, owner, name, kind) in &preserved_hierarchy {
+        let node = candidate
+            .projection
+            .nodes
+            .iter()
+            .find(|node| node.id == *id)
+            .expect("candidate preserves owner and ancestor canonical identities");
+        assert_eq!(&node.owner, owner);
+        assert_eq!(&node.name, name);
+        assert_eq!(&node.semantic_kind, kind);
+    }
+    assert!(
+        candidate
+            .projection
+            .nodes
+            .iter()
+            .any(|node| node.id == owner),
+        "nested insertion preserves selected owner's canonical identity"
+    );
     let added = candidate
         .projection
         .nodes
@@ -93,6 +136,16 @@ fn native_in_process_self_model_candidate_commit_and_restore() {
         .find(|node| node.name == "nativeObserver")
         .unwrap()
         .id;
+    assert_eq!(
+        candidate
+            .projection
+            .nodes
+            .iter()
+            .find(|node| node.id == added)
+            .unwrap()
+            .owner,
+        Some(owner)
+    );
     let source = platform.source_candidate(candidate.id, added).unwrap();
     assert_eq!(source.binding.revision, candidate.projection.revision_id);
     assert!(source.source.contains("part nativeObserver;"));
@@ -159,6 +212,27 @@ fn native_in_process_self_model_candidate_commit_and_restore() {
     drop(platform);
     let restored = agq_studio_platform::open(&config, |_| {}).unwrap();
     let history = restored.history(project.id).unwrap();
+    let committed = history
+        .revisions
+        .iter()
+        .find(|manifest| manifest.revision_id == receipt.revision_id)
+        .unwrap();
+    assert!(
+        committed
+            .metadata
+            .alias
+            .iter()
+            .any(|alias| alias == "agentique-source-identity/part-insertion/1"),
+        "validation, commit and restart retain the command identity policy"
+    );
+    let identity_evidence: serde_json::Value =
+        serde_json::from_str(committed.metadata.description.as_deref().unwrap()).unwrap();
+    assert_eq!(identity_evidence["mode"], "full-source-reconstruction");
+    assert_eq!(identity_evidence["owner"], serde_json::json!(owner));
+    assert_eq!(
+        identity_evidence["retired_identity_reservations_preserved"],
+        true
+    );
     assert_eq!(
         history
             .branches
@@ -167,5 +241,30 @@ fn native_in_process_self_model_candidate_commit_and_restore() {
             .unwrap()
             .head,
         receipt.revision_id
+    );
+    let restored_binding = RevisionBinding {
+        project: project.id,
+        revision: receipt.revision_id,
+    };
+    let restored_graph = restored.project(restored_binding, &definition).unwrap();
+    for (id, owner, name, kind) in &preserved_hierarchy {
+        let node = restored_graph
+            .nodes
+            .iter()
+            .find(|node| node.id == *id)
+            .expect("durable restart preserves owner and ancestor canonical identities");
+        assert_eq!(&node.owner, owner);
+        assert_eq!(&node.name, name);
+        assert_eq!(&node.semantic_kind, kind);
+    }
+    assert!(restored_graph.nodes.iter().any(|node| node.id == owner));
+    assert_eq!(
+        restored_graph
+            .nodes
+            .iter()
+            .find(|node| node.id == added)
+            .unwrap()
+            .owner,
+        Some(owner)
     );
 }

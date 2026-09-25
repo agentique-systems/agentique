@@ -604,6 +604,40 @@ mod tests {
     }
 
     #[test]
+    fn proof_preserves_restored_identity_arena_across_two_insertions() {
+        let before = parse("package System { part def Platform; part sibling; }");
+        let owner = before
+            .nodes()
+            .find(|node| node.kind() == P::PartDefinition)
+            .unwrap()
+            .id();
+        let first =
+            prove_insertion(&before, owner, &edit_for(&before, owner, "part firstChild;")).unwrap();
+        let first_part = first.added_part;
+        let restored = first.parsed.restore_identities(&first.identities).unwrap();
+        let second = prove_insertion(
+            &restored,
+            owner,
+            &edit_for(&restored, owner, "part secondChild;"),
+        )
+        .unwrap();
+        let second_part = second.added_part;
+        let twice = second
+            .parsed
+            .restore_identities(&second.identities)
+            .unwrap();
+        let ids: BTreeSet<_> = twice.nodes().map(|node| node.id()).collect();
+        assert!(restored.nodes().all(|node| ids.contains(&node.id())));
+        assert!(ids.contains(&owner));
+        assert!(ids.contains(&first_part));
+        assert!(ids.contains(&second_part));
+        assert_ne!(first_part, second_part);
+        let owner_node = twice.nodes().find(|node| node.id() == owner).unwrap();
+        assert!(owner_node.text().contains("part firstChild;"));
+        assert!(owner_node.text().contains("part secondChild;"));
+    }
+
+    #[test]
     fn proof_accepts_one_qualified_typing_but_no_hidden_declarations() {
         let syntax = parse("part def Platform { part retained; }");
         let owner = syntax

@@ -45,7 +45,7 @@ identity-transfer carrier in the normal ModelingService preparation path. Rewrit
 source checkpoint IDs and hashes outside that path would introduce an unreviewed
 identity authority surface. The exploratory command did not do this.
 
-## Minimal correct contract for a later implementation
+## Required contract
 
 A command-layer implementation could be sound only if it issues and consumes an
 explicit proof of identity reconciliation. It must be narrower than accepting an
@@ -75,10 +75,45 @@ arbitrary caller-supplied checkpoint:
    resurrect a retired declaration. Record the mapping policy in durable source
    identity history; presentation matching must never substitute for this proof.
 
-This is a proposed contract, not an implemented or accepted identity policy. The
-frozen producer/source-input files remain unchanged during runtime recovery.
-Adding CreateConnection before resolving its owner's identity would inherit the
-same risk, so connection breadth was not substituted for this defect.
+## Bounded service implementation
+
+`ModelingService::prepare_part_insertion` now implements this policy only for an
+appended, plain named PartUsage, optionally typed by one qualified name. It requires
+a Validated predecessor, exact branch head, selected authored owner provenance and
+one edit at that owner's final closing brace or semicolon. The agent's existing
+CreatePartUsage command uses this preparation path; callers supply no checkpoint,
+syntax identity map or retired-ID exceptions.
+
+The service parses the after-bytes and proves a complete one-to-one mapping of old
+production kinds and transformed ranges, with the same old child order and owners.
+The semicolon-to-body case trims only replacement wrapper trivia for productions
+that previously spanned exactly the replaced semicolon. Declaration headers and
+all disjoint source remain byte-identical. Exactly one new plain PartUsage is
+permitted and every new production must lie inside the insertion. The existing
+syntax checkpoint shape validator independently rechecks the derived arena.
+
+The service clones only the authenticated predecessor's remaining checkpoint
+fields, preserves all retired reservations, and invokes ordinary full source
+reconstruction. It then checks every old authored canonical ID, class, owner and
+declared slot value, permitting appended owned relationships only on the selected
+owner. Previous reference relationships must remain complete with the same
+targets; shadowing is rejected. The new Part must have the exact original owner.
+Ordinary validation and durable compare-and-swap remain mandatory for commit.
+
+The durable manifest records policy `agentique-source-identity/part-insertion/1`,
+before/after source and syntax-arena hashes, source revisions, owner, added syntax
+identity, and the explicit mode `full-source-reconstruction`. Validation retains
+this metadata. It is evidence of the command policy, not a new semantic authority.
+The normal durable source checkpoint stores the reconciled identities for restart.
+Frozen producer/source-input files and accepted receipts are unchanged.
+
+This solves an identity correctness prerequisite, not the requested incremental
+semantic speedup. The performance oracle compares full command preparation against
+a direct full rebuild over identical reconciled source identities. It continues
+to require exact canonical records, references, query evidence and closure identity.
+The real platform gate now requires owner and ancestor continuity, new Part owner,
+commit and durable restart; real accepted-runtime execution is still pending.
+RenameElement and CreateConnection remain unsupported.
 
 ## Actual verification boundary
 
@@ -93,7 +128,16 @@ The integration lead ran `cargo test --release --config profile.release.lto=fals
 --locked --offline -p agq-modeling-agent --lib -j 2`: all eight tests passed,
 exit 0. Both identity-churn regressions reproduced. See the exact
 [command/output receipt](checks/source-command-identity-tests.json).
+
+The first service-proof gate found a real
+semicolon wrapper-trivia mismatch (2 passed, 1 failed). After the bounded fix,
+`cargo test --locked --offline -p agq-modeling-service --lib part_insertion::tests -- --nocapture`
+passed all 3 tests, exit 0, in 2.094 seconds. The exact receipt is
+`checks/part-insertion-proof-tests-boundary.json`. A new sequential-insertion test
+reconstructs the first mapped arena before the second insertion and requires the
+first new Part's identity to remain; its test run is pending at this commit.
+
 The temporary
 Rename implementation was committed only in the isolated worktree and explicitly
 reverted before handoff; neither commit should be cherry-picked. Only the retained
-regression and this review are integration candidates.
+regression and subsequent bounded insertion implementation are integration candidates.
