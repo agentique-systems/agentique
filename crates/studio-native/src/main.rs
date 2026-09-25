@@ -12,6 +12,7 @@ mod navigation;
 mod palette_ui;
 mod panels;
 mod presentation;
+mod real_automation;
 mod real_targets;
 mod saved_views;
 mod scene_build;
@@ -50,8 +51,8 @@ pub struct Args {
     light: bool,
     #[arg(long)]
     no_restore: bool,
-    /// Exercise native input routing: the architecture vertical or stress camera fixtures.
-    #[arg(long, value_parser = ["vertical", "stress"])]
+    /// Exercise native input routing over explicit fixtures or the accepted real model.
+    #[arg(long, value_parser = ["vertical", "stress", "real", "real-restart"])]
     scenario: Option<String>,
     #[arg(
         long,
@@ -61,10 +62,20 @@ pub struct Args {
     /// Retain native screenshots and revision-qualified state at journey checkpoints.
     #[arg(long, requires = "scenario", conflicts_with = "screenshot")]
     gallery: Option<PathBuf>,
+    /// Prior real journey report, required only for the separate durable restart check.
+    #[arg(long, requires = "scenario")]
+    restart_report: Option<PathBuf>,
+    /// Real acceptance wall-time deadline including runtime restore and semantic work.
+    #[arg(long, default_value_t = 14400)]
+    scenario_timeout_seconds: u64,
 }
 
 fn main() -> eframe::Result {
     let args = Args::parse();
+    if let Err(error) = real_automation::validate_launch(&args) {
+        eprintln!("Native real acceptance launch refused: {error}");
+        std::process::exit(2);
+    }
     let options = eframe::NativeOptions {
         renderer: eframe::Renderer::Wgpu,
         wgpu_options: egui_wgpu::WgpuConfiguration {

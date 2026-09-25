@@ -441,7 +441,9 @@ impl eframe::App for StudioApp {
             }
         }
         if let Some(scenario) = &self.args.scenario {
-            let outcome = if scenario == "stress" {
+            let outcome = if matches!(scenario.as_str(), "real" | "real-restart") {
+                crate::real_automation::drive(self, ctx, input, &self.args.scenario_report)
+            } else if scenario == "stress" {
                 crate::stress_automation::drive(self, ctx, input, &self.args.scenario_report)
             } else {
                 crate::automation::drive(self, ctx, input, scenario, &self.args.scenario_report)
@@ -452,7 +454,7 @@ impl eframe::App for StudioApp {
                     ctx.send_viewport_cmd(egui::ViewportCommand::Close)
                 }
                 Err(error) => {
-                    eprintln!("Native fixture interaction FAILED: {error}");
+                    eprintln!("Native interaction FAILED: {error}");
                     std::process::exit(2);
                 }
             }
