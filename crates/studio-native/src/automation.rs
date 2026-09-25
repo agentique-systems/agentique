@@ -356,6 +356,7 @@ struct Snapshot {
     explanation_open: bool,
     dark: bool,
     high_contrast: bool,
+    reduced_motion: bool,
     status: String,
 }
 impl Snapshot {
@@ -387,6 +388,7 @@ impl Snapshot {
             explanation_open: app.show_explain,
             dark: app.theme.dark,
             high_contrast: app.theme.contrast,
+            reduced_motion: app.reduced_motion,
             status: app.status.clone(),
         }
     }
