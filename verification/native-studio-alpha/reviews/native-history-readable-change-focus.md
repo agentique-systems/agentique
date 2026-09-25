@@ -16,6 +16,8 @@ Review requires an exact matching ViewDefinition and matching scene-after revisi
 
 The follow-up indexes canonical before/after nodes and scene identities once per review/focus build, replacing per-change full-array endpoint/owner/target searches. This removes quadratic lookup work without changing record equality or claiming a measured wall-time gain. A selected canonical owner can focus its changed children; Node/Container presentation targets with the same canonical identity resolve consistently. A successful explicit runtime-open request clears old requested/deferred view intent and pending change focus, using the parent's new app fields.
 
+Independent source review found and corrected a group-choice interaction defect: choosing a group with no actionable scene target could snap back to the old selection's group on the next frame. The remembered group now records the selection at choice time, so that explicit choice survives until a new semantic selection occurs. A focused state regression covers hidden-group choice with both an existing selection and no selection, then following a changed selection.
+
 ## Checks and remaining qualification
 
 Four regression groups cover: removed-element revision and mismatched-lens/scene rejection; actual port-only and relationship-only focus with stale-target rejection; widely dispersed changes staying readable without moving any scene object or losing ghosts; and actual StudioApp focus preserving binding, ghost selection, candidate phase and both exact DTOs while doing nothing in Current/Candidate mode. These are explicit DTO/interaction tests, not substitute real semantic acceptance.

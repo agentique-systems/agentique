@@ -51,6 +51,36 @@ struct CachedReview {
     review: Arc<ChangeReview>,
 }
 
+#[derive(Clone)]
+struct RememberedGroup {
+    index: usize,
+    selection: Option<SceneTarget>,
+}
+
+fn displayed_group(
+    review: &ChangeReview,
+    selection: Option<&SceneTarget>,
+    remembered: Option<&RememberedGroup>,
+) -> usize {
+    if let Some(remembered) = remembered
+        && remembered.selection.as_ref() == selection
+    {
+        return remembered.index.min(review.groups.len().saturating_sub(1));
+    }
+    review
+        .groups
+        .iter()
+        .position(|group| {
+            group
+                .changes
+                .iter()
+                .any(|change| same_target(change.target.as_ref(), selection))
+        })
+        .or_else(|| remembered.map(|remembered| remembered.index))
+        .unwrap_or(0)
+        .min(review.groups.len().saturating_sub(1))
+}
+
 fn mark_label(mark: DiffMark) -> &'static str {
     match mark {
         DiffMark::Added => "+ Added",
@@ -540,8 +570,8 @@ impl StudioApp {
             });
             if review.groups.is_empty() { ui.label("No projected changes in this comparison."); return; }
             let key = ui.id().with(("change-review-group", self.generation, review.before.to_string(), review.after.to_string()));
-            let selected_group = review.groups.iter().position(|group| group.changes.iter().any(|change| same_target(change.target.as_ref(), self.selection.primary.as_ref())));
-            let mut index = selected_group.or_else(|| ui.ctx().data(|data| data.get_temp::<usize>(key))).unwrap_or(0).min(review.groups.len() - 1);
+            let remembered = ui.ctx().data(|data| data.get_temp::<RememberedGroup>(key));
+            let mut index = displayed_group(&review, self.selection.primary.as_ref(), remembered.as_ref());
             let previous = index;
             ui.horizontal_wrapped(|ui| {
                 egui::ComboBox::from_id_salt(key).selected_text(&review.groups[index].name).show_ui(ui, |ui| {
@@ -556,7 +586,7 @@ impl StudioApp {
                 if let Some(target) = review.groups[index].changes.iter().find_map(|change| change.target.clone()) { self.select(target, false); }
                 self.focus_change_group(&review.groups[index]);
             }
-            ui.ctx().data_mut(|data| data.insert_temp(key, index));
+            ui.ctx().data_mut(|data| data.insert_temp(key, RememberedGroup { index, selection: self.selection.primary.clone() }));
             let group = &review.groups[index];
             for change in group.changes.iter().take(3) { self.change_row(ui, change); }
             if group.changes.len() > 3 {
@@ -674,6 +704,55 @@ mod tests {
         let mut other_scene = scene.clone();
         other_scene.revision_id = before.revision_id;
         assert!(change_review(&before, &after, &other_scene).is_none());
+    }
+
+    #[test]
+    fn explicit_hidden_group_choice_survives_until_semantic_selection_changes() {
+        let (before, after) = pair();
+        let scene = scene(&before, &after);
+        let mut review = change_review(&before, &after, &scene).unwrap();
+        assert!(review.groups.len() > 1);
+        let old_selection = review.groups[0]
+            .changes
+            .iter()
+            .find_map(|change| change.target.clone())
+            .unwrap();
+        // Full-pair review retains this group although presentation excludes
+        // all its targets. Choosing it must not force an invalid scene select.
+        let hidden = review.groups.len() - 1;
+        for change in &mut review.groups[hidden].changes {
+            change.target = None;
+        }
+        let remembered = RememberedGroup {
+            index: hidden,
+            selection: Some(old_selection.clone()),
+        };
+        assert_eq!(
+            displayed_group(&review, Some(&old_selection), Some(&remembered)),
+            hidden
+        );
+        let changed_selection = review
+            .groups
+            .iter()
+            .enumerate()
+            .take(hidden)
+            .flat_map(|(index, group)| {
+                group
+                    .changes
+                    .iter()
+                    .filter_map(move |change| change.target.as_ref().map(|target| (index, target)))
+            })
+            .find(|(_, target)| **target != old_selection)
+            .unwrap();
+        assert_eq!(
+            displayed_group(&review, Some(changed_selection.1), Some(&remembered)),
+            changed_selection.0
+        );
+        let no_selection = RememberedGroup {
+            index: hidden,
+            selection: None,
+        };
+        assert_eq!(displayed_group(&review, None, Some(&no_selection)), hidden);
     }
 
     #[test]
