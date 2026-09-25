@@ -11,10 +11,16 @@ pub struct Selection {
 }
 impl Selection {
     pub fn new(revision: ProjectRevisionId) -> Self {
-        Self { revision, targets: BTreeSet::new(), primary: None }
+        Self {
+            revision,
+            targets: BTreeSet::new(),
+            primary: None,
+        }
     }
     pub fn select(&mut self, target: SceneTarget, extend: bool) {
-        if !extend { self.targets.clear(); }
+        if !extend {
+            self.targets.clear();
+        }
         if extend && self.targets.contains(&target) {
             self.targets.remove(&target);
             self.primary = self.targets.last().cloned();
@@ -23,21 +29,44 @@ impl Selection {
             self.primary = Some(target);
         }
     }
-    pub fn clear(&mut self) { self.targets.clear(); self.primary = None; }
+    pub fn clear(&mut self) {
+        self.targets.clear();
+        self.primary = None;
+    }
     pub fn element(&self, scene: &SemanticScene) -> Option<ElementId> {
+        if self.revision != scene.revision_id {
+            return None;
+        }
+        if scene.target_bounds(self.primary.as_ref()?).is_none() {
+            return None;
+        }
         match self.primary.as_ref()? {
-            SceneTarget::Edge(id) => scene.edges.iter().find(|e| e.semantic.id == *id)?.semantic.relationship_id,
+            SceneTarget::Edge(id) => {
+                scene
+                    .edges
+                    .iter()
+                    .find(|e| e.semantic.id == *id)?
+                    .semantic
+                    .relationship_id
+            }
             other => other.element_id(),
         }
     }
     pub fn contains(&self, id: ElementId) -> bool {
-        self.targets.iter().any(|target| target.element_id() == Some(id))
+        self.targets
+            .iter()
+            .any(|target| target.element_id() == Some(id))
     }
     /// Surviving identities retain selection, removed identities cannot bind stale inspection.
     pub fn reconcile(&mut self, scene: &SemanticScene) {
         self.revision = scene.revision_id;
-        self.targets.retain(|target| scene.target_bounds(target).is_some());
-        if self.primary.as_ref().is_none_or(|target| !self.targets.contains(target)) {
+        self.targets
+            .retain(|target| scene.target_bounds(target).is_some());
+        if self
+            .primary
+            .as_ref()
+            .is_none_or(|target| !self.targets.contains(target))
+        {
             self.primary = self.targets.last().cloned();
         }
     }

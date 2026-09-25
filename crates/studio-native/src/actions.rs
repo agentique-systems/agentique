@@ -1,197 +1,734 @@
-use crate::{app::{Candidate,ComparisonMode,StudioApp,fixture_projection},bridge::{Output,Work},commands::{self,CommandContext,CommandId},navigation::{Location,World}};
+use crate::{
+    app::{Candidate, ComparisonMode, StudioApp, fixture_projection},
+    bridge::{Output, Work},
+    commands::{self, CommandContext, CommandId},
+    navigation::{Location, World},
+};
 use agq_kernel::ElementId;
-use agq_modeling_view::{FeatureCounts,ViewDefinition,ViewEdge,ViewNode,ViewOrigin,RelationshipFamily};
+use agq_modeling_view::{
+    FeatureCounts, RelationshipFamily, ViewDefinition, ViewEdge, ViewNode, ViewOrigin,
+};
 use agq_modeling_workspace::ProjectRevisionId;
-use agq_studio_scene::{Point,SceneTarget,fixtures};
-use eframe::egui::{self,Key,Modifiers};
+use agq_studio_scene::{Point, SceneTarget, fixtures};
+use eframe::egui::{self, Key, Modifiers};
 use std::collections::BTreeSet;
 
 impl StudioApp {
-    pub fn context(&self)->CommandContext {
-        CommandContext {selected:self.selection.primary.is_some(),candidate:self.candidate.is_some(),validated:self.candidate.as_ref().is_some_and(|c|matches!(c.phase,Some(agq_studio_platform::CandidatePhase::Validated|agq_studio_platform::CandidatePhase::CommitUnresolved))),live:self.binding.is_some()&&self.fixture.is_none(),busy:!self.pending.is_empty()}
-    }
-    pub fn enqueue(&mut self,work:Work)->u64 {
-        match self.bridge.work(work) {Ok(id)=>{self.pending.insert(id);id},Err(e)=>{self.status=e;0}}
-    }
-    pub fn definition(&self)->ViewDefinition {
-        let mut view=match self.world {World::System=>ViewDefinition::architecture(),World::Requirements=>ViewDefinition::requirements(),_=>ViewDefinition::semantic_graph()};
-        view.focus=self.focus; view.include_standard_library=self.include_standard;
-        view.relationship_families=self.families.iter().copied().collect();
-        view
-    }
-    pub fn selected_element(&self)->Option<ElementId> {self.selection.element(&self.scene)}
-    pub fn select(&mut self,target:SceneTarget,extend:bool) {
-        self.selection.select(target,extend); self.batch_key=None;
-        self.inspector=None; self.explanation=None;self.source=None;
-        self.inspector_request=0;self.explanation_request=0;self.source_request=0;
-        if let (Some(binding),Some(element))=(self.binding,self.selected_element()) {
-            let candidate=self.visible_candidate_id();
-            // Ghosts preserve the revision they came from, including semantic inspection.
-            let revision=self.selection.primary.as_ref().and_then(|target|match target {
-                SceneTarget::Node(id)|SceneTarget::Container(id)=>self.scene.node(*id).map(|n|n.semantic.revision_id),
-                SceneTarget::Port(id)=>self.scene.ports.iter().find(|p|p.id==*id).map(|p|p.revision_id),
-                SceneTarget::Edge(id)=>self.scene.edges.iter().find(|e|e.semantic.id==*id).map(|e|e.semantic.revision_id),
-            }).unwrap_or(binding.revision);
-            let binding=agq_studio_platform::RevisionBinding {revision,..binding};
-            let candidate=candidate.filter(|_|self.candidate.as_ref().is_some_and(|c|c.after.revision_id==revision));
-            self.inspector_request=self.enqueue(Box::new(move|platform|if let Some(id)=candidate {platform.inspect_candidate(id,element).map(Output::Inspector)}else{platform.inspect(binding,element).map(Output::Inspector)}));
+    pub fn context(&self) -> CommandContext {
+        CommandContext {
+            selected: self.selection.primary.is_some(),
+            candidate: self.candidate.is_some(),
+            validated: self.candidate.as_ref().is_some_and(|c| {
+                matches!(
+                    c.phase,
+                    Some(
+                        agq_studio_platform::CandidatePhase::Validated
+                            | agq_studio_platform::CandidatePhase::CommitUnresolved
+                    )
+                )
+            }),
+            live: self.binding.is_some() && self.fixture.is_none(),
+            busy: !self.pending.is_empty(),
         }
     }
-    pub fn visible_candidate_id(&self)->Option<agq_studio_platform::CandidateId> {if self.comparison==ComparisonMode::Current {None}else{self.candidate.as_ref().and_then(|c|c.id)}}
-    pub fn record_location(&mut self) {
-        self.navigation.push(Location {revision:self.projection.revision_id,world:self.world,focus:self.focus,center:[self.camera.center.x,self.camera.center.y],zoom:self.camera.zoom});
+    pub fn work_context(&self) -> crate::bridge::WorkContext {
+        crate::bridge::WorkContext {
+            binding: self.binding,
+            candidate: self.candidate.as_ref().and_then(|c| c.id),
+            fixture: self.fixture.clone(),
+        }
     }
-    pub fn restore_location(&mut self,location:Location) {
-        // Model revisions are immutable, but may require a worker restoration.
-        self.world=location.world;self.focus=location.focus;self.expanded=None;
-        if let Some(binding)=self.binding && binding.revision!=location.revision {
-            self.binding=Some(agq_studio_platform::RevisionBinding {revision:location.revision,..binding});
+    pub fn enqueue(&mut self, work: Work) -> u64 {
+        self.enqueue_kind(work, false)
+    }
+    pub fn enqueue_mutation(&mut self, work: Work) -> u64 {
+        self.enqueue_kind(work, true)
+    }
+    fn enqueue_kind(&mut self, work: Work, mutation: bool) -> u64 {
+        let context = self.work_context();
+        match self.bridge.work(work, context, mutation) {
+            Ok(id) => {
+                self.pending.insert(id);
+                id
+            }
+            Err(e) => {
+                self.status = e;
+                0
+            }
+        }
+    }
+    pub fn allow_context_change(&mut self) -> bool {
+        if self.bridge.mutation_pending() {
+            self.status = "Wait for the model operation before changing project or revision".into();
+            return false;
+        }
+        if self.candidate.as_ref().is_some_and(|c| c.id.is_some()) {
+            self.status =
+                "Review or cancel the retained candidate before changing project or revision"
+                    .into();
+            return false;
+        }
+        true
+    }
+    pub fn invalidate_inspection(&mut self) {
+        self.inspector = None;
+        self.explanation = None;
+        self.source = None;
+        self.inspector_request = 0;
+        self.explanation_request = 0;
+        self.source_request = 0;
+    }
+    pub fn select_revision(&mut self, revision: ProjectRevisionId) {
+        if !self.allow_context_change() {
+            return;
+        }
+        self.focus = None;
+        self.expanded = None;
+        self.dependencies = None;
+        self.candidate = None;
+        self.compare_before = None;
+        self.comparison = ComparisonMode::Current;
+        self.invalidate_inspection();
+        self.scene_request = 0;
+        self.selection.clear();
+        if let Some(binding) = self.binding {
+            if !self
+                .history
+                .as_ref()
+                .is_some_and(|history| history.revisions.iter().any(|r| r.revision_id == revision))
+            {
+                self.status = "Revision is outside this project".into();
+                return;
+            }
+            self.binding = Some(agq_studio_platform::RevisionBinding {
+                revision,
+                ..binding
+            });
             self.request_projection();
-        } else {self.rebuild();}
-        self.camera.center=Point::new(location.center[0],location.center[1]);self.camera.zoom=location.zoom;self.camera_target=None;self.fit_pending=false;
-    }
-    pub fn request_projection(&mut self) {
-        if let Some(binding)=self.binding {
-            let definition=self.definition();
-            self.scene_request=self.enqueue(Box::new(move|platform|platform.project(binding,&definition).map(Output::Projection)));
-        } else {self.rebuild();}
-    }
-    pub fn switch_world(&mut self,world:World) {
-        self.navigation.update_camera([self.camera.center.x,self.camera.center.y],self.camera.zoom);
-        self.world=world;self.expanded=None;self.dependencies=None;
-        if world!=World::System {self.focus=None;}
-        if self.fixture.is_some() {
-            if world==World::Requirements {self.projection=fixtures::requirements();}
-            else if self.projection.view.kind==agq_modeling_view::ViewKind::Requirements {self.projection=fixture_projection(self.fixture.as_deref().unwrap_or("architecture"));}
+        } else {
+            let (before, after) = fixtures::revision_diff();
+            if revision == before.revision_id {
+                self.projection = before;
+            } else if revision == after.revision_id {
+                self.projection = after;
+            } else {
+                return;
+            }
             self.rebuild();
-        } else if world!=World::History {self.request_projection();}
-        self.fit_pending=true;self.record_location();
-    }
-    pub fn load_fixture(&mut self,name:&str) {
-        self.fixture=Some(name.into());self.binding=None;self.branch=None;self.history=None;
-        // Fence all outstanding read responses when entering fixture mode.
-        self.scene_request=0;self.project_request=0;self.inspector_request=0;
-        self.explanation_request=0;self.source_request=0;
-        self.projection=fixture_projection(name);self.world=if name=="requirements" {World::Requirements}else if matches!(name,"ports"|"stress1000"|"stress10000"){World::Graph}else{World::System};
-        self.focus=None;self.expanded=None;self.dependencies=None;self.candidate=None;self.compare_before=None;self.comparison=ComparisonMode::Current;self.layout=Default::default();self.selection.clear();
-        self.rebuild();self.fit_pending=true;self.ready=true;
-        if name=="diff" {self.show_fixture_diff();}
-        self.status="Visual fixture · semantic acceptance is unavailable".into();
+        }
         self.record_location();
     }
-    pub fn execute(&mut self,id:CommandId,ctx:&egui::Context) {
-        if let Some(reason)=commands::unavailable(id,&self.context()) {self.status=reason.into();return;}
+    pub fn definition(&self) -> ViewDefinition {
+        let mut view = match self.world {
+            World::System => ViewDefinition::architecture(),
+            World::Requirements => ViewDefinition::requirements(),
+            _ => ViewDefinition::semantic_graph(),
+        };
+        view.focus = self.focus;
+        view.include_standard_library = self.include_standard;
+        view.relationship_families = self.families.iter().copied().collect();
+        view
+    }
+    pub fn selected_element(&self) -> Option<ElementId> {
+        self.selection.element(&self.scene)
+    }
+    pub fn select(&mut self, target: SceneTarget, extend: bool) {
+        self.selection.select(target, extend);
+        self.batch_key = None;
+        self.inspector = None;
+        self.explanation = None;
+        self.source = None;
+        self.inspector_request = 0;
+        self.explanation_request = 0;
+        self.source_request = 0;
+        if let Some((binding, candidate, element)) = self.selected_context() {
+            self.inspector_request = self.enqueue(Box::new(move |platform| {
+                if let Some(id) = candidate {
+                    platform
+                        .inspect_candidate(id, element)
+                        .map(Output::Inspector)
+                } else {
+                    platform.inspect(binding, element).map(Output::Inspector)
+                }
+            }));
+        }
+    }
+    pub fn selected_context(
+        &self,
+    ) -> Option<(
+        agq_studio_platform::RevisionBinding,
+        Option<agq_studio_platform::CandidateId>,
+        ElementId,
+    )> {
+        let binding = self.binding?;
+        let element = self.selected_element()?;
+        let revision = match self.selection.primary.as_ref()? {
+            SceneTarget::Node(id) | SceneTarget::Container(id) => {
+                self.scene.node(*id)?.semantic.revision_id
+            }
+            SceneTarget::Port(id) => self.scene.ports.iter().find(|p| p.id == *id)?.revision_id,
+            SceneTarget::Edge(id) => {
+                self.scene
+                    .edges
+                    .iter()
+                    .find(|e| e.semantic.id == *id)?
+                    .semantic
+                    .revision_id
+            }
+        };
+        let candidate = self.visible_candidate_id().filter(|_| {
+            self.candidate
+                .as_ref()
+                .is_some_and(|c| c.after.revision_id == revision)
+        });
+        Some((
+            agq_studio_platform::RevisionBinding {
+                revision,
+                ..binding
+            },
+            candidate,
+            element,
+        ))
+    }
+    pub fn visible_candidate_id(&self) -> Option<agq_studio_platform::CandidateId> {
+        if self.comparison == ComparisonMode::Current {
+            None
+        } else {
+            self.candidate.as_ref().and_then(|c| c.id)
+        }
+    }
+    pub fn record_location(&mut self) {
+        self.navigation.push(Location {
+            revision: self.projection.revision_id,
+            world: self.world,
+            focus: self.focus,
+            center: [self.camera.center.x, self.camera.center.y],
+            zoom: self.camera.zoom,
+        });
+    }
+    pub fn restore_location(&mut self, location: Location) {
+        if self.bridge.mutation_pending() {
+            self.status = "Wait for the model operation before navigating".into();
+            return;
+        }
+        if self
+            .binding
+            .is_some_and(|binding| binding.revision != location.revision)
+            && !self.allow_context_change()
+        {
+            return;
+        }
+        // Model revisions are immutable, but may require a worker restoration.
+        self.world = location.world;
+        self.focus = location.focus;
+        self.expanded = None;
+        if let Some(binding) = self.binding
+            && binding.revision != location.revision
+        {
+            self.binding = Some(agq_studio_platform::RevisionBinding {
+                revision: location.revision,
+                ..binding
+            });
+            self.request_projection();
+        } else {
+            self.rebuild();
+        }
+        self.camera.center = Point::new(location.center[0], location.center[1]);
+        self.camera.zoom = location.zoom;
+        self.camera_target = None;
+        self.fit_pending = false;
+    }
+    pub fn request_projection(&mut self) {
+        self.invalidate_inspection();
+        if let Some(binding) = self.binding {
+            let definition = self.definition();
+            let candidate = self.visible_candidate_id();
+            self.scene_request = self.enqueue(Box::new(move |platform| {
+                if let Some(id) = candidate {
+                    platform
+                        .candidate(id, &definition)
+                        .map(Output::CandidateView)
+                } else {
+                    platform
+                        .project(binding, &definition)
+                        .map(Output::Projection)
+                }
+            }));
+        } else {
+            self.rebuild();
+        }
+    }
+    pub fn switch_world(&mut self, world: World) {
+        if self.bridge.mutation_pending() {
+            self.status = "Wait for the model operation before switching worlds".into();
+            return;
+        }
+        self.navigation.update_camera(
+            [self.camera.center.x, self.camera.center.y],
+            self.camera.zoom,
+        );
+        self.world = world;
+        self.expanded = None;
+        self.dependencies = None;
+        if world != World::System {
+            self.focus = None;
+        }
+        if self.fixture.is_some() {
+            if world == World::Requirements {
+                self.projection = fixtures::requirements();
+            } else if self.projection.view.kind == agq_modeling_view::ViewKind::Requirements {
+                self.projection =
+                    fixture_projection(self.fixture.as_deref().unwrap_or("architecture"));
+            }
+            self.rebuild();
+        } else if world != World::History {
+            self.request_projection();
+        }
+        self.fit_pending = true;
+        self.record_location();
+    }
+    pub fn load_fixture(&mut self, name: &str) {
+        if !self.allow_context_change() {
+            return;
+        }
+        self.fixture = Some(name.into());
+        self.binding = None;
+        self.branch = None;
+        self.history = None;
+        // Fence all outstanding read responses when entering fixture mode.
+        self.scene_request = 0;
+        self.project_request = 0;
+        self.inspector_request = 0;
+        self.explanation_request = 0;
+        self.source_request = 0;
+        self.navigation = Default::default();
+        self.projection = fixture_projection(name);
+        self.world = if name == "requirements" {
+            World::Requirements
+        } else if matches!(name, "ports" | "stress1000" | "stress10000") {
+            World::Graph
+        } else {
+            World::System
+        };
+        self.focus = None;
+        self.expanded = None;
+        self.dependencies = None;
+        self.candidate = None;
+        self.compare_before = None;
+        self.comparison = ComparisonMode::Current;
+        self.layout = Default::default();
+        self.selection.clear();
+        self.rebuild();
+        self.fit_pending = true;
+        self.ready = true;
+        if name == "diff" {
+            self.show_fixture_diff();
+        }
+        self.status = "Visual fixture · semantic acceptance is unavailable".into();
+        self.record_location();
+    }
+    pub fn execute(&mut self, id: CommandId, ctx: &egui::Context) {
+        if let Some(reason) = commands::unavailable(id, &self.context()) {
+            self.status = reason.into();
+            return;
+        }
         use CommandId::*;
+        if self.bridge.mutation_pending()
+            && matches!(
+                id,
+                Home | Back
+                    | Forward
+                    | Up
+                    | System
+                    | Graph
+                    | Requirements
+                    | History
+                    | Focus
+                    | Compare
+                    | Dependencies
+                    | ExpandIncoming
+                    | ExpandOutgoing
+            )
+        {
+            self.status = "Wait for the model operation before changing the view".into();
+            return;
+        }
         match id {
-            Theme=>{self.theme=crate::theme::Theme::new(!self.theme.dark,self.theme.contrast);self.theme.install(ctx);self.batch_key=None;}
-            Contrast=>{self.theme=crate::theme::Theme::new(self.theme.dark,!self.theme.contrast);self.theme.install(ctx);self.batch_key=None;}
-            ReducedMotion=>self.reduced_motion=!self.reduced_motion,
-            System=>self.switch_world(World::System),Graph=>self.switch_world(World::Graph),Requirements=>self.switch_world(World::Requirements),History=>self.switch_world(World::History),
-            Home=>{self.focus=None;self.expanded=None;self.dependencies=None;self.collapsed.clear();self.switch_world(World::System);}
-            Fit=>self.fit_pending=true,
-            Focus=>{
-                self.navigation.update_camera([self.camera.center.x,self.camera.center.y],self.camera.zoom);
-                if let Some(id)=self.selected_element() {
-                    if self.world==World::System && self.scene.node(id).is_some_and(|n|n.is_container) {self.focus=Some(id);self.request_projection();self.fit_pending=true;}
-                    else if let Some(bounds)=self.selection.primary.as_ref().and_then(|t|self.scene.target_bounds(t)) {let mut target=self.camera;target.fit(bounds,140.0);target.zoom=target.zoom.min(2.0);self.camera_target=Some(target);}
+            Theme => {
+                self.theme = crate::theme::Theme::new(!self.theme.dark, self.theme.contrast);
+                self.theme.install(ctx);
+                self.batch_key = None;
+            }
+            Contrast => {
+                self.theme = crate::theme::Theme::new(self.theme.dark, !self.theme.contrast);
+                self.theme.install(ctx);
+                self.batch_key = None;
+            }
+            ReducedMotion => self.reduced_motion = !self.reduced_motion,
+            System => self.switch_world(World::System),
+            Graph => self.switch_world(World::Graph),
+            Requirements => self.switch_world(World::Requirements),
+            History => self.switch_world(World::History),
+            Home => {
+                self.focus = None;
+                self.expanded = None;
+                self.dependencies = None;
+                self.collapsed.clear();
+                self.switch_world(World::System);
+            }
+            Fit => self.fit_pending = true,
+            Focus => {
+                self.navigation.update_camera(
+                    [self.camera.center.x, self.camera.center.y],
+                    self.camera.zoom,
+                );
+                if let Some(id) = self.selected_element() {
+                    if self.world == World::System
+                        && self.scene.node(id).is_some_and(|n| n.is_container)
+                    {
+                        self.focus = Some(id);
+                        self.request_projection();
+                        self.fit_pending = true;
+                    } else if let Some(bounds) = self
+                        .selection
+                        .primary
+                        .as_ref()
+                        .and_then(|t| self.scene.target_bounds(t))
+                    {
+                        let mut target = self.camera;
+                        target.fit(bounds, 140.0);
+                        target.zoom = target.zoom.min(2.0);
+                        self.camera_target = Some(target);
+                    }
                     self.record_location();
                 }
             }
-            Up=>{self.focus=self.focus.and_then(|id|self.projection.nodes.iter().find(|n|n.id==id).and_then(|n|n.owner));self.request_projection();self.fit_pending=true;self.record_location();}
-            Back=>{if let Some(location)=self.navigation.back(){self.restore_location(location);}}
-            Forward=>{if let Some(location)=self.navigation.forward(){self.restore_location(location);}}
-            Explain=>{
-                self.show_explain=true;self.explanation=None;
-                if let (Some(binding),Some(element))=(self.binding,self.selected_element()) {
-                    let candidate=self.visible_candidate_id();
-                    self.explanation_request=self.enqueue(Box::new(move|p|if let Some(id)=candidate {p.explain_candidate(id,element).map(Output::Explanation)}else{p.explain(binding,element).map(Output::Explanation)}));
+            Up => {
+                self.focus = self.focus.and_then(|id| {
+                    self.projection
+                        .nodes
+                        .iter()
+                        .find(|n| n.id == id)
+                        .and_then(|n| n.owner)
+                });
+                self.request_projection();
+                self.fit_pending = true;
+                self.record_location();
+            }
+            Back => {
+                if let Some(location) = self.navigation.back() {
+                    self.restore_location(location);
                 }
             }
-            Source=>{
-                self.show_source=true;
-                if let (Some(binding),Some(element))=(self.binding,self.selected_element()) {
-                    self.source_request=self.enqueue(Box::new(move|p|p.source(binding,element).map(Output::Source)));
+            Forward => {
+                if let Some(location) = self.navigation.forward() {
+                    self.restore_location(location);
                 }
             }
-            Dependencies=>{
-                if let Some(id)=self.selected_element() {
-                    self.world=World::Graph;self.focus=None;self.show_agent=true;
-                    let mut ids=BTreeSet::from([id]);
-                    for e in &self.active_projection().edges {if e.source==id || e.target==id {ids.extend([e.source,e.target]);}}
-                    // Feature ports keep their owning element visible in the temporary lens.
-                    if let Some(node)=self.active_projection().nodes.iter().find(|n|n.id==id) {ids.extend(node.features.iter().map(|f|f.id));}
-                    for e in &self.active_projection().edges {if ids.contains(&e.source)||ids.contains(&e.target){ids.extend([e.source,e.target]);}}
-                    self.dependencies=Some(ids.clone());self.expanded=None;
-                    self.rebuild();self.fit_pending=true;self.status="Temporary dependency view · model unchanged".into();
+            Explain => {
+                self.show_explain = true;
+                self.explanation = None;
+                if let Some((binding, candidate, element)) = self.selected_context() {
+                    self.explanation_request = self.enqueue(Box::new(move |p| {
+                        if let Some(id) = candidate {
+                            p.explain_candidate(id, element).map(Output::Explanation)
+                        } else {
+                            p.explain(binding, element).map(Output::Explanation)
+                        }
+                    }));
                 }
             }
-            ExpandIncoming|ExpandOutgoing|Neighbors=>{
-                if let Some(id)=self.selected_element() {
-                    let mut ids=BTreeSet::from([id]);
+            Source => {
+                self.show_source = true;
+                if let Some((binding, candidate, element)) = self.selected_context() {
+                    self.source_request = self.enqueue(Box::new(move |p| {
+                        if let Some(id) = candidate {
+                            p.source_candidate(id, element).map(Output::Source)
+                        } else {
+                            p.source(binding, element).map(Output::Source)
+                        }
+                    }));
+                }
+            }
+            Dependencies => {
+                if let Some((binding, candidate, element)) = self.selected_context() {
+                    self.world = World::Graph;
+                    self.focus = Some(element);
+                    self.show_agent = true;
+                    self.expanded = None;
+                    self.dependencies = None;
+                    self.invalidate_inspection();
+                    let families = self.families.iter().copied().collect();
+                    let standards = self.include_standard;
+                    let mut view = ViewDefinition::semantic_graph();
+                    view.focus = Some(element);
+                    view.depth = 2;
+                    view.include_standard_library = standards;
+                    view.relationship_families = families;
+                    self.scene_request = self.enqueue(Box::new(move |p| {
+                        if let Some(id) = candidate {
+                            p.candidate(id, &view).map(Output::CandidateView)
+                        } else {
+                            p.dependencies(
+                                binding,
+                                element,
+                                view.relationship_families,
+                                2,
+                                standards,
+                            )
+                            .map(Output::Projection)
+                        }
+                    }));
+                    self.status = "Querying revision-bound dependency neighborhood".into();
+                    return;
+                }
+                if let Some(id) = self.selected_element() {
+                    self.world = World::Graph;
+                    self.focus = None;
+                    self.show_agent = true;
+                    let mut ids = BTreeSet::from([id]);
                     for e in &self.active_projection().edges {
-                        if (id==Neighbors || id==ExpandOutgoing) && e.source==self.selected_element().unwrap() {ids.insert(e.target);}
-                        if (id==Neighbors || id==ExpandIncoming) && e.target==self.selected_element().unwrap() {ids.insert(e.source);}
+                        if e.source == id || e.target == id {
+                            ids.extend([e.source, e.target]);
+                        }
                     }
-                    if id==Neighbors {self.selection.replace(ids.into_iter().map(SceneTarget::Node));self.batch_key=None;}
-                    else {self.expanded.get_or_insert_with(BTreeSet::new).extend(ids);self.rebuild();}
+                    // Feature ports keep their owning element visible in the temporary lens.
+                    if let Some(node) = self.active_projection().nodes.iter().find(|n| n.id == id) {
+                        ids.extend(node.features.iter().map(|f| f.id));
+                    }
+                    for e in &self.active_projection().edges {
+                        if ids.contains(&e.source) || ids.contains(&e.target) {
+                            ids.extend([e.source, e.target]);
+                        }
+                    }
+                    self.dependencies = Some(ids.clone());
+                    self.expanded = None;
+                    self.rebuild();
+                    self.fit_pending = true;
+                    self.status = "Temporary dependency view · model unchanged".into();
                 }
             }
-            CreatePart=>{self.create_dialog=true;self.new_part_name="newPart".into();}
-            Compare=>self.compare_parent(),
-            Validate=>{if let Some(id)=self.candidate.as_ref().and_then(|c|c.id) {let view=self.definition();self.enqueue(Box::new(move|p|p.validate(id,&view).map(Output::Candidate)));}}
-            Commit=>{if let Some(id)=self.candidate.as_ref().and_then(|c|c.id) {self.enqueue(Box::new(move|p|p.commit(id).map(Output::Committed)));}}
-            Cancel=>{
-                if let Some(id)=self.candidate.as_ref().and_then(|c|c.id) {self.enqueue(Box::new(move|p|{p.cancel(id)?;Ok(Output::Cancelled)}));}
-                else {self.candidate=None;self.comparison=ComparisonMode::Current;self.rebuild();}
+            ExpandIncoming | ExpandOutgoing | Neighbors => {
+                if let Some(selected) = self.selected_element() {
+                    let mut ids = BTreeSet::from([selected]);
+                    for e in &self.active_projection().edges {
+                        if (id == Neighbors || id == ExpandOutgoing) && e.source == selected {
+                            ids.insert(e.target);
+                        }
+                        if (id == Neighbors || id == ExpandIncoming) && e.target == selected {
+                            ids.insert(e.source);
+                        }
+                    }
+                    if id == Neighbors {
+                        self.selection
+                            .replace(ids.into_iter().map(SceneTarget::Node));
+                        self.batch_key = None;
+                    } else {
+                        self.expanded.get_or_insert_with(BTreeSet::new).extend(ids);
+                        self.rebuild();
+                    }
+                }
+            }
+            CreatePart => {
+                self.create_dialog = true;
+                self.new_part_name = "newPart".into();
+            }
+            Compare => self.compare_parent(),
+            Validate => {
+                if let Some(id) = self.candidate.as_ref().and_then(|c| c.id) {
+                    let view = self.definition();
+                    self.enqueue_mutation(Box::new(move |p| {
+                        p.validate(id, &view).map(Output::Candidate)
+                    }));
+                }
+            }
+            Commit => {
+                if let Some(id) = self.candidate.as_ref().and_then(|c| c.id) {
+                    self.enqueue_mutation(Box::new(move |p| p.commit(id).map(Output::Committed)));
+                }
+            }
+            Cancel => {
+                if let Some(id) = self.candidate.as_ref().and_then(|c| c.id) {
+                    self.enqueue_mutation(Box::new(move |p| {
+                        p.cancel(id)?;
+                        Ok(Output::Cancelled)
+                    }));
+                } else {
+                    self.candidate = None;
+                    self.comparison = ComparisonMode::Current;
+                    self.rebuild();
+                }
             }
         }
     }
     pub fn prepare_part(&mut self) {
-        let Some(owner)=self.selected_element() else {return;};
-        let name=self.new_part_name.trim().to_owned();
-        if name.is_empty() {self.status="Enter a part name".into();return;}
-        if let (Some(binding),Some(branch))=(self.binding,self.branch) {
-            let context=agq_modeling_agent::AgentContext {project:binding.project,branch,revision:binding.revision,selection:vec![owner]};
-            let view=self.definition();
-            self.enqueue(crate::bridge::nested_part(context,owner,name,view));
+        let Some(owner) = self.selected_element() else {
+            return;
+        };
+        let name = self.new_part_name.trim().to_owned();
+        if name.is_empty() {
+            self.status = "Enter a part name".into();
+            return;
+        }
+        if let (Some(binding), Some(branch)) = (self.binding, self.branch) {
+            let context = agq_modeling_agent::AgentContext {
+                project: binding.project,
+                branch,
+                revision: binding.revision,
+                selection: vec![owner],
+            };
+            let view = self.definition();
+            self.enqueue_mutation(crate::bridge::nested_part(context, owner, name, view));
         } else {
             // Deterministic visual response to typed intent; no semantic reconstruction exists here.
-            let _intent=agq_modeling_agent::ModelCommand::CreatePartUsage {owner,name:name.clone(),definition:None};
-            let before=self.projection.clone();let mut after=before.clone();
-            after.revision_id=ProjectRevisionId::from_u128(before.revision_id.as_u128()+100);
-            for node in &mut after.nodes {node.revision_id=after.revision_id;}
-            for edge in &mut after.edges {edge.revision_id=after.revision_id;}
-            let id=ElementId::from_u128(0xfa11000000000000000000000000ffff);
-            after.nodes.push(ViewNode {id,revision_id:after.revision_id,semantic_kind:"PartUsage".into(),name:name.clone(),qualified_name:None,owner:Some(owner),origin:ViewOrigin::Authored,source_available:false,features:vec![],counts:FeatureCounts::default(),badges:vec!["Visual preview".into()]});
-            after.edges.push(ViewEdge {id:"fixture-candidate-ownership".into(),relationship_id:None,revision_id:after.revision_id,family:RelationshipFamily::Ownership,semantic_kind:"OwningMembership".into(),source:owner,target:id,origin:ViewOrigin::Authored,rule_id:None,label:"owns".into(),directed:true,order:0});
-            self.candidate=Some(Candidate {id:None,phase:None,before,after,source:format!("VISUAL FIXTURE — illustrative intent only\npart {name};\n\nNo source reconstruction, validation or commit has occurred.")});
-            self.comparison=ComparisonMode::Diff;self.rebuild();self.fit_pending=true;
-            self.status="Candidate visual preview · install runtime for semantic reconstruction".into();
+            let _intent = agq_modeling_agent::ModelCommand::CreatePartUsage {
+                owner,
+                name: name.clone(),
+                definition: None,
+            };
+            let before = self.projection.clone();
+            let mut after = before.clone();
+            after.revision_id = ProjectRevisionId::from_u128(before.revision_id.as_u128() + 100);
+            for node in &mut after.nodes {
+                node.revision_id = after.revision_id;
+            }
+            for edge in &mut after.edges {
+                edge.revision_id = after.revision_id;
+            }
+            let id = ElementId::from_u128(0xfa11000000000000000000000000ffff);
+            after.nodes.push(ViewNode {
+                id,
+                revision_id: after.revision_id,
+                semantic_kind: "PartUsage".into(),
+                name: name.clone(),
+                qualified_name: None,
+                owner: Some(owner),
+                origin: ViewOrigin::Authored,
+                source_available: false,
+                features: vec![],
+                counts: FeatureCounts::default(),
+                badges: vec!["Visual preview".into()],
+            });
+            after.edges.push(ViewEdge {
+                id: "fixture-candidate-ownership".into(),
+                relationship_id: None,
+                revision_id: after.revision_id,
+                family: RelationshipFamily::Ownership,
+                semantic_kind: "OwningMembership".into(),
+                source: owner,
+                target: id,
+                origin: ViewOrigin::Authored,
+                rule_id: None,
+                label: "owns".into(),
+                directed: true,
+                order: 0,
+            });
+            self.candidate = Some(Candidate {
+                id: None,
+                phase: None,
+                before,
+                after,
+                source: format!(
+                    "VISUAL FIXTURE — illustrative intent only\npart {name};\n\nNo source reconstruction, validation or commit has occurred."
+                ),
+            });
+            self.comparison = ComparisonMode::Diff;
+            self.rebuild();
+            self.fit_pending = true;
+            self.status =
+                "Candidate visual preview · install runtime for semantic reconstruction".into();
         }
-        self.create_dialog=false;
+        self.create_dialog = false;
     }
     pub fn show_fixture_diff(&mut self) {
-        let (before,after)=fixtures::revision_diff();self.projection=after;self.compare_before=Some(before);self.comparison=ComparisonMode::Diff;self.rebuild();self.fit_pending=true;
+        let (before, after) = fixtures::revision_diff();
+        self.projection = after;
+        self.compare_before = Some(before);
+        self.comparison = ComparisonMode::Diff;
+        self.rebuild();
+        self.fit_pending = true;
     }
     pub fn compare_parent(&mut self) {
-        if self.fixture.is_some() {self.show_fixture_diff();return;}
-        if let Some(binding)=self.binding && let Some(parent)=self.history.as_ref().and_then(|h|h.revisions.iter().find(|r|r.revision_id==binding.revision)).and_then(|r|r.parent_revision_id) {
-            let view=self.definition();self.scene_request=self.enqueue(Box::new(move|p|p.compare(binding.project,parent,binding.revision,&view).map(Output::Comparison)));
-        } else {self.status="This revision has no parent".into();}
+        if self.fixture.is_some() {
+            self.show_fixture_diff();
+            return;
+        }
+        if let Some(binding) = self.binding
+            && let Some(parent) = self
+                .history
+                .as_ref()
+                .and_then(|h| {
+                    h.revisions
+                        .iter()
+                        .find(|r| r.revision_id == binding.revision)
+                })
+                .and_then(|r| r.parent_revision_id)
+        {
+            let view = self.definition();
+            self.scene_request = self.enqueue(Box::new(move |p| {
+                p.compare(binding.project, parent, binding.revision, &view)
+                    .map(Output::Comparison)
+            }));
+        } else {
+            self.status = "This revision has no parent".into();
+        }
     }
-    pub fn keyboard(&mut self,ctx:&egui::Context) {
-        if ctx.input_mut(|i|i.consume_key(Modifiers::COMMAND,Key::K)) {self.palette=!self.palette;self.palette_focus=true;}
-        if ctx.input_mut(|i|i.consume_key(Modifiers::NONE,Key::Escape)) {
-            if self.palette {self.palette=false;}else if self.create_dialog {self.create_dialog=false;}else if self.show_explain||self.show_source {self.show_explain=false;self.show_source=false;}else if !self.selection.targets.is_empty(){self.selection.clear();self.inspector=None;self.batch_key=None;}else{self.execute(CommandId::Back,ctx);}return;
+    pub fn keyboard(&mut self, ctx: &egui::Context) {
+        if ctx.input_mut(|i| i.consume_key(Modifiers::COMMAND, Key::K)) {
+            self.palette = !self.palette;
+            self.palette_focus = true;
         }
-        if ctx.wants_keyboard_input() {return;}
-        for (key,modifiers,command) in [(Key::F,Modifiers::NONE,CommandId::Focus),(Key::Home,Modifiers::NONE,CommandId::Fit),(Key::D,Modifiers::NONE,CommandId::Dependencies),(Key::E,Modifiers::NONE,CommandId::Explain),(Key::N,Modifiers::NONE,CommandId::Neighbors),(Key::Num1,Modifiers::NONE,CommandId::System),(Key::Num2,Modifiers::NONE,CommandId::Graph),(Key::Num3,Modifiers::NONE,CommandId::Requirements),(Key::Num4,Modifiers::NONE,CommandId::History),(Key::ArrowLeft,Modifiers::ALT,CommandId::Back),(Key::ArrowRight,Modifiers::ALT,CommandId::Forward),(Key::ArrowUp,Modifiers::ALT,CommandId::Up)] {
-            if ctx.input_mut(|i|i.consume_key(modifiers,key)) {self.execute(command,ctx);}
+        if ctx.input_mut(|i| i.consume_key(Modifiers::NONE, Key::Escape)) {
+            if self.palette {
+                self.palette = false;
+            } else if self.create_dialog {
+                self.create_dialog = false;
+            } else if self.show_explain || self.show_source {
+                self.show_explain = false;
+                self.show_source = false;
+            } else if !self.selection.targets.is_empty() {
+                self.selection.clear();
+                self.inspector = None;
+                self.batch_key = None;
+            } else {
+                self.execute(CommandId::Back, ctx);
+            }
+            return;
         }
-        if ctx.input(|i|i.key_pressed(Key::ArrowDown)||i.key_pressed(Key::ArrowUp)) && !self.scene.nodes.is_empty() {
-            let current=self.selected_element().and_then(|id|self.scene.nodes.iter().position(|n|n.id()==id)).unwrap_or(0);
-            let next=if ctx.input(|i|i.key_pressed(Key::ArrowDown)) {(current+1)%self.scene.nodes.len()}else{(current+self.scene.nodes.len()-1)%self.scene.nodes.len()};
-            self.select(SceneTarget::Node(self.scene.nodes[next].id()),false);
+        if ctx.wants_keyboard_input() {
+            return;
+        }
+        for (key, modifiers, command) in [
+            (Key::F, Modifiers::NONE, CommandId::Focus),
+            (Key::Home, Modifiers::NONE, CommandId::Fit),
+            (Key::D, Modifiers::NONE, CommandId::Dependencies),
+            (Key::E, Modifiers::NONE, CommandId::Explain),
+            (Key::N, Modifiers::NONE, CommandId::Neighbors),
+            (Key::Num1, Modifiers::NONE, CommandId::System),
+            (Key::Num2, Modifiers::NONE, CommandId::Graph),
+            (Key::Num3, Modifiers::NONE, CommandId::Requirements),
+            (Key::Num4, Modifiers::NONE, CommandId::History),
+            (Key::ArrowLeft, Modifiers::ALT, CommandId::Back),
+            (Key::ArrowRight, Modifiers::ALT, CommandId::Forward),
+            (Key::ArrowUp, Modifiers::ALT, CommandId::Up),
+        ] {
+            if ctx.input_mut(|i| i.consume_key(modifiers, key)) {
+                self.execute(command, ctx);
+            }
+        }
+        if ctx.input(|i| i.key_pressed(Key::ArrowDown) || i.key_pressed(Key::ArrowUp))
+            && !self.scene.nodes.is_empty()
+        {
+            let current = self
+                .selected_element()
+                .and_then(|id| self.scene.nodes.iter().position(|n| n.id() == id))
+                .unwrap_or(0);
+            let next = if ctx.input(|i| i.key_pressed(Key::ArrowDown)) {
+                (current + 1) % self.scene.nodes.len()
+            } else {
+                (current + self.scene.nodes.len() - 1) % self.scene.nodes.len()
+            };
+            self.select(SceneTarget::Node(self.scene.nodes[next].id()), false);
         }
     }
 }
