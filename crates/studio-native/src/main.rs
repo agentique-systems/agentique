@@ -8,6 +8,7 @@ mod bridge;
 mod commands;
 mod gpu;
 mod gpu_timing;
+mod history;
 mod inspector;
 mod loading;
 mod navigation;

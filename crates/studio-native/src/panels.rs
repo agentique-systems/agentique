@@ -403,6 +403,9 @@ impl StudioApp {
                                 if ui.small_button("Focus changes").clicked() { self.execute(CommandId::FocusChanges, ctx); }
                             }
                         });
+                        if self.comparison == ComparisonMode::Diff {
+                            self.diff_review_panel(ui);
+                        }
                         if self.world == World::System && self.focus.is_some() {
                             let visible: std::collections::BTreeSet<_> = self.scene.nodes.iter()
                                 .flat_map(|node| std::iter::once(node.id()).chain(node.semantic.features.iter().map(|feature| feature.id)))
@@ -463,7 +466,7 @@ impl StudioApp {
                                             self.execute(command, ctx);
                                         }
                                     }
-                                    if self.expanded.is_some()
+                                    if self.comparison != ComparisonMode::Diff && self.expanded.is_some()
                                         && ui.button("Show loaded view").clicked()
                                     {
                                         self.expanded = None;
