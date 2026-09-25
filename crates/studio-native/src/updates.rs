@@ -364,7 +364,7 @@ impl StudioApp {
                     self.request_inspection();
                     self.record_location();
                     if presentation_ok {
-                        self.status = "Revision restored in process".into();
+                        self.status = "View ready".into();
                     }
                 }
                 Ok(Output::Inspector(inspector))

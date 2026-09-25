@@ -88,20 +88,14 @@ impl StudioApp {
                             self.palette = true;
                             self.palette_focus = true;
                         }
-                        ui.add_space(10.0);
-                        ui.label(
-                            RichText::new(if self.fixture.is_some() {
-                                "VISUAL FIXTURE"
-                            } else {
-                                "IN-PROCESS"
-                            })
-                            .size(CAPTION)
-                            .color(if self.fixture.is_some() {
-                                theme.amber
-                            } else {
-                                theme.green
-                            }),
-                        );
+                        if self.fixture.is_some() {
+                            ui.add_space(10.0);
+                            ui.label(
+                                RichText::new("VISUAL FIXTURE")
+                                    .size(CAPTION)
+                                    .color(theme.amber),
+                            );
+                        }
                     });
                 });
             });
@@ -126,11 +120,7 @@ impl StudioApp {
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                         ui.label(
                             muted(
-                                format!(
-                                    "{}%  ·  {:?}",
-                                    (self.camera.zoom * 100.0) as u32,
-                                    self.lod.level()
-                                ),
+                                format!("{}%", (self.camera.zoom * 100.0) as u32),
                                 theme,
                             )
                             .small(),

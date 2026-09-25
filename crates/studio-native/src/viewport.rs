@@ -749,18 +749,15 @@ impl StudioApp {
                 egui::StrokeKind::Inside,
             );
         }
-        let caption = if self.fixture.is_some() {
-            "DETERMINISTIC VISUAL FIXTURE"
-        } else {
-            "REVISION-BOUND SEMANTIC WORLD"
-        };
-        painter.text(
-            rect.left_bottom() + Vec2::new(24.0, -23.0),
-            Align2::LEFT_BOTTOM,
-            caption,
-            FontId::proportional(10.0),
-            theme.muted.gamma_multiply(0.8),
-        );
+        if self.fixture.is_some() {
+            painter.text(
+                rect.left_bottom() + Vec2::new(24.0, -23.0),
+                Align2::LEFT_BOTTOM,
+                "DETERMINISTIC VISUAL FIXTURE",
+                FontId::proportional(10.0),
+                theme.muted.gamma_multiply(0.8),
+            );
+        }
         painter.text(
             rect.right_bottom() + Vec2::new(-24.0, -23.0),
             Align2::RIGHT_BOTTOM,

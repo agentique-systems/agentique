@@ -282,7 +282,7 @@ impl StudioApp {
                                 } else if activity.complete {
                                     format!("Complete · {} result elements", activity.result_count)
                                 } else {
-                                    "Running · waiting for semantic projection".into()
+                                    "Running · building dependency view".into()
                                 },
                                 theme,
                             )
