@@ -33,9 +33,9 @@ Reports belong in ignored `verification/generated/native-studio/`.
 Register `mod automation;` in the binary. Add opt-in CLI arguments:
 
 ```rust
-#[arg(long, value_parser = ["vertical"])]
+#[arg(long, value_parser = ["vertical", "stress"])]
 scenario: Option<String>,
-#[arg(long, default_value = "verification/generated/native-studio/interaction.json")]
+#[arg(long, default_value = "verification/generated/native-studio/interaction-report.json")]
 scenario_report: PathBuf,
 ```
 
@@ -44,12 +44,20 @@ Add the ordinary eframe input hook; no new application state field is needed:
 ```rust
 fn raw_input_hook(&mut self, ctx: &egui::Context, raw: &mut egui::RawInput) {
     if let Some(name) = &self.args.scenario {
-        match crate::automation::drive(self, ctx, raw, name, &self.args.scenario_report) {
+        let outcome = if name == "stress" {
+            crate::stress_automation::drive(self, ctx, raw, &self.args.scenario_report)
+        } else {
+            crate::automation::drive(self, ctx, raw, name, &self.args.scenario_report)
+        };
+        match outcome {
             Ok(crate::automation::ScenarioStatus::Running) => {}
             Ok(crate::automation::ScenarioStatus::Complete) => {
                 ctx.send_viewport_cmd(egui::ViewportCommand::Close);
             }
-            Err(error) => panic!("Native interaction scenario failed: {error}"),
+            Err(error) => {
+                eprintln!("Native fixture interaction FAILED: {error}");
+                std::process::exit(2);
+            }
         }
     }
 }
@@ -78,7 +86,7 @@ coded screen pixels. Recording them does not invoke or bypass any widget action.
 ## Run and evaluate
 
 ```powershell
-cargo run -p agq-studio-native -- --fixture architecture --no-restore --scenario vertical --scenario-report verification/generated/native-studio/interaction.json
+cargo run --manifest-path crates/studio-native/Cargo.toml --release -- --fixture architecture --no-restore --scenario vertical --scenario-report verification/generated/native-studio/interaction-report.json
 ```
 
 The exit code must be zero **and** the report must contain `passed: true`,
@@ -86,3 +94,15 @@ The exit code must be zero **and** the report must contain `passed: true`,
 exit code and assertion summary after running it. The runner's existence or unit
 tests do not establish that the native scenario passed. The integration lead
 performs and records the actual native run.
+
+The native shell has its own Cargo workspace, so use its manifest path rather
+than `cargo run -p agq-studio-native` from the language workspace. The integration
+currently reports scenario errors and exits with code 2; a process failure must
+not be converted to a passing report by a wrapper script.
+
+Current verification status: the first three actual native runs exposed palette
+input timing, cross-object click counting and a port-identity assertion mismatch.
+Those corrections are recorded in [the quality review](quality-review.md).
+The final corrected 37-stage run is **pending** until its actual report and
+successful process exit are recorded. This runner verifies visual fixtures;
+disabled fixture validation/commit are intentional authority-boundary checks.
