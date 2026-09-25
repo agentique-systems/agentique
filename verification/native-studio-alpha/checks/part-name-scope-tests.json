@@ -1,0 +1,27 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-modeling-agent",
+    "--lib",
+    "--target-dir",
+    "C:/Users/phili/github/agentique-systems/agentique/target",
+    "--",
+    "--nocapture"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-editperf",
+  "started_utc": "2026-09-25T17:11:34.675708+00:00",
+  "elapsed_seconds": 24.484,
+  "exit_code": 101,
+  "output": "verification/native-studio-alpha/checks/part-name-scope-tests.txt",
+  "output_sha256": "d4f3ec37135f7f7862886b4acb05ce3f87050ece185c2b2ef93cd3dea3a04654",
+  "build_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "2"
+  }
+}

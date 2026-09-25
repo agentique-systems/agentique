@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "fmt",
+    "--all",
+    "--",
+    "--check"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-editperf",
+  "started_utc": "2026-09-25T17:16:42.806247+00:00",
+  "elapsed_seconds": 7.453,
+  "exit_code": 1,
+  "output": "verification/native-studio-alpha/checks/part-name-restart-fmt.txt",
+  "output_sha256": "5f28cec50fc7f5c1996c0c9678672be9b43f7f73561bbfc766d2a49f39e5a15a",
+  "build_environment": {}
+}

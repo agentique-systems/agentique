@@ -1,0 +1,18 @@
+   Compiling agq-modeling-agent v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\modeling-agent)
+    Finished `test` profile [unoptimized] target(s) in 1.64s
+     Running unittests src\lib.rs (C:/Users/phili/github/agentique-systems/agentique/target\debug\deps\agq_modeling_agent-e364bc98b4701ec2.exe)
+
+running 10 tests
+test tests::machine_proposal_cannot_grant_commit_or_validation ... ok
+test decision::tests::bounded_routing_retains_revision_and_rejects_unoffered_answers ... ok
+test commands::tests::production_name_edits_replace_selected_and_ancestor_identity ... ok
+test commands::tests::semicolon_owner_becomes_body ... ok
+test commands::tests::nested_insertion_retains_disjoint_children_but_replaces_owner_identity ... ok
+test commands::tests::command_uses_selected_declaration_range_inside_a_package ... ok
+test commands::tests::nested_source_command_ignores_comment_braces_and_preserves_bytes ... ok
+test commands::tests::nested_name_and_type_tokens_are_not_source_level_sibling_conflicts ... ok
+test commands::tests::selected_definition_check_rejects_a_valid_but_different_canonical_target ... ok
+test commands::tests::direct_owner_semantic_names_reject_siblings_but_allow_nested_reuse ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+

@@ -12,6 +12,7 @@ agq-modeling-workspace = { path = "../modeling-workspace" }
 agq-modeling-repository = { path = "../modeling-repository" }
 agq-kernel = { path = "../kernel" }
 agq-kerml = { path = "../kerml" }
+agq-kerml-semantics = { path = "../kerml-semantics" }
 agq-sysml = { path = "../sysml" }
 agq-kerml-text = { path = "../kerml-text" }
 agq-kerml-syntax = { path = "../kerml-syntax" }
@@ -20,7 +21,6 @@ serde_json.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
-agq-kerml-semantics = { path = "../kerml-semantics" }
 agq-modeling-sqlite = { path = "../../adapters/modeling-sqlite" }
 agq-standard-libraries = { path = "../standard-libraries" }
 tempfile.workspace = true

@@ -1,4 +1,5 @@
 use crate::{AgentContext, AgentError, AgentPolicy, Authority};
+use agq_kerml_semantics::{Completeness, KerMlQueries, MemberAccess};
 use agq_kerml_syntax::{TextEdit, TokenKind, production};
 use agq_kerml_text::ProjectChange;
 use agq_kernel::{ElementId, provenance::ByteRange};
@@ -140,6 +141,11 @@ pub fn propose(
         .ok_or_else(|| {
             AgentError::Invalid("owner declaration cannot be reconciled to source".into())
         })?;
+    let queries = bound
+        .revision()
+        .kerml_queries()
+        .map_err(|error| AgentError::Invalid(format!("owner name query unavailable: {error:?}")))?;
+    ensure_distinct_direct_member(&queries, *owner, name)?;
     let type_name = definition
         .map(|id| {
             let target = bound.current_element(id)?;
@@ -294,6 +300,34 @@ fn identifier(name: &str) -> bool {
         && name.len() <= 120
 }
 
+/// Check actual direct-owner membership names (including aliases/short names).
+/// A grandchild name or a type-name token in source is not a sibling conflict.
+/// Inherited/imported bindings and shadowing are checked by service reconstruction.
+fn ensure_distinct_direct_member(
+    queries: &KerMlQueries<'_>,
+    owner: ElementId,
+    name: &str,
+) -> Result<(), AgentError> {
+    let owned = queries.memberships(owner);
+    let named = queries.lookup_member(owner, name, MemberAccess::All);
+    if owned.completeness != Completeness::Complete || named.completeness != Completeness::Complete
+    {
+        return Err(AgentError::Invalid(
+            "direct-owner member names could not be established completely".into(),
+        ));
+    }
+    if named
+        .value
+        .iter()
+        .any(|member| owned.value.contains(&member.membership))
+    {
+        return Err(AgentError::Invalid(
+            "a direct member already has this name; choose a distinct part name".into(),
+        ));
+    }
+    Ok(())
+}
+
 fn nested_part_edit(
     syntax: &production::Document,
     owner: ByteRange,
@@ -317,11 +351,6 @@ fn nested_part_edit(
             )
         })
         .collect();
-    if tokens.iter().any(|token| syntax.token_text(token) == name) {
-        return Err(AgentError::Invalid(
-            "name already occurs in the selected declaration; choose a distinct part name".into(),
-        ));
-    }
     let last = tokens
         .last()
         .ok_or_else(|| AgentError::Invalid("empty source declaration".into()))?;
@@ -407,7 +436,6 @@ mod tests {
         let edited = apply(source, "observer").unwrap();
         assert!(edited.contains("// } not the body end\r\n    part existing;"));
         assert!(edited.contains("part observer;\r\n}"));
-        assert!(apply(source, "existing").is_err());
         assert!(apply(source, "injected; part bad").is_err());
         assert!(apply(source, "part").is_err());
     }
@@ -418,6 +446,129 @@ mod tests {
                 .unwrap()
                 .contains("part component {\n    part child;\n}")
         );
+    }
+
+    #[test]
+    fn nested_name_and_type_tokens_are_not_source_level_sibling_conflicts() {
+        let nested = "part def Platform { part subsystem { part observer; } }";
+        let edited = apply(nested, "observer").unwrap();
+        assert_eq!(edited.matches("part observer;").count(), 2);
+        let typed = "part def Platform { part existing : Devices::Sensor; }";
+        assert!(apply(typed, "Sensor").unwrap().contains("part Sensor;"));
+    }
+
+    #[test]
+    fn direct_owner_semantic_names_reject_siblings_but_allow_nested_reuse() {
+        use agq_kerml::properties as p;
+        use agq_kerml_semantics::{SemanticContext, SemanticOptions};
+        use agq_kernel::{
+            Snapshot,
+            provenance::DeclaredOrigin,
+            value::{SlotValue, Value},
+        };
+        use std::{collections::BTreeSet, sync::Arc};
+        let origin = DeclaredOrigin::Authored { source: None };
+        let base = Snapshot::new(Arc::new(
+            agq_sysml::registry_for_profile(agq_kerml::BaselineProfile::OPERATIONAL_V9).unwrap(),
+        ));
+        let owner = ElementId::new();
+        let subsystem = ElementId::new();
+        let observer = ElementId::new();
+        let outer_membership = ElementId::new();
+        let inner_membership = ElementId::new();
+        let mut changes = base.change_set();
+        changes.create(owner, agq_sysml::classes::PART_DEFINITION, origin.clone());
+        for (namespace, membership, member, name) in [
+            (owner, outer_membership, subsystem, "subsystem"),
+            (subsystem, inner_membership, observer, "observer"),
+        ] {
+            changes.create(member, agq_sysml::classes::PART_USAGE, origin.clone());
+            changes.create(
+                membership,
+                agq_kerml::classes::FEATURE_MEMBERSHIP,
+                origin.clone(),
+            );
+            changes.set(
+                member,
+                p::FEATURE_IS_END,
+                SlotValue::Scalar(Value::Boolean(false)),
+                origin.clone(),
+            );
+            let registry = base.model().registry();
+            let agq_kernel::metamodel::ValueKind::Enumeration(domain) = registry
+                .storage_kind(
+                    registry
+                        .property(p::MEMBERSHIP_VISIBILITY)
+                        .unwrap()
+                        .value_kind,
+                )
+                .unwrap()
+            else {
+                panic!("membership visibility enum")
+            };
+            let visibility = registry
+                .enumeration(domain)
+                .unwrap()
+                .literals
+                .iter()
+                .find(|(_, name)| name.as_str() == "public")
+                .unwrap()
+                .0;
+            changes.set(
+                membership,
+                p::MEMBERSHIP_VISIBILITY,
+                SlotValue::Scalar(Value::Enumeration(*visibility)),
+                origin.clone(),
+            );
+            changes.set(
+                member,
+                p::ELEMENT_DECLARED_NAME,
+                SlotValue::Scalar(Value::String(name.into())),
+                origin.clone(),
+            );
+            changes.set(
+                namespace,
+                p::ELEMENT_OWNED_RELATIONSHIP,
+                SlotValue::Ordered(vec![Value::Reference(membership)]),
+                origin.clone(),
+            );
+            changes.set(
+                membership,
+                p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+                SlotValue::Ordered(vec![Value::Reference(member)]),
+                origin.clone(),
+            );
+        }
+        changes.set(
+            subsystem,
+            p::ELEMENT_DECLARED_SHORT_NAME,
+            SlotValue::Scalar(Value::String("sub".into())),
+            origin,
+        );
+        let model = base.preview(&changes).unwrap();
+        let context = SemanticContext::for_construction(
+            &model,
+            SemanticOptions {
+                baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V9,
+                ..Default::default()
+            },
+            BTreeSet::new(),
+        )
+        .unwrap();
+        let queries = KerMlQueries::new(context);
+        let owned = queries.memberships(owner);
+        let named = queries.lookup_member(owner, "observer", MemberAccess::All);
+        assert!(
+            ensure_distinct_direct_member(&queries, owner, "observer").is_ok(),
+            "owned={:?} {:?}; named={:?} {:?}",
+            owned.completeness,
+            owned.diagnostics,
+            named.completeness,
+            named.diagnostics
+        );
+        assert!(ensure_distinct_direct_member(&queries, owner, "subsystem").is_err());
+        assert!(ensure_distinct_direct_member(&queries, owner, "sub").is_err());
+        assert!(ensure_distinct_direct_member(&queries, subsystem, "observer").is_err());
     }
 
     #[test]

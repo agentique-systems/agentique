@@ -1,0 +1,30 @@
+{
+  "command": [
+    "cargo",
+    "clippy",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-modeling-agent",
+    "-p",
+    "agq-studio-platform",
+    "--all-targets",
+    "--target-dir",
+    "C:/Users/phili/github/agentique-systems/agentique/target",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-editperf",
+  "started_utc": "2026-09-25T17:19:08.915434+00:00",
+  "elapsed_seconds": 2.375,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/part-name-restart-clippy-fixed.txt",
+  "output_sha256": "b1ef3bfb8dcd2c690d6f3686f142b788397de4abe4bbf4c2a0766e820f414364",
+  "build_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "2"
+  }
+}

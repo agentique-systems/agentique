@@ -267,4 +267,135 @@ fn native_in_process_self_model_candidate_commit_and_restore() {
             .owner,
         Some(owner)
     );
+
+    // The normal restart above may use its authenticated project graph cache.
+    // Independently force durable source/checkpoint restoration in this isolated
+    // test database; accepted standard caches, source blobs and manifests stay intact.
+    let cache_digest = committed.semantic_cache.as_ref().unwrap().content_digest;
+    assert_ne!(cache_digest, committed.checkpoint_digest);
+    assert!(
+        committed
+            .documents
+            .iter()
+            .all(|document| document.content_digest != cache_digest)
+    );
+    drop(restored);
+    let database = rusqlite::Connection::open(&config.database).unwrap();
+    assert_eq!(
+        database
+            .execute("DELETE FROM blobs WHERE digest=?1", [cache_digest.hex()])
+            .unwrap(),
+        1
+    );
+    drop(database);
+
+    let runtime = agq_runtime_publications::load(&config.runtime, &config.root, |_| {}).unwrap();
+    let repository =
+        std::sync::Arc::new(agq_modeling_sqlite::SqliteRepository::open(&config.database).unwrap());
+    let service = std::sync::Arc::new(agq_modeling_service::ModelingService::new(
+        repository,
+        runtime.systems,
+        8,
+    ));
+    let from_source = service
+        .resolve(
+            project.id,
+            agq_modeling_service::RevisionSelector::Revision(receipt.revision_id),
+        )
+        .unwrap();
+    assert_eq!(
+        from_source.load_path(),
+        agq_modeling_service::RevisionLoadPath::DurableSource
+    );
+    assert!(
+        from_source.validated().is_some(),
+        "source replay repeats the ordinary validation gate"
+    );
+    let mut source_platform = agq_studio_platform::StudioPlatform::new(
+        service,
+        agq_modeling_agent::AgentPolicy::operator(),
+    );
+    assert_eq!(
+        source_platform
+            .project(restored_binding, &definition)
+            .unwrap(),
+        restored_graph,
+        "source-only restart retains exact semantic projection identities"
+    );
+
+    let second = source_platform
+        .propose(
+            AgentContext {
+                project: project.id,
+                branch: project.default_branch,
+                revision: receipt.revision_id,
+                selection: vec![added],
+            },
+            ModelCommand::CreatePartUsage {
+                // The first new part ended with a semicolon. This second command
+                // expands that body, testing both owner forms across a restart.
+                owner: added,
+                name: "afterRestartObserver".into(),
+                definition: Some(
+                    graph
+                        .nodes
+                        .iter()
+                        .find(|node| {
+                            node.name == "ModelRepository" && node.semantic_kind == "PartDefinition"
+                        })
+                        .unwrap()
+                        .id,
+                ),
+            },
+            &definition,
+        )
+        .unwrap();
+    assert_eq!(second.phase, CandidatePhase::Working);
+    for (id, expected_owner, name, kind) in &preserved_hierarchy {
+        let node = second
+            .projection
+            .nodes
+            .iter()
+            .find(|node| node.id == *id)
+            .expect("second insertion preserves the original hierarchy");
+        assert_eq!(&node.owner, expected_owner);
+        assert_eq!(&node.name, name);
+        assert_eq!(&node.semantic_kind, kind);
+    }
+    let first_part = second
+        .projection
+        .nodes
+        .iter()
+        .find(|node| node.id == added)
+        .expect("second insertion retains the first inserted identity");
+    assert_eq!(first_part.owner, Some(owner));
+    let second_added = second
+        .projection
+        .nodes
+        .iter()
+        .find(|node| node.name == "afterRestartObserver")
+        .unwrap();
+    assert_ne!(second_added.id, added);
+    assert_eq!(second_added.owner, Some(added));
+    source_platform.validate(second.id, &definition).unwrap();
+    let second_receipt = source_platform.commit(second.id).unwrap();
+    assert_ne!(second_receipt.revision_id, receipt.revision_id);
+    assert_eq!(
+        source_platform
+            .project(restored_binding, &definition)
+            .unwrap(),
+        restored_graph,
+        "the source-restored predecessor remains immutable after a second commit"
+    );
+    assert_eq!(
+        source_platform
+            .history(project.id)
+            .unwrap()
+            .branches
+            .iter()
+            .find(|branch| branch.id == project.default_branch)
+            .unwrap()
+            .head,
+        second_receipt.revision_id
+    );
 }

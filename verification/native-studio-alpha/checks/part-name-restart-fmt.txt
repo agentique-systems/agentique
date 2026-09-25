@@ -1,0 +1,15 @@
+Diff in \\?\C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\modeling-service\src\part_insertion.rs:611:
+             .find(|node| node.kind() == P::PartDefinition)
+             .unwrap()
+             .id();
+-        let first =
+-            prove_insertion(&before, owner, &edit_for(&before, owner, "part firstChild;")).unwrap();
++        let first = prove_insertion(
++            &before,
++            owner,
++            &edit_for(&before, owner, "part firstChild;"),
++        )
++        .unwrap();
+         let first_part = first.added_part;
+         let restored = first.parsed.restore_identities(&first.identities).unwrap();
+         let second = prove_insertion(

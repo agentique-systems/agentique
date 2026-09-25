@@ -1,0 +1,19 @@
+   Compiling agq-modeling-agent v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\modeling-agent)
+    Finished `test` profile [unoptimized] target(s) in 1.38s
+     Running unittests src\lib.rs (C:/Users/phili/github/agentique-systems/agentique/target\debug\deps\agq_modeling_agent-e364bc98b4701ec2.exe)
+
+running 1 test
+
+thread 'commands::tests::direct_owner_semantic_names_reject_siblings_but_allow_nested_reuse' (4700) panicked at crates\modeling-agent\src\commands.rs:529:9:
+owned=Complete {}; named=Incomplete {Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(6336535081129326565628430368692261328), message: "Required property 002548b0-653b-546a-abb6-5b5c21359a5e is pending structural construction" }, Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(128027888447538149789454547326650198753), message: "Required property 007092e9-5bfe-5b87-95b1-09d80e23148e is pending structural construction" }}
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test commands::tests::direct_owner_semantic_names_reject_siblings_but_allow_nested_reuse ... FAILED
+
+failures:
+
+failures:
+    commands::tests::direct_owner_semantic_names_reject_siblings_but_allow_nested_reuse
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 9 filtered out; finished in 0.16s
+
+error: test failed, to rerun pass `-p agq-modeling-agent --lib`

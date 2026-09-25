@@ -1,0 +1,35 @@
+   Compiling syn v3.0.5
+   Compiling windows-sys v0.61.2
+   Compiling anstyle-wincon v3.0.11
+   Compiling anstyle-query v1.1.5
+   Compiling anstream v1.0.0
+   Compiling clap_builder v4.6.7
+   Compiling serde_derive v1.0.229
+   Compiling thiserror-impl v2.0.20
+   Compiling thiserror v2.0.20
+   Compiling displaydoc v0.2.7
+   Compiling zip v2.4.2
+   Compiling serde v1.0.229
+   Compiling num-bigint v0.4.8
+   Compiling chrono v0.4.45
+   Compiling agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\kernel)
+   Compiling clap_derive v4.6.7
+   Compiling tempfile v3.27.0
+   Compiling clap v4.6.7
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\kerml)
+   Compiling agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\sysml)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\kerml-semantics)
+   Compiling agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\standard-libraries)
+   Compiling agq-sysml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\sysml-semantics)
+   Compiling agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\kerml-syntax)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\kerml-text)
+   Compiling agq-modeling-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\modeling-workspace)
+   Compiling agq-modeling-repository v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\modeling-repository)
+   Compiling agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\modeling-service)
+   Compiling agq-modeling-view v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\modeling-view)
+   Compiling agq-modeling-agent v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\modeling-agent)
+   Compiling agq-modeling-sqlite v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\adapters\modeling-sqlite)
+   Compiling agq-runtime-publications v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\runtime-publications)
+   Compiling agq-studio-platform v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\studio-platform)
+    Finished `test` profile [unoptimized] target(s) in 54.60s
+  Executable tests\real_model.rs (C:/Users/phili/github/agentique-systems/agentique/target\debug\deps\real_model-3a1f2ae1b5180e10.exe)
