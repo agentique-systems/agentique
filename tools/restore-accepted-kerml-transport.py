@@ -24,7 +24,8 @@ def check_receipt(authority, candidate):
     for field in ("graph_sha256", "graph_bytes"):
         comparable["complete_overlay"][field] = authority["complete_overlay"][field]
     comparable["complete_overlay"]["identity"]["revision"] = authority["complete_overlay"]["identity"]["revision"]
-    if comparable != authority:
+    # Python equates True with 1; accepted JSON identities must preserve types.
+    if json.dumps(comparable, sort_keys=True) != json.dumps(authority, sort_keys=True):
         raise ValueError("Rematerialized receipt differs from accepted semantic/capability contract")
 
 

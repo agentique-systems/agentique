@@ -56,6 +56,12 @@ class SystemsContractComparison(unittest.TestCase):
     def test_complete_binding_manifest_must_match(self):
         self.assertFalse(self.compare({"anchors": []})["accepted_bindings_equal"])
 
+    def test_json_identity_preserves_number_and_boolean_types(self):
+        self.generated["identity"]["semantic_digest"][0] = True
+        self.assertFalse(self.compare()["semantic_contract_equal"])
+        self.generated["identity"]["semantic_digest"][0] = 1.0
+        self.assertFalse(self.compare()["semantic_contract_equal"])
+
     def test_transport_receipt_shape_stays_exact(self):
         for mutation in (None, {}, {"attacker": {"bytes": 5, "sha256": [2] * 32}}):
             self.generated["entries"] = mutation
@@ -115,6 +121,12 @@ class ExactTransportRecovery(unittest.TestCase):
 
     def test_semantic_mismatch_cannot_be_labeled_transport(self):
         self.candidate["complete_overlay"]["identity"]["semantic_digest"][0] ^= 1
+        with self.assertRaisesRegex(ValueError, "semantic/capability"):
+            self.restore()
+        self.assertFalse(self.output.exists())
+
+    def test_json_boolean_cannot_replace_digest_integer(self):
+        self.candidate["binding_manifest_sha256"][0] = True
         with self.assertRaisesRegex(ValueError, "semantic/capability"):
             self.restore()
         self.assertFalse(self.output.exists())
