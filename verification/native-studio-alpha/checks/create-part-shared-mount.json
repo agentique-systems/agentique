@@ -1,0 +1,20 @@
+{
+  "command": [
+    "python",
+    "verification/scripts/measure-phase2-frontend.py",
+    "verification/native-studio-alpha/performance/create-part-shared-mount.json",
+    "target/release/deps/create_part_performance-10efcec309eb5e00.exe",
+    "create_part_command_matches_full_self_model_reconstruction",
+    "--exact",
+    "--ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T21:17:06.757785+00:00",
+  "elapsed_seconds": 626.953,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/create-part-shared-mount.txt",
+  "output_sha256": "57edea51746b6ac8d31230fcd59c9794209da678b678665d4a1c21e82f34f606",
+  "build_environment": {}
+}
