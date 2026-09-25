@@ -20,6 +20,75 @@ pub struct Session {
     pub high_contrast: bool,
     pub reduced_motion: bool,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct SessionFile(std::path::PathBuf);
+    impl Drop for SessionFile {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_file(&self.0);
+        }
+    }
+    fn temporary() -> SessionFile {
+        SessionFile(std::env::temp_dir().join(format!(
+            "agq-native-session-{}.json",
+            ProjectRevisionId::new()
+        )))
+    }
+
+    #[test]
+    fn oversized_or_future_session_is_rejected_without_touching_model_state() {
+        let path = temporary();
+        std::fs::File::create(&path.0)
+            .unwrap()
+            .set_len(8 * 1024 * 1024 + 1)
+            .unwrap();
+        assert!(Session::load(&path.0).is_none());
+        let session = Session {
+            version: 99,
+            project: None,
+            revision: ProjectRevisionId::new(),
+            fixture: Some("architecture".into()),
+            world: World::System,
+            focus: None,
+            camera: Camera2D::default(),
+            layout: LayoutMemory::default(),
+            dark: true,
+            high_contrast: false,
+            reduced_motion: true,
+        };
+        session.save(&path.0).unwrap();
+        assert!(Session::load(&path.0).is_none());
+    }
+
+    #[test]
+    fn session_roundtrip_preserves_presentation_and_rejects_unsafe_camera() {
+        let path = temporary();
+        let mut session = Session {
+            version: 1,
+            project: None,
+            revision: ProjectRevisionId::new(),
+            fixture: Some("architecture".into()),
+            world: World::Graph,
+            focus: None,
+            camera: Camera2D::default(),
+            layout: LayoutMemory::default(),
+            dark: false,
+            high_contrast: true,
+            reduced_motion: true,
+        };
+        session.save(&path.0).unwrap();
+        let restored = Session::load(&path.0).unwrap();
+        assert_eq!(restored.revision, session.revision);
+        assert_eq!(restored.world, World::Graph);
+        assert!(restored.high_contrast);
+        session.camera.zoom = Camera2D::MAX_ZOOM + 1.0;
+        session.save(&path.0).unwrap();
+        assert!(Session::load(&path.0).is_none());
+    }
+}
 impl Session {
     pub fn load(path: &Path) -> Option<Self> {
         use std::io::Read;

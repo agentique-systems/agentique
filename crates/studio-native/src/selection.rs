@@ -9,6 +9,29 @@ pub struct Selection {
     pub targets: BTreeSet<SceneTarget>,
     pub primary: Option<SceneTarget>,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use agq_studio_scene::{SceneOptions, fixtures};
+
+    #[test]
+    fn stale_revision_or_missing_target_cannot_become_an_inspector_request() {
+        let projection = fixtures::architecture();
+        let scene =
+            SemanticScene::from_projection(&projection, &SceneOptions::default(), None).unwrap();
+        let first = scene.nodes[0].id();
+        let mut selection = Selection::new(ProjectRevisionId::new());
+        selection.select(SceneTarget::Node(first), false);
+        assert_eq!(selection.element(&scene), None);
+        selection.reconcile(&scene);
+        assert_eq!(selection.element(&scene), Some(first));
+        selection.select(SceneTarget::Node(ElementId::from_u128(u128::MAX)), false);
+        assert_eq!(selection.element(&scene), None);
+        selection.reconcile(&scene);
+        assert!(selection.primary.is_none());
+    }
+}
 impl Selection {
     pub fn new(revision: ProjectRevisionId) -> Self {
         Self {

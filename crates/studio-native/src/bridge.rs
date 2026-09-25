@@ -24,7 +24,7 @@ pub enum Output {
     Source(SourceProjection),
     Comparison(ComparisonProjection),
     Candidate(CandidateProjection),
-    CandidateView(CandidateProjection),
+    CandidateView(CandidateProjection, ViewProjection),
     Committed(CommitReceipt),
     Cancelled,
 }
@@ -196,6 +196,18 @@ pub fn nested_part(
     })
 }
 
+/// Compare a candidate and its base through the same lens; world changes cannot
+/// manufacture apparent removals by comparing two different selection scopes.
+pub fn candidate_view(
+    platform: &mut StudioPlatform,
+    id: CandidateId,
+    view: &agq_modeling_view::ViewDefinition,
+) -> agq_studio_platform::Result<Output> {
+    let candidate = platform.candidate(id, view)?;
+    let before = platform.project(candidate.base, view)?;
+    Ok(Output::CandidateView(candidate, before))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -225,5 +237,68 @@ mod tests {
         changed.candidate =
             Some(serde_json::from_str("\"00000000-0000-0000-0000-000000000001\"").unwrap());
         assert!(!scope.matches(&changed));
+    }
+
+    #[test]
+    fn unresolved_worker_request_blocks_runtime_switch_and_keeps_its_context() {
+        let mut bridge = Bridge::new(egui::Context::default());
+        let scope = WorkContext {
+            binding: None,
+            candidate: None,
+            fixture: None,
+        };
+        let id = bridge
+            .work(
+                Box::new(|_| panic!("work ran without authenticated service")),
+                scope.clone(),
+                true,
+            )
+            .unwrap();
+        assert!(bridge.mutation_pending());
+        let config = NativeConfig::for_root(
+            std::env::temp_dir(),
+            Some(std::env::temp_dir().join("agq-missing-test-runtime")),
+        )
+        .unwrap();
+        assert!(bridge.open(config, None).is_err());
+        let reply = bridge
+            .replies
+            .recv_timeout(std::time::Duration::from_secs(5))
+            .unwrap();
+        assert_eq!(reply.request, id);
+        assert_eq!(reply.context, Some(scope));
+        assert!(reply.terminal);
+        assert!(reply.mutation);
+        assert!(reply.result.is_err());
+        bridge.complete(reply.request);
+        assert!(!bridge.mutation_pending());
+    }
+
+    #[test]
+    fn failed_bootstrap_emits_nonterminal_progress_before_terminal_error() {
+        let mut bridge = Bridge::new(egui::Context::default());
+        let missing = std::env::temp_dir().join(format!(
+            "absent-native-runtime-{}",
+            ProjectRevisionId::new()
+        ));
+        let mut config = NativeConfig::for_root(missing.clone(), Some(missing.clone())).unwrap();
+        config.runtime.bundle = Some(missing.join("runtime.agq-runtime"));
+        let id = bridge.open(config, None).unwrap();
+        let mut progress = false;
+        loop {
+            let reply = bridge
+                .replies
+                .recv_timeout(std::time::Duration::from_secs(5))
+                .unwrap();
+            assert_eq!(reply.request, id);
+            assert!(bridge.current_open(id));
+            if reply.terminal {
+                assert!(reply.result.is_err());
+                break;
+            }
+            assert!(matches!(reply.result, Ok(Output::Progress(_))));
+            progress = true;
+        }
+        assert!(progress);
     }
 }

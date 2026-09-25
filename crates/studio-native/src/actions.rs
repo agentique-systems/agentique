@@ -245,9 +245,7 @@ impl StudioApp {
             let candidate = self.visible_candidate_id();
             self.scene_request = self.enqueue(Box::new(move |platform| {
                 if let Some(id) = candidate {
-                    platform
-                        .candidate(id, &definition)
-                        .map(Output::CandidateView)
+                    crate::bridge::candidate_view(platform, id, &definition)
                 } else {
                     platform
                         .project(binding, &definition)
@@ -468,7 +466,7 @@ impl StudioApp {
                     view.relationship_families = families;
                     self.scene_request = self.enqueue(Box::new(move |p| {
                         if let Some(id) = candidate {
-                            p.candidate(id, &view).map(Output::CandidateView)
+                            crate::bridge::candidate_view(p, id, &view)
                         } else {
                             p.dependencies(
                                 binding,
@@ -563,6 +561,10 @@ impl StudioApp {
         }
     }
     pub fn prepare_part(&mut self) {
+        if let Some(reason) = commands::unavailable(CommandId::CreatePart, &self.context()) {
+            self.status = reason.into();
+            return;
+        }
         let Some(owner) = self.selected_element() else {
             return;
         };

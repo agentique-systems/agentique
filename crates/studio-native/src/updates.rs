@@ -33,7 +33,7 @@ impl StudioApp {
                     {
                         let view = self.definition();
                         self.scene_request = self.enqueue(Box::new(move |p| {
-                            p.candidate(id, &view).map(Output::CandidateView)
+                            crate::bridge::candidate_view(p, id, &view)
                         }));
                     }
                 }
@@ -185,7 +185,7 @@ impl StudioApp {
                     self.fit_pending = true;
                     self.status = "Candidate revision ready for review".into();
                 }
-                Ok(Output::CandidateView(candidate))
+                Ok(Output::CandidateView(candidate, before))
                     if reply.request == self.scene_request
                         && self.binding == Some(candidate.base)
                         && self
@@ -194,6 +194,7 @@ impl StudioApp {
                             .is_some_and(|current| current.id == Some(candidate.id)) =>
                 {
                     if let Some(current) = &mut self.candidate {
+                        current.before = before;
                         current.after = candidate.projection;
                         current.phase = Some(candidate.phase);
                     }
