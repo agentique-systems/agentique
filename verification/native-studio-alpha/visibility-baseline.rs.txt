@@ -1,0 +1,88 @@
+//! CPU-only visibility characterization. No semantic or GPU latency claim.
+use agq_studio_scene::{Rect, SceneLookup, SceneOptions, SemanticScene, SpatialIndex, fixtures};
+use std::{
+    collections::hash_map::DefaultHasher,
+    hash::{Hash, Hasher},
+    time::Instant,
+};
+
+fn summary(values: &mut [f64]) -> serde_json::Value {
+    values.sort_by(f64::total_cmp);
+    serde_json::json!({
+        "samples": values.len(),
+        "median_us": values[values.len()/2],
+        "p95_us": values[((values.len() as f64 * 0.95).ceil() as usize - 1).min(values.len()-1)],
+    })
+}
+
+fn main() {
+    for count in [1_000, 10_000] {
+        let projection = fixtures::stress(count, count * 2);
+        let scene = SemanticScene::from_projection(
+            &projection,
+            &SceneOptions {
+                hierarchy: false,
+                ..Default::default()
+            },
+            None,
+        )
+        .unwrap();
+        let started = Instant::now();
+        let spatial = SpatialIndex::build(&scene);
+        let spatial_build_ms = started.elapsed().as_secs_f64() * 1000.0;
+        let lookup = SceneLookup::build(&scene);
+        for (trace, fraction) in [("fit", 1.0), ("pan", 0.85), ("zoom", 0.3)] {
+            let bounds = scene.bounds();
+            let width = bounds.width() * fraction;
+            let height = bounds.height() * fraction;
+            let rectangles: Vec<_> = (0..120)
+                .map(|i| {
+                    let position = i as f32 / 119.0;
+                    Rect::new(
+                        bounds.min.x + (bounds.width() - width) * position,
+                        bounds.min.y + (bounds.height() - height) * (1.0 - position),
+                        width,
+                        height,
+                    )
+                })
+                .collect();
+            // Warm the same real API before retaining samples.
+            for &rect in rectangles.iter().take(12) {
+                let targets = spatial.visible(rect);
+                std::hint::black_box(lookup.visible(&scene, &targets));
+            }
+            let mut total = Vec::new();
+            let mut cull = Vec::new();
+            let mut resolve = Vec::new();
+            let mut hash = Vec::new();
+            let mut objects_total = 0;
+            for &rect in &rectangles {
+                let started = Instant::now();
+                let targets = spatial.visible(rect);
+                let after_cull = Instant::now();
+                let objects = lookup.visible(&scene, &targets);
+                let after_resolve = Instant::now();
+                let mut hasher = DefaultHasher::new();
+                targets.hash(&mut hasher);
+                std::hint::black_box(hasher.finish());
+                let after_hash = Instant::now();
+                total.push((after_hash - started).as_secs_f64() * 1e6);
+                cull.push((after_cull - started).as_secs_f64() * 1e6);
+                resolve.push((after_resolve - after_cull).as_secs_f64() * 1e6);
+                hash.push((after_hash - after_resolve).as_secs_f64() * 1e6);
+                objects_total += objects.nodes.len() + objects.ports.len() + objects.edges.len();
+                std::hint::black_box(objects);
+            }
+            println!(
+                "{}",
+                serde_json::json!({
+                    "format":"agentique-visibility-microbenchmark/1", "fixture":true,
+                    "nodes":count,"edges":scene.edges.len(),"trace":trace,"implementation":"owned_targets",
+                    "spatial_build_ms":spatial_build_ms,"visible_objects_total":objects_total,
+                    "total":summary(&mut total),"cull":summary(&mut cull),"resolve":summary(&mut resolve),"identity_hash":summary(&mut hash),
+                    "scope":"CPU spatial culling + checked borrowed lookup + presentation identity hashing; no GPU/frame/semantic timing",
+                })
+            );
+        }
+    }
+}

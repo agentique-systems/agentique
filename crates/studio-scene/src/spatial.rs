@@ -1,4 +1,5 @@
-use crate::{Point, Rect, SceneTarget, SemanticScene, segment_distance};
+use crate::{Point, Rect, SceneTarget, SemanticScene, VisibleScene, segment_distance};
+use agq_modeling_workspace::ProjectRevisionId;
 use std::collections::{BTreeMap, BTreeSet};
 
 /// Uniform world grid with an overflow lane for long edges/large containers.
@@ -41,6 +42,7 @@ impl<T> RectIndex<T> {
             }
         }
     }
+    /// Each intersecting item once, in insertion order, including overflow items.
     pub fn query(&self, r: Rect) -> Vec<&T> {
         let (x0, y0, x1, y1) = self.range(r);
         if (i128::from(x1) - i128::from(x0) + 1) * (i128::from(y1) - i128::from(y0) + 1) > 4096 {
@@ -72,24 +74,42 @@ impl<T> RectIndex<T> {
 }
 #[derive(Clone, Debug)]
 struct HitItem {
-    target: SceneTarget,
+    target: usize,
     bounds: Rect,
     segment: Option<(Point, Point)>,
     priority: u8,
 }
 #[derive(Clone, Debug)]
+struct IndexedTarget {
+    identity: SceneTarget,
+    scene_index: usize,
+}
+/// Disposable bounds index for one scene generation.
+///
+/// Rebuild after layout, projection replacement or applying a diff. Each routed
+/// segment refers to one shared identity slot, rather than owning an edge name.
+#[derive(Clone, Debug)]
 pub struct SpatialIndex {
+    revision_id: ProjectRevisionId,
     index: RectIndex<HitItem>,
+    targets: Vec<IndexedTarget>,
 }
 impl SpatialIndex {
     pub fn build(scene: &SemanticScene) -> Self {
         let mut index = RectIndex::new(256.0);
-        for n in &scene.nodes {
-            let target = if n.is_container {
+        let mut targets =
+            Vec::with_capacity(scene.nodes.len() + scene.ports.len() + scene.edges.len());
+        for (scene_index, n) in scene.nodes.iter().enumerate() {
+            let identity = if n.is_container {
                 SceneTarget::Container(n.id())
             } else {
                 SceneTarget::Node(n.id())
             };
+            let target = targets.len();
+            targets.push(IndexedTarget {
+                identity,
+                scene_index,
+            });
             index.insert(
                 n.bounds,
                 HitItem {
@@ -100,25 +120,35 @@ impl SpatialIndex {
                 },
             );
         }
-        for p in &scene.ports {
+        for (scene_index, p) in scene.ports.iter().enumerate() {
+            let target = targets.len();
+            targets.push(IndexedTarget {
+                identity: SceneTarget::Port(p.id),
+                scene_index,
+            });
             let bounds = Rect::new(p.position.x - 7.0, p.position.y - 7.0, 14.0, 14.0);
             index.insert(
                 bounds,
                 HitItem {
-                    target: SceneTarget::Port(p.id),
+                    target,
                     bounds,
                     segment: None,
                     priority: 0,
                 },
             );
         }
-        for edge in &scene.edges {
+        for (scene_index, edge) in scene.edges.iter().enumerate() {
+            let target = targets.len();
+            targets.push(IndexedTarget {
+                identity: SceneTarget::Edge(edge.semantic.id.clone()),
+                scene_index,
+            });
             for pair in edge.points.windows(2) {
                 let bounds = Rect::from_points(pair[0], pair[1]);
                 index.insert(
                     bounds,
                     HitItem {
-                        target: SceneTarget::Edge(edge.semantic.id.clone()),
+                        target,
                         bounds,
                         segment: Some((pair[0], pair[1])),
                         priority: 2,
@@ -126,7 +156,11 @@ impl SpatialIndex {
                 );
             }
         }
-        Self { index }
+        Self {
+            revision_id: scene.revision_id,
+            index,
+            targets,
+        }
     }
     /// Tolerance is in world units; shell should divide pixel radius by zoom.
     pub fn hit_test(&self, point: Point, tolerance: f32) -> Option<SceneTarget> {
@@ -145,9 +179,13 @@ impl SpatialIndex {
                         (a.bounds.width() * a.bounds.height())
                             .total_cmp(&(b.bounds.width() * b.bounds.height()))
                     })
-                    .then_with(|| a.target.cmp(&b.target))
+                    .then_with(|| {
+                        self.targets[a.target]
+                            .identity
+                            .cmp(&self.targets[b.target].identity)
+                    })
             })
-            .map(|item| item.target.clone())
+            .map(|item| self.targets[item.target].identity.clone())
     }
     /// Culling includes edges crossing the viewport with both endpoints outside.
     pub fn query(&self, bounds: Rect) -> Vec<SceneTarget> {
@@ -155,7 +193,7 @@ impl SpatialIndex {
             .index
             .query(bounds)
             .into_iter()
-            .map(|i| &i.target)
+            .map(|i| &self.targets[i.target].identity)
             .collect();
         targets.sort_unstable();
         targets.dedup();
@@ -167,12 +205,70 @@ impl SpatialIndex {
             .query(bounds)
             .into_iter()
             .filter(|i| i.segment.is_none() && bounds.contains_rect(i.bounds))
-            .map(|i| i.target.clone())
+            .map(|i| self.targets[i.target].identity.clone())
             .collect::<BTreeSet<_>>()
             .into_iter()
             .collect()
     }
     pub fn visible(&self, bounds: Rect) -> Vec<SceneTarget> {
         self.query(bounds)
+    }
+    /// Cull and borrow records in original scene order, without allocating
+    /// semantic identities or resolving them through another identity map.
+    ///
+    /// Revision and exact identity are checked before borrowing each stored
+    /// slot. A stale index cannot return unrelated records or panic after scene
+    /// replacement/shrinking. This does not authorize reuse after geometry
+    /// changes: rebuild this index for every new scene generation.
+    pub fn visible_scene<'scene>(
+        &self,
+        scene: &'scene SemanticScene,
+        bounds: Rect,
+    ) -> VisibleScene<'scene> {
+        if scene.revision_id != self.revision_id {
+            return VisibleScene::default();
+        }
+        let mut visible = VisibleScene::default();
+        let mut previous = None;
+        // Grid hits are in insertion order. All segments of an edge are
+        // inserted together, so target slots are ordered and duplicates are
+        // adjacent. This preserves containment order without a second sort.
+        for hit in self.index.query(bounds) {
+            if previous == Some(hit.target) {
+                continue;
+            }
+            previous = Some(hit.target);
+            let target = &self.targets[hit.target];
+            match &target.identity {
+                SceneTarget::Node(id) | SceneTarget::Container(id) => {
+                    if let Some(node) = scene.nodes.get(target.scene_index).filter(|node| {
+                        node.id() == *id
+                            && node.is_container
+                                == matches!(&target.identity, SceneTarget::Container(_))
+                    }) {
+                        visible.nodes.push(node);
+                    }
+                }
+                SceneTarget::Port(id) => {
+                    if let Some(port) = scene
+                        .ports
+                        .get(target.scene_index)
+                        .filter(|port| port.id == *id)
+                    {
+                        visible.ports.push(port);
+                    }
+                }
+                SceneTarget::Edge(id) => {
+                    if let Some(edge) = scene
+                        .edges
+                        .get(target.scene_index)
+                        .filter(|edge| edge.semantic.id == *id)
+                    {
+                        visible.edges.push(edge);
+                    }
+                }
+            }
+        }
+        visible
     }
 }

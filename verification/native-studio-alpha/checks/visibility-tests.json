@@ -1,0 +1,27 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--release",
+    "--config",
+    "profile.release.lto=false",
+    "--config",
+    "profile.release.debug=0",
+    "--config",
+    "build.jobs=2",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-studio-scene",
+    "--all-targets",
+    "--target-dir",
+    "C:/Users/phili/github/agentique-systems/agentique/target"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-editperf",
+  "started_utc": "2026-09-25T16:28:55.473265+00:00",
+  "elapsed_seconds": 17.062,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/visibility-tests.txt",
+  "output_sha256": "e7ed7dabfd2c23a66eea98a83c720cc816c8d466636448b74e32583ce0d07726",
+  "build_environment": {}
+}

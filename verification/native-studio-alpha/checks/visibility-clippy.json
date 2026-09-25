@@ -1,0 +1,30 @@
+{
+  "command": [
+    "cargo",
+    "clippy",
+    "--release",
+    "--config",
+    "profile.release.lto=false",
+    "--config",
+    "profile.release.debug=0",
+    "--config",
+    "build.jobs=2",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-studio-scene",
+    "--all-targets",
+    "--target-dir",
+    "C:/Users/phili/github/agentique-systems/agentique/target",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-editperf",
+  "started_utc": "2026-09-25T16:30:03.297486+00:00",
+  "elapsed_seconds": 26.563,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/visibility-clippy.txt",
+  "output_sha256": "d19c12e868f45e175cd6b5279c2815db36c635b847b0197b444118a56af567fa",
+  "build_environment": {}
+}
