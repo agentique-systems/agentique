@@ -30,6 +30,7 @@ pub(crate) fn route_edges(
     let mut result = Vec::new();
     let mut edges: Vec<_> = edges.iter().collect();
     edges.sort_by(|a, b| a.id.cmp(&b.id));
+    let attachments = node_attachments(&nodes, &ports, &edges);
     for edge in edges {
         let Some(source_center) = center(edge.source, &nodes, &ports) else {
             continue;
@@ -37,10 +38,22 @@ pub(crate) fn route_edges(
         let Some(target_center) = center(edge.target, &nodes, &ports) else {
             continue;
         };
-        let Some(source) = endpoint(edge.source, target_center, &nodes, &ports) else {
+        let Some(source) = endpoint(
+            edge.source,
+            target_center,
+            attachments.get(&(edge.id.as_str(), true)),
+            &nodes,
+            &ports,
+        ) else {
             continue;
         };
-        let Some(target) = endpoint(edge.target, source_center, &nodes, &ports) else {
+        let Some(target) = endpoint(
+            edge.target,
+            source_center,
+            attachments.get(&(edge.id.as_str(), false)),
+            &nodes,
+            &ports,
+        ) else {
             continue;
         };
         let pair = if edge.source <= edge.target {
@@ -68,6 +81,58 @@ pub(crate) fn route_edges(
     }
     result
 }
+/// Separate relationship attachment lanes on ordinary node boundaries. These
+/// positions are drawing geometry only: they introduce no ScenePort or semantic
+/// identity. Actual modeled ports always retain their exact position.
+fn node_attachments<'a>(
+    nodes: &BTreeMap<ElementId, &SceneNode>,
+    ports: &BTreeMap<ElementId, &ScenePort>,
+    edges: &[&'a ViewEdge],
+) -> BTreeMap<(&'a str, bool), (f32, f32)> {
+    let mut sides = BTreeMap::<(ElementId, bool), Vec<(&str, bool, f32)>>::new();
+    for edge in edges {
+        for (id, other, source) in [
+            (edge.source, edge.target, true),
+            (edge.target, edge.source, false),
+        ] {
+            if ports.contains_key(&id) {
+                continue;
+            }
+            let (Some(node), Some(toward)) = (nodes.get(&id), center(other, nodes, ports)) else {
+                continue;
+            };
+            sides
+                .entry((id, toward.x >= node.bounds.center().x))
+                .or_default()
+                .push((edge.id.as_str(), source, toward.y));
+        }
+    }
+    let mut attachments = BTreeMap::new();
+    for ((id, _), mut entries) in sides {
+        // Neighbor order prevents avoidable local crossings. Identity is the
+        // tie-breaker, so transport order cannot change the drawing.
+        entries.sort_by(|a, b| {
+            a.2.total_cmp(&b.2)
+                .then_with(|| a.0.cmp(b.0))
+                .then_with(|| a.1.cmp(&b.1))
+        });
+        let bounds = nodes[&id].bounds;
+        let spacing = ((bounds.height() - 36.0).max(0.0)
+            / entries.len().saturating_sub(1).max(1) as f32)
+            .min(18.0);
+        let middle = (entries.len() - 1) as f32 * 0.5;
+        for (index, (edge, source, _)) in entries.into_iter().enumerate() {
+            let y = bounds.center().y + (index as f32 - middle) * spacing;
+            // Stagger the nearby turn as well as the endpoint, keeping the
+            // final corridor and arrowhead independently traceable.
+            // Stay inside the 42-world-unit minimum node gutter, including
+            // obstacle clearance; long stubs can pierce unrelated neighbors.
+            let stub_length = 22.0 + (index % 3) as f32 * 3.0;
+            attachments.insert((edge, source), (y, stub_length));
+        }
+    }
+    attachments
+}
 fn center(
     id: ElementId,
     nodes: &BTreeMap<ElementId, &SceneNode>,
@@ -81,6 +146,7 @@ fn center(
 fn endpoint(
     id: ElementId,
     toward: Point,
+    attachment: Option<&(f32, f32)>,
     nodes: &BTreeMap<ElementId, &SceneNode>,
     ports: &BTreeMap<ElementId, &ScenePort>,
 ) -> Option<Endpoint> {
@@ -103,10 +169,11 @@ fn endpoint(
     let center = bounds.center();
     let right = toward.x >= center.x;
     let x = if right { bounds.max.x } else { bounds.min.x };
-    let point = Point::new(x, center.y);
+    let (y, stub_length) = attachment.copied().unwrap_or((center.y, 22.0));
+    let point = Point::new(x, y);
     Some(Endpoint {
         point,
-        stub: Point::new(x + if right { 22.0 } else { -22.0 }, center.y),
+        stub: Point::new(x + if right { stub_length } else { -stub_length }, y),
         owner: id,
         bounds,
     })

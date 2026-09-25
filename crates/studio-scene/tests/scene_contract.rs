@@ -410,6 +410,141 @@ fn parallel_relationships_have_distinct_routes() {
 }
 
 #[test]
+fn satisfaction_and_verification_have_individually_selectable_target_lanes() {
+    let projection = fixtures::requirements();
+    let options = SceneOptions {
+        hierarchy: false,
+        ..Default::default()
+    };
+    let scene = SemanticScene::from_projection(&projection, &options, None).unwrap();
+    let index = SpatialIndex::build(&scene);
+    assert!(
+        scene.ports.is_empty(),
+        "drawing anchors must not invent semantic ports"
+    );
+    for requirement in [101, 102, 103] {
+        let edges: Vec<_> = scene
+            .edges
+            .iter()
+            .filter(|edge| edge.semantic.target == fixtures::id(requirement))
+            .collect();
+        assert_eq!(edges.len(), 2);
+        assert!(
+            edges[0]
+                .points
+                .last()
+                .unwrap()
+                .distance(*edges[1].points.last().unwrap())
+                >= 12.0,
+            "satisfies and verifies need distinct arrowheads"
+        );
+        for edge in edges {
+            let end = *edge.points.last().unwrap();
+            let before = edge.points[edge.points.len() - 2];
+            let length = end.distance(before);
+            assert!(length >= 12.0);
+            let probe = Point::new(
+                end.x + (before.x - end.x) / length * 10.0,
+                end.y + (before.y - end.y) / length * 10.0,
+            );
+            assert_eq!(
+                index.hit_test(probe, 3.0),
+                Some(SceneTarget::Edge(edge.semantic.id.clone())),
+                "each relationship must remain independently selectable at its target"
+            );
+            assert_eq!(edge.quality, RouteQuality::Clear);
+        }
+    }
+    let mut reordered = projection;
+    reordered.edges.reverse();
+    let reordered = SemanticScene::from_projection(&reordered, &options, None).unwrap();
+    for edge in &scene.edges {
+        assert_eq!(
+            edge.points,
+            reordered
+                .edges
+                .iter()
+                .find(|other| other.semantic.id == edge.semantic.id)
+                .unwrap()
+                .points
+        );
+    }
+}
+
+#[test]
+fn parallel_node_links_have_separate_endpoints_but_modeled_ports_remain_exact() {
+    let mut projection = fixtures::stress(2, 1);
+    for index in 0..3 {
+        let mut edge = projection.edges[0].clone();
+        edge.id = format!("independent-{index}");
+        projection.edges.push(edge);
+    }
+    let scene = SemanticScene::from_projection(
+        &projection,
+        &SceneOptions {
+            hierarchy: false,
+            ..Default::default()
+        },
+        None,
+    )
+    .unwrap();
+    for (index, edge) in scene.edges.iter().enumerate() {
+        for other in &scene.edges[index + 1..] {
+            assert_ne!(edge.points.first(), other.points.first());
+            assert_ne!(edge.points.last(), other.points.last());
+        }
+    }
+    let mut projection = fixtures::architecture();
+    let mut extra = projection.edges[0].clone();
+    extra.id = "same-modeled-port".into();
+    projection.edges.push(extra);
+    let scene =
+        SemanticScene::from_projection(&projection, &SceneOptions::default(), None).unwrap();
+    for edge in scene
+        .edges
+        .iter()
+        .filter(|edge| edge.semantic.source == fixtures::id(1102))
+    {
+        let source = scene
+            .ports
+            .iter()
+            .find(|port| port.id == edge.semantic.source)
+            .unwrap();
+        let target = scene
+            .ports
+            .iter()
+            .find(|port| port.id == edge.semantic.target)
+            .unwrap();
+        assert_eq!(edge.points.first(), Some(&source.position));
+        assert_eq!(edge.points.last(), Some(&target.position));
+    }
+}
+
+#[test]
+fn separated_attachment_stubs_stay_inside_dense_default_layout_gutters() {
+    let projection = fixtures::stress(80, 160);
+    for hierarchy in [true, false] {
+        let scene = SemanticScene::from_projection(
+            &projection,
+            &SceneOptions {
+                hierarchy,
+                ..Default::default()
+            },
+            None,
+        )
+        .unwrap();
+        assert_eq!(scene.edges.len(), 160);
+        assert!(
+            scene
+                .edges
+                .iter()
+                .all(|edge| edge.quality == RouteQuality::Clear),
+            "attachment staggering must not drive stubs through unrelated neighbors"
+        );
+    }
+}
+
+#[test]
 fn collapsed_layout_restores_hidden_component_positions() {
     let before = architecture();
     let mut options = SceneOptions::default();
