@@ -6,14 +6,13 @@ loops have resulted in changes, and the accepted KerML v9 / Systems v3 runtime h
 been rematerialized, authenticated, packaged and installed through ordinary
 facades. Real native runs reached a durable Validated Agentique revision and
 captured System, focused subsystem, ports, Graph, Requirements, Explain, parent
-diff and agent dependency views. Iteration three improved hierarchy readability
-but exposed clipped Explain content, unreadable history framing and a failed
-pan gesture during candidate preparation. Iteration four adds corrections and
-query-phase measurements. Its fresh real journey passed eight assertions, then
-exposed an inconsistent dependency-view name; the strict view-intent fence
-correctly rejected that response. The shared view definition is now corrected.
-Candidate preparation, the remaining real gallery and separate restart remain
-under qualification.
+diff and agent dependency views. Iteration five visibly corrects port ownership
+and Explain clipping and completes real candidate preparation while ordinary
+input and current-revision inspection remain active. Its premature new-part
+selection assertion failed: the actual application correctly preserved the
+operator's previous selection. The corrected driver retains exact selection
+checks after the operator explicitly selects the new part. Candidate review,
+validation, commit and separate restart still need a complete passing journey.
 No fixture screenshot is presented as real model acceptance.
 
 ## Product evidence
@@ -52,7 +51,14 @@ No fixture screenshot is presented as real model acceptance.
   view and safe pre-candidate resume conditions; its [spatial review](reviews/real-run04-query-and-spatial-review.md)
   identifies misleading port placement and measured query-context costs.
 - [Call-local query reuse review](reviews/call-local-query-reuse-independent.md)
-  separates source review from the pending same-revision runtime oracle.
+  and [actual result review](reviews/call-local-query-reuse-results-independent.md)
+  retain exact same-revision parity for 17 projections and eight Inspectors.
+  Three alternating measured pairs reduce focused projection/Inspector median
+  from about 5.5 seconds to 2.9 seconds; these are query-call times, not frames.
+- [Iteration-five review](reviews/real-run05-editor-interaction.md) examines ten
+  actual images, the closed visual defects, remaining History/Graph weaknesses,
+  and the failed driver assumption. Its real preparation observed 140.216 seconds
+  and a maximum native input-hook gap of 13 ms; this is not photon latency.
 - [Runtime distribution](../../docs/runtime-publication-distribution.md) describes
   content-addressed bundles and offline installation. A workflow being present
   does not mean a release asset has been published.
