@@ -23,7 +23,7 @@ must discard stale worker responses when their selected binding changes.
 diff. Only the reviewed `CreatePartUsage` source mapping is supported by the
 existing modeling-agent contract. Unsupported rename/delete/connection commands
 are rejected by that contract. `candidate`, `inspect_candidate` and
-`explain_candidate` address the candidate revision without pretending it is a
+`explain_candidate` and `source_candidate` address the candidate revision without pretending it is a
 durable branch head. `validate` requires independent validation authority;
 `commit` requires commit authority and an actually validated candidate.
 
@@ -47,3 +47,13 @@ Runtime authentication code and standards authority were not copied into UI.
 Fixture scenes belong to the native presentation layer and never enter this
 facade as canonical semantic truth. Real runtime acceptance remains separate
 from fixture interaction tests.
+
+Focused lifecycle tests inject storage acknowledgement loss and CAS refusal at
+the retained-operation boundary. They verify deny-before-work authority, failed
+validation retention, no presentation-only validation substitute, acknowledgement
+retry, idempotent receipt replay, and candidate pressure preserving unresolved
+operations. The ignored `native_in_process_self_model_candidate_commit_and_restore`
+test supplies the separate real-model gate: revision-bound projection/inspection/
+explanation, source for a newly created candidate, immutable parent, validation,
+CAS conflict/cancellation, durable commit and process restoration. Run it only
+with an existing accepted runtime; it never republishes standards.

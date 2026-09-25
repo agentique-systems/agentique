@@ -86,6 +86,20 @@ fn native_in_process_self_model_candidate_commit_and_restore() {
         )
         .unwrap();
     assert_eq!(candidate.phase, CandidatePhase::Working);
+    let added = candidate
+        .projection
+        .nodes
+        .iter()
+        .find(|node| node.name == "nativeObserver")
+        .unwrap()
+        .id;
+    let source = platform.source_candidate(candidate.id, added).unwrap();
+    assert_eq!(source.binding.revision, candidate.projection.revision_id);
+    assert!(source.source.contains("part nativeObserver;"));
+    assert!(
+        platform.source(binding, added).is_err(),
+        "candidate identity is absent from its parent source"
+    );
     assert!(
         platform.commit(candidate.id).is_err(),
         "unvalidated preview cannot commit"

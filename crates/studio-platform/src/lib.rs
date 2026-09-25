@@ -150,24 +150,7 @@ impl StudioPlatform {
 
     pub fn source(&self, binding: RevisionBinding, element: ElementId) -> Result<SourceProjection> {
         let revision = self.bound(binding)?;
-        let origin = revision
-            .source_origin(element)
-            .ok_or_else(|| PlatformError::Invalid("Element has no authored source".into()))?;
-        let (path, document) = revision
-            .revision()
-            .documents()
-            .find(|(_, doc)| doc.id() == origin.document)
-            .ok_or_else(|| {
-                PlatformError::Invalid("Source is outside the authored project".into())
-            })?;
-        Ok(SourceProjection {
-            binding,
-            element,
-            path: path.into(),
-            source: document.source().into(),
-            start: origin.range.start(),
-            end: origin.range.end(),
-        })
+        source_projection(binding, &revision, element)
     }
 
     pub fn compare(
@@ -214,6 +197,29 @@ impl StudioPlatform {
             },
         )
     }
+}
+
+fn source_projection(
+    binding: RevisionBinding,
+    revision: &BoundRevision,
+    element: ElementId,
+) -> Result<SourceProjection> {
+    let origin = revision
+        .source_origin(element)
+        .ok_or_else(|| PlatformError::Invalid("Element has no authored source".into()))?;
+    let (path, document) = revision
+        .revision()
+        .documents()
+        .find(|(_, doc)| doc.id() == origin.document)
+        .ok_or_else(|| PlatformError::Invalid("Source is outside the authored project".into()))?;
+    Ok(SourceProjection {
+        binding,
+        element,
+        path: path.into(),
+        source: document.source().into(),
+        start: origin.range.start(),
+        end: origin.range.end(),
+    })
 }
 
 #[cfg(test)]
