@@ -1,0 +1,503 @@
+{
+  "scope": "Read-only extraction from completed real-run02/03 reports; no fresh benchmark or runtime execution",
+  "source_sha256": {
+    "verification/native-studio-alpha/real-run02/gallery/01-system-world.json": "1d046c036c293f0983d8647da85836838d258a35e1f95835f59a3fc9f7d4cf94",
+    "verification/native-studio-alpha/real-run02/gallery/02-focused-subsystem.json": "36366371951c255816258e8b3fe83dbb41e9bd0581c335fd1d7885dc2d708a95",
+    "verification/native-studio-alpha/real-run02/gallery/02a-platform-port.json": "6df33ab5e9dd3ce7bdc0a68b3c74bc2a6e6d8a49806939a625367aec8829f7de",
+    "verification/native-studio-alpha/real-run03/gallery/01-system-world.json": "efd6e08d4492b0dc62e8e75cf381793e58d4cd7cee87f5d57a7bf9ec358ea221",
+    "verification/native-studio-alpha/real-run03/gallery/02-focused-subsystem.json": "35c1346d1f5ead3d473ab84587351c8d6126cd8ce49c195bca7e7ee3f33df4bc",
+    "verification/native-studio-alpha/real-run03/gallery/02a-platform-port.json": "76c7880ba825c4e8757c029bc18c3031bb3213c0723c792a8648e2d0a4682cc1",
+    "verification/native-studio-alpha/real-run03/gallery/02b-focused-repository.json": "109532aa14a2ebd291a7eed93490e59d4c4f8632db452def424d1b7feedf00a3",
+    "verification/native-studio-alpha/real-run03/gallery/02c-repository-port.json": "e8570ee4f539932c143a5b86dd96df681774d1ef496959327fb07703d1a034cd",
+    "verification/native-studio-alpha/real-run03/gallery/03-graph-world.json": "3277ed7e94b9c869be06ca989f08270aefabc7acaaa19c72ff8daf03c050e3c5",
+    "verification/native-studio-alpha/real-run03/gallery/04-requirements-world.json": "93904f740ca093b12cd6b3601a7860989b0ec22bf36b173a2bd7af428f8fa51a",
+    "verification/native-studio-alpha/real-run03/gallery/05-explain.json": "94a36e30cb21e736d0f43cedae8fc3e3c04fb4d8282bee8b14ee187bff7e1878",
+    "verification/native-studio-alpha/real-run03/gallery/06-history-diff.json": "954040c52b8a0f2b64cf026a1a11721f991d259b7b7b564f751feeadfbef5609",
+    "verification/native-studio-alpha/real-run03/gallery/07-agent-view.json": "8ed6554c5b63d1caa755142f73e4d726e8df960381dc691e44fe10e155ce5365",
+    "verification/native-studio-alpha/real-run03/journey.json": "6d98590d05c9f1bab1b7579658ecbeb181df65d94cad261ab2ca0c854514e53e",
+    "verification/native-studio-alpha/real-run03/process.json": "2e21e8eb25b5ea1c3e3a152d28301621ad079dadc9586995f2b7f5e7a4cc8017"
+  },
+  "shots": [
+    {
+      "run": "real-run02",
+      "shot": "01-system-world",
+      "projection_nodes": 38,
+      "projection_edges": 37,
+      "scene_nodes": 38,
+      "scene_edges": 37,
+      "scene_build_ms": 3.995,
+      "layout_routing_diff_ms": 3.3615,
+      "index_lookup_outliner_ms": 0.6333000000000001,
+      "frame_interval_p95_ms": 13.725100000000001,
+      "frame_samples": 240,
+      "ui_cpu_p95_ms": 0.6285000000000001,
+      "scene_gpu_p95_ms": 0.00512,
+      "hit_p95_us": 4.8999999999999995,
+      "gesture_samples": {
+        "pan": 0,
+        "selection": 0,
+        "zoom": 0
+      },
+      "local_element_count": null
+    },
+    {
+      "run": "real-run02",
+      "shot": "02-focused-subsystem",
+      "projection_nodes": 41,
+      "projection_edges": 49,
+      "scene_nodes": 32,
+      "scene_edges": 49,
+      "scene_build_ms": 0.5912,
+      "layout_routing_diff_ms": 0.5217,
+      "index_lookup_outliner_ms": 0.0694,
+      "frame_interval_p95_ms": 13.8107,
+      "frame_samples": 240,
+      "ui_cpu_p95_ms": 0.6296999999999999,
+      "scene_gpu_p95_ms": 0.003072,
+      "hit_p95_us": 4.4,
+      "gesture_samples": {
+        "pan": 0,
+        "selection": 0,
+        "zoom": 0
+      },
+      "local_element_count": null
+    },
+    {
+      "run": "real-run02",
+      "shot": "02a-platform-port",
+      "projection_nodes": 41,
+      "projection_edges": 49,
+      "scene_nodes": 32,
+      "scene_edges": 49,
+      "scene_build_ms": 0.5912,
+      "layout_routing_diff_ms": 0.5217,
+      "index_lookup_outliner_ms": 0.0694,
+      "frame_interval_p95_ms": 13.6094,
+      "frame_samples": 240,
+      "ui_cpu_p95_ms": 0.5217,
+      "scene_gpu_p95_ms": 0.003072,
+      "hit_p95_us": 4.4,
+      "gesture_samples": {
+        "pan": 0,
+        "selection": 0,
+        "zoom": 0
+      },
+      "local_element_count": null
+    },
+    {
+      "run": "real-run03",
+      "shot": "01-system-world",
+      "projection_nodes": 7,
+      "projection_edges": 6,
+      "scene_nodes": 7,
+      "scene_edges": 6,
+      "scene_build_ms": 0.5630000000000001,
+      "layout_routing_diff_ms": 0.3344,
+      "index_lookup_outliner_ms": 0.2283,
+      "frame_interval_p95_ms": 14.7201,
+      "frame_samples": 240,
+      "ui_cpu_p95_ms": 0.6063000000000001,
+      "scene_gpu_p95_ms": 0.011264,
+      "hit_p95_us": 4.300000000000001,
+      "gesture_samples": {
+        "pan": 0,
+        "selection": 0,
+        "zoom": 0
+      },
+      "local_element_count": 785
+    },
+    {
+      "run": "real-run03",
+      "shot": "02-focused-subsystem",
+      "projection_nodes": 20,
+      "projection_edges": 20,
+      "scene_nodes": 18,
+      "scene_edges": 20,
+      "scene_build_ms": 0.5802,
+      "layout_routing_diff_ms": 0.5414,
+      "index_lookup_outliner_ms": 0.0386,
+      "frame_interval_p95_ms": 14.5423,
+      "frame_samples": 240,
+      "ui_cpu_p95_ms": 0.5714,
+      "scene_gpu_p95_ms": 0.012288,
+      "hit_p95_us": 4.300000000000001,
+      "gesture_samples": {
+        "pan": 0,
+        "selection": 0,
+        "zoom": 0
+      },
+      "local_element_count": 785
+    },
+    {
+      "run": "real-run03",
+      "shot": "02a-platform-port",
+      "projection_nodes": 20,
+      "projection_edges": 20,
+      "scene_nodes": 18,
+      "scene_edges": 20,
+      "scene_build_ms": 0.5802,
+      "layout_routing_diff_ms": 0.5414,
+      "index_lookup_outliner_ms": 0.0386,
+      "frame_interval_p95_ms": 14.3523,
+      "frame_samples": 240,
+      "ui_cpu_p95_ms": 0.5002,
+      "scene_gpu_p95_ms": 0.012288,
+      "hit_p95_us": 4.300000000000001,
+      "gesture_samples": {
+        "pan": 0,
+        "selection": 0,
+        "zoom": 0
+      },
+      "local_element_count": 785
+    },
+    {
+      "run": "real-run03",
+      "shot": "02b-focused-repository",
+      "projection_nodes": 5,
+      "projection_edges": 4,
+      "scene_nodes": 4,
+      "scene_edges": 4,
+      "scene_build_ms": 0.0775,
+      "layout_routing_diff_ms": 0.06509999999999999,
+      "index_lookup_outliner_ms": 0.0123,
+      "frame_interval_p95_ms": 11.2088,
+      "frame_samples": 240,
+      "ui_cpu_p95_ms": 0.5498000000000001,
+      "scene_gpu_p95_ms": 0.00512,
+      "hit_p95_us": 4.300000000000001,
+      "gesture_samples": {
+        "pan": 0,
+        "selection": 0,
+        "zoom": 0
+      },
+      "local_element_count": 785
+    },
+    {
+      "run": "real-run03",
+      "shot": "02c-repository-port",
+      "projection_nodes": 5,
+      "projection_edges": 4,
+      "scene_nodes": 4,
+      "scene_edges": 4,
+      "scene_build_ms": 0.0775,
+      "layout_routing_diff_ms": 0.06509999999999999,
+      "index_lookup_outliner_ms": 0.0123,
+      "frame_interval_p95_ms": 16.1375,
+      "frame_samples": 240,
+      "ui_cpu_p95_ms": 0.3862,
+      "scene_gpu_p95_ms": 0.006144,
+      "hit_p95_us": 4.300000000000001,
+      "gesture_samples": {
+        "pan": 0,
+        "selection": 0,
+        "zoom": 0
+      },
+      "local_element_count": 785
+    },
+    {
+      "run": "real-run03",
+      "shot": "03-graph-world",
+      "projection_nodes": 19,
+      "projection_edges": 23,
+      "scene_nodes": 18,
+      "scene_edges": 23,
+      "scene_build_ms": 0.7226,
+      "layout_routing_diff_ms": 0.3856,
+      "index_lookup_outliner_ms": 0.3367,
+      "frame_interval_p95_ms": 10.9076,
+      "frame_samples": 240,
+      "ui_cpu_p95_ms": 0.7676000000000001,
+      "scene_gpu_p95_ms": 0.002048,
+      "hit_p95_us": 4.300000000000001,
+      "gesture_samples": {
+        "pan": 0,
+        "selection": 0,
+        "zoom": 0
+      },
+      "local_element_count": 785
+    },
+    {
+      "run": "real-run03",
+      "shot": "04-requirements-world",
+      "projection_nodes": 6,
+      "projection_edges": 6,
+      "scene_nodes": 6,
+      "scene_edges": 6,
+      "scene_build_ms": 0.1462,
+      "layout_routing_diff_ms": 0.12669999999999998,
+      "index_lookup_outliner_ms": 0.0194,
+      "frame_interval_p95_ms": 10.1195,
+      "frame_samples": 240,
+      "ui_cpu_p95_ms": 0.5810000000000001,
+      "scene_gpu_p95_ms": 0.00512,
+      "hit_p95_us": 6.8,
+      "gesture_samples": {
+        "pan": 0,
+        "selection": 1,
+        "zoom": 0
+      },
+      "local_element_count": 785
+    },
+    {
+      "run": "real-run03",
+      "shot": "05-explain",
+      "projection_nodes": 41,
+      "projection_edges": 60,
+      "scene_nodes": 40,
+      "scene_edges": 60,
+      "scene_build_ms": 3.8118000000000003,
+      "layout_routing_diff_ms": 3.3156000000000003,
+      "index_lookup_outliner_ms": 0.49589999999999995,
+      "frame_interval_p95_ms": 9.822,
+      "frame_samples": 240,
+      "ui_cpu_p95_ms": 0.754,
+      "scene_gpu_p95_ms": 0.006144,
+      "hit_p95_us": 9.9,
+      "gesture_samples": {
+        "pan": 0,
+        "selection": 1,
+        "zoom": 0
+      },
+      "local_element_count": 785
+    },
+    {
+      "run": "real-run03",
+      "shot": "06-history-diff",
+      "projection_nodes": 159,
+      "projection_edges": 425,
+      "scene_nodes": 130,
+      "scene_edges": 405,
+      "scene_build_ms": 62.5497,
+      "layout_routing_diff_ms": 61.7669,
+      "index_lookup_outliner_ms": 0.7821,
+      "frame_interval_p95_ms": 7.8414,
+      "frame_samples": 240,
+      "ui_cpu_p95_ms": 0.786,
+      "scene_gpu_p95_ms": 0.012288,
+      "hit_p95_us": 3.3000000000000003,
+      "gesture_samples": {
+        "pan": 0,
+        "selection": 1,
+        "zoom": 0
+      },
+      "local_element_count": 785
+    },
+    {
+      "run": "real-run03",
+      "shot": "07-agent-view",
+      "projection_nodes": 19,
+      "projection_edges": 23,
+      "scene_nodes": 18,
+      "scene_edges": 23,
+      "scene_build_ms": 2.1218,
+      "layout_routing_diff_ms": 2.0762,
+      "index_lookup_outliner_ms": 0.0453,
+      "frame_interval_p95_ms": 12.480500000000001,
+      "frame_samples": 240,
+      "ui_cpu_p95_ms": 0.7004999999999999,
+      "scene_gpu_p95_ms": 0.003072,
+      "hit_p95_us": 4.300000000000001,
+      "gesture_samples": {
+        "pan": 0,
+        "selection": 0,
+        "zoom": 0
+      },
+      "local_element_count": 785
+    }
+  ],
+  "run03_process": {
+    "source_commit_at_start": "31d8c666c3300f0d96836259042e6d680d5058eb",
+    "executable_sha256": "9cd59692c4ee414ecdfa16ac6633f1e1f719f11d84f7dbffb304baab00fbc61f",
+    "command": [
+      "target/native-alpha/release/agq-studio-native.exe",
+      "--root",
+      ".",
+      "--runtime-dir",
+      "C:/Users/phili/.agentique",
+      "--database",
+      "C:/Users/phili/github/agentique-systems/agentique/verification/generated/native-studio-alpha/real-run01/agentique.sqlite",
+      "--no-restore",
+      "--gpu-timestamps",
+      "--scenario",
+      "real",
+      "--resume-report",
+      "verification/native-studio-alpha/real-run01/journey.json",
+      "--scenario-report",
+      "verification/native-studio-alpha/real-run03/journey.json",
+      "--gallery",
+      "verification/native-studio-alpha/real-run03/gallery"
+    ],
+    "exit_code": 2,
+    "wall_seconds": 601.8635088000447,
+    "maximum_process_peak_working_set_bytes": 5852807168,
+    "sampled_process_tree_peak_resident_bytes": 5847425024,
+    "sample_interval_seconds": 0.25
+  },
+  "run03_outcome": {
+    "outcome": "failed",
+    "passed": false,
+    "elapsed_ms": 599282,
+    "failure": "Native pan did not move the current camera during background preparation",
+    "background_frames": 5,
+    "background_pan_observed": false,
+    "background_current_inspection": null,
+    "preparation_responsiveness": {
+      "elapsed_ms": null,
+      "maximum_input_hook_gap_ms": 7,
+      "observed_input_hooks": 5,
+      "assessment": null
+    }
+  },
+  "run03_assertions": [
+    {
+      "name": "open authenticated Agentique with Validated semantic closure",
+      "passed": true,
+      "elapsed_ms": 12533,
+      "since_start_ms": 278309
+    },
+    {
+      "name": "select ModelingPlatform through the semantic outliner",
+      "passed": true,
+      "elapsed_ms": 8370,
+      "since_start_ms": 286767
+    },
+    {
+      "name": "focus ModelingPlatform through native keyboard input",
+      "passed": true,
+      "elapsed_ms": 16001,
+      "since_start_ms": 302775
+    },
+    {
+      "name": "inspect a platform port and its actual query connection",
+      "passed": true,
+      "elapsed_ms": 7577,
+      "since_start_ms": 310398
+    },
+    {
+      "name": "select ModelRepository inside the focused ModelingPlatform",
+      "passed": true,
+      "elapsed_ms": 7570,
+      "since_start_ms": 318014
+    },
+    {
+      "name": "enter ModelRepository without leaving its containing subsystem",
+      "passed": true,
+      "elapsed_ms": 14924,
+      "since_start_ms": 332944
+    },
+    {
+      "name": "inspect the original inherited repositoryRevisions port",
+      "passed": true,
+      "elapsed_ms": 7652,
+      "since_start_ms": 340647
+    },
+    {
+      "name": "select repository as the dependency inquiry subject",
+      "passed": true,
+      "elapsed_ms": 7910,
+      "since_start_ms": 348608
+    },
+    {
+      "name": "agent shows revision-bound dependencies",
+      "passed": true,
+      "elapsed_ms": 11404,
+      "since_start_ms": 360018
+    },
+    {
+      "name": "open Graph World over real relationships",
+      "passed": true,
+      "elapsed_ms": 11626,
+      "since_start_ms": 371710
+    },
+    {
+      "name": "include authenticated adjacent standard dependencies",
+      "passed": true,
+      "elapsed_ms": 11453,
+      "since_start_ms": 383224
+    },
+    {
+      "name": "select an actual derived relationship by hit-tested geometry",
+      "passed": true,
+      "elapsed_ms": 7634,
+      "since_start_ms": 390866
+    },
+    {
+      "name": "Explain renders actual derived causal evidence",
+      "passed": true,
+      "elapsed_ms": 3863,
+      "since_start_ms": 394736
+    },
+    {
+      "name": "dismiss Explain",
+      "passed": true,
+      "elapsed_ms": 350,
+      "since_start_ms": 395139
+    },
+    {
+      "name": "open real Requirements World",
+      "passed": true,
+      "elapsed_ms": 4507,
+      "since_start_ms": 399655
+    },
+    {
+      "name": "open immutable real design history",
+      "passed": true,
+      "elapsed_ms": 345,
+      "since_start_ms": 400041
+    },
+    {
+      "name": "open Graph World to compare the added Agent Fabric",
+      "passed": true,
+      "elapsed_ms": 4649,
+      "since_start_ms": 404698
+    },
+    {
+      "name": "show the complete authored graph including the added agent architecture",
+      "passed": true,
+      "elapsed_ms": 4182,
+      "since_start_ms": 408888
+    },
+    {
+      "name": "compare actual parent revision with the same complete graph lens",
+      "passed": true,
+      "elapsed_ms": 173482,
+      "since_start_ms": 582378
+    },
+    {
+      "name": "select current revision in History to leave comparison",
+      "passed": true,
+      "elapsed_ms": 285,
+      "since_start_ms": 582713
+    },
+    {
+      "name": "restore current revision atomically",
+      "passed": true,
+      "elapsed_ms": 3850,
+      "since_start_ms": 586569
+    },
+    {
+      "name": "return to System World before direct manipulation",
+      "passed": true,
+      "elapsed_ms": 4500,
+      "since_start_ms": 591073
+    },
+    {
+      "name": "select nested part owner",
+      "passed": true,
+      "elapsed_ms": 7495,
+      "since_start_ms": 598576
+    },
+    {
+      "name": "open Create Part through contextual palette",
+      "passed": true,
+      "elapsed_ms": 405,
+      "since_start_ms": 598990
+    }
+  ],
+  "measurement_limits": [
+    "Scene metrics are last-build values, not repeated distributions; port captures can repeat prior build values.",
+    "Frame/GPU/CPU windows retain recent samples globally, not reset per scene.",
+    "Gesture pan/zoom samples are absent in every gallery sidecar.",
+    "Driver step times include fixed 30-frame lead and 18-frame tail, input sequence, semantic requests and settling; projection/query time is not isolated."
+  ]
+}
