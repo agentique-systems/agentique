@@ -578,6 +578,7 @@ fn routing_detours_around_an_unrelated_node() {
             (projection.nodes[1].id, Rect::new(300.0, 0.0, 232.0, 118.0)),
             (projection.nodes[2].id, Rect::new(600.0, 0.0, 232.0, 118.0)),
         ]),
+        ..Default::default()
     };
     let scene = SemanticScene::from_projection(&projection, &options, Some(&memory)).unwrap();
     assert_eq!(scene.edges[0].quality, RouteQuality::Clear);

@@ -11,6 +11,21 @@ state. Structural containment is a presentation of existing owners; Graph World
 uses SCC-condensed topology without changing those owners. Layout preserves old
 positions when geometry permits and retains hidden positions through collapse.
 
+Graph positions can be pinned with `LayoutMemory::pin(element_id, node.bounds)`;
+`unpin(element_id)` releases the constraint and `is_pinned(element_id)` reports
+it. Pins are saved presentation anchors, separate from cached card geometry.
+The exact top-left position stays fixed; a card may grow when projected features
+change. Active pins are placed before soft position hints and new graph nodes.
+Filtered or deleted IDs reserve no space. Hierarchy layout does not enforce
+graph pins. Old saved memories without a `pinned` field still deserialize.
+
+Conflicting active pins return `SceneError::GraphPin(PinError::Conflict { .. })`.
+The shell should retain the previous scene and offer to unpin a conflicting
+node; it must not claim that overlapping fixed constraints were satisfied.
+Calling `LayoutEngine` directly requires checking `LayoutResult::pin_error`.
+Invalid pin geometry is rejected. These errors concern presentation only and
+never affect model validation or durable revision state.
+
 The uniform spatial grid serves hits, marquee and culling. Very large containers
 and edge segments use an overflow list rather than allocating arbitrarily many
 cells. Port hits precede nodes, then edges, then containing backgrounds. Geometry
@@ -19,8 +34,9 @@ is logical world coordinates; hit tolerance should be `logical_pixels / zoom`.
 Routing is deterministic orthogonal corridor search with indexed obstacles,
 semantic endpoint ports, parallel lanes and self loops. Bounded search reports
 `RouteQuality::Obstructed` explicitly when it cannot find a clean route. It is
-not a claim of globally optimal edge routing. Collapsed endpoints are omitted
-instead of being silently retargeted to a different semantic identity.
+not a claim of globally optimal edge routing. Collapsed external connections use
+boundary proxies with the original port identity and explicit original owner.
+Other omitted endpoints are never silently retargeted to a different identity.
 
 The current view transport exposes metaclass names. One exact-name adapter
 assigns a typed `NodeCategory`; no name substring or element label heuristic is

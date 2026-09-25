@@ -8,6 +8,39 @@ use std::collections::{BTreeMap, BTreeSet};
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct LayoutMemory {
     pub bounds: BTreeMap<ElementId, Rect>,
+    /// Graph-only presentation anchors. Kept separately from cached geometry so
+    /// a hierarchy visit or a changing card size cannot overwrite a fixed origin.
+    /// Missing/filtered identities never reserve space in a graph layout.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub pinned: BTreeMap<ElementId, Point>,
+}
+impl LayoutMemory {
+    /// Pin an observed graph node's top-left position. The card may still resize
+    /// to show newly projected features; its semantic record is never changed.
+    /// Active pin conflicts are checked against the next graph projection.
+    pub fn pin(&mut self, id: ElementId, bounds: Rect) -> Result<(), PinError> {
+        if !bounds.finite() || bounds.width() <= 0.0 || bounds.height() <= 0.0 {
+            return Err(PinError::InvalidBounds(id));
+        }
+        self.bounds.insert(id, bounds);
+        self.pinned.insert(id, bounds.min);
+        Ok(())
+    }
+    /// Release the constraint while keeping the last geometry as a layout hint.
+    pub fn unpin(&mut self, id: ElementId) -> bool {
+        self.pinned.remove(&id).is_some()
+    }
+    pub fn is_pinned(&self, id: ElementId) -> bool {
+        self.pinned.contains_key(&id)
+    }
+}
+/// Presentation errors, never language validation or model mutations.
+#[derive(Clone, Debug, PartialEq, Eq, thiserror::Error)]
+pub enum PinError {
+    #[error("graph pin for {0} has invalid geometry")]
+    InvalidBounds(ElementId),
+    #[error("graph pins for {first} and {second} overlap; unpin one to rearrange the view")]
+    Conflict { first: ElementId, second: ElementId },
 }
 #[derive(Clone, Debug)]
 pub struct LayoutInput {
@@ -242,6 +275,9 @@ fn boundary_ports(
 #[derive(Clone, Debug, Default)]
 pub struct LayoutResult {
     pub bounds: BTreeMap<ElementId, Rect>,
+    /// Conflicting constraints are explicit; callers must not display an
+    /// incomplete/overlapping result as a successful graph layout.
+    pub pin_error: Option<PinError>,
 }
 /// Layout implementations receive only disposable public view records.
 pub trait LayoutEngine: Send + Sync {

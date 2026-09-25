@@ -203,6 +203,8 @@ impl Default for SceneOptions {
 }
 #[derive(Debug, thiserror::Error)]
 pub enum SceneError {
+    #[error(transparent)]
+    GraphPin(#[from] PinError),
     #[error("projection contains mixed revision identities")]
     MixedRevisions,
     #[error("projection contains duplicate element identity {0}")]
@@ -268,6 +270,9 @@ impl SemanticScene {
         }
         let input = LayoutInput::from_projection(projection, options)?;
         let result = layout.layout(&input, previous);
+        if let Some(error) = result.pin_error {
+            return Err(error.into());
+        }
         let mut nodes = Vec::with_capacity(input.nodes.len());
         for n in &input.nodes {
             let bounds = *result

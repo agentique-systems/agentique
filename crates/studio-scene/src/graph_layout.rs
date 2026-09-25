@@ -1,5 +1,6 @@
 use crate::{
-    LayoutEngine, LayoutInput, LayoutMemory, LayoutResult, Point, Rect, Size, spatial::RectIndex,
+    LayoutEngine, LayoutInput, LayoutMemory, LayoutResult, PinError, Point, Rect, Size,
+    spatial::RectIndex,
 };
 use agq_kernel::ElementId;
 use std::collections::{BTreeMap, BTreeSet};
@@ -145,7 +146,28 @@ impl LayoutEngine for GraphLayout {
         let mut result = LayoutResult::default();
         let mut occupied = RectIndex::new(320.0);
         if let Some(previous) = previous {
+            // Pins are hard presentation constraints and precede all soft
+            // retained positions. A lower-sorted unpinned ID cannot steal them.
+            for (id, position) in previous.pinned.iter().filter(|(id, _)| ids.contains(id)) {
+                let r = Rect::new(position.x, position.y, sizes[id].width, sizes[id].height);
+                if !r.finite() || r.width() <= 0.0 || r.height() <= 0.0 {
+                    result.pin_error = Some(PinError::InvalidBounds(*id));
+                    return result;
+                }
+                if let Some(other) = occupied.query(r).first() {
+                    result.pin_error = Some(PinError::Conflict {
+                        first: **other,
+                        second: *id,
+                    });
+                    return result;
+                }
+                occupied.insert(r, *id);
+                result.bounds.insert(*id, r);
+            }
             for id in &ids {
+                if result.bounds.contains_key(id) {
+                    continue;
+                }
                 if let Some(old) = previous.bounds.get(id).filter(|r| r.finite()) {
                     let r = Rect::new(old.min.x, old.min.y, sizes[id].width, sizes[id].height);
                     if occupied.query(r.inflate(14.0)).is_empty() {
