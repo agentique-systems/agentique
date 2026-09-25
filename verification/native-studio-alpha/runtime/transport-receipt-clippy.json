@@ -1,0 +1,33 @@
+{
+  "command": [
+    "cargo",
+    "clippy",
+    "--release",
+    "--config",
+    "profile.release.lto=false",
+    "--locked",
+    "--offline",
+    "-j",
+    "1",
+    "--target-dir",
+    "C:/Users/phili/github/agentique-systems/agentique-alpha-rematerialize-kerml/target",
+    "-p",
+    "agq-kerml-semantics",
+    "--all-targets",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "cwd": "C:/Users/phili/github/agentique-systems/agentique-alpha-runtime",
+  "started_utc": "2026-09-25T16:53:50.502135+00:00",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "source_commit": "5007ea5e9b23945cc8d72cc31c936dddd777822a",
+  "working_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "exit_code": 0,
+  "elapsed_seconds": 37.11,
+  "peak_rss_bytes": 11091968,
+  "peak_private_bytes": 5464064,
+  "memory_scope": "direct child process sampled at 1 second; excludes descendant compilers",
+  "output_sha256": "15441153a3870929f35cec00b95b630c08cb4a7b2105039f779b8f53d50cb5ec",
+  "raw_output": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\native-studio-alpha\\runtime\\transport-receipt-clippy.log"
+}
