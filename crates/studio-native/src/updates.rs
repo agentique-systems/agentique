@@ -45,6 +45,13 @@ impl StudioApp {
             }
             match reply.result {
                 Err(error) => {
+                    if reply.request == self.scene_request
+                        && self.show_agent
+                        && let Some(activity) = &mut self.agent_activity
+                    {
+                        activity.error = Some(error.clone());
+                        activity.complete = false;
+                    }
                     self.setup_reason = error.clone();
                     self.status = error;
                     // A disposable saved focus may no longer be usable. Retry
@@ -156,6 +163,7 @@ impl StudioApp {
                             .is_some_and(|binding| binding.revision == projection.revision_id) =>
                 {
                     self.projection = projection;
+                    self.finish_agent_projection();
                     self.ready = true;
                     self.rebuild();
                     self.fit_pending = true;
@@ -216,6 +224,7 @@ impl StudioApp {
                         .map(|current| current.before.clone())
                         .unwrap_or_else(|| self.projection.clone());
                     self.candidate = Some(Candidate {
+                        review_selection: None,
                         id: Some(candidate.id),
                         phase: Some(candidate.phase),
                         before,
@@ -225,11 +234,16 @@ impl StudioApp {
                             candidate.source_preview.path, candidate.source_preview.after
                         ),
                     });
+                    if self.show_agent {
+                        self.expanded = None;
+                    }
+                    self.show_agent = false;
+                    self.dependencies = None;
+                    self.agent_activity = None;
                     self.invalidate_inspection();
                     self.scene_request = 0;
                     self.comparison = ComparisonMode::Diff;
                     self.rebuild();
-                    self.fit_pending = true;
                     self.request_inspection();
                     self.status = "Candidate revision ready for review".into();
                 }
@@ -251,9 +265,9 @@ impl StudioApp {
                         self.status =
                             "Candidate validated; review its revision-bound difference".into();
                     }
+                    self.finish_agent_projection();
                     self.invalidate_inspection();
                     self.rebuild();
-                    self.fit_pending = true;
                     self.apply_pending_presentation();
                     self.request_inspection();
                 }

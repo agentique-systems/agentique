@@ -49,6 +49,15 @@ impl StudioApp {
             self.status = "Wait for the model operation before changing the candidate view".into();
             return;
         }
+        if let Some(candidate) = &mut self.candidate {
+            if self.comparison != ComparisonMode::Current {
+                candidate.review_selection = Some(self.selection.clone());
+            } else if mode != ComparisonMode::Current
+                && let Some(selection) = &candidate.review_selection
+            {
+                self.selection = selection.clone();
+            }
+        }
         self.comparison = mode;
         self.invalidate_inspection();
         self.rebuild();
@@ -296,9 +305,10 @@ impl StudioApp {
         } else {
             self.rebuild();
         }
-        self.camera.center = Point::new(location.center[0], location.center[1]);
-        self.camera.zoom = location.zoom;
-        self.camera_target = None;
+        let mut target = self.camera;
+        target.center = Point::new(location.center[0], location.center[1]);
+        target.zoom = location.zoom;
+        self.camera_target = Some(target);
         self.fit_pending = false;
     }
     pub fn request_projection(&mut self) {
@@ -315,9 +325,21 @@ impl StudioApp {
         if let Some(binding) = self.binding {
             let definition = self.definition();
             let candidate = self.visible_candidate_id();
+            let comparison_base = (self.candidate.is_none()
+                && self.comparison == ComparisonMode::Diff)
+                .then(|| {
+                    self.compare_before
+                        .as_ref()
+                        .map(|before| before.revision_id)
+                })
+                .flatten();
             self.scene_request = self.enqueue(Box::new(move |platform| {
                 if let Some(id) = candidate {
                     crate::bridge::candidate_view(platform, id, &definition)
+                } else if let Some(before) = comparison_base {
+                    platform
+                        .compare(binding.project, before, binding.revision, &definition)
+                        .map(Output::Comparison)
                 } else {
                     platform
                         .project(binding, &definition)
@@ -338,6 +360,7 @@ impl StudioApp {
         self.expanded = None;
         self.dependencies = None;
         self.show_agent = false;
+        self.status = format!("{} · selected revision", world.title());
         if world != World::System {
             self.focus = None;
         }
@@ -442,6 +465,30 @@ impl StudioApp {
                 self.status =
                     "Graph overview · focus a selection to inspect its neighborhood".into();
             }
+            ReviewCurrent => self.change_comparison(ComparisonMode::Current),
+            ReviewCandidate => self.change_comparison(ComparisonMode::Candidate),
+            ReviewDiff => self.change_comparison(ComparisonMode::Diff),
+            FocusChanges => {
+                let leaves = self.scene.nodes.iter().any(|node| {
+                    !node.is_container && node.diff != agq_studio_scene::DiffMark::Unchanged
+                });
+                let bounds = self
+                    .scene
+                    .nodes
+                    .iter()
+                    .filter(|node| {
+                        node.diff != agq_studio_scene::DiffMark::Unchanged
+                            && (!leaves || !node.is_container)
+                    })
+                    .map(|node| node.bounds)
+                    .reduce(|a, b| a.union(b));
+                if let Some(bounds) = bounds {
+                    let mut target = self.camera;
+                    target.fit(bounds, 90.0);
+                    target.zoom = target.zoom.min(1.3);
+                    self.camera_target = Some(target);
+                }
+            }
             Theme => {
                 self.theme = crate::theme::Theme::new(!self.theme.dark, self.theme.contrast);
                 self.theme.install(ctx);
@@ -452,7 +499,12 @@ impl StudioApp {
                 self.theme.install(ctx);
                 self.batch_key = None;
             }
-            ReducedMotion => self.reduced_motion = !self.reduced_motion,
+            ReducedMotion => {
+                self.reduced_motion = !self.reduced_motion;
+                ctx.style_mut(|style| {
+                    style.animation_time = if self.reduced_motion { 0.0 } else { 0.12 }
+                });
+            }
             System => self.switch_world(World::System),
             Graph => self.switch_world(World::Graph),
             Requirements => self.switch_world(World::Requirements),
@@ -539,6 +591,22 @@ impl StudioApp {
                 }
             }
             Dependencies => {
+                if let Some(root) = self.selected_element() {
+                    self.agent_activity = Some(crate::agents::DependencyActivity {
+                        revision: self.scene.revision_id,
+                        root,
+                        root_name: self
+                            .active_projection()
+                            .nodes
+                            .iter()
+                            .find(|node| node.id == root)
+                            .map_or_else(|| "Selected element".into(), |node| node.name.clone()),
+                        complete: false,
+                        result_count: 0,
+                        error: None,
+                        fixture: self.fixture.is_some(),
+                    });
+                }
                 if let Some((binding, candidate, element)) = self.selected_context() {
                     self.world = World::Graph;
                     self.focus = Some(element);
@@ -585,6 +653,11 @@ impl StudioApp {
                         .elements,
                     );
                     self.expanded = self.dependencies.clone();
+                    if let Some(activity) = &mut self.agent_activity {
+                        activity.complete = true;
+                        activity.result_count =
+                            self.dependencies.as_ref().map_or(0, |ids| ids.len());
+                    }
                     self.rebuild();
                     self.fit_pending = true;
                     self.status = "Temporary dependency view · model unchanged".into();
@@ -657,6 +730,7 @@ impl StudioApp {
                     self.candidate = None;
                     self.comparison = ComparisonMode::Current;
                     self.rebuild();
+                    self.status = "Visual candidate cancelled · current revision restored".into();
                 }
             }
         }
@@ -753,6 +827,7 @@ impl StudioApp {
                 order: 0,
             });
             self.candidate = Some(Candidate {
+                review_selection: None,
                 id: None,
                 phase: None,
                 before,
@@ -763,7 +838,6 @@ impl StudioApp {
             });
             self.comparison = ComparisonMode::Diff;
             self.rebuild();
-            self.fit_pending = true;
             self.status =
                 "Candidate visual preview · install runtime for semantic reconstruction".into();
         }
@@ -812,6 +886,10 @@ impl StudioApp {
         }
     }
     pub fn keyboard(&mut self, ctx: &egui::Context) {
+        // The input method owns Escape/Enter while composing text.
+        if self.ime_composing {
+            return;
+        }
         if ctx.input_mut(|i| i.consume_key(Modifiers::COMMAND, Key::K)) {
             self.palette = !self.palette;
             self.palette_focus = true;
@@ -847,6 +925,7 @@ impl StudioApp {
             (Key::Num3, Modifiers::NONE, CommandId::Requirements),
             (Key::Num4, Modifiers::NONE, CommandId::History),
             (Key::ArrowLeft, Modifiers::ALT, CommandId::Back),
+            (Key::Z, Modifiers::COMMAND, CommandId::Back),
             (Key::ArrowRight, Modifiers::ALT, CommandId::Forward),
             (Key::ArrowUp, Modifiers::ALT, CommandId::Up),
             (Key::Backspace, Modifiers::NONE, CommandId::Up),

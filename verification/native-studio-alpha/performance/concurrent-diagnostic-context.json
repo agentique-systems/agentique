@@ -1,0 +1,12 @@
+{
+  "scope": "Diagnostic only; concurrent accepted KerML rematerialization and current-main release authentication compilation. Not an idle-machine baseline.",
+  "utc": "2026-09-25T16:01:47Z",
+  "rematerialization_process": {
+    "pid": 8624,
+    "working_set_bytes_observed_after": 4080459776,
+    "peak_working_set_bytes": 5348311040
+  },
+  "ui_cpu_median_ms": 21.1954,
+  "visibility_lookup_median_ms": 16.9665,
+  "conclusion": "Visibility collection/hashing/lookup dominates measured UI CPU; cannot infer GPU duration or final idle performance."
+}

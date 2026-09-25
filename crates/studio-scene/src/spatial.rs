@@ -51,7 +51,7 @@ impl<T> RectIndex<T> {
                 .map(|(_, v)| v)
                 .collect();
         }
-        let mut ids = BTreeSet::new();
+        let mut ids = Vec::new();
         for y in y0..=y1 {
             for x in x0..=x1 {
                 if let Some(cell) = self.cells.get(&(x, y)) {
@@ -60,6 +60,8 @@ impl<T> RectIndex<T> {
             }
         }
         ids.extend(self.large.iter().copied());
+        ids.sort_unstable();
+        ids.dedup();
         ids.into_iter()
             .filter_map(|id| {
                 let (bounds, item) = &self.items[id];
@@ -149,13 +151,15 @@ impl SpatialIndex {
     }
     /// Culling includes edges crossing the viewport with both endpoints outside.
     pub fn query(&self, bounds: Rect) -> Vec<SceneTarget> {
-        self.index
+        let mut targets: Vec<_> = self
+            .index
             .query(bounds)
             .into_iter()
-            .map(|i| i.target.clone())
-            .collect::<BTreeSet<_>>()
-            .into_iter()
-            .collect()
+            .map(|i| &i.target)
+            .collect();
+        targets.sort_unstable();
+        targets.dedup();
+        targets.into_iter().cloned().collect()
     }
     /// Fully enclosed nodes and ports; containers only if their entire box fits.
     pub fn marquee(&self, bounds: Rect) -> Vec<SceneTarget> {

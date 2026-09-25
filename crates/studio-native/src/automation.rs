@@ -92,6 +92,7 @@ enum Action {
     Pan,
     Wheel,
     Palette(&'static str),
+    PaletteKeys(&'static str, usize),
     PrepareNamedPart(&'static str),
     ClickTarget(Target),
 }
@@ -118,6 +119,7 @@ impl Action {
             | Self::ClickTarget(..) => 2,
             Self::DoubleClickContainer(..) | Self::Pan => 4,
             Self::Palette(..) => 12,
+            Self::PaletteKeys(..) => 9,
             Self::PrepareNamedPart(..) => 6,
         }
     }
@@ -140,6 +142,7 @@ enum Check {
     Diff,
     CreateDialog,
     Candidate,
+    ReviewMode(ComparisonMode),
     NamedSelected(&'static str),
     Disabled(CommandId),
     PaletteClosed,
@@ -283,6 +286,11 @@ fn vertical() -> Vec<Step> {
             Check::World(World::System),
         ),
         step(
+            "keyboard palette arrows choose System World",
+            Action::PaletteKeys("World", 1),
+            Check::World(World::System),
+        ),
+        step(
             "select candidate parent",
             Action::ClickNode(2, false),
             Check::Selected(2),
@@ -298,9 +306,29 @@ fn vertical() -> Vec<Step> {
             Check::Candidate,
         ),
         step(
+            "explicit focus changes frames candidate",
+            Action::PaletteKeys("Focus changes", 0),
+            Check::PaletteClosed,
+        ),
+        step(
             "candidate element is selectable",
             Action::ClickNamedNode("ScenarioNestedPart"),
             Check::NamedSelected("ScenarioNestedPart"),
+        ),
+        step(
+            "Current retains candidate review memory and camera",
+            Action::PaletteKeys("Review: Current revision", 0),
+            Check::ReviewMode(ComparisonMode::Current),
+        ),
+        step(
+            "Candidate restores its element selection and camera",
+            Action::PaletteKeys("Review: Candidate revision", 0),
+            Check::ReviewMode(ComparisonMode::Candidate),
+        ),
+        step(
+            "Diff preserves candidate element and camera",
+            Action::PaletteKeys("Review: Candidate difference", 0),
+            Check::ReviewMode(ComparisonMode::Diff),
         ),
         step(
             "fixture validation stays disabled",
@@ -364,7 +392,7 @@ fn vertical() -> Vec<Step> {
         ),
         step(
             "final engineering selection",
-            Action::ClickNode(21, false),
+            Action::PaletteKeys("Focus: ModelRepository", 0),
             Check::Selected(21),
         ),
     ]
@@ -388,6 +416,7 @@ struct Snapshot {
     removed_elements: Vec<String>,
     candidate: bool,
     candidate_phase: Option<String>,
+    comparison: String,
     palette: bool,
     palette_query: String,
     create_dialog: bool,
@@ -435,6 +464,7 @@ impl Snapshot {
                 .map(|n| n.semantic.name.clone())
                 .collect(),
             candidate: app.candidate.is_some(),
+            comparison: format!("{:?}", app.comparison),
             candidate_phase: app
                 .candidate
                 .as_ref()
@@ -897,6 +927,18 @@ fn inject(
             }
             _ => {}
         },
+        Action::PaletteKeys(query, down) => match frame {
+            0 => key(input, Key::K, Modifiers::COMMAND),
+            2 => key(input, Key::A, Modifiers::COMMAND),
+            3 => input.events.push(Event::Text((*query).into())),
+            5 => {
+                for _ in 0..*down {
+                    key(input, Key::ArrowDown, Modifiers::NONE);
+                }
+            }
+            7 => key(input, Key::Enter, Modifiers::NONE),
+            _ => {}
+        },
         Action::PrepareNamedPart(name) => match frame {
             0 | 1 => click(
                 input,
@@ -1017,6 +1059,23 @@ fn check(
                         .any(|n| n.name == "ScenarioNestedPart")
             }) && app.comparison == ComparisonMode::Diff
                 && !app.create_dialog
+                && (app.camera.zoom - before.zoom).abs() < 0.001
+                && app.camera.center.x == before.camera_center[0]
+                && app.camera.center.y == before.camera_center[1]
+        }
+        Check::ReviewMode(mode) => {
+            app.comparison == *mode
+                && !app.palette
+                && (app.camera.zoom - before.zoom).abs() < 0.001
+                && app.camera.center.x == before.camera_center[0]
+                && app.camera.center.y == before.camera_center[1]
+                && if *mode == ComparisonMode::Current {
+                    app.selection.primary.is_none()
+                } else {
+                    app.selected_element()
+                        .and_then(|id| app.lookup.node(&app.scene, id))
+                        .is_some_and(|node| node.semantic.name == "ScenarioNestedPart")
+                }
         }
         Check::NamedSelected(name) => app
             .selected_element()

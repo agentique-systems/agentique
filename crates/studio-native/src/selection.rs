@@ -33,6 +33,7 @@ impl CanvasClicks {
     }
 }
 
+#[derive(Clone)]
 pub struct Selection {
     pub revision: ProjectRevisionId,
     pub targets: BTreeSet<SceneTarget>,

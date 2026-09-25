@@ -25,9 +25,15 @@ impl StudioApp {
         crate::automation::record(ui.ctx(), crate::automation::Target::Viewport, rect);
         self.camera.viewport = Size::new(rect.width(), rect.height());
         if self.fit_pending && !self.scene_builder.busy {
-            self.camera.fit(self.scene.bounds(), 42.0);
-            self.camera.zoom = self.camera.zoom.min(1.3);
-            self.camera_target = None;
+            let mut target = self.camera;
+            target.fit(self.scene.bounds(), 42.0);
+            target.zoom = target.zoom.min(1.3);
+            if self.frame_number > 2 && !self.reduced_motion {
+                self.camera_target = Some(target);
+            } else {
+                self.camera = target;
+                self.camera_target = None;
+            }
             self.fit_pending = false;
         }
         self.lod.update(self.camera.zoom);
@@ -105,30 +111,27 @@ impl StudioApp {
         if response.double_clicked() && focus_click && self.selection.primary.is_some() {
             self.execute(CommandId::Focus, ui.ctx());
         }
-        if response.secondary_clicked()
-            && let Some(target) = hovered.clone()
-        {
-            self.select(target, false);
+        if response.secondary_clicked() {
+            if let Some(target) = hovered.clone() {
+                self.select(target, false);
+            } else {
+                self.selection.clear();
+                self.invalidate_inspection();
+                self.batch_key = None;
+            }
         }
         response.context_menu(|ui| {
-            for id in [
-                CommandId::Focus,
-                CommandId::Dependencies,
-                CommandId::Explain,
-                CommandId::Source,
-                CommandId::CreatePart,
-                CommandId::Neighbors,
-                CommandId::Fit,
-            ] {
+            for id in context_commands(self.selection.primary.as_ref()) {
+                let id = *id;
                 let command = commands::COMMANDS.iter().find(|c| c.id == id).unwrap();
                 let reason = commands::unavailable(id, &self.context());
-                let button = ui.add_enabled(reason.is_none(), egui::Button::new(command.label));
+                if reason.is_some() {
+                    continue;
+                }
+                let button = ui.button(command.label);
                 if button.clicked() {
                     self.execute(id, ui.ctx());
                     ui.close();
-                }
-                if let Some(reason) = reason {
-                    button.on_disabled_hover_text(reason);
                 }
             }
         });
@@ -149,11 +152,9 @@ impl StudioApp {
             }
         }
         let visibility_started = Instant::now();
-        let visible: BTreeSet<_> = self
+        let visible = self
             .spatial
-            .visible(self.camera.visible_rect().inflate(20.0 / self.camera.zoom))
-            .into_iter()
-            .collect();
+            .visible(self.camera.visible_rect().inflate(20.0 / self.camera.zoom));
         let mut hasher = DefaultHasher::new();
         self.generation.hash(&mut hasher);
         self.theme.dark.hash(&mut hasher);
@@ -204,6 +205,8 @@ impl StudioApp {
         self.timing.visible_nodes = 0;
         let labels_started = Instant::now();
         self.timing.total_nodes = self.scene.nodes.len();
+        let mut keyboard_selection = None;
+        let mut keyboard_focus = false;
         for node in &objects.nodes {
             self.timing.visible_nodes += 1;
             let a = self.camera.world_to_screen(node.bounds.min);
@@ -372,10 +375,29 @@ impl StudioApp {
                         true,
                         format!(
                             "{}, {}, {:?}",
-                            node.semantic.name, node.semantic.semantic_kind, node.semantic.origin
+                            node.semantic.name,
+                            node.category.label(),
+                            node.semantic.origin
                         ),
                     )
                 });
+                if accessibility.has_focus() {
+                    painter.rect_stroke(
+                        bounds.expand(5.0),
+                        7.0,
+                        Stroke::new(2.0, theme.accent),
+                        egui::StrokeKind::Outside,
+                    );
+                    if accessibility.gained_focus() {
+                        keyboard_selection = Some(SceneTarget::Node(node.id()));
+                    }
+                    if ui.input_mut(|input| {
+                        input.consume_key(egui::Modifiers::NONE, egui::Key::Enter)
+                    }) {
+                        keyboard_selection = Some(SceneTarget::Node(node.id()));
+                        keyboard_focus = true;
+                    }
+                }
             }
         }
         for edge in &objects.edges {
@@ -464,6 +486,12 @@ impl StudioApp {
             }
         }
         self.timing.labels(labels_started.elapsed());
+        if let Some(target) = keyboard_selection {
+            self.select(target, false);
+            if keyboard_focus {
+                self.execute(CommandId::Focus, ui.ctx());
+            }
+        }
         if let Some(target) = hovered {
             let label = match &target {
                 SceneTarget::Node(id) | SceneTarget::Container(id) => self
@@ -739,6 +767,17 @@ impl StudioApp {
         batch
     }
 }
+fn context_commands(target: Option<&SceneTarget>) -> &'static [CommandId] {
+    use CommandId::*;
+    match target {
+        None => &[Fit, Home, System, Graph, Requirements],
+        Some(SceneTarget::Port(_)) => &[Focus, Explain, Source, Dependencies],
+        Some(SceneTarget::Edge(_)) => &[Focus, Explain, Source],
+        Some(SceneTarget::Node(_) | SceneTarget::Container(_)) => {
+            &[Focus, Dependencies, Explain, Source, CreatePart, Neighbors]
+        }
+    }
+}
 fn category_color(category: NodeCategory, theme: crate::theme::Theme) -> Color32 {
     match category {
         NodeCategory::Requirement => theme.amber,
@@ -823,7 +862,7 @@ fn bounded_label(
         egui::text::LayoutJob::simple_singleline(text.into(), FontId::proportional(size), color);
     job.wrap.max_width = width;
     job.wrap.max_rows = rows;
-    job.wrap.break_anywhere = true;
+    job.wrap.break_anywhere = rows == 1;
     job.wrap.overflow_character = Some('…');
     painter.galley(position, painter.layout_job(job), color);
 }

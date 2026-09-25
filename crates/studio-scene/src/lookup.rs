@@ -1,7 +1,7 @@
 use crate::{SceneEdge, SceneNode, ScenePort, SceneTarget, SemanticScene};
 use agq_kernel::ElementId;
 use agq_modeling_workspace::ProjectRevisionId;
-use std::collections::{BTreeSet, HashMap};
+use std::collections::HashMap;
 
 /// Identity-to-position accelerator for one disposable scene generation.
 ///
@@ -104,23 +104,23 @@ impl SceneLookup {
         if scene.revision_id != self.revision_id {
             return VisibleScene::default();
         }
-        let mut nodes = BTreeSet::new();
-        let mut ports = BTreeSet::new();
-        let mut edges = BTreeSet::new();
+        let mut nodes = Vec::new();
+        let mut ports = Vec::new();
+        let mut edges = Vec::new();
         for target in targets {
             match target {
                 SceneTarget::Node(id) | SceneTarget::Container(id) => {
                     if let Some(index) = self.nodes.get(id)
                         && scene.nodes.get(*index).is_some_and(|n| n.id() == *id)
                     {
-                        nodes.insert(*index);
+                        nodes.push(*index);
                     }
                 }
                 SceneTarget::Port(id) => {
                     if let Some(index) = self.ports.get(id)
                         && scene.ports.get(*index).is_some_and(|p| p.id == *id)
                     {
-                        ports.insert(*index);
+                        ports.push(*index);
                     }
                 }
                 SceneTarget::Edge(id) => {
@@ -130,10 +130,14 @@ impl SceneLookup {
                             .get(*index)
                             .is_some_and(|e| e.semantic.id == *id)
                     {
-                        edges.insert(*index);
+                        edges.push(*index);
                     }
                 }
             }
+        }
+        for indices in [&mut nodes, &mut ports, &mut edges] {
+            indices.sort_unstable();
+            indices.dedup();
         }
         VisibleScene {
             nodes: nodes.into_iter().map(|i| &scene.nodes[i]).collect(),

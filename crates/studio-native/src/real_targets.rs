@@ -24,13 +24,11 @@ struct Recorded {
 }
 
 pub fn record(ctx: &egui::Context, target: Target, rect: Rect) {
+    let frame = ctx.cumulative_frame_nr();
     ctx.data_mut(|data| {
         data.insert_temp(
             egui::Id::new(("native-real-input-target", target)),
-            Recorded {
-                rect,
-                frame: ctx.cumulative_frame_nr(),
-            },
+            Recorded { rect, frame },
         );
     });
 }

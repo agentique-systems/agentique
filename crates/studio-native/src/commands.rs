@@ -21,6 +21,10 @@ pub enum CommandId {
     ExpandBoth,
     CollapseNeighborhood,
     ShowLoadedGraph,
+    ReviewCurrent,
+    ReviewCandidate,
+    ReviewDiff,
+    FocusChanges,
     CreatePart,
     Compare,
     Validate,
@@ -39,6 +43,30 @@ pub struct Command {
 }
 
 pub const COMMANDS: &[Command] = &[
+    Command {
+        id: CommandId::ReviewCurrent,
+        label: "Review: Current revision",
+        shortcut: "",
+        description: "Inspect the unchanged base while retaining candidate selection",
+    },
+    Command {
+        id: CommandId::ReviewCandidate,
+        label: "Review: Candidate revision",
+        shortcut: "",
+        description: "Return to the proposed revision at the same camera",
+    },
+    Command {
+        id: CommandId::ReviewDiff,
+        label: "Review: Candidate difference",
+        shortcut: "",
+        description: "Show added, changed and removed objects",
+    },
+    Command {
+        id: CommandId::FocusChanges,
+        label: "Focus changes",
+        shortcut: "",
+        description: "Frame visible changed objects without changing model state",
+    },
     Command {
         id: CommandId::ShowLoadedGraph,
         label: "Show loaded graph overview",
@@ -180,7 +208,7 @@ pub const COMMANDS: &[Command] = &[
     Command {
         id: CommandId::Cancel,
         label: "Cancel candidate",
-        shortcut: "Esc",
+        shortcut: "",
         description: "Discard the uncommitted alternate revision",
     },
     Command {
@@ -273,6 +301,11 @@ pub fn unavailable(id: CommandId, context: &CommandContext) -> Option<&'static s
         return Some("A model operation is running");
     }
     match id {
+        ReviewCurrent | ReviewCandidate | ReviewDiff
+            if context.candidate == CandidateReview::None =>
+        {
+            Some("No candidate to review")
+        }
         Compare if context.candidate != CandidateReview::None => {
             Some("Review or cancel the candidate before comparing durable revisions")
         }

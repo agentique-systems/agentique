@@ -25,6 +25,11 @@ impl StudioApp {
             target.is_some(),
             egui::Button::new(&feature.name).frame(false),
         );
+        crate::real_targets::record(
+            ui.ctx(),
+            crate::real_targets::Target::InspectorElement(feature.id),
+            response.rect,
+        );
         let clicked = response
             .on_hover_text(format!(
                 "{}\n{}",
@@ -94,11 +99,15 @@ impl StudioApp {
                     .edges
                     .iter()
                     .any(|item| item.semantic.id == edge.id);
-                if ui
+                let response = ui
                     .add_enabled(visible, egui::Button::new(label).frame(false))
-                    .on_hover_text(format!("{:?} · {:?}", edge.family, edge.origin))
-                    .clicked()
-                {
+                    .on_hover_text(format!("{:?} · {:?}", edge.family, edge.origin));
+                crate::real_targets::record(
+                    ui.ctx(),
+                    crate::real_targets::Target::InspectorRelationship(edge.id.clone()),
+                    response.rect,
+                );
+                if response.clicked() {
                     self.select(SceneTarget::Edge(edge.id.clone()), false);
                 }
             }
@@ -206,19 +215,59 @@ impl StudioApp {
                 .corner_radius(6)
                 .show(ui, |ui| {
                     ui.strong("Dependency view");
-                    ui.label(muted("Agent intent · show related architecture", theme).small());
+                    if let Some(activity) = &self.agent_activity {
+                        ui.label(
+                            muted(
+                                if activity.fixture {
+                                    "Built-in query · visual fixture"
+                                } else {
+                                    "Built-in semantic query agent"
+                                },
+                                theme,
+                            )
+                            .small(),
+                        );
+                        ui.label(format!("Dependencies of {}", activity.root_name));
+                        ui.label(
+                            muted(
+                                format!("Target {}", short_revision(activity.revision)),
+                                theme,
+                            )
+                            .small(),
+                        );
+                        ui.label(
+                            muted(
+                                if let Some(error) = &activity.error {
+                                    format!("Failed: {error}")
+                                } else if activity.complete {
+                                    format!("Complete · {} result elements", activity.result_count)
+                                } else {
+                                    "Running · waiting for semantic projection".into()
+                                },
+                                theme,
+                            )
+                            .small(),
+                        );
+                        ui.collapsing("Query identity", |ui| {
+                            ui.label(activity.root.to_string());
+                            ui.label(activity.revision.to_string());
+                        });
+                    } else {
+                        ui.label(
+                            muted("Restored temporary view · no running agent request", theme)
+                                .small(),
+                        );
+                    }
+                    ui.label(muted("Temporary view · read-only authority", theme).small());
+                    ui.separator();
+                    ui.label("Decision mock suggests Graph");
                     ui.label(
                         muted(
-                            format!(
-                                "{} · {} visible elements",
-                                short_revision(self.scene.revision_id),
-                                self.scene.nodes.len()
-                            ),
+                            "Illustrative weight 0.72 · not calibrated confidence",
                             theme,
                         )
                         .small(),
                     );
-                    ui.label(muted("Temporary view · read-only authority", theme).small());
                     if ui.button("Dismiss agent view").clicked() {
                         self.show_agent = false;
                         self.dependencies = None;
@@ -427,8 +476,15 @@ impl StudioApp {
                             .map(|n| n.semantic.name.clone())
                     })
                     .unwrap_or_else(|| "Outside current view".into());
+                let direction = if !edge.directed {
+                    "—"
+                } else if self.lookup.endpoint_owner(edge.source) == node.id() {
+                    "→"
+                } else {
+                    "←"
+                };
                 if ui
-                    .selectable_label(false, format!("{} → {}", edge.label, target_name))
+                    .selectable_label(false, format!("{} {direction} {}", edge.label, target_name))
                     .on_hover_text(format!("{:?} · {:?}", edge.family, edge.origin))
                     .clicked()
                 {
@@ -531,7 +587,14 @@ impl StudioApp {
             );
             theme.section(ui, "DECISION AGENT");
             ui.label("Suggested lens: Graph World");
-            ui.label(muted("Illustrative choice distribution", theme).small());
+            ui.label(
+                muted(
+                    format!("Provider: {}", presentation.decision.provider),
+                    theme,
+                )
+                .small(),
+            );
+            ui.label(muted("Illustrative weights · not calibrated probabilities", theme).small());
             for (name, score) in &presentation.decision.answers[0].probabilities {
                 ui.add(
                     egui::ProgressBar::new(*score as f32)

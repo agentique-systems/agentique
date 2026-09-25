@@ -1,0 +1,23 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-studio-scene",
+    "-j",
+    "2"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T16:03:37.157611+00:00",
+  "elapsed_seconds": 41.969,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/visibility-scene-tests.txt",
+  "output_sha256": "449210ceac1c398fafb78049f538dcca99b1f08587d8f0cd443bda762047f228",
+  "build_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0"
+  }
+}

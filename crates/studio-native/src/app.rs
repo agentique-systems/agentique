@@ -41,6 +41,7 @@ pub struct Candidate {
     pub before: ViewProjection,
     pub after: ViewProjection,
     pub source: String,
+    pub review_selection: Option<Selection>,
 }
 
 pub struct PendingPreparation {
@@ -53,6 +54,7 @@ pub struct StudioApp {
     pub args: Args,
     pub theme: Theme,
     pub reduced_motion: bool,
+    pub ime_composing: bool,
     pub ready: bool,
     pub fixture: Option<String>,
     pub config: NativeConfig,
@@ -110,6 +112,7 @@ pub struct StudioApp {
     pub compare_before: Option<ViewProjection>,
     pub dependencies: Option<BTreeSet<ElementId>>,
     pub show_agent: bool,
+    pub agent_activity: Option<crate::agents::DependencyActivity>,
     pub search: String,
     pub status: String,
     pub fit_pending: bool,
@@ -171,6 +174,7 @@ impl StudioApp {
             args,
             theme,
             reduced_motion: restore.as_ref().is_some_and(|r| r.reduced_motion),
+            ime_composing: false,
             ready: fixture.is_some(),
             fixture,
             config,
@@ -230,6 +234,7 @@ impl StudioApp {
             compare_before: None,
             dependencies: None,
             show_agent: false,
+            agent_activity: None,
             search: String::new(),
             status: "Ready".into(),
             fit_pending: true,
@@ -385,6 +390,8 @@ impl StudioApp {
             {
                 self.camera = target;
                 self.camera_target = None;
+                self.navigation
+                    .update_camera([target.center.x, target.center.y], target.zoom);
             } else {
                 ctx.request_repaint();
             }
@@ -422,6 +429,17 @@ impl StudioApp {
 
 impl eframe::App for StudioApp {
     fn raw_input_hook(&mut self, ctx: &egui::Context, input: &mut egui::RawInput) {
+        for event in &input.events {
+            match event {
+                egui::Event::Ime(egui::ImeEvent::Preedit(text)) => {
+                    self.ime_composing = !text.is_empty()
+                }
+                egui::Event::Ime(egui::ImeEvent::Commit(_) | egui::ImeEvent::Disabled) => {
+                    self.ime_composing = false
+                }
+                _ => {}
+            }
+        }
         if let Some(scenario) = &self.args.scenario {
             let outcome = if scenario == "stress" {
                 crate::stress_automation::drive(self, ctx, input, &self.args.scenario_report)

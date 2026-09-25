@@ -1,0 +1,19 @@
+{
+  "command": [
+    "target/native-alpha/release/agq-studio-native.exe",
+    "--fixture",
+    "stress10000",
+    "--no-restore",
+    "--scenario",
+    "stress",
+    "--scenario-report",
+    "verification/native-studio-alpha/performance/10k-concurrent-reconstruction.json"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T16:01:47.865260+00:00",
+  "elapsed_seconds": 11.281,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/stress10k-concurrent-diagnostic.txt",
+  "output_sha256": "6518a7086588667c2b5fa8c828425ddc154dffbad599ff63536832aefc905b87",
+  "build_environment": {}
+}

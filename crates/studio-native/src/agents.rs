@@ -5,6 +5,39 @@ use agq_modeling_workspace::ProjectRevisionId;
 use agq_studio_scene::{OverlayKind, SceneOverlay, SceneTarget};
 use std::collections::BTreeSet;
 
+/// A query observation retains the requested subject even when selection changes.
+pub struct DependencyActivity {
+    pub revision: ProjectRevisionId,
+    pub root: ElementId,
+    pub root_name: String,
+    pub complete: bool,
+    pub result_count: usize,
+    pub error: Option<String>,
+    pub fixture: bool,
+}
+
+impl crate::app::StudioApp {
+    pub fn finish_agent_projection(&mut self) {
+        if !self.show_agent {
+            return;
+        }
+        let projection = self.active_projection();
+        let revision = projection.revision_id;
+        let targets: BTreeSet<_> = projection.nodes.iter().map(|node| node.id).collect();
+        if let Some(activity) = &mut self.agent_activity {
+            if activity.revision != revision {
+                self.show_agent = false;
+                self.dependencies = None;
+                return;
+            }
+            activity.complete = true;
+            activity.result_count = targets.len();
+            activity.error = None;
+        }
+        self.dependencies = Some(targets);
+    }
+}
+
 pub struct AgentPresentation {
     pub observation: DecisionState,
     pub decision: DecisionResult,

@@ -1,0 +1,188 @@
+
+> agentique@0.1.0 test:e2e
+> playwright test
+
+[WebServer]    Compiling proc-macro2 v1.0.107
+[WebServer]    Compiling quote v1.0.47
+[WebServer]    Compiling unicode-ident v1.0.24
+[WebServer]    Compiling cfg-if v1.0.5
+[WebServer]    Compiling windows-link v0.2.1
+[WebServer]    Compiling itoa v1.0.18
+[WebServer]    Compiling serde_core v1.0.229
+[WebServer]    Compiling smallvec v1.16.1
+[WebServer]    Compiling version_check v0.9.5
+[WebServer]    Compiling typenum v1.20.1
+[WebServer]    Compiling stable_deref_trait v1.2.1
+[WebServer]    Compiling find-msvc-tools v0.1.12
+[WebServer]    Compiling windows-sys v0.61.2
+[WebServer]    Compiling shlex v2.0.1
+[WebServer]    Compiling zmij v1.0.23
+[WebServer]    Compiling pin-project-lite v0.2.17
+[WebServer]    Compiling[WebServer]  serde v1.0.229
+[WebServer]    Compiling bytes v1.12.1
+[WebServer]    Compiling[WebServer]  autocfg v1.5.1
+[WebServer]    Compiling[WebServer]  log v0.4.34
+[WebServer]    Compiling generic-array v0.14.7
+[WebServer]    Compiling cc v1.4.6
+[WebServer]    Compiling parking_lot_core v0.9.12
+[WebServer]    Compiling futures-core v0.3.34
+[WebServer]    Compiling num-traits v0.2.19
+[WebServer]    Compiling[WebServer]  scopeguard v1.2.0
+[WebServer]    Compiling cpufeatures v0.2.17
+[WebServer]    Compiling[WebServer]  once_cell v1.21.4
+[WebServer]    Compiling lock_api v0.4.14
+[WebServer]    Compiling memchr v2.8.3
+[WebServer]    Compiling serde_json v1.0.151
+[WebServer]    Compiling getrandom v0.4.3
+[WebServer]    Compiling parking_lot v0.12.5
+[WebServer]    Compiling[WebServer]  syn v3.0.5
+[WebServer]    Compiling[WebServer]  block-buffer v0.10.4
+[WebServer]    Compiling crypto-common v0.1.7
+[WebServer]    Compiling[WebServer]  digest v0.10.7
+[WebServer]    Compiling[WebServer]  thiserror v2.0.20
+[WebServer]    Compiling http v1.5.0
+[WebServer]    Compiling writeable v0.6.4
+[WebServer]    Compiling[WebServer]  sha2 v0.10.9
+[WebServer]    Compiling[WebServer]  litemap v0.8.3
+[WebServer]    Compiling tracing-core v0.1.36
+[WebServer]    Compiling[WebServer]  utf8_iter v1.0.4
+[WebServer]    Compiling icu_properties_data v2.3.0
+[WebServer]    Compiling[WebServer]  num-integer v0.1.47
+[WebServer]    Compiling crc32fast v1.5.2
+[WebServer]    Compiling ring v0.17.14
+[WebServer]    Compiling sha1_smol v1.0.1
+[WebServer]    Compiling[WebServer]  http-body v1.1.0
+[WebServer]    Compiling icu_normalizer_data v2.3.0
+[WebServer]    Compiling[WebServer]  percent-encoding v2.3.2
+[WebServer]    Compiling socket2 v0.6.5
+[WebServer]    Compiling mio v1.2.3
+[WebServer]    Compiling[WebServer]  uuid v1.26.1
+[WebServer]    Compiling tracing v0.1.44
+[WebServer]    Compiling[WebServer]  httparse v1.10.1
+[WebServer]    Compiling[WebServer]  simd-adler32 v0.3.10
+[WebServer]    Compiling[WebServer]  futures-task v0.3.34
+[WebServer]    Compiling zeroize v1.9.0
+[WebServer]    Compiling tower-service v0.3.3
+[WebServer]    Compiling slab v0.4.12
+[WebServer]    Compiling[WebServer]  futures-util v0.3.34
+[WebServer]    Compiling[WebServer]  rustls-pki-types v1.15.1
+[WebServer]    Compiling getrandom v0.2.17
+[WebServer]    Compiling libc v0.2.189
+[WebServer]    Compiling try-lock v0.2.5
+[WebServer]    Compiling untrusted v0.9.0
+[WebServer]    Compiling adler2 v2.0.1
+[WebServer]    Compiling[WebServer]  httpdate v1.0.3
+[WebServer]    Compiling miniz_oxide v0.9.1
+[WebServer]    Compiling[WebServer]  want v0.3.1
+[WebServer]    Compiling[WebServer]  form_urlencoded v1.2.2
+[WebServer]    Compiling[WebServer]  sync_wrapper v1.0.2
+[WebServer]    Compiling[WebServer]  futures-channel v0.3.34
+[WebServer]    Compiling[WebServer]  equivalent v1.0.2
+[WebServer]    Compiling[WebServer]  atomic-waker v1.1.2
+[WebServer]    Compiling[WebServer]  rustls v0.23.45
+[WebServer]    Compiling tower-layer v0.3.3
+[WebServer]    Compiling[WebServer]  bumpalo v3.20.3
+[WebServer]    Compiling[WebServer]  mime v0.3.17
+[WebServer]    Compiling[WebServer]  zip v2.4.2
+[WebServer]    Compiling hashbrown v0.17.1
+[WebServer]    Compiling unicase v2.9.0
+[WebServer]    Compiling zopfli v0.8.3
+[WebServer]    Compiling flate2 v1.1.10
+[WebServer]    Compiling synstructure v0.14.0
+[WebServer]    Compiling http-body-util v0.1.5
+[WebServer]    Compiling mime_guess v2.0.5
+[WebServer]    Compiling[WebServer]  pkg-config v0.3.34
+[WebServer]    Compiling vcpkg v0.2.15
+[WebServer]    Compiling indexmap v2.14.2
+[WebServer]    Compiling subtle v2.6.1
+[WebServer]    Compiling[WebServer]  base64 v0.22.1
+[WebServer]    Compiling[WebServer]  bitflags v2.13.2
+[WebServer]    Compiling ipnet v2.12.2
+[WebServer]    Compiling[WebServer]  agq-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\semantics)
+[WebServer]    Compiling agq-application v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\application)
+[WebServer]    Compiling utf8parse v0.2.2
+[WebServer]    Compiling[WebServer]  anstyle v1.0.14
+[WebServer]    Compiling libsqlite3-sys v0.35.0
+[WebServer]    Compiling futures-sink v0.3.34
+[WebServer]    Compiling foldhash v0.1.5
+[WebServer]    Compiling[WebServer]  ryu v1.0.23
+[WebServer]    Compiling[WebServer]  once_cell_polyfill v1.70.2
+[WebServer]    Compiling[WebServer]  hashbrown v0.15.5
+[WebServer]    Compiling anstyle-parse v1.0.0
+[WebServer]    Compiling anstyle-wincon v3.0.11
+[WebServer]    Compiling webpki-roots v1.0.9
+[WebServer]    Compiling[WebServer]  anstyle-query v1.1.5
+[WebServer]    Compiling http-range-header v0.4.2
+[WebServer]    Compiling colorchoice v1.0.5
+[WebServer]    Compiling is_terminal_polyfill v1.70.2
+[WebServer]    Compiling[WebServer]  fallible-iterator v0.3.0
+[WebServer]    Compiling fallible-streaming-iterator v0.1.9
+[WebServer]    Compiling anstream v1.0.0
+[WebServer]    Compiling strsim v0.11.1
+[WebServer]    Compiling clap_lex v1.1.1
+[WebServer]    Compiling[WebServer]  hashlink v0.10.0
+[WebServer]    Compiling heck v0.5.0
+[WebServer]    Compiling axum-core v0.5.6
+[WebServer]    Compiling clap_builder v4.6.7
+[WebServer]    Compiling serde_path_to_error v0.1.20
+[WebServer]    Compiling matchit v0.8.4
+[WebServer]    Compiling zerofrom-derive v0.1.8
+[WebServer]    Compiling displaydoc v0.2.7
+[WebServer]    Compiling yoke-derive v0.8.3
+[WebServer]    Compiling serde_derive v1.0.229
+[WebServer]    Compiling zerovec-derive v0.11.6
+[WebServer]    Compiling[WebServer]  tokio-macros v2.7.2
+[WebServer]    Compiling thiserror-impl v2.0.20
+[WebServer]    Compiling clap_derive v4.6.7
+[WebServer]    Compiling[WebServer]  rustls-webpki v0.103.15
+[WebServer]    Compiling tokio v1.53.1
+[WebServer]    Compiling rusqlite v0.37.0
+[WebServer]    Compiling[WebServer]  zerofrom v0.1.8
+[WebServer]    Compiling yoke v0.8.3
+[WebServer]    Compiling zerovec v0.11.8
+[WebServer]    Compiling[WebServer]  zerotrie v0.2.5
+[WebServer]    Compiling clap v4.6.7
+[WebServer]    Compiling tinystr v0.8.4
+[WebServer]    Compiling potential_utf v0.1.6
+[WebServer]    Compiling icu_collections v2.3.0
+[WebServer]    Compiling[WebServer]  icu_locale_core v2.3.0
+[WebServer]    Compiling num-bigint v0.4.8
+[WebServer]    Compiling chrono v0.4.45
+[WebServer]    Compiling serde_urlencoded v0.7.1
+[WebServer]    Compiling icu_provider v2.3.1
+[WebServer]    Compiling icu_properties v2.3.0
+[WebServer]    Compiling icu_normalizer v2.3.0
+[WebServer]    Compiling agq-model v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\model)
+[WebServer]    Compiling idna_adapter v1.2.2
+[WebServer]    Compiling agq-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\syntax)
+[WebServer]    Compiling idna v1.1.0
+[WebServer]    Compiling url v2.5.8
+[WebServer]    Compiling agq-simulation v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\simulation)
+[WebServer]    Compiling agq-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\workspace)
+[WebServer]    Compiling agq-storage v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\storage)
+[WebServer]    Compiling hyper v1.11.1
+[WebServer]    Compiling tower v0.5.3
+[WebServer]    Compiling tokio-rustls v0.26.5
+[WebServer]    Compiling tokio-util v0.7.19
+[WebServer]    Compiling tower-http v0.6.11
+[WebServer]    Compiling hyper-util v0.1.20
+[WebServer]    Compiling hyper-rustls v0.27.9
+[WebServer]    Compiling axum v0.8.9
+[WebServer]    Compiling reqwest v0.12.28
+[WebServer]    Compiling agq-assistant v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\assistant)
+[WebServer]    Compiling agq-server v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\server)
+[WebServer]     Finished `dev` profile [unoptimized + debuginfo] target(s) in 1m 01s
+[WebServer]      Running `target\debug\agq-server.exe --port 7342 --workspace .workspaces/e2e-aef4e7e0-8c1b-41e4-9ac6-3e3d80486c02.db`
+
+Running 8 tests using 1 worker
+
+  ✓  1 tests\browser\console.spec.ts:5:1 › Cancellable model work and paged history use durable Engine results (21.1s)
+  ✓  2 tests\browser\console.spec.ts:143:1 › Console lifecycle, source navigation, shared context and reviewed Assistant change (21.8s)
+  ✓  3 tests\browser\console.spec.ts:242:1 › API authentication, scope, identity mapping and revision checks (2.5s)
+  ✓  4 tests\browser\console.spec.ts:330:1 › Keyboard inspection and recoverable source drafts (5.5s)
+  ✓  5 tests\browser\studio.spec.ts:272:1 › Studio reports missing durable inputs without substituting model content (471ms)
+  ✓  6 tests\browser\studio.spec.ts:298:1 › Studio shared selection, semantic filters, explanation and revision binding (1.3s)
+  ✓  7 tests\browser\studio.spec.ts:386:1 › Agent view and explicit candidate validation, commit, history, and rejection (1.6s)
+  ✓  8 tests\browser\studio.spec.ts:470:1 › Studio refuses a projection from the wrong immutable revision (309ms)
+
+  8 passed (2.0m)

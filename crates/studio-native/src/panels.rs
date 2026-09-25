@@ -194,16 +194,29 @@ impl StudioApp {
                             ComparisonMode::Candidate,
                             ComparisonMode::Diff,
                         ] {
-                            if ui
-                                .add_enabled(
-                                    !self.bridge.mutation_pending(),
-                                    egui::Button::selectable(
-                                        self.comparison == mode,
-                                        format!("{mode:?}"),
-                                    ),
-                                )
-                                .clicked()
-                            {
+                            let response = ui.add_enabled(
+                                !self.bridge.mutation_pending(),
+                                egui::Button::selectable(
+                                    self.comparison == mode,
+                                    format!("{mode:?}"),
+                                ),
+                            );
+                            crate::real_targets::record(
+                                ctx,
+                                match mode {
+                                    ComparisonMode::Current => {
+                                        crate::real_targets::Target::ComparisonCurrent
+                                    }
+                                    ComparisonMode::Candidate => {
+                                        crate::real_targets::Target::ComparisonCandidate
+                                    }
+                                    ComparisonMode::Diff => {
+                                        crate::real_targets::Target::ComparisonDiff
+                                    }
+                                },
+                                response.rect,
+                            );
+                            if response.clicked() {
                                 self.change_comparison(mode);
                             }
                         }
@@ -322,6 +335,7 @@ impl StudioApp {
                                         .size(11.0)
                                         .color(theme.green),
                                 );
+                                if ui.small_button("Focus changes").clicked() { self.execute(CommandId::FocusChanges, ctx); }
                             }
                         });
                         if self.world == World::System && self.focus.is_some() {
@@ -392,10 +406,9 @@ impl StudioApp {
                                     }
                                 });
                                 let mut include = self.include_standard;
-                                if ui
-                                    .checkbox(&mut include, "Expand adjacent standard dependencies")
-                                    .changed()
-                                {
+                                let standards = ui.checkbox(&mut include, "Expand adjacent standard dependencies");
+                                crate::real_targets::record(ctx, crate::real_targets::Target::Standards, standards.rect);
+                                if standards.changed() {
                                     self.include_standard = include;
                                     self.request_projection();
                                 }
@@ -418,10 +431,18 @@ impl StudioApp {
                 .color(theme.muted),
         );
         ui.add_space(14.0);
-        ui.add(
-            egui::TextEdit::singleline(&mut self.search)
-                .hint_text("Find an element…")
-                .desired_width(f32::INFINITY),
+        let search_label = ui.label(muted("Find an element", theme).small());
+        let search_input = ui
+            .add(
+                egui::TextEdit::singleline(&mut self.search)
+                    .hint_text("Find an element…")
+                    .desired_width(f32::INFINITY),
+            )
+            .labelled_by(search_label.id);
+        crate::real_targets::record(
+            ui.ctx(),
+            crate::real_targets::Target::ExplorerSearch,
+            search_input.rect,
         );
         ui.add_space(14.0);
         ui.horizontal(|ui| {
@@ -479,6 +500,11 @@ impl StudioApp {
                         let response = ui
                             .selectable_label(self.selection.contains(*id), name)
                             .on_hover_text(name);
+                        crate::real_targets::record(
+                            ui.ctx(),
+                            crate::real_targets::Target::ExplorerElement(*id),
+                            response.rect,
+                        );
                         if response.clicked() {
                             self.select(
                                 if *container {
@@ -530,10 +556,9 @@ impl StudioApp {
                             });
                             ui.add_space(18.0);
                             for project in self.projects.clone() {
-                                if ui
-                                    .add_sized([500.0, 42.0], egui::Button::new(&project.name))
-                                    .clicked()
-                                {
+                                let project_button = ui.add_sized([500.0, 42.0], egui::Button::new(&project.name));
+                                crate::real_targets::record(ctx, crate::real_targets::Target::Project(project.id), project_button.rect);
+                                if project_button.clicked() {
                                     self.open_project(project.id);
                                 }
                             }
@@ -594,84 +619,7 @@ impl StudioApp {
     pub fn dialogs(&mut self, ctx: &egui::Context) {
         let theme = self.theme;
         if self.palette {
-            let mut open = true;
-            egui::Window::new("Commands")
-                .open(&mut open)
-                .collapsible(false)
-                .resizable(false)
-                .anchor(Align2::CENTER_TOP, [0.0, 130.0])
-                .fixed_size([590.0, 420.0])
-                .show(ctx, |ui| {
-                    let input = ui.add(
-                        egui::TextEdit::singleline(&mut self.palette_query)
-                            .hint_text("Find a command or focus an element…")
-                            .desired_width(f32::INFINITY),
-                    );
-                    if self.palette_focus {
-                        input.request_focus();
-                        self.palette_focus = false;
-                    }
-                    crate::automation::record(
-                        ctx,
-                        crate::automation::Target::PaletteInput,
-                        input.rect,
-                    );
-                    ui.add_space(8.0);
-                    let enter = ui.input(|i| i.key_pressed(egui::Key::Enter));
-                    egui::ScrollArea::vertical().show(ui, |ui| {
-                        let results: Vec<_> = commands::search(&self.palette_query).collect();
-                        let first_available = results
-                            .iter()
-                            .find(|command| {
-                                commands::unavailable(command.id, &self.context()).is_none()
-                            })
-                            .map(|command| command.id);
-                        for command in results {
-                            let reason = commands::unavailable(command.id, &self.context());
-                            let label = format!(
-                                "{}    {}\n{}",
-                                command.label,
-                                command.shortcut,
-                                reason.unwrap_or(command.description)
-                            );
-                            let response = ui.add_enabled(
-                                reason.is_none(),
-                                egui::Button::new(label)
-                                    .min_size(Vec2::new(ui.available_width(), 52.0)),
-                            );
-                            if response.clicked()
-                                || (first_available == Some(command.id)
-                                    && enter
-                                    && reason.is_none())
-                            {
-                                self.execute(command.id, ctx);
-                                self.palette = false;
-                            }
-                        }
-                        if !self.palette_query.trim().is_empty() {
-                            let query = self
-                                .palette_query
-                                .trim_start_matches("Focus ")
-                                .to_lowercase();
-                            let nodes: Vec<_> = self
-                                .projection
-                                .nodes
-                                .iter()
-                                .filter(|n| commands::fuzzy_score(&query, &n.name).is_some())
-                                .take(8)
-                                .map(|n| (n.id, n.name.clone()))
-                                .collect();
-                            for (id, name) in nodes {
-                                if ui.button(format!("Focus {name}")).clicked() {
-                                    self.select(SceneTarget::Node(id), false);
-                                    self.execute(CommandId::Focus, ctx);
-                                    self.palette = false;
-                                }
-                            }
-                        }
-                    });
-                });
-            self.palette &= open;
+            self.command_palette(ctx);
         }
         if self.create_dialog {
             let mut open = true;
