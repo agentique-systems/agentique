@@ -14,6 +14,7 @@ mod palette_ui;
 mod panels;
 mod part_edit;
 mod presentation;
+mod presentation_automation;
 mod real_automation;
 mod real_targets;
 mod saved_views;
@@ -58,7 +59,7 @@ pub struct Args {
     #[arg(long)]
     no_restore: bool,
     /// Exercise native input routing over explicit fixtures or the accepted real model.
-    #[arg(long, value_parser = ["vertical", "keyboard", "stress", "real", "real-restart"])]
+    #[arg(long, value_parser = ["vertical", "keyboard", "stress", "real", "real-restart", "presentation", "presentation-restart"])]
     scenario: Option<String>,
     #[arg(
         long,
@@ -68,7 +69,7 @@ pub struct Args {
     /// Retain native screenshots and revision-qualified state at journey checkpoints.
     #[arg(long, requires = "scenario", conflicts_with = "screenshot")]
     gallery: Option<PathBuf>,
-    /// Prior real journey report, required only for the separate durable restart check.
+    /// Prior journey report for a separate real or presentation restart check.
     #[arg(long, requires = "scenario")]
     restart_report: Option<PathBuf>,
     /// Real acceptance wall-time deadline including runtime restore and semantic work.
@@ -78,6 +79,10 @@ pub struct Args {
 
 fn main() -> eframe::Result {
     let args = Args::parse();
+    if let Err(error) = presentation_automation::validate_launch(&args) {
+        eprintln!("Native presentation qualification launch refused: {error}");
+        std::process::exit(2);
+    }
     if let Err(error) = real_automation::validate_launch(&args) {
         eprintln!("Native real acceptance launch refused: {error}");
         std::process::exit(2);

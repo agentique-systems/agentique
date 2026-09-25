@@ -888,7 +888,7 @@ fn gallery_checkpoint(step: &str) -> Option<&'static str> {
     }
 }
 
-fn key(input: &mut egui::RawInput, key: Key, mut modifiers: Modifiers) {
+pub(crate) fn key(input: &mut egui::RawInput, key: Key, mut modifiers: Modifiers) {
     // Match the actual native platform modifier as well as egui's logical
     // command bit; text widgets may inspect Ctrl/mac_cmd directly.
     if modifiers.command {
@@ -906,7 +906,12 @@ fn key(input: &mut egui::RawInput, key: Key, mut modifiers: Modifiers) {
         });
     }
 }
-fn click(input: &mut egui::RawInput, position: Pos2, pressed: bool, modifiers: Modifiers) {
+pub(crate) fn click(
+    input: &mut egui::RawInput,
+    position: Pos2,
+    pressed: bool,
+    modifiers: Modifiers,
+) {
     input.modifiers = modifiers;
     input.events.push(Event::PointerMoved(position));
     input.events.push(Event::PointerButton {

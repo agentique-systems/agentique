@@ -26,6 +26,9 @@ const PART_NAME: &str = "alphaStudioObserver";
 /// Run before StudioApp starts a worker: real acceptance may write only to an
 /// explicitly selected fresh database. Restart reads that same isolated database.
 pub fn validate_launch(args: &Args) -> Result<(), String> {
+    if crate::presentation_automation::is_scenario(args.scenario.as_deref()) {
+        return Ok(()); // Its independent launch gate validates isolated paths.
+    }
     let real = matches!(args.scenario.as_deref(), Some("real" | "real-restart"));
     if !real {
         return if args.restart_report.is_some() {

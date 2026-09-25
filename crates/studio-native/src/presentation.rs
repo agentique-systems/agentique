@@ -14,13 +14,14 @@ impl StudioApp {
     /// Invoke once from the toolbar. Disk IO occurs when the menu opens or after
     /// an explicit save/rename/update, never in the ordinary viewport frame.
     pub fn local_views_menu(&mut self, ui: &mut eframe::egui::Ui) {
+        use crate::presentation_automation::{Target, record};
         use eframe::egui::{self, RichText};
         let memory = egui::Id::new("local-view-editor");
         let mut editor = ui
             .ctx()
             .data(|data| data.get_temp::<ViewEditor>(memory))
             .unwrap_or_default();
-        ui.menu_button("Local views", |ui| {
+        let menu = ui.menu_button("Local views", |ui| {
             ui.set_min_width(330.0);
             ui.set_max_width(460.0);
             let scope = self.view_binding().ok();
@@ -40,12 +41,16 @@ impl StudioApp {
             if editor.views.is_empty() { ui.label("No local views for this project yet."); }
             for view in editor.views.clone() {
                 ui.horizontal(|ui| {
-                    if ui.selectable_label(editor.selected == Some(view.id), &view.name).clicked() {
+                    let selected = ui.selectable_label(editor.selected == Some(view.id), &view.name);
+                    record(ui.ctx(), Target::Select(view.id), selected.rect);
+                    if selected.clicked() {
                         editor.selected = Some(view.id);
                         editor.name = view.name.clone();
                     }
                     ui.label(crate::app::muted(crate::app::short_revision(view.binding.revision), self.theme).small());
-                    if ui.small_button("Open").clicked() {
+                    let open = ui.small_button("Open");
+                    record(ui.ctx(), Target::Open(view.id), open.rect);
+                    if open.clicked() {
                         match self.open_local_view(view.id) {
                             Ok(()) => { editor.error = None; ui.close(); }
                             Err(error) => editor.error = Some(error),
@@ -54,19 +59,24 @@ impl StudioApp {
                 });
             }
             ui.separator();
-            ui.label("View name");
-            ui.add(egui::TextEdit::singleline(&mut editor.name).hint_text("e.g. Repository interfaces").desired_width(f32::INFINITY));
+            let name_label = ui.label("View name");
+            let name = ui.add(egui::TextEdit::singleline(&mut editor.name).hint_text("e.g. Repository interfaces").desired_width(f32::INFINITY)).labelled_by(name_label.id);
+            record(ui.ctx(), Target::Name, name.rect);
             let can_capture = self.bookmark_snapshot().is_ok();
             let has_name = !editor.name.trim().is_empty();
             let mut refresh = false;
             ui.horizontal_wrapped(|ui| {
-                if ui.add_enabled(can_capture && has_name, egui::Button::new("Save current as new")).clicked() {
+                let save = ui.add_enabled(can_capture && has_name, egui::Button::new("Save current as new"));
+                record(ui.ctx(), Target::Save, save.rect);
+                if save.clicked() {
                     match self.save_local_view(&editor.name) {
                         Ok(id) => { editor.selected = Some(id); editor.error = None; refresh = true; self.status = "Local view saved; model unchanged".into(); }
                         Err(error) => editor.error = Some(error),
                     }
                 }
-                if ui.add_enabled(editor.selected.is_some() && has_name, egui::Button::new("Rename selected")).clicked()
+                let rename = ui.add_enabled(editor.selected.is_some() && has_name, egui::Button::new("Rename selected"));
+                record(ui.ctx(), Target::Rename, rename.rect);
+                if rename.clicked()
                     && let Some(id) = editor.selected {
                     match self.rename_local_view(id, &editor.name) {
                         Ok(()) => { editor.error = None; refresh = true; self.status = "Local view renamed".into(); }
@@ -74,7 +84,9 @@ impl StudioApp {
                     }
                 }
             });
-            if ui.add_enabled(can_capture && editor.selected.is_some(), egui::Button::new("Update selected from current revision")).on_hover_text("Replace the selected bookmark's revision, camera, filters and layout with the current presentation").clicked()
+            let update = ui.add_enabled(can_capture && editor.selected.is_some(), egui::Button::new("Update selected from current revision")).on_hover_text("Replace the selected bookmark's revision, camera, filters and layout with the current presentation");
+            record(ui.ctx(), Target::Update, update.rect);
+            if update.clicked()
                 && let Some(id) = editor.selected {
                 match self.update_local_view(id) {
                     Ok(()) => { editor.error = None; refresh = true; self.status = "Local view updated from the current revision".into(); }
@@ -92,6 +104,7 @@ impl StudioApp {
             }
             if let Some(error) = &editor.error { ui.label(RichText::new(error).color(self.theme.amber)); }
         });
+        record(ui.ctx(), Target::Menu, menu.response.rect);
         ui.ctx().data_mut(|data| data.insert_temp(memory, editor));
     }
 

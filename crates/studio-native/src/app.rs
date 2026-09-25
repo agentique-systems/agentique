@@ -191,8 +191,14 @@ impl StudioApp {
         } else {
             Session::load(&session_path)
         };
-        let fixture = args.fixture.clone();
-        let projection = initial_projection(fixture.as_deref());
+        let restored_fixture = restore.as_ref().and_then(restorable_fixture);
+        let fixture = args
+            .fixture
+            .clone()
+            .or_else(|| restored_fixture.as_ref().map(|(name, _)| name.clone()));
+        let projection = restored_fixture
+            .map(|(_, projection)| projection)
+            .unwrap_or_else(|| initial_projection(fixture.as_deref()));
         let scene = SemanticScene::from_projection(&projection, &SceneOptions::default(), None)?;
         let spatial = SpatialIndex::build(&scene);
         let lookup = SceneLookup::build(&scene);
@@ -320,6 +326,12 @@ impl StudioApp {
             Some("stress1000" | "stress10000" | "ports")
         ) {
             app.world = World::Graph;
+        }
+        if app.fixture.is_some()
+            && let Some(session) = app.restore.take()
+            && let Some(presentation) = session.presentation
+        {
+            app.apply_saved_presentation(presentation);
         }
         app.rebuild();
         if app.fixture.as_deref() == Some("diff") {
@@ -541,7 +553,11 @@ impl StudioApp {
             || self.pending_revision.is_some()
             || self.args.screenshot.is_some()
             || self.args.frames.is_some()
-            || self.args.scenario.is_some()
+            || self
+                .args
+                .scenario
+                .as_deref()
+                .is_some_and(|scenario| scenario != "presentation")
         {
             return;
         }
@@ -581,7 +597,9 @@ impl eframe::App for StudioApp {
             }
         }
         if let Some(scenario) = &self.args.scenario {
-            let outcome = if matches!(scenario.as_str(), "real" | "real-restart") {
+            let outcome = if crate::presentation_automation::is_scenario(Some(scenario)) {
+                crate::presentation_automation::drive(self, ctx, input)
+            } else if matches!(scenario.as_str(), "real" | "real-restart") {
                 crate::real_automation::drive(self, ctx, input, &self.args.scenario_report)
             } else if scenario == "stress" {
                 crate::stress_automation::drive(self, ctx, input, &self.args.scenario_report)
@@ -669,6 +687,27 @@ pub fn fixture_projection(name: &str) -> ViewProjection {
         "stress10000" => fixtures::stress(10000, 20000),
         _ => fixtures::architecture(),
     }
+}
+
+/// Restore only known disposable fixtures at their exact retained revision.
+/// A persisted fixture name can never select a real project or invent a model.
+fn restorable_fixture(session: &Session) -> Option<(String, ViewProjection)> {
+    let name = session.fixture.as_deref()?;
+    if session.project.is_some()
+        || session.presentation.is_none()
+        || !matches!(
+            name,
+            "architecture" | "typography" | "ports" | "requirements" | "stress1000" | "stress10000"
+        )
+    {
+        return None;
+    }
+    let projection = if session.world == World::Requirements {
+        fixtures::requirements()
+    } else {
+        fixture_projection(name)
+    };
+    (projection.revision_id == session.revision).then(|| (name.to_owned(), projection))
 }
 
 fn initial_projection(fixture: Option<&str>) -> ViewProjection {
@@ -804,5 +843,46 @@ mod bootstrap_tests {
         assert!(scene.ports.is_empty());
         assert!(hierarchy_order(&scene).is_empty());
         assert_eq!(initial_projection(Some("architecture")).nodes.len(), 12);
+    }
+
+    #[test]
+    fn fixture_session_restoration_requires_known_name_exact_revision_and_no_project() {
+        let projection = fixture_projection("architecture");
+        let presentation = crate::saved_views::SavedPresentation {
+            world: World::System,
+            definition: projection.view,
+            camera: Camera2D::default(),
+            layout: LayoutMemory::default(),
+            collapsed: BTreeSet::new(),
+            expanded: None,
+            branch: None,
+            panels: Default::default(),
+        };
+        let mut session = Session {
+            version: 1,
+            project: None,
+            revision: projection.revision_id,
+            fixture: Some("architecture".into()),
+            world: World::System,
+            focus: None,
+            camera: Camera2D::default(),
+            layout: LayoutMemory::default(),
+            dark: true,
+            high_contrast: false,
+            reduced_motion: false,
+            presentation: Some(presentation),
+        };
+        assert!(restorable_fixture(&session).is_some());
+        session.fixture = Some("unknown".into());
+        assert!(restorable_fixture(&session).is_none());
+        session.fixture = Some("architecture".into());
+        session.project = Some(ProjectId::new());
+        assert!(restorable_fixture(&session).is_none());
+        session.project = None;
+        session.revision = agq_modeling_repository::ProjectRevisionId::new();
+        assert!(restorable_fixture(&session).is_none());
+        session.revision = projection.revision_id;
+        session.presentation = None;
+        assert!(restorable_fixture(&session).is_none());
     }
 }
