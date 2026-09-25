@@ -119,11 +119,7 @@ impl StudioApp {
                     ui.label(muted(&self.status, theme).small());
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                         ui.label(
-                            muted(
-                                format!("{}%", (self.camera.zoom * 100.0) as u32),
-                                theme,
-                            )
-                            .small(),
+                            muted(format!("{}%", (self.camera.zoom * 100.0) as u32), theme).small(),
                         );
                         ui.separator();
                         ui.label(

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "gh",
+    "run",
+    "view",
+    "36193104237",
+    "--log-failed"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "7d31b98798190c9de87746d0434110236461e9f8",
+  "tracked_changes_at_start": [],
+  "started_utc": "2026-09-25T21:53:47.631988+00:00",
+  "elapsed_seconds": 2.297,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/ci-fef80ff-failures.txt",
+  "output_sha256": "513823dd6afea2ab35d0895cb6f7b322396690e3a6a87d0bb95265e944fa17ed",
+  "build_environment": {}
+}
