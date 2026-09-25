@@ -1,0 +1,153 @@
+{
+  "format": "agq-independent-installed-runtime-review/1",
+  "finished_utc": "2026-09-25T18:34:12.318101+00:00",
+  "command": [
+    "verification/native-studio-alpha/reviews/audit-installed-runtime.py",
+    "C:/Users/phili/github/agentique-systems/agentique",
+    "C:/Users/phili/github/agentique-systems/agentique-alpha-runtime",
+    "verification/native-studio-alpha/reviews/installed-runtime-boundary-review.json"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 2.265,
+  "audit_script_sha256": "6a8156e70ab1f2e6a9b41f66244f8df059caa40d00dae3132b82d58c203cbfc8",
+  "ordinary_facade_authentication_evidence_accepted": true,
+  "facades_rerun_by_reviewer": false,
+  "native_real_model_acceptance_established": false,
+  "checks": {
+    "same_current_executable": true,
+    "build_success_and_retained_log": true,
+    "pin_integrated_before_build": true,
+    "build_source_unchanged:crates/runtime-publications/src/main.rs": true,
+    "build_source_unchanged:crates/runtime-publications/src/lib.rs": true,
+    "build_source_unchanged:crates/kerml-semantics/src/trusted_publication.rs": true,
+    "build_source_unchanged:crates/kerml-text/src/library/publication_cache.rs": true,
+    "build_source_unchanged:crates/kerml-text/src/sysml/publication_cache.rs": true,
+    "build_source_unchanged:crates/kerml-text/src/sysml/publication_restore.rs": true,
+    "build_source_unchanged:standards/kerml-accepted-publication.json": true,
+    "build_source_unchanged:standards/kerml-standard-bindings.json": true,
+    "build_source_unchanged:standards/sysml-accepted-publication.json": true,
+    "build_source_unchanged:standards/sysml-standard-bindings.json": true,
+    "build_source_unchanged:standards/runtime-transports/sysml-v3-rematerialized-2026-09-25.json": true,
+    "exact_reviewed_trust_source": true,
+    "exact_reviewed_finite_pin": true,
+    "pack_success_exact_binary_and_log": true,
+    "pack_observed_authenticating_kerml": true,
+    "pack_observed_authenticating_sysml": true,
+    "pack_observed_ready": true,
+    "verify_success_exact_binary_and_log": true,
+    "verify_observed_authenticating_kerml": true,
+    "verify_observed_authenticating_sysml": true,
+    "verify_observed_ready": true,
+    "install_success_exact_binary_and_log": true,
+    "install_observed_authenticating_kerml": true,
+    "install_observed_authenticating_sysml": true,
+    "install_observed_ready": true,
+    "bundle_transport_exact": true,
+    "ordinary_commands_same_manifest": true,
+    "installed_manifest_exact": true,
+    "exact_bundle_entry_population": true,
+    "embedded_manifest_exact": true,
+    "kerml_embedded_and_installed_cache_exact": true,
+    "systems_embedded_and_installed_cache_exact": true,
+    "reviewed_kerml_cache": true,
+    "reviewed_systems_cache": true,
+    "freshness_does_not_change_publication_authority": true,
+    "freshness_only_exact_reviewed_source_and_transport": true,
+    "transport-freshness-regression_retained_success": true,
+    "integrated-standards-transport-fixed_retained_success": true
+  },
+  "installer": {
+    "binary": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\native-alpha\\release\\agq-publications.exe",
+    "binary_sha256": "0f656a2c026acbe9bf859d9865a62dd9951202e8e3e4b570a7522e87ea553acb",
+    "build_source_commit": "23b7910dc79faac0d53a9d0113954a0c0fa6ada9",
+    "integrated_transport_commit": "8e8380c6709138967ac90d7c3039567cea29473d",
+    "reviewed_transport_commit": "e44015b3982331c9edca5633ea7f7b6ef85dd6e8",
+    "build_receipt": "verification/native-studio-alpha/checks/native-graph-runtime-cli-build.json",
+    "free_disk_bytes": 10254962688
+  },
+  "build_source_hashes_lf": {
+    "crates/runtime-publications/src/main.rs": "b9efbfa1667ed8cc87f25bd553d6ba562d8a6fe6ac4d02ad4c54acbcf0881013",
+    "crates/runtime-publications/src/lib.rs": "3495a16ee28ea8f2aaaa5421914c63c7553e4b9b3f021070ec7298c7f27f82e4",
+    "crates/kerml-semantics/src/trusted_publication.rs": "f280efebad2e03cc194c88ff64dd0a046d5c5a5d28e5e06003bfb05df423261a",
+    "crates/kerml-text/src/library/publication_cache.rs": "a8555a02d9ea038c1458bd455f49b43cd5270110bcba12c14db79a4ce0b80a25",
+    "crates/kerml-text/src/sysml/publication_cache.rs": "fd710d2bd09814deff6ccaa08a39ae98cec5e7fa98c586814ee4f9c245d4f809",
+    "crates/kerml-text/src/sysml/publication_restore.rs": "0e7f27168ef50d236681fe07397ee0a7d5f49b0cb6f953f362b9e428a38684fe",
+    "standards/kerml-accepted-publication.json": "d51d43a8e907698f94297ff3cfb007ac5dbf088ebec550ef97e8f7107b351ff5",
+    "standards/kerml-standard-bindings.json": "130398e2fe9e10e662d13f28a8cd8f12934eba998ddd879e32c06a3089f0601c",
+    "standards/sysml-accepted-publication.json": "becc3cf991e69115dae905957d74292774164e3f5707eecefb06d8eb60e0269a",
+    "standards/sysml-standard-bindings.json": "dbd794bba9ebdfdea5af433945f6bb5d0475f0f05ad1d229cd004f5b57045789",
+    "standards/runtime-transports/sysml-v3-rematerialized-2026-09-25.json": "12cc2aeff7aa7e4a1f3de16faf13d63aa158dd88248e9b3179ad4629e1ffeda0"
+  },
+  "command_receipts": {
+    "pack": {
+      "receipt_sha256": "aa43bf7f9ff5dc310b507b4c8eaef369781f6e0810a385f8471d2e74e34ef0a4",
+      "log_sha256": "1dbed1f6b82483f9292e2cbe5482948d9e30574a7952db86396a6eea0b719522",
+      "exit_code": 0,
+      "elapsed_seconds": 86.453
+    },
+    "verify": {
+      "receipt_sha256": "d8dfb6992c80e70bf2b94c0727ced99beae45d2af08990e933f5e8d37ad4fa48",
+      "log_sha256": "bf204d772a9802e9135c3938a353d4a7ab3d243e7f7522a1a69d17c9004bd096",
+      "exit_code": 0,
+      "elapsed_seconds": 84.156
+    },
+    "install": {
+      "receipt_sha256": "f17b6565b30b5a9d504bac4313ae6a67571c9de0d957fdc6d1634ac1472013ac",
+      "log_sha256": "d605a0f54423a03ef24d94427ad583b6b3024dfc8a4ee474e2ef6a93625b4db7",
+      "exit_code": 0,
+      "elapsed_seconds": 75.156
+    }
+  },
+  "bundle": {
+    "bytes": 610190454,
+    "sha256": "37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026",
+    "identity": "633ea89eb39f8a9e301f2bd5199994455cdf28c8d373fdbd69be30a1402ebcf4"
+  },
+  "assets": {
+    "kerml": {
+      "bytes": 475865571,
+      "sha256": "aadf9ff589eea35bcedc5d1e3d0521952058b55f3325614ecb0ab12ae36300c4",
+      "publication": {
+        "profile": "agentique-kerml-1.0-operational/9",
+        "publication_digest": "815573353973607bc62a25195ed4461645182027407f8476be521ffc99174f12",
+        "receipt_path": "standards/kerml-accepted-publication.json",
+        "receipt_json_sha256": "7e2192ba4639eb2eee19ddb1e7a2e5507b566cd429984028e87cec030c37658a",
+        "binding_manifest_sha256": "274545be48e3644c2046a98a978f39ea715acf02e3b4d4ce52cef5dac16b8f5c",
+        "required_cache_formats": [
+          "zip",
+          "agq-kerml-publication-facade/1",
+          "agq-kernel-graph-archive/1"
+        ]
+      }
+    },
+    "systems": {
+      "bytes": 134322830,
+      "sha256": "02ba47ad99ceaddb853b198a556cbe40351a00361f077099a993f3a226bcc323",
+      "publication": {
+        "profile": "agentique-sysml-2.0-operational/3",
+        "publication_digest": "25aeddb099be16462b553d6debcad97f43bf22e89ce8a9bbb53cf72eb7d193fa",
+        "receipt_path": "standards/sysml-accepted-publication.json",
+        "receipt_json_sha256": "947a1cb8cb24c20929be3b51fb11745a35d7331cb657249ac6928ac77cba7032",
+        "binding_manifest_sha256": "1783a8a7d3111c9d7029b8f33ff6841f5affc84f044b57ec8119cad2e7897477",
+        "required_cache_formats": [
+          "zip",
+          "agq-sysml-publication-facade/1",
+          "agq-kernel-dependent-evidence-archive/1"
+        ]
+      }
+    }
+  },
+  "installed_directory": "C:\\Users\\phili\\.agentique\\publications\\633ea89eb39f8a9e301f2bd5199994455cdf28c8d373fdbd69be30a1402ebcf4",
+  "verify_timings": {
+    "kerml_restore_ms": 41610,
+    "sources_verify_ms": 2,
+    "systems_restore_ms": 38800,
+    "transport_verify_ms": 1356
+  },
+  "install_timings": {
+    "kerml_restore_ms": 36406,
+    "sources_verify_ms": 3,
+    "systems_restore_ms": 34756,
+    "transport_verify_ms": 1146
+  }
+}
