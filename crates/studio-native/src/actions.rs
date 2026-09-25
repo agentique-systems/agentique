@@ -667,7 +667,17 @@ impl StudioApp {
                 );
                 if let Some(id) = self.selected_element() {
                     if self.world == World::System
-                        && self.scene.node(id).is_some_and(|n| n.is_container)
+                        && self.scene.node(id).is_some_and(|node| {
+                            // Ports alone do not create geometric containment.
+                            // A real part still has a focused semantic view.
+                            node.is_container
+                                || (self.fixture.is_none()
+                                    && matches!(
+                                        node.category,
+                                        agq_studio_scene::NodeCategory::System
+                                            | agq_studio_scene::NodeCategory::Part
+                                    ))
+                        })
                     {
                         self.focus = Some(id);
                         self.request_projection();

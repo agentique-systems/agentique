@@ -19,8 +19,12 @@ dependencies. Local construction rebuilt 1,101 records, reparsed six documents,
 evaluated 717 producer subjects and audited 791 subjects. Command phase counters
 reported reference refinement 12.731 s, declared construction 1.803 s, final
 closure 73.651 s, final references 7.572 s and effective audit 48.022 s.
-Source preparation was 14.549 s outside the compilation timer. These boundaries
-are the compiler's own observations; phases are not an allocation profile.
+Source preparation was 14.549 s **inside** the compilation timer and includes
+declared construction and reference refinement. These nested intervals must not
+be added together. The 15.051 s difference between prepare and compile mixes
+checkpoint restoration, dependency mounting, source proof and continuity checks;
+it is not a separately measured mount duration. These boundaries are the
+compiler's own observations; phases are not an allocation profile.
 
 The whole test ran for 699.466 s with peak working set 5,925,900,288 bytes.
 That peak includes restoration, seeding, two candidates and validation; it is
