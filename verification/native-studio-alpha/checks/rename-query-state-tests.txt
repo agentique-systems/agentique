@@ -1,0 +1,39 @@
+   Compiling agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\crates\kernel)
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\crates\kerml)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\crates\kerml-semantics)
+   Compiling agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\crates\sysml)
+   Compiling agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\crates\standard-libraries)
+   Compiling agq-sysml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\crates\sysml-semantics)
+   Compiling agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\crates\kerml-syntax)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\crates\kerml-text)
+   Compiling agq-modeling-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\crates\modeling-workspace)
+   Compiling agq-modeling-repository v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\crates\modeling-repository)
+   Compiling agq-modeling-sqlite v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\adapters\modeling-sqlite)
+   Compiling agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\crates\modeling-service)
+warning: unused `std::result::Result` that must be used
+   --> crates\modeling-service\src\part_rename.rs:826:13
+    |
+826 |             builder.failure(element, property, failure);
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+    = note: `#[warn(unused_must_use)]` (part of `#[warn(unused)]`) on by default
+help: use `let _ = ...` to ignore the resulting value
+    |
+826 |             let _ = builder.failure(element, property, failure);
+    |             +++++++
+
+warning: `agq-modeling-service` (lib test) generated 1 warning
+    Finished `test` profile [unoptimized] target(s) in 1m 03s
+     Running unittests src\lib.rs (C:/Users/phili/github/agentique-systems/agentique/target\debug\deps\agq_modeling_service-045040c4c90fcc3e.exe)
+
+running 6 tests
+test part_rename::tests::effective_guard_rejects_navigation_value_and_presence_changes_without_record_changes ... ok
+test part_rename::tests::effective_guard_rejects_failure_meaning_changes_but_allows_rebuilt_evidence ... ok
+test part_rename::tests::rename_changes_only_selected_nested_declaration_with_repeated_names ... ok
+test part_rename::tests::rename_rejects_complex_headers_wrong_identity_and_injected_names ... ok
+test part_rename::tests::effective_graph_guard_allows_only_selected_declared_name ... ok
+test part_rename::tests::rename_preserves_complete_identity_arena_and_only_replaces_name ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.07s
+

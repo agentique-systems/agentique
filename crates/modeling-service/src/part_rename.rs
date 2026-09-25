@@ -457,6 +457,49 @@ fn verify_graph_values(
             ));
         }
     }
+    // Association-owned derived navigation is query-visible storage outside
+    // element slots. Compare its exact key/value population while allowing the
+    // ordinary reconstruction to rebuild origins and supporting evidence.
+    if !old
+        .derived_navigation_results()
+        .map(|(key, slot)| (key, slot.value()))
+        .eq(next
+            .derived_navigation_results()
+            .map(|(key, slot)| (key, slot.value())))
+    {
+        return Err(invalid("rename changed effective derived navigation"));
+    }
+    // Missing, incomplete and invalid are distinct from an empty computed value.
+    // Explanation/search evidence is rebuilt, but failure kind and meaning must
+    // remain identical at each exact element/property key.
+    if old.computation_failures().count() != next.computation_failures().count()
+        || !old
+            .computation_failures()
+            .zip(next.computation_failures())
+            .all(|((key, failure), (next_key, next_failure))| {
+                use agq_kernel::derived::ComputationFailure;
+                key == next_key
+                    && match (failure, next_failure) {
+                        (
+                            ComputationFailure::Incomplete { reason, .. },
+                            ComputationFailure::Incomplete {
+                                reason: next_reason,
+                                ..
+                            },
+                        ) => reason == next_reason,
+                        (
+                            ComputationFailure::Invalid { diagnostic, .. },
+                            ComputationFailure::Invalid {
+                                diagnostic: next_diagnostic,
+                                ..
+                            },
+                        ) => diagnostic == next_diagnostic,
+                        _ => false,
+                    }
+            })
+    {
+        return Err(invalid("rename changed effective computation completeness"));
+    }
     Ok(())
 }
 
@@ -630,5 +673,197 @@ mod tests {
             assert!(verify_graph_values(before.model(), changed.model(), selected).is_err());
         }
         assert!(verify_graph_values(before.model(), rename.model(), sibling).is_err());
+    }
+
+    // Non-normative kernel fixture: these association-owned values deliberately
+    // have no element record slots or occurrences for the earlier guard to see.
+    fn navigation_fixture() -> (agq_kernel::Snapshot, [ElementId; 3], agq_kernel::PropertyId) {
+        use agq_kernel::{metamodel::*, *};
+        let metamodel = MetamodelId::from_u128(1);
+        let class = MetaclassId::from_u128(1);
+        let association = AssociationId::from_u128(1);
+        let left = PropertyId::from_u128(1);
+        let right = PropertyId::from_u128(2);
+        let registry = MetamodelRegistry::from_descriptors(DescriptorSet {
+            models: vec![MetamodelDescriptor {
+                id: metamodel,
+                name: "Rename query-state guard fixture".into(),
+                version: Version {
+                    major: 1,
+                    minor: 0,
+                    patch: 0,
+                },
+                uri: "urn:agentique:test:rename-query-state:1".into(),
+            }],
+            classes: vec![MetaclassDescriptor {
+                id: class,
+                name: "FixtureElement".into(),
+                package: vec![],
+                metamodel,
+                direct_supertypes: BTreeSet::new(),
+                is_abstract: false,
+            }],
+            associations: vec![AssociationDescriptor {
+                id: association,
+                name: "FixtureNavigation".into(),
+                package: vec![],
+                metamodel,
+                member_ends: vec![left, right],
+                navigable_owned_ends: BTreeSet::from([left]),
+                direct_supertypes: BTreeSet::new(),
+                is_abstract: false,
+            }],
+            properties: [(left, right), (right, left)]
+                .into_iter()
+                .map(|(id, opposite)| PropertyDescriptor {
+                    id,
+                    name: format!("end-{id}"),
+                    owner: PropertyOwner::Association(association),
+                    value_kind: ValueKind::Reference(class),
+                    multiplicity: Multiplicity::MANY,
+                    ordered: false,
+                    unique: true,
+                    derived: id == left,
+                    composite: false,
+                    redefines: BTreeSet::new(),
+                    subsets: BTreeSet::new(),
+                    derived_union: false,
+                    association: Some(association),
+                    opposite_ends: BTreeSet::from([opposite]),
+                })
+                .collect(),
+            ..Default::default()
+        })
+        .unwrap();
+        let base = Snapshot::new(Arc::new(registry));
+        let ids = [
+            ElementId::from_u128(1),
+            ElementId::from_u128(2),
+            ElementId::from_u128(3),
+        ];
+        let mut changes = base.change_set();
+        for id in ids {
+            changes.create(id, class, DeclaredOrigin::Authored { source: None });
+        }
+        (base.apply(&changes).unwrap(), ids, left)
+    }
+
+    #[test]
+    fn effective_guard_rejects_navigation_value_and_presence_changes_without_record_changes() {
+        use agq_kernel::{RuleId, derived::*, provenance::*, value::*};
+        let (base, [subject, first, second], property) = navigation_fixture();
+        let make = |targets: &[ElementId], rule| {
+            let mut builder = DerivationBuilder::new(base.clone());
+            builder.property(
+                subject,
+                property,
+                SlotValue::Set(targets.iter().copied().map(Value::Reference).collect()),
+                Explanation {
+                    rule: RuleId::from_u128(rule),
+                    dependencies: BTreeSet::new(),
+                },
+            );
+            builder.build().unwrap()
+        };
+        let before = make(&[first], 1);
+        let after = make(&[second], 1);
+        assert!(
+            before
+                .model()
+                .element(subject)
+                .unwrap()
+                .slot(property)
+                .is_none()
+        );
+        assert!(
+            after
+                .model()
+                .element(subject)
+                .unwrap()
+                .slot(property)
+                .is_none()
+        );
+        assert_eq!(before.model().association_occurrences().count(), 0);
+        assert_eq!(after.model().association_occurrences().count(), 0);
+        assert!(verify_graph_values(before.model(), after.model(), subject).is_err());
+        let empty = make(&[], 1);
+        assert!(matches!(
+            base.model().property_state(subject, property).unwrap(),
+            PropertyState::NotComputed
+        ));
+        assert!(matches!(
+            empty.model().property_state(subject, property).unwrap(),
+            PropertyState::Computed(_)
+        ));
+        assert!(verify_graph_values(base.model(), empty.model(), subject).is_err());
+        assert!(verify_graph_values(empty.model(), base.model(), subject).is_err());
+        let rebuilt_evidence = make(&[first], 2);
+        assert!(verify_graph_values(before.model(), rebuilt_evidence.model(), subject).is_ok());
+    }
+
+    #[test]
+    fn effective_guard_rejects_failure_meaning_changes_but_allows_rebuilt_evidence() {
+        use agq_kernel::{RuleId, derived::*, provenance::*};
+        let (base, [subject, other, _], property) = navigation_fixture();
+        let make = |element, reason, diagnostic: Option<&str>, rule| {
+            let mut builder = DerivationBuilder::new(base.clone());
+            let explanation = Explanation {
+                rule: RuleId::from_u128(rule),
+                dependencies: BTreeSet::new(),
+            };
+            let failure = match diagnostic {
+                None => ComputationFailure::Incomplete {
+                    reason,
+                    explanation,
+                    searches: BTreeSet::new(),
+                },
+                Some(diagnostic) => ComputationFailure::Invalid {
+                    diagnostic: diagnostic.into(),
+                    explanation,
+                    searches: BTreeSet::new(),
+                },
+            };
+            builder.failure(element, property, failure).unwrap();
+            builder.build().unwrap()
+        };
+        let before = make(subject, IncompleteReason::MissingInput, None, 1);
+        assert!(
+            before
+                .model()
+                .element(subject)
+                .unwrap()
+                .slot(property)
+                .is_none()
+        );
+        assert_eq!(before.model().association_occurrences().count(), 0);
+        assert!(verify_graph_values(base.model(), before.model(), subject).is_err());
+        assert!(verify_graph_values(before.model(), base.model(), subject).is_err());
+        for changed in [
+            make(subject, IncompleteReason::IncompleteDependency, None, 1),
+            make(other, IncompleteReason::MissingInput, None, 1),
+            make(
+                subject,
+                IncompleteReason::MissingInput,
+                Some("invalid relationship"),
+                1,
+            ),
+        ] {
+            assert!(verify_graph_values(before.model(), changed.model(), subject).is_err());
+        }
+        let rebuilt_evidence = make(subject, IncompleteReason::MissingInput, None, 2);
+        assert!(verify_graph_values(before.model(), rebuilt_evidence.model(), subject).is_ok());
+        let invalid = make(
+            subject,
+            IncompleteReason::MissingInput,
+            Some("invalid relationship"),
+            1,
+        );
+        let different = make(
+            subject,
+            IncompleteReason::MissingInput,
+            Some("different failure"),
+            1,
+        );
+        assert!(verify_graph_values(invalid.model(), different.model(), subject).is_err());
     }
 }

@@ -1,0 +1,14 @@
+   Compiling agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\crates\modeling-service)
+    Finished `test` profile [unoptimized] target(s) in 2.60s
+     Running unittests src\lib.rs (C:/Users/phili/github/agentique-systems/agentique/target\debug\deps\agq_modeling_service-045040c4c90fcc3e.exe)
+
+running 6 tests
+test part_rename::tests::effective_guard_rejects_navigation_value_and_presence_changes_without_record_changes ... ok
+test part_rename::tests::effective_guard_rejects_failure_meaning_changes_but_allows_rebuilt_evidence ... ok
+test part_rename::tests::rename_changes_only_selected_nested_declaration_with_repeated_names ... ok
+test part_rename::tests::rename_rejects_complex_headers_wrong_identity_and_injected_names ... ok
+test part_rename::tests::effective_graph_guard_allows_only_selected_declared_name ... ok
+test part_rename::tests::rename_preserves_complete_identity_arena_and_only_replaces_name ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out; finished in 0.07s
+

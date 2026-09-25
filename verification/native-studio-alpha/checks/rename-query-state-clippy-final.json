@@ -1,0 +1,28 @@
+{
+  "command": [
+    "cargo",
+    "clippy",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-modeling-service",
+    "--all-targets",
+    "--target-dir",
+    "C:/Users/phili/github/agentique-systems/agentique/target",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-state-recovery",
+  "started_utc": "2026-09-25T17:52:44.745498+00:00",
+  "elapsed_seconds": 2.11,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/rename-query-state-clippy-final.txt",
+  "output_sha256": "13faf636967ee7d227c2e169c50a26385453e01a1eb6cf24810ed5b785bb040d",
+  "build_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "1"
+  }
+}
