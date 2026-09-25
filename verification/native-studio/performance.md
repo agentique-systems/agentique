@@ -5,7 +5,8 @@ semantic acceptance of the real Agentique model or its runtime publication.
 
 Both native camera scenarios passed their assertions and exited 0. The 1k scene
 sustained roughly 16.7 ms intervals through pan and zoom; the 10k scene had similar
-medians but active P95 intervals near 29.5 ms. This is a measured tail-latency
+medians but active P95 intervals near 28 ms in a quiet repeat (29.5 ms with
+background workspace tests). This is a measured tail-latency
 limitation, not evidence of 60 FPS throughout every 10k interaction.
 
 The native shell renders through its retained wgpu scene on Windows, using an
@@ -50,6 +51,9 @@ There was no competing native rendering or Rust compilation.
 | 10k / steady | 16.653 ms | 17.106 ms | 120 |
 | 10k / pan | 16.619 ms | 29.251 ms | 120 |
 | 10k / zoom | 16.736 ms | 29.510 ms | 120 |
+| 10k / steady, quiet repeat | 16.660 ms | 16.865 ms | 120 |
+| 10k / pan, quiet repeat | 16.472 ms | 26.821 ms | 120 |
+| 10k / zoom, quiet repeat | 16.773 ms | 28.000 ms | 120 |
 
 | Native metric | 1k nodes / 2k edges | 10k nodes / 20k edges |
 | --- | ---: | ---: |
@@ -71,6 +75,19 @@ The native unit suite passed all 20 tests, including the four timing contract
 tests; the integrated architecture input scenario passed 37 assertions. Their
 logs are retained by the primary checkout's verification runner.
 
+After the workspace regression finished, the 10k scenario was repeated with no
+competing build, test or native window. It passed and exited 0. The later release
+binary includes setup-surface refinements; its explicit stress path is unchanged.
+The repeat has its own binary hash and source metadata in the JSON. Scene build
+was 144.299 ms, hit testing measured median 6.1 us / P95 11.1 us, and the latest
+batch CPU upload took 2.606 ms. Culling again reached 1,440 visible nodes and
+maximum pointer-anchor error remained 0.002013 world units. Handled pan-to-next-UI
+update measured median 16.206 ms / P95 26.662 ms, and zoom measured median
+16.499 ms / P95 27.635 ms. The quiet run confirms the active tail remains without
+the earlier competing workspace workload. The subsequent native suite has 21
+passing tests after adding a bootstrap fixture-separation check; strict native
+Clippy also passed.
+
 The separate [scene benchmark](scene-summary.md) measures layout directly:
 1.62 ms at 1k and 27.74 ms at 10k. That earlier CPU benchmark ran with different
 concurrent development load and must not be subtracted from this native run to
@@ -79,7 +96,7 @@ infer a renderer stage cost.
 ## Bounded review of active 10k tails
 
 Source inspection identifies plausible allocation and packing costs, not a
-measured breakdown of the 29.5 ms tail. A changed visibility set rebuilds the
+measured breakdown of the 28–29.5 ms tail. A changed visibility set rebuilds the
 visible batch. `SceneLookup::visible` sorts visible indices twice in a rebuild
 frame, once for geometry and again for labels/accessibility. Already-resolved
 edges then clone relationship IDs for membership checks. GPU preparation copies
