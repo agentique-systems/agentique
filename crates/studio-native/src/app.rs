@@ -95,6 +95,7 @@ pub struct StudioApp {
     pub fixture: Option<String>,
     pub config: NativeConfig,
     pub setup_reason: String,
+    pub opening: Option<crate::loading::OpeningProgress>,
     pub bundle_path: String,
     pub projects: Vec<Project>,
     pub binding: Option<RevisionBinding>,
@@ -218,12 +219,13 @@ impl StudioApp {
         let setup = agq_studio_platform::setup_surface(&config)?;
         let mut bridge = Bridge::new(cc.egui_ctx.clone());
         let mut pending = BTreeSet::new();
+        let mut opening = None;
         if fixture.is_none() && setup.bundle_located {
-            pending.insert(
-                bridge
-                    .open(config.clone(), None)
-                    .map_err(std::io::Error::other)?,
-            );
+            let request = bridge
+                .open(config.clone(), None)
+                .map_err(std::io::Error::other)?;
+            pending.insert(request);
+            opening = Some(crate::loading::OpeningProgress::new(request));
         }
         let adapter = cc
             .wgpu_render_state
@@ -241,6 +243,7 @@ impl StudioApp {
             setup_reason: setup
                 .reason
                 .unwrap_or_else(|| "Authenticating accepted publications…".into()),
+            opening,
             bundle_path: String::new(),
             projects: vec![],
             binding: None,

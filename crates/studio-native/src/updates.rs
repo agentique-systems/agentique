@@ -90,6 +90,9 @@ impl StudioApp {
             }
             match reply.result {
                 Err(error) => {
+                    if let Some(opening) = &mut self.opening {
+                        opening.finish(reply.request, true);
+                    }
                     if reply.request == self.scene_request
                         && self.show_agent
                         && let Some(activity) = &mut self.agent_activity
@@ -152,10 +155,16 @@ impl StudioApp {
                     }
                 }
                 Ok(Output::Progress(phase)) => {
-                    self.setup_reason = format!("{phase:?}");
+                    if let Some(opening) = &mut self.opening {
+                        opening.observe(reply.request, &phase);
+                    }
+                    self.setup_reason = crate::loading::phase_text(&phase).0.into();
                     self.status = self.setup_reason.clone();
                 }
                 Ok(Output::Ready(projects)) => {
+                    if let Some(opening) = &mut self.opening {
+                        opening.finish(reply.request, false);
+                    }
                     self.projects = projects;
                     if self.fixture.is_none()
                         && let Some(project) = self

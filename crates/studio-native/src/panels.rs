@@ -602,20 +602,43 @@ impl StudioApp {
                         .inner_margin(32)
                         .show(ui, |ui| {
                             ui.set_max_width(610.0);
-                            ui.heading(if self.projects.is_empty() {
+                            let opening = self.opening.as_ref().filter(|opening| opening.running());
+                            let failed = self.opening.as_ref().is_some_and(|opening| opening.failed);
+                            ui.heading(if opening.is_some() {
+                                "Opening your workspace"
+                            } else if failed {
+                                "Workspace could not open"
+                            } else if self.projects.is_empty() {
                                 "Set up your engineering workspace"
                             } else {
                                 "Choose a project"
                             });
                             ui.add_space(14.0);
-                            ui.label(if !self.pending.is_empty() {
-                                "Preparing your engineering workspace…"
-                            } else if self.projects.is_empty() {
-                                "Install an authenticated Agentique runtime bundle to open real projects."
+                            if let Some(opening) = opening {
+                                ui.horizontal(|ui| {
+                                    if !self.reduced_motion { ui.spinner(); }
+                                    ui.label(RichText::new(opening.title).strong());
+                                });
+                                ui.label(opening.detail);
+                                ui.add_space(8.0);
+                                ui.label(muted(opening.elapsed_text(), theme));
+                                ctx.request_repaint_after(std::time::Duration::from_secs(1));
                             } else {
-                                "Your semantic runtime is ready. Select a project to continue."
-                            });
-                            ui.collapsing("Runtime details", |ui| {
+                                ui.label(if failed {
+                                    "Opening stopped before the workspace was ready. See the details below."
+                                } else if !self.pending.is_empty() {
+                                    "Opening the selected project revision…"
+                                } else if self.projects.is_empty() {
+                                    "Choose a local Agentique runtime bundle to authenticate and install."
+                                } else {
+                                    "Your semantic runtime is ready. Select a project to continue."
+                                });
+                                if failed && let Some(opening) = &self.opening {
+                                    ui.label(muted(format!("Stopped while: {}", opening.title), theme));
+                                    ui.label(muted(opening.elapsed_text(), theme));
+                                }
+                            }
+                            egui::CollapsingHeader::new("Opening details").open(failed.then_some(true)).show(ui, |ui| {
                                 ui.label(&self.setup_reason);
                             });
                             ui.add_space(18.0);
@@ -626,8 +649,8 @@ impl StudioApp {
                                     self.open_project(project.id);
                                 }
                             }
-                            if self.projects.is_empty() {
-                                ui.label(muted("Accepted KerML v9 + SysML v3 runtime", theme));
+                            if self.projects.is_empty() && !self.opening.as_ref().is_some_and(|opening| opening.running()) {
+                                ui.label(muted("Required runtime: KerML v9 + SysML v3", theme));
                                 ui.add(
                                     egui::TextEdit::singleline(&mut self.bundle_path)
                                         .hint_text("Absolute path to accepted-runtime.agq-runtime")
@@ -646,6 +669,7 @@ impl StudioApp {
                                     ) {
                                         Ok(id) => {
                                             self.pending.insert(id);
+                                            self.opening = Some(crate::loading::OpeningProgress::new(id));
                                             self.setup_reason =
                                                 "Authenticating immutable runtime bundle…".into();
                                         }
@@ -657,7 +681,7 @@ impl StudioApp {
                             ui.separator();
                             ui.add_space(14.0);
                             ui.label(muted(
-                                "Explore the native interaction and rendering foundation",
+                                "Explore a sample architecture",
                                 theme,
                             ));
                             if ui.button("Open architecture visual fixture").clicked() {
@@ -670,7 +694,7 @@ impl StudioApp {
                                 .small()
                                 .color(theme.amber),
                             );
-                            if !self.pending.is_empty() {
+                            if !self.pending.is_empty() && !self.opening.as_ref().is_some_and(|opening| opening.running()) {
                                 ui.horizontal(|ui| {
                                     ui.spinner();
                                     ui.label("Modeling work continues in the background");

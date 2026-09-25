@@ -9,6 +9,7 @@ mod commands;
 mod gpu;
 mod gpu_timing;
 mod inspector;
+mod loading;
 mod navigation;
 mod palette_ui;
 mod panels;
