@@ -518,7 +518,10 @@ fn owned_feature_summaries(
     for relationship in refs(model, id, p::ELEMENT_OWNED_RELATIONSHIP) {
         for child in refs(model, relationship, p::RELATIONSHIP_OWNED_RELATED_ELEMENT) {
             if is(model, child, c::FEATURE) {
-                if is(model, child, sc::PART_USAGE) {
+                // ConnectionUsage (including InterfaceUsage) is also a PartUsage
+                // in the metamodel, but is a separate engineering object in the
+                // Studio. Keep its feature/ownership; exclude it from part totals.
+                if is(model, child, sc::PART_USAGE) && !is(model, child, c::CONNECTOR) {
                     counts.parts += 1;
                 }
                 if is(model, child, sc::PORT_USAGE) {
@@ -1045,6 +1048,72 @@ pub(crate) mod tests {
             ),
             vec![child]
         );
+    }
+
+    #[test]
+    fn engineering_part_count_excludes_connectors_without_losing_owned_features() {
+        let snapshot = semantic_fixture(
+            &[
+                (1, sc::PART_DEFINITION),
+                (2, sc::PART_USAGE),
+                (3, sc::INTERFACE_USAGE),
+                (4, sc::CONNECTION_USAGE),
+                (11, c::FEATURE_MEMBERSHIP),
+                (12, c::FEATURE_MEMBERSHIP),
+                (13, c::FEATURE_MEMBERSHIP),
+            ],
+            &[
+                (1, p::ELEMENT_OWNED_RELATIONSHIP, references(&[11, 12, 13])),
+                (11, p::RELATIONSHIP_OWNED_RELATED_ELEMENT, references(&[2])),
+                (12, p::RELATIONSHIP_OWNED_RELATED_ELEMENT, references(&[3])),
+                (13, p::RELATIONSHIP_OWNED_RELATED_ELEMENT, references(&[4])),
+                (
+                    2,
+                    p::ELEMENT_DECLARED_NAME,
+                    vec![Value::String("Connector".into())],
+                ),
+                (
+                    3,
+                    p::ELEMENT_DECLARED_NAME,
+                    vec![Value::String("queryConnection".into())],
+                ),
+                (
+                    4,
+                    p::ELEMENT_DECLARED_NAME,
+                    vec![Value::String("module".into())],
+                ),
+            ],
+        );
+        let model = snapshot.model();
+        let id = ElementId::from_u128;
+        assert!(is(model, id(2), sc::PART_USAGE));
+        assert!(!is(model, id(2), c::CONNECTOR));
+        for child in [id(3), id(4)] {
+            assert!(is(model, child, sc::PART_USAGE));
+            assert!(is(model, child, c::CONNECTOR));
+        }
+        let (counts, features) = owned_feature_summaries(model, id(1));
+        assert_eq!(
+            counts,
+            FeatureCounts {
+                parts: 1,
+                ..Default::default()
+            }
+        );
+        assert_eq!(
+            features
+                .iter()
+                .map(|feature| feature.id)
+                .collect::<Vec<_>>(),
+            vec![id(2), id(3), id(4)],
+            "canonical feature identities and ownership order remain intact"
+        );
+        assert_eq!(features[0].name, "Connector");
+        assert_eq!(features[1].semantic_kind, "InterfaceUsage");
+        assert_eq!(features[2].semantic_kind, "ConnectionUsage");
+        for child in [id(2), id(3), id(4)] {
+            assert_eq!(owner(model, child), Some(id(1)));
+        }
     }
 
     #[test]

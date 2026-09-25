@@ -152,6 +152,8 @@ pub struct FeatureSummary {
 /// Counts of canonical directly owned features, not effective/inherited totals.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FeatureCounts {
+    /// Engineering parts: PartUsage subtypes excluding canonical connectors,
+    /// which include ConnectionUsage and InterfaceUsage.
     pub parts: usize,
     pub ports: usize,
     pub requirements: usize,
