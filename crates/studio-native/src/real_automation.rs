@@ -1932,7 +1932,13 @@ impl Runner {
                     .ok_or("No real candidate was returned")?;
                 assess_background_inspection(
                     self.report.background_current_inspection.as_ref(),
-                    candidate.base,
+                    agq_studio_platform::RevisionBinding {
+                        project: self
+                            .report
+                            .project
+                            .ok_or("Baseline project was not retained")?,
+                        revision: candidate.before.revision_id,
+                    },
                     self.report
                         .added_owner
                         .ok_or("Create intent owner was not retained")?,
@@ -2715,6 +2721,7 @@ mod tests {
                 effective_types: vec![],
                 owned_features: vec![],
                 effective_features: vec![],
+                feature_provenance: Default::default(),
                 specializations: vec![],
                 subsettings: vec![],
                 redefinitions: vec![],
