@@ -12,6 +12,7 @@ mod inspector;
 mod navigation;
 mod palette_ui;
 mod panels;
+mod part_edit;
 mod presentation;
 mod real_automation;
 mod real_targets;
@@ -33,7 +34,7 @@ use std::path::PathBuf;
 #[command(about = "Agentique Native Studio — spatial engineering")]
 pub struct Args {
     /// Explicit visual fixture. Never substitutes for an authenticated project.
-    #[arg(long, value_parser = ["architecture", "ports", "requirements", "diff", "stress1000", "stress10000"])]
+    #[arg(long, value_parser = ["architecture", "typography", "ports", "requirements", "diff", "stress1000", "stress10000"])]
     fixture: Option<String>,
     #[arg(long, default_value = ".")]
     root: PathBuf,

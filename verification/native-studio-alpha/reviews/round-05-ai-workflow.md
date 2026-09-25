@@ -56,3 +56,17 @@ The integration now retains the dependency request's original subject and revisi
 The [native vertical journey](../round-05-after/journey.json) passed after these changes. A separate [keyboard-only journey](../keyboard-journey.json) passed navigation, inspection, dependency view, Explain, requirements, source-free component preparation, review mode switching, cancellation and History using key/text input only. These are fixture interaction qualifications, not semantic validation or commit acceptance.
 
 Dismissal still resets to the loaded view instead of restoring every earlier exploration setting. The candidate header does not yet retain a rich operator intent/agent rationale summary. These criticisms remain open; this completed review loop does not grant overall alpha or real-model acceptance.
+
+### Subsequent integration
+
+The later [agent return journey](../agent-return-journey.json) passes restoration
+of the initiating world, focus, camera, selection and filters after dismissal.
+Independent revision/lifecycle failure tests also cover this return path and
+reject invalid disposable projections without restoring older authority.
+Candidate projection now retains its actual operation summary and proposing
+actor; the corresponding header is integrated and the 49 native tests pass
+(`checks/candidate-intent-native-tests.json`). The later
+[candidate capture](../candidate-intent-after/08-candidate.png) shows the operation
+and Human operator attribution alongside explicit review state. Its
+[native journey](../candidate-intent-after/journey.json) passes. No agent rationale
+is invented, and fixture lifecycle restrictions remain visible.

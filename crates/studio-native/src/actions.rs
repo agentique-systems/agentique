@@ -831,11 +831,7 @@ impl StudioApp {
                     }
                 }
             }
-            CreatePart => {
-                self.create_dialog = true;
-                self.create_dialog_focus = true;
-                self.new_part_name = "newPart".into();
-            }
+            CreatePart | RenamePart => self.open_part_edit(id),
             Compare => self.compare_parent(),
             Validate => {
                 if let Some(id) = self.candidate.as_ref().and_then(|c| c.id) {
@@ -867,11 +863,7 @@ impl StudioApp {
         }
     }
     pub fn prepare_part(&mut self) {
-        if let Some(reason) = commands::unavailable(CommandId::CreatePart, &self.context()) {
-            self.status = reason.into();
-            return;
-        }
-        let Some(owner) = self.selected_element() else {
+        let Some(owner) = self.part_edit_target(CommandId::CreatePart) else {
             return;
         };
         let name = self.new_part_name.trim().to_owned();
@@ -879,6 +871,11 @@ impl StudioApp {
             self.status = "Enter a part name".into();
             return;
         }
+        let owner_name = self
+            .scene
+            .node(owner)
+            .map_or("selected part", |node| node.semantic.name.as_str());
+        let intent = format!("Add {name} to {owner_name}");
         if let (Some(binding), Some(branch)) = (self.binding, self.branch) {
             let context = agq_modeling_agent::AgentContext {
                 project: binding.project,
@@ -894,6 +891,7 @@ impl StudioApp {
                     request,
                     started: std::time::Instant::now(),
                     cancelled: false,
+                    intent,
                 });
                 self.status = "Constructing a Working candidate in the background".into();
             }
@@ -961,6 +959,8 @@ impl StudioApp {
                 review_selection: None,
                 id: None,
                 phase: None,
+                intent,
+                actor: "human-operator".into(),
                 before,
                 after,
                 source: format!(

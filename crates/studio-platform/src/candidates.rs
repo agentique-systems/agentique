@@ -143,6 +143,8 @@ pub struct CandidateProjection {
     pub id: CandidateId,
     pub base: RevisionBinding,
     pub phase: CandidatePhase,
+    pub intent: String,
+    pub actor: String,
     pub projection: ViewProjection,
     pub changes: RevisionDiff,
     pub source_preview: SourcePreview,
@@ -208,6 +210,17 @@ impl StudioPlatform {
             id,
             base,
             phase: stored.lifecycle.phase,
+            intent: stored
+                .candidate
+                .prepared()
+                .request()
+                .candidate
+                .manifest
+                .metadata
+                .name
+                .clone()
+                .unwrap_or_else(|| "Model change".into()),
+            actor: stored.candidate.actor.clone(),
             projection: agq_modeling_view::project(after.revision(), definition)?,
             changes: agq_modeling_service::revision_diff(&before, &after)?,
             source_preview: stored.candidate.source_preview.clone(),

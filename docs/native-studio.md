@@ -6,9 +6,9 @@ browser compatibility surface and regression client.
 
 ```powershell
 cargo fetch --locked --manifest-path crates/studio-native/Cargo.toml
-cargo run --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target
+cargo run --release --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target
 # Explicit rendering/interaction fixtures, without accepted semantic runtime:
-cargo run --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target -- --fixture architecture
+cargo run --release --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target -- --fixture architecture --no-restore
 ```
 
 The first build requires fetching the native Cargo.lock dependencies once. No build or
@@ -93,8 +93,14 @@ maps it to source, reconstructs a Working candidate, and provides Current,
 Candidate and Diff views. Validation uses the existing acceptance contract. Commit
 requires an explicit operator command and a durable compare-and-set receipt.
 Cancel discards uncommitted work. Durable history is never rewritten by local undo.
-Rename, connection creation and delete remain unsupported rather than silently
-mutating scene objects.
+Rename Part is also available for a bounded plain authored declaration. It changes
+one declared name, preserves the canonical identity, and refuses the candidate if
+existing references would change or break. Complex headers and quoted names still
+require expert source editing. Both commands capture their target when the dialog
+opens; a later selection cannot redirect the edit, and a changed revision requires
+reopening the command. Real rename qualification is pending the accepted-runtime
+journey; see the [proof and scope](../verification/native-studio-alpha/reviews/part-rename-design.md).
+Connection creation and delete remain unsupported.
 
 The fixture candidate is an illustrative display response to the same intent. It
 does not reconstruct sources or establish language acceptance. Validation and
@@ -110,7 +116,7 @@ cargo run --locked --offline --manifest-path crates/studio-native/Cargo.toml --t
 cargo run --locked --offline -p agq-studio-scene --example scene_benchmark
 ```
 
-Other explicit fixtures are `ports`, `requirements`, and `diff`. Native screenshots
+Other explicit fixtures are `ports`, `requirements`, `typography`, and `diff`. Native screenshots
 come from the rendered GPU surface. Frame intervals include vsync and CPU work;
 they are not GPU timestamp measurements or physical input latency. CPU scene
 benchmarks separately record layout, indexing and hit-testing.
@@ -125,3 +131,8 @@ full accessibility conformance follows merely from enabling AccessKit.
 Session JSON is disposable and versioned. Candidates are process-local and are
 never restored as durable model state. Atomic presentation saves are separate from
 the modeling service's durable commit protocol.
+
+The alpha iteration's [product language](native-studio-product-language.md),
+[eight-surface gallery](../verification/native-studio-alpha/GALLERY.md) and
+[real acceptance procedure](../verification/native-studio-alpha/real-acceptance-runner.md)
+separate observed native interaction from pending semantic acceptance.

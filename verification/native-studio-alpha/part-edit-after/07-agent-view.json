@@ -1,0 +1,66 @@
+{
+  "adapter": "AdapterInfo { name: \"NVIDIA GeForce RTX 3060 Ti\", vendor: 4318, device: 9353, device_type: DiscreteGpu, driver: \"NVIDIA\", driver_info: \"616.92\", backend: Vulkan }",
+  "checkpoint": "07-agent-view",
+  "fixture": "architecture",
+  "format": "agentique-native-gallery/1",
+  "image_sha256": "bdfd157fe2055cc9c4aba20562376684798d3c360e85d670f6a66225b6a19574",
+  "image_size": [
+    1600,
+    1000
+  ],
+  "semantic_data": "explicit architecture visual fixture, not real-model acceptance",
+  "state": {
+    "added_elements": [],
+    "agent_overlay": true,
+    "agent_return": {
+      "center": [
+        1006.0,
+        299.0
+      ],
+      "focus": null,
+      "selection": [
+        "Node(ElementId(332426421773975269261407966485658206229))"
+      ],
+      "world": "Graph",
+      "zoom": 0.48812925815582275
+    },
+    "camera_center": [
+      498.0,
+      139.0
+    ],
+    "candidate": false,
+    "candidate_phase": null,
+    "comparison": "Current",
+    "create_dialog": false,
+    "dark": true,
+    "dependency_elements": [
+      "fa170000-0000-0000-0000-00000000000b",
+      "fa170000-0000-0000-0000-000000000015",
+      "fa170000-0000-0000-0000-000000000016",
+      "fa170000-0000-0000-0000-000000000017",
+      "fa170000-0000-0000-0000-00000000001f",
+      "fa170000-0000-0000-0000-00000000044e",
+      "fa170000-0000-0000-0000-000000000835",
+      "fa170000-0000-0000-0000-000000000836",
+      "fa170000-0000-0000-0000-000000000c1d"
+    ],
+    "edges": 4,
+    "explanation_open": false,
+    "focus": null,
+    "frame": 509,
+    "high_contrast": false,
+    "nodes": 5,
+    "palette": false,
+    "palette_query": "Show dependencies",
+    "reduced_motion": true,
+    "removed_elements": [],
+    "revision": "fa170000-0000-0000-0000-000000000001",
+    "selected": [
+      "Node(ElementId(332426421773975269261407966485658206229))"
+    ],
+    "selection_revision": "fa170000-0000-0000-0000-000000000001",
+    "status": "Temporary dependency view · model unchanged",
+    "world": "Graph",
+    "zoom": 1.0076242685317993
+  }
+}

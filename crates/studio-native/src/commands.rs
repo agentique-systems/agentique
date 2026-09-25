@@ -29,6 +29,7 @@ pub enum CommandId {
     Pin,
     Unpin,
     CreatePart,
+    RenamePart,
     Compare,
     Validate,
     Commit,
@@ -111,6 +112,12 @@ pub const COMMANDS: &[Command] = &[
         label: "Create: nested Part",
         shortcut: "",
         description: "Prepare a source-backed candidate for review",
+    },
+    Command {
+        id: CommandId::RenamePart,
+        label: "Rename selected Part",
+        shortcut: "",
+        description: "Review a name change while retaining the part's identity",
     },
     Command {
         id: CommandId::Graph,
@@ -322,7 +329,7 @@ pub fn can_create_part(
 
 pub fn unavailable(id: CommandId, context: &CommandContext) -> Option<&'static str> {
     use CommandId::*;
-    if context.busy && matches!(id, CreatePart | Validate | Commit | Cancel) {
+    if context.busy && matches!(id, CreatePart | RenamePart | Validate | Commit | Cancel) {
         return Some("A model operation is running");
     }
     match id {
@@ -338,20 +345,22 @@ pub fn unavailable(id: CommandId, context: &CommandContext) -> Option<&'static s
         Compare if context.candidate != CandidateReview::None => {
             Some("Review or cancel the candidate before comparing durable revisions")
         }
-        Focus | Dependencies | Explain | Source | Neighbors | CreatePart | ExpandIncoming
-        | ExpandOutgoing | ExpandBoth | CollapseNeighborhood
+        Focus | Dependencies | Explain | Source | Neighbors | CreatePart | RenamePart
+        | ExpandIncoming | ExpandOutgoing | ExpandBoth | CollapseNeighborhood
             if !context.selected =>
         {
             Some("Select an element first")
         }
-        CreatePart if context.candidate != CandidateReview::None => {
+        CreatePart | RenamePart if context.candidate != CandidateReview::None => {
             Some("Review or cancel the existing candidate")
         }
+        RenamePart if !context.live => Some("Rename requires an authenticated project"),
+        RenamePart if !context.can_create => Some("Select an authored part with editable source"),
         CreatePart if !context.can_create => {
             Some("Select an authored part with source to create a nested part")
         }
-        CreatePart if context.live && !context.create_base_ready => {
-            Some("Open the Validated branch-head revision before creating a part")
+        CreatePart | RenamePart if context.live && !context.create_base_ready => {
+            Some("Open the Validated branch-head revision before editing a part")
         }
         Validate if !context.live => Some("Visual fixtures cannot establish semantic validation"),
         Validate | Commit | Cancel if context.candidate == CandidateReview::None => {

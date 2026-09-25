@@ -1,0 +1,15 @@
+{
+  "command": [
+    "python",
+    "-m",
+    "unittest",
+    "verification.scripts.test_runtime_rematerialization"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T17:23:01.407390+00:00",
+  "elapsed_seconds": 0.375,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/runtime-mutation-rejection-tests.txt",
+  "output_sha256": "044d1fee37b09bae0018be18f07424ef9dd00a879fcddff351fd1fb34551cdfb",
+  "build_environment": {}
+}

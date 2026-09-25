@@ -16,12 +16,23 @@ if command and command[0] == "--":
 directory = root / "verification/native-studio-alpha/checks"
 directory.mkdir(parents=True, exist_ok=True)
 output_path = directory / f"{name}.txt"
+executable = pathlib.Path(command[0])
+if not executable.is_absolute():
+    executable = root / executable
+def executable_digest():
+    if executable.suffix.lower() == ".exe" and executable.is_file():
+        with executable.open("rb") as stream:
+            return hashlib.file_digest(stream, "sha256").hexdigest()
+    return None
+
+executable_before = executable_digest()
 started = time.monotonic()
 utc = datetime.datetime.now(datetime.timezone.utc).isoformat()
 with output_path.open("w", encoding="utf-8") as output:
     process = subprocess.run(command, cwd=root, stdout=output, stderr=subprocess.STDOUT,
                              shell=command[0] == "npm")
 output = output_path.read_bytes()
+executable_after = executable_digest()
 record = {
     "command": command,
     "cwd": str(root),
@@ -34,7 +45,14 @@ record = {
         "CARGO_PROFILE_DEV_DEBUG", "CARGO_PROFILE_TEST_DEBUG", "CARGO_INCREMENTAL", "CARGO_BUILD_JOBS"
     ) if key in os.environ},
 }
+if executable_before is not None:
+    record["executable"] = {
+        "path": str(executable.resolve()),
+        "sha256_before": executable_before,
+        "sha256_after": executable_after,
+        "unchanged_during_run": executable_before == executable_after,
+    }
 (directory / f"{name}.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
 print(json.dumps(record))
 print(output.decode("utf-8", errors="replace")[-4500:])
-raise SystemExit(process.returncode)
+raise SystemExit(process.returncode or (2 if executable_before != executable_after else 0))

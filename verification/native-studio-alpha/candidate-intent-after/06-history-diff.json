@@ -1,0 +1,49 @@
+{
+  "adapter": "AdapterInfo { name: \"NVIDIA GeForce RTX 3060 Ti\", vendor: 4318, device: 9353, device_type: DiscreteGpu, driver: \"NVIDIA\", driver_info: \"616.92\", backend: Vulkan }",
+  "checkpoint": "06-history-diff",
+  "fixture": "architecture",
+  "format": "agentique-native-gallery/1",
+  "image_sha256": "913ed56fcc5176cfafde65e8eaf4b7d0b6a567befb9061c6f1124c59f6298894",
+  "image_size": [
+    1600,
+    1000
+  ],
+  "semantic_data": "explicit architecture visual fixture, not real-model acceptance",
+  "state": {
+    "added_elements": [
+      "CandidateCoordinator"
+    ],
+    "agent_overlay": false,
+    "agent_return": null,
+    "camera_center": [
+      482.0,
+      353.0
+    ],
+    "candidate": false,
+    "candidate_phase": null,
+    "comparison": "Diff",
+    "create_dialog": false,
+    "dark": true,
+    "dependency_elements": null,
+    "edges": 10,
+    "explanation_open": false,
+    "focus": null,
+    "frame": 546,
+    "high_contrast": false,
+    "nodes": 13,
+    "palette": false,
+    "palette_query": "Compare with parent",
+    "reduced_motion": true,
+    "removed_elements": [
+      "Inspector"
+    ],
+    "revision": "fa170000-0000-0000-0000-000000000002",
+    "selected": [
+      "Node(ElementId(332426421773975269261407966485658206229))"
+    ],
+    "selection_revision": "fa170000-0000-0000-0000-000000000002",
+    "status": "System World · selected revision",
+    "world": "System",
+    "zoom": 0.9957507252693176
+  }
+}

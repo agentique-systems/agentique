@@ -891,6 +891,7 @@ fn context_commands(target: Option<&SceneTarget>) -> &'static [CommandId] {
             Explain,
             Source,
             CreatePart,
+            RenamePart,
             Pin,
             Unpin,
             Neighbors,

@@ -727,11 +727,11 @@ impl Runner {
         if !matches!(self.report.scenario.as_str(), "vertical" | "keyboard") {
             return Err(format!("Unknown native scenario {}", self.report.scenario));
         }
-        if app.fixture.as_deref() != Some("architecture")
+        if !matches!(app.fixture.as_deref(), Some("architecture" | "typography"))
             || app.binding.is_some()
             || app.branch.is_some()
         {
-            return Err("Native input scenario requires --fixture architecture and refuses every live service binding".into());
+            return Err("Native input scenario requires --fixture architecture or typography and refuses every live service binding".into());
         }
         self.report.adapter.clone_from(&app.adapter);
         // Keep one monotonic clock during capture delivery as well as input
@@ -769,11 +769,14 @@ impl Runner {
                 .map_err(|error| format!("Cannot save gallery screenshot: {error}"))?;
                 let evidence = serde_json::json!({
                     "format": "agentique-native-gallery/1",
-                    "semantic_data": "explicit architecture fixture, not real-model acceptance",
+                    "semantic_data": format!("explicit {} visual fixture, not real-model acceptance", app.fixture.as_deref().unwrap_or("unavailable")),
                     "fixture": app.fixture,
                     "checkpoint": name,
                     "state": snapshot,
                     "image_size": image.size,
+                    "image_sha256": agq_modeling_repository::ContentDigest::of(
+                        &std::fs::read(&path).map_err(|e| e.to_string())?
+                    ),
                     "adapter": app.adapter,
                 });
                 std::fs::write(

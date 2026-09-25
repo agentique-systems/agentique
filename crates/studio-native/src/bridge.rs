@@ -183,17 +183,25 @@ pub fn nested_part(
     name: String,
     view: agq_modeling_view::ViewDefinition,
 ) -> Work {
+    propose(
+        context,
+        ModelCommand::CreatePartUsage {
+            owner,
+            name,
+            definition: None,
+        },
+        view,
+    )
+}
+
+pub fn propose(
+    context: AgentContext,
+    command: ModelCommand,
+    view: agq_modeling_view::ViewDefinition,
+) -> Work {
     Box::new(move |platform| {
         platform
-            .propose(
-                context,
-                ModelCommand::CreatePartUsage {
-                    owner,
-                    name,
-                    definition: None,
-                },
-                &view,
-            )
+            .propose(context, command, &view)
             .map(Output::Candidate)
     })
 }

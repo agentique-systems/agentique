@@ -39,13 +39,13 @@ Working or Validated and visibly distinguished from the durable revision.
 | Spacing | 8 px rhythm; 14 px scene inset; 30 px minimum chrome controls; 44 world px routing gutters. |
 | Elevation | Dark canvas, quieter containment, raised component cards, highest contrast Inspector and transient labels. Light mode preserves the ordering. |
 | Structure | Subsystem heading above contained parts; its boundary communicates membership. A restrained category mark and text identify the object. |
-| Selection | Blue outline plus outer keyline; the Inspector uses the same semantic selection. Connected paths brighten while unrelated edges recede. |
+| Selection | Blue outline plus outer keyline; the Inspector uses the same semantic selection. Graph World brightens connected paths and fades unrelated edges. System World keeps child connections readable when their container is selected. |
 | Hover / focus | Hover reveals exact identity and meaning; keyboard focus has an explicit stroke. Active controls have a filled treatment. Disabled commands retain reasons. |
 | Authored / derived / standard | Authored relationships are solid, derived are dashed, and standard origin has an explicit text marker. Color is supplementary. |
 | Requirements | Amber category treatment plus requirement shape/label. Link coverage is described literally, never pass/fail. |
 | Behavior / agents | Violet category treatment plus distinct marks and names. Agent results are temporary overlays with target revision and authority. |
-| Ports | Square boundary surface, filled center when a visible connection exists, hollow when no connection is shown. Name appears for the selected object or close inspection. Placement never fabricates direction. |
-| Candidate / diff | Working candidate uses an explicit header; added uses + and green, changed uses ~ and amber, removed uses −, muted ghost and dashed relationships. |
+| Ports | Square boundary surface, filled center when a visible connection exists, hollow when no connection is shown. Names appear for the selected object, close inspection and small focused subsystems. Accessible names include the original owner and actual/unspecified direction. Placement never fabricates direction. |
+| Candidate / diff | Working candidate uses an explicit lifecycle header, requested change and proposing actor; added uses + and green, changed uses ~ and amber, removed uses −, muted ghost and dashed relationships. |
 | Motion | Short camera interpolation reinforces navigation. No semantic progress is simulated. Previous valid revision remains explorable. |
 | Contrast | High contrast increases boundary and secondary text contrast, preserving labels and shape distinctions. |
 

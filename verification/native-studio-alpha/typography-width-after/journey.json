@@ -1,0 +1,5143 @@
+{
+  "format": "agentique-native-interaction/1",
+  "scenario": "vertical",
+  "scope": "Actual native egui input over deterministic visual fixture; no semantic validation or durable commit acceptance",
+  "outcome": "passed",
+  "passed": true,
+  "adapter": "AdapterInfo { name: \"NVIDIA GeForce RTX 3060 Ti\", vendor: 4318, device: 9353, device_type: DiscreteGpu, driver: \"NVIDIA\", driver_info: \"616.92\", backend: Vulkan }",
+  "assertions": [
+    {
+      "name": "native fixture and GPU ready",
+      "expected": "Ready",
+      "passed": true,
+      "before": {
+        "frame": 0,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          0.0,
+          0.0
+        ],
+        "zoom": 1.0,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": false,
+        "status": "Ready"
+      },
+      "after": {
+        "frame": 13,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          272.0
+        ],
+        "zoom": 1.0414938,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": false,
+        "status": "Ready"
+      },
+      "inputs": []
+    },
+    {
+      "name": "enable reduced-motion keyboard path",
+      "expected": "ReducedMotion",
+      "passed": true,
+      "before": {
+        "frame": 18,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          272.0
+        ],
+        "zoom": 1.0414938,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": false,
+        "status": "Ready"
+      },
+      "after": {
+        "frame": 33,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          272.0
+        ],
+        "zoom": 1.0414938,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Ready"
+      },
+      "inputs": [
+        {
+          "frame": 18,
+          "palette_query_before": "",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: K, physical_key: Some(K), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: K, physical_key: Some(K), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 23,
+          "palette_query_before": "",
+          "keyboard_focus": "DED6",
+          "events": [
+            "PointerMoved([800.0 218.5])",
+            "PointerButton { pos: [800.0 218.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 24,
+          "palette_query_before": "",
+          "keyboard_focus": "DED6",
+          "events": [
+            "PointerMoved([800.0 218.5])",
+            "PointerButton { pos: [800.0 218.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 25,
+          "palette_query_before": "",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 26,
+          "palette_query_before": "",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Text(\"Toggle reduced motion\")"
+          ]
+        },
+        {
+          "frame": 28,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: Enter, physical_key: Some(Enter), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Enter, physical_key: Some(Enter), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "select ModelRepository by scene geometry",
+      "expected": "Selected(21)",
+      "passed": true,
+      "before": {
+        "frame": 34,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          272.0
+        ],
+        "zoom": 1.0414938,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Ready"
+      },
+      "after": {
+        "frame": 79,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          272.0
+        ],
+        "zoom": 1.0414938,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Ready"
+      },
+      "inputs": [
+        {
+          "frame": 74,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([782.0 427.6])",
+            "PointerButton { pos: [782.0 427.6], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 75,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([782.0 427.6])",
+            "PointerButton { pos: [782.0 427.6], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "shift-click adds ModelingService",
+      "expected": "MultiSelected",
+      "passed": true,
+      "before": {
+        "frame": 80,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          272.0
+        ],
+        "zoom": 1.0414938,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Ready"
+      },
+      "after": {
+        "frame": 125,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))",
+          "Node(ElementId(332426421773975269261407966485658206230))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          272.0
+        ],
+        "zoom": 1.0414938,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Ready"
+      },
+      "inputs": [
+        {
+          "frame": 120,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([782.0 596.4])",
+            "PointerButton { pos: [782.0 596.4], button: Primary, pressed: true, modifiers: Modifiers { shift: true } }"
+          ]
+        },
+        {
+          "frame": 121,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([782.0 596.4])",
+            "PointerButton { pos: [782.0 596.4], button: Primary, pressed: false, modifiers: Modifiers { shift: true } }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Escape clears scene selection",
+      "expected": "SelectionEmpty",
+      "passed": true,
+      "before": {
+        "frame": 126,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))",
+          "Node(ElementId(332426421773975269261407966485658206230))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          272.0
+        ],
+        "zoom": 1.0414938,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Ready"
+      },
+      "after": {
+        "frame": 130,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          272.0
+        ],
+        "zoom": 1.0414938,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Ready"
+      },
+      "inputs": [
+        {
+          "frame": 126,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: Escape, physical_key: Some(Escape), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Escape, physical_key: Some(Escape), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "double-click focuses ModelingPlatform",
+      "expected": "Focused(2)",
+      "passed": true,
+      "before": {
+        "frame": 131,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          272.0
+        ],
+        "zoom": 1.0414938,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Ready"
+      },
+      "after": {
+        "frame": 178,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "focus": "fa170000-0000-0000-0000-000000000002",
+        "camera_center": [
+          482.0,
+          272.0
+        ],
+        "zoom": 1.2169118,
+        "nodes": 4,
+        "edges": 2,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Ready"
+      },
+      "inputs": [
+        {
+          "frame": 171,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([782.0 318.3])",
+            "PointerButton { pos: [782.0 318.3], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 172,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([782.0 318.3])",
+            "PointerButton { pos: [782.0 318.3], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 173,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([782.0 318.3])",
+            "PointerButton { pos: [782.0 318.3], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 174,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([782.0 318.3])",
+            "PointerButton { pos: [782.0 318.3], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Alt-Up navigates to owner context",
+      "expected": "RootFocus",
+      "passed": true,
+      "before": {
+        "frame": 182,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "focus": "fa170000-0000-0000-0000-000000000002",
+        "camera_center": [
+          482.0,
+          272.0
+        ],
+        "zoom": 1.2169118,
+        "nodes": 4,
+        "edges": 2,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Ready"
+      },
+      "after": {
+        "frame": 186,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          272.0
+        ],
+        "zoom": 1.0414938,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Ready"
+      },
+      "inputs": [
+        {
+          "frame": 182,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: ArrowUp, physical_key: Some(ArrowUp), pressed: true, repeat: false, modifiers: Modifiers { alt: true } }",
+            "Key { key: ArrowUp, physical_key: Some(ArrowUp), pressed: false, repeat: false, modifiers: Modifiers { alt: true } }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "select subsystem header",
+      "expected": "Selected(2)",
+      "passed": true,
+      "before": {
+        "frame": 187,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          272.0
+        ],
+        "zoom": 1.0414938,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Ready"
+      },
+      "after": {
+        "frame": 232,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          272.0
+        ],
+        "zoom": 1.0414938,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Ready"
+      },
+      "inputs": [
+        {
+          "frame": 227,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([782.0 318.3])",
+            "PointerButton { pos: [782.0 318.3], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 228,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([782.0 318.3])",
+            "PointerButton { pos: [782.0 318.3], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "F focuses selected subsystem",
+      "expected": "Focused(2)",
+      "passed": true,
+      "before": {
+        "frame": 233,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          272.0
+        ],
+        "zoom": 1.0414938,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Ready"
+      },
+      "after": {
+        "frame": 237,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "focus": "fa170000-0000-0000-0000-000000000002",
+        "camera_center": [
+          482.0,
+          272.0
+        ],
+        "zoom": 1.2169118,
+        "nodes": 4,
+        "edges": 2,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Ready"
+      },
+      "inputs": [
+        {
+          "frame": 233,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: F, physical_key: Some(F), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: F, physical_key: Some(F), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Alt-Left restores root navigation",
+      "expected": "RootFocus",
+      "passed": true,
+      "before": {
+        "frame": 238,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "focus": "fa170000-0000-0000-0000-000000000002",
+        "camera_center": [
+          482.0,
+          272.0
+        ],
+        "zoom": 1.2169118,
+        "nodes": 4,
+        "edges": 2,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Ready"
+      },
+      "after": {
+        "frame": 242,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          272.0
+        ],
+        "zoom": 1.0414938,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Ready"
+      },
+      "inputs": [
+        {
+          "frame": 238,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: ArrowLeft, physical_key: Some(ArrowLeft), pressed: true, repeat: false, modifiers: Modifiers { alt: true } }",
+            "Key { key: ArrowLeft, physical_key: Some(ArrowLeft), pressed: false, repeat: false, modifiers: Modifiers { alt: true } }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "drag empty canvas pans camera",
+      "expected": "Panned",
+      "passed": true,
+      "before": {
+        "frame": 243,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          272.0
+        ],
+        "zoom": 1.0414938,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Ready"
+      },
+      "after": {
+        "frame": 250,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "focus": null,
+        "camera_center": [
+          405.18726,
+          225.91235
+        ],
+        "zoom": 1.0414938,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Ready"
+      },
+      "inputs": [
+        {
+          "frame": 243,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([260.0 203.0])",
+            "PointerButton { pos: [260.0 203.0], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 244,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([300.0 227.0])"
+          ]
+        },
+        {
+          "frame": 245,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([340.0 251.0])"
+          ]
+        },
+        {
+          "frame": 246,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([340.0 251.0])",
+            "PointerButton { pos: [340.0 251.0], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "wheel zoom preserves pointer anchor",
+      "expected": "ZoomAnchored",
+      "passed": true,
+      "before": {
+        "frame": 251,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "focus": null,
+        "camera_center": [
+          405.18726,
+          225.91235
+        ],
+        "zoom": 1.0414938,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Ready"
+      },
+      "after": {
+        "frame": 267,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "focus": null,
+        "camera_center": [
+          466.88696,
+          199.13422
+        ],
+        "zoom": 1.4779499,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Ready"
+      },
+      "inputs": [
+        {
+          "frame": 251,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([999.6 480.1])",
+            "MouseWheel { unit: Point, delta: [0.0 140.0], modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "select repository before graph reasoning",
+      "expected": "Selected(21)",
+      "passed": true,
+      "before": {
+        "frame": 268,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "focus": null,
+        "camera_center": [
+          466.88696,
+          199.13422
+        ],
+        "zoom": 1.4779499,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Ready"
+      },
+      "after": {
+        "frame": 313,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          466.88696,
+          199.13422
+        ],
+        "zoom": 1.4779499,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Ready"
+      },
+      "inputs": [
+        {
+          "frame": 308,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([804.3 473.8])",
+            "PointerButton { pos: [804.3 473.8], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 309,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([804.3 473.8])",
+            "PointerButton { pos: [804.3 473.8], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2 opens Graph World",
+      "expected": "World(Graph)",
+      "passed": true,
+      "before": {
+        "frame": 314,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          466.88696,
+          199.13422
+        ],
+        "zoom": 1.4779499,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Ready"
+      },
+      "after": {
+        "frame": 318,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          498.0,
+          139.0
+        ],
+        "zoom": 1.0075614,
+        "nodes": 5,
+        "edges": 4,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Graph World · selected revision"
+      },
+      "inputs": [
+        {
+          "frame": 314,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: Num2, physical_key: Some(Num2), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Num2, physical_key: Some(Num2), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "expand from readable neighborhood to graph overview",
+      "expected": "World(Graph)",
+      "passed": true,
+      "before": {
+        "frame": 322,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          498.0,
+          139.0
+        ],
+        "zoom": 1.0075614,
+        "nodes": 5,
+        "edges": 4,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle reduced motion",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Graph World · selected revision"
+      },
+      "after": {
+        "frame": 337,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          1006.0,
+          299.0
+        ],
+        "zoom": 0.48809886,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Show loaded graph overview",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Graph overview · focus a selection to inspect its neighborhood"
+      },
+      "inputs": [
+        {
+          "frame": 322,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: K, physical_key: Some(K), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: K, physical_key: Some(K), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 327,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": "DED6",
+          "events": [
+            "PointerMoved([800.0 218.5])",
+            "PointerButton { pos: [800.0 218.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 328,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": "DED6",
+          "events": [
+            "PointerMoved([800.0 218.5])",
+            "PointerButton { pos: [800.0 218.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 329,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 330,
+          "palette_query_before": "Toggle reduced motion",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Text(\"Show loaded graph overview\")"
+          ]
+        },
+        {
+          "frame": 332,
+          "palette_query_before": "Show loaded graph overview",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: Enter, physical_key: Some(Enter), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Enter, physical_key: Some(Enter), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pin graph position",
+      "expected": "Pinned(true)",
+      "passed": true,
+      "before": {
+        "frame": 338,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          1006.0,
+          299.0
+        ],
+        "zoom": 0.48809886,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Show loaded graph overview",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Graph overview · focus a selection to inspect its neighborhood"
+      },
+      "after": {
+        "frame": 350,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          1006.0,
+          299.0
+        ],
+        "zoom": 0.48809886,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Pin position",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Graph position pinned · presentation only"
+      },
+      "inputs": [
+        {
+          "frame": 338,
+          "palette_query_before": "Show loaded graph overview",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: K, physical_key: Some(K), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: K, physical_key: Some(K), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 340,
+          "palette_query_before": "Show loaded graph overview",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 341,
+          "palette_query_before": "Show loaded graph overview",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Text(\"Pin position\")"
+          ]
+        },
+        {
+          "frame": 345,
+          "palette_query_before": "Pin position",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: Enter, physical_key: Some(Enter), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Enter, physical_key: Some(Enter), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "pin survives projection rebuild",
+      "expected": "Pinned(true)",
+      "passed": true,
+      "before": {
+        "frame": 351,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          1006.0,
+          299.0
+        ],
+        "zoom": 0.48809886,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Pin position",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Graph position pinned · presentation only"
+      },
+      "after": {
+        "frame": 363,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          1006.0,
+          299.0
+        ],
+        "zoom": 0.48809886,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Show loaded graph overview",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Graph overview · focus a selection to inspect its neighborhood"
+      },
+      "inputs": [
+        {
+          "frame": 351,
+          "palette_query_before": "Pin position",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: K, physical_key: Some(K), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: K, physical_key: Some(K), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 353,
+          "palette_query_before": "Pin position",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 354,
+          "palette_query_before": "Pin position",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Text(\"Show loaded graph overview\")"
+          ]
+        },
+        {
+          "frame": 358,
+          "palette_query_before": "Show loaded graph overview",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: Enter, physical_key: Some(Enter), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Enter, physical_key: Some(Enter), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "unpin graph position",
+      "expected": "Pinned(false)",
+      "passed": true,
+      "before": {
+        "frame": 364,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          1006.0,
+          299.0
+        ],
+        "zoom": 0.48809886,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Show loaded graph overview",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Graph overview · focus a selection to inspect its neighborhood"
+      },
+      "after": {
+        "frame": 376,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          1006.0,
+          299.0
+        ],
+        "zoom": 0.48809886,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Unpin position",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Graph position unpinned · presentation only"
+      },
+      "inputs": [
+        {
+          "frame": 364,
+          "palette_query_before": "Show loaded graph overview",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: K, physical_key: Some(K), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: K, physical_key: Some(K), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 366,
+          "palette_query_before": "Show loaded graph overview",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 367,
+          "palette_query_before": "Show loaded graph overview",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Text(\"Unpin position\")"
+          ]
+        },
+        {
+          "frame": 371,
+          "palette_query_before": "Unpin position",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: Enter, physical_key: Some(Enter), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Enter, physical_key: Some(Enter), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "select derived relationship geometry",
+      "expected": "DerivedSelected",
+      "passed": true,
+      "before": {
+        "frame": 377,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          1006.0,
+          299.0
+        ],
+        "zoom": 0.48809886,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Unpin position",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Graph position unpinned · presentation only"
+      },
+      "after": {
+        "frame": 422,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Edge(\"fixture-edge-00000013\")"
+        ],
+        "focus": null,
+        "camera_center": [
+          1006.0,
+          299.0
+        ],
+        "zoom": 0.48809886,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Unpin position",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Graph position unpinned · presentation only"
+      },
+      "inputs": [
+        {
+          "frame": 417,
+          "palette_query_before": "Unpin position",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([422.3 676.5])",
+            "PointerButton { pos: [422.3 676.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 418,
+          "palette_query_before": "Unpin position",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([422.3 676.5])",
+            "PointerButton { pos: [422.3 676.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "E opens semantic Explain",
+      "expected": "ExplainOpen",
+      "passed": true,
+      "before": {
+        "frame": 423,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Edge(\"fixture-edge-00000013\")"
+        ],
+        "focus": null,
+        "camera_center": [
+          1006.0,
+          299.0
+        ],
+        "zoom": 0.48809886,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Unpin position",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Graph position unpinned · presentation only"
+      },
+      "after": {
+        "frame": 427,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Edge(\"fixture-edge-00000013\")"
+        ],
+        "focus": null,
+        "camera_center": [
+          1006.0,
+          299.0
+        ],
+        "zoom": 0.48809886,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Unpin position",
+        "create_dialog": false,
+        "explanation_open": true,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Graph position unpinned · presentation only"
+      },
+      "inputs": [
+        {
+          "frame": 423,
+          "palette_query_before": "Unpin position",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: E, physical_key: Some(E), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: E, physical_key: Some(E), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Escape closes Explain",
+      "expected": "ExplainClosed",
+      "passed": true,
+      "before": {
+        "frame": 431,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Edge(\"fixture-edge-00000013\")"
+        ],
+        "focus": null,
+        "camera_center": [
+          1006.0,
+          299.0
+        ],
+        "zoom": 0.48809886,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Unpin position",
+        "create_dialog": false,
+        "explanation_open": true,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Graph position unpinned · presentation only"
+      },
+      "after": {
+        "frame": 435,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Edge(\"fixture-edge-00000013\")"
+        ],
+        "focus": null,
+        "camera_center": [
+          1006.0,
+          299.0
+        ],
+        "zoom": 0.48809886,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Unpin position",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Graph position unpinned · presentation only"
+      },
+      "inputs": [
+        {
+          "frame": 431,
+          "palette_query_before": "Unpin position",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: Escape, physical_key: Some(Escape), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Escape, physical_key: Some(Escape), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3 opens Requirements World",
+      "expected": "World(Requirements)",
+      "passed": true,
+      "before": {
+        "frame": 436,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Edge(\"fixture-edge-00000013\")"
+        ],
+        "focus": null,
+        "camera_center": [
+          1006.0,
+          299.0
+        ],
+        "zoom": 0.48809886,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Unpin position",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Graph position unpinned · presentation only"
+      },
+      "after": {
+        "frame": 440,
+        "world": "Requirements",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          444.0,
+          206.0
+        ],
+        "zoom": 1.1301028,
+        "nodes": 9,
+        "edges": 6,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Unpin position",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Requirements World · selected revision"
+      },
+      "inputs": [
+        {
+          "frame": 436,
+          "palette_query_before": "Unpin position",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: Num3, physical_key: Some(Num3), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Num3, physical_key: Some(Num3), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "return to Graph World after requirements",
+      "expected": "World(Graph)",
+      "passed": true,
+      "before": {
+        "frame": 445,
+        "world": "Requirements",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          444.0,
+          206.0
+        ],
+        "zoom": 1.1301028,
+        "nodes": 9,
+        "edges": 6,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Unpin position",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Requirements World · selected revision"
+      },
+      "after": {
+        "frame": 449,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          1006.0,
+          299.0
+        ],
+        "zoom": 0.48809886,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Unpin position",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Graph World · selected revision"
+      },
+      "inputs": [
+        {
+          "frame": 445,
+          "palette_query_before": "Unpin position",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: Num2, physical_key: Some(Num2), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Num2, physical_key: Some(Num2), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "select repository in Graph World",
+      "expected": "Selected(21)",
+      "passed": true,
+      "before": {
+        "frame": 450,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          1006.0,
+          299.0
+        ],
+        "zoom": 0.48809886,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Unpin position",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Graph World · selected revision"
+      },
+      "after": {
+        "frame": 495,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          1006.0,
+          299.0
+        ],
+        "zoom": 0.48809886,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Unpin position",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Graph World · selected revision"
+      },
+      "inputs": [
+        {
+          "frame": 490,
+          "palette_query_before": "Unpin position",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([534.3 520.4])",
+            "PointerButton { pos: [534.3 520.4], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 491,
+          "palette_query_before": "Unpin position",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([534.3 520.4])",
+            "PointerButton { pos: [534.3 520.4], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "command palette shows dependencies",
+      "expected": "Dependencies",
+      "passed": true,
+      "before": {
+        "frame": 496,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          1006.0,
+          299.0
+        ],
+        "zoom": 0.48809886,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Unpin position",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Graph World · selected revision"
+      },
+      "after": {
+        "frame": 511,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          498.0,
+          139.0
+        ],
+        "zoom": 1.0075614,
+        "nodes": 5,
+        "edges": 4,
+        "dependency_elements": [
+          "fa170000-0000-0000-0000-00000000000b",
+          "fa170000-0000-0000-0000-000000000015",
+          "fa170000-0000-0000-0000-000000000016",
+          "fa170000-0000-0000-0000-000000000017",
+          "fa170000-0000-0000-0000-00000000001f",
+          "fa170000-0000-0000-0000-00000000044e",
+          "fa170000-0000-0000-0000-000000000835",
+          "fa170000-0000-0000-0000-000000000836",
+          "fa170000-0000-0000-0000-000000000c1d"
+        ],
+        "agent_overlay": true,
+        "agent_return": {
+          "world": "Graph",
+          "focus": null,
+          "center": [
+            1006.0,
+            299.0
+          ],
+          "zoom": 0.48809886,
+          "selection": [
+            "Node(ElementId(332426421773975269261407966485658206229))"
+          ]
+        },
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Show dependencies",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Temporary dependency view · model unchanged"
+      },
+      "inputs": [
+        {
+          "frame": 496,
+          "palette_query_before": "Unpin position",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: K, physical_key: Some(K), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: K, physical_key: Some(K), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 501,
+          "palette_query_before": "Unpin position",
+          "keyboard_focus": "DED6",
+          "events": [
+            "PointerMoved([800.0 218.5])",
+            "PointerButton { pos: [800.0 218.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 502,
+          "palette_query_before": "Unpin position",
+          "keyboard_focus": "DED6",
+          "events": [
+            "PointerMoved([800.0 218.5])",
+            "PointerButton { pos: [800.0 218.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 503,
+          "palette_query_before": "Unpin position",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 504,
+          "palette_query_before": "Unpin position",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Text(\"Show dependencies\")"
+          ]
+        },
+        {
+          "frame": 506,
+          "palette_query_before": "Show dependencies",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: Enter, physical_key: Some(Enter), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Enter, physical_key: Some(Enter), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "dismiss dependency view restores operator context",
+      "expected": "AgentReturned",
+      "passed": true,
+      "before": {
+        "frame": 515,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          498.0,
+          139.0
+        ],
+        "zoom": 1.0075614,
+        "nodes": 5,
+        "edges": 4,
+        "dependency_elements": [
+          "fa170000-0000-0000-0000-00000000000b",
+          "fa170000-0000-0000-0000-000000000015",
+          "fa170000-0000-0000-0000-000000000016",
+          "fa170000-0000-0000-0000-000000000017",
+          "fa170000-0000-0000-0000-00000000001f",
+          "fa170000-0000-0000-0000-00000000044e",
+          "fa170000-0000-0000-0000-000000000835",
+          "fa170000-0000-0000-0000-000000000836",
+          "fa170000-0000-0000-0000-000000000c1d"
+        ],
+        "agent_overlay": true,
+        "agent_return": {
+          "world": "Graph",
+          "focus": null,
+          "center": [
+            1006.0,
+            299.0
+          ],
+          "zoom": 0.48809886,
+          "selection": [
+            "Node(ElementId(332426421773975269261407966485658206229))"
+          ]
+        },
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Show dependencies",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Temporary dependency view · model unchanged"
+      },
+      "after": {
+        "frame": 527,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          1006.0,
+          299.0
+        ],
+        "zoom": 0.48809886,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Return from agent view",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Returned to your view · model unchanged"
+      },
+      "inputs": [
+        {
+          "frame": 515,
+          "palette_query_before": "Show dependencies",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: K, physical_key: Some(K), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: K, physical_key: Some(K), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 517,
+          "palette_query_before": "Show dependencies",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 518,
+          "palette_query_before": "Show dependencies",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Text(\"Return from agent view\")"
+          ]
+        },
+        {
+          "frame": 522,
+          "palette_query_before": "Return from agent view",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: Enter, physical_key: Some(Enter), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Enter, physical_key: Some(Enter), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "command palette compares revisions",
+      "expected": "Diff",
+      "passed": true,
+      "before": {
+        "frame": 528,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          1006.0,
+          299.0
+        ],
+        "zoom": 0.48809886,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Return from agent view",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Returned to your view · model unchanged"
+      },
+      "after": {
+        "frame": 543,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000002",
+        "selection_revision": "fa170000-0000-0000-0000-000000000002",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          1006.0,
+          299.0
+        ],
+        "zoom": 0.48809886,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "CandidateCoordinator"
+        ],
+        "removed_elements": [
+          "Inspector"
+        ],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": false,
+        "palette_query": "Compare with parent",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Comparing architecture baseline with candidate coordination · visual fixture"
+      },
+      "inputs": [
+        {
+          "frame": 528,
+          "palette_query_before": "Return from agent view",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: K, physical_key: Some(K), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: K, physical_key: Some(K), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 533,
+          "palette_query_before": "Return from agent view",
+          "keyboard_focus": "DED6",
+          "events": [
+            "PointerMoved([800.0 218.5])",
+            "PointerButton { pos: [800.0 218.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 534,
+          "palette_query_before": "Return from agent view",
+          "keyboard_focus": "DED6",
+          "events": [
+            "PointerMoved([800.0 218.5])",
+            "PointerButton { pos: [800.0 218.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 535,
+          "palette_query_before": "Return from agent view",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 536,
+          "palette_query_before": "Return from agent view",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Text(\"Compare with parent\")"
+          ]
+        },
+        {
+          "frame": 538,
+          "palette_query_before": "Compare with parent",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: Enter, physical_key: Some(Enter), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Enter, physical_key: Some(Enter), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1 opens System World comparison",
+      "expected": "World(System)",
+      "passed": true,
+      "before": {
+        "frame": 544,
+        "world": "Graph",
+        "revision": "fa170000-0000-0000-0000-000000000002",
+        "selection_revision": "fa170000-0000-0000-0000-000000000002",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          1006.0,
+          299.0
+        ],
+        "zoom": 0.48809886,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "CandidateCoordinator"
+        ],
+        "removed_elements": [
+          "Inspector"
+        ],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": false,
+        "palette_query": "Compare with parent",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Comparing architecture baseline with candidate coordination · visual fixture"
+      },
+      "after": {
+        "frame": 548,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000002",
+        "selection_revision": "fa170000-0000-0000-0000-000000000002",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          353.0
+        ],
+        "zoom": 0.9957507,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "CandidateCoordinator"
+        ],
+        "removed_elements": [
+          "Inspector"
+        ],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": false,
+        "palette_query": "Compare with parent",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "System World · selected revision"
+      },
+      "inputs": [
+        {
+          "frame": 544,
+          "palette_query_before": "Compare with parent",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: Num1, physical_key: Some(Num1), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Num1, physical_key: Some(Num1), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "keyboard palette arrows choose System World",
+      "expected": "World(System)",
+      "passed": true,
+      "before": {
+        "frame": 552,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000002",
+        "selection_revision": "fa170000-0000-0000-0000-000000000002",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          353.0
+        ],
+        "zoom": 0.9957507,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "CandidateCoordinator"
+        ],
+        "removed_elements": [
+          "Inspector"
+        ],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": false,
+        "palette_query": "Compare with parent",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "System World · selected revision"
+      },
+      "after": {
+        "frame": 564,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000002",
+        "selection_revision": "fa170000-0000-0000-0000-000000000002",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          353.0
+        ],
+        "zoom": 0.9957507,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "CandidateCoordinator"
+        ],
+        "removed_elements": [
+          "Inspector"
+        ],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": false,
+        "palette_query": "World",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "System World · selected revision"
+      },
+      "inputs": [
+        {
+          "frame": 552,
+          "palette_query_before": "Compare with parent",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: K, physical_key: Some(K), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: K, physical_key: Some(K), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 554,
+          "palette_query_before": "Compare with parent",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 555,
+          "palette_query_before": "Compare with parent",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Text(\"World\")"
+          ]
+        },
+        {
+          "frame": 557,
+          "palette_query_before": "World",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: ArrowDown, physical_key: Some(ArrowDown), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: ArrowDown, physical_key: Some(ArrowDown), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 559,
+          "palette_query_before": "World",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: Enter, physical_key: Some(Enter), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Enter, physical_key: Some(Enter), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "select candidate parent",
+      "expected": "Selected(2)",
+      "passed": true,
+      "before": {
+        "frame": 565,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000002",
+        "selection_revision": "fa170000-0000-0000-0000-000000000002",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          353.0
+        ],
+        "zoom": 0.9957507,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "CandidateCoordinator"
+        ],
+        "removed_elements": [
+          "Inspector"
+        ],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": false,
+        "palette_query": "World",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "System World · selected revision"
+      },
+      "after": {
+        "frame": 610,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000002",
+        "selection_revision": "fa170000-0000-0000-0000-000000000002",
+        "selected": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          353.0
+        ],
+        "zoom": 0.9957507,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "CandidateCoordinator"
+        ],
+        "removed_elements": [
+          "Inspector"
+        ],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": false,
+        "palette_query": "World",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "System World · selected revision"
+      },
+      "inputs": [
+        {
+          "frame": 605,
+          "palette_query_before": "World",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([782.2 248.9])",
+            "PointerButton { pos: [782.2 248.9], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 606,
+          "palette_query_before": "World",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([782.2 248.9])",
+            "PointerButton { pos: [782.2 248.9], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "palette opens nested-part dialog",
+      "expected": "CreateDialog",
+      "passed": true,
+      "before": {
+        "frame": 611,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000002",
+        "selection_revision": "fa170000-0000-0000-0000-000000000002",
+        "selected": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          353.0
+        ],
+        "zoom": 0.9957507,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "CandidateCoordinator"
+        ],
+        "removed_elements": [
+          "Inspector"
+        ],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": false,
+        "palette_query": "World",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "System World · selected revision"
+      },
+      "after": {
+        "frame": 626,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000002",
+        "selection_revision": "fa170000-0000-0000-0000-000000000002",
+        "selected": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          353.0
+        ],
+        "zoom": 0.9957507,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "CandidateCoordinator"
+        ],
+        "removed_elements": [
+          "Inspector"
+        ],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": false,
+        "palette_query": "Create nested part",
+        "create_dialog": true,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "System World · selected revision"
+      },
+      "inputs": [
+        {
+          "frame": 611,
+          "palette_query_before": "World",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: K, physical_key: Some(K), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: K, physical_key: Some(K), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 616,
+          "palette_query_before": "World",
+          "keyboard_focus": "DED6",
+          "events": [
+            "PointerMoved([800.0 218.5])",
+            "PointerButton { pos: [800.0 218.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 617,
+          "palette_query_before": "World",
+          "keyboard_focus": "DED6",
+          "events": [
+            "PointerMoved([800.0 218.5])",
+            "PointerButton { pos: [800.0 218.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 618,
+          "palette_query_before": "World",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 619,
+          "palette_query_before": "World",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Text(\"Create nested part\")"
+          ]
+        },
+        {
+          "frame": 621,
+          "palette_query_before": "Create nested part",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: Enter, physical_key: Some(Enter), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Enter, physical_key: Some(Enter), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "text entry prepares candidate preview",
+      "expected": "Candidate",
+      "passed": true,
+      "before": {
+        "frame": 627,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000002",
+        "selection_revision": "fa170000-0000-0000-0000-000000000002",
+        "selected": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          353.0
+        ],
+        "zoom": 0.9957507,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "CandidateCoordinator"
+        ],
+        "removed_elements": [
+          "Inspector"
+        ],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": false,
+        "palette_query": "Create nested part",
+        "create_dialog": true,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "System World · selected revision"
+      },
+      "after": {
+        "frame": 636,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000066",
+        "selection_revision": "fa170000-0000-0000-0000-000000000066",
+        "selected": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          353.0
+        ],
+        "zoom": 0.9957507,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "ScenarioNestedPart"
+        ],
+        "removed_elements": [],
+        "candidate": true,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": false,
+        "palette_query": "Create nested part",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Candidate visual preview · install runtime for semantic reconstruction"
+      },
+      "inputs": [
+        {
+          "frame": 627,
+          "palette_query_before": "Create nested part",
+          "keyboard_focus": "FD36",
+          "events": [
+            "PointerMoved([800.0 494.5])",
+            "PointerButton { pos: [800.0 494.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 628,
+          "palette_query_before": "Create nested part",
+          "keyboard_focus": "FD36",
+          "events": [
+            "PointerMoved([800.0 494.5])",
+            "PointerButton { pos: [800.0 494.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 629,
+          "palette_query_before": "Create nested part",
+          "keyboard_focus": "FD36",
+          "events": [
+            "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 630,
+          "palette_query_before": "Create nested part",
+          "keyboard_focus": "FD36",
+          "events": [
+            "Text(\"ScenarioNestedPart\")"
+          ]
+        },
+        {
+          "frame": 631,
+          "palette_query_before": "Create nested part",
+          "keyboard_focus": "FD36",
+          "events": [
+            "PointerMoved([647.7 608.5])",
+            "PointerButton { pos: [647.7 608.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 632,
+          "palette_query_before": "Create nested part",
+          "keyboard_focus": "FD36",
+          "events": [
+            "PointerMoved([647.7 608.5])",
+            "PointerButton { pos: [647.7 608.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "explicit focus changes frames candidate",
+      "expected": "PaletteClosed",
+      "passed": true,
+      "before": {
+        "frame": 637,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000066",
+        "selection_revision": "fa170000-0000-0000-0000-000000000066",
+        "selected": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          353.0
+        ],
+        "zoom": 0.9957507,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "ScenarioNestedPart"
+        ],
+        "removed_elements": [],
+        "candidate": true,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": false,
+        "palette_query": "Create nested part",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Candidate visual preview · install runtime for semantic reconstruction"
+      },
+      "after": {
+        "frame": 649,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000066",
+        "selection_revision": "fa170000-0000-0000-0000-000000000066",
+        "selected": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "ScenarioNestedPart"
+        ],
+        "removed_elements": [],
+        "candidate": true,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": false,
+        "palette_query": "Focus changes",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Candidate visual preview · install runtime for semantic reconstruction"
+      },
+      "inputs": [
+        {
+          "frame": 637,
+          "palette_query_before": "Create nested part",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: K, physical_key: Some(K), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: K, physical_key: Some(K), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 639,
+          "palette_query_before": "Create nested part",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 640,
+          "palette_query_before": "Create nested part",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Text(\"Focus changes\")"
+          ]
+        },
+        {
+          "frame": 644,
+          "palette_query_before": "Focus changes",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: Enter, physical_key: Some(Enter), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Enter, physical_key: Some(Enter), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "candidate element is selectable",
+      "expected": "NamedSelected(\"ScenarioNestedPart\")",
+      "passed": true,
+      "before": {
+        "frame": 650,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000066",
+        "selection_revision": "fa170000-0000-0000-0000-000000000066",
+        "selected": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "ScenarioNestedPart"
+        ],
+        "removed_elements": [],
+        "candidate": true,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": false,
+        "palette_query": "Focus changes",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Candidate visual preview · install runtime for semantic reconstruction"
+      },
+      "after": {
+        "frame": 695,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000066",
+        "selection_revision": "fa170000-0000-0000-0000-000000000066",
+        "selected": [
+          "Node(ElementId(332395267992824060295636783507682951167))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "ScenarioNestedPart"
+        ],
+        "removed_elements": [],
+        "candidate": true,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": false,
+        "palette_query": "Focus changes",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Candidate visual preview · install runtime for semantic reconstruction"
+      },
+      "inputs": [
+        {
+          "frame": 690,
+          "palette_query_before": "Focus changes",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([782.2 526.5])",
+            "PointerButton { pos: [782.2 526.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 691,
+          "palette_query_before": "Focus changes",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([782.2 526.5])",
+            "PointerButton { pos: [782.2 526.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Current retains candidate review memory and camera",
+      "expected": "ReviewMode(Current)",
+      "passed": true,
+      "before": {
+        "frame": 699,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000066",
+        "selection_revision": "fa170000-0000-0000-0000-000000000066",
+        "selected": [
+          "Node(ElementId(332395267992824060295636783507682951167))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "ScenarioNestedPart"
+        ],
+        "removed_elements": [],
+        "candidate": true,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": false,
+        "palette_query": "Focus changes",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Candidate visual preview · install runtime for semantic reconstruction"
+      },
+      "after": {
+        "frame": 711,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000002",
+        "selection_revision": "fa170000-0000-0000-0000-000000000002",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 12,
+        "edges": 9,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": true,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Review: Current revision",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Candidate visual preview · install runtime for semantic reconstruction"
+      },
+      "inputs": [
+        {
+          "frame": 699,
+          "palette_query_before": "Focus changes",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: K, physical_key: Some(K), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: K, physical_key: Some(K), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 701,
+          "palette_query_before": "Focus changes",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 702,
+          "palette_query_before": "Focus changes",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Text(\"Review: Current revision\")"
+          ]
+        },
+        {
+          "frame": 706,
+          "palette_query_before": "Review: Current revision",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: Enter, physical_key: Some(Enter), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Enter, physical_key: Some(Enter), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Candidate restores its element selection and camera",
+      "expected": "ReviewMode(Candidate)",
+      "passed": true,
+      "before": {
+        "frame": 712,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000002",
+        "selection_revision": "fa170000-0000-0000-0000-000000000002",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 12,
+        "edges": 9,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": true,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Review: Current revision",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Candidate visual preview · install runtime for semantic reconstruction"
+      },
+      "after": {
+        "frame": 724,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000066",
+        "selection_revision": "fa170000-0000-0000-0000-000000000066",
+        "selected": [
+          "Node(ElementId(332395267992824060295636783507682951167))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": true,
+        "candidate_phase": null,
+        "comparison": "Candidate",
+        "palette": false,
+        "palette_query": "Review: Candidate revision",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Candidate visual preview · install runtime for semantic reconstruction"
+      },
+      "inputs": [
+        {
+          "frame": 712,
+          "palette_query_before": "Review: Current revision",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: K, physical_key: Some(K), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: K, physical_key: Some(K), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 714,
+          "palette_query_before": "Review: Current revision",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 715,
+          "palette_query_before": "Review: Current revision",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Text(\"Review: Candidate revision\")"
+          ]
+        },
+        {
+          "frame": 719,
+          "palette_query_before": "Review: Candidate revision",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: Enter, physical_key: Some(Enter), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Enter, physical_key: Some(Enter), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Diff preserves candidate element and camera",
+      "expected": "ReviewMode(Diff)",
+      "passed": true,
+      "before": {
+        "frame": 725,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000066",
+        "selection_revision": "fa170000-0000-0000-0000-000000000066",
+        "selected": [
+          "Node(ElementId(332395267992824060295636783507682951167))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": true,
+        "candidate_phase": null,
+        "comparison": "Candidate",
+        "palette": false,
+        "palette_query": "Review: Candidate revision",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Candidate visual preview · install runtime for semantic reconstruction"
+      },
+      "after": {
+        "frame": 737,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000066",
+        "selection_revision": "fa170000-0000-0000-0000-000000000066",
+        "selected": [
+          "Node(ElementId(332395267992824060295636783507682951167))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "ScenarioNestedPart"
+        ],
+        "removed_elements": [],
+        "candidate": true,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": false,
+        "palette_query": "Review: Candidate difference",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Candidate visual preview · install runtime for semantic reconstruction"
+      },
+      "inputs": [
+        {
+          "frame": 725,
+          "palette_query_before": "Review: Candidate revision",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: K, physical_key: Some(K), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: K, physical_key: Some(K), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 727,
+          "palette_query_before": "Review: Candidate revision",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 728,
+          "palette_query_before": "Review: Candidate revision",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Text(\"Review: Candidate difference\")"
+          ]
+        },
+        {
+          "frame": 732,
+          "palette_query_before": "Review: Candidate difference",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: Enter, physical_key: Some(Enter), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Enter, physical_key: Some(Enter), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "fixture validation stays disabled",
+      "expected": "Disabled(Validate)",
+      "passed": true,
+      "before": {
+        "frame": 738,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000066",
+        "selection_revision": "fa170000-0000-0000-0000-000000000066",
+        "selected": [
+          "Node(ElementId(332395267992824060295636783507682951167))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "ScenarioNestedPart"
+        ],
+        "removed_elements": [],
+        "candidate": true,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": false,
+        "palette_query": "Review: Candidate difference",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Candidate visual preview · install runtime for semantic reconstruction"
+      },
+      "after": {
+        "frame": 753,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000066",
+        "selection_revision": "fa170000-0000-0000-0000-000000000066",
+        "selected": [
+          "Node(ElementId(332395267992824060295636783507682951167))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "ScenarioNestedPart"
+        ],
+        "removed_elements": [],
+        "candidate": true,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": true,
+        "palette_query": "Validate candidate",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Candidate visual preview · install runtime for semantic reconstruction"
+      },
+      "inputs": [
+        {
+          "frame": 738,
+          "palette_query_before": "Review: Candidate difference",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: K, physical_key: Some(K), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: K, physical_key: Some(K), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 743,
+          "palette_query_before": "Review: Candidate difference",
+          "keyboard_focus": "DED6",
+          "events": [
+            "PointerMoved([800.0 218.5])",
+            "PointerButton { pos: [800.0 218.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 744,
+          "palette_query_before": "Review: Candidate difference",
+          "keyboard_focus": "DED6",
+          "events": [
+            "PointerMoved([800.0 218.5])",
+            "PointerButton { pos: [800.0 218.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 745,
+          "palette_query_before": "Review: Candidate difference",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 746,
+          "palette_query_before": "Review: Candidate difference",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Text(\"Validate candidate\")"
+          ]
+        },
+        {
+          "frame": 748,
+          "palette_query_before": "Validate candidate",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: Enter, physical_key: Some(Enter), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Enter, physical_key: Some(Enter), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "close disabled validation palette",
+      "expected": "PaletteClosed",
+      "passed": true,
+      "before": {
+        "frame": 754,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000066",
+        "selection_revision": "fa170000-0000-0000-0000-000000000066",
+        "selected": [
+          "Node(ElementId(332395267992824060295636783507682951167))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "ScenarioNestedPart"
+        ],
+        "removed_elements": [],
+        "candidate": true,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": true,
+        "palette_query": "Validate candidate",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Candidate visual preview · install runtime for semantic reconstruction"
+      },
+      "after": {
+        "frame": 758,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000066",
+        "selection_revision": "fa170000-0000-0000-0000-000000000066",
+        "selected": [
+          "Node(ElementId(332395267992824060295636783507682951167))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "ScenarioNestedPart"
+        ],
+        "removed_elements": [],
+        "candidate": true,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": false,
+        "palette_query": "Validate candidate",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Candidate visual preview · install runtime for semantic reconstruction"
+      },
+      "inputs": [
+        {
+          "frame": 754,
+          "palette_query_before": "Validate candidate",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: Escape, physical_key: Some(Escape), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Escape, physical_key: Some(Escape), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "fixture commit stays disabled",
+      "expected": "Disabled(Commit)",
+      "passed": true,
+      "before": {
+        "frame": 759,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000066",
+        "selection_revision": "fa170000-0000-0000-0000-000000000066",
+        "selected": [
+          "Node(ElementId(332395267992824060295636783507682951167))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "ScenarioNestedPart"
+        ],
+        "removed_elements": [],
+        "candidate": true,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": false,
+        "palette_query": "Validate candidate",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Candidate visual preview · install runtime for semantic reconstruction"
+      },
+      "after": {
+        "frame": 774,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000066",
+        "selection_revision": "fa170000-0000-0000-0000-000000000066",
+        "selected": [
+          "Node(ElementId(332395267992824060295636783507682951167))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "ScenarioNestedPart"
+        ],
+        "removed_elements": [],
+        "candidate": true,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": true,
+        "palette_query": "Commit validated candidate",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Candidate visual preview · install runtime for semantic reconstruction"
+      },
+      "inputs": [
+        {
+          "frame": 759,
+          "palette_query_before": "Validate candidate",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: K, physical_key: Some(K), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: K, physical_key: Some(K), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 764,
+          "palette_query_before": "Validate candidate",
+          "keyboard_focus": "DED6",
+          "events": [
+            "PointerMoved([800.0 218.5])",
+            "PointerButton { pos: [800.0 218.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 765,
+          "palette_query_before": "Validate candidate",
+          "keyboard_focus": "DED6",
+          "events": [
+            "PointerMoved([800.0 218.5])",
+            "PointerButton { pos: [800.0 218.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 766,
+          "palette_query_before": "Validate candidate",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 767,
+          "palette_query_before": "Validate candidate",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Text(\"Commit validated candidate\")"
+          ]
+        },
+        {
+          "frame": 769,
+          "palette_query_before": "Commit validated candidate",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: Enter, physical_key: Some(Enter), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Enter, physical_key: Some(Enter), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "close disabled commit palette",
+      "expected": "PaletteClosed",
+      "passed": true,
+      "before": {
+        "frame": 775,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000066",
+        "selection_revision": "fa170000-0000-0000-0000-000000000066",
+        "selected": [
+          "Node(ElementId(332395267992824060295636783507682951167))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "ScenarioNestedPart"
+        ],
+        "removed_elements": [],
+        "candidate": true,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": true,
+        "palette_query": "Commit validated candidate",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Candidate visual preview · install runtime for semantic reconstruction"
+      },
+      "after": {
+        "frame": 779,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000066",
+        "selection_revision": "fa170000-0000-0000-0000-000000000066",
+        "selected": [
+          "Node(ElementId(332395267992824060295636783507682951167))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "ScenarioNestedPart"
+        ],
+        "removed_elements": [],
+        "candidate": true,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": false,
+        "palette_query": "Commit validated candidate",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Candidate visual preview · install runtime for semantic reconstruction"
+      },
+      "inputs": [
+        {
+          "frame": 775,
+          "palette_query_before": "Commit validated candidate",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: Escape, physical_key: Some(Escape), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Escape, physical_key: Some(Escape), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "cancel drops candidate and stale selection",
+      "expected": "Cancelled",
+      "passed": true,
+      "before": {
+        "frame": 780,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000066",
+        "selection_revision": "fa170000-0000-0000-0000-000000000066",
+        "selected": [
+          "Node(ElementId(332395267992824060295636783507682951167))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 13,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [
+          "ScenarioNestedPart"
+        ],
+        "removed_elements": [],
+        "candidate": true,
+        "candidate_phase": null,
+        "comparison": "Diff",
+        "palette": false,
+        "palette_query": "Commit validated candidate",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Candidate visual preview · install runtime for semantic reconstruction"
+      },
+      "after": {
+        "frame": 795,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000002",
+        "selection_revision": "fa170000-0000-0000-0000-000000000002",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 12,
+        "edges": 9,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Cancel candidate",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Visual candidate cancelled · current revision restored"
+      },
+      "inputs": [
+        {
+          "frame": 780,
+          "palette_query_before": "Commit validated candidate",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: K, physical_key: Some(K), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: K, physical_key: Some(K), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 785,
+          "palette_query_before": "Commit validated candidate",
+          "keyboard_focus": "DED6",
+          "events": [
+            "PointerMoved([800.0 218.5])",
+            "PointerButton { pos: [800.0 218.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 786,
+          "palette_query_before": "Commit validated candidate",
+          "keyboard_focus": "DED6",
+          "events": [
+            "PointerMoved([800.0 218.5])",
+            "PointerButton { pos: [800.0 218.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 787,
+          "palette_query_before": "Commit validated candidate",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 788,
+          "palette_query_before": "Commit validated candidate",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Text(\"Cancel candidate\")"
+          ]
+        },
+        {
+          "frame": 790,
+          "palette_query_before": "Cancel candidate",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: Enter, physical_key: Some(Enter), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Enter, physical_key: Some(Enter), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4 opens immutable history",
+      "expected": "World(History)",
+      "passed": true,
+      "before": {
+        "frame": 796,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000002",
+        "selection_revision": "fa170000-0000-0000-0000-000000000002",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 12,
+        "edges": 9,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Cancel candidate",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Visual candidate cancelled · current revision restored"
+      },
+      "after": {
+        "frame": 800,
+        "world": "History",
+        "revision": "fa170000-0000-0000-0000-000000000002",
+        "selection_revision": "fa170000-0000-0000-0000-000000000002",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 12,
+        "edges": 9,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Cancel candidate",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Design history · selected revision"
+      },
+      "inputs": [
+        {
+          "frame": 796,
+          "palette_query_before": "Cancel candidate",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: Num4, physical_key: Some(Num4), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Num4, physical_key: Some(Num4), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "history baseline changes entire revision context",
+      "expected": "Revision(ProjectRevisionId(RevisionId(332426421773975269261407966485658206209)))",
+      "passed": true,
+      "before": {
+        "frame": 801,
+        "world": "History",
+        "revision": "fa170000-0000-0000-0000-000000000002",
+        "selection_revision": "fa170000-0000-0000-0000-000000000002",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 12,
+        "edges": 9,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Cancel candidate",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Design history · selected revision"
+      },
+      "after": {
+        "frame": 846,
+        "world": "History",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Cancel candidate",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Design history · selected revision"
+      },
+      "inputs": [
+        {
+          "frame": 841,
+          "palette_query_before": "Cancel candidate",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([782.0 333.0])",
+            "PointerButton { pos: [782.0 333.0], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 842,
+          "palette_query_before": "Cancel candidate",
+          "keyboard_focus": null,
+          "events": [
+            "PointerMoved([782.0 333.0])",
+            "PointerButton { pos: [782.0 333.0], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "high contrast command changes theme",
+      "expected": "ContrastChanged",
+      "passed": true,
+      "before": {
+        "frame": 847,
+        "world": "History",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Cancel candidate",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Design history · selected revision"
+      },
+      "after": {
+        "frame": 862,
+        "world": "History",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle high contrast",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": true,
+        "reduced_motion": true,
+        "status": "Design history · selected revision"
+      },
+      "inputs": [
+        {
+          "frame": 847,
+          "palette_query_before": "Cancel candidate",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: K, physical_key: Some(K), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: K, physical_key: Some(K), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 852,
+          "palette_query_before": "Cancel candidate",
+          "keyboard_focus": "DED6",
+          "events": [
+            "PointerMoved([800.0 218.5])",
+            "PointerButton { pos: [800.0 218.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 853,
+          "palette_query_before": "Cancel candidate",
+          "keyboard_focus": "DED6",
+          "events": [
+            "PointerMoved([800.0 218.5])",
+            "PointerButton { pos: [800.0 218.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 854,
+          "palette_query_before": "Cancel candidate",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 855,
+          "palette_query_before": "Cancel candidate",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Text(\"Toggle high contrast\")"
+          ]
+        },
+        {
+          "frame": 857,
+          "palette_query_before": "Toggle high contrast",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: Enter, physical_key: Some(Enter), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Enter, physical_key: Some(Enter), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "light-dark command changes theme",
+      "expected": "ThemeChanged",
+      "passed": true,
+      "before": {
+        "frame": 863,
+        "world": "History",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle high contrast",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": true,
+        "reduced_motion": true,
+        "status": "Design history · selected revision"
+      },
+      "after": {
+        "frame": 878,
+        "world": "History",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Switch light",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": false,
+        "high_contrast": true,
+        "reduced_motion": true,
+        "status": "Design history · selected revision"
+      },
+      "inputs": [
+        {
+          "frame": 863,
+          "palette_query_before": "Toggle high contrast",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: K, physical_key: Some(K), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: K, physical_key: Some(K), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 868,
+          "palette_query_before": "Toggle high contrast",
+          "keyboard_focus": "DED6",
+          "events": [
+            "PointerMoved([800.0 218.5])",
+            "PointerButton { pos: [800.0 218.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 869,
+          "palette_query_before": "Toggle high contrast",
+          "keyboard_focus": "DED6",
+          "events": [
+            "PointerMoved([800.0 218.5])",
+            "PointerButton { pos: [800.0 218.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 870,
+          "palette_query_before": "Toggle high contrast",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 871,
+          "palette_query_before": "Toggle high contrast",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Text(\"Switch light\")"
+          ]
+        },
+        {
+          "frame": 873,
+          "palette_query_before": "Switch light",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: Enter, physical_key: Some(Enter), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Enter, physical_key: Some(Enter), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "restore theme through same command path",
+      "expected": "ThemeChanged",
+      "passed": true,
+      "before": {
+        "frame": 879,
+        "world": "History",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Switch light",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": false,
+        "high_contrast": true,
+        "reduced_motion": true,
+        "status": "Design history · selected revision"
+      },
+      "after": {
+        "frame": 894,
+        "world": "History",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Switch light",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": true,
+        "reduced_motion": true,
+        "status": "Design history · selected revision"
+      },
+      "inputs": [
+        {
+          "frame": 879,
+          "palette_query_before": "Switch light",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: K, physical_key: Some(K), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: K, physical_key: Some(K), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 884,
+          "palette_query_before": "Switch light",
+          "keyboard_focus": "DED6",
+          "events": [
+            "PointerMoved([800.0 218.5])",
+            "PointerButton { pos: [800.0 218.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 885,
+          "palette_query_before": "Switch light",
+          "keyboard_focus": "DED6",
+          "events": [
+            "PointerMoved([800.0 218.5])",
+            "PointerButton { pos: [800.0 218.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 886,
+          "palette_query_before": "Switch light",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 887,
+          "palette_query_before": "Switch light",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Text(\"Switch light\")"
+          ]
+        },
+        {
+          "frame": 889,
+          "palette_query_before": "Switch light",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: Enter, physical_key: Some(Enter), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Enter, physical_key: Some(Enter), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "restore ordinary contrast",
+      "expected": "ContrastChanged",
+      "passed": true,
+      "before": {
+        "frame": 895,
+        "world": "History",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Switch light",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": true,
+        "reduced_motion": true,
+        "status": "Design history · selected revision"
+      },
+      "after": {
+        "frame": 910,
+        "world": "History",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle high contrast",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Design history · selected revision"
+      },
+      "inputs": [
+        {
+          "frame": 895,
+          "palette_query_before": "Switch light",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: K, physical_key: Some(K), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: K, physical_key: Some(K), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 900,
+          "palette_query_before": "Switch light",
+          "keyboard_focus": "DED6",
+          "events": [
+            "PointerMoved([800.0 218.5])",
+            "PointerButton { pos: [800.0 218.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 901,
+          "palette_query_before": "Switch light",
+          "keyboard_focus": "DED6",
+          "events": [
+            "PointerMoved([800.0 218.5])",
+            "PointerButton { pos: [800.0 218.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+          ]
+        },
+        {
+          "frame": 902,
+          "palette_query_before": "Switch light",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 903,
+          "palette_query_before": "Switch light",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Text(\"Toggle high contrast\")"
+          ]
+        },
+        {
+          "frame": 905,
+          "palette_query_before": "Toggle high contrast",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: Enter, physical_key: Some(Enter), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Enter, physical_key: Some(Enter), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "return to System World",
+      "expected": "World(System)",
+      "passed": true,
+      "before": {
+        "frame": 911,
+        "world": "History",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          779.0
+        ],
+        "zoom": 1.3,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle high contrast",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "Design history · selected revision"
+      },
+      "after": {
+        "frame": 915,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          434.0
+        ],
+        "zoom": 0.80990785,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle high contrast",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "System World · selected revision"
+      },
+      "inputs": [
+        {
+          "frame": 911,
+          "palette_query_before": "Toggle high contrast",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: Num1, physical_key: Some(Num1), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Num1, physical_key: Some(Num1), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "final engineering selection",
+      "expected": "Selected(21)",
+      "passed": true,
+      "before": {
+        "frame": 916,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          434.0
+        ],
+        "zoom": 0.80990785,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Toggle high contrast",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "System World · selected revision"
+      },
+      "after": {
+        "frame": 928,
+        "world": "System",
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection_revision": "fa170000-0000-0000-0000-000000000001",
+        "selected": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "focus": null,
+        "camera_center": [
+          482.0,
+          131.0
+        ],
+        "zoom": 2.0,
+        "nodes": 12,
+        "edges": 10,
+        "dependency_elements": null,
+        "agent_overlay": false,
+        "agent_return": null,
+        "added_elements": [],
+        "removed_elements": [],
+        "candidate": false,
+        "candidate_phase": null,
+        "comparison": "Current",
+        "palette": false,
+        "palette_query": "Focus: ModelRepository",
+        "create_dialog": false,
+        "explanation_open": false,
+        "dark": true,
+        "high_contrast": false,
+        "reduced_motion": true,
+        "status": "System World · selected revision"
+      },
+      "inputs": [
+        {
+          "frame": 916,
+          "palette_query_before": "Toggle high contrast",
+          "keyboard_focus": null,
+          "events": [
+            "Key { key: K, physical_key: Some(K), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: K, physical_key: Some(K), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 918,
+          "palette_query_before": "Toggle high contrast",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+            "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }"
+          ]
+        },
+        {
+          "frame": 919,
+          "palette_query_before": "Toggle high contrast",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Text(\"Focus: ModelRepository\")"
+          ]
+        },
+        {
+          "frame": 923,
+          "palette_query_before": "Focus: ModelRepository",
+          "keyboard_focus": "DED6",
+          "events": [
+            "Key { key: Enter, physical_key: Some(Enter), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+            "Key { key: Enter, physical_key: Some(Enter), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+          ]
+        }
+      ]
+    }
+  ],
+  "failure": null,
+  "gallery": [
+    "verification/native-studio-alpha/typography-width-after\\01-system-world.png",
+    "verification/native-studio-alpha/typography-width-after\\02-focused-subsystem.png",
+    "verification/native-studio-alpha/typography-width-after\\03-graph-world.png",
+    "verification/native-studio-alpha/typography-width-after\\05-explain.png",
+    "verification/native-studio-alpha/typography-width-after\\04-requirements-world.png",
+    "verification/native-studio-alpha/typography-width-after\\07-agent-view.png",
+    "verification/native-studio-alpha/typography-width-after\\06-history-diff.png",
+    "verification/native-studio-alpha/typography-width-after\\08-candidate.png"
+  ]
+}

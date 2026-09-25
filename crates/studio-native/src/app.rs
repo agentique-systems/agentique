@@ -38,6 +38,8 @@ pub enum ComparisonMode {
 pub struct Candidate {
     pub id: Option<CandidateId>,
     pub phase: Option<CandidatePhase>,
+    pub intent: String,
+    pub actor: String,
     pub before: ViewProjection,
     pub after: ViewProjection,
     pub source: String,
@@ -48,6 +50,7 @@ pub struct PendingPreparation {
     pub request: u64,
     pub started: Instant,
     pub cancelled: bool,
+    pub intent: String,
 }
 
 /// Disposable display state only. Restoring this must never restore a lifecycle
@@ -146,6 +149,7 @@ pub struct StudioApp {
     pub palette_query: String,
     pub palette_focus: bool,
     pub create_dialog: bool,
+    pub edit_target: Option<crate::part_edit::EditTarget>,
     pub create_dialog_focus: bool,
     pub new_part_name: String,
     pub candidate: Option<Candidate>,
@@ -283,6 +287,7 @@ impl StudioApp {
             palette_query: String::new(),
             palette_focus: false,
             create_dialog: false,
+            edit_target: None,
             create_dialog_focus: false,
             new_part_name: "newPart".into(),
             candidate: None,
@@ -651,6 +656,13 @@ impl eframe::App for StudioApp {
 
 pub fn fixture_projection(name: &str) -> ViewProjection {
     match name {
+        "typography" => {
+            fixtures::adversarial()
+                .into_iter()
+                .find(|(name, _)| *name == "long-unicode-names")
+                .expect("retained typography stress fixture")
+                .1
+        }
         "ports" => fixtures::dense_ports(),
         "requirements" => fixtures::requirements(),
         "stress1000" => fixtures::stress(1000, 2000),

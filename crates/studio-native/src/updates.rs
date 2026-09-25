@@ -59,6 +59,8 @@ impl StudioApp {
                             self.candidate = Some(Candidate {
                                 id: Some(id),
                                 phase: Some(candidate.phase),
+                                intent: candidate.intent,
+                                actor: candidate.actor,
                                 before: self.projection.clone(),
                                 after: candidate.projection,
                                 source: candidate.source_preview.after,
@@ -355,6 +357,8 @@ impl StudioApp {
                         review_selection: None,
                         id: Some(candidate.id),
                         phase: Some(candidate.phase),
+                        intent: candidate.intent,
+                        actor: candidate.actor,
                         before,
                         after: candidate.projection,
                         source: format!(
@@ -685,6 +689,8 @@ mod tests {
             id: serde_json::from_str("\"00000000-0000-0000-0000-000000000091\"").unwrap(),
             base: app.binding.unwrap(),
             phase,
+            intent: "Add test part".into(),
+            actor: "human-operator".into(),
             changes: serde_json::from_value(serde_json::json!({
                 "from": app.projection.revision_id, "to": projection.revision_id,
                 "documents": [], "declared": {"added":[],"removed":[],"changed":[]},
@@ -706,6 +712,8 @@ mod tests {
         app.candidate = Some(Candidate {
             id: Some(candidate.id),
             phase: Some(phase),
+            intent: candidate.intent,
+            actor: candidate.actor,
             before: app.projection.clone(),
             after: candidate.projection,
             source: candidate.source_preview.after,

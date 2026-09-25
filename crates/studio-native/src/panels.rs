@@ -61,6 +61,7 @@ impl StudioApp {
                         ui.label(muted("VISUAL FIXTURES", theme).small());
                         for (name, label) in [
                             ("architecture", "Agentique architecture"),
+                            ("typography", "Long engineering names and Unicode"),
                             ("ports", "Dense ports and connections"),
                             ("requirements", "Requirement knowledge graph"),
                             ("diff", "Revision comparison"),
@@ -159,6 +160,7 @@ impl StudioApp {
                         ui.spinner();
                         ui.vertical(|ui| {
                             ui.strong(if preparation.cancelled { "CANCELLATION REQUESTED" } else { "PREPARING WORKING CANDIDATE" });
+                            ui.label(&preparation.intent);
                             ui.label(if preparation.cancelled {
                                 "Current reconstruction will finish safely; its result will be discarded."
                             } else {
@@ -291,6 +293,16 @@ impl StudioApp {
                             }
                         });
                     });
+                    if let Some(candidate) = &self.candidate {
+                        let actor = if candidate.actor == "human-operator" {
+                            "Human operator"
+                        } else {
+                            candidate.actor.as_str()
+                        };
+                        let summary = format!("{} · Proposed by {actor}", candidate.intent);
+                        ui.add(egui::Label::new(&summary).truncate())
+                            .on_hover_text(summary);
+                    }
                 });
         }
         egui::SidePanel::left("outliner")
@@ -546,7 +558,11 @@ impl StudioApp {
                             ui.label(RichText::new(category_icon(*category)).color(theme.muted));
                         }
                         let response = ui
-                            .selectable_label(self.selection.contains(*id), name)
+                            .add_sized(
+                                [ui.available_width().max(1.0), 28.0],
+                                egui::Button::selectable(self.selection.contains(*id), name)
+                                    .truncate(),
+                            )
                             .on_hover_text(name);
                         crate::real_targets::record(
                             ui.ctx(),
@@ -665,26 +681,10 @@ impl StudioApp {
             });
     }
     pub fn dialogs(&mut self, ctx: &egui::Context) {
-        let theme = self.theme;
         if self.palette {
             self.command_palette(ctx);
         }
-        if self.create_dialog {
-            let mut open = true;
-            egui::Window::new("Create nested part").open(&mut open).collapsible(false).resizable(false).anchor(Align2::CENTER_CENTER,Vec2::ZERO).default_width(440.0).show(ctx,|ui|{
-                let owner=self.selected_element().and_then(|id|self.projection.nodes.iter().find(|n|n.id==id)).map_or("Selected owner",|n|n.name.as_str());
-                ui.label(format!("Inside {owner}"));ui.add_space(10.0);
-                let name_label=ui.label("Part name");let name=ui.add(egui::TextEdit::singleline(&mut self.new_part_name).desired_width(f32::INFINITY)).labelled_by(name_label.id);
-                if self.create_dialog_focus { name.request_focus(); self.create_dialog_focus=false; }
-                let submit = name.lost_focus() && ui.input(|input| input.key_pressed(egui::Key::Enter));
-                crate::automation::record(ctx,crate::automation::Target::CandidateName,name.rect);
-                ui.add_space(16.0);ui.label(muted(if self.fixture.is_some(){"This creates a visual preview of typed intent. Semantic reconstruction requires the accepted runtime."}else{"A source-backed Working candidate will be reconstructed. Review and validate it before committing."},theme));
-                ui.add_space(16.0);let prepare=ui.button("Prepare candidate");
-                crate::automation::record(ctx,crate::automation::Target::CandidatePrepare,prepare.rect);
-                if prepare.clicked() || submit {self.prepare_part();}
-            });
-            self.create_dialog &= open;
-        }
+        self.part_edit_dialog(ctx);
         if self.show_explain {
             let mut open = true;
             if let Some(window) = egui::Window::new("Explain · semantic provenance")
@@ -812,6 +812,14 @@ impl StudioApp {
                     rect,
                 );
                 let selected = *revision == self.projection.revision_id;
+                response.widget_info(|| {
+                    egui::WidgetInfo::selected(
+                        egui::WidgetType::Button,
+                        true,
+                        selected,
+                        format!("{name}, {status}, revision {}", short_revision(*revision)),
+                    )
+                });
                 let dot = egui::pos2(rect.left() + 50.0, rect.center().y);
                 if let Some(parent_index) =
                     parent.and_then(|parent| revisions.iter().position(|r| r.0 == parent))
@@ -842,16 +850,30 @@ impl StudioApp {
                     8.0,
                     theme.surface,
                     Stroke::new(
-                        if selected { 1.5 } else { 1.0 },
-                        if selected { theme.accent } else { theme.border },
+                        if selected || response.has_focus() {
+                            1.5
+                        } else {
+                            1.0
+                        },
+                        if selected || response.has_focus() {
+                            theme.accent
+                        } else {
+                            theme.border
+                        },
                     ),
                     egui::StrokeKind::Inside,
                 );
-                ui.painter().text(
-                    card.min + Vec2::new(20.0, 17.0),
-                    Align2::LEFT_TOP,
-                    name,
+                let mut title = egui::text::LayoutJob::simple_singleline(
+                    name.clone(),
                     FontId::proportional(18.0),
+                    theme.text,
+                );
+                title.wrap.max_width = (card.width() - 40.0).max(1.0);
+                title.wrap.max_rows = 1;
+                title.wrap.break_anywhere = true;
+                ui.painter().galley(
+                    card.min + Vec2::new(20.0, 17.0),
+                    ui.painter().layout_job(title),
                     theme.text,
                 );
                 ui.painter().text(
@@ -869,6 +891,7 @@ impl StudioApp {
                 if response.clicked() {
                     self.select_revision(*revision);
                 }
+                response.on_hover_text(name);
             }
         });
         ui.horizontal(|ui| {

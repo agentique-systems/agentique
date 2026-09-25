@@ -1,0 +1,47 @@
+{
+  "adapter": "AdapterInfo { name: \"NVIDIA GeForce RTX 3060 Ti\", vendor: 4318, device: 9353, device_type: DiscreteGpu, driver: \"NVIDIA\", driver_info: \"616.92\", backend: Vulkan }",
+  "checkpoint": "08-candidate",
+  "fixture": "architecture",
+  "format": "agentique-native-gallery/1",
+  "image_sha256": "62a030b68877ef817d5fde3f5ada4d19db1cf32ef5e73e577122144b43be24f2",
+  "image_size": [
+    1600,
+    1000
+  ],
+  "semantic_data": "explicit architecture visual fixture, not real-model acceptance",
+  "state": {
+    "added_elements": [
+      "ScenarioNestedPart"
+    ],
+    "agent_overlay": false,
+    "agent_return": null,
+    "camera_center": [
+      482.0,
+      779.0
+    ],
+    "candidate": true,
+    "candidate_phase": null,
+    "comparison": "Diff",
+    "create_dialog": false,
+    "dark": true,
+    "dependency_elements": null,
+    "edges": 10,
+    "explanation_open": false,
+    "focus": null,
+    "frame": 693,
+    "high_contrast": false,
+    "nodes": 13,
+    "palette": false,
+    "palette_query": "Focus changes",
+    "reduced_motion": true,
+    "removed_elements": [],
+    "revision": "fa170000-0000-0000-0000-000000000066",
+    "selected": [
+      "Node(ElementId(332395267992824060295636783507682951167))"
+    ],
+    "selection_revision": "fa170000-0000-0000-0000-000000000066",
+    "status": "Candidate visual preview · install runtime for semantic reconstruction",
+    "world": "System",
+    "zoom": 1.2999999523162842
+  }
+}
