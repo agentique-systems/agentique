@@ -1,0 +1,165 @@
+{
+  "format": "agentique-interrupted-proposal-storage-review/1",
+  "scope": "Read-only consistent SQLite snapshot. Storage identity only; not semantic authentication, rollback, or a resumed-journey result.",
+  "database": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\native-studio-alpha\\real-run04\\agentique.sqlite",
+  "failed_report": "verification\\native-studio-alpha\\real-run05\\journey.json",
+  "failed_report_sha256": "4754e75f1d19e0ad478a474fd926ea116ff969af38459921170ed7ac8d328a6c",
+  "audit_script_sha256": "a9b8e39ce09b6b58b98ca271ae1d5b9f2a53ab6b90a9dba8b3222798852b32a4",
+  "repository_metadata": [
+    [
+      "55e45188-04fb-4890-9444-58f30d0a03f3",
+      "agentique-modeling-sqlite/1"
+    ]
+  ],
+  "inventory": {
+    "projects": [
+      {
+        "keys": [
+          "\"07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9\""
+        ],
+        "sha256": "172d1b6822d5493a58790299db3c3e9544ed2d04033f0aca9efdb5d1e7c6fa33",
+        "bytes": 264
+      }
+    ],
+    "branches": [
+      {
+        "keys": [
+          "\"7d2c2e03-67ab-4e24-ab79-3c34a5e10d33\"",
+          "\"07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9\"",
+          "architecture-baseline",
+          "\"8d7fa8e8-3834-4048-b3bd-e85d1d675f16\""
+        ],
+        "sha256": "ab5a17466c1512365179bc0ae1e274643248379b1a734aa5b5b7f37986b8d8c1",
+        "bytes": 277
+      },
+      {
+        "keys": [
+          "\"c51074f7-a379-4007-b3f6-46cbcb939e20\"",
+          "\"07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9\"",
+          "main",
+          "\"62af4537-f2c9-4bf1-90d6-e0862d6b4141\""
+        ],
+        "sha256": "88b6b3ef2014cd716b722fead8f70e64a8aa85b6a3d44d8e0ffd8a9057989f35",
+        "bytes": 301
+      }
+    ],
+    "revisions": [
+      {
+        "keys": [
+          "\"62af4537-f2c9-4bf1-90d6-e0862d6b4141\"",
+          "\"07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9\"",
+          "\"8d7fa8e8-3834-4048-b3bd-e85d1d675f16\""
+        ],
+        "sha256": "6dc586d1d3b46ebe5923b30d117b30cdce43d1df52b46a350dc746f364c65790",
+        "bytes": 2871
+      },
+      {
+        "keys": [
+          "\"7d285849-f9cd-4b44-b5e9-3c58c57f23a0\"",
+          "\"07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9\"",
+          null
+        ],
+        "sha256": "3b2483cf35651768ebd1b445abf8282455cc84afea6bbeddd45a9cf3beb884a3",
+        "bytes": 577
+      },
+      {
+        "keys": [
+          "\"8d7fa8e8-3834-4048-b3bd-e85d1d675f16\"",
+          "\"07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9\"",
+          "\"7d285849-f9cd-4b44-b5e9-3c58c57f23a0\""
+        ],
+        "sha256": "2e75e4328e6bc508c6f2eec8e588b55f5ded3b68613e5761cad6ed18188dd11b",
+        "bytes": 2626
+      }
+    ],
+    "operation_receipts": [
+      {
+        "keys": [
+          "\"07e98d48-d359-4f52-9d7b-e3d39ab154d8\"",
+          "09d6229f03d8eb130c79d7d4444df185a1bae3b5d19419ca535c88b276eb2af5",
+          "\"8d7fa8e8-3834-4048-b3bd-e85d1d675f16\""
+        ],
+        "sha256": "7c8ddc4fdb0182f86bf4bfe1fd3cbfd03515005fa7315aa4ec35eb552f147479",
+        "bytes": 176
+      },
+      {
+        "keys": [
+          "\"2f4eb159-d83d-4bf2-b986-2730d1b6480d\"",
+          "5059d9e2891325ade23c7d8c9d578272541c4f53fac162b664ba6290d77c1a52",
+          "\"7d285849-f9cd-4b44-b5e9-3c58c57f23a0\""
+        ],
+        "sha256": "acdc094e15fc6f860a6fe93a1fe6e78767bcc58f564b3de5d14a6c3c6ed0fa65",
+        "bytes": 176
+      },
+      {
+        "keys": [
+          "\"61a4a44f-f729-4dcc-a0fe-5c4be464e788\"",
+          "d9ff94b418e8767986cbf3473afba14e49ea622f1b695a5e45e9190b8ceb925f",
+          "\"62af4537-f2c9-4bf1-90d6-e0862d6b4141\""
+        ],
+        "sha256": "7a6e5d9036df3b075838acc52a78e974361bd15259191267c93bd65314e23600",
+        "bytes": 176
+      }
+    ]
+  },
+  "head_manifest_equals_failed_report_baseline": true,
+  "head": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+  "complete_revision_population_equals_baseline_ancestry": [
+    "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+    "8d7fa8e8-3834-4048-b3bd-e85d1d675f16",
+    "7d285849-f9cd-4b44-b5e9-3c58c57f23a0"
+  ],
+  "all_operation_receipts_bound_only_to_baseline_ancestry": true,
+  "all_blob_content_addresses_verified": {
+    "12c198141d892e606f9cd2b3a419863cc02f994f1b31236af0b112faf5d31b79": {
+      "bytes": 3185,
+      "sha256_verified": true
+    },
+    "17cc930b105b74d7001a70ab9cfddf3a2c65c906a57dcc2e1f341140b3636960": {
+      "bytes": 262,
+      "sha256_verified": true
+    },
+    "2916e1a348226de677a7c7394d6398c67f991f9d6aa120694d9bc9e22d3af7a0": {
+      "bytes": 407204,
+      "sha256_verified": true
+    },
+    "2ef15715a476375cd40fd64c7d964b3bda9c05d6a7a39b0cafed80d1dcb0d2af": {
+      "bytes": 462006,
+      "sha256_verified": true
+    },
+    "3fbdf2caa9a6ee69c8807f513af0d1e822b053d9a86ff947782ff65f88536f39": {
+      "bytes": 816,
+      "sha256_verified": true
+    },
+    "4235d37c880ca5d43bb11b482d9414b4270a78ff6ee7287d3538961bcc94bc2a": {
+      "bytes": 731,
+      "sha256_verified": true
+    },
+    "5c6512f2931b9346cd1011ffc5544b72f7a0aaaebd11c0e801fc6780bd0587b8": {
+      "bytes": 13424736,
+      "sha256_verified": true
+    },
+    "70d4d526e2d6036df2236f64041b27eb310dec8dd58a42f41858785817931e0e": {
+      "bytes": 14760294,
+      "sha256_verified": true
+    },
+    "7c34e8072c3712ed6c214fbc4780af3ad44f4e561fe33bdc1746941c69a482cd": {
+      "bytes": 777,
+      "sha256_verified": true
+    },
+    "7f753fe89a4158918481a52134df9df9218167433fe3869d65ae22ccf6d90691": {
+      "bytes": 720,
+      "sha256_verified": true
+    },
+    "fb19fdb031aa524d9957f3a1498818bd66106c718d51274328bd47f381921617": {
+      "bytes": 760,
+      "sha256_verified": true
+    }
+  },
+  "baseline_source_population_matches_current_model_files": true,
+  "candidate_name_absent_from_baseline_source_bytes": true,
+  "sqlite_integrity_check": "ok",
+  "foreign_key_violations": [],
+  "elapsed_seconds": 0.09194539999589324,
+  "exit_code": 0
+}

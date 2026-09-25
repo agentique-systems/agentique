@@ -20,6 +20,7 @@ mod presentation_automation;
 mod read_lane;
 mod real_automation;
 mod real_targets;
+mod relationship_labels;
 mod revision_reads;
 mod saved_views;
 mod scene_build;

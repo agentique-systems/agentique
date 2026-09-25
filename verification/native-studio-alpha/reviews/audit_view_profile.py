@@ -59,7 +59,7 @@ for line_number, line in enumerate(lines, 1):
         phase for phase in phases
         if phase["name"] in {
             "connector_kerml_context", "focused_kerml_context",
-            "kerml_context", "sysml_profile_context",
+            "kerml_context", "sysml_profile_context", "sysml_context",
         }
     ]
     context_ms = sum(phase["elapsed_ms"] for phase in contexts)

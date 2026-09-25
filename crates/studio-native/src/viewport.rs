@@ -440,6 +440,7 @@ impl StudioApp {
                 }
             }
         }
+        let mut label_edges = Vec::new();
         for edge in &objects.edges {
             let incident = self
                 .selection
@@ -453,46 +454,111 @@ impl StudioApp {
             let requirement_context = self.world == crate::navigation::World::Requirements
                 && objects.edges.len() <= 24
                 && self.lod.level() >= LodLevel::Summary;
-            if !(selected_edges.contains(edge.semantic.id.as_str())
+            let selected_edge = selected_edges.contains(edge.semantic.id.as_str());
+            let graph_context = self.world == crate::navigation::World::Graph
+                && self.lod.level() >= LodLevel::Summary;
+            if !(selected_edge
                 || hovered_edge
                 || requirement_context
                 || (incident
-                    && self.lod.level() >= LodLevel::Features
+                    && (graph_context || self.lod.level() >= LodLevel::Features)
                     && objects.edges.len() <= 24))
             {
                 continue;
             }
-            if let Some(segment) = edge.points.windows(2).max_by(|a, b| {
-                ((a[1].x - a[0].x).hypot(a[1].y - a[0].y))
-                    .total_cmp(&((b[1].x - b[0].x).hypot(b[1].y - b[0].y)))
-            }) {
-                let center = self.camera.world_to_screen(Point::new(
-                    (segment[0].x + segment[1].x) * 0.5,
-                    (segment[0].y + segment[1].y) * 0.5,
-                ));
-                let position = rect.min + Vec2::new(center.x, center.y - 14.0);
-                let label = format!(
-                    "{}{}",
-                    edge.semantic.label,
-                    if edge.semantic.origin == ViewOrigin::Derived {
-                        " · derived"
-                    } else {
-                        ""
+            label_edges.push((
+                if selected_edge {
+                    0
+                } else if hovered_edge {
+                    1
+                } else {
+                    2
+                },
+                *edge,
+            ));
+        }
+        // Give explicit inspection priority. Automatic neighborhood labels have
+        // a small screen-space budget even when many nodes are selected.
+        label_edges.sort_by_key(|(priority, _)| *priority);
+        let obstacles: Vec<_> = if label_edges.is_empty() {
+            Vec::new()
+        } else {
+            objects
+                .nodes
+                .iter()
+                .map(|node| {
+                    let a = self.camera.world_to_screen(node.bounds.min);
+                    let b = self.camera.world_to_screen(node.bounds.max);
+                    let mut bounds = egui::Rect::from_min_max(
+                        rect.min + Vec2::new(a.x, a.y),
+                        rect.min + Vec2::new(b.x, b.y),
+                    );
+                    if node.is_container && !node.collapsed {
+                        bounds.max.y = bounds.max.y.min(bounds.min.y + 58.0 * self.camera.zoom);
                     }
-                );
-                let galley =
-                    painter.layout_no_wrap(label, FontId::proportional(12.0), theme.accent);
-                let label_rect =
-                    egui::Rect::from_center_size(position, galley.size() + Vec2::new(16.0, 8.0));
-                painter.rect(
-                    label_rect,
-                    4.0,
-                    theme.canvas,
-                    Stroke::new(1.0, theme.border),
-                    egui::StrokeKind::Inside,
-                );
-                painter.galley(label_rect.min + Vec2::new(8.0, 4.0), galley, theme.accent);
+                    bounds
+                })
+                .collect()
+        };
+        let mut placed_labels = Vec::new();
+        let mut automatic_labels = 0;
+        for (priority, edge) in label_edges {
+            if priority == 2 && automatic_labels >= 8 {
+                continue;
             }
+            let label = format!(
+                "{}{}",
+                edge.semantic.label,
+                if edge.semantic.origin == ViewOrigin::Derived {
+                    " · derived"
+                } else {
+                    ""
+                }
+            );
+            let galley = painter.layout_no_wrap(label, FontId::proportional(12.0), theme.accent);
+            let route: Vec<_> = edge
+                .points
+                .iter()
+                .map(|point| {
+                    let screen = self.camera.world_to_screen(*point);
+                    rect.min + Vec2::new(screen.x, screen.y)
+                })
+                .collect();
+            let Some(placement) = crate::relationship_labels::place(
+                &route,
+                galley.size() + Vec2::new(16.0, 8.0),
+                rect,
+                &obstacles,
+                &placed_labels,
+                priority < 2,
+            ) else {
+                continue;
+            };
+            let label_rect = placement.bounds;
+            let leader_end = egui::pos2(
+                placement
+                    .anchor
+                    .x
+                    .clamp(label_rect.left(), label_rect.right()),
+                placement
+                    .anchor
+                    .y
+                    .clamp(label_rect.top(), label_rect.bottom()),
+            );
+            painter.line_segment(
+                [placement.anchor, leader_end],
+                Stroke::new(1.0, theme.muted),
+            );
+            painter.rect(
+                label_rect,
+                4.0,
+                theme.canvas,
+                Stroke::new(1.0, theme.border),
+                egui::StrokeKind::Inside,
+            );
+            painter.galley(label_rect.min + Vec2::new(8.0, 4.0), galley, theme.accent);
+            placed_labels.push(label_rect);
+            automatic_labels += usize::from(priority == 2);
         }
         if self.lod.level() >= LodLevel::Features
             || (self.world == crate::navigation::World::System && self.focus.is_some())
