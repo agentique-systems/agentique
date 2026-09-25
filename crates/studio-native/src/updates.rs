@@ -361,6 +361,11 @@ impl StudioApp {
                         .filter(|current| current.id == Some(candidate.id))
                         .map(|current| current.before.clone())
                         .unwrap_or_else(|| self.projection.clone());
+                    let definition = self.definition();
+                    let matched = before.revision_id == candidate.base.revision
+                        && before.view == definition
+                        && candidate.projection.view == definition;
+                    let id = candidate.id;
                     self.candidate = Some(Candidate {
                         review_selection: None,
                         id: Some(candidate.id),
@@ -374,6 +379,16 @@ impl StudioApp {
                             candidate.source_preview.path, candidate.source_preview.after
                         ),
                     });
+                    if !matched {
+                        // Preparation captured an earlier lens. Its semantic
+                        // handle is authoritative, but its DTO must never be
+                        // paired with the operator's newer current projection.
+                        self.comparison = ComparisonMode::Current;
+                        if self.request_candidate_pair(id) {
+                            self.status = "Candidate prepared · refreshing review for your current view; Current remains open".into();
+                        }
+                        continue;
+                    }
                     if self.show_agent {
                         self.expanded = None;
                     }
@@ -399,17 +414,39 @@ impl StudioApp {
                             .as_ref()
                             .is_some_and(|current| current.id == Some(candidate.id)) =>
                 {
-                    // Validation is a lifecycle result, independent of a disposable
-                    // lens request. Navigation may supersede its view, never its phase.
-                    if reply.mutation && candidate.projection.view != self.definition() {
-                        if let Some(current) = &mut self.candidate {
+                    // The response must itself be one coherent comparison,
+                    // regardless of whether its request fence is still current.
+                    // A malformed display response cannot erase lifecycle truth.
+                    if before.revision_id != candidate.base.revision
+                        || before.view != candidate.projection.view
+                    {
+                        if reply.mutation
+                            && let Some(current) = &mut self.candidate
+                        {
                             current.phase = Some(candidate.phase);
                         }
-                        self.request_projection();
-                        self.status = "Candidate validated · refreshing your current view".into();
+                        self.status = "Candidate view rejected: base and candidate projections do not match. The previous view remains open.".into();
+                        continue;
+                    }
+                    // Validation is a lifecycle result, independent of a disposable
+                    // lens request. Navigation may supersede its view, never its phase.
+                    if candidate.projection.view != self.definition() {
+                        if reply.mutation
+                            && let Some(current) = &mut self.candidate
+                        {
+                            current.phase = Some(candidate.phase);
+                        }
+                        if self.request_candidate_pair(candidate.id) {
+                            self.status =
+                                "Candidate retained · refreshing review for your current view"
+                                    .into();
+                        }
                         continue;
                     }
                     let previous = self.display_snapshot();
+                    // Current must use the same authentic base query too, so
+                    // switching back from Candidate never flashes an older lens.
+                    self.projection = before.clone();
                     if let Some(current) = &mut self.candidate {
                         current.before = before;
                         current.after = candidate.projection;
@@ -426,8 +463,15 @@ impl StudioApp {
                         continue;
                     }
                     self.finish_agent_projection();
-                    self.apply_pending_presentation();
+                    if !self.apply_pending_presentation() {
+                        continue;
+                    }
                     self.request_inspection();
+                    if self.comparison == ComparisonMode::Current {
+                        self.status =
+                            "Candidate ready for this view · choose Candidate or Diff to review"
+                                .into();
+                    }
                 }
                 Ok(Output::Committed(receipt))
                     if reply.mutation
@@ -487,6 +531,16 @@ impl StudioApp {
                 format!("Candidate retained; showing current revision. View failed: {error}");
             self.request_inspection();
         }
+    }
+    /// Load an actual before/after pair without making stale candidate DTOs
+    /// visible while the operator remains in Current.
+    pub(crate) fn request_candidate_pair(&mut self, id: agq_studio_platform::CandidateId) -> bool {
+        let definition = self.definition();
+        self.scene_builder.invalidate();
+        self.scene_request = self.enqueue(Box::new(move |platform| {
+            crate::bridge::candidate_view(platform, id, &definition)
+        }));
+        self.scene_request != 0
     }
     fn apply_pending_presentation(&mut self) -> bool {
         if let Some(restore) = self.restore.take()
@@ -688,6 +742,9 @@ mod tests {
             revision: app.projection.revision_id,
         });
         app.branch = Some(agq_modeling_repository::BranchId::new());
+        // Test DTOs represent the exact live request definition; fixture-only
+        // display labels and its initial family subset are not a service query.
+        app.projection.view = app.definition();
         app
     }
     fn candidate(app: &StudioApp, phase: CandidatePhase) -> CandidateProjection {
@@ -1064,6 +1121,102 @@ mod tests {
             app.candidate.as_ref().unwrap().phase,
             Some(CandidatePhase::Validated)
         );
+    }
+
+    #[test]
+    fn prepared_candidate_after_navigation_waits_for_matching_pair_without_changing_current() {
+        for navigation in ["world", "focus", "filter"] {
+            let mut app = application();
+            let prepared = candidate(&app, CandidatePhase::Working);
+            let id = prepared.id;
+            let scope = app.work_context();
+            match navigation {
+                "world" => app.world = World::Graph,
+                "focus" => app.focus = Some(app.projection.nodes[0].id),
+                _ => app.families.clear(),
+            }
+            assert!(app.rebuild_immediate());
+            let current = app.projection.clone();
+            let scene_revision = app.scene.revision_id;
+            let camera = app.camera;
+            let selection = app.selection.targets.clone();
+            let definition = app.definition();
+            app.receive_replies([reply(910, scope, true, Ok(Output::Candidate(prepared)))]);
+            assert_eq!(app.candidate.as_ref().unwrap().id, Some(id), "{navigation}");
+            assert_eq!(
+                app.candidate.as_ref().unwrap().phase,
+                Some(CandidatePhase::Working),
+                "{navigation}"
+            );
+            assert_eq!(app.comparison, ComparisonMode::Current, "{navigation}");
+            assert_eq!(app.projection, current, "{navigation}");
+            assert_eq!(app.scene.revision_id, scene_revision, "{navigation}");
+            assert_eq!(app.camera, camera, "{navigation}");
+            assert_eq!(app.selection.targets, selection, "{navigation}");
+            // An eager review click must not publish the retained old-lens DTO.
+            app.change_comparison(ComparisonMode::Diff);
+            assert_eq!(app.comparison, ComparisonMode::Current, "{navigation}");
+            assert_eq!(app.projection, current, "{navigation}");
+            let mut paired_before = current;
+            paired_before.view = definition.clone();
+            let paired_after = candidate(&app, CandidatePhase::Working);
+            let request = app.scene_request;
+            let scope = app.work_context();
+            app.receive_replies([reply(
+                request,
+                scope,
+                false,
+                Ok(Output::CandidateView(paired_after, paired_before.clone())),
+            )]);
+            assert_eq!(app.comparison, ComparisonMode::Current, "{navigation}");
+            assert_eq!(app.projection, paired_before, "{navigation}");
+            let candidate = app.candidate.as_ref().unwrap();
+            assert_eq!(candidate.before.view, definition, "{navigation}");
+            assert_eq!(candidate.after.view, definition, "{navigation}");
+            app.change_comparison(ComparisonMode::Diff);
+            assert_eq!(app.comparison, ComparisonMode::Diff, "{navigation}");
+        }
+    }
+
+    #[test]
+    fn candidate_view_rejects_mixed_lenses_and_wrong_base_even_with_current_request() {
+        for mutation in [false, true] {
+            for mismatch in ["view", "revision"] {
+                let mut app = application();
+                retain(&mut app, CandidatePhase::Working);
+                let projection = app.projection.clone();
+                let candidate_before = app.candidate.as_ref().unwrap().before.clone();
+                let candidate_after = app.candidate.as_ref().unwrap().after.clone();
+                let mut before = projection.clone();
+                if mismatch == "view" {
+                    before.view = agq_modeling_view::ViewDefinition::semantic_graph();
+                } else {
+                    before.revision_id = agq_modeling_workspace::ProjectRevisionId::new();
+                }
+                let candidate = candidate(&app, CandidatePhase::Validated);
+                app.scene_request = 911;
+                let scope = app.work_context();
+                app.receive_replies([reply(
+                    911,
+                    scope,
+                    mutation,
+                    Ok(Output::CandidateView(candidate, before)),
+                )]);
+                assert_eq!(app.projection, projection);
+                assert_eq!(app.scene.revision_id, projection.revision_id);
+                assert_eq!(app.candidate.as_ref().unwrap().before, candidate_before);
+                assert_eq!(app.candidate.as_ref().unwrap().after, candidate_after);
+                assert_eq!(
+                    app.candidate.as_ref().unwrap().phase,
+                    Some(if mutation {
+                        CandidatePhase::Validated
+                    } else {
+                        CandidatePhase::Working
+                    })
+                );
+                assert!(app.status.contains("Candidate view rejected"));
+            }
+        }
     }
 
     #[test]

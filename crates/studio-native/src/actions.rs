@@ -72,6 +72,23 @@ impl StudioApp {
             self.status = "Wait for the model operation before changing the candidate view".into();
             return;
         }
+        if mode != ComparisonMode::Current && self.fixture.is_none() {
+            let definition = self.definition();
+            if let Some(id) = self.candidate.as_ref().and_then(|candidate| {
+                (candidate.before.view != definition
+                    || candidate.after.view != definition
+                    || self
+                        .binding
+                        .is_some_and(|binding| candidate.before.revision_id != binding.revision))
+                .then_some(candidate.id)
+                .flatten()
+            }) {
+                if self.request_candidate_pair(id) {
+                    self.status = "Refreshing candidate review for this view; choose Candidate or Diff when ready".into();
+                }
+                return;
+            }
+        }
         let previous = self.display_snapshot();
         if let Some(candidate) = &mut self.candidate {
             if self.comparison != ComparisonMode::Current {
