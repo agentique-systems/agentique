@@ -1,0 +1,14 @@
+{
+  "command": [
+    "git",
+    "diff",
+    "--check"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-state-recovery",
+  "started_utc": "2026-09-25T21:12:24.800161+00:00",
+  "elapsed_seconds": 0.047,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/native-create-owner-ready-positive-diff.txt",
+  "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "build_environment": {}
+}

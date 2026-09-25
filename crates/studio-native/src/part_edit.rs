@@ -510,6 +510,125 @@ mod tests {
     }
 
     #[test]
+    fn matching_live_owner_response_enables_the_original_target_after_pending_reads_settle() {
+        use crate::bridge::{Output, Reply};
+        use agq_modeling_repository::{
+            Branch, BranchId, ContentDigest, Project, ProjectId, RevisionManifest,
+        };
+        let mut app = application();
+        let owner = named(&app, "ModelingPlatform");
+        let later = named(&app, "ModelRepository");
+        app.select(SceneTarget::Node(owner), false);
+        app.fixture = None;
+        let binding = RevisionBinding {
+            project: ProjectId::new(),
+            revision: app.projection.revision_id,
+        };
+        let branch = BranchId::new();
+        app.binding = Some(binding);
+        app.branch = Some(branch);
+        // Explicit UI-state DTOs only: this manifest is never passed to a
+        // repository/service. No runtime is open and no edit will be submitted.
+        let digest = ContentDigest::of(b"owner-view routing test only");
+        let manifest: RevisionManifest = serde_json::from_value(serde_json::json!({
+            "format_version": 1, "project_id": binding.project,
+            "revision_id": binding.revision, "parent_revision_id": null,
+            "metadata": {"created": "2026-09-25T00:00:00Z", "name": null, "description": null, "alias": []},
+            "documents": [{"document_id": ProjectId::new(), "path": "OwnerViewTest.sysml", "language": "SysMl", "source_revision_id": ProjectRevisionId::new(), "content_digest": digest}],
+            "accepted_publications": {"kerml": digest, "sysml": digest},
+            "checkpoint_digest": digest,
+            "validation": {"Validated": {"acceptance_contract": "unit-routing-only", "source_binding": digest, "semantic_digest": digest, "semantic_context": digest, "closure_digest": digest}},
+            "semantic_cache": null
+        })).unwrap();
+        app.history = Some(agq_studio_platform::ProjectHistory {
+            project: Project {
+                id: binding.project,
+                name: "Owner-view UI state test".into(),
+                default_branch: branch,
+                metadata: manifest.metadata.clone(),
+            },
+            branches: vec![Branch {
+                id: branch,
+                project_id: binding.project,
+                name: "main".into(),
+                head: binding.revision,
+                metadata: manifest.metadata.clone(),
+            }],
+            revisions: vec![manifest],
+        });
+        let context = app.work_context();
+        app.open_part_edit(CommandId::CreatePart);
+        let request = app.scene_request;
+        let mut projected = app.projection.clone();
+        projected.view = app
+            .edit_target
+            .as_ref()
+            .unwrap()
+            .owner_view
+            .clone()
+            .unwrap();
+        projected
+            .nodes
+            .iter_mut()
+            .find(|node| node.id == owner)
+            .unwrap()
+            .source_available = true;
+        assert!(!app.part_edit_ready());
+        assert_eq!(
+            app.requested_definition,
+            Some((request, projected.view.clone()))
+        );
+        app.receive_replies([Reply {
+            request,
+            epoch: app.bridge.epoch(),
+            context: Some(context),
+            read: None,
+            mutation: false,
+            terminal: true,
+            result: Ok(Output::Projection(projected.clone())),
+        }]);
+        assert_eq!(app.projection, projected);
+        assert_eq!(app.definition(), projected.view);
+        assert_eq!(app.scene.revision_id, binding.revision);
+        assert!(app.requested_definition.is_none());
+        assert!(
+            !app.part_edit_ready(),
+            "the ordinary reader pin is still pending"
+        );
+
+        // The real empty worker refuses read authority. Consume its terminal
+        // errors rather than fabricating an accepted StudioRevisionReader or
+        // deleting pending IDs to make the presentation readiness check pass.
+        let settle_refused_reads = |app: &mut StudioApp| {
+            while !app.pending.is_empty() {
+                let reply = app
+                    .bridge
+                    .replies
+                    .recv_timeout(std::time::Duration::from_secs(5))
+                    .unwrap();
+                assert!(reply.result.is_err());
+                app.receive_replies([reply]);
+            }
+        };
+        settle_refused_reads(&mut app);
+        assert!(app.part_edit_ready());
+        assert_eq!(app.part_edit_target(CommandId::CreatePart), Some(owner));
+        assert!(app.scene.node(later).is_some());
+        app.select(SceneTarget::Node(later), false);
+        settle_refused_reads(&mut app);
+        assert_eq!(app.selected_element(), Some(later));
+        assert!(app.part_edit_ready());
+        assert_eq!(app.part_edit_target(CommandId::CreatePart), Some(owner));
+        assert_eq!(app.projection, projected);
+
+        // The positive case still depends on the exact current validated head.
+        app.history.as_mut().unwrap().branches[0].head = ProjectRevisionId::new();
+        assert!(!app.part_edit_ready());
+        assert!(app.candidate.is_none());
+        assert!(!app.bridge.mutation_pending());
+    }
+
+    #[test]
     fn stale_dialog_cannot_prepare_a_candidate_for_a_new_revision() {
         let mut app = application();
         let selected = named(&app, "ModelRepository");
