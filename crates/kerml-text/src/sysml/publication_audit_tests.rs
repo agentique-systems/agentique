@@ -144,7 +144,21 @@ fn assert_answer_delivery(
         q.effective_usages(subject),
     );
     let old_answer = q.effective_usages(subject);
-    assert_eq!(old_answer.completeness(), expected);
+    assert_eq!(
+        old_answer.completeness(),
+        expected,
+        "subject {subject:?}, present={}, full answer={old_answer:?}",
+        q.model().element(subject).is_some(),
+    );
+    if q.model().element(subject).is_none() {
+        // The local SysML check records missing evidence, but the composed
+        // KerML typed-subject query is Invalid; the public result retains the
+        // strongest completeness from every contributing answer.
+        assert_eq!(old_answer.kerml.completeness, Completeness::Invalid);
+        assert!(old_answer.diagnostics.iter().any(|diagnostic| {
+            diagnostic.code == "SQ_MISSING_ELEMENT" && diagnostic.subject == subject
+        }));
+    }
     let old_exact = format!("{old_answer:?}");
     let old_diagnostic = capability(compilation, subject, old_answer);
     let q = bound.fork();
@@ -237,9 +251,10 @@ fn authored_audit_observer_matches_two_pass_queries_and_diagnostics() {
             answer.value.iter().map(|target| target.element).collect();
         assert_eq!(ids.len(), 1);
         assert_answer_delivery(&compilation, *ids.first().unwrap(), expected);
-        // Root is an existing canonical Package, not a Definition/Usage. Missing
-        // identity remains a real Incomplete query result, never an empty success.
+        // Root is an existing canonical Package, not a Definition/Usage. A
+        // missing identity also has Invalid composed completeness from KerML's
+        // typed-subject check, alongside the SysML missing-element diagnostic.
         assert_answer_delivery(&compilation, current.root(), Completeness::Invalid);
-        assert_answer_delivery(&compilation, ElementId::new(), Completeness::Incomplete);
+        assert_answer_delivery(&compilation, ElementId::new(), Completeness::Invalid);
     }
 }

@@ -1,0 +1,54 @@
+   Compiling syn v3.0.5
+   Compiling serde_derive v1.0.229
+   Compiling serde v1.0.229
+   Compiling thiserror-impl v2.0.20
+   Compiling thiserror v2.0.20
+   Compiling serde_json v1.0.151
+   Compiling num-bigint v0.4.8
+   Compiling agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+   Compiling displaydoc v0.2.7
+   Compiling zip v2.4.2
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml)
+   Compiling agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\standard-libraries)
+   Compiling agq-sysml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml-semantics)
+   Compiling agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-syntax)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+   Compiling windows-sys v0.61.2
+   Compiling agq-modeling-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-workspace)
+   Compiling anstyle-wincon v3.0.11
+   Compiling anstyle-query v1.1.5
+   Compiling chrono v0.4.45
+   Compiling anstream v1.0.0
+   Compiling agq-modeling-repository v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-repository)
+   Compiling clap_builder v4.6.7
+   Compiling clap_derive v4.6.7
+   Compiling once_cell v1.21.4
+   Compiling fastrand v2.5.0
+   Compiling smallvec v1.16.1
+   Compiling rusqlite v0.37.0
+   Compiling tempfile v3.27.0
+   Compiling clap v4.6.7
+   Compiling agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-service)
+   Compiling agq-modeling-view v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-view)
+   Compiling agq-modeling-agent v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-agent)
+   Compiling agq-runtime-publications v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\runtime-publications)
+   Compiling agq-modeling-sqlite v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\modeling-sqlite)
+   Compiling agq-studio-platform v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-platform)
+    Finished `test` profile [unoptimized] target(s) in 1m 11s
+     Running unittests src\lib.rs (target\debug\deps\agq_studio_platform-dab881f7ff9d49eb.exe)
+
+running 9 tests
+test projection_cache::tests::complete_dto_is_exact_while_resolution_runs_on_every_hit ... ok
+test projection_cache::tests::concurrent_completion_equality_is_required_and_first_result_is_retained ... ok
+test projection_cache::tests::denied_read_or_failed_or_wrong_binding_resolution_cannot_use_cached_dto ... ok
+test projection_cache::tests::every_view_field_and_ordered_filter_list_participates_in_exact_key ... ok
+test projection_cache::tests::failed_computation_is_never_negative_cached ... ok
+test projection_cache::tests::poisoned_cache_bypasses_retention_but_keeps_binding_and_result_checks ... ok
+test projection_cache::tests::project_revision_and_platform_instance_boundaries_do_not_share_entries ... ok
+test projection_cache::tests::returned_outer_nested_revisions_and_full_view_must_match_before_retention ... ok
+test projection_cache::tests::sixteen_entries_evict_least_recently_used_definition_without_stale_reuse ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 20 filtered out; finished in 0.00s
+

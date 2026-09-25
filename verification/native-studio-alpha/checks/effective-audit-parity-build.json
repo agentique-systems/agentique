@@ -1,0 +1,30 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--release",
+    "--config",
+    "profile.release.lto=false",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "agq-kerml-text",
+    "--lib",
+    "--no-run"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "64e5c22bc32d76d6dbc049bce3fd80733abbb851",
+  "tracked_changes_at_start": [],
+  "started_utc": "2026-09-25T22:03:09.596712+00:00",
+  "elapsed_seconds": 189.125,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/effective-audit-parity-build.txt",
+  "output_sha256": "ec8c1f93ce9cd79a66e451fccf392788637bb612659339f4d8998d1c9d999d58",
+  "build_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "1"
+  }
+}

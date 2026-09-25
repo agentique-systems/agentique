@@ -1,0 +1,18 @@
+
+running 1 test
+test sysml::publication::authored_audit_parity_tests::authored_audit_observer_matches_two_pass_queries_and_diagnostics ... 
+thread 'sysml::publication::authored_audit_parity_tests::authored_audit_observer_matches_two_pass_queries_and_diagnostics' (7924) panicked at crates\kerml-text\src\sysml\publication_audit_tests.rs:147:5:
+assertion `left == right` failed
+  left: Invalid
+ right: Incomplete
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    sysml::publication::authored_audit_parity_tests::authored_audit_observer_matches_two_pass_queries_and_diagnostics
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 66 filtered out; finished in 126.96s
+
+{"source_commit_at_start": "99ee17c11a4a58aee64ac0f3a1c82ab9dfb04caf", "executable_sha256": "4ca436f8278f429b48be0026cf7f1433589187a7da38dd336b8c3301a781c130", "command": ["target/release/deps/agq_kerml_text-1ae1689677397383.exe", "sysml::publication::authored_audit_parity_tests::authored_audit_observer_matches_two_pass_queries_and_diagnostics", "--exact", "--ignored", "--nocapture", "--test-threads=1"], "exit_code": 101, "wall_seconds": 127.7729040000122, "maximum_process_peak_working_set_bytes": 5831131136, "sampled_process_tree_peak_resident_bytes": 5805305856, "sample_interval_seconds": 0.25}
