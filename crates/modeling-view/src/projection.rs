@@ -1,5 +1,6 @@
 use crate::*;
 use agq_kerml::{classes as c, properties as p};
+use agq_kerml_semantics::{Completeness, KerMlQueries, QueryResult};
 use agq_kernel::{
     ElementRecord, MetaclassId, ModelView, PropertyId,
     provenance::{DeclaredOrigin, FactKey, Origin},
@@ -41,37 +42,18 @@ pub fn project(
         let queries = revision
             .kerml_queries()
             .map_err(|e| ViewError::Query(format!("{e:?}")))?;
-        for id in &local {
-            if !is(model, *id, c::CONNECTOR) {
-                continue;
-            }
-            let answer = queries.connector_endpoints(*id);
-            if answer.completeness != agq_kerml_semantics::Completeness::Complete {
-                warnings.push(format!(
-                    "Connector {} endpoints are {:?}",
-                    name(model, *id),
-                    answer.completeness
-                ));
-            }
-            // A connector is a semantic hyperedge. The first endpoint is the visual hub;
-            // all spoke edges retain the connector identity and original endpoint order.
-            if let Some(source) = answer.value.first() {
-                for (order, target) in answer.value.iter().enumerate().skip(1) {
-                    if let Some(record) = model.element(*id) {
-                        edges.push(edge(
-                            model,
-                            revision.revision(),
-                            record,
-                            RelationshipFamily::Connection,
-                            *source,
-                            *target,
-                            order,
-                            name(model, *id),
-                        ));
-                    }
-                }
-            }
-        }
+        edges.extend(connector_edges(
+            &queries,
+            revision.revision(),
+            &local,
+            |id, answer| {
+                query_warning(
+                    &mut warnings,
+                    &format!("Connector {} endpoints", name(model, id)),
+                    answer,
+                );
+            },
+        ));
     }
     let mut selected: BTreeSet<_> = local
         .iter()
@@ -82,6 +64,7 @@ pub fn project(
         .focus
         .or_else(|| architecture_root(model, &selected, &edges));
     if definition.kind == ViewKind::Architecture {
+        let context_allowed = selected.clone();
         selected.retain(|id| {
             is(model, *id, sc::PART_DEFINITION)
                 || is(model, *id, sc::PART_USAGE)
@@ -98,6 +81,17 @@ pub fn project(
                 &edges,
                 definition.depth.saturating_mul(2).min(8),
             );
+            if definition.focus.is_some() && is(model, focus, c::TYPE) {
+                let queries = revision
+                    .kerml_queries()
+                    .map_err(|e| ViewError::Query(format!("{e:?}")))?;
+                selected.extend(focused_interfaces(
+                    &queries,
+                    focus,
+                    &context_allowed,
+                    &mut warnings,
+                ));
+            }
         }
     }
     edges.retain(|edge| definition.relationship_families.contains(&edge.family));
@@ -120,7 +114,7 @@ pub fn project(
                     || is(model, *id, sc::VERIFICATION_CASE_USAGE)
             })
             .collect();
-        selected = neighborhood(&seeds, &selected, &edges, 1);
+        selected = requirement_neighborhood(model, &seeds, &selected, &edges);
     }
     if let Some(focus) = definition
         .focus
@@ -260,6 +254,119 @@ fn neighborhood(
         }
     }
     selected
+}
+
+fn query_warning<T>(warnings: &mut Vec<String>, label: &str, answer: &QueryResult<T>) {
+    if answer.completeness != Completeness::Complete {
+        warnings.push(format!("{label} are {:?}", answer.completeness));
+    }
+}
+
+/// Explicit focus can reveal inherited connection surfaces, without reparenting
+/// their canonical records or synthesizing a second copy under the focused type.
+fn focused_interfaces(
+    queries: &KerMlQueries<'_>,
+    focus: ElementId,
+    allowed: &BTreeSet<ElementId>,
+    warnings: &mut Vec<String>,
+) -> BTreeSet<ElementId> {
+    let model = queries.model();
+    let effective = queries.effective_features(focus);
+    query_warning(warnings, "Focused effective features", &effective);
+    let mut selected = BTreeSet::new();
+    for feature in effective.value.iter().copied().filter(|id| {
+        allowed.contains(id)
+            && (is(model, *id, sc::PORT_USAGE) || is(model, *id, sc::INTERFACE_USAGE))
+    }) {
+        selected.insert(feature);
+        let owner = queries.owner(feature);
+        query_warning(warnings, "Connection surface owners", &owner);
+        selected.extend(owner.value.filter(|owner| allowed.contains(owner)));
+        let types = queries.feature_types(feature);
+        query_warning(warnings, "Connection surface types", &types);
+        // A port definition remains an Inspector type reference. Treating it as
+        // another boundary port would give it an invented presentation owner.
+        selected.extend(
+            types
+                .value
+                .iter()
+                .filter(|id| allowed.contains(id) && !is(model, **id, sc::PORT_DEFINITION))
+                .copied(),
+        );
+    }
+    selected
+}
+
+/// Keep the literal subject feature and its architecture type as two identities
+/// connected by their two original relationships. No requirement-to-type shortcut.
+fn requirement_neighborhood(
+    model: &ModelView,
+    seeds: &BTreeSet<ElementId>,
+    allowed: &BTreeSet<ElementId>,
+    edges: &[ViewEdge],
+) -> BTreeSet<ElementId> {
+    let mut selected = neighborhood(seeds, allowed, edges, 1);
+    let subjects: BTreeSet<_> = edges
+        .iter()
+        .filter(|edge| {
+            seeds.contains(&edge.source)
+                && edge.family == RelationshipFamily::Requirement
+                && edge
+                    .relationship_id
+                    .is_some_and(|id| is(model, id, sc::SUBJECT_MEMBERSHIP))
+        })
+        .map(|edge| edge.target)
+        .filter(|id| selected.contains(id))
+        .collect();
+    selected.extend(
+        edges
+            .iter()
+            .filter(|edge| {
+                subjects.contains(&edge.source)
+                    && edge.family == RelationshipFamily::Typing
+                    && allowed.contains(&edge.target)
+            })
+            .map(|edge| edge.target),
+    );
+    selected
+}
+
+/// Both scene projection and inspection use this exact semantic endpoint query.
+/// The observer retains completeness and evidence summaries even for empty results.
+pub(crate) fn connector_edges(
+    queries: &KerMlQueries<'_>,
+    revision: ProjectRevisionId,
+    local: &BTreeSet<ElementId>,
+    mut observe: impl FnMut(ElementId, &QueryResult<Vec<ElementId>>),
+) -> Vec<ViewEdge> {
+    let model = queries.model();
+    let mut edges = vec![];
+    for id in local
+        .iter()
+        .copied()
+        .filter(|id| is(model, *id, c::CONNECTOR))
+    {
+        let answer = queries.connector_endpoints(id);
+        observe(id, &answer);
+        // A connector is a semantic hyperedge. Preserve its canonical endpoint
+        // order and relationship identity for every spoke, without flow claims.
+        if let Some(source) = answer.value.first() {
+            let record = model.element(id).expect("queried canonical connector");
+            for (order, target) in answer.value.iter().enumerate().skip(1) {
+                edges.push(edge(
+                    model,
+                    revision,
+                    record,
+                    RelationshipFamily::Connection,
+                    *source,
+                    *target,
+                    order,
+                    name(model, id),
+                ));
+            }
+        }
+    }
+    edges
 }
 
 pub(crate) fn is(model: &ModelView, id: ElementId, class: MetaclassId) -> bool {
@@ -485,6 +592,27 @@ pub(crate) fn graph_edges(
                 p::SPECIALIZATION_GENERAL,
                 "specializes",
             )
+        } else if is(model, *id, sc::SUBJECT_MEMBERSHIP)
+            && refs(model, *id, p::RELATIONSHIP_OWNING_RELATED_ELEMENT)
+                .iter()
+                .any(|owner| {
+                    is(model, *owner, sc::REQUIREMENT_DEFINITION)
+                        || is(model, *owner, sc::REQUIREMENT_USAGE)
+                })
+        {
+            (
+                RelationshipFamily::Requirement,
+                p::RELATIONSHIP_OWNING_RELATED_ELEMENT,
+                p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+                "subject",
+            )
+        } else if is(model, *id, sc::REQUIREMENT_VERIFICATION_MEMBERSHIP) {
+            (
+                RelationshipFamily::Verification,
+                p::RELATIONSHIP_OWNING_RELATED_ELEMENT,
+                p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+                "verification requirement",
+            )
         } else if is(model, *id, c::OWNING_MEMBERSHIP) {
             (
                 RelationshipFamily::Ownership,
@@ -553,8 +681,255 @@ fn edge(
 }
 
 #[cfg(test)]
-mod tests {
+pub(crate) mod tests {
     use super::*;
+    use agq_kerml_semantics::{SemanticContext, SemanticOptions};
+    use agq_kernel::{Snapshot, metamodel::ValueKind, value::SlotValue};
+    use std::sync::Arc;
+
+    /// Small canonical records exercise the public query contracts; no accepted
+    /// runtime, generated semantic answers or frontend fixture edges are used.
+    pub(crate) fn semantic_fixture(
+        records: &[(u128, MetaclassId)],
+        slots: &[(u128, PropertyId, Vec<Value>)],
+    ) -> Snapshot {
+        let registry = Arc::new(
+            agq_sysml::registry_for_profile(agq_kerml::BaselineProfile::OPERATIONAL_V9).unwrap(),
+        );
+        let base = Snapshot::new(registry.clone());
+        let mut changes = base.change_set();
+        let origin = || DeclaredOrigin::Authored { source: None };
+        let records: BTreeMap<_, _> = records.iter().copied().collect();
+        for (&element, &class) in &records {
+            let element = ElementId::from_u128(element);
+            changes.create(element, class, origin());
+            for property in registry
+                .effective_properties(class)
+                .unwrap()
+                .filter(|p| !p.derived && p.multiplicity.lower > 0)
+            {
+                let value = match registry.storage_kind(property.value_kind).unwrap() {
+                    ValueKind::Boolean => Value::Boolean(false),
+                    ValueKind::String => Value::String(element.to_string()),
+                    ValueKind::Enumeration(domain) => {
+                        let literals = &registry.enumeration(domain).unwrap().literals;
+                        let literal = literals
+                            .iter()
+                            .find(|(_, name)| name.as_str() == "public")
+                            .or_else(|| literals.iter().next())
+                            .unwrap()
+                            .0;
+                        Value::Enumeration(*literal)
+                    }
+                    ValueKind::Reference(_) => continue,
+                    other => panic!("unexpected fixture property: {other:?}"),
+                };
+                changes.set(element, property.id, SlotValue::Scalar(value), origin());
+            }
+        }
+        for (element, property, values) in slots {
+            let property = registry
+                .resolve_property(records[element], *property)
+                .unwrap()
+                .unwrap();
+            let value = if property.multiplicity.upper.is_some_and(|upper| upper <= 1) {
+                SlotValue::Scalar(values[0].clone())
+            } else if property.ordered {
+                SlotValue::Ordered(values.clone())
+            } else if property.unique {
+                SlotValue::Set(values.iter().cloned().collect())
+            } else {
+                SlotValue::Bag(values.clone())
+            };
+            changes.set(ElementId::from_u128(*element), property.id, value, origin());
+        }
+        base.apply(&changes).unwrap()
+    }
+
+    pub(crate) fn fixture_queries(snapshot: &Snapshot) -> KerMlQueries<'_> {
+        KerMlQueries::new(
+            SemanticContext::for_snapshot(
+                snapshot,
+                SemanticOptions {
+                    baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V9,
+                    ..Default::default()
+                },
+                BTreeSet::new(),
+            )
+            .unwrap(),
+        )
+    }
+
+    pub(crate) fn references(ids: &[u128]) -> Vec<Value> {
+        ids.iter()
+            .map(|id| Value::Reference(ElementId::from_u128(*id)))
+            .collect()
+    }
+
+    #[test]
+    fn requirement_subject_reaches_architecture_through_two_canonical_relationships_only() {
+        let snapshot = semantic_fixture(
+            &[
+                (1, sc::REQUIREMENT_DEFINITION),
+                (2, sc::REFERENCE_USAGE),
+                (3, sc::PART_DEFINITION),
+                (4, sc::PART_USAGE),
+                (5, sc::PART_DEFINITION),
+                (11, sc::SUBJECT_MEMBERSHIP),
+                (12, c::FEATURE_TYPING),
+                (13, c::FEATURE_MEMBERSHIP),
+                (14, c::FEATURE_TYPING),
+            ],
+            &[
+                (1, p::ELEMENT_OWNED_RELATIONSHIP, references(&[11])),
+                (11, p::RELATIONSHIP_OWNED_RELATED_ELEMENT, references(&[2])),
+                (2, p::ELEMENT_OWNED_RELATIONSHIP, references(&[12])),
+                (12, p::SPECIALIZATION_SPECIFIC, references(&[2])),
+                (12, p::SPECIALIZATION_GENERAL, references(&[3])),
+                (3, p::ELEMENT_OWNED_RELATIONSHIP, references(&[13])),
+                (13, p::RELATIONSHIP_OWNED_RELATED_ELEMENT, references(&[4])),
+                (4, p::ELEMENT_OWNED_RELATIONSHIP, references(&[14])),
+                (14, p::SPECIALIZATION_SPECIFIC, references(&[4])),
+                (14, p::SPECIALIZATION_GENERAL, references(&[5])),
+            ],
+        );
+        let id = ElementId::from_u128;
+        let model = snapshot.model();
+        let local = model.elements().map(ElementRecord::id).collect();
+        let edges = graph_edges(model, ProjectRevisionId::from_u128(90), &local);
+        let selected = requirement_neighborhood(model, &BTreeSet::from([id(1)]), &local, &edges);
+        assert_eq!(selected, BTreeSet::from([id(1), id(2), id(3)]));
+        let subject = edges
+            .iter()
+            .find(|edge| edge.relationship_id == Some(id(11)))
+            .unwrap();
+        assert_eq!(
+            (subject.source, subject.target, subject.family),
+            (id(1), id(2), RelationshipFamily::Requirement)
+        );
+        assert_eq!(subject.semantic_kind, "SubjectMembership");
+        assert_eq!(subject.origin, ViewOrigin::Authored);
+        let typing = edges
+            .iter()
+            .find(|edge| edge.relationship_id == Some(id(12)))
+            .unwrap();
+        assert_eq!((typing.source, typing.target), (id(2), id(3)));
+        assert_eq!(typing.semantic_kind, "FeatureTyping");
+        assert!(
+            !edges
+                .iter()
+                .any(|edge| edge.source == id(1) && edge.target == id(3))
+        );
+        // Filtering Typing removes the second hop, not the literal subject.
+        let filtered: Vec<_> = edges
+            .into_iter()
+            .filter(|edge| edge.family != RelationshipFamily::Typing)
+            .collect();
+        assert_eq!(
+            requirement_neighborhood(model, &BTreeSet::from([id(1)]), &local, &filtered),
+            BTreeSet::from([id(1), id(2)])
+        );
+    }
+
+    #[test]
+    fn verification_membership_is_a_modeled_link_and_case_subject_is_not_a_requirement() {
+        let snapshot = semantic_fixture(
+            &[
+                (1, sc::VERIFICATION_CASE_DEFINITION),
+                (2, sc::REQUIREMENT_USAGE),
+                (3, sc::REFERENCE_USAGE),
+                (11, sc::REQUIREMENT_VERIFICATION_MEMBERSHIP),
+                (12, sc::SUBJECT_MEMBERSHIP),
+            ],
+            &[
+                (1, p::ELEMENT_OWNED_RELATIONSHIP, references(&[11, 12])),
+                (11, p::RELATIONSHIP_OWNED_RELATED_ELEMENT, references(&[2])),
+                (12, p::RELATIONSHIP_OWNED_RELATED_ELEMENT, references(&[3])),
+            ],
+        );
+        let model = snapshot.model();
+        let edges = graph_edges(
+            model,
+            ProjectRevisionId::from_u128(91),
+            &model.elements().map(ElementRecord::id).collect(),
+        );
+        let verification = edges
+            .iter()
+            .find(|edge| edge.relationship_id == Some(ElementId::from_u128(11)))
+            .unwrap();
+        assert_eq!(verification.family, RelationshipFamily::Verification);
+        assert_eq!(
+            verification.semantic_kind,
+            "RequirementVerificationMembership"
+        );
+        assert_eq!(verification.label, "verification requirement");
+        assert_eq!(
+            (verification.source, verification.target),
+            (ElementId::from_u128(1), ElementId::from_u128(2))
+        );
+        assert!(edges.iter().any(
+            |edge| edge.relationship_id == Some(ElementId::from_u128(12))
+                && edge.family == RelationshipFamily::Ownership
+        ));
+    }
+
+    #[test]
+    fn focused_inherited_port_keeps_owner_membership_and_original_identity() {
+        let snapshot = semantic_fixture(
+            &[
+                (1, sc::PART_DEFINITION),
+                (2, sc::PART_DEFINITION),
+                (3, sc::PORT_USAGE),
+                (4, sc::PORT_DEFINITION),
+                (11, c::SUBCLASSIFICATION),
+                (12, c::FEATURE_MEMBERSHIP),
+                (13, c::FEATURE_TYPING),
+            ],
+            &[
+                (1, p::ELEMENT_OWNED_RELATIONSHIP, references(&[11])),
+                (11, p::SPECIALIZATION_SPECIFIC, references(&[1])),
+                (11, p::SPECIALIZATION_GENERAL, references(&[2])),
+                (2, p::ELEMENT_OWNED_RELATIONSHIP, references(&[12])),
+                (12, p::RELATIONSHIP_OWNED_RELATED_ELEMENT, references(&[3])),
+                (3, p::ELEMENT_OWNED_RELATIONSHIP, references(&[13])),
+                (13, p::SPECIALIZATION_SPECIFIC, references(&[3])),
+                (13, p::SPECIALIZATION_GENERAL, references(&[4])),
+            ],
+        );
+        let id = ElementId::from_u128;
+        let q = fixture_queries(&snapshot);
+        let allowed = BTreeSet::from([id(1), id(2), id(3), id(4)]);
+        let mut warnings = vec![];
+        assert!(q.effective_features(id(1)).value.contains(&id(3)));
+        let selected = focused_interfaces(&q, id(1), &allowed, &mut warnings);
+        assert_eq!(selected, BTreeSet::from([id(2), id(3)]));
+        assert_eq!(q.owner(id(3)).value, Some(id(2)));
+        assert_eq!(owner(snapshot.model(), id(3)), Some(id(2)));
+        let edges = graph_edges(
+            snapshot.model(),
+            ProjectRevisionId::from_u128(92),
+            &snapshot.model().elements().map(ElementRecord::id).collect(),
+        );
+        assert!(edges.iter().any(|edge| edge.relationship_id == Some(id(12))
+            && edge.source == id(2)
+            && edge.target == id(3)));
+        assert!(
+            !edges
+                .iter()
+                .any(|edge| edge.family == RelationshipFamily::Ownership
+                    && edge.source == id(1)
+                    && edge.target == id(3))
+        );
+        assert!(edges.iter().any(|edge| edge.relationship_id == Some(id(11))
+            && edge.family == RelationshipFamily::Specialization));
+        let effective = q.effective_features(id(1));
+        assert_eq!(
+            warnings
+                .iter()
+                .any(|warning| warning.starts_with("Focused effective features")),
+            effective.completeness != Completeness::Complete
+        );
+    }
     fn e(source: u128, target: u128) -> ViewEdge {
         ViewEdge {
             id: format!("{source}-{target}"),

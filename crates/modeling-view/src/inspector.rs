@@ -1,6 +1,6 @@
 use crate::{projection::*, *};
 use agq_kerml::{classes as c, properties as p};
-use agq_kerml_semantics::QueryResult;
+use agq_kerml_semantics::{Completeness, KerMlQueries, QueryResult};
 use agq_kernel::{DocumentId, SourceRevisionId, provenance::FactKey};
 use agq_modeling_workspace::ProjectRevision;
 use std::collections::BTreeSet;
@@ -121,10 +121,9 @@ pub fn inspect(revision: &ProjectRevision, id: ElementId) -> Result<ElementInspe
         })
         .map(|r| r.id())
         .collect();
-    let relationships = graph_edges(model, revision.revision(), &local)
-        .into_iter()
-        .filter(|e| e.source == id || e.target == id || e.relationship_id == Some(id))
-        .collect();
+    let (relationships, connection_queries) =
+        inspect_relationships(&q, revision.revision(), &local, id);
+    queries.extend(connection_queries);
     let source = revision
         .source_for_fact(FactKey::Element(id))
         .map(|source| SourceLocation {
@@ -159,4 +158,138 @@ pub fn inspect(revision: &ProjectRevision, id: ElementId) -> Result<ElementInspe
         queries,
         profile,
     })
+}
+
+fn inspect_relationships(
+    q: &KerMlQueries<'_>,
+    revision: ProjectRevisionId,
+    local: &BTreeSet<ElementId>,
+    id: ElementId,
+) -> (Vec<ViewEdge>, Vec<QuerySummary>) {
+    let mut queries = vec![];
+    let mut relationships = graph_edges(q.model(), revision, local);
+    relationships.extend(connector_edges(q, revision, local, |connector, answer| {
+        // An unresolved connector might touch this selection. Retain its actual
+        // incomplete contract rather than implying the incidence search is closed.
+        if connector == id
+            || answer.value.contains(&id)
+            || answer.completeness != Completeness::Complete
+        {
+            queries.push(QuerySummary::of(
+                &format!(
+                    "Connection endpoints: {} [{connector}]",
+                    name(q.model(), connector)
+                ),
+                answer,
+            ));
+        }
+    }));
+    relationships
+        .retain(|edge| edge.source == id || edge.target == id || edge.relationship_id == Some(id));
+    relationships.sort_by(|a, b| a.id.cmp(&b.id));
+    relationships.dedup_by(|a, b| a.id == b.id);
+    (relationships, queries)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::projection::tests::{fixture_queries, references, semantic_fixture};
+    use agq_kernel::{ElementRecord, value::Value};
+    use agq_sysml::classes as sc;
+
+    #[test]
+    fn inspector_and_scene_share_canonical_connection_and_query_completeness() {
+        let snapshot = semantic_fixture(
+            &[
+                (1, sc::PORT_USAGE),
+                (2, sc::PORT_USAGE),
+                (3, sc::INTERFACE_USAGE),
+                (4, c::FEATURE),
+                (5, c::FEATURE),
+                (11, c::END_FEATURE_MEMBERSHIP),
+                (12, c::END_FEATURE_MEMBERSHIP),
+                (13, c::REFERENCE_SUBSETTING),
+                (14, c::REFERENCE_SUBSETTING),
+            ],
+            &[
+                (
+                    3,
+                    p::ELEMENT_DECLARED_NAME,
+                    vec![Value::String("queryConnection".into())],
+                ),
+                (3, p::ELEMENT_OWNED_RELATIONSHIP, references(&[11, 12])),
+                (11, p::RELATIONSHIP_OWNED_RELATED_ELEMENT, references(&[4])),
+                (12, p::RELATIONSHIP_OWNED_RELATED_ELEMENT, references(&[5])),
+                (4, p::FEATURE_IS_END, vec![Value::Boolean(true)]),
+                (5, p::FEATURE_IS_END, vec![Value::Boolean(true)]),
+                (4, p::ELEMENT_OWNED_RELATIONSHIP, references(&[13])),
+                (5, p::ELEMENT_OWNED_RELATIONSHIP, references(&[14])),
+                (13, p::SUBSETTING_SUBSETTING_FEATURE, references(&[4])),
+                (13, p::SUBSETTING_SUBSETTED_FEATURE, references(&[1])),
+                (14, p::SUBSETTING_SUBSETTING_FEATURE, references(&[5])),
+                (14, p::SUBSETTING_SUBSETTED_FEATURE, references(&[2])),
+            ],
+        );
+        let id = ElementId::from_u128;
+        let q = fixture_queries(&snapshot);
+        let local = snapshot.model().elements().map(ElementRecord::id).collect();
+        let revision = ProjectRevisionId::from_u128(93);
+        let endpoint_answer = q.connector_endpoints(id(3));
+        assert_eq!(endpoint_answer.value, vec![id(1), id(2)]);
+        let scene = connector_edges(&q, revision, &local, |_, _| {});
+        assert_eq!(scene.len(), 1);
+        assert_eq!((scene[0].source, scene[0].target), (id(1), id(2)));
+        assert_eq!(scene[0].relationship_id, Some(id(3)));
+        assert_eq!(scene[0].semantic_kind, "InterfaceUsage");
+        assert!(!scene[0].directed);
+        for selected in [id(1), id(2), id(3)] {
+            let (relationships, summaries) = inspect_relationships(&q, revision, &local, selected);
+            assert!(relationships.contains(&scene[0]));
+            let summary = summaries
+                .iter()
+                .find(|summary| {
+                    summary.name == format!("Connection endpoints: queryConnection [{}]", id(3))
+                })
+                .unwrap();
+            assert_eq!(*summary, QuerySummary::of(&summary.name, &endpoint_answer));
+        }
+    }
+
+    #[test]
+    fn unresolved_connector_keeps_actual_incomplete_query_even_without_an_incident_edge() {
+        let snapshot = semantic_fixture(
+            &[
+                (1, sc::PORT_USAGE),
+                (3, sc::INTERFACE_USAGE),
+                (4, c::FEATURE),
+                (11, c::END_FEATURE_MEMBERSHIP),
+            ],
+            &[
+                (3, p::ELEMENT_OWNED_RELATIONSHIP, references(&[11])),
+                (11, p::RELATIONSHIP_OWNED_RELATED_ELEMENT, references(&[4])),
+                (4, p::FEATURE_IS_END, vec![Value::Boolean(true)]),
+            ],
+        );
+        let id = ElementId::from_u128;
+        let q = fixture_queries(&snapshot);
+        let local = snapshot.model().elements().map(ElementRecord::id).collect();
+        let actual = q.connector_endpoints(id(3));
+        assert_ne!(actual.completeness, Completeness::Complete);
+        let (relationships, queries) =
+            inspect_relationships(&q, ProjectRevisionId::from_u128(94), &local, id(1));
+        assert!(
+            !relationships
+                .iter()
+                .any(|edge| edge.family == RelationshipFamily::Connection)
+        );
+        assert_eq!(queries.len(), 1);
+        assert_eq!(queries[0], QuerySummary::of(&queries[0].name, &actual));
+        assert!(
+            queries[0]
+                .diagnostics
+                .iter()
+                .any(|diagnostic| diagnostic.contains("KQ_CONNECTOR_ENDPOINT"))
+        );
+    }
 }
