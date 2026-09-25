@@ -1182,8 +1182,9 @@ impl Runner {
                 require(
                     candidate.id == self.candidate_id
                         && Some(candidate.after.revision_id) == self.candidate_revision
+                        && candidate.before.view == candidate.after.view
                         && app.comparison == *mode,
-                    "Candidate identity or review mode is wrong",
+                    "Candidate identity, matching lens, or review mode is wrong",
                 )?;
                 let expected = if *mode == ComparisonMode::Current {
                     candidate.before.revision_id
@@ -1194,6 +1195,20 @@ impl Runner {
                     app.scene.revision_id == expected,
                     "Candidate mode mixed revisions",
                 )?;
+                if let Some(added) = self.report.added_element {
+                    if *mode == ComparisonMode::Current {
+                        require(
+                            app.scene.node(added).is_none()
+                                && app.selected_element() != Some(added),
+                            "Candidate-only object leaked into Current revision",
+                        )?;
+                    } else {
+                        require(
+                            app.selected_element() == Some(added),
+                            "Candidate selection was lost while switching review modes",
+                        )?;
+                    }
+                }
                 if *mode == ComparisonMode::Diff {
                     require(
                         app.scene
@@ -1231,6 +1246,10 @@ impl Runner {
                         })
                     }),
                     "Branch history did not confirm the committed head",
+                )?;
+                require(
+                    Some(named(app, PART)?) == self.report.added_element,
+                    "Committed projection lost or changed the reviewed canonical part identity",
                 )?;
                 self.report.committed = Some(manifest.clone());
                 Ok(())
