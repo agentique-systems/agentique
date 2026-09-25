@@ -53,6 +53,9 @@ pub enum CheckpointError {
     /// The disposable cache belongs to another revision or format.
     #[error("semantic cache revision or format does not match the source checkpoint")]
     CacheIdentity,
+    /// In-process reconstruction must name this exact source-history predecessor.
+    #[error("checkpoint does not continue the supplied predecessor revision")]
+    Predecessor,
     /// Source authentication, parsing or semantic reconstruction failed.
     #[error(transparent)]
     Source(#[from] SourceCheckpointError),
@@ -96,6 +99,33 @@ impl ProjectRevision {
 }
 
 impl ProjectRevisionCheckpoint {
+    /// Fully reconstruct a successor while sharing the predecessor's immutable,
+    /// already authenticated standard dependency. This is not local semantic
+    /// cache reuse, validation inheritance, or a durable head change.
+    pub fn restore_sharing_dependency(
+        &self,
+        predecessor: &WorkingProjectRevision,
+        sources: &BTreeMap<DocumentId, String>,
+    ) -> Result<Arc<WorkingProjectRevision>, CheckpointError> {
+        if self.format_version != 1 {
+            return Err(CheckpointError::Version(self.format_version));
+        }
+        if self.parent_revision_id != Some(predecessor.revision())
+            || self.project_revision_id == predecessor.revision()
+        {
+            return Err(CheckpointError::Predecessor);
+        }
+        Ok(Arc::new(WorkingProjectRevision {
+            revision: ProjectRevision {
+                revision: self.project_revision_id,
+                parent: self.parent_revision_id,
+                compilation: self
+                    .source
+                    .restore_sharing_dependency(&predecessor.compilation, sources)?,
+            },
+        }))
+    }
+
     /// Authenticate a cache against exact source, accepted language dependencies
     /// and closure identities, then rerun producer and effective-query audits.
     /// Callers may discard any failed cache and use ordinary source restoration.

@@ -38,7 +38,7 @@ pub(super) fn reconstruct(
         .collect();
     sources.insert(parsed.document(), parsed.source().into());
     let working = checkpoint
-        .restore(before.accepted_sysml().clone(), &sources)
+        .restore_sharing_dependency(before, &sources)
         .map_err(|error| invalid(&format!("ordinary reconstruction failed: {error}")))?;
     Ok((working, checkpoint))
 }

@@ -9,8 +9,8 @@ use agq_kernel::ElementId;
 use agq_modeling_agent::{AgentContext, AgentPolicy, ModelCommand};
 use agq_modeling_repository::OperationId;
 use agq_modeling_service::{ApplyDocumentChanges, ModelingService, RevisionSelector};
-use agq_modeling_workspace::WorkingProjectRevision;
-use std::{fs::File, path::Path, sync::Arc, time::Instant};
+use agq_modeling_workspace::{ProjectRevisionCheckpoint, WorkingProjectRevision};
+use std::{collections::BTreeMap, fs::File, path::Path, sync::Arc, time::Instant};
 
 fn named(revision: &WorkingProjectRevision, segments: &[&str]) -> ElementId {
     let answer = revision.kerml_queries().unwrap().lookup_path(
@@ -42,6 +42,11 @@ fn assert_query<T: std::fmt::Debug + PartialEq>(left: &QueryResult<T>, right: &Q
 }
 
 fn assert_equivalent(left: &WorkingProjectRevision, right: &WorkingProjectRevision) {
+    assert_eq!(
+        left.checkpoint(),
+        right.checkpoint(),
+        "exact source/arena/retirement checkpoint"
+    );
     assert_eq!(
         left.semantic_fingerprint().unwrap(),
         right.semantic_fingerprint().unwrap()
@@ -97,6 +102,74 @@ fn assert_equivalent(left: &WorkingProjectRevision, right: &WorkingProjectRevisi
     for (fact, a) in &l.observations {
         assert_query(a, &r.observations[fact]);
     }
+}
+
+/// Malformed reuse requests must fail before they can become candidate graphs.
+/// The ordinary cold restore tests remain independent of this new entry point.
+fn assert_restore_rejections(
+    predecessor: &WorkingProjectRevision,
+    checkpoint: &ProjectRevisionCheckpoint,
+    sources: &BTreeMap<agq_kernel::DocumentId, String>,
+) -> usize {
+    let mut checked = 0;
+    let mut rejects = |label: &str,
+                       changed: &ProjectRevisionCheckpoint,
+                       bytes: &BTreeMap<agq_kernel::DocumentId, String>| {
+        let result = changed.restore_sharing_dependency(predecessor, bytes);
+        assert!(result.is_err(), "reuse accepted invalid {label}");
+        eprintln!("shared_mount_negative {label}: {}", result.unwrap_err());
+        checked += 1;
+    };
+    let mut changed = checkpoint.clone();
+    changed.format_version += 1;
+    rejects("checkpoint version", &changed, sources);
+    changed = checkpoint.clone();
+    changed.parent_revision_id = None;
+    rejects("missing parent", &changed, sources);
+    changed.parent_revision_id = Some(agq_modeling_workspace::ProjectRevisionId::new());
+    rejects("foreign parent", &changed, sources);
+    changed = checkpoint.clone();
+    changed.project_revision_id = predecessor.revision();
+    rejects("reused project revision", &changed, sources);
+    changed = checkpoint.clone();
+    changed.source.format_version += 1;
+    rejects("source checkpoint version", &changed, sources);
+    changed = checkpoint.clone();
+    changed.source.project_id = agq_kerml_text::ProjectId::new();
+    rejects("foreign source project", &changed, sources);
+    changed = checkpoint.clone();
+    changed.source.root = ElementId::new();
+    rejects("foreign canonical root", &changed, sources);
+    changed = checkpoint.clone();
+    changed.source.accepted_kerml[0] ^= 1;
+    rejects("foreign accepted KerML", &changed, sources);
+    changed = checkpoint.clone();
+    changed.source.accepted_sysml[0] ^= 1;
+    rejects("foreign accepted Systems", &changed, sources);
+    let mut bytes = sources.clone();
+    bytes.values_mut().next().unwrap().push(' ');
+    rejects("changed source digest", checkpoint, &bytes);
+    bytes = sources.clone();
+    bytes.pop_first();
+    rejects("missing source", checkpoint, &bytes);
+    bytes = sources.clone();
+    let (_, source) = bytes.pop_first().unwrap();
+    bytes.insert(agq_kernel::DocumentId::new(), source);
+    rejects("substituted source identity", checkpoint, &bytes);
+    changed = checkpoint.clone();
+    changed.source.documents[1].document_id = changed.source.documents[0].document_id;
+    rejects("duplicate document identity", &changed, sources);
+    changed = checkpoint.clone();
+    changed.source.documents[1].path = changed.source.documents[0].path.clone();
+    rejects("duplicate document path", &changed, sources);
+    changed = checkpoint.clone();
+    let syntax = &mut changed.source.documents[0].syntax_nodes;
+    syntax[1].id = syntax[0].id;
+    rejects("duplicate syntax identity", &changed, sources);
+    changed = checkpoint.clone();
+    changed.source.documents[0].syntax_nodes.pop();
+    rejects("incomplete syntax arena", &changed, sources);
+    checked
 }
 
 #[test]
@@ -189,6 +262,10 @@ fn create_part_command_matches_full_self_model_reconstruction() {
     .unwrap();
     let command_prepare_ms = started.elapsed().as_millis();
     let command_full = candidate.prepared().revision().clone();
+    assert!(
+        agq_modeling_workspace::testing::shares_accepted_dependency(base.revision(), &command_full),
+        "source command reuses the exact authenticated dependency mount"
+    );
     assert_eq!(
         named(&command_full, &["PlatformArchitecture", "ModelingPlatform"]),
         owner,
@@ -225,28 +302,60 @@ fn create_part_command_matches_full_self_model_reconstruction() {
         before,
         "candidate preserves current revision"
     );
+    // Reusing candidate.inputs via full_rebuild is not an independent mount
+    // oracle: it would reuse the same optimization being qualified. Cold restore
+    // must mint its own authenticated mount over identical sources/identities.
+    let checkpoint = command_full.checkpoint();
+    let sources: BTreeMap<_, _> = command_full
+        .documents()
+        .map(|(_, document)| (document.id(), document.source().to_owned()))
+        .collect();
+    let negative_cases = assert_restore_rejections(base.revision(), &checkpoint, &sources);
+    eprintln!("oracle: independent cold checkpoint restore");
     let started = Instant::now();
-    let full = agq_modeling_workspace::testing::full_rebuild(&command_full).unwrap();
-    let full_rebuild_ms = started.elapsed().as_millis();
+    let full = checkpoint
+        .restore(command_full.accepted_sysml().clone(), &sources)
+        .unwrap();
+    let cold_checkpoint_restore_ms = started.elapsed().as_millis();
+    assert!(
+        !agq_modeling_workspace::testing::shares_accepted_dependency(&command_full, &full),
+        "cold oracle must authenticate a separate mount"
+    );
     assert_equivalent(&command_full, &full);
     let started = Instant::now();
     candidate.validate(&AgentPolicy::operator()).unwrap();
     let validation_ms = started.elapsed().as_millis();
+    let started = Instant::now();
     full.validate().unwrap();
+    let cold_validation_ms = started.elapsed().as_millis();
+    assert!(!command_full.compilation_work().semantic_cache_used);
+    assert!(!full.compilation_work().semantic_cache_used);
+    assert_eq!(
+        command_full.compilation_work().documents_reparsed,
+        command_full.documents().count()
+    );
+    assert_eq!(
+        full.compilation_work().documents_reparsed,
+        full.documents().count()
+    );
     // Keep semantic compile timings separate from command source mapping and service preparation.
     println!(
         "CREATE_PART_PERFORMANCE {}",
         serde_json::json!({
-            "format": "agentique-create-part-performance/2",
+            "format": "agentique-create-part-performance/3",
             "model": "models/agentique",
-            "command_reconstruction_mode": "full-source-reconstruction-with-verified-insertion-identities",
-            "comparison_reconstruction_mode": "full-source-reconstruction-with-identical-source-identities",
+            "command_reconstruction_mode": "full-source-reconstruction-with-verified-insertion-identities-and-shared-authenticated-mount",
+            "comparison_reconstruction_mode": "independent-cold-checkpoint-restore-with-identical-source-and-canonical-identities",
             "runtime_restore_ms": runtime_restore_ms,
             "command_prepare_ms": command_prepare_ms,
             "command_compile_ms": command_full.compilation_timings().total_compile_micros as f64 / 1000.0,
-            "full_rebuild_ms": full_rebuild_ms,
+            "cold_checkpoint_restore_ms": cold_checkpoint_restore_ms,
             "full_compile_ms": full.compilation_timings().total_compile_micros as f64 / 1000.0,
             "validation_ms": validation_ms,
+            "cold_validation_ms": cold_validation_ms,
+            "command_noncompile_residual_ms": command_prepare_ms as f64 - command_full.compilation_timings().total_compile_micros as f64 / 1000.0,
+            "cold_noncompile_residual_ms": cold_checkpoint_restore_ms as f64 - full.compilation_timings().total_compile_micros as f64 / 1000.0,
+            "residual_scope": "mixed source/checkpoint/proof/postcheck/serialization overhead; not a measurement of mount time",
             "command_phases": command_full.compilation_timings(),
             "full_phases": full.compilation_timings(),
             "command_work": command_full.compilation_work(),
@@ -255,10 +364,13 @@ fn create_part_command_matches_full_self_model_reconstruction() {
             "authored_documents": command_full.documents().count(),
             "exact_equivalence": true,
             "owner_and_ancestor_identity_preserved": true,
+            "same_authenticated_mount_observed": true,
+            "independent_cold_mount_observed": true,
+            "negative_reuse_cases": negative_cases,
             "incremental_speedup_claimed": false,
             "peak_memory_bytes": null,
             "memory_scope": "measure the process externally; no per-edit allocation claim",
-            "comparison_scope": "two full reconstruction paths over identical parsed source and canonical identity inputs; command preparation additionally includes source proof and continuity postchecks",
+            "comparison_scope": "two full reconstructions over identical source/checkpoint identities; cold restore independently authenticates its mount; hot command additionally includes source proof and continuity postchecks; no incremental semantic work-elimination claim",
         })
     );
 }

@@ -1,6 +1,16 @@
 //! Verification-only scheduler and storage observations; no acceptance authority.
 use crate::*;
 
+/// Whether two compilations share the same authenticated immutable dependency
+/// mount. This storage observation grants no semantic or validation authority.
+pub fn shares_accepted_dependency(
+    left: &WorkingProjectRevision,
+    right: &WorkingProjectRevision,
+) -> bool {
+    left.compilation
+        .shares_accepted_dependency_with(&right.compilation)
+}
+
 /// Full reconstruction oracle over identical source and identity inputs.
 pub fn full_rebuild(
     revision: &WorkingProjectRevision,
