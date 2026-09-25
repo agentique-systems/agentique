@@ -36,12 +36,29 @@ Use isolated detached worktrees at those commits. Copy the retained
 [`kerml_rematerialize.rs`](../tools/runtime-recovery/kerml_rematerialize.rs) wrapper
 into the historical KerML checkout's `crates/kerml-text/examples`. Original language
 source remains unchanged. From that checkout, build with the pinned toolchain and
-locked dependencies, then run:
+locked dependencies:
 
 ```powershell
 cargo build --release --config profile.release.lto=false --locked --offline -j 2 -p agq-kerml-text --example kerml_rematerialize
-target/release/examples/kerml_rematerialize.exe --authority-root=C:/path/to/current/agentique --output=C:/runtime-recovery/kerml/canonical.json
 ```
+
+Prefer the retained provenance-guarded runner from the current checkout:
+
+```powershell
+python verification/native-studio-alpha/runtime/rematerialize_kerml.py
+```
+
+The mission runner expects the sibling historical checkout named
+`agentique-alpha-rematerialize-kerml` and its successful
+`historical-kerml-recovery-build.json` command record. It checks the exact Git
+commit, an empty tracked diff and equality of the copied wrapper bytes before
+invoking the producer. The retained producer record also hashes the wrapper and
+executable. Its output directory is
+`verification/generated/native-studio-alpha/rematerialized-kerml`.
+When adapting this runner to another machine, retain these checks and record fresh
+source and binary hashes. The producer commit reported by the wrapper is a fixed
+identifier, not independent proof of the executable's provenance. Direct wrapper
+invocation therefore requires the same external provenance checks.
 
 Choose fresh output directories. The wrapper has no authority-writing option. It
 calls the unchanged full-corpus producer, including every closure, mandatory
