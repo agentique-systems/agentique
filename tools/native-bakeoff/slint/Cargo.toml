@@ -1,0 +1,12 @@
+[package]
+name = "agq-bakeoff-slint"
+version = "0.1.0"
+edition = "2024"
+publish = false
+[workspace]
+[dependencies]
+slint = { version = "=1.18.1", default-features = false, features = ["std", "compat-1-18", "backend-winit", "renderer-femtovg-wgpu", "accessibility", "unstable-wgpu-30"] }
+bytemuck = { version = "1.24", features = ["derive"] }
+[features]
+default = ["wgpu30"]
+wgpu30 = []

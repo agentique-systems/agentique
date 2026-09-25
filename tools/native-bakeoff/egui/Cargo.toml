@@ -1,0 +1,12 @@
+[package]
+name = "agq-bakeoff-egui"
+version = "0.1.0"
+edition = "2024"
+publish = false
+[workspace]
+[dependencies]
+eframe = { version = "=0.33.3", default-features = false, features = ["wgpu", "default_fonts", "accesskit", "x11", "wayland"] }
+bytemuck = { version = "1.24", features = ["derive"] }
+wgpu = { version = "=27.0.1", features = ["dx12", "vulkan", "metal", "wgsl"] }
+[features]
+wgpu30 = []
