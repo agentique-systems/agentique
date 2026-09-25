@@ -354,3 +354,65 @@ fn neighborhood_is_one_hop_order_independent_and_resolves_port_owners() {
         expand_neighborhood(&projection, &seeds, &families, NeighborhoodDirection::Both)
     );
 }
+
+#[test]
+fn scene_lookup_resolves_only_culled_objects_in_containment_order() {
+    let scene = architecture();
+    let lookup = SceneLookup::build(&scene);
+    let targets = vec![
+        SceneTarget::Node(fixtures::id(21)),
+        SceneTarget::Container(fixtures::id(2)),
+        SceneTarget::Port(fixtures::id(2101)),
+        SceneTarget::Node(fixtures::id(21)),
+        SceneTarget::Edge(scene.edges[0].semantic.id.clone()),
+    ];
+    let visible = lookup.visible(&scene, &targets);
+    assert_eq!(
+        visible.nodes.iter().map(|n| n.id()).collect::<Vec<_>>(),
+        vec![fixtures::id(2), fixtures::id(21)]
+    );
+    assert_eq!(visible.ports.len(), 1);
+    assert_eq!(visible.edges.len(), 1);
+    assert_eq!(lookup.endpoint_owner(fixtures::id(2101)), fixtures::id(21));
+    assert_eq!(lookup.endpoint_owner(fixtures::id(987)), fixtures::id(987));
+    assert_eq!(
+        lookup.node(&scene, fixtures::id(21)).unwrap().semantic.name,
+        "ModelRepository"
+    );
+    assert_eq!(
+        lookup.port(&scene, fixtures::id(2101)).unwrap().id,
+        fixtures::id(2101)
+    );
+    assert_eq!(
+        lookup
+            .edge(&scene, &scene.edges[0].semantic.id)
+            .unwrap()
+            .semantic
+            .id,
+        scene.edges[0].semantic.id
+    );
+}
+
+#[test]
+fn stale_scene_lookup_cannot_return_unrelated_records_or_cross_revisions() {
+    let scene = architecture();
+    let lookup = SceneLookup::build(&scene);
+    let mut reordered = scene.clone();
+    reordered.nodes.reverse();
+    assert!(lookup.node(&reordered, fixtures::id(21)).is_none());
+    let mut projection = fixtures::architecture();
+    projection.nodes.truncate(1);
+    projection.edges.clear();
+    let small =
+        SemanticScene::from_projection(&projection, &SceneOptions::default(), None).unwrap();
+    assert!(lookup.node(&small, fixtures::id(21)).is_none());
+    let mut other = scene;
+    other.revision_id = ProjectRevisionId::from_u128(9);
+    assert!(lookup.node(&other, fixtures::id(21)).is_none());
+    assert!(
+        lookup
+            .visible(&other, &[SceneTarget::Node(fixtures::id(21))])
+            .nodes
+            .is_empty()
+    );
+}
