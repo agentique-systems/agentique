@@ -1,0 +1,23 @@
+{
+  "format": "agentique-native-source-check/1",
+  "corrects": "df2c492",
+  "checks": [
+    {
+      "command": "rustfmt --edition 2024 crates/studio-scene/src/routing.rs",
+      "chunk_id": "24a385",
+      "wall_time_seconds": 0.3885323,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "command": "git diff --check",
+      "chunk_id": "bb4968",
+      "wall_time_seconds": 0.3721319,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    }
+  ],
+  "scope": "Constructor and generic-stub source follow-up; no build, tests or runtime consumer."
+}

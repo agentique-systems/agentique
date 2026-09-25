@@ -76,7 +76,6 @@ pub(crate) fn route_edges(
             semantic: edge.clone(),
             points,
             bounds,
-            side: p.side,
             quality,
             diff: DiffMark::Unchanged,
         });
@@ -165,6 +164,7 @@ fn endpoint(
             stub,
             owner: p.owner,
             bounds,
+            side: p.side,
         });
     }
     let bounds = nodes.get(&id)?.bounds;
@@ -279,7 +279,7 @@ fn route_around_owner(
         let clearance = 34.0 + lane + extra;
         for clockwise in [true, false] {
             let points = if source.point == target.point && source.side == target.side {
-                owner_loop(source, clearance, clockwise)
+                owner_loop(source, target, clearance, clockwise)
             } else {
                 owner_perimeter(source, target, clearance, clockwise)
             };
@@ -308,8 +308,8 @@ fn route_around_owner(
     )
 }
 
-fn owner_loop(endpoint: Endpoint, clearance: f32, clockwise: bool) -> Vec<Point> {
-    let outward = match endpoint.side {
+fn owner_loop(source: Endpoint, target: Endpoint, clearance: f32, clockwise: bool) -> Vec<Point> {
+    let outward = match source.side {
         PortSide::Left => Point::new(-1.0, 0.0),
         PortSide::Right => Point::new(1.0, 0.0),
         PortSide::Top => Point::new(0.0, -1.0),
@@ -317,20 +317,25 @@ fn owner_loop(endpoint: Endpoint, clearance: f32, clockwise: bool) -> Vec<Point>
     };
     let sign = if clockwise { 1.0 } else { -1.0 };
     let tangent = Point::new(-outward.y * sign, outward.x * sign);
+    // Ordinary node attachments stagger stub lengths (22/25/28). Both
+    // endpoints can occupy the same boundary point with different stubs.
+    let source_length = source.point.distance(source.stub);
+    let target_length = target.point.distance(target.stub);
+    let far = clearance.max(source_length.max(target_length) + 12.0);
     let point = |out: f32, along: f32| {
         Point::new(
-            endpoint.point.x + outward.x * out + tangent.x * along,
-            endpoint.point.y + outward.y * out + tangent.y * along,
+            source.point.x + outward.x * out + tangent.x * along,
+            source.point.y + outward.y * out + tangent.y * along,
         )
     };
     simplify(vec![
-        endpoint.point,
-        endpoint.stub,
-        point(clearance, 0.0),
-        point(clearance, clearance),
-        point(22.0, clearance),
-        endpoint.stub,
-        endpoint.point,
+        source.point,
+        source.stub,
+        point(far, 0.0),
+        point(far, clearance),
+        point(target_length, clearance),
+        target.stub,
+        target.point,
     ])
 }
 
@@ -593,6 +598,62 @@ mod owner_route_tests {
             assert_boundary_route(&routes[0], &port, &port, owner);
             assert!(routes[0].points.len() >= 5);
             assert!(routes[0].bounds.width() > 0.0 && routes[0].bounds.height() > 0.0);
+        }
+    }
+
+    #[test]
+    fn coincident_generic_anchors_with_different_stubs_stay_orthogonal() {
+        let bounds = Rect::new(100.0, 80.0, 300.0, 220.0);
+        for (side, point, outward) in [
+            (
+                PortSide::Left,
+                Point::new(100.0, 190.0),
+                Point::new(-1.0, 0.0),
+            ),
+            (
+                PortSide::Right,
+                Point::new(400.0, 190.0),
+                Point::new(1.0, 0.0),
+            ),
+            (
+                PortSide::Top,
+                Point::new(250.0, 80.0),
+                Point::new(0.0, -1.0),
+            ),
+            (
+                PortSide::Bottom,
+                Point::new(250.0, 300.0),
+                Point::new(0.0, 1.0),
+            ),
+        ] {
+            for (source_length, target_length) in [(25.0, 28.0), (40.0, 25.0)] {
+                let endpoint = |length| Endpoint {
+                    point,
+                    stub: Point::new(point.x + outward.x * length, point.y + outward.y * length),
+                    owner: fixtures::id(1),
+                    bounds,
+                    side,
+                };
+                let source = endpoint(source_length);
+                let target = endpoint(target_length);
+                let (points, quality) = route(source, target, 0.0, &RectIndex::new(320.0));
+                assert_eq!(quality, RouteQuality::Clear);
+                assert_eq!(points.first(), Some(&point));
+                assert_eq!(points.last(), Some(&point));
+                assert_eq!(points[points.len() - 2], target.stub);
+                assert!(points.len() >= 5);
+                assert!(
+                    points
+                        .windows(2)
+                        .all(|pair| pair[0].x == pair[1].x || pair[0].y == pair[1].y),
+                    "non-default stubs must not introduce a diagonal: {points:?}"
+                );
+                let mut interior = RectIndex::new(320.0);
+                interior.insert(bounds, (fixtures::id(1), bounds));
+                assert!(
+                    blockers(&points, fixtures::id(999), fixtures::id(999), &interior).is_empty()
+                );
+            }
         }
     }
 
