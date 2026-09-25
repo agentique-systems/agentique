@@ -41,6 +41,13 @@ impl StudioApp {
         {
             let started = Instant::now();
             hovered = self.spatial.hit_test(point, 6.0 / self.camera.zoom);
+            // A hidden feature port is represented by its owning node at low LOD.
+            if self.lod.level() < LodLevel::Features
+                && let Some(SceneTarget::Port(id)) = hovered.as_ref()
+                && let Some(port) = self.lookup.port(&self.scene, *id)
+            {
+                hovered = Some(SceneTarget::Node(port.owner));
+            }
             self.timing.hit_us = started.elapsed().as_secs_f64() * 1_000_000.0;
             let wheel = ui.input(|i| i.smooth_scroll_delta.y);
             if wheel.abs() > 0.01 {
@@ -67,10 +74,11 @@ impl StudioApp {
         if response.drag_stopped()
             && let (Some(a), Some(b)) = (self.marquee_start.take(), self.marquee_end.take())
         {
-            self.selection.replace(
-                self.spatial
-                    .marquee(agq_studio_scene::Rect::from_points(a, b)),
-            );
+            let mut targets = self.spatial.marquee(agq_studio_scene::Rect::from_points(a, b));
+            if self.lod.level() < LodLevel::Features {
+                targets.retain(|target| !matches!(target, SceneTarget::Port(_)));
+            }
+            self.selection.replace(targets);
             self.batch_key = None;
             self.inspector = None;
         }

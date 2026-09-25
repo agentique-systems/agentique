@@ -637,6 +637,18 @@ impl StudioApp {
                 counts: FeatureCounts::default(),
                 badges: vec!["Visual preview".into()],
             });
+            if let Some(parent) = after.nodes.iter_mut().find(|node| node.id == owner) {
+                parent.counts.parts += 1;
+            }
+            if let Some(group) = after.groups.iter_mut().find(|group| group.element_id == owner) {
+                group.children.push(id);
+            } else {
+                after.groups.push(agq_modeling_view::ViewGroup {
+                    element_id: owner,
+                    children: vec![id],
+                });
+            }
+            after.metadata.local_element_count = after.nodes.len();
             after.edges.push(ViewEdge {
                 id: "fixture-candidate-ownership".into(),
                 relationship_id: None,
@@ -745,18 +757,18 @@ impl StudioApp {
             }
         }
         if ctx.input(|i| i.key_pressed(Key::ArrowDown) || i.key_pressed(Key::ArrowUp))
-            && !self.scene.nodes.is_empty()
+            && !self.outliner_order.is_empty()
         {
             let current = self
                 .selected_element()
-                .and_then(|id| self.scene.nodes.iter().position(|n| n.id() == id))
+                .and_then(|id| self.outliner_order.iter().position(|index| self.scene.nodes[*index].id() == id))
                 .unwrap_or(0);
             let next = if ctx.input(|i| i.key_pressed(Key::ArrowDown)) {
-                (current + 1) % self.scene.nodes.len()
+                (current + 1) % self.outliner_order.len()
             } else {
-                (current + self.scene.nodes.len() - 1) % self.scene.nodes.len()
+                (current + self.outliner_order.len() - 1) % self.outliner_order.len()
             };
-            self.select(SceneTarget::Node(self.scene.nodes[next].id()), false);
+            self.select(SceneTarget::Node(self.scene.nodes[self.outliner_order[next]].id()), false);
         }
     }
 }

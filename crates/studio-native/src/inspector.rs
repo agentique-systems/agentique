@@ -29,7 +29,7 @@ impl StudioApp {
         let node = element.and_then(|id| self.scene.node(id)).cloned();
         if let Some(inspector) = self.inspector.clone() {
             ui.label(RichText::new(&inspector.element.name).size(TITLE).strong());
-            ui.label(muted(&inspector.element.semantic_kind, theme));
+            ui.label(muted(kind_label(&inspector.element.semantic_kind), theme));
             theme.section(ui, "IDENTITY");
             value(
                 ui,
@@ -66,7 +66,7 @@ impl StudioApp {
                 .chain(inspector.specializations.iter())
             {
                 ui.label(&feature.name);
-                ui.label(muted(&feature.semantic_kind, theme).small());
+                ui.label(muted(kind_label(&feature.semantic_kind), theme).small());
             }
             for query in &inspector.queries {
                 ui.horizontal_wrapped(|ui| {
@@ -100,7 +100,7 @@ impl StudioApp {
             });
         } else if let Some(node) = node {
             ui.label(RichText::new(&node.semantic.name).size(TITLE).strong());
-            ui.label(muted(&node.semantic.semantic_kind, theme));
+            ui.label(muted(kind_label(&node.semantic.semantic_kind), theme));
             ui.add_space(9.0);
             ui.label(
                 RichText::new(if self.fixture.is_some() {
@@ -301,4 +301,28 @@ fn value(ui: &mut egui::Ui, key: &str, value: &str, theme: crate::theme::Theme) 
         ui.label(muted(key, theme));
         ui.label(value);
     });
+}
+
+/// Presentation copy for known public projection kinds. Unknown kinds retain
+/// their exact name; this mapping never determines semantic behavior.
+fn kind_label(kind: &str) -> &str {
+    match kind {
+        "PartDefinition" => "Part definition",
+        "PartUsage" => "Part usage",
+        "PortDefinition" => "Port definition",
+        "PortUsage" => "Port usage",
+        "InterfaceDefinition" => "Interface definition",
+        "InterfaceUsage" => "Interface usage",
+        "ConnectionDefinition" => "Connection definition",
+        "ConnectionUsage" => "Connection usage",
+        "RequirementDefinition" => "Requirement definition",
+        "RequirementUsage" => "Requirement usage",
+        "ActionDefinition" => "Action definition",
+        "ActionUsage" => "Action usage",
+        "StateDefinition" => "State definition",
+        "StateUsage" => "State usage",
+        "AttributeDefinition" => "Attribute definition",
+        "AttributeUsage" => "Attribute usage",
+        _ => kind,
+    }
 }
