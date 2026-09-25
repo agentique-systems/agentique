@@ -10,6 +10,7 @@ pub enum RouteQuality {
 }
 #[derive(Clone, Copy)]
 struct Endpoint {
+    element: ElementId,
     point: Point,
     stub: Point,
     owner: ElementId,
@@ -160,6 +161,7 @@ fn endpoint(
             PortSide::Bottom => Point::new(p.position.x, p.position.y + 22.0),
         };
         return Some(Endpoint {
+            element: id,
             point: p.position,
             stub,
             owner: p.owner,
@@ -174,6 +176,7 @@ fn endpoint(
     let (y, stub_length) = attachment.copied().unwrap_or((center.y, 22.0));
     let point = Point::new(x, y);
     Some(Endpoint {
+        element: id,
         point,
         stub: Point::new(x + if right { stub_length } else { -stub_length }, y),
         owner: id,
@@ -278,7 +281,9 @@ fn route_around_owner(
     for extra in [0.0, 24.0, 64.0, 128.0] {
         let clearance = 34.0 + lane + extra;
         for clockwise in [true, false] {
-            let points = if source.point == target.point && source.side == target.side {
+            let points = if source.side == target.side
+                && (source.element == target.element || source.point == target.point)
+            {
                 owner_loop(source, target, clearance, clockwise)
             } else {
                 owner_perimeter(source, target, clearance, clockwise)
@@ -309,34 +314,53 @@ fn route_around_owner(
 }
 
 fn owner_loop(source: Endpoint, target: Endpoint, clearance: f32, clockwise: bool) -> Vec<Point> {
+    // Node self-relationships have separate attachment lanes. Draw the loop
+    // beyond one attachment, or reverse the walk to try beyond the other;
+    // the shorter perimeter between them would collapse into a small U.
+    let (start, finish) = if clockwise {
+        (source, target)
+    } else {
+        (target, source)
+    };
     let outward = match source.side {
         PortSide::Left => Point::new(-1.0, 0.0),
         PortSide::Right => Point::new(1.0, 0.0),
         PortSide::Top => Point::new(0.0, -1.0),
         PortSide::Bottom => Point::new(0.0, 1.0),
     };
-    let sign = if clockwise { 1.0 } else { -1.0 };
-    let tangent = Point::new(-outward.y * sign, outward.x * sign);
+    let tangent = Point::new(-outward.y, outward.x);
+    let along =
+        (finish.point.x - start.point.x) * tangent.x + (finish.point.y - start.point.y) * tangent.y;
+    let sign = if along > 0.0 || (along == 0.0 && clockwise) {
+        1.0
+    } else {
+        -1.0
+    };
+    let beyond = along + sign * clearance;
     // Ordinary node attachments stagger stub lengths (22/25/28). Both
     // endpoints can occupy the same boundary point with different stubs.
-    let source_length = source.point.distance(source.stub);
-    let target_length = target.point.distance(target.stub);
+    let source_length = start.point.distance(start.stub);
+    let target_length = finish.point.distance(finish.stub);
     let far = clearance.max(source_length.max(target_length) + 12.0);
     let point = |out: f32, along: f32| {
         Point::new(
-            source.point.x + outward.x * out + tangent.x * along,
-            source.point.y + outward.y * out + tangent.y * along,
+            start.point.x + outward.x * out + tangent.x * along,
+            start.point.y + outward.y * out + tangent.y * along,
         )
     };
-    simplify(vec![
-        source.point,
-        source.stub,
+    let mut points = vec![
+        start.point,
+        start.stub,
         point(far, 0.0),
-        point(far, clearance),
-        point(target_length, clearance),
-        target.stub,
-        target.point,
-    ])
+        point(far, beyond),
+        point(target_length, beyond),
+        finish.stub,
+        finish.point,
+    ];
+    if !clockwise {
+        points.reverse();
+    }
+    simplify(points)
 }
 
 fn owner_perimeter(
@@ -628,6 +652,7 @@ mod owner_route_tests {
         ] {
             for (source_length, target_length) in [(25.0, 28.0), (40.0, 25.0)] {
                 let endpoint = |length| Endpoint {
+                    element: fixtures::id(1),
                     point,
                     stub: Point::new(point.x + outward.x * length, point.y + outward.y * length),
                     owner: fixtures::id(1),

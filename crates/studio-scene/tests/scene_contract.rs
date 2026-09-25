@@ -602,6 +602,61 @@ fn self_relationship_routes_form_a_visible_loop() {
 }
 
 #[test]
+fn parallel_self_relationships_keep_separate_anchors_and_visible_exterior_loops() {
+    for count in [1, 2, 5] {
+        let mut projection = fixtures::stress(1, count);
+        let owner = projection.nodes[0].id;
+        for edge in &mut projection.edges {
+            edge.source = owner;
+            edge.target = owner;
+        }
+        let scene =
+            SemanticScene::from_projection(&projection, &SceneOptions::default(), None).unwrap();
+        let bounds = scene.node(owner).unwrap().bounds;
+        assert_eq!(scene.edges.len(), count);
+        assert!(
+            scene.ports.is_empty(),
+            "drawing anchors are not semantic ports"
+        );
+        for route in &scene.edges {
+            assert_eq!(
+                &route.semantic,
+                projection
+                    .edges
+                    .iter()
+                    .find(|edge| edge.id == route.semantic.id)
+                    .unwrap()
+            );
+            let first = *route.points.first().unwrap();
+            let last = *route.points.last().unwrap();
+            assert_eq!(first.x, bounds.max.x);
+            assert_eq!(last.x, bounds.max.x);
+            assert_ne!(first, last, "self-link attachment lanes stay distinct");
+            assert!(
+                route.points.len() >= 6,
+                "a short U is not the self-link loop: {:?}",
+                route.points
+            );
+            assert!(route.points.iter().all(|point| point.x >= bounds.max.x));
+            assert!(route.points.iter().any(|point| {
+                point.y <= first.y.min(last.y) - 34.0 + 0.001
+                    || point.y >= first.y.max(last.y) + 34.0 - 0.001
+            }));
+            assert!(
+                route
+                    .points
+                    .windows(2)
+                    .all(|pair| pair[0].x == pair[1].x || pair[0].y == pair[1].y)
+            );
+            assert_eq!(route.quality, RouteQuality::Clear);
+        }
+        for pair in scene.edges.windows(2) {
+            assert_ne!(pair[0].points, pair[1].points);
+        }
+    }
+}
+
+#[test]
 fn expanded_owner_port_strips_are_clear_bounded_and_preserve_canonical_identity() {
     for count in [1_usize, 2, 4, 5, 24] {
         let mut projection = fixtures::architecture();
