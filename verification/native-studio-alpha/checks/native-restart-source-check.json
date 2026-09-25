@@ -1,0 +1,60 @@
+{
+  "format": "agentique-native-restart-source-check/1",
+  "checked_at": "2026-09-25T21:55:06.700316+00:00",
+  "base": "7d31b98",
+  "scope": "source checks only; no build, native scenario or semantic consumer",
+  "unchanged_guards": {
+    "validate_launch": {
+      "unchanged": true,
+      "sha256": "c210adb74ef0655908e9fdd676dd86ae573d89936fa7afd79d8ac6d96762794e"
+    },
+    "read_report": {
+      "unchanged": true,
+      "sha256": "b6d91518a827a1423ed20d2fb24756a0462e2f6ed569b4d6e2db9f4c8f96f54e"
+    },
+    "read_restart_evidence": {
+      "unchanged": true,
+      "sha256": "4737ff2f0bd93855d219693d4d0edc322836239d9afb88a7d97c98eee9d86efc"
+    },
+    "read_resume": {
+      "unchanged": true,
+      "sha256": "63ddb2ec484d2a63dc11f3c00c38fb787ffa9a9ea4a6f65466ca3ab1eb70639c"
+    },
+    "validate_resume_report": {
+      "unchanged": true,
+      "sha256": "ca2d88c4debdaaa475a4407d6db1f964c4660e6edcdbf72b613f5899f1a80e52"
+    },
+    "assert_source_manifest": {
+      "unchanged": true,
+      "sha256": "2b1e72aa635cccecb969202d0105714af17e704622596f97d0cd1dc9d452c04f"
+    },
+    "first_process_steps": {
+      "unchanged": true,
+      "sha256": "ec7003786a37ae3c3191bafacf673fbadccf8f732e4b6a09e7d79d99ee1f6ef3"
+    }
+  },
+  "checks": [
+    {
+      "command": [
+        "rustfmt",
+        "--edition",
+        "2024",
+        "--check",
+        "crates/studio-native/src/real_automation.rs"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ]
+}

@@ -503,6 +503,39 @@ fn assert_part_owner(
     }
 }
 
+fn assert_restart_element(
+    projection: &ViewProjection,
+    focus: Option<ElementId>,
+    inspector: Option<&ElementInspector>,
+    part: ElementId,
+    owner: ElementId,
+) -> Result<(), String> {
+    if projection.view.kind != ViewKind::Architecture
+        || focus != Some(owner)
+        || projection.view.focus != Some(owner)
+    {
+        return Err(
+            "Restarted part identity must be checked in its actual focused owner view".into(),
+        );
+    }
+    if projection_named(projection, PART)? != part {
+        return Err("Restarted canonical part identity differs".into());
+    }
+    assert_part_owner(projection, part, owner)?;
+    let inspector = inspector.ok_or("Restarted part has no real Inspector response")?;
+    if inspector.revision_id != projection.revision_id
+        || inspector.element.revision_id != projection.revision_id
+        || inspector.element.id != part
+        || inspector.element.owner != Some(owner)
+        || inspector.owner.as_ref().map(|item| item.id) != Some(owner)
+    {
+        return Err(
+            "Restarted Inspector differs from the committed part, owner or revision".into(),
+        );
+    }
+    Ok(())
+}
+
 #[derive(Clone, Copy, Debug)]
 struct Named {
     name: &'static str,
@@ -790,6 +823,7 @@ enum Check {
     Mode(ComparisonMode),
     Validated,
     Committed,
+    RestartRevision,
     Restart,
 }
 
@@ -812,13 +846,25 @@ fn steps(restart: bool) -> Vec<Step> {
             step(
                 "restart opens the same durable real project",
                 Action::OpenProject,
-                Check::Restart,
+                Check::RestartRevision,
                 Some("10-restarted-system-world"),
+            ),
+            step(
+                "restart selects the committed part's actual ModelingPlatform owner",
+                Action::Select(PLATFORM),
+                Check::Selected(PLATFORM),
+                None,
+            ),
+            step(
+                "restart enters ModelingPlatform through native keyboard input",
+                Action::Key(Key::F),
+                Check::FocusedPlatform,
+                Some("10a-restarted-part-owner"),
             ),
             step(
                 "restart inspects the same committed canonical element",
                 Action::Select(PART),
-                Check::Selected(PART),
+                Check::Restart,
                 Some("11-restarted-committed-element"),
             ),
             step(
@@ -2111,7 +2157,7 @@ impl Runner {
                 self.report.committed = Some(manifest.clone());
                 Ok(())
             }
-            Check::Restart => {
+            Check::RestartRevision => {
                 let manifest = current_manifest(app)?;
                 assert_validated(manifest)?;
                 require(
@@ -2121,17 +2167,6 @@ impl Runner {
                     "Reauthenticated durable revision/receipt differs from the first process",
                 )?;
                 require(
-                    Some(named(app, PART)?) == self.report.added_element,
-                    "Restarted canonical part identity differs",
-                )?;
-                assert_part_owner(
-                    app.active_projection(),
-                    named(app, PART)?,
-                    self.report
-                        .added_owner
-                        .ok_or("Restarted part owner was not retained")?,
-                )?;
-                require(
                     app.history.as_ref().is_some_and(|h| {
                         h.branches.iter().any(|b| {
                             Some(b.id) == self.report.branch && b.head == manifest.revision_id
@@ -2139,6 +2174,25 @@ impl Runner {
                     }),
                     "Restarted branch head differs from committed revision",
                 )
+            }
+            Check::Restart => {
+                // The fresh --no-restore overview is intentionally shallow.
+                // Verify durable authority on open, then repeat that check here
+                // after ordinary selection/focus exposes the nested object.
+                self.check(&Check::RestartRevision, app, ctx)?;
+                self.check(&Check::FocusedPlatform, app, ctx)?;
+                assert_restart_element(
+                    app.active_projection(),
+                    app.focus,
+                    app.inspector.as_ref(),
+                    self.report
+                        .added_element
+                        .ok_or("Restarted part identity was not retained")?,
+                    self.report
+                        .added_owner
+                        .ok_or("Restarted part owner was not retained")?,
+                )?;
+                self.check(&Check::Selected(PART), app, ctx)
             }
         }
     }
@@ -2809,6 +2863,118 @@ mod tests {
         projection.nodes[2].owner = Some(owner);
         projection.nodes[2].origin = ViewOrigin::Derived;
         assert!(assert_part_owner(&projection, id, owner).is_err());
+    }
+
+    #[test]
+    fn restart_plan_navigates_before_enforcing_nested_identity_and_keeps_history_proof() {
+        let plan = steps(true);
+        assert_eq!(plan.len(), 5);
+        assert!(matches!(plan[0].action, Action::OpenProject));
+        assert!(matches!(plan[0].check, Check::RestartRevision));
+        assert!(matches!(
+            plan[1].action,
+            Action::Select(Named {
+                name: "ModelingPlatform",
+                kind: "PartDefinition"
+            })
+        ));
+        assert!(matches!(
+            plan[1].check,
+            Check::Selected(Named {
+                name: "ModelingPlatform",
+                kind: "PartDefinition"
+            })
+        ));
+        assert!(matches!(plan[2].action, Action::Key(Key::F)));
+        assert!(matches!(plan[2].check, Check::FocusedPlatform));
+        assert!(matches!(
+            plan[3].action,
+            Action::Select(Named {
+                name: PART_NAME,
+                kind: "PartUsage"
+            })
+        ));
+        assert!(matches!(plan[3].check, Check::Restart));
+        assert!(matches!(plan[4].action, Action::Key(Key::Num4)));
+        assert!(matches!(plan[4].check, Check::History));
+        assert!(
+            steps(false)
+                .iter()
+                .all(|step| !matches!(step.check, Check::RestartRevision | Check::Restart))
+        );
+    }
+
+    #[test]
+    fn restart_identity_gate_rejects_shallow_views_changed_ids_owners_and_stale_inspectors() {
+        // Explicit DTO counterexamples qualify the gate, not real semantics.
+        let mut projection = agq_studio_scene::fixtures::architecture();
+        let owner = projection.nodes[0].id;
+        let other = projection.nodes[1].id;
+        let part = &mut projection.nodes[2];
+        let id = part.id;
+        part.name = PART_NAME.into();
+        part.semantic_kind = "PartUsage".into();
+        part.owner = Some(owner);
+        part.origin = ViewOrigin::Authored;
+        part.source_available = true;
+        projection.view.kind = ViewKind::Architecture;
+        projection.view.focus = Some(owner);
+        let inspector = ElementInspector {
+            revision_id: projection.revision_id,
+            element: projection.nodes[2].clone(),
+            owner: Some(agq_modeling_view::FeatureSummary {
+                id: owner,
+                name: "ModelingPlatform".into(),
+                semantic_kind: "PartDefinition".into(),
+            }),
+            effective_types: vec![],
+            owned_features: vec![],
+            effective_features: vec![],
+            feature_provenance: Default::default(),
+            specializations: vec![],
+            subsettings: vec![],
+            redefinitions: vec![],
+            relationships: vec![],
+            multiplicity: None,
+            source: None,
+            queries: vec![],
+            profile: "Counterexample only; never real-runtime evidence".into(),
+        };
+        assert!(
+            assert_restart_element(&projection, Some(owner), Some(&inspector), id, owner).is_ok()
+        );
+        for invalid in 0..12 {
+            let mut changed = projection.clone();
+            let mut inspection = inspector.clone();
+            let mut focus = Some(owner);
+            match invalid {
+                0 => changed.nodes.retain(|node| node.id != id),
+                1 => focus = None,
+                2 => changed.view.focus = None,
+                3 => changed.nodes[2].id = other,
+                4 => changed.nodes[2].owner = Some(other),
+                5 => inspection.element.id = other,
+                6 => inspection.element.owner = Some(other),
+                7 => inspection.owner.as_mut().unwrap().id = other,
+                8 => inspection.revision_id = ProjectRevisionId::new(),
+                9 => inspection.element.revision_id = ProjectRevisionId::new(),
+                10 => changed.nodes[2].origin = ViewOrigin::Derived,
+                11 => changed.view.kind = ViewKind::SemanticGraph,
+                _ => unreachable!(),
+            }
+            assert!(
+                assert_restart_element(&changed, focus, Some(&inspection), id, owner).is_err(),
+                "Accepted invalid restart identity case {invalid}"
+            );
+        }
+        assert!(assert_restart_element(&projection, Some(owner), None, id, owner).is_err());
+        assert!(
+            assert_restart_element(&projection, Some(owner), Some(&inspector), other, owner)
+                .is_err()
+        );
+        assert!(
+            assert_restart_element(&projection, Some(owner), Some(&inspector), id, other).is_err()
+        );
     }
 
     fn isolated_args() -> Args {
