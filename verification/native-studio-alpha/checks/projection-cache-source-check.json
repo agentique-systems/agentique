@@ -1,0 +1,9 @@
+﻿{
+    "diff_command":  "git diff --check",
+    "runtime_run":  false,
+    "format_command":  "rustfmt --edition 2024 --check crates/studio-platform/src/lib.rs crates/studio-platform/src/projection_cache.rs crates/studio-platform/src/projection_cache_tests.rs crates/studio-platform/tests/real_model.rs",
+    "unit_tests_run":  false,
+    "build_run":  false,
+    "format_exit_code":  0,
+    "diff_exit_code":  0
+}

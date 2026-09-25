@@ -37,6 +37,23 @@ fn native_in_process_self_model_candidate_commit_and_restore() {
         ..ViewDefinition::semantic_graph()
     };
     let graph = platform.project(binding, &definition).unwrap();
+    let repeated_graph = platform.project(binding, &definition).unwrap();
+    assert_eq!(
+        repeated_graph, graph,
+        "completed projection reuse retains the whole real DTO"
+    );
+    assert_eq!(
+        serde_json::to_vec(&repeated_graph).unwrap(),
+        serde_json::to_vec(&graph).unwrap()
+    );
+    let mut caller_projection = repeated_graph;
+    caller_projection
+        .metadata
+        .warnings
+        .push("caller-only presentation copy".into());
+    assert_ne!(caller_projection, graph);
+    assert_eq!(platform.project(binding, &definition).unwrap(), graph);
+    drop(caller_projection);
     let owner = graph
         .nodes
         .iter()
@@ -209,15 +226,15 @@ fn native_in_process_self_model_candidate_commit_and_restore() {
     platform
         .cancel(competing.id)
         .expect("explicit CAS refusal permits cancellation");
-    assert!(
-        !platform
-            .compare(project.id, revision, receipt.revision_id, &definition)
-            .unwrap()
-            .changes
-            .declared
-            .added
-            .is_empty()
+    let comparison = platform
+        .compare(project.id, revision, receipt.revision_id, &definition)
+        .unwrap();
+    assert!(!comparison.changes.declared.added.is_empty());
+    assert_eq!(
+        comparison.before, graph,
+        "uncached comparison freshly projects the unchanged predecessor"
     );
+    drop(comparison);
     assert_eq!(
         platform.project(binding, &definition).unwrap(),
         graph,
@@ -326,6 +343,7 @@ fn native_in_process_self_model_candidate_commit_and_restore() {
         from_source.validated().is_some(),
         "source replay repeats the ordinary validation gate"
     );
+    let source_predecessor_identity = from_source.revision().semantic_fingerprint().unwrap();
     let mut source_platform = agq_studio_platform::StudioPlatform::new(
         service,
         agq_modeling_agent::AgentPolicy::operator(),
@@ -395,6 +413,11 @@ fn native_in_process_self_model_candidate_commit_and_restore() {
     source_platform.validate(second.id, &definition).unwrap();
     let second_receipt = source_platform.commit(second.id).unwrap();
     assert_ne!(second_receipt.revision_id, receipt.revision_id);
+    assert_eq!(
+        from_source.revision().semantic_fingerprint().unwrap(),
+        source_predecessor_identity,
+        "cached presentation cannot mask a change to the source-restored canonical predecessor"
+    );
     assert_eq!(
         source_platform
             .project(restored_binding, &definition)

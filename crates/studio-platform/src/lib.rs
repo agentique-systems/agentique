@@ -7,6 +7,7 @@
 
 mod bootstrap;
 mod candidates;
+mod projection_cache;
 mod reader;
 mod seed;
 
@@ -83,6 +84,7 @@ pub struct StudioPlatform {
     service: Arc<ModelingService>,
     policy: AgentPolicy,
     candidates: BTreeMap<CandidateId, RetainedCandidate>,
+    projections: projection_cache::ProjectionCache,
 }
 
 impl StudioPlatform {
@@ -91,6 +93,7 @@ impl StudioPlatform {
             service,
             policy,
             candidates: BTreeMap::new(),
+            projections: projection_cache::ProjectionCache::default(),
         }
     }
 
@@ -117,15 +120,49 @@ impl StudioPlatform {
         )?)
     }
 
+    /// Project an ordinarily authorized immutable binding. Completed DTOs are
+    /// retained in a bounded per-platform cache keyed by the entire definition;
+    /// every call still resolves its binding and returns an owned result.
     pub fn project(
         &self,
         binding: RevisionBinding,
         definition: &ViewDefinition,
     ) -> Result<ViewProjection> {
-        Ok(agq_modeling_view::project(
-            self.bound(binding)?.revision(),
+        use std::{io::Write, time::Instant};
+        let started = std::env::var_os("AGENTIQUE_VIEW_PROFILE")
+            .is_some_and(|value| value == "1")
+            .then(Instant::now);
+        let (access, result) = self.projections.read(
+            binding,
             definition,
-        )?)
+            || {
+                // The ordinary authority and durable revision binding path runs
+                // on every call, including a completed projection cache hit.
+                let bound = self.bound(binding)?;
+                let actual = RevisionBinding {
+                    project: bound.manifest().project_id,
+                    revision: bound.manifest().revision_id,
+                };
+                Ok((actual, bound))
+            },
+            |bound| Ok(agq_modeling_view::project(bound.revision(), definition)?),
+        );
+        if let Some(started) = started {
+            let elapsed_ms = started.elapsed().as_secs_f64() * 1000.0;
+            let record = serde_json::json!({
+                "format": "agentique-studio-projection-cache/1",
+                "operation": "platform_project",
+                "project": binding.project,
+                "revision": binding.revision,
+                "view": definition,
+                "cache": access,
+                "outcome": if result.is_ok() { "ok" } else { "error" },
+                "elapsed_ms": elapsed_ms,
+                "timing_contract": "Platform call wall time including ordinary read authorization/revision binding, lookup, identity checks and owned DTO clone; a miss includes modeling-view computation. Excludes worker queue wait and profiling serialization/emission. Not a query-phase, GPU or input-latency measurement."
+            });
+            let _ = writeln!(std::io::stderr().lock(), "{record}");
+        }
+        result
     }
 
     pub fn inspect(
