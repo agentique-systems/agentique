@@ -295,14 +295,50 @@ impl StudioApp {
                     }
                     ui.label(muted("Temporary view · read-only authority", theme).small());
                     ui.separator();
-                    ui.label("Decision mock suggests Graph");
-                    ui.label(
-                        muted(
-                            "Illustrative weight 0.72 · not calibrated confidence",
-                            theme,
-                        )
-                        .small(),
-                    );
+                    ui.label(muted("VIEW RECOMMENDATION", theme).small());
+                    match self.agent_view_decision(ui.ctx()) {
+                        Ok(decision) => {
+                            ui.strong(decision.choice.label());
+                            ui.label(muted("Deterministic view mock", theme).small());
+                            if decision.weights.is_empty() {
+                                ui.label(muted("Choice only · no weights returned", theme).small());
+                            } else {
+                                ui.label(muted("Returned weights · uncalibrated", theme).small());
+                                for (option, weight) in &decision.weights {
+                                    ui.add(egui::ProgressBar::new(*weight as f32)
+                                        .text(format!("{}  {weight:.3}", option.label()))
+                                        .fill(theme.accent));
+                                }
+                            }
+                            ui.collapsing("Decision observation", |ui| {
+                                ui.label(format!("Provider: {}", decision.result.provider));
+                                ui.label(format!("Intent: {}", decision.observation.intent));
+                                ui.label(format!("Revision: {}", decision.observation.revision));
+                                for element in &decision.observation.selected_elements {
+                                    ui.label(format!("Inquiry subject: {element}"));
+                                }
+                                ui.label("Offered: System World, Graph World, Requirements World, History");
+                                if let Some(confidence) = decision.result.answers[0].confidence {
+                                    ui.label(format!("Returned confidence: {confidence:.3} · uncalibrated"));
+                                } else {
+                                    ui.label("No confidence value returned");
+                                }
+                                ui.label("Presentation suggestion · no model mutation");
+                            });
+                            let already_open = self.world == decision.choice.world();
+                            if ui.add_enabled(!already_open, egui::Button::new(if already_open {
+                                "Recommended view is open"
+                            } else {
+                                "Open recommended view"
+                            })).clicked() {
+                                self.execute(decision.choice.command(), ui.ctx());
+                            }
+                        }
+                        Err(error) => {
+                            ui.label(muted("Recommendation unavailable", theme).small());
+                            ui.label(muted(error, theme).small());
+                        }
+                    }
                     if ui.button("Dismiss agent view").clicked() {
                         self.dismiss_agent_view();
                     }
@@ -635,41 +671,6 @@ impl StudioApp {
                     self.execute(id, ui.ctx());
                 }
             }
-        }
-        if self.show_agent {
-            let presentation = crate::agents::dependency_view(
-                self.scene.revision_id,
-                &self.dependencies.clone().unwrap_or_default(),
-            );
-            theme.section(ui, "DECISION AGENT");
-            ui.label("Suggested lens: Graph World");
-            ui.label(
-                muted(
-                    format!("Provider: {}", presentation.decision.provider),
-                    theme,
-                )
-                .small(),
-            );
-            ui.label(muted("Illustrative weights · not calibrated probabilities", theme).small());
-            for (name, score) in &presentation.decision.answers[0].probabilities {
-                ui.add(
-                    egui::ProgressBar::new(*score as f32)
-                        .text(format!("{name}   {score:.2}"))
-                        .fill(theme.accent),
-                );
-            }
-            ui.label(
-                muted(
-                    format!(
-                        "{} · {} elements",
-                        presentation.overlay.label,
-                        presentation.observation.selected_elements.len()
-                    ),
-                    theme,
-                )
-                .small(),
-            );
-            ui.label(muted("Presentation suggestion · no model mutation", theme).small());
         }
     }
 }
