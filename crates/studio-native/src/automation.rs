@@ -103,7 +103,8 @@ impl Action {
             | Self::ClickDerivedEdge
             | Self::ClickTarget(..) => 2,
             Self::DoubleClickContainer(..) | Self::Pan => 4,
-            Self::Palette(..) | Self::PrepareNamedPart(..) => 6,
+            Self::Palette(..) => 12,
+            Self::PrepareNamedPart(..) => 6,
         }
     }
 }
@@ -350,6 +351,7 @@ struct Snapshot {
     candidate: bool,
     candidate_phase: Option<String>,
     palette: bool,
+    palette_query: String,
     create_dialog: bool,
     explanation_open: bool,
     dark: bool,
@@ -380,6 +382,7 @@ impl Snapshot {
                 .as_ref()
                 .and_then(|c| c.phase.as_ref().map(|p| format!("{p:?}"))),
             palette: app.palette,
+            palette_query: app.palette_query.clone(),
             create_dialog: app.create_dialog,
             explanation_open: app.show_explain,
             dark: app.theme.dark,
@@ -391,6 +394,8 @@ impl Snapshot {
 #[derive(Clone, Debug, Serialize)]
 struct InputEvidence {
     frame: u64,
+    palette_query_before: String,
+    keyboard_focus: Option<String>,
     events: Vec<String>,
 }
 #[derive(Clone, Debug, Serialize)]
@@ -538,6 +543,9 @@ impl Runner {
             if input.events.len() > start {
                 self.events.push(InputEvidence {
                     frame: app.frame_number,
+                    palette_query_before: app.palette_query.clone(),
+                    keyboard_focus: ctx
+                        .memory(|memory| memory.focused().map(|id| format!("{id:?}"))),
                     events: input.events[start..]
                         .iter()
                         .map(|e| format!("{e:?}"))
@@ -550,7 +558,13 @@ impl Runner {
     }
 }
 
-fn key(input: &mut egui::RawInput, key: Key, modifiers: Modifiers) {
+fn key(input: &mut egui::RawInput, key: Key, mut modifiers: Modifiers) {
+    // Match the actual native platform modifier as well as egui's logical
+    // command bit; text widgets may inspect Ctrl/mac_cmd directly.
+    if modifiers.command {
+        modifiers.ctrl = !cfg!(target_os = "macos");
+        modifiers.mac_cmd = cfg!(target_os = "macos");
+    }
     input.modifiers = modifiers;
     for pressed in [true, false] {
         input.events.push(Event::Key {
@@ -732,15 +746,27 @@ fn inject(
         }
         Action::Palette(query) => match frame {
             0 => key(input, Key::K, Modifiers::COMMAND),
-            1 | 2 => click(
+            // Native floating windows need their ordinary sizing/fade passes
+            // before their previous-frame hit geometry becomes interactive.
+            5 | 6 => click(
                 input,
                 target(ctx, Target::PaletteInput)?.center(),
-                frame == 1,
+                frame == 5,
                 Modifiers::NONE,
             ),
-            3 => key(input, Key::A, Modifiers::COMMAND),
-            4 => input.events.push(Event::Text((*query).into())),
-            _ => key(input, Key::Enter, Modifiers::NONE),
+            7 => key(input, Key::A, Modifiers::COMMAND),
+            8 => input.events.push(Event::Text((*query).into())),
+            10 => {
+                if app.palette_query != *query {
+                    return Err(format!(
+                        "Palette text input did not retain query: expected {query:?}, observed {:?}, focused {:?}",
+                        app.palette_query,
+                        ctx.memory(|memory| memory.focused())
+                    ));
+                }
+                key(input, Key::Enter, Modifiers::NONE);
+            }
+            _ => {}
         },
         Action::PrepareNamedPart(name) => match frame {
             0 | 1 => click(
