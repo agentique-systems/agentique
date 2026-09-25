@@ -18,3 +18,16 @@ agq-kerml-syntax = { path = "../kerml-syntax" }
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
+
+[dev-dependencies]
+agq-kerml-semantics = { path = "../kerml-semantics" }
+agq-modeling-sqlite = { path = "../../adapters/modeling-sqlite" }
+agq-standard-libraries = { path = "../standard-libraries" }
+tempfile.workspace = true
+
+[features]
+verification = ["agq-modeling-workspace/verification"]
+
+[[test]]
+name = "create_part_performance"
+required-features = ["verification"]
