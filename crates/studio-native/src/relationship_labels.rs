@@ -33,7 +33,7 @@ pub(crate) fn place(
         let horizontal = (b.x - a.x).abs() >= (b.y - a.y).abs();
         let normal = if horizontal { Vec2::Y } else { Vec2::X };
         let offset = if horizontal { size.y } else { size.x } * 0.5 + 5.0;
-        for fraction in [0.5, 0.3, 0.7] {
+        for fraction in [0.5, 0.3, 0.7, 0.15, 0.85] {
             let anchor = a + (b - a) * fraction;
             for side in [-1.0, 1.0] {
                 let center = anchor + normal * offset * side;
