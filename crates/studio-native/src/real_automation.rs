@@ -194,6 +194,7 @@ fn validate_resume_report(report: &Report) -> Result<(), String> {
         || report.added_owner.is_some()
         || report.background_frames != 0
         || report.background_pan_observed
+        || report.background_current_inspection.is_some()
         || report.preparation_responsiveness.elapsed_ms.is_some()
         || report.preparation_responsiveness.observed_input_hooks != 0
         || report.assertions.is_empty()
@@ -353,6 +354,8 @@ struct Report {
     background_frames: u64,
     background_pan_observed: bool,
     #[serde(default)]
+    background_current_inspection: Option<BackgroundInspectionEvidence>,
+    #[serde(default)]
     preparation_responsiveness: PreparationResponsiveness,
     #[serde(default)]
     engineering_evidence: EngineeringEvidence,
@@ -368,6 +371,63 @@ struct EngineeringEvidence {
     inherited_port: Option<ElementInspector>,
     connected_port: Option<ElementInspector>,
     requirement_subject_path: Vec<ViewEdge>,
+}
+
+/// Observed native input/query completion while actual candidate work was pending.
+/// Timings start at application observations, not OS delivery or photon output.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct BackgroundInspectionEvidence {
+    binding: RevisionBinding,
+    runtime_epoch: u64,
+    element: ElementId,
+    request: u64,
+    selection_started_frame: u64,
+    request_observed_frame: u64,
+    response_observed_frame: u64,
+    selection_to_response_ms: u128,
+    request_observed_to_response_ms: u128,
+    mutation_pending_at_response: bool,
+    inspector: ElementInspector,
+}
+
+#[derive(Clone)]
+struct BackgroundInspection {
+    binding: RevisionBinding,
+    runtime_epoch: u64,
+    element: ElementId,
+    name: String,
+    age: u64,
+    started: Instant,
+    selection_started_frame: u64,
+    previous_request: u64,
+    request: Option<(u64, u64, Instant)>,
+}
+
+fn assess_background_inspection(
+    evidence: Option<&BackgroundInspectionEvidence>,
+    baseline: RevisionBinding,
+    owner: ElementId,
+    runtime_epoch: u64,
+) -> Result<(), String> {
+    let evidence = evidence.ok_or(
+        "No different current-revision object was inspected before candidate preparation completed",
+    )?;
+    if evidence.binding != baseline
+        || evidence.runtime_epoch != runtime_epoch
+        || evidence.element == owner
+        || evidence.request == 0
+        || !evidence.mutation_pending_at_response
+        || evidence.inspector.revision_id != baseline.revision
+        || evidence.inspector.element.revision_id != baseline.revision
+        || evidence.inspector.element.id != evidence.element
+        || evidence.inspector.element.origin != ViewOrigin::Authored
+        || !evidence.inspector.element.source_available
+        || evidence.request_observed_frame < evidence.selection_started_frame
+        || evidence.response_observed_frame < evidence.request_observed_frame
+    {
+        return Err("Background Inspector did not prove a different exact baseline object while candidate preparation was still pending".into());
+    }
+    Ok(())
 }
 
 /// Native input-hook cadence during submission through candidate response delivery.
@@ -997,6 +1057,7 @@ struct Runner {
     candidate_revision: Option<ProjectRevisionId>,
     preparation_clock: Option<PreparationClock>,
     inspected_feature: Option<ElementId>,
+    background_inspection: Option<BackgroundInspection>,
 }
 impl Runner {
     fn new(app: &StudioApp) -> Result<Self, String> {
@@ -1026,6 +1087,7 @@ impl Runner {
                 added_owner: previous.as_ref().and_then(|p| p.added_owner),
                 added_name: PART_NAME.into(), assertions: vec![], gallery: vec![], failure: None,
                 elapsed_ms: 0, background_frames: 0, background_pan_observed: false,
+                background_current_inspection: None,
                 preparation_responsiveness: PreparationResponsiveness::default(),
                 engineering_evidence: EngineeringEvidence::default(),
                 metrics: serde_json::Value::Null, last_state: State::of(app),
@@ -1035,6 +1097,7 @@ impl Runner {
             background_pan: None, candidate_id: None, candidate_revision: None,
             preparation_clock: None,
             inspected_feature: None,
+            background_inspection: None,
         })
     }
 
@@ -1249,27 +1312,16 @@ impl Runner {
                     frame == 0,
                 );
             }
-            Action::Select(wanted) => match frame {
-                0 | 1 => click(
-                    input,
-                    real_targets::target(ctx, Target::ExplorerSearch)?.center(),
-                    frame == 0,
-                ),
-                2 => key(input, Key::A, Modifiers::COMMAND),
-                3 => input.events.push(Event::Text(wanted.name.into())),
-                8 | 9 => {
-                    if app.search != wanted.name {
-                        return Err("Explorer did not retain native text input".into());
-                    }
-                    let id = named(app, *wanted)?;
-                    click(
-                        input,
-                        real_targets::target(ctx, Target::ExplorerElement(id))?.center(),
-                        frame == 8,
-                    );
-                }
-                _ => {}
-            },
+            Action::Select(wanted) => outliner_input(
+                app,
+                ctx,
+                input,
+                frame,
+                wanted.name,
+                matches!(frame, 8 | 9)
+                    .then(|| named(app, *wanted))
+                    .transpose()?,
+            )?,
             Action::InspectFeature(name) => {
                 let point = if let Some(point) = self.point {
                     point
@@ -1402,7 +1454,7 @@ impl Runner {
             }
         }
         if self.report.background_pan_observed {
-            return Ok(());
+            return self.background_inspection_input(app, ctx, input);
         }
         if self.background_pan.is_none() {
             let rect = automation::target(ctx, automation::Target::Viewport)?;
@@ -1434,6 +1486,107 @@ impl Runner {
             }
         }
         *frame += 1;
+        Ok(())
+    }
+
+    fn background_inspection_input(
+        &mut self,
+        app: &StudioApp,
+        ctx: &egui::Context,
+        input: &mut egui::RawInput,
+    ) -> Result<(), String> {
+        if self.report.background_current_inspection.is_some() || !app.bridge.mutation_pending() {
+            return Ok(());
+        }
+        if self.background_inspection.is_none() {
+            let owner = self
+                .report
+                .added_owner
+                .ok_or("No retained create intent owner")?;
+            // Choose an actual source-backed part in this loaded scene. The
+            // overview's intentional depth may omit other named subsystems.
+            let node = app.active_projection().nodes.iter().find(|node| {
+                node.id != owner && node.origin == ViewOrigin::Authored && node.source_available
+                    && matches!(node.semantic_kind.as_str(), "PartDefinition" | "PartUsage")
+                    && !node.name.is_empty() && app.scene.node(node.id).is_some()
+            }).ok_or("Loaded current architecture has no other authored part to inspect during preparation")?;
+            self.background_inspection = Some(BackgroundInspection {
+                binding: app
+                    .binding
+                    .ok_or("Current binding disappeared during preparation")?,
+                runtime_epoch: app.bridge.epoch(),
+                element: node.id,
+                name: node.name.clone(),
+                age: 0,
+                started: Instant::now(),
+                selection_started_frame: app.frame_number,
+                previous_request: app.inspector_request,
+                request: None,
+            });
+        }
+        let observation = self
+            .background_inspection
+            .as_mut()
+            .expect("initialized inspection");
+        if app.binding != Some(observation.binding)
+            || app.scene.revision_id != observation.binding.revision
+            || app.bridge.epoch() != observation.runtime_epoch
+        {
+            return Err("Current revision changed during background Inspector input".into());
+        }
+        if observation.age < 12 {
+            let start = input.events.len();
+            outliner_input(
+                app,
+                ctx,
+                input,
+                observation.age,
+                &observation.name,
+                Some(observation.element),
+            )?;
+            self.events.extend(
+                input.events[start..]
+                    .iter()
+                    .map(|event| format!("Background Inspector input: {event:?}")),
+            );
+            observation.age += 1;
+        }
+        if observation.age >= 10
+            && app.selected_element() == Some(observation.element)
+            && app.inspector_request != 0
+            && app.inspector_request != observation.previous_request
+        {
+            observation.request.get_or_insert((
+                app.inspector_request,
+                app.frame_number,
+                Instant::now(),
+            ));
+        }
+        if let Some((request, request_observed_frame, started)) = observation.request
+            && app.inspector_request == request
+            && app.selected_element() == Some(observation.element)
+            && let Some(inspector) = app.inspector.as_ref().filter(|inspector| {
+                inspector.element.id == observation.element
+                    && inspector.revision_id == observation.binding.revision
+            })
+        {
+            self.report.background_current_inspection = Some(BackgroundInspectionEvidence {
+                binding: observation.binding,
+                runtime_epoch: observation.runtime_epoch,
+                element: observation.element,
+                request,
+                selection_started_frame: observation.selection_started_frame,
+                request_observed_frame,
+                response_observed_frame: app.frame_number,
+                selection_to_response_ms: observation.started.elapsed().as_millis(),
+                request_observed_to_response_ms: started.elapsed().as_millis(),
+                mutation_pending_at_response: app.bridge.mutation_pending(),
+                inspector: inspector.clone(),
+            });
+            self.events.push(format!("Background Inspector received request {request} for {} at baseline {} while candidate preparation remained pending", observation.element, observation.binding.revision));
+            self.background_inspection = None;
+            self.dirty = true;
+        }
         Ok(())
     }
 
@@ -1777,6 +1930,14 @@ impl Runner {
                     .candidate
                     .as_ref()
                     .ok_or("No real candidate was returned")?;
+                assess_background_inspection(
+                    self.report.background_current_inspection.as_ref(),
+                    candidate.base,
+                    self.report
+                        .added_owner
+                        .ok_or("Create intent owner was not retained")?,
+                    app.bridge.epoch(),
+                )?;
                 require(
                     candidate.id.is_some()
                         && candidate.phase == Some(CandidatePhase::Working)
@@ -2066,6 +2227,48 @@ fn key(input: &mut egui::RawInput, key: Key, mut modifiers: Modifiers) {
         });
     }
 }
+fn outliner_input(
+    app: &StudioApp,
+    ctx: &egui::Context,
+    input: &mut egui::RawInput,
+    frame: u64,
+    name: &str,
+    element: Option<ElementId>,
+) -> Result<(), String> {
+    match frame {
+        0 | 1 => click(
+            input,
+            real_targets::target(ctx, Target::ExplorerSearch)?.center(),
+            frame == 0,
+        ),
+        2 => key(input, Key::A, Modifiers::COMMAND),
+        3 => input.events.push(Event::Text(name.into())),
+        8 | 9 => {
+            if app.search != name {
+                return Err("Explorer did not retain native text input".into());
+            }
+            let element = element.ok_or("No canonical object for native Explorer input")?;
+            if !app
+                .active_projection()
+                .nodes
+                .iter()
+                .any(|node| node.id == element && node.name == name)
+            {
+                return Err(
+                    "Explorer target is absent from the current semantic projection".into(),
+                );
+            }
+            click(
+                input,
+                real_targets::target(ctx, Target::ExplorerElement(element))?.center(),
+                frame == 8,
+            );
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
 fn click(input: &mut egui::RawInput, position: Pos2, pressed: bool) {
     input.events.push(Event::PointerMoved(position));
     input.events.push(Event::PointerButton {
@@ -2482,6 +2685,64 @@ mod tests {
                 .unwrap()
                 .contains("not observed")
         );
+    }
+
+    #[test]
+    fn background_read_gate_rejects_late_or_wrong_identity_even_after_successful_pan() {
+        let mut projection = agq_studio_scene::fixtures::architecture();
+        projection.nodes[0].source_available = true;
+        let baseline = RevisionBinding {
+            project: ProjectId::new(),
+            revision: projection.revision_id,
+        };
+        let owner = projection.nodes[1].id;
+        let evidence = BackgroundInspectionEvidence {
+            binding: baseline,
+            runtime_epoch: 3,
+            element: projection.nodes[0].id,
+            request: 42,
+            selection_started_frame: 100,
+            request_observed_frame: 110,
+            response_observed_frame: 113,
+            selection_to_response_ms: 220,
+            request_observed_to_response_ms: 48,
+            mutation_pending_at_response: true,
+            inspector: ElementInspector {
+                revision_id: projection.revision_id,
+                element: projection.nodes[0].clone(),
+                owner: None,
+                effective_types: vec![],
+                owned_features: vec![],
+                effective_features: vec![],
+                specializations: vec![],
+                subsettings: vec![],
+                redefinitions: vec![],
+                relationships: vec![],
+                multiplicity: None,
+                source: None,
+                queries: vec![],
+                profile: "Counterexample only; never real-runtime evidence".into(),
+            },
+        };
+        assert!(assess_background_inspection(Some(&evidence), baseline, owner, 3).is_ok());
+        assert!(assess_background_inspection(None, baseline, owner, 3).is_err());
+        for invalid in 0..7 {
+            let mut changed = evidence.clone();
+            match invalid {
+                0 => changed.mutation_pending_at_response = false,
+                1 => changed.binding.revision = ProjectRevisionId::new(),
+                2 => changed.runtime_epoch += 1,
+                3 => changed.element = owner,
+                4 => changed.inspector.element.id = owner,
+                5 => changed.request = 0,
+                6 => changed.response_observed_frame = changed.request_observed_frame - 1,
+                _ => unreachable!(),
+            }
+            assert!(
+                assess_background_inspection(Some(&changed), baseline, owner, 3).is_err(),
+                "Accepted invalid concurrent Inspector evidence {invalid}"
+            );
+        }
     }
 
     #[test]
