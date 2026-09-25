@@ -4,6 +4,35 @@ use agq_modeling_workspace::ProjectRevisionId;
 use agq_studio_scene::{SceneTarget, SemanticScene};
 use std::collections::BTreeSet;
 
+/// The canvas is one toolkit widget. Toolkit-wide click counts alone cannot
+/// distinguish two rapid clicks on different semantic objects.
+#[derive(Default)]
+pub struct CanvasClicks {
+    last: Option<(u64, SceneTarget, [f32; 2], f64)>,
+}
+impl CanvasClicks {
+    pub fn click(
+        &mut self,
+        generation: u64,
+        target: Option<&SceneTarget>,
+        position: [f32; 2],
+        time: f64,
+    ) -> bool {
+        let same = self.last.as_ref().is_some_and(
+            |(previous_generation, previous_target, previous_position, previous_time)| {
+                *previous_generation == generation
+                    && Some(previous_target) == target
+                    && (0.0..=0.35).contains(&(time - previous_time))
+                    && (position[0] - previous_position[0])
+                        .hypot(position[1] - previous_position[1])
+                        <= 6.0
+            },
+        );
+        self.last = target.map(|target| (generation, target.clone(), position, time));
+        same
+    }
+}
+
 pub struct Selection {
     pub revision: ProjectRevisionId,
     pub targets: BTreeSet<SceneTarget>,
@@ -81,6 +110,21 @@ impl Selection {
 mod tests {
     use super::*;
     use agq_studio_scene::{SceneOptions, fixtures};
+
+    #[test]
+    fn double_click_requires_same_object_context_and_pointer_location() {
+        let mut clicks = CanvasClicks::default();
+        let a = SceneTarget::Node(ElementId::from_u128(1));
+        let b = SceneTarget::Node(ElementId::from_u128(2));
+        assert!(!clicks.click(1, Some(&a), [10.0, 10.0], 0.0));
+        assert!(!clicks.click(1, Some(&b), [10.0, 10.0], 0.1));
+        assert!(!clicks.click(2, Some(&b), [10.0, 10.0], 0.2));
+        assert!(!clicks.click(2, Some(&b), [90.0, 10.0], 0.3));
+        assert!(clicks.click(2, Some(&b), [91.0, 10.0], 0.4));
+        assert!(!clicks.click(2, None, [91.0, 10.0], 0.5));
+        assert!(!clicks.click(2, Some(&b), [91.0, 10.0], 0.6));
+        assert!(!clicks.click(2, Some(&b), [91.0, 10.0], 1.2));
+    }
 
     #[test]
     fn stale_revision_or_missing_target_cannot_become_an_inspector_request() {

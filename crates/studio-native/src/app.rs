@@ -3,7 +3,7 @@ use crate::{
     bridge::Bridge,
     gpu::{Batch, GpuStats},
     navigation::{Navigation, World},
-    selection::Selection,
+    selection::{CanvasClicks, Selection},
     session::Session,
     theme::Theme,
     timing::FrameTiming,
@@ -79,6 +79,7 @@ pub struct StudioApp {
     pub batch_key: Option<u64>,
     pub gpu_stats: Arc<Mutex<GpuStats>>,
     pub selection: Selection,
+    pub canvas_clicks: CanvasClicks,
     pub navigation: Navigation,
     pub world: World,
     pub focus: Option<ElementId>,
@@ -196,6 +197,7 @@ impl StudioApp {
             batch_key: None,
             gpu_stats: Arc::new(Mutex::new(GpuStats::default())),
             selection,
+            canvas_clicks: CanvasClicks::default(),
             navigation: Navigation::default(),
             world: World::System,
             focus: None,
@@ -377,11 +379,16 @@ impl StudioApp {
 
 impl eframe::App for StudioApp {
     fn raw_input_hook(&mut self, ctx: &egui::Context, input: &mut egui::RawInput) {
-        if let Some(scenario)=&self.args.scenario {
-            match crate::automation::drive(self,ctx,input,scenario,&self.args.scenario_report) {
-                Ok(crate::automation::ScenarioStatus::Running)=>{},
-                Ok(crate::automation::ScenarioStatus::Complete)=>ctx.send_viewport_cmd(egui::ViewportCommand::Close),
-                Err(error)=>{eprintln!("Native fixture interaction FAILED: {error}");std::process::exit(2);}
+        if let Some(scenario) = &self.args.scenario {
+            match crate::automation::drive(self, ctx, input, scenario, &self.args.scenario_report) {
+                Ok(crate::automation::ScenarioStatus::Running) => {}
+                Ok(crate::automation::ScenarioStatus::Complete) => {
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Close)
+                }
+                Err(error) => {
+                    eprintln!("Native fixture interaction FAILED: {error}");
+                    std::process::exit(2);
+                }
             }
         }
     }

@@ -300,7 +300,10 @@ impl StudioApp {
             .frames
             .is_some_and(|frames| self.frame_number >= frames)
             || (self.args.frames.is_none() && self.args.screenshot.is_some() && self.capture_done);
-        if finished && self.args.scenario.is_none() && (self.args.screenshot.is_none() || self.capture_done) {
+        if finished
+            && self.args.scenario.is_none()
+            && (self.args.screenshot.is_none() || self.capture_done)
+        {
             let stats = self.gpu_stats.lock().map(|s| s.clone()).unwrap_or_default();
             let report = serde_json::json!({"fixture":self.fixture,"adapter":self.adapter,"frame_count":self.frame_number,"frame_interval_median_ms":self.timing.median_ms(),"frame_interval_p95_ms":self.timing.p95_ms(),"scene_build_ms":self.timing.scene_ms,"layout_included_in_scene_build":true,"hit_test_us":self.timing.hit_us,"input_to_ui_frame_ms":self.timing.input_to_frame_ms,"gpu_upload_cpu_ms":stats.upload_ms,"gpu_uploaded_bytes":stats.uploaded_bytes,"gpu_upload_count":stats.uploads,"gpu_instances":stats.instances,"scene_draw_calls":stats.draw_calls,"visible_nodes":self.timing.visible_nodes,"total_nodes":self.scene.nodes.len(),"total_edges":self.scene.edges.len(),"gpu_timestamp_ms":null,"note":"Actual native wgpu frames, vsync enabled; frame interval is not GPU timestamp or measured physical input latency."});
             if let Some(path) = &self.args.metrics {

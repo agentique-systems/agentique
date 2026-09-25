@@ -529,7 +529,11 @@ impl StudioApp {
                         input.request_focus();
                         self.palette_focus = false;
                     }
-                    crate::automation::record(ctx,crate::automation::Target::PaletteInput,input.rect);
+                    crate::automation::record(
+                        ctx,
+                        crate::automation::Target::PaletteInput,
+                        input.rect,
+                    );
                     ui.add_space(8.0);
                     let enter = ui.input(|i| i.key_pressed(egui::Key::Enter));
                     egui::ScrollArea::vertical().show(ui, |ui| {
@@ -703,7 +707,11 @@ impl StudioApp {
                     Vec2::new(ui.available_width(), 110.0),
                     egui::Sense::click(),
                 );
-                crate::automation::record(ui.ctx(),crate::automation::Target::HistoryRevision(*revision),rect);
+                crate::automation::record(
+                    ui.ctx(),
+                    crate::automation::Target::HistoryRevision(*revision),
+                    rect,
+                );
                 let selected = *revision == self.projection.revision_id;
                 let dot = egui::pos2(rect.left() + 50.0, rect.center().y);
                 if let Some(parent_index) =

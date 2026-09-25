@@ -21,7 +21,7 @@ impl StudioApp {
             ui.available_size().max(Vec2::splat(1.0)),
             Sense::click_and_drag(),
         );
-        crate::automation::record(ui.ctx(),crate::automation::Target::Viewport,rect);
+        crate::automation::record(ui.ctx(), crate::automation::Target::Viewport, rect);
         self.camera.viewport = Size::new(rect.width(), rect.height());
         if self.fit_pending {
             self.camera.fit(self.scene.bounds(), 42.0);
@@ -74,7 +74,9 @@ impl StudioApp {
         if response.drag_stopped()
             && let (Some(a), Some(b)) = (self.marquee_start.take(), self.marquee_end.take())
         {
-            let mut targets = self.spatial.marquee(agq_studio_scene::Rect::from_points(a, b));
+            let mut targets = self
+                .spatial
+                .marquee(agq_studio_scene::Rect::from_points(a, b));
             if self.lod.level() < LodLevel::Features {
                 targets.retain(|target| !matches!(target, SceneTarget::Port(_)));
             }
@@ -82,8 +84,15 @@ impl StudioApp {
             self.batch_key = None;
             self.inspector = None;
         }
+        let mut focus_click = false;
         if response.clicked() {
             self.timing.input();
+            focus_click = self.canvas_clicks.click(
+                self.generation,
+                hovered.as_ref(),
+                pointer.map_or([0.0, 0.0], |point| [point.x, point.y]),
+                ui.input(|input| input.time),
+            );
             if let Some(target) = hovered.clone() {
                 self.select(target, ui.input(|i| i.modifiers.shift));
             } else if !ui.input(|i| i.modifiers.shift) {
@@ -92,7 +101,7 @@ impl StudioApp {
                 self.batch_key = None;
             }
         }
-        if response.double_clicked() && self.selection.primary.is_some() {
+        if response.double_clicked() && focus_click && self.selection.primary.is_some() {
             self.execute(CommandId::Focus, ui.ctx());
         }
         if response.secondary_clicked()

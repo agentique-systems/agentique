@@ -640,7 +640,11 @@ impl StudioApp {
             if let Some(parent) = after.nodes.iter_mut().find(|node| node.id == owner) {
                 parent.counts.parts += 1;
             }
-            if let Some(group) = after.groups.iter_mut().find(|group| group.element_id == owner) {
+            if let Some(group) = after
+                .groups
+                .iter_mut()
+                .find(|group| group.element_id == owner)
+            {
                 group.children.push(id);
             } else {
                 after.groups.push(agq_modeling_view::ViewGroup {
@@ -761,14 +765,21 @@ impl StudioApp {
         {
             let current = self
                 .selected_element()
-                .and_then(|id| self.outliner_order.iter().position(|index| self.scene.nodes[*index].id() == id))
+                .and_then(|id| {
+                    self.outliner_order
+                        .iter()
+                        .position(|index| self.scene.nodes[*index].id() == id)
+                })
                 .unwrap_or(0);
             let next = if ctx.input(|i| i.key_pressed(Key::ArrowDown)) {
                 (current + 1) % self.outliner_order.len()
             } else {
                 (current + self.outliner_order.len() - 1) % self.outliner_order.len()
             };
-            self.select(SceneTarget::Node(self.scene.nodes[self.outliner_order[next]].id()), false);
+            self.select(
+                SceneTarget::Node(self.scene.nodes[self.outliner_order[next]].id()),
+                false,
+            );
         }
     }
 }

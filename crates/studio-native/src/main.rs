@@ -47,7 +47,10 @@ pub struct Args {
     /// Exercise real native pointer/keyboard routing against the architecture fixture.
     #[arg(long, value_parser = ["vertical"])]
     scenario: Option<String>,
-    #[arg(long, default_value = "verification/generated/native-studio/interaction-report.json")]
+    #[arg(
+        long,
+        default_value = "verification/generated/native-studio/interaction-report.json"
+    )]
     scenario_report: PathBuf,
 }
 
