@@ -4,10 +4,185 @@ use crate::{
     commands::CommandId,
     theme::{CAPTION, TITLE},
 };
-use agq_studio_scene::SceneTarget;
+use agq_kernel::ElementId;
+use agq_modeling_view::{
+    ExplanationNodeKind, ExplanationProjection, FeatureSummary, RelationshipFamily, ViewEdge,
+    ViewOrigin,
+};
+use agq_studio_scene::{NodeCategory, SceneTarget};
 use eframe::egui::{self, RichText};
 
 impl StudioApp {
+    fn feature_link(&mut self, ui: &mut egui::Ui, feature: &FeatureSummary) {
+        let target = if self.lookup.port(&self.scene, feature.id).is_some() {
+            Some(SceneTarget::Port(feature.id))
+        } else {
+            self.scene
+                .node(feature.id)
+                .map(|_| SceneTarget::Node(feature.id))
+        };
+        let response = ui.add_enabled(
+            target.is_some(),
+            egui::Button::new(&feature.name).frame(false),
+        );
+        let clicked = response
+            .on_hover_text(format!(
+                "{}\n{}",
+                kind_label(&feature.semantic_kind),
+                feature.id
+            ))
+            .clicked();
+        if clicked && let Some(target) = target {
+            self.select(target, false);
+        }
+    }
+
+    fn endpoint_name(&self, id: ElementId) -> String {
+        self.lookup
+            .port(&self.scene, id)
+            .map(|port| {
+                let owner = self
+                    .scene
+                    .node(port.owner)
+                    .map_or("", |node| node.semantic.name.as_str());
+                format!("{owner}.{}", port.name)
+            })
+            .or_else(|| {
+                self.active_projection()
+                    .nodes
+                    .iter()
+                    .find(|node| node.id == id)
+                    .map(|node| node.name.clone())
+            })
+            .unwrap_or_else(|| "Outside this view".into())
+    }
+
+    fn relationship_sections(
+        &mut self,
+        ui: &mut egui::Ui,
+        selected: ElementId,
+        edges: &[ViewEdge],
+    ) {
+        let theme = self.theme;
+        for (title, families) in [
+            ("CONNECTIONS", &[RelationshipFamily::Connection][..]),
+            ("REQUIREMENT LINKS", &[RelationshipFamily::Requirement][..]),
+            (
+                "VERIFICATION LINKS",
+                &[RelationshipFamily::Verification][..],
+            ),
+        ] {
+            let matching: Vec<_> = edges
+                .iter()
+                .filter(|edge| families.contains(&edge.family))
+                .collect();
+            if matching.is_empty() {
+                continue;
+            }
+            theme.section(ui, title);
+            for edge in matching {
+                let counterpart = if edge.source == selected
+                    || self.lookup.endpoint_owner(edge.source) == selected
+                {
+                    edge.target
+                } else {
+                    edge.source
+                };
+                let label = format!("{} · {}", edge.label, self.endpoint_name(counterpart));
+                let visible = self
+                    .scene
+                    .edges
+                    .iter()
+                    .any(|item| item.semantic.id == edge.id);
+                if ui
+                    .add_enabled(visible, egui::Button::new(label).frame(false))
+                    .on_hover_text(format!("{:?} · {:?}", edge.family, edge.origin))
+                    .clicked()
+                {
+                    self.select(SceneTarget::Edge(edge.id.clone()), false);
+                }
+            }
+        }
+    }
+
+    pub fn explain_content(&self, ui: &mut egui::Ui) {
+        let theme = self.theme;
+        if let Some(explanation) = &self.explanation {
+            ui.heading("Why this exists");
+            ui.label(explanation_summary(explanation));
+            ui.add_space(12.0);
+            explanation_diagram(ui, explanation, theme);
+            ui.label(
+                muted(
+                    "Arrows show evidence supporting a semantic conclusion.",
+                    theme,
+                )
+                .small(),
+            );
+            if explanation.truncated {
+                ui.label(
+                    RichText::new(format!(
+                        "Showing a bounded explanation from {} evidence dependencies.",
+                        explanation.evidence_count
+                    ))
+                    .color(theme.amber),
+                );
+            }
+            ui.collapsing("Evidence · exact facts and rule", |ui| {
+                for node in &explanation.nodes {
+                    ui.label(&node.label);
+                    ui.label(muted(format!("{:?} · {}", node.kind, node.id), theme).small());
+                }
+                for edge in &explanation.edges {
+                    ui.label(
+                        muted(
+                            format!("{} — {} → {}", edge.source, edge.label, edge.target),
+                            theme,
+                        )
+                        .small(),
+                    );
+                }
+            });
+            ui.collapsing("Advanced · publication context", |ui| {
+                value(ui, "Revision", &explanation.revision_id.to_string(), theme);
+                value(ui, "Subject", &explanation.subject_id.to_string(), theme);
+                value(ui, "Profile", &explanation.profile, theme);
+                if let Some(rule) = explanation.rule_id {
+                    value(ui, "Rule", &rule.to_string(), theme);
+                }
+                value(ui, "Origin", origin_label(explanation.origin), theme);
+            });
+        } else if self.fixture.is_some() {
+            ui.heading("Why this relationship exists");
+            ui.label("Authored intent can cause a semantic rule to add a relationship. Real evidence is available after opening an authenticated project.");
+            ui.add_space(16.0);
+            ui.horizontal(|ui| {
+                ui.group(|ui| {
+                    ui.label("Authored intent");
+                    ui.label(muted("Part and type reference", theme).small());
+                });
+                ui.label("→");
+                ui.group(|ui| {
+                    ui.label("Semantic rule");
+                    ui.label(muted("Applies to this declaration", theme).small());
+                });
+                ui.label("→");
+                ui.group(|ui| {
+                    ui.label("Derived relationship");
+                    ui.label(muted("Effective model", theme).small());
+                });
+            });
+            ui.add_space(16.0);
+            ui.label(
+                RichText::new("VISUAL FIXTURE · Illustrative explanation; no canonical proof.")
+                    .color(theme.amber),
+            );
+        } else {
+            ui.spinner();
+            ui.label("Loading evidence for the selected revision…");
+        }
+    }
+
     pub fn inspector_panel(&mut self, ui: &mut egui::Ui) {
         let theme = self.theme;
         ui.horizontal(|ui| {
@@ -30,64 +205,107 @@ impl StudioApp {
         if let Some(inspector) = self.inspector.clone() {
             ui.label(RichText::new(&inspector.element.name).size(TITLE).strong());
             ui.label(muted(kind_label(&inspector.element.semantic_kind), theme));
-            theme.section(ui, "IDENTITY");
-            value(
-                ui,
-                "Revision",
-                &short_revision(inspector.revision_id),
-                theme,
-            );
-            value(
-                ui,
-                "Origin",
-                &format!("{:?}", inspector.element.origin),
-                theme,
-            );
-            theme.section(ui, "STRUCTURE");
-            if let Some(owner) = inspector.owner {
-                value(ui, "Owner", &owner.name, theme);
+            ui.label(muted(origin_label(inspector.element.origin), theme).small());
+            if let Some(owner) = &inspector.owner {
+                theme.section(ui, "WITHIN");
+                self.feature_link(ui, owner);
             }
-            value(
-                ui,
-                "Owned features",
-                &inspector.owned_features.len().to_string(),
-                theme,
-            );
-            value(
-                ui,
-                "Effective features",
-                &inspector.effective_features.len().to_string(),
-                theme,
-            );
-            theme.section(ui, "SEMANTICS");
-            for feature in inspector
-                .effective_types
-                .iter()
-                .chain(inspector.specializations.iter())
+            if !inspector.effective_types.is_empty() {
+                theme.section(
+                    ui,
+                    if NodeCategory::from_semantic_kind(&inspector.element.semantic_kind)
+                        == NodeCategory::Port
+                    {
+                        "INTERFACE / TYPE"
+                    } else {
+                        "DEFINED BY"
+                    },
+                );
+                for feature in &inspector.effective_types {
+                    self.feature_link(ui, feature);
+                }
+            }
+            for (title, categories) in [
+                ("PARTS", &[NodeCategory::Part, NodeCategory::System][..]),
+                (
+                    "PORTS & INTERFACES",
+                    &[NodeCategory::Port, NodeCategory::Interface][..],
+                ),
+                ("REQUIREMENTS", &[NodeCategory::Requirement][..]),
+                ("BEHAVIOR", &[NodeCategory::Action, NodeCategory::State][..]),
+            ] {
+                let features: Vec<_> = inspector
+                    .owned_features
+                    .iter()
+                    .filter(|feature| {
+                        categories
+                            .contains(&NodeCategory::from_semantic_kind(&feature.semantic_kind))
+                    })
+                    .collect();
+                if !features.is_empty() {
+                    theme.section(ui, title);
+                    for feature in features {
+                        self.feature_link(ui, feature);
+                    }
+                }
+            }
+            self.relationship_sections(ui, inspector.element.id, &inspector.relationships);
+            if NodeCategory::from_semantic_kind(&inspector.element.semantic_kind)
+                == NodeCategory::Requirement
             {
-                ui.label(&feature.name);
-                ui.label(muted(kind_label(&feature.semantic_kind), theme).small());
+                ui.label(muted("Links express modeled relationships. They do not establish verification success.", theme).small());
             }
-            for query in &inspector.queries {
-                ui.horizontal_wrapped(|ui| {
-                    ui.label(&query.name);
-                    ui.label(muted(&query.completeness, theme).small());
-                });
+            if NodeCategory::from_semantic_kind(&inspector.element.semantic_kind)
+                == NodeCategory::Port
+            {
+                let direction = self
+                    .scene
+                    .ports
+                    .iter()
+                    .find(|port| port.id == inspector.element.id)
+                    .map(|port| format!("{:?}", port.direction))
+                    .unwrap_or_else(|| "Not provided by this projection".into());
+                value(ui, "Direction", &direction, theme);
             }
-            theme.section(ui, "ENGINEERING");
-            value(
-                ui,
-                "Connections / relationships",
-                &inspector.relationships.len().to_string(),
-                theme,
-            );
-            theme.section(ui, "PROVENANCE");
-            if let Some(source) = inspector.source {
-                ui.label(source.path.unwrap_or_else(|| "Authored document".into()));
+            ui.collapsing("Effective semantics", |ui| {
+                for (label, features) in [
+                    ("Effective features", &inspector.effective_features),
+                    ("Specializes", &inspector.specializations),
+                    ("Subsets", &inspector.subsettings),
+                    ("Redefines", &inspector.redefinitions),
+                ] {
+                    if !features.is_empty() {
+                        ui.label(muted(label, theme).small());
+                        for feature in features {
+                            self.feature_link(ui, feature);
+                        }
+                    }
+                }
+                for query in &inspector.queries {
+                    ui.label(
+                        muted(format!("{}: {}", query.name, query.completeness), theme).small(),
+                    );
+                }
+            });
+            if let Some(source) = &inspector.source {
+                theme.section(ui, "SOURCE");
+                if ui
+                    .link(source.path.as_deref().unwrap_or("Authored document"))
+                    .clicked()
+                {
+                    self.execute(CommandId::Source, ui.ctx());
+                }
             }
-            ui.label(muted(inspector.profile, theme).small());
             ui.collapsing("Advanced · evidence and identity", |ui| {
-                ui.label(element.map(|id| id.to_string()).unwrap_or_default());
+                ui.label(inspector.element.id.to_string());
+                ui.label(&inspector.element.semantic_kind);
+                value(
+                    ui,
+                    "Revision",
+                    &short_revision(inspector.revision_id),
+                    theme,
+                );
+                value(ui, "Profile", &inspector.profile, theme);
                 for query in inspector.queries {
                     ui.label(format!(
                         "{}: {} dependencies · {} searches",
@@ -303,24 +521,165 @@ fn value(ui: &mut egui::Ui, key: &str, value: &str, theme: crate::theme::Theme) 
     });
 }
 
+fn origin_label(origin: ViewOrigin) -> &'static str {
+    match origin {
+        ViewOrigin::Authored => "Authored in this project",
+        ViewOrigin::Derived => "Derived from model semantics",
+        ViewOrigin::Standard => "From the accepted standard library",
+        ViewOrigin::Generated => "Generated model element",
+    }
+}
+
+fn explanation_summary(explanation: &ExplanationProjection) -> String {
+    match explanation.origin {
+        ViewOrigin::Derived => format!("The model includes this fact because a semantic rule is supported by {} recorded evidence dependencies. The diagram traces that immediate support.", explanation.evidence_count),
+        ViewOrigin::Authored => "This fact comes directly from the project's authored model. No semantic producer is asserted for this fact.".into(),
+        ViewOrigin::Standard => "This fact belongs to the accepted standard library used by this revision.".into(),
+        ViewOrigin::Generated => "This is a generated model fact. Inspect its exact identity and publication context below.".into(),
+    }
+}
+
+/// The topology is taken only from the proof projection. A display arrow is
+/// never inferred from node ordering or used as a modeled system connection.
+fn explanation_diagram(
+    ui: &mut egui::Ui,
+    explanation: &ExplanationProjection,
+    theme: crate::theme::Theme,
+) {
+    use egui::{Align2, FontId, Pos2, Rect, Sense, Stroke, Vec2};
+    use std::collections::BTreeMap;
+    let mut columns = [Vec::new(), Vec::new(), Vec::new()];
+    for node in &explanation.nodes {
+        let column = if node.kind == ExplanationNodeKind::Rule {
+            1
+        } else if explanation.edges.iter().any(|edge| {
+            edge.target == node.id
+                && explanation.nodes.iter().any(|source| {
+                    source.id == edge.source && source.kind == ExplanationNodeKind::Rule
+                })
+        }) {
+            2
+        } else {
+            0
+        };
+        columns[column].push(node);
+    }
+    let rows = columns.iter().map(Vec::len).max().unwrap_or(1).max(1);
+    let height = rows as f32 * 90.0 + 30.0;
+    egui::ScrollArea::both()
+        .id_salt("explanation-diagram")
+        .max_height(350.0)
+        .show(ui, |ui| {
+            let (rect, _) = ui.allocate_exact_size(Vec2::new(700.0, height), Sense::hover());
+            let mut positions = BTreeMap::new();
+            for (column, nodes) in columns.iter().enumerate() {
+                for (row, node) in nodes.iter().enumerate() {
+                    let y = if column == 0 {
+                        row as f32 * 90.0
+                    } else {
+                        (height - 100.0) * 0.5
+                    };
+                    positions.insert(
+                        node.id.as_str(),
+                        Rect::from_min_size(
+                            rect.min + Vec2::new(column as f32 * 246.0, y + 20.0),
+                            Vec2::new(208.0, 72.0),
+                        ),
+                    );
+                }
+            }
+            for edge in &explanation.edges {
+                if let (Some(source), Some(target)) = (
+                    positions.get(edge.source.as_str()),
+                    positions.get(edge.target.as_str()),
+                ) {
+                    let start = source.right_center();
+                    let end = target.left_center();
+                    let middle = (start.x + end.x) * 0.5;
+                    ui.painter().add(egui::Shape::line(
+                        vec![
+                            start,
+                            Pos2::new(middle, start.y),
+                            Pos2::new(middle, end.y),
+                            end,
+                        ],
+                        Stroke::new(1.4, theme.muted),
+                    ));
+                    ui.painter().arrow(
+                        end - Vec2::new(8.0, 0.0),
+                        Vec2::new(8.0, 0.0),
+                        Stroke::new(1.4, theme.muted),
+                    );
+                }
+            }
+            for node in &explanation.nodes {
+                let Some(card) = positions.get(node.id.as_str()).copied() else {
+                    continue;
+                };
+                let rule = node.kind == ExplanationNodeKind::Rule;
+                ui.painter().rect(
+                    card,
+                    7.0,
+                    if rule { theme.elevated } else { theme.surface },
+                    Stroke::new(1.0, if rule { theme.accent } else { theme.border }),
+                    egui::StrokeKind::Inside,
+                );
+                let heading = if rule {
+                    "SEMANTIC RULE"
+                } else if columns[2].iter().any(|outcome| outcome.id == node.id) {
+                    "CONSEQUENCE"
+                } else {
+                    "EVIDENCE"
+                };
+                ui.painter().text(
+                    card.min + Vec2::new(10.0, 10.0),
+                    Align2::LEFT_TOP,
+                    heading,
+                    FontId::proportional(10.0),
+                    theme.muted,
+                );
+                let mut job = egui::text::LayoutJob::simple(
+                    node.label.clone(),
+                    FontId::proportional(12.0),
+                    theme.text,
+                    card.width() - 20.0,
+                );
+                job.wrap.max_rows = 2;
+                job.wrap.break_anywhere = true;
+                let galley = ui.fonts_mut(|fonts| fonts.layout_job(job));
+                ui.painter()
+                    .galley(card.min + Vec2::new(10.0, 28.0), galley, theme.text);
+                let response = ui.interact(card, ui.id().with(&node.id), Sense::hover());
+                response.widget_info(|| {
+                    egui::WidgetInfo::labeled(
+                        egui::WidgetType::Label,
+                        true,
+                        format!("{heading}: {}", node.label),
+                    )
+                });
+                response.on_hover_text(format!("{}\n{}", node.label, node.id));
+            }
+        });
+}
+
 /// Presentation copy for known public projection kinds. Unknown kinds retain
 /// their exact name; this mapping never determines semantic behavior.
 fn kind_label(kind: &str) -> &str {
     match kind {
         "PartDefinition" => "Part definition",
-        "PartUsage" => "Part usage",
+        "PartUsage" => "Part",
         "PortDefinition" => "Port definition",
-        "PortUsage" => "Port usage",
+        "PortUsage" => "Port",
         "InterfaceDefinition" => "Interface definition",
-        "InterfaceUsage" => "Interface usage",
+        "InterfaceUsage" => "Interface",
         "ConnectionDefinition" => "Connection definition",
-        "ConnectionUsage" => "Connection usage",
+        "ConnectionUsage" => "Connection",
         "RequirementDefinition" => "Requirement definition",
-        "RequirementUsage" => "Requirement usage",
+        "RequirementUsage" => "Requirement",
         "ActionDefinition" => "Action definition",
-        "ActionUsage" => "Action usage",
+        "ActionUsage" => "Action",
         "StateDefinition" => "State definition",
-        "StateUsage" => "State usage",
+        "StateUsage" => "State",
         "AttributeDefinition" => "Attribute definition",
         "AttributeUsage" => "Attribute usage",
         _ => kind,

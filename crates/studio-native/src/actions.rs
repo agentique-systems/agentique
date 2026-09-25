@@ -398,6 +398,8 @@ impl StudioApp {
                     | Dependencies
                     | ExpandIncoming
                     | ExpandOutgoing
+                    | ExpandBoth
+                    | CollapseNeighborhood
             )
         {
             self.status = "Wait for the model operation before changing the view".into();
@@ -552,16 +554,23 @@ impl StudioApp {
                     self.status = "Temporary dependency view · model unchanged".into();
                 }
             }
-            ExpandIncoming | ExpandOutgoing | Neighbors => {
+            ExpandIncoming | ExpandOutgoing | ExpandBoth | CollapseNeighborhood | Neighbors => {
                 if let Some(selected) = self.selected_element() {
                     let direction = match id {
                         ExpandIncoming => NeighborhoodDirection::Incoming,
                         ExpandOutgoing => NeighborhoodDirection::Outgoing,
                         _ => NeighborhoodDirection::Both,
                     };
+                    let seeds = if id == ExpandBoth {
+                        self.expanded
+                            .clone()
+                            .unwrap_or_else(|| BTreeSet::from([selected]))
+                    } else {
+                        BTreeSet::from([selected])
+                    };
                     let ids = agq_studio_scene::expand_neighborhood(
                         self.active_projection(),
-                        &BTreeSet::from([selected]),
+                        &seeds,
                         &self.families,
                         direction,
                     )
@@ -572,9 +581,14 @@ impl StudioApp {
                         self.invalidate_inspection();
                         self.request_inspection();
                         self.batch_key = None;
+                    } else if id == CollapseNeighborhood {
+                        self.expanded = Some(ids);
+                        self.rebuild();
+                        self.status = "One-hop neighborhood in the loaded projection".into();
                     } else {
                         self.expanded.get_or_insert_with(BTreeSet::new).extend(ids);
                         self.rebuild();
+                        self.status = "Neighborhood expanded within the loaded projection".into();
                     }
                 }
             }
@@ -785,6 +799,8 @@ impl StudioApp {
             (Key::ArrowLeft, Modifiers::ALT, CommandId::Back),
             (Key::ArrowRight, Modifiers::ALT, CommandId::Forward),
             (Key::ArrowUp, Modifiers::ALT, CommandId::Up),
+            (Key::Backspace, Modifiers::NONE, CommandId::Up),
+            (Key::Enter, Modifiers::NONE, CommandId::Focus),
         ] {
             if ctx.input_mut(|i| i.consume_key(modifiers, key)) {
                 self.execute(command, ctx);

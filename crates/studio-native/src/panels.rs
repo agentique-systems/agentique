@@ -157,15 +157,9 @@ impl StudioApp {
                 .show(ctx, |ui| {
                     ui.horizontal(|ui| {
                         ui.vertical(|ui| {
-                            ui.label(RichText::new("Candidate revision").strong().size(16.0));
-                            ui.label(muted(
-                                if self.fixture.is_some() {
-                                    "Visual preview · semantic validation unavailable"
-                                } else {
-                                    "Alternate revision · branch head has not moved"
-                                },
-                                theme,
-                            ));
+                            let review = self.context().candidate;
+                            ui.label(RichText::new(review.title()).strong().size(14.0));
+                            ui.label(muted(review.description(), theme).small());
                         });
                         ui.add_space(24.0);
                         for mode in [
@@ -317,6 +311,29 @@ impl StudioApp {
                                             }
                                             self.request_projection();
                                         }
+                                    }
+                                });
+                                ui.horizontal_wrapped(|ui| {
+                                    for (label, command) in [
+                                        ("Incoming", CommandId::ExpandIncoming),
+                                        ("Outgoing", CommandId::ExpandOutgoing),
+                                        ("Next hop", CommandId::ExpandBoth),
+                                        ("One hop", CommandId::CollapseNeighborhood),
+                                    ] {
+                                        let reason =
+                                            commands::unavailable(command, &self.context());
+                                        if ui
+                                            .add_enabled(reason.is_none(), egui::Button::new(label))
+                                            .clicked()
+                                        {
+                                            self.execute(command, ctx);
+                                        }
+                                    }
+                                    if self.expanded.is_some()
+                                        && ui.button("Show loaded view").clicked()
+                                    {
+                                        self.expanded = None;
+                                        self.rebuild();
                                     }
                                 });
                                 let mut include = self.include_standard;
@@ -548,7 +565,13 @@ impl StudioApp {
                     let enter = ui.input(|i| i.key_pressed(egui::Key::Enter));
                     egui::ScrollArea::vertical().show(ui, |ui| {
                         let results: Vec<_> = commands::search(&self.palette_query).collect();
-                        for (index, command) in results.into_iter().enumerate() {
+                        let first_available = results
+                            .iter()
+                            .find(|command| {
+                                commands::unavailable(command.id, &self.context()).is_none()
+                            })
+                            .map(|command| command.id);
+                        for command in results {
                             let reason = commands::unavailable(command.id, &self.context());
                             let label = format!(
                                 "{}    {}\n{}",
@@ -561,7 +584,11 @@ impl StudioApp {
                                 egui::Button::new(label)
                                     .min_size(Vec2::new(ui.available_width(), 52.0)),
                             );
-                            if response.clicked() || (index == 0 && enter && reason.is_none()) {
+                            if response.clicked()
+                                || (first_available == Some(command.id)
+                                    && enter
+                                    && reason.is_none())
+                            {
                                 self.execute(command.id, ctx);
                                 self.palette = false;
                             }
@@ -575,7 +602,7 @@ impl StudioApp {
                                 .projection
                                 .nodes
                                 .iter()
-                                .filter(|n| n.name.to_lowercase().contains(&query))
+                                .filter(|n| commands::fuzzy_score(&query, &n.name).is_some())
                                 .take(8)
                                 .map(|n| (n.id, n.name.clone()))
                                 .collect();
@@ -607,19 +634,10 @@ impl StudioApp {
         }
         if self.show_explain {
             let mut open = true;
-            egui::Window::new("Explain · semantic provenance").open(&mut open).default_size([620.0,360.0]).show(ctx,|ui|{
-                if let Some(explanation)=&self.explanation {
-                    ui.label(format!("{:?} · {}",explanation.origin,short_revision(explanation.revision_id)));
-                    if let Some(rule)=&explanation.rule_name {ui.heading(rule);}
-                    for node in &explanation.nodes {ui.group(|ui|{ui.label(&node.label);ui.label(muted(format!("{:?}",node.kind),theme).small());});}
-                    ui.label(format!("{} evidence dependencies{}",explanation.evidence_count,if explanation.truncated{" · display truncated"}else{""}));
-                }else if self.fixture.is_some(){
-                    ui.heading("Every derived relationship has a reason");ui.add_space(12.0);
-                    ui.label("This visual fixture illustrates the path from authored intent through a semantic rule to a derived relationship.");
-                    for text in ["Authored part / type reference","Semantic rule application","Derived relationship"] {ui.group(|ui|{ui.label(text);});ui.label("↓");}
-                    ui.label(RichText::new("Illustrative only. No canonical proof is asserted by this fixture.").color(theme.amber));
-                }else{ui.spinner();ui.label("Loading revision-bound evidence…");}
-            });
+            egui::Window::new("Explain · semantic provenance")
+                .open(&mut open)
+                .default_size([750.0, 440.0])
+                .show(ctx, |ui| self.explain_content(ui));
             self.show_explain = open;
         }
         if self.show_source {

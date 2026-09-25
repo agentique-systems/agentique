@@ -18,6 +18,8 @@ pub enum CommandId {
     Neighbors,
     ExpandOutgoing,
     ExpandIncoming,
+    ExpandBoth,
+    CollapseNeighborhood,
     CreatePart,
     Compare,
     Validate,
@@ -50,13 +52,13 @@ pub const COMMANDS: &[Command] = &[
     },
     Command {
         id: CommandId::CreatePart,
-        label: "Create nested PartUsage",
+        label: "Create: nested Part",
         shortcut: "",
         description: "Prepare a source-backed candidate for review",
     },
     Command {
         id: CommandId::Graph,
-        label: "Open Graph World",
+        label: "Graph World",
         shortcut: "2",
         description: "Explore typed relationship families",
     },
@@ -113,6 +115,18 @@ pub const COMMANDS: &[Command] = &[
         label: "Select neighbors",
         shortcut: "N",
         description: "Select adjacent elements in the current projection",
+    },
+    Command {
+        id: CommandId::ExpandBoth,
+        label: "Graph: expand next hop",
+        shortcut: "",
+        description: "Expand incoming and outgoing relationships from the visible neighborhood",
+    },
+    Command {
+        id: CommandId::CollapseNeighborhood,
+        label: "Graph: return to one hop",
+        shortcut: "",
+        description: "Keep the selection and its immediate neighbors",
     },
     Command {
         id: CommandId::Fit,
@@ -192,6 +206,38 @@ pub enum CandidateReview {
     Semantic(agq_studio_platform::CandidatePhase),
 }
 
+impl CandidateReview {
+    pub fn title(self) -> &'static str {
+        use agq_studio_platform::CandidatePhase;
+        match self {
+            Self::None => "CURRENT REVISION",
+            Self::Visual => "VISUAL CANDIDATE",
+            Self::Semantic(CandidatePhase::Working) => "WORKING CANDIDATE",
+            Self::Semantic(CandidatePhase::Validated) => "VALIDATED CANDIDATE",
+            Self::Semantic(CandidatePhase::CommitUnresolved) => "COMMIT ACKNOWLEDGEMENT PENDING",
+            Self::Semantic(CandidatePhase::Committed) => "COMMITTED REVISION",
+        }
+    }
+
+    pub fn description(self) -> &'static str {
+        use agq_studio_platform::CandidatePhase;
+        match self {
+            Self::None => "Immutable design history",
+            Self::Visual => "Illustrative preview · semantic validation unavailable",
+            Self::Semantic(CandidatePhase::Working) => {
+                "Not committed · review changes, then validate"
+            }
+            Self::Semantic(CandidatePhase::Validated) => {
+                "Not committed · validated and ready for operator approval"
+            }
+            Self::Semantic(CandidatePhase::CommitUnresolved) => {
+                "Durability unresolved · retry this same commit to reconcile"
+            }
+            Self::Semantic(CandidatePhase::Committed) => "Durably committed to design history",
+        }
+    }
+}
+
 #[derive(Default)]
 pub struct CommandContext {
     pub selected: bool,
@@ -224,7 +270,7 @@ pub fn unavailable(id: CommandId, context: &CommandContext) -> Option<&'static s
             Some("Review or cancel the candidate before comparing durable revisions")
         }
         Focus | Dependencies | Explain | Source | Neighbors | CreatePart | ExpandIncoming
-        | ExpandOutgoing
+        | ExpandOutgoing | ExpandBoth | CollapseNeighborhood
             if !context.selected =>
         {
             Some("Select an element first")
@@ -278,16 +324,78 @@ pub fn unavailable(id: CommandId, context: &CommandContext) -> Option<&'static s
 }
 
 pub fn search(query: &str) -> impl Iterator<Item = &'static Command> {
-    let words: Vec<_> = query.split_whitespace().map(str::to_lowercase).collect();
-    COMMANDS.iter().filter(move |command| {
-        let haystack = format!("{} {}", command.label, command.description).to_lowercase();
-        words.iter().all(|word| haystack.contains(word))
-    })
+    let mut found: Vec<_> = COMMANDS
+        .iter()
+        .filter_map(|command| {
+            let haystack = format!("{} {}", command.label, command.description);
+            fuzzy_score(query, &haystack).map(|score| (score, command))
+        })
+        .collect();
+    found.sort_by_key(|(score, _)| *score);
+    found.into_iter().map(|(_, command)| command)
+}
+
+/// Unicode-safe ordered abbreviation search. Exact phrases rank before scattered
+/// matches; the score is presentation ranking, never a semantic confidence.
+pub fn fuzzy_score(query: &str, text: &str) -> Option<usize> {
+    let query = query.trim().to_lowercase();
+    let text = text.to_lowercase();
+    if query.is_empty() {
+        return Some(0);
+    }
+    if let Some(index) = text.find(&query) {
+        return Some(index);
+    }
+    let mut cursor = 0;
+    let chars: Vec<_> = text.chars().collect();
+    let mut penalty = 1000;
+    for needle in query.chars().filter(|character| !character.is_whitespace()) {
+        let position = chars[cursor..]
+            .iter()
+            .position(|character| *character == needle)?;
+        penalty += position;
+        cursor += position + 1;
+    }
+    Some(penalty)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn palette_finds_abbreviations_without_losing_exact_match_priority() {
+        assert_eq!(search("grph").next().unwrap().id, CommandId::Graph);
+        assert_eq!(
+            search("nested part").next().unwrap().id,
+            CommandId::CreatePart
+        );
+        assert!(fuzzy_score("μs", "周期 μs").is_some());
+        assert!(fuzzy_score("missing", "Part").is_none());
+    }
+
+    #[test]
+    fn candidate_lifecycle_copy_never_calls_working_validated_or_unresolved_committed() {
+        use agq_studio_platform::CandidatePhase;
+        assert_eq!(
+            CandidateReview::Semantic(CandidatePhase::Working).title(),
+            "WORKING CANDIDATE"
+        );
+        assert!(
+            CandidateReview::Semantic(CandidatePhase::Validated)
+                .description()
+                .starts_with("Not committed")
+        );
+        assert!(
+            CandidateReview::Semantic(CandidatePhase::CommitUnresolved)
+                .description()
+                .contains("unresolved")
+        );
+        assert!(
+            CandidateReview::Visual
+                .description()
+                .contains("unavailable")
+        );
+    }
     #[test]
     fn fixture_cannot_enable_validation_or_commit() {
         let context = CommandContext {
