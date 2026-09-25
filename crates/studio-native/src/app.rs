@@ -353,7 +353,11 @@ impl StudioApp {
         }
     }
     pub fn save_session(&mut self) {
-        if !self.ready || self.args.screenshot.is_some() || self.args.frames.is_some() {
+        if !self.ready
+            || self.args.screenshot.is_some()
+            || self.args.frames.is_some()
+            || self.args.scenario.is_some()
+        {
             return;
         }
         // Never restore a process-local candidate as durable model state.

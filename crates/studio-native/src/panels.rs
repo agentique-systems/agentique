@@ -73,7 +73,9 @@ impl StudioApp {
                             }
                         }
                         ui.separator();
-                        if ui.button("Runtime setup / projects").clicked() {
+                        if ui.button("Runtime setup / projects").clicked()
+                            && self.allow_context_change()
+                        {
                             self.ready = false;
                             ui.close();
                         }
@@ -302,31 +304,33 @@ impl StudioApp {
                             }
                         });
                         if self.world == World::Graph {
-                            ui.add_space(6.0);
-                            ui.horizontal_wrapped(|ui| {
-                                for family in agq_modeling_view::RelationshipFamily::all() {
-                                    let mut enabled = self.families.contains(&family);
-                                    if ui
-                                        .toggle_value(&mut enabled, format!("{family:?}"))
-                                        .changed()
-                                    {
-                                        if enabled {
-                                            self.families.insert(family);
-                                        } else {
-                                            self.families.remove(&family);
+                            ui.add_enabled_ui(!self.bridge.mutation_pending(), |ui| {
+                                ui.add_space(6.0);
+                                ui.horizontal_wrapped(|ui| {
+                                    for family in agq_modeling_view::RelationshipFamily::all() {
+                                        let mut enabled = self.families.contains(&family);
+                                        if ui
+                                            .toggle_value(&mut enabled, format!("{family:?}"))
+                                            .changed()
+                                        {
+                                            if enabled {
+                                                self.families.insert(family);
+                                            } else {
+                                                self.families.remove(&family);
+                                            }
+                                            self.request_projection();
                                         }
-                                        self.request_projection();
                                     }
+                                });
+                                let mut include = self.include_standard;
+                                if ui
+                                    .checkbox(&mut include, "Expand adjacent standard dependencies")
+                                    .changed()
+                                {
+                                    self.include_standard = include;
+                                    self.request_projection();
                                 }
                             });
-                            let mut include = self.include_standard;
-                            if ui
-                                .checkbox(&mut include, "Expand adjacent standard dependencies")
-                                .changed()
-                            {
-                                self.include_standard = include;
-                                self.request_projection();
-                            }
                         }
                     });
                 if self.world == World::History {
@@ -775,8 +779,8 @@ impl StudioApp {
         ui.horizontal(|ui| {
             ui.add_space(78.0);
             if ui.button("Compare with parent").clicked() {
-                self.world = World::System;
-                self.compare_parent();
+                self.switch_world(World::System);
+                self.execute(CommandId::Compare, ui.ctx());
             }
         });
     }

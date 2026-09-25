@@ -1,0 +1,11 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--workspace"
+  ],
+  "exit_code": 101,
+  "elapsed_seconds": 142.64,
+  "utc": "2026-09-25T07:34:21.001177+00:00",
+  "output": "verification/generated/native-studio/rust-workspace-tests-retry.txt"
+}
