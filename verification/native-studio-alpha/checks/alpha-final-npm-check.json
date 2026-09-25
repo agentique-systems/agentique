@@ -1,0 +1,14 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "check"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T20:56:05.350125+00:00",
+  "elapsed_seconds": 2.187,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/alpha-final-npm-check.txt",
+  "output_sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e",
+  "build_environment": {}
+}
