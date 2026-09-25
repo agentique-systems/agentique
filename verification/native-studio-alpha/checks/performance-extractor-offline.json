@@ -1,0 +1,35 @@
+{
+  "format": "agentique-native-performance-extractor-checks/1",
+  "observed_utc": "2026-09-25T22:24:00.094271+00:00",
+  "command": [
+    "python",
+    "verification/native-studio-alpha/performance/test_summarize_native_performance.py"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 0.13979310006834567,
+  "stdout": "",
+  "stderr": "......\n----------------------------------------------------------------------\nRan 6 tests in 0.011s\n\nOK\n",
+  "scope": "Python-only tests and verification of existing run05 evidence. No native build, process launch or standards consumer.",
+  "actual_run05_extraction": {
+    "exit_code": 0,
+    "report_sha256": "e17d46294f877b23410fba768208c2cb0e8482b143745d9d884ce8a9bcd36d0c",
+    "artifacts_rehashed": 24,
+    "gallery_images_verified": 10,
+    "profiles": {
+      "agentique-modeling-view-profile/1": 26,
+      "agentique-studio-inspector-cache/1": 16
+    },
+    "cache_hits": 9,
+    "failed_journey_and_absent_later_stages_retained": true
+  },
+  "diff_check": {
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  }
+}
