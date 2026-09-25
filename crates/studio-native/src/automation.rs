@@ -28,7 +28,7 @@ pub fn record(ctx: &egui::Context, target: Target, rect: Rect) {
         data.insert_temp(egui::Id::new(("native-interaction-target", target)), rect)
     });
 }
-fn target(ctx: &egui::Context, key: Target) -> Result<Rect, String> {
+pub(crate) fn target(ctx: &egui::Context, key: Target) -> Result<Rect, String> {
     ctx.data(|data| data.get_temp::<Rect>(egui::Id::new(("native-interaction-target", key))))
         .filter(|rect| rect.is_finite() && rect.is_positive())
         .ok_or_else(|| format!("UI geometry for {key:?} has not been recorded"))
