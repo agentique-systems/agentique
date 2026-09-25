@@ -1,0 +1,27 @@
+{
+  "format": "agentique-verification-summary/1",
+  "scope": "Source checks only; native compilation and real runtime execution delegated to integration",
+  "commands": [
+    {
+      "command": [
+        "rustfmt",
+        "--edition",
+        "2024",
+        "--check",
+        "crates/studio-native/src/real_automation.rs",
+        "crates/studio-native/src/real_targets.rs"
+      ],
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "output": ""
+    }
+  ]
+}
