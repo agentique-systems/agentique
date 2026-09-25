@@ -1,9 +1,19 @@
 # Candidate reconstruction diagnosis
 
 No end-to-end semantic latency improvement is claimed by this workstream. The
-accepted runtime is being rematerialized independently; the new real-model gate
-has not yet run. No semantic producer, kernel index, publication receipt,
-authority decision or frozen publication input was changed.
+accepted runtime has been rematerialized and authenticated. The
+[current real command oracle](performance/create-part-before-sharing.md) passed
+exact reconstruction equivalence and both validations: command preparation
+159.459 s, its compile 144.408 s, and full reconstruction over already mounted
+inputs 143.453 s. Whole-process peak working set was 5,925,900,288 bytes. This
+is a measured baseline, not an incremental speedup.
+
+The diagnosis below retains the earlier investigation and its original
+measurement boundaries. Proposed dependency-mount sharing and duplicate audit
+answer removal remain held for the
+[separate qualification sequence](reviews/held-reconstruction-qualification.md).
+No accepted semantic identity, authority decision or publication receipt is
+changed by that proposal.
 
 ## What the existing measurements establish
 
@@ -25,8 +35,10 @@ not CreatePartUsage with accepted semantic closure. Its 24.721 ms versus
 161.748 ms comparison excluded producer closure, effective audit and persistence.
 See [its explicit measurement boundary](../summaries/agentique-studio-phase3/performance.md).
 
-There is no retained current accepted-cache phase profile from which to name the
-dominant phase honestly. Current `CompilationTimings` already separates reference
+At the initial investigation there was no retained current accepted-cache phase
+profile. The subsequent real baseline measured final closure at 73.651 s,
+effective audit at 48.022 s and source preparation at 14.549 s (including
+12.731 s reference refinement). `CompilationTimings` separates reference
 refinement, declared construction, preparatory producers, strict kernel validation,
 final closure/certification, final references and effective audit. Nested timings
 overlap source preparation and must not be added indiscriminately.

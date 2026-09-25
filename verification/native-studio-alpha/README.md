@@ -5,11 +5,12 @@ alpha acceptance. The native fixture journeys work, five independent product rev
 loops have resulted in changes, and the accepted KerML v9 / Systems v3 runtime has
 been rematerialized, authenticated, packaged and installed through ordinary
 facades. Real native runs reached a durable Validated Agentique revision and
-captured authenticated System, focused subsystem and connected-port views.
-Those images exposed unreadable overview density and an Explorer focus defect;
-the real-image product review rejects their visual quality. A corrected visual
-scope, layout and immutable background read path are under qualification. The
-complete real journey, candidate and separate restart remain pending.
+captured System, focused subsystem, ports, Graph, Requirements, Explain, parent
+diff and agent dependency views. Iteration three improved hierarchy readability
+but exposed clipped Explain content, unreadable history framing and a failed
+pan gesture during candidate preparation. Iteration four corrects those defects,
+adds exact view-intent fencing and measures query phases. Its fresh real journey,
+candidate and separate restart remain under qualification.
 No fixture screenshot is presented as real model acceptance.
 
 ## Product evidence
@@ -39,6 +40,9 @@ No fixture screenshot is presented as real model acceptance.
   semantic baseline, failed visual gate and identified scheduling defect.
 - [First real image review](reviews/real-system-first-light-review.md) retains
   the ranked criticism of three authenticated screenshots from the second run.
+- [Iteration-three real review](reviews/real-system-iteration-review.md) examines
+  ten authenticated images; [its failed journey](real-run03/diagnosis.md) remains
+  beside the [iteration-four corrections](reviews/real-iteration04-integration.md).
 - [Independent current-revision read review](reviews/current-revision-read-independent-review.md)
   checks the authority and stale-response boundaries for background inspection.
 - [Runtime distribution](../../docs/runtime-publication-distribution.md) describes
@@ -52,7 +56,9 @@ No fixture screenshot is presented as real model acceptance.
 - [Paired visibility comparison](visibility-performance.md) checks exact visible
   identities and order while measuring the allocation reduction.
 - [Semantic edit diagnosis](edit-performance.md) retains the negative historical
-  latency result and the exact full-reconstruction oracle to execute next.
+  latency result and the [current real reconstruction baseline](performance/create-part-before-sharing.md).
+  The [held optimization qualification](reviews/held-reconstruction-qualification.md)
+  requires independent cold reconstruction and exact semantic equivalence.
 - [Adversarial layout evidence](product/README.md) covers hierarchy, cycles,
   ports, parallel edges, long names, overlaps and unchanged-node displacement.
 - [Windows accessibility and release qualification](release-qualification.md)

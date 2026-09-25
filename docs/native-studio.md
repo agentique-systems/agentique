@@ -81,7 +81,8 @@ selection without changing model semantics.
 | Wheel | Zoom toward pointer |
 | Double-click / F | Focus selection |
 | Home | Fit view |
-| Alt-Left / Alt-Right / Alt-Up | Back / forward / semantic owner |
+| Alt-Left / Alt-Right / Alt-Up or Backspace | Back / forward / semantic owner |
+| Ctrl/Cmd-Z | Presentation navigation back; never rewrites durable history |
 | Up / Down | Traverse semantic elements |
 | Ctrl/Cmd-K | Search commands or focus an element |
 | 1 / 2 / 3 / 4 | System / Graph / Requirements / History |
@@ -104,8 +105,11 @@ Connection creation and delete remain unsupported.
 
 The fixture candidate is an illustrative display response to the same intent. It
 does not reconstruct sources or establish language acceptance. Validation and
-commit are disabled. Agent dependency views and illustrative decision distributions
-are presentation state and cannot silently commit.
+commit are disabled. Agent dependency views retain their subject, revision and
+read-only authority. The decision panel displays the selected mock provider's
+actual returned choice; it shows no weights when the provider supplies none.
+Applying that suggestion is an explicit presentation action and cannot commit a
+semantic change.
 
 ## Reproducible native visual review
 

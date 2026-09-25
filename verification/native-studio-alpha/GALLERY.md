@@ -1,10 +1,42 @@
 # Native Studio product gallery
 
-**Visual fixtures only. Real-model first light is pending accepted Systems runtime
-authentication.** These are actual native-window captures, not image mockups or
-HTTP scenes. Their adjacent JSON files identify the fixture, selected canonical
-fixture IDs, displayed revisions and candidate state. Fixture
-validation and commit remain unavailable.
+**Real authenticated model captures are available; the complete real candidate
+and restart journey is still under qualification.** These are actual native
+window captures, not image mockups or HTTP scenes. Adjacent JSON files identify
+the data source, exact revision, selected canonical identities and image digest.
+
+## Real Agentique, iteration three
+
+These captures use the accepted KerML v9 / Systems v3 runtime, a durable
+Validated Agentique revision, ModelingService and actual semantic projections.
+The [run report](real-run03/journey.json) and
+[process record](real-run03/process.json) retain the executable and source
+identity. The [independent review](reviews/real-system-iteration-review.md)
+rejects several surfaces' current quality; their presence is not alpha acceptance.
+
+| Surface | Real native capture |
+| --- | --- |
+| System World | [01-system-world.png](real-run03/gallery/01-system-world.png) |
+| ModelingPlatform | [02-focused-subsystem.png](real-run03/gallery/02-focused-subsystem.png) |
+| Selected platform port | [02a-platform-port.png](real-run03/gallery/02a-platform-port.png) |
+| ModelRepository | [02b-focused-repository.png](real-run03/gallery/02b-focused-repository.png) |
+| Inherited canonical port | [02c-repository-port.png](real-run03/gallery/02c-repository-port.png) |
+| Graph World | [03-graph-world.png](real-run03/gallery/03-graph-world.png) |
+| Requirements World | [04-requirements-world.png](real-run03/gallery/04-requirements-world.png) |
+| Explain | [05-explain.png](real-run03/gallery/05-explain.png) |
+| History and difference | [06-history-diff.png](real-run03/gallery/06-history-diff.png) |
+| Agent view | [07-agent-view.png](real-run03/gallery/07-agent-view.png) |
+
+There is no real candidate image from this run: its background-pan assertion
+failed after preparation started. The [diagnosis](real-run03/diagnosis.md)
+retains that failure. The next iteration corrects the reproduced input-capture
+defect and the reviewed scope, port, Explain and diff presentation problems;
+its screenshots and completion must be reviewed separately.
+
+## Complete fixture gallery
+
+These images remain explicitly **fixtures**. Their illustrative candidate
+cannot validate or commit a semantic change.
 
 The latest complete integrated gallery covers all eight product surfaces:
 
