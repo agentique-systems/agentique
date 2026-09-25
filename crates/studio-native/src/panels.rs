@@ -142,10 +142,7 @@ impl StudioApp {
                             .small(),
                         );
                         ui.separator();
-                        ui.label(
-                            muted(format!("{}", short_revision(self.scene.revision_id)), theme)
-                                .small(),
-                        );
+                        ui.label(muted(short_revision(self.scene.revision_id), theme).small());
                     });
                 });
             });
@@ -444,12 +441,21 @@ impl StudioApp {
                         .show(ui, |ui| {
                             ui.set_max_width(610.0);
                             ui.heading(if self.projects.is_empty() {
-                                "Open your engineering workspace"
+                                "Set up your engineering workspace"
                             } else {
                                 "Choose a project"
                             });
                             ui.add_space(14.0);
-                            ui.label(&self.setup_reason);
+                            ui.label(if !self.pending.is_empty() {
+                                "Preparing your engineering workspace…"
+                            } else if self.projects.is_empty() {
+                                "Install an authenticated Agentique runtime bundle to open real projects."
+                            } else {
+                                "Your semantic runtime is ready. Select a project to continue."
+                            });
+                            ui.collapsing("Runtime details", |ui| {
+                                ui.label(&self.setup_reason);
+                            });
                             ui.add_space(18.0);
                             for project in self.projects.clone() {
                                 if ui
@@ -633,7 +639,7 @@ impl StudioApp {
                             self.selection
                                 .primary
                                 .as_ref()
-                                .and_then(|target| self.target_revision(target))
+                                .and_then(|target| self.scene.target_revision(target))
                                 .map(short_revision)
                                 .unwrap_or_default()
                         )

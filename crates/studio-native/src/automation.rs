@@ -712,7 +712,7 @@ fn inject(
                 *point = Some(p);
                 p
             };
-            click(input, p, frame % 2 == 0, Modifiers::NONE);
+            click(input, p, frame.is_multiple_of(2), Modifiers::NONE);
         }
         Action::ClickNamedNode(name) => {
             let p = if let Some(p) = *point {

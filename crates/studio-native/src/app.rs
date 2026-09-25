@@ -134,7 +134,7 @@ impl StudioApp {
             Session::load(&session_path)
         };
         let fixture = args.fixture.clone();
-        let projection = fixture_projection(fixture.as_deref().unwrap_or("architecture"));
+        let projection = initial_projection(fixture.as_deref());
         let scene = SemanticScene::from_projection(&projection, &SceneOptions::default(), None)?;
         let spatial = SpatialIndex::build(&scene);
         let lookup = SceneLookup::build(&scene);
@@ -439,6 +439,32 @@ pub fn fixture_projection(name: &str) -> ViewProjection {
     }
 }
 
+fn initial_projection(fixture: Option<&str>) -> ViewProjection {
+    if let Some(name) = fixture {
+        return fixture_projection(name);
+    }
+    // An unloaded presentation has no semantic objects, including for command
+    // discovery. This sentinel revision is never submitted to a model service.
+    ViewProjection {
+        revision_id: agq_modeling_workspace::ProjectRevisionId::from_u128(0),
+        view: agq_modeling_view::ViewDefinition {
+            name: "No project open".into(),
+            ..Default::default()
+        },
+        nodes: vec![],
+        edges: vec![],
+        groups: vec![],
+        metadata: agq_modeling_view::ViewMetadata {
+            suggested_focus: None,
+            scope: "No project open".into(),
+            producer_completeness: "Unavailable".into(),
+            local_element_count: 0,
+            omitted_standard_endpoints: 0,
+            warnings: vec![],
+        },
+    }
+}
+
 fn install_fonts(ctx: &egui::Context) {
     let mut fonts = egui::FontDefinitions::default();
     // Platform fonts are read locally, never redistributed. Built-in fonts remain fallback.
@@ -527,4 +553,24 @@ fn hierarchy_order(scene: &SemanticScene) -> Vec<usize> {
         }
     }
     ordered
+}
+
+#[cfg(test)]
+mod bootstrap_tests {
+    use super::*;
+
+    #[test]
+    fn unloaded_workspace_has_no_hidden_fixture_objects_or_selection_targets() {
+        let projection = initial_projection(None);
+        assert!(projection.nodes.is_empty());
+        assert!(projection.edges.is_empty());
+        assert!(projection.groups.is_empty());
+        assert_eq!(projection.metadata.producer_completeness, "Unavailable");
+        let scene =
+            SemanticScene::from_projection(&projection, &SceneOptions::default(), None).unwrap();
+        assert!(scene.nodes.is_empty());
+        assert!(scene.ports.is_empty());
+        assert!(hierarchy_order(&scene).is_empty());
+        assert_eq!(initial_projection(Some("architecture")).nodes.len(), 12);
+    }
 }

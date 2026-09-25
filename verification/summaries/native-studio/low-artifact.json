@@ -1,0 +1,218 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "native-tests-final",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--manifest-path",
+        "crates/studio-native/Cargo.toml"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "bfabd2c7b4cee100338246c4b0716e122e0f9d97",
+      "working_changes_sha256": "2f9cd0378d7477f47fd8b0b03a8508e61317f6626dd583776d046a64050caccd",
+      "output_sha256": "d346d30ac1fd87929de1717549055f040b1a474472c7891aa6eb09841d09f44c",
+      "duration_seconds": 364.61,
+      "output": "verification/generated/native-studio/native-tests-final.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target"
+      }
+    },
+    {
+      "name": "native-clippy-final",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "--manifest-path",
+        "crates/studio-native/Cargo.toml",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "3a8aee2e481222d806a6e5cd56e24a56f62fcb9d",
+      "working_changes_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "output_sha256": "d40f2ac912df923a43a7039f118b927f7f9602e3f65c2e0e7a4472910a12ba47",
+      "duration_seconds": 290.7,
+      "output": "verification/generated/native-studio/native-clippy-final.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target"
+      }
+    },
+    {
+      "name": "native-tests-revision-label-fix",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--manifest-path",
+        "crates/studio-native/Cargo.toml"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "202a43da50c916fc342b0c2b801c79ef44946a27",
+      "working_changes_sha256": "f7b359735839df2bd56c2fe22505a029d697b766f25644ad5184799a5787c2e8",
+      "output_sha256": "abe6199635d6619b1b328e39f06d6b6dd6e520cf84ae0d20e54dffc79d398b79",
+      "duration_seconds": 25.52,
+      "output": "verification/generated/native-studio/native-tests-revision-label-fix.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target"
+      }
+    },
+    {
+      "name": "native-clippy-clean",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "--manifest-path",
+        "crates/studio-native/Cargo.toml",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "202a43da50c916fc342b0c2b801c79ef44946a27",
+      "working_changes_sha256": "ebdca15129775d68bc8a3f771ef27a3913473c08cf2f496d48684bd09a892f98",
+      "output_sha256": "540bc62222b6a059212ea72429df251862945c03d546b9021e7e076f75f95897",
+      "duration_seconds": 1.81,
+      "output": "verification/generated/native-studio/native-clippy-clean.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target"
+      }
+    },
+    {
+      "name": "rust-workspace-tests-bounded",
+      "command": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "dbde4a5123a55b19754fc7f0c1d13fbad6cd5675",
+      "working_changes_sha256": "684509984aeef0e7bba1b20c6d7baa0d4753252484cede7caa7653d7065d3999",
+      "output_sha256": "060efd8839d031dacd562239be650e79b114d74d5f42b3e787da356a8680e278",
+      "duration_seconds": 833.23,
+      "output": "verification/generated/native-studio/rust-workspace-tests-bounded.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target"
+      }
+    },
+    {
+      "name": "native-bootstrap-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "--manifest-path",
+        "crates/studio-native/Cargo.toml"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "202a43da50c916fc342b0c2b801c79ef44946a27",
+      "working_changes_sha256": "7195c8cdbbadac9a8c8cb5f01d2d7a95e933c2754e5ee9afc1ff87bfba371b1a",
+      "output_sha256": "f374911e91d5fa0a42a279f95494e96419138e7073090eb97a91700964cb3df9",
+      "duration_seconds": 3.75,
+      "output": "verification/generated/native-studio/native-bootstrap-tests.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target"
+      }
+    },
+    {
+      "name": "native-bootstrap-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "--manifest-path",
+        "crates/studio-native/Cargo.toml",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 101,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "c0a742bbbc6493eba3816d07ac1013479f0d8ffd",
+      "working_changes_sha256": "7195c8cdbbadac9a8c8cb5f01d2d7a95e933c2754e5ee9afc1ff87bfba371b1a",
+      "output_sha256": "375e5fb769d0395dcb116894ea4eb89dbd28c169292ba01a37ae54b29340050f",
+      "duration_seconds": 1.59,
+      "output": "verification/generated/native-studio/native-bootstrap-clippy.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target"
+      }
+    },
+    {
+      "name": "native-clippy-accepted",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "--manifest-path",
+        "crates/studio-native/Cargo.toml",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "c0a742bbbc6493eba3816d07ac1013479f0d8ffd",
+      "working_changes_sha256": "fce21ce16e1940a2b272c58dee8f96199d9c2c3441939a4d1070fbbcc98e582c",
+      "output_sha256": "322fac6fe5d3e36dedd029a63b6fa1af637cc505a1191024892f27206c00399a",
+      "duration_seconds": 1.58,
+      "output": "verification/generated/native-studio/native-clippy-accepted.log",
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_BUILD_JOBS": "2",
+        "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target"
+      }
+    }
+  ]
+}

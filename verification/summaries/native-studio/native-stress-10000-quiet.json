@@ -1,0 +1,16 @@
+{
+  "command": [
+    "target/release/agq-studio-native.exe",
+    "--fixture",
+    "stress10000",
+    "--scenario",
+    "stress",
+    "--scenario-report",
+    "verification/generated/native-studio/stress10000-input-quiet.json",
+    "--no-restore"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 9.078,
+  "utc": "2026-09-25T07:52:30.145512+00:00",
+  "output": "verification/generated/native-studio/native-stress-10000-quiet.txt"
+}

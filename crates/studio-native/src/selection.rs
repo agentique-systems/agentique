@@ -67,9 +67,7 @@ impl Selection {
         if self.revision != scene.revision_id {
             return None;
         }
-        if scene.target_bounds(self.primary.as_ref()?).is_none() {
-            return None;
-        }
+        scene.target_bounds(self.primary.as_ref()?)?;
         match self.primary.as_ref()? {
             SceneTarget::Edge(id) => {
                 scene

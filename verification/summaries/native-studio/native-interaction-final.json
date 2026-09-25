@@ -1,0 +1,16 @@
+{
+  "command": [
+    "target/release/agq-studio-native.exe",
+    "--fixture",
+    "architecture",
+    "--no-restore",
+    "--scenario",
+    "vertical",
+    "--scenario-report",
+    "verification/generated/native-studio/interaction-final.json"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 15.359,
+  "utc": "2026-09-25T07:49:24.574197+00:00",
+  "output": "verification/generated/native-studio/native-interaction-final.txt"
+}
