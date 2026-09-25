@@ -1,0 +1,24 @@
+{
+  "command": [
+    "C:\\Users\\phili\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\tools\\restore-accepted-kerml-transport.py",
+    "--cache",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\generated\\native-studio-alpha\\rematerialized-kerml\\canonical.publication.zip",
+    "--generated-receipt",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\generated\\native-studio-alpha\\rematerialized-kerml\\canonical.publication.receipt.json",
+    "--output",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\generated\\native-studio-alpha\\rematerialized-kerml\\accepted.cache"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime",
+  "started_utc": "2026-09-25T16:16:41.438962+00:00",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "source_commit": "bc38b135900d14ef2b6da34d544b9c75329d0716",
+  "working_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "exit_code": 0,
+  "elapsed_seconds": 46.172,
+  "peak_rss_bytes": 96505856,
+  "peak_private_bytes": 89206784,
+  "memory_scope": "direct child process sampled at 1 second; excludes descendant compilers",
+  "output_sha256": "909eaa28a623466818e9b21c20a1aef5e8946a2446abd2d4eeb76271822abe57",
+  "raw_output": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\native-studio-alpha\\runtime\\kerml-exact-transport-recovery.log"
+}

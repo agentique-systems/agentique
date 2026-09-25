@@ -19,7 +19,19 @@ seconds. Its binary hashes are retained. The separate Systems producer/finalizer
 uses `4ac9b8e`; its language source is identical to original closure `257d73cb`.
 Recovery never passes `--write-bindings` or replaces accepted receipts.
 
-At this evidence checkpoint, the real historical reconstruction chain is running.
+At this evidence checkpoint, KerML rematerialization passed its original semantic
+contract and exact uncompressed archive entry contract. The full replay exited 0
+in 1,819.328 seconds, with sampled peak RSS 5,033,037,824 bytes. It checked all
+61,718 capability subjects and 4,000 mandatory references with zero findings,
+matched the existing semantic digest and all 31 bindings, then wrote its cache.
+`kerml-rematerialization-summary.json` and the actual command record retain this
+result. `kerml-original-entry-reproduction.json` records exact equality of the
+78,187,642-byte facade and 2,176,394,780-byte graph with the original receipt after
+restoring only the historical snapshot revision label. The dependent Systems
+producer is now restoring that cache through the ordinary KerML facade before
+replaying its accepted closure. A complete authenticated runtime pair is still
+pending.
+
 The original scoped development preflight was deliberately stopped after
 1,046.672 seconds, exit 15, after checking 20,157 subjects with zero findings and
 requesting further provider scope expansion. The retained recovery wrapper calls
@@ -40,7 +52,9 @@ The new transport recovery utility allows only the historical random snapshot
 revision label to be restored, then demands the original accepted payload hashes
 and lengths exactly. Seven rejection/equivalence tests passed; see
 `transport-recovery-tests.json` and its unmodified log. They establish the tool's
-failure behavior, not acceptance of the missing real corpus.
+failure behavior. Four additional Systems contract tests reject changed or extra
+identity fields, changed bindings and invalid transport receipt shapes; the
+combined suite passed 11 tests in `transport-contract-recovery-tests.json`.
 
 The manual `runtime-asset` workflow authenticates an explicit draft asset against
 its independently recorded transport SHA-256 and both language facades. It has

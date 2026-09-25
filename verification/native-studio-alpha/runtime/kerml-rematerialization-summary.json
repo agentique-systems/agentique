@@ -1,0 +1,193 @@
+{
+  "authority_status": "candidate-pending-original-receipt-restoration",
+  "binding_manifest_equal": true,
+  "development_slice_preflights_repeated": false,
+  "elapsed_seconds": 1813.3091428,
+  "format": "agq-accepted-cache-rematerialization/1",
+  "full_closure_and_capability_audits_executed": true,
+  "historical_producer_commit": "a1a7b847ef83f8e4c54bea9242cac94a9ce665fe",
+  "receipt_changed": false,
+  "reference_refinement": [
+    {
+      "affected_elements": 0,
+      "input_endpoints": 0,
+      "references_considered": 4000,
+      "references_evaluated": 4000,
+      "references_reused": 0,
+      "round": 0,
+      "seconds": {
+        "change_detection": 2e-07,
+        "construction": 1.1689584,
+        "context": 0.1204541,
+        "resolution": 11.9160658
+      },
+      "selected_endpoints": 2110,
+      "structural_obligations": 4000
+    },
+    {
+      "affected_elements": 6525,
+      "input_endpoints": 2110,
+      "references_considered": 4000,
+      "references_evaluated": 3972,
+      "references_reused": 28,
+      "round": 1,
+      "seconds": {
+        "change_detection": 0.0842936,
+        "construction": 1.1893609,
+        "context": 0.1203128,
+        "resolution": 29.0519094
+      },
+      "selected_endpoints": 3661,
+      "structural_obligations": 1890
+    },
+    {
+      "affected_elements": 5434,
+      "input_endpoints": 3661,
+      "references_considered": 4000,
+      "references_evaluated": 3981,
+      "references_reused": 19,
+      "round": 2,
+      "seconds": {
+        "change_detection": 0.1106109,
+        "construction": 1.3009172,
+        "context": 0.1317822,
+        "resolution": 32.9576892
+      },
+      "selected_endpoints": 3838,
+      "structural_obligations": 339
+    },
+    {
+      "affected_elements": 862,
+      "input_endpoints": 3838,
+      "references_considered": 4000,
+      "references_evaluated": 3837,
+      "references_reused": 163,
+      "round": 3,
+      "seconds": {
+        "change_detection": 0.0752335,
+        "construction": 1.1455327,
+        "context": 0.1227711,
+        "resolution": 29.9125308
+      },
+      "selected_endpoints": 3919,
+      "structural_obligations": 162
+    },
+    {
+      "affected_elements": 317,
+      "input_endpoints": 3919,
+      "references_considered": 4000,
+      "references_evaluated": 3706,
+      "references_reused": 294,
+      "round": 4,
+      "seconds": {
+        "change_detection": 0.0740086,
+        "construction": 1.0961674,
+        "context": 0.1183073,
+        "resolution": 33.2068206
+      },
+      "selected_endpoints": 3952,
+      "structural_obligations": 81
+    },
+    {
+      "affected_elements": 225,
+      "input_endpoints": 3952,
+      "references_considered": 4000,
+      "references_evaluated": 3719,
+      "references_reused": 281,
+      "round": 5,
+      "seconds": {
+        "change_detection": 0.0876821,
+        "construction": 1.2751948,
+        "context": 0.1334421,
+        "resolution": 32.7094394
+      },
+      "selected_endpoints": 3973,
+      "structural_obligations": 48
+    },
+    {
+      "affected_elements": 117,
+      "input_endpoints": 3973,
+      "references_considered": 4000,
+      "references_evaluated": 3687,
+      "references_reused": 313,
+      "round": 6,
+      "seconds": {
+        "change_detection": 0.0801878,
+        "construction": 1.1915871,
+        "context": 0.1232277,
+        "resolution": 31.3066911
+      },
+      "selected_endpoints": 3994,
+      "structural_obligations": 27
+    },
+    {
+      "affected_elements": 81,
+      "input_endpoints": 3994,
+      "references_considered": 4000,
+      "references_evaluated": 917,
+      "references_reused": 3083,
+      "round": 7,
+      "seconds": {
+        "change_detection": 0.0763515,
+        "construction": 1.1613505,
+        "context": 0.1273577,
+        "resolution": 10.1976479
+      },
+      "selected_endpoints": 4000,
+      "structural_obligations": 6
+    },
+    {
+      "affected_elements": 26,
+      "input_endpoints": 4000,
+      "references_considered": 4000,
+      "references_evaluated": 215,
+      "references_reused": 3785,
+      "round": 8,
+      "seconds": {
+        "change_detection": 0.0733774,
+        "construction": 1.1578244,
+        "context": 0.124676,
+        "resolution": 2.1769881
+      },
+      "selected_endpoints": 4000,
+      "structural_obligations": 0
+    }
+  ],
+  "references": 4000,
+  "semantic_digest": [
+    129,
+    85,
+    115,
+    53,
+    57,
+    115,
+    96,
+    123,
+    198,
+    42,
+    37,
+    25,
+    94,
+    212,
+    70,
+    22,
+    69,
+    24,
+    32,
+    39,
+    64,
+    127,
+    132,
+    118,
+    190,
+    82,
+    31,
+    252,
+    153,
+    23,
+    79,
+    18
+  ],
+  "semantic_identity_equal": true,
+  "source_content_set": "sha256:6cceb50286d6edd411f327201b6016b5651744d4a30175c78e019810d482e928"
+}
