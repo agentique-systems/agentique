@@ -35,11 +35,13 @@ asset. `remote-distribution-result.json` retains this evidence alongside the
 exact metadata, download and comparison command outputs.
 
 All three local ordinary facade gates passed and independent boundary review
-accepted those results. A fresh facade run on the downloaded copy remains
-queued until the real native journey releases the runtime. The comparison
-helper never invokes a standards consumer. The uploaded verification asset
-accurately records local authentication at upload time; subsequent remote
-checks are retained in Git separately.
+accepted those results. After the native process released the runtime, a fresh
+ordinary facade run on the downloaded copy also passed: 72.391 seconds, with
+KerML restoration 34,535 ms and Systems restoration 34,005 ms. Exact output,
+command, memory and timing records are retained in
+`remote-runtime-authentication.json` and `remote-runtime-facade-verify.*`.
+The uploaded verification asset accurately records local authentication at
+upload time; subsequent remote checks are retained in Git separately.
 
 A maintainer with an authenticated `gh` session can download from a checkout
 containing the reviewed transport registration:
@@ -60,8 +62,8 @@ same draft using its exact tag and package hash. It has not been dispatched.
 
 The retained downloaded copy is in
 `verification/generated/native-studio-alpha/runtime-remote-download-2026-09-25/`
-of the runtime worktree. Once the integration lead releases the memory gate,
-its ordinary verification command from the integration checkout is:
+of the runtime worktree. The successful ordinary verification command from the
+integration checkout was:
 
 ```powershell
 target/native-alpha/release/agq-publications.exe --root . verify --bundle C:/Users/phili/github/agentique-systems/agentique-alpha-runtime/verification/generated/native-studio-alpha/runtime-remote-download-2026-09-25/accepted-runtime.agq-runtime

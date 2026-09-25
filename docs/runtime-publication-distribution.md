@@ -18,8 +18,9 @@ now retains all four assets. An independent download matched every local asset
 and GitHub-reported digest exactly. Access requires repository push permission;
 the draft remains unpublished. See the [download evidence](../verification/native-studio-alpha/runtime/remote-distribution-result.json)
 and [handoff](../verification/native-studio-alpha/runtime/distribution-handoff.md).
-A fresh ordinary facade run on the downloaded copy remains deferred until the
-native real-model journey releases the runtime; byte equality is already proved.
+A fresh ordinary facade run on the downloaded copy also passed in 72.391 seconds,
+authenticating both accepted profiles. Its [command and timing evidence](../verification/native-studio-alpha/runtime/remote-runtime-authentication.json)
+completes the remote distribution gate without publishing the draft.
 
 ## Package and authenticate
 

@@ -1,0 +1,33 @@
+{
+  "format": "agq-runtime-remote-authentication/1",
+  "completed_utc": "2026-09-25T18:57:16.716920+00:00",
+  "downloaded_bundle_sha256": "37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026",
+  "downloaded_bundle_bytes": 610190454,
+  "release_url": "https://github.com/agentique-systems/agentique/releases/tag/untagged-05ba0adcc0765264ca72",
+  "asset_byte_comparison_record": "remote-distribution-result.json",
+  "asset_byte_comparison_record_sha256": "0d080a70588800f3d295887845539f4e9d4bfea591ecb0f3255a19615b7387fb",
+  "comparison_checkpoint_preserved": true,
+  "facades_rerun_on_downloaded_copy": true,
+  "ordinary_authentication_passed": true,
+  "kerml_profile": "agentique-kerml-1.0-operational/9",
+  "sysml_profile": "agentique-sysml-2.0-operational/3",
+  "binary": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\native-alpha\\release\\agq-publications.exe",
+  "binary_sha256": "0f656a2c026acbe9bf859d9865a62dd9951202e8e3e4b570a7522e87ea553acb",
+  "binary_build_source": "23b7910dc79faac0d53a9d0113954a0c0fa6ada9",
+  "command_record": "remote-runtime-facade-verify.json",
+  "command_record_sha256": "5712928824b5b5914b50283bad003b97be0974d1981f6ba06c3a2b18f5df7f05",
+  "command_exit_code": 0,
+  "elapsed_seconds": 72.391,
+  "peak_rss_bytes": 4981239808,
+  "peak_private_bytes": 5138018304,
+  "memory_scope": "direct child process sampled at 1 second; excludes descendant compilers",
+  "timings": {
+    "kerml_restore_ms": 34535,
+    "sources_verify_ms": 25,
+    "systems_restore_ms": 34005,
+    "transport_verify_ms": 847
+  },
+  "release_mutated": false,
+  "release_published": false,
+  "workflow_dispatched": false
+}

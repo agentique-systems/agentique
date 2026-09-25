@@ -128,7 +128,11 @@ matches the reviewed notes; the embedded manifest equals the separate asset.
 `remote-distribution-result.json` and exact `remote-draft-*.log` outputs retain
 these results. No publication or asset replacement occurred in this stream.
 
-The manual `runtime-asset` workflow has not been dispatched. A fresh normal
-facade run on the downloaded copy is deliberately deferred while the native
-real-model journey holds the runtime. Byte equality with the already
-authenticated bundle is established; that separate rerun is not yet claimed.
+After the native process released the runtime, a fresh normal facade run on the
+downloaded copy passed in 72.391 seconds: KerML 34,535 ms, Systems 34,005 ms,
+source verification 25 ms and transport verification 847 ms. Peak sampled RSS
+was 4,981,239,808 bytes. `remote-runtime-authentication.json` and the exact
+`remote-runtime-facade-verify.log`/JSON command record retain this final gate.
+The earlier byte-comparison checkpoint remains unchanged and accurately records
+that facade verification was deferred at that point. The manual `runtime-asset`
+workflow has not been dispatched; the draft remains unpublished.

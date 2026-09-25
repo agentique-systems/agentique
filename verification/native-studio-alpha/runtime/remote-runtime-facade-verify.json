@@ -1,0 +1,22 @@
+{
+  "command": [
+    "C:/Users/phili/github/agentique-systems/agentique/target/native-alpha/release/agq-publications.exe",
+    "--root",
+    "C:/Users/phili/github/agentique-systems/agentique",
+    "verify",
+    "--bundle",
+    "C:/Users/phili/github/agentique-systems/agentique-alpha-runtime/verification/generated/native-studio-alpha/runtime-remote-download-2026-09-25/accepted-runtime.agq-runtime"
+  ],
+  "cwd": "C:/Users/phili/github/agentique-systems/agentique",
+  "started_utc": "2026-09-25T18:54:57.494233+00:00",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "source_commit": "95e234b1f08c6757588734993cd3004c28984d3a",
+  "working_diff_sha256": "a87770ee3731ae3d36918e685c983389f78413b15ef101cb1cbb63c3702b9451",
+  "exit_code": 0,
+  "elapsed_seconds": 72.391,
+  "peak_rss_bytes": 4981239808,
+  "peak_private_bytes": 5138018304,
+  "memory_scope": "direct child process sampled at 1 second; excludes descendant compilers",
+  "output_sha256": "a1732b13dcd77dfd8bf3f6885d1be78134616dab761a599a66823b45df903c35",
+  "raw_output": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\native-studio-alpha\\runtime\\remote-runtime-facade-verify.log"
+}
