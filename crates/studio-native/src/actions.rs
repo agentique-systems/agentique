@@ -15,20 +15,45 @@ use std::collections::BTreeSet;
 
 impl StudioApp {
     pub fn context(&self) -> CommandContext {
+        let can_create = self
+            .selected_element()
+            .and_then(|id| self.scene.node(id))
+            .is_some_and(|node| {
+                commands::can_create_part(
+                    &node.semantic,
+                    self.fixture.is_some(),
+                    self.projection.revision_id,
+                )
+            });
         CommandContext {
             selected: self.selection.primary.is_some(),
-            candidate: self.candidate.is_some(),
-            validated: self.candidate.as_ref().is_some_and(|c| {
-                matches!(
-                    c.phase,
-                    Some(
-                        agq_studio_platform::CandidatePhase::Validated
-                            | agq_studio_platform::CandidatePhase::CommitUnresolved
+            can_create,
+            candidate: self.candidate.as_ref().map_or(
+                commands::CandidateReview::None,
+                |candidate| {
+                    candidate.phase.map_or(
+                        commands::CandidateReview::Visual,
+                        commands::CandidateReview::Semantic,
                     )
-                )
-            }),
+                },
+            ),
             live: self.binding.is_some() && self.fixture.is_none(),
             busy: !self.pending.is_empty(),
+        }
+    }
+    pub fn change_comparison(&mut self, mode: ComparisonMode) {
+        if self.candidate.is_none() || self.comparison == mode {
+            return;
+        }
+        if self.bridge.mutation_pending() {
+            self.status = "Wait for the model operation before changing the candidate view".into();
+            return;
+        }
+        self.comparison = mode;
+        self.invalidate_inspection();
+        self.rebuild();
+        if self.fixture.is_none() {
+            self.request_projection();
         }
     }
     pub fn work_context(&self) -> crate::bridge::WorkContext {

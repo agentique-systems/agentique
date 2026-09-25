@@ -1,0 +1,19 @@
+{
+  "source_commit": "17aac1b",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-studio-native",
+    "--bin",
+    "agq-studio-native"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique-native-safety",
+  "target_directory": "C:/Users/phili/github/agentique-systems/agentique/target",
+  "exit_code": 0,
+  "elapsed_ms": 7297,
+  "output": "\nrunning 7 tests\ntest bridge::tests::replies_cannot_cross_project_revision_fixture_or_candidate_context ... ok\ntest commands::tests::fixture_cannot_enable_validation_or_commit ... ok\ntest bridge::tests::unresolved_worker_request_blocks_runtime_switch_and_keeps_its_context ... ok\ntest bridge::tests::failed_bootstrap_emits_nonterminal_progress_before_terminal_error ... ok\ntest selection::tests::stale_revision_or_missing_target_cannot_become_an_inspector_request ... ok\ntest session::tests::oversized_or_future_session_is_rejected_without_touching_model_state ... ok\ntest session::tests::session_roundtrip_preserves_presentation_and_rejects_unsafe_camera ... ok\n\ntest result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\n",
+  "stderr": "   Compiling agq-studio-native v0.1.0 (C:\\Users\\phili\\github\\agentique-systems\\agentique-native-safety\\crates\\studio-native)\n    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.73s\n     Running unittests src\\main.rs (C:/Users/phili/github/agentique-systems/agentique/target\\debug\\deps\\agq_studio_native-615a2f638bc182d6.exe)\n"
+}
