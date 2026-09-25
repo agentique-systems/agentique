@@ -126,6 +126,17 @@ and the explicitly reviewed new transport pin. Do not report these as original
 Systems cache bytes recovered. No alternate transport is active merely because
 the mechanism exists.
 
+Prepare the small transport receipt for review with
+`tools/runtime-recovery/prepare_systems_transport.py`, supplying the generated
+cache, receipt and bindings, a unique transport identifier and a fresh output
+directory. It independently hashes actual entries, requires every semantic field
+and binding to match, preserves original facade/closure bytes and all entry
+lengths, and records the new snapshot revision in `content.json`. It writes only
+an unauthenticated review candidate. Keep that content record: a later replay
+can restore the known label and demand this registered exact graph digest.
+Registration in the compiled catalogue remains an explicit reviewed source
+change followed by ordinary language-facade authentication.
+
 ## Retain the result
 
 After both ordinary facades authenticate, use `agq-publications pack` to create

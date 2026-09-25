@@ -4,6 +4,7 @@ import hashlib
 import importlib.util
 import json
 import pathlib
+import sys
 import tempfile
 import unittest
 import zipfile
@@ -16,6 +17,81 @@ COMPARE_SPEC = importlib.util.spec_from_file_location(
     "compare_systems", ROOT / "tools/runtime-recovery/compare_systems_contract.py")
 COMPARE = importlib.util.module_from_spec(COMPARE_SPEC)
 COMPARE_SPEC.loader.exec_module(COMPARE)
+sys.modules["compare_systems_contract"] = COMPARE
+PREPARE_SPEC = importlib.util.spec_from_file_location(
+    "prepare_systems", ROOT / "tools/runtime-recovery/prepare_systems_transport.py")
+PREPARE = importlib.util.module_from_spec(PREPARE_SPEC)
+PREPARE_SPEC.loader.exec_module(PREPARE)
+
+
+class SystemsTransportPreparation(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.root = pathlib.Path(self.temp.name)
+        self.addCleanup(self.temp.cleanup)
+        self.cache = self.root / "candidate.zip"
+        self.revision = "00000000-0000-4000-8000-000000000001"
+        self.payloads = {
+            "closure.json": b'{"fixture":"closure"}',
+            "facade.json": b'{"fixture":"facade"}',
+            "kernel.jsonl": ('{"Snapshot":{"revision":"' + self.revision + '"}}\n').encode(),
+        }
+        self.authority = {
+            "identity": {"semantic_digest": [1] * 32}, "status": "accepted",
+            "entries": {name: {"bytes": len(payload), "sha256": list(hashlib.sha256(payload).digest())}
+                        for name, payload in self.payloads.items()},
+        }
+        self.generated = copy.deepcopy(self.authority)
+        self.authority["entries"]["kernel.jsonl"]["sha256"] = [0] * 32
+        self.bindings = {"anchors": [{"id": "canonical"}]}
+
+    def prepare(self):
+        with zipfile.ZipFile(self.cache, "w") as archive:
+            for name, payload in self.payloads.items():
+                archive.writestr(name, payload)
+        return PREPARE.prepare(self.cache, json.dumps(self.authority).encode(),
+                               json.dumps(self.generated).encode(), self.bindings,
+                               self.bindings, "fixture-reviewed-transport")
+
+    def test_candidate_retains_revision_and_exact_original_authority_without_acceptance(self):
+        receipt, evidence = self.prepare()
+        self.assertEqual(receipt["semantic_authority_sha256"],
+                         list(hashlib.sha256(json.dumps(self.authority).encode()).digest()))
+        self.assertEqual(receipt["identity"], self.authority["identity"])
+        self.assertEqual(evidence["snapshot_revision"], self.revision)
+        self.assertFalse(evidence["runtime_accepted"])
+        self.assertTrue(evidence["ordinary_facade_authentication_required"])
+        self.assertTrue(evidence["entries"]["facade.json"]["original_bytes_equal"])
+        self.assertTrue(evidence["entries"]["closure.json"]["original_bytes_equal"])
+        self.assertFalse(evidence["entries"]["kernel.jsonl"]["original_bytes_equal"])
+
+    def test_new_facade_or_closure_digest_is_not_a_transport_candidate(self):
+        for name in ("facade.json", "closure.json"):
+            old = self.generated["entries"][name]["sha256"]
+            self.generated["entries"][name]["sha256"] = [0] * 32
+            with self.assertRaisesRegex(ValueError, "reviewed entry boundary"):
+                self.prepare()
+            self.generated["entries"][name]["sha256"] = old
+
+    def test_graph_size_change_is_not_a_transport_candidate(self):
+        self.generated["entries"]["kernel.jsonl"]["bytes"] += 1
+        with self.assertRaisesRegex(ValueError, "reviewed entry boundary"):
+            self.prepare()
+
+    def test_claimed_digest_without_matching_actual_payload_fails(self):
+        self.generated["entries"]["kernel.jsonl"]["sha256"] = [2] * 32
+        with self.assertRaisesRegex(ValueError, "actual bytes"):
+            self.prepare()
+
+    def test_archive_cannot_add_caller_authority(self):
+        self.payloads["authority.json"] = b"{}"
+        with self.assertRaisesRegex(ValueError, "Unexpected"):
+            self.prepare()
+
+    def test_changed_semantics_cannot_reach_candidate_issuance(self):
+        self.generated["identity"]["semantic_digest"][0] ^= 1
+        with self.assertRaisesRegex(ValueError, "semantic contract"):
+            self.prepare()
 
 
 class SystemsContractComparison(unittest.TestCase):
