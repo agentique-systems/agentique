@@ -389,6 +389,17 @@ impl HierarchyLayout {
         parent: ElementId,
         origin: Point,
     ) -> BTreeMap<ElementId, Rect> {
+        // Root definitions have very different sizes: one may contain a whole
+        // subsystem while its type context is a handful of small cards. A grid
+        // whose every cell inherits the largest width and height creates vast
+        // empty bands and forces fit-to-view below readable zoom.
+        if parent == ElementId::from_u128(0)
+            && children.len() > 1
+            && previous
+                .is_none_or(|memory| children.iter().all(|id| !memory.bounds.contains_key(id)))
+        {
+            return self.pack_roots(children, sizes, origin);
+        }
         let mut result = BTreeMap::new();
         let mut occupied = crate::spatial::RectIndex::new(320.0);
         let parent_old = previous
@@ -462,5 +473,94 @@ impl HierarchyLayout {
             }
         }
         result
+    }
+
+    fn pack_roots(
+        &self,
+        children: &[ElementId],
+        sizes: &BTreeMap<ElementId, Size>,
+        origin: Point,
+    ) -> BTreeMap<ElementId, Rect> {
+        let columns = if children.len() > self.max_columns * 4 {
+            (children.len() as f32).sqrt().ceil() as usize
+        } else {
+            self.max_columns.min(children.len()).max(1)
+        };
+        let mut ordered = children.to_vec();
+        ordered.sort_by(|a, b| sizes[b].height.total_cmp(&sizes[a].height).then(a.cmp(b)));
+        let mut heights = vec![0.0_f32; columns];
+        let mut widths = vec![0.0_f32; columns];
+        let mut assignments = Vec::with_capacity(children.len());
+        for id in ordered {
+            let column = (0..columns)
+                .min_by(|a, b| heights[*a].total_cmp(&heights[*b]).then(a.cmp(b)))
+                .expect("at least one root column");
+            assignments.push((id, column, heights[column]));
+            widths[column] = widths[column].max(sizes[&id].width);
+            heights[column] += sizes[&id].height + self.gap;
+        }
+        let mut left = origin.x;
+        let offsets: Vec<_> = widths
+            .into_iter()
+            .map(|width| {
+                let offset = left;
+                left += width + self.gap;
+                offset
+            })
+            .collect();
+        assignments
+            .into_iter()
+            .map(|(id, column, y)| {
+                let size = sizes[&id];
+                (
+                    id,
+                    Rect::new(offsets[column], origin.y + y, size.width, size.height),
+                )
+            })
+            .collect()
+    }
+}
+
+#[cfg(test)]
+mod root_packing_tests {
+    use super::*;
+
+    #[test]
+    fn a_large_subsystem_does_not_inflate_every_context_card_cell() {
+        let ids: Vec<_> = (1..=9).map(ElementId::from_u128).collect();
+        let mut sizes: BTreeMap<_, _> = ids
+            .iter()
+            .map(|id| (*id, Size::new(232.0, 118.0)))
+            .collect();
+        sizes.insert(ids[0], Size::new(850.0, 500.0));
+        let layout = HierarchyLayout::default();
+        let first = layout.pack(
+            &ids,
+            &sizes,
+            None,
+            ElementId::from_u128(0),
+            Point::default(),
+        );
+        assert!(first.values().map(|r| r.max.x).fold(0.0_f32, f32::max) < 1500.0);
+        assert!(first.values().map(|r| r.max.y).fold(0.0_f32, f32::max) < 700.0);
+        for (id, bounds) in &first {
+            for (other, other_bounds) in &first {
+                if id != other {
+                    assert!(!bounds.intersects(*other_bounds));
+                }
+            }
+        }
+        let memory = LayoutMemory {
+            bounds: first.clone(),
+            ..Default::default()
+        };
+        let restored = layout.pack(
+            &ids,
+            &sizes,
+            Some(&memory),
+            ElementId::from_u128(0),
+            Point::default(),
+        );
+        assert_eq!(first, restored);
     }
 }

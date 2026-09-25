@@ -230,13 +230,15 @@ impl StudioApp {
             let scale = self.camera.zoom;
             let inset = 14.0 * scale;
             if self.lod.level() >= LodLevel::Summary
-                || (node.is_container && bounds.width() >= 90.0 && bounds.height() >= 28.0)
+                || (bounds.width() >= 55.0 && bounds.height() >= 24.0)
             {
                 let title_size = if node.is_container { 17.0 } else { 16.0 };
                 let top = bounds.min
                     + Vec2::new(
                         inset,
-                        if node.is_container {
+                        if self.lod.level() < LodLevel::Summary {
+                            5.0
+                        } else if node.is_container {
                             15.0 * scale
                         } else {
                             37.0 * scale

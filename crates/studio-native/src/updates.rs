@@ -305,6 +305,20 @@ impl StudioApp {
                         self.agent_return = None;
                     }
                     self.finish_agent_projection();
+                    if !self.ready
+                        && self.selection.primary.is_none()
+                        && let Some(root) = self.projection.metadata.suggested_focus
+                        && let Some(node) = self.scene.node(root)
+                    {
+                        self.selection.select(
+                            if node.is_container {
+                                agq_studio_scene::SceneTarget::Container(root)
+                            } else {
+                                agq_studio_scene::SceneTarget::Node(root)
+                            },
+                            false,
+                        );
+                    }
                     self.ready = true;
                     self.fit_pending = true;
                     let presentation_ok = self.apply_pending_presentation();
@@ -570,6 +584,7 @@ impl StudioApp {
             // Set the world before rebuilding, so the per-world memory swap
             // cannot discard the newly restored layout.
             self.layout_world = self.world;
+            self.layout_focus = self.focus;
             if !self.rebuild_immediate() {
                 self.restore_display(previous);
                 return false;

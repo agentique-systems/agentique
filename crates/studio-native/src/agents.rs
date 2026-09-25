@@ -99,9 +99,11 @@ impl crate::app::StudioApp {
             self.focus = previous.focus;
             self.camera_target = Some(previous.camera);
             self.selection = previous.selection;
-            self.layouts.insert(self.layout_world, self.layout.clone());
+            self.layouts
+                .insert((self.layout_world, self.layout_focus), self.layout.clone());
             self.layout = previous.layout;
             self.layout_world = self.world;
+            self.layout_focus = self.focus;
             self.collapsed = previous.collapsed;
             self.expanded = previous.expanded;
             self.families = previous.families;

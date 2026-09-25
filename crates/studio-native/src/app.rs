@@ -66,8 +66,9 @@ pub struct DisplayState {
     camera: Camera2D,
     camera_target: Option<Camera2D>,
     layout: LayoutMemory,
-    layouts: BTreeMap<World, LayoutMemory>,
+    layouts: BTreeMap<(World, Option<ElementId>), LayoutMemory>,
     layout_world: World,
+    layout_focus: Option<ElementId>,
     collapsed: BTreeSet<ElementId>,
     expanded: Option<BTreeSet<ElementId>>,
     families: BTreeSet<RelationshipFamily>,
@@ -126,14 +127,16 @@ pub struct StudioApp {
     pub camera_target: Option<Camera2D>,
     pub lod: LodController,
     pub layout: LayoutMemory,
-    pub layouts: BTreeMap<World, LayoutMemory>,
+    pub layouts: BTreeMap<(World, Option<ElementId>), LayoutMemory>,
     pub layout_world: World,
+    pub layout_focus: Option<ElementId>,
     pub generation: u64,
     pub batch: Arc<Batch>,
     pub batch_key: Option<u64>,
     pub gpu_stats: Arc<Mutex<GpuStats>>,
     pub selection: Selection,
     pub canvas_clicks: CanvasClicks,
+    pub explorer_clicks: CanvasClicks,
     pub navigation: Navigation,
     pub world: World,
     pub focus: Option<ElementId>,
@@ -274,12 +277,14 @@ impl StudioApp {
             layout,
             layouts: BTreeMap::new(),
             layout_world: World::System,
+            layout_focus: None,
             generation: 1,
             batch: Arc::new(Batch::default()),
             batch_key: None,
             gpu_stats: Arc::new(Mutex::new(GpuStats::default())),
             selection,
             canvas_clicks: CanvasClicks::default(),
+            explorer_clicks: CanvasClicks::default(),
             navigation: Navigation::default(),
             world: World::System,
             focus: None,
@@ -374,6 +379,7 @@ impl StudioApp {
             layout: self.layout.clone(),
             layouts: self.layouts.clone(),
             layout_world: self.layout_world,
+            layout_focus: self.layout_focus,
             collapsed: self.collapsed.clone(),
             expanded: self.expanded.clone(),
             families: self.families.clone(),
@@ -405,6 +411,7 @@ impl StudioApp {
         self.layout = previous.layout;
         self.layouts = previous.layouts;
         self.layout_world = previous.layout_world;
+        self.layout_focus = previous.layout_focus;
         self.collapsed = previous.collapsed;
         self.expanded = previous.expanded;
         self.families = previous.families;
@@ -425,10 +432,21 @@ impl StudioApp {
         self.rebuild_with_background(false)
     }
     fn rebuild_with_background(&mut self, background: bool) -> bool {
-        if self.layout_world != self.world {
-            self.layouts.insert(self.layout_world, self.layout.clone());
-            self.layout = self.layouts.get(&self.world).cloned().unwrap_or_default();
+        if (self.layout_world, self.layout_focus) != (self.world, self.focus) {
+            self.layouts
+                .insert((self.layout_world, self.layout_focus), self.layout.clone());
+            self.layout = self
+                .layouts
+                .get(&(self.world, self.focus))
+                .cloned()
+                .unwrap_or_default();
+            // Bounded disposable navigation memory. The active view is also
+            // stored in the crash-safe presentation session.
+            while self.layouts.len() > 24 {
+                self.layouts.pop_first();
+            }
             self.layout_world = self.world;
+            self.layout_focus = self.focus;
         }
         let mut projection = self.active_projection().clone();
         let hidden: BTreeSet<_> = projection.view.hidden_elements.iter().copied().collect();
@@ -806,6 +824,13 @@ pub fn short_revision(id: agq_modeling_workspace::ProjectRevisionId) -> String {
 }
 
 pub(crate) fn hierarchy_order(scene: &SemanticScene) -> Vec<usize> {
+    hierarchy_order_with_focus(scene, None)
+}
+
+pub(crate) fn hierarchy_order_with_focus(
+    scene: &SemanticScene,
+    focus: Option<ElementId>,
+) -> Vec<usize> {
     let ids: BTreeSet<_> = scene.nodes.iter().map(|n| n.id()).collect();
     let mut children = BTreeMap::<Option<ElementId>, Vec<usize>>::new();
     for (index, node) in scene.nodes.iter().enumerate() {
@@ -815,6 +840,12 @@ pub(crate) fn hierarchy_order(scene: &SemanticScene) -> Vec<usize> {
             .push(index);
     }
     let mut stack = children.get(&None).cloned().unwrap_or_default();
+    stack.sort_by_key(|index| {
+        (
+            Some(scene.nodes[*index].id()) != focus,
+            scene.nodes[*index].semantic.name.to_lowercase(),
+        )
+    });
     stack.reverse();
     let mut ordered = Vec::with_capacity(scene.nodes.len());
     let mut seen = BTreeSet::new();

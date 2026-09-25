@@ -256,7 +256,12 @@ impl StudioApp {
     }
     pub fn definition(&self) -> ViewDefinition {
         let mut view = match self.world {
-            World::System => ViewDefinition::architecture(),
+            World::System => ViewDefinition {
+                // One engineering level includes the actual owned parts and
+                // their definitions. Enter a subsystem to reveal the next.
+                depth: 1,
+                ..ViewDefinition::architecture()
+            },
             World::Requirements => ViewDefinition::requirements(),
             _ => ViewDefinition::semantic_graph(),
         };
@@ -391,11 +396,13 @@ impl StudioApp {
                 world: location.world,
                 focus: location.focus,
                 camera,
-                layout: if self.layout_world == location.world {
+                layout: if (self.layout_world, self.layout_focus)
+                    == (location.world, location.focus)
+                {
                     self.layout.clone()
                 } else {
                     self.layouts
-                        .get(&location.world)
+                        .get(&(location.world, location.focus))
                         .cloned()
                         .unwrap_or_default()
                 },

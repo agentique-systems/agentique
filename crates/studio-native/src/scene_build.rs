@@ -40,7 +40,8 @@ pub fn build(input: SceneInput) -> Result<BuiltScene, String> {
     let index_started = Instant::now();
     let spatial = SpatialIndex::build(&scene);
     let lookup = SceneLookup::build(&scene);
-    let outliner = crate::app::hierarchy_order(&scene);
+    let outliner =
+        crate::app::hierarchy_order_with_focus(&scene, input.projection.metadata.suggested_focus);
     let index_ms = index_started.elapsed().as_secs_f64() * 1000.0;
     Ok(BuiltScene {
         scene,

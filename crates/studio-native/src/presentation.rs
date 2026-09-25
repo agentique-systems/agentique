@@ -363,6 +363,7 @@ impl StudioApp {
         self.expanded = presentation.expanded;
         self.layout = presentation.layout;
         self.layout_world = self.world;
+        self.layout_focus = self.focus;
         // A saved window size cannot override the current monitor/viewport.
         let viewport = self.camera.viewport;
         self.camera = presentation.camera;

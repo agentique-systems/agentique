@@ -569,17 +569,26 @@ impl StudioApp {
                             crate::real_targets::Target::ExplorerElement(*id),
                             response.rect,
                         );
+                        let target = if *container {
+                            SceneTarget::Container(*id)
+                        } else {
+                            SceneTarget::Node(*id)
+                        };
+                        let mut same_object_click = false;
                         if response.clicked() {
-                            self.select(
-                                if *container {
-                                    SceneTarget::Container(*id)
-                                } else {
-                                    SceneTarget::Node(*id)
-                                },
-                                ui.input(|i| i.modifiers.shift),
+                            // Filtering can place a different canonical object
+                            // under the same toolkit row between two clicks.
+                            same_object_click = self.explorer_clicks.click(
+                                self.generation,
+                                Some(&target),
+                                response
+                                    .interact_pointer_pos()
+                                    .map_or([0.0, 0.0], |p| [p.x, p.y]),
+                                ui.input(|i| i.time),
                             );
+                            self.select(target, ui.input(|i| i.modifiers.shift));
                         }
-                        if response.double_clicked() {
+                        if response.double_clicked() && same_object_click {
                             self.execute(CommandId::Focus, ui.ctx());
                         }
                     });
