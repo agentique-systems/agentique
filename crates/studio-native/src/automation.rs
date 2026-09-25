@@ -95,6 +95,19 @@ enum Action {
     ClickTarget(Target),
 }
 impl Action {
+    fn lead_frames(&self) -> u64 {
+        // egui counts double/triple clicks globally by time, even across
+        // different widgets. Separate independent semantic gestures while
+        // keeping the two clicks inside DoubleClickContainer deliberately close.
+        match self {
+            Self::ClickNode(..)
+            | Self::DoubleClickContainer(..)
+            | Self::ClickNamedNode(..)
+            | Self::ClickDerivedEdge
+            | Self::ClickTarget(..) => 40,
+            _ => 0,
+        }
+    }
     fn frames(&self) -> u64 {
         match self {
             Self::Idle | Self::Key(..) | Self::Wheel => 1,
@@ -500,9 +513,9 @@ impl Runner {
             self.anchor = None;
         }
         let before = self.before.as_ref().expect("step snapshot initialized");
-        if self.age >= step.action.frames() + step.settle {
+        if self.age >= step.action.lead_frames() + step.action.frames() + step.settle {
             let passed = check(&step.check, app, before, self.anchor, self.point, ctx);
-            if passed || self.age > step.action.frames() + 180 {
+            if passed || self.age > step.action.lead_frames() + step.action.frames() + 180 {
                 self.report.assertions.push(AssertionEvidence {
                     name: step.name.into(),
                     expected: format!("{:?}", step.check),
@@ -530,11 +543,13 @@ impl Runner {
                 });
             }
         }
-        if self.age < step.action.frames() {
+        if self.age >= step.action.lead_frames()
+            && self.age - step.action.lead_frames() < step.action.frames()
+        {
             let start = input.events.len();
             inject(
                 &step.action,
-                self.age,
+                self.age - step.action.lead_frames(),
                 app,
                 ctx,
                 input,
