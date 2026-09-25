@@ -48,12 +48,12 @@ impl StudioApp {
             {
                 hovered = Some(SceneTarget::Node(port.owner));
             }
-            self.timing.hit_us = started.elapsed().as_secs_f64() * 1_000_000.0;
+            self.timing.hit(started.elapsed());
             let wheel = ui.input(|i| i.smooth_scroll_delta.y);
             if wheel.abs() > 0.01 {
                 self.camera_target = None;
                 self.camera.zoom_at(local.unwrap(), (wheel * 0.0025).exp());
-                self.timing.input();
+                self.timing.input(crate::timing::InputKind::Zoom);
                 ui.ctx().request_repaint();
             }
         }
@@ -62,7 +62,7 @@ impl StudioApp {
             self.marquee_end = world;
         }
         if response.dragged() {
-            self.timing.input();
+            self.timing.input(crate::timing::InputKind::Pan);
             self.camera_target = None;
             if self.marquee_start.is_some() {
                 self.marquee_end = world;
@@ -86,7 +86,7 @@ impl StudioApp {
         }
         let mut focus_click = false;
         if response.clicked() {
-            self.timing.input();
+            self.timing.input(crate::timing::InputKind::Selection);
             focus_click = self.canvas_clicks.click(
                 self.generation,
                 hovered.as_ref(),

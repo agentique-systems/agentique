@@ -12,6 +12,7 @@ mod navigation;
 mod panels;
 mod selection;
 mod session;
+mod stress_automation;
 mod theme;
 mod timing;
 mod updates;
@@ -44,8 +45,8 @@ pub struct Args {
     light: bool,
     #[arg(long)]
     no_restore: bool,
-    /// Exercise real native pointer/keyboard routing against the architecture fixture.
-    #[arg(long, value_parser = ["vertical"])]
+    /// Exercise native input routing: the architecture vertical or stress camera fixtures.
+    #[arg(long, value_parser = ["vertical", "stress"])]
     scenario: Option<String>,
     #[arg(
         long,

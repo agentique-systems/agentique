@@ -384,7 +384,12 @@ impl StudioApp {
 impl eframe::App for StudioApp {
     fn raw_input_hook(&mut self, ctx: &egui::Context, input: &mut egui::RawInput) {
         if let Some(scenario) = &self.args.scenario {
-            match crate::automation::drive(self, ctx, input, scenario, &self.args.scenario_report) {
+            let outcome = if scenario == "stress" {
+                crate::stress_automation::drive(self, ctx, input, &self.args.scenario_report)
+            } else {
+                crate::automation::drive(self, ctx, input, scenario, &self.args.scenario_report)
+            };
+            match outcome {
                 Ok(crate::automation::ScenarioStatus::Running) => {}
                 Ok(crate::automation::ScenarioStatus::Complete) => {
                     ctx.send_viewport_cmd(egui::ViewportCommand::Close)

@@ -276,6 +276,38 @@ impl StudioApp {
             platform.history(id).map(Output::History)
         }));
     }
+    pub fn metrics_report(&self) -> serde_json::Value {
+        let stats = self.gpu_stats.lock().ok();
+        let frames = self.timing.frame_summary();
+        serde_json::json!({
+            "fixture": self.fixture,
+            "adapter": self.adapter,
+            "frame_count": self.frame_number,
+            "frame_interval_median_ms": frames.median,
+            "frame_interval_p95_ms": frames.p95,
+            "frame_intervals_ms": frames,
+            "warmup_frame_intervals_discarded": self.timing.discarded_frame_intervals(),
+            "scene_build_ms": self.timing.scene_ms,
+            "layout_included_in_scene_build": true,
+            "hit_test_us": self.timing.hit_summary(),
+            "handled_input_to_next_ui_update_ms": {
+                "pan": self.timing.input_summary(crate::timing::InputKind::Pan),
+                "zoom": self.timing.input_summary(crate::timing::InputKind::Zoom),
+                "selection": self.timing.input_summary(crate::timing::InputKind::Selection),
+            },
+            "gpu_upload_cpu_ms": stats.as_ref().filter(|s| s.uploads > 0).map(|s| s.upload_ms),
+            "gpu_uploaded_bytes": stats.as_ref().map(|s| s.uploaded_bytes),
+            "gpu_upload_count": stats.as_ref().map(|s| s.uploads),
+            "gpu_instances": stats.as_ref().map(|s| s.instances),
+            "scene_draw_calls": stats.as_ref().map(|s| s.draw_calls),
+            "visible_nodes": self.timing.visible_nodes,
+            "total_nodes": self.scene.nodes.len(),
+            "total_edges": self.scene.edges.len(),
+            "gpu_timestamp_ms": null,
+            "physical_input_to_photon_ms": null,
+            "note": "Native wgpu frames with vsync. CPU update intervals retain the latest 240 samples after 60 warmup intervals. Input spans start inside the viewport gesture handler and end at the next UI update; they exclude OS input delivery and do not measure presentation. GPU upload is CPU submission time for the last upload. Null means unmeasured."
+        })
+    }
     pub fn capture(&mut self, ctx: &egui::Context) {
         if self.args.screenshot.is_some() && !self.capture_requested && self.frame_number >= 20 {
             self.capture_requested = true;
@@ -327,15 +359,31 @@ impl StudioApp {
             && self.args.scenario.is_none()
             && (self.args.screenshot.is_none() || self.capture_done)
         {
-            let stats = self.gpu_stats.lock().map(|s| s.clone()).unwrap_or_default();
-            let report = serde_json::json!({"fixture":self.fixture,"adapter":self.adapter,"frame_count":self.frame_number,"frame_interval_median_ms":self.timing.median_ms(),"frame_interval_p95_ms":self.timing.p95_ms(),"scene_build_ms":self.timing.scene_ms,"layout_included_in_scene_build":true,"hit_test_us":self.timing.hit_us,"input_to_ui_frame_ms":self.timing.input_to_frame_ms,"gpu_upload_cpu_ms":stats.upload_ms,"gpu_uploaded_bytes":stats.uploaded_bytes,"gpu_upload_count":stats.uploads,"gpu_instances":stats.instances,"scene_draw_calls":stats.draw_calls,"visible_nodes":self.timing.visible_nodes,"total_nodes":self.scene.nodes.len(),"total_edges":self.scene.edges.len(),"gpu_timestamp_ms":null,"note":"Actual native wgpu frames, vsync enabled; frame interval is not GPU timestamp or measured physical input latency."});
+            // Close is asynchronous; subsequent updates must not overwrite the
+            // chosen measurement or emit a second benchmark record.
+            let emitted = egui::Id::new("native-benchmark-metrics-emitted");
+            if ctx
+                .data(|data| data.get_temp::<bool>(emitted))
+                .unwrap_or(false)
+            {
+                return;
+            }
+            let report = self.metrics_report();
             if let Some(path) = &self.args.metrics {
-                if let Some(parent) = path.parent() {
-                    let _ = std::fs::create_dir_all(parent);
+                let write_result = (|| -> Result<(), Box<dyn std::error::Error>> {
+                    if let Some(parent) = path.parent().filter(|p| !p.as_os_str().is_empty()) {
+                        std::fs::create_dir_all(parent)?;
+                    }
+                    std::fs::write(path, serde_json::to_vec_pretty(&report)?)?;
+                    Ok(())
+                })();
+                if let Err(error) = write_result {
+                    eprintln!("Cannot persist native benchmark metrics: {error}");
+                    std::process::exit(2);
                 }
-                let _ = std::fs::write(path, serde_json::to_vec_pretty(&report).unwrap());
             }
             println!("{report}");
+            ctx.data_mut(|data| data.insert_temp(emitted, true));
             ctx.send_viewport_cmd(egui::ViewportCommand::Close);
         }
     }
