@@ -1,0 +1,109 @@
+{
+  "format": "agentique-real-source-selector-preflight/1",
+  "root": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_preflight_passed": true,
+  "runtime_authenticated": false,
+  "semantic_validation_performed": false,
+  "source_sha256": {
+    "AgentFabric.sysml": "fb19fdb031aa524d9957f3a1498818bd66106c718d51274328bd47f381921617",
+    "Agentique.sysml": "17cc930b105b74d7001a70ab9cfddf3a2c65c906a57dcc2e1f341140b3636960",
+    "Contracts.sysml": "4235d37c880ca5d43bb11b482d9414b4270a78ff6ee7287d3538961bcc94bc2a",
+    "ExecutionRuntime.sysml": "7f753fe89a4158918481a52134df9df9218167433fe3869d65ae22ccf6d90691",
+    "LanguageEngine.sysml": "3fbdf2caa9a6ee69c8807f513af0d1e822b053d9a86ff947782ff65f88536f39",
+    "ModelingPlatform.sysml": "12c198141d892e606f9cd2b3a419863cc02f994f1b31236af0b112faf5d31b79"
+  },
+  "checks": [
+    {
+      "name": "bootstrap source inventory",
+      "passed": true,
+      "detail": [
+        "AgentFabric.sysml",
+        "Agentique.sysml",
+        "Contracts.sysml",
+        "ExecutionRuntime.sysml",
+        "LanguageEngine.sysml",
+        "ModelingPlatform.sysml"
+      ]
+    },
+    {
+      "name": "unique PartDefinition Agentique",
+      "passed": true,
+      "detail": [
+        "Agentique.sysml"
+      ]
+    },
+    {
+      "name": "unique PartDefinition ModelingPlatform",
+      "passed": true,
+      "detail": [
+        "ModelingPlatform.sysml"
+      ]
+    },
+    {
+      "name": "unique PartDefinition ModelRepository",
+      "passed": true,
+      "detail": [
+        "ModelingPlatform.sysml"
+      ]
+    },
+    {
+      "name": "unique PartDefinition ProjectWorkspace",
+      "passed": true,
+      "detail": [
+        "ModelingPlatform.sysml"
+      ]
+    },
+    {
+      "name": "unique PartDefinition AgentRuntime",
+      "passed": true,
+      "detail": [
+        "AgentFabric.sysml"
+      ]
+    },
+    {
+      "name": "repository inherits interface owner",
+      "passed": true,
+      "detail": "ModelRepository specializes Repository"
+    },
+    {
+      "name": "repository interface declaration",
+      "passed": true,
+      "detail": "Repository owns port repositoryRevisions"
+    },
+    {
+      "name": "CreatePartUsage owner has plain body header",
+      "passed": true,
+      "detail": "ModelingPlatform is a plain authored PartDefinition"
+    },
+    {
+      "name": "rename refusal target has plain header and actual textual references",
+      "passed": true,
+      "detail": "ProjectWorkspace rename must exercise reference refusal, not complex-header refusal"
+    },
+    {
+      "name": "acceptance part name is fresh: alphaStudioObserver",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "acceptance part name is fresh: nativeObserver",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "acceptance part name is fresh: afterRestartObserver",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "acceptance part name is fresh: nativeObserverRenamed",
+      "passed": true,
+      "detail": []
+    },
+    {
+      "name": "authored requirement declaration exists",
+      "passed": true,
+      "detail": "Requirements World has authored seed declarations"
+    }
+  ]
+}

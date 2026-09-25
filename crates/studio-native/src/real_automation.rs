@@ -259,6 +259,10 @@ const REPOSITORY: Named = Named {
     name: "ModelRepository",
     kind: "PartDefinition",
 };
+const AGENT_RUNTIME: Named = Named {
+    name: "AgentRuntime",
+    kind: "PartDefinition",
+};
 const PART: Named = Named {
     name: PART_NAME,
     kind: "PartUsage",
@@ -314,6 +318,7 @@ enum Check {
     RepositoryInterfaces,
     Home,
     World(World),
+    GraphOverview,
     Dependencies,
     Standards,
     DerivedEdge,
@@ -445,13 +450,19 @@ fn steps(restart: bool) -> Vec<Step> {
             None,
         ),
         step(
-            "open System World for a matching-lens comparison",
-            Action::Key(Key::Num1),
-            Check::World(World::System),
+            "open Graph World to compare the added Agent Fabric",
+            Action::Key(Key::Num2),
+            Check::World(World::Graph),
             None,
         ),
         step(
-            "compare actual parent revision in System World",
+            "show the complete authored graph including the added agent architecture",
+            Action::Palette("Show loaded graph overview"),
+            Check::GraphOverview,
+            None,
+        ),
+        step(
+            "compare actual parent revision with the same complete graph lens",
             Action::Palette("Compare with parent"),
             Check::ParentDiff,
             Some("06-history-diff"),
@@ -1062,6 +1073,19 @@ impl Runner {
                     && !app.projection.edges.is_empty(),
                 "Agent action did not return an actual revision-bound dependency view",
             ),
+            Check::GraphOverview => {
+                require(
+                    app.world == World::Graph
+                        && app.focus.is_none()
+                        && app.active_projection().view.focus.is_none(),
+                    "Graph overview retained a neighborhood focus",
+                )?;
+                let id = named(app, AGENT_RUNTIME)?;
+                require(
+                    app.scene.node(id).is_some(),
+                    "Graph overview omits the Agent Fabric added by bootstrap",
+                )
+            }
             Check::Standards => require(
                 app.include_standard
                     && app.active_projection().view.include_standard_library
@@ -1131,10 +1155,9 @@ impl Runner {
                             .is_some_and(|before| before.view == app.projection.view)
                         && app
                             .scene
-                            .nodes
-                            .iter()
-                            .any(|n| n.diff != DiffMark::Unchanged),
-                    "Parent difference lacks exact parent, matching lens, or structural changes",
+                            .node(named(app, AGENT_RUNTIME)?)
+                            .is_some_and(|node| node.diff == DiffMark::Added),
+                    "Parent difference lacks exact parent, matching lens, or the actual added AgentRuntime",
                 )
             }
             Check::CreateDialog => require(
