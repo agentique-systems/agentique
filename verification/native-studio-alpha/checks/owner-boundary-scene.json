@@ -1,0 +1,28 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--release",
+    "--config",
+    "profile.release.lto=false",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-studio-scene",
+    "-j1"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "988f32194fe7a9ef45591a0900d9ad5127dd7fc0",
+  "tracked_changes_at_start": [],
+  "started_utc": "2026-09-25T21:40:35.167731+00:00",
+  "elapsed_seconds": 44.828,
+  "exit_code": 101,
+  "output": "verification/native-studio-alpha/checks/owner-boundary-scene.txt",
+  "output_sha256": "957c5b9be9abd10f9b3cae904eb1ab82c59795d19162824da084d8f689e6d6a6",
+  "build_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "1"
+  }
+}

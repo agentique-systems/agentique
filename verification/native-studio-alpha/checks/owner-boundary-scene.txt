@@ -1,0 +1,77 @@
+   Compiling agq-modeling-view v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-view)
+   Compiling agq-studio-scene v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-scene)
+    Finished `release` profile [optimized] target(s) in 44.49s
+     Running unittests src\lib.rs (target\release\deps\agq_studio_scene-916a04861dca29d3.exe)
+
+running 6 tests
+test routing::owner_route_tests::coincident_generic_anchors_with_different_stubs_stay_orthogonal ... ok
+test fixtures::tests::comparison_fixture_updates_owned_group_summaries ... ok
+test layout::root_packing_tests::a_large_subsystem_does_not_inflate_every_context_card_cell ... ok
+test routing::owner_route_tests::owner_perimeter_parallel_lanes_stay_distinct_and_unavoidable_obstructions_stay_honest ... ok
+test routing::owner_route_tests::platform_boundary_connection_avoids_actual_style_child_grid_and_tries_other_perimeter ... ok
+test routing::owner_route_tests::every_pair_of_boundary_sides_and_same_port_loops_preserves_exact_endpoints ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\graph_pins.rs (target\release\deps\graph_pins-2eb59e043a79f5a1.exe)
+
+running 7 tests
+test old_sessions_deserialize_and_new_sessions_round_trip_pins ... ok
+test invalid_pin_geometry_is_rejected_without_mutating_presentation_memory ... ok
+test card_growth_keeps_pinned_origin_and_reports_new_pin_conflicts ... ok
+test conflicting_active_pins_are_explicit_and_unpin_recovers ... ok
+test pin_precedes_soft_positions_and_survives_expansion_and_revision_change ... ok
+test hidden_and_stale_pins_reserve_no_space_but_return_when_visible ... ok
+test hierarchy_ignores_graph_pins_without_overwriting_their_anchors ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\scene_contract.rs (target\release\deps\scene_contract-b79935daf47301b4.exe)
+
+running 30 tests
+test camera_pointer_anchor_fit_and_round_trip ... ok
+test lod_hysteresis_resists_boundary_noise ... ok
+test hierarchy_contains_children_and_siblings_do_not_overlap ... ok
+test culling_and_marquee_use_geometry_including_crossing_edges ... ok
+test collapsed_subsystem_preserves_external_port_connections_without_inventing_ports ... ok
+test huge_spatial_queries_use_overflow_lane_without_integer_overflow ... ok
+test collapsed_and_focused_views_retain_original_ids ... ok
+test diff_retains_ghost_revision_and_does_not_mark_unchanged_revision_ids ... ok
+test comparison_preserves_container_envelope_around_removed_ghosts ... ok
+test ownership_cycles_are_rejected_without_recursive_overflow ... ok
+test many_ports_have_readable_separation_in_both_layouts ... ok
+test candidate_diff_does_not_union_old_absolute_container_positions ... ok
+test collapsed_layout_restores_hidden_component_positions ... ok
+test neighborhood_is_one_hop_order_independent_and_resolves_port_owners ... ok
+test parallel_relationships_have_distinct_routes ... ok
+test moved_diff_container_keeps_extent_in_current_coordinate_frame ... ok
+test parallel_node_links_have_separate_endpoints_but_modeled_ports_remain_exact ... ok
+test ports_have_semantic_identity_and_edges_attach_exactly ... ok
+test revision_bindings_and_identity_are_enforced ... ok
+test routing_detours_around_an_unrelated_node ... ok
+test routes_are_orthogonal_and_report_obstructions ... ok
+test rebuild_is_deterministic_and_local_edits_keep_sibling_positions ... ok
+test scene_lookup_resolves_only_culled_objects_in_containment_order ... ok
+test satisfaction_and_verification_have_individually_selectable_target_lanes ... ok
+test unknown_categories_are_never_guessed_by_substring ... ok
+test stale_scene_lookup_cannot_return_unrelated_records_or_cross_revisions ... ok
+test expanded_owner_port_strips_are_clear_bounded_and_preserve_canonical_identity ... ok
+test self_relationship_routes_form_a_visible_loop ... FAILED
+test graph_layout_keeps_semantic_owners_and_handles_cycles ... ok
+test separated_attachment_stubs_stay_inside_dense_default_layout_gutters ... ok
+
+failures:
+
+---- self_relationship_routes_form_a_visible_loop stdout ----
+
+thread 'self_relationship_routes_form_a_visible_loop' (25376) panicked at crates\studio-scene\tests\scene_contract.rs:599:5:
+assertion failed: scene.edges[0].points.len() >= 5
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    self_relationship_routes_form_a_visible_loop
+
+test result: FAILED. 29 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `-p agq-studio-scene --test scene_contract`

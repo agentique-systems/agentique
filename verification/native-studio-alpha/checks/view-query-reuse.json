@@ -1,0 +1,20 @@
+{
+  "command": [
+    "python",
+    "verification/scripts/measure-phase2-frontend.py",
+    "verification/native-studio-alpha/performance/view-query-reuse.json",
+    "target/release/deps/agq_modeling_view-0b264d7eb7ea2322.exe",
+    "query_reuse_oracle::accepted_same_revision_call_local_query_reuse_matches_full_results",
+    "--exact",
+    "--ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T21:32:04.088381+00:00",
+  "elapsed_seconds": 495.781,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/view-query-reuse.txt",
+  "output_sha256": "1d71172a927dde230f41e315f04f621112b7b8dc53c1aaaf3ecb37b7f07a8735",
+  "build_environment": {}
+}

@@ -1,0 +1,17 @@
+{
+  "source_commit_at_start": "e5aa5cf08ee6998d4b996fae299c86b9dd785c72",
+  "executable_sha256": "75ee5c7fe298af999b9f71751bab8e8e0c000501b005e5ff7a7842a93c050d0a",
+  "command": [
+    "target/release/deps/agq_modeling_view-0b264d7eb7ea2322.exe",
+    "query_reuse_oracle::accepted_same_revision_call_local_query_reuse_matches_full_results",
+    "--exact",
+    "--ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 495.66564909997396,
+  "maximum_process_peak_working_set_bytes": 5536743424,
+  "sampled_process_tree_peak_resident_bytes": 5531361280,
+  "sample_interval_seconds": 0.25
+}
