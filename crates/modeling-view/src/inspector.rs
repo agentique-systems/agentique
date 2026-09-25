@@ -225,9 +225,7 @@ mod tests {
                 (5, p::FEATURE_IS_END, vec![Value::Boolean(true)]),
                 (4, p::ELEMENT_OWNED_RELATIONSHIP, references(&[13])),
                 (5, p::ELEMENT_OWNED_RELATIONSHIP, references(&[14])),
-                (13, p::SUBSETTING_SUBSETTING_FEATURE, references(&[4])),
                 (13, p::SUBSETTING_SUBSETTED_FEATURE, references(&[1])),
-                (14, p::SUBSETTING_SUBSETTING_FEATURE, references(&[5])),
                 (14, p::SUBSETTING_SUBSETTED_FEATURE, references(&[2])),
             ],
         );
