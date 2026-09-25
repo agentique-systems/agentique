@@ -3,7 +3,6 @@ use crate::{
     app::StudioApp,
     commands::{self, CommandId},
     gpu::{Batch, Quad, SceneCallback},
-    panels::category_icon,
 };
 use agq_modeling_view::{RelationshipFamily, ViewOrigin};
 use agq_studio_scene::{
@@ -221,7 +220,9 @@ impl StudioApp {
             };
             let scale = self.camera.zoom;
             let inset = 14.0 * scale;
-            if self.lod.level() >= LodLevel::Summary || node.is_container {
+            if self.lod.level() >= LodLevel::Summary
+                || (node.is_container && bounds.width() >= 90.0 && bounds.height() >= 28.0)
+            {
                 let title_size = if node.is_container { 17.0 } else { 16.0 };
                 let top = bounds.min
                     + Vec2::new(
@@ -253,20 +254,27 @@ impl StudioApp {
                     painter.text(
                         bounds.min + Vec2::new(inset, 40.0 * scale),
                         Align2::LEFT_TOP,
-                        format!("{} components", node.semantic.counts.parts),
+                        format!(
+                            "{} parts{}",
+                            node.semantic.counts.parts,
+                            if node.collapsed { " · collapsed" } else { "" }
+                        ),
                         FontId::proportional((10.0 * scale).clamp(9.0, 14.0)),
                         theme.muted,
                     );
                 }
                 if !node.is_container && self.lod.level() >= LodLevel::Summary {
+                    category_mark(
+                        &painter,
+                        bounds.min + Vec2::new(inset + 4.0 * scale, 20.0 * scale),
+                        node.category,
+                        (7.0 * scale).clamp(5.0, 12.0),
+                        category_color(node.category, theme),
+                    );
                     painter.text(
-                        bounds.min + Vec2::new(inset, 15.0 * scale),
+                        bounds.min + Vec2::new(inset + 15.0 * scale, 15.0 * scale),
                         Align2::LEFT_TOP,
-                        format!(
-                            "{}   {}",
-                            category_icon(node.category),
-                            node.category.label()
-                        ),
+                        node.category.label(),
                         FontId::proportional((9.0 * scale).clamp(8.0, 14.0)),
                         if faded {
                             theme.muted.gamma_multiply(0.5)
@@ -277,20 +285,23 @@ impl StudioApp {
                 }
                 if self.lod.level() >= LodLevel::Features && !node.is_container {
                     let subtitle = if node.semantic.counts.ports > 0 {
+                        let parts = node.semantic.counts.parts;
                         format!(
-                            "{} ports   ·   {} parts",
-                            node.semantic.counts.ports, node.semantic.counts.parts
-                        )
-                    } else {
-                        format!(
-                            "{:?}  ·  {}",
-                            node.semantic.origin,
-                            if node.semantic.source_available {
-                                "source-backed"
+                            "{} ports{}",
+                            node.semantic.counts.ports,
+                            if parts > 0 {
+                                format!(" · {parts} parts")
                             } else {
-                                "projection"
+                                String::new()
                             }
                         )
+                    } else {
+                        match node.semantic.origin {
+                            ViewOrigin::Authored => "Authored".into(),
+                            ViewOrigin::Derived => "Derived · Explain available".into(),
+                            ViewOrigin::Standard => "Standard library".into(),
+                            ViewOrigin::Generated => "Generated".into(),
+                        }
                     };
                     elided(
                         &painter,
@@ -301,7 +312,17 @@ impl StudioApp {
                         (bounds.width() - 2.0 * inset).max(10.0),
                     );
                     if self.lod.level() >= LodLevel::Relationships {
-                        for (index, feature) in node.semantic.features.iter().take(2).enumerate() {
+                        for (index, feature) in node
+                            .semantic
+                            .features
+                            .iter()
+                            .filter(|f| {
+                                NodeCategory::from_semantic_kind(&f.semantic_kind)
+                                    != NodeCategory::Port
+                            })
+                            .take(1)
+                            .enumerate()
+                        {
                             elided(
                                 &painter,
                                 bounds.min + Vec2::new(inset, (90.0 + index as f32 * 15.0) * scale),
@@ -350,7 +371,21 @@ impl StudioApp {
             }
         }
         for edge in &objects.edges {
-            if !selected_edges.contains(edge.semantic.id.as_str()) {
+            let incident = self
+                .selection
+                .contains(self.lookup.endpoint_owner(edge.semantic.source))
+                || self
+                    .selection
+                    .contains(self.lookup.endpoint_owner(edge.semantic.target));
+            let hovered_edge = hovered.as_ref().is_some_and(
+                |target| matches!(target, SceneTarget::Edge(id) if id == &edge.semantic.id),
+            );
+            if !selected_edges.contains(edge.semantic.id.as_str())
+                && !hovered_edge
+                && !(incident
+                    && self.lod.level() >= LodLevel::Features
+                    && objects.edges.len() <= 24)
+            {
                 continue;
             }
             if let Some(segment) = edge.points.windows(2).max_by(|a, b| {
@@ -387,13 +422,16 @@ impl StudioApp {
         }
         if self.lod.level() >= LodLevel::Features {
             for port in &objects.ports {
-                if self.lod.level() >= LodLevel::Relationships || self.selection.contains(port.id) {
+                if self.lod.level() >= LodLevel::Relationships
+                    || self.selection.contains(port.id)
+                    || self.selection.contains(port.owner)
+                {
                     let point = self.camera.world_to_screen(port.position);
                     let position = rect.min + Vec2::new(point.x, point.y);
                     let (offset, align) = if port.side == PortSide::Left {
-                        (Vec2::new(-10.0, -10.0), Align2::RIGHT_BOTTOM)
+                        (Vec2::new(10.0, 10.0), Align2::LEFT_TOP)
                     } else {
-                        (Vec2::new(10.0, -10.0), Align2::LEFT_BOTTOM)
+                        (Vec2::new(-10.0, 10.0), Align2::RIGHT_TOP)
                     };
                     painter.text(
                         position + offset,
@@ -501,11 +539,7 @@ impl StudioApp {
                 border = theme.amber;
             }
             let mut fill = if node.is_container {
-                if theme.dark {
-                    Color32::from_rgb(21, 28, 37)
-                } else {
-                    Color32::from_rgb(241, 245, 249)
-                }
+                theme.containment(node.depth)
             } else {
                 theme.elevated
             };
@@ -531,6 +565,14 @@ impl StudioApp {
             let quad = Quad::rect(rect, fill, border, radius, if selected { 2.0 } else { 1.0 });
             if node.is_container {
                 batch.containers.push(quad);
+                // A header separator makes containment readable without another bright card.
+                batch.containers.push(Quad::rect(
+                    [rect[0] + 14.0, rect[1] + 58.0, rect[2] - 28.0, 0.8],
+                    theme.border.gamma_multiply(0.65),
+                    Color32::TRANSPARENT,
+                    0.0,
+                    0.0,
+                ));
             } else {
                 if selected || node.diff == DiffMark::Added {
                     batch.nodes.push(Quad::rect(
@@ -574,6 +616,9 @@ impl StudioApp {
                     .muted
                     .gamma_multiply(if theme.contrast { 0.95 } else { 0.50 })
             };
+            if !self.selection.targets.is_empty() && !selected && !incident {
+                color = color.gamma_multiply(if theme.contrast { 0.70 } else { 0.44 });
+            }
             if edge.diff == DiffMark::Added {
                 color = theme.green;
             } else if edge.diff == DiffMark::Removed {
@@ -627,6 +672,12 @@ impl StudioApp {
             }
         }
         if self.lod.level() >= LodLevel::Features {
+            let connected: BTreeSet<_> = objects
+                .edges
+                .iter()
+                .filter(|edge| edge.semantic.family == RelationshipFamily::Connection)
+                .flat_map(|edge| [edge.semantic.source, edge.semantic.target])
+                .collect();
             for port in &objects.ports {
                 let selected = self.selection.contains(port.id);
                 let size = if selected { 12.0 } else { 9.0 };
@@ -642,6 +693,15 @@ impl StudioApp {
                     2.0,
                     if selected { 2.5 } else { 1.5 },
                 ));
+                if connected.contains(&port.id) {
+                    batch.overlays.push(Quad::rect(
+                        [port.position.x - 1.5, port.position.y - 1.5, 3.0, 3.0],
+                        if selected { theme.accent } else { theme.green },
+                        Color32::TRANSPARENT,
+                        0.0,
+                        0.0,
+                    ));
+                }
             }
         }
         batch
@@ -653,6 +713,59 @@ fn category_color(category: NodeCategory, theme: crate::theme::Theme) -> Color32
         NodeCategory::Agent | NodeCategory::Action | NodeCategory::State => theme.violet,
         NodeCategory::Interface | NodeCategory::Port => theme.green,
         _ => theme.accent,
+    }
+}
+/// Font-independent marks. The adjacent text always supplies the category name.
+fn category_mark(
+    painter: &egui::Painter,
+    center: egui::Pos2,
+    category: NodeCategory,
+    size: f32,
+    color: Color32,
+) {
+    let bounds = egui::Rect::from_center_size(center, Vec2::splat(size));
+    let stroke = Stroke::new(1.0, color);
+    match category {
+        NodeCategory::Interface | NodeCategory::Port => {
+            for y in [-2.0, 2.0] {
+                painter.line_segment(
+                    [
+                        center + Vec2::new(-size * 0.5, y),
+                        center + Vec2::new(size * 0.5, y),
+                    ],
+                    stroke,
+                );
+            }
+        }
+        NodeCategory::Agent => {
+            let r = size * 0.6;
+            painter.add(egui::Shape::closed_line(
+                vec![
+                    center + Vec2::new(0.0, -r),
+                    center + Vec2::new(r, 0.0),
+                    center + Vec2::new(0.0, r),
+                    center + Vec2::new(-r, 0.0),
+                ],
+                stroke,
+            ));
+        }
+        NodeCategory::Action | NodeCategory::State => {
+            painter.circle_stroke(center, size * 0.5, stroke);
+        }
+        _ => {
+            painter.rect_stroke(bounds, 0.0, stroke, egui::StrokeKind::Inside);
+            if category == NodeCategory::System {
+                painter.rect_stroke(bounds.shrink(2.0), 0.0, stroke, egui::StrokeKind::Inside);
+            } else if category == NodeCategory::Requirement {
+                painter.line_segment(
+                    [
+                        center - Vec2::new(size * 0.25, 0.0),
+                        center + Vec2::new(size * 0.25, 0.0),
+                    ],
+                    stroke,
+                );
+            }
+        }
     }
 }
 fn elided(

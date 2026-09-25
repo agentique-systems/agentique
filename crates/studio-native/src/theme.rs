@@ -1,4 +1,4 @@
-//! Small design system shared by chrome, scene and accessibility treatments.
+//! Native design tokens shared by chrome, scene and accessibility treatments.
 use eframe::egui::{self, Color32, FontId, RichText, Stroke};
 
 pub const SPACE: f32 = 8.0;
@@ -90,6 +90,9 @@ impl Theme {
         style.visuals.selection.stroke = Stroke::new(1.5, self.accent);
         style.visuals.widgets.noninteractive.bg_stroke = Stroke::new(1.0, self.border);
         style.visuals.widgets.inactive.weak_bg_fill = self.elevated;
+        style.visuals.widgets.inactive.bg_stroke = Stroke::new(1.0, self.border);
+        style.visuals.widgets.hovered.bg_stroke = Stroke::new(1.0, self.accent);
+        style.visuals.widgets.active.bg_stroke = Stroke::new(1.5, self.accent);
         style.visuals.widgets.active.weak_bg_fill = self.accent.gamma_multiply(0.25);
         style.visuals.widgets.hovered.weak_bg_fill = self.border;
         style.spacing.item_spacing = egui::vec2(SPACE, SPACE);
@@ -117,6 +120,14 @@ impl Theme {
         ui.add_space(14.0);
         ui.label(RichText::new(text).size(CAPTION).color(self.muted).strong());
         ui.add_space(3.0);
+    }
+    pub fn containment(self, depth: usize) -> Color32 {
+        let offset = (depth.min(3) * 3) as u8;
+        if self.dark {
+            Color32::from_rgb(21 + offset, 28 + offset, 37 + offset)
+        } else {
+            Color32::from_rgb(241 - offset, 245 - offset, 249 - offset)
+        }
     }
 }
 impl Default for Theme {
