@@ -1,0 +1,17 @@
+{
+  "source_commit_at_start": "1b5075dc357b93d34d16e6dd97b783291c986b15",
+  "executable_sha256": "9c02844a2199e7ddaf10f9f5a8dcff4382d8aa619651165c574baa873a11db77",
+  "command": [
+    "target/release/deps/agq_kerml_text-1ae1689677397383.exe",
+    "sysml::publication::authored_audit_parity_tests::authored_audit_observer_matches_two_pass_queries_and_diagnostics",
+    "--exact",
+    "--ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 192.03369840001687,
+  "maximum_process_peak_working_set_bytes": 6710374400,
+  "sampled_process_tree_peak_resident_bytes": 6575726592,
+  "sample_interval_seconds": 0.25
+}

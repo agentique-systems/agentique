@@ -1,0 +1,6 @@
+
+running 1 test
+test sysml::publication::authored_audit_parity_tests::authored_audit_observer_matches_two_pass_queries_and_diagnostics ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 66 filtered out; finished in 191.22s
+
