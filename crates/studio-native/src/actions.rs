@@ -174,6 +174,8 @@ impl StudioApp {
                 self.revision_retry = Some(target);
             }
             self.scene_request = 0;
+            self.requested_definition = None;
+            self.deferred_definition = None;
             self.restore = None;
         }
     }
@@ -226,6 +228,8 @@ impl StudioApp {
         self.comparison = ComparisonMode::Current;
         self.invalidate_inspection();
         self.scene_request = 0;
+        self.requested_definition = None;
+        self.deferred_definition = None;
         self.selection.clear();
         self.fit_pending = true;
         if let Some(binding) = self.binding {
@@ -278,6 +282,20 @@ impl StudioApp {
             .filter(|saved| saved.world == self.world)
         {
             view = saved.definition.clone();
+        } else if let Some(deferred) = self
+            .deferred_definition
+            .as_ref()
+            .filter(|deferred| deferred.kind == view.kind)
+        {
+            view = deferred.clone();
+        } else if let Some((_, requested)) =
+            self.requested_definition
+                .as_ref()
+                .filter(|(request, requested)| {
+                    *request != 0 && *request == self.scene_request && requested.kind == view.kind
+                })
+        {
+            view = requested.clone();
         } else if self.ready && self.active_projection().view.kind == view.kind {
             view.depth = self.active_projection().view.depth;
             view.graph_scope = self.active_projection().view.graph_scope;
@@ -365,6 +383,7 @@ impl StudioApp {
         });
     }
     pub fn restore_location(&mut self, location: Location) {
+        self.focus_changes_pending = false;
         if self.bridge.mutation_pending() && location.revision != self.projection.revision_id {
             self.status = "The current revision remains explorable while model work runs".into();
             return;
@@ -429,17 +448,28 @@ impl StudioApp {
     pub fn request_projection(&mut self) {
         self.request_projection_definition(self.definition());
     }
-    fn request_projection_definition(&mut self, definition: ViewDefinition) {
+    pub(crate) fn request_projection_definition(&mut self, definition: ViewDefinition) {
+        self.focus_changes_pending = false;
+        if self
+            .restore
+            .as_ref()
+            .and_then(|session| session.presentation.as_ref())
+            .is_some_and(|saved| saved.definition != definition)
+        {
+            // A newer operator query also supersedes the saved camera/layout.
+            // Its result must not be relabeled as the older saved definition.
+            self.restore = None;
+        }
         self.scene_builder.invalidate();
         self.invalidate_inspection();
         if self.bridge.mutation_pending() {
-            // Present only already loaded semantic data while the serialized
-            // worker reconstructs a candidate. No model operation or query is
-            // guessed by this local change of lens.
-            self.rebuild();
-            self.status = "Model operation running · exploring the loaded revision".into();
+            self.deferred_definition = Some(definition);
+            self.status =
+                "View update queued after model work; the previous revision view remains open"
+                    .into();
             return;
         }
+        self.deferred_definition = None;
         if let Some(binding) = self.pending_revision.or(self.binding) {
             let candidate = self
                 .pending_revision
@@ -455,6 +485,7 @@ impl StudioApp {
                         .map(|before| before.revision_id)
                 })
                 .flatten();
+            let requested = definition.clone();
             self.scene_request = self.enqueue(Box::new(move |platform| {
                 if let Some(id) = candidate {
                     crate::bridge::candidate_view(platform, id, &definition)
@@ -468,6 +499,8 @@ impl StudioApp {
                         .map(Output::Projection)
                 }
             }));
+            self.requested_definition =
+                (self.scene_request != 0).then_some((self.scene_request, requested));
             if self.scene_request == 0
                 && let Some(target) = self.pending_revision.take()
             {
@@ -479,6 +512,9 @@ impl StudioApp {
     }
     pub fn switch_world(&mut self, world: World) {
         let selected = self.selected_element();
+        if self.show_agent && self.agent_return.is_some() {
+            self.dismiss_agent_view();
+        }
         self.restore_world_filters(world);
         self.navigation.update_camera(
             [self.camera.center.x, self.camera.center.y],
@@ -569,6 +605,8 @@ impl StudioApp {
         self.history = None;
         // Fence all outstanding read responses when entering fixture mode.
         self.scene_request = 0;
+        self.requested_definition = None;
+        self.deferred_definition = None;
         self.project_request = 0;
         self.inspector_request = 0;
         self.explanation_request = 0;
@@ -610,6 +648,22 @@ impl StudioApp {
             return;
         }
         use CommandId::*;
+        if matches!(
+            id,
+            Focus
+                | Fit
+                | Home
+                | Back
+                | Forward
+                | Up
+                | System
+                | Graph
+                | Requirements
+                | History
+                | DismissAgent
+        ) {
+            self.focus_changes_pending = false;
+        }
         if self.bridge.mutation_pending() && matches!(id, Compare | Dependencies) {
             self.status = "Wait for the model operation before changing the view".into();
             return;
@@ -651,27 +705,7 @@ impl StudioApp {
             ReviewCurrent => self.change_comparison(ComparisonMode::Current),
             ReviewCandidate => self.change_comparison(ComparisonMode::Candidate),
             ReviewDiff => self.change_comparison(ComparisonMode::Diff),
-            FocusChanges => {
-                let leaves = self.scene.nodes.iter().any(|node| {
-                    !node.is_container && node.diff != agq_studio_scene::DiffMark::Unchanged
-                });
-                let bounds = self
-                    .scene
-                    .nodes
-                    .iter()
-                    .filter(|node| {
-                        node.diff != agq_studio_scene::DiffMark::Unchanged
-                            && (!leaves || !node.is_container)
-                    })
-                    .map(|node| node.bounds)
-                    .reduce(|a, b| a.union(b));
-                if let Some(bounds) = bounds {
-                    let mut target = self.camera;
-                    target.fit(bounds, 90.0);
-                    target.zoom = target.zoom.min(1.3);
-                    self.camera_target = Some(target);
-                }
-            }
+            FocusChanges => self.focus_changes(),
             Theme => {
                 self.theme = crate::theme::Theme::new(!self.theme.dark, self.theme.contrast);
                 self.theme.install(ctx);
@@ -699,7 +733,10 @@ impl StudioApp {
                 self.collapsed.clear();
                 self.switch_world(World::System);
             }
-            Fit => self.fit_pending = true,
+            Fit => {
+                self.focus_changes_pending = false;
+                self.fit_pending = true;
+            }
             Focus => {
                 self.cancel_revision_navigation();
                 self.navigation.update_camera(
@@ -813,11 +850,13 @@ impl StudioApp {
                     let families = self.families.iter().copied().collect();
                     let standards = self.include_standard;
                     let mut view = ViewDefinition::semantic_graph();
+                    view.graph_scope = agq_modeling_view::GraphScope::DependencyNeighborhood;
                     view.focus = Some(element);
                     view.depth = 2;
                     view.include_standard_library = standards;
                     view.relationship_families = families;
                     self.fit_pending = true;
+                    let requested = view.clone();
                     self.scene_request = self.enqueue(Box::new(move |p| {
                         if let Some(id) = candidate {
                             crate::bridge::candidate_view(p, id, &view)
@@ -832,6 +871,8 @@ impl StudioApp {
                             .map(Output::Projection)
                         }
                     }));
+                    self.requested_definition =
+                        (self.scene_request != 0).then_some((self.scene_request, requested));
                     self.status = "Querying revision-bound dependency neighborhood".into();
                     return;
                 }
@@ -885,6 +926,12 @@ impl StudioApp {
                             );
                             return;
                         }
+                        if id == ExpandBoth {
+                            self.status =
+                                "Eight-hop limit reached; focus an object to explore further"
+                                    .into();
+                            return;
+                        }
                     }
                     let direction = match id {
                         ExpandIncoming => NeighborhoodDirection::Incoming,
@@ -892,9 +939,13 @@ impl StudioApp {
                         _ => NeighborhoodDirection::Both,
                     };
                     let seeds = if id == ExpandBoth {
-                        self.expanded
-                            .clone()
-                            .unwrap_or_else(|| BTreeSet::from([selected]))
+                        self.expanded.clone().unwrap_or_else(|| {
+                            self.active_projection()
+                                .nodes
+                                .iter()
+                                .map(|node| node.id)
+                                .collect()
+                        })
                     } else {
                         BTreeSet::from([selected])
                     };
@@ -1066,7 +1117,9 @@ impl StudioApp {
         self.create_dialog = false;
     }
     pub fn show_fixture_diff(&mut self) {
-        let (before, after) = fixtures::revision_diff();
+        let (mut before, after) = fixtures::revision_diff();
+        // Fixture names describe the pictured revision, not a different lens.
+        before.view = after.view.clone();
         self.projection = after;
         self.compare_before = Some(before);
         self.comparison = ComparisonMode::Diff;
@@ -1074,7 +1127,8 @@ impl StudioApp {
         self.show_agent = false;
         self.expanded = None;
         self.rebuild();
-        self.fit_pending = true;
+        self.fit_pending = false;
+        self.focus_changes_pending = true;
         self.status =
             "Comparing architecture baseline with candidate coordination · visual fixture".into();
     }
@@ -1100,10 +1154,13 @@ impl StudioApp {
                 .and_then(|r| r.parent_revision_id)
         {
             let view = self.definition();
+            let requested = view.clone();
             self.scene_request = self.enqueue(Box::new(move |p| {
                 p.compare(binding.project, parent, binding.revision, &view)
                     .map(Output::Comparison)
             }));
+            self.requested_definition =
+                (self.scene_request != 0).then_some((self.scene_request, requested));
         } else {
             self.status = "This revision has no parent".into();
         }
@@ -1295,6 +1352,45 @@ mod tests {
             agq_modeling_view::GraphScope::Neighborhood
         );
         assert_eq!(app.definition().depth, 1);
+    }
+
+    #[test]
+    fn graph_depth_limit_never_shrinks_the_visible_neighborhood() {
+        let mut app = application();
+        app.world = World::Graph;
+        app.fixture = None;
+        app.projection.view = ViewDefinition::semantic_graph();
+        app.projection.view.depth = 8;
+        let id = app.projection.nodes[0].id;
+        app.focus = Some(id);
+        app.selection.select(SceneTarget::Node(id), false);
+        let generation = app.generation;
+        app.execute(CommandId::ExpandBoth, &egui::Context::default());
+        assert_eq!(app.generation, generation);
+        assert!(app.expanded.is_none());
+        assert_eq!(app.definition().depth, 8);
+        assert!(app.status.contains("Eight-hop limit"));
+    }
+
+    #[test]
+    fn explicit_world_exit_restores_operator_filters_before_leaving_agent_view() {
+        let mut app = application();
+        app.families.remove(&RelationshipFamily::Typing);
+        let system = app.families.clone();
+        app.remember_agent_return();
+        app.world = World::Graph;
+        app.show_agent = true;
+        app.include_standard = true;
+        app.families.remove(&RelationshipFamily::Ownership);
+        app.switch_world(World::System);
+        assert_eq!(app.families, system);
+        assert!(!app.include_standard);
+        app.switch_world(World::Graph);
+        assert_eq!(
+            app.families,
+            RelationshipFamily::all().into_iter().collect()
+        );
+        assert!(!app.include_standard);
     }
 
     #[test]

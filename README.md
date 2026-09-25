@@ -91,7 +91,9 @@ gate with 100 documents, five Validated revisions and four parallel readers have
 passed. All 12 accepted-cache workspace tests passed and ADR 0024 is adopted;
 the [runtime record](verification/summaries/final-audit-semantic-closure/workspace-runtime-acceptance.md)
 retains the exact results, failures and measured costs.
-This does not provide Gen2 persistence, application migration or execution.
+Native Studio now builds on a generation-2 ModelRepository and ModelingService
+with durable revisions. The earlier workspace gate does not establish native
+product acceptance, generation-1 application migration or execution support.
 
 Prerequisites: Rust/rustup with the pinned 1.92.0 toolchain, Node 22.11 or newer,
 npm, and a native C/C++ build toolchain for Rust and bundled SQLite. On Windows,

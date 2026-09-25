@@ -30,6 +30,8 @@ mod surface_recovery;
 mod theme;
 mod timing;
 mod updates;
+#[cfg(test)]
+mod view_intent_tests;
 mod viewport;
 
 use clap::Parser;

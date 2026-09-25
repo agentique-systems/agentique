@@ -795,7 +795,7 @@ fn explanation_summary_graph(explanation: &ExplanationProjection) -> Explanation
 }
 
 /// A relationship's readable endpoints must come from the same exact revision
-/// and producer. Only the known binary Subsetting projection is summarized;
+/// and producer. Only known binary Subsetting/Specialization projections are summarized;
 /// property facts and connectors retain their exact proof label.
 fn explanation_relationship_label(
     explanation: &ExplanationProjection,
@@ -815,8 +815,14 @@ fn explanation_relationship_label(
         || edge.revision_id != explanation.revision_id
         || edge.rule_id != explanation.rule_id
         || edge.origin != explanation.origin
-        || edge.family != RelationshipFamily::Subsetting
-        || edge.semantic_kind != "Subsetting"
+        || !matches!(
+            (edge.family, edge.semantic_kind.as_str()),
+            (RelationshipFamily::Subsetting, "Subsetting")
+                | (
+                    RelationshipFamily::Specialization,
+                    "Specialization" | "Subclassification"
+                )
+        )
         || !edge.directed
     {
         return None;
@@ -840,6 +846,7 @@ fn explanation_rule_label(name: &str) -> &str {
         // Presentation name only. The accepted rule's applicability and target
         // remain in sysml-semantics/producers.rs, not in native UI logic.
         "checkOccurrenceUsageSuboccurrenceSpecialization" => "Suboccurrence specialization",
+        "checkPartDefinitionSpecialization" => "Part definition specialization",
         _ => name,
     }
 }
@@ -901,6 +908,10 @@ fn explanation_display_label<'a>(
         && rule_name == Some("checkOccurrenceUsageSuboccurrenceSpecialization")
     {
         "Suboccurrence specialization"
+    } else if node.kind == ExplanationNodeKind::Rule
+        && rule_name == Some("checkPartDefinitionSpecialization")
+    {
+        "Part definition specialization"
     } else {
         &node.label
     }

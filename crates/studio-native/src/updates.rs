@@ -101,6 +101,23 @@ impl StudioApp {
             }
             match reply.result {
                 Err(error) => {
+                    if !reply.mutation
+                        && reply.context.is_some()
+                        && ![
+                            self.scene_request,
+                            self.project_request,
+                            self.lifecycle_request,
+                            self.inspector_request,
+                            self.explanation_request,
+                            self.source_request,
+                        ]
+                        .contains(&reply.request)
+                    {
+                        continue;
+                    }
+                    if reply.request == self.scene_request {
+                        self.requested_definition = None;
+                    }
                     if let Some(opening) = &mut self.opening {
                         opening.finish(reply.request, true);
                     }
@@ -284,6 +301,13 @@ impl StudioApp {
                             .or(self.binding)
                             .is_some_and(|binding| binding.revision == projection.revision_id) =>
                 {
+                    if !self.projection_definition_matches(reply.request, &projection.view) {
+                        self.requested_definition = None;
+                        self.status =
+                            "View response rejected: requested and returned definitions differ"
+                                .into();
+                        continue;
+                    }
                     let previous_display = self.display_snapshot();
                     self.projection = projection;
                     let previous_candidate =
@@ -305,6 +329,7 @@ impl StudioApp {
                             ..binding
                         });
                         self.restore_display(previous_display);
+                        self.requested_definition = None;
                         self.restore = None;
                         continue;
                     }
@@ -332,6 +357,7 @@ impl StudioApp {
                         );
                     }
                     self.ready = true;
+                    self.requested_definition = None;
                     self.fit_pending = true;
                     let presentation_ok = self.apply_pending_presentation();
                     self.pin_current_reader();
@@ -374,15 +400,31 @@ impl StudioApp {
                     self.source = Some(source)
                 }
                 Ok(Output::Comparison(comparison)) if reply.request == self.scene_request => {
+                    if comparison.before.view != comparison.after.view
+                        || !self
+                            .projection_definition_matches(reply.request, &comparison.after.view)
+                    {
+                        self.requested_definition = None;
+                        self.status =
+                            "Comparison rejected: requested and returned definitions differ".into();
+                        continue;
+                    }
+                    let initial_comparison = self.comparison != ComparisonMode::Diff
+                        || self.compare_before.as_ref().map(|view| view.revision_id)
+                            != Some(comparison.before.revision_id)
+                        || self.projection.revision_id != comparison.after.revision_id;
                     let previous = self.display_snapshot();
                     self.projection = comparison.after;
                     self.compare_before = Some(comparison.before);
                     self.comparison = ComparisonMode::Diff;
                     if !self.rebuild_immediate() {
                         self.restore_display(previous);
+                        self.requested_definition = None;
                         continue;
                     }
-                    self.fit_pending = true;
+                    self.fit_pending = false;
+                    self.requested_definition = None;
+                    self.focus_changes_pending = initial_comparison;
                     self.request_inspection();
                 }
                 Ok(Output::Candidate(candidate))
@@ -440,6 +482,9 @@ impl StudioApp {
                         continue;
                     }
                     self.request_inspection();
+                    self.requested_definition = None;
+                    self.focus_changes_pending = true;
+                    self.fit_pending = false;
                     self.status = "Candidate revision ready for review".into();
                 }
                 Ok(Output::CandidateView(candidate, before))
@@ -456,6 +501,9 @@ impl StudioApp {
                     if before.revision_id != candidate.base.revision
                         || before.view != candidate.projection.view
                     {
+                        if reply.request == self.scene_request {
+                            self.requested_definition = None;
+                        }
                         if reply.mutation
                             && let Some(current) = &mut self.candidate
                         {
@@ -496,7 +544,13 @@ impl StudioApp {
                     self.invalidate_inspection();
                     if !self.rebuild_immediate() {
                         self.restore_candidate_display(previous);
+                        if reply.request == self.scene_request {
+                            self.requested_definition = None;
+                        }
                         continue;
+                    }
+                    if reply.request == self.scene_request {
+                        self.requested_definition = None;
                     }
                     self.finish_agent_projection();
                     if !self.apply_pending_presentation() {
@@ -540,6 +594,7 @@ impl StudioApp {
                     self.comparison = ComparisonMode::Current;
                     self.invalidate_inspection();
                     self.scene_request = 0;
+                    self.requested_definition = None;
                     if !self.rebuild_immediate() {
                         self.ready = false;
                         self.setup_reason = format!(
@@ -548,12 +603,35 @@ impl StudioApp {
                         );
                         continue;
                     }
-                    self.request_inspection();
+                    if self.deferred_definition.is_none() {
+                        self.request_inspection();
+                    }
                     self.status = "Uncommitted candidate cancelled".into();
                 }
-                Ok(_) => {} // Superseded read requests cannot populate another view/selection.
+                Ok(_) => {
+                    // Superseded responses cannot clear a newer requested view.
+                    if reply.terminal && reply.request == self.scene_request {
+                        self.requested_definition = None;
+                        self.status = "View response rejected: binding or payload does not match the requested context".into();
+                    }
+                }
             }
         }
+        if !self.bridge.mutation_pending()
+            && let Some(definition) = self.deferred_definition.take()
+        {
+            self.request_projection_definition(definition);
+        }
+    }
+    fn projection_definition_matches(
+        &self,
+        request: u64,
+        definition: &agq_modeling_view::ViewDefinition,
+    ) -> bool {
+        self.requested_definition
+            .as_ref()
+            .filter(|(id, _)| *id == request)
+            .is_none_or(|(_, expected)| expected == definition)
     }
     /// Retain exact candidate lifecycle and source even when its disposable view
     /// cannot be drawn. The operator can still refresh, cancel or reconcile it.
@@ -572,10 +650,16 @@ impl StudioApp {
     /// visible while the operator remains in Current.
     pub(crate) fn request_candidate_pair(&mut self, id: agq_studio_platform::CandidateId) -> bool {
         let definition = self.definition();
+        let requested = definition.clone();
         self.scene_builder.invalidate();
         self.scene_request = self.enqueue(Box::new(move |platform| {
             crate::bridge::candidate_view(platform, id, &definition)
         }));
+        self.requested_definition =
+            (self.scene_request != 0).then_some((self.scene_request, requested));
+        if self.scene_request != 0 {
+            self.deferred_definition = None;
+        }
         self.scene_request != 0
     }
     fn apply_pending_presentation(&mut self) -> bool {
@@ -616,6 +700,8 @@ impl StudioApp {
         self.revision_retry = None;
         self.history_request = None;
         self.scene_request = 0;
+        self.requested_definition = None;
+        self.deferred_definition = None;
         self.project_request = self.enqueue(Box::new(move |platform| {
             platform.history(id).map(Output::History)
         }));

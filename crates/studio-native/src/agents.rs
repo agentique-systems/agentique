@@ -75,6 +75,8 @@ impl crate::app::StudioApp {
         self.agent_activity = None;
         // Fence a query which may still be queued on the semantic worker.
         self.scene_request = 0;
+        self.requested_definition = None;
+        self.deferred_definition = None;
         if let Some(previous) = self.agent_return.take().filter(|previous| {
             previous.context.matches(&self.work_context())
                 && previous.projection.revision_id == self.projection.revision_id

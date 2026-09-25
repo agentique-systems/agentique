@@ -11,7 +11,7 @@ use crate::{
 use agq_kernel::ElementId;
 use agq_modeling_repository::{BranchId, Project, ProjectId};
 use agq_modeling_view::{
-    ElementInspector, ExplanationProjection, RelationshipFamily, ViewProjection,
+    ElementInspector, ExplanationProjection, RelationshipFamily, ViewDefinition, ViewProjection,
 };
 use agq_studio_platform::{
     CandidateId, CandidatePhase, NativeConfig, ProjectHistory, RevisionBinding, SourceProjection,
@@ -79,6 +79,9 @@ pub struct DisplayState {
     agent_activity: Option<crate::agents::DependencyActivity>,
     agent_return: Option<crate::agents::AgentReturn>,
     fit_pending: bool,
+    focus_changes_pending: bool,
+    requested_definition: Option<(u64, ViewDefinition)>,
+    deferred_definition: Option<ViewDefinition>,
 }
 
 struct CandidateDisplay {
@@ -169,6 +172,9 @@ pub struct StudioApp {
     pub search: String,
     pub status: String,
     pub fit_pending: bool,
+    pub focus_changes_pending: bool,
+    pub requested_definition: Option<(u64, ViewDefinition)>,
+    pub deferred_definition: Option<ViewDefinition>,
     pub marquee_start: Option<Point>,
     pub marquee_end: Option<Point>,
     pub timing: FrameTiming,
@@ -318,6 +324,9 @@ impl StudioApp {
             search: String::new(),
             status: "Ready".into(),
             fit_pending: true,
+            focus_changes_pending: false,
+            requested_definition: None,
+            deferred_definition: None,
             marquee_start: None,
             marquee_end: None,
             timing: FrameTiming::default(),
@@ -393,6 +402,9 @@ impl StudioApp {
             agent_activity: self.agent_activity.clone(),
             agent_return: self.agent_return.clone(),
             fit_pending: self.fit_pending,
+            focus_changes_pending: self.focus_changes_pending,
+            requested_definition: self.requested_definition.clone(),
+            deferred_definition: self.deferred_definition.clone(),
         }
     }
     pub fn restore_display(&mut self, previous: DisplayState) {
@@ -426,6 +438,9 @@ impl StudioApp {
         self.agent_activity = previous.agent_activity;
         self.agent_return = previous.agent_return;
         self.fit_pending = previous.fit_pending;
+        self.focus_changes_pending = previous.focus_changes_pending;
+        self.requested_definition = previous.requested_definition;
+        self.deferred_definition = previous.deferred_definition;
         self.invalidate_inspection();
         self.batch_key = None;
     }
@@ -575,6 +590,13 @@ impl StudioApp {
     pub fn save_session(&mut self) {
         if !self.ready
             || self.pending_revision.is_some()
+            || self.deferred_definition.is_some()
+            || self
+                .requested_definition
+                .as_ref()
+                .is_some_and(|(request, _)| {
+                    *request == self.scene_request && self.pending.contains(request)
+                })
             || self.args.screenshot.is_some()
             || self.args.frames.is_some()
             || self

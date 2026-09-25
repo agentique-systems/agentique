@@ -22,6 +22,9 @@ pub fn presentation_projection(
     let visible =
         |id: &ElementId| !hidden.contains(id) && expanded.is_none_or(|ids| ids.contains(id));
     projection.nodes.retain(|node| visible(&node.id));
+    for node in &mut projection.nodes {
+        node.features.retain(|feature| visible(&feature.id));
+    }
     projection.edges.retain(|edge| {
         visible(&edge.source)
             && visible(&edge.target)
@@ -152,6 +155,41 @@ impl SceneBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn hidden_port_cannot_return_through_its_owners_feature_summaries() {
+        let mut projection = agq_studio_scene::fixtures::architecture();
+        let port = projection
+            .nodes
+            .iter()
+            .flat_map(|node| &node.features)
+            .find(|feature| feature.semantic_kind == "PortUsage")
+            .unwrap()
+            .id;
+        projection.view.hidden_elements.push(port);
+        let canonical = projection.clone();
+        let filtered = presentation_projection(
+            &projection,
+            &RelationshipFamily::all().into_iter().collect(),
+            None,
+            true,
+        );
+        let built = build(SceneInput {
+            projection: filtered,
+            before: None,
+            options: SceneOptions::default(),
+            memory: LayoutMemory::default(),
+        })
+        .unwrap();
+        assert!(
+            built
+                .scene
+                .ports
+                .iter()
+                .all(|candidate| candidate.id != port)
+        );
+        assert_eq!(projection, canonical);
+    }
 
     #[test]
     fn comparison_filters_do_not_fabricate_removed_ownership_or_erase_real_removed_links() {

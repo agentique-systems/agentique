@@ -29,6 +29,13 @@ impl StudioApp {
         );
         crate::automation::record(ui.ctx(), crate::automation::Target::Viewport, rect);
         self.camera.viewport = Size::new(rect.width(), rect.height());
+        if self.focus_changes_pending && !self.scene_builder.busy {
+            self.focus_changes_pending = false;
+            if self.comparison == crate::app::ComparisonMode::Diff {
+                self.fit_pending = false;
+                self.focus_changes();
+            }
+        }
         if self.fit_pending && !self.scene_builder.busy {
             let mut target = self.camera;
             target.fit(self.scene.bounds(), 42.0);

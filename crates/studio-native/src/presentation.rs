@@ -185,6 +185,13 @@ impl StudioApp {
         }
         if self.scene_builder.busy
             || self.pending_revision.is_some()
+            || self.deferred_definition.is_some()
+            || self
+                .requested_definition
+                .as_ref()
+                .is_some_and(|(request, _)| {
+                    *request == self.scene_request && self.pending.contains(request)
+                })
             || self.bridge.mutation_pending()
             || self.scene.revision_id != self.projection.revision_id
             || self
@@ -327,11 +334,14 @@ impl StudioApp {
                 reduced_motion: self.reduced_motion,
                 presentation: Some(presentation),
             });
+            let requested = definition.clone();
             self.scene_request = self.enqueue(Box::new(move |platform| {
                 platform
                     .project(binding, &definition)
                     .map(crate::bridge::Output::Projection)
             }));
+            self.requested_definition =
+                (self.scene_request != 0).then_some((self.scene_request, requested));
         } else if let Some(projection) = saved_fixture {
             self.projection = projection;
             self.apply_saved_presentation(presentation);
