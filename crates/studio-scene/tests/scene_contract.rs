@@ -248,6 +248,11 @@ fn unknown_categories_are_never_guessed_by_substring() {
         NodeCategory::from_semantic_kind("MisleadingPartDefinitionWrapper"),
         NodeCategory::Unknown
     );
+    // Agent is a presentation participant category, not a pinned SysML metaclass.
+    assert_eq!(
+        NodeCategory::from_semantic_kind("Agent"),
+        NodeCategory::Unknown
+    );
 }
 
 #[test]

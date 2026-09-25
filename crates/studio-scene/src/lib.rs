@@ -61,7 +61,6 @@ impl NodeCategory {
                 Self::Action
             }
             "StateDefinition" | "StateUsage" | "TransitionUsage" => Self::State,
-            "Agent" => Self::Agent,
             "Package" | "Namespace" => Self::Package,
             "Feature" | "AttributeUsage" | "AttributeDefinition" => Self::Feature,
             _ => Self::Unknown,
