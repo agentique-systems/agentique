@@ -1,0 +1,89 @@
+# Recovering the accepted runtime
+
+Semantic publication authority, cache encoding and distribution are separate.
+The alpha mission explicitly authorizes replaying the already accepted producer
+against its exact original inputs. It does not authorize different standards,
+profiles, rules, bindings or canonical elements. Normal startup and ordinary CI
+never perform this recovery.
+
+The final search on 2026-09-25 found no original runtime in available historical
+worktrees, local project archives, Git objects, releases or Actions caches. A fresh
+download of Actions run `36150517543` contained 3,046 files and no publication
+cache. Exact search commands and outputs are retained in
+[`verification/native-studio-alpha/runtime`](../verification/native-studio-alpha/runtime).
+This is evidence about available storage, not every external backup.
+
+## Frozen inputs
+
+| Contract | Exact identity |
+| --- | --- |
+| KerML producer commit | `a1a7b847ef83f8e4c54bea9242cac94a9ce665fe` |
+| KerML profile / rule set | `agentique-kerml-1.0-operational/9` / `agq-kerml-query/26` |
+| KerML publication digest | `815573353973607bc62a25195ed4461645182027407f8476be521ffc99174f12` |
+| Systems producer/finalizer commit | `4ac9b8e58695ad837fed6643b0cedfac05d15635` |
+| SysML profile / rule set | `agentique-sysml-2.0-operational/3` / `agq-sysml-query/6` |
+| Systems publication digest | `25aeddb099be16462b553d6debcad97f43bf22e89ce8a9bbb53cf72eb7d193fa` |
+
+These commits come from original accepted command records. Systems producer
+source is unchanged between original closure commit `257d73cb` and the listed
+finalizer commit. Checked-in receipts and bindings remain the authority. Their
+complete source, descriptor, profile, registry, closure and binding identities
+must match; the table is only a readable locator.
+
+## Reproduction
+
+Use isolated detached worktrees at those commits. From the historical KerML
+checkout, build with the pinned toolchain and locked dependencies, then run:
+
+```powershell
+cargo build --release --config profile.release.lto=false --locked --offline -j 2 -p agq-kerml-text --example publication_slices --example canonical_publication
+target/release/examples/publication_slices.exe --slice=all "--output=C:/runtime-recovery/kerml/slices/slice-{slice}.json"
+target/release/examples/canonical_publication.exe --slice-evidence=C:/runtime-recovery/kerml/slices --output=C:/runtime-recovery/kerml/canonical.json
+```
+
+Choose fresh output directories. Do not pass `--write-bindings`: recovery must not
+replace trusted receipts or anchors. All five preflights must pass before whole
+corpus reconstruction. A completed run remains a candidate until it matches the
+existing authority.
+
+The historical kernel allocates a fresh immutable snapshot revision label. The
+original receipt pins that label and full serialized graph separately from
+semantic identity. From the current checkout, restore that original label with:
+
+```powershell
+python tools/restore-accepted-kerml-transport.py --cache C:/runtime-recovery/kerml/canonical.publication.zip --generated-receipt C:/runtime-recovery/kerml/canonical.publication.receipt.json --output C:/runtime-recovery/kerml/accepted.cache
+```
+
+The tool requires the full generated receipt to equal the checked-in receipt
+apart from graph transport digest/length and the snapshot label. It changes only
+`Snapshot.revision`. Both resulting uncompressed entries must then match the
+original accepted payload SHA-256 and length exactly. Changed elements, evidence,
+bindings, profiles, sources or semantic digests fail closed. Ordinary language
+facade restoration remains mandatory before packaging. The original receipt is
+unchanged; the outer ZIP encoding may differ.
+
+Build and run `sysml_systems_publication` from the Systems historical checkout
+with `--profile=operational-v3`, the authenticated KerML cache and an explicit
+checkpoint directory. Retain the generated journal hash independently. The direct
+finalizer accepts that journal through `--finalize-converged` and
+`--resume-sha256`, and runs the strict effective audit before emitting a cache.
+Compare its receipt, all 69 bindings, graph identity and closure certificate to
+the accepted Systems contract. A successful new closure cannot replace equality.
+
+If an entry differs, diagnose semantics versus encoding. The recovery tool never
+relaxes authentication. Alternative encoding would require an explicit versioned
+transport receipt and independent restoration against unchanged semantic
+authority. A semantic mismatch stops runtime acceptance while Studio work continues.
+
+## Retain the result
+
+After both ordinary facades authenticate, use `agq-publications pack` to create
+`accepted-runtime.agq-runtime`, verify it and record its actual outer SHA-256 and
+content-addressed manifest. Upload to an immutable draft release, rather than an
+expiring verification artifact. The [`runtime-asset` workflow](../.github/workflows/runtime-asset.yml)
+downloads an explicit draft asset, checks its independently recorded hash and
+authenticates both facades again. It never publishes the draft.
+
+See [runtime distribution](runtime-publication-distribution.md) for packaging and
+offline installation. Actual authentication results belong to the current
+verification record; recovery tooling alone does not establish first light.

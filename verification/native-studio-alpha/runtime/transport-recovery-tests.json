@@ -1,0 +1,12 @@
+{
+  "command": [
+    "python",
+    "verification/scripts/test_runtime_rematerialization.py"
+  ],
+  "cwd": "C:/Users/phili/github/agentique-systems/agentique-alpha-runtime",
+  "started_utc": "2026-09-25T15:25:28.170727+00:00",
+  "exit_code": 0,
+  "elapsed_seconds": 1.047,
+  "peak_rss_bytes": 1560576,
+  "peak_private_bytes": 405504
+}

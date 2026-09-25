@@ -1,0 +1,18 @@
+{
+  "command": [
+    "gh",
+    "run",
+    "download",
+    "36150517543",
+    "--repo",
+    "agentique-systems/agentique",
+    "--name",
+    "verification-evidence",
+    "--dir",
+    "verification/generated/native-alpha-ci-inspection"
+  ],
+  "cwd": "C:/Users/phili/github/agentique-systems/agentique-alpha-runtime",
+  "started_utc": "2026-09-25T15:18:47.691321+00:00",
+  "exit_code": 0,
+  "elapsed_seconds": 118.594
+}

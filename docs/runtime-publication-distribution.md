@@ -8,7 +8,9 @@ the existing language facades. It does not run producers or regenerate standards
 **Availability:** no runtime Release asset was found during First Light work.
 The commands below are the release procedure, not a claim that a downloadable
 package exists. A maintainer must recover the two accepted caches from retained
-storage before a package can be issued. See the [asset search record](../verification/summaries/agentique-studio-first-light/asset-search.md).
+storage or complete the explicitly authorized [exact accepted-cache
+rematerialization](runtime-rematerialization.md) before a package can be issued.
+See the [asset search record](../verification/summaries/agentique-studio-first-light/asset-search.md).
 
 ## Package and authenticate
 

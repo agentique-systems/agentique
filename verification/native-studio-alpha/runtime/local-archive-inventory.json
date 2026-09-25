@@ -1,0 +1,41 @@
+{
+  "archives_inspected": 14,
+  "runtime_candidate_entries": 0,
+  "project_archives": [
+    {
+      "name": "Agentique (1).zip",
+      "bytes": 13353,
+      "candidates": []
+    },
+    {
+      "name": "Agentique Console.zip",
+      "bytes": 107856,
+      "candidates": []
+    },
+    {
+      "name": "agentique-codex-starter.zip",
+      "bytes": 22063,
+      "candidates": []
+    },
+    {
+      "name": "agentique-console-with-git.zip",
+      "bytes": 22368942,
+      "candidates": []
+    },
+    {
+      "name": "Agentique.zip",
+      "bytes": 12645,
+      "candidates": []
+    },
+    {
+      "name": "next-js-agentique-console.zip",
+      "bytes": 163776,
+      "candidates": []
+    },
+    {
+      "name": "repo-last-commit.zip",
+      "bytes": 903672,
+      "candidates": []
+    }
+  ]
+}
