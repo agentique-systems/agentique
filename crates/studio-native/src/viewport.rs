@@ -467,14 +467,43 @@ impl StudioApp {
                 painter.galley(label_rect.min + Vec2::new(8.0, 4.0), galley, theme.accent);
             }
         }
-        if self.lod.level() >= LodLevel::Features {
+        if self.lod.level() >= LodLevel::Features
+            || self
+                .selection
+                .targets
+                .iter()
+                .any(|target| matches!(target, SceneTarget::Port(_)))
+        {
             for port in &objects.ports {
+                let selected_port = self.selection.contains(port.id);
+                if self.lod.level() < LodLevel::Features && !selected_port {
+                    continue;
+                }
                 let point = self.camera.world_to_screen(port.position);
                 let position = rect.min + Vec2::new(point.x, point.y);
                 let port_rect =
                     egui::Rect::from_center_size(position, Vec2::splat(16.0)).intersect(rect);
                 if !port_rect.is_positive() {
                     continue;
+                }
+                // Semantic selection remains visible even when ordinary port
+                // detail is suppressed at overview/summary zoom. This marker
+                // stays a legible screen size without rebuilding GPU batches
+                // on every zoom tick.
+                if selected_port {
+                    painter.rect(
+                        egui::Rect::from_center_size(position, Vec2::splat(12.0)),
+                        2.0,
+                        theme.canvas,
+                        Stroke::new(2.0, theme.accent),
+                        egui::StrokeKind::Inside,
+                    );
+                    painter.rect_stroke(
+                        egui::Rect::from_center_size(position, Vec2::splat(22.0)),
+                        4.0,
+                        Stroke::new(1.0, theme.accent.gamma_multiply(0.6)),
+                        egui::StrokeKind::Outside,
+                    );
                 }
                 let port_response = ui.interact(
                     port_rect,
@@ -545,10 +574,15 @@ impl StudioApp {
                         .lookup
                         .node(&self.scene, port.owner)
                         .map_or(100.0, |node| node.bounds.width() * self.camera.zoom * 0.44);
+                    let label_color = if selected_port {
+                        theme.accent
+                    } else {
+                        theme.muted
+                    };
                     let mut job = egui::text::LayoutJob::simple_singleline(
                         port.name.clone(),
                         FontId::proportional(12.0),
-                        theme.muted,
+                        label_color,
                     );
                     job.wrap.max_width = width;
                     job.wrap.max_rows = 1;
@@ -560,7 +594,7 @@ impl StudioApp {
                     } else {
                         -10.0 - galley.size().x
                     };
-                    painter.galley(position + Vec2::new(offset, 10.0), galley, theme.muted);
+                    painter.galley(position + Vec2::new(offset, 10.0), galley, label_color);
                 }
                 if port_response.hovered() {
                     let connections = self

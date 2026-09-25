@@ -38,6 +38,8 @@ Studio opens its setup screen when no accepted semantic runtime is installed.
 Choose a locally supplied authenticated `.agq-runtime` bundle, then open the
 Agentique project seeded from `models/agentique/`. Runtime authentication is required
 to edit the real model.
+The current alpha can take several minutes to authenticate and restore a real
+project; Studio shows the opening stage and elapsed time.
 The [runtime distribution guide](docs/runtime-publication-distribution.md) explains
 download and offline installation. The authenticated runtime is currently retained
 as a maintainer-access draft release; a successful build alone does not supply it.
