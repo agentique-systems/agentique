@@ -19,17 +19,24 @@ jobs:
   authenticate:
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    # GitHub limits draft-release visibility to identities with push access.
+    # This workflow only reads the asset; no step creates or publishes releases.
+    permissions:
+      contents: write
     env:
-      GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
       RUNTIME_TAG: ${{ inputs.draft_tag }}
       RUNTIME_SHA256: ${{ inputs.transport_sha256 }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
       - name: Check strict transport recovery rejection behavior
         run: python3 verification/scripts/test_runtime_rematerialization.py
       - name: Download explicit draft asset
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           python - <<'PY'
           import os, re

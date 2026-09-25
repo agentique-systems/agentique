@@ -98,6 +98,34 @@ relaxes authentication. Alternative encoding would require an explicit versioned
 transport receipt and independent restoration against unchanged semantic
 authority. A semantic mismatch stops runtime acceptance while Studio work continues.
 
+### Versioned Systems transport
+
+The original Systems receipt does not retain its snapshot revision label. If a
+fresh historical replay has a different graph digest, the old graph bytes cannot
+be reproduced by substituting a known original label as they can for KerML.
+The compiled publication catalogue supports a separately versioned transport
+receipt anchored to the SHA-256 of the unchanged original semantic receipt.
+It requires the identical publication identity, entry names and entry byte
+lengths. Only `kernel.jsonl` may have an alternate digest; `facade.json` and
+`closure.json` remain pinned to their original exact bytes. The original receipt
+and binding manifest remain the objects consumed by all semantic checks.
+
+A transport hash can be registered only after the recorded frozen producer
+replay, whole-contract comparison and full binding equality pass. Ordinary facade
+restoration must then authenticate, decode and re-encode the actual graph,
+recompute its semantic identity, validate original source provenance and bindings,
+and restore the original closure certificate against that exact model and
+registry. A caller-supplied receipt or hash cannot select new authority.
+
+Without the old Systems graph payload, the precise cause of different serialized
+bytes is an inference, not a proved byte comparison. The graph also encodes
+identity reservations and reference-contribution transport beyond its canonical
+semantic digest. The evidence is the unchanged historical producer and inputs,
+independently equal accepted semantics, unchanged facade and certificate bytes,
+and the explicitly reviewed new transport pin. Do not report these as original
+Systems cache bytes recovered. No alternate transport is active merely because
+the mechanism exists.
+
 ## Retain the result
 
 After both ordinary facades authenticate, use `agq-publications pack` to create
@@ -106,6 +134,10 @@ content-addressed manifest. Upload to an immutable draft release, rather than an
 expiring verification artifact. The [`runtime-asset` workflow](../.github/workflows/runtime-asset.yml)
 downloads an explicit draft asset, checks its independently recorded hash and
 authenticates both facades again. It never publishes the draft.
+GitHub restricts draft visibility to identities with push access, so the job's
+token needs `contents: write` for that read. The token is exposed only to the
+download step and checkout does not persist credentials; the workflow contains
+no release mutation command. See the [GitHub release API contract](https://docs.github.com/en/rest/releases/releases#list-releases).
 
 See [runtime distribution](runtime-publication-distribution.md) for packaging and
 offline installation. Actual authentication results belong to the current
