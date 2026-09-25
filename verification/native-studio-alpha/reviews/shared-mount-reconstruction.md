@@ -1,7 +1,9 @@
 # Shared accepted dependency during proven source reconstruction
 
 Status: implementation prepared in an isolated worktree; **not compiled, not run,
-not independently reviewed, and not approved for integration**. The lead required
+and not approved for integration**. The independent runtime review of `089fde4`
+requested the oracle/context and public API documentation changes recorded below.
+The lead required
 baseline measurement before changing the active runtime consumer. No performance
 improvement or runtime equivalence is claimed by this record.
 
@@ -34,6 +36,15 @@ checkpoint's exact source project and canonical root to match the predecessor.
 The outer wrapper requires its exact project revision as the sole parent and
 refuses reuse of that revision as the candidate identity.
 
+These checks do **not** authenticate arbitrary caller-supplied identity history
+as a successor. Both public API documents now explicitly require trusted identity
+reconciliation with the predecessor, including retirement and reservation
+lineage. The service satisfies that precondition by cloning the actual previous
+checkpoint, retaining its complete identity history/source ledger, and applying
+its existing private syntax proof. Deserialized or untrusted checkpoints require
+independent lineage verification. No general-purpose identity-ledger continuity
+algorithm was added to this mount-storage optimization.
+
 Fresh `SourceInputs` use the same default parser limits as cold restoration,
 empty document storage, and the cloned authenticated dependency. Every source
 digest, document/path population, syntax identity/shape, identity reservation and
@@ -62,7 +73,11 @@ using the candidate's exact checkpoint and source bytes. It requires:
 - Exact canonical records, ElementIds, provenance and relationship ordering.
 - Equal semantic fingerprint, context contract and closure semantic identity.
 - Equal reference results, completeness, diagnostics, positive/negative search
-  evidence and explanations, plus the retained effective-query oracle.
+  evidence and explanations, including exact reference kind, alias and visibility.
+- Equal complete public SysML query context, including dependency contract,
+  bindings, rule/profile identities and metamodel version. Only its nested fresh
+  KerML revision label is normalized, as in the constituent KerML query oracle;
+  no provenance or semantic dependency field is normalized.
 - Both reconstructions validate; neither used a source semantic cache; both
   reparsed the entire source-document population.
 - Wrong checkpoint/source version, parent, candidate revision, source project,
@@ -95,7 +110,7 @@ review gate. Among interpretation inputs, only `source_checkpoint.rs` changes:
 Recorded normalized SHA-256:
 eb86d74ead07e68664081b131c3dbd152877fdb12c1374d3ba2175764a57aa0e
 Proposed normalized SHA-256:
-1b77839611609533c329b800843aca3e97530b1c8e011f8c42c3ddd593261e07
+8465c80bf7707c540399265d0447f5b0d44dba7730ff4ec3818a6f5e62010368
 ```
 
 `standards/sysml-publication-inputs.json` is deliberately **not updated**. After
@@ -111,6 +126,13 @@ pins are untouched. Until that reviewed update, the freshness gate should fail.
 Actual local checks: `cargo fmt --all -- --check` exited 0, recorded in
 `checks/shared-mount-source-format.*`; `git diff --check` exited 0. No build,
 accepted cache restoration or semantic consumer ran in this worktree.
+
+The independent runtime review follow-up adds three exact reference comparisons
+and the enclosing SysML context comparison; the 16 negative restoration cases
+remain unchanged. It also documents the trusted lineage precondition on both
+public methods. Follow-up format/diff results are recorded separately in
+`checks/shared-mount-review-followup.*`. The runtime oracle still requires actual
+execution; these assertion additions are not equivalence evidence by themselves.
 
 After the lead preserves the baseline and approves integration, use the existing
 target and one compiler job. Relevant commands include:

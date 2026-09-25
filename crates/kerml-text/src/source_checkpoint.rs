@@ -136,6 +136,18 @@ impl SourceIdentityCheckpoint {
     /// No prior local graph, lowering cache, certificate or validation handle is
     /// reused. This returns a Working compilation, just like [`Self::restore`].
     /// The outer workspace remains responsible for exact revision-parent checks.
+    ///
+    /// # Checkpoint lineage precondition
+    ///
+    /// The caller must establish that this checkpoint was derived from the
+    /// predecessor through a trusted identity reconciliation: previous retired
+    /// identities stay retired and existing reservations keep their lineage.
+    /// This method checks the checkpoint's internal consistency, source bytes,
+    /// project/root and publication identities; it does not authenticate an
+    /// arbitrary caller-supplied retirement/reservation/source ledger against
+    /// the predecessor. Matching project/root labels alone do not prove lineage.
+    /// The modeling service supplies its own proven checkpoint; a deserialized
+    /// or otherwise untrusted checkpoint needs independent lineage verification.
     pub fn restore_sharing_dependency(
         &self,
         predecessor: &SourceCompilation,

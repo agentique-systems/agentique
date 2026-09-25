@@ -69,8 +69,11 @@ fn assert_equivalent(left: &WorkingProjectRevision, right: &WorkingProjectRevisi
     for (a, b) in left.references().iter().zip(right.references()) {
         assert_eq!(a.relationship, b.relationship);
         assert_eq!(a.specific, b.specific);
+        assert_eq!(a.kind, b.kind);
         assert_eq!(a.name, b.name);
         assert_eq!(a.origin, b.origin);
+        assert_eq!(a.alias(), b.alias());
+        assert_eq!(a.visibility(), b.visibility());
         assert_query(&a.resolution, &b.resolution);
     }
     // Only the fresh kernel revision label differs; source and canonical identities do not.
@@ -84,6 +87,11 @@ fn assert_equivalent(left: &WorkingProjectRevision, right: &WorkingProjectRevisi
     assert_eq!(a, named(right, &path));
     let l = left.sysml_queries().unwrap().effective_usages(a);
     let r = right.sysml_queries().unwrap().effective_usages(a);
+    // Only the fresh kernel revision differs. In particular the enclosing
+    // SysML dependency contract, bindings, profiles and metamodel stay exact.
+    let mut context = r.context.clone();
+    context.kerml.revision = l.context.kerml.revision;
+    assert_eq!(l.context, context);
     assert_query(&l.kerml, &r.kerml);
     assert_eq!(l.completeness(), r.completeness());
     assert_eq!(l.pending, r.pending);

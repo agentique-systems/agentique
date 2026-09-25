@@ -102,6 +102,14 @@ impl ProjectRevisionCheckpoint {
     /// Fully reconstruct a successor while sharing the predecessor's immutable,
     /// already authenticated standard dependency. This is not local semantic
     /// cache reuse, validation inheritance, or a durable head change.
+    ///
+    /// The caller must supply a checkpoint obtained by trusted identity
+    /// reconciliation with this predecessor, preserving retirement and
+    /// reservation lineage. The exact parent check below authenticates the
+    /// revision labels, not arbitrary caller-supplied source identity history.
+    /// See [`SourceIdentityCheckpoint::restore_sharing_dependency`] for the
+    /// source checkpoint lineage precondition. The modeling service constructs
+    /// and proves this checkpoint internally; this is not an untrusted import API.
     pub fn restore_sharing_dependency(
         &self,
         predecessor: &WorkingProjectRevision,
