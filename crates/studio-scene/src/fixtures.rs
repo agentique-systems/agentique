@@ -304,6 +304,82 @@ pub fn revision_diff() -> (ViewProjection, ViewProjection) {
     after
         .edges
         .retain(|e| e.source != id(1302) && e.target != id(1301));
+    let mut children: BTreeMap<ElementId, Vec<ElementId>> = BTreeMap::new();
+    for node in &after.nodes {
+        if let Some(owner) = node.owner {
+            children.entry(owner).or_default().push(node.id);
+        }
+    }
+    // The fixture's group summaries must describe its edited projection. These
+    // are fixture records only, not a semantic reconstruction or validation.
+    for node in &mut after.nodes {
+        if let Some(children) = children.get(&node.id) {
+            node.counts.parts = children.len();
+        }
+    }
+    after.groups = children
+        .into_iter()
+        .map(|(element_id, children)| ViewGroup {
+            element_id,
+            children,
+        })
+        .collect();
+    after.metadata.local_element_count = after.nodes.len();
     after.view.name = "Revision comparison · visual fixture".into();
     (before, after)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn comparison_fixture_updates_owned_group_summaries() {
+        let (before, after) = revision_diff();
+        assert_eq!(
+            before
+                .nodes
+                .iter()
+                .find(|n| n.id == id(1))
+                .unwrap()
+                .counts
+                .parts,
+            3
+        );
+        assert_eq!(
+            after
+                .nodes
+                .iter()
+                .find(|n| n.id == id(1))
+                .unwrap()
+                .counts
+                .parts,
+            2
+        );
+        assert_eq!(
+            after
+                .nodes
+                .iter()
+                .find(|n| n.id == id(2))
+                .unwrap()
+                .counts
+                .parts,
+            4
+        );
+        assert!(
+            !after
+                .groups
+                .iter()
+                .flat_map(|g| &g.children)
+                .any(|child| *child == id(13))
+        );
+        assert!(
+            after
+                .groups
+                .iter()
+                .find(|g| g.element_id == id(2))
+                .unwrap()
+                .children
+                .contains(&id(24))
+        );
+    }
 }
