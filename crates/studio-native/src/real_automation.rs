@@ -1200,6 +1200,10 @@ impl Runner {
                 "fixture": null, "checkpoint": capture.name, "state": capture.state,
                 "baseline": self.report.baseline, "committed": self.report.committed,
                 "engineering_evidence": self.report.engineering_evidence,
+                // Preserve the actual revision-bound view and disposable
+                // geometry for independent layout diagnosis after this process.
+                "projection": app.active_projection(),
+                "layout": app.scene.memory(),
                 "image_size": image.size, "image_digest": ContentDigest::of(&std::fs::read(&path).map_err(|e| e.to_string())?),
                 "adapter": app.adapter, "metrics": app.metrics_report(),
             });

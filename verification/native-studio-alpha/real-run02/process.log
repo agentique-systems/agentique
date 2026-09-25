@@ -1,0 +1,3 @@
+Graphics surface recovery: The underlying surface has changed, and therefore the swap chain must be updated
+Graphics surface recovery: The underlying surface has changed, and therefore the swap chain must be updated
+Native interaction FAILED: Step 5 'select ModelRepository inside the focused ModelingPlatform': Expected one real PartDefinition named ModelingPlatform; found 0 in the current projection; status=Revision restored in process

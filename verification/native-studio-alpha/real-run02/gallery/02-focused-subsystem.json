@@ -1,0 +1,251 @@
+{
+  "adapter": "AdapterInfo { name: \"NVIDIA GeForce RTX 3060 Ti\", vendor: 4318, device: 9353, device_type: DiscreteGpu, driver: \"NVIDIA\", driver_info: \"616.92\", backend: Vulkan }",
+  "baseline": {
+    "accepted_publications": {
+      "kerml": "815573353973607bc62a25195ed4461645182027407f8476be521ffc99174f12",
+      "sysml": "25aeddb099be16462b553d6debcad97f43bf22e89ce8a9bbb53cf72eb7d193fa"
+    },
+    "checkpoint_digest": "a926fd8e382c280bddc35eda7be5e4f446371895bd138e726047228e482a18a2",
+    "documents": [
+      {
+        "content_digest": "fb19fdb031aa524d9957f3a1498818bd66106c718d51274328bd47f381921617",
+        "document_id": "0473f35d-539e-43f5-a7b6-d3f54bccf1b7",
+        "language": "SysMl",
+        "path": "AgentFabric.sysml",
+        "source_revision_id": "24da0d92-458d-41fc-a4c1-ddb9dfa40f05"
+      },
+      {
+        "content_digest": "17cc930b105b74d7001a70ab9cfddf3a2c65c906a57dcc2e1f341140b3636960",
+        "document_id": "b9415032-eb90-4bbd-a6f4-76664c7f064f",
+        "language": "SysMl",
+        "path": "Agentique.sysml",
+        "source_revision_id": "7f48f750-e3bb-479b-bc6c-8da352c3697c"
+      },
+      {
+        "content_digest": "4235d37c880ca5d43bb11b482d9414b4270a78ff6ee7287d3538961bcc94bc2a",
+        "document_id": "ab682d57-2832-465a-b186-cc92b13b0453",
+        "language": "SysMl",
+        "path": "Contracts.sysml",
+        "source_revision_id": "f2c6b6d7-52c4-4617-881e-144f0e8b8816"
+      },
+      {
+        "content_digest": "7f753fe89a4158918481a52134df9df9218167433fe3869d65ae22ccf6d90691",
+        "document_id": "1435b595-ebd7-4c94-a017-076ee1c2ff4b",
+        "language": "SysMl",
+        "path": "ExecutionRuntime.sysml",
+        "source_revision_id": "ef8ad97c-e1eb-4439-9da5-34c94c9665b7"
+      },
+      {
+        "content_digest": "3fbdf2caa9a6ee69c8807f513af0d1e822b053d9a86ff947782ff65f88536f39",
+        "document_id": "32128c12-5690-4070-a062-3e8cc2e16ddd",
+        "language": "SysMl",
+        "path": "LanguageEngine.sysml",
+        "source_revision_id": "5baccce0-b01b-4b84-8553-e20669a2a4a4"
+      },
+      {
+        "content_digest": "12c198141d892e606f9cd2b3a419863cc02f994f1b31236af0b112faf5d31b79",
+        "document_id": "8582f373-2d6f-4edb-9e9a-8ee2dfc8a6bd",
+        "language": "SysMl",
+        "path": "ModelingPlatform.sysml",
+        "source_revision_id": "561c7733-94f1-42ef-a1ac-ac8ea952304a"
+      }
+    ],
+    "format_version": 1,
+    "metadata": {
+      "alias": [],
+      "created": "2026-09-25T18:46:55.748517800+00:00",
+      "description": null,
+      "name": null
+    },
+    "parent_revision_id": "a0ce9ecb-728a-40ce-87b5-88f8cbc84105",
+    "project_id": "c20c4a5c-ea43-45ea-89d2-db2742e2c20a",
+    "revision_id": "8dcfb224-55e6-4d0d-ac3a-84fcfffb9a46",
+    "semantic_cache": {
+      "closure_digest": "b32dbb2ca5a74b1aa293cee982d11553ef2724aed69ec3e76c3f9ada825e70d4",
+      "content_digest": "a200df28927db426461939d02e480419c15adb79b132730a88ce6b7eae9cac18",
+      "format": "agq-project-semantic-cache/2",
+      "semantic_context": "07bf3a7e26dc15d0046998fae647a57268e04a520ae3aee2f61c4616a83068e8",
+      "source_binding": "83bd33499adb37ca8ab6cee5634edb4a5f826b82c078e9a69196f2a387a95610"
+    },
+    "validation": {
+      "Validated": {
+        "acceptance_contract": "agentique-modeling-workspace-phase1/1",
+        "closure_digest": "b32dbb2ca5a74b1aa293cee982d11553ef2724aed69ec3e76c3f9ada825e70d4",
+        "semantic_context": "07bf3a7e26dc15d0046998fae647a57268e04a520ae3aee2f61c4616a83068e8",
+        "semantic_digest": "83fd3b603de1cf7ca605031357e092d2462efe328cbe25cbadde72e0b2cde9fa",
+        "source_binding": "83bd33499adb37ca8ab6cee5634edb4a5f826b82c078e9a69196f2a387a95610"
+      }
+    }
+  },
+  "checkpoint": "02-focused-subsystem",
+  "committed": null,
+  "engineering_evidence": {
+    "connected_port": null,
+    "inherited_port": null,
+    "repository_interfaces": null,
+    "requirement_subject_path": []
+  },
+  "fixture": null,
+  "format": "agentique-native-real-gallery/1",
+  "image_digest": "b7416f163e193e53a15b2068b34c73f1fc7e21412a4c7dc299b3070b22a58c9e",
+  "image_size": [
+    1600,
+    1000
+  ],
+  "metrics": {
+    "adapter": "AdapterInfo { name: \"NVIDIA GeForce RTX 3060 Ti\", vendor: 4318, device: 9353, device_type: DiscreteGpu, driver: \"NVIDIA\", driver_info: \"616.92\", backend: Vulkan }",
+    "fixture": null,
+    "frame_count": 23753,
+    "frame_interval_median_ms": 12.69315,
+    "frame_interval_p95_ms": 13.8107,
+    "frame_intervals_ms": {
+      "last": 14.644499999999999,
+      "median": 12.69315,
+      "p95": 13.8107,
+      "total_samples": 23692,
+      "window_samples": 240
+    },
+    "gpu_instances": 181,
+    "gpu_timestamp_errors": 1,
+    "gpu_timestamp_ms": {
+      "last": 0.002048,
+      "median": 0.002048,
+      "p95": 0.003072,
+      "total_samples": 2747,
+      "window_samples": 240
+    },
+    "gpu_timestamp_scope": "Scene GPU pass only; excludes text, chrome, upload and presentation",
+    "gpu_upload_count": 13,
+    "gpu_upload_cpu_ms": 0.0094,
+    "gpu_uploaded_bytes": 14480,
+    "handled_input_to_next_ui_update_ms": {
+      "pan": {
+        "last": null,
+        "median": null,
+        "p95": null,
+        "total_samples": 0,
+        "window_samples": 0
+      },
+      "selection": {
+        "last": null,
+        "median": null,
+        "p95": null,
+        "total_samples": 0,
+        "window_samples": 0
+      },
+      "zoom": {
+        "last": null,
+        "median": null,
+        "p95": null,
+        "total_samples": 0,
+        "window_samples": 0
+      }
+    },
+    "hit_test_us": {
+      "last": 2.6,
+      "median": 2.5,
+      "p95": 4.4,
+      "total_samples": 79,
+      "window_samples": 79
+    },
+    "input_pipeline": {
+      "boundary": "eframe raw input hook -> UI shape construction complete -> following update; excludes OS delivery and GPU presentation",
+      "changed_batch_cpu_ms": {
+        "last": 0.0123,
+        "median": 0.016900000000000002,
+        "p95": 0.028900000000000002,
+        "total_samples": 13,
+        "window_samples": 13
+      },
+      "frame_submission_ms": null,
+      "labels_accessibility_cpu_ms": {
+        "last": 0.011300000000000001,
+        "median": 0.0063,
+        "p95": 0.0098,
+        "total_samples": 2750,
+        "window_samples": 240
+      },
+      "presentation_ms": null,
+      "raw_input_to_next_update_ms": {
+        "last": 12.9472,
+        "median": 12.9837,
+        "p95": 16.3184,
+        "total_samples": 9,
+        "window_samples": 9
+      },
+      "raw_input_to_ui_complete_ms": {
+        "last": 0.7513,
+        "median": 0.633,
+        "p95": 0.9419,
+        "total_samples": 9,
+        "window_samples": 9
+      },
+      "ui_cpu_ms": {
+        "last": 0.5743,
+        "median": 0.4175,
+        "p95": 0.6296999999999999,
+        "total_samples": 23753,
+        "window_samples": 240
+      },
+      "visibility_lookup_cpu_ms": {
+        "last": 0.0664,
+        "median": 0.04045,
+        "p95": 0.07540000000000001,
+        "total_samples": 2750,
+        "window_samples": 240
+      }
+    },
+    "layout_included_in_scene_build": true,
+    "note": "Native wgpu frames with vsync. CPU update intervals retain the latest 240 samples after 60 warmup intervals. Input spans start inside the viewport gesture handler and end at the next UI update; they exclude OS input delivery and do not measure presentation. GPU upload is CPU submission time for the last upload. Null means unmeasured.",
+    "physical_input_to_photon_ms": null,
+    "scene_background_pending": false,
+    "scene_build_ms": 0.5912,
+    "scene_draw_calls": 3,
+    "scene_index_lookup_outliner_ms": 0.0694,
+    "scene_layout_routing_diff_ms": 0.5217,
+    "total_edges": 49,
+    "total_nodes": 32,
+    "visible_nodes": 32,
+    "warmup_frame_intervals_discarded": 60
+  },
+  "semantic_data": "real authenticated models/agentique",
+  "state": {
+    "agent_view": false,
+    "binding": {
+      "project": "c20c4a5c-ea43-45ea-89d2-db2742e2c20a",
+      "revision": "8dcfb224-55e6-4d0d-ac3a-84fcfffb9a46"
+    },
+    "branch": "6de4fea6-7924-4465-83b3-0c90782c7019",
+    "camera": [
+      1928.0,
+      1382.0,
+      0.24787534773349762
+    ],
+    "candidate_phase": null,
+    "candidate_revision": null,
+    "comparison": "Current",
+    "explanation_evidence": null,
+    "explanation_origin": null,
+    "explanation_revision": null,
+    "explanation_rule": null,
+    "explanation_subject": null,
+    "focus": "b7417a6b-874c-5898-abd2-9c7c6d62d170",
+    "frame": 23750,
+    "inspector_element": "b7417a6b-874c-5898-abd2-9c7c6d62d170",
+    "inspector_revision": "8dcfb224-55e6-4d0d-ac3a-84fcfffb9a46",
+    "mutation_pending": false,
+    "pending_requests": 0,
+    "producer_completeness": "Complete",
+    "projection_edges": 49,
+    "projection_nodes": 41,
+    "scene_edges": 49,
+    "scene_nodes": 32,
+    "scene_revision": "8dcfb224-55e6-4d0d-ac3a-84fcfffb9a46",
+    "selected": [
+      "Container(ElementId(243588705497702176140036036578135691632))"
+    ],
+    "selection_revision": "8dcfb224-55e6-4d0d-ac3a-84fcfffb9a46",
+    "status": "Revision restored in process",
+    "world": "System"
+  }
+}
