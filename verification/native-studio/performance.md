@@ -62,7 +62,7 @@ workspace tests completed, with no competing native window.
 | Maximum zoom anchor error | 0.001465 world units | 0.002013 world units |
 | Latest batch CPU upload | 0.293 ms | 4.223 ms |
 | Latest batch bytes / instances | 650,240 / 8,128 | 6,416,000 / 80,200 |
-| Draw calls | 2 | 2 |
+| Custom scene draw calls | 2 | 2 |
 
 The viewport now resolves ordered visible records once per frame, shares the
 borrowed result between geometry and label/accessibility passes, and borrows
@@ -74,6 +74,8 @@ The observed quiet 10k pan and zoom P95 reductions are approximately 25% and 31%
 There are no timing distributions for upload or scene construction, so their
 individual sample variation must not be presented as an optimization result.
 GPU execution duration and physical input-to-photon latency remain unavailable.
+Draw-call counts cover the custom GPU scene passes; toolkit chrome and text draws
+are outside that counter.
 
 ## Earlier native camera runs before visibility optimization
 
