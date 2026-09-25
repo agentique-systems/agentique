@@ -26,6 +26,13 @@ def executable_digest():
     return None
 
 executable_before = executable_digest()
+source_commit = subprocess.check_output(
+    ["git", "rev-parse", "HEAD"], cwd=root, text=True, encoding="utf-8"
+).strip()
+tracked_changes = subprocess.check_output(
+    ["git", "status", "--porcelain", "--untracked-files=no"],
+    cwd=root, text=True, encoding="utf-8"
+).splitlines()
 started = time.monotonic()
 utc = datetime.datetime.now(datetime.timezone.utc).isoformat()
 return_code = None
@@ -43,6 +50,8 @@ executable_after = executable_digest()
 record = {
     "command": command,
     "cwd": str(root),
+    "source_commit_at_start": source_commit,
+    "tracked_changes_at_start": tracked_changes,
     "started_utc": utc,
     "elapsed_seconds": round(time.monotonic() - started, 3),
     "exit_code": return_code,
