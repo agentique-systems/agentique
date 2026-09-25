@@ -1,0 +1,27 @@
+{
+  "format": "agq-runtime-recovery-content-inventory/1",
+  "original_archive_recovered": false,
+  "original_entry_bytes_reproduced": true,
+  "artifacts": [
+    {
+      "path": "verification\\generated\\native-studio-alpha\\rematerialized-kerml\\canonical.publication.zip",
+      "bytes": 540739850,
+      "sha256": "51daed8e5b6e53f6b17d2ef9483c329e6a32eab16d120e46e6f1acef4f578d65"
+    },
+    {
+      "path": "verification\\generated\\native-studio-alpha\\rematerialized-kerml\\accepted.cache",
+      "bytes": 475865571,
+      "sha256": "aadf9ff589eea35bcedc5d1e3d0521952058b55f3325614ecb0ab12ae36300c4"
+    },
+    {
+      "path": "standards\\kerml-accepted-publication.json",
+      "bytes": 82485,
+      "sha256": "d51d43a8e907698f94297ff3cfb007ac5dbf088ebec550ef97e8f7107b351ff5"
+    },
+    {
+      "path": "standards\\kerml-standard-bindings.json",
+      "bytes": 140125,
+      "sha256": "130398e2fe9e10e662d13f28a8cd8f12934eba998ddd879e32c06a3089f0601c"
+    }
+  ]
+}
