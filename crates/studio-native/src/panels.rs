@@ -420,22 +420,22 @@ impl StudioApp {
                         if self.world == World::Graph {
                             ui.add_enabled_ui(!self.bridge.mutation_pending(), |ui| {
                                 ui.add_space(6.0);
-                                ui.horizontal_wrapped(|ui| {
-                                    for family in agq_modeling_view::RelationshipFamily::all() {
-                                        let mut enabled = self.families.contains(&family);
-                                        if ui
-                                            .toggle_value(&mut enabled, format!("{family:?}"))
-                                            .changed()
-                                        {
-                                            if enabled {
-                                                self.families.insert(family);
-                                            } else {
-                                                self.families.remove(&family);
-                                            }
-                                            self.request_projection();
-                                        }
-                                    }
-                                });
+                                if self.comparison == ComparisonMode::Diff {
+                                    ui.horizontal_wrapped(|ui| {
+                                        ui.menu_button("Graph filters", |ui| {
+                                            ui.set_max_width(560.0);
+                                            ui.label(muted("Filters apply to both revisions.", theme).small());
+                                            self.graph_family_controls(ui);
+                                            self.graph_standard_control(ui);
+                                        });
+                                        ui.label(muted(format!(
+                                            "{} relationship families · standard expansion {}",
+                                            self.families.len(),
+                                            if self.include_standard { "on" } else { "off" },
+                                        ), theme).small());
+                                    });
+                                } else {
+                                    self.graph_family_controls(ui);
                                 ui.horizontal_wrapped(|ui| {
                                     for (label, command) in [
                                         ("Incoming", CommandId::ExpandIncoming),
@@ -459,12 +459,7 @@ impl StudioApp {
                                         self.rebuild();
                                     }
                                 });
-                                let mut include = self.include_standard;
-                                let standards = ui.checkbox(&mut include, "Expand adjacent standard dependencies");
-                                crate::real_targets::record(ctx, crate::real_targets::Target::Standards, standards.rect);
-                                if standards.changed() {
-                                    self.include_standard = include;
-                                    self.request_projection();
+                                    self.graph_standard_control(ui);
                                 }
                             });
                         }
@@ -476,6 +471,39 @@ impl StudioApp {
                 }
             });
     }
+    fn graph_family_controls(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal_wrapped(|ui| {
+            for family in agq_modeling_view::RelationshipFamily::all() {
+                let mut enabled = self.families.contains(&family);
+                if ui
+                    .toggle_value(&mut enabled, format!("{family:?}"))
+                    .changed()
+                {
+                    if enabled {
+                        self.families.insert(family);
+                    } else {
+                        self.families.remove(&family);
+                    }
+                    self.request_projection();
+                }
+            }
+        });
+    }
+
+    fn graph_standard_control(&mut self, ui: &mut egui::Ui) {
+        let mut include = self.include_standard;
+        let standards = ui.checkbox(&mut include, "Expand adjacent standard dependencies");
+        crate::real_targets::record(
+            ui.ctx(),
+            crate::real_targets::Target::Standards,
+            standards.rect,
+        );
+        if standards.changed() {
+            self.include_standard = include;
+            self.request_projection();
+        }
+    }
+
     fn outliner(&mut self, ui: &mut egui::Ui) {
         let theme = self.theme;
         ui.label(

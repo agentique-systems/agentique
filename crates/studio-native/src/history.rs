@@ -364,6 +364,13 @@ fn object_bounds(scene: &SemanticScene, lookup: &SceneLookup, id: ElementId) -> 
         .map(|port| Rect::new(port.position.x - 7.0, port.position.y - 7.0, 14.0, 14.0))
 }
 
+fn owner_target(scene: &SemanticScene, owner: Option<ElementId>) -> Option<SceneTarget> {
+    let id = owner?;
+    [SceneTarget::Port(id), SceneTarget::Node(id)]
+        .into_iter()
+        .find(|target| scene.target_revision(target).is_some())
+}
+
 fn change_bounds(scene: &SemanticScene, lookup: &SceneLookup, change: &Change) -> Vec<Rect> {
     let Some(target) = &change.target else {
         return vec![];
@@ -399,6 +406,7 @@ struct ChangeFocus {
     camera: Camera2D,
     nearby: usize,
     visible: usize,
+    owner_visible: bool,
 }
 
 fn focus_group(
@@ -416,8 +424,33 @@ fn focus_group(
             (!bounds.is_empty()).then_some((change, bounds))
         })
         .collect();
-    entries.sort_by_key(|(change, _)| usize::from(!same_target(change.target.as_ref(), primary)));
-    let mut bounds = *entries.first()?.1.first()?;
+    let selected = entries
+        .iter()
+        .find(|(change, _)| same_target(change.target.as_ref(), primary));
+    let owner = group.owner.and_then(|id| object_bounds(scene, &lookup, id));
+    // A group is an owner's recorded change context. Start there unless the
+    // operator explicitly selected a change, then collect spatially nearby
+    // changes instead of letting alphabetical order choose a distant cluster.
+    let mut bounds = selected
+        .and_then(|(_, anchors)| anchors.first().copied())
+        .or(owner)
+        .or_else(|| entries.first()?.1.first().copied())?;
+    let center = bounds.center();
+    let distance = |anchors: &[Rect]| {
+        anchors
+            .iter()
+            .map(|anchor| {
+                let p = anchor.center();
+                (p.x - center.x).powi(2) + (p.y - center.y).powi(2)
+            })
+            .min_by(f32::total_cmp)
+            .unwrap_or(f32::INFINITY)
+    };
+    entries.sort_by(|(a, a_bounds), (b, b_bounds)| {
+        usize::from(!same_target(a.target.as_ref(), primary))
+            .cmp(&usize::from(!same_target(b.target.as_ref(), primary)))
+            .then_with(|| distance(a_bounds).total_cmp(&distance(b_bounds)))
+    });
     let mut nearby = 0;
     for (_, anchors) in &entries {
         let mut included = false;
@@ -432,7 +465,7 @@ fn focus_group(
         }
         nearby += usize::from(included);
     }
-    if let Some(owner) = group.owner.and_then(|id| object_bounds(scene, &lookup, id)) {
+    if let Some(owner) = owner {
         let mut fitted = camera;
         fitted.fit(bounds.union(owner), 72.0);
         if fitted.zoom >= 0.42 {
@@ -446,6 +479,10 @@ fn focus_group(
         camera: target,
         nearby,
         visible: entries.len(),
+        owner_visible: owner.is_some_and(|owner| {
+            let visible = target.visible_rect();
+            visible.contains(owner.min) && visible.contains(owner.max)
+        }),
     })
 }
 
@@ -536,12 +573,12 @@ impl StudioApp {
     }
 
     fn focus_change_group(&mut self, group: &ChangeGroup) {
-        let Some(focus) = focus_group(
-            &self.scene,
-            group,
-            self.camera,
-            self.selection.primary.as_ref(),
-        ) else {
+        let primary = self.selection.primary.clone();
+        self.frame_change_group(group, primary.as_ref());
+    }
+
+    fn frame_change_group(&mut self, group: &ChangeGroup, primary: Option<&SceneTarget>) {
+        let Some(focus) = focus_group(&self.scene, group, self.camera, primary) else {
             return;
         };
         self.fit_pending = false;
@@ -555,6 +592,11 @@ impl StudioApp {
             "{} · nearby context for {} of {} visible changes; full comparison retained",
             group.name, focus.nearby, focus.visible
         );
+        if focus.owner_visible {
+            self.status.push_str("; owner in frame");
+        } else if group.owner.is_some() {
+            self.status.push_str("; use Focus group for owner context");
+        }
     }
 
     pub fn diff_review_panel(&mut self, ui: &mut egui::Ui) {
@@ -562,45 +604,108 @@ impl StudioApp {
             return;
         };
         let theme = self.theme;
-        egui::Frame::new().fill(theme.surface).inner_margin(10.0).corner_radius(6.0).show(ui, |ui| {
-            ui.horizontal_wrapped(|ui| {
-                ui.strong("Design changes");
-                ui.label(muted(format!("{} objects · {} relationships in this view", review.objects, review.relationships), theme).small());
-                if ui.small_button("Fit entire comparison").clicked() { self.execute(crate::commands::CommandId::Fit, ui.ctx()); }
-            });
-            if review.groups.is_empty() { ui.label("No projected changes in this comparison."); return; }
-            let key = ui.id().with(("change-review-group", self.generation, review.before.to_string(), review.after.to_string()));
-            let remembered = ui.ctx().data(|data| data.get_temp::<RememberedGroup>(key));
-            let mut index = displayed_group(&review, self.selection.primary.as_ref(), remembered.as_ref());
-            let previous = index;
-            ui.horizontal_wrapped(|ui| {
-                egui::ComboBox::from_id_salt(key).selected_text(&review.groups[index].name).show_ui(ui, |ui| {
-                    for (i, group) in review.groups.iter().enumerate() {
-                        ui.selectable_value(&mut index, i, format!("{} · {} changes", group.name, group.changes.len()));
+        egui::Frame::new()
+            .fill(theme.surface)
+            .inner_margin(6.0)
+            .corner_radius(6.0)
+            .show(ui, |ui| {
+                if review.groups.is_empty() {
+                    ui.label("No projected changes in this comparison.");
+                    return;
+                }
+                let key = ui.id().with((
+                    "change-review-group",
+                    self.generation,
+                    review.before.to_string(),
+                    review.after.to_string(),
+                ));
+                let remembered = ui.ctx().data(|data| data.get_temp::<RememberedGroup>(key));
+                let mut index = displayed_group(
+                    &review,
+                    self.selection.primary.as_ref(),
+                    remembered.as_ref(),
+                );
+                let previous = index;
+                ui.horizontal_wrapped(|ui| {
+                    ui.strong("Design changes");
+                    ui.label(muted(
+                        format!("{} objects · {} relationships · {} owner groups", review.objects, review.relationships, review.groups.len()),
+                        theme,
+                    ).small());
+                    ui.menu_button(format!("Browse all {} changes", review.objects + review.relationships), |ui| {
+                        ui.set_min_width(400.0);
+                        ui.set_max_width(620.0);
+                        ui.strong("Complete changes in this view");
+                        ui.label(muted(format!("{} → {}", review.before, review.after), theme).small());
+                        ui.label(muted("Selecting a change frames its local context. All positions and removed objects are retained.", theme).small());
+                        let height = (ui.ctx().content_rect().height() * 0.55).min(420.0);
+                        egui::ScrollArea::vertical().max_height(height).show(ui, |ui| {
+                            for (i, group) in review.groups.iter().enumerate() {
+                                egui::CollapsingHeader::new(format!("{} · {} changes", group.name, group.changes.len()))
+                                    .id_salt((key, i))
+                                    .default_open(i == index)
+                                    .show(ui, |ui| {
+                                        for change in &group.changes {
+                                            if self.change_row(ui, change) {
+                                                index = i;
+                                                ui.close();
+                                            }
+                                        }
+                                    });
+                            }
+                        });
+                    });
+                    if ui.small_button("Fit entire comparison").clicked() {
+                        self.execute(crate::commands::CommandId::Fit, ui.ctx());
                     }
                 });
-                if ui.small_button("Focus this group").clicked() { self.focus_change_group(&review.groups[index]); }
-                ui.label(muted(format!("{} owner groups", review.groups.len()), theme).small());
-            });
-            if index != previous {
-                if let Some(target) = review.groups[index].changes.iter().find_map(|change| change.target.clone()) { self.select(target, false); }
-                self.focus_change_group(&review.groups[index]);
-            }
-            ui.ctx().data_mut(|data| data.insert_temp(key, RememberedGroup { index, selection: self.selection.primary.clone() }));
-            let group = &review.groups[index];
-            for change in group.changes.iter().take(3) { self.change_row(ui, change); }
-            if group.changes.len() > 3 {
-                ui.collapsing(format!("All {} changes in {}", group.changes.len(), group.name), |ui| {
-                    egui::ScrollArea::vertical().max_height(220.0).show(ui, |ui| {
-                        for change in &group.changes { self.change_row(ui, change); }
-                    });
+                // The complete list is an overlay, so reviewing a large group
+                // never takes vertical space away from its architecture.
+                let mut owner_changed = false;
+                ui.horizontal_wrapped(|ui| {
+                    ui.label(muted("Owner context", theme).small());
+                    egui::ComboBox::from_id_salt(key)
+                        .width(180.0)
+                        .selected_text(&review.groups[index].name)
+                        .show_ui(ui, |ui| {
+                            for (i, group) in review.groups.iter().enumerate() {
+                                owner_changed |= ui.selectable_value(
+                                    &mut index, i, format!("{} · {} changes", group.name, group.changes.len()),
+                                ).changed();
+                            }
+                        });
+                    let group = &review.groups[index];
+                    if ui.small_button("Focus group").clicked() {
+                        // Explicit group focus gives the owner priority even
+                        // when the previously selected change is far away.
+                        self.frame_change_group(group, None);
+                    }
+                    let owner = owner_target(&self.scene, group.owner);
+                    let inspect = ui.add_enabled(owner.is_some(), egui::Button::new("Inspect owner").small());
+                    if inspect.clicked() && let Some(owner) = owner {
+                        self.select(owner, false);
+                        self.frame_change_group(group, None);
+                    }
+                    inspect.on_hover_text("Inspect the canonical owner in its displayed revision. Owners outside this scene remain in the complete change list.");
+                    let objects = group.changes.iter().filter(|change| !change.relationship).count();
+                    ui.label(muted(format!("{} objects · {} relationships", objects, group.changes.len() - objects), theme).small());
                 });
-            }
-            ui.label(muted("Focus keeps existing positions. Distant changes remain in the list and the full comparison.", theme).small());
-        });
+                if owner_changed && index != previous {
+                    // Select the real owner where it is present; a group never
+                    // fabricates an owner target or selects a different revision.
+                    if let Some(owner) = owner_target(&self.scene, review.groups[index].owner) {
+                        self.select(owner, false);
+                    }
+                    self.frame_change_group(&review.groups[index], None);
+                }
+                ui.ctx().data_mut(|data| data.insert_temp(key, RememberedGroup {
+                    index,
+                    selection: self.selection.primary.clone(),
+                }));
+            });
     }
 
-    fn change_row(&mut self, ui: &mut egui::Ui, change: &Change) {
+    fn change_row(&mut self, ui: &mut egui::Ui, change: &Change) -> bool {
         let color = match change.mark {
             DiffMark::Added => self.theme.green,
             DiffMark::Removed => self.theme.amber,
@@ -612,9 +717,8 @@ impl StudioApp {
                 change.target.is_some(),
                 egui::Button::new(&change.name).frame(false).wrap(),
             );
-            if response.clicked()
-                && let Some(target) = &change.target
-            {
+            let clicked = response.clicked();
+            if clicked && let Some(target) = &change.target {
                 self.select(target.clone(), false);
                 self.focus_changes();
             }
@@ -633,7 +737,9 @@ impl StudioApp {
                 }
             ));
             ui.label(muted(&change.detail, self.theme).small());
-        });
+            clicked
+        })
+        .inner
     }
 }
 
@@ -860,6 +966,134 @@ mod tests {
         assert_eq!(
             scene.target_revision(&SceneTarget::Node(fixtures::id(13))),
             Some(before.revision_id)
+        );
+    }
+
+    #[test]
+    fn group_focus_frames_actual_owner_and_nearby_changes_before_alphabetical_changes() {
+        let (before, mut after) = pair();
+        for node in &mut after.nodes {
+            if [fixtures::id(21), fixtures::id(23)].contains(&node.id) {
+                node.name.push_str("Updated");
+            }
+        }
+        let mut scene = scene(&before, &after);
+        for (id, x, y) in [
+            (2, 0.0, 0.0),
+            (21, 6_000.0, 160.0),
+            (22, 6_600.0, 160.0),
+            (23, 300.0, 160.0),
+            (24, 12_000.0, 160.0),
+        ] {
+            scene
+                .nodes
+                .iter_mut()
+                .find(|node| node.id() == fixtures::id(id))
+                .unwrap()
+                .bounds = Rect::new(x, y, 232.0, 118.0);
+        }
+        let unchanged_scene = format!("{scene:?}");
+        let review = change_review(&before, &after, &scene).unwrap();
+        let group = review
+            .groups
+            .iter()
+            .find(|group| group.owner == Some(fixtures::id(2)))
+            .unwrap();
+        let camera = Camera2D {
+            viewport: Size::new(1000.0, 600.0),
+            ..Default::default()
+        };
+        let focus = focus_group(&scene, group, camera, None).unwrap();
+        assert!(focus.owner_visible);
+        assert!(focus.nearby > 0 && focus.nearby < focus.visible);
+        assert!(
+            focus
+                .camera
+                .visible_rect()
+                .contains(scene.node(fixtures::id(23)).unwrap().bounds.center())
+        );
+        assert!(
+            !focus
+                .camera
+                .visible_rect()
+                .contains(scene.node(fixtures::id(21)).unwrap().bounds.center())
+        );
+        assert!(focus.camera.zoom >= 0.42);
+        assert_eq!(format!("{scene:?}"), unchanged_scene);
+    }
+
+    #[test]
+    fn owner_inspection_targets_actual_revision_or_remains_unavailable() {
+        let (before, after) = pair();
+        let scene = scene(&before, &after);
+        let removed = owner_target(&scene, Some(fixtures::id(13))).unwrap();
+        assert_eq!(scene.target_revision(&removed), Some(before.revision_id));
+        let current = owner_target(&scene, Some(fixtures::id(2))).unwrap();
+        assert_eq!(scene.target_revision(&current), Some(after.revision_id));
+        assert!(owner_target(&scene, Some(fixtures::id(999_999))).is_none());
+        assert!(owner_target(&scene, None).is_none());
+    }
+
+    #[test]
+    fn closed_change_list_leaves_canvas_space_and_preserves_exact_pair() {
+        use clap::Parser;
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let args = crate::Args::parse_from([
+            "studio",
+            "--fixture",
+            "architecture",
+            "--no-restore",
+            "--root",
+            root.to_str().unwrap(),
+        ]);
+        let ctx = egui::Context::default();
+        let creation = eframe::CreationContext::_new_kittest(ctx.clone());
+        let mut app = StudioApp::new(&creation, args).unwrap();
+        let (before, after) = pair();
+        app.compare_before = Some(before.clone());
+        app.projection = after.clone();
+        app.scene = scene(&before, &after);
+        app.comparison = ComparisonMode::Diff;
+        let unchanged_scene = format!("{:?}", app.scene);
+        let expected = app.change_review().unwrap();
+        let mut height = 0.0;
+        let _ = ctx.run(
+            egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(
+                    egui::Pos2::ZERO,
+                    egui::vec2(1000.0, 720.0),
+                )),
+                ..Default::default()
+            },
+            |ctx| {
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    height = ui
+                        .scope(|ui| app.diff_review_panel(ui))
+                        .response
+                        .rect
+                        .height();
+                });
+            },
+        );
+        assert!(
+            height <= 110.0,
+            "closed review consumed {height}px of the canvas"
+        );
+        assert_eq!(app.compare_before.as_ref(), Some(&before));
+        assert_eq!(app.projection, after);
+        assert_eq!(format!("{:?}", app.scene), unchanged_scene);
+        let retained = app.change_review().unwrap();
+        assert_eq!(
+            (retained.objects, retained.relationships),
+            (expected.objects, expected.relationships)
+        );
+        assert_eq!(
+            retained
+                .groups
+                .iter()
+                .map(|group| group.changes.len())
+                .sum::<usize>(),
+            retained.objects + retained.relationships
         );
     }
 
