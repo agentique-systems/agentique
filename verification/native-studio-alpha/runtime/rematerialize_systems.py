@@ -19,7 +19,7 @@ def read_when_complete(path):
         try:
             return json.loads(path.read_text())
         except (FileNotFoundError, json.JSONDecodeError):
-            for name in ("historical-kerml-build", "historical-kerml-slices", "historical-kerml-canonical"):
+            for name in ("historical-kerml-recovery-build", "historical-kerml-rematerialize"):
                 status = HERE / (name + ".json")
                 if status.exists() and json.loads(status.read_text())["exit_code"] != 0:
                     raise SystemExit(f"{name} failed; runtime acceptance paused")
@@ -59,3 +59,21 @@ run("historical-systems-finalizer", [str(TARGET / "sysml_systems_publication.exe
     "--cache=" + str(KERML / "accepted.cache"), "--profile=operational-v3",
     "--finalize-converged=" + str(journal), "--resume-sha256=" + actual_digest,
     "--audit-workers=2", "--output=" + str(SYSTEMS / "finalized/report.json")])
+run("systems-independent-artifact-gate", [sys.executable,
+    str(ROOT / "verification/scripts/systems_publication_gate.py"),
+    "--report", str(SYSTEMS / "finalized/report.json"), "--repository", str(ROOT),
+    "--output", str(ARTIFACTS / "systems-independent-artifact-gate.json")], ROOT)
+accepted = json.loads((ROOT / "standards/sysml-accepted-publication.json").read_text())
+generated = json.loads((SYSTEMS / "finalized/accepted-publication.json").read_text())
+original_bindings = json.loads((ROOT / "standards/sysml-standard-bindings.json").read_text())
+new_bindings = json.loads((SYSTEMS / "finalized/standard-bindings.json").read_text())
+semantic_fields = {key: generated.get(key) == value for key, value in accepted.items() if key != "entries"}
+comparison = {"semantic_contract_equal": all(semantic_fields.values()),
+              "semantic_fields": semantic_fields,
+              "accepted_bindings_equal": original_bindings == new_bindings,
+              "original_transport_entries_equal": generated["entries"] == accepted["entries"],
+              "ordinary_facade_authentication_required": True, "accepted_receipt_changed": False}
+(HERE / "systems-existing-contract-comparison.json").write_text(json.dumps(comparison, indent=2))
+if not comparison["semantic_contract_equal"] or not comparison["accepted_bindings_equal"]:
+    raise SystemExit("Real semantic mismatch with existing Systems acceptance; runtime stream paused")
+print(json.dumps(comparison), flush=True)

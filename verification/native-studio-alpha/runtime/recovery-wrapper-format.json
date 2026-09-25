@@ -1,0 +1,22 @@
+{
+  "command": [
+    "rustfmt",
+    "--check",
+    "--edition",
+    "2024",
+    "--config",
+    "skip_children=true",
+    "tools/runtime-recovery/kerml_rematerialize.rs"
+  ],
+  "cwd": "C:/Users/phili/github/agentique-systems/agentique-alpha-runtime",
+  "started_utc": "2026-09-25T15:46:10.244676+00:00",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "source_commit": "5d08f0513a999a3f69d5ca29909313fa8197c441",
+  "working_diff_sha256": "169364e02b9b961ff36a55171a95ba1384e1652195d9d1ffd149f514cddac399",
+  "exit_code": 0,
+  "elapsed_seconds": 1.125,
+  "peak_rss_bytes": 3682304,
+  "peak_private_bytes": 778240,
+  "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "raw_output": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\native-studio-alpha\\runtime\\recovery-wrapper-format.log"
+}

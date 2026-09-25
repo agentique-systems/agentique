@@ -10,7 +10,7 @@ ROOT = HERE.parents[2]
 HISTORICAL = ROOT.parent / "agentique-alpha-rematerialize-kerml"
 ARTIFACTS = ROOT / "verification/generated/native-studio-alpha/rematerialized-kerml"
 ARTIFACTS.mkdir(parents=True, exist_ok=True)
-build = HERE / "historical-kerml-build.json"
+build = HERE / "historical-kerml-recovery-build.json"
 while not build.exists():
     time.sleep(1)
 if json.loads(build.read_text())["exit_code"] != 0:
@@ -24,7 +24,9 @@ def run(name, command):
     subprocess.run([sys.executable, str(HERE / "run_record.py"), "--cwd", str(HISTORICAL),
                     "--name", name, "--", *command], check=True)
 
-run("historical-kerml-slices", [str(HISTORICAL / "target/release/examples/publication_slices.exe"),
-    "--slice=all", "--output=" + str(ARTIFACTS / "slices/slice-{slice}.json")])
-run("historical-kerml-canonical", [str(HISTORICAL / "target/release/examples/canonical_publication.exe"),
-    "--slice-evidence=" + str(ARTIFACTS / "slices"), "--output=" + str(ARTIFACTS / "canonical.json")])
+wrapper = ROOT / "tools/runtime-recovery/kerml_rematerialize.rs"
+copied = HISTORICAL / "crates/kerml-text/examples/kerml_rematerialize.rs"
+if copied.read_bytes() != wrapper.read_bytes():
+    raise SystemExit("Recovery wrapper must match the retained reviewed source")
+run("historical-kerml-rematerialize", [str(HISTORICAL / "target/release/examples/kerml_rematerialize.exe"),
+    "--authority-root=" + str(ROOT), "--output=" + str(ARTIFACTS / "canonical.json")])

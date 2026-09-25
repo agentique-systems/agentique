@@ -1,0 +1,13 @@
+{
+  "command": [
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-rematerialize-kerml\\target\\release\\examples\\publication_slices.exe",
+    "--slice=all",
+    "--output=C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\generated\\native-studio-alpha\\rematerialized-kerml\\slices\\slice-{slice}.json"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-rematerialize-kerml",
+  "started_utc": "2026-09-25T15:26:50.506792+00:00",
+  "exit_code": 15,
+  "elapsed_seconds": 1046.672,
+  "peak_rss_bytes": 1762914304,
+  "peak_private_bytes": 1791082496
+}

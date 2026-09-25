@@ -32,19 +32,25 @@ must match; the table is only a readable locator.
 
 ## Reproduction
 
-Use isolated detached worktrees at those commits. From the historical KerML
-checkout, build with the pinned toolchain and locked dependencies, then run:
+Use isolated detached worktrees at those commits. Copy the retained
+[`kerml_rematerialize.rs`](../tools/runtime-recovery/kerml_rematerialize.rs) wrapper
+into the historical KerML checkout's `crates/kerml-text/examples`. Original language
+source remains unchanged. From that checkout, build with the pinned toolchain and
+locked dependencies, then run:
 
 ```powershell
-cargo build --release --config profile.release.lto=false --locked --offline -j 2 -p agq-kerml-text --example publication_slices --example canonical_publication
-target/release/examples/publication_slices.exe --slice=all "--output=C:/runtime-recovery/kerml/slices/slice-{slice}.json"
-target/release/examples/canonical_publication.exe --slice-evidence=C:/runtime-recovery/kerml/slices --output=C:/runtime-recovery/kerml/canonical.json
+cargo build --release --config profile.release.lto=false --locked --offline -j 2 -p agq-kerml-text --example kerml_rematerialize
+target/release/examples/kerml_rematerialize.exe --authority-root=C:/path/to/current/agentique --output=C:/runtime-recovery/kerml/canonical.json
 ```
 
-Choose fresh output directories. Do not pass `--write-bindings`: recovery must not
-replace trusted receipts or anchors. All five preflights must pass before whole
-corpus reconstruction. A completed run remains a candidate until it matches the
-existing authority.
+Choose fresh output directories. The wrapper has no authority-writing option. It
+calls the unchanged full-corpus producer, including every closure, mandatory
+reference and capability gate. It requires the existing accepted semantic digest
+and full binding-manifest equality before writing a cache candidate. The original
+development tool's five scoped preflights and post-publication authored benchmark
+are separate from these complete gates and do not need repeating to recover
+already accepted bytes. Completion remains a candidate until ordinary restoration
+matches existing authority. No failed semantic obligation is waived.
 
 The historical kernel allocates a fresh immutable snapshot revision label. The
 original receipt pins that label and full serialized graph separately from
