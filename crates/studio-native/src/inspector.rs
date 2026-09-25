@@ -700,11 +700,71 @@ fn origin_label(origin: ViewOrigin) -> &'static str {
 }
 
 fn explanation_summary(explanation: &ExplanationProjection) -> String {
+    let rule = explanation
+        .nodes
+        .iter()
+        .find(|node| node.kind == ExplanationNodeKind::Rule);
+    let subject = rule
+        .and_then(|rule| {
+            explanation
+                .edges
+                .iter()
+                .filter(|edge| edge.source == rule.id)
+                .find_map(|edge| {
+                    explanation.nodes.iter().find(|node| {
+                        node.id == edge.target && node.kind != ExplanationNodeKind::Rule
+                    })
+                })
+        })
+        .or_else(|| {
+            explanation
+                .nodes
+                .iter()
+                .find(|node| node.element_id == Some(explanation.subject_id))
+        });
+    let fact = subject.map_or_else(|| "this fact".into(), |node| format!("“{}”", node.label));
     match explanation.origin {
-        ViewOrigin::Derived => format!("The model includes this fact because a semantic rule is supported by {} recorded evidence dependencies. The diagram traces that immediate support.", explanation.evidence_count),
-        ViewOrigin::Authored => "This fact comes directly from the project's authored model. No semantic producer is asserted for this fact.".into(),
-        ViewOrigin::Standard => "This fact belongs to the accepted standard library used by this revision.".into(),
-        ViewOrigin::Generated => "This is a generated model fact. Inspect its exact identity and publication context below.".into(),
+        ViewOrigin::Derived => {
+            let mut summary = format!("The model derives {fact}");
+            if let Some(name) = &explanation.rule_name {
+                summary.push_str(&format!(" by applying “{name}”"));
+            }
+            summary.push('.');
+            if let Some(rule) = rule {
+                let mut seen = std::collections::BTreeSet::new();
+                let support: Vec<_> = explanation
+                    .edges
+                    .iter()
+                    .filter(|edge| edge.target == rule.id && seen.insert(&edge.source))
+                    .filter_map(|edge| {
+                        explanation.nodes.iter().find(|node| {
+                            node.id == edge.source && node.kind != ExplanationNodeKind::Rule
+                        })
+                    })
+                    .take(2)
+                    .map(|node| format!("“{}”", node.label))
+                    .collect();
+                if !support.is_empty() {
+                    summary.push_str(&format!(
+                        " Its recorded support includes {}.",
+                        support.join(" and ")
+                    ));
+                }
+            }
+            if explanation.truncated {
+                summary.push_str(" This is a partial view of the recorded support.");
+            }
+            summary
+        }
+        ViewOrigin::Authored => {
+            format!("The fact {fact} comes directly from the project's authored model.")
+        }
+        ViewOrigin::Standard => format!(
+            "The fact {fact} belongs to the accepted standard library used by this revision."
+        ),
+        ViewOrigin::Generated => format!(
+            "The model records {fact} as generated. Inspect its exact identity and publication context below."
+        ),
     }
 }
 
@@ -932,5 +992,83 @@ mod tests {
         );
         node.kind = ExplanationNodeKind::Fact;
         assert_eq!(explanation_display_label(&node, None), node.label);
+    }
+
+    #[test]
+    fn summary_names_only_actual_consequence_and_immediate_support() {
+        use agq_modeling_view::{ExplanationEdge, ExplanationNode};
+        let subject = ElementId::from_u128(1);
+        let rule_id = agq_kernel::RuleId::from_u128(123);
+        let mut projection = ExplanationProjection {
+            revision_id: agq_modeling_workspace::ProjectRevisionId::from_u128(2),
+            subject_id: subject,
+            origin: ViewOrigin::Derived,
+            rule_id: Some(rule_id),
+            rule_name: None,
+            profile: "test".into(),
+            nodes: [
+                ("unrelated", "Unrelated fact", ExplanationNodeKind::Fact),
+                ("consequence", "engine · type", ExplanationNodeKind::Fact),
+                ("rule", "Unnamed producer", ExplanationNodeKind::Rule),
+                (
+                    "support1",
+                    "engine : PartUsage",
+                    ExplanationNodeKind::Element,
+                ),
+                (
+                    "support2",
+                    "Engine : PartDefinition",
+                    ExplanationNodeKind::Element,
+                ),
+            ]
+            .into_iter()
+            .map(|(id, label, kind)| ExplanationNode {
+                id: if id == "rule" {
+                    rule_id.to_string()
+                } else {
+                    id.into()
+                },
+                element_id: (id == "consequence").then_some(subject),
+                label: if id == "rule" {
+                    format!("Semantic producer {rule_id}")
+                } else {
+                    label.into()
+                },
+                kind,
+            })
+            .collect(),
+            edges: [
+                ("support1".into(), rule_id.to_string()),
+                ("support2".into(), rule_id.to_string()),
+                (rule_id.to_string(), "consequence".into()),
+            ]
+            .into_iter()
+            .map(|(source, target)| ExplanationEdge {
+                source,
+                target,
+                label: "test support".into(),
+                presentation_only: true,
+            })
+            .collect(),
+            evidence_count: 10,
+            truncated: true,
+        };
+        let original = projection.clone();
+        let summary = explanation_summary(&projection);
+        assert_eq!(
+            summary,
+            "The model derives “engine · type”. Its recorded support includes “engine : PartUsage” and “Engine : PartDefinition”. This is a partial view of the recorded support."
+        );
+        assert!(!summary.contains(&rule_id.to_string()));
+        assert!(!summary.contains("Unrelated fact"));
+        assert_eq!(projection, original);
+        projection.rule_name = Some("actualRecordedRule".into());
+        assert!(explanation_summary(&projection).contains("by applying “actualRecordedRule”"));
+        projection.origin = ViewOrigin::Authored;
+        projection.edges.clear();
+        assert_eq!(
+            explanation_summary(&projection),
+            "The fact “engine · type” comes directly from the project's authored model."
+        );
     }
 }
