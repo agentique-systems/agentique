@@ -440,10 +440,13 @@ impl StudioApp {
                 .get(&(self.world, self.focus))
                 .cloned()
                 .unwrap_or_default();
-            // Bounded disposable navigation memory. The active view is also
-            // stored in the crash-safe presentation session.
-            while self.layouts.len() > 24 {
-                self.layouts.pop_first();
+            // Retain every coordinate system referenced by bounded navigation
+            // plus each world's Home. Key-order eviction could otherwise pair
+            // an old Back camera with a newly packed layout.
+            if self.layouts.len() > 24 {
+                let retained = self.navigation.retained_views();
+                self.layouts
+                    .retain(|key, _| key.1.is_none() || retained.contains(key));
             }
             self.layout_world = self.world;
             self.layout_focus = self.focus;
