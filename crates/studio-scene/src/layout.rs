@@ -16,6 +16,8 @@ pub struct LayoutInput {
     pub parents: BTreeMap<ElementId, ElementId>,
     pub depths: BTreeMap<ElementId, usize>,
     pub collapsed: BTreeSet<ElementId>,
+    /// Port endpoints resolve to their visible owner's topology node.
+    pub edges: Vec<(ElementId, ElementId)>,
 }
 impl LayoutInput {
     pub fn from_projection(
@@ -100,12 +102,46 @@ impl LayoutInput {
         parents.retain(|child, parent| {
             displayable.get(child) == Some(&true) && displayable.get(parent) == Some(&true)
         });
+        let visible: BTreeSet<_> = nodes.iter().map(|n| n.id).collect();
+        let mut port_owners: BTreeMap<_, _> = projection
+            .nodes
+            .iter()
+            .filter_map(|n| n.owner.map(|owner| (n.id, owner)))
+            .collect();
+        for n in &nodes {
+            for f in &n.features {
+                port_owners.insert(f.id, n.id);
+            }
+        }
+        let endpoint = |id: ElementId| {
+            if visible.contains(&id) {
+                Some(id)
+            } else {
+                port_owners
+                    .get(&id)
+                    .copied()
+                    .filter(|p| visible.contains(p))
+            }
+        };
+        let edges = projection
+            .edges
+            .iter()
+            .filter_map(|e| Some((endpoint(e.source)?, endpoint(e.target)?)))
+            .collect();
+        if !options.hierarchy {
+            parents.clear();
+            children.clear();
+            for depth in depths.values_mut() {
+                *depth = 0;
+            }
+        }
         Ok(Self {
             nodes,
             children,
             parents,
             depths,
             collapsed: options.collapsed.clone(),
+            edges,
         })
     }
 }

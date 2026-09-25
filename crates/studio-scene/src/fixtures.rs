@@ -6,6 +6,7 @@
 use agq_kernel::{ElementId, RuleId};
 use agq_modeling_view::*;
 use agq_modeling_workspace::ProjectRevisionId;
+use std::collections::BTreeMap;
 
 pub const FIXTURE_REVISION: u128 = 0xfa170000000000000000000000000001;
 pub fn id(value: u128) -> ElementId {
@@ -65,18 +66,17 @@ fn projection(
     nodes: Vec<ViewNode>,
     edges: Vec<ViewEdge>,
 ) -> ViewProjection {
-    let groups = nodes
-        .iter()
-        .filter_map(|n| {
-            let children: Vec<_> = nodes
-                .iter()
-                .filter(|c| c.owner == Some(n.id))
-                .map(|c| c.id)
-                .collect();
-            (!children.is_empty()).then_some(ViewGroup {
-                element_id: n.id,
-                children,
-            })
+    let mut grouped: BTreeMap<ElementId, Vec<ElementId>> = BTreeMap::new();
+    for n in &nodes {
+        if let Some(owner) = n.owner {
+            grouped.entry(owner).or_default().push(n.id);
+        }
+    }
+    let groups = grouped
+        .into_iter()
+        .map(|(element_id, children)| ViewGroup {
+            element_id,
+            children,
         })
         .collect();
     let count = nodes.len();

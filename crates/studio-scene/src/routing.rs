@@ -170,6 +170,9 @@ fn route(
         via_x(bounds.min.x - 28.0 - lane),
         via_x(bounds.max.x + 28.0 + lane),
     ];
+    if lane > 0.0 && (a.y - b.y).abs() < 1.0 {
+        candidates.insert(0, via_y(a.y + 24.0 + lane));
+    }
     let mut best = None::<(usize, f32, Vec<Point>)>;
     let mut index = 0;
     while index < candidates.len() && index < 24 {

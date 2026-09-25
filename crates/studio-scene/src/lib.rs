@@ -7,6 +7,7 @@
 mod camera;
 pub mod fixtures;
 mod geometry;
+mod graph_layout;
 mod layout;
 mod routing;
 mod spatial;
@@ -15,6 +16,7 @@ use agq_modeling_view::{ViewEdge, ViewNode, ViewOrigin, ViewProjection};
 use agq_modeling_workspace::ProjectRevisionId;
 pub use camera::*;
 pub use geometry::*;
+pub use graph_layout::*;
 pub use layout::*;
 pub use routing::*;
 pub use spatial::*;
@@ -176,11 +178,22 @@ pub enum OverlayKind {
     Suggestion,
     RequirementImpact,
 }
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug)]
 pub struct SceneOptions {
     pub collapsed: BTreeSet<ElementId>,
     /// Presentation-only focus restricts display to this ownership subtree.
     pub focus: Option<ElementId>,
+    /// False selects the topology layout, keeping semantic owners untouched.
+    pub hierarchy: bool,
+}
+impl Default for SceneOptions {
+    fn default() -> Self {
+        Self {
+            collapsed: BTreeSet::new(),
+            focus: None,
+            hierarchy: true,
+        }
+    }
 }
 #[derive(Debug, thiserror::Error)]
 pub enum SceneError {
@@ -212,7 +225,11 @@ impl SemanticScene {
         options: &SceneOptions,
         previous: Option<&LayoutMemory>,
     ) -> Result<Self, SceneError> {
-        Self::with_layout(projection, options, previous, &HierarchyLayout::default())
+        if options.hierarchy {
+            Self::with_layout(projection, options, previous, &HierarchyLayout::default())
+        } else {
+            Self::with_layout(projection, options, previous, &GraphLayout::default())
+        }
     }
     pub fn with_layout(
         projection: &ViewProjection,
@@ -270,10 +287,10 @@ impl SemanticScene {
         let mut port_ids = BTreeSet::new();
         let mut owned_ports: BTreeMap<ElementId, Vec<&ViewNode>> = BTreeMap::new();
         for p in &projection.nodes {
-            if NodeCategory::from_semantic_kind(&p.semantic_kind) == NodeCategory::Port {
-                if let Some(owner) = p.owner {
-                    owned_ports.entry(owner).or_default().push(p);
-                }
+            if NodeCategory::from_semantic_kind(&p.semantic_kind) == NodeCategory::Port
+                && let Some(owner) = p.owner
+            {
+                owned_ports.entry(owner).or_default().push(p);
             }
         }
         for n in &nodes {
@@ -352,6 +369,8 @@ impl SemanticScene {
         if obstructed > 0 {
             warnings.push(format!("{obstructed} routes need refinement; bounded router retained explicit obstacle warnings"));
         }
+        let mut memory = previous.cloned().unwrap_or_default();
+        memory.bounds.extend(result.bounds);
         Ok(Self {
             revision_id: projection.revision_id,
             nodes,
@@ -360,9 +379,7 @@ impl SemanticScene {
             containers,
             warnings,
             bounds,
-            memory: LayoutMemory {
-                bounds: result.bounds,
-            },
+            memory,
         })
     }
     pub fn bounds(&self) -> Rect {
