@@ -1,0 +1,26 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--release",
+    "--config",
+    "profile.release.lto=false",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-studio-scene",
+    "-p",
+    "agq-modeling-view",
+    "--lib",
+    "-j1"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T19:49:57.007595+00:00",
+  "elapsed_seconds": 38.312,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/compact-layout-provenance-tests.txt",
+  "output_sha256": "bbbd327237bff00c87e2dac774677554722a930f50ce8fe9f8d4e90c898befed",
+  "build_environment": {
+    "CARGO_BUILD_JOBS": "1"
+  }
+}
