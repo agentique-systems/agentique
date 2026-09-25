@@ -6,7 +6,9 @@ use crate::{
     panels::category_icon,
 };
 use agq_modeling_view::{RelationshipFamily, ViewOrigin};
-use agq_studio_scene::{DiffMark, LodLevel, NodeCategory, Point, PortSide, SceneTarget, Size};
+use agq_studio_scene::{
+    DiffMark, LodLevel, NodeCategory, Point, PortSide, SceneTarget, Size, VisibleScene,
+};
 use eframe::egui::{self, Align2, Color32, FontId, Sense, Stroke, Vec2};
 use std::{
     collections::{BTreeSet, hash_map::DefaultHasher},
@@ -163,8 +165,20 @@ impl StudioApp {
             ids.hash(&mut hasher);
         }
         let key = hasher.finish();
+        // Resolve exact, revision-checked targets once. The borrowed result is
+        // already ordered for containment and shared by GPU and text passes.
+        let objects = self.lookup.visible(&self.scene, &visible);
+        let selected_edges: BTreeSet<&str> = self
+            .selection
+            .targets
+            .iter()
+            .filter_map(|target| match target {
+                SceneTarget::Edge(id) => Some(id.as_str()),
+                _ => None,
+            })
+            .collect();
         if self.batch_key != Some(key) {
-            self.batch = Arc::new(self.make_batch(key, &visible));
+            self.batch = Arc::new(self.make_batch(key, &objects, &selected_edges));
             self.batch_key = Some(key);
         }
         painter.add(egui_wgpu::Callback::new_paint_callback(
@@ -186,16 +200,7 @@ impl StudioApp {
         ));
         self.timing.visible_nodes = 0;
         self.timing.total_nodes = self.scene.nodes.len();
-        let objects = self.lookup.visible(&self.scene, &visible);
         for node in &objects.nodes {
-            let target = if node.is_container {
-                SceneTarget::Container(node.id())
-            } else {
-                SceneTarget::Node(node.id())
-            };
-            if !visible.contains(&target) {
-                continue;
-            }
             self.timing.visible_nodes += 1;
             let a = self.camera.world_to_screen(node.bounds.min);
             let b = self.camera.world_to_screen(node.bounds.max);
@@ -345,11 +350,7 @@ impl StudioApp {
             }
         }
         for edge in &objects.edges {
-            if !self
-                .selection
-                .targets
-                .contains(&SceneTarget::Edge(edge.semantic.id.clone()))
-            {
+            if !selected_edges.contains(edge.semantic.id.as_str()) {
                 continue;
             }
             if let Some(segment) = edge.points.windows(2).max_by(|a, b| {
@@ -386,9 +387,6 @@ impl StudioApp {
         }
         if self.lod.level() >= LodLevel::Features {
             for port in &objects.ports {
-                if !visible.contains(&SceneTarget::Port(port.id)) {
-                    continue;
-                }
                 if self.lod.level() >= LodLevel::Relationships || self.selection.contains(port.id) {
                     let point = self.camera.world_to_screen(port.position);
                     let position = rect.min + Vec2::new(point.x, point.y);
@@ -479,22 +477,18 @@ impl StudioApp {
             );
         }
     }
-    fn make_batch(&self, key: u64, visible: &BTreeSet<SceneTarget>) -> Batch {
+    fn make_batch(
+        &self,
+        key: u64,
+        objects: &VisibleScene<'_>,
+        selected_edges: &BTreeSet<&str>,
+    ) -> Batch {
         let mut batch = Batch {
             key,
             ..Default::default()
         };
         let theme = self.theme;
-        let objects = self.lookup.visible(&self.scene, visible);
         for node in &objects.nodes {
-            let target = if node.is_container {
-                SceneTarget::Container(node.id())
-            } else {
-                SceneTarget::Node(node.id())
-            };
-            if !visible.contains(&target) {
-                continue;
-            }
             let selected = self.selection.contains(node.id());
             let faded = self.dependencies.as_ref().is_some_and(|ids| {
                 !ids.contains(&node.id())
@@ -558,19 +552,13 @@ impl StudioApp {
             }
         }
         for edge in &objects.edges {
-            if !visible.contains(&SceneTarget::Edge(edge.semantic.id.clone())) {
-                continue;
-            }
             // Ownership is already explicit spatially; graph mode exposes its actual edges.
             if self.world == crate::navigation::World::System
                 && edge.semantic.family == RelationshipFamily::Ownership
             {
                 continue;
             }
-            let selected = self
-                .selection
-                .targets
-                .contains(&SceneTarget::Edge(edge.semantic.id.clone()));
+            let selected = selected_edges.contains(edge.semantic.id.as_str());
             let incident = self.selection.contains(edge.semantic.source)
                 || self.selection.contains(edge.semantic.target)
                 || self
@@ -640,9 +628,6 @@ impl StudioApp {
         }
         if self.lod.level() >= LodLevel::Features {
             for port in &objects.ports {
-                if !visible.contains(&SceneTarget::Port(port.id)) {
-                    continue;
-                }
                 let selected = self.selection.contains(port.id);
                 let size = if selected { 12.0 } else { 9.0 };
                 batch.overlays.push(Quad::rect(
