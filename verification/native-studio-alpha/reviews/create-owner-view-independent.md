@@ -1,0 +1,10 @@
+# Independent Create owner-view readiness review
+
+Reviewed exact commit `e353768f546b5b2af8b307783ba4c648999dbd33` with the existing request, definition, projection-reply and command-capability paths. This is read-only source review, with no build, test or accepted-runtime consumer.
+
+No new authority or readiness blocker found. Create pins the selected owner and current binding before opening an ordinary Architecture view focused on that owner at depth 1. Before preparation, the shared button/Enter/direct-submit check requires the same revision, binding and fixture identity; current System/focus/filter intent; no pending revision, requested/deferred view or scene build; equal installed projection definition; matching scene revision, layout world/focus and actual canonical owner record; and the existing ordinary create capability/base-head checks. A later operator intent prevents submission rather than redirecting it. Source reconstruction and candidate authority remain owned by the service.
+
+For a successful live reply, the existing projection handler checks the exact request definition, installs the complete scene, then clears requested_definition. The new owner definition is the same Architecture factory/depth/families/standards that definition() reproduces afterward; no persistent false readiness condition was found. A failed or stale projection does not make an older, differently scoped scene ready. The fixture branch updates presentation metadata only and remains explicitly non-semantic.
+
+The new negative tests exercise a superseded live owner reply, rejected scene, pending query/build and changed world/focus. Suggested follow-up: add a positive injected ordinary live reply with valid current branch/head metadata proving readiness transitions from false to true after the exact owner projection installs. This is especially useful after run04 exposed a request/response definition-name mismatch in a different path. Tests and actual candidate visibility remain integration gates; source review does not establish a passed nested-part journey.
+
