@@ -26,6 +26,8 @@ jobs:
       RUNTIME_SHA256: ${{ inputs.transport_sha256 }}
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Check strict transport recovery rejection behavior
+        run: python3 verification/scripts/test_runtime_rematerialization.py
       - name: Download explicit draft asset
         shell: bash
         run: |
