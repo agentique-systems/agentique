@@ -2,6 +2,8 @@
 //! Browser presentation metadata is stored separately from semantic model facts.
 #![forbid(unsafe_code)]
 
+mod seed;
+mod startup;
 #[cfg(test)]
 mod tests;
 
@@ -40,6 +42,10 @@ pub struct StudioConfig {
     pub root: PathBuf,
     pub kerml_cache: Option<PathBuf>,
     pub systems_cache: Option<PathBuf>,
+    /// Installed runtime location; defaults to the normal per-user Agentique store.
+    pub runtime_dir: Option<PathBuf>,
+    /// Explicit accepted runtime bundle override, independently authenticated on load.
+    pub bundle: Option<PathBuf>,
 }
 
 struct Runtime {
@@ -78,6 +84,8 @@ struct Host {
     jobs: Arc<Semaphore>,
     operator_token: Arc<String>,
     agent_token: Arc<String>,
+    config: Arc<StudioConfig>,
+    startup: Arc<Mutex<startup::Startup>>,
 }
 
 #[derive(Debug)]
@@ -128,27 +136,11 @@ pub fn router(config: StudioConfig) -> Router {
             std::env::var("AGENTIQUE_STUDIO_AGENT_TOKEN")
                 .unwrap_or_else(|_| uuid::Uuid::new_v4().to_string()),
         ),
+        config: Arc::new(config.clone()),
+        startup: Arc::new(Mutex::new(startup::Startup::new())),
     };
-    let startup = host.clone();
     let build = config.root.join("console/dist");
-    std::thread::spawn(move || {
-        let result = if startup.operator_token.len() < 16
-            || startup.agent_token.len() < 16
-            || startup.operator_token == startup.agent_token
-        {
-            Err(
-                "Studio operator and agent tokens must be distinct and at least 16 characters."
-                    .into(),
-            )
-        } else {
-            initialize(&config).map(Arc::new)
-        };
-        match &result {
-            Ok(_) => eprintln!("Studio durable self-model ready"),
-            Err(error) => eprintln!("Studio setup required: {error}"),
-        }
-        *startup.runtime.lock().expect("runtime initialization") = result;
-    });
+    startup::start(host.clone(), None);
     routes(host, build)
 }
 
@@ -158,6 +150,9 @@ fn routes(host: Host, build: PathBuf) -> Router {
             "/api/gen2/studio",
             Router::new()
                 .route("/session", get(session))
+                .route("/runtime", get(startup::status))
+                .route("/runtime/install", post(startup::install))
+                .route("/runtime/retry", post(startup::retry))
                 .route("/view", post(view))
                 .route("/inspect", post(inspect))
                 .route("/explain", post(explain))
@@ -208,7 +203,11 @@ async fn access(State(host): State<Host>, request: Request, next: Next) -> Respo
             .into_response();
         }
     }
-    if !request.uri().path().ends_with("/session") && policy(&host, request.headers()).is_err() {
+    if !matches!(
+        request.uri().path(),
+        "/session" | "/runtime" | "/api/gen2/studio/session" | "/api/gen2/studio/runtime"
+    ) && policy(&host, request.headers()).is_err()
+    {
         return HttpError(
             StatusCode::UNAUTHORIZED,
             "Studio session token required".into(),
@@ -258,42 +257,48 @@ async fn run(
     .map_err(|error| HttpError(StatusCode::INTERNAL_SERVER_ERROR, error.to_string()))?
 }
 
-fn initialize(config: &StudioConfig) -> Result<Runtime, String> {
-    use agq_kerml_text::{
-        library::CanonicalKermlStandardLibraries, sysml::CanonicalSysmlSystemsLibrary,
-    };
-    let open = |path: &Option<PathBuf>, name: &str| {
-        let path = path.as_ref().ok_or_else(|| format!("Set {name} to an existing accepted publication cache. Studio never rebuilds standards during startup."))?;
-        std::fs::File::open(path).map_err(|e| format!("{name}: {}: {e}", path.display()))
-    };
-    let kerml_file = open(&config.kerml_cache, "AGENTIQUE_KERML_CACHE")?;
-    let systems_file = open(&config.systems_cache, "AGENTIQUE_SYSTEMS_CACHE")?;
-    let sources = agq_standard_libraries::VerifiedLibrarySet::load_from_directory(&config.root)
-        .map_err(|e| e.to_string())?;
-    let kerml = Arc::new(
-        CanonicalKermlStandardLibraries::restore_cache(kerml_file, &sources)
-            .map_err(|e| e.to_string())?,
-    );
-    let systems = Arc::new(
-        CanonicalSysmlSystemsLibrary::restore_cache(systems_file, &sources, kerml)
-            .map_err(|e| e.to_string())?,
-    );
+fn initialize(config: &StudioConfig, progress: &mut impl FnMut(&str)) -> Result<Runtime, String> {
+    let accepted =
+        agq_runtime_publications::load(&startup::runtime_config(config), &config.root, |phase| {
+            progress(startup::phase_name(phase))
+        })
+        .map_err(|error| error.to_string())?;
+    initialize_with_publications(config, progress, accepted)
+}
+
+fn initialize_with_publications(
+    config: &StudioConfig,
+    progress: &mut impl FnMut(&str),
+    accepted: agq_runtime_publications::AuthenticatedRuntime,
+) -> Result<Runtime, String> {
+    eprintln!("{}", json!({"publication_timings": accepted.timings}));
+    progress("opening_repository");
     if let Some(parent) = config.database.parent() {
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
     let repository = Arc::new(
         agq_modeling_sqlite::SqliteRepository::open(&config.database).map_err(|e| e.to_string())?,
     );
-    let service = Arc::new(ModelingService::new(repository, systems, 8));
-    seed(&service, &config.root).map_err(|e| e.to_string())?;
+    let service = Arc::new(ModelingService::new(repository, accepted.systems, 8));
     let metadata = rusqlite::Connection::open(config.database.with_extension("views.sqlite"))
         .map_err(|e| e.to_string())?;
     metadata.execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; CREATE TABLE IF NOT EXISTS studio_views (project TEXT NOT NULL, name TEXT NOT NULL, definition TEXT NOT NULL, PRIMARY KEY(project,name));").map_err(|e| e.to_string())?;
+    progress("opening_agentique");
+    seed::seed(&service, &config.root, &metadata, progress).map_err(|e| e.to_string())?;
+    progress("restoring_revision");
     for project in service
         .repository()
         .list_projects()
         .map_err(|e| e.to_string())?
     {
+        let head = service
+            .repository()
+            .get_branch(project.id, project.default_branch)
+            .map_err(|error| error.to_string())?
+            .head;
+        service
+            .resolve(project.id, RevisionSelector::Revision(head))
+            .map_err(|error| error.to_string())?;
         let view = ViewDefinition::architecture();
         metadata
             .execute(
@@ -312,88 +317,6 @@ fn initialize(config: &StudioConfig) -> Result<Runtime, String> {
         candidates: Mutex::new(BTreeMap::new()),
         candidate_slots: Arc::new(Semaphore::new(8)),
     })
-}
-
-fn seed(
-    service: &ModelingService,
-    root: &std::path::Path,
-) -> Result<(), agq_modeling_service::ServiceError> {
-    use agq_kerml_text::{ProjectChange, SourceLanguage};
-    // Resume only our identifiable empty seed after a failed startup. Any authored
-    // repository is preserved; later self-model changes require ordinary candidates.
-    let projects = service.repository().list_projects()?;
-    let project = if projects.is_empty() {
-        service.create_project(
-            "Agentique",
-            Some("Agentique's own durable system architecture".into()),
-        )?
-    } else {
-        let Some(project) = projects.into_iter().find(|p| {
-            p.name == "Agentique"
-                && p.metadata.description.as_deref()
-                    == Some("Agentique's own durable system architecture")
-        }) else {
-            return Ok(());
-        };
-        let current = service
-            .repository()
-            .get_branch(project.id, project.default_branch)?
-            .head;
-        if !service
-            .repository()
-            .load_revision(project.id, current)?
-            .documents
-            .is_empty()
-        {
-            return Ok(());
-        }
-        project
-    };
-    let head = service
-        .repository()
-        .get_branch(project.id, project.default_branch)?
-        .head;
-    let names = [
-        "Contracts.sysml",
-        "LanguageEngine.sysml",
-        "ModelingPlatform.sysml",
-        "ExecutionRuntime.sysml",
-        "Agentique.sysml",
-    ];
-    let mut changes = Vec::new();
-    for name in names {
-        let source = std::fs::read_to_string(root.join("models/agentique").join(name))
-            .map_err(|e| agq_modeling_service::ServiceError::Invalid(e.to_string()))?;
-        changes.push(ProjectChange::Add {
-            path: name.into(),
-            language: SourceLanguage::SysMl,
-            source,
-        });
-    }
-    let first = service.apply_document_changes(ApplyDocumentChanges {
-        operation_id: OperationId::new(),
-        project: project.id,
-        branch: project.default_branch,
-        expected_head: head,
-        changes,
-        validate: true,
-    })?;
-    service.create_branch(project.id, "architecture-baseline", first.revision_id)?;
-    let source = std::fs::read_to_string(root.join("models/agentique/AgentFabric.sysml"))
-        .map_err(|e| agq_modeling_service::ServiceError::Invalid(e.to_string()))?;
-    service.apply_document_changes(ApplyDocumentChanges {
-        operation_id: OperationId::new(),
-        project: project.id,
-        branch: project.default_branch,
-        expected_head: first.revision_id,
-        changes: vec![ProjectChange::Add {
-            path: "AgentFabric.sysml".into(),
-            language: SourceLanguage::SysMl,
-            source,
-        }],
-        validate: true,
-    })?;
-    Ok(())
 }
 
 async fn session(State(host): State<Host>, headers: HeaderMap) -> HttpResult {

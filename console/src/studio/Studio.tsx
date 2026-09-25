@@ -20,6 +20,7 @@ import {
   viewDefinition,
 } from "./model";
 import { Viewport, canonicalChanges, projectionChanges } from "./Viewport";
+import { RuntimeSetup, RuntimeStatus } from "./RuntimeSetup";
 import "./studio.css";
 
 const lenses: { name: Lens; icon: string; caption: string }[] = [
@@ -57,6 +58,7 @@ export function Studio() {
   const [loadingView, setLoadingView] = useState(false);
   const [error, setError] = useState("");
   const [startupError, setStartupError] = useState("");
+  const [runtimeStatus, setRuntimeStatus] = useState<RuntimeStatus>();
   const [theme, setTheme] = useState(
     () => localStorage.getItem("agentique-studio-theme") ?? "dark",
   );
@@ -123,10 +125,25 @@ export function Studio() {
     void refreshSession();
   }, []);
   useEffect(() => {
-    if (session || !startupError.startsWith("Restoring accepted standards"))
-      return;
-    const timer = setTimeout(() => void refreshSession(), 1500);
-    return () => clearTimeout(timer);
+    if (session || !startupError) return;
+    let cancelled = false;
+    async function poll() {
+      try {
+        const status = await studioApi<RuntimeStatus>("/runtime");
+        if (cancelled) return;
+        if (status.session_token) setOperatorToken(status.session_token);
+        setRuntimeStatus(status);
+        if (status.ready) await refreshSession();
+      } catch {
+        /* Keep the connection error visible if the host cannot be reached. */
+      }
+    }
+    void poll();
+    const timer = setInterval(() => void poll(), 1500);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
   }, [session, startupError]);
   useEffect(() => {
     localStorage.setItem("agentique-studio-theme", theme);
@@ -436,47 +453,27 @@ export function Studio() {
         </button>
       </header>
       {!session ? (
-        <main className="studio-startup">
-          <div className="studio-startup-mark">◈</div>
-          <p className="studio-eyebrow">THE MODEL IS THE WORLD</p>
-          <h1>Your engineering workspace.</h1>
-          <p>
-            Architecture, relationships, decisions, and immutable history.
-            <br />
-            One semantic model. Every view connected.
-          </p>
-          <div className="studio-connection-card">
-            <div className="studio-card-label">
-              <span className="studio-status-dot" />{" "}
-              {startupError
-                ? "Repository connection needed"
-                : "Opening durable project"}
-            </div>
-            {startupError ? (
-              <>
-                <p>{startupError}</p>
-                <p className="studio-muted">
-                  Start the Gen2 Studio service with the accepted KerML and
-                  Systems publication caches and the durable Agentique
-                  repository. Model content appears after the service connects.
-                </p>
-                <button
-                  className="studio-primary"
-                  onClick={() => void refreshSession()}
-                >
-                  Reconnect to Studio
-                </button>
-              </>
-            ) : (
-              <p className="studio-muted">
-                Restoring the immutable project context…
-              </p>
-            )}
-          </div>
-          <a className="studio-expert-link" href="/expert">
-            Open the legacy expert console ↗
-          </a>
-        </main>
+        <RuntimeSetup
+          status={runtimeStatus}
+          error={startupError}
+          onRetry={async () => {
+            if (runtimeStatus) await studioApi("/runtime/retry", {});
+            else await refreshSession();
+          }}
+          onInstall={async (bundle) => {
+            await studioApi("/runtime/install", { bundle });
+            setRuntimeStatus((previous) =>
+              previous
+                ? {
+                    ...previous,
+                    running: true,
+                    phase: "locating_package",
+                    error: null,
+                  }
+                : previous,
+            );
+          }}
+        />
       ) : (
         <>
           <div className="studio-workspace">

@@ -9,12 +9,13 @@
     "check": "tsc --noEmit -p console/tsconfig.json",
     "test": "node --test tools/*.test.mjs",
     "test:e2e": "playwright test",
+    "test:studio": "cargo build --locked --offline -p agq-studio && playwright test --config playwright.studio.config.ts",
     "dev": "vite --config console/vite.config.ts",
     "standards:check": "node tools/standards-check.mjs",
     "metamodel:check": "cargo run --locked --offline -p agq-metamodel-gen -- --check",
     "test:process": "node tools/process-test.mjs",
     "verify": "node tools/verify.mjs",
-    "format:check": "prettier --check console/src console/*.ts tests/browser tools/*.mjs playwright.config.ts"
+    "format:check": "prettier --check console/src console/*.ts tests/browser tests/studio tools/*.mjs playwright.config.ts playwright.studio.config.ts"
   },
   "dependencies": {
     "react": "19.3.0",

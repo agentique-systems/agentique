@@ -283,6 +283,7 @@ test("Studio reports missing durable inputs without substituting model content",
   );
   await page.goto("/studio");
   await expect(page.getByText("Repository connection needed")).toBeVisible();
+  await page.getByText("Setup details", { exact: true }).click();
   await expect(
     page.getByText("Accepted publication caches are unavailable."),
   ).toBeVisible();

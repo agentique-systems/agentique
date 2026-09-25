@@ -1,0 +1,82 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "runtime-cli-help",
+      "command": [
+        "target/debug/agq-publications.exe",
+        "--help"
+      ],
+      "exit_code": 0,
+      "tool_version": "error: unexpected argument '--version' found",
+      "source_commit": "8b7f5ef79d51e6a3380f659bd1b32897cb6f6b2b",
+      "working_changes_sha256": "dcb7385c2f0dc41ea252cb4fdc26cfe22813cb6b78b0d55b7c44930e3c678d4b",
+      "output_sha256": "89315276486735452bf1e525ca4def769f1fd476f3a88193ac8a4939472a185b",
+      "duration_seconds": 0.02,
+      "output": "verification/generated/agentique-studio-first-light/runtime-cli-help.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "runtime-cli-build",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-runtime-publications",
+        "--bin",
+        "agq-publications",
+        "-j",
+        "2"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "8b7f5ef79d51e6a3380f659bd1b32897cb6f6b2b",
+      "working_changes_sha256": "4e2b6bc60ba2dc179e60c5184b008e41add959a35c196478afc32d81190d8b55",
+      "output_sha256": "4c1f26aa692075a9c545e23d9a41c63bedc33ced23c7eece3dfaeb9972653f6e",
+      "duration_seconds": 57.44,
+      "output": "verification/generated/agentique-studio-first-light/runtime-cli-build.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0"
+      }
+    },
+    {
+      "name": "runtime-cli-missing-final",
+      "command": [
+        "target/debug/agq-publications.exe",
+        "--runtime-dir",
+        "verification/generated/agentique-studio-first-light/absent-runtime-store",
+        "status"
+      ],
+      "exit_code": 1,
+      "tool_version": "agq-runtime-publications 0.1.0",
+      "source_commit": "8b7f5ef79d51e6a3380f659bd1b32897cb6f6b2b",
+      "working_changes_sha256": "7624464553344c278bf6ba4647668284e0c17f01b513505a51a84dd6ca5b1ef3",
+      "output_sha256": "fd1a1bbcafaa113e0a892e79583d02a9676189e93d0486a373bf0bd348e35792",
+      "duration_seconds": 0.02,
+      "output": "verification/generated/agentique-studio-first-light/runtime-cli-missing-final.log",
+      "environment_overrides": {},
+      "expected_exit_code": 1,
+      "result": "Expected missing-runtime rejection, actionable setup command, no store created",
+      "directory_created": false
+    },
+    {
+      "name": "runtime-cli-contract-final",
+      "command": [
+        "target/debug/agq-publications.exe",
+        "contract"
+      ],
+      "exit_code": 0,
+      "tool_version": "agq-runtime-publications 0.1.0",
+      "source_commit": "8b7f5ef79d51e6a3380f659bd1b32897cb6f6b2b",
+      "working_changes_sha256": "7624464553344c278bf6ba4647668284e0c17f01b513505a51a84dd6ca5b1ef3",
+      "output_sha256": "421e5f272036839af596fb8b2f292fecba0b0f2ca7f55a42d95902a628ab22eb",
+      "duration_seconds": 0.02,
+      "output": "verification/generated/agentique-studio-first-light/runtime-cli-contract-final.log",
+      "environment_overrides": {}
+    }
+  ],
+  "result": "CLI builds and prints checked-in authority references. Missing installed assets correctly return exit 1; no real publication acceptance is claimed."
+}

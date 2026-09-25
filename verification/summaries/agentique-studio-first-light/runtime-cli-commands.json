@@ -1,0 +1,15 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "command": "cargo run --locked --offline -p agq-runtime-publications --bin agq-publications -- contract",
+      "exit_code": 0,
+      "elapsed_seconds": 2.3367194,
+      "output": "verification/generated/agentique-studio-first-light/runtime-cli-commands.log",
+      "output_sha256": "f7df4b5d415ed79de8c3a71a9f1f57280874835ddf036da4397f062036ef927f",
+      "source_commit": "8b7f5ef79d51e6a3380f659bd1b32897cb6f6b2b",
+      "working_changes_sha256": null,
+      "source_identity_note": "Working patch digest was not captured for this early smoke invocation."
+    }
+  ]
+}

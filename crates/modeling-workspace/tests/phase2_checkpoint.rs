@@ -385,5 +385,10 @@ fn local_edit_classes_match_full_semantic_oracle() {
             incremental.compilation_work(),
             full.compilation_work()
         );
+        eprintln!(
+            "{name}: incremental_phases={} full_phases={}",
+            serde_json::to_string(incremental.compilation_timings()).unwrap(),
+            serde_json::to_string(full.compilation_timings()).unwrap()
+        );
     }
 }

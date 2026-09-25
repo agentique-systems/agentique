@@ -59,6 +59,10 @@ fn report_restore(bound: &BoundRevision, started: Instant) {
         RevisionLoadPath::ImmutableMemory => "restore_from_immutable_memory",
     };
     eprintln!("{class}_ms={}", started.elapsed().as_millis());
+    eprintln!(
+        "{class}_compile_phases={}",
+        serde_json::to_string(bound.revision().compilation_timings()).unwrap()
+    );
 }
 fn add(path: &str, language: SourceLanguage, source: &str) -> ProjectChange {
     ProjectChange::Add {
@@ -172,6 +176,7 @@ fn durable_cache_and_failure_authentication() {
         .semantic_cache
         .clone()
         .expect("validated candidate persisted its cache");
+    assert_eq!(cache.format, "agq-project-semantic-cache/2");
     eprintln!(
         "semantic_cache_blob_bytes={}",
         prepared.request().candidate.blobs[&cache.content_digest].len()
@@ -193,6 +198,10 @@ fn durable_cache_and_failure_authentication() {
     eprintln!(
         "authenticated_cache_restore_work={}",
         serde_json::to_string(cached.revision().compilation_work()).unwrap()
+    );
+    eprintln!(
+        "authenticated_cache_restore_phases={}",
+        serde_json::to_string(cached.revision().compilation_timings()).unwrap()
     );
     assert_eq!(cached.revision().checkpoint(), checkpoint);
     assert_eq!(
@@ -239,6 +248,10 @@ fn durable_cache_and_failure_authentication() {
         eprintln!(
             "source_restore_work={}",
             serde_json::to_string(restored.revision().compilation_work()).unwrap()
+        );
+        eprintln!(
+            "source_restore_phases={}",
+            serde_json::to_string(restored.revision().compilation_timings()).unwrap()
         );
         assert_eq!(
             restored.load_path(),

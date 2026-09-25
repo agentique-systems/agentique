@@ -8,6 +8,15 @@ fn unavailable_host() -> Host {
         jobs: Arc::new(Semaphore::new(2)),
         operator_token: Arc::new("operator-test".into()),
         agent_token: Arc::new("agent-test".into()),
+        config: Arc::new(StudioConfig {
+            root: PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.."),
+            database: PathBuf::from("unused-test.sqlite"),
+            kerml_cache: None,
+            systems_cache: None,
+            runtime_dir: None,
+            bundle: None,
+        }),
+        startup: Arc::new(Mutex::new(startup::Startup::new())),
     }
 }
 async fn request(
@@ -91,6 +100,88 @@ async fn host_reports_missing_inputs_and_denies_machine_commit() {
 }
 
 #[tokio::test]
+async fn runtime_setup_is_observable_retryable_and_operator_only() {
+    let directory = tempfile::tempdir().unwrap();
+    let config = StudioConfig {
+        root: PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.."),
+        database: directory.path().join("studio.sqlite"),
+        kerml_cache: None,
+        systems_cache: None,
+        runtime_dir: Some(directory.path().join("runtime")),
+        bundle: Some(directory.path().join("missing-bundle")),
+    };
+    let host = Host {
+        config: Arc::new(config.clone()),
+        operator_token: Arc::new("operator-runtime-test-token".into()),
+        agent_token: Arc::new("agent-runtime-test-token".into()),
+        ..unavailable_host()
+    };
+    startup::start(host.clone(), None);
+    let app = routes(host, config.root.join("console/dist"));
+    async fn settled(app: &Router) -> Value {
+        for _ in 0..200 {
+            let (status, body) = request(app, "GET", "/runtime", None, Value::Null).await;
+            assert_eq!(status, StatusCode::OK);
+            if body["running"] == false {
+                return body;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(10)).await;
+        }
+        panic!("missing runtime should settle without semantic work");
+    }
+    let status = settled(&app).await;
+    assert_eq!(status["phase"], "setup_required");
+    assert_eq!(status["ready"], false);
+    assert_eq!(status["session_token"], "operator-runtime-test-token");
+    assert!(
+        !config.database.exists(),
+        "a failed runtime must not create a model repository"
+    );
+    let (_, machine) = request(
+        &app,
+        "GET",
+        "/runtime",
+        Some("agent-runtime-test-token"),
+        Value::Null,
+    )
+    .await;
+    assert!(machine["session_token"].is_null());
+    let bundle = json!({"bundle":directory.path().join("missing.agq-runtime")});
+    for action in ["/runtime/install", "/runtime/retry"] {
+        let (status, _) = request(
+            &app,
+            "POST",
+            action,
+            Some("agent-runtime-test-token"),
+            bundle.clone(),
+        )
+        .await;
+        assert_eq!(status, StatusCode::FORBIDDEN);
+    }
+    let (status, _) = request(
+        &app,
+        "POST",
+        "/runtime/install",
+        Some("operator-runtime-test-token"),
+        bundle,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(settled(&app).await["phase"], "setup_required");
+    let (status, _) = request(
+        &app,
+        "POST",
+        "/runtime/retry",
+        Some("operator-runtime-test-token"),
+        Value::Null,
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    assert_eq!(settled(&app).await["phase"], "setup_required");
+    assert!(!config.database.exists());
+}
+
+#[tokio::test]
 #[ignore = "requires accepted KerML and Systems cache files; never rebuilds publication"]
 async fn durable_studio_candidate_view_and_history_vertical() {
     let directory = tempfile::tempdir().unwrap();
@@ -99,8 +190,10 @@ async fn durable_studio_candidate_view_and_history_vertical() {
         database: directory.path().join("studio.sqlite"),
         kerml_cache: std::env::var_os("AGENTIQUE_KERML_CACHE").map(PathBuf::from),
         systems_cache: std::env::var_os("AGENTIQUE_SYSTEMS_CACHE").map(PathBuf::from),
+        runtime_dir: std::env::var_os("AGENTIQUE_RUNTIME_DIR").map(PathBuf::from),
+        bundle: None,
     };
-    let runtime = Arc::new(initialize(&config).unwrap());
+    let runtime = Arc::new(initialize(&config, &mut |_| {}).unwrap());
     let host = Host {
         runtime: Arc::new(Mutex::new(Ok(runtime.clone()))),
         ..unavailable_host()

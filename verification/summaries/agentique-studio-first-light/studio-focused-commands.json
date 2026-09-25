@@ -1,0 +1,80 @@
+{
+  "base_commit": "8b7f5ef79d51e6a3380f659bd1b32897cb6f6b2b",
+  "tools": {
+    "rustc": "1.92.0 (ded5c06cf 2025-12-08)",
+    "node": "v22.11.0",
+    "npm": "10.9.0"
+  },
+  "rust_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0"
+  },
+  "commands": [
+    {
+      "command": "cargo test --locked --offline -p agq-studio -j 2",
+      "exit_code": 0,
+      "outcome": "3 passed; 1 real accepted-cache test ignored",
+      "output": "verification/generated/agentique-studio-first-light/studio-focused-test.log",
+      "output_sha256": "a6a97e7a4af8b5c066bb5a066eaecdebe8e800bd98afd8ebe2951ca21b08b9e9",
+      "tested_tree_digest": null
+    },
+    {
+      "command": "cargo build --locked --offline -p agq-studio -j 2",
+      "exit_code": 0,
+      "outcome": "Studio host built",
+      "output": "verification/generated/agentique-studio-first-light/studio-build.log",
+      "output_sha256": "625f11bc5cc806dcc9947dadb94a5da95839c3f599660e32d0f0d1220e73c700",
+      "tested_tree_digest": null
+    },
+    {
+      "command": "npm run build",
+      "exit_code": 0,
+      "outcome": "35 modules transformed; frontend built",
+      "output": "verification/generated/agentique-studio-first-light/studio-frontend-build.log",
+      "output_sha256": "ba754c577badc705f90d6208e1d9937a4c17e57c38a7927342252afc20e7b9de",
+      "tested_tree_digest": null
+    },
+    {
+      "command": "npx playwright test --config playwright.studio.config.ts",
+      "exit_code": 0,
+      "outcome": "1 real-backend missing-runtime test passed; 1 real-model test skipped because accepted bundle absent",
+      "output": "verification/generated/agentique-studio-first-light/studio-real-host-browser.log",
+      "output_sha256": "e432e0464ca0d6bb17542b85bb1a54f9276114f99a6d550ec30ecdf51602977f",
+      "tested_tree_digest": null
+    },
+    {
+      "command": "cargo check -p agq-studio -j 2",
+      "exit_code": 0,
+      "outcome": "Studio host checked",
+      "output": "tool transcript",
+      "output_sha256": null,
+      "tested_tree_digest": null
+    },
+    {
+      "command": "npm run check",
+      "exit_code": 0,
+      "outcome": "TypeScript check passed",
+      "output": "tool transcript",
+      "output_sha256": null,
+      "tested_tree_digest": null
+    }
+  ],
+  "tested_tree_identity_note": "Commands ran against the uncommitted First Light working tree. A tree digest was not captured at command start; null fields are intentional. Final workspace regression records the integrated tree separately.",
+  "setup_only_measurement": {
+    "first_http_ms": 707.4063,
+    "missing_runtime_discovery_ms": 6,
+    "caveat": "Unoptimized local host, fresh temporary runtime and database paths. First HTTP is measured by a polling observer and includes polling delay. No accepted runtime was restored; this is not a cold semantic launch."
+  },
+  "setup_screenshot": {
+    "path": "verification/generated/agentique-studio-first-light/studio-runtime-setup.png",
+    "sha256": "e8521229652037dc5fb8d644e89721313600a6fa3683df6f224a034cda2d621a",
+    "scope": "Real agq-studio missing-runtime setup state only. No model loaded; not real semantic screenshot acceptance."
+  },
+  "real_operator_sequence": {
+    "implemented": "tests/studio/runtime.spec.ts",
+    "executed": false,
+    "reason": "No existing accepted runtime bundle available. Requires AGENTIQUE_STUDIO_BUNDLE."
+  },
+  "real_semantic_acceptance": false
+}

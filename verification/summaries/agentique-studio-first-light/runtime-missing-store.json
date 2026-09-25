@@ -1,0 +1,21 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "command": "./target/debug/agq-publications.exe --runtime-dir C:\\Users\\phili\\AppData\\Local\\Temp\\agentique-runtime-smoke-dc1c18f8ecb5464ca26d1f39643cb580 status",
+      "environment": {
+        "AGENTIQUE_KERML_CACHE": null,
+        "AGENTIQUE_SYSTEMS_CACHE": null
+      },
+      "exit_code": 1,
+      "expected": "Missing runtime; no acquisition or publication; no directory created",
+      "directory_created": false,
+      "elapsed_seconds": 0.0540002,
+      "output": "verification/generated/agentique-studio-first-light/runtime-missing-store.log",
+      "output_sha256": "e13460216aebdcfa0d023e85222e55c0839ddf7cc67779994742028e6fb69331",
+      "source_commit": "8b7f5ef79d51e6a3380f659bd1b32897cb6f6b2b",
+      "working_changes_sha256": null,
+      "source_identity_note": "Working patch digest was not captured for this early smoke invocation."
+    }
+  ]
+}

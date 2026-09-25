@@ -1,0 +1,181 @@
+{
+  "format": "agentique-verification-summary/1",
+  "commands": [
+    {
+      "name": "platform-timing-check",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-modeling-workspace",
+        "--all-targets",
+        "--features",
+        "verification"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "8b7f5ef79d51e6a3380f659bd1b32897cb6f6b2b",
+      "working_changes_sha256": "f98469194103d34c8fbf3925df7614c176b820c85bcf4a4192d7ea6b105ccf36",
+      "output_sha256": "157ac5cf39a97ca8f087e99b48ecc0d7e63ecc3a0935c28b02550de487c7cbf0",
+      "duration_seconds": 14.34,
+      "output": "verification/generated/agentique-studio-first-light/platform-timing-check.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "platform-timing-service-check",
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-modeling-service",
+        "--all-targets",
+        "--features",
+        "verification"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "8b7f5ef79d51e6a3380f659bd1b32897cb6f6b2b",
+      "working_changes_sha256": "ca47f9e66b0b0d4995977bc93533d2d9c0aa8823ea3628a8035a3349a25536e6",
+      "output_sha256": "ec2416785afb6a174ab58829e894537ab9c5f67b47e53c15c4875c5db82876a7",
+      "duration_seconds": 5.95,
+      "output": "verification/generated/agentique-studio-first-light/platform-timing-service-check.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "platform-compact-codec-tests",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-modeling-service",
+        "--lib",
+        "cache_codec::tests::",
+        "--",
+        "--nocapture"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "8b7f5ef79d51e6a3380f659bd1b32897cb6f6b2b",
+      "working_changes_sha256": "ca47f9e66b0b0d4995977bc93533d2d9c0aa8823ea3628a8035a3349a25536e6",
+      "output_sha256": "f03df233701bba5c414aaf504672313317eb429747892b48c50ffd7b5b2e29a2",
+      "duration_seconds": 35.31,
+      "output": "verification/generated/agentique-studio-first-light/platform-compact-codec-tests.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "platform-gate-helper-help",
+      "command": [
+        "python",
+        "verification/scripts/first_light_platform.py",
+        "--help"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "8b7f5ef79d51e6a3380f659bd1b32897cb6f6b2b",
+      "working_changes_sha256": "f677eb828e1a72d35a64516aaa6ae87b1816bd179eab7719ab29e5349c94c78b",
+      "output_sha256": "5af693d4d9d790ed516350e179c57a34e16adf0ba4e88712de24f7a7d336352d",
+      "duration_seconds": 0.11,
+      "output": "verification/generated/agentique-studio-first-light/platform-gate-helper-help.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "platform-gate-orchestration-tests",
+      "command": [
+        "python",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "verification/scripts",
+        "-p",
+        "test_first_light_platform.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "tool_version": "Python 3.12.10",
+      "source_commit": "8b7f5ef79d51e6a3380f659bd1b32897cb6f6b2b",
+      "working_changes_sha256": "ef40928efdb77d6e5a1e44a7797618add00bb67909d7f8828828251880dc597f",
+      "output_sha256": "eba454592f4c6fdcd26cbc5ab87bf3bcfa645fc8dd5cf5acb0a0c1d17f4fd1b7",
+      "duration_seconds": 0.67,
+      "output": "verification/generated/agentique-studio-first-light/platform-gate-orchestration-tests.log",
+      "environment_overrides": {}
+    },
+    {
+      "name": "platform-timing-clippy",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-kerml-text",
+        "-p",
+        "agq-modeling-workspace",
+        "-p",
+        "agq-modeling-service",
+        "--all-targets",
+        "--features",
+        "verification",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "8b7f5ef79d51e6a3380f659bd1b32897cb6f6b2b",
+      "working_changes_sha256": "b7017c7a8dd2eafe6c76bd89842cfa0385ec850b4a2869e0cb95b2c26845d6b3",
+      "output_sha256": "446cfe1194e04314ebe30c7ff567ce64e2041757256444d96e4b389d6dd72663",
+      "duration_seconds": 15.53,
+      "output": "verification/generated/agentique-studio-first-light/platform-timing-clippy.log",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      }
+    },
+    {
+      "name": "platform-timing-format",
+      "command": [
+        "rustfmt",
+        "--edition",
+        "2024",
+        "--check",
+        "crates/kerml-text/src/source_inputs.rs",
+        "crates/kerml-text/src/sysml/source.rs",
+        "crates/modeling-workspace/src/lib.rs",
+        "crates/modeling-service/tests/durable_platform.rs",
+        "crates/modeling-workspace/tests/phase2_checkpoint.rs"
+      ],
+      "exit_code": 0,
+      "tool_version": "rustfmt 1.8.0-stable (ded5c06cf2 2025-12-08)",
+      "source_commit": "8b7f5ef79d51e6a3380f659bd1b32897cb6f6b2b",
+      "working_changes_sha256": "a849b6af66650cdd5f509d5391e25e01a986fa0f417762aa29d95396f0c47cae",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 0.12,
+      "output": "verification/generated/agentique-studio-first-light/platform-timing-format.log",
+      "environment_overrides": {}
+    }
+  ]
+}

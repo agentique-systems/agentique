@@ -7,6 +7,7 @@ use agq_kerml_semantics::{
 use agq_kernel::derived::DerivedOverlay;
 use agq_sysml_semantics::{SysmlProducerExtension, SysmlQueries, SysmlSemanticContext};
 use std::collections::BTreeMap;
+use std::time::Instant;
 
 /// Result of the combined authored producer scheduler, independently of syntax
 /// and mandatory reference diagnostics. This is not full language validation.
@@ -188,6 +189,7 @@ pub(crate) fn prepare_accepted_source(
     pending: &BTreeSet<ElementId>,
     history: Option<&agq_kernel::DeclaredConstructionHistory>,
     cache: Option<&std::cell::RefCell<construction::LoweringCache>>,
+    timings: Option<&std::cell::RefCell<crate::CompilationTimings>>,
 ) -> Result<PreparedSource, LibraryLoadError> {
     let base = dependency.mounted.project_snapshot();
     let profile = dependency.publication.accepted_kerml().profile();
@@ -196,6 +198,7 @@ pub(crate) fn prepare_accepted_source(
     let mut reopened_evaluations = 0;
     let mut status = None;
     let construct = |resolved: &BTreeMap<(ElementId, agq_kernel::PropertyId), ElementId>| {
+        let started = Instant::now();
         let mut cache = cache.map(std::cell::RefCell::borrow_mut);
         let draft = construction::construct_on_cached(
             inputs,
@@ -205,11 +208,15 @@ pub(crate) fn prepare_accepted_source(
             Some((root, origin.clone())),
             cache.as_deref_mut(),
         )?;
-        if let Some(history) = history {
-            Ok(draft.reconcile_declared(history)?.1)
+        let draft = if let Some(history) = history {
+            draft.reconcile_declared(history)?.1
         } else {
-            Ok(draft)
+            draft
+        };
+        if let Some(timings) = timings {
+            timings.borrow_mut().declared_construction_micros += crate::elapsed_micros(started);
         }
+        Ok(draft)
     };
     let mut draft = library::refinement::refine(
         &construct,
@@ -220,7 +227,7 @@ pub(crate) fn prepare_accepted_source(
             )
         },
         ReferenceRefinementStrategy::DependencyDriven,
-        |_| {},
+        |round| record_refinement_timing(timings, round),
     )?;
     // A missing endpoint may require an inherited or producer-created member.
     // Keep these consequences separate from canonical declared construction.
@@ -251,6 +258,7 @@ pub(crate) fn prepare_accepted_source(
                 endpoints,
                 |resolved| {
                     let mut draft = construct(resolved)?;
+                    let started = Instant::now();
                     let mut seed = checkpoint.take();
                     let closed = agq_kerml_semantics::close_construction_structure_with_extension(
                         draft.candidate_shared(),
@@ -310,6 +318,10 @@ pub(crate) fn prepare_accepted_source(
                     });
                     draft.set_semantic_candidate(closed.overlay);
                     draft.set_producer_closure(closed.certificate);
+                    if let Some(timings) = timings {
+                        timings.borrow_mut().preparatory_producers_micros +=
+                            crate::elapsed_micros(started);
+                    }
                     Ok(draft)
                 },
                 |draft| {
@@ -319,7 +331,7 @@ pub(crate) fn prepare_accepted_source(
                     .status_queries())
                 },
                 ReferenceRefinementStrategy::DependencyDriven,
-                |_| {},
+                |round| record_refinement_timing(timings, round),
             )?;
             if draft.candidate().obligations().is_empty() {
                 break;
@@ -332,6 +344,18 @@ pub(crate) fn prepare_accepted_source(
         retained_evaluations,
         reopened_evaluations,
     })
+}
+
+fn record_refinement_timing(
+    timings: Option<&std::cell::RefCell<crate::CompilationTimings>>,
+    round: &library::refinement::ReferenceRefinementRound,
+) {
+    if let Some(timings) = timings {
+        let elapsed =
+            round.context_elapsed + round.change_detection_elapsed + round.resolution_elapsed;
+        timings.borrow_mut().reference_refinement_micros +=
+            u64::try_from(elapsed.as_micros()).unwrap_or(u64::MAX);
+    }
 }
 
 pub(crate) struct PreparedSource {
@@ -356,10 +380,14 @@ pub(crate) fn lower_accepted_source(
         &BTreeSet::new(),
         None,
         None,
+        None,
     )?;
-    finish_accepted_source(inputs, prepared, previous, root, dependency, None, None)
+    finish_accepted_source(
+        inputs, prepared, previous, root, dependency, None, None, None,
+    )
 }
 
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn finish_accepted_source(
     inputs: &[SourceInput<'_>],
     prepared: PreparedSource,
@@ -368,7 +396,9 @@ pub(crate) fn finish_accepted_source(
     dependency: Arc<AcceptedSourceDependency>,
     desired: Option<Snapshot>,
     semantic_cache: Option<&crate::SourceSemanticCache>,
+    timings: Option<&std::cell::RefCell<crate::CompilationTimings>>,
 ) -> Result<SourceModel, LibraryLoadError> {
+    let closure_started = Instant::now();
     let PreparedSource {
         draft,
         mut retained_evaluations,
@@ -464,6 +494,10 @@ pub(crate) fn finish_accepted_source(
             reopened_evaluations,
         },
     };
+    if let Some(timings) = timings {
+        timings.borrow_mut().final_closure_micros += crate::elapsed_micros(closure_started);
+    }
+    let references_started = Instant::now();
     let queries = KerMlQueries::new(effective.context(root));
     if let Some(cache) = semantic_cache {
         cache.verify_closed(queries.context(), effective.certificate.as_deref())?;
@@ -471,6 +505,9 @@ pub(crate) fn finish_accepted_source(
     let (references, diagnostics) =
         source_references(inputs, &pending_references, &source_map, root, &queries)?;
     drop(queries);
+    if let Some(timings) = timings {
+        timings.borrow_mut().final_references_micros += crate::elapsed_micros(references_started);
+    }
     Ok(SourceModel {
         snapshot,
         root,

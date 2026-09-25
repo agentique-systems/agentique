@@ -12,6 +12,7 @@ use agq_sysml_semantics::{
     SysmlQueries, SysmlQueryResult, SysmlSemanticContext, SysmlSemanticContextId,
 };
 use std::collections::BTreeSet;
+use std::time::Instant;
 #[path = "source_checkpoint.rs"]
 mod checkpoint;
 pub use checkpoint::*;
@@ -111,6 +112,8 @@ impl SourceInputs {
         incremental: bool,
         semantic_cache: Option<&SourceSemanticCache>,
     ) -> Result<SourceCompilation, LibraryLoadError> {
+        let compilation_started = Instant::now();
+        let timings = std::cell::RefCell::new(CompilationTimings::default());
         if previous.is_some_and(|previous| {
             previous.inputs.project != self.project
                 || !Arc::ptr_eq(&previous.inputs.dependency, &self.dependency)
@@ -165,6 +168,8 @@ impl SourceInputs {
         }
         // Unsupported source has an explicit typed emission site. Internal
         // interpretation, dependency and kernel errors are never swallowed here.
+        timings.borrow_mut().identity_preparation_micros = elapsed_micros(compilation_started);
+        let preparation_started = Instant::now();
         let (prepared, pending) = loop {
             let inputs = self.lowering_inputs(&omitted);
             let pending = if omitted.is_empty() {
@@ -182,6 +187,7 @@ impl SourceInputs {
                 &pending,
                 Some(&history),
                 Some(&cache),
+                Some(&timings),
             ) {
                 Ok(prepared) => break (prepared, pending),
                 Err(LibraryLoadError::UnsupportedSource { origin, construct }) => {
@@ -196,6 +202,7 @@ impl SourceInputs {
                 Err(error) => return Err(error),
             }
         };
+        timings.borrow_mut().source_preparation_micros = elapsed_micros(preparation_started);
         let (history, _) = history.reconcile(prepared.draft.candidate().clone())?;
         for (fact, origin) in prepared.draft.source_map() {
             if matches!(
@@ -208,7 +215,10 @@ impl SourceInputs {
         let inputs = self.lowering_inputs(&omitted);
         let frontier = if pending.is_empty() && prepared.draft.candidate().obligations().is_empty()
         {
+            let validation_started = Instant::now();
             let snapshot = prepared.draft.candidate().clone().revalidate_declared()?;
+            timings.borrow_mut().strict_kernel_validation_micros =
+                elapsed_micros(validation_started);
             let previous = previous.and_then(|previous| match &previous.frontier {
                 SourceFrontier::Strict(model) => Some(model.as_ref()),
                 _ => None,
@@ -221,6 +231,7 @@ impl SourceInputs {
                 self.dependency.clone(),
                 Some(snapshot),
                 semantic_cache,
+                Some(&timings),
             )?;
             diagnostics.extend(
                 model
@@ -279,6 +290,7 @@ impl SourceInputs {
             effective_audit: None,
             lowering_cache: cache.into_inner(),
             work: CompilationWork::default(),
+            timings: CompilationTimings::default(),
             edit_frontier: SourceEditFrontier::default(),
             #[cfg(feature = "verification")]
             producer_subjects: observation.finish(),
@@ -290,6 +302,7 @@ impl SourceInputs {
         // Audit the final current graph, including derived local elements that
         // have no direct source-map entry. The accepted dependency is borrowed,
         // never reevaluated as an authored population.
+        let audit_started = Instant::now();
         let bound_queries = result
             .sysml_queries()
             .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))?;
@@ -365,6 +378,7 @@ impl SourceInputs {
             subjects,
             report,
         });
+        timings.borrow_mut().effective_audit_micros = elapsed_micros(audit_started);
         result.work = CompilationWork {
             semantic_cache_used: semantic_cache.is_some(),
             documents_reparsed: self.documents_reparsed,
@@ -387,7 +401,11 @@ impl SourceInputs {
                 .as_ref()
                 .map_or(0, |audit| audit.subjects.len()),
         };
+        let delta_started = Instant::now();
         result.edit_frontier = SourceEditFrontier::between(previous, &result);
+        timings.borrow_mut().edit_frontier_micros = elapsed_micros(delta_started);
+        timings.borrow_mut().total_compile_micros = elapsed_micros(compilation_started);
+        result.timings = timings.into_inner();
         Ok(result)
     }
     fn lowering_inputs(&self, omitted: &BTreeSet<DocumentId>) -> Vec<SourceInput<'_>> {
@@ -534,6 +552,44 @@ pub struct CompilationWork {
     pub producer_subjects_evaluated: usize,
     /// Current local canonical subjects visited by the final effective audit.
     pub effective_audit_subjects_evaluated: usize,
+}
+
+/// Observed elapsed times for one authored compilation, in microseconds.
+///
+/// These measurements are excluded from semantic identities, checkpoints, caches
+/// and acceptance. Nested measurements overlap their enclosing phase: source
+/// preparation includes construction, refinement and preparatory producers.
+/// Parsing happens before compilation and is not included in the total.
+#[derive(Clone, Debug, Default, serde::Serialize, serde::Deserialize)]
+pub struct CompilationTimings {
+    /// Complete authored compile call, excluding input parsing.
+    pub total_compile_micros: u64,
+    /// Prior identity reconciliation and lowering-cache preparation.
+    pub identity_preparation_micros: u64,
+    /// Entire declaration/reference preparation, including trial passes.
+    pub source_preparation_micros: u64,
+    /// Kernel construction and declared identity reconciliation across all passes.
+    pub declared_construction_micros: u64,
+    /// Refinement context binding, change detection and reference resolution;
+    /// excludes construction and producer closure inside construction callbacks.
+    pub reference_refinement_micros: u64,
+    /// Preparatory producer schedules, checkpoint capture and closure binding.
+    pub preparatory_producers_micros: u64,
+    /// Final declared graph validation before effective producer closure.
+    pub strict_kernel_validation_micros: u64,
+    /// Final producer schedule, certificate checkpoint/rebinding and certification.
+    /// Certification remains inside the measured closure operation.
+    pub final_closure_micros: u64,
+    /// Final source references checked against the closed semantic context.
+    pub final_references_micros: u64,
+    /// Strict current local-subject audit, including effective context binding.
+    pub effective_audit_micros: u64,
+    /// Exact source and declared-fact delta capture after the effective audit.
+    pub edit_frontier_micros: u64,
+}
+
+pub(crate) fn elapsed_micros(started: Instant) -> u64 {
+    u64::try_from(started.elapsed().as_micros()).unwrap_or(u64::MAX)
 }
 
 /// Exact authored input/fact delta. Producer invalidation independently checks
@@ -728,11 +784,16 @@ pub struct SourceCompilation {
     effective_audit: Option<SourceEffectiveAudit>,
     lowering_cache: crate::library::construction::LoweringCache,
     work: CompilationWork,
+    timings: CompilationTimings,
     edit_frontier: SourceEditFrontier,
     #[cfg(feature = "verification")]
     producer_subjects: BTreeSet<ElementId>,
 }
 impl SourceCompilation {
+    /// Observational phase timings; never a semantic acceptance or cache input.
+    pub fn timings(&self) -> &CompilationTimings {
+        &self.timings
+    }
     /// Measured work, distinct from semantic acceptance or wall-clock latency.
     pub fn work(&self) -> &CompilationWork {
         &self.work

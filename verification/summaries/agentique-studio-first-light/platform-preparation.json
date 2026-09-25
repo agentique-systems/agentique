@@ -1,0 +1,37 @@
+{
+  "format": "agentique-first-light-platform-preparation/1",
+  "early_commands": [
+    {
+      "command": "cargo check --locked --offline -p agq-modeling-workspace --all-targets --features verification",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      },
+      "exit_code": 1,
+      "output": "error: failed to load manifest for workspace member `C:\\Users\\phili\\github\\agentique-systems\\agentique\\crates\\studio`\nreferenced by workspace at `C:\\Users\\phili\\github\\agentique-systems\\agentique\\Cargo.toml`\n\nCaused by:\n  failed to load manifest for dependency `agq-runtime-publications`\n\nCaused by:\n  failed to read `C:\\Users\\phili\\github\\agentique-systems\\agentique\\crates\\runtime-publications\\Cargo.toml`\n\nCaused by:\n  The system cannot find the path specified. (os error 3)\n",
+      "disposition": "Concurrent runtime crate implementation had not created its manifest yet; no compilation ran. Later focused check passed."
+    },
+    {
+      "command": "cargo check --locked --offline -p agq-modeling-workspace --all-targets --features verification",
+      "environment_overrides": {
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_BUILD_JOBS": "2"
+      },
+      "exit_code": 1,
+      "output": "error: the lock file C:\\Users\\phili\\github\\agentique-systems\\agentique\\Cargo.lock needs to be updated but --locked was passed to prevent this\nIf you want to try to generate the lock file without accessing the network, remove the --locked flag and use --offline instead.\n",
+      "disposition": "Runtime crate lockfile update was pending; no compilation ran. Later locked focused check passed."
+    }
+  ],
+  "accepted_runtime_gates": {
+    "compact_cache_restoration_and_failure_authentication": "not run: accepted publication bytes unavailable",
+    "real_http_and_stable_continuation": "not run: accepted publication bytes unavailable",
+    "durable_100_document_scale": "not run: accepted publication bytes unavailable",
+    "incremental_full_oracle_profile": "not run: accepted publication bytes unavailable"
+  },
+  "semantic_changes": "none; timing observations do not affect identities, cache authentication, closure or effective audit",
+  "performance_claim": "No measured speedup; no audit reuse or new semantic fast path accepted."
+}

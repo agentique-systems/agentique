@@ -1426,6 +1426,73 @@
   color: var(--studio-accent);
   font-size: 11px;
 }
+
+.studio-runtime-card {
+  width: min(640px, calc(100vw - 48px));
+  max-width: 640px;
+}
+.studio-runtime-publications {
+  display: grid;
+  gap: 13px;
+  margin: 23px 0;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--studio-border);
+}
+.studio-runtime-publications > div,
+.studio-runtime-phases li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  font-size: 12px;
+}
+.studio-runtime-publications strong {
+  color: var(--studio-muted);
+  font-size: 11px;
+  font-weight: 500;
+}
+.studio-runtime-publications strong.authenticated {
+  color: var(--studio-accent);
+}
+.studio-runtime-card form {
+  display: grid;
+  gap: 9px;
+  margin-top: 24px;
+}
+.studio-runtime-card label {
+  font-size: 11px;
+}
+.studio-runtime-card input {
+  width: 100%;
+  padding: 12px;
+  font-size: 11px;
+}
+.studio-runtime-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.studio-runtime-details {
+  margin-top: 18px;
+  color: var(--studio-muted);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.studio-runtime-details summary {
+  cursor: pointer;
+}
+.studio-runtime-phases {
+  padding: 0;
+  margin-top: 20px;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+.studio-runtime-phases small,
+.studio-runtime-note {
+  color: var(--studio-muted);
+  font-size: 10px;
+}
 @media (max-width: 1250px) {
   .studio-workspace {
     grid-template-columns: 205px minmax(0, 1fr) 248px;

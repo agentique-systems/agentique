@@ -279,6 +279,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "agq-runtime-publications"
+version = "0.1.0"
+dependencies = [
+ "agq-kerml-text",
+ "agq-standard-libraries",
+ "clap",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror",
+ "zip",
+]
+
+[[package]]
 name = "agq-semantics"
 version = "0.1.0"
 dependencies = [
@@ -359,6 +374,7 @@ dependencies = [
  "agq-modeling-sqlite",
  "agq-modeling-view",
  "agq-modeling-workspace",
+ "agq-runtime-publications",
  "agq-standard-libraries",
  "axum",
  "clap",

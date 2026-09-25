@@ -245,6 +245,20 @@ The additive [Agentique Studio](agentique-studio.md) surface now uses Generation
 directly through `agq-modeling-view` and `agq-modeling-agent`, hosted by
 `agq-studio`. Canonical identities remain in the kernel; projections, layouts,
 agent decisions and saved view definitions do not own semantic truth.
+
+Accepted publication transport belongs to `agq-runtime-publications`, consumed by
+Studio and its explicit setup command. This outer adapter depends on the language
+facades; language crates, workspace and kernel never depend on distribution.
+Its [bundle contract](runtime-publications.md) binds exact cache bytes to existing
+checked-in receipts and binding identities. A temporary installation is promoted
+only after both facades authenticate. Normal startup discovers the user runtime
+store, reauthenticates it, then opens or seeds the durable self-model repository.
+Neither historical verification directories nor a retained Phase 2 database are
+runtime prerequisites. Missing assets expose a setup surface while semantic
+endpoints remain unavailable. [First Light evidence](../verification/summaries/agentique-studio-first-light/README.md)
+records the remaining real-runtime acceptance barrier separately from this
+implemented distribution boundary.
+
 [ADR 0029](adr/0029-agentique-studio-semantic-worlds.md) defines revision binding,
 source-backed candidates, authority and the current local-host scope. Actual
 accepted-publication runtime acceptance is recorded separately from implementation.

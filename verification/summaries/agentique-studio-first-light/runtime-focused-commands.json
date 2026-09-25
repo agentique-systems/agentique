@@ -1,0 +1,113 @@
+{
+  "format": "agentique-verification-summary/1",
+  "result": "11 runtime trust-boundary tests passed; package clippy, rustdoc and format passed. Real accepted installation remains unavailable.",
+  "commands": [
+    {
+      "name": "runtime-focused-1",
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-runtime-publications",
+        "-j",
+        "2"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "8b7f5ef79d51e6a3380f659bd1b32897cb6f6b2b",
+      "working_changes_sha256": null,
+      "source_identity_note": "Working patch digest was not captured for this early focused invocation.",
+      "output": "verification/generated/agentique-studio-first-light/runtime-focused-1.log",
+      "output_sha256": "c07149045700ccaf9d48c5e03e9227d2c2e64d723885b3a0127d141f170aa812",
+      "duration_seconds": 2.6115882,
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0"
+      }
+    },
+    {
+      "name": "runtime-focused-2",
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-runtime-publications",
+        "--all-targets",
+        "-j",
+        "2",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "8b7f5ef79d51e6a3380f659bd1b32897cb6f6b2b",
+      "working_changes_sha256": null,
+      "source_identity_note": "Working patch digest was not captured for this early focused invocation.",
+      "output": "verification/generated/agentique-studio-first-light/runtime-focused-2.log",
+      "output_sha256": "fbf13a1790a0cace70dca5edd41a21b3f6bd3da3020df893e45a0913690eb0fe",
+      "duration_seconds": 11.2335295,
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0"
+      }
+    },
+    {
+      "name": "runtime-focused-3",
+      "command": [
+        "cargo",
+        "doc",
+        "--locked",
+        "--offline",
+        "-p",
+        "agq-runtime-publications",
+        "--no-deps",
+        "-j",
+        "2"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "8b7f5ef79d51e6a3380f659bd1b32897cb6f6b2b",
+      "working_changes_sha256": null,
+      "source_identity_note": "Working patch digest was not captured for this early focused invocation.",
+      "output": "verification/generated/agentique-studio-first-light/runtime-focused-3.log",
+      "output_sha256": "7f6fc5fc1c0c610ceea5daba0c99c1c2cee79f9b4dd5122669d1cace6e6de1f5",
+      "duration_seconds": 2.0916718999999997,
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0"
+      }
+    },
+    {
+      "name": "runtime-focused-4",
+      "command": [
+        "cargo",
+        "fmt",
+        "-p",
+        "agq-runtime-publications",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "tool_version": "cargo 1.92.0 (344c4567c 2025-10-21)",
+      "source_commit": "8b7f5ef79d51e6a3380f659bd1b32897cb6f6b2b",
+      "working_changes_sha256": null,
+      "source_identity_note": "Working patch digest was not captured for this early focused invocation.",
+      "output": "verification/generated/agentique-studio-first-light/runtime-focused-4.log",
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "duration_seconds": 0.19100029999999998,
+      "environment_overrides": {
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0"
+      }
+    }
+  ]
+}

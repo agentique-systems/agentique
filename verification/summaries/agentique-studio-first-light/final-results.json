@@ -1,0 +1,101 @@
+{
+  "format": "agentique-studio-first-light-results/1",
+  "status": "AGENTIQUE STUDIO FIRST LIGHT INCOMPLETE",
+  "base_commit": "8b7f5ef79d51e6a3380f659bd1b32897cb6f6b2b",
+  "branch": "platform/agentique-studio-first-light",
+  "blocking_asset": "Existing accepted KerML v9 and Systems v3 cache bytes not located; no runtime release asset available",
+  "accepted_publications_installed_authenticated": false,
+  "normal_launch_requires_verification_generated": false,
+  "normal_launch_requires_old_phase2_database": false,
+  "real_model_operator_sequence": "not run: accepted bundle absent",
+  "real_semantic_screenshot": null,
+  "platform_gates": {
+    "compact_semantic_cache": "not run: accepted bundle absent",
+    "gen2_http_vertical": "not run: accepted bundle absent",
+    "100_document_durable_scale": "not run: accepted bundle absent"
+  },
+  "real_semantic_performance": "unmeasured; no incremental speedup claim",
+  "final_regression": {
+    "final-standards": {
+      "exit_code": 0,
+      "duration_seconds": 0.67,
+      "output_sha256": "6bd7437b1dca605ba954772448102455b82f7b610198a7f57fc034b64ae3b3eb"
+    },
+    "final-npm-tests": {
+      "exit_code": 0,
+      "duration_seconds": 1.08,
+      "output_sha256": "a4635c9c9882fc07200b56fd7d0de0116c51c2bb36cfc1dbeb23088bab0fcdf9"
+    },
+    "final-build": {
+      "exit_code": 0,
+      "duration_seconds": 2.05,
+      "output_sha256": "76508938703cc42d5d8a66f736748f01a3ebea31dfc9c1516eaa0eaf05549250"
+    },
+    "final-typescript": {
+      "exit_code": 0,
+      "duration_seconds": 2.23,
+      "output_sha256": "795c2e98fcd05a4e5603444ee347d0768304b193ff71c109c4db108f36db375e"
+    },
+    "final-clippy": {
+      "exit_code": 0,
+      "duration_seconds": 59.77,
+      "output_sha256": "2e16840a3fd26dcaadf81432fe44f3124442c0b72104fe7eb0b5a4fa922d4632"
+    },
+    "final-format": {
+      "exit_code": 0,
+      "duration_seconds": 3.09,
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "final-frontend-format": {
+      "exit_code": 0,
+      "duration_seconds": 1.56,
+      "output_sha256": "a872aed67da5fa403c884bf72f643b99e2c18b694dafad95dd5fc81b15b03e52"
+    },
+    "final-generator": {
+      "exit_code": 0,
+      "duration_seconds": 11.86,
+      "output_sha256": "5f236ca187ebe90572ce5f4b0840071ab77c3f3593e6e5434f4d650eeab01c81"
+    },
+    "final-rustdoc": {
+      "exit_code": 0,
+      "duration_seconds": 4.78,
+      "output_sha256": "3aa74c1c350d67b56cb6cd1eaad7c7969720a744bc58ba1f714a00a788b47aa5"
+    },
+    "final-browser": {
+      "exit_code": 0,
+      "duration_seconds": 64.67,
+      "output_sha256": "72503754af41c129d02870085a205e90b01e06a62760d7d362ec4a75267c13f6"
+    },
+    "final-studio-browser": {
+      "exit_code": 0,
+      "duration_seconds": 5.14,
+      "output_sha256": "d7ec58d82cfa8f14fad94d52ff026178fe93ec18d0571518941bde3b62a7f642"
+    },
+    "final-workspace-tests": {
+      "exit_code": 0,
+      "duration_seconds": 675.58,
+      "output_sha256": "d32974915f844314088458806c4a8559d48de91b5d31f36cdce3b12c73565527"
+    }
+  },
+  "workspace_tests": {
+    "passed": 1034,
+    "failed": 0,
+    "ignored": 10
+  },
+  "existing_browser_tests": {
+    "passed": 8
+  },
+  "real_backend_browser_tests": {
+    "setup_passed": 1,
+    "real_model_skipped": 1
+  },
+  "setup_only_observation": {
+    "first_observed_http_ms": 139.42409999999995,
+    "missing_runtime_discovery_ms": 5,
+    "scope": "Unoptimized host, no publications or model loaded; includes polling delay",
+    "measurements_sha256": "4cdfd93c5e933ee7f2f862a0cb45716e7fe863669b7048c80657b83dba2a97e0",
+    "screenshot_path": "verification/generated/agentique-studio-first-light/studio-runtime-setup.png",
+    "screenshot_sha256": "d483f880afdb191777b9d711153bd496ea89a48aa70bb66dc95e623eff7de857",
+    "screenshot_is_semantic_acceptance": false
+  }
+}

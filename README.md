@@ -16,9 +16,13 @@ See [baseline discrepancies](docs/standards-discrepancies.md) and
 
 The new **Generation 2 Agentique Studio** has its own local host and semantic
 viewport. See [Studio launch and operator workflow](docs/agentique-studio.md).
-It requires the existing accepted KerML and Systems publication cache artifacts;
-the [Phase 3 evidence](verification/summaries/agentique-studio-phase3/README.md)
-distinguishes implemented surfaces from verified durable runtime acceptance.
+Its semantic runtime is installed once with `agq-studio setup --bundle <path>`
+and discovered in the normal user runtime store on launch. The
+[runtime distribution guide](docs/runtime-publication-distribution.md) describes
+packaging and installing existing accepted KerML v9 / Systems v3 bytes. No runtime
+release asset was available during this milestone; the
+[First Light record](verification/summaries/agentique-studio-first-light/README.md)
+distinguishes implemented startup from real semantic product acceptance.
 
 The launch instructions and release claims below describe **generation 1**:
 `agq-model`, `agq-syntax`, `agq-semantics` and the integrated workspace, simulation,

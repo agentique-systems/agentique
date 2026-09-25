@@ -24,15 +24,27 @@ class GenerationBoundaryTests(unittest.TestCase):
                                 for v in report["violations"]))
 
     def test_platform_generation_remains_separate_from_gen1(self):
-        report = audit(metadata({"agq-modeling-service": [dependency("agq-application")]}))
-        self.assertIn({"rule": "gen2-must-not-depend-on-gen1",
-                       "path": ["agq-modeling-service", "agq-application"]}, report["violations"])
+        for origin in ("agq-modeling-service", "agq-runtime-publications"):
+            report = audit(metadata({origin: [dependency("agq-application")]}))
+            self.assertIn({"rule": "gen2-must-not-depend-on-gen1",
+                           "path": [origin, "agq-application"]}, report["violations"])
+
+    def test_distribution_cannot_become_language_authority(self):
+        report = audit(metadata({
+            "agq-kerml-text": [dependency("indirect-distribution")],
+            "indirect-distribution": [dependency("agq-runtime-publications")],
+        }))
+        self.assertIn({"rule": "language-workspace-must-not-depend-on-platform-adapters",
+                       "path": ["agq-kerml-text", "indirect-distribution", "agq-runtime-publications"]},
+                      report["violations"])
 
     def test_inward_language_and_platform_dependencies_are_permitted(self):
         report = audit(metadata({
             "agq-kerml": [dependency("agq-kernel")],
             "agq-sysml": [dependency("agq-kerml")],
             "agq-modeling-workspace": [dependency("agq-sysml"), dependency("serde")],
+            "agq-studio": [dependency("agq-runtime-publications")],
+            "agq-runtime-publications": [dependency("agq-kerml-text"), dependency("agq-standard-libraries")],
             "agq-application": [dependency("agq-modeling-workspace")],
         }))
         self.assertEqual(report["violations"], [])

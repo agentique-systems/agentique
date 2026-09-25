@@ -80,6 +80,7 @@ const commands = [
   ],
   ["official-pilot", "node", ["tools/pilot-validate.mjs"]],
   ["browser-tests", "npm", ["run", "test:e2e"]],
+  ["studio-runtime-setup", "npm", ["run", "test:studio"]],
   ["process-recovery", "node", ["tools/process-test.mjs"]],
   ["headless-demo", binary, ["--workspace", demoDb, "demo"]],
 ];

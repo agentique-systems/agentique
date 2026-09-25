@@ -71,6 +71,10 @@ impl ProjectRevision {
     pub fn compilation_work(&self) -> &agq_kerml_text::CompilationWork {
         self.compilation.work()
     }
+    /// Observed compile phases, excluded from identities and semantic acceptance.
+    pub fn compilation_timings(&self) -> &agq_kerml_text::CompilationTimings {
+        self.compilation.timings()
+    }
     /// Exact source identities and declared fact changes since the parent.
     pub fn edit_frontier(&self) -> &agq_kerml_text::SourceEditFrontier {
         self.compilation.edit_frontier()
