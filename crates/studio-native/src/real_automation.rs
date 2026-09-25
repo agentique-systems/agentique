@@ -1943,8 +1943,11 @@ impl Runner {
             Check::CreateDialog => {
                 let owner = named(app, PLATFORM)?;
                 require(
-                    app.create_dialog && !app.palette && app.selected_element() == Some(owner),
-                    "Create Part dialog did not open for the selected ModelingPlatform",
+                    app.create_dialog
+                        && !app.palette
+                        && app.selected_element() == Some(owner)
+                        && app.part_edit_ready(),
+                    "Create Part dialog did not open with the selected ModelingPlatform's installed owner view ready for preparation",
                 )?;
                 self.report.added_owner = Some(owner);
                 Ok(())

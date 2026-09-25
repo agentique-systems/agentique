@@ -507,7 +507,13 @@ impl StudioApp {
                 self.revision_retry = Some(target);
             }
         } else {
-            self.rebuild();
+            // Fixture queries are presentation only, but still retain the
+            // requested lens so ordinary edit readiness checks use the same scope.
+            let previous = self.display_snapshot();
+            self.projection.view = definition;
+            if !self.rebuild() {
+                self.restore_display(previous);
+            }
         }
     }
     pub fn switch_world(&mut self, world: World) {
@@ -576,7 +582,7 @@ impl StudioApp {
         self.fit_pending = true;
         self.record_location();
     }
-    fn restore_world_filters(&mut self, world: World) {
+    pub(crate) fn restore_world_filters(&mut self, world: World) {
         if self.world != world {
             self.world_filters
                 .insert(self.world, (self.families.clone(), self.include_standard));
