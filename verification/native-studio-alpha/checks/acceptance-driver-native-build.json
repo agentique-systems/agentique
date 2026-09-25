@@ -1,0 +1,24 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--release",
+    "--locked",
+    "--offline",
+    "--manifest-path",
+    "crates/studio-native/Cargo.toml",
+    "--target-dir",
+    "target/native-alpha",
+    "--config",
+    "profile.release.lto=false",
+    "-j",
+    "1"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T18:30:15.336872+00:00",
+  "elapsed_seconds": 81.016,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/acceptance-driver-native-build.txt",
+  "output_sha256": "bc0b53035268a4d43c2fc1c5515733c09a3da70e434c3dc7307e100422558f10",
+  "build_environment": {}
+}

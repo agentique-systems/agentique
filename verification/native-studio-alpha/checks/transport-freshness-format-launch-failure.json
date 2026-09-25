@@ -1,0 +1,18 @@
+{
+  "command": [
+    "npx",
+    "--no-install",
+    "prettier",
+    "--check",
+    "tools/sysml-publication-stale.mjs",
+    "tools/sysml-publication-stale.test.mjs"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T18:45:24.344035+00:00",
+  "elapsed_seconds": 0.031,
+  "exit_code": null,
+  "output": "verification/native-studio-alpha/checks/transport-freshness-format-launch-failure.txt",
+  "output_sha256": "47bdbd2c1e092c8ae410bbf8287fac64e45eb2b4aed3848a2dea5ce255f0c155",
+  "build_environment": {},
+  "launch_error": "FileNotFoundError: [WinError 2] The system cannot find the file specified"
+}

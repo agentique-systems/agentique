@@ -28,9 +28,16 @@ def executable_digest():
 executable_before = executable_digest()
 started = time.monotonic()
 utc = datetime.datetime.now(datetime.timezone.utc).isoformat()
+return_code = None
+launch_error = None
 with output_path.open("w", encoding="utf-8") as output:
-    process = subprocess.run(command, cwd=root, stdout=output, stderr=subprocess.STDOUT,
-                             shell=command[0] == "npm")
+    try:
+        process = subprocess.run(command, cwd=root, stdout=output, stderr=subprocess.STDOUT,
+                                 shell=command[0] == "npm")
+        return_code = process.returncode
+    except OSError as error:
+        launch_error = f"{type(error).__name__}: {error}"
+        output.write(f"Process did not start: {launch_error}\n")
 output = output_path.read_bytes()
 executable_after = executable_digest()
 record = {
@@ -38,13 +45,15 @@ record = {
     "cwd": str(root),
     "started_utc": utc,
     "elapsed_seconds": round(time.monotonic() - started, 3),
-    "exit_code": process.returncode,
+    "exit_code": return_code,
     "output": str(output_path.relative_to(root)).replace("\\", "/"),
     "output_sha256": hashlib.sha256(output).hexdigest(),
     "build_environment": {key: os.environ[key] for key in (
         "CARGO_PROFILE_DEV_DEBUG", "CARGO_PROFILE_TEST_DEBUG", "CARGO_INCREMENTAL", "CARGO_BUILD_JOBS"
     ) if key in os.environ},
 }
+if launch_error is not None:
+    record["launch_error"] = launch_error
 if executable_before is not None:
     record["executable"] = {
         "path": str(executable.resolve()),
@@ -55,4 +64,4 @@ if executable_before is not None:
 (directory / f"{name}.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
 print(json.dumps(record))
 print(output.decode("utf-8", errors="replace")[-4500:])
-raise SystemExit(process.returncode or (2 if executable_before != executable_after else 0))
+raise SystemExit(1 if launch_error else return_code or (2 if executable_before != executable_after else 0))

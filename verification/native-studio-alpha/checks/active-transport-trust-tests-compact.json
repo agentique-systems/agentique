@@ -1,0 +1,26 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-kerml-semantics",
+    "--lib",
+    "trusted_publication::tests",
+    "--",
+    "--nocapture"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T18:13:36.112593+00:00",
+  "elapsed_seconds": 111.016,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/active-transport-trust-tests-compact.txt",
+  "output_sha256": "357da43079db1b46410143e2e6ed2d963d63ee6d63a0cbf64d5923cb7ba267ac",
+  "build_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "1"
+  }
+}

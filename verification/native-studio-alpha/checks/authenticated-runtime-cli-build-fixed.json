@@ -1,0 +1,24 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--release",
+    "--config",
+    "profile.release.lto=false",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-runtime-publications",
+    "--bin",
+    "agq-publications",
+    "-j",
+    "1"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T18:12:03.816322+00:00",
+  "elapsed_seconds": 609.094,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/authenticated-runtime-cli-build-fixed.txt",
+  "output_sha256": "503719dede9f376677a0c729d2c7eb6b25d0dd082c1710272b4162a18f61cf2c",
+  "build_environment": {}
+}

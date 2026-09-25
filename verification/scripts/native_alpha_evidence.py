@@ -21,19 +21,41 @@ def main():
     if args.git_index and args.repair_line_endings:
         parser.error("Index verification never rewrites evidence")
     checked, repaired, failures = 0, [], []
-    for receipt in sorted((DIRECTORY / "checks").glob("*.json")):
-        record = json.loads(receipt.read_text(encoding="utf-8-sig"))
+    def read_index(path):
+        result = subprocess.run(["git", "show", f":{path}"], cwd=ROOT,
+                                capture_output=True, check=False)
+        if result.returncode:
+            raise ValueError(f"Missing staged blob: {path}")
+        return result.stdout
+
+    if args.git_index:
+        receipts = [ROOT / path for path in subprocess.check_output([
+            "git", "ls-files", "--", "verification/native-studio-alpha/checks/*.json"
+        ], cwd=ROOT, text=True).splitlines()]
+    else:
+        receipts = sorted((DIRECTORY / "checks").glob("*.json"))
+    for receipt in receipts:
+        try:
+            raw = (read_index(receipt.relative_to(ROOT).as_posix())
+                   if args.git_index else receipt.read_bytes())
+            record = json.loads(raw.decode("utf-8-sig"))
+        except (OSError, ValueError) as error:
+            failures.append({"receipt": str(receipt), "error": str(error)})
+            continue
         name, expected = record.get("output"), record.get("output_sha256")
         if not name or not expected:
             continue
         output = (ROOT / name).resolve()
-        if not output.is_relative_to(DIRECTORY) or not output.is_file():
+        if not output.is_relative_to(DIRECTORY):
             failures.append({"receipt": str(receipt), "error": "missing or external output"})
             continue
         checked += 1
-        original = (subprocess.check_output(
-            ["git", "show", f":{output.relative_to(ROOT).as_posix()}"], cwd=ROOT
-        ) if args.git_index else output.read_bytes())
+        try:
+            original = (read_index(output.relative_to(ROOT).as_posix())
+                        if args.git_index else output.read_bytes())
+        except (OSError, ValueError) as error:
+            failures.append({"receipt": str(receipt), "error": str(error)})
+            continue
         if digest(original) == expected:
             continue
         unix = original.replace(b"\r\n", b"\n")

@@ -1,8 +1,15 @@
-# Agentique 0.1
+# Agentique
 
-A Rust modelling and simulation Engine with a persistent local workspace, browser
-Console and one tool-equipped Assistant. This repository contains a working
-integrated **release candidate**, not a completed standards-verified v0.1 release.
+Agentique develops a native spatial environment for systems engineering. Native
+Studio presents a canonical KerML/SysML model through System, Graph and
+Requirements views, with semantic inspection, candidate review and durable design
+history. Its [alpha qualification](verification/native-studio-alpha/README.md) is
+in progress; successful builds and fixture screenshots are not product acceptance.
+
+The operational generation-1 product is a Rust modelling and simulation Engine
+with a persistent local workspace, browser Console and tool-equipped Assistant.
+It remains an integrated **release candidate**, not a completed standards-verified
+v0.1 release.
 The [implementation report](verification/RELEASE.md), [requirement register](verification/traceability.json) and
 [five-axis coverage](standards/coverage.json) identify remaining obligations.
 
@@ -14,7 +21,7 @@ See [baseline discrepancies](docs/standards-discrepancies.md) and
 
 ## Setup and launch
 
-The **Rust-native Agentique Studio** foundation has its own GPU semantic scene and
+**Rust-native Agentique Studio** has its own GPU semantic scene and
 in-process modeling boundary. See [Native Studio launch and architecture](docs/native-studio.md).
 
 ### Run Native Studio
@@ -32,7 +39,8 @@ Choose a locally supplied authenticated `.agq-runtime` bundle, then open the
 Agentique project seeded from `models/agentique/`. Runtime authentication is required
 to edit the real model.
 The [runtime distribution guide](docs/runtime-publication-distribution.md) explains
-packaging and offline installation; a successful build does not supply those assets.
+download and offline installation. The authenticated runtime is currently retained
+as a maintainer-access draft release; a successful build alone does not supply it.
 
 To explore the native interface without the runtime, explicitly open the labeled
 architecture fixture:
@@ -55,8 +63,8 @@ viewport as a contract and regression client. See [web-client launch and workflo
 Its semantic runtime is installed once with `agq-studio setup --bundle <path>`
 and discovered in the normal user runtime store on launch. The
 [runtime distribution guide](docs/runtime-publication-distribution.md) describes
-packaging and installing existing accepted KerML v9 / Systems v3 bytes. No runtime
-release asset was available during this milestone; the
+packaging and installing accepted KerML v9 / Systems v3 bytes. The earlier browser
+prototype milestone had no runtime release asset; its historical
 [First Light record](verification/summaries/agentique-studio-first-light/README.md)
 distinguishes implemented startup from real semantic product acceptance.
 

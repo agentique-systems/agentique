@@ -1,0 +1,24 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--release",
+    "--locked",
+    "--offline",
+    "--manifest-path",
+    "crates/studio-native/Cargo.toml",
+    "--target-dir",
+    "target/native-alpha",
+    "--config",
+    "profile.release.lto=false",
+    "-j",
+    "1"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T18:09:18.893199+00:00",
+  "elapsed_seconds": 63.329,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/candidate-lens-native-tests.txt",
+  "output_sha256": "1e7c35b90d0b727cca7e3720584ecf88972c89c5583a22db8db32472d9e6445c",
+  "build_environment": {}
+}

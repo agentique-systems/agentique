@@ -1,0 +1,33 @@
+{
+  "command": [
+    "target/native-alpha/release/agq-studio-native.exe",
+    "--root",
+    ".",
+    "--database",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\native-studio-alpha\\presentation-run02\\qualification.sqlite",
+    "--fixture",
+    "architecture",
+    "--no-restore",
+    "--scenario",
+    "presentation",
+    "--scenario-report",
+    "verification/native-studio-alpha/presentation-run02/journey.json",
+    "--gallery",
+    "verification/native-studio-alpha/presentation-run02/first-gallery",
+    "--scenario-timeout-seconds",
+    "180"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T18:29:03.926471+00:00",
+  "elapsed_seconds": 17.218,
+  "exit_code": 101,
+  "output": "verification/native-studio-alpha/checks/presentation-menu-fixed-journey.txt",
+  "output_sha256": "eaf214d5b9c0da119e118c4281cbbf07daef00fe03847609f5b48401e4301f38",
+  "build_environment": {},
+  "executable": {
+    "path": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\native-alpha\\release\\agq-studio-native.exe",
+    "sha256_before": "df6f572777831f39a59167434bc9a77f280170821718265c26ca4a207109df54",
+    "sha256_after": "df6f572777831f39a59167434bc9a77f280170821718265c26ca4a207109df54",
+    "unchanged_during_run": true
+  }
+}

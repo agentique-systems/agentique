@@ -1,8 +1,8 @@
 # Real native acceptance runner
 
-**Prepared, not executed against accepted runtime.** Runtime rematerialization
-was still running when this runner was written. The integrated native build and
-all 45 native tests now pass. No real screenshot, successful
+**Prepared, not yet executed against accepted runtime.** Runtime rematerialization,
+ordinary authentication, bundle verification and installation have now passed.
+The runner is being rebuilt with independent acceptance-review fixes. No real screenshot, successful
 candidate, semantic validation, durable commit or restart result is claimed by
 this document.
 
@@ -23,11 +23,14 @@ The first run performs the following:
    native geometry. Explain must return its canonical subject, producer rule,
    nonempty evidence and a visible causal diagram.
 4. Open Requirements World and History; compare the actual parent under an
-   identical System lens, then restore the current revision.
+   identical Graph overview lens and require the actual added AgentRuntime,
+   then restore the current revision.
 5. Prepare `CreatePartUsage(alphaStudioObserver)` through the ordinary dialog.
    Pan the retained current world using native input while reconstruction runs.
-   A long-running preparation must demonstrate camera movement while mutation
-   is pending. A fast completion makes no background latency claim.
+   Preparation lasting at least one second must demonstrate camera movement
+   while mutation is pending. Every measured input-hook gap must stay within
+   a coarse 250 ms non-freeze bound, including completion between hooks. This
+   does not establish 60 Hz rendering or physical presentation latency.
 6. Review Current, Candidate and Diff, select the canonical added part, validate
    through the normal operator command, commit through that same command path,
    and observe the exact validated revision at the durable branch head.

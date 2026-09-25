@@ -1,0 +1,28 @@
+{
+  "command": [
+    "gh",
+    "release",
+    "create",
+    "runtime-kerml-v9-sysml-v3-bundle1",
+    "--repo",
+    "agentique-systems/agentique",
+    "--draft",
+    "--target",
+    "c00de91f348bc59934c721fd75b17cbd09217163",
+    "--title",
+    "Agentique accepted runtime: KerML v9 / SysML v3",
+    "--notes-file",
+    "verification/native-studio-alpha/runtime/runtime-release-notes.md",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\generated\\native-studio-alpha\\runtime-package\\accepted-runtime.agq-runtime",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\generated\\native-studio-alpha\\runtime-package\\runtime-manifest.json",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\generated\\native-studio-alpha\\runtime-package\\accepted-runtime.agq-runtime.sha256",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\generated\\native-studio-alpha\\runtime-package\\runtime-verification.json"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T18:36:22.089954+00:00",
+  "elapsed_seconds": 26.125,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/authenticated-runtime-draft-create.txt",
+  "output_sha256": "a21566b0678e96f1c700c6cf323a003717c6b368a46fa81eaa011cfcfb3fd042",
+  "build_environment": {}
+}

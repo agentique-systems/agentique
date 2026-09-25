@@ -1,0 +1,6384 @@
+{
+  "format": "agentique-native-presentation/1",
+  "scenario": "presentation",
+  "scope": "Native egui input over explicit architecture fixture. Presentation persistence only; no runtime authentication, semantic validation or durable model acceptance.",
+  "database": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\native-studio-alpha\\presentation-run02\\qualification.sqlite",
+  "adapter": "AdapterInfo { name: \"NVIDIA GeForce RTX 3060 Ti\", vendor: 4318, device: 9353, device_type: DiscreteGpu, driver: \"NVIDIA\", driver_info: \"616.92\", backend: Vulkan }",
+  "passed": true,
+  "failure": null,
+  "assertions": [
+    {
+      "name": "isolated fixture ready",
+      "passed": true,
+      "before": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 0.0,
+              "y": 0.0
+            },
+            "zoom": 1.0,
+            "viewport": {
+              "width": 1200.0,
+              "height": 800.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "after": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.0414938,
+            "viewport": {
+              "width": 1088.0,
+              "height": 787.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "inputs": []
+    },
+    {
+      "name": "open Local views",
+      "passed": true,
+      "before": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.0414938,
+            "viewport": {
+              "width": 1088.0,
+              "height": 787.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "after": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.0414938,
+            "viewport": {
+              "width": 1088.0,
+              "height": 787.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "inputs": [
+        "frame 133: PointerMoved([643.2 93.5])",
+        "frame 133: PointerButton { pos: [643.2 93.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }",
+        "frame 134: PointerMoved([643.2 93.5])",
+        "frame 134: PointerButton { pos: [643.2 93.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+      ]
+    },
+    {
+      "name": "enter view name",
+      "passed": true,
+      "before": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.0414938,
+            "viewport": {
+              "width": 1088.0,
+              "height": 787.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "after": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.0414938,
+            "viewport": {
+              "width": 1088.0,
+              "height": 787.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "inputs": [
+        "frame 226: PointerMoved([834.0 283.5])",
+        "frame 226: PointerButton { pos: [834.0 283.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }",
+        "frame 227: PointerMoved([834.0 283.5])",
+        "frame 227: PointerButton { pos: [834.0 283.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }",
+        "frame 229: Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+        "frame 229: Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+        "frame 230: Text(\"Architecture overview\")"
+      ]
+    },
+    {
+      "name": "save current view through menu",
+      "passed": true,
+      "before": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.0414938,
+            "viewport": {
+              "width": 1088.0,
+              "height": 787.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "after": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.0414938,
+            "viewport": {
+              "width": 1088.0,
+              "height": 787.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "inputs": [
+        "frame 319: PointerMoved([667.1 318.0])",
+        "frame 319: PointerButton { pos: [667.1 318.0], button: Primary, pressed: true, modifiers: Modifiers::NONE }",
+        "frame 320: PointerMoved([667.1 318.0])",
+        "frame 320: PointerButton { pos: [667.1 318.0], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+      ]
+    },
+    {
+      "name": "enter replacement view name",
+      "passed": true,
+      "before": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.0414938,
+            "viewport": {
+              "width": 1088.0,
+              "height": 787.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "after": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.0414938,
+            "viewport": {
+              "width": 1088.0,
+              "height": 787.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "inputs": [
+        "frame 412: PointerMoved([834.0 294.5])",
+        "frame 412: PointerButton { pos: [834.0 294.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }",
+        "frame 413: PointerMoved([834.0 294.5])",
+        "frame 413: PointerButton { pos: [834.0 294.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }",
+        "frame 415: Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+        "frame 415: Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+        "frame 416: Text(\"Platform relationships\")"
+      ]
+    },
+    {
+      "name": "rename selected view without altering presentation",
+      "passed": true,
+      "before": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.0414938,
+            "viewport": {
+              "width": 1088.0,
+              "height": 787.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "after": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.0414938,
+            "viewport": {
+              "width": 1088.0,
+              "height": 787.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "inputs": [
+        "frame 505: PointerMoved([792.2 329.0])",
+        "frame 505: PointerButton { pos: [792.2 329.0], button: Primary, pressed: true, modifiers: Modifiers::NONE }",
+        "frame 506: PointerMoved([792.2 329.0])",
+        "frame 506: PointerButton { pos: [792.2 329.0], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+      ]
+    },
+    {
+      "name": "Escape dismisses views menu and preserves canvas selection",
+      "passed": true,
+      "before": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.0414938,
+            "viewport": {
+              "width": 1088.0,
+              "height": 787.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "after": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.0414938,
+            "viewport": {
+              "width": 1088.0,
+              "height": 787.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "inputs": [
+        "frame 598: Key { key: Escape, physical_key: Some(Escape), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+        "frame 598: Key { key: Escape, physical_key: Some(Escape), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+      ]
+    },
+    {
+      "name": "focus ModelingPlatform with native double-click",
+      "passed": true,
+      "before": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.0414938,
+            "viewport": {
+              "width": 1088.0,
+              "height": 787.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "after": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": "fa170000-0000-0000-0000-000000000002",
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.2169118,
+            "viewport": {
+              "width": 1088.0,
+              "height": 746.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "inputs": [
+        "frame 691: PointerMoved([782.0 318.3])",
+        "frame 691: PointerButton { pos: [782.0 318.3], button: Primary, pressed: true, modifiers: Modifiers::NONE }",
+        "frame 692: PointerMoved([782.0 318.3])",
+        "frame 692: PointerButton { pos: [782.0 318.3], button: Primary, pressed: false, modifiers: Modifiers::NONE }",
+        "frame 693: PointerMoved([782.0 318.3])",
+        "frame 693: PointerButton { pos: [782.0 318.3], button: Primary, pressed: true, modifiers: Modifiers::NONE }",
+        "frame 694: PointerMoved([782.0 318.3])",
+        "frame 694: PointerButton { pos: [782.0 318.3], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+      ]
+    },
+    {
+      "name": "switch focused view to Graph",
+      "passed": true,
+      "before": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": "fa170000-0000-0000-0000-000000000002",
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.2169118,
+            "viewport": {
+              "width": 1088.0,
+              "height": 746.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "after": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "Graph",
+          "definition": {
+            "version": 1,
+            "name": "Semantic Graph",
+            "kind": "SemanticGraph",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 880.0,
+              "y": 219.0
+            },
+            "zoom": 0.57045454,
+            "viewport": {
+              "width": 1088.0,
+              "height": 661.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 382.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 0.0,
+                  "y": 320.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 438.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 0.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 764.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 996.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 382.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 278.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": [
+            "fa170000-0000-0000-0000-000000000002",
+            "fa170000-0000-0000-0000-00000000000b",
+            "fa170000-0000-0000-0000-00000000000c",
+            "fa170000-0000-0000-0000-00000000000d",
+            "fa170000-0000-0000-0000-000000000015",
+            "fa170000-0000-0000-0000-000000000016",
+            "fa170000-0000-0000-0000-000000000017",
+            "fa170000-0000-0000-0000-00000000001f",
+            "fa170000-0000-0000-0000-000000000020",
+            "fa170000-0000-0000-0000-000000000021",
+            "fa170000-0000-0000-0000-00000000044e",
+            "fa170000-0000-0000-0000-0000000004b2",
+            "fa170000-0000-0000-0000-000000000516",
+            "fa170000-0000-0000-0000-000000000835",
+            "fa170000-0000-0000-0000-000000000836",
+            "fa170000-0000-0000-0000-000000000899",
+            "fa170000-0000-0000-0000-00000000089a",
+            "fa170000-0000-0000-0000-0000000008fd",
+            "fa170000-0000-0000-0000-0000000008fe",
+            "fa170000-0000-0000-0000-000000000c1d",
+            "fa170000-0000-0000-0000-000000000c81",
+            "fa170000-0000-0000-0000-000000000ce5"
+          ],
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "inputs": [
+        "frame 784: Key { key: Num2, physical_key: Some(Num2), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+        "frame 784: Key { key: Num2, physical_key: Some(Num2), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+      ]
+    },
+    {
+      "name": "pan graph before updating bookmark",
+      "passed": true,
+      "before": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "Graph",
+          "definition": {
+            "version": 1,
+            "name": "Semantic Graph",
+            "kind": "SemanticGraph",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 880.0,
+              "y": 219.0
+            },
+            "zoom": 0.57045454,
+            "viewport": {
+              "width": 1088.0,
+              "height": 661.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 382.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 0.0,
+                  "y": 320.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 438.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 0.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 764.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 996.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 382.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 278.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": [
+            "fa170000-0000-0000-0000-000000000002",
+            "fa170000-0000-0000-0000-00000000000b",
+            "fa170000-0000-0000-0000-00000000000c",
+            "fa170000-0000-0000-0000-00000000000d",
+            "fa170000-0000-0000-0000-000000000015",
+            "fa170000-0000-0000-0000-000000000016",
+            "fa170000-0000-0000-0000-000000000017",
+            "fa170000-0000-0000-0000-00000000001f",
+            "fa170000-0000-0000-0000-000000000020",
+            "fa170000-0000-0000-0000-000000000021",
+            "fa170000-0000-0000-0000-00000000044e",
+            "fa170000-0000-0000-0000-0000000004b2",
+            "fa170000-0000-0000-0000-000000000516",
+            "fa170000-0000-0000-0000-000000000835",
+            "fa170000-0000-0000-0000-000000000836",
+            "fa170000-0000-0000-0000-000000000899",
+            "fa170000-0000-0000-0000-00000000089a",
+            "fa170000-0000-0000-0000-0000000008fd",
+            "fa170000-0000-0000-0000-0000000008fe",
+            "fa170000-0000-0000-0000-000000000c1d",
+            "fa170000-0000-0000-0000-000000000c81",
+            "fa170000-0000-0000-0000-000000000ce5"
+          ],
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "after": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "Graph",
+          "definition": {
+            "version": 1,
+            "name": "Semantic Graph",
+            "kind": "SemanticGraph",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 739.761,
+              "y": 134.85657
+            },
+            "zoom": 0.57045454,
+            "viewport": {
+              "width": 1088.0,
+              "height": 661.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 382.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 0.0,
+                  "y": 320.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 438.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 0.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 764.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 996.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 382.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 278.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": [
+            "fa170000-0000-0000-0000-000000000002",
+            "fa170000-0000-0000-0000-00000000000b",
+            "fa170000-0000-0000-0000-00000000000c",
+            "fa170000-0000-0000-0000-00000000000d",
+            "fa170000-0000-0000-0000-000000000015",
+            "fa170000-0000-0000-0000-000000000016",
+            "fa170000-0000-0000-0000-000000000017",
+            "fa170000-0000-0000-0000-00000000001f",
+            "fa170000-0000-0000-0000-000000000020",
+            "fa170000-0000-0000-0000-000000000021",
+            "fa170000-0000-0000-0000-00000000044e",
+            "fa170000-0000-0000-0000-0000000004b2",
+            "fa170000-0000-0000-0000-000000000516",
+            "fa170000-0000-0000-0000-000000000835",
+            "fa170000-0000-0000-0000-000000000836",
+            "fa170000-0000-0000-0000-000000000899",
+            "fa170000-0000-0000-0000-00000000089a",
+            "fa170000-0000-0000-0000-0000000008fd",
+            "fa170000-0000-0000-0000-0000000008fe",
+            "fa170000-0000-0000-0000-000000000c1d",
+            "fa170000-0000-0000-0000-000000000c81",
+            "fa170000-0000-0000-0000-000000000ce5"
+          ],
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "inputs": [
+        "frame 877: PointerMoved([260.0 329.0])",
+        "frame 877: PointerButton { pos: [260.0 329.0], button: Primary, pressed: true, modifiers: Modifiers::NONE }",
+        "frame 878: PointerMoved([300.0 353.0])",
+        "frame 879: PointerMoved([340.0 377.0])",
+        "frame 880: PointerMoved([340.0 377.0])",
+        "frame 880: PointerButton { pos: [340.0 377.0], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+      ]
+    },
+    {
+      "name": "reopen Local views",
+      "passed": true,
+      "before": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "Graph",
+          "definition": {
+            "version": 1,
+            "name": "Semantic Graph",
+            "kind": "SemanticGraph",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 739.761,
+              "y": 134.85657
+            },
+            "zoom": 0.57045454,
+            "viewport": {
+              "width": 1088.0,
+              "height": 661.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 382.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 0.0,
+                  "y": 320.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 438.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 0.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 764.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 996.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 382.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 278.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": [
+            "fa170000-0000-0000-0000-000000000002",
+            "fa170000-0000-0000-0000-00000000000b",
+            "fa170000-0000-0000-0000-00000000000c",
+            "fa170000-0000-0000-0000-00000000000d",
+            "fa170000-0000-0000-0000-000000000015",
+            "fa170000-0000-0000-0000-000000000016",
+            "fa170000-0000-0000-0000-000000000017",
+            "fa170000-0000-0000-0000-00000000001f",
+            "fa170000-0000-0000-0000-000000000020",
+            "fa170000-0000-0000-0000-000000000021",
+            "fa170000-0000-0000-0000-00000000044e",
+            "fa170000-0000-0000-0000-0000000004b2",
+            "fa170000-0000-0000-0000-000000000516",
+            "fa170000-0000-0000-0000-000000000835",
+            "fa170000-0000-0000-0000-000000000836",
+            "fa170000-0000-0000-0000-000000000899",
+            "fa170000-0000-0000-0000-00000000089a",
+            "fa170000-0000-0000-0000-0000000008fd",
+            "fa170000-0000-0000-0000-0000000008fe",
+            "fa170000-0000-0000-0000-000000000c1d",
+            "fa170000-0000-0000-0000-000000000c81",
+            "fa170000-0000-0000-0000-000000000ce5"
+          ],
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "after": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "Graph",
+          "definition": {
+            "version": 1,
+            "name": "Semantic Graph",
+            "kind": "SemanticGraph",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 739.761,
+              "y": 134.85657
+            },
+            "zoom": 0.57045454,
+            "viewport": {
+              "width": 1088.0,
+              "height": 661.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 382.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 0.0,
+                  "y": 320.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 438.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 0.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 764.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 996.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 382.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 278.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": [
+            "fa170000-0000-0000-0000-000000000002",
+            "fa170000-0000-0000-0000-00000000000b",
+            "fa170000-0000-0000-0000-00000000000c",
+            "fa170000-0000-0000-0000-00000000000d",
+            "fa170000-0000-0000-0000-000000000015",
+            "fa170000-0000-0000-0000-000000000016",
+            "fa170000-0000-0000-0000-000000000017",
+            "fa170000-0000-0000-0000-00000000001f",
+            "fa170000-0000-0000-0000-000000000020",
+            "fa170000-0000-0000-0000-000000000021",
+            "fa170000-0000-0000-0000-00000000044e",
+            "fa170000-0000-0000-0000-0000000004b2",
+            "fa170000-0000-0000-0000-000000000516",
+            "fa170000-0000-0000-0000-000000000835",
+            "fa170000-0000-0000-0000-000000000836",
+            "fa170000-0000-0000-0000-000000000899",
+            "fa170000-0000-0000-0000-00000000089a",
+            "fa170000-0000-0000-0000-0000000008fd",
+            "fa170000-0000-0000-0000-0000000008fe",
+            "fa170000-0000-0000-0000-000000000c1d",
+            "fa170000-0000-0000-0000-000000000c81",
+            "fa170000-0000-0000-0000-000000000ce5"
+          ],
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "inputs": [
+        "frame 970: PointerMoved([643.2 93.5])",
+        "frame 970: PointerButton { pos: [643.2 93.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }",
+        "frame 971: PointerMoved([643.2 93.5])",
+        "frame 971: PointerButton { pos: [643.2 93.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+      ]
+    },
+    {
+      "name": "update selected view from current presentation",
+      "passed": true,
+      "before": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "Graph",
+          "definition": {
+            "version": 1,
+            "name": "Semantic Graph",
+            "kind": "SemanticGraph",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 739.761,
+              "y": 134.85657
+            },
+            "zoom": 0.57045454,
+            "viewport": {
+              "width": 1088.0,
+              "height": 661.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 382.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 0.0,
+                  "y": 320.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 438.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 0.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 764.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 996.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 382.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 278.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": [
+            "fa170000-0000-0000-0000-000000000002",
+            "fa170000-0000-0000-0000-00000000000b",
+            "fa170000-0000-0000-0000-00000000000c",
+            "fa170000-0000-0000-0000-00000000000d",
+            "fa170000-0000-0000-0000-000000000015",
+            "fa170000-0000-0000-0000-000000000016",
+            "fa170000-0000-0000-0000-000000000017",
+            "fa170000-0000-0000-0000-00000000001f",
+            "fa170000-0000-0000-0000-000000000020",
+            "fa170000-0000-0000-0000-000000000021",
+            "fa170000-0000-0000-0000-00000000044e",
+            "fa170000-0000-0000-0000-0000000004b2",
+            "fa170000-0000-0000-0000-000000000516",
+            "fa170000-0000-0000-0000-000000000835",
+            "fa170000-0000-0000-0000-000000000836",
+            "fa170000-0000-0000-0000-000000000899",
+            "fa170000-0000-0000-0000-00000000089a",
+            "fa170000-0000-0000-0000-0000000008fd",
+            "fa170000-0000-0000-0000-0000000008fe",
+            "fa170000-0000-0000-0000-000000000c1d",
+            "fa170000-0000-0000-0000-000000000c81",
+            "fa170000-0000-0000-0000-000000000ce5"
+          ],
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "after": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "Graph",
+          "definition": {
+            "version": 1,
+            "name": "Semantic Graph",
+            "kind": "SemanticGraph",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 739.761,
+              "y": 134.85657
+            },
+            "zoom": 0.57045454,
+            "viewport": {
+              "width": 1088.0,
+              "height": 661.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 382.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 0.0,
+                  "y": 320.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 438.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 0.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 764.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 996.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 382.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 278.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": [
+            "fa170000-0000-0000-0000-000000000002",
+            "fa170000-0000-0000-0000-00000000000b",
+            "fa170000-0000-0000-0000-00000000000c",
+            "fa170000-0000-0000-0000-00000000000d",
+            "fa170000-0000-0000-0000-000000000015",
+            "fa170000-0000-0000-0000-000000000016",
+            "fa170000-0000-0000-0000-000000000017",
+            "fa170000-0000-0000-0000-00000000001f",
+            "fa170000-0000-0000-0000-000000000020",
+            "fa170000-0000-0000-0000-000000000021",
+            "fa170000-0000-0000-0000-00000000044e",
+            "fa170000-0000-0000-0000-0000000004b2",
+            "fa170000-0000-0000-0000-000000000516",
+            "fa170000-0000-0000-0000-000000000835",
+            "fa170000-0000-0000-0000-000000000836",
+            "fa170000-0000-0000-0000-000000000899",
+            "fa170000-0000-0000-0000-00000000089a",
+            "fa170000-0000-0000-0000-0000000008fd",
+            "fa170000-0000-0000-0000-0000000008fe",
+            "fa170000-0000-0000-0000-000000000c1d",
+            "fa170000-0000-0000-0000-000000000c81",
+            "fa170000-0000-0000-0000-000000000ce5"
+          ],
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "inputs": [
+        "frame 1063: PointerMoved([834.0 367.0])",
+        "frame 1063: PointerButton { pos: [834.0 367.0], button: Primary, pressed: true, modifiers: Modifiers::NONE }",
+        "frame 1064: PointerMoved([834.0 367.0])",
+        "frame 1064: PointerButton { pos: [834.0 367.0], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+      ]
+    },
+    {
+      "name": "dismiss updated view menu",
+      "passed": true,
+      "before": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "Graph",
+          "definition": {
+            "version": 1,
+            "name": "Semantic Graph",
+            "kind": "SemanticGraph",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 739.761,
+              "y": 134.85657
+            },
+            "zoom": 0.57045454,
+            "viewport": {
+              "width": 1088.0,
+              "height": 661.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 382.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 0.0,
+                  "y": 320.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 438.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 0.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 764.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 996.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 382.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 278.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": [
+            "fa170000-0000-0000-0000-000000000002",
+            "fa170000-0000-0000-0000-00000000000b",
+            "fa170000-0000-0000-0000-00000000000c",
+            "fa170000-0000-0000-0000-00000000000d",
+            "fa170000-0000-0000-0000-000000000015",
+            "fa170000-0000-0000-0000-000000000016",
+            "fa170000-0000-0000-0000-000000000017",
+            "fa170000-0000-0000-0000-00000000001f",
+            "fa170000-0000-0000-0000-000000000020",
+            "fa170000-0000-0000-0000-000000000021",
+            "fa170000-0000-0000-0000-00000000044e",
+            "fa170000-0000-0000-0000-0000000004b2",
+            "fa170000-0000-0000-0000-000000000516",
+            "fa170000-0000-0000-0000-000000000835",
+            "fa170000-0000-0000-0000-000000000836",
+            "fa170000-0000-0000-0000-000000000899",
+            "fa170000-0000-0000-0000-00000000089a",
+            "fa170000-0000-0000-0000-0000000008fd",
+            "fa170000-0000-0000-0000-0000000008fe",
+            "fa170000-0000-0000-0000-000000000c1d",
+            "fa170000-0000-0000-0000-000000000c81",
+            "fa170000-0000-0000-0000-000000000ce5"
+          ],
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "after": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "Graph",
+          "definition": {
+            "version": 1,
+            "name": "Semantic Graph",
+            "kind": "SemanticGraph",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 739.761,
+              "y": 134.85657
+            },
+            "zoom": 0.57045454,
+            "viewport": {
+              "width": 1088.0,
+              "height": 661.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 382.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 0.0,
+                  "y": 320.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 438.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 0.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 764.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 996.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 382.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 278.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": [
+            "fa170000-0000-0000-0000-000000000002",
+            "fa170000-0000-0000-0000-00000000000b",
+            "fa170000-0000-0000-0000-00000000000c",
+            "fa170000-0000-0000-0000-00000000000d",
+            "fa170000-0000-0000-0000-000000000015",
+            "fa170000-0000-0000-0000-000000000016",
+            "fa170000-0000-0000-0000-000000000017",
+            "fa170000-0000-0000-0000-00000000001f",
+            "fa170000-0000-0000-0000-000000000020",
+            "fa170000-0000-0000-0000-000000000021",
+            "fa170000-0000-0000-0000-00000000044e",
+            "fa170000-0000-0000-0000-0000000004b2",
+            "fa170000-0000-0000-0000-000000000516",
+            "fa170000-0000-0000-0000-000000000835",
+            "fa170000-0000-0000-0000-000000000836",
+            "fa170000-0000-0000-0000-000000000899",
+            "fa170000-0000-0000-0000-00000000089a",
+            "fa170000-0000-0000-0000-0000000008fd",
+            "fa170000-0000-0000-0000-0000000008fe",
+            "fa170000-0000-0000-0000-000000000c1d",
+            "fa170000-0000-0000-0000-000000000c81",
+            "fa170000-0000-0000-0000-000000000ce5"
+          ],
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "inputs": [
+        "frame 1156: PointerMoved([643.2 93.5])",
+        "frame 1156: PointerButton { pos: [643.2 93.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }",
+        "frame 1157: PointerMoved([643.2 93.5])",
+        "frame 1157: PointerButton { pos: [643.2 93.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+      ]
+    },
+    {
+      "name": "leave bookmarked world",
+      "passed": true,
+      "before": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "Graph",
+          "definition": {
+            "version": 1,
+            "name": "Semantic Graph",
+            "kind": "SemanticGraph",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 739.761,
+              "y": 134.85657
+            },
+            "zoom": 0.57045454,
+            "viewport": {
+              "width": 1088.0,
+              "height": 661.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 382.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 0.0,
+                  "y": 320.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 438.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 0.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 764.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 996.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 382.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 278.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": [
+            "fa170000-0000-0000-0000-000000000002",
+            "fa170000-0000-0000-0000-00000000000b",
+            "fa170000-0000-0000-0000-00000000000c",
+            "fa170000-0000-0000-0000-00000000000d",
+            "fa170000-0000-0000-0000-000000000015",
+            "fa170000-0000-0000-0000-000000000016",
+            "fa170000-0000-0000-0000-000000000017",
+            "fa170000-0000-0000-0000-00000000001f",
+            "fa170000-0000-0000-0000-000000000020",
+            "fa170000-0000-0000-0000-000000000021",
+            "fa170000-0000-0000-0000-00000000044e",
+            "fa170000-0000-0000-0000-0000000004b2",
+            "fa170000-0000-0000-0000-000000000516",
+            "fa170000-0000-0000-0000-000000000835",
+            "fa170000-0000-0000-0000-000000000836",
+            "fa170000-0000-0000-0000-000000000899",
+            "fa170000-0000-0000-0000-00000000089a",
+            "fa170000-0000-0000-0000-0000000008fd",
+            "fa170000-0000-0000-0000-0000000008fe",
+            "fa170000-0000-0000-0000-000000000c1d",
+            "fa170000-0000-0000-0000-000000000c81",
+            "fa170000-0000-0000-0000-000000000ce5"
+          ],
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "after": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.0414938,
+            "viewport": {
+              "width": 1088.0,
+              "height": 787.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "inputs": [
+        "frame 1249: Key { key: Num1, physical_key: Some(Num1), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+        "frame 1249: Key { key: Num1, physical_key: Some(Num1), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+      ]
+    },
+    {
+      "name": "open saved view menu",
+      "passed": true,
+      "before": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.0414938,
+            "viewport": {
+              "width": 1088.0,
+              "height": 787.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "after": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.0414938,
+            "viewport": {
+              "width": 1088.0,
+              "height": 787.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "inputs": [
+        "frame 1342: PointerMoved([643.2 93.5])",
+        "frame 1342: PointerButton { pos: [643.2 93.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }",
+        "frame 1343: PointerMoved([643.2 93.5])",
+        "frame 1343: PointerButton { pos: [643.2 93.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+      ]
+    },
+    {
+      "name": "open exact updated view through its row",
+      "passed": true,
+      "before": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.0414938,
+            "viewport": {
+              "width": 1088.0,
+              "height": 787.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "after": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "Graph",
+          "definition": {
+            "version": 1,
+            "name": "Semantic Graph",
+            "kind": "SemanticGraph",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 739.761,
+              "y": 134.85657
+            },
+            "zoom": 0.57045454,
+            "viewport": {
+              "width": 1088.0,
+              "height": 661.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 382.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 0.0,
+                  "y": 320.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 438.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 0.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 764.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 996.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 382.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 278.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": [
+            "fa170000-0000-0000-0000-000000000002",
+            "fa170000-0000-0000-0000-00000000000b",
+            "fa170000-0000-0000-0000-00000000000c",
+            "fa170000-0000-0000-0000-00000000000d",
+            "fa170000-0000-0000-0000-000000000015",
+            "fa170000-0000-0000-0000-000000000016",
+            "fa170000-0000-0000-0000-000000000017",
+            "fa170000-0000-0000-0000-00000000001f",
+            "fa170000-0000-0000-0000-000000000020",
+            "fa170000-0000-0000-0000-000000000021",
+            "fa170000-0000-0000-0000-00000000044e",
+            "fa170000-0000-0000-0000-0000000004b2",
+            "fa170000-0000-0000-0000-000000000516",
+            "fa170000-0000-0000-0000-000000000835",
+            "fa170000-0000-0000-0000-000000000836",
+            "fa170000-0000-0000-0000-000000000899",
+            "fa170000-0000-0000-0000-00000000089a",
+            "fa170000-0000-0000-0000-0000000008fd",
+            "fa170000-0000-0000-0000-0000000008fe",
+            "fa170000-0000-0000-0000-000000000c1d",
+            "fa170000-0000-0000-0000-000000000c81",
+            "fa170000-0000-0000-0000-000000000ce5"
+          ],
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "inputs": [
+        "frame 1435: PointerMoved([828.8 219.0])",
+        "frame 1435: PointerButton { pos: [828.8 219.0], button: Primary, pressed: true, modifiers: Modifiers::NONE }",
+        "frame 1436: PointerMoved([828.8 219.0])",
+        "frame 1436: PointerButton { pos: [828.8 219.0], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+      ]
+    },
+    {
+      "name": "ordinary autosave retains reopened presentation",
+      "passed": true,
+      "before": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "Graph",
+          "definition": {
+            "version": 1,
+            "name": "Semantic Graph",
+            "kind": "SemanticGraph",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 739.761,
+              "y": 134.85657
+            },
+            "zoom": 0.57045454,
+            "viewport": {
+              "width": 1088.0,
+              "height": 661.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 382.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 0.0,
+                  "y": 320.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 438.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 0.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 764.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 996.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 382.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 278.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": [
+            "fa170000-0000-0000-0000-000000000002",
+            "fa170000-0000-0000-0000-00000000000b",
+            "fa170000-0000-0000-0000-00000000000c",
+            "fa170000-0000-0000-0000-00000000000d",
+            "fa170000-0000-0000-0000-000000000015",
+            "fa170000-0000-0000-0000-000000000016",
+            "fa170000-0000-0000-0000-000000000017",
+            "fa170000-0000-0000-0000-00000000001f",
+            "fa170000-0000-0000-0000-000000000020",
+            "fa170000-0000-0000-0000-000000000021",
+            "fa170000-0000-0000-0000-00000000044e",
+            "fa170000-0000-0000-0000-0000000004b2",
+            "fa170000-0000-0000-0000-000000000516",
+            "fa170000-0000-0000-0000-000000000835",
+            "fa170000-0000-0000-0000-000000000836",
+            "fa170000-0000-0000-0000-000000000899",
+            "fa170000-0000-0000-0000-00000000089a",
+            "fa170000-0000-0000-0000-0000000008fd",
+            "fa170000-0000-0000-0000-0000000008fe",
+            "fa170000-0000-0000-0000-000000000c1d",
+            "fa170000-0000-0000-0000-000000000c81",
+            "fa170000-0000-0000-0000-000000000ce5"
+          ],
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "after": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Container(ElementId(332426421773975269261407966485658206210))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "Graph",
+          "definition": {
+            "version": 1,
+            "name": "Semantic Graph",
+            "kind": "SemanticGraph",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 739.761,
+              "y": 134.85657
+            },
+            "zoom": 0.57045454,
+            "viewport": {
+              "width": 1088.0,
+              "height": 661.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 382.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 0.0,
+                  "y": 320.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 438.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 0.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 232.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 764.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 996.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 382.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 614.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 278.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 1146.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1378.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 118.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 1528.0,
+                  "y": 160.0
+                },
+                "max": {
+                  "x": 1760.0,
+                  "y": 278.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": [
+            "fa170000-0000-0000-0000-000000000002",
+            "fa170000-0000-0000-0000-00000000000b",
+            "fa170000-0000-0000-0000-00000000000c",
+            "fa170000-0000-0000-0000-00000000000d",
+            "fa170000-0000-0000-0000-000000000015",
+            "fa170000-0000-0000-0000-000000000016",
+            "fa170000-0000-0000-0000-000000000017",
+            "fa170000-0000-0000-0000-00000000001f",
+            "fa170000-0000-0000-0000-000000000020",
+            "fa170000-0000-0000-0000-000000000021",
+            "fa170000-0000-0000-0000-00000000044e",
+            "fa170000-0000-0000-0000-0000000004b2",
+            "fa170000-0000-0000-0000-000000000516",
+            "fa170000-0000-0000-0000-000000000835",
+            "fa170000-0000-0000-0000-000000000836",
+            "fa170000-0000-0000-0000-000000000899",
+            "fa170000-0000-0000-0000-00000000089a",
+            "fa170000-0000-0000-0000-0000000008fd",
+            "fa170000-0000-0000-0000-0000000008fe",
+            "fa170000-0000-0000-0000-000000000c1d",
+            "fa170000-0000-0000-0000-000000000c81",
+            "fa170000-0000-0000-0000-000000000ce5"
+          ],
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "inputs": []
+    }
+  ],
+  "gallery": [
+    "verification/native-studio-alpha/presentation-run02/first-gallery\\presentation.png"
+  ],
+  "final_state": {
+    "revision": "fa170000-0000-0000-0000-000000000001",
+    "selection": [
+      "Container(ElementId(332426421773975269261407966485658206210))"
+    ],
+    "fixture": "architecture",
+    "presentation": {
+      "world": "Graph",
+      "definition": {
+        "version": 1,
+        "name": "Semantic Graph",
+        "kind": "SemanticGraph",
+        "focus": null,
+        "depth": 2,
+        "relationship_families": [
+          "Ownership",
+          "Typing",
+          "Specialization",
+          "Subsetting",
+          "Redefinition",
+          "Connection",
+          "Requirement",
+          "Verification",
+          "Reference"
+        ],
+        "include_standard_library": false,
+        "hidden_elements": []
+      },
+      "camera": {
+        "center": {
+          "x": 739.761,
+          "y": 134.85657
+        },
+        "zoom": 0.57045454,
+        "viewport": {
+          "width": 1088.0,
+          "height": 661.0
+        }
+      },
+      "layout": {
+        "bounds": {
+          "fa170000-0000-0000-0000-000000000002": {
+            "min": {
+              "x": 0.0,
+              "y": 0.0
+            },
+            "max": {
+              "x": 232.0,
+              "y": 118.0
+            }
+          },
+          "fa170000-0000-0000-0000-00000000000b": {
+            "min": {
+              "x": 382.0,
+              "y": 0.0
+            },
+            "max": {
+              "x": 614.0,
+              "y": 118.0
+            }
+          },
+          "fa170000-0000-0000-0000-00000000000c": {
+            "min": {
+              "x": 0.0,
+              "y": 320.0
+            },
+            "max": {
+              "x": 232.0,
+              "y": 438.0
+            }
+          },
+          "fa170000-0000-0000-0000-00000000000d": {
+            "min": {
+              "x": 0.0,
+              "y": 160.0
+            },
+            "max": {
+              "x": 232.0,
+              "y": 278.0
+            }
+          },
+          "fa170000-0000-0000-0000-000000000015": {
+            "min": {
+              "x": 764.0,
+              "y": 0.0
+            },
+            "max": {
+              "x": 996.0,
+              "y": 118.0
+            }
+          },
+          "fa170000-0000-0000-0000-000000000016": {
+            "min": {
+              "x": 382.0,
+              "y": 160.0
+            },
+            "max": {
+              "x": 614.0,
+              "y": 278.0
+            }
+          },
+          "fa170000-0000-0000-0000-000000000017": {
+            "min": {
+              "x": 1146.0,
+              "y": 160.0
+            },
+            "max": {
+              "x": 1378.0,
+              "y": 278.0
+            }
+          },
+          "fa170000-0000-0000-0000-00000000001f": {
+            "min": {
+              "x": 1146.0,
+              "y": 0.0
+            },
+            "max": {
+              "x": 1378.0,
+              "y": 118.0
+            }
+          },
+          "fa170000-0000-0000-0000-000000000020": {
+            "min": {
+              "x": 1528.0,
+              "y": 0.0
+            },
+            "max": {
+              "x": 1760.0,
+              "y": 118.0
+            }
+          },
+          "fa170000-0000-0000-0000-000000000021": {
+            "min": {
+              "x": 1528.0,
+              "y": 160.0
+            },
+            "max": {
+              "x": 1760.0,
+              "y": 278.0
+            }
+          }
+        }
+      },
+      "collapsed": [],
+      "expanded": [
+        "fa170000-0000-0000-0000-000000000002",
+        "fa170000-0000-0000-0000-00000000000b",
+        "fa170000-0000-0000-0000-00000000000c",
+        "fa170000-0000-0000-0000-00000000000d",
+        "fa170000-0000-0000-0000-000000000015",
+        "fa170000-0000-0000-0000-000000000016",
+        "fa170000-0000-0000-0000-000000000017",
+        "fa170000-0000-0000-0000-00000000001f",
+        "fa170000-0000-0000-0000-000000000020",
+        "fa170000-0000-0000-0000-000000000021",
+        "fa170000-0000-0000-0000-00000000044e",
+        "fa170000-0000-0000-0000-0000000004b2",
+        "fa170000-0000-0000-0000-000000000516",
+        "fa170000-0000-0000-0000-000000000835",
+        "fa170000-0000-0000-0000-000000000836",
+        "fa170000-0000-0000-0000-000000000899",
+        "fa170000-0000-0000-0000-00000000089a",
+        "fa170000-0000-0000-0000-0000000008fd",
+        "fa170000-0000-0000-0000-0000000008fe",
+        "fa170000-0000-0000-0000-000000000c1d",
+        "fa170000-0000-0000-0000-000000000c81",
+        "fa170000-0000-0000-0000-000000000ce5"
+      ],
+      "branch": null,
+      "panels": {
+        "agent": false,
+        "explain": false,
+        "source": false
+      }
+    },
+    "dark": true,
+    "contrast": false,
+    "reduced_motion": false
+  },
+  "session_digest": "21c755b69147c1071855ac16479f8c798bc171b8d2d7f6c6056d72611700e1b3",
+  "views_digest": "085bf7f227bbb816ec87d78c327793c6357907dd7cbef41978ea495233ffc1fc"
+}
