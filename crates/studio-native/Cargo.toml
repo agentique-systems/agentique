@@ -1,0 +1,23 @@
+[package]
+name = "agq-studio-native"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Agentique's native spatial engineering shell"
+
+[dependencies]
+agq-kernel = { path = "../kernel" }
+agq-modeling-view = { path = "../modeling-view" }
+agq-modeling-workspace = { path = "../modeling-workspace" }
+agq-modeling-agent = { path = "../modeling-agent" }
+agq-modeling-repository = { path = "../modeling-repository" }
+agq-studio-scene = { path = "../studio-scene" }
+agq-studio-platform = { path = "../studio-platform" }
+eframe = { version = "=0.33.3", default-features = false, features = ["default_fonts", "wgpu", "accesskit", "x11", "wayland"] }
+egui-wgpu = "=0.33.3"
+wgpu = { version = "=27.0.1", features = ["dx12", "metal", "vulkan", "wgsl"] }
+bytemuck = { version = "1.24", features = ["derive"] }
+serde.workspace = true
+serde_json.workspace = true
+clap.workspace = true
+image = { version = "0.25", default-features = false, features = ["png"] }
