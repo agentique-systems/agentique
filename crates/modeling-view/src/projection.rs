@@ -269,7 +269,7 @@ impl ViewProfile {
         focus: Option<ElementId>,
         definition: Option<&ViewDefinition>,
     ) -> Self {
-        if !std::env::var_os("AGENTIQUE_VIEW_PROFILE").is_some_and(|value| value == "1") {
+        if std::env::var_os("AGENTIQUE_VIEW_PROFILE").is_none_or(|value| value != "1") {
             return Self::disabled();
         }
         let identity = serde_json::json!({
