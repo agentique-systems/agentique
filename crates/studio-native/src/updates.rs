@@ -18,6 +18,17 @@ impl StudioApp {
                 self.pending.remove(&reply.request);
                 self.bridge.complete(reply.request);
             }
+            if !self.bridge.current_epoch(reply.epoch) {
+                continue;
+            }
+            if reply.read.is_some() {
+                self.receive_panel_read(reply);
+                continue;
+            }
+            if self.bridge.reader_pin(reply.request).is_some() {
+                self.receive_reader_pin(reply);
+                continue;
+            }
             // Project history is independent of the displayed revision/candidate.
             // Its own request fence excludes older refreshes and other projects.
             if matches!(&reply.result, Ok(Output::HistoryRefresh(_)))
@@ -322,6 +333,7 @@ impl StudioApp {
                     self.ready = true;
                     self.fit_pending = true;
                     let presentation_ok = self.apply_pending_presentation();
+                    self.pin_current_reader();
                     self.request_inspection();
                     self.record_location();
                     if presentation_ok {
@@ -598,6 +610,7 @@ impl StudioApp {
             return;
         }
         self.invalidate_inspection();
+        self.bridge.clear_reader();
         self.pending_revision = None;
         self.revision_retry = None;
         self.history_request = None;
@@ -817,7 +830,9 @@ mod tests {
     ) -> Reply {
         Reply {
             request,
+            epoch: 0,
             context: Some(context),
+            read: None,
             mutation,
             terminal: true,
             result,

@@ -151,6 +151,7 @@ impl StudioApp {
         true
     }
     pub fn invalidate_inspection(&mut self) {
+        self.bridge.cancel_reads();
         self.inspector = None;
         self.explanation = None;
         self.source = None;
@@ -296,15 +297,12 @@ impl StudioApp {
         self.inspector = None;
         self.inspector_request = 0;
         if let Some((binding, candidate, element)) = self.selected_context() {
-            self.inspector_request = self.enqueue(Box::new(move |platform| {
-                if let Some(id) = candidate {
-                    platform
-                        .inspect_candidate(id, element)
-                        .map(Output::Inspector)
-                } else {
-                    platform.inspect(binding, element).map(Output::Inspector)
-                }
-            }));
+            self.inspector_request = self.request_panel_read(
+                crate::read_lane::PanelRead::Inspector,
+                binding,
+                candidate,
+                element,
+            );
         }
     }
     pub fn selected_context(
@@ -528,6 +526,7 @@ impl StudioApp {
         if !self.allow_context_change() {
             return;
         }
+        self.bridge.clear_reader();
         self.fixture = Some(name.into());
         self.binding = None;
         self.pending_revision = None;
@@ -729,25 +728,23 @@ impl StudioApp {
                 self.show_explain = true;
                 self.explanation = None;
                 if let Some((binding, candidate, element)) = self.selected_context() {
-                    self.explanation_request = self.enqueue(Box::new(move |p| {
-                        if let Some(id) = candidate {
-                            p.explain_candidate(id, element).map(Output::Explanation)
-                        } else {
-                            p.explain(binding, element).map(Output::Explanation)
-                        }
-                    }));
+                    self.explanation_request = self.request_panel_read(
+                        crate::read_lane::PanelRead::Explain,
+                        binding,
+                        candidate,
+                        element,
+                    );
                 }
             }
             Source => {
                 self.show_source = true;
                 if let Some((binding, candidate, element)) = self.selected_context() {
-                    self.source_request = self.enqueue(Box::new(move |p| {
-                        if let Some(id) = candidate {
-                            p.source_candidate(id, element).map(Output::Source)
-                        } else {
-                            p.source(binding, element).map(Output::Source)
-                        }
-                    }));
+                    self.source_request = self.request_panel_read(
+                        crate::read_lane::PanelRead::Source,
+                        binding,
+                        candidate,
+                        element,
+                    );
                 }
             }
             DismissAgent => self.dismiss_agent_view(),

@@ -7,10 +7,12 @@
 
 mod bootstrap;
 mod candidates;
+mod reader;
 mod seed;
 
 pub use bootstrap::*;
 pub use candidates::*;
+pub use reader::StudioRevisionReader;
 pub use seed::seed_agentique;
 
 use agq_kernel::ElementId;

@@ -1,0 +1,25 @@
+{
+  "command": [
+    "rustfmt",
+    "--edition",
+    "2024",
+    "--check",
+    "--config",
+    "skip_children=true",
+    "crates/studio-native/src/main.rs",
+    "crates/studio-native/src/read_lane.rs",
+    "crates/studio-native/src/revision_reads.rs",
+    "crates/studio-native/src/bridge.rs",
+    "crates/studio-native/src/actions.rs",
+    "crates/studio-native/src/updates.rs",
+    "crates/studio-platform/src/reader.rs",
+    "crates/studio-platform/src/lib.rs"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-state-recovery",
+  "started_utc": "2026-09-25T19:36:06.941734+00:00",
+  "elapsed_seconds": 0.172,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/immutable-read-lane-format.txt",
+  "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "build_environment": {}
+}

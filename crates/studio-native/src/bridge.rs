@@ -1,10 +1,11 @@
-//! Serialized, bounded worker boundary; reconstruction and durable IO never run in a frame.
+//! Serialized mutations and an independent immutable read lane. No semantic work runs in a frame.
+use crate::read_lane::{PanelRead, ReadContext, ReadLane, ReadScope};
 use agq_modeling_agent::{AgentContext, ModelCommand};
 use agq_modeling_repository::{CommitReceipt, Project};
 use agq_modeling_view::{ElementInspector, ExplanationProjection, ViewProjection};
 use agq_studio_platform::{
     BootstrapPhase, CandidateId, CandidateProjection, ComparisonProjection, NativeConfig,
-    ProjectHistory, RevisionBinding, SourceProjection, StudioPlatform,
+    ProjectHistory, RevisionBinding, SourceProjection, StudioPlatform, StudioRevisionReader,
 };
 use eframe::egui;
 use std::{
@@ -19,6 +20,7 @@ pub enum Output {
     History(ProjectHistory),
     HistoryRefresh(ProjectHistory),
     Projection(ViewProjection),
+    Reader(StudioRevisionReader),
     Inspector(ElementInspector),
     Explanation(ExplanationProjection),
     Source(SourceProjection),
@@ -47,11 +49,13 @@ impl WorkContext {
 pub type Work = Box<dyn FnOnce(&mut StudioPlatform) -> agq_studio_platform::Result<Output> + Send>;
 enum Request {
     Open(u64, NativeConfig, Option<PathBuf>),
-    Work(u64, WorkContext, bool, Work),
+    Work(u64, u64, WorkContext, bool, Work),
 }
 pub struct Reply {
     pub request: u64,
+    pub epoch: u64,
     pub context: Option<WorkContext>,
+    pub read: Option<ReadContext>,
     pub mutation: bool,
     pub terminal: bool,
     pub result: Result<Output, String>,
@@ -62,24 +66,31 @@ pub struct Bridge {
     next: u64,
     mutations: BTreeSet<u64>,
     latest_open: Option<u64>,
+    reads: ReadLane,
+    reader_pin: Option<(u64, ReadScope)>,
 }
 impl Bridge {
     pub fn new(ctx: egui::Context) -> Self {
         let (sender, receiver) = mpsc::sync_channel::<Request>(16);
         let (reply, replies) = mpsc::channel();
+        let reads = ReadLane::new(ctx.clone(), reply.clone());
         std::thread::Builder::new()
             .name("agentique-modeling".into())
             .spawn(move || {
                 let mut platform = None;
+                let mut open_epoch = 0;
                 while let Ok(request) = receiver.recv() {
-                    let (id, context, mutation, result) = match request {
+                    let (id, epoch, context, mutation, result) = match request {
                         Request::Open(id, config, bundle) => {
                             // A failed switch must never leave a previous repository silently active.
                             platform = None;
+                            open_epoch = id;
                             let progress = |phase| {
                                 let _ = reply.send(Reply {
                                     request: id,
+                                    epoch: id,
                                     context: None,
+                                    read: None,
                                     mutation: false,
                                     terminal: false,
                                     result: Ok(Output::Progress(phase)),
@@ -96,24 +107,32 @@ impl Bridge {
                                 platform = Some(value);
                                 Ok(Output::Ready(projects))
                             });
-                            (id, None, false, result)
+                            (id, id, None, false, result)
                         }
-                        Request::Work(id, context, mutation, work) => {
-                            let result = platform
-                                .as_mut()
-                                .ok_or_else(|| {
-                                    agq_studio_platform::PlatformError::Invalid(
-                                        "Authenticated runtime is not open".into(),
-                                    )
-                                })
-                                .and_then(work);
-                            (id, Some(context), mutation, result)
+                        Request::Work(id, epoch, context, mutation, work) => {
+                            let result = if epoch != open_epoch {
+                                Err(agq_studio_platform::PlatformError::Invalid(
+                                    "Work belongs to an earlier runtime opening".into(),
+                                ))
+                            } else {
+                                platform
+                                    .as_mut()
+                                    .ok_or_else(|| {
+                                        agq_studio_platform::PlatformError::Invalid(
+                                            "Authenticated runtime is not open".into(),
+                                        )
+                                    })
+                                    .and_then(work)
+                            };
+                            (id, epoch, Some(context), mutation, result)
                         }
                     };
                     if reply
                         .send(Reply {
                             request: id,
+                            epoch,
                             context,
+                            read: None,
                             mutation,
                             terminal: true,
                             result: result.map_err(|e| e.to_string()),
@@ -132,6 +151,8 @@ impl Bridge {
             next: 1,
             mutations: BTreeSet::new(),
             latest_open: None,
+            reads,
+            reader_pin: None,
         }
     }
     pub fn open(&mut self, config: NativeConfig, bundle: Option<PathBuf>) -> Result<u64, String> {
@@ -140,10 +161,13 @@ impl Bridge {
         }
         let id = self.next;
         self.next += 1;
+        // An attempted runtime change revokes native presentation access before
+        // queueing, even if enqueueing or later authentication fails.
+        self.latest_open = Some(id);
+        self.clear_reader();
         self.sender
             .try_send(Request::Open(id, config, bundle))
             .map_err(|e| e.to_string())?;
-        self.latest_open = Some(id);
         Ok(id)
     }
     pub fn work(
@@ -158,7 +182,7 @@ impl Bridge {
         let id = self.next;
         self.next += 1;
         self.sender
-            .try_send(Request::Work(id, context, mutation, work))
+            .try_send(Request::Work(id, self.epoch(), context, mutation, work))
             .map_err(|e| e.to_string())?;
         if mutation {
             self.mutations.insert(id);
@@ -173,6 +197,113 @@ impl Bridge {
     }
     pub fn current_open(&self, request: u64) -> bool {
         self.latest_open == Some(request)
+    }
+    pub fn epoch(&self) -> u64 {
+        self.latest_open.unwrap_or(0)
+    }
+    pub fn current_epoch(&self, epoch: u64) -> bool {
+        epoch == self.epoch()
+    }
+
+    /// Queue before enabling interaction with a newly accepted real projection.
+    /// The serial worker alone resolves and grants the opaque read capability.
+    pub fn pin_reader(
+        &mut self,
+        binding: RevisionBinding,
+        context: WorkContext,
+    ) -> Result<Option<u64>, String> {
+        if context.fixture.is_some() || context.binding != Some(binding) {
+            return Err("Only the displayed real revision can request a reader".into());
+        }
+        let scope = ReadScope {
+            epoch: self.epoch(),
+            binding,
+        };
+        if self.reads.ready(scope) || self.reader_pin.is_some_and(|(_, pending)| pending == scope) {
+            return Ok(None);
+        }
+        self.reader_pin = None;
+        self.reads.reset(Some(scope));
+        let request = match self.work(
+            Box::new(move |platform| platform.revision_reader(binding).map(Output::Reader)),
+            context,
+            false,
+        ) {
+            Ok(request) => request,
+            Err(error) => {
+                // No pin will arrive: a panel must fail immediately rather than
+                // wait forever in an unminted read scope.
+                self.reads.reset(None);
+                return Err(error);
+            }
+        };
+        self.reader_pin = Some((request, scope));
+        Ok(Some(request))
+    }
+
+    pub fn reader_pin(&self, request: u64) -> Option<ReadScope> {
+        self.reader_pin
+            .filter(|(id, _)| *id == request)
+            .map(|(_, scope)| scope)
+    }
+
+    pub fn install_reader(
+        &mut self,
+        request: u64,
+        reader: StudioRevisionReader,
+    ) -> Result<(), String> {
+        let scope = self
+            .reader_pin(request)
+            .ok_or("Reader pin was superseded")?;
+        self.reader_pin = None;
+        if !self.current_epoch(scope.epoch) {
+            self.reads
+                .fail(scope, "Reader pin belongs to an earlier runtime opening");
+            return Err("Reader pin belongs to an earlier runtime opening".into());
+        }
+        let result = self.reads.install(scope, reader);
+        if let Err(error) = &result {
+            self.reads.fail(scope, error);
+        }
+        result
+    }
+
+    pub fn fail_reader(&mut self, request: u64, error: &str) {
+        if let Some(scope) = self.reader_pin(request) {
+            self.reader_pin = None;
+            self.reads.fail(scope, error);
+        }
+    }
+
+    pub fn clear_reader(&mut self) {
+        self.reader_pin = None;
+        self.reads.reset(None);
+    }
+
+    pub fn cancel_reads(&self) {
+        self.reads.cancel_pending();
+    }
+
+    pub fn read(
+        &mut self,
+        binding: RevisionBinding,
+        element: agq_kernel::ElementId,
+        panel: PanelRead,
+    ) -> Result<u64, String> {
+        let request = self.next;
+        self.next += 1;
+        self.reads.request(
+            request,
+            ReadContext {
+                scope: ReadScope {
+                    epoch: self.epoch(),
+                    binding,
+                },
+                panel,
+                element,
+            },
+        )?;
+        Ok(request)
     }
 }
 
@@ -222,6 +353,74 @@ pub fn candidate_view(
 mod tests {
     use super::*;
     use agq_modeling_repository::{ProjectId, ProjectRevisionId};
+
+    #[test]
+    fn refused_pin_enqueue_cannot_leave_panel_requests_waiting_without_a_capability() {
+        let mut bridge = Bridge::new(egui::Context::default());
+        let (sender, receiver) = mpsc::sync_channel(1);
+        drop(receiver);
+        bridge.sender = sender;
+        let binding = RevisionBinding {
+            project: ProjectId::new(),
+            revision: ProjectRevisionId::new(),
+        };
+        let context = WorkContext {
+            binding: Some(binding),
+            candidate: None,
+            fixture: None,
+        };
+        assert!(bridge.pin_reader(binding, context).is_err());
+        assert!(bridge.reader_pin.is_none());
+        assert!(bridge.reads.scope().is_none());
+        assert!(
+            bridge
+                .read(
+                    binding,
+                    agq_kernel::ElementId::from_u128(1),
+                    PanelRead::Inspector
+                )
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn even_failed_runtime_enqueue_invalidates_waiting_reads_and_old_epoch() {
+        let mut bridge = Bridge::new(egui::Context::default());
+        let binding = RevisionBinding {
+            project: ProjectId::new(),
+            revision: ProjectRevisionId::new(),
+        };
+        let context = WorkContext {
+            binding: Some(binding),
+            candidate: None,
+            fixture: None,
+        };
+        let pin = bridge.pin_reader(binding, context).unwrap().unwrap();
+        let read = bridge
+            .read(
+                binding,
+                agq_kernel::ElementId::from_u128(1),
+                PanelRead::Inspector,
+            )
+            .unwrap();
+        let epoch = bridge.epoch();
+        let (sender, receiver) = mpsc::sync_channel(1);
+        drop(receiver);
+        bridge.sender = sender;
+        let config =
+            NativeConfig::for_root(std::env::temp_dir(), Some(std::env::temp_dir())).unwrap();
+        assert!(bridge.open(config, None).is_err());
+        assert!(!bridge.current_epoch(epoch));
+        assert!(bridge.reader_pin(pin).is_none());
+        assert!(bridge.reads.scope().is_none());
+        let reply = bridge
+            .replies
+            .try_iter()
+            .find(|reply| reply.request == read)
+            .unwrap();
+        assert!(reply.terminal && reply.result.is_err());
+        assert_eq!(reply.epoch, epoch);
+    }
 
     #[test]
     fn replies_cannot_cross_project_revision_fixture_or_candidate_context() {
