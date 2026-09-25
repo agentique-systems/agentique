@@ -6,8 +6,8 @@ use crate::{
 };
 use agq_kernel::ElementId;
 use agq_modeling_view::{
-    ExplanationNodeKind, ExplanationProjection, FeatureSummary, RelationshipFamily, ViewEdge,
-    ViewOrigin,
+    ExplanationNodeKind, ExplanationProjection, FeatureProvenance, FeatureSummary,
+    RelationshipFamily, ViewEdge, ViewOrigin,
 };
 use agq_studio_scene::{NodeCategory, SceneTarget};
 use eframe::egui::{self, RichText};
@@ -347,6 +347,7 @@ impl StudioApp {
                 let features = section_features(
                     &inspector.owned_features,
                     &inspector.effective_features,
+                    &inspector.feature_provenance,
                     categories,
                 );
                 if !features.is_empty() {
@@ -354,8 +355,15 @@ impl StudioApp {
                     for (feature, inherited) in features {
                         if inherited {
                             self.inherited_feature_link(ui, feature);
-                        } else {
+                        } else if inspector.feature_provenance.contains_key(&feature.id) {
                             self.feature_link(ui, feature);
+                        } else {
+                            ui.horizontal_wrapped(|ui| {
+                                self.feature_link(ui, feature);
+                                ui.label(muted("Origin unknown", theme).small()).on_hover_text(
+                                    "This owned feature has no provenance metadata in the current inspector response.",
+                                );
+                            });
                         }
                     }
                 }
@@ -380,6 +388,7 @@ impl StudioApp {
             }
             ui.collapsing("Effective semantics", |ui| {
                 for (label, features) in [
+                    ("Owned features", &inspector.owned_features),
                     ("Effective features", &inspector.effective_features),
                     ("Specializes", &inspector.specializations),
                     ("Subsets", &inspector.subsettings),
@@ -388,7 +397,19 @@ impl StudioApp {
                     if !features.is_empty() {
                         ui.label(muted(label, theme).small());
                         for feature in features {
-                            self.feature_link(ui, feature);
+                            ui.horizontal_wrapped(|ui| {
+                                self.feature_link(ui, feature);
+                                if let Some(provenance) =
+                                    inspector.feature_provenance.get(&feature.id)
+                                {
+                                    ui.label(muted(origin_label(provenance.origin), theme).small())
+                                        .on_hover_text(if provenance.source_available {
+                                            "Source is available in this revision."
+                                        } else {
+                                            "No source location is available in this revision."
+                                        });
+                                }
+                            });
                         }
                     }
                 }
@@ -653,12 +674,14 @@ impl StudioApp {
     }
 }
 
-/// The main engineering sections include effective ports/interfaces, retaining
-/// their original canonical IDs. Owned features take precedence; equal names
-/// are not equal identities. Other inherited details stay in Effective semantics.
+/// Primary sections show named authored features, including inherited ports and
+/// interfaces outside the scene's current depth. Unknown owned provenance stays
+/// visible; unknown inherited and known standard/derived details remain in
+/// Effective semantics. Owned IDs take precedence; names never establish origin.
 fn section_features<'a>(
     owned: &'a [FeatureSummary],
     effective: &'a [FeatureSummary],
+    provenance: &std::collections::BTreeMap<ElementId, FeatureProvenance>,
     categories: &[NodeCategory],
 ) -> Vec<(&'a FeatureSummary, bool)> {
     let mut seen = std::collections::BTreeSet::new();
@@ -676,8 +699,13 @@ fn section_features<'a>(
                 })
                 .map(|feature| (feature, true)),
         )
-        .filter(|(feature, _)| {
+        .filter(|(feature, inherited)| {
             categories.contains(&NodeCategory::from_semantic_kind(&feature.semantic_kind))
+                && provenance
+                    .get(&feature.id)
+                    .map_or(!*inherited, |provenance| {
+                        provenance.origin == ViewOrigin::Authored && provenance.has_declared_name
+                    })
                 && seen.insert(feature.id)
         })
         .collect()
@@ -950,9 +978,11 @@ mod tests {
             feature(3, "access", "InterfaceUsage"),
             feature(4, "implementation", "PartUsage"),
         ];
+        let provenance = authored_provenance(owned.iter().chain(&effective));
         let rows = section_features(
             &owned,
             &effective,
+            &provenance,
             &[NodeCategory::Port, NodeCategory::Interface],
         );
         let actual: Vec<_> = rows
@@ -969,7 +999,86 @@ mod tests {
         );
         assert!(std::ptr::eq(rows[0].0, &owned[0]));
         assert!(std::ptr::eq(rows[1].0, &effective[1]));
-        assert!(section_features(&owned, &effective, &[NodeCategory::Part]).is_empty());
+        assert!(
+            section_features(&owned, &effective, &provenance, &[NodeCategory::Part]).is_empty()
+        );
+    }
+
+    fn authored_provenance<'a>(
+        features: impl Iterator<Item = &'a FeatureSummary>,
+    ) -> std::collections::BTreeMap<ElementId, FeatureProvenance> {
+        features
+            .map(|feature| {
+                (
+                    feature.id,
+                    FeatureProvenance {
+                        origin: ViewOrigin::Authored,
+                        source_available: true,
+                        has_declared_name: true,
+                    },
+                )
+            })
+            .collect()
+    }
+
+    #[test]
+    fn primary_features_use_canonical_provenance_without_scene_or_name_guesses() {
+        let owned = vec![
+            feature(1, "localPart", "PartUsage"),
+            feature(2, "localPort", "PortUsage"),
+            feature(3, "unnamed owned fallback", "PortUsage"),
+            feature(4, "owned standard", "PortUsage"),
+        ];
+        let effective = vec![
+            owned[1].clone(),
+            feature(5, "repositoryRevisions", "PortUsage"),
+            feature(6, "Connector", "InterfaceUsage"),
+            feature(7, "repositoryRevisions", "PortUsage"),
+            feature(8, "derivedNamedPort", "PortUsage"),
+            feature(9, "generatedNamedPort", "PortUsage"),
+            feature(10, "unknown inherited", "PortUsage"),
+            feature(11, "PortUsage", "PortUsage"),
+        ];
+        let unchanged_owned = owned.clone();
+        let unchanged_effective = effective.clone();
+        let mut provenance = authored_provenance(owned.iter().chain(&effective));
+        let id = ElementId::from_u128;
+        // Absence from provenance does not erase a directly owned component/port.
+        provenance.remove(&id(1));
+        provenance.remove(&id(2));
+        provenance.remove(&id(10));
+        provenance.get_mut(&id(3)).unwrap().has_declared_name = false;
+        provenance.get_mut(&id(4)).unwrap().origin = ViewOrigin::Standard;
+        provenance.get_mut(&id(7)).unwrap().origin = ViewOrigin::Standard;
+        provenance.get_mut(&id(8)).unwrap().origin = ViewOrigin::Derived;
+        provenance.get_mut(&id(9)).unwrap().origin = ViewOrigin::Generated;
+        provenance.get_mut(&id(11)).unwrap().has_declared_name = false;
+        // A source link is optional for canonical authored records. No visible
+        // scene is consulted, including for the inherited repository port.
+        provenance.get_mut(&id(6)).unwrap().source_available = false;
+        let rows = section_features(
+            &owned,
+            &effective,
+            &provenance,
+            &[NodeCategory::Port, NodeCategory::Interface],
+        );
+        assert_eq!(
+            rows.iter()
+                .map(|(f, inherited)| (f.id, *inherited))
+                .collect::<Vec<_>>(),
+            vec![(id(2), false), (id(5), true), (id(6), true)]
+        );
+        assert!(std::ptr::eq(rows[1].0, &effective[1]));
+        assert_eq!(
+            section_features(&owned, &effective, &provenance, &[NodeCategory::Part])
+                .iter()
+                .map(|(f, _)| f.id)
+                .collect::<Vec<_>>(),
+            vec![id(1)]
+        );
+        // Classification never removes the exact facts from advanced inspection.
+        assert_eq!(owned, unchanged_owned);
+        assert_eq!(effective, unchanged_effective);
     }
 
     #[test]

@@ -439,6 +439,9 @@ fn displayable(model: &ModelView, id: ElementId) -> bool {
     if is(model, id, c::RELATIONSHIP) && !is(model, id, c::FEATURE) {
         return false;
     }
+    has_declared_name(model, id)
+}
+pub(crate) fn has_declared_name(model: &ModelView, id: ElementId) -> bool {
     [p::ELEMENT_DECLARED_NAME, p::ELEMENT_DECLARED_SHORT_NAME]
         .iter()
         .any(|property| {

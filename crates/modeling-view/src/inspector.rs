@@ -3,7 +3,7 @@ use agq_kerml::{classes as c, properties as p};
 use agq_kerml_semantics::{Completeness, KerMlQueries, QueryResult};
 use agq_kernel::{DocumentId, SourceRevisionId, provenance::FactKey};
 use agq_modeling_workspace::ProjectRevision;
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 
 /// Exact half-open UTF-8 source range for the selected revision.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -40,6 +40,17 @@ impl QuerySummary {
     }
 }
 
+/// Revision-bound provenance for an original canonical feature, independent of
+/// whether the current spatial projection includes that feature.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct FeatureProvenance {
+    /// Exact accepted-library membership takes precedence over record origin.
+    pub origin: ViewOrigin,
+    pub source_available: bool,
+    /// A declared name or short name exists; a metaclass display fallback is not a name.
+    pub has_declared_name: bool,
+}
+
 /// Contextual semantic inspection. Raw metamodel slot tables are intentionally absent.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ElementInspector {
@@ -49,6 +60,10 @@ pub struct ElementInspector {
     pub effective_types: Vec<FeatureSummary>,
     pub owned_features: Vec<FeatureSummary>,
     pub effective_features: Vec<FeatureSummary>,
+    /// Provenance of owned/effective features in this same revision. Missing
+    /// entries mean unknown provenance, including older serialized inspectors.
+    #[serde(default)]
+    pub feature_provenance: BTreeMap<ElementId, FeatureProvenance>,
     pub specializations: Vec<FeatureSummary>,
     pub subsettings: Vec<FeatureSummary>,
     pub redefinitions: Vec<FeatureSummary>,
@@ -109,6 +124,21 @@ pub fn inspect(revision: &ProjectRevision, id: ElementId) -> Result<ElementInspe
         specializations = general.value.iter().map(|id| summary(model, *id)).collect();
         queries.push(QuerySummary::of("Specializations", &general));
     }
+    let feature_provenance = owned_features
+        .iter()
+        .chain(&effective_features)
+        .filter_map(|feature| {
+            feature_provenance(
+                model,
+                revision.accepted_sysml().overlay().model(),
+                feature.id,
+                revision
+                    .source_for_fact(FactKey::Element(feature.id))
+                    .is_some(),
+            )
+            .map(|provenance| (feature.id, provenance))
+        })
+        .collect();
     let local: BTreeSet<_> = model
         .elements()
         .filter(|r| {
@@ -147,6 +177,7 @@ pub fn inspect(revision: &ProjectRevision, id: ElementId) -> Result<ElementInspe
         effective_types,
         owned_features,
         effective_features,
+        feature_provenance,
         specializations,
         subsettings,
         redefinitions,
@@ -157,6 +188,24 @@ pub fn inspect(revision: &ProjectRevision, id: ElementId) -> Result<ElementInspe
         source,
         queries,
         profile,
+    })
+}
+
+fn feature_provenance(
+    model: &agq_kernel::ModelView,
+    accepted_standard: &agq_kernel::ModelView,
+    id: ElementId,
+    source_available: bool,
+) -> Option<FeatureProvenance> {
+    let record = model.element(id)?;
+    Some(FeatureProvenance {
+        origin: if accepted_standard.element(id).is_some() {
+            ViewOrigin::Standard
+        } else {
+            provenance(record.origin())
+        },
+        source_available,
+        has_declared_name: has_declared_name(model, id),
     })
 }
 
@@ -197,6 +246,58 @@ mod tests {
     use crate::projection::tests::{fixture_queries, references, semantic_fixture};
     use agq_kernel::{ElementRecord, value::Value};
     use agq_sysml::classes as sc;
+
+    #[test]
+    fn feature_metadata_uses_exact_standard_identity_and_canonical_declared_names() {
+        let snapshot = semantic_fixture(
+            &[
+                (1, sc::PORT_USAGE),
+                (2, sc::PORT_USAGE),
+                (3, sc::INTERFACE_USAGE),
+                (4, sc::PORT_USAGE),
+            ],
+            &[
+                (
+                    1,
+                    p::ELEMENT_DECLARED_NAME,
+                    vec![Value::String("repositoryRevisions".into())],
+                ),
+                (
+                    3,
+                    p::ELEMENT_DECLARED_NAME,
+                    vec![Value::String("Connector".into())],
+                ),
+                (
+                    4,
+                    p::ELEMENT_DECLARED_SHORT_NAME,
+                    vec![Value::String("\u{0394}rev".into())],
+                ),
+            ],
+        );
+        // Imported membership is represented by canonical IDs, independent of
+        // display labels and of how the accepted overlay recorded its origin.
+        let standard = semantic_fixture(&[(1, sc::PORT_USAGE)], &[]);
+        let id = ElementId::from_u128;
+        let metadata = |element, source| {
+            feature_provenance(snapshot.model(), standard.model(), id(element), source).unwrap()
+        };
+        assert_eq!(
+            metadata(1, true),
+            FeatureProvenance {
+                origin: ViewOrigin::Standard,
+                source_available: true,
+                has_declared_name: true,
+            }
+        );
+        assert_eq!(metadata(2, false).origin, ViewOrigin::Authored);
+        assert!(!metadata(2, false).has_declared_name);
+        assert_eq!(name(snapshot.model(), id(2)), "PortUsage");
+        assert_eq!(metadata(3, false).origin, ViewOrigin::Authored);
+        assert!(metadata(3, false).has_declared_name);
+        assert!(!metadata(3, false).source_available);
+        assert!(metadata(4, true).has_declared_name);
+        assert!(feature_provenance(snapshot.model(), standard.model(), id(99), false).is_none());
+    }
 
     #[test]
     fn inspector_and_scene_share_canonical_connection_and_query_completeness() {

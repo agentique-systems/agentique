@@ -1,0 +1,27 @@
+{
+  "kind": "source-only checks; compilation, tests and real runtime intentionally not run",
+  "results": [
+    {
+      "command": "rustfmt --edition 2024 --check crates/modeling-view/src/inspector.rs crates/modeling-view/src/projection.rs crates/studio-native/src/inspector.rs crates/studio-native/src/real_automation.rs",
+      "status": "fulfilled",
+      "value": {
+        "chunk_id": "4b8f6f",
+        "wall_time_seconds": 0.3096778,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "command": "git diff --check",
+      "status": "fulfilled",
+      "value": {
+        "chunk_id": "8775c5",
+        "wall_time_seconds": 0.118219,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    }
+  ]
+}

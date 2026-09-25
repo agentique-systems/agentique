@@ -2448,6 +2448,7 @@ mod tests {
             effective_types: vec![],
             owned_features: vec![],
             effective_features: vec![],
+            feature_provenance: Default::default(),
             specializations: vec![],
             subsettings: vec![],
             redefinitions: vec![],
