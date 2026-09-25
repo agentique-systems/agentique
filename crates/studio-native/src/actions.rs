@@ -849,12 +849,8 @@ impl StudioApp {
                     self.invalidate_inspection();
                     let families = self.families.iter().copied().collect();
                     let standards = self.include_standard;
-                    let mut view = ViewDefinition::semantic_graph();
-                    view.graph_scope = agq_modeling_view::GraphScope::DependencyNeighborhood;
-                    view.focus = Some(element);
-                    view.depth = 2;
-                    view.include_standard_library = standards;
-                    view.relationship_families = families;
+                    let view =
+                        ViewDefinition::dependency_neighborhood(element, families, 2, standards);
                     self.fit_pending = true;
                     let requested = view.clone();
                     self.scene_request = self.enqueue(Box::new(move |p| {

@@ -190,15 +190,12 @@ impl StudioPlatform {
     ) -> Result<ViewProjection> {
         self.project(
             binding,
-            &ViewDefinition {
-                name: "Dependency neighborhood".into(),
-                graph_scope: agq_modeling_view::GraphScope::DependencyNeighborhood,
-                focus: Some(selection),
-                relationship_families: families,
-                depth: depth.min(8),
+            &ViewDefinition::dependency_neighborhood(
+                selection,
+                families,
+                depth,
                 include_standard_library,
-                ..ViewDefinition::semantic_graph()
-            },
+            ),
         )
     }
 }

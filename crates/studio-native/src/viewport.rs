@@ -285,8 +285,13 @@ impl StudioApp {
                         bounds.min + Vec2::new(inset, 40.0 * scale),
                         Align2::LEFT_TOP,
                         format!(
-                            "{} parts{}",
+                            "{} part{}{}",
                             node.semantic.counts.parts,
+                            if node.semantic.counts.parts == 1 {
+                                ""
+                            } else {
+                                "s"
+                            },
                             if node.collapsed { " · collapsed" } else { "" }
                         ),
                         FontId::proportional((10.0 * scale).clamp(9.0, 14.0)),
@@ -327,10 +332,15 @@ impl StudioApp {
                     let subtitle = if node.semantic.counts.ports > 0 {
                         let parts = node.semantic.counts.parts;
                         format!(
-                            "{} ports{}",
+                            "{} port{}{}",
                             node.semantic.counts.ports,
+                            if node.semantic.counts.ports == 1 {
+                                ""
+                            } else {
+                                "s"
+                            },
                             if parts > 0 {
-                                format!(" · {parts} parts")
+                                format!(" · {parts} part{}", if parts == 1 { "" } else { "s" })
                             } else {
                                 String::new()
                             }

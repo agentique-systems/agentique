@@ -131,6 +131,24 @@ impl ViewDefinition {
             ..Self::architecture()
         }
     }
+    /// Exact bounded dependency lens shared by requesters and projectors.
+    /// Reached package owners supply context without expanding their siblings.
+    pub fn dependency_neighborhood(
+        selection: ElementId,
+        relationship_families: Vec<RelationshipFamily>,
+        depth: u8,
+        include_standard_library: bool,
+    ) -> Self {
+        Self {
+            name: "Dependency neighborhood".into(),
+            graph_scope: GraphScope::DependencyNeighborhood,
+            focus: Some(selection),
+            relationship_families,
+            depth: depth.min(8),
+            include_standard_library,
+            ..Self::semantic_graph()
+        }
+    }
     /// Requirement context is selected by metaclass, not label text.
     pub fn requirements() -> Self {
         Self {

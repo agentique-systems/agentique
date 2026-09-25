@@ -282,8 +282,43 @@ fn candidate_pair_uses_requested_graph_scope_instead_of_old_active_depth() {
 }
 
 #[test]
-fn same_request_wrong_scope_or_depth_cannot_replace_current_projection() {
-    for wrong_scope in [false, true] {
+fn agent_dependency_command_accepts_the_exact_shared_platform_lens() {
+    let mut app = application();
+    let subject = app.scene.nodes[0].id();
+    app.selection
+        .select(agq_studio_scene::SceneTarget::Node(subject), false);
+    let context = app.work_context();
+    app.execute(
+        crate::commands::CommandId::Dependencies,
+        &eframe::egui::Context::default(),
+    );
+    // This constructor is also used by StudioPlatform::dependencies, including
+    // its name. The full ViewDefinition fence is deliberately retained.
+    let returned = ViewDefinition::dependency_neighborhood(
+        subject,
+        app.families.iter().copied().collect(),
+        2,
+        app.include_standard,
+    );
+    let (request, requested) = app.requested_definition.clone().unwrap();
+    assert_eq!(requested, returned);
+    assert_eq!(requested.name, "Dependency neighborhood");
+    let projection = with_view(app.projection.clone(), &returned);
+    app.receive_replies([reply(
+        request,
+        context,
+        false,
+        Ok(Output::Projection(projection)),
+    )]);
+    assert_eq!(app.projection.view, returned);
+    assert!(app.agent_activity.as_ref().unwrap().complete);
+    assert!(app.dependencies.is_some());
+    assert!(app.requested_definition.is_none());
+}
+
+#[test]
+fn same_request_wrong_scope_depth_or_name_cannot_replace_current_projection() {
+    for wrong_field in ["scope", "depth", "name"] {
         let mut app = application();
         let before = app.projection.clone();
         let generation = app.generation;
@@ -292,10 +327,11 @@ fn same_request_wrong_scope_or_depth_cannot_replace_current_projection() {
         app.request_projection_definition(desired.clone());
         let request = assert_requested(&app, &desired);
         let mut wrong = desired;
-        if wrong_scope {
-            wrong.graph_scope = GraphScope::Neighborhood;
-        } else {
-            wrong.depth = 1;
+        match wrong_field {
+            "scope" => wrong.graph_scope = GraphScope::Neighborhood,
+            "depth" => wrong.depth = 1,
+            "name" => wrong.name = "Another view".into(),
+            _ => unreachable!(),
         }
         let payload = with_view(before.clone(), &wrong);
         app.receive_replies([reply(
