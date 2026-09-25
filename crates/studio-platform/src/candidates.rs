@@ -176,7 +176,25 @@ impl StudioPlatform {
             ));
         }
         stored.phase = CandidatePhase::CommitUnresolved;
-        let receipt = stored.candidate.commit(&self.service, &self.policy)?;
+        let receipt = match stored.candidate.commit(&self.service, &self.policy) {
+            Ok(receipt) => receipt,
+            Err(error) => {
+                // An explicit atomic CAS refusal proves this candidate was not
+                // committed. It can be cancelled/reprepared. Other errors keep
+                // the exact operation for acknowledgement reconciliation.
+                if matches!(
+                    &error,
+                    agq_modeling_agent::AgentError::Service(
+                        agq_modeling_service::ServiceError::Repository(
+                            agq_modeling_repository::RepositoryError::Conflict { .. }
+                        )
+                    )
+                ) {
+                    stored.phase = CandidatePhase::Validated;
+                }
+                return Err(error.into());
+            }
+        };
         stored.receipt = Some(receipt.clone());
         stored.phase = CandidatePhase::Committed;
         Ok(receipt)

@@ -32,6 +32,8 @@ An unresolved acknowledgement cannot be cancelled or rewritten. `cancel` drops
 an uncommitted candidate; it never creates semantic undo history. Eight active
 review handles and 32 total handles bound process-local retention. Durable
 operation receipts remain in the repository.
+An explicit atomic CAS conflict proves the commit was refused, so the candidate
+remains validated and may be cancelled or replaced with a fresh reviewed proposal.
 
 `StudioPlatform::new(service, AgentPolicy::agent(...))` supports an embedded
 participant with Read + Propose only. Policies are trusted host inputs, never

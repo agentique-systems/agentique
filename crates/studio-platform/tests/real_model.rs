@@ -106,9 +106,28 @@ fn native_in_process_self_model_candidate_commit_and_restore() {
         validated.projection.revision_id,
         candidate.projection.revision_id
     );
+    let competing = platform
+        .propose(
+            context,
+            ModelCommand::CreatePartUsage {
+                owner,
+                name: "competingObserver".into(),
+                definition: None,
+            },
+            &definition,
+        )
+        .unwrap();
+    platform.validate(competing.id, &definition).unwrap();
     let receipt = platform.commit(candidate.id).unwrap();
     assert_eq!(receipt, platform.commit(candidate.id).unwrap());
     assert!(platform.cancel(candidate.id).is_err());
+    assert!(
+        platform.commit(competing.id).is_err(),
+        "durable CAS protects the moved head"
+    );
+    platform
+        .cancel(competing.id)
+        .expect("explicit CAS refusal permits cancellation");
     assert!(
         !platform
             .compare(project.id, revision, receipt.revision_id, &definition)
