@@ -211,10 +211,14 @@ impl StudioApp {
                         self.fixture = None;
                         self.ready = false;
                         self.setup_reason = "Loading the selected project revision".into();
-                        let restored = self.restore.as_ref().filter(|session| {
+                        // All saved query and scene settings share one exact
+                        // project/revision fence. Discard a stale session before
+                        // definition() can use its hidden IDs or depth as well.
+                        self.restore = self.restore.take().filter(|session| {
                             session.project == Some(history.project.id)
                                 && session.revision == revision
                         });
+                        let restored = self.restore.as_ref();
                         self.focus = restored.and_then(|session| session.focus);
                         self.world = restored.map_or(World::System, |session| session.world);
                         self.history = Some(history);
@@ -229,6 +233,10 @@ impl StudioApp {
                         self.expanded = None;
                         self.dependencies = None;
                         self.collapsed.clear();
+                        self.families = agq_modeling_view::RelationshipFamily::all()
+                            .into_iter()
+                            .collect();
+                        self.include_standard = false;
                         if let Some(saved) = self
                             .restore
                             .as_ref()
@@ -1056,6 +1064,118 @@ mod tests {
             app.candidate.as_ref().unwrap().phase,
             Some(CandidatePhase::Validated)
         );
+    }
+
+    #[test]
+    fn project_history_discards_unmatched_session_and_previous_project_filters() {
+        for mismatch in ["project", "revision", "no session"] {
+            let mut app = application();
+            let binding = app.binding.unwrap();
+            let stale_id = agq_kernel::ElementId::from_u128(0xdead);
+            app.world = World::Graph;
+            app.focus = Some(stale_id);
+            app.families.clear();
+            app.include_standard = true;
+            app.collapsed.insert(stale_id);
+            app.expanded = Some([stale_id].into_iter().collect());
+            // A previously loaded same-kind projection also carried local
+            // omissions. Those are not the query for a newly opening project.
+            app.projection.view.depth = 7;
+            app.projection.view.hidden_elements = vec![stale_id];
+            let mut session = crate::session::Session {
+                version: 1,
+                project: Some(binding.project),
+                revision: binding.revision,
+                fixture: None,
+                world: app.world,
+                focus: app.focus,
+                camera: app.camera,
+                layout: app.layout.clone(),
+                dark: true,
+                high_contrast: false,
+                reduced_motion: false,
+                presentation: Some(app.capture_presentation()),
+            };
+            match mismatch {
+                "project" => session.project = Some(agq_modeling_repository::ProjectId::new()),
+                "revision" => session.revision = agq_modeling_workspace::ProjectRevisionId::new(),
+                _ => {}
+            }
+            app.restore = (mismatch != "no session").then_some(session);
+            app.project_request = 901;
+            let scope = app.work_context();
+            let history = history(&app, binding.revision);
+            app.receive_replies([reply(901, scope, false, Ok(Output::History(history)))]);
+            assert_eq!(app.binding, Some(binding), "{mismatch}");
+            assert!(app.restore.is_none(), "{mismatch}");
+            assert_eq!(app.world, World::System, "{mismatch}");
+            assert_eq!(app.focus, None, "{mismatch}");
+            assert_eq!(
+                app.families,
+                agq_modeling_view::RelationshipFamily::all()
+                    .into_iter()
+                    .collect(),
+                "{mismatch}"
+            );
+            assert!(!app.include_standard, "{mismatch}");
+            assert!(app.collapsed.is_empty(), "{mismatch}");
+            assert!(app.expanded.is_none(), "{mismatch}");
+            assert!(!app.ready, "{mismatch}");
+            let queried = app.definition();
+            assert!(queried.hidden_elements.is_empty(), "{mismatch}");
+            assert_eq!(
+                queried.depth,
+                agq_modeling_view::ViewDefinition::architecture().depth,
+                "{mismatch}"
+            );
+        }
+    }
+
+    #[test]
+    fn project_history_retains_exact_matching_saved_query_before_projection_arrives() {
+        let mut app = application();
+        let binding = app.binding.unwrap();
+        let focus = app.projection.nodes[0].id;
+        let hidden = app.projection.nodes[1].id;
+        app.world = World::Graph;
+        app.focus = Some(focus);
+        app.families = [agq_modeling_view::RelationshipFamily::Typing]
+            .into_iter()
+            .collect();
+        app.include_standard = true;
+        app.collapsed.insert(focus);
+        app.expanded = Some([focus].into_iter().collect());
+        let mut saved = app.capture_presentation();
+        saved.definition.depth = 5;
+        saved.definition.hidden_elements = vec![hidden];
+        let expected = saved.definition.clone();
+        app.restore = Some(crate::session::Session {
+            version: 1,
+            project: Some(binding.project),
+            revision: binding.revision,
+            fixture: None,
+            world: World::Graph,
+            focus: Some(focus),
+            camera: app.camera,
+            layout: app.layout.clone(),
+            dark: true,
+            high_contrast: false,
+            reduced_motion: false,
+            presentation: Some(saved),
+        });
+        app.project_request = 902;
+        let scope = app.work_context();
+        let history = history(&app, binding.revision);
+        app.receive_replies([reply(902, scope, false, Ok(Output::History(history)))]);
+        assert!(!app.ready);
+        assert!(app.restore.is_some());
+        assert_eq!(app.world, World::Graph);
+        assert_eq!(app.focus, Some(focus));
+        assert_eq!(app.definition(), expected);
+        assert_eq!(app.collapsed, [focus].into_iter().collect());
+        assert_eq!(app.expanded, Some([focus].into_iter().collect()));
+        // The existing DTO has not been relabeled to pretend this query arrived.
+        assert_ne!(app.projection.view, expected);
     }
 
     #[test]

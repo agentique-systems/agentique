@@ -250,7 +250,7 @@ impl StudioApp {
             .filter(|saved| saved.world == self.world)
         {
             view = saved.definition.clone();
-        } else if self.active_projection().view.kind == view.kind {
+        } else if self.ready && self.active_projection().view.kind == view.kind {
             view.depth = self.active_projection().view.depth;
             view.hidden_elements = self.active_projection().view.hidden_elements.clone();
         }

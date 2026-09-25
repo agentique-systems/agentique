@@ -1,0 +1,17 @@
+{
+  "command": [
+    "rustfmt",
+    "--edition",
+    "2024",
+    "--check",
+    "crates/studio-native/src/updates.rs",
+    "crates/studio-native/src/actions.rs"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-state-recovery",
+  "started_utc": "2026-09-25T18:00:21.578653+00:00",
+  "elapsed_seconds": 0.203,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/session-scope-native-format.txt",
+  "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "build_environment": {}
+}
