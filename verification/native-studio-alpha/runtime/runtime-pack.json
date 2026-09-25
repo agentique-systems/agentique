@@ -1,0 +1,26 @@
+{
+  "command": [
+    "C:/Users/phili/github/agentique-systems/agentique/target/native-alpha/release/agq-publications.exe",
+    "--root",
+    "C:/Users/phili/github/agentique-systems/agentique",
+    "pack",
+    "--kerml-cache",
+    "C:/Users/phili/github/agentique-systems/agentique-alpha-runtime/verification/generated/native-studio-alpha/rematerialized-kerml/accepted.cache",
+    "--systems-cache",
+    "C:/Users/phili/github/agentique-systems/agentique-alpha-runtime/verification/generated/native-studio-alpha/rematerialized-systems/finalized/canonical.publication.zip",
+    "--output",
+    "C:/Users/phili/github/agentique-systems/agentique-alpha-runtime/verification/generated/native-studio-alpha/runtime-package/accepted-runtime.agq-runtime"
+  ],
+  "cwd": "C:/Users/phili/github/agentique-systems/agentique",
+  "started_utc": "2026-09-25T18:21:40.713092+00:00",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "source_commit": "23b7910dc79faac0d53a9d0113954a0c0fa6ada9",
+  "working_diff_sha256": "550ff6574be4e6e0de8c5812eaff4d33bafd8bb9f3c2a24c47528438dd417601",
+  "exit_code": 0,
+  "elapsed_seconds": 86.453,
+  "peak_rss_bytes": 4839034880,
+  "peak_private_bytes": 5121925120,
+  "memory_scope": "direct child process sampled at 1 second; excludes descendant compilers",
+  "output_sha256": "1dbed1f6b82483f9292e2cbe5482948d9e30574a7952db86396a6eea0b719522",
+  "raw_output": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\native-studio-alpha\\runtime\\runtime-pack.log"
+}

@@ -52,9 +52,24 @@ cannot be proved to be only a random snapshot label. The new finite transport
 receipt pins `ec9d1c78d864d4ad2f671f93371c1988bcb8b952651b82afb9f3624b0756b828`
 under the original semantic receipt SHA-256; it does not replace accepted
 publication authority. `systems-rematerialized-content.json` retains the
-actual snapshot label and every original/new entry comparison. At this
-checkpoint, ordinary current-facade authentication and runtime packaging remain
-the next gates.
+actual snapshot label and every original/new entry comparison.
+
+The current application installer then passed all three ordinary runtime gates:
+`pack` in 86.453 seconds, independent `verify` in 84.156 seconds and normal-store
+`install` in 75.156 seconds. Every command restored both language facades without
+producer replay. Verification separately measured 41,610 ms for KerML,
+38,800 ms for Systems and 1,356 ms for transport checks. Installation measured
+36,406 ms, 34,756 ms and 1,146 ms respectively. Peak sampled process RSS was
+4,839,034,880 / 4,975,308,800 / 5,021,249,536 bytes. These are cache authentication
+timings, not Native Studio candidate or real-model reconstruction measurements.
+
+`runtime-manifest.json` preserves the exact package manifest;
+`runtime-verification.json` retains the actual commands, binary identity, results
+and normal store location. The 610,190,454-byte package has SHA-256
+`37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026`.
+It is installed at
+`C:/Users/phili/.agentique/publications/633ea89eb39f8a9e301f2bd5199994455cdf28c8d373fdbd69be30a1402ebcf4`.
+Native real-model acceptance is tracked separately by the integration stream.
 
 The original scoped development preflight was deliberately stopped after
 1,046.672 seconds, exit 15, after checking 20,157 subjects with zero findings and
@@ -97,5 +112,6 @@ from source review or generated receipts.
 
 The manual `runtime-asset` workflow authenticates an explicit draft asset against
 its independently recorded transport SHA-256 and both language facades. It has
-not been dispatched and does not publish releases. A downloadable runtime is not
-claimed until a real pair passes and is packaged.
+not been dispatched and does not publish releases. `distribution-handoff.md` and
+`runtime-release-notes.md` prepare the exact draft asset handoff; successful
+upload and independent downloaded-byte verification remain separate evidence.

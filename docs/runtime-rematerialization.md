@@ -147,8 +147,10 @@ and snapshot revision `36f83b80-aa6a-4d4b-bd3c-c32117e1104e`.
 The new receipt pins only this transport under the unchanged v3 authority.
 [`systems-rematerialized-content.json`](../verification/native-studio-alpha/runtime/systems-rematerialized-content.json)
 retains actual archive and entry hashes. This preparation record deliberately
-does not claim runtime authentication; the packaging/verification commands must
-still restore both ordinary language facades.
+does not claim runtime authentication. The subsequent ordinary pack, separate
+verify and normal-store install all passed; see the actual
+[`runtime-verification.json`](../verification/native-studio-alpha/runtime/runtime-verification.json).
+Each command authenticated both current language facades without producer replay.
 
 ## Retain the result
 

@@ -11,7 +11,14 @@ Proposed tag: `runtime-kerml-v9-sysml-v3-bundle1`.
 
 Proposed title: `Agentique accepted runtime: KerML v9 / SysML v3`.
 
-Assets prepared after successful ordinary facade gates:
+All three ordinary facade gates passed. Actual package SHA-256:
+`37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026`.
+Package size: 610,190,454 bytes. Bundle identity:
+`633ea89eb39f8a9e301f2bd5199994455cdf28c8d373fdbd69be30a1402ebcf4`.
+
+Assets are prepared in
+`verification/generated/native-studio-alpha/runtime-package/` of the runtime
+worktree:
 
 - `accepted-runtime.agq-runtime`: the actual authenticated package.
 - `runtime-manifest.json`: the package's exact content-addressed manifest.

@@ -5,12 +5,16 @@ KerML Operational v9 and SysML Operational v3 receipts are the semantic authorit
 The runtime bundle packages existing accepted bytes and authenticates them with
 the existing language facades. It does not run producers or regenerate standards.
 
-**Availability:** no runtime Release asset was found during First Light work.
-The commands below are the release procedure, not a claim that a downloadable
-package exists. A maintainer must recover the two accepted caches from retained
-storage or complete the explicitly authorized [exact accepted-cache
-rematerialization](runtime-rematerialization.md) before a package can be issued.
-See the [asset search record](../verification/summaries/agentique-studio-first-light/asset-search.md).
+**Availability:** the 2026-09-25 [exact accepted-cache rematerialization](runtime-rematerialization.md)
+succeeded. Both current language facades passed ordinary packaging, separate
+bundle verification and normal-store installation. The resulting
+`accepted-runtime.agq-runtime` is 610,190,454 bytes with SHA-256
+`37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026`.
+The [manifest](../verification/native-studio-alpha/runtime/runtime-manifest.json)
+and [actual verification record](../verification/native-studio-alpha/runtime/runtime-verification.json)
+retain the accepted identities and command results. Remote draft distribution
+is a separate [handoff](../verification/native-studio-alpha/runtime/distribution-handoff.md);
+these local results alone do not claim a downloadable release exists.
 
 ## Package and authenticate
 
