@@ -77,7 +77,11 @@ impl Runner {
                     .into(),
             );
         }
-        if !app.ready || app.fit_pending || app.gpu_stats.lock().is_ok_and(|s| s.draw_calls == 0) {
+        if !app.ready
+            || app.scene_builder.busy
+            || app.fit_pending
+            || app.gpu_stats.lock().is_ok_and(|s| s.draw_calls == 0)
+        {
             if app.frame_number > 600 {
                 return Err("Native stress fixture did not become ready".into());
             }

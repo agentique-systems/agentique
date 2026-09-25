@@ -20,6 +20,7 @@ pub enum CommandId {
     ExpandIncoming,
     ExpandBoth,
     CollapseNeighborhood,
+    ShowLoadedGraph,
     CreatePart,
     Compare,
     Validate,
@@ -38,6 +39,12 @@ pub struct Command {
 }
 
 pub const COMMANDS: &[Command] = &[
+    Command {
+        id: CommandId::ShowLoadedGraph,
+        label: "Show loaded graph overview",
+        shortcut: "",
+        description: "Remove neighborhood focus and show the current semantic projection",
+    },
     Command {
         id: CommandId::Focus,
         label: "Focus selection",

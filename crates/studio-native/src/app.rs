@@ -43,6 +43,12 @@ pub struct Candidate {
     pub source: String,
 }
 
+pub struct PendingPreparation {
+    pub request: u64,
+    pub started: Instant,
+    pub cancelled: bool,
+}
+
 pub struct StudioApp {
     pub args: Args,
     pub theme: Theme,
@@ -65,6 +71,7 @@ pub struct StudioApp {
     pub project_request: u64,
     pub projection: ViewProjection,
     pub scene: SemanticScene,
+    pub scene_builder: crate::scene_build::SceneBuilder,
     pub spatial: SpatialIndex,
     pub lookup: SceneLookup,
     pub outliner_order: Vec<usize>,
@@ -98,6 +105,7 @@ pub struct StudioApp {
     pub create_dialog: bool,
     pub new_part_name: String,
     pub candidate: Option<Candidate>,
+    pub preparation: Option<PendingPreparation>,
     pub comparison: ComparisonMode,
     pub compare_before: Option<ViewProjection>,
     pub dependencies: Option<BTreeSet<ElementId>>,
@@ -183,6 +191,7 @@ impl StudioApp {
             project_request: 0,
             projection,
             scene,
+            scene_builder: crate::scene_build::SceneBuilder::new(cc.egui_ctx.clone())?,
             spatial,
             lookup,
             outliner_order,
@@ -216,6 +225,7 @@ impl StudioApp {
             create_dialog: false,
             new_part_name: "newPart".into(),
             candidate: None,
+            preparation: None,
             comparison: ComparisonMode::Current,
             compare_before: None,
             dependencies: None,
@@ -263,13 +273,17 @@ impl StudioApp {
         self.binding.map(|b| b.project)
     }
     pub fn rebuild(&mut self) {
-        let started = Instant::now();
         if self.layout_world != self.world {
             self.layouts.insert(self.layout_world, self.layout.clone());
             self.layout = self.layouts.get(&self.world).cloned().unwrap_or_default();
             self.layout_world = self.world;
         }
         let mut projection = self.active_projection().clone();
+        let hidden: BTreeSet<_> = projection.view.hidden_elements.iter().copied().collect();
+        projection.nodes.retain(|node| !hidden.contains(&node.id));
+        projection
+            .edges
+            .retain(|edge| !hidden.contains(&edge.source) && !hidden.contains(&edge.target));
         projection
             .edges
             .retain(|e| self.families.contains(&e.family));
@@ -288,36 +302,60 @@ impl StudioApp {
             },
             hierarchy: matches!(self.world, World::System | World::History),
         };
-        match SemanticScene::from_projection(&projection, &options, Some(&self.layout)) {
-            Ok(mut scene) => {
-                if self.comparison == ComparisonMode::Diff {
-                    let before = self
-                        .candidate
+        let input = crate::scene_build::SceneInput {
+            projection,
+            before: (self.comparison == ComparisonMode::Diff)
+                .then(|| {
+                    self.candidate
                         .as_ref()
                         .map(|c| &c.before)
-                        .or(self.compare_before.as_ref());
-                    if let Some(before) = before
-                        && let Ok(parent) =
-                            SemanticScene::from_projection(before, &options, Some(&self.layout))
-                    {
-                        scene.apply_diff(&parent);
-                    }
-                }
-                self.layout = scene.memory().clone();
-                self.spatial = SpatialIndex::build(&scene);
-                self.lookup = SceneLookup::build(&scene);
-                self.outliner_order = hierarchy_order(&scene);
-                self.selection.reconcile(&scene);
-                self.scene = scene;
-                self.generation += 1;
-                self.batch_key = None;
-                self.inspector = None;
-                self.explanation = None;
-                self.source = None;
-                self.timing.scene_ms = started.elapsed().as_secs_f64() * 1000.0;
-                self.timing.layout_ms = self.timing.scene_ms;
+                        .or(self.compare_before.as_ref())
+                        .cloned()
+                })
+                .flatten(),
+            options,
+            memory: self.layout.clone(),
+        };
+        // Large same-revision presentation changes retain the explorable previous
+        // scene while layout, routing and indexes build on a dedicated worker.
+        // Revision swaps stay atomic until all revision-bound UI is staged.
+        if input.projection.nodes.len() >= 750
+            && input.projection.revision_id == self.scene.revision_id
+        {
+            if let Err(error) = self.scene_builder.request(input) {
+                self.status = error;
             }
-            Err(error) => self.status = error.to_string(),
+        } else {
+            self.scene_builder.invalidate();
+            match crate::scene_build::build(input) {
+                Ok(built) => self.install_scene(built),
+                Err(error) => self.status = error,
+            }
+        }
+    }
+    fn install_scene(&mut self, built: crate::scene_build::BuiltScene) {
+        self.layout = built.scene.memory().clone();
+        self.spatial = built.spatial;
+        self.lookup = built.lookup;
+        self.outliner_order = built.outliner;
+        self.selection.reconcile(&built.scene);
+        self.scene = built.scene;
+        self.generation += 1;
+        self.batch_key = None;
+        self.invalidate_inspection();
+        self.timing.scene_ms = built.build_ms;
+        self.timing.layout_ms = built.scene_ms;
+        self.timing.index_ms = built.index_ms;
+    }
+    fn receive_scene(&mut self) {
+        if let Some(result) = self.scene_builder.poll() {
+            match result {
+                Ok(built) => {
+                    self.install_scene(built);
+                    self.request_inspection();
+                }
+                Err(error) => self.status = format!("View rebuild failed: {error}"),
+            }
         }
     }
     pub fn active_projection(&self) -> &ViewProjection {
@@ -373,6 +411,7 @@ impl StudioApp {
             dark: self.theme.dark,
             high_contrast: self.theme.contrast,
             reduced_motion: self.reduced_motion,
+            presentation: Some(self.capture_presentation()),
         };
         if let Err(error) = session.save(&self.session_path) {
             self.status = format!("Presentation state was not saved: {error}");
@@ -400,11 +439,13 @@ impl eframe::App for StudioApp {
                 }
             }
         }
+        self.timing.raw_input(input);
     }
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.frame_number += 1;
         self.timing.frame();
         self.receive();
+        self.receive_scene();
         self.animate(ctx);
         self.keyboard(ctx);
         if self.ready {
@@ -420,6 +461,7 @@ impl eframe::App for StudioApp {
         if self.last_saved.elapsed() > Duration::from_secs(8) {
             self.save_session();
         }
+        self.timing.ui_complete();
     }
     fn on_exit(&mut self) {
         self.save_session();
@@ -530,7 +572,7 @@ pub fn short_revision(id: agq_modeling_workspace::ProjectRevisionId) -> String {
     )
 }
 
-fn hierarchy_order(scene: &SemanticScene) -> Vec<usize> {
+pub(crate) fn hierarchy_order(scene: &SemanticScene) -> Vec<usize> {
     let ids: BTreeSet<_> = scene.nodes.iter().map(|n| n.id()).collect();
     let mut children = BTreeMap::<Option<ElementId>, Vec<usize>>::new();
     for (index, node) in scene.nodes.iter().enumerate() {

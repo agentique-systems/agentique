@@ -14,6 +14,25 @@ impl StudioApp {
                 self.pending.remove(&reply.request);
                 self.bridge.complete(reply.request);
             }
+            if reply.terminal
+                && self
+                    .preparation
+                    .as_ref()
+                    .is_some_and(|p| p.request == reply.request)
+            {
+                let preparation = self.preparation.take().expect("matching preparation");
+                if preparation.cancelled {
+                    if let Ok(Output::Candidate(candidate)) = reply.result {
+                        self.enqueue_mutation(Box::new(move |platform| {
+                            platform.cancel(candidate.id)?;
+                            Ok(Output::Cancelled)
+                        }));
+                    }
+                    self.status =
+                        "Candidate preparation cancelled · current revision retained".into();
+                    continue;
+                }
+            }
             if let Some(context) = &reply.context {
                 if !context.matches(&self.work_context()) {
                     if reply.mutation {
@@ -64,10 +83,18 @@ impl StudioApp {
                     }
                 }
                 Ok(Output::History(history)) if reply.request == self.project_request => {
+                    let preferred_branch = self
+                        .restore
+                        .as_ref()
+                        .filter(|session| session.project == Some(history.project.id))
+                        .and_then(|session| session.presentation.as_ref())
+                        .and_then(|presentation| presentation.branch)
+                        .filter(|id| history.branches.iter().any(|branch| branch.id == *id))
+                        .unwrap_or(history.project.default_branch);
                     let branch = history
                         .branches
                         .iter()
-                        .find(|b| b.id == history.project.default_branch)
+                        .find(|b| b.id == preferred_branch)
                         .cloned();
                     if let Some(branch) = branch {
                         let revision = self
@@ -103,6 +130,21 @@ impl StudioApp {
                         self.expanded = None;
                         self.dependencies = None;
                         self.collapsed.clear();
+                        if let Some(saved) = self
+                            .restore
+                            .as_ref()
+                            .and_then(|session| session.presentation.as_ref())
+                        {
+                            self.families = saved
+                                .definition
+                                .relationship_families
+                                .iter()
+                                .copied()
+                                .collect();
+                            self.include_standard = saved.definition.include_standard_library;
+                            self.collapsed = saved.collapsed.clone();
+                            self.expanded = saved.expanded.clone();
+                        }
                         self.fit_pending = true;
                         self.request_projection();
                     }
@@ -261,6 +303,11 @@ impl StudioApp {
         if let Some(restore) = self.restore.take()
             && restoration_matches(&restore, self.binding, self.world, self.focus)
         {
+            if let Some(presentation) = restore.presentation {
+                self.apply_saved_presentation(presentation);
+                self.rebuild();
+                return;
+            }
             self.camera = restore.camera;
             self.camera_target = None;
             self.layout = restore.layout;
@@ -293,6 +340,10 @@ impl StudioApp {
             "frame_intervals_ms": frames,
             "warmup_frame_intervals_discarded": self.timing.discarded_frame_intervals(),
             "scene_build_ms": self.timing.scene_ms,
+            "scene_layout_routing_diff_ms": self.timing.layout_ms,
+            "scene_index_lookup_outliner_ms": self.timing.index_ms,
+            "scene_background_pending": self.scene_builder.busy,
+            "input_pipeline": self.timing.latency_report(),
             "layout_included_in_scene_build": true,
             "hit_test_us": self.timing.hit_summary(),
             "handled_input_to_next_ui_update_ms": {
@@ -431,6 +482,7 @@ mod tests {
             dark: true,
             high_contrast: false,
             reduced_motion: false,
+            presentation: None,
         };
         assert!(restoration_matches(
             &session,

@@ -77,12 +77,77 @@ pub struct FrameTiming {
     intervals_seen: usize,
     pub scene_ms: f64,
     pub layout_ms: f64,
+    pub index_ms: f64,
     pub visible_nodes: usize,
     pub total_nodes: usize,
     last_frame: Option<Instant>,
     pending_inputs: [Option<Instant>; 3],
+    raw_input_to_ui_complete: Samples,
+    raw_input_to_next_update: Samples,
+    ui_cpu: Samples,
+    visibility: Samples,
+    batches: Samples,
+    labels: Samples,
+    received_input: Option<Instant>,
+    previous_input: Option<Instant>,
+    update_started: Option<Instant>,
 }
 impl FrameTiming {
+    pub fn visibility(&mut self, duration: Duration) {
+        self.visibility.push(duration.as_secs_f64() * 1000.0);
+    }
+    pub fn batch(&mut self, duration: Duration) {
+        self.batches.push(duration.as_secs_f64() * 1000.0);
+    }
+    pub fn labels(&mut self, duration: Duration) {
+        self.labels.push(duration.as_secs_f64() * 1000.0);
+    }
+    /// Software delivery at the eframe input hook. This excludes device and OS
+    /// queue latency; synthetic native scenarios use the same hook.
+    pub fn raw_input(&mut self, input: &eframe::egui::RawInput) {
+        if input.events.iter().any(|event| {
+            matches!(
+                event,
+                eframe::egui::Event::Key { .. }
+                    | eframe::egui::Event::Text(_)
+                    | eframe::egui::Event::PointerMoved(_)
+                    | eframe::egui::Event::PointerButton { .. }
+                    | eframe::egui::Event::MouseWheel { .. }
+                    | eframe::egui::Event::Zoom(_)
+            )
+        }) {
+            self.received_input.get_or_insert_with(Instant::now);
+        }
+    }
+
+    /// UI shape construction has ended. Eframe submits and presents afterwards;
+    /// neither this marker nor the next-update marker claims visible photons.
+    pub fn ui_complete(&mut self) {
+        let now = Instant::now();
+        if let Some(started) = self.update_started.take() {
+            self.ui_cpu
+                .push(now.duration_since(started).as_secs_f64() * 1000.0);
+        }
+        if let Some(received) = self.received_input.take() {
+            self.raw_input_to_ui_complete
+                .push(now.duration_since(received).as_secs_f64() * 1000.0);
+            self.previous_input = Some(received);
+        }
+    }
+
+    pub fn latency_report(&self) -> serde_json::Value {
+        serde_json::json!({
+            "raw_input_to_ui_complete_ms": self.raw_input_to_ui_complete.summary(),
+            "raw_input_to_next_update_ms": self.raw_input_to_next_update.summary(),
+            "ui_cpu_ms": self.ui_cpu.summary(),
+            "visibility_lookup_cpu_ms": self.visibility.summary(),
+            "changed_batch_cpu_ms": self.batches.summary(),
+            "labels_accessibility_cpu_ms": self.labels.summary(),
+            "frame_submission_ms": null,
+            "presentation_ms": null,
+            "boundary": "eframe raw input hook -> UI shape construction complete -> following update; excludes OS delivery and GPU presentation",
+        })
+    }
     /// Marks handling in the viewport. The next `frame` records elapsed CPU wall
     /// time to the next UI update, not completion/presentation of the current frame.
     pub fn input(&mut self, kind: InputKind) {
@@ -99,6 +164,11 @@ impl FrameTiming {
         self.frame_at(Instant::now());
     }
     fn frame_at(&mut self, now: Instant) {
+        self.update_started = Some(now);
+        if let Some(received) = self.previous_input.take() {
+            self.raw_input_to_next_update
+                .push(now.duration_since(received).as_secs_f64() * 1000.0);
+        }
         if let Some(previous) = self.last_frame.replace(now) {
             self.intervals_seen += 1;
             if self.intervals_seen > FRAME_WARMUP_INTERVALS {

@@ -150,6 +150,17 @@ impl StudioApp {
             World::Requirements => ViewDefinition::requirements(),
             _ => ViewDefinition::semantic_graph(),
         };
+        if let Some(saved) = self
+            .restore
+            .as_ref()
+            .and_then(|session| session.presentation.as_ref())
+            .filter(|saved| saved.world == self.world)
+        {
+            view = saved.definition.clone();
+        } else if self.active_projection().view.kind == view.kind {
+            view.depth = self.active_projection().view.depth;
+            view.hidden_elements = self.active_projection().view.hidden_elements.clone();
+        }
         view.focus = self.focus;
         view.include_standard_library = self.include_standard;
         view.relationship_families = self.families.iter().copied().collect();
@@ -235,8 +246,8 @@ impl StudioApp {
         });
     }
     pub fn restore_location(&mut self, location: Location) {
-        if self.bridge.mutation_pending() {
-            self.status = "Wait for the model operation before navigating".into();
+        if self.bridge.mutation_pending() && location.revision != self.projection.revision_id {
+            self.status = "The current revision remains explorable while model work runs".into();
             return;
         }
         if self
@@ -279,6 +290,7 @@ impl StudioApp {
                 dark: self.theme.dark,
                 high_contrast: self.theme.contrast,
                 reduced_motion: self.reduced_motion,
+                presentation: None,
             });
             self.request_projection();
         } else {
@@ -290,7 +302,16 @@ impl StudioApp {
         self.fit_pending = false;
     }
     pub fn request_projection(&mut self) {
+        self.scene_builder.invalidate();
         self.invalidate_inspection();
+        if self.bridge.mutation_pending() {
+            // Present only already loaded semantic data while the serialized
+            // worker reconstructs a candidate. No model operation or query is
+            // guessed by this local change of lens.
+            self.rebuild();
+            self.status = "Model operation running · exploring the loaded revision".into();
+            return;
+        }
         if let Some(binding) = self.binding {
             let definition = self.definition();
             let candidate = self.visible_candidate_id();
@@ -308,10 +329,7 @@ impl StudioApp {
         }
     }
     pub fn switch_world(&mut self, world: World) {
-        if self.bridge.mutation_pending() {
-            self.status = "Wait for the model operation before switching worlds".into();
-            return;
-        }
+        let selected = self.selected_element();
         self.navigation.update_camera(
             [self.camera.center.x, self.camera.center.y],
             self.camera.zoom,
@@ -319,6 +337,7 @@ impl StudioApp {
         self.world = world;
         self.expanded = None;
         self.dependencies = None;
+        self.show_agent = false;
         if world != World::System {
             self.focus = None;
         }
@@ -329,8 +348,33 @@ impl StudioApp {
                 self.projection =
                     fixture_projection(self.fixture.as_deref().unwrap_or("architecture"));
             }
+            if world == World::Graph
+                && let Some(selected) =
+                    selected.filter(|id| self.projection.nodes.iter().any(|node| node.id == *id))
+            {
+                let mut seeds = BTreeSet::from([selected]);
+                seeds.extend(
+                    self.projection
+                        .nodes
+                        .iter()
+                        .filter(|node| node.owner == Some(selected))
+                        .map(|node| node.id),
+                );
+                self.expanded = Some(
+                    agq_studio_scene::expand_neighborhood(
+                        &self.projection,
+                        &seeds,
+                        &self.families,
+                        NeighborhoodDirection::Both,
+                    )
+                    .elements,
+                );
+            }
             self.rebuild();
         } else if world != World::History {
+            if world == World::Graph {
+                self.focus = selected;
+            }
             self.request_projection();
         }
         self.fit_pending = true;
@@ -383,29 +427,21 @@ impl StudioApp {
             return;
         }
         use CommandId::*;
-        if self.bridge.mutation_pending()
-            && matches!(
-                id,
-                Home | Back
-                    | Forward
-                    | Up
-                    | System
-                    | Graph
-                    | Requirements
-                    | History
-                    | Focus
-                    | Compare
-                    | Dependencies
-                    | ExpandIncoming
-                    | ExpandOutgoing
-                    | ExpandBoth
-                    | CollapseNeighborhood
-            )
-        {
+        if self.bridge.mutation_pending() && matches!(id, Compare | Dependencies) {
             self.status = "Wait for the model operation before changing the view".into();
             return;
         }
         match id {
+            ShowLoadedGraph => {
+                self.expanded = None;
+                self.focus = None;
+                self.dependencies = None;
+                self.show_agent = false;
+                self.request_projection();
+                self.fit_pending = true;
+                self.status =
+                    "Graph overview · focus a selection to inspect its neighborhood".into();
+            }
             Theme => {
                 self.theme = crate::theme::Theme::new(!self.theme.dark, self.theme.contrast);
                 self.theme.install(ctx);
@@ -548,7 +584,7 @@ impl StudioApp {
                         )
                         .elements,
                     );
-                    self.expanded = None;
+                    self.expanded = self.dependencies.clone();
                     self.rebuild();
                     self.fit_pending = true;
                     self.status = "Temporary dependency view · model unchanged".into();
@@ -646,7 +682,16 @@ impl StudioApp {
                 selection: vec![owner],
             };
             let view = self.definition();
-            self.enqueue_mutation(crate::bridge::nested_part(context, owner, name, view));
+            let request =
+                self.enqueue_mutation(crate::bridge::nested_part(context, owner, name, view));
+            if request != 0 {
+                self.preparation = Some(crate::app::PendingPreparation {
+                    request,
+                    started: std::time::Instant::now(),
+                    cancelled: false,
+                });
+                self.status = "Constructing a Working candidate in the background".into();
+            }
         } else {
             // Deterministic visual response to typed intent; no semantic reconstruction exists here.
             let _intent = agq_modeling_agent::ModelCommand::CreatePartUsage {
@@ -729,8 +774,13 @@ impl StudioApp {
         self.projection = after;
         self.compare_before = Some(before);
         self.comparison = ComparisonMode::Diff;
+        self.dependencies = None;
+        self.show_agent = false;
+        self.expanded = None;
         self.rebuild();
         self.fit_pending = true;
+        self.status =
+            "Comparing architecture baseline with candidate coordination · visual fixture".into();
     }
     pub fn compare_parent(&mut self) {
         if let Some(reason) = commands::unavailable(CommandId::Compare, &self.context()) {

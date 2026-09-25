@@ -109,18 +109,14 @@ impl StudioApp {
                 .selectable_label(self.focus == Some(entry.id), &entry.name)
                 .clicked()
             {
-                if self.bridge.mutation_pending() {
-                    self.status = "Wait for the model operation before changing focus".into();
-                } else {
-                    self.navigation.update_camera(
-                        [self.camera.center.x, self.camera.center.y],
-                        self.camera.zoom,
-                    );
-                    self.focus = Some(entry.id);
-                    self.request_projection();
-                    self.fit_pending = true;
-                    self.record_location();
-                }
+                self.navigation.update_camera(
+                    [self.camera.center.x, self.camera.center.y],
+                    self.camera.zoom,
+                );
+                self.focus = Some(entry.id);
+                self.request_projection();
+                self.fit_pending = true;
+                self.record_location();
             }
         }
         if trail.cycle {
@@ -169,7 +165,8 @@ impl StudioApp {
                     .into(),
             );
         }
-        if self.bridge.mutation_pending()
+        if self.scene_builder.busy
+            || self.bridge.mutation_pending()
             || self.scene.revision_id != self.projection.revision_id
             || self
                 .binding
@@ -329,6 +326,7 @@ impl StudioApp {
     /// Projection omissions are recovered as presentation omissions only.
     pub fn apply_saved_presentation(&mut self, mut presentation: SavedPresentation) {
         let recovery = presentation.reconcile(&self.projection);
+        self.projection.view = presentation.definition.clone();
         self.world = presentation.world;
         self.focus = presentation.definition.focus;
         self.families = presentation
@@ -348,6 +346,7 @@ impl StudioApp {
         self.camera_target = None;
         self.fit_pending = recovery.focus_reset;
         self.show_agent = presentation.panels.agent;
+        self.dependencies = self.show_agent.then(|| self.expanded.clone()).flatten();
         // Evidence/source require a revision-bound selection, which is not saved.
         self.show_explain = false;
         self.show_source = false;

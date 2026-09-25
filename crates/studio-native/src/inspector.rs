@@ -199,6 +199,38 @@ impl StudioApp {
             });
         });
         ui.add_space(18.0);
+        if self.show_agent {
+            egui::Frame::new()
+                .fill(theme.elevated)
+                .inner_margin(10)
+                .corner_radius(6)
+                .show(ui, |ui| {
+                    ui.strong("Dependency view");
+                    ui.label(muted("Agent intent · show related architecture", theme).small());
+                    ui.label(
+                        muted(
+                            format!(
+                                "{} · {} visible elements",
+                                short_revision(self.scene.revision_id),
+                                self.scene.nodes.len()
+                            ),
+                            theme,
+                        )
+                        .small(),
+                    );
+                    ui.label(muted("Temporary view · read-only authority", theme).small());
+                    if ui.button("Dismiss agent view").clicked() {
+                        self.show_agent = false;
+                        self.dependencies = None;
+                        self.expanded = None;
+                        self.focus = None;
+                        self.request_projection();
+                        self.fit_pending = true;
+                        self.status = "Agent view dismissed · model unchanged".into();
+                    }
+                });
+            ui.add_space(16.0);
+        }
         let primary = self.selection.primary.clone();
         let element = self.selected_element();
         let node = element.and_then(|id| self.scene.node(id)).cloned();
@@ -340,7 +372,7 @@ impl StudioApp {
             value(ui, "Parts", &node.semantic.counts.parts.to_string(), theme);
             value(ui, "Ports", &node.semantic.counts.ports.to_string(), theme);
             if !node.semantic.features.is_empty() {
-                theme.section(ui, "FEATURES");
+                theme.section(ui, "PORTS AND FEATURES");
             }
             for feature in &node.semantic.features {
                 if ui
@@ -422,8 +454,16 @@ impl StudioApp {
                 ui.label(muted("Semantic port", theme));
                 theme.section(ui, "INTERFACE");
                 value(ui, "Direction", &format!("{:?}", port.direction), theme);
-                if let Some(owner) = self.scene.node(port.owner) {
-                    value(ui, "Owner", &owner.semantic.name, theme);
+                if let Some(owner) = self
+                    .active_projection()
+                    .nodes
+                    .iter()
+                    .find(|node| node.id == port.proxy_for_owner.unwrap_or(port.owner))
+                {
+                    value(ui, "Owner", &owner.name, theme);
+                }
+                if port.proxy_for_owner.is_some() {
+                    ui.label(muted("Shown on the collapsed subsystem boundary; original port identity retained.", theme).small());
                 }
                 ui.label(muted("Endpoint order does not establish flow direction.", theme).small());
                 ui.collapsing("Identity", |ui| {

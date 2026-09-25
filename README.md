@@ -17,6 +17,38 @@ See [baseline discrepancies](docs/standards-discrepancies.md) and
 The **Rust-native Agentique Studio** foundation has its own GPU semantic scene and
 in-process modeling boundary. See [Native Studio launch and architecture](docs/native-studio.md).
 
+### Run Native Studio
+
+Install the pinned Rust toolchain (via rustup) and a native C/C++ build toolchain
+(Visual Studio C++ Build Tools on Windows). Run these commands from this repository:
+
+```sh
+cargo fetch --locked --manifest-path crates/studio-native/Cargo.toml
+cargo run --release --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target
+```
+
+Studio opens its setup screen when no accepted semantic runtime is installed.
+Choose a locally supplied authenticated `.agq-runtime` bundle, then create or open
+a project. Runtime authentication is required to edit the real Agentique model.
+The [runtime distribution guide](docs/runtime-publication-distribution.md) explains
+packaging and offline installation; a successful build does not supply those assets.
+
+To explore the native interface without the runtime, explicitly open the labeled
+architecture fixture:
+
+```sh
+cargo run --release --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target -- --fixture architecture --no-restore
+```
+
+The fixture supports navigation and illustrative candidate review; it cannot
+validate or commit semantic changes. Use **Ctrl/Cmd+K** for commands, **F** to
+focus a selection, **Home** to fit the view, and **1–4** for System, Graph,
+Requirements and History. The native application needs neither Node nor a local
+HTTP server. Its graphics dependencies have a separate lockfile, so root-workspace
+`cargo run` alone does not launch Native Studio.
+
+### Browser prototype and generation 1
+
 The browser **Agentique Studio Prototype 0** retains its local host and semantic
 viewport as a contract and regression client. See [web-client launch and workflow](docs/agentique-studio.md).
 Its semantic runtime is installed once with `agq-studio setup --bundle <path>`

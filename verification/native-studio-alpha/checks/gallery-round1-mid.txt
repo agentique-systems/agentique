@@ -1,0 +1,1 @@
+Native fixture interaction FAILED: Native interaction assertion failed at step 24 'palette opens nested-part dialog': expected CreateDialog; status=Temporary dependency view · model unchanged

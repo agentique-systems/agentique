@@ -1,0 +1,3 @@
+    Blocking waiting for file lock on package cache
+   Compiling agq-studio-native v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-native)
+    Finished `release` profile [optimized] target(s) in 53.34s

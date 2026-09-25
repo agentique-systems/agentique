@@ -1,0 +1,26 @@
+{
+  "command": [
+    "cargo",
+    "check",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-modeling-agent",
+    "--all-targets",
+    "--features",
+    "verification",
+    "-j",
+    "2"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T15:47:09.661744+00:00",
+  "elapsed_seconds": 20.609,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/edit-oracle-compile.txt",
+  "output_sha256": "180ac2147fffd9e67b0f2025247e81a672bf3867c3abffe224e37070e8b29877",
+  "build_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0"
+  }
+}

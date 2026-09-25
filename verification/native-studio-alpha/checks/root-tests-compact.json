@@ -1,0 +1,19 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--workspace"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T15:28:59.348005+00:00",
+  "elapsed_seconds": 1001.312,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/root-tests-compact.txt",
+  "output_sha256": "802886a26fd4da022c9a3b76d8ee196d3bbeca75e896eb7220da20b2b3a84133",
+  "build_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "2"
+  }
+}

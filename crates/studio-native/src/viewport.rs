@@ -24,7 +24,7 @@ impl StudioApp {
         );
         crate::automation::record(ui.ctx(), crate::automation::Target::Viewport, rect);
         self.camera.viewport = Size::new(rect.width(), rect.height());
-        if self.fit_pending {
+        if self.fit_pending && !self.scene_builder.busy {
             self.camera.fit(self.scene.bounds(), 42.0);
             self.camera.zoom = self.camera.zoom.min(1.3);
             self.camera_target = None;
@@ -148,6 +148,7 @@ impl StudioApp {
                 y += spacing;
             }
         }
+        let visibility_started = Instant::now();
         let visible: BTreeSet<_> = self
             .spatial
             .visible(self.camera.visible_rect().inflate(20.0 / self.camera.zoom))
@@ -167,6 +168,7 @@ impl StudioApp {
         // Resolve exact, revision-checked targets once. The borrowed result is
         // already ordered for containment and shared by GPU and text passes.
         let objects = self.lookup.visible(&self.scene, &visible);
+        self.timing.visibility(visibility_started.elapsed());
         let selected_edges: BTreeSet<&str> = self
             .selection
             .targets
@@ -177,8 +179,10 @@ impl StudioApp {
             })
             .collect();
         if self.batch_key != Some(key) {
+            let started = Instant::now();
             self.batch = Arc::new(self.make_batch(key, &objects, &selected_edges));
             self.batch_key = Some(key);
+            self.timing.batch(started.elapsed());
         }
         painter.add(egui_wgpu::Callback::new_paint_callback(
             rect,
@@ -198,6 +202,7 @@ impl StudioApp {
             },
         ));
         self.timing.visible_nodes = 0;
+        let labels_started = Instant::now();
         self.timing.total_nodes = self.scene.nodes.len();
         for node in &objects.nodes {
             self.timing.visible_nodes += 1;
@@ -242,13 +247,15 @@ impl StudioApp {
                 } else {
                     node.semantic.name.clone()
                 };
-                elided(
+                let requirement_title = node.category == NodeCategory::Requirement;
+                bounded_label(
                     &painter,
                     top,
                     &label,
-                    (title_size * scale).clamp(10.0, 26.0),
+                    (title_size * scale).clamp(12.0, 26.0),
                     text,
                     (bounds.width() - 2.0 * inset).max(10.0),
+                    if requirement_title { 2 } else { 1 },
                 );
                 if node.is_container && self.lod.level() >= LodLevel::Summary {
                     painter.text(
@@ -305,13 +312,14 @@ impl StudioApp {
                     };
                     elided(
                         &painter,
-                        bounds.min + Vec2::new(inset, 69.0 * scale),
+                        bounds.min
+                            + Vec2::new(inset, if requirement_title { 87.0 } else { 69.0 } * scale),
                         &subtitle,
                         (11.0 * scale).clamp(9.0, 16.0),
                         theme.muted,
                         (bounds.width() - 2.0 * inset).max(10.0),
                     );
-                    if self.lod.level() >= LodLevel::Relationships {
+                    if self.lod.level() >= LodLevel::Relationships && !requirement_title {
                         for (index, feature) in node
                             .semantic
                             .features
@@ -380,8 +388,12 @@ impl StudioApp {
             let hovered_edge = hovered.as_ref().is_some_and(
                 |target| matches!(target, SceneTarget::Edge(id) if id == &edge.semantic.id),
             );
+            let requirement_context = self.world == crate::navigation::World::Requirements
+                && objects.edges.len() <= 24
+                && self.lod.level() >= LodLevel::Summary;
             if !selected_edges.contains(edge.semantic.id.as_str())
                 && !hovered_edge
+                && !requirement_context
                 && !(incident
                     && self.lod.level() >= LodLevel::Features
                     && objects.edges.len() <= 24)
@@ -451,6 +463,7 @@ impl StudioApp {
                 }
             }
         }
+        self.timing.labels(labels_started.elapsed());
         if let Some(target) = hovered {
             let label = match &target {
                 SceneTarget::Node(id) | SceneTarget::Container(id) => self
@@ -795,10 +808,21 @@ fn elided(
     color: Color32,
     width: f32,
 ) {
+    bounded_label(painter, position, text, size, color, width, 1);
+}
+fn bounded_label(
+    painter: &egui::Painter,
+    position: egui::Pos2,
+    text: &str,
+    size: f32,
+    color: Color32,
+    width: f32,
+    rows: usize,
+) {
     let mut job =
         egui::text::LayoutJob::simple_singleline(text.into(), FontId::proportional(size), color);
     job.wrap.max_width = width;
-    job.wrap.max_rows = 1;
+    job.wrap.max_rows = rows;
     job.wrap.break_anywhere = true;
     job.wrap.overflow_character = Some('…');
     painter.galley(position, painter.layout_job(job), color);

@@ -21,6 +21,7 @@ pub enum Target {
     PaletteInput,
     CandidateName,
     CandidatePrepare,
+    ExplainWindow,
     HistoryRevision(ProjectRevisionId),
 }
 pub fn record(ctx: &egui::Context, target: Target, rect: Rect) {
@@ -222,8 +223,18 @@ fn vertical() -> Vec<Step> {
             settle: 15,
         },
         step(
+            "select repository before graph reasoning",
+            Action::ClickNode(21, false),
+            Check::Selected(21),
+        ),
+        step(
             "2 opens Graph World",
             Action::Key(Key::Num2, Modifiers::NONE),
+            Check::World(World::Graph),
+        ),
+        step(
+            "expand from readable neighborhood to graph overview",
+            Action::Palette("Show loaded graph overview"),
             Check::World(World::Graph),
         ),
         step(
@@ -240,6 +251,16 @@ fn vertical() -> Vec<Step> {
             "Escape closes Explain",
             Action::Key(Key::Escape, Modifiers::NONE),
             Check::ExplainClosed,
+        ),
+        step(
+            "3 opens Requirements World",
+            Action::Key(Key::Num3, Modifiers::NONE),
+            Check::World(World::Requirements),
+        ),
+        step(
+            "return to Graph World after requirements",
+            Action::Key(Key::Num2, Modifiers::NONE),
+            Check::World(World::Graph),
         ),
         step(
             "select repository in Graph World",
@@ -268,7 +289,7 @@ fn vertical() -> Vec<Step> {
         ),
         step(
             "palette opens nested-part dialog",
-            Action::Palette("Create nested PartUsage"),
+            Action::Palette("Create nested part"),
             Check::CreateDialog,
         ),
         step(
@@ -455,6 +476,7 @@ struct Report {
     adapter: String,
     assertions: Vec<AssertionEvidence>,
     failure: Option<String>,
+    gallery: Vec<String>,
 }
 #[derive(Clone, Debug)]
 struct Runner {
@@ -469,6 +491,7 @@ struct Runner {
     events: Vec<InputEvidence>,
     report_dirty: bool,
     time_origin: Option<f64>,
+    pending_capture: Option<(&'static str, Snapshot, u64)>,
 }
 impl Runner {
     fn new(scenario: &str) -> Self {
@@ -482,6 +505,7 @@ impl Runner {
                 adapter: String::new(),
                 assertions: vec![],
                 failure: None,
+                gallery: vec![],
             },
             steps: vertical(),
             index: 0,
@@ -493,6 +517,7 @@ impl Runner {
             events: vec![],
             report_dirty: true,
             time_origin: None,
+            pending_capture: None,
         }
     }
     fn advance(
@@ -511,15 +536,13 @@ impl Runner {
             return Err("Native input scenario requires --fixture architecture and refuses every live service binding".into());
         }
         self.report.adapter.clone_from(&app.adapter);
-        if self.index == self.steps.len() {
-            return Ok(ScenarioStatus::Complete);
-        }
+        // Keep one monotonic clock during capture delivery as well as input
+        // steps. Mixing synthetic event time with wall time made transient
+        // windows fade out while a screenshot was being delivered.
         self.total_frames += 1;
-        if self.total_frames > 2400 {
-            return Err("Native scenario exceeded its 2400-frame global deadline".into());
+        if self.total_frames > 3000 {
+            return Err("Native scenario exceeded its 3000-frame global deadline".into());
         }
-        // Ignore human keyboard/pointer interference while this explicit scenario
-        // owns input. Keep screenshot delivery and window lifecycle events.
         input
             .events
             .retain(|e| matches!(e, Event::Screenshot { .. } | Event::WindowFocused(_)));
@@ -528,6 +551,49 @@ impl Runner {
         let origin = *self.time_origin.get_or_insert(input.time.unwrap_or(0.0));
         input.time = Some(origin + self.total_frames as f64 / 60.0);
         input.predicted_dt = 1.0 / 60.0;
+        if let Some((name, snapshot, waiting)) = &mut self.pending_capture {
+            *waiting += 1;
+            if let Some(image) = input.events.iter().find_map(|event| match event {
+                Event::Screenshot { image, .. } => Some(image.clone()),
+                _ => None,
+            }) {
+                let directory = app.args.gallery.as_ref().expect("requested gallery");
+                std::fs::create_dir_all(directory).map_err(|error| error.to_string())?;
+                let path = directory.join(format!("{name}.png"));
+                let bytes: Vec<u8> = image.pixels.iter().flat_map(|p| p.to_array()).collect();
+                image::save_buffer(
+                    &path,
+                    &bytes,
+                    image.size[0] as u32,
+                    image.size[1] as u32,
+                    image::ColorType::Rgba8,
+                )
+                .map_err(|error| format!("Cannot save gallery screenshot: {error}"))?;
+                let evidence = serde_json::json!({
+                    "format": "agentique-native-gallery/1",
+                    "semantic_data": "explicit architecture fixture, not real-model acceptance",
+                    "fixture": app.fixture,
+                    "checkpoint": name,
+                    "state": snapshot,
+                    "image_size": image.size,
+                    "adapter": app.adapter,
+                });
+                std::fs::write(
+                    path.with_extension("json"),
+                    serde_json::to_vec_pretty(&evidence).map_err(|e| e.to_string())?,
+                )
+                .map_err(|e| e.to_string())?;
+                self.report.gallery.push(path.display().to_string());
+                self.report_dirty = true;
+                self.pending_capture = None;
+            } else if *waiting > 120 {
+                return Err(format!("Native gallery capture {name} did not arrive"));
+            }
+            return Ok(ScenarioStatus::Running);
+        }
+        if self.index == self.steps.len() {
+            return Ok(ScenarioStatus::Complete);
+        }
         let step = self.steps[self.index].clone();
         if self.age == 0 {
             self.before = Some(Snapshot::of(app));
@@ -559,6 +625,15 @@ impl Runner {
                 }
                 self.index += 1;
                 self.age = 0;
+                if app.args.gallery.is_some()
+                    && let Some(name) = gallery_checkpoint(step.name)
+                {
+                    self.pending_capture = Some((name, Snapshot::of(app), 0));
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(
+                        egui::UserData::default(),
+                    ));
+                    return Ok(ScenarioStatus::Running);
+                }
                 return Ok(if self.index == self.steps.len() {
                     ScenarioStatus::Complete
                 } else {
@@ -595,6 +670,20 @@ impl Runner {
         }
         self.age += 1;
         Ok(ScenarioStatus::Running)
+    }
+}
+
+fn gallery_checkpoint(step: &str) -> Option<&'static str> {
+    match step {
+        "native fixture and GPU ready" => Some("01-system-world"),
+        "double-click focuses ModelingPlatform" => Some("02-focused-subsystem"),
+        "2 opens Graph World" => Some("03-graph-world"),
+        "3 opens Requirements World" => Some("04-requirements-world"),
+        "E opens semantic Explain" => Some("05-explain"),
+        "1 opens System World comparison" => Some("06-history-diff"),
+        "command palette shows dependencies" => Some("07-agent-view"),
+        "candidate element is selectable" => Some("08-candidate"),
+        _ => None,
     }
 }
 
@@ -887,7 +976,14 @@ fn check(
                 .is_some_and(|e| e.semantic.origin == ViewOrigin::Derived),
             _ => false,
         }),
-        Check::ExplainOpen => app.show_explain,
+        Check::ExplainOpen => {
+            app.show_explain
+                && target(ctx, Target::ExplainWindow).is_ok_and(|rect| {
+                    rect.intersects(ctx.viewport_rect())
+                        && rect.width() > 300.0
+                        && rect.height() > 150.0
+                })
+        }
         Check::ExplainClosed => !app.show_explain,
         Check::Dependencies => {
             app.world == World::Graph

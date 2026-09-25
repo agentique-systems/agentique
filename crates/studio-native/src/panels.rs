@@ -113,8 +113,13 @@ impl StudioApp {
             )
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
-                    if !self.pending.is_empty() {
+                    if !self.pending.is_empty() || self.scene_builder.busy {
                         ui.spinner();
+                    }
+                    if self.scene_builder.busy {
+                        ui.label(
+                            muted("Updating view · previous view remains available", theme).small(),
+                        );
                     }
                     ui.label(muted(&self.status, theme).small());
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
@@ -146,6 +151,28 @@ impl StudioApp {
                     });
                 });
             });
+        if let Some(preparation) = &mut self.preparation {
+            egui::TopBottomPanel::bottom("candidate_preparation")
+                .frame(egui::Frame::new().fill(theme.elevated).inner_margin(16))
+                .show(ctx, |ui| {
+                    ui.horizontal(|ui| {
+                        ui.spinner();
+                        ui.vertical(|ui| {
+                            ui.strong(if preparation.cancelled { "CANCELLATION REQUESTED" } else { "PREPARING WORKING CANDIDATE" });
+                            ui.label(if preparation.cancelled {
+                                "Current reconstruction will finish safely; its result will be discarded."
+                            } else {
+                                "Source edit and semantic reconstruction running · validation has not started"
+                            });
+                            ui.label(muted(format!("Elapsed {:.1} s · current revision remains available", preparation.started.elapsed().as_secs_f32()), theme).small());
+                        });
+                        if ui.add_enabled(!preparation.cancelled, egui::Button::new("Cancel preparation")).clicked() {
+                            preparation.cancelled = true;
+                        }
+                    });
+                });
+            ctx.request_repaint_after(std::time::Duration::from_millis(100));
+        }
         if self.candidate.is_some() {
             egui::TopBottomPanel::bottom("candidate_review")
                 .exact_height(96.0)
@@ -246,6 +273,7 @@ impl StudioApp {
                                     self.switch_world(world);
                                 }
                             }
+                            self.local_views_menu(ui);
                             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                                 if ui.button("Fit").on_hover_text("Fit view · Home").clicked() {
                                     self.fit_pending = true;
@@ -269,12 +297,8 @@ impl StudioApp {
                             {
                                 self.execute(CommandId::Home, ctx);
                             }
-                            if let Some(id) = self.focus
-                                && let Some(node) =
-                                    self.projection.nodes.iter().find(|n| n.id == id)
-                            {
-                                ui.label(muted("/", theme));
-                                ui.label(&node.name);
+                            if self.focus.is_some() {
+                                self.breadcrumb_navigation(ui);
                             } else {
                                 ui.label(muted("/", theme));
                                 ui.label(muted(self.world.title(), theme));
@@ -287,13 +311,44 @@ impl StudioApp {
                                 );
                             }
                             if self.comparison == ComparisonMode::Diff {
+                                let before = self.candidate.as_ref().map(|c| c.before.revision_id)
+                                    .or_else(|| self.compare_before.as_ref().map(|p| p.revision_id));
+                                if let Some(before) = before {
+                                    ui.label(muted(format!("{} → {}", short_revision(before), short_revision(self.scene.revision_id)), theme).small());
+                                }
+                                let count = |mark| self.scene.nodes.iter().filter(|n| n.diff == mark).count();
                                 ui.label(
-                                    RichText::new("+ added   − removed   ~ changed")
+                                    RichText::new(format!("+ {} added   − {} removed   ~ {} changed", count(agq_studio_scene::DiffMark::Added), count(agq_studio_scene::DiffMark::Removed), count(agq_studio_scene::DiffMark::Changed)))
                                         .size(11.0)
                                         .color(theme.green),
                                 );
                             }
                         });
+                        if self.world == World::System && self.focus.is_some() {
+                            let visible: std::collections::BTreeSet<_> = self.scene.nodes.iter()
+                                .flat_map(|node| std::iter::once(node.id()).chain(node.semantic.features.iter().map(|feature| feature.id)))
+                                .collect();
+                            let external = self.active_projection().edges.iter().filter(|edge|
+                                edge.family == agq_modeling_view::RelationshipFamily::Connection
+                                && (visible.contains(&edge.source) != visible.contains(&edge.target))).count();
+                            if external > 0 {
+                                ui.horizontal_wrapped(|ui| {
+                                    ui.label(muted(format!("{external} connections continue outside this focus"), theme).small());
+                                    if ui.small_button("Explore connection context").clicked() {
+                                        if let Some(focus) = self.focus { self.select(SceneTarget::Node(focus), false); }
+                                        self.switch_world(World::Graph);
+                                    }
+                                });
+                            }
+                        }
+                        if self.world == World::Requirements {
+                            let requirements: Vec<_> = self.active_projection().nodes.iter()
+                                .filter(|node| NodeCategory::from_semantic_kind(&node.semantic_kind) == NodeCategory::Requirement)
+                                .map(|node| node.id).collect();
+                            let linked = requirements.iter().filter(|id| self.active_projection().edges.iter().any(|edge|
+                                (edge.source == **id || edge.target == **id) && matches!(edge.family, agq_modeling_view::RelationshipFamily::Requirement | agq_modeling_view::RelationshipFamily::Verification))).count();
+                            ui.label(muted(format!("{} requirements · {} linked in this view · relationship presence does not assert verification success", requirements.len(), linked), theme).small());
+                        }
                         if self.world == World::Graph {
                             ui.add_enabled_ui(!self.bridge.mutation_pending(), |ui| {
                                 ui.add_space(6.0);
@@ -634,10 +689,18 @@ impl StudioApp {
         }
         if self.show_explain {
             let mut open = true;
-            egui::Window::new("Explain · semantic provenance")
+            if let Some(window) = egui::Window::new("Explain · semantic provenance")
                 .open(&mut open)
+                .default_pos(egui::pos2(420.0, 240.0))
                 .default_size([750.0, 440.0])
-                .show(ctx, |ui| self.explain_content(ui));
+                .show(ctx, |ui| self.explain_content(ui))
+            {
+                crate::automation::record(
+                    ctx,
+                    crate::automation::Target::ExplainWindow,
+                    window.response.rect,
+                );
+            }
             self.show_explain = open;
         }
         if self.show_source {

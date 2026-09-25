@@ -10,6 +10,9 @@ mod gpu;
 mod inspector;
 mod navigation;
 mod panels;
+mod presentation;
+mod saved_views;
+mod scene_build;
 mod selection;
 mod session;
 mod stress_automation;
@@ -53,12 +56,19 @@ pub struct Args {
         default_value = "verification/generated/native-studio/interaction-report.json"
     )]
     scenario_report: PathBuf,
+    /// Retain native screenshots and revision-qualified state at journey checkpoints.
+    #[arg(long, requires = "scenario", conflicts_with = "screenshot")]
+    gallery: Option<PathBuf>,
 }
 
 fn main() -> eframe::Result {
     let args = Args::parse();
     let options = eframe::NativeOptions {
         renderer: eframe::Renderer::Wgpu,
+        wgpu_options: egui_wgpu::WgpuConfiguration {
+            on_surface_error: std::sync::Arc::new(surface_error),
+            ..Default::default()
+        },
         viewport: eframe::egui::ViewportBuilder::default()
             .with_title("Agentique · Native Studio")
             .with_inner_size([1600.0, 1000.0])
@@ -74,4 +84,18 @@ fn main() -> eframe::Result {
             Ok(Box::new(app::StudioApp::new(cc, args)?))
         }),
     )
+}
+
+fn surface_error(error: wgpu::SurfaceError) -> egui_wgpu::SurfaceErrorAction {
+    // Eframe owns the surface and applies this action before the next frame.
+    // Timeout is transient; lost/outdated surfaces need reconfiguration.
+    match error {
+        wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated => {
+            egui_wgpu::SurfaceErrorAction::RecreateSurface
+        }
+        other => {
+            eprintln!("Native surface frame unavailable: {other}");
+            egui_wgpu::SurfaceErrorAction::SkipFrame
+        }
+    }
 }

@@ -1,0 +1,344 @@
+
+> agentique@0.1.0 test:e2e
+> playwright test
+
+[WebServer]    Compiling proc-macro2 v1.0.107
+[WebServer]    Compiling unicode-ident v1.0.24
+[WebServer]    Compiling quote v1.0.47
+[WebServer]    Compiling cfg-if v1.0.5
+[WebServer]    Compiling windows-link v0.2.1
+[WebServer]    Compiling itoa v1.0.18
+[WebServer]    Compiling smallvec v1.16.1
+[WebServer]    Compiling serde_core v1.0.229
+[WebServer]    Compiling version_check v0.9.5
+[WebServer]    Compiling typenum v1.20.1
+[WebServer]    Compiling shlex v2.0.1
+[WebServer]    Compiling zmij v1.0.23
+[WebServer]    Compiling[WebServer]  windows-sys v0.61.2
+[WebServer]    Compiling find-msvc-tools v0.1.12
+[WebServer]    Compiling[WebServer]  stable_deref_trait v1.2.1
+[WebServer]    Compiling serde v1.0.229
+[WebServer]    Compiling pin-project-lite v0.2.17
+[WebServer]    Compiling[WebServer]  bytes v1.12.1
+[WebServer]    Compiling[WebServer]  futures-core v0.3.34
+[WebServer]    Compiling[WebServer]  log v0.4.34
+[WebServer]    Compiling generic-array v0.14.7
+[WebServer]    Compiling[WebServer]  autocfg v1.5.1
+[WebServer]    Compiling parking_lot_core v0.9.12
+[WebServer]    Compiling cc v1.4.6
+[WebServer]    Compiling[WebServer]  scopeguard v1.2.0
+[WebServer]    Compiling[WebServer]  cpufeatures v0.2.17
+[WebServer]    Compiling once_cell v1.21.4
+[WebServer]    Compiling lock_api v0.4.14
+[WebServer]    Compiling num-traits v0.2.19
+[WebServer]    Compiling[WebServer]  memchr v2.8.3
+[WebServer]    Compiling[WebServer]  serde_json v1.0.151
+[WebServer]    Compiling parking_lot v0.12.5
+[WebServer]    Compiling thiserror v2.0.20
+[WebServer]    Compiling syn v3.0.5
+[WebServer]    Compiling crypto-common v0.1.7
+[WebServer]    Compiling[WebServer]  block-buffer v0.10.4
+[WebServer]    Compiling getrandom v0.4.3
+[WebServer]    Compiling[WebServer]  http v1.5.0
+[WebServer]    Compiling digest v0.10.7
+[WebServer]    Compiling[WebServer]  writeable v0.6.4
+[WebServer]    Compiling litemap v0.8.3
+[WebServer]    Compiling sha2 v0.10.9
+[WebServer]    Compiling[WebServer]  tracing-core v0.1.36
+[WebServer]    Compiling icu_normalizer_data v2.3.0
+[WebServer]    Compiling[WebServer]  utf8_iter v1.0.4
+[WebServer]    Compiling[WebServer]  icu_properties_data v2.3.0
+[WebServer]    Compiling ring v0.17.14
+[WebServer]    Compiling num-integer v0.1.47
+[WebServer]    Compiling http-body v1.1.0
+[WebServer]    Compiling[WebServer]  socket2 v0.6.5
+[WebServer]    Compiling mio v1.2.3
+[WebServer]    Compiling crc32fast v1.5.2
+[WebServer]    Compiling sha1_smol v1.0.1
+[WebServer]    Compiling[WebServer]  percent-encoding v2.3.2
+[WebServer]    Compiling uuid v1.26.1
+[WebServer]    Compiling tracing v0.1.44
+[WebServer]    Compiling httparse v1.10.1
+[WebServer]    Compiling[WebServer]  slab v0.4.12
+[WebServer]    Compiling zeroize v1.9.0
+[WebServer]    Compiling[WebServer]  simd-adler32 v0.3.10
+[WebServer]    Compiling futures-task v0.3.34
+[WebServer]    Compiling tower-service v0.3.3
+[WebServer]    Compiling rustls-pki-types v1.15.1
+[WebServer]    Compiling[WebServer]  futures-util v0.3.34
+[WebServer]    Compiling getrandom v0.2.17
+[WebServer]    Compiling httpdate v1.0.3
+[WebServer]    Compiling untrusted v0.9.0
+[WebServer]    Compiling libc v0.2.189
+[WebServer]    Compiling adler2 v2.0.1
+[WebServer]    Compiling try-lock v0.2.5
+[WebServer]    Compiling want v0.3.1
+[WebServer]    Compiling[WebServer]  miniz_oxide v0.9.1
+[WebServer]    Compiling[WebServer]  form_urlencoded v1.2.2
+[WebServer]    Compiling[WebServer]  sync_wrapper v1.0.2
+[WebServer]    Compiling[WebServer]  futures-channel v0.3.34
+[WebServer]    Compiling atomic-waker v1.1.2
+[WebServer]    Compiling mime v0.3.17
+[WebServer]    Compiling[WebServer]  rustls v0.23.45
+[WebServer]    Compiling[WebServer]  unicase v2.9.0
+[WebServer]    Compiling tower-layer v0.3.3
+[WebServer]    Compiling bumpalo v3.20.3
+[WebServer]    Compiling[WebServer]  zip v2.4.2
+[WebServer]    Compiling synstructure v0.14.0
+[WebServer]    Compiling equivalent v1.0.2
+[WebServer]    Compiling hashbrown v0.17.1
+[WebServer]    Compiling zopfli v0.8.3
+[WebServer]    Compiling[WebServer]  mime_guess v2.0.5
+[WebServer]    Compiling flate2 v1.1.10
+[WebServer]    Compiling[WebServer]  http-body-util v0.1.5
+[WebServer]    Compiling agq-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\semantics)
+[WebServer]    Compiling[WebServer]  indexmap v2.14.2
+[WebServer]    Compiling vcpkg v0.2.15
+[WebServer]    Compiling base64 v0.22.1
+[WebServer]    Compiling ipnet v2.12.2
+[WebServer]    Compiling[WebServer]  subtle v2.6.1
+[WebServer]    Compiling[WebServer]  bitflags v2.13.2
+[WebServer]    Compiling pkg-config v0.3.34
+[WebServer]    Compiling[WebServer]  agq-application v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\application)
+[WebServer]    Compiling ryu v1.0.23
+[WebServer]    Compiling anstyle v1.0.14
+[WebServer]    Compiling futures-sink v0.3.34
+[WebServer]    Compiling once_cell_polyfill v1.70.2
+[WebServer]    Compiling utf8parse v0.2.2
+[WebServer]    Compiling foldhash v0.1.5
+[WebServer]    Compiling[WebServer]  webpki-roots v1.0.9
+[WebServer]    Compiling[WebServer]  libsqlite3-sys v0.35.0
+[WebServer]    Compiling anstyle-parse v1.0.0
+[WebServer]    Compiling hashbrown v0.15.5
+[WebServer]    Compiling anstyle-wincon v3.0.11
+[WebServer]    Compiling anstyle-query v1.1.5
+[WebServer]    Compiling http-range-header v0.4.2
+[WebServer]    Compiling colorchoice v1.0.5
+[WebServer]    Compiling[WebServer]  displaydoc v0.2.7
+[WebServer]    Compiling zerofrom-derive v0.1.8
+[WebServer]    Compiling yoke-derive v0.8.3
+[WebServer]    Compiling[WebServer]  serde_derive v1.0.229
+[WebServer]    Compiling zerovec-derive v0.11.6
+[WebServer]    Compiling tokio-macros v2.7.2
+[WebServer]    Compiling thiserror-impl v2.0.20
+[WebServer]    Compiling[WebServer]  rustls-webpki v0.103.15
+[WebServer]    Compiling[WebServer]  is_terminal_polyfill v1.70.2
+[WebServer]    Compiling tokio v1.53.1
+[WebServer]    Compiling hashlink v0.10.0
+[WebServer]    Compiling anstream v1.0.0
+[WebServer]    Compiling fallible-iterator v0.3.0
+[WebServer]    Compiling[WebServer]  clap_lex v1.1.1
+[WebServer]    Compiling zerofrom v0.1.8
+[WebServer]    Compiling heck v0.5.0
+[WebServer]    Compiling strsim v0.11.1
+[WebServer]    Compiling[WebServer]  fallible-streaming-iterator v0.1.9
+[WebServer]    Compiling[WebServer]  yoke v0.8.3
+[WebServer]    Compiling[WebServer]  clap_derive v4.6.7
+[WebServer]    Compiling clap_builder v4.6.7
+[WebServer]    Compiling axum-core v0.5.6
+[WebServer]    Compiling serde_path_to_error v0.1.20
+[WebServer]    Compiling matchit v0.8.4
+[WebServer]    Compiling zerovec v0.11.8
+[WebServer]    Compiling zerotrie v0.2.5
+[WebServer]    Compiling rusqlite v0.37.0
+[WebServer]    Compiling tinystr v0.8.4
+[WebServer]    Compiling potential_utf v0.1.6
+[WebServer]    Compiling icu_collections v2.3.0
+[WebServer]    Compiling icu_locale_core v2.3.0
+[WebServer]    Compiling num-bigint v0.4.8
+[WebServer]    Compiling chrono v0.4.45
+[WebServer]    Compiling serde_urlencoded v0.7.1
+[WebServer]    Compiling clap v4.6.7
+[WebServer]    Compiling agq-model v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\model)
+[WebServer]    Compiling icu_provider v2.3.1
+[WebServer]    Compiling agq-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\syntax)
+[WebServer]    Compiling icu_normalizer v2.3.0
+[WebServer]    Compiling icu_properties v2.3.0
+[WebServer]    Compiling agq-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\workspace)
+[WebServer]    Compiling agq-simulation v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\simulation)
+[WebServer]    Compiling idna_adapter v1.2.2
+[WebServer]    Compiling idna v1.1.0
+[WebServer]    Compiling[WebServer]  url v2.5.8
+[WebServer]    Compiling agq-storage v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\storage)
+[WebServer]    Compiling hyper v1.11.1
+[WebServer]    Compiling tower v0.5.3
+[WebServer]    Compiling tokio-util v0.7.19
+[WebServer]    Compiling tokio-rustls v0.26.5
+[WebServer]    Compiling tower-http v0.6.11
+[WebServer]    Compiling hyper-util v0.1.20
+[WebServer]    Compiling hyper-rustls v0.27.9
+[WebServer]    Compiling axum v0.8.9
+[WebServer]    Compiling reqwest v0.12.28
+[WebServer]    Compiling agq-assistant v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\assistant)
+[WebServer]    Compiling agq-server v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\server)
+[WebServer]     Finished `dev` profile [unoptimized + debuginfo] target(s) in 1m 05s
+[WebServer]      Running `target\debug\agq-server.exe --port 7342 --workspace .workspaces/e2e-1923802f-9496-4177-bd7f-48d93d31d683.db`
+
+Running 8 tests using 1 worker
+
+  ✘  1 tests\browser\console.spec.ts:5:1 › Cancellable model work and paged history use durable Engine results (1.1m)
+  ✓  2 tests\browser\console.spec.ts:143:1 › Console lifecycle, source navigation, shared context and reviewed Assistant change (35.1s)
+  ✓  3 tests\browser\console.spec.ts:242:1 › API authentication, scope, identity mapping and revision checks (7.4s)
+  ✘  4 tests\browser\console.spec.ts:330:1 › Keyboard inspection and recoverable source drafts (17.2s)
+  ✓  5 tests\browser\studio.spec.ts:272:1 › Studio reports missing durable inputs without substituting model content (1.2s)
+  ✓  6 tests\browser\studio.spec.ts:298:1 › Studio shared selection, semantic filters, explanation and revision binding (3.3s)
+  ✓  7 tests\browser\studio.spec.ts:386:1 › Agent view and explicit candidate validation, commit, history, and rejection (3.3s)
+  ✓  8 tests\browser\studio.spec.ts:470:1 › Studio refuses a projection from the wrong immutable revision (972ms)
+
+
+  1) tests\browser\console.spec.ts:5:1 › Cancellable model work and paged history use durable Engine results 
+
+    Error: expect(locator).toContainText(expected) failed
+
+    Locator: locator('.run-stats')
+    Expected substring: "input_exhausted"
+    Received string:    "StatusrunningActive statedormantInputs consumed452 / 511Stop reason—"
+    Timeout: 45000ms
+
+    Call log:
+      - Expect "toContainText" locator('.run-stats') with timeout 45000ms
+      - waiting for locator('.run-stats')
+        3 × locator resolved to <div class="run-stats">…</div>
+          - unexpected value "StatuspausedActive statedormantInputs consumed0 / 511Stop reason—"
+        4 × locator resolved to <div class="run-stats">…</div>
+          - unexpected value "StatusrunningActive stateliveInputs consumed1 / 511Stop reason—"
+        - locator resolved to <div class="run-stats">…</div>
+        - unexpected value "StatusrunningActive statedormantInputs consumed6 / 511Stop reason—"
+        - locator resolved to <div class="run-stats">…</div>
+        - unexpected value "StatusrunningActive statedormantInputs consumed10 / 511Stop reason—"
+        3 × locator resolved to <div class="run-stats">…</div>
+          - unexpected value "StatusrunningActive stateliveInputs consumed15 / 511Stop reason—"
+        2 × locator resolved to <div class="run-stats">…</div>
+          - unexpected value "StatusrunningActive stateliveInputs consumed19 / 511Stop reason—"
+        4 × locator resolved to <div class="run-stats">…</div>
+          - unexpected value "StatusrunningActive stateliveInputs consumed29 / 511Stop reason—"
+        3 × locator resolved to <div class="run-stats">…</div>
+          - unexpected value "StatusrunningActive stateliveInputs consumed41 / 511Stop reason—"
+        - locator resolved to <div class="run-stats">…</div>
+        - unexpected value "StatusrunningActive stateliveInputs consumed45 / 511Stop reason—"
+        2 × locator resolved to <div class="run-stats">…</div>
+          - unexpected value "StatusrunningActive statedormantInputs consumed52 / 511Stop reason—"
+        - locator resolved to <div class="run-stats">…</div>
+        - unexpected value "StatusrunningActive statedormantInputs consumed58 / 511Stop reason—"
+        4 × locator resolved to <div class="run-stats">…</div>
+          - unexpected value "StatusrunningActive statedormantInputs consumed68 / 511Stop reason—"
+        - locator resolved to <div class="run-stats">…</div>
+        - unexpected value "StatusrunningActive statedormantInputs consumed120 / 511Stop reason—"
+        5 × locator resolved to <div class="run-stats">…</div>
+          - unexpected value "StatusrunningActive stateliveInputs consumed123 / 511Stop reason—"
+        - locator resolved to <div class="run-stats">…</div>
+        - unexpected value "StatusrunningActive statedormantInputs consumed172 / 511Stop reason—"
+        2 × locator resolved to <div class="run-stats">…</div>
+          - unexpected value "StatusrunningActive statedormantInputs consumed176 / 511Stop reason—"
+        2 × locator resolved to <div class="run-stats">…</div>
+          - unexpected value "StatusrunningActive statedormantInputs consumed180 / 511Stop reason—"
+        3 × locator resolved to <div class="run-stats">…</div>
+          - unexpected value "StatusrunningActive statedormantInputs consumed184 / 511Stop reason—"
+        - locator resolved to <div class="run-stats">…</div>
+        - unexpected value "StatusrunningActive statedormantInputs consumed188 / 511Stop reason—"
+        2 × locator resolved to <div class="run-stats">…</div>
+          - unexpected value "StatusrunningActive stateliveInputs consumed191 / 511Stop reason—"
+        - locator resolved to <div class="run-stats">…</div>
+        - unexpected value "StatusrunningActive stateliveInputs consumed193 / 511Stop reason—"
+        3 × locator resolved to <div class="run-stats">…</div>
+          - unexpected value "StatusrunningActive statedormantInputs consumed194 / 511Stop reason—"
+        - locator resolved to <div class="run-stats">…</div>
+        - unexpected value "StatusrunningActive statedormantInputs consumed198 / 511Stop reason—"
+        2 × locator resolved to <div class="run-stats">…</div>
+          - unexpected value "StatusrunningActive statedormantInputs consumed202 / 511Stop reason—"
+        - locator resolved to <div class="run-stats">…</div>
+        - unexpected value "StatusrunningActive statedormantInputs consumed206 / 511Stop reason—"
+        - locator resolved to <div class="run-stats">…</div>
+        - unexpected value "StatusrunningActive statedormantInputs consumed210 / 511Stop reason—"
+        - locator resolved to <div class="run-stats">…</div>
+        - unexpected value "StatusrunningActive statedormantInputs consumed212 / 511Stop reason—"
+        4 × locator resolved to <div class="run-stats">…</div>
+          - unexpected value "StatusrunningActive statedormantInputs consumed214 / 511Stop reason—"
+        2 × locator resolved to <div class="run-stats">…</div>
+          - unexpected value "StatusrunningActive stateliveInputs consumed251 / 511Stop reason—"
+        - locator resolved to <div class="run-stats">…</div>
+        - unexpected value "StatusrunningActive stateliveInputs consumed259 / 511Stop reason—"
+        4 × locator resolved to <div class="run-stats">…</div>
+          - unexpected value "StatusrunningActive stateliveInputs consumed265 / 511Stop reason—"
+        5 × locator resolved to <div class="run-stats">…</div>
+          - unexpected value "StatusrunningActive statedormantInputs consumed308 / 511Stop reason—"
+        5 × locator resolved to <div class="run-stats">…</div>
+          - unexpected value "StatusrunningActive stateliveInputs consumed353 / 511Stop reason—"
+        - locator resolved to <div class="run-stats">…</div>
+        - unexpected value "StatusrunningActive stateliveInputs consumed397 / 511Stop reason—"
+        4 × locator resolved to <div class="run-stats">…</div>
+          - unexpected value "StatusrunningActive stateliveInputs consumed405 / 511Stop reason—"
+        2 × locator resolved to <div class="run-stats">…</div>
+          - unexpected value "StatusrunningActive statedormantInputs consumed446 / 511Stop reason—"
+        - locator resolved to <div class="run-stats">…</div>
+        - unexpected value "StatusrunningActive statedormantInputs consumed448 / 511Stop reason—"
+        2 × locator resolved to <div class="run-stats">…</div>
+          - unexpected value "StatusrunningActive statedormantInputs consumed450 / 511Stop reason—"
+        2 × locator resolved to <div class="run-stats">…</div>
+          - unexpected value "StatusrunningActive statedormantInputs consumed452 / 511Stop reason—"
+
+
+      126 |   await page.getByRole("button", { name: "Initialise", exact: true }).click();
+      127 |   await page.getByRole("button", { name: "Run", exact: true }).click();
+    > 128 |   await expect(page.locator(".run-stats")).toContainText("input_exhausted", {
+          |                                            ^
+      129 |     timeout: 45000,
+      130 |   });
+      131 |   await page
+        at C:\Users\phili\github\agentique-systems\agentique\tests\browser\console.spec.ts:128:44
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\console-Cancellable-model--d6d07--use-durable-Engine-results\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\console-Cancellable-model--d6d07--use-durable-Engine-results\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\console-Cancellable-model--d6d07--use-durable-Engine-results\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\console-Cancellable-model--d6d07--use-durable-Engine-results\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) tests\browser\console.spec.ts:330:1 › Keyboard inspection and recoverable source drafts ───────
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator: getByLabel('Filter model elements')
+    Expected: visible
+    Timeout: 5000ms
+    Error: element(s) not found
+
+    Call log:
+      - Expect "toBeVisible" getByLabel('Filter model elements') with timeout 5000ms
+      - waiting for getByLabel('Filter model elements')
+
+
+      360 |   ).toBe(true);
+      361 |   await page.reload();
+    > 362 |   await expect(page.getByLabel("Filter model elements")).toBeVisible();
+          |                                                          ^
+      363 |   await page.getByLabel("Filter model elements").focus();
+      364 |   await page.keyboard.type("Engine");
+      365 |   await page.keyboard.press("Tab");
+        at C:\Users\phili\github\agentique-systems\agentique\tests\browser\console.spec.ts:362:58
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\console-Keyboard-inspection-and-recoverable-source-drafts\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\console-Keyboard-inspection-and-recoverable-source-drafts\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\console-Keyboard-inspection-and-recoverable-source-drafts\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\console-Keyboard-inspection-and-recoverable-source-drafts\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    tests\browser\console.spec.ts:5:1 › Cancellable model work and paged history use durable Engine results 
+    tests\browser\console.spec.ts:330:1 › Keyboard inspection and recoverable source drafts ────────
+  6 passed (4.4m)
