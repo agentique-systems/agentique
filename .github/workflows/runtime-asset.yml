@@ -53,14 +53,19 @@ jobs:
           path = pathlib.Path('runtime-input/accepted-runtime.agq-runtime')
           with path.open('rb') as stream:
               digest = hashlib.file_digest(stream, 'sha256').hexdigest()
-          assert digest == os.environ['RUNTIME_SHA256'].lower(), 'Transport identity mismatch'
-          with zipfile.ZipFile(path) as archive:
-              assert sorted(archive.namelist()) == ['kerml.cache', 'manifest.json', 'systems.cache']
-              manifest = json.loads(archive.read('manifest.json'))
+              assert digest == os.environ['RUNTIME_SHA256'].lower(), 'Transport identity mismatch'
+              stream.seek(0)
+              with zipfile.ZipFile(stream) as archive:
+                  assert sorted(archive.namelist()) == ['kerml.cache', 'manifest.json', 'systems.cache']
+                  assert 0 < archive.getinfo('manifest.json').file_size <= 64 * 1024, 'Manifest size limit'
+                  manifest = json.loads(archive.read('manifest.json'))
+              transport_bytes = stream.seek(0, 2)
+              stream.seek(0)
+              assert hashlib.file_digest(stream, 'sha256').hexdigest() == digest, 'Transport changed during inspection'
           evidence = pathlib.Path('runtime-evidence')
           evidence.mkdir()
           (evidence / 'manifest.json').write_text(json.dumps(manifest, indent=2))
-          (evidence / 'transport.json').write_text(json.dumps({'sha256': digest, 'bytes': path.stat().st_size,
+          (evidence / 'transport.json').write_text(json.dumps({'sha256': digest, 'bytes': transport_bytes,
               'source_commit': os.environ['GITHUB_SHA'], 'draft_tag': os.environ['RUNTIME_TAG']}, indent=2))
           PY
       - run: cargo fetch --locked
