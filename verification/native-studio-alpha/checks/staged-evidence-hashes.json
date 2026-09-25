@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python",
+    "verification/scripts/native_alpha_evidence.py",
+    "--git-index"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T17:16:03.155278+00:00",
+  "elapsed_seconds": 2.688,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/staged-evidence-hashes.txt",
+  "output_sha256": "da7902530d0c703c2fb2a7b846690d23985df8ec43f5b4aac572f5cead40842c",
+  "build_environment": {}
+}
