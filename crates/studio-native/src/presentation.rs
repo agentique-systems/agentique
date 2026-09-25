@@ -270,6 +270,7 @@ impl StudioApp {
                 return Err("Saved fixture revision is unavailable".into());
             }
         }
+        let previous = self.display_snapshot();
         let presentation = saved.presentation;
         self.world = presentation.world;
         self.focus = presentation.definition.focus;
@@ -316,7 +317,11 @@ impl StudioApp {
         } else if let Some(projection) = saved_fixture {
             self.projection = projection;
             self.apply_saved_presentation(presentation);
-            self.rebuild();
+            if !self.rebuild_immediate() {
+                let error = self.status.clone();
+                self.restore_display(previous);
+                return Err(error);
+            }
             self.record_location();
         }
         self.status = format!("Opened local view ‘{}’ at its saved revision", saved.name);

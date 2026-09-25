@@ -25,6 +25,8 @@ pub enum Output {
     Comparison(ComparisonProjection),
     Candidate(CandidateProjection),
     CandidateView(CandidateProjection, ViewProjection),
+    /// Lifecycle recovery never replaces a disposable scene or selection.
+    CandidateLifecycle(CandidateProjection),
     Committed(CommitReceipt),
     Cancelled,
 }

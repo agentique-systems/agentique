@@ -7,6 +7,7 @@ use std::collections::BTreeSet;
 
 /// A temporary query has a return address in the same immutable model context.
 /// Candidate phase and authority are deliberately never copied back from this.
+#[derive(Clone)]
 pub struct AgentReturn {
     context: crate::bridge::WorkContext,
     projection: agq_modeling_view::ViewProjection,
@@ -28,6 +29,7 @@ pub struct AgentReturn {
 }
 
 /// A query observation retains the requested subject even when selection changes.
+#[derive(Clone)]
 pub struct DependencyActivity {
     pub revision: ProjectRevisionId,
     pub root: ElementId,
@@ -66,6 +68,7 @@ impl crate::app::StudioApp {
 
     pub fn dismiss_agent_view(&mut self) {
         self.cancel_revision_navigation();
+        let previous_display = self.display_snapshot();
         self.show_agent = false;
         self.dependencies = None;
         self.agent_activity = None;
@@ -104,7 +107,10 @@ impl crate::app::StudioApp {
             self.families = previous.families;
             self.include_standard = previous.include_standard;
             self.invalidate_inspection();
-            self.rebuild();
+            if !self.rebuild_immediate() {
+                self.restore_display(previous_display);
+                return;
+            }
             self.fit_pending = false;
             self.request_inspection();
             self.status = "Returned to your view · model unchanged".into();

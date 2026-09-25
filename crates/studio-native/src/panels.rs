@@ -173,6 +173,38 @@ impl StudioApp {
                 });
             ctx.request_repaint_after(std::time::Duration::from_millis(100));
         }
+        if let Some(target) = self
+            .revision_retry
+            .filter(|target| self.project_id() == Some(target.project))
+        {
+            egui::TopBottomPanel::bottom("revision_view_retry")
+                .frame(egui::Frame::new().fill(theme.elevated).inner_margin(12))
+                .show(ctx, |ui| {
+                    ui.horizontal(|ui| {
+                        let committed =
+                            self.committed_receipt
+                                .as_ref()
+                                .is_some_and(|(project, receipt)| {
+                                    *project == target.project
+                                        && receipt.revision_id == target.revision
+                                });
+                        ui.label(if committed {
+                            "Revision committed durably; its view is unavailable."
+                        } else {
+                            "Requested revision view is unavailable; current revision retained."
+                        });
+                        if ui
+                            .add_enabled(
+                                self.pending_revision.is_none() && !self.bridge.mutation_pending(),
+                                egui::Button::new("Retry revision view"),
+                            )
+                            .clicked()
+                        {
+                            self.retry_revision_view();
+                        }
+                    });
+                });
+        }
         if self.candidate.is_some() {
             egui::TopBottomPanel::bottom("candidate_review")
                 .exact_height(96.0)
@@ -185,8 +217,29 @@ impl StudioApp {
                     ui.horizontal(|ui| {
                         ui.vertical(|ui| {
                             let review = self.context().candidate;
-                            ui.label(RichText::new(review.title()).strong().size(14.0));
-                            ui.label(muted(review.description(), theme).small());
+                            if self.lifecycle_unknown {
+                                ui.label(
+                                    RichText::new("CANDIDATE STATE NEEDS REFRESH")
+                                        .strong()
+                                        .size(14.0),
+                                );
+                                ui.label(
+                                    muted("Model actions wait for the authoritative state", theme)
+                                        .small(),
+                                );
+                                if ui
+                                    .add_enabled(
+                                        self.lifecycle_request == 0,
+                                        egui::Button::new("Refresh candidate state"),
+                                    )
+                                    .clicked()
+                                {
+                                    self.reconcile_candidate_lifecycle();
+                                }
+                            } else {
+                                ui.label(RichText::new(review.title()).strong().size(14.0));
+                                ui.label(muted(review.description(), theme).small());
+                            }
                         });
                         ui.add_space(24.0);
                         for mode in [

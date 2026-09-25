@@ -50,6 +50,39 @@ pub struct PendingPreparation {
     pub cancelled: bool,
 }
 
+/// Disposable display state only. Restoring this must never restore a lifecycle
+/// phase, durable binding, receipt or operator authority from an older snapshot.
+pub struct DisplayState {
+    projection: ViewProjection,
+    candidate: Option<CandidateDisplay>,
+    comparison: ComparisonMode,
+    compare_before: Option<ViewProjection>,
+    world: World,
+    focus: Option<ElementId>,
+    selection: Selection,
+    camera: Camera2D,
+    camera_target: Option<Camera2D>,
+    layout: LayoutMemory,
+    layouts: BTreeMap<World, LayoutMemory>,
+    layout_world: World,
+    collapsed: BTreeSet<ElementId>,
+    expanded: Option<BTreeSet<ElementId>>,
+    families: BTreeSet<RelationshipFamily>,
+    include_standard: bool,
+    show_agent: bool,
+    dependencies: Option<BTreeSet<ElementId>>,
+    agent_activity: Option<crate::agents::DependencyActivity>,
+    agent_return: Option<crate::agents::AgentReturn>,
+    fit_pending: bool,
+}
+
+struct CandidateDisplay {
+    id: Option<CandidateId>,
+    before: ViewProjection,
+    after: ViewProjection,
+    review_selection: Option<Selection>,
+}
+
 pub struct StudioApp {
     pub args: Args,
     pub theme: Theme,
@@ -64,6 +97,9 @@ pub struct StudioApp {
     pub binding: Option<RevisionBinding>,
     /// Requested revision becomes current only when its projection is ready.
     pub pending_revision: Option<RevisionBinding>,
+    /// A durable acknowledgement survives failed or superseded view preparation.
+    pub committed_receipt: Option<(ProjectId, agq_modeling_repository::CommitReceipt)>,
+    pub revision_retry: Option<RevisionBinding>,
     pub branch: Option<BranchId>,
     pub history: Option<ProjectHistory>,
     pub bridge: Bridge,
@@ -73,6 +109,9 @@ pub struct StudioApp {
     pub explanation_request: u64,
     pub source_request: u64,
     pub project_request: u64,
+    pub lifecycle_request: u64,
+    pub lifecycle_unknown: bool,
+    pub history_request: Option<(u64, ProjectId)>,
     pub projection: ViewProjection,
     pub scene: SemanticScene,
     pub scene_builder: crate::scene_build::SceneBuilder,
@@ -196,6 +235,8 @@ impl StudioApp {
             projects: vec![],
             binding: None,
             pending_revision: None,
+            committed_receipt: None,
+            revision_retry: None,
             branch: None,
             history: None,
             bridge,
@@ -205,6 +246,9 @@ impl StudioApp {
             explanation_request: 0,
             source_request: 0,
             project_request: 0,
+            lifecycle_request: 0,
+            lifecycle_unknown: false,
+            history_request: None,
             projection,
             scene,
             scene_builder: crate::scene_build::SceneBuilder::new(cc.egui_ctx.clone())?,
@@ -291,7 +335,76 @@ impl StudioApp {
     pub fn project_id(&self) -> Option<ProjectId> {
         self.binding.map(|b| b.project)
     }
+    pub fn display_snapshot(&self) -> DisplayState {
+        DisplayState {
+            projection: self.projection.clone(),
+            candidate: self.candidate.as_ref().map(|candidate| CandidateDisplay {
+                id: candidate.id,
+                before: candidate.before.clone(),
+                after: candidate.after.clone(),
+                review_selection: candidate.review_selection.clone(),
+            }),
+            comparison: self.comparison,
+            compare_before: self.compare_before.clone(),
+            world: self.world,
+            focus: self.focus,
+            selection: self.selection.clone(),
+            camera: self.camera,
+            camera_target: self.camera_target,
+            layout: self.layout.clone(),
+            layouts: self.layouts.clone(),
+            layout_world: self.layout_world,
+            collapsed: self.collapsed.clone(),
+            expanded: self.expanded.clone(),
+            families: self.families.clone(),
+            include_standard: self.include_standard,
+            show_agent: self.show_agent,
+            dependencies: self.dependencies.clone(),
+            agent_activity: self.agent_activity.clone(),
+            agent_return: self.agent_return.clone(),
+            fit_pending: self.fit_pending,
+        }
+    }
+    pub fn restore_display(&mut self, previous: DisplayState) {
+        self.scene_builder.invalidate();
+        self.projection = previous.projection;
+        if let (Some(current), Some(old)) = (&mut self.candidate, previous.candidate)
+            && current.id == old.id
+        {
+            current.before = old.before;
+            current.after = old.after;
+            current.review_selection = old.review_selection;
+        }
+        self.comparison = previous.comparison;
+        self.compare_before = previous.compare_before;
+        self.world = previous.world;
+        self.focus = previous.focus;
+        self.selection = previous.selection;
+        self.camera = previous.camera;
+        self.camera_target = previous.camera_target;
+        self.layout = previous.layout;
+        self.layouts = previous.layouts;
+        self.layout_world = previous.layout_world;
+        self.collapsed = previous.collapsed;
+        self.expanded = previous.expanded;
+        self.families = previous.families;
+        self.include_standard = previous.include_standard;
+        self.show_agent = previous.show_agent;
+        self.dependencies = previous.dependencies;
+        self.agent_activity = previous.agent_activity;
+        self.agent_return = previous.agent_return;
+        self.fit_pending = previous.fit_pending;
+        self.invalidate_inspection();
+        self.batch_key = None;
+    }
     pub fn rebuild(&mut self) -> bool {
+        self.rebuild_with_background(true)
+    }
+    /// Revision/candidate/return swaps must finish before publishing matching DTOs.
+    pub fn rebuild_immediate(&mut self) -> bool {
+        self.rebuild_with_background(false)
+    }
+    fn rebuild_with_background(&mut self, background: bool) -> bool {
         if self.layout_world != self.world {
             self.layouts.insert(self.layout_world, self.layout.clone());
             self.layout = self.layouts.get(&self.world).cloned().unwrap_or_default();
@@ -338,7 +451,8 @@ impl StudioApp {
         // Large same-revision presentation changes retain the explorable previous
         // scene while layout, routing and indexes build on a dedicated worker.
         // Revision swaps stay atomic until all revision-bound UI is staged.
-        if input.projection.nodes.len() >= 750
+        if background
+            && input.projection.nodes.len() >= 750
             && input.projection.revision_id == self.scene.revision_id
             && self.pending_revision.is_none()
         {

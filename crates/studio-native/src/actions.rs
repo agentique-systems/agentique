@@ -38,7 +38,7 @@ impl StudioApp {
                 },
             ),
             live: self.binding.is_some() && self.fixture.is_none(),
-            busy: !self.pending.is_empty(),
+            busy: !self.pending.is_empty() || self.lifecycle_unknown,
             graph_node: self.world == World::Graph
                 && self
                     .selected_element()
@@ -57,6 +57,7 @@ impl StudioApp {
             self.status = "Wait for the model operation before changing the candidate view".into();
             return;
         }
+        let previous = self.display_snapshot();
         if let Some(candidate) = &mut self.candidate {
             if self.comparison != ComparisonMode::Current {
                 candidate.review_selection = Some(self.selection.clone());
@@ -68,7 +69,10 @@ impl StudioApp {
         }
         self.comparison = mode;
         self.invalidate_inspection();
-        self.rebuild();
+        if !self.rebuild_immediate() {
+            self.restore_display(previous);
+            return;
+        }
         if self.fixture.is_none() {
             self.request_projection();
         }
@@ -125,10 +129,53 @@ impl StudioApp {
     /// An explicit action on the visible revision supersedes queued navigation.
     /// Its worker result cannot later replace this newer operator intent.
     pub fn cancel_revision_navigation(&mut self) {
-        if self.pending_revision.take().is_some() {
+        if let Some(target) = self.pending_revision.take() {
+            if self
+                .committed_receipt
+                .as_ref()
+                .is_some_and(|(project, receipt)| {
+                    *project == target.project && receipt.revision_id == target.revision
+                })
+            {
+                self.revision_retry = Some(target);
+            }
             self.scene_request = 0;
             self.restore = None;
         }
+    }
+    pub fn reconcile_candidate_lifecycle(&mut self) {
+        if let Some(id) = self.candidate.as_ref().and_then(|candidate| candidate.id) {
+            self.lifecycle_unknown = true;
+            let view = self.definition();
+            self.lifecycle_request = self.enqueue(Box::new(move |platform| {
+                platform
+                    .candidate(id, &view)
+                    .map(Output::CandidateLifecycle)
+            }));
+        }
+    }
+    pub fn refresh_history(&mut self) {
+        if let Some(project) = self.project_id() {
+            let request = self.enqueue(Box::new(move |platform| {
+                platform.history(project).map(Output::HistoryRefresh)
+            }));
+            self.history_request = (request != 0).then_some((request, project));
+        }
+    }
+    pub fn retry_revision_view(&mut self) {
+        let Some(target) = self.revision_retry else {
+            return;
+        };
+        if self.project_id() != Some(target.project) || !self.allow_context_change() {
+            return;
+        }
+        self.pending_revision = Some(target);
+        self.restore = None;
+        self.focus = None;
+        self.expanded = None;
+        self.refresh_history();
+        self.request_projection();
+        self.status = "Retrying revision view · durable history is unchanged".into();
     }
     pub fn select_revision(&mut self, revision: ProjectRevisionId) {
         if !self.allow_context_change() {
@@ -375,6 +422,11 @@ impl StudioApp {
                         .map(Output::Projection)
                 }
             }));
+            if self.scene_request == 0
+                && let Some(target) = self.pending_revision.take()
+            {
+                self.revision_retry = Some(target);
+            }
         } else {
             self.rebuild();
         }
@@ -440,6 +492,10 @@ impl StudioApp {
         self.fixture = Some(name.into());
         self.binding = None;
         self.pending_revision = None;
+        self.revision_retry = None;
+        self.history_request = None;
+        self.lifecycle_request = 0;
+        self.lifecycle_unknown = false;
         self.branch = None;
         self.history = None;
         // Fence all outstanding read responses when entering fixture mode.
