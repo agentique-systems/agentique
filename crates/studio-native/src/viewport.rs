@@ -612,10 +612,16 @@ impl StudioApp {
                         && self.focus.is_some()
                         && objects.ports.len() <= 24)
                 {
-                    let width = self
-                        .lookup
-                        .node(&self.scene, port.owner)
-                        .map_or(100.0, |node| node.bounds.width() * self.camera.zoom * 0.44);
+                    let owner = self.lookup.node(&self.scene, port.owner);
+                    let expanded_owner =
+                        owner.is_some_and(|node| node.is_container && !node.collapsed);
+                    let owner_width =
+                        owner.map_or(100.0 / 0.44, |node| node.bounds.width() * self.camera.zoom);
+                    let width = if port.label_in_header {
+                        (owner_width * 0.44).min((owner_width * 0.5 - 20.0).max(10.0))
+                    } else {
+                        owner_width * 0.44
+                    };
                     let label_color = if selected_port {
                         theme.accent
                     } else {
@@ -631,12 +637,34 @@ impl StudioApp {
                     job.wrap.break_anywhere = true;
                     job.wrap.overflow_character = Some('…');
                     let galley = painter.layout_job(job);
-                    let offset = if port.side == PortSide::Left {
-                        10.0
-                    } else {
-                        -10.0 - galley.size().x
-                    };
-                    painter.galley(position + Vec2::new(offset, 10.0), galley, label_color);
+                    // At low zoom a fixed-size name cannot fit the reserved
+                    // row. Keep it outside the body with an explicit leader.
+                    let header_label = port.label_in_header
+                        && self.camera.zoom * 24.0 >= galley.size().y
+                        && owner_width >= 80.0;
+                    let external = expanded_owner && !header_label;
+                    let label_origin = port_label_origin(
+                        port.side,
+                        position,
+                        galley.size(),
+                        expanded_owner,
+                        header_label,
+                    );
+                    if external {
+                        // A distributed boundary label belongs outside an
+                        // expanded owner, never over a child card. A short
+                        // leader ties this disposable label to the exact port.
+                        let label_rect = egui::Rect::from_min_size(label_origin, galley.size());
+                        let end = match port.side {
+                            PortSide::Left => label_rect.right_center(),
+                            PortSide::Right => label_rect.left_center(),
+                            PortSide::Top => label_rect.center_bottom(),
+                            PortSide::Bottom => label_rect.center_top(),
+                        };
+                        painter.line_segment([position, end], Stroke::new(1.0, label_color));
+                        painter.rect_filled(label_rect.expand(2.0), 2.0, theme.surface);
+                    }
+                    painter.galley(label_origin, galley, label_color);
                 }
                 if port_response.hovered() {
                     let connections = self
@@ -949,6 +977,34 @@ impl StudioApp {
         batch
     }
 }
+fn port_label_origin(
+    side: PortSide,
+    position: egui::Pos2,
+    size: Vec2,
+    expanded_owner: bool,
+    label_in_header: bool,
+) -> egui::Pos2 {
+    if expanded_owner {
+        let offset = match (side, label_in_header) {
+            (PortSide::Left, true) => Vec2::new(10.0, -size.y * 0.5),
+            (PortSide::Right, true) => Vec2::new(-10.0 - size.x, -size.y * 0.5),
+            (PortSide::Left, false) => Vec2::new(-10.0 - size.x, -size.y * 0.5),
+            (PortSide::Right, false) => Vec2::new(10.0, -size.y * 0.5),
+            (PortSide::Top, _) => Vec2::new(-size.x * 0.5, -10.0 - size.y),
+            (PortSide::Bottom, _) => Vec2::new(-size.x * 0.5, 10.0),
+        };
+        position + offset
+    } else {
+        position
+            + match side {
+                PortSide::Left => Vec2::new(10.0, 10.0),
+                PortSide::Right => Vec2::new(-10.0 - size.x, 10.0),
+                PortSide::Top => Vec2::new(-size.x * 0.5, -10.0 - size.y),
+                PortSide::Bottom => Vec2::new(-size.x * 0.5, 10.0),
+            }
+    }
+}
+
 pub(crate) fn port_direction_label(direction: agq_studio_scene::PortDirection) -> &'static str {
     match direction {
         agq_studio_scene::PortDirection::Unspecified => "not specified",
@@ -1063,4 +1119,54 @@ fn bounded_label(
     job.wrap.break_anywhere = rows == 1;
     job.wrap.overflow_character = Some('…');
     painter.galley(position, painter.layout_job(job), color);
+}
+
+#[cfg(test)]
+mod port_label_tests {
+    use super::*;
+
+    #[test]
+    fn expanded_owner_labels_use_the_clear_header_or_the_exterior_not_child_cards() {
+        let size = Vec2::new(92.0, 14.0);
+        // Real-run04's focused container is shown near 71% zoom. The new
+        // reserved row at world y=72 stays above children at world y=92.
+        let zoom = 0.708;
+        for side in [PortSide::Left, PortSide::Right] {
+            let x = if side == PortSide::Left {
+                0.0
+            } else {
+                844.0 * zoom
+            };
+            let port = egui::pos2(x, 72.0 * zoom);
+            let rect =
+                egui::Rect::from_min_size(port_label_origin(side, port, size, true, true), size);
+            assert!(rect.min.y > 58.0 * zoom);
+            assert!(rect.max.y < 92.0 * zoom);
+            assert!(rect.min.x >= 0.0 && rect.max.x <= 844.0 * zoom);
+
+            let body_port = egui::pos2(x, 292.0 * zoom);
+            let exterior = egui::Rect::from_min_size(
+                port_label_origin(side, body_port, size, true, false),
+                size,
+            );
+            if side == PortSide::Left {
+                assert!(exterior.max.x < 0.0);
+            } else {
+                assert!(exterior.min.x > 844.0 * zoom);
+            }
+            assert_eq!(exterior.center().y, body_port.y);
+        }
+        let top = egui::pos2(140.0, 0.0);
+        let top_label = egui::Rect::from_min_size(
+            port_label_origin(PortSide::Top, top, size, true, false),
+            size,
+        );
+        assert!(top_label.max.y < top.y);
+        let bottom = egui::pos2(140.0, 500.0);
+        let bottom_label = egui::Rect::from_min_size(
+            port_label_origin(PortSide::Bottom, bottom, size, true, false),
+            size,
+        );
+        assert!(bottom_label.min.y > bottom.y);
+    }
 }

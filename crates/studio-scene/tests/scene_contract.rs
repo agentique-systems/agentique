@@ -602,6 +602,109 @@ fn self_relationship_routes_form_a_visible_loop() {
 }
 
 #[test]
+fn expanded_owner_port_strips_are_clear_bounded_and_preserve_canonical_identity() {
+    for count in [1_usize, 2, 4, 5, 24] {
+        let mut projection = fixtures::architecture();
+        let owner = fixtures::id(2);
+        let features: Vec<_> = (0..count)
+            .map(|index| agq_modeling_view::FeatureSummary {
+                id: fixtures::id(80_000 + index as u128),
+                name: format!("actualBoundary_{index}"),
+                semantic_kind: "PortUsage".into(),
+            })
+            .collect();
+        let owner_node = projection
+            .nodes
+            .iter_mut()
+            .find(|node| node.id == owner)
+            .unwrap();
+        owner_node.features = features.clone();
+        // An advisory count must not reserve a made-up header or duplicate the
+        // actual ports also present as canonical records in this projection.
+        owner_node.counts.ports = 99;
+        for feature in &features {
+            let mut port = projection.nodes[0].clone();
+            port.id = feature.id;
+            port.owner = Some(owner);
+            port.semantic_kind = "PortUsage".into();
+            port.name = feature.name.clone();
+            port.features.clear();
+            port.counts = Default::default();
+            projection.nodes.push(port);
+        }
+        let scene =
+            SemanticScene::from_projection(&projection, &SceneOptions::default(), None).unwrap();
+        let container = scene.node(owner).unwrap();
+        let ports: Vec<_> = scene
+            .ports
+            .iter()
+            .filter(|port| port.owner == owner)
+            .collect();
+        assert_eq!(ports.len(), count);
+        assert_eq!(
+            ports
+                .iter()
+                .map(|port| port.id)
+                .collect::<std::collections::BTreeSet<_>>(),
+            features.iter().map(|feature| feature.id).collect()
+        );
+        assert!(
+            ports
+                .iter()
+                .all(|port| port.revision_id == projection.revision_id
+                    && port.proxy_for_owner.is_none()
+                    && port.direction == PortDirection::Unspecified)
+        );
+        let child_top = scene
+            .nodes
+            .iter()
+            .filter(|node| node.semantic.owner == Some(owner))
+            .map(|node| node.bounds.min.y)
+            .reduce(f32::min)
+            .unwrap();
+        let header = child_top - container.bounds.min.y;
+        if count <= 4 {
+            assert!((92.0..=116.0).contains(&header));
+            assert!(ports.iter().all(|port| port.label_in_header
+                && port.position.y >= container.bounds.min.y + 72.0
+                && port.position.y + 20.0 <= child_top));
+            let index = SpatialIndex::build(&scene);
+            for port in &ports {
+                assert_eq!(
+                    index.hit_test(port.position, 3.0),
+                    Some(SceneTarget::Port(port.id))
+                );
+            }
+        } else {
+            assert_eq!(
+                header, 72.0,
+                "dense ports must not grow an unbounded header"
+            );
+            assert!(ports.iter().all(|port| !port.label_in_header));
+        }
+        let again = SemanticScene::from_projection(
+            &projection,
+            &SceneOptions::default(),
+            Some(scene.memory()),
+        )
+        .unwrap();
+        assert_eq!(
+            scene
+                .nodes
+                .iter()
+                .map(|node| (node.id(), node.bounds))
+                .collect::<Vec<_>>(),
+            again
+                .nodes
+                .iter()
+                .map(|node| (node.id(), node.bounds))
+                .collect::<Vec<_>>(),
+            "unchanged port strips must not keep moving the layout"
+        );
+    }
+}
+
+#[test]
 fn huge_spatial_queries_use_overflow_lane_without_integer_overflow() {
     let scene = architecture();
     let index = SpatialIndex::build(&scene);

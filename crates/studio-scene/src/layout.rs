@@ -52,6 +52,8 @@ pub struct LayoutInput {
     /// Port endpoints resolve to their visible owner's topology node.
     pub edges: Vec<(ElementId, ElementId)>,
     pub(crate) boundary_ports: Vec<BoundaryPort>,
+    /// Exact distinct projected port identities, including collapsed proxies.
+    port_counts: BTreeMap<ElementId, usize>,
 }
 #[derive(Clone, Debug)]
 pub(crate) struct BoundaryPort {
@@ -160,6 +162,28 @@ impl LayoutInput {
                 port_owners.insert(f.id, n.id);
             }
         }
+        let mut port_ids = BTreeMap::<ElementId, BTreeSet<ElementId>>::new();
+        for n in &projection.nodes {
+            if NodeCategory::from_semantic_kind(&n.semantic_kind) == NodeCategory::Port
+                && let Some(owner) = n.owner
+            {
+                port_ids.entry(owner).or_default().insert(n.id);
+            }
+        }
+        for n in &nodes {
+            for feature in &n.features {
+                if NodeCategory::from_semantic_kind(&feature.semantic_kind) == NodeCategory::Port {
+                    port_ids.entry(n.id).or_default().insert(feature.id);
+                }
+            }
+        }
+        for port in &boundary_ports {
+            port_ids.entry(port.owner).or_default().insert(port.id);
+        }
+        let port_counts = port_ids
+            .into_iter()
+            .map(|(owner, ids)| (owner, ids.len()))
+            .collect();
         let endpoint = |id: ElementId| {
             if visible.contains(&id) {
                 Some(id)
@@ -190,6 +214,7 @@ impl LayoutInput {
             collapsed: options.collapsed.clone(),
             edges,
             boundary_ports,
+            port_counts,
         })
     }
     pub(crate) fn node_size(&self, node: &ViewNode, base: Size) -> Size {
@@ -210,6 +235,16 @@ impl LayoutInput {
             base.height + ports.div_ceil(2).saturating_sub(2) as f32 * 24.0,
         )
     }
+}
+
+// At most two fixed rows. Large interfaces keep their distributed boundary;
+// adding more ports must not turn a container header into another outliner.
+pub(crate) const PORT_STRIP_FIRST: f32 = 72.0;
+pub(crate) const PORT_STRIP_ROW: f32 = 24.0;
+pub(crate) fn port_strip_header(count: usize) -> Option<f32> {
+    (1..=4).contains(&count).then(|| {
+        PORT_STRIP_FIRST + PORT_STRIP_ROW * count.div_ceil(2).saturating_sub(1) as f32 + 20.0
+    })
 }
 
 /// Resolve external connections to the boundary of a collapsed subsystem while
@@ -324,7 +359,9 @@ impl LayoutEngine for HierarchyLayout {
                 sizes.insert(n.id, input.node_size(n, self.node_size));
                 continue;
             }
-            let origin = Point::new(self.inset, self.header);
+            let header = port_strip_header(input.port_counts.get(&n.id).copied().unwrap_or(0))
+                .map_or(self.header, |strip| self.header.max(strip));
+            let origin = Point::new(self.inset, header);
             let placed = self.pack(&children, &sizes, previous, n.id, origin);
             let width = placed
                 .values()

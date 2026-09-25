@@ -147,6 +147,8 @@ pub struct ScenePort {
     pub proxy_for_owner: Option<ElementId>,
     pub name: String,
     pub position: Point,
+    /// Disposable label slot within a clear, bounded expanded-container header.
+    pub label_in_header: bool,
     pub side: PortSide,
     pub direction: PortDirection,
     pub origin: ViewOrigin,
@@ -294,6 +296,15 @@ impl SemanticScene {
         }
         // Parents precede children so renderers can draw retained containment.
         nodes.sort_by_key(|n| (n.depth, n.id()));
+        let mut child_top = BTreeMap::<ElementId, f32>::new();
+        for node in &nodes {
+            if let Some(owner) = node.semantic.owner {
+                child_top
+                    .entry(owner)
+                    .and_modify(|y| *y = y.min(node.bounds.min.y))
+                    .or_insert(node.bounds.min.y);
+            }
+        }
         let mut ports = Vec::new();
         let mut port_ids = BTreeSet::new();
         let mut owned_ports: BTreeMap<ElementId, Vec<&ViewNode>> = BTreeMap::new();
@@ -331,6 +342,13 @@ impl SemanticScene {
             features.sort_by_key(|(id, _, _, _)| *id);
             features.dedup_by_key(|(id, _, _, _)| *id);
             let count = features.len();
+            let label_in_header = n.is_container
+                && !n.collapsed
+                && layout::port_strip_header(count).is_some_and(|header| {
+                    child_top
+                        .get(&n.id())
+                        .is_some_and(|top| *top >= n.bounds.min.y + header)
+                });
             for (i, (id, name, origin, proxy_for_owner)) in features.into_iter().enumerate() {
                 if !port_ids.insert(id) {
                     continue;
@@ -341,9 +359,12 @@ impl SemanticScene {
                     PortSide::Right
                 };
                 let y = n.bounds.min.y
-                    + 62.0
-                    + (n.bounds.height() - 82.0).max(12.0)
-                        * ((i / 2 + 1) as f32 / ((count.div_ceil(2) + 1) as f32));
+                    + if label_in_header {
+                        layout::PORT_STRIP_FIRST + layout::PORT_STRIP_ROW * (i / 2) as f32
+                    } else {
+                        62.0 + (n.bounds.height() - 82.0).max(12.0)
+                            * ((i / 2 + 1) as f32 / ((count.div_ceil(2) + 1) as f32))
+                    };
                 let x = if side == PortSide::Left {
                     n.bounds.min.x
                 } else {
@@ -356,6 +377,7 @@ impl SemanticScene {
                     proxy_for_owner,
                     name,
                     position: Point::new(x, y),
+                    label_in_header,
                     side,
                     direction: PortDirection::Unspecified,
                     origin,
