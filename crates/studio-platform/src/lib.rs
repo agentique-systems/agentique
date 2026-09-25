@@ -178,7 +178,8 @@ impl StudioPlatform {
         })
     }
 
-    /// Deliberate neighborhood expansion is a temporary view, never a graph mutation.
+    /// Bounded dependency neighborhood. Reached package owners are context
+    /// anchors, not expansion through unrelated siblings; this is not an impact proof.
     pub fn dependencies(
         &self,
         binding: RevisionBinding,
@@ -190,7 +191,8 @@ impl StudioPlatform {
         self.project(
             binding,
             &ViewDefinition {
-                name: "Temporary dependency view".into(),
+                name: "Dependency neighborhood".into(),
+                graph_scope: agq_modeling_view::GraphScope::DependencyNeighborhood,
                 focus: Some(selection),
                 relationship_families: families,
                 depth: depth.min(8),

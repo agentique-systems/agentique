@@ -122,12 +122,22 @@ pub fn project(
     {
         // An explicitly focused standard element is deliberate expansion.
         selected.insert(focus);
-        selected = neighborhood(
-            &BTreeSet::from([focus]),
-            &selected,
-            &edges,
-            definition.depth.min(8),
-        );
+        selected = if dependency_scope(definition) {
+            dependency_neighborhood(
+                model,
+                &BTreeSet::from([focus]),
+                &selected,
+                &edges,
+                definition.depth.min(8),
+            )
+        } else {
+            neighborhood(
+                &BTreeSet::from([focus]),
+                &selected,
+                &edges,
+                definition.depth.min(8),
+            )
+        };
     }
     for hidden in &definition.hidden_elements {
         selected.remove(hidden);
@@ -159,7 +169,11 @@ pub fn project(
             .collect(),
         metadata: ViewMetadata {
             suggested_focus,
-            scope: "Current canonical graph; authored context, original identities".into(),
+            scope: if dependency_scope(definition) {
+                "Dependency neighborhood; reached package owners are context anchors, not sibling expansion"
+            } else {
+                "Current canonical graph; authored context, original identities"
+            }.into(),
             producer_completeness: revision
                 .producer_status()
                 .map_or("Unavailable".into(), |s| format!("{:?}", s.completeness)),
@@ -249,6 +263,48 @@ fn neighborhood(
             .collect();
         let prior = selected.len();
         selected.extend(frontier);
+        if selected.len() == prior {
+            break;
+        }
+    }
+    selected
+}
+
+fn dependency_scope(definition: &ViewDefinition) -> bool {
+    definition.kind == ViewKind::SemanticGraph
+        && definition.focus.is_some()
+        && definition.graph_scope == GraphScope::DependencyNeighborhood
+}
+
+/// Family/standard filtering supplies the same edges and eligible identities as
+/// ordinary Graph. Only outward Ownership from a reached Package is terminal;
+/// Type/Feature ownership, incoming owners and other relationships still expand.
+fn dependency_neighborhood(
+    model: &ModelView,
+    seeds: &BTreeSet<ElementId>,
+    allowed: &BTreeSet<ElementId>,
+    edges: &[ViewEdge],
+    depth: u8,
+) -> BTreeSet<ElementId> {
+    let mut selected = seeds.clone();
+    for _ in 0..depth {
+        let mut additions = BTreeSet::new();
+        for edge in edges {
+            let terminal_package_owner = edge.family == RelationshipFamily::Ownership
+                && !seeds.contains(&edge.source)
+                && is(model, edge.source, c::PACKAGE);
+            if selected.contains(&edge.source)
+                && !terminal_package_owner
+                && allowed.contains(&edge.target)
+            {
+                additions.insert(edge.target);
+            }
+            if selected.contains(&edge.target) && allowed.contains(&edge.source) {
+                additions.insert(edge.source);
+            }
+        }
+        let prior = selected.len();
+        selected.extend(additions);
         if selected.len() == prior {
             break;
         }
@@ -973,6 +1029,188 @@ pub(crate) mod tests {
         assert_eq!(edges[0].target, ElementId::from_u128(2));
         assert_eq!(edges[1].family, RelationshipFamily::Typing);
         assert!(!selected.contains(&ElementId::from_u128(5)));
+    }
+
+    fn dependency_fixture() -> Snapshot {
+        semantic_fixture(
+            &[
+                (1, c::PACKAGE),
+                (2, sc::PART_DEFINITION),
+                (3, sc::PART_DEFINITION),
+                (4, sc::PORT_USAGE),
+                (5, sc::PART_DEFINITION),
+                (6, sc::PART_DEFINITION),
+                (11, c::OWNING_MEMBERSHIP),
+                (12, c::OWNING_MEMBERSHIP),
+                (13, c::FEATURE_MEMBERSHIP),
+                (14, c::MEMBERSHIP),
+                (15, c::MEMBERSHIP),
+                (16, c::MEMBERSHIP),
+                (17, c::OWNING_MEMBERSHIP),
+            ],
+            &[
+                (
+                    1,
+                    p::ELEMENT_OWNED_RELATIONSHIP,
+                    references(&[11, 12, 16, 17]),
+                ),
+                (2, p::ELEMENT_OWNED_RELATIONSHIP, references(&[13, 14])),
+                (5, p::ELEMENT_OWNED_RELATIONSHIP, references(&[15])),
+                (11, p::RELATIONSHIP_OWNED_RELATED_ELEMENT, references(&[2])),
+                (12, p::RELATIONSHIP_OWNED_RELATED_ELEMENT, references(&[3])),
+                (13, p::RELATIONSHIP_OWNED_RELATED_ELEMENT, references(&[4])),
+                (17, p::RELATIONSHIP_OWNED_RELATED_ELEMENT, references(&[5])),
+                // A direct dependency on sibling 5, with a reference cycle.
+                (14, p::MEMBERSHIP_MEMBER_ELEMENT, references(&[5])),
+                (15, p::MEMBERSHIP_MEMBER_ELEMENT, references(&[2])),
+                // Reached package 1 has a genuine non-Ownership dependency.
+                (16, p::MEMBERSHIP_MEMBER_ELEMENT, references(&[6])),
+            ],
+        )
+    }
+
+    #[test]
+    fn dependency_scope_stops_package_siblings_but_keeps_features_and_direct_dependencies() {
+        let snapshot = dependency_fixture();
+        let model = snapshot.model();
+        let id = ElementId::from_u128;
+        let local = model.elements().map(ElementRecord::id).collect();
+        let edges = graph_edges(model, ProjectRevisionId::from_u128(97), &local);
+        let original_edges = edges.clone();
+        let allowed = (1..=6).map(id).collect();
+        let seeds = BTreeSet::from([id(2)]);
+        assert!(is(model, id(2), c::NAMESPACE));
+        assert!(!is(model, id(2), c::PACKAGE));
+        assert_eq!(
+            dependency_neighborhood(model, &seeds, &allowed, &edges, 0),
+            seeds
+        );
+        assert_eq!(
+            dependency_neighborhood(model, &seeds, &allowed, &edges, 1),
+            BTreeSet::from([id(1), id(2), id(4), id(5)])
+        );
+        let selected = dependency_neighborhood(model, &seeds, &allowed, &edges, 2);
+        assert_eq!(
+            selected,
+            BTreeSet::from([id(1), id(2), id(4), id(5), id(6)])
+        );
+        assert_eq!(
+            dependency_neighborhood(model, &seeds, &allowed, &edges, 8),
+            selected
+        );
+        // Ordinary Graph deliberately retains its existing broad neighborhood.
+        assert_eq!(neighborhood(&seeds, &allowed, &edges, 2), allowed);
+        for relationship in [11, 13, 14, 15, 16, 17] {
+            let original = edges
+                .iter()
+                .find(|edge| edge.relationship_id == Some(id(relationship)))
+                .unwrap();
+            assert!(selected.contains(&original.source) && selected.contains(&original.target));
+        }
+        assert_eq!(edges, original_edges);
+        assert_eq!(owner(model, id(4)), Some(id(2)));
+        assert_eq!(owner(model, id(5)), Some(id(1)));
+    }
+
+    #[test]
+    fn explicit_package_seed_can_expand_members_without_changing_depth_contract() {
+        let snapshot = dependency_fixture();
+        let model = snapshot.model();
+        let id = ElementId::from_u128;
+        let local = model.elements().map(ElementRecord::id).collect();
+        let edges = graph_edges(model, ProjectRevisionId::from_u128(98), &local);
+        let allowed = (1..=6).map(id).collect();
+        let seeds = BTreeSet::from([id(1)]);
+        assert_eq!(
+            dependency_neighborhood(model, &seeds, &allowed, &edges, 0),
+            seeds
+        );
+        assert_eq!(
+            dependency_neighborhood(model, &seeds, &allowed, &edges, 1),
+            BTreeSet::from([id(1), id(2), id(3), id(5), id(6)])
+        );
+        assert_eq!(
+            dependency_neighborhood(model, &seeds, &allowed, &edges, 2),
+            allowed
+        );
+    }
+
+    #[test]
+    fn dependency_scope_respects_filtered_families_and_standard_eligibility() {
+        let snapshot = dependency_fixture();
+        let model = snapshot.model();
+        let id = ElementId::from_u128;
+        let local = model.elements().map(ElementRecord::id).collect();
+        let edges = graph_edges(model, ProjectRevisionId::from_u128(99), &local);
+        let seeds = BTreeSet::from([id(2)]);
+        let all = (1..=6).map(id).collect();
+        let ownership: Vec<_> = edges
+            .iter()
+            .filter(|edge| edge.family == RelationshipFamily::Ownership)
+            .cloned()
+            .collect();
+        assert_eq!(
+            dependency_neighborhood(model, &seeds, &all, &ownership, 8),
+            BTreeSet::from([id(1), id(2), id(4)])
+        );
+        let references: Vec<_> = edges
+            .iter()
+            .filter(|edge| edge.family == RelationshipFamily::Reference)
+            .cloned()
+            .collect();
+        assert_eq!(
+            dependency_neighborhood(model, &seeds, &all, &references, 8),
+            BTreeSet::from([id(2), id(5)])
+        );
+        assert_eq!(dependency_neighborhood(model, &seeds, &all, &[], 8), seeds);
+        // `project` supplies the same exact-ID eligibility set after its standard
+        // switch. No traversal through an excluded standard endpoint is allowed.
+        let standard = semantic_fixture(&[(6, sc::PART_DEFINITION)], &[]);
+        let authored: BTreeSet<_> = all
+            .iter()
+            .copied()
+            .filter(|element| standard.model().element(*element).is_none())
+            .collect();
+        let selected = dependency_neighborhood(model, &seeds, &authored, &edges, 8);
+        assert_eq!(selected, BTreeSet::from([id(1), id(2), id(4), id(5)]));
+        let expanded = dependency_neighborhood(model, &seeds, &all, &edges, 8);
+        assert_eq!(
+            expanded.difference(&selected).copied().collect::<Vec<_>>(),
+            vec![id(6)]
+        );
+        // An explicit standard focus remains selected, matching ordinary Graph.
+        assert_eq!(
+            dependency_neighborhood(model, &BTreeSet::from([id(6)]), &authored, &edges, 1),
+            BTreeSet::from([id(1), id(6)])
+        );
+    }
+
+    #[test]
+    fn dependency_scope_round_trips_defaults_old_views_and_applies_only_to_focused_graph() {
+        let mut view = ViewDefinition::semantic_graph();
+        view.focus = Some(ElementId::from_u128(2));
+        view.graph_scope = GraphScope::DependencyNeighborhood;
+        view.relationship_families = vec![RelationshipFamily::Reference];
+        view.include_standard_library = true;
+        view.depth = 3;
+        let json = serde_json::to_value(&view).unwrap();
+        assert_eq!(
+            serde_json::from_value::<ViewDefinition>(json.clone()).unwrap(),
+            view
+        );
+        assert!(dependency_scope(&view));
+        let mut legacy = json;
+        legacy.as_object_mut().unwrap().remove("graph_scope");
+        let old = serde_json::from_value::<ViewDefinition>(legacy).unwrap();
+        assert_eq!(old.graph_scope, GraphScope::Neighborhood);
+        assert!(!dependency_scope(&old));
+        for kind in [ViewKind::Architecture, ViewKind::Requirements] {
+            let mut other = view.clone();
+            other.kind = kind;
+            assert!(!dependency_scope(&other));
+        }
+        view.focus = None;
+        assert!(!dependency_scope(&view));
     }
     #[test]
     fn definitions_are_selection_metadata_and_preserve_hidden_identity() {

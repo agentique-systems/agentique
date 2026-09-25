@@ -42,6 +42,17 @@ pub enum ViewKind {
     Requirements,
 }
 
+/// Traversal policy for a focused Semantic Graph. Other worlds ignore this field.
+/// A dependency neighborhood is a bounded view, not a complete impact analysis.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum GraphScope {
+    #[default]
+    Neighborhood,
+    /// Reached package owners are context anchors. Only an explicitly focused
+    /// package expands its outgoing Ownership relationships to members.
+    DependencyNeighborhood,
+}
+
 /// Canonical relationship families which a human may independently display.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum RelationshipFamily {
@@ -78,6 +89,9 @@ pub struct ViewDefinition {
     pub version: u32,
     pub name: String,
     pub kind: ViewKind,
+    /// Retained with saved views so reprojecting an agent result preserves scope.
+    #[serde(default)]
+    pub graph_scope: GraphScope,
     /// Optional center for a bounded semantic neighborhood.
     pub focus: Option<ElementId>,
     /// Maximum relationship hops from focus, capped at eight by the engine.
@@ -96,6 +110,7 @@ impl ViewDefinition {
             version: Self::VERSION,
             name: "Agentique Architecture".into(),
             kind: ViewKind::Architecture,
+            graph_scope: GraphScope::Neighborhood,
             focus: None,
             depth: 2,
             relationship_families: vec![
