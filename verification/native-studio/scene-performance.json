@@ -1,0 +1,48 @@
+{
+  "source_commit": "768bd23160b9fd1a5b9891e839ba68abb3294c3b",
+  "rustc": "1.92.0 (ded5c06cf 2025-12-08)",
+  "platform": "Windows x86_64",
+  "processor": "AMD Ryzen 5 5600X, 6 cores / 12 logical processors",
+  "profile": "release, lto=false",
+  "scope": "Visual fixture CPU geometry only; no semantic acceptance or GPU latency claims",
+  "command": "cargo run --release --config profile.release.lto=false -p agq-studio-scene --example scene_benchmark",
+  "exit_code": 0,
+  "measurements": [
+    {
+      "culling_mean_us": 50.23,
+      "culling_total_targets": 8349,
+      "edges": 2000,
+      "fixture": true,
+      "fixture_build_ms": 0.8573,
+      "gpu_upload_ms": null,
+      "hit_test_mean_us": 1.1253600000000001,
+      "hit_test_successes": 10000,
+      "layout_ms": 1.6214,
+      "nodes": 1000,
+      "obstructed_routes": 0,
+      "pan_zoom_math_mean_us": 0.00548,
+      "projection_adapter_ms": 1.0494,
+      "render_fps": null,
+      "scene_build_including_layout_and_routing_ms": 23.6135,
+      "spatial_index_ms": 2.2134
+    },
+    {
+      "culling_mean_us": 73.805,
+      "culling_total_targets": 8608,
+      "edges": 20000,
+      "fixture": true,
+      "fixture_build_ms": 10.0806,
+      "gpu_upload_ms": null,
+      "hit_test_mean_us": 2.36747,
+      "hit_test_successes": 10000,
+      "layout_ms": 27.7448,
+      "nodes": 10000,
+      "obstructed_routes": 0,
+      "pan_zoom_math_mean_us": 0.0052899999999999996,
+      "projection_adapter_ms": 16.4937,
+      "render_fps": null,
+      "scene_build_including_layout_and_routing_ms": 200.711,
+      "spatial_index_ms": 28.3176
+    }
+  ]
+}
