@@ -1400,6 +1400,13 @@ mod tests {
     fn explain_readable_consequence_requires_an_exact_revision_and_complete_edge() {
         let mut explanation = explanation_test_projection();
         let mut projection = agq_studio_scene::fixtures::architecture();
+        // The fixture's first connections use feature-summary-only port IDs;
+        // this positive case requires both canonical endpoint node DTOs.
+        let endpoints: std::collections::BTreeSet<_> =
+            projection.nodes.iter().map(|node| node.id).collect();
+        projection
+            .edges
+            .retain(|edge| endpoints.contains(&edge.source) && endpoints.contains(&edge.target));
         projection.edges.truncate(1);
         let edge = &mut projection.edges[0];
         edge.relationship_id = Some(explanation.subject_id);
