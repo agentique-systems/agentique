@@ -1317,7 +1317,7 @@ mod tests {
             assert!(queried.hidden_elements.is_empty(), "{mismatch}");
             assert_eq!(
                 queried.depth,
-                agq_modeling_view::ViewDefinition::architecture().depth,
+                1, // Fresh Native System views show one engineering level.
                 "{mismatch}"
             );
         }
