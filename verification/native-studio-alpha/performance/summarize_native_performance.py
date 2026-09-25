@@ -12,6 +12,7 @@ import statistics
 
 PROFILE = "agentique-modeling-view-profile/1"
 CACHES = {"agentique-studio-inspector-cache/1", "agentique-studio-projection-cache/1"}
+JOURNEYS = {"agentique-native-real-acceptance/1": 1, "agentique-native-real-acceptance/2": 2}
 STAGES = {
     "prepare": "prepare real source-backed candidate while current remains responsive",
     "validate": "validate the retained semantic candidate",
@@ -149,8 +150,9 @@ def logs(inputs, paths):
 
 
 def journey(value):
-    if value.get("format") != "agentique-native-real-acceptance/1":
-        raise ValueError("Expected a real native acceptance report")
+    input_format = value.get("format")
+    if input_format not in JOURNEYS:
+        raise ValueError("Expected known real native acceptance format /1 or /2")
     if value.get("outcome") not in {"failed", "passed", "journey_passed_restart_pending"}:
         raise ValueError("The native journey is still running or its outcome is unknown")
     assertions = value.get("assertions", [])
@@ -169,10 +171,17 @@ def journey(value):
     if background:
         background = {key: item for key, item in background.items() if key != "inspector"}
     return {
+        "input_format": input_format,
+        "input_version": JOURNEYS[input_format],
         **select(value, ("scenario", "outcome", "passed", "failure", "restart_verified",
                          "project", "branch", "elapsed_ms", "previous_report_digest",
                          "resumed_baseline", "background_frames", "background_pan_observed")),
         "accepted_publications": (value.get("baseline") or {}).get("accepted_publications"),
+        "engineering_evidence": value.get("engineering_evidence"),
+        "version_scope": "This extraction summarizes one input journey only. Composition and "
+                         "other engineering evidence are retained exactly as reported, without "
+                         "filling absent legacy fields or treating /1 as composed-Studio /2 "
+                         "acceptance. Supporting evidence does not upgrade its outcome or version.",
         "first_asserted_validated_view_since_runner_start_ms": first["since_start_ms"] if first else None,
         "steps": steps, "semantic_stage_ui_steps": stages,
         "stage_scope": "elapsed_ms starts when the native step is initialized before input "
@@ -271,7 +280,8 @@ def markdown(result):
         return f"{value:.3f}" if finite(value) else "unmeasured"
 
     run = result["journey"]
-    lines = ["# Native performance extraction", "", f"Journey outcome: **{run['outcome']}**.", "",
+    lines = ["# Native performance extraction", "", f"Input report: `{run['input_format']}` (journey version {run['input_version']}).", "",
+             f"Journey outcome: **{run['outcome']}**.", "",
              "This report preserves failed/missing stages. It does not establish product acceptance.", "",
              f"Recorded source commit: `{result['recorded_launch'].get('source_commit_at_start', 'unrecorded')}`.",
              f"Recorded executable SHA256: `{result['recorded_launch'].get('executable_sha256', 'unrecorded')}`.", "",

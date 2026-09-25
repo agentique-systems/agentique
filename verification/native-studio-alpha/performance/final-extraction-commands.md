@@ -53,6 +53,15 @@ journey or a process receipt without a terminal integer exit code. A failed
 completed journey is legitimate evidence and remains labeled failed. Use fresh
 output names; existing evidence is never overwritten.
 
+Only `agentique-native-real-acceptance/1` and `/2` are recognized. The extraction
+retains the exact input format and numeric version, plus unmodified engineering
+evidence. The composed-Studio v2 driver at `63725707ab02187a90c7ec7f02db63953e44386c`
+adds wrapper/core navigation and composition evidence; its three semantic-stage
+names and timing boundaries are unchanged. Stage matching uses exact names,
+not ordinal step numbers. Unknown future versions are refused. Legacy v1 evidence
+is not promoted to v2 acceptance or filled with invented composition records.
+The existing run05 extraction is immutable; it predates this additive support.
+
 ```powershell
 python verification/native-studio-alpha/performance/summarize_native_performance.py --journey verification/native-studio-alpha/real-run05/journey.json --process verification/native-studio-alpha/real-run05/process.json --log verification/native-studio-alpha/real-run05/process.log --gallery verification/native-studio-alpha/real-run05/gallery --out verification/native-studio-alpha/performance/run05-extracted.json --markdown verification/native-studio-alpha/performance/run05-extracted.md
 ```

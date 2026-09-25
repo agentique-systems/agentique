@@ -21,12 +21,69 @@ class EvidenceContracts(unittest.TestCase):
             "preparation_responsiveness": {"elapsed_ms": 140216},
         }
         summary = report.journey(value)
+        self.assertEqual(summary["input_format"], value["format"])
+        self.assertEqual(summary["input_version"], 1)
+        self.assertIsNone(summary["engineering_evidence"])
         self.assertFalse(summary["passed"])
         self.assertIsNone(summary["semantic_stage_ui_steps"]["validate"])
         self.assertIsNone(summary["semantic_stage_ui_steps"]["commit"])
         self.assertIsNone(summary["final_metrics"])
         self.assertEqual(summary["semantic_stage_ui_steps"]["prepare"]["elapsed_ms"], 143240)
         self.assertEqual(summary["preparation_observation"]["elapsed_ms"], 140216)
+
+    def test_v2_wrapper_core_steps_keep_stage_timings_and_new_evidence_separate(self):
+        # Bookkeeping-only fixture; no semantic or native acceptance is asserted.
+        names = [
+            "open authenticated Agentique with Validated semantic closure",
+            "select the actual NativeStudio definition",
+            "enter NativeStudio to inspect its scene and bounded agent architecture",
+            "return to the composed Studio architecture",
+            "select the actual composed core definition",
+            "enter the core through native keyboard input",
+            "select the core before nested part creation",
+            "enter the core before nested part creation",
+            report.STAGES["prepare"], report.STAGES["validate"],
+        ]
+        evidence = {"studio_composition": [{"id": "fixture-studio-ownership", "revision_id": "fixture-r2"}],
+                    "native_studio_composition": [], "native_studio_inspector": None,
+                    "studio_requirement_subjects": [{"id": "fixture-subject-typing"}]}
+        value = {
+            "format": "agentique-native-real-acceptance/2", "scenario": "real",
+            "outcome": "failed", "passed": False, "restart_verified": False,
+            "project": "fixture-project-v2", "previous_report_digest": None,
+            "resumed_baseline": False, "engineering_evidence": evidence,
+            "assertions": [{"name": name, "passed": index < len(names) - 1,
+                            "elapsed_ms": index + 10, "since_start_ms": (index + 1) * 100,
+                            "after": {"binding": {"project": "fixture-project-v2", "revision": "fixture-r2"}}}
+                           for index, name in enumerate(names)],
+        }
+        original = json.dumps(value, sort_keys=True)
+        summary = report.journey(value)
+        self.assertEqual(summary["input_format"], value["format"])
+        self.assertEqual(summary["input_version"], 2)
+        self.assertFalse(summary["passed"])
+        self.assertFalse(summary["restart_verified"])
+        self.assertFalse(summary["resumed_baseline"])
+        self.assertIsNone(summary["previous_report_digest"])
+        self.assertEqual([step["name"] for step in summary["steps"]], names)
+        self.assertEqual(summary["first_asserted_validated_view_since_runner_start_ms"], 100)
+        self.assertEqual(summary["semantic_stage_ui_steps"]["prepare"]["elapsed_ms"], 18)
+        self.assertFalse(summary["semantic_stage_ui_steps"]["validate"]["passed"])
+        self.assertIsNone(summary["semantic_stage_ui_steps"]["commit"])
+        self.assertEqual(summary["engineering_evidence"], evidence)
+        self.assertNotIn("requirement_subject_path", summary["engineering_evidence"])
+        self.assertEqual(json.dumps(value, sort_keys=True), original)
+
+    def test_unknown_versions_are_refused_and_legacy_metadata_is_not_promoted(self):
+        legacy = {"format": "agentique-native-real-acceptance/1", "outcome": "failed",
+                  "engineering_evidence": {"requirement_subject_path": []}}
+        summary = report.journey(legacy)
+        self.assertEqual(summary["engineering_evidence"], {"requirement_subject_path": []})
+        self.assertNotIn("studio_composition", summary["engineering_evidence"])
+        for unknown in [None, "agentique-native-real-acceptance/0", "agentique-native-real-acceptance/3",
+                        "agentique-native-real-acceptance/2.1", "agentique-native-real-acceptance/02"]:
+            with self.subTest(unknown=unknown), self.assertRaises(ValueError):
+                report.journey({**legacy, "format": unknown})
 
     def test_incomplete_reports_or_ambiguous_stages_are_refused(self):
         with self.assertRaises(ValueError):
