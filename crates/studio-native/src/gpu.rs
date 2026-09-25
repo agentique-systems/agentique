@@ -90,9 +90,15 @@ struct Resources {
     key: Option<u64>,
     timing: Option<crate::gpu_timing::GpuTiming>,
     timing_status: &'static str,
+    recovery: crate::surface_recovery::Recovery,
+    surface_epoch: u64,
 }
 
-pub fn install(cc: &eframe::CreationContext<'_>, timestamps: bool) -> Result<(), String> {
+pub fn install(
+    cc: &eframe::CreationContext<'_>,
+    timestamps: bool,
+    recovery: crate::surface_recovery::Recovery,
+) -> Result<(), String> {
     let state = cc
         .wgpu_render_state
         .as_ref()
@@ -179,6 +185,8 @@ pub fn install(cc: &eframe::CreationContext<'_>, timestamps: bool) -> Result<(),
         ranges: [0..0, 0..0, 0..0, 0..0],
         key: None,
         timing: crate::gpu_timing::GpuTiming::new(device, &state.queue),
+        surface_epoch: recovery.epoch(),
+        recovery,
         timing_status: if !timestamps {
             "Not requested; use --gpu-timestamps"
         } else if !device.features().contains(crate::gpu_timing::features()) {
@@ -208,6 +216,19 @@ impl CallbackTrait for SceneCallback {
         let renderer = resources
             .get_mut::<Resources>()
             .expect("scene renderer installed");
+        if renderer.recovery.device_unavailable() {
+            return Vec::new();
+        }
+        let epoch = renderer.recovery.epoch();
+        if renderer.surface_epoch != epoch {
+            // eframe runs prepare before acquiring a surface. A failed acquisition
+            // drops its encoder without submitting timestamp resolve/copy work.
+            renderer.timing = crate::gpu_timing::GpuTiming::new(device, queue);
+            renderer.surface_epoch = epoch;
+            if let Ok(mut stats) = self.stats.lock() {
+                stats.timestamp_errors += 1;
+            }
+        }
         if let Ok(mut stats) = self.stats.lock() {
             stats.timestamp_status = renderer.timing_status;
             if let Some(timing) = &mut renderer.timing {
@@ -266,6 +287,9 @@ impl CallbackTrait for SceneCallback {
         let renderer = resources
             .get::<Resources>()
             .expect("scene renderer installed");
+        if renderer.recovery.device_unavailable() {
+            return;
+        }
         if let Some(timing) = &renderer.timing {
             timing.begin(pass);
         }

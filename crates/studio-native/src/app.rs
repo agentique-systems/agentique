@@ -601,6 +601,28 @@ impl eframe::App for StudioApp {
         self.timing.frame();
         self.receive();
         self.receive_scene();
+        if let Some(message) = crate::surface_recovery::device_fault(ctx) {
+            // Keep processing in-flight semantic outcomes, but do not accept new
+            // blind editor actions while its graphics device cannot show them.
+            self.status = message;
+            if self.last_saved.elapsed() > Duration::from_secs(8) {
+                self.save_session();
+            }
+            self.timing.ui_complete();
+            return;
+        }
+        if let Some(message) = crate::surface_recovery::surface_fault(ctx) {
+            self.status = message.clone();
+            egui::CentralPanel::default().show(ctx, |ui| {
+                ui.heading("Graphics surface unavailable");
+                ui.label(message);
+            });
+            // Resizing or a later input can acquire a surface again. The minimal
+            // recovery view accepts no model-edit commands while pixels are stale.
+            crate::surface_recovery::paint_heartbeat(ctx);
+            self.timing.ui_complete();
+            return;
+        }
         self.animate(ctx);
         self.keyboard(ctx);
         if self.ready {
@@ -609,6 +631,7 @@ impl eframe::App for StudioApp {
             self.setup(ctx);
         }
         self.dialogs(ctx);
+        crate::surface_recovery::paint_heartbeat(ctx);
         self.capture(ctx);
         if self.args.frames.is_some() {
             ctx.request_repaint();

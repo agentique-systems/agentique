@@ -20,6 +20,7 @@ mod scene_build;
 mod selection;
 mod session;
 mod stress_automation;
+mod surface_recovery;
 mod theme;
 mod timing;
 mod updates;
@@ -91,11 +92,18 @@ fn main() -> eframe::Result {
             descriptor
         });
     }
+    let recovery = surface_recovery::Recovery::default();
+    let surface_context = std::sync::Arc::new(std::sync::Mutex::new(None::<eframe::egui::Context>));
+    let error_context = surface_context.clone();
+    let error_recovery = recovery.clone();
     let options = eframe::NativeOptions {
         renderer: eframe::Renderer::Wgpu,
         wgpu_options: egui_wgpu::WgpuConfiguration {
             wgpu_setup: egui_wgpu::WgpuSetup::CreateNew(wgpu_setup),
-            on_surface_error: std::sync::Arc::new(surface_error),
+            on_surface_error: std::sync::Arc::new(move |error| {
+                let context = error_context.lock().expect("surface context").clone();
+                error_recovery.surface_error(error, context.as_ref())
+            }),
             ..Default::default()
         },
         viewport: eframe::egui::ViewportBuilder::default()
@@ -109,22 +117,12 @@ fn main() -> eframe::Result {
         "Agentique Native Studio",
         options,
         Box::new(move |cc| {
-            gpu::install(cc, args.gpu_timestamps).map_err(std::io::Error::other)?;
+            *surface_context.lock().expect("surface context") = Some(cc.egui_ctx.clone());
+            if let Some(render_state) = &cc.wgpu_render_state {
+                recovery.attach(&cc.egui_ctx, &render_state.device);
+            }
+            gpu::install(cc, args.gpu_timestamps, recovery).map_err(std::io::Error::other)?;
             Ok(Box::new(app::StudioApp::new(cc, args)?))
         }),
     )
-}
-
-fn surface_error(error: wgpu::SurfaceError) -> egui_wgpu::SurfaceErrorAction {
-    // Eframe owns the surface and applies this action before the next frame.
-    // Timeout is transient; lost/outdated surfaces need reconfiguration.
-    match error {
-        wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated => {
-            egui_wgpu::SurfaceErrorAction::RecreateSurface
-        }
-        other => {
-            eprintln!("Native surface frame unavailable: {other}");
-            egui_wgpu::SurfaceErrorAction::SkipFrame
-        }
-    }
 }
