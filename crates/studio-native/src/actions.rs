@@ -161,12 +161,14 @@ impl StudioApp {
     pub fn select(&mut self, target: SceneTarget, extend: bool) {
         self.selection.select(target, extend);
         self.batch_key = None;
+        self.invalidate_inspection();
+        self.request_inspection();
+    }
+    /// Refresh the exact primary object after a projection without changing
+    /// the current multi-selection or promoting a ghost to the active revision.
+    pub fn request_inspection(&mut self) {
         self.inspector = None;
-        self.explanation = None;
-        self.source = None;
         self.inspector_request = 0;
-        self.explanation_request = 0;
-        self.source_request = 0;
         if let Some((binding, candidate, element)) = self.selected_context() {
             self.inspector_request = self.enqueue(Box::new(move |platform| {
                 if let Some(id) = candidate {
@@ -568,6 +570,7 @@ impl StudioApp {
                         let targets = neighborhood_selection(&self.scene, &self.lookup, ids);
                         self.selection.replace(targets);
                         self.invalidate_inspection();
+                        self.request_inspection();
                         self.batch_key = None;
                     } else {
                         self.expanded.get_or_insert_with(BTreeSet::new).extend(ids);
@@ -716,6 +719,10 @@ impl StudioApp {
         self.fit_pending = true;
     }
     pub fn compare_parent(&mut self) {
+        if let Some(reason) = commands::unavailable(CommandId::Compare, &self.context()) {
+            self.status = reason.into();
+            return;
+        }
         if self.fixture.is_some() {
             self.show_fixture_diff();
             return;

@@ -220,6 +220,9 @@ pub fn unavailable(id: CommandId, context: &CommandContext) -> Option<&'static s
         return Some("A model operation is running");
     }
     match id {
+        Compare if context.candidate != CandidateReview::None => {
+            Some("Review or cancel the candidate before comparing durable revisions")
+        }
         Focus | Dependencies | Explain | Source | Neighbors | CreatePart | ExpandIncoming
         | ExpandOutgoing
             if !context.selected =>
@@ -314,6 +317,7 @@ mod tests {
             CommandId::Validate,
             CommandId::Cancel,
             CommandId::CreatePart,
+            CommandId::Compare,
         ] {
             assert!(unavailable(command, &context).is_some());
         }
@@ -339,6 +343,11 @@ mod tests {
             assert_eq!(
                 unavailable(CommandId::Commit, &context).is_none(),
                 can_commit
+            );
+            assert_eq!(
+                unavailable(CommandId::Compare, &context).is_none(),
+                candidate == CandidateReview::None,
+                "Durable comparisons cannot be shadowed by a retained candidate"
             );
         }
         let context = CommandContext {

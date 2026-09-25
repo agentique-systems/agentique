@@ -118,6 +118,7 @@ impl StudioApp {
                     self.rebuild();
                     self.fit_pending = true;
                     self.apply_pending_presentation();
+                    self.request_inspection();
                     self.record_location();
                     self.status = "Revision restored in process".into();
                 }
@@ -159,6 +160,7 @@ impl StudioApp {
                     self.comparison = ComparisonMode::Diff;
                     self.rebuild();
                     self.fit_pending = true;
+                    self.request_inspection();
                 }
                 Ok(Output::Candidate(candidate))
                     if reply.mutation
@@ -186,6 +188,7 @@ impl StudioApp {
                     self.comparison = ComparisonMode::Diff;
                     self.rebuild();
                     self.fit_pending = true;
+                    self.request_inspection();
                     self.status = "Candidate revision ready for review".into();
                 }
                 Ok(Output::CandidateView(candidate, before))
@@ -210,6 +213,7 @@ impl StudioApp {
                     self.rebuild();
                     self.fit_pending = true;
                     self.apply_pending_presentation();
+                    self.request_inspection();
                 }
                 Ok(Output::Committed(receipt))
                     if reply.mutation
@@ -246,6 +250,7 @@ impl StudioApp {
                     self.invalidate_inspection();
                     self.scene_request = 0;
                     self.rebuild();
+                    self.request_inspection();
                     self.status = "Uncommitted candidate cancelled".into();
                 }
                 Ok(_) => {} // Superseded read requests cannot populate another view/selection.
