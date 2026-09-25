@@ -1023,8 +1023,16 @@ impl StudioApp {
             return;
         }
         if ctx.input_mut(|i| i.consume_key(Modifiers::COMMAND, Key::K)) {
+            egui::Popup::close_all(ctx);
             self.palette = !self.palette;
             self.palette_focus = true;
+            return;
+        }
+        // Menus own dismissal and navigation keys before canvas shortcuts.
+        // In particular, leave Escape unconsumed so egui closes the popup
+        // without clearing selection or navigating behind it.
+        if egui::Popup::is_any_open(ctx) {
+            return;
         }
         if ctx.input_mut(|i| i.consume_key(Modifiers::NONE, Key::Escape)) {
             if self.palette {
