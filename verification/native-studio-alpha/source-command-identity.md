@@ -135,7 +135,18 @@ semicolon wrapper-trivia mismatch (2 passed, 1 failed). After the bounded fix,
 passed all 3 tests, exit 0, in 2.094 seconds. The exact receipt is
 `checks/part-insertion-proof-tests-boundary.json`. A new sequential-insertion test
 reconstructs the first mapped arena before the second insertion and requires the
-first new Part's identity to remain; its test run is pending at this commit.
+first new Part's identity to remain. The combined wired gate passed all eight
+agent tests and all eleven active service tests (one accepted-runtime test
+ignored), exit 0, in 4.093 seconds. See
+`checks/part-identity-wired-tests-names.json`. Its first attempt used the reserved
+word `first` as a fixture name and failed the parser; the corrected identifiers
+`firstChild` and `secondChild` required no proof-policy relaxation.
+
+The integrated workspace Clippy gate initially rejected a collapsible conditional;
+after that stylistic correction, the complete workspace/all-targets gate passed
+with warnings denied (`checks/integrated-root-clippy-retry.json`). Native's 45
+tests also passed (`checks/integrated-native-tests.json`). These checks do not
+establish real semantic reconstruction or durable restart acceptance.
 
 The temporary
 Rename implementation was committed only in the isolated worktree and explicitly

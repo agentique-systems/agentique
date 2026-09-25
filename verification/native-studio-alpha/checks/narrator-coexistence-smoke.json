@@ -1,0 +1,20 @@
+{
+  "command": [
+    "powershell",
+    "-NoProfile",
+    "-ExecutionPolicy",
+    "Bypass",
+    "-File",
+    "verification/scripts/native_alpha_uia.ps1",
+    "-Report",
+    "verification/native-studio-alpha/accessibility/narrator-coexistence.json",
+    "-WithNarrator"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T17:11:49.853189+00:00",
+  "elapsed_seconds": 10.984,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/narrator-coexistence-smoke.txt",
+  "output_sha256": "84cd874306c39a296cb6c1380ceee1c830a7dc3fb4ba4ae7f67a0c747b82f303",
+  "build_environment": {}
+}

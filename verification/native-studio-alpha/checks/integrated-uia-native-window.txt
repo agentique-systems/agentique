@@ -1,0 +1,533 @@
+{
+    "format":  "agentique-native-uia/1",
+    "started_utc":  "2026-09-25T17:09:38.9326744Z",
+    "binary":  "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\native-alpha\\release\\agq-studio-native.exe",
+    "binary_sha256":  "0226b5e5f76bcfe982a17aa3a806b21de67430576dc5de72a5c6083c5535bc52",
+    "scope":  "Actual Windows UI Automation on an explicit visual fixture. No screen-reader speech, IME or mixed-DPI claim.",
+    "passed":  true,
+    "assertions":  [
+                       {
+                           "name":  "Explorer search has an accessible name",
+                           "passed":  true,
+                           "observed":  "Find an element"
+                       },
+                       {
+                           "name":  "Focused subsystem exposes its actual ports",
+                           "passed":  true,
+                           "observed":  [
+                                            "request, Port in ModelRepository, direction not specified",
+                                            "result, Port in ModelRepository, direction not specified",
+                                            "request, Port in ModelingService, direction not specified",
+                                            "result, Port in ModelingService, direction not specified",
+                                            "request, Port in ProjectWorkspace, direction not specified",
+                                            "result, Port in ProjectWorkspace, direction not specified"
+                                        ]
+                       },
+                       {
+                           "name":  "Port supports accessible invocation",
+                           "passed":  true,
+                           "observed":  [
+                                            "InvokePatternIdentifiers.Pattern"
+                                        ]
+                       },
+                       {
+                           "name":  "Port invocation selects its Inspector",
+                           "passed":  true,
+                           "observed":  "request"
+                       },
+                       {
+                           "name":  "Port accepts keyboard focus",
+                           "passed":  true,
+                           "observed":  "request, Port in ModelRepository, direction not specified"
+                       },
+                       {
+                           "name":  "Minimize/restore retains an interactive native window",
+                           "passed":  true,
+                           "observed":  "Normal"
+                       },
+                       {
+                           "name":  "Resize sequence retains named command-palette input",
+                           "passed":  true,
+                           "observed":  "Command or element"
+                       }
+                   ],
+    "error":  null,
+    "pid":  13284,
+    "initial_nodes":  [
+                          {
+                              "name":  "AGENTIQUE",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "Agentique",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "/",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "Engineering workspace",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "Commands  Ctrl K",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "VISUAL FIXTURE",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "Ready",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "104%  ·  Features",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "12 / 12 elements",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "fa17…0001",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "",
+                              "type":  "ControlType.Pane"
+                          },
+                          {
+                              "name":  "PROJECT EXPLORER",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "Find an element",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "Find an element",
+                              "type":  "ControlType.Edit"
+                          },
+                          {
+                              "name":  "Architecture",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "12",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "Collapse NativeStudio",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "NativeStudio",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "□",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "SystemWorld",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "□",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "GraphWorld",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "□",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "Inspector",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "Collapse ModelingPlatform",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "ModelingPlatform",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "□",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "ModelRepository",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "□",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "ModelingService",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "□",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "ProjectWorkspace",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "Collapse AgentFabric",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "AgentFabric",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "□",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "DecisionAgent",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "□",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "ProposalEngine",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "↔",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "ModelingAPI",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "",
+                              "type":  "ControlType.Custom"
+                          },
+                          {
+                              "name":  "",
+                              "type":  "ControlType.Pane"
+                          },
+                          {
+                              "name":  "INSPECTOR",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "1 selected",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "ModelRepository",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "Part",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "VISUAL FIXTURE",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "STRUCTURE",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "Owner",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "ModelingPlatform",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "Parts",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "0",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "Ports",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "2",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "PORTS AND FEATURES",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "◇  request",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "◇  result",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "RELATIONSHIPS",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "contract — SystemWorld.result",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "contract — DecisionAgent.request",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "durable checkpoint → ProjectWorkspace",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "revision-bound service ← ModelingService",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "PROVENANCE",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "Origin",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "Authored",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "Projection identity is preserved across every world.",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "Advanced · identity",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "ACTIONS",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "Focus selection",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "Explain",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "Show dependencies",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "",
+                              "type":  "ControlType.Custom"
+                          },
+                          {
+                              "name":  "",
+                              "type":  "ControlType.Custom"
+                          },
+                          {
+                              "name":  "",
+                              "type":  "ControlType.Custom"
+                          },
+                          {
+                              "name":  "System",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "Graph",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "Requirements",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "History",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "Local views",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "Fit",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "↑",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "→",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "←",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "Agentique",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "/",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "System World",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "",
+                              "type":  "ControlType.Custom"
+                          },
+                          {
+                              "name":  "NativeStudio, definition, Authored",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "ModelingPlatform, definition, Authored",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "AgentFabric, definition, Authored",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "SystemWorld, part, Authored",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "GraphWorld, part, Authored",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "Inspector, part, Authored",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "ModelRepository, part, Authored",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "ModelingService, part, Authored",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "ProjectWorkspace, part, Authored",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "DecisionAgent, part, Authored",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "ProposalEngine, part, Authored",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "ModelingAPI, interface, Authored",
+                              "type":  "ControlType.Text"
+                          },
+                          {
+                              "name":  "request, Port in SystemWorld, direction not specified",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "result, Port in SystemWorld, direction not specified",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "request, Port in GraphWorld, direction not specified",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "result, Port in GraphWorld, direction not specified",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "request, Port in Inspector, direction not specified",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "result, Port in Inspector, direction not specified",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "request, Port in ModelRepository, direction not specified",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "result, Port in ModelRepository, direction not specified",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "request, Port in ModelingService, direction not specified",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "result, Port in ModelingService, direction not specified",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "request, Port in ProjectWorkspace, direction not specified",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "result, Port in ProjectWorkspace, direction not specified",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "request, Port in DecisionAgent, direction not specified",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "result, Port in DecisionAgent, direction not specified",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "request, Port in ProposalEngine, direction not specified",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "result, Port in ProposalEngine, direction not specified",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "request, Port in ModelingAPI, direction not specified",
+                              "type":  "ControlType.Button"
+                          },
+                          {
+                              "name":  "result, Port in ModelingAPI, direction not specified",
+                              "type":  "ControlType.Button"
+                          }
+                      ],
+    "window":  {
+                   "name":  "Agentique · Native Studio",
+                   "handle":  23922116,
+                   "process_id":  13284
+               },
+    "process_exit_code":  null,
+    "finished_utc":  "2026-09-25T17:09:44.1527673Z"
+}

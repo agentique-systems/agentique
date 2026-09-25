@@ -1,0 +1,25 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-modeling-service",
+    "-p",
+    "agq-modeling-agent",
+    "--lib"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T17:00:16.460546+00:00",
+  "elapsed_seconds": 5.078,
+  "exit_code": 101,
+  "output": "verification/native-studio-alpha/checks/part-identity-wired-tests.txt",
+  "output_sha256": "03be88a3b1c3bbc453fb0888f4934ab066dec4ab748449ebe9669b9eaed0d3c7",
+  "build_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "2"
+  }
+}

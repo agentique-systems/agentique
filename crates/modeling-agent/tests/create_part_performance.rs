@@ -169,6 +169,7 @@ fn create_part_command_matches_full_self_model_reconstruction() {
         base.revision(),
         &["PlatformArchitecture", "ModelingPlatform"],
     );
+    let ancestor = named(base.revision(), &["PlatformArchitecture"]);
     let started = Instant::now();
     let mut candidate = agq_modeling_agent::propose(
         &service,
@@ -187,7 +188,24 @@ fn create_part_command_matches_full_self_model_reconstruction() {
     )
     .unwrap();
     let command_prepare_ms = started.elapsed().as_millis();
-    let incremental = candidate.prepared().revision().clone();
+    let command_full = candidate.prepared().revision().clone();
+    assert_eq!(
+        named(&command_full, &["PlatformArchitecture", "ModelingPlatform"]),
+        owner,
+        "the command preserves its owner's canonical identity"
+    );
+    assert_eq!(
+        named(&command_full, &["PlatformArchitecture"]),
+        ancestor,
+        "the command preserves containing architecture identity"
+    );
+    let added = named(
+        &command_full,
+        &["PlatformArchitecture", "ModelingPlatform", "alphaObserver"],
+    );
+    let ownership = command_full.kerml_queries().unwrap().owner(added);
+    assert_eq!(ownership.completeness, Completeness::Complete);
+    assert_eq!(ownership.value, Some(owner));
     assert!(
         candidate
             .source_preview
@@ -208,9 +226,9 @@ fn create_part_command_matches_full_self_model_reconstruction() {
         "candidate preserves current revision"
     );
     let started = Instant::now();
-    let full = agq_modeling_workspace::testing::full_rebuild(&incremental).unwrap();
+    let full = agq_modeling_workspace::testing::full_rebuild(&command_full).unwrap();
     let full_rebuild_ms = started.elapsed().as_millis();
-    assert_equivalent(&incremental, &full);
+    assert_equivalent(&command_full, &full);
     let started = Instant::now();
     candidate.validate(&AgentPolicy::operator()).unwrap();
     let validation_ms = started.elapsed().as_millis();
@@ -219,24 +237,28 @@ fn create_part_command_matches_full_self_model_reconstruction() {
     println!(
         "CREATE_PART_PERFORMANCE {}",
         serde_json::json!({
-            "format": "agentique-create-part-performance/1",
+            "format": "agentique-create-part-performance/2",
             "model": "models/agentique",
+            "command_reconstruction_mode": "full-source-reconstruction-with-verified-insertion-identities",
+            "comparison_reconstruction_mode": "full-source-reconstruction-with-identical-source-identities",
             "runtime_restore_ms": runtime_restore_ms,
             "command_prepare_ms": command_prepare_ms,
-            "incremental_compile_ms": incremental.compilation_timings().total_compile_micros as f64 / 1000.0,
+            "command_compile_ms": command_full.compilation_timings().total_compile_micros as f64 / 1000.0,
             "full_rebuild_ms": full_rebuild_ms,
             "full_compile_ms": full.compilation_timings().total_compile_micros as f64 / 1000.0,
             "validation_ms": validation_ms,
-            "incremental_phases": incremental.compilation_timings(),
+            "command_phases": command_full.compilation_timings(),
             "full_phases": full.compilation_timings(),
-            "incremental_work": incremental.compilation_work(),
+            "command_work": command_full.compilation_work(),
             "full_work": full.compilation_work(),
-            "canonical_elements": incremental.semantic_model().unwrap().elements().count(),
-            "authored_documents": incremental.documents().count(),
+            "canonical_elements": command_full.semantic_model().unwrap().elements().count(),
+            "authored_documents": command_full.documents().count(),
             "exact_equivalence": true,
+            "owner_and_ancestor_identity_preserved": true,
+            "incremental_speedup_claimed": false,
             "peak_memory_bytes": null,
             "memory_scope": "measure the process externally; no per-edit allocation claim",
-            "comparison_scope": "identical parsed source and canonical identity inputs; parsing occurs before compilation",
+            "comparison_scope": "two full reconstruction paths over identical parsed source and canonical identity inputs; command preparation additionally includes source proof and continuity postchecks",
         })
     );
 }

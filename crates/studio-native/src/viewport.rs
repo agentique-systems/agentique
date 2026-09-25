@@ -207,6 +207,7 @@ impl StudioApp {
         self.timing.total_nodes = self.scene.nodes.len();
         let mut keyboard_selection = None;
         let mut keyboard_focus = false;
+        let mut port_command = None;
         for node in &objects.nodes {
             self.timing.visible_nodes += 1;
             let a = self.camera.world_to_screen(node.bounds.min);
@@ -386,7 +387,7 @@ impl StudioApp {
                         format!(
                             "{}, {}, {:?}",
                             node.semantic.name,
-                            node.category.label(),
+                            node.category.label().to_lowercase(),
                             node.semantic.origin
                         ),
                     )
@@ -466,19 +467,85 @@ impl StudioApp {
         }
         if self.lod.level() >= LodLevel::Features {
             for port in &objects.ports {
+                let point = self.camera.world_to_screen(port.position);
+                let position = rect.min + Vec2::new(point.x, point.y);
+                let port_rect =
+                    egui::Rect::from_center_size(position, Vec2::splat(16.0)).intersect(rect);
+                if !port_rect.is_positive() {
+                    continue;
+                }
+                let port_response = ui.interact(
+                    port_rect,
+                    egui::Id::new(("semantic-port", self.scene.revision_id, port.id)),
+                    Sense::click(),
+                );
+                port_response.widget_info(|| {
+                    egui::WidgetInfo::labeled(
+                        egui::WidgetType::Button,
+                        true,
+                        format!(
+                            "{}, Port in {}, direction {}",
+                            port.name,
+                            self.active_projection()
+                                .nodes
+                                .iter()
+                                .find(|node| node.id == port.proxy_for_owner.unwrap_or(port.owner))
+                                .map_or("owner outside this view", |node| node.name.as_str()),
+                            port_direction_label(port.direction)
+                        ),
+                    )
+                });
+                if port_response.clicked() || port_response.gained_focus() {
+                    keyboard_selection = Some(SceneTarget::Port(port.id));
+                }
+                if port_response.double_clicked() {
+                    keyboard_selection = Some(SceneTarget::Port(port.id));
+                    keyboard_focus = true;
+                }
+                if port_response.secondary_clicked() {
+                    keyboard_selection = Some(SceneTarget::Port(port.id));
+                }
+                port_response.context_menu(|ui| {
+                    let mut context = self.context();
+                    context.selected = true;
+                    for id in context_commands(Some(&SceneTarget::Port(port.id))) {
+                        if commands::unavailable(*id, &context).is_some() {
+                            continue;
+                        }
+                        let command = commands::COMMANDS
+                            .iter()
+                            .find(|command| command.id == *id)
+                            .expect("registered command");
+                        if ui.button(command.label).clicked() {
+                            keyboard_selection = Some(SceneTarget::Port(port.id));
+                            port_command = Some(*id);
+                            ui.close();
+                        }
+                    }
+                });
+                if port_response.has_focus() {
+                    painter.rect_stroke(
+                        port_rect.expand(3.0),
+                        3.0,
+                        Stroke::new(2.0, theme.accent),
+                        egui::StrokeKind::Outside,
+                    );
+                }
                 if self.lod.level() >= LodLevel::Relationships
                     || self.selection.contains(port.id)
                     || self.selection.contains(port.owner)
+                    || port_response.hovered()
+                    || (self.world == crate::navigation::World::System
+                        && self.focus.is_some()
+                        && objects.ports.len() <= 24)
                 {
-                    let point = self.camera.world_to_screen(port.position);
-                    let position = rect.min + Vec2::new(point.x, point.y);
                     let width = self
                         .lookup
                         .node(&self.scene, port.owner)
                         .map_or(100.0, |node| node.bounds.width() * self.camera.zoom * 0.44);
                     let mut job = egui::text::LayoutJob::simple_singleline(
                         port.name.clone(),
-                        FontId::proportional(11.0),
+                        FontId::proportional(12.0),
                         theme.muted,
                     );
                     job.wrap.max_width = width;
@@ -493,6 +560,28 @@ impl StudioApp {
                     };
                     painter.galley(position + Vec2::new(offset, 10.0), galley, theme.muted);
                 }
+                if port_response.hovered() {
+                    let connections = self
+                        .active_projection()
+                        .edges
+                        .iter()
+                        .filter(|edge| {
+                            edge.family == RelationshipFamily::Connection
+                                && (edge.source == port.id || edge.target == port.id)
+                        })
+                        .count();
+                    port_response.on_hover_text(format!(
+                        "{} · Port\nDirection {}\n{} connections in this view{}",
+                        port.name,
+                        port_direction_label(port.direction),
+                        connections,
+                        if port.proxy_for_owner.is_some() {
+                            "\nExposed at collapsed subsystem boundary"
+                        } else {
+                            ""
+                        }
+                    ));
+                }
             }
         }
         self.timing.labels(labels_started.elapsed());
@@ -501,6 +590,9 @@ impl StudioApp {
             if keyboard_focus {
                 self.execute(CommandId::Focus, ui.ctx());
             }
+        }
+        if let Some(command) = port_command {
+            self.execute(command, ui.ctx());
         }
         if let Some(target) = hovered {
             let label = match &target {
@@ -512,12 +604,7 @@ impl StudioApp {
                     format!(
                         "{} · Port · direction {}{}",
                         p.name,
-                        match p.direction {
-                            agq_studio_scene::PortDirection::Unspecified => "not specified",
-                            agq_studio_scene::PortDirection::In => "in",
-                            agq_studio_scene::PortDirection::Out => "out",
-                            agq_studio_scene::PortDirection::InOut => "in/out",
-                        },
+                        port_direction_label(p.direction),
                         if p.proxy_for_owner.is_some() {
                             " · collapsed boundary proxy; original port identity"
                         } else {
@@ -684,9 +771,16 @@ impl StudioApp {
             } else {
                 theme
                     .muted
-                    .gamma_multiply(if theme.contrast { 0.95 } else { 0.50 })
+                    .gamma_multiply(if theme.contrast { 0.95 } else { 0.65 })
             };
-            if !self.selection.targets.is_empty() && !selected && !incident {
+            // In System World a selected container establishes the surrounding
+            // engineering context; its children's connections remain readable.
+            // Graph World uses deliberate path emphasis for semantic reasoning.
+            if self.world == crate::navigation::World::Graph
+                && !self.selection.targets.is_empty()
+                && !selected
+                && !incident
+            {
                 color = color.gamma_multiply(if theme.contrast { 0.70 } else { 0.44 });
             }
             if edge.diff == DiffMark::Added {
@@ -775,6 +869,14 @@ impl StudioApp {
             }
         }
         batch
+    }
+}
+pub(crate) fn port_direction_label(direction: agq_studio_scene::PortDirection) -> &'static str {
+    match direction {
+        agq_studio_scene::PortDirection::Unspecified => "not specified",
+        agq_studio_scene::PortDirection::In => "in",
+        agq_studio_scene::PortDirection::Out => "out",
+        agq_studio_scene::PortDirection::InOut => "in/out",
     }
 }
 fn context_commands(target: Option<&SceneTarget>) -> &'static [CommandId] {

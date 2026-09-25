@@ -338,7 +338,7 @@ impl StudioApp {
                     .ports
                     .iter()
                     .find(|port| port.id == inspector.element.id)
-                    .map(|port| format!("{:?}", port.direction))
+                    .map(|port| crate::viewport::port_direction_label(port.direction).to_owned())
                     .unwrap_or_else(|| "Not provided by this projection".into());
                 value(ui, "Direction", &direction, theme);
             }
@@ -501,9 +501,14 @@ impl StudioApp {
         } else if let Some(SceneTarget::Port(id)) = primary {
             if let Some(port) = self.scene.ports.iter().find(|p| p.id == id).cloned() {
                 ui.label(RichText::new(&port.name).size(TITLE));
-                ui.label(muted("Semantic port", theme));
+                ui.label(muted("Port", theme));
                 theme.section(ui, "INTERFACE");
-                value(ui, "Direction", &format!("{:?}", port.direction), theme);
+                value(
+                    ui,
+                    "Direction",
+                    crate::viewport::port_direction_label(port.direction),
+                    theme,
+                );
                 if let Some(owner) = self
                     .active_projection()
                     .nodes

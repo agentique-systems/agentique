@@ -298,6 +298,7 @@ impl CandidateReview {
 pub struct CommandContext {
     pub selected: bool,
     pub can_create: bool,
+    pub create_base_ready: bool,
     pub candidate: CandidateReview,
     pub live: bool,
     pub busy: bool,
@@ -348,6 +349,9 @@ pub fn unavailable(id: CommandId, context: &CommandContext) -> Option<&'static s
         }
         CreatePart if !context.can_create => {
             Some("Select an authored part with source to create a nested part")
+        }
+        CreatePart if context.live && !context.create_base_ready => {
+            Some("Open the Validated branch-head revision before creating a part")
         }
         Validate if !context.live => Some("Visual fixtures cannot establish semantic validation"),
         Validate | Commit | Cancel if context.candidate == CandidateReview::None => {
@@ -484,6 +488,7 @@ mod tests {
         let mut context = CommandContext {
             selected: true,
             can_create: true,
+            create_base_ready: true,
             candidate: CandidateReview::Semantic(CandidatePhase::CommitUnresolved),
             live: true,
             busy: false,

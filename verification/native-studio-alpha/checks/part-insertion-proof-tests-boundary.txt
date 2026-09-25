@@ -1,0 +1,11 @@
+   Compiling agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-service)
+    Finished `test` profile [unoptimized] target(s) in 1.69s
+     Running unittests src\lib.rs (target\debug\deps\agq_modeling_service-045040c4c90fcc3e.exe)
+
+running 3 tests
+test part_insertion::tests::proof_rejects_header_rename_wrong_owner_and_other_source_changes ... ok
+test part_insertion::tests::proof_preserves_every_old_identity_for_braces_and_semicolon_bodies ... ok
+test part_insertion::tests::proof_accepts_one_qualified_typing_but_no_hidden_declarations ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.08s
+

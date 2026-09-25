@@ -10,6 +10,13 @@ and two UI Automation invocations worked in the actual native application. Full
 screen-reader operation, a keyboard-only engineering journey, mixed-DPI movement,
 IME composition, GPU device loss, and non-Windows operation remain unqualified.
 
+**Later qualification, 16:57 UTC:** the rebuilt port-accessibility binary passed
+seven actual UIA checks and the separate keyboard-only visual journey. This
+supersedes the earlier search-name, port-action, keyboard-journey and bounded
+resize/minimize observations below. It does not qualify spoken screen-reader
+output, real IME composition, mixed DPI, device loss or semantic commits.
+See the dated addendum at the end of this record.
+
 ## Artifact and environment
 
 - Main checkout HEAD when recorded: `f93a2a03e72ba5c116030297763256321e233e45`.
@@ -275,3 +282,58 @@ engineering journey and one Narrator listening session. Then test an installed
 composition IME, mixed 100/150/200% monitor transitions, minimize/restore and rapid
 resize, followed by controlled surface/device-failure recovery on disposable
 test state. Preserve exact binary identity and observed outputs for each check.
+
+## Subsequent port, keyboard and window qualification
+
+At 16:57 UTC the actual executable SHA-256
+`60306b41d2ae8e6dc7bc7514524ce15848ffd94d1c3ee970ea37fed3f59a98a1`
+passed all seven assertions in
+[port-uia-native-window.json](accessibility/port-uia-native-window.json):
+
+- Explorer search exposes the name `Find an element`.
+- Focusing ModelingPlatform exposes six real fixture ports as accessible Buttons.
+- A port supports UIA Invoke, accepts keyboard focus, and invocation selects its
+  corresponding Inspector heading.
+- Minimize followed by restore retains the interactive native window.
+- Four resize requests (1280×800, 1600×1000, 1100×760, 1600×1000) retain an
+  invokable command palette with named input `Command or element`.
+
+The driver exited 0. Native stderr was empty. It closed only its owned PID12252,
+which was subsequently confirmed absent. PowerShell did not expose the native
+process exit code (recorded null); the driver exit is not substituted for it.
+Two earlier attempts (PID9488 and PID21752) queried the console window returned
+by MainWindowHandle and failed with an empty accessibility tree. Both were closed
+and confirmed absent. The corrected driver selects the titled native window
+within the exact owned process. Failed artifacts are retained.
+
+The separate [keyboard journey](accessibility/keyboard-after-ports.json) passed
+with no pointer events or source editing. It covers visual navigation, selection,
+Explain, candidate review/cancel and the fixture validation/commit prohibition;
+it does not establish a real semantic commit by keyboard.
+
+Focused System World now shows port names without requiring an individual Part
+selection. Port direction remains `not specified` when the projection provides
+none. Toolkit and camera reduced-motion settings are now controlled together,
+and restored reduced-motion preferences initialize the toolkit setting. Canvas
+node focus selects the corresponding semantic object. Arrow navigation uses the
+filtered Explorer rows, and disclosure controls include the owner's name.
+These source changes do not establish comprehensive accessibility compliance.
+
+The subsequent integrated build passed the seven UIA checks again at 17:09 UTC
+(`accessibility/integrated-uia-native-window.json`, executable SHA-256
+`0226b5e5f76bcfe982a17aa3a806b21de67430576dc5de72a5c6083c5535bc52`).
+Port names now include their actual owner and known/unspecified direction, so
+`request` on ModelRepository differs from `request` on ModelingService. The
+separate `accessibility/integrated-keyboard.json` journey also passed.
+
+At 17:11 UTC an additional actual Windows Narrator coexistence smoke check
+completed the same native accessibility action sequence with Narrator running,
+then confirmed that Narrator remained alive. All eight assertions passed,
+driver exit 0 (`checks/narrator-coexistence-smoke.json` and
+`accessibility/narrator-coexistence.json`). No prior Narrator session was present.
+The script closed only its own native process and Narrator PID; Narrator required
+a bounded forced close after its normal window-close request did not exit.
+Subsequent process inspection found neither process running. **Spoken output was
+not listened to or assessed**; this is a coexistence/action smoke check, not a
+screen-reader speech or usability qualification. IME composition, mixed-DPI
+monitor movement and controlled device failure remain unqualified.

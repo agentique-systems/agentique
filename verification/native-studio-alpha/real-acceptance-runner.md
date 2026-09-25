@@ -1,8 +1,8 @@
 # Real native acceptance runner
 
 **Prepared, not executed against accepted runtime.** Runtime rematerialization
-was still running when this runner was written. Compilation is delegated to the
-integration lead to avoid another heavy build. No real screenshot, successful
+was still running when this runner was written. The integrated native build and
+all 45 native tests now pass. No real screenshot, successful
 candidate, semantic validation, durable commit or restart result is claimed by
 this document.
 

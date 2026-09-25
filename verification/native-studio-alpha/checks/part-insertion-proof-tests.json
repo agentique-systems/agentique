@@ -1,0 +1,26 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-modeling-service",
+    "--lib",
+    "part_insertion::tests",
+    "--",
+    "--nocapture"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T16:52:09.424266+00:00",
+  "elapsed_seconds": 22.406,
+  "exit_code": 101,
+  "output": "verification/native-studio-alpha/checks/part-insertion-proof-tests.txt",
+  "output_sha256": "edc7e665ccb5c15cd3bdd1e1e317420e92127eefdac54b7463e9a7190b9c06fb",
+  "build_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "2"
+  }
+}

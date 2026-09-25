@@ -28,6 +28,21 @@ impl StudioApp {
         CommandContext {
             selected: self.selection.primary.is_some(),
             can_create,
+            create_base_ready: self.binding.is_some_and(|binding| {
+                self.history.as_ref().is_some_and(|history| {
+                    history.project.id == binding.project
+                        && history.branches.iter().any(|branch| {
+                            Some(branch.id) == self.branch && branch.head == binding.revision
+                        })
+                        && history.revisions.iter().any(|revision| {
+                            revision.revision_id == binding.revision
+                                && matches!(
+                                    revision.validation,
+                                    agq_modeling_repository::ValidationState::Validated(_)
+                                )
+                        })
+                })
+            }),
             candidate: self.candidate.as_ref().map_or(
                 commands::CandidateReview::None,
                 |candidate| {

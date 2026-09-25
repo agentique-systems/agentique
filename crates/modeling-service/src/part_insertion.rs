@@ -23,6 +23,7 @@ struct InsertionProof {
     parsed: production::Document,
     identities: Vec<NodeIdentity>,
     added_part: SyntaxNodeId,
+    part_name: String,
     retained: usize,
 }
 
@@ -154,7 +155,12 @@ impl ModelingService {
             "previous_reference_targets_preserved": true,
         });
         let mut candidate = prepare_candidate(&working, command.validate)?;
-        candidate.manifest.metadata.name = Some("Add Part".into());
+        let owner_name = target
+            .declared_qualified_name
+            .as_deref()
+            .and_then(|name| name.rsplit("::").next())
+            .unwrap_or("selected part");
+        candidate.manifest.metadata.name = Some(format!("Add {} to {owner_name}", proof.part_name));
         candidate.manifest.metadata.description = Some(serde_json::to_string(&evidence)?);
         candidate.manifest.metadata.alias.push(POLICY.into());
         candidate.verify()?;
@@ -339,8 +345,8 @@ fn prove_insertion(
     {
         return Err(invalid("only one plain named PartUsage is supported"));
     }
-    if texts.len() != 3 {
-        if texts.get(2) != Some(&":")
+    if texts.len() != 3
+        && (texts.get(2) != Some(&":")
             || tokens[3..tokens.len() - 1]
                 .iter()
                 .enumerate()
@@ -351,10 +357,9 @@ fn prove_insertion(
                         after.token_text(token) != "::"
                     }
                 })
-            || (tokens.len() - 4) % 2 != 1
-        {
-            return Err(invalid("part typing must be one simple qualified name"));
-        }
+            || (tokens.len() - 4) % 2 != 1)
+    {
+        return Err(invalid("part typing must be one simple qualified name"));
     }
     let outside_part = format!(
         "{}{}",
@@ -372,6 +377,7 @@ fn prove_insertion(
             "insertion contains text outside the single part declaration",
         ));
     }
+    let part_name = texts[1].to_owned();
     for (old_index, &new_index) in mapping.iter().enumerate() {
         next[new_index].id = old[old_index].id;
     }
@@ -393,6 +399,7 @@ fn prove_insertion(
         parsed: after,
         identities: next,
         added_part,
+        part_name,
         retained: old.len(),
     })
 }
@@ -611,8 +618,12 @@ mod tests {
             .find(|node| node.kind() == P::PartDefinition)
             .unwrap()
             .id();
-        let first =
-            prove_insertion(&before, owner, &edit_for(&before, owner, "part firstChild;")).unwrap();
+        let first = prove_insertion(
+            &before,
+            owner,
+            &edit_for(&before, owner, "part firstChild;"),
+        )
+        .unwrap();
         let first_part = first.added_part;
         let restored = first.parsed.restore_identities(&first.identities).unwrap();
         let second = prove_insertion(
