@@ -1,0 +1,202 @@
+use crate::*;
+use agq_runtime_publications::{RuntimeConfig, RuntimePhase};
+use std::path::{Path, PathBuf};
+
+/// Deployment paths are explicit. Runtime discovery follows the shared package contract.
+#[derive(Clone, Debug)]
+pub struct NativeConfig {
+    pub root: PathBuf,
+    pub database: PathBuf,
+    pub runtime: RuntimeConfig,
+}
+
+impl NativeConfig {
+    pub fn for_root(root: PathBuf, runtime_dir: Option<PathBuf>) -> Result<Self> {
+        let directory = agq_runtime_publications::runtime_directory(runtime_dir.as_deref())?;
+        Ok(Self {
+            root,
+            database: directory.join("projects/agentique.sqlite"),
+            runtime: RuntimeConfig {
+                runtime_dir,
+                ..RuntimeConfig::default()
+            },
+        })
+    }
+}
+
+/// Observable work phases, not estimated percentages or semantic acceptance claims.
+#[derive(Clone, Debug, Serialize)]
+pub enum BootstrapPhase {
+    Runtime(RuntimePhase),
+    OpeningRepository,
+    OpeningProject,
+    ValidatingArchitecture,
+    ValidatingAgentFabric,
+    RestoringRevision,
+    Ready,
+}
+
+/// Setup can be rendered before any canonical model or service exists.
+#[derive(Clone, Debug, Serialize)]
+pub struct SetupSurface {
+    pub runtime_directory: PathBuf,
+    pub database: PathBuf,
+    pub kerml_profile: String,
+    pub systems_profile: String,
+    pub bundle_identity: String,
+    pub bundle_located: bool,
+    pub reason: Option<String>,
+}
+
+/// Discovery is deliberately distinct from authentication and never grants authority.
+pub fn setup_surface(config: &NativeConfig) -> Result<SetupSurface> {
+    let (kerml, systems) = agq_runtime_publications::accepted_contracts()?;
+    let discovery = agq_runtime_publications::discover(&config.runtime);
+    // `discover` returns cache locations for directories; `load` also accepts
+    // archive input. Existence is UI setup information, never authentication.
+    let archive_present = config
+        .runtime
+        .bundle
+        .as_ref()
+        .is_some_and(|path| path.is_file());
+    Ok(SetupSurface {
+        runtime_directory: agq_runtime_publications::runtime_directory(
+            config.runtime.runtime_dir.as_deref(),
+        )?,
+        database: config.database.clone(),
+        kerml_profile: kerml.profile,
+        systems_profile: systems.profile,
+        bundle_identity: agq_runtime_publications::accepted_bundle_identity()?,
+        bundle_located: archive_present || discovery.is_ok(),
+        reason: if archive_present {
+            None
+        } else {
+            discovery.err().map(|e| e.to_string())
+        },
+    })
+}
+
+/// Authenticate, seed only a first-run project, and restore all default revisions.
+/// Call on a worker; no HTTP, runtime download, or producer publication is involved.
+pub fn open(
+    config: &NativeConfig,
+    mut progress: impl FnMut(BootstrapPhase),
+) -> Result<StudioPlatform> {
+    let runtime = agq_runtime_publications::load(&config.runtime, &config.root, |phase| {
+        progress(BootstrapPhase::Runtime(phase))
+    })?;
+    open_authenticated(config, runtime, &mut progress)
+}
+
+/// Explicit operator setup delegates staging, authentication and atomic promotion to
+/// runtime-publications. Authenticated graphs are reused without a second restoration.
+pub fn install(
+    config: &NativeConfig,
+    bundle: &Path,
+    mut progress: impl FnMut(BootstrapPhase),
+) -> Result<StudioPlatform> {
+    if !bundle.is_absolute() {
+        return Err(PlatformError::Invalid(
+            "Choose an absolute local runtime bundle path".into(),
+        ));
+    }
+    let directory =
+        agq_runtime_publications::runtime_directory(config.runtime.runtime_dir.as_deref())?;
+    let installed =
+        agq_runtime_publications::install_bundle(bundle, &directory, &config.root, |phase| {
+            progress(BootstrapPhase::Runtime(phase))
+        })?;
+    open_authenticated(config, installed.runtime, &mut progress)
+}
+
+fn open_authenticated(
+    config: &NativeConfig,
+    runtime: agq_runtime_publications::AuthenticatedRuntime,
+    progress: &mut impl FnMut(BootstrapPhase),
+) -> Result<StudioPlatform> {
+    progress(BootstrapPhase::OpeningRepository);
+    if let Some(parent) = config
+        .database
+        .parent()
+        .filter(|path| !path.as_os_str().is_empty())
+    {
+        std::fs::create_dir_all(parent).map_err(|e| PlatformError::Invalid(e.to_string()))?;
+    }
+    let repository = Arc::new(agq_modeling_sqlite::SqliteRepository::open(
+        &config.database,
+    )?);
+    let service = Arc::new(ModelingService::new(repository, runtime.systems, 8));
+    // This database contains bootstrap bookkeeping only. It never stores semantic truth.
+    let journal = rusqlite::Connection::open(config.database.with_extension("views.sqlite"))
+        .map_err(|e| PlatformError::Invalid(e.to_string()))?;
+    journal
+        .execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;")
+        .map_err(|e| PlatformError::Invalid(e.to_string()))?;
+    progress(BootstrapPhase::OpeningProject);
+    seed_agentique(&service, &config.root, &journal, &mut |phase| match phase {
+        "validating_architecture" => progress(BootstrapPhase::ValidatingArchitecture),
+        "validating_agent_fabric" => progress(BootstrapPhase::ValidatingAgentFabric),
+        _ => {}
+    })?;
+    progress(BootstrapPhase::RestoringRevision);
+    for project in service.repository().list_projects()? {
+        let branch = service
+            .repository()
+            .get_branch(project.id, project.default_branch)?;
+        service.resolve(project.id, RevisionSelector::Revision(branch.head))?;
+    }
+    progress(BootstrapPhase::Ready);
+    Ok(StudioPlatform::new(service, AgentPolicy::operator()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn discovery_is_not_authentication_and_missing_runtime_never_creates_a_database() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut config = NativeConfig::for_root(
+            directory.path().into(),
+            Some(directory.path().join("runtime")),
+        )
+        .unwrap();
+        // Explicit missing bundle makes the test independent of legacy environment inputs.
+        config.runtime.bundle = Some(directory.path().join("absent.agq-runtime"));
+        assert!(open(&config, |_| {}).is_err());
+        assert!(!config.database.exists());
+        let setup = setup_surface(&config).unwrap();
+        assert!(!setup.bundle_located);
+        assert!(setup.reason.is_some());
+        assert_eq!(setup.kerml_profile, "agentique-kerml-1.0-operational/9");
+        assert_eq!(setup.systems_profile, "agentique-sysml-2.0-operational/3");
+    }
+
+    #[test]
+    fn relative_setup_path_is_rejected_before_installation() {
+        let directory = tempfile::tempdir().unwrap();
+        let config = NativeConfig::for_root(
+            directory.path().into(),
+            Some(directory.path().join("runtime")),
+        )
+        .unwrap();
+        assert!(install(&config, Path::new("runtime.agq-runtime"), |_| {}).is_err());
+        assert!(!config.database.exists());
+    }
+
+    #[test]
+    fn existing_archive_does_not_claim_authenticated_runtime() {
+        let directory = tempfile::tempdir().unwrap();
+        let mut config = NativeConfig::for_root(
+            directory.path().into(),
+            Some(directory.path().join("runtime")),
+        )
+        .unwrap();
+        let bundle = directory.path().join("invalid.agq-runtime");
+        std::fs::write(&bundle, b"untrusted bytes").unwrap();
+        config.runtime.bundle = Some(bundle);
+        assert!(setup_surface(&config).unwrap().bundle_located);
+        assert!(open(&config, |_| {}).is_err());
+        assert!(!config.database.exists());
+    }
+}

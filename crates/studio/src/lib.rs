@@ -12,10 +12,8 @@ use agq_modeling_agent::decision::{
     DecisionModel, DecisionQuestion, DecisionState, DecisionValue, MockViewDecision,
 };
 use agq_modeling_agent::{AgentCandidate, AgentContext, AgentPolicy, Authority, ModelCommand};
-use agq_modeling_repository::{BranchId, OperationId, ProjectId, ProjectRevisionId};
-use agq_modeling_service::{
-    ApplyDocumentChanges, BoundRevision, ModelingService, RevisionSelector, revision_diff,
-};
+use agq_modeling_repository::{BranchId, ProjectId, ProjectRevisionId};
+use agq_modeling_service::{BoundRevision, ModelingService, RevisionSelector, revision_diff};
 use agq_modeling_view::ViewDefinition;
 use axum::{
     Json, Router,

@@ -6,6 +6,7 @@ license.workspace = true
 description = "Local Agentique Studio host over the durable Gen2 repository"
 
 [dependencies]
+agq-studio-platform = { path = "../studio-platform" }
 agq-modeling-agent = { path = "../modeling-agent" }
 agq-modeling-view = { path = "../modeling-view" }
 agq-modeling-service = { path = "../modeling-service" }

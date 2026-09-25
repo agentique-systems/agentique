@@ -1,0 +1,24 @@
+[package]
+name = "agq-studio-platform"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "In-process revision-bound platform boundary for Agentique native Studio"
+
+[dependencies]
+agq-modeling-agent = { path = "../modeling-agent" }
+agq-modeling-view = { path = "../modeling-view" }
+agq-modeling-service = { path = "../modeling-service" }
+agq-modeling-repository = { path = "../modeling-repository" }
+agq-modeling-sqlite = { path = "../../adapters/modeling-sqlite" }
+agq-runtime-publications = { path = "../runtime-publications" }
+agq-kerml-text = { path = "../kerml-text" }
+agq-kernel = { path = "../kernel" }
+serde.workspace = true
+serde_json.workspace = true
+rusqlite.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
