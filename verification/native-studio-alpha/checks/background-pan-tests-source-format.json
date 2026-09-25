@@ -1,0 +1,11 @@
+{
+  "format": "agentique-review-command-evidence/1",
+  "working_directory": "C:/Users/phili/github/agentique-systems/agentique-alpha-runtime",
+  "command": "rustfmt --edition 2024 crates/studio-native/src/background_pan_tests.rs",
+  "chunk_id": "f1d464",
+  "wall_time_seconds": 0.5151662,
+  "exit_code": 0,
+  "original_token_count": 0,
+  "output": "",
+  "test_status": "Not compiled or executed at source handoff; parent owns integrated gate."
+}
