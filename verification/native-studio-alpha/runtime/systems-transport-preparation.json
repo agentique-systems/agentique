@@ -1,0 +1,28 @@
+{
+  "command": [
+    "python",
+    "tools/runtime-recovery/prepare_systems_transport.py",
+    "--cache",
+    "verification/generated/native-studio-alpha/rematerialized-systems/finalized/canonical.publication.zip",
+    "--generated-receipt",
+    "verification/generated/native-studio-alpha/rematerialized-systems/finalized/accepted-publication.json",
+    "--generated-bindings",
+    "verification/generated/native-studio-alpha/rematerialized-systems/finalized/standard-bindings.json",
+    "--transport-id",
+    "sysml-systems-operational-v3-rematerialized-2026-09-25",
+    "--output",
+    "verification/generated/native-studio-alpha/systems-transport-review"
+  ],
+  "cwd": "C:/Users/phili/github/agentique-systems/agentique-alpha-runtime",
+  "started_utc": "2026-09-25T18:07:59.849340+00:00",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "source_commit": "f4fb8283436bf073d964a46d8738c110fc69e028",
+  "working_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "exit_code": 0,
+  "elapsed_seconds": 10.109,
+  "peak_rss_bytes": 21151744,
+  "peak_private_bytes": 13631488,
+  "memory_scope": "direct child process sampled at 1 second; excludes descendant compilers",
+  "output_sha256": "89c77581cb27cb7a6440ee5fd180d315caf204d4bbff75b5151417ead2c4b0f0",
+  "raw_output": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\native-studio-alpha\\runtime\\systems-transport-preparation.log"
+}

@@ -1,0 +1,24 @@
+{
+  "command": [
+    "C:\\Users\\phili\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\scripts\\systems_publication_gate.py",
+    "--report",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\generated\\native-studio-alpha\\rematerialized-systems\\finalized\\report.json",
+    "--repository",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime",
+    "--output",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\generated\\native-studio-alpha\\systems-independent-artifact-gate.json"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime",
+  "started_utc": "2026-09-25T18:02:45.626915+00:00",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "source_commit": "f4fb8283436bf073d964a46d8738c110fc69e028",
+  "working_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "exit_code": 0,
+  "elapsed_seconds": 57.156,
+  "peak_rss_bytes": 154009600,
+  "peak_private_bytes": 147271680,
+  "memory_scope": "direct child process sampled at 1 second; excludes descendant compilers",
+  "output_sha256": "6af700d7c605a8a5caf334775b11c9832bab54e068359526efa825601e69b1bc",
+  "raw_output": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\native-studio-alpha\\runtime\\systems-independent-artifact-gate.log"
+}

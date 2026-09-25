@@ -1,0 +1,45 @@
+{
+  "format": "agq-rematerialized-transport-candidate/1",
+  "runtime_accepted": false,
+  "ordinary_facade_authentication_required": true,
+  "authority_receipt_changed": false,
+  "transport_id": "sysml-systems-operational-v3-rematerialized-2026-09-25",
+  "original_semantic_receipt_sha256": "becc3cf991e69115dae905957d74292774164e3f5707eecefb06d8eb60e0269a",
+  "generated_receipt_sha256": "734401505f2a52cb020f999055ee98f671511667ff7d3d803862fd248e428730",
+  "cache_bytes": 134322830,
+  "cache_sha256": "02ba47ad99ceaddb853b198a556cbe40351a00361f077099a993f3a226bcc323",
+  "snapshot_revision": "36f83b80-aa6a-4d4b-bd3c-c32117e1104e",
+  "contract": {
+    "semantic_contract_equal": true,
+    "semantic_fields": {
+      "binding_manifest_sha256": true,
+      "format": true,
+      "identity": true,
+      "source_content_set": true,
+      "status": true
+    },
+    "accepted_bindings_equal": true,
+    "transport_entry_schema_equal": true,
+    "original_transport_entries_equal": false,
+    "ordinary_facade_authentication_required": true,
+    "accepted_receipt_changed": false,
+    "runtime_accepted": false
+  },
+  "entries": {
+    "closure.json": {
+      "bytes": 6759870,
+      "sha256": "0e7527e9f1f49dc8a338dcaaba9b6af3ea92e03ad8818464a957f7a77fef3dc9",
+      "original_bytes_equal": true
+    },
+    "facade.json": {
+      "bytes": 19746846,
+      "sha256": "7a7e489805127b4fd057e95db58d19d53fb15ecaf5a0c2b0af871830cf6967e5",
+      "original_bytes_equal": true
+    },
+    "kernel.jsonl": {
+      "bytes": 748560767,
+      "sha256": "ec9d1c78d864d4ad2f671f93371c1988bcb8b952651b82afb9f3624b0756b828",
+      "original_bytes_equal": false
+    }
+  }
+}

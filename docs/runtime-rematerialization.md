@@ -137,6 +137,19 @@ can restore the known label and demand this registered exact graph digest.
 Registration in the compiled catalogue remains an explicit reviewed source
 change followed by ordinary language-facade authentication.
 
+The 2026-09-25 replay completed every original Systems capability and effective
+audit with zero findings. Its complete non-entry receipt and all 69 bindings
+match the original accepted authority. The registered transport is
+[`sysml-v3-rematerialized-2026-09-25.json`](../standards/runtime-transports/sysml-v3-rematerialized-2026-09-25.json).
+The original facade and closure payloads are byte-exact; its 748,560,767-byte
+graph has SHA-256 `ec9d1c78d864d4ad2f671f93371c1988bcb8b952651b82afb9f3624b0756b828`
+and snapshot revision `36f83b80-aa6a-4d4b-bd3c-c32117e1104e`.
+The new receipt pins only this transport under the unchanged v3 authority.
+[`systems-rematerialized-content.json`](../verification/native-studio-alpha/runtime/systems-rematerialized-content.json)
+retains actual archive and entry hashes. This preparation record deliberately
+does not claim runtime authentication; the packaging/verification commands must
+still restore both ordinary language facades.
+
 ## Retain the result
 
 After both ordinary facades authenticate, use `agq-publications pack` to create

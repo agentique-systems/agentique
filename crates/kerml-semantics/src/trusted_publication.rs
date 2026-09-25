@@ -26,7 +26,9 @@ const CATALOGUE: &[CatalogueEntry<'static>] = &[CatalogueEntry {
     receipt: include_str!("../../../standards/sysml-accepted-publication.json"),
     bindings: include_str!("../../../standards/sysml-standard-bindings.json"),
     transport_entry: Some("kernel.jsonl"),
-    transports: &[],
+    transports: &[include_str!(
+        "../../../standards/runtime-transports/sysml-v3-rematerialized-2026-09-25.json"
+    )],
 }];
 
 /// A transport receipt never supplies semantic authority. It is compiled beside
@@ -458,6 +460,33 @@ mod tests {
                 transports: &[],
             })
             .is_err()
+        );
+    }
+
+    #[test]
+    fn rematerialized_systems_keeps_original_authority_and_rejects_other_transports() {
+        let trusted =
+            TrustedPublicationReceipt::checked_in("sysml-systems-operational-v3").unwrap();
+        let original: Value = serde_json::from_str(include_str!(
+            "../../../standards/sysml-accepted-publication.json"
+        ))
+        .unwrap();
+        let transport: TransportReceipt = serde_json::from_str(include_str!(
+            "../../../standards/runtime-transports/sysml-v3-rematerialized-2026-09-25.json"
+        ))
+        .unwrap();
+        assert_eq!(trusted.receipt, original);
+        let graph = transport.entries.get("kernel.jsonl").unwrap();
+        assert_eq!(trusted.entry_bytes("kernel.jsonl").unwrap(), graph.bytes);
+        trusted
+            .verify_entry_digest("kernel.jsonl", graph.sha256)
+            .unwrap();
+        let mut unreviewed = graph.sha256;
+        unreviewed[0] ^= 1;
+        assert!(
+            trusted
+                .verify_entry_digest("kernel.jsonl", unreviewed)
+                .is_err()
         );
     }
 
