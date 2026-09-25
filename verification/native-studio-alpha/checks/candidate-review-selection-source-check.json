@@ -1,0 +1,85 @@
+{
+  "format": "agentique-native-review-selection-source-check/1",
+  "checked_at": "2026-09-25T22:07:41.031185+00:00",
+  "base": "71f8cbf",
+  "scope": "source checks and prior evidence only; no build, native scenario or semantic consumer",
+  "unchanged_guards": {
+    "steps": {
+      "unchanged": true,
+      "sha256": "1447319bbda6cb4f581d74bef96943831d9fb2405e5155f6112eb0d04b0ee8f3"
+    },
+    "validate_launch": {
+      "unchanged": true,
+      "sha256": "c210adb74ef0655908e9fdd676dd86ae573d89936fa7afd79d8ac6d96762794e"
+    },
+    "read_report": {
+      "unchanged": true,
+      "sha256": "b6d91518a827a1423ed20d2fb24756a0462e2f6ed569b4d6e2db9f4c8f96f54e"
+    },
+    "read_restart_evidence": {
+      "unchanged": true,
+      "sha256": "4737ff2f0bd93855d219693d4d0edc322836239d9afb88a7d97c98eee9d86efc"
+    },
+    "read_resume": {
+      "unchanged": true,
+      "sha256": "63ddb2ec484d2a63dc11f3c00c38fb787ffa9a9ea4a6f65466ca3ab1eb70639c"
+    },
+    "validate_resume_report": {
+      "unchanged": true,
+      "sha256": "ca2d88c4debdaaa475a4407d6db1f964c4660e6edcdbf72b613f5899f1a80e52"
+    },
+    "assert_source_manifest": {
+      "unchanged": true,
+      "sha256": "2b1e72aa635cccecb969202d0105714af17e704622596f97d0cd1dc9d452c04f"
+    },
+    "assert_restart_element": {
+      "unchanged": true,
+      "sha256": "2830a3cadaa4741823813ce9a3557821be11bbf70635c3dfbadf8fd41b45bda1"
+    }
+  },
+  "run05": {
+    "path": "verification/native-studio-alpha/real-run05/journey.json",
+    "sha256": "4754e75f1d19e0ad478a474fd926ea116ff969af38459921170ed7ac8d328a6c",
+    "recorded_failure": "Step 26 'review Candidate revision': Candidate selection was lost while switching review modes; status=ModelingPlatform \u00b7 nearby context for 1 of 1 visible changes; full comparison retained",
+    "equal_before_and_after": {
+      "selected": [
+        "Node(ElementId(38420268876060022078063346281745293145))"
+      ],
+      "focus": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+      "scene_revision": "19f46877-550e-4d05-95da-f7b4dcc74e72",
+      "selection_revision": "19f46877-550e-4d05-95da-f7b4dcc74e72",
+      "inspector_revision": "19f46877-550e-4d05-95da-f7b4dcc74e72",
+      "inspector_element": "1ce77981-59b7-5a69-b978-88f84b7d1f59",
+      "camera": [
+        160.0,
+        348.0,
+        0.55172414
+      ]
+    },
+    "added_element": "65a22118-37dd-51dc-9256-3d519aa0050f"
+  },
+  "checks": [
+    {
+      "command": [
+        "rustfmt",
+        "--edition",
+        "2024",
+        "--check",
+        "crates/studio-native/src/real_automation.rs"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ]
+}

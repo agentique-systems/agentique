@@ -8,6 +8,7 @@ use crate::{
     automation::{self, ScenarioStatus},
     navigation::World,
     real_targets::{self, Target},
+    selection::Selection,
 };
 use agq_kernel::ElementId;
 use agq_modeling_repository::{
@@ -1085,6 +1086,57 @@ struct Capture {
 }
 
 #[derive(Clone)]
+struct ReviewSelection {
+    selection: Selection,
+    focus: Option<ElementId>,
+}
+impl ReviewSelection {
+    fn of(app: &StudioApp) -> Self {
+        Self {
+            selection: app.selection.clone(),
+            focus: app.focus,
+        }
+    }
+}
+
+fn assert_candidate_review_selection(
+    before: &ReviewSelection,
+    after: &ReviewSelection,
+    revision: ProjectRevisionId,
+    added: ElementId,
+    explicitly_selected: Option<ElementId>,
+) -> Result<(), String> {
+    if before.focus != after.focus || after.selection.revision != revision {
+        return Err("Candidate mode lost its focus or selection revision".into());
+    }
+    if let Some(selected) = explicitly_selected {
+        if selected != added
+            || after
+                .selection
+                .primary
+                .as_ref()
+                .and_then(SceneTarget::element_id)
+                != Some(added)
+            || after
+                .selection
+                .primary
+                .as_ref()
+                .is_none_or(|target| !after.selection.targets.contains(target))
+        {
+            return Err(
+                "Explicitly selected candidate part was lost while switching review modes".into(),
+            );
+        }
+    } else if before.selection.revision != revision
+        || before.selection.targets != after.selection.targets
+        || before.selection.primary != after.selection.primary
+    {
+        return Err("Initial Candidate review did not preserve the actual prior selection".into());
+    }
+    Ok(())
+}
+
+#[derive(Clone)]
 struct Runner {
     report: Report,
     steps: Vec<Step>,
@@ -1105,6 +1157,9 @@ struct Runner {
     preparation_clock: Option<PreparationClock>,
     inspected_feature: Option<ElementId>,
     background_inspection: Option<BackgroundInspection>,
+    review_selection_before: Option<ReviewSelection>,
+    /// Set only after the explicit part selection and real Inspector check pass.
+    explicitly_selected_candidate_part: Option<ElementId>,
 }
 impl Runner {
     fn new(app: &StudioApp) -> Result<Self, String> {
@@ -1146,6 +1201,8 @@ impl Runner {
             preparation_clock: None,
             inspected_feature: None,
             background_inspection: None,
+            review_selection_before: None,
+            explicitly_selected_candidate_part: None,
         })
     }
 
@@ -1206,6 +1263,8 @@ impl Runner {
                 assert_bound(app)?;
             }
             self.before = Some(State::of(app));
+            self.review_selection_before =
+                matches!(step.action, Action::Mode(_)).then(|| ReviewSelection::of(app));
             self.step_started = Instant::now();
             self.age = 0;
             self.point = None;
@@ -1717,6 +1776,13 @@ impl Runner {
                     } else {
                         self.report.added_element = Some(id);
                     }
+                    if app.comparison != ComparisonMode::Current
+                        && app.candidate.as_ref().is_some_and(|candidate| {
+                            candidate.after.revision_id == app.scene.revision_id
+                        })
+                    {
+                        self.explicitly_selected_candidate_part = Some(id);
+                    }
                 }
                 Ok(())
             }
@@ -2091,19 +2157,33 @@ impl Runner {
                     app.scene.revision_id == expected,
                     "Candidate mode mixed revisions",
                 )?;
-                if let Some(added) = self.report.added_element {
-                    if *mode == ComparisonMode::Current {
-                        require(
-                            app.scene.node(added).is_none()
-                                && app.selected_element() != Some(added),
-                            "Candidate-only object leaked into Current revision",
-                        )?;
-                    } else {
-                        require(
-                            app.selected_element() == Some(added),
-                            "Candidate selection was lost while switching review modes",
-                        )?;
-                    }
+                let before = self
+                    .review_selection_before
+                    .as_ref()
+                    .ok_or("Review mode has no pre-input selection evidence")?;
+                require(
+                    app.focus == before.focus,
+                    "Review mode changed the engineering focus",
+                )?;
+                let added = self
+                    .report
+                    .added_element
+                    .ok_or("Created part identity was not retained")?;
+                if *mode == ComparisonMode::Current {
+                    require(
+                        self.explicitly_selected_candidate_part == Some(added)
+                            && app.scene.node(added).is_none()
+                            && app.selected_element() != Some(added),
+                        "Candidate-only object leaked into Current or was never explicitly selected",
+                    )?;
+                } else {
+                    assert_candidate_review_selection(
+                        before,
+                        &ReviewSelection::of(app),
+                        candidate.after.revision_id,
+                        added,
+                        self.explicitly_selected_candidate_part,
+                    )?;
                 }
                 if *mode == ComparisonMode::Diff {
                     require(
@@ -2863,6 +2943,116 @@ mod tests {
         projection.nodes[2].owner = Some(owner);
         projection.nodes[2].origin = ViewOrigin::Derived;
         assert!(assert_part_owner(&projection, id, owner).is_err());
+    }
+
+    #[test]
+    fn review_gate_tracks_existing_selection_then_explicit_part_through_real_app_modes() {
+        // Exercise production presentation transitions on a labeled fixture;
+        // this neither constructs nor accepts a semantic candidate.
+        let mut args = isolated_args();
+        args.fixture = Some("architecture".into());
+        let context = eframe::CreationContext::_new_kittest(egui::Context::default());
+        let mut app = StudioApp::new(&context, args).unwrap();
+        let owner = named(&app, PLATFORM).unwrap();
+        app.select(SceneTarget::Node(owner), false);
+        app.open_part_edit(crate::commands::CommandId::CreatePart);
+        assert!(app.part_edit_ready());
+        let observed = app
+            .scene
+            .nodes
+            .iter()
+            .find(|node| node.id() != owner)
+            .unwrap()
+            .id();
+        app.select(SceneTarget::Node(observed), false);
+        app.new_part_name = PART_NAME.into();
+        app.prepare_part();
+        let revision = app.candidate.as_ref().unwrap().after.revision_id;
+        let added = projection_named(&app.candidate.as_ref().unwrap().after, PART).unwrap();
+        assert_eq!(app.selected_element(), Some(observed));
+        let before = ReviewSelection::of(&app);
+        app.change_comparison(ComparisonMode::Candidate);
+        let after = ReviewSelection::of(&app);
+        assert!(assert_candidate_review_selection(&before, &after, revision, added, None).is_ok());
+        assert!(
+            assert_candidate_review_selection(&before, &after, revision, added, Some(added))
+                .is_err(),
+            "The created part has not been explicitly selected yet"
+        );
+        app.select(SceneTarget::Node(added), false);
+        app.change_comparison(ComparisonMode::Current);
+        assert!(app.scene.node(added).is_none());
+        assert_ne!(app.selected_element(), Some(added));
+        let before_return = ReviewSelection::of(&app);
+        app.change_comparison(ComparisonMode::Candidate);
+        assert!(
+            assert_candidate_review_selection(
+                &before_return,
+                &ReviewSelection::of(&app),
+                revision,
+                added,
+                Some(added)
+            )
+            .is_ok()
+        );
+        let before_diff = ReviewSelection::of(&app);
+        app.change_comparison(ComparisonMode::Diff);
+        assert!(
+            assert_candidate_review_selection(
+                &before_diff,
+                &ReviewSelection::of(&app),
+                revision,
+                added,
+                Some(added)
+            )
+            .is_ok()
+        );
+        assert_eq!(app.focus, Some(owner));
+    }
+
+    #[test]
+    fn review_gate_rejects_lost_substituted_stale_or_reordered_selection_and_focus() {
+        let revision = ProjectRevisionId::new();
+        let observed = ElementId::from_u128(501);
+        let second = ElementId::from_u128(502);
+        let added = ElementId::from_u128(503);
+        let mut before = ReviewSelection {
+            selection: Selection::new(revision),
+            focus: Some(ElementId::from_u128(500)),
+        };
+        before.selection.select(SceneTarget::Node(observed), false);
+        before.selection.select(SceneTarget::Port(second), true);
+        assert!(assert_candidate_review_selection(&before, &before, revision, added, None).is_ok());
+        for invalid in 0..5 {
+            let mut after = before.clone();
+            match invalid {
+                0 => after.selection.clear(),
+                1 => after.selection.select(SceneTarget::Node(added), false),
+                2 => after.selection.revision = ProjectRevisionId::new(),
+                3 => after.selection.primary = Some(SceneTarget::Node(observed)),
+                4 => after.focus = None,
+                _ => unreachable!(),
+            }
+            assert!(
+                assert_candidate_review_selection(&before, &after, revision, added, None).is_err(),
+                "Accepted initial review selection corruption {invalid}"
+            );
+        }
+        let mut restored = before.clone();
+        restored.selection.select(SceneTarget::Node(added), false);
+        assert!(
+            assert_candidate_review_selection(&before, &restored, revision, added, Some(added))
+                .is_ok()
+        );
+        restored.selection.targets.clear();
+        assert!(
+            assert_candidate_review_selection(&before, &restored, revision, added, Some(added))
+                .is_err()
+        );
+        assert!(
+            assert_candidate_review_selection(&before, &before, revision, added, Some(observed))
+                .is_err()
+        );
     }
 
     #[test]
