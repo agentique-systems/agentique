@@ -32,8 +32,29 @@ producer authenticated that cache through the ordinary KerML facade in 40.882
 seconds before replaying its accepted closure. The recovered archive is
 475,865,571 bytes with SHA-256
 `aadf9ff589eea35bcedc5d1e3d0521952058b55f3325614ecb0ab12ae36300c4`;
-`kerml-recovered-content.json` retains the content inventory. A complete
-authenticated runtime pair is still pending.
+`kerml-recovered-content.json` retains the content inventory.
+
+Systems closure completed in 4,026.203 seconds, with 27,177/27,177 closed
+producer pairs and 452,172/452,172 closed requirements. The separate strict
+finalizer completed in 2,291.282 seconds with sampled peak RSS 5,813,383,168
+bytes. Every full capability/effective audit passed with zero findings;
+1,327/1,327 mandatory references and all 69 accepted bindings match.
+`systems-finalized-report.json` retains the complete emitted report.
+`systems-existing-contract-result.json` compares the whole original receipt
+apart from transport entries, with exact equality of all semantic fields and
+bindings. `systems-independent-artifact-result.json` separately checks the
+actual output artifacts and their provenance.
+
+The regenerated Systems facade and closure entries exactly match the original
+bytes. Its graph has the same 748,560,767-byte length but a different transport
+SHA-256. Original graph bytes are unavailable, so the precise byte difference
+cannot be proved to be only a random snapshot label. The new finite transport
+receipt pins `ec9d1c78d864d4ad2f671f93371c1988bcb8b952651b82afb9f3624b0756b828`
+under the original semantic receipt SHA-256; it does not replace accepted
+publication authority. `systems-rematerialized-content.json` retains the
+actual snapshot label and every original/new entry comparison. At this
+checkpoint, ordinary current-facade authentication and runtime packaging remain
+the next gates.
 
 The original scoped development preflight was deliberately stopped after
 1,046.672 seconds, exit 15, after checking 20,157 subjects with zero findings and
@@ -62,16 +83,17 @@ Two further JSON type-identity cases bring the suite to 13 passing tests in
 `recovery-json-identity-tests.json`. The real generated KerML receipt also passes
 the stricter equality that distinguishes Boolean, integer and floating values.
 
-The inactive compiled transport mechanism in commit `5007ea5` preserves the
+The compiled transport mechanism introduced in commit `5007ea5` preserves the
 original semantic receipt and bindings. It requires an original-receipt SHA-256
 anchor, identical identity and entry bounds, and unchanged facade/closure bytes;
-only a reviewed kernel transport digest can differ. No alternate hash is
-registered at this checkpoint. Five Rust trust tests pass in both the independent
+only a reviewed kernel transport digest can differ. Commit `e44015b` registers
+the concrete result above and adds a real-catalogue rejection test. Before that
+registration, five Rust trust tests passed in both the independent
 integration debug gate and release build, with a final unchanged-source release
 repeat retained in `transport-receipt-rust-tests-final.json`. Workspace formatting
 and all-target Clippy for `agq-kerml-semantics` pass. Independent source review is
-retained by the integration branch; actual transport registration and restoration
-still await the Systems result.
+retained by the integration branch; actual normal restoration is a separate gate
+from source review or generated receipts.
 
 The manual `runtime-asset` workflow authenticates an explicit draft asset against
 its independently recorded transport SHA-256 and both language facades. It has

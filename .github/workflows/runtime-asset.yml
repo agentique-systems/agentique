@@ -24,6 +24,7 @@ jobs:
     permissions:
       contents: write
     env:
+      CARGO_BUILD_JOBS: 2
       GH_REPO: ${{ github.repository }}
       RUNTIME_TAG: ${{ inputs.draft_tag }}
       RUNTIME_SHA256: ${{ inputs.transport_sha256 }}
