@@ -1,0 +1,33 @@
+{
+  "format": "agentique-held-reconstruction-source-review/1",
+  "runtime_consumed": false,
+  "pins_modified": false,
+  "baseline": "d404a8759891acc5d621dcad655fa4a981e17d63",
+  "six_models_unchanged": [
+    {
+      "path": "models/agentique/AgentFabric.sysml",
+      "normalized_sha256": "fb19fdb031aa524d9957f3a1498818bd66106c718d51274328bd47f381921617"
+    },
+    {
+      "path": "models/agentique/Agentique.sysml",
+      "normalized_sha256": "17cc930b105b74d7001a70ab9cfddf3a2c65c906a57dcc2e1f341140b3636960"
+    },
+    {
+      "path": "models/agentique/Contracts.sysml",
+      "normalized_sha256": "4235d37c880ca5d43bb11b482d9414b4270a78ff6ee7287d3538961bcc94bc2a"
+    },
+    {
+      "path": "models/agentique/ExecutionRuntime.sysml",
+      "normalized_sha256": "7f753fe89a4158918481a52134df9df9218167433fe3869d65ae22ccf6d90691"
+    },
+    {
+      "path": "models/agentique/LanguageEngine.sysml",
+      "normalized_sha256": "3fbdf2caa9a6ee69c8807f513af0d1e822b053d9a86ff947782ff65f88536f39"
+    },
+    {
+      "path": "models/agentique/ModelingPlatform.sysml",
+      "normalized_sha256": "12c198141d892e606f9cd2b3a419863cc02f994f1b31236af0b112faf5d31b79"
+    }
+  ],
+  "proposal_apply_check_exit": 0
+}
