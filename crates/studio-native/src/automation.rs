@@ -715,7 +715,9 @@ fn inject(
         }
         Action::Wheel => {
             let viewport = target(ctx, Target::Viewport)?;
-            let p = viewport.center();
+            // An off-center anchor catches implementations that accidentally
+            // zoom about the camera center instead of the actual pointer.
+            let p = viewport.min + Vec2::new(viewport.width() * 0.70, viewport.height() * 0.38);
             *point = Some(p);
             *anchor = Some(
                 app.camera
