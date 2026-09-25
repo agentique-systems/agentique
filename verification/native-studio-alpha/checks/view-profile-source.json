@@ -1,0 +1,28 @@
+{
+  "format": "agentique-source-check/1",
+  "worktree": "C:/Users/phili/github/agentique-systems/agentique-alpha-runtime",
+  "base": "bb4a76631d39696d07bbf898dd81f44851ad4ffa",
+  "checks": [
+    {
+      "command": "rustfmt --edition 2024 --check crates/modeling-view/src/projection.rs crates/modeling-view/src/inspector.rs",
+      "chunk_id": "9aa508",
+      "wall_time_seconds": 0.3984032,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "command": "$metadata = cargo metadata --offline --format-version 1 --manifest-path crates/studio-native/Cargo.toml; $metadataExit = $LASTEXITCODE; if ($metadataExit -eq 0) { $parsed = $metadata | ConvertFrom-Json; Write-Output ('Resolved packages: ' + $parsed.packages.Count) }; exit $metadataExit",
+      "chunk_id": "39c057",
+      "wall_time_seconds": 2.9563015999999998,
+      "exit_code": 0,
+      "original_token_count": 6,
+      "output": "Resolved packages: 449\r\n"
+    }
+  ],
+  "limitations": [
+    "No build or Rust tests run by this subagent.",
+    "No accepted-runtime consumer run.",
+    "Metadata stdout summarized after successful JSON parsing; no generated metadata retained."
+  ]
+}

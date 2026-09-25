@@ -77,23 +77,51 @@ pub struct ElementInspector {
 
 /// Execute effective queries only for the selected canonical identity.
 pub fn inspect(revision: &ProjectRevision, id: ElementId) -> Result<ElementInspector, ViewError> {
-    let element = node(revision, id)?;
+    let mut timing = ViewProfile::new("inspect", revision, Some(id), None);
+    let result = inspect_observed(revision, id, &mut timing);
+    if let Ok(inspector) = &result {
+        timing.size("relationships", inspector.relationships.len());
+        timing.size("query_summaries", inspector.queries.len());
+        timing.size("owned_features", inspector.owned_features.len());
+        timing.size("effective_features", inspector.effective_features.len());
+        timing.size("effective_types", inspector.effective_types.len());
+    }
+    timing.finish(result.is_ok());
+    result
+}
+
+fn inspect_observed(
+    revision: &ProjectRevision,
+    id: ElementId,
+    timing: &mut ViewProfile,
+) -> Result<ElementInspector, ViewError> {
+    let element = timing.measure("node_mapping", None, || node(revision, id))?;
     let model = revision
         .semantic_model()
         .ok_or(ViewError::Unavailable(revision.revision()))?;
-    let q = revision
-        .kerml_queries()
-        .map_err(|e| ViewError::Query(format!("{e:?}")))?;
+    timing.size("canonical_elements", model.len());
+    timing.size(
+        "standard_elements",
+        revision.accepted_sysml().overlay().model().len(),
+    );
+    let q = timing.measure("kerml_context", None, || {
+        revision
+            .kerml_queries()
+            .map_err(|e| ViewError::Query(format!("{e:?}")))
+    })?;
     let mut queries = vec![];
+    let owner_started = timing.start();
     let owner_query = q.owner(id);
     let owner = owner_query.value.map(|id| summary(model, id));
     queries.push(QuerySummary::of("Owner", &owner_query));
+    timing.end("owner_query", None, owner_started);
     let mut effective_types = vec![];
     let mut owned_features = vec![];
     let mut effective_features = vec![];
     let mut specializations = vec![];
     let mut subsettings = vec![];
     let mut redefinitions = vec![];
+    let feature_started = timing.start();
     if is(model, id, c::FEATURE) {
         let types = q.feature_types(id);
         effective_types = types.value.iter().map(|id| summary(model, *id)).collect();
@@ -109,6 +137,8 @@ pub fn inspect(revision: &ProjectRevision, id: ElementId) -> Result<ElementInspe
             .collect();
         queries.push(QuerySummary::of("Redefinitions", &redefines));
     }
+    timing.end("feature_queries", None, feature_started);
+    let type_started = timing.start();
     if is(model, id, c::TYPE) {
         let owned = q.direct_features(id);
         owned_features = owned.value.iter().map(|id| summary(model, *id)).collect();
@@ -124,6 +154,8 @@ pub fn inspect(revision: &ProjectRevision, id: ElementId) -> Result<ElementInspe
         specializations = general.value.iter().map(|id| summary(model, *id)).collect();
         queries.push(QuerySummary::of("Specializations", &general));
     }
+    timing.end("type_queries", None, type_started);
+    let provenance_started = timing.start();
     let feature_provenance = owned_features
         .iter()
         .chain(&effective_features)
@@ -139,6 +171,8 @@ pub fn inspect(revision: &ProjectRevision, id: ElementId) -> Result<ElementInspe
             .map(|provenance| (feature.id, provenance))
         })
         .collect();
+    timing.end("feature_provenance", None, provenance_started);
+    let local_started = timing.start();
     let local: BTreeSet<_> = model
         .elements()
         .filter(|r| {
@@ -151,9 +185,14 @@ pub fn inspect(revision: &ProjectRevision, id: ElementId) -> Result<ElementInspe
         })
         .map(|r| r.id())
         .collect();
+    timing.end("local_population", None, local_started);
+    timing.size("local_elements", local.len());
+    let relationships_started = timing.start();
     let (relationships, connection_queries) =
-        inspect_relationships(&q, revision.revision(), &local, id);
+        inspect_relationships(&q, revision.revision(), &local, id, timing);
     queries.extend(connection_queries);
+    timing.end("relationship_queries", None, relationships_started);
+    let source_started = timing.start();
     let source = revision
         .source_for_fact(FactKey::Element(id))
         .map(|source| SourceLocation {
@@ -166,10 +205,13 @@ pub fn inspect(revision: &ProjectRevision, id: ElementId) -> Result<ElementInspe
                 .find(|(_, d)| d.id() == source.document)
                 .map(|(path, _)| path.to_owned()),
         });
-    let profile = revision
-        .sysml_queries()
-        .map(|q| q.context().dependencies.sysml_profile.id().to_owned())
-        .unwrap_or_else(|_| q.context().baseline_profile_id.to_owned());
+    timing.end("source_mapping", None, source_started);
+    let profile = timing.measure("sysml_profile_context", None, || {
+        revision
+            .sysml_queries()
+            .map(|q| q.context().dependencies.sysml_profile.id().to_owned())
+            .unwrap_or_else(|_| q.context().baseline_profile_id.to_owned())
+    });
     Ok(ElementInspector {
         revision_id: revision.revision(),
         element,
@@ -214,10 +256,18 @@ fn inspect_relationships(
     revision: ProjectRevisionId,
     local: &BTreeSet<ElementId>,
     id: ElementId,
+    timing: &mut ViewProfile,
 ) -> (Vec<ViewEdge>, Vec<QuerySummary>) {
     let mut queries = vec![];
-    let mut relationships = graph_edges(q.model(), revision, local);
+    let mut relationships =
+        timing.measure("graph_extraction", Some("relationship_queries"), || {
+            graph_edges(q.model(), revision, local)
+        });
+    timing.size("extracted_graph_edges", relationships.len());
+    let connector_started = timing.start();
+    let mut connector_queries = 0;
     relationships.extend(connector_edges(q, revision, local, |connector, answer| {
+        connector_queries += 1;
         // An unresolved connector might touch this selection. Retain its actual
         // incomplete contract rather than implying the incidence search is closed.
         if connector == id
@@ -233,6 +283,12 @@ fn inspect_relationships(
             ));
         }
     }));
+    timing.end(
+        "connector_queries",
+        Some("relationship_queries"),
+        connector_started,
+    );
+    timing.size("connector_queries", connector_queries);
     relationships
         .retain(|edge| edge.source == id || edge.target == id || edge.relationship_id == Some(id));
     relationships.sort_by(|a, b| a.id.cmp(&b.id));
@@ -343,7 +399,8 @@ mod tests {
         assert_eq!(scene[0].semantic_kind, "InterfaceUsage");
         assert!(!scene[0].directed);
         for selected in [id(1), id(2), id(3)] {
-            let (relationships, summaries) = inspect_relationships(&q, revision, &local, selected);
+            let (relationships, summaries) =
+                inspect_relationships(&q, revision, &local, selected, &mut ViewProfile::disabled());
             assert!(relationships.contains(&scene[0]));
             let summary = summaries
                 .iter()
@@ -375,8 +432,13 @@ mod tests {
         let local = snapshot.model().elements().map(ElementRecord::id).collect();
         let actual = q.connector_endpoints(id(3));
         assert_ne!(actual.completeness, Completeness::Complete);
-        let (relationships, queries) =
-            inspect_relationships(&q, ProjectRevisionId::from_u128(94), &local, id(1));
+        let (relationships, queries) = inspect_relationships(
+            &q,
+            ProjectRevisionId::from_u128(94),
+            &local,
+            id(1),
+            &mut ViewProfile::disabled(),
+        );
         assert!(
             !relationships
                 .iter()

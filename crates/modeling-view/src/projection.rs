@@ -15,6 +15,23 @@ pub fn project(
     revision: &ProjectRevision,
     definition: &ViewDefinition,
 ) -> Result<ViewProjection, ViewError> {
+    let mut profile = ViewProfile::new("project", revision, definition.focus, Some(definition));
+    let result = project_observed(revision, definition, &mut profile);
+    if let Ok(view) = &result {
+        profile.size("projected_nodes", view.nodes.len());
+        profile.size("projected_edges", view.edges.len());
+        profile.size("groups", view.groups.len());
+        profile.size("warnings", view.metadata.warnings.len());
+    }
+    profile.finish(result.is_ok());
+    result
+}
+
+fn project_observed(
+    revision: &ProjectRevision,
+    definition: &ViewDefinition,
+    profile: &mut ViewProfile,
+) -> Result<ViewProjection, ViewError> {
     if definition.version != ViewDefinition::VERSION {
         return Err(ViewError::UnsupportedVersion(definition.version));
     }
@@ -27,34 +44,45 @@ pub fn project(
             .ok_or(ViewError::MissingElement(focus))?;
     }
     let standard = revision.accepted_sysml().overlay().model();
-    let local: BTreeSet<_> = model
-        .elements()
-        .filter(|r| standard.element(r.id()).is_none())
-        .map(ElementRecord::id)
-        .collect();
-    let mut edges = graph_edges(model, revision.revision(), &local);
+    profile.size("canonical_elements", model.len());
+    profile.size("standard_elements", standard.len());
+    let local: BTreeSet<_> = profile.measure("local_population", None, || {
+        model
+            .elements()
+            .filter(|r| standard.element(r.id()).is_none())
+            .map(ElementRecord::id)
+            .collect()
+    });
+    profile.size("local_elements", local.len());
+    let mut edges = profile.measure("graph_extraction", None, || {
+        graph_edges(model, revision.revision(), &local)
+    });
+    profile.size("extracted_graph_edges", edges.len());
     let mut warnings = vec![];
     // Connector endpoints are effective semantic queries, never inferred from the layout.
     if definition
         .relationship_families
         .contains(&RelationshipFamily::Connection)
     {
-        let queries = revision
-            .kerml_queries()
-            .map_err(|e| ViewError::Query(format!("{e:?}")))?;
-        edges.extend(connector_edges(
-            &queries,
-            revision.revision(),
-            &local,
-            |id, answer| {
+        let queries = profile.measure("connector_kerml_context", None, || {
+            revision
+                .kerml_queries()
+                .map_err(|e| ViewError::Query(format!("{e:?}")))
+        })?;
+        let mut connector_queries = 0;
+        edges.extend(profile.measure("connector_queries", None, || {
+            connector_edges(&queries, revision.revision(), &local, |id, answer| {
+                connector_queries += 1;
                 query_warning(
                     &mut warnings,
                     &format!("Connector {} endpoints", name(model, id)),
                     answer,
                 );
-            },
-        ));
+            })
+        }));
+        profile.size("connector_queries", connector_queries);
     }
+    let selection_started = profile.start();
     let mut selected: BTreeSet<_> = local
         .iter()
         .copied()
@@ -82,14 +110,16 @@ pub fn project(
                 definition.depth.saturating_mul(2).min(8),
             );
             if definition.focus.is_some() && is(model, focus, c::TYPE) {
-                let queries = revision
-                    .kerml_queries()
-                    .map_err(|e| ViewError::Query(format!("{e:?}")))?;
-                selected.extend(focused_interfaces(
-                    &queries,
-                    focus,
-                    &context_allowed,
-                    &mut warnings,
+                let queries =
+                    profile.measure("focused_kerml_context", Some("selection_scope"), || {
+                        revision
+                            .kerml_queries()
+                            .map_err(|e| ViewError::Query(format!("{e:?}")))
+                    })?;
+                selected.extend(profile.measure(
+                    "focused_interface_queries",
+                    Some("selection_scope"),
+                    || focused_interfaces(&queries, focus, &context_allowed, &mut warnings),
                 ));
             }
         }
@@ -145,16 +175,21 @@ pub fn project(
     edges.retain(|edge| selected.contains(&edge.source) && selected.contains(&edge.target));
     edges.sort_by(|a, b| a.id.cmp(&b.id));
     edges.dedup_by(|a, b| a.id == b.id);
-    let nodes = selected
-        .iter()
-        .map(|id| node(revision, *id))
-        .collect::<Result<Vec<_>, _>>()?;
+    profile.end("selection_scope", None, selection_started);
+    let nodes = profile.measure("node_mapping", None, || {
+        selected
+            .iter()
+            .map(|id| node(revision, *id))
+            .collect::<Result<Vec<_>, _>>()
+    })?;
+    let groups_started = profile.start();
     let mut groups = BTreeMap::<ElementId, Vec<ElementId>>::new();
     for item in &nodes {
         if let Some(owner) = item.owner.filter(|id| selected.contains(id)) {
             groups.entry(owner).or_default().push(item.id);
         }
     }
+    profile.end("group_mapping", None, groups_started);
     Ok(ViewProjection {
         revision_id: revision.revision(),
         view: definition.clone(),
@@ -186,6 +221,102 @@ pub fn project(
             warnings,
         },
     })
+}
+
+/// Opt-in application profiling only: no clocks or output when disabled, and no
+/// timing fields are attached to canonical/query/presentation result DTOs.
+pub(crate) struct ViewProfile(Option<ViewProfileState>);
+
+struct ViewProfileState {
+    identity: serde_json::Value,
+    started: std::time::Instant,
+    phases: Vec<serde_json::Value>,
+    sizes: BTreeMap<&'static str, usize>,
+}
+
+impl ViewProfile {
+    pub(crate) const fn disabled() -> Self {
+        Self(None)
+    }
+
+    pub(crate) fn new(
+        operation: &'static str,
+        revision: &ProjectRevision,
+        focus: Option<ElementId>,
+        definition: Option<&ViewDefinition>,
+    ) -> Self {
+        if !std::env::var_os("AGENTIQUE_VIEW_PROFILE").is_some_and(|value| value == "1") {
+            return Self::disabled();
+        }
+        let identity = serde_json::json!({
+            "format": "agentique-modeling-view-profile/1",
+            "operation": operation,
+            "project": revision.project(),
+            "revision": revision.revision(),
+            "focus": focus,
+            "kind": definition.map_or_else(|| "Inspector".into(), |view| format!("{:?}", view.kind)),
+            "scope": definition.map_or_else(|| "SelectedElement".into(), |view| format!("{:?}", view.graph_scope)),
+            "view": definition,
+            "phase_contract": "Elapsed wall time. included_in names an inclusive parent phase; do not sum nested phases. total_ms is measured independently and excludes JSON emission. A missing phase was skipped or did not complete.",
+        });
+        Self(Some(ViewProfileState {
+            identity,
+            started: std::time::Instant::now(),
+            phases: vec![],
+            sizes: BTreeMap::new(),
+        }))
+    }
+
+    pub(crate) fn start(&self) -> Option<std::time::Instant> {
+        self.0.as_ref().map(|_| std::time::Instant::now())
+    }
+
+    pub(crate) fn end(
+        &mut self,
+        name: &'static str,
+        included_in: Option<&'static str>,
+        started: Option<std::time::Instant>,
+    ) {
+        if let (Some(profile), Some(started)) = (&mut self.0, started) {
+            let elapsed_ms = started.elapsed().as_secs_f64() * 1000.0;
+            profile.phases.push(serde_json::json!({
+                "name": name, "included_in": included_in, "elapsed_ms": elapsed_ms,
+            }));
+        }
+    }
+
+    pub(crate) fn measure<T>(
+        &mut self,
+        name: &'static str,
+        included_in: Option<&'static str>,
+        work: impl FnOnce() -> T,
+    ) -> T {
+        let started = self.start();
+        let result = work();
+        self.end(name, included_in, started);
+        result
+    }
+
+    pub(crate) fn size(&mut self, name: &'static str, size: usize) {
+        if let Some(profile) = &mut self.0 {
+            profile.sizes.insert(name, size);
+        }
+    }
+
+    pub(crate) fn finish(self, success: bool) {
+        use std::io::Write;
+        if let Some(profile) = self.0 {
+            let total_ms = profile.started.elapsed().as_secs_f64() * 1000.0;
+            let mut record = profile.identity;
+            record["outcome"] = if success { "ok" } else { "error" }.into();
+            record["total_ms"] = total_ms.into();
+            record["phases"] = profile.phases.into();
+            record["sizes"] = serde_json::json!(profile.sizes);
+            // A closed/full diagnostic sink cannot turn a valid query into an
+            // application error. One lock keeps concurrent read records intact.
+            let _ = writeln!(std::io::stderr().lock(), "{record}");
+        }
+    }
 }
 
 fn architecture_root(
