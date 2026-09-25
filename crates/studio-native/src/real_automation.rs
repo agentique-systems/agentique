@@ -29,6 +29,9 @@ const MAX_PREPARATION_INPUT_GAP_MS: u128 = 250;
 /// Run before StudioApp starts a worker: real acceptance may write only to an
 /// explicitly selected fresh database. Restart reads that same isolated database.
 pub fn validate_launch(args: &Args) -> Result<(), String> {
+    if args.resume_report.is_some() && args.scenario.as_deref() != Some("real") {
+        return Err("--resume-report is only valid with --scenario real".into());
+    }
     if crate::presentation_automation::is_scenario(args.scenario.as_deref()) {
         return Ok(()); // Its independent launch gate validates isolated paths.
     }
@@ -69,7 +72,9 @@ pub fn validate_launch(args: &Args) -> Result<(), String> {
         return Err("Choose a new --gallery directory; prior captures are preserved".into());
     }
     if args.scenario.as_deref() == Some("real") {
-        if args.restart_report.is_some()
+        if args.resume_report.is_some() {
+            read_resume(args)?;
+        } else if args.restart_report.is_some()
             || entry_exists(database)
             || entry_exists(&database.with_extension("views.sqlite"))
             || entry_exists(&database.with_extension("native-session.json"))
@@ -99,14 +104,22 @@ fn entry_exists(path: &Path) -> bool {
 }
 
 fn read_restart(args: &Args) -> Result<Report, String> {
+    read_restart_evidence(args).map(|(report, _)| report)
+}
+
+fn read_report(path: &Path) -> Result<(Report, ContentDigest), String> {
+    let bytes = std::fs::read(path).map_err(|e| format!("Cannot read prior report: {e}"))?;
+    let report =
+        serde_json::from_slice(&bytes).map_err(|e| format!("Invalid first-process report: {e}"))?;
+    Ok((report, ContentDigest::of(&bytes)))
+}
+
+fn read_restart_evidence(args: &Args) -> Result<(Report, ContentDigest), String> {
     let path = args
         .restart_report
         .as_ref()
         .ok_or("--scenario real-restart requires --restart-report")?;
-    let bytes =
-        std::fs::read(path).map_err(|e| format!("Cannot read first-process report: {e}"))?;
-    let report: Report =
-        serde_json::from_slice(&bytes).map_err(|e| format!("Invalid first-process report: {e}"))?;
+    let (report, digest) = read_report(path)?;
     if report.format != FORMAT
         || report.scenario != "real"
         || !report.passed
@@ -119,7 +132,90 @@ fn read_restart(args: &Args) -> Result<Report, String> {
     {
         return Err("Restart requires a successful real first-process journey with committed identity and complete gallery".into());
     }
-    Ok(report)
+    Ok((report, digest))
+}
+
+fn read_resume(args: &Args) -> Result<(Report, ContentDigest), String> {
+    if args.scenario.as_deref() != Some("real") || args.restart_report.is_some() {
+        return Err("Resume requires --scenario real without --restart-report".into());
+    }
+    let path = args.resume_report.as_ref().ok_or("Resume report missing")?;
+    let (report, digest) = read_report(path)?;
+    let database = args.database.as_ref().ok_or("Resume database missing")?;
+    if !database.is_absolute() || !database.is_file() || Path::new(&report.database) != database {
+        return Err(
+            "Resume must open the exact existing absolute database from the failed report".into(),
+        );
+    }
+    validate_resume_report(&report)?;
+    assert_source_manifest(
+        &args.root,
+        report.baseline.as_ref().expect("validated baseline"),
+    )?;
+    Ok((report, digest))
+}
+
+fn validate_resume_report(report: &Report) -> Result<(), String> {
+    let baseline = report
+        .baseline
+        .as_ref()
+        .ok_or("Resume report has no validated baseline")?;
+    assert_validated(baseline)?;
+    let expected = RevisionBinding {
+        project: baseline.project_id,
+        revision: baseline.revision_id,
+    };
+    let untouched = |state: &State| {
+        !state.mutation_pending
+            && state.candidate_revision.is_none()
+            && state.candidate_phase.is_none()
+            && state.binding.is_none_or(|binding| binding == expected)
+            && state
+                .branch
+                .is_none_or(|branch| Some(branch) == report.branch)
+    };
+    let safe_steps: Vec<_> = steps(false)
+        .into_iter()
+        .take_while(|step| !matches!(step.check, Check::CreateDialog))
+        .collect();
+    if report.format != FORMAT
+        || report.scenario != "real"
+        || report.outcome != "failed"
+        || report.passed
+        || report.restart_verified
+        || report.failure.as_ref().is_none_or(|e| e.is_empty())
+        || report.project != Some(baseline.project_id)
+        || report.branch.is_none()
+        || report.committed.is_some()
+        || report.added_element.is_some()
+        || report.added_owner.is_some()
+        || report.background_frames != 0
+        || report.background_pan_observed
+        || report.preparation_responsiveness.elapsed_ms.is_some()
+        || report.preparation_responsiveness.observed_input_hooks != 0
+        || report.assertions.is_empty()
+        || report.assertions.len() > safe_steps.len()
+        || !report.assertions[0].passed
+        || report
+            .assertions
+            .iter()
+            .zip(&safe_steps)
+            .any(|(assertion, step)| {
+                assertion.name != step.name
+                    || !untouched(&assertion.before)
+                    || !untouched(&assertion.after)
+            })
+        || !untouched(&report.last_state)
+        || report.last_state.binding != Some(expected)
+        || report.last_state.branch != report.branch
+        || report.last_state.pending_requests != 0
+        || report.last_state.scene_revision != baseline.revision_id
+        || report.last_state.selection_revision != baseline.revision_id
+        || report.last_state.producer_completeness != "Complete"
+    {
+        return Err("Resume requires a failed real journey stopped before any candidate or mutation, with an unchanged validated baseline".into());
+    }
+    Ok(())
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -237,6 +333,8 @@ struct Report {
     passed: bool,
     restart_verified: bool,
     previous_report_digest: Option<ContentDigest>,
+    #[serde(default)]
+    resumed_baseline: bool,
     project: Option<ProjectId>,
     branch: Option<BranchId>,
     baseline: Option<RevisionManifest>,
@@ -667,21 +765,15 @@ struct Runner {
 impl Runner {
     fn new(app: &StudioApp) -> Result<Self, String> {
         let restart = app.args.scenario.as_deref() == Some("real-restart");
-        let previous = if restart {
-            Some(read_restart(&app.args)?)
+        let prior = if restart {
+            Some(read_restart_evidence(&app.args)?)
+        } else if app.args.resume_report.is_some() {
+            Some(read_resume(&app.args)?)
         } else {
             None
         };
-        let previous_report_digest = app
-            .args
-            .restart_report
-            .as_ref()
-            .map(|p| {
-                std::fs::read(p)
-                    .map(|bytes| ContentDigest::of(&bytes))
-                    .map_err(|e| e.to_string())
-            })
-            .transpose()?;
+        let previous_report_digest = prior.as_ref().map(|(_, digest)| *digest);
+        let previous = prior.map(|(report, _)| report);
         Ok(Self {
             report: Report {
                 format: FORMAT.into(), scenario: app.args.scenario.clone().unwrap(),
@@ -689,6 +781,7 @@ impl Runner {
                 database: app.config.database.display().to_string(), root: app.config.root.display().to_string(),
                 outcome: "running".into(), passed: false, restart_verified: false,
                 previous_report_digest,
+                resumed_baseline: app.args.resume_report.is_some(),
                 project: previous.as_ref().and_then(|p| p.project),
                 branch: previous.as_ref().and_then(|p| p.branch),
                 baseline: previous.as_ref().and_then(|p| p.baseline.clone()),
@@ -1091,13 +1184,23 @@ impl Runner {
             Check::Baseline => {
                 let manifest = current_manifest(app)?;
                 assert_validated(manifest)?;
+                // Resume never substitutes a prior source proof for this process.
+                assert_self_model_sources(app, manifest)?;
                 if let Some(baseline) = &self.report.baseline {
                     require(
-                        manifest == baseline && app.comparison == ComparisonMode::Current,
+                        manifest == baseline
+                            && app.comparison == ComparisonMode::Current
+                            && app.binding.map(|binding| binding.project) == self.report.project
+                            && app.branch == self.report.branch
+                            && app.history.as_ref().is_some_and(|history| {
+                                history.branches.iter().any(|branch| {
+                                    Some(branch.id) == self.report.branch
+                                        && branch.head == baseline.revision_id
+                                })
+                            }),
                         "Baseline revision or comparison mode changed",
                     )?;
                 } else {
-                    assert_self_model_sources(app, manifest)?;
                     self.report.project = Some(manifest.project_id);
                     self.report.branch = app.branch;
                     self.report.baseline = Some(manifest.clone());
@@ -1556,8 +1659,11 @@ fn assert_validated(manifest: &RevisionManifest) -> Result<(), String> {
     }
 }
 fn assert_self_model_sources(app: &StudioApp, manifest: &RevisionManifest) -> Result<(), String> {
-    let entries =
-        std::fs::read_dir(app.config.root.join("models/agentique")).map_err(|e| e.to_string())?;
+    assert_source_manifest(&app.config.root, manifest)
+}
+
+fn assert_source_manifest(root: &Path, manifest: &RevisionManifest) -> Result<(), String> {
+    let entries = std::fs::read_dir(root.join("models/agentique")).map_err(|e| e.to_string())?;
     let mut expected = BTreeMap::new();
     for entry in entries {
         let path = entry.map_err(|e| e.to_string())?.path();
@@ -1571,13 +1677,12 @@ fn assert_self_model_sources(app: &StudioApp, manifest: &RevisionManifest) -> Re
             );
         }
     }
-    if expected.is_empty()
-        || manifest.documents.len() != expected.len()
-        || manifest
-            .documents
-            .iter()
-            .any(|d| expected.get(&d.path) != Some(&d.content_digest))
-    {
+    let actual: BTreeMap<_, _> = manifest
+        .documents
+        .iter()
+        .map(|document| (document.path.clone(), document.content_digest))
+        .collect();
+    if expected.is_empty() || actual.len() != manifest.documents.len() || actual != expected {
         return Err(
             "Repository source identities do not exactly match current models/agentique/*.sysml"
                 .into(),
@@ -1697,6 +1802,171 @@ pub fn drive(
 mod tests {
     use super::*;
     use clap::Parser;
+
+    fn resume_fixture() -> (Args, Report) {
+        let mut args = isolated_args();
+        args.root = args.database.as_ref().unwrap().with_extension("root");
+        let sources = args.root.join("models/agentique");
+        std::fs::create_dir_all(&sources).unwrap();
+        let source = "part def ResumeTest;\n";
+        std::fs::write(sources.join("ResumeTest.sysml"), source).unwrap();
+        let mut fixture_args = args.clone();
+        fixture_args.fixture = Some("architecture".into());
+        let context = eframe::CreationContext::_new_kittest(egui::Context::default());
+        let app = StudioApp::new(&context, fixture_args).unwrap();
+        let mut report = Runner::new(&app).unwrap().report;
+        let project = ProjectId::new();
+        let branch = BranchId::new();
+        let revision = ProjectRevisionId::new();
+        let digest = ContentDigest::of(source.as_bytes());
+        let manifest: RevisionManifest = serde_json::from_value(serde_json::json!({
+            "format_version": 1, "project_id": project, "revision_id": revision,
+            "parent_revision_id": null,
+            "metadata": {"created": "2026-09-25T00:00:00Z", "name": null, "description": null, "alias": []},
+            "documents": [{"document_id": ProjectId::new(), "path": "ResumeTest.sysml", "language": "SysMl", "source_revision_id": ProjectRevisionId::new(), "content_digest": digest}],
+            "accepted_publications": {"kerml": digest, "sysml": digest},
+            "checkpoint_digest": digest,
+            "validation": {"Validated": {"acceptance_contract": "test-only", "source_binding": digest, "semantic_digest": digest, "semantic_context": digest, "closure_digest": digest}},
+            "semantic_cache": null
+        })).unwrap();
+        report.outcome = "failed".into();
+        report.failure = Some("Native screenshot was not delivered".into());
+        report.project = Some(project);
+        report.branch = Some(branch);
+        report.baseline = Some(manifest);
+        let mut state = State::of(&app);
+        state.binding = Some(RevisionBinding { project, revision });
+        state.branch = Some(branch);
+        state.scene_revision = revision;
+        state.selection_revision = revision;
+        state.producer_completeness = "Complete".into();
+        report.assertions.push(Assertion {
+            name: steps(false)[0].name.into(),
+            passed: true,
+            elapsed_ms: 1,
+            since_start_ms: 1,
+            before: State::of(&app),
+            after: state.clone(),
+            inputs: vec![],
+        });
+        report.last_state = state;
+        args.resume_report = Some(
+            args.database
+                .as_ref()
+                .unwrap()
+                .with_extension("failed.json"),
+        );
+        // Launch preflight checks paths/source evidence only. Ordinary authenticated
+        // History must independently check the real database manifest before edits.
+        std::fs::write(args.database.as_ref().unwrap(), b"isolated path sentinel").unwrap();
+        std::fs::write(
+            args.resume_report.as_ref().unwrap(),
+            serde_json::to_vec(&report).unwrap(),
+        )
+        .unwrap();
+        (args, report)
+    }
+
+    fn remove_resume_fixture(args: &Args) {
+        std::fs::remove_dir_all(&args.root).unwrap();
+        std::fs::remove_file(args.database.as_ref().unwrap()).unwrap();
+        std::fs::remove_file(args.resume_report.as_ref().unwrap()).unwrap();
+    }
+
+    #[test]
+    fn explicit_resume_repeats_real_steps_and_digests_the_exact_checked_report() {
+        let (mut args, _) = resume_fixture();
+        assert!(validate_launch(&args).is_ok());
+        let (_, digest) = read_resume(&args).unwrap();
+        assert_eq!(
+            digest,
+            ContentDigest::of(&std::fs::read(args.resume_report.as_ref().unwrap()).unwrap())
+        );
+        let predecessor = args.resume_report.take();
+        assert!(validate_launch(&args).unwrap_err().contains("new database"));
+        args.resume_report = predecessor;
+        args.scenario = Some("real-restart".into());
+        assert!(validate_launch(&args).unwrap_err().contains("only valid"));
+        args.scenario = Some("presentation".into());
+        assert!(validate_launch(&args).is_err());
+        remove_resume_fixture(&args);
+    }
+
+    #[test]
+    fn resume_refuses_any_recorded_candidate_mutation_or_nonfailed_predecessor() {
+        let (args, original) = resume_fixture();
+        for mutation in 0..10 {
+            let mut report = original.clone();
+            match mutation {
+                0 => report.outcome = "running".into(),
+                1 => report.passed = true,
+                2 => {
+                    report.added_element =
+                        Some(agq_studio_scene::fixtures::architecture().nodes[0].id)
+                }
+                3 => {
+                    report.added_owner =
+                        Some(agq_studio_scene::fixtures::architecture().nodes[0].id)
+                }
+                4 => report.committed = report.baseline.clone(),
+                5 => report.last_state.candidate_revision = Some(ProjectRevisionId::new()),
+                6 => report.last_state.mutation_pending = true,
+                7 => {
+                    report.assertions[0].name =
+                        "prepare real source-backed candidate while current remains responsive"
+                            .into()
+                }
+                8 => report.baseline.as_mut().unwrap().validation = ValidationState::Working,
+                9 => report.assertions[0].before.candidate_phase = Some("Cancelled".into()),
+                _ => unreachable!(),
+            }
+            assert!(
+                validate_resume_report(&report).is_err(),
+                "Unsafe predecessor case {mutation}"
+            );
+        }
+        remove_resume_fixture(&args);
+    }
+
+    #[test]
+    fn resume_requires_matching_database_project_branch_and_current_source_population() {
+        let (mut args, original) = resume_fixture();
+        for mismatch in 0..3 {
+            let mut report = original.clone();
+            match mismatch {
+                0 => report.project = Some(ProjectId::new()),
+                1 => report.branch = Some(BranchId::new()),
+                2 => {
+                    report.last_state.binding.as_mut().unwrap().revision = ProjectRevisionId::new()
+                }
+                _ => unreachable!(),
+            }
+            assert!(validate_resume_report(&report).is_err());
+        }
+        let database = args.database.take();
+        args.database = Some(args.root.join("another.sqlite"));
+        assert!(
+            read_resume(&args)
+                .unwrap_err()
+                .contains("exact existing absolute database")
+        );
+        args.database = database;
+        let sources = args.root.join("models/agentique");
+        std::fs::write(sources.join("Added.sysml"), "part def Extra;").unwrap();
+        assert!(
+            read_resume(&args)
+                .unwrap_err()
+                .contains("source identities")
+        );
+        std::fs::remove_file(sources.join("Added.sysml")).unwrap();
+        std::fs::write(sources.join("ResumeTest.sysml"), "part def Changed;").unwrap();
+        assert!(
+            read_resume(&args)
+                .unwrap_err()
+                .contains("source identities")
+        );
+        remove_resume_fixture(&args);
+    }
 
     #[test]
     fn preparation_cannot_hide_a_frozen_ui_behind_few_observed_frames() {

@@ -73,6 +73,9 @@ pub struct Args {
     /// Prior journey report for a separate real or presentation restart check.
     #[arg(long, requires = "scenario")]
     restart_report: Option<PathBuf>,
+    /// Repeat the full real journey from an untouched baseline in a failed report.
+    #[arg(long, requires = "scenario", conflicts_with = "restart_report")]
+    resume_report: Option<PathBuf>,
     /// Real acceptance wall-time deadline including runtime restore and semantic work.
     #[arg(long, default_value_t = 14400)]
     scenario_timeout_seconds: u64,
