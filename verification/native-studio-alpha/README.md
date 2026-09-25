@@ -8,9 +8,12 @@ facades. Real native runs reached a durable Validated Agentique revision and
 captured System, focused subsystem, ports, Graph, Requirements, Explain, parent
 diff and agent dependency views. Iteration three improved hierarchy readability
 but exposed clipped Explain content, unreadable history framing and a failed
-pan gesture during candidate preparation. Iteration four corrects those defects,
-adds exact view-intent fencing and measures query phases. Its fresh real journey,
-candidate and separate restart remain under qualification.
+pan gesture during candidate preparation. Iteration four adds corrections and
+query-phase measurements. Its fresh real journey passed eight assertions, then
+exposed an inconsistent dependency-view name; the strict view-intent fence
+correctly rejected that response. The shared view definition is now corrected.
+Candidate preparation, the remaining real gallery and separate restart remain
+under qualification.
 No fixture screenshot is presented as real model acceptance.
 
 ## Product evidence
@@ -45,6 +48,11 @@ No fixture screenshot is presented as real model acceptance.
   beside the [iteration-four corrections](reviews/real-iteration04-integration.md).
 - [Independent current-revision read review](reviews/current-revision-read-independent-review.md)
   checks the authority and stale-response boundaries for background inspection.
+- [Iteration-four result](real-run04/diagnosis.md) retains the rejected dependency
+  view and safe pre-candidate resume conditions; its [spatial review](reviews/real-run04-query-and-spatial-review.md)
+  identifies misleading port placement and measured query-context costs.
+- [Call-local query reuse review](reviews/call-local-query-reuse-independent.md)
+  separates source review from the pending same-revision runtime oracle.
 - [Runtime distribution](../../docs/runtime-publication-distribution.md) describes
   content-addressed bundles and offline installation. A workflow being present
   does not mean a release asset has been published.
@@ -59,6 +67,9 @@ No fixture screenshot is presented as real model acceptance.
   latency result and the [current real reconstruction baseline](performance/create-part-before-sharing.md).
   The [held optimization qualification](reviews/held-reconstruction-qualification.md)
   requires independent cold reconstruction and exact semantic equivalence.
+  The [shared-mount run](performance/create-part-shared-mount.json) passed that
+  comparison and sixteen malformed-input refusals, while retaining full local
+  reconstruction; it does not establish incremental semantic speedup.
 - [Adversarial layout evidence](product/README.md) covers hierarchy, cycles,
   ports, parallel edges, long names, overlaps and unchanged-node displacement.
 - [Windows accessibility and release qualification](release-qualification.md)
