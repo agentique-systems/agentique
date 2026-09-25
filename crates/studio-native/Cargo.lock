@@ -215,6 +215,7 @@ version = "0.1.0"
 dependencies = [
  "agq-kerml",
  "agq-kerml-semantics",
+ "agq-kerml-syntax",
  "agq-kerml-text",
  "agq-kernel",
  "agq-modeling-repository",
