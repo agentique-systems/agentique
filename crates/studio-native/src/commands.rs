@@ -312,6 +312,7 @@ pub struct CommandContext {
     pub graph_node: bool,
     pub pinned: bool,
     pub agent_view: bool,
+    pub diff: bool,
 }
 
 /// Advisory UI eligibility for the existing reviewed source command. The service
@@ -333,6 +334,13 @@ pub fn unavailable(id: CommandId, context: &CommandContext) -> Option<&'static s
         return Some("A model operation is running");
     }
     match id {
+        ExpandIncoming | ExpandOutgoing | ExpandBoth | CollapseNeighborhood | Neighbors
+            if context.diff =>
+        {
+            Some(
+                "Review Current or Candidate to change the neighborhood; Diff retains removed objects",
+            )
+        }
         DismissAgent if !context.agent_view => Some("No temporary agent view is open"),
         Pin | Unpin if !context.graph_node => Some("Select a node in Graph World"),
         Pin if context.pinned => Some("This graph position is already pinned"),
@@ -504,6 +512,7 @@ mod tests {
             graph_node: false,
             pinned: false,
             agent_view: false,
+            diff: false,
         };
         assert!(unavailable(CommandId::Commit, &context).is_none());
         for command in [

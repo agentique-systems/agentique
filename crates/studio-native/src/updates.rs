@@ -248,6 +248,7 @@ impl StudioApp {
                         self.comparison = ComparisonMode::Current;
                         self.layout = Default::default();
                         self.layouts.clear();
+                        self.world_filters.clear();
                         self.selection.clear();
                         self.invalidate_inspection();
                         self.expanded = None;

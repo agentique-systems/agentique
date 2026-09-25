@@ -62,6 +62,7 @@ impl StudioApp {
                 .selected_element()
                 .is_some_and(|id| self.layout.is_pinned(id)),
             agent_view: self.show_agent,
+            diff: self.comparison == ComparisonMode::Diff,
         }
     }
     pub fn change_comparison(&mut self, mode: ComparisonMode) {
@@ -264,6 +265,10 @@ impl StudioApp {
                 ..ViewDefinition::architecture()
             },
             World::Requirements => ViewDefinition::requirements(),
+            World::Graph => ViewDefinition {
+                depth: 1,
+                ..ViewDefinition::semantic_graph()
+            },
             _ => ViewDefinition::semantic_graph(),
         };
         if let Some(saved) = self
@@ -275,6 +280,7 @@ impl StudioApp {
             view = saved.definition.clone();
         } else if self.ready && self.active_projection().view.kind == view.kind {
             view.depth = self.active_projection().view.depth;
+            view.graph_scope = self.active_projection().view.graph_scope;
             view.hidden_elements = self.active_projection().view.hidden_elements.clone();
         }
         view.focus = self.focus;
@@ -371,6 +377,7 @@ impl StudioApp {
             return;
         }
         // Model revisions are immutable, but may require a worker restoration.
+        self.restore_world_filters(location.world);
         self.world = location.world;
         self.focus = location.focus;
         self.expanded = None;
@@ -420,6 +427,9 @@ impl StudioApp {
         self.fit_pending = false;
     }
     pub fn request_projection(&mut self) {
+        self.request_projection_definition(self.definition());
+    }
+    fn request_projection_definition(&mut self, definition: ViewDefinition) {
         self.scene_builder.invalidate();
         self.invalidate_inspection();
         if self.bridge.mutation_pending() {
@@ -431,7 +441,6 @@ impl StudioApp {
             return;
         }
         if let Some(binding) = self.pending_revision.or(self.binding) {
-            let definition = self.definition();
             let candidate = self
                 .pending_revision
                 .is_none()
@@ -470,11 +479,13 @@ impl StudioApp {
     }
     pub fn switch_world(&mut self, world: World) {
         let selected = self.selected_element();
+        self.restore_world_filters(world);
         self.navigation.update_camera(
             [self.camera.center.x, self.camera.center.y],
             self.camera.zoom,
         );
         self.world = world;
+        self.search.clear();
         self.expanded = None;
         self.dependencies = None;
         self.show_agent = false;
@@ -517,10 +528,30 @@ impl StudioApp {
             if world == World::Graph {
                 self.focus = selected;
             }
-            self.request_projection();
+            let mut definition = self.definition();
+            if world == World::Graph {
+                // An explicit World command starts an ordinary one-hop view;
+                // reprojection of an agent view retains its separate scope.
+                definition.depth = 1;
+                definition.graph_scope = agq_modeling_view::GraphScope::Neighborhood;
+            }
+            self.request_projection_definition(definition);
         }
         self.fit_pending = true;
         self.record_location();
+    }
+    fn restore_world_filters(&mut self, world: World) {
+        if self.world != world {
+            self.world_filters
+                .insert(self.world, (self.families.clone(), self.include_standard));
+            let (families, standards) = self
+                .world_filters
+                .get(&world)
+                .cloned()
+                .unwrap_or_else(|| (RelationshipFamily::all().into_iter().collect(), false));
+            self.families = families;
+            self.include_standard = standards;
+        }
     }
     pub fn load_fixture(&mut self, name: &str) {
         if !self.allow_context_change() {
@@ -559,6 +590,10 @@ impl StudioApp {
         self.comparison = ComparisonMode::Current;
         self.layout = Default::default();
         self.layouts.clear();
+        self.world_filters.clear();
+        self.families = RelationshipFamily::all().into_iter().collect();
+        self.include_standard = false;
+        self.search.clear();
         self.selection.clear();
         self.rebuild();
         self.fit_pending = true;
@@ -686,6 +721,7 @@ impl StudioApp {
                         })
                     {
                         self.focus = Some(id);
+                        self.search.clear();
                         self.request_projection();
                         self.fit_pending = true;
                     } else if let Some(bounds) = self
@@ -826,6 +862,30 @@ impl StudioApp {
             ExpandIncoming | ExpandOutgoing | ExpandBoth | CollapseNeighborhood | Neighbors => {
                 self.cancel_revision_navigation();
                 if let Some(selected) = self.selected_element() {
+                    if self.fixture.is_none()
+                        && !self.bridge.mutation_pending()
+                        && self.candidate.is_none()
+                        && self.comparison == ComparisonMode::Current
+                        && self.world == World::Graph
+                        && self.focus == Some(selected)
+                        && matches!(id, ExpandBoth | CollapseNeighborhood)
+                    {
+                        let mut definition = self.definition();
+                        let depth = if id == CollapseNeighborhood {
+                            1
+                        } else {
+                            definition.depth.saturating_add(1).min(8)
+                        };
+                        if depth != definition.depth {
+                            definition.depth = depth;
+                            self.expanded = None;
+                            self.request_projection_definition(definition);
+                            self.status = format!(
+                                "Loading {depth}-hop semantic neighborhood; previous view retained"
+                            );
+                            return;
+                        }
+                    }
                     let direction = match id {
                         ExpandIncoming => NeighborhoodDirection::Incoming,
                         ExpandOutgoing => NeighborhoodDirection::Outgoing,
@@ -1170,6 +1230,106 @@ fn neighborhood_selection(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use clap::Parser;
+
+    fn application() -> StudioApp {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let args = crate::Args::parse_from([
+            "studio",
+            "--fixture",
+            "architecture",
+            "--no-restore",
+            "--root",
+            root.to_str().unwrap(),
+        ]);
+        let context = eframe::CreationContext::_new_kittest(egui::Context::default());
+        StudioApp::new(&context, args).unwrap()
+    }
+
+    #[test]
+    fn standards_and_relationship_filters_belong_to_each_world_and_reset_with_project() {
+        let mut app = application();
+        let initial = app.families.clone();
+        app.search = "ModelingPlatform".into();
+        app.switch_world(World::Graph);
+        assert!(app.search.is_empty());
+        app.include_standard = true;
+        app.families.remove(&RelationshipFamily::Ownership);
+        let graph = app.families.clone();
+        app.switch_world(World::Requirements);
+        assert!(!app.include_standard);
+        assert_eq!(app.families, initial);
+        app.switch_world(World::System);
+        assert!(!app.include_standard);
+        assert_eq!(app.families, initial);
+        app.switch_world(World::Graph);
+        assert!(app.include_standard);
+        assert_eq!(app.families, graph);
+        app.load_fixture("architecture");
+        assert!(app.world_filters.is_empty());
+        assert!(!app.include_standard);
+        assert_eq!(app.families, initial);
+    }
+
+    #[test]
+    fn reprojection_retains_explicit_dependency_scope_without_leaking_to_system() {
+        let mut app = application();
+        app.world = World::Graph;
+        app.projection.view = ViewDefinition::semantic_graph();
+        app.projection.view.graph_scope = agq_modeling_view::GraphScope::DependencyNeighborhood;
+        app.projection.view.depth = 2;
+        app.families.remove(&RelationshipFamily::Ownership);
+        assert_eq!(
+            app.definition().graph_scope,
+            agq_modeling_view::GraphScope::DependencyNeighborhood
+        );
+        assert_eq!(app.definition().depth, 2);
+        assert!(
+            !app.definition()
+                .relationship_families
+                .contains(&RelationshipFamily::Ownership)
+        );
+        app.world = World::System;
+        assert_eq!(
+            app.definition().graph_scope,
+            agq_modeling_view::GraphScope::Neighborhood
+        );
+        assert_eq!(app.definition().depth, 1);
+    }
+
+    #[test]
+    fn diff_retains_removed_objects_outside_temporary_current_neighborhood() {
+        let mut app = application();
+        app.show_fixture_diff();
+        let removed: Vec<_> = app
+            .scene
+            .nodes
+            .iter()
+            .filter(|node| node.diff == agq_studio_scene::DiffMark::Removed)
+            .map(|node| node.id())
+            .collect();
+        assert!(!removed.is_empty());
+        app.expanded = Some(BTreeSet::from([app.active_projection().nodes[0].id]));
+        assert!(app.rebuild_immediate());
+        assert!(removed.iter().all(|id| app.scene.node(*id).is_some()));
+        assert!(commands::unavailable(CommandId::ExpandBoth, &app.context()).is_some());
+        let before = (
+            app.expanded.clone(),
+            app.focus,
+            serde_json::to_value(app.active_projection()).unwrap(),
+            app.generation,
+        );
+        app.execute(CommandId::ExpandBoth, &egui::Context::default());
+        assert_eq!(
+            before,
+            (
+                app.expanded.clone(),
+                app.focus,
+                serde_json::to_value(app.active_projection()).unwrap(),
+                app.generation
+            )
+        );
+    }
 
     #[test]
     fn neighbor_selection_preserves_real_ports_and_visible_endpoint_owners() {

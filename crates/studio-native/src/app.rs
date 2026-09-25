@@ -73,6 +73,7 @@ pub struct DisplayState {
     expanded: Option<BTreeSet<ElementId>>,
     families: BTreeSet<RelationshipFamily>,
     include_standard: bool,
+    world_filters: BTreeMap<World, (BTreeSet<RelationshipFamily>, bool)>,
     show_agent: bool,
     dependencies: Option<BTreeSet<ElementId>>,
     agent_activity: Option<crate::agents::DependencyActivity>,
@@ -144,6 +145,7 @@ pub struct StudioApp {
     pub families: BTreeSet<RelationshipFamily>,
     pub expanded: Option<BTreeSet<ElementId>>,
     pub include_standard: bool,
+    pub world_filters: BTreeMap<World, (BTreeSet<RelationshipFamily>, bool)>,
     pub inspector: Option<ElementInspector>,
     pub explanation: Option<ExplanationProjection>,
     pub source: Option<SourceProjection>,
@@ -292,6 +294,7 @@ impl StudioApp {
             families: RelationshipFamily::all().into_iter().collect(),
             expanded: None,
             include_standard: false,
+            world_filters: BTreeMap::new(),
             inspector: None,
             explanation: None,
             source: None,
@@ -384,6 +387,7 @@ impl StudioApp {
             expanded: self.expanded.clone(),
             families: self.families.clone(),
             include_standard: self.include_standard,
+            world_filters: self.world_filters.clone(),
             show_agent: self.show_agent,
             dependencies: self.dependencies.clone(),
             agent_activity: self.agent_activity.clone(),
@@ -416,6 +420,7 @@ impl StudioApp {
         self.expanded = previous.expanded;
         self.families = previous.families;
         self.include_standard = previous.include_standard;
+        self.world_filters = previous.world_filters;
         self.show_agent = previous.show_agent;
         self.dependencies = previous.dependencies;
         self.agent_activity = previous.agent_activity;
@@ -451,21 +456,20 @@ impl StudioApp {
             self.layout_world = self.world;
             self.layout_focus = self.focus;
         }
-        let mut projection = self.active_projection().clone();
-        let hidden: BTreeSet<_> = projection.view.hidden_elements.iter().copied().collect();
-        projection.nodes.retain(|node| !hidden.contains(&node.id));
-        projection
-            .edges
-            .retain(|edge| !hidden.contains(&edge.source) && !hidden.contains(&edge.target));
-        projection
-            .edges
-            .retain(|e| self.families.contains(&e.family));
-        if let Some(expanded) = &self.expanded {
-            projection.nodes.retain(|n| expanded.contains(&n.id));
-            projection
-                .edges
-                .retain(|e| expanded.contains(&e.source) && expanded.contains(&e.target));
-        }
+        // A loaded current-neighborhood ID set cannot classify removals. Diff
+        // keeps the complete paired query scope, including genuine old ghosts.
+        let expanded = (self.comparison != ComparisonMode::Diff)
+            .then_some(self.expanded.as_ref())
+            .flatten();
+        let visible_projection = |projection: &ViewProjection| {
+            crate::scene_build::presentation_projection(
+                projection,
+                &self.families,
+                expanded,
+                self.world == World::System,
+            )
+        };
+        let projection = visible_projection(self.active_projection());
         let options = SceneOptions {
             collapsed: self.collapsed.clone(),
             focus: ownership_focus(&projection, self.world, self.focus, self.fixture.is_some()),
@@ -479,7 +483,7 @@ impl StudioApp {
                         .as_ref()
                         .map(|c| &c.before)
                         .or(self.compare_before.as_ref())
-                        .cloned()
+                        .map(visible_projection)
                 })
                 .flatten(),
             options,

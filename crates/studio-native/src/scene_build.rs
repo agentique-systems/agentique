@@ -1,11 +1,35 @@
 //! Disposable scene construction off the UI thread. The latest request wins;
 //! neither worker completion nor a cancelled presentation can change a model.
-use agq_modeling_view::ViewProjection;
+use agq_kernel::ElementId;
+use agq_modeling_view::{RelationshipFamily, ViewProjection};
 use agq_studio_scene::{LayoutMemory, SceneLookup, SceneOptions, SemanticScene, SpatialIndex};
 use std::{
+    collections::BTreeSet,
     sync::{Arc, Mutex, mpsc},
     time::Instant,
 };
+
+/// Apply the same disposable visibility policy to both sides of a comparison.
+/// Canonical DTOs stay intact; containment already communicates System ownership.
+pub fn presentation_projection(
+    source: &ViewProjection,
+    families: &BTreeSet<RelationshipFamily>,
+    expanded: Option<&BTreeSet<ElementId>>,
+    system: bool,
+) -> ViewProjection {
+    let mut projection = source.clone();
+    let hidden: BTreeSet<_> = source.view.hidden_elements.iter().copied().collect();
+    let visible =
+        |id: &ElementId| !hidden.contains(id) && expanded.is_none_or(|ids| ids.contains(id));
+    projection.nodes.retain(|node| visible(&node.id));
+    projection.edges.retain(|edge| {
+        visible(&edge.source)
+            && visible(&edge.target)
+            && families.contains(&edge.family)
+            && !(system && edge.family == RelationshipFamily::Ownership)
+    });
+    projection
+}
 
 pub struct SceneInput {
     pub projection: ViewProjection,
@@ -128,6 +152,52 @@ impl SceneBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn comparison_filters_do_not_fabricate_removed_ownership_or_erase_real_removed_links() {
+        let before = agq_studio_scene::fixtures::architecture();
+        let mut after = before.clone();
+        let removed = after
+            .edges
+            .iter()
+            .find(|edge| edge.family != RelationshipFamily::Ownership)
+            .unwrap()
+            .id
+            .clone();
+        after.edges.retain(|edge| edge.id != removed);
+        let canonical_before = serde_json::to_value(&before).unwrap();
+        let families = RelationshipFamily::all().into_iter().collect();
+        let filtered_before = presentation_projection(&before, &families, None, true);
+        let filtered_after = presentation_projection(&after, &families, None, true);
+        assert_eq!(filtered_before.nodes, before.nodes);
+        let built = build(SceneInput {
+            projection: filtered_after,
+            before: Some(filtered_before),
+            options: SceneOptions::default(),
+            memory: LayoutMemory::default(),
+        })
+        .unwrap();
+        assert!(
+            built
+                .scene
+                .edges
+                .iter()
+                .all(|edge| edge.semantic.family != RelationshipFamily::Ownership)
+        );
+        assert_eq!(
+            built
+                .scene
+                .edges
+                .iter()
+                .filter(|edge| edge.diff == agq_studio_scene::DiffMark::Removed)
+                .map(|edge| edge.semantic.id.as_str())
+                .collect::<Vec<_>>(),
+            vec![removed.as_str()]
+        );
+        assert_eq!(serde_json::to_value(&before).unwrap(), canonical_before);
+        let graph = presentation_projection(&before, &families, None, false);
+        assert_eq!(graph.edges, before.edges);
+    }
 
     #[test]
     fn stale_scene_cannot_replace_newer_context() {

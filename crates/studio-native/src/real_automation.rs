@@ -1053,6 +1053,7 @@ struct Runner {
     dirty: bool,
     last_write: Instant,
     background_pan: Option<(u8, Pos2, Point)>,
+    background_pan_ready_frame: Option<u64>,
     candidate_id: Option<agq_studio_platform::CandidateId>,
     candidate_revision: Option<ProjectRevisionId>,
     preparation_clock: Option<PreparationClock>,
@@ -1095,6 +1096,7 @@ impl Runner {
             steps: steps(restart), index: 0, age: 0, started: Instant::now(), step_started: Instant::now(),
             before: None, point: None, events: vec![], capture: None, dirty: true, last_write: Instant::now(),
             background_pan: None, candidate_id: None, candidate_revision: None,
+            background_pan_ready_frame: None,
             preparation_clock: None,
             inspected_feature: None,
             background_inspection: None,
@@ -1457,9 +1459,24 @@ impl Runner {
             return self.background_inspection_input(app, ctx, input);
         }
         if self.background_pan.is_none() {
+            // The Prepare-release pass still contains the centered dialog.
+            // egui resolves a new press against the previous pass's widgets.
+            // Let that hit data expire without stopping the preparation clock.
+            if app.create_dialog || app.palette || app.camera_target.is_some() {
+                self.background_pan_ready_frame = None;
+                return Ok(());
+            }
+            let ready_frame = *self
+                .background_pan_ready_frame
+                .get_or_insert(app.frame_number);
+            if app.frame_number < ready_frame + 2 {
+                return Ok(());
+            }
             let rect = automation::target(ctx, automation::Target::Viewport)?;
-            self.background_pan = Some((0, rect.center(), app.camera.center));
+            self.background_pan = Some((0, background_pan_start(rect)?, app.camera.center));
+            self.events.push(format!("Background pan begins at frame {} after dialog settled at frame {ready_frame}, camera {:?}", app.frame_number, app.camera.center));
         }
+        let first_event = input.events.len();
         let (frame, point, before) = self.background_pan.as_mut().expect("initialized pan");
         match *frame {
             0 => click(input, *point, true),
@@ -1486,6 +1503,13 @@ impl Runner {
             }
         }
         *frame += 1;
+        self.events
+            .extend(input.events[first_event..].iter().map(|event| {
+                format!(
+                    "Background pan input at frame {}: {event:?}",
+                    app.frame_number
+                )
+            }));
         Ok(())
     }
 
@@ -2365,6 +2389,17 @@ pub fn drive(
     }
     result
 }
+
+fn background_pan_start(rect: egui::Rect) -> Result<Pos2, String> {
+    if !rect.is_finite() || rect.width() < 104.0 || rect.height() < 88.0 {
+        return Err("Viewport is too small for the complete background pan gesture".into());
+    }
+    Ok(rect.left_top() + Vec2::splat(24.0))
+}
+
+#[cfg(test)]
+#[path = "background_pan_tests.rs"]
+mod background_pan_tests;
 
 #[cfg(test)]
 mod tests {

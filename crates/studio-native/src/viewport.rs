@@ -17,6 +17,11 @@ use std::{
 };
 
 impl StudioApp {
+    fn port_visible(&self, port: &agq_studio_scene::ScenePort) -> bool {
+        self.lod.level() >= LodLevel::Features
+            || self.selection.contains(port.id)
+            || (self.world == crate::navigation::World::System && self.focus == Some(port.owner))
+    }
     pub fn viewport(&mut self, ui: &mut egui::Ui) {
         let (rect, response) = ui.allocate_exact_size(
             ui.available_size().max(Vec2::splat(1.0)),
@@ -52,6 +57,7 @@ impl StudioApp {
             if self.lod.level() < LodLevel::Features
                 && let Some(SceneTarget::Port(id)) = hovered.as_ref()
                 && let Some(port) = self.lookup.port(&self.scene, *id)
+                && !self.port_visible(port)
             {
                 hovered = Some(SceneTarget::Node(port.owner));
             }
@@ -84,9 +90,13 @@ impl StudioApp {
             let mut targets = self
                 .spatial
                 .marquee(agq_studio_scene::Rect::from_points(a, b));
-            if self.lod.level() < LodLevel::Features {
-                targets.retain(|target| !matches!(target, SceneTarget::Port(_)));
-            }
+            targets.retain(|target| match target {
+                SceneTarget::Port(id) => self
+                    .lookup
+                    .port(&self.scene, *id)
+                    .is_some_and(|port| self.port_visible(port)),
+                _ => true,
+            });
             self.selection.replace(targets);
             self.batch_key = None;
             self.inspector = None;
@@ -468,6 +478,7 @@ impl StudioApp {
             }
         }
         if self.lod.level() >= LodLevel::Features
+            || (self.world == crate::navigation::World::System && self.focus.is_some())
             || self
                 .selection
                 .targets
@@ -476,7 +487,9 @@ impl StudioApp {
         {
             for port in &objects.ports {
                 let selected_port = self.selection.contains(port.id);
-                if self.lod.level() < LodLevel::Features && !selected_port {
+                let focused_boundary = self.world == crate::navigation::World::System
+                    && self.focus == Some(port.owner);
+                if !self.port_visible(port) {
                     continue;
                 }
                 let point = self.camera.world_to_screen(port.position);
@@ -490,14 +503,26 @@ impl StudioApp {
                 // detail is suppressed at overview/summary zoom. This marker
                 // stays a legible screen size without rebuilding GPU batches
                 // on every zoom tick.
-                if selected_port {
+                if selected_port || (focused_boundary && self.lod.level() < LodLevel::Features) {
                     painter.rect(
-                        egui::Rect::from_center_size(position, Vec2::splat(12.0)),
+                        egui::Rect::from_center_size(
+                            position,
+                            Vec2::splat(if selected_port { 12.0 } else { 9.0 }),
+                        ),
                         2.0,
                         theme.canvas,
-                        Stroke::new(2.0, theme.accent),
+                        Stroke::new(
+                            2.0,
+                            if selected_port {
+                                theme.accent
+                            } else {
+                                theme.muted
+                            },
+                        ),
                         egui::StrokeKind::Inside,
                     );
+                }
+                if selected_port {
                     painter.rect_stroke(
                         egui::Rect::from_center_size(position, Vec2::splat(22.0)),
                         4.0,
