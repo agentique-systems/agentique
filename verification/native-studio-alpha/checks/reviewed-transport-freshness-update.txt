@@ -1,0 +1,33 @@
+{
+  "grants_publication_authority": false,
+  "authority_fields_unchanged": true,
+  "prior_lock_pin_preserved": true,
+  "reviewed_changes": [
+    "crates/kerml-semantics/src/trusted_publication.rs",
+    "standards/runtime-transports/sysml-v3-rematerialized-2026-09-25.json"
+  ],
+  "verified": {
+    "status": "accepted-inputs-compatible",
+    "publication_digest": "25aeddb099be16462b553d6debcad97f43bf22e89ce8a9bbb53cf72eb7d193fa",
+    "checked_inputs": 151,
+    "lock_compatibility": {
+      "status": "accepted-language-lock-closure-unchanged",
+      "grants_publication_authority": false,
+      "accepted_lock_sha256": "f8f56cb388ebfe08af3450edafdbf3021fff9b1e52d0fde4dc5e1a3bc3257583",
+      "current_lock_sha256": "0accdb4fdd20cf9b9613c4d21f1908d173de1f0189268d76a437ebf0b4e84317",
+      "reference": "verification/compatibility/sysml-v3-accepted.Cargo.lock",
+      "roots": [
+        "agq-kernel",
+        "agq-kerml",
+        "agq-kerml-semantics",
+        "agq-kerml-syntax",
+        "agq-kerml-text",
+        "agq-sysml",
+        "agq-sysml-semantics",
+        "agq-standard-libraries"
+      ],
+      "reachable_packages": 69,
+      "closure_sha256": "5cd40b34553cfc18534928eaad2465888325770e7755d4d85b1ef0550b48b340"
+    }
+  }
+}

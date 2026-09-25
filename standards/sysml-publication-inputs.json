@@ -428,7 +428,7 @@
     "crates/kerml-semantics/src/status_queries.rs": "2dbb3096710a798eed08e00ed17c8e0cd1d68eb6f091060bff6b6132d1e67fd8",
     "crates/kerml-semantics/src/structural.rs": "b7489ea509637c108aa2bed622bf899f27dff38700c0f0d41c2a67c0ee2fcd6a",
     "crates/kerml-semantics/src/testing.rs": "fbf53939e210fd47d3f84efd856669b2c84eff9531c700b03cd3b24f2d7a215f",
-    "crates/kerml-semantics/src/trusted_publication.rs": "962820f0ce931f98684574dcbd651a8335b4ac8536c0d9c5d47ebea9750eea47",
+    "crates/kerml-semantics/src/trusted_publication.rs": "f280efebad2e03cc194c88ff64dd0a046d5c5a5d28e5e06003bfb05df423261a",
     "crates/kerml-semantics/src/typing.rs": "4835149ba718e77c4a3d5ac8ce48d540f07ea637aa7c1a4d21d2eddbcd85b623",
     "crates/kerml-semantics/src/validation.rs": "4f7e957e01c16c962cf8207f123202a09020e77b4490930a94921f0d24efa62c",
     "crates/kerml-syntax/Cargo.toml": "347c282a229538bf160c503d2af3ff9d9c09d6c320abfcb2cc8787bcd1b38380",
@@ -530,6 +530,7 @@
     "standards/kerml-accepted-publication.json": "d51d43a8e907698f94297ff3cfb007ac5dbf088ebec550ef97e8f7107b351ff5",
     "standards/kerml-standard-bindings.json": "130398e2fe9e10e662d13f28a8cd8f12934eba998ddd879e32c06a3089f0601c",
     "standards/normative/sysml-2.0/library-set.json": "5f0533b4f0795d71499677916b5967d972c01eca62f4edf66fba04397d082c1e",
+    "standards/runtime-transports/sysml-v3-rematerialized-2026-09-25.json": "12cc2aeff7aa7e4a1f3de16faf13d63aa158dd88248e9b3179ad4629e1ffeda0",
     "standards/sysml-2.0-operational-semantic-v1.json": "4d776c10b3ba783575f189f3d17e304d657fca7f820c7e6bbcb676c68da997c5",
     "standards/sysml-2.0-operational-semantic-v2.json": "74c8a0058d103ea34cf05bc584bd6e16c44e0b709f67f4d3be8250325ee8c663",
     "standards/sysml-2.0-operational-semantic-v3.json": "b85ceb886e8c20361abbb87eea2673faa8c4a1127257148e25d21911189de02f"

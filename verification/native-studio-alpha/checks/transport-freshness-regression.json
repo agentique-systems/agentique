@@ -1,0 +1,14 @@
+{
+  "command": [
+    "node",
+    "--test",
+    "tools/sysml-publication-stale.test.mjs"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T18:26:33.870888+00:00",
+  "elapsed_seconds": 1.906,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/transport-freshness-regression.txt",
+  "output_sha256": "72f4835f99d0023b6fddee7bd65891ebb614da17423f164f407e074c8bfeb133",
+  "build_environment": {}
+}

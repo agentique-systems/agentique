@@ -1,0 +1,16 @@
+{
+  "command": [
+    "node",
+    "node_modules/prettier/bin/prettier.cjs",
+    "--check",
+    "tools/sysml-publication-stale.mjs",
+    "tools/sysml-publication-stale.test.mjs"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T18:27:01.355087+00:00",
+  "elapsed_seconds": 0.453,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/transport-freshness-format-direct.txt",
+  "output_sha256": "17aa973d3f004560237d9a95171210b0671deff23d61628eecf7322ff5938f20",
+  "build_environment": {}
+}

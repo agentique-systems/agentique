@@ -79,3 +79,23 @@ After successful ordinary restoration, retain pack/verify/offline-install
 receipts tied to the compiled source and actual runtime bundle digest. Native
 Agentique first light and durable candidate validation/commit remain product
 acceptance gates beyond transport review.
+
+## Repository freshness follow-up
+
+The integrated standards check correctly rejected the stale source fingerprint
+after registration. Independent review approved updating the non-authoritative
+`sysml-publication-inputs.json` record for the exact reviewed Rust source and
+transport pin. The update command asserts every semantic identity, receipt and
+binding digest remains equal, preserves the original Cargo.lock pin, and verifies
+its existing language-dependency compatibility proof. Only those two reviewed
+input entries change. Accepted semantic receipt and binding files remain intact.
+
+The input inventory now also tracks `standards/runtime-transports/*.json`: changing
+an `include_str!` payload must invalidate freshness even when its Rust source is
+unchanged. The negative test exercises added, changed and removed transport files
+and confirms authority bytes remain intact. All 15 freshness tests, formatting,
+and the corrected standards check pass; actual commands and outputs are retained
+in `checks/reviewed-transport-freshness-update.*`,
+`checks/transport-freshness-regression.*`, and
+`checks/integrated-standards-transport-fixed.*`. This bookkeeping update grants
+no new semantic publication authority.

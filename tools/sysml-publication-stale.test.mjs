@@ -128,6 +128,37 @@ test("accepted Systems freshness binds interpretation population and identities"
   );
 });
 
+test("transport content and population require reviewed freshness without changing authority", (t) => {
+  const { root, write } = fixture(t, 3);
+  const transport = "standards/runtime-transports/fixture.json";
+  const authority = [receiptPath, bindingsPath].map((file) =>
+    fs.readFileSync(path.join(root, file)),
+  );
+  write(transport, { fixture: "original" });
+  assert.throws(
+    () => verifySystemsPublicationFreshness(root),
+    /stale accepted Systems/,
+  );
+  write(inputsPath, capturePublicationInputs(root));
+  assert.equal(
+    verifySystemsPublicationFreshness(root).status,
+    "accepted-inputs-current",
+  );
+  write(transport, { fixture: "changed" });
+  assert.throws(
+    () => verifySystemsPublicationFreshness(root),
+    /stale accepted Systems/,
+  );
+  fs.unlinkSync(path.join(root, transport));
+  assert.throws(
+    () => verifySystemsPublicationFreshness(root),
+    /stale accepted Systems/,
+  );
+  for (const [index, file] of [receiptPath, bindingsPath].entries()) {
+    assert.deepEqual(fs.readFileSync(path.join(root, file)), authority[index]);
+  }
+});
+
 test("v3 freshness authenticates the v3 manifest while preserving v2 fixtures", (t) => {
   const { root, write, receipt, bindings } = fixture(t, 3);
   assert.equal(
