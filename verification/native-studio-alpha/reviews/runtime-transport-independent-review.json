@@ -1,0 +1,31 @@
+{
+  "format": "agq-independent-runtime-transport-review/1",
+  "runtime_accepted": false,
+  "reviewed_head": "e0488d7b273d2207d3885a44e3b4d50cbcac0475",
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_sha256": {
+    "crates/kerml-semantics/src/trusted_publication.rs": "e3922f906f245d6d8167dc987beaf7f46f965751c8253d9b40a5b7882e540729",
+    "crates/kerml-text/src/sysml/publication_restore.rs": "0e7f27168ef50d236681fe07397ee0a7d5f49b0cb6f953f362b9e428a38684fe",
+    "crates/sysml-semantics/src/context.rs": "28bb87564defa390a5a88f26da04d6145666ec12d1d7fc9006fe687ff9dda4f4",
+    "tools/runtime-recovery/prepare_systems_transport.py": "2323d1735d61e5745b1d292ae407bd5d199670c1edc949aea439b16e1a2d3d47",
+    "tools/runtime-recovery/compare_systems_contract.py": "d7c6998e52f84822eedd162dfbfc49f2f50e497d1a264aab1cd4decad6179665",
+    "docs/runtime-rematerialization.md": "81ff3bc76357d3479a86936fa56b9f7673dbf0ca4225c7312aa03924d68e4ecb",
+    "standards/sysml-accepted-publication.json": "becc3cf991e69115dae905957d74292774164e3f5707eecefb06d8eb60e0269a",
+    "standards/sysml-standard-bindings.json": "dbd794bba9ebdfdea5af433945f6bb5d0475f0f05ad1d229cd004f5b57045789"
+  },
+  "command": [
+    "C:\\Users\\phili\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\scripts\\test_runtime_rematerialization.py"
+  ],
+  "exit_code": 0,
+  "output": "...................\n----------------------------------------------------------------------\nRan 19 tests in 0.105s\n\nOK\n",
+  "preparer_outer_evidence_race_probe": {
+    "prepare_returned_candidate": true,
+    "runtime_accepted": false,
+    "recorded_cache_sha256": "a1ba63a9e66d506534bc05f0420714117be380f0feaf4c67072719ae28a8cb2e",
+    "actual_cache_sha256": "b9d29b04f991684d27a0787390a370ae2641bfd9d8248eb6d581b412a15538c8",
+    "outer_hash_evidence_matches_final_file": false,
+    "semantic_payloads_changed": false
+  },
+  "elapsed_seconds": 0.377
+}
