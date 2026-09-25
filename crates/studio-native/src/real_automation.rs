@@ -13,7 +13,7 @@ use agq_kernel::ElementId;
 use agq_modeling_repository::{
     BranchId, ContentDigest, ProjectId, ProjectRevisionId, RevisionManifest, ValidationState,
 };
-use agq_modeling_view::{ExplanationNodeKind, ViewKind, ViewOrigin};
+use agq_modeling_view::{ExplanationNodeKind, ViewKind, ViewOrigin, ViewProjection};
 use agq_studio_platform::{CandidatePhase, RevisionBinding};
 use agq_studio_scene::{DiffMark, NodeCategory, Point, SceneTarget};
 use eframe::egui::{self, Event, Key, Modifiers, PointerButton, Pos2, Rect, Vec2};
@@ -22,6 +22,9 @@ use std::{collections::BTreeMap, path::Path, time::Instant};
 
 const FORMAT: &str = "agentique-native-real-acceptance/1";
 const PART_NAME: &str = "alphaStudioObserver";
+// Coarse non-freeze qualification, separate from the 60 Hz interaction target.
+const LONG_PREPARATION_MS: u128 = 1_000;
+const MAX_PREPARATION_INPUT_GAP_MS: u128 = 250;
 
 /// Run before StudioApp starts a worker: real acceptance may write only to an
 /// explicitly selected fresh database. Restart reads that same isolated database.
@@ -111,6 +114,7 @@ fn read_restart(args: &Args) -> Result<Report, String> {
         || report.restart_verified
         || report.committed.is_none()
         || report.added_element.is_none()
+        || report.added_owner.is_none()
         || report.gallery.len() < 8
     {
         return Err("Restart requires a successful real first-process journey with committed identity and complete gallery".into());
@@ -238,6 +242,8 @@ struct Report {
     baseline: Option<RevisionManifest>,
     committed: Option<RevisionManifest>,
     added_element: Option<ElementId>,
+    #[serde(default)]
+    added_owner: Option<ElementId>,
     added_name: String,
     assertions: Vec<Assertion>,
     gallery: Vec<String>,
@@ -245,8 +251,83 @@ struct Report {
     elapsed_ms: u128,
     background_frames: u64,
     background_pan_observed: bool,
+    #[serde(default)]
+    preparation_responsiveness: PreparationResponsiveness,
     metrics: serde_json::Value,
     last_state: State,
+}
+
+/// Native input-hook cadence during submission through first idle candidate view.
+/// These observations do not measure physical input latency or GPU presentation.
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+struct PreparationResponsiveness {
+    elapsed_ms: Option<u128>,
+    maximum_input_hook_gap_ms: u128,
+    observed_input_hooks: u64,
+    assessment: Option<String>,
+}
+
+#[derive(Clone)]
+struct PreparationClock {
+    started: Instant,
+    previous: Instant,
+}
+
+impl PreparationClock {
+    fn observe(&mut self, now: Instant, evidence: &mut PreparationResponsiveness) {
+        evidence.maximum_input_hook_gap_ms = evidence
+            .maximum_input_hook_gap_ms
+            .max(now.duration_since(self.previous).as_millis());
+        evidence.observed_input_hooks += 1;
+        self.previous = now;
+    }
+}
+
+fn assess_preparation(
+    evidence: &PreparationResponsiveness,
+    background_pan_observed: bool,
+) -> Result<&'static str, String> {
+    let elapsed = evidence
+        .elapsed_ms
+        .ok_or("Preparation timing did not finish")?;
+    if evidence.observed_input_hooks == 0 {
+        return Err("Preparation has no observed native input-hook interval".into());
+    }
+    if evidence.maximum_input_hook_gap_ms > MAX_PREPARATION_INPUT_GAP_MS {
+        return Err(format!(
+            "Preparation blocked native input hooks for {} ms; coarse non-freeze limit is {} ms",
+            evidence.maximum_input_hook_gap_ms, MAX_PREPARATION_INPUT_GAP_MS
+        ));
+    }
+    if elapsed >= LONG_PREPARATION_MS && !background_pan_observed {
+        return Err(format!(
+            "Preparation took {elapsed} ms without native panning observed while mutation was pending"
+        ));
+    }
+    Ok(if background_pan_observed {
+        "Native camera pan observed during pending mutation; input-hook gaps stayed within 250 ms. This is not a 60 Hz or physical-presentation qualification."
+    } else {
+        "Preparation completed in under 1000 ms with input-hook gaps within 250 ms; concurrent panning was not observed."
+    })
+}
+
+fn assert_part_owner(
+    projection: &ViewProjection,
+    part: ElementId,
+    owner: ElementId,
+) -> Result<(), String> {
+    if projection.nodes.iter().any(|node| {
+        node.id == part
+            && node.name == PART_NAME
+            && node.semantic_kind == "PartUsage"
+            && node.owner == Some(owner)
+            && node.origin == ViewOrigin::Authored
+            && node.source_available
+    }) {
+        Ok(())
+    } else {
+        Err("Created part is not source-backed authored content owned by the intended ModelingPlatform identity".into())
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -581,6 +662,7 @@ struct Runner {
     background_pan: Option<(u8, Pos2, Point)>,
     candidate_id: Option<agq_studio_platform::CandidateId>,
     candidate_revision: Option<ProjectRevisionId>,
+    preparation_clock: Option<PreparationClock>,
 }
 impl Runner {
     fn new(app: &StudioApp) -> Result<Self, String> {
@@ -612,13 +694,16 @@ impl Runner {
                 baseline: previous.as_ref().and_then(|p| p.baseline.clone()),
                 committed: previous.as_ref().and_then(|p| p.committed.clone()),
                 added_element: previous.as_ref().and_then(|p| p.added_element),
+                added_owner: previous.as_ref().and_then(|p| p.added_owner),
                 added_name: PART_NAME.into(), assertions: vec![], gallery: vec![], failure: None,
                 elapsed_ms: 0, background_frames: 0, background_pan_observed: false,
+                preparation_responsiveness: PreparationResponsiveness::default(),
                 metrics: serde_json::Value::Null, last_state: State::of(app),
             },
             steps: steps(restart), index: 0, age: 0, started: Instant::now(), step_started: Instant::now(),
             before: None, point: None, events: vec![], capture: None, dirty: true, last_write: Instant::now(),
             background_pan: None, candidate_id: None, candidate_revision: None,
+            preparation_clock: None,
         })
     }
 
@@ -630,6 +715,17 @@ impl Runner {
     ) -> Result<ScenarioStatus, String> {
         if app.fixture.is_some() || app.args.fixture.is_some() {
             return Err("Real runner refuses every fixture and fixture service fallback".into());
+        }
+        // Observe before inspecting pending state: a synchronous regression may
+        // finish the whole mutation between two hooks and must retain that gap.
+        if let Some(clock) = &mut self.preparation_clock {
+            let now = Instant::now();
+            clock.observe(now, &mut self.report.preparation_responsiveness);
+            if app.candidate.is_some() && idle(app) {
+                self.report.preparation_responsiveness.elapsed_ms =
+                    Some(now.duration_since(clock.started).as_millis());
+                self.preparation_clock = None;
+            }
         }
         if self.started.elapsed().as_secs() > app.args.scenario_timeout_seconds {
             return Err(format!(
@@ -883,6 +979,15 @@ impl Runner {
                     if frame == 5 && app.new_part_name != PART_NAME {
                         return Err("Candidate name did not retain native text input".into());
                     }
+                    if frame == 6 {
+                        let now = Instant::now();
+                        self.preparation_clock = Some(PreparationClock {
+                            started: now,
+                            previous: now,
+                        });
+                        self.report.preparation_responsiveness =
+                            PreparationResponsiveness::default();
+                    }
                     click(
                         input,
                         automation::target(ctx, automation::Target::CandidatePrepare)?.center(),
@@ -1012,6 +1117,13 @@ impl Runner {
                     "Selection and real Inspector are not bound to the chosen canonical object",
                 )?;
                 if wanted.name == PART_NAME {
+                    assert_part_owner(
+                        app.active_projection(),
+                        id,
+                        self.report
+                            .added_owner
+                            .ok_or("Created part owner was not retained")?,
+                    )?;
                     if let Some(expected) = self.report.added_element {
                         require(
                             id == expected,
@@ -1163,10 +1275,15 @@ impl Runner {
                     "Parent difference lacks exact parent, matching lens, or the actual added AgentRuntime",
                 )
             }
-            Check::CreateDialog => require(
-                app.create_dialog && !app.palette,
-                "Create Part dialog did not open",
-            ),
+            Check::CreateDialog => {
+                let owner = named(app, PLATFORM)?;
+                require(
+                    app.create_dialog && !app.palette && app.selected_element() == Some(owner),
+                    "Create Part dialog did not open for the selected ModelingPlatform",
+                )?;
+                self.report.added_owner = Some(owner);
+                Ok(())
+            }
             Check::CandidateWorking => {
                 let candidate = app
                     .candidate
@@ -1192,12 +1309,37 @@ impl Runner {
                 )?;
                 self.candidate_id = candidate.id;
                 self.candidate_revision = Some(candidate.after.revision_id);
-                if self.report.background_frames >= 10 {
-                    require(
+                let matches: Vec<_> = candidate
+                    .after
+                    .nodes
+                    .iter()
+                    .filter(|node| node.name == PART_NAME && node.semantic_kind == "PartUsage")
+                    .collect();
+                let [added] = matches.as_slice() else {
+                    return Err("Candidate must contain exactly one new named PartUsage".into());
+                };
+                assert_part_owner(
+                    &candidate.after,
+                    added.id,
+                    self.report
+                        .added_owner
+                        .ok_or("Create intent owner was not retained")?,
+                )?;
+                require(
+                    !candidate.before.nodes.iter().any(|node| {
+                        node.id == added.id
+                            || (node.name == PART_NAME && node.semantic_kind == "PartUsage")
+                    }),
+                    "Created canonical part or reserved test name already exists in the same baseline lens",
+                )?;
+                self.report.added_element = Some(added.id);
+                self.report.preparation_responsiveness.assessment = Some(
+                    assess_preparation(
+                        &self.report.preparation_responsiveness,
                         self.report.background_pan_observed,
-                        "Long-running preparation did not demonstrate responsive native panning",
-                    )?;
-                }
+                    )?
+                    .into(),
+                );
                 Ok(())
             }
             Check::Mode(mode) => {
@@ -1277,6 +1419,13 @@ impl Runner {
                     Some(named(app, PART)?) == self.report.added_element,
                     "Committed projection lost or changed the reviewed canonical part identity",
                 )?;
+                assert_part_owner(
+                    app.active_projection(),
+                    named(app, PART)?,
+                    self.report
+                        .added_owner
+                        .ok_or("Committed part owner was not retained")?,
+                )?;
                 self.report.committed = Some(manifest.clone());
                 Ok(())
             }
@@ -1292,6 +1441,13 @@ impl Runner {
                 require(
                     Some(named(app, PART)?) == self.report.added_element,
                     "Restarted canonical part identity differs",
+                )?;
+                assert_part_owner(
+                    app.active_projection(),
+                    named(app, PART)?,
+                    self.report
+                        .added_owner
+                        .ok_or("Restarted part owner was not retained")?,
                 )?;
                 require(
                     app.history.as_ref().is_some_and(|h| {
@@ -1515,6 +1671,64 @@ pub fn drive(
 mod tests {
     use super::*;
     use clap::Parser;
+
+    #[test]
+    fn preparation_cannot_hide_a_frozen_ui_behind_few_observed_frames() {
+        let started = Instant::now();
+        let mut clock = PreparationClock {
+            started,
+            previous: started,
+        };
+        let mut evidence = PreparationResponsiveness::default();
+        // A whole synchronous operation finishes before the next input hook.
+        clock.observe(started + std::time::Duration::from_secs(5), &mut evidence);
+        evidence.elapsed_ms = Some(5_000);
+        assert_eq!(evidence.observed_input_hooks, 1);
+        assert!(
+            assess_preparation(&evidence, false)
+                .unwrap_err()
+                .contains("5000 ms")
+        );
+        assert!(
+            assess_preparation(&evidence, true).is_err(),
+            "A prior pan does not excuse a later freeze"
+        );
+
+        // Observed frame count never decides whether a long operation needs pan proof.
+        evidence.maximum_input_hook_gap_ms = 20;
+        assert!(
+            assess_preparation(&evidence, false)
+                .unwrap_err()
+                .contains("without native panning")
+        );
+        assert!(assess_preparation(&evidence, true).is_ok());
+        evidence.elapsed_ms = Some(100);
+        assert!(
+            assess_preparation(&evidence, false)
+                .unwrap()
+                .contains("not observed")
+        );
+    }
+
+    #[test]
+    fn created_identity_and_name_do_not_substitute_for_canonical_owner() {
+        let mut projection = agq_studio_scene::fixtures::architecture();
+        let owner = projection.nodes[0].id;
+        let other_owner = projection.nodes[1].id;
+        let part = &mut projection.nodes[2];
+        let id = part.id;
+        part.name = PART_NAME.into();
+        part.semantic_kind = "PartUsage".into();
+        part.owner = Some(owner);
+        part.origin = ViewOrigin::Authored;
+        part.source_available = true;
+        assert!(assert_part_owner(&projection, id, owner).is_ok());
+        projection.nodes[2].owner = Some(other_owner);
+        assert!(assert_part_owner(&projection, id, owner).is_err());
+        projection.nodes[2].owner = Some(owner);
+        projection.nodes[2].origin = ViewOrigin::Derived;
+        assert!(assert_part_owner(&projection, id, owner).is_err());
+    }
 
     fn isolated_args() -> Args {
         let unique = format!(
