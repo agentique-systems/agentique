@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python",
+    "-c",
+    "import pathlib,shutil,hashlib,json; source=pathlib.Path(target/release/deps/create_part_performance-6184f8b9327774b2.exe); destination=pathlib.Path(verification/generated/native-studio-alpha/oracles/create-part-before-sharing.exe); destination.parent.mkdir(parents=True,exist_ok=True); assert not destination.exists(); shutil.copy2(source,destination); digest=lambda p:hashlib.sha256(p.read_bytes()).hexdigest(); assert digest(source)==digest(destination); print(json.dumps({source:str(source.resolve()),retained:str(destination.resolve()),sha256:digest(destination),bytes:destination.stat().st_size}))"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T19:09:58.778826+00:00",
+  "elapsed_seconds": 0.063,
+  "exit_code": 1,
+  "output": "verification/native-studio-alpha/checks/preserve-baseline-oracle.txt",
+  "output_sha256": "74ab86f143fdb7b00d0aa9fc873513adbdc05dbc8bb454f504d0dd1017935c6d",
+  "build_environment": {}
+}

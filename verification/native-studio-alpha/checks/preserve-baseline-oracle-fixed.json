@@ -1,0 +1,15 @@
+{
+  "command": [
+    "python",
+    "verification/scripts/native_alpha_preserve.py",
+    "target/release/deps/create_part_performance-6184f8b9327774b2.exe",
+    "verification/generated/native-studio-alpha/oracles/create-part-before-sharing.exe"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T19:10:21.313066+00:00",
+  "elapsed_seconds": 0.515,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/preserve-baseline-oracle-fixed.txt",
+  "output_sha256": "0ccc97d4e23b965d0cd94add8131b0703c35fcc88e3e13808b45dd591f4ae94d",
+  "build_environment": {}
+}
