@@ -361,6 +361,10 @@ struct Snapshot {
     zoom: f32,
     nodes: usize,
     edges: usize,
+    dependency_elements: Option<Vec<String>>,
+    agent_overlay: bool,
+    added_elements: Vec<String>,
+    removed_elements: Vec<String>,
     candidate: bool,
     candidate_phase: Option<String>,
     palette: bool,
@@ -390,6 +394,25 @@ impl Snapshot {
             zoom: app.camera.zoom,
             nodes: app.scene.nodes.len(),
             edges: app.scene.edges.len(),
+            dependency_elements: app
+                .dependencies
+                .as_ref()
+                .map(|ids| ids.iter().map(ToString::to_string).collect()),
+            agent_overlay: app.show_agent,
+            added_elements: app
+                .scene
+                .nodes
+                .iter()
+                .filter(|n| n.diff == DiffMark::Added)
+                .map(|n| n.semantic.name.clone())
+                .collect(),
+            removed_elements: app
+                .scene
+                .nodes
+                .iter()
+                .filter(|n| n.diff == DiffMark::Removed)
+                .map(|n| n.semantic.name.clone())
+                .collect(),
             candidate: app.candidate.is_some(),
             candidate_phase: app
                 .candidate
