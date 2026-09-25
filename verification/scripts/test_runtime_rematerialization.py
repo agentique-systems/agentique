@@ -7,6 +7,7 @@ import pathlib
 import sys
 import tempfile
 import unittest
+from unittest import mock
 import zipfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
@@ -92,6 +93,21 @@ class SystemsTransportPreparation(unittest.TestCase):
         self.generated["identity"]["semantic_digest"][0] ^= 1
         with self.assertRaisesRegex(ValueError, "semantic contract"):
             self.prepare()
+
+    def test_concurrent_archive_mutation_cannot_issue_inconsistent_evidence(self):
+        cache = self.cache
+
+        class MutatedAfterInspection(zipfile.ZipFile):
+            def __exit__(self, *args):
+                result = super().__exit__(*args)
+                if self.mode == "r":
+                    with cache.open("ab") as changed:
+                        changed.write(b"concurrent transport mutation")
+                return result
+
+        with mock.patch.object(PREPARE.zipfile, "ZipFile", MutatedAfterInspection):
+            with self.assertRaisesRegex(ValueError, "Cache changed"):
+                self.prepare()
 
 
 class SystemsContractComparison(unittest.TestCase):

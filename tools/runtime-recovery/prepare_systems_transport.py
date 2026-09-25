@@ -27,36 +27,45 @@ def prepare(cache, authority_raw, generated_raw, original_bindings, new_bindings
         if entry["bytes"] != original["bytes"] or (
                 name != "kernel.jsonl" and not exact_json(entry, original)):
             raise ValueError(f"{name}: transport exceeds the reviewed entry boundary")
-    archive_digest = hashlib.sha256()
-    with cache.open("rb") as stream:
-        while chunk := stream.read(1024 * 1024):
-            archive_digest.update(chunk)
     snapshot_revision = None
     observed_entries = {}
-    with zipfile.ZipFile(cache) as archive:
-        if sorted(archive.namelist()) != sorted(generated["entries"]):
-            raise ValueError("Unexpected or duplicate cache entries")
-        for name, expected in sorted(generated["entries"].items()):
-            if archive.getinfo(name).file_size != expected["bytes"]:
-                raise ValueError(f"{name}: entry byte count differs")
-            digest = hashlib.sha256()
-            count = 0
-            with archive.open(name) as source:
-                for line in source:
-                    count += len(line)
-                    if count > expected["bytes"]:
-                        raise ValueError(f"{name}: decoded entry exceeds bound")
-                    digest.update(line)
-                    if name == "kernel.jsonl" and line.startswith(b'{"Snapshot":'):
-                        if snapshot_revision is not None:
-                            raise ValueError("Multiple snapshot labels")
-                        snapshot_revision = json.loads(line)["Snapshot"]["revision"]
-                        if str(uuid.UUID(snapshot_revision)) != snapshot_revision:
-                            raise ValueError("Invalid snapshot label")
-            observed = {"bytes": count, "sha256": list(digest.digest())}
-            if not exact_json(observed, expected):
-                raise ValueError(f"{name}: actual bytes differ from generated receipt")
-            observed_entries[name] = observed
+    # One handle binds outer transport and decoded entries to the same file even
+    # if another process replaces its path. A second hash rejects mutation while
+    # it is being inspected; later authentication still checks the actual input.
+    with cache.open("rb") as stream:
+        archive_digest = hashlib.sha256()
+        archive_bytes = 0
+        while chunk := stream.read(1024 * 1024):
+            archive_digest.update(chunk)
+            archive_bytes += len(chunk)
+        stream.seek(0)
+        with zipfile.ZipFile(stream) as archive:
+            if sorted(archive.namelist()) != sorted(generated["entries"]):
+                raise ValueError("Unexpected or duplicate cache entries")
+            for name, expected in sorted(generated["entries"].items()):
+                if archive.getinfo(name).file_size != expected["bytes"]:
+                    raise ValueError(f"{name}: entry byte count differs")
+                digest = hashlib.sha256()
+                count = 0
+                with archive.open(name) as source:
+                    for line in source:
+                        count += len(line)
+                        if count > expected["bytes"]:
+                            raise ValueError(f"{name}: decoded entry exceeds bound")
+                        digest.update(line)
+                        if name == "kernel.jsonl" and line.startswith(b'{"Snapshot":'):
+                            if snapshot_revision is not None:
+                                raise ValueError("Multiple snapshot labels")
+                            snapshot_revision = json.loads(line)["Snapshot"]["revision"]
+                            if str(uuid.UUID(snapshot_revision)) != snapshot_revision:
+                                raise ValueError("Invalid snapshot label")
+                observed = {"bytes": count, "sha256": list(digest.digest())}
+                if not exact_json(observed, expected):
+                    raise ValueError(f"{name}: actual bytes differ from generated receipt")
+                observed_entries[name] = observed
+        stream.seek(0)
+        if hashlib.file_digest(stream, "sha256").digest() != archive_digest.digest():
+            raise ValueError("Cache changed while transport evidence was prepared")
     if snapshot_revision is None:
         raise ValueError("Missing snapshot label")
     authority_digest = hashlib.sha256(authority_raw).digest()
@@ -76,7 +85,7 @@ def prepare(cache, authority_raw, generated_raw, original_bindings, new_bindings
         "transport_id": transport_id,
         "original_semantic_receipt_sha256": authority_digest.hex(),
         "generated_receipt_sha256": hashlib.sha256(generated_raw).hexdigest(),
-        "cache_bytes": cache.stat().st_size,
+        "cache_bytes": archive_bytes,
         "cache_sha256": archive_digest.hexdigest(),
         "snapshot_revision": snapshot_revision,
         "contract": contract,
