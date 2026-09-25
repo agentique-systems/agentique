@@ -5,12 +5,13 @@ Native Studio is the Rust spatial product foundation. The browser Studio is
 browser compatibility surface and regression client.
 
 ```powershell
-cargo run --locked --offline -p agq-studio-native
+cargo fetch --locked --manifest-path crates/studio-native/Cargo.toml
+cargo run --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target
 # Explicit rendering/interaction fixtures, without accepted semantic runtime:
-cargo run --locked --offline -p agq-studio-native -- --fixture architecture
+cargo run --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target -- --fixture architecture
 ```
 
-The first build requires fetching the Cargo.lock dependencies once. No build or
+The first build requires fetching the native Cargo.lock dependencies once. No build or
 startup action acquires or republishes standards. The setup surface accepts a local
 authenticated `.agq-runtime` bundle through the existing runtime-publications
 package. Once installed, choose a project; subsequent launches restore the saved
@@ -34,6 +35,28 @@ The native shell does not speak loopback HTTP, query SQLite tables, invoke produ
 scheduler internals or edit canonical records. The shared platform adapter owns
 bootstrap and in-process operations. The HTTP and Systems Modeling APIs remain
 available for browser/remote/external clients. Generation 1 remains separate.
+
+The outer UI application has its own Cargo workspace and lockfile. Its graphics,
+windowing and accessibility dependencies resolve separately from the accepted
+language workspace; the reusable scene and platform crates remain root workspace
+members. This prevents UI feature unification from changing the accepted language
+dependency closure. The freshness gate authenticates the original lock bytes and
+requires exact package identities, checksums and dependency edges for all 69
+reachable language packages. Every original interpretation input remains pinned.
+See [the compatibility proof](../verification/compatibility/README.md).
+
+The native lock still activates additional optional dependencies in shared
+third-party packages. Root workspace compatibility does not establish real native
+semantic acceptance; that requires the authenticated runtime and self-model gate.
+Use `--target-dir target` from the repository root to share build output rather
+than creating a second graphics build cache. CI checks the native workspace
+explicitly, in addition to the root workspace regression:
+
+```powershell
+cargo fmt --manifest-path crates/studio-native/Cargo.toml -- --check
+cargo clippy --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target --all-targets -- -D warnings
+cargo test --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target
+```
 
 Scene objects preserve canonical element/relationship identity, presentation
 identity and project revision. Layout and animation are disposable. Graph and
@@ -81,9 +104,9 @@ are presentation state and cannot silently commit.
 ## Reproducible native visual review
 
 ```powershell
-cargo run --locked --offline -p agq-studio-native -- --fixture architecture --no-restore --screenshot verification/generated/native-studio/system.png --frames 180 --metrics verification/generated/native-studio/system.json
-cargo run --locked --offline -p agq-studio-native -- --fixture stress1000 --no-restore --frames 360 --metrics verification/generated/native-studio/1k.json
-cargo run --locked --offline -p agq-studio-native -- --fixture stress10000 --no-restore --frames 360 --metrics verification/generated/native-studio/10k.json
+cargo run --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target -- --fixture architecture --no-restore --screenshot verification/generated/native-studio/system.png --frames 180 --metrics verification/generated/native-studio/system.json
+cargo run --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target -- --fixture stress1000 --no-restore --frames 360 --metrics verification/generated/native-studio/1k.json
+cargo run --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target -- --fixture stress10000 --no-restore --frames 360 --metrics verification/generated/native-studio/10k.json
 cargo run --locked --offline -p agq-studio-scene --example scene_benchmark
 ```
 

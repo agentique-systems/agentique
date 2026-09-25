@@ -1,6 +1,21 @@
 name: Engine and Console verification
 on: [push, pull_request]
 jobs:
+  native-studio:
+    # The GPU application has an independent lock so application features do
+    # not alter the accepted language workspace's dependency closure.
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4, verified 2026-09-16
+      - run: rustup show
+      - name: Native windowing development libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends pkg-config libx11-dev libx11-xcb-dev libxcb1-dev libxkbcommon-dev libwayland-dev libegl1-mesa-dev
+      - run: cargo fetch --locked --manifest-path crates/studio-native/Cargo.toml
+      - run: cargo fmt --manifest-path crates/studio-native/Cargo.toml -- --check
+      - run: cargo clippy --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target --all-targets -- -D warnings
+      - run: cargo test --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target
   checks:
     runs-on: ubuntu-24.04
     steps:
