@@ -246,10 +246,32 @@ fn prove_insertion(
     let mut mapping = Vec::with_capacity(old.len());
     let mut used = BTreeSet::new();
     for node in &old {
-        let range = mapped_range(node.range, edit)?;
+        let mut range = mapped_range(node.range, edit)?;
+        // An empty body's production spans its semicolon token. Replacing that
+        // token with a braced body can introduce leading/trailing trivia, which
+        // the parser does not include in this production's range. Only the
+        // exact replaced token gets this adjustment; declaration headers and
+        // all other productions still use the ordinary byte-splice mapping.
+        if !insertion && node.range == edit.range {
+            let leading = edit.replacement.len() - edit.replacement.trim_start().len();
+            let trimmed = edit.replacement.trim();
+            if !trimmed.starts_with('{') || !trimmed.ends_with('}') {
+                return Err(invalid("semicolon must become one braced body"));
+            }
+            range = ByteRange::new(
+                edit.range.start() + leading as u64,
+                edit.range.start() + leading as u64 + trimmed.len() as u64,
+            )
+            .map_err(|_| invalid("replacement body range is invalid"))?;
+        }
         let candidates = index
             .get(&(node.production.as_str(), range.start(), range.end()))
-            .ok_or_else(|| invalid("an existing production disappeared or changed kind"))?;
+            .ok_or_else(|| {
+                invalid(&format!(
+                    "existing {} at {:?} has no unique matching production at {:?}",
+                    node.production, node.range, range
+                ))
+            })?;
         let [target] = candidates.as_slice() else {
             return Err(invalid("production mapping is ambiguous"));
         };

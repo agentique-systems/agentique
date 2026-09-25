@@ -132,3 +132,19 @@ At this document's commit, that focused gate was still pending. No passing Rust
 test result is claimed here. `git diff --check` for this review document completed
 with exit code 0. Followup review should bind the final implementation commit,
 actual focused test result and concrete transport pin before runtime first light.
+
+## Followup: final inactive mechanism
+
+Independently reviewed commit `5007ea5e9b23945cc8d72cc31c936dddd777822a`.
+The production alternate list remains empty. The implementation keeps the same
+boundary described above, with explicit negative cases for facade and profile
+replacement and an unregistered kernel digest. No new authority bypass was found.
+Its focused Rust gate was still compiling at this followup; no Rust pass is claimed
+here. Review of a concrete transport registration and actual facade restoration
+remains outstanding.
+
+The reviewer independently reran `python verification/scripts/test_runtime_rematerialization.py`
+in the runtime worktree: 13 tests passed in 0.089 seconds, exit code 0. The runtime
+owner subsequently reported the focused Rust tests passing in debug and release,
+with evidence committed as `b9a432e`; those Rust commands were not rerun by this
+reviewer. No actual alternate transport has yet been registered or accepted.
