@@ -892,9 +892,12 @@ fn check(
         Check::Dependencies => {
             app.world == World::Graph
                 && app.dependencies.as_ref().is_some_and(|ids| {
-                    ids.contains(&fixtures::id(21))
-                        && ids.contains(&fixtures::id(11))
-                        && ids.contains(&fixtures::id(31))
+                    // Dependency projections may retain semantic port IDs.
+                    // Assert the visible owner context, preserving that identity.
+                    [21, 11, 31].into_iter().all(|owner| {
+                        ids.iter()
+                            .any(|id| app.lookup.endpoint_owner(*id) == fixtures::id(owner))
+                    })
                 })
                 && app.show_agent
         }
