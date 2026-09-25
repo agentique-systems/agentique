@@ -6,7 +6,7 @@ transport. Original receipts, profiles and binding manifests are unchanged.
 Exact command outputs are retained beside their JSON receipts, including
 `runtime-pack.log`, `runtime-verify.log`, `runtime-install.log`, both historical
 producer replays and the strict Systems finalizer. `output-retention.json` maps
-all 32 logs (684,650 bytes total) to their commands and hashes. Twenty-six logs
+the 32 original recovery logs (684,650 bytes total) to their commands and hashes. Twenty-six logs
 match hashes recorded at command completion; six early records did not include
 output hashes, so the inventory explicitly records that limitation. The aborted
 optional preflight's exit 15 and original output remain visible. Cache archives
@@ -119,8 +119,16 @@ and all-target Clippy for `agq-kerml-semantics` pass. Independent source review 
 retained by the integration branch; actual normal restoration is a separate gate
 from source review or generated receipts.
 
-The manual `runtime-asset` workflow authenticates an explicit draft asset against
-its independently recorded transport SHA-256 and both language facades. It has
-not been dispatched and does not publish releases. `distribution-handoff.md` and
-`runtime-release-notes.md` prepare the exact draft asset handoff; successful
-upload and independent downloaded-byte verification remain separate evidence.
+The integration lead created the unpublished runtime draft with four assets,
+targeting `c00de91f348bc59934c721fd75b17cbd09217163`. The runtime stream then
+downloaded all four assets into a fresh ignored directory in 54.125 seconds and
+independently checked every byte hash/length in 2.125 seconds. All match both
+the authenticated local assets and GitHub-reported digests. The release body
+matches the reviewed notes; the embedded manifest equals the separate asset.
+`remote-distribution-result.json` and exact `remote-draft-*.log` outputs retain
+these results. No publication or asset replacement occurred in this stream.
+
+The manual `runtime-asset` workflow has not been dispatched. A fresh normal
+facade run on the downloaded copy is deliberately deferred while the native
+real-model journey holds the runtime. Byte equality with the already
+authenticated bundle is established; that separate rerun is not yet claimed.

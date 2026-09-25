@@ -12,9 +12,14 @@ bundle verification and normal-store installation. The resulting
 `37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026`.
 The [manifest](../verification/native-studio-alpha/runtime/runtime-manifest.json)
 and [actual verification record](../verification/native-studio-alpha/runtime/runtime-verification.json)
-retain the accepted identities and command results. Remote draft distribution
-is a separate [handoff](../verification/native-studio-alpha/runtime/distribution-handoff.md);
-these local results alone do not claim a downloadable release exists.
+retain the accepted identities and command results. The
+[runtime draft](https://github.com/agentique-systems/agentique/releases/tag/untagged-05ba0adcc0765264ca72)
+now retains all four assets. An independent download matched every local asset
+and GitHub-reported digest exactly. Access requires repository push permission;
+the draft remains unpublished. See the [download evidence](../verification/native-studio-alpha/runtime/remote-distribution-result.json)
+and [handoff](../verification/native-studio-alpha/runtime/distribution-handoff.md).
+A fresh ordinary facade run on the downloaded copy remains deferred until the
+native real-model journey releases the runtime; byte equality is already proved.
 
 ## Package and authenticate
 

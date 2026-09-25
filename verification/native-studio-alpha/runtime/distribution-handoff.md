@@ -1,63 +1,74 @@
 # Accepted runtime draft handoff
 
-This handoff preserves the rematerialized runtime independently of local
-worktrees. It is a draft runtime asset, not a Studio release. The repository is
-public, but draft assets require a maintainer with push access. Read-only checks
-on 2026-09-25 found no existing releases and confirmed that the current GitHub
-identity has push, maintain and admin access. See `draft-release-permissions.json`
-and `draft-release-existing.json` with their retained command outputs.
+The [runtime draft](https://github.com/agentique-systems/agentique/releases/tag/untagged-05ba0adcc0765264ca72)
+now preserves the rematerialized bytes independently of local worktrees. It is
+unpublished and requires repository push access. The integration lead pushed
+the reviewed source and created this draft; the runtime stream only inspected
+and downloaded it.
 
-Proposed tag: `runtime-kerml-v9-sysml-v3-bundle1`.
+Tag: `runtime-kerml-v9-sysml-v3-bundle1`.
 
-Proposed title: `Agentique accepted runtime: KerML v9 / SysML v3`.
+Title: `Agentique accepted runtime: KerML v9 / SysML v3`.
 
-All three ordinary facade gates passed. Actual package SHA-256:
+Actual release target: `c00de91f348bc59934c721fd75b17cbd09217163`.
+The installer build source remains separately recorded as
+`23b7910dc79faac0d53a9d0113954a0c0fa6ada9`.
+
+Package SHA-256:
 `37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026`.
 Package size: 610,190,454 bytes. Bundle identity:
 `633ea89eb39f8a9e301f2bd5199994455cdf28c8d373fdbd69be30a1402ebcf4`.
 
-Assets are prepared in
-`verification/generated/native-studio-alpha/runtime-package/` of the runtime
-worktree:
+The four uploaded assets are:
 
-- `accepted-runtime.agq-runtime`: the actual authenticated package.
-- `runtime-manifest.json`: the package's exact content-addressed manifest.
+- `accepted-runtime.agq-runtime`: the authenticated package.
+- `runtime-manifest.json`: its exact content-addressed manifest.
 - `accepted-runtime.agq-runtime.sha256`: the actual outer package hash.
-- `runtime-verification.json`: completed pack, verify and install evidence with
-  source/binary identities. This file is evidence, not semantic authority.
+- `runtime-verification.json`: completed local pack, verify and install evidence,
+  including source and executable identities.
 
-The release body is `runtime-release-notes.md`, generated from that manifest and
-the actual command records. Its source commit must be reachable on GitHub and
-must contain the reviewed transport registration. Original accepted semantic
-receipts and bindings remain unchanged.
+A fresh download of every asset completed in 54.125 seconds. Independent
+streaming checks took 2.125 seconds and matched all local asset bytes and
+GitHub-reported hashes/lengths. The release body matches the reviewed notes,
+its published date remains null, and the embedded manifest matches the separate
+asset. `remote-distribution-result.json` retains this evidence alongside the
+exact metadata, download and comparison command outputs.
 
-The integration lead creates the draft only after ordinary `pack`, separate
-`verify`, normal-store `install` and independent boundary review succeed. Never
-overwrite assets with `--clobber`. Do not publish this draft during alpha work.
+All three local ordinary facade gates passed and independent boundary review
+accepted those results. A fresh facade run on the downloaded copy remains
+queued until the real native journey releases the runtime. The comparison
+helper never invokes a standards consumer. The uploaded verification asset
+accurately records local authentication at upload time; subsequent remote
+checks are retained in Git separately.
 
-After uploading, download the exact named package into a fresh directory and
-compare it with the retained SHA-256 before running normal facade verification:
-
-```powershell
-gh release download runtime-kerml-v9-sysml-v3-bundle1 --repo agentique-systems/agentique --pattern accepted-runtime.agq-runtime --dir verification/generated/native-studio-alpha/runtime-redownload
-Get-FileHash -Algorithm SHA256 verification/generated/native-studio-alpha/runtime-redownload/accepted-runtime.agq-runtime
-target/release/agq-publications.exe --root . verify --bundle verification/generated/native-studio-alpha/runtime-redownload/accepted-runtime.agq-runtime
-```
-
-The `runtime-asset.yml` workflow provides the same independent download and
-facade gate once that workflow and registration exist on the selected remote
-source revision. Dispatch it with the exact draft tag and the independently
-recorded package hash. It never publishes a release. A local package or an
-undispatched workflow alone does not establish remote distribution.
-
-Offline installation uses the identical asset:
+A maintainer with an authenticated `gh` session can download from a checkout
+containing the reviewed transport registration:
 
 ```powershell
-cargo run --release --config profile.release.lto=false --locked --offline -p agq-runtime-publications --bin agq-publications -- install --bundle C:/packages/accepted-runtime.agq-runtime
+gh release download runtime-kerml-v9-sysml-v3-bundle1 --repo agentique-systems/agentique --pattern accepted-runtime.agq-runtime --dir .runtime-download
+$runtimePackageSha = (Get-FileHash -Algorithm SHA256 .runtime-download/accepted-runtime.agq-runtime).Hash.ToLowerInvariant()
+if ($runtimePackageSha -ne "37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026") { throw "Runtime package transport mismatch" }
+cargo run --release --config profile.release.lto=false --locked --offline -p agq-runtime-publications --bin agq-publications -- verify --bundle .runtime-download/accepted-runtime.agq-runtime
+cargo run --release --config profile.release.lto=false --locked --offline -p agq-runtime-publications --bin agq-publications -- install --bundle .runtime-download/accepted-runtime.agq-runtime
 cargo run --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target
 ```
 
-Pinned Rust dependencies must already be available for offline compilation.
-Installation itself does not download sources or regenerate standards. The
-default store is `~/.agentique/publications/<bundle identity>`; project databases
-remain separate from the content-addressed runtime.
+Use a fresh download directory. Never overwrite existing release assets with
+`--clobber`; this draft must remain unpublished during alpha work. The
+`runtime-asset.yml` workflow can independently download and authenticate the
+same draft using its exact tag and package hash. It has not been dispatched.
+
+The retained downloaded copy is in
+`verification/generated/native-studio-alpha/runtime-remote-download-2026-09-25/`
+of the runtime worktree. Once the integration lead releases the memory gate,
+its ordinary verification command from the integration checkout is:
+
+```powershell
+target/native-alpha/release/agq-publications.exe --root . verify --bundle C:/Users/phili/github/agentique-systems/agentique-alpha-runtime/verification/generated/native-studio-alpha/runtime-remote-download-2026-09-25/accepted-runtime.agq-runtime
+```
+
+For offline installation, transfer the same package locally and use the install
+command with that path. Pinned Rust dependencies must already be cached for
+offline compilation. Installation never downloads sources or regenerates
+standards. The default store is `~/.agentique/publications/<bundle identity>`;
+project databases remain separate.

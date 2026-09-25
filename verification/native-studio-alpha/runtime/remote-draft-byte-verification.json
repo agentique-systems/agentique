@@ -1,0 +1,18 @@
+{
+  "command": [
+    "python",
+    "verification/native-studio-alpha/runtime/verify_remote_distribution.py"
+  ],
+  "cwd": "C:/Users/phili/github/agentique-systems/agentique-alpha-runtime",
+  "started_utc": "2026-09-25T18:40:22.888479+00:00",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "source_commit": "2908dfd31c7cde219a5697cc72a68329bf13ca7e",
+  "working_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "exit_code": 0,
+  "elapsed_seconds": 2.125,
+  "peak_rss_bytes": 17412096,
+  "peak_private_bytes": 10502144,
+  "memory_scope": "direct child process sampled at 1 second; excludes descendant compilers",
+  "output_sha256": "e399cb2a67361afb6338101fae584f2207fad52b10bdc1acfed6cfd0012fb541",
+  "raw_output": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\native-studio-alpha\\runtime\\remote-draft-byte-verification.log"
+}

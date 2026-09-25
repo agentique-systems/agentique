@@ -1,0 +1,24 @@
+{
+  "command": [
+    "gh",
+    "release",
+    "view",
+    "runtime-kerml-v9-sysml-v3-bundle1",
+    "--repo",
+    "agentique-systems/agentique",
+    "--json",
+    "assets,body,isDraft,isPrerelease,tagName,targetCommitish,url,name,id,createdAt,publishedAt"
+  ],
+  "cwd": "C:/Users/phili/github/agentique-systems/agentique-alpha-runtime",
+  "started_utc": "2026-09-25T18:38:24.650819+00:00",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "source_commit": "2908dfd31c7cde219a5697cc72a68329bf13ca7e",
+  "working_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "exit_code": 0,
+  "elapsed_seconds": 2.11,
+  "peak_rss_bytes": 36798464,
+  "peak_private_bytes": 62812160,
+  "memory_scope": "direct child process sampled at 1 second; excludes descendant compilers",
+  "output_sha256": "2f42f726747db41b49080d95389b02a6b9763f0fc58d4b2431f1e170b8f679df",
+  "raw_output": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\native-studio-alpha\\runtime\\remote-draft-metadata.log"
+}
