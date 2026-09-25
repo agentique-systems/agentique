@@ -480,6 +480,16 @@ impl StudioApp {
         // Give explicit inspection priority. Automatic neighborhood labels have
         // a small screen-space budget even when many nodes are selected.
         label_edges.sort_by_key(|(priority, _)| *priority);
+        let mut header_bottoms = std::collections::HashMap::<_, f32>::new();
+        if !label_edges.is_empty() {
+            for port in objects.ports.iter().filter(|port| port.label_in_header) {
+                let bottom = rect.top() + self.camera.world_to_screen(port.position).y + 12.0;
+                header_bottoms
+                    .entry(port.owner)
+                    .and_modify(|current| *current = current.max(bottom))
+                    .or_insert(bottom);
+            }
+        }
         let obstacles: Vec<_> = if label_edges.is_empty() {
             Vec::new()
         } else {
@@ -494,7 +504,13 @@ impl StudioApp {
                         rect.min + Vec2::new(b.x, b.y),
                     );
                     if node.is_container && !node.collapsed {
-                        bounds.max.y = bounds.max.y.min(bounds.min.y + 58.0 * self.camera.zoom);
+                        let title_bottom = bounds.min.y + 58.0 * self.camera.zoom;
+                        let header_bottom = header_bottoms
+                            .get(&node.id())
+                            .copied()
+                            .unwrap_or(title_bottom)
+                            .max(title_bottom);
+                        bounds.max.y = bounds.max.y.min(header_bottom);
                     }
                     bounds
                 })
