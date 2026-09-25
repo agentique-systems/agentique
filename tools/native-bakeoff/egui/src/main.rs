@@ -206,13 +206,17 @@ impl eframe::App for App {
         self.frames += 1;
         if self.bench {
             ctx.request_repaint();
-            if self.frames == 360 {
+            if self.frames == 60 {
+                self.started = Instant::now();
+                self.samples.clear();
+            }
+            if self.frames == 420 {
                 self.samples.sort_by(f64::total_cmp);
                 println!(
-                    "frames={} elapsed_ms={:.2} delivered_fps={:.2} cpu_ui_p50_ms={:.3} cpu_ui_p95_ms={:.3}",
-                    self.frames,
+                    "warmup_frames=60 frames={} elapsed_ms={:.2} delivered_fps={:.2} cpu_ui_p50_ms={:.3} cpu_ui_p95_ms={:.3}",
+                    self.frames - 60,
                     self.started.elapsed().as_secs_f64() * 1000.,
-                    self.frames as f64 / self.started.elapsed().as_secs_f64(),
+                    (self.frames - 60) as f64 / self.started.elapsed().as_secs_f64(),
                     self.samples[180],
                     self.samples[342]
                 );

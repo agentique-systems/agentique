@@ -3,7 +3,7 @@ use slint::{ComponentHandle, ModelRc, VecModel};
 #[path = "../../gpu.rs"]
 mod gpu;
 slint::slint! {
-    import { Button, VerticalBox, HorizontalBox, ScrollView, LineEdit, StandardListView } from "std-widgets.slint";
+    import { Button, VerticalBox, HorizontalBox, ScrollView, LineEdit, StandardListView, Palette } from "std-widgets.slint";
     export component Bakeoff inherits Window {
         title: "Agentique framework bakeoff — Slint"; width:1440px; height:900px;
         in-out property <image> scene;
@@ -15,12 +15,13 @@ slint::slint! {
         in-out property <[StandardListViewItem]> rows;
         in-out property <bool> dialog:false;
         callback redraw();
+        init => { Palette.color-scheme=ColorScheme.dark; }
         background: dark ? #101720 : #edf1f4;
         VerticalBox {
             HorizontalBox { height:50px;
                 Text { text:"AGENTIQUE / native framework bakeoff"; color:root.dark ? white : black; font-weight:700; }
                 Text { text:"System World"; color:root.dark ? #99aabb : #445566; }
-                Button { text:"Theme"; clicked=>{root.dark=!root.dark;} }
+                Button { text:"Theme"; clicked=>{root.dark=!root.dark;Palette.color-scheme=root.dark ? ColorScheme.dark : ColorScheme.light;} }
                 Button { text:"Project…"; clicked=>{root.dialog=true;} }
             }
             HorizontalBox {
@@ -75,7 +76,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let weak = app.as_weak();
     let mut render: Option<(gpu::Gpu, wgpu::Texture)> = None;
     let mut frames = 0usize;
-    let started = std::time::Instant::now();
+    let mut started = std::time::Instant::now();
     let bench = std::env::args().any(|a| a == "--bench");
     app.window().set_rendering_notifier(move |state, api| {
         let (Some(app), slint::GraphicsAPI::WGPU30 { device, queue, .. }) = (weak.upgrade(), api)
@@ -105,54 +106,57 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 texture,
             ));
         }
-        if matches!(state, slint::RenderingState::BeforeRendering) {
-            if let Some((gpu, texture)) = &render {
-                gpu.update(
-                    queue,
-                    gpu::View {
-                        size: [850., 760.],
-                        zoom: app.get_zoom(),
-                        selected: app.get_selected() as f32,
-                        pan: [app.get_pan_x(), app.get_pan_y()],
-                        dark: 1.,
-                        pad: 0.,
-                    },
-                );
-                let mut encoder = device.create_command_encoder(&Default::default());
-                {
-                    let view = texture.create_view(&Default::default());
-                    let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                            view: &view,
-                            resolve_target: None,
-                            depth_slice: None,
-                            ops: wgpu::Operations {
-                                load: wgpu::LoadOp::Clear(wgpu::Color {
-                                    r: 0.06,
-                                    g: 0.09,
-                                    b: 0.12,
-                                    a: 1.,
-                                }),
-                                store: wgpu::StoreOp::Store,
-                            },
-                        })],
-                        ..Default::default()
-                    });
-                    gpu.paint(&mut pass);
-                }
-                queue.submit([encoder.finish()]);
+        if matches!(state, slint::RenderingState::BeforeRendering)
+            && let Some((gpu, texture)) = &render
+        {
+            gpu.update(
+                queue,
+                gpu::View {
+                    size: [850., 760.],
+                    zoom: app.get_zoom(),
+                    selected: app.get_selected() as f32,
+                    pan: [app.get_pan_x(), app.get_pan_y()],
+                    dark: 1.,
+                    pad: 0.,
+                },
+            );
+            let mut encoder = device.create_command_encoder(&Default::default());
+            {
+                let view = texture.create_view(&Default::default());
+                let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                    color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                        view: &view,
+                        resolve_target: None,
+                        depth_slice: None,
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(wgpu::Color {
+                                r: 0.06,
+                                g: 0.09,
+                                b: 0.12,
+                                a: 1.,
+                            }),
+                            store: wgpu::StoreOp::Store,
+                        },
+                    })],
+                    ..Default::default()
+                });
+                gpu.paint(&mut pass);
             }
+            queue.submit([encoder.finish()]);
         }
         if matches!(state, slint::RenderingState::AfterRendering) {
             frames += 1;
             if bench {
                 app.window().request_redraw();
-                if frames == 360 {
+                if frames == 60 {
+                    started = std::time::Instant::now();
+                }
+                if frames == 420 {
                     println!(
-                        "frames={} elapsed_ms={:.2} delivered_fps={:.2}",
-                        frames,
+                        "warmup_frames=60 frames={} elapsed_ms={:.2} delivered_fps={:.2}",
+                        frames - 60,
                         started.elapsed().as_secs_f64() * 1000.,
-                        frames as f64 / started.elapsed().as_secs_f64()
+                        (frames - 60) as f64 / started.elapsed().as_secs_f64()
                     );
                     slint::quit_event_loop().unwrap();
                 }

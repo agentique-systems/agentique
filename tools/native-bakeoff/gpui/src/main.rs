@@ -22,12 +22,15 @@ impl Render for Bakeoff {
         self.frames += 1;
         if self.bench {
             window.request_animation_frame();
-            if self.frames == 360 {
+            if self.frames == 60 {
+                self.started = Instant::now();
+            }
+            if self.frames == 420 {
                 println!(
-                    "frames={} elapsed_ms={:.2} delivered_fps={:.2}",
-                    self.frames,
+                    "warmup_frames=60 frames={} elapsed_ms={:.2} delivered_fps={:.2}",
+                    self.frames - 60,
                     self.started.elapsed().as_secs_f64() * 1000.,
-                    self.frames as f64 / self.started.elapsed().as_secs_f64()
+                    (self.frames - 60) as f64 / self.started.elapsed().as_secs_f64()
                 );
                 cx.quit();
             }
@@ -111,26 +114,30 @@ impl Render for Bakeoff {
                                 gpui::uniform_list(
                                     "outliner",
                                     1000,
-                                    cx.processor(move |this, range, _, cx| {
-                                        range
-                                            .map(|i| {
-                                                div()
-                                                    .id(i)
-                                                    .p(px(6.))
-                                                    .cursor_pointer()
-                                                    .bg(rgb(if i == this.selected {
-                                                        0x326d77
-                                                    } else {
-                                                        bg
-                                                    }))
-                                                    .child(format!("Subsystem {i:04}"))
-                                                    .on_click(cx.listener(move |this, _, _, cx| {
-                                                        this.selected = i;
-                                                        cx.notify();
-                                                    }))
-                                            })
-                                            .collect::<Vec<_>>()
-                                    }),
+                                    cx.processor(
+                                        move |this, range: std::ops::Range<usize>, _, cx| {
+                                            range
+                                                .map(|i| {
+                                                    div()
+                                                        .id(i)
+                                                        .p(px(6.))
+                                                        .cursor_pointer()
+                                                        .bg(rgb(if i == this.selected {
+                                                            0x326d77
+                                                        } else {
+                                                            bg
+                                                        }))
+                                                        .child(format!("Subsystem {i:04}"))
+                                                        .on_click(cx.listener(
+                                                            move |this, _, _, cx| {
+                                                                this.selected = i;
+                                                                cx.notify();
+                                                            },
+                                                        ))
+                                                })
+                                                .collect::<Vec<_>>()
+                                        },
+                                    ),
                                 )
                                 .flex_1(),
                             ),

@@ -19,15 +19,18 @@ $env:GPUI_FXC_PATH='C:/Program Files (x86)/Windows Kits/10/bin/10.0.22621.0/x64/
 cargo build --release --locked --manifest-path tools/native-bakeoff/gpui/Cargo.toml
 ```
 
-Use `-- --bench` to request 360 redraws and print delivered frame cadence. egui
+Use `-- --bench` to warm up for 60 frames, measure 360 redraws, and print delivered frame cadence. egui
 also reports UI update percentiles. These are not GPU timestamp measurements,
 input latency measurements, or stable absolute acceptance gates. Run one
-candidate at a time after compilation, on an unobscured desktop. Initial startup
-and shader work are included; debug and release results must be distinguished.
+candidate at a time after compilation, on an unobscured desktop. Warmup excludes
+initial startup and shader work; debug and release results must be distinguished.
 
 `capture.ps1 -Candidate egui` launches a benchmark and captures its native window
 under `verification/generated/native-bakeoff/`. Use `-Profile release` after a
-release build. A slow run may outlive the script's bounded wait and print its PID;
+release build. The script keeps the launcher hidden, finds only the launched
+process's explicitly titled native UI, reveals that UI and waits for window
+animation before capture. Desktop captures must still be visually inspected.
+A slow run may outlive the script's bounded wait and print its PID;
 do not confuse that timeout with a completed benchmark. Generated logs and images
 are not committed as routine regression evidence.
 

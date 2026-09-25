@@ -45,7 +45,7 @@ implementation or primary documentation, and `open` means not qualified here.
 | Rendering architecture | Observed wgpu callback | Observed wgpu texture import | Observed native D3D11 canvas | Source: direct surface |
 | Custom renderer sharing | Observed same device/pass | Observed same device/texture | Private platform renderer; extra seam needed | Application owns it |
 | Input model | Response/input snapshot | Declarative focus/touch callbacks | Actions/focus/listeners | OS event loop only |
-| Text quality | Latin/Greek visible; default CJK missing | Font backend + shaping infrastructure | Observed crisp CJK/system fallback | Must supply shaper/atlas |
+| Text quality | Latin/Greek visible; default CJK missing | Observed Latin/Greek/CJK; shaping infrastructure | Observed crisp CJK/system fallback | Must supply shaper/atlas |
 | Accessibility | AccessKit enabled; scene tree open | Accessibility feature enabled; assistive test open | Packaged API qualification open | Must implement |
 | IME | Source integration; composition test open | Source integration; composition test open | Source platform input handler; test open | Events available; editing must be built |
 | Clipboard | Source toolkit integration; round trip open | Source toolkit integration; round trip open | Source platform clipboard; round trip open | Must integrate |
@@ -68,6 +68,34 @@ GPUI probe lacks editable text/IME and initially lacked drag panning; Slint's
 simple overlay dialog does not prove modal focus trapping. The probes include
 keyboard focus paths but no screen-reader run, accessibility audit, clipboard
 round-trip or mixed-DPI monitor test. Those are explicit open product gates.
+
+## Measured optimized workload
+
+Final probes use 60 warmup frames followed by 360 measured frames, run serially
+after their builds and the root's heavy compilation finished. All submitted
+1,000 nodes and 2,000 edges. Final native screenshots were inspected. Default
+vsync behavior is retained, so these numbers demonstrate display cadence, not
+maximum throughput or a statistically established performance ranking.
+
+| Probe | Measured interval | Delivered FPS | UI update p50 / p95 | GPU path |
+|---|---:|---:|---:|---|
+| egui/eframe | 6001.60 ms | 59.98 | 0.121 / 0.169 ms | RTX 3060 Ti / Vulkan, shared pass |
+| Slint | 5959.65 ms | 60.41 | Not instrumented | RTX 3060 Ti / Vulkan, imported texture |
+| GPUI | 5999.90 ms | 60.00 | Not instrumented | Native Windows D3D11 canvas |
+
+The egui timer covers application UI construction, not all toolkit tessellation,
+submission or GPU work. GPU timestamp duration, input-to-photon latency,
+10k-node rendering and isolated shader throughput are **not measured by these
+probes**. Production scene-engine measurements are separate. Earlier debug and
+startup-inclusive numbers remain historical observations in the evidence record.
+
+The first capture harness inherited a hidden startup state in GPUI, suppressing
+its native window, and briefly selected console/helper windows. It now restricts
+capture to the exact process and explicit probe title, reveals only that native
+UI, waits for window animation, and removes stale captures. These harness defects
+are not attributed to toolkit throughput. Slint's standard-widget palette was
+also synchronized with the probe's theme; otherwise dark canvas with OS-light
+widgets made the outliner illegible. Corrected screenshots were reviewed.
 
 ## Observations affecting the decision
 

@@ -1,0 +1,26 @@
+{
+  "schema": "agentique.native-bakeoff.v1",
+  "semantic_acceptance": false,
+  "base_commit": "9fa5c1357b4faff837fff507173d0f90bb4ead9f",
+  "initial_probe_commit": "709fd9c",
+  "tested_tools_patch_sha256": "2a583d0133405278c98b87794ce2f49fb345fa656a02ebd389024e2566931806",
+  "patch_command": "git diff --binary 709fd9c -- tools/native-bakeoff",
+  "rustc": "1.92.0 (ded5c06cf 2025-12-08)",
+  "target": "x86_64-pc-windows-msvc",
+  "profile": "release",
+  "cpu": "AMD Ryzen 5 5600X",
+  "gpu": "NVIDIA GeForce RTX 3060 Ti",
+  "driver": "32.0.16.1692",
+  "nodes_submitted": 1000,
+  "edges_submitted": 2000,
+  "culling": false,
+  "warmup_frames": 60,
+  "measured_frames": 360,
+  "measurement": "delivered native redraw cadence with default vsync; not maximum GPU throughput",
+  "runs": [
+    {"candidate": "eframe 0.33.3 / wgpu 27.0.1", "backend": "Vulkan", "elapsed_ms": 6001.60, "delivered_fps": 59.98, "application_ui_update_p50_ms": 0.121, "application_ui_update_p95_ms": 0.169, "exit_code": 0},
+    {"candidate": "Slint 1.18.1 / wgpu 30.0.1", "backend": "Vulkan", "elapsed_ms": 5959.65, "delivered_fps": 60.41, "application_ui_update_p50_ms": null, "application_ui_update_p95_ms": null, "exit_code": 0},
+    {"candidate": "GPUI 0.2.2", "backend": "D3D11 native canvas", "elapsed_ms": 5999.90, "delivered_fps": 60.00, "application_ui_update_p50_ms": null, "application_ui_update_p95_ms": null, "exit_code": 0}
+  ],
+  "not_measured": ["GPU timestamp duration", "input-to-photon latency", "10k nodes", "mixed DPI", "screen readers", "IME composition", "clipboard round trip", "non-Windows runtime"]
+}

@@ -9,6 +9,8 @@ stdout/stderr and screenshots are in ignored
 Toolchain: rustc 1.92.0 (`ded5c06cf`), x86_64-pc-windows-msvc, LLVM 21.1.3.
 Hardware: Ryzen 5 5600X, RTX 3060 Ti, driver 32.0.16.1692.
 These are visual fixtures; no language or runtime acceptance is asserted.
+The final source-patch identity and compact measurements are retained in
+[`bakeoff-metrics.json`](bakeoff-metrics.json).
 
 ## Commands actually executed
 
@@ -47,16 +49,49 @@ unvirtualized list and individual paths. GPUI now uses a virtualized list and
 one batched path. Release measurements and final-source checks are a follow-up
 to this initial integration record, not silently inferred from earlier results.
 
-Three native windows were rendered. egui and GPUI captures were inspected;
+Three native windows were rendered. Initial egui and GPUI captures were inspected;
 GPUI rendered the CJK text sample, while default egui fonts displayed missing
 glyphs. Slint's initial capture selected a 1 × 1 helper window: the capture tool
 now selects the largest visible window belonging to the exact launched process.
 No bakeoff screenshot is claimed as a product-quality review round.
 
-## Explicit open qualifications
+## Final optimized comparison and checks
 
-Release comparison, final-source Clippy, a representative Slint screenshot,
-screen-reader behavior, full keyboard interaction, IME composition, clipboard,
-mixed DPI and non-Windows runtime testing remain open in this initial record.
-The architectural decision is supported by the demonstrated GPU composition
-seams and does not depend on declaring these unfinished checks successful.
+Final sources supersede the initial timing harness: 60 warmup frames and 360
+measured frames in each candidate. The windows ran serially after heavy local
+builds; normal display vsync remained enabled. egui and Slint reported the RTX
+3060 Ti Vulkan adapter. GPUI uses its published Windows D3D11 renderer.
+
+| Actual final command | Exit | Output/result |
+|---|---:|---|
+| `cargo build --release --locked --manifest-path tools/native-bakeoff/egui/Cargo.toml` | 0 | Optimized final probe compiled |
+| `cargo build --release --locked --manifest-path tools/native-bakeoff/slint/Cargo.toml` | 0 | Optimized final probe compiled |
+| `cargo build --release --locked --manifest-path tools/native-bakeoff/gpui/Cargo.toml` with `GPUI_FXC_PATH` set to installed SDK | 0 | Optimized final probe compiled; SDK issue recovered |
+| `powershell -NoProfile -ExecutionPolicy Bypass -File tools/native-bakeoff/capture.ps1 -Candidate egui -Profile release` | 0 | `warmup_frames=60 frames=360 elapsed_ms=6001.60 delivered_fps=59.98 cpu_ui_p50_ms=0.121 cpu_ui_p95_ms=0.169` |
+| Same capture command, `-Candidate slint -Profile release` | 0 | `warmup_frames=60 frames=360 elapsed_ms=5959.65 delivered_fps=60.41` |
+| Same capture command, `-Candidate gpui -Profile release` | 0 | `warmup_frames=60 frames=360 elapsed_ms=5999.90 delivered_fps=60.00` |
+| `cargo fmt --manifest-path tools/native-bakeoff/egui/Cargo.toml -- --check` | 0 | No formatting diff |
+| Same fmt command for `slint`, `gpui` | 0 each | No formatting diff |
+| `cargo clippy --locked --manifest-path tools/native-bakeoff/egui/Cargo.toml --all-targets -- -D warnings` | 0 | Final sources pass |
+| Same Clippy command for `slint`, `gpui` | 0 each | Final sources pass |
+
+The GPUI list optimization required an explicit `Range<usize>` annotation; final
+build fixed the intermediate compiler error. Slint's first Clippy pass found a
+collapsible conditional; the final source fixes it. Successful check runs do not
+erase these earlier failures.
+
+All three final native windows were inspected, including Slint's corrected
+dark-widget palette and legible CJK sample. The capture harness now excludes
+console/helper windows by exact process plus explicit title and waits for native
+window animation. Early captures of helper/console windows are invalid visual
+evidence and are not product screenshots. The final probe images remain generated
+artifacts; no bakeoff screenshot is claimed as a product-quality review round.
+
+The measured intervals are display cadence, not GPU timestamp durations or
+framework ceilings. The egui CPU percentiles cover its application update closure.
+This comparison makes no input-to-photon or large-label throughput claim.
+
+Screen-reader behavior, full keyboard interaction, IME composition, clipboard,
+mixed DPI and non-Windows runtime testing remain open qualifications. The decision
+does not depend on declaring those unfinished checks successful. The root mission
+owns the full repository regression gates and production Studio acceptance.
