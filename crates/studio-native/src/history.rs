@@ -4,7 +4,7 @@ use crate::app::{ComparisonMode, StudioApp, muted};
 use agq_kernel::ElementId;
 use agq_modeling_view::{ViewDefinition, ViewNode, ViewOrigin, ViewProjection};
 use agq_modeling_workspace::ProjectRevisionId;
-use agq_studio_scene::{Camera2D, DiffMark, Rect, SceneTarget, SemanticScene};
+use agq_studio_scene::{Camera2D, DiffMark, Rect, SceneLookup, SceneTarget, SemanticScene};
 use eframe::egui::{self, RichText};
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
@@ -79,6 +79,17 @@ fn change_rank(change: &Change) -> (u8, bool) {
     (origin, change.relationship)
 }
 
+fn same_target(a: Option<&SceneTarget>, b: Option<&SceneTarget>) -> bool {
+    match (a, b) {
+        (
+            Some(SceneTarget::Node(a) | SceneTarget::Container(a)),
+            Some(SceneTarget::Node(b) | SceneTarget::Container(b)),
+        ) => a == b,
+        (Some(a), Some(b)) => a == b,
+        _ => false,
+    }
+}
+
 fn node_changed(before: &ViewNode, after: &ViewNode) -> bool {
     let mut before = before.clone();
     before.revision_id = after.revision_id;
@@ -97,13 +108,19 @@ fn change_review(
     }
     let before_nodes: BTreeMap<_, _> = before.nodes.iter().map(|node| (node.id, node)).collect();
     let after_nodes: BTreeMap<_, _> = after.nodes.iter().map(|node| (node.id, node)).collect();
+    let lookup = SceneLookup::build(scene);
     let mut groups: BTreeMap<(Option<ElementId>, bool), ChangeGroup> = BTreeMap::new();
     let mut add = |owner: Option<ElementId>,
                    context: &ViewProjection,
                    unknown_owner: bool,
                    change: Change| {
+        let nodes = if context.revision_id == after.revision_id {
+            &after_nodes
+        } else {
+            &before_nodes
+        };
         let owner_name = owner
-            .and_then(|id| context.nodes.iter().find(|node| node.id == id))
+            .and_then(|id| nodes.get(&id))
             .map(|node| node.name.clone())
             .unwrap_or_else(|| {
                 if unknown_owner {
@@ -143,7 +160,7 @@ fn change_review(
         let context = if new.is_some() { after } else { before };
         let target = [SceneTarget::Port(id), SceneTarget::Node(id)]
             .into_iter()
-            .find(|target| scene.target_revision(target) == Some(node.revision_id));
+            .find(|target| target_revision(scene, &lookup, target) == Some(node.revision_id));
         let mut details = vec![origin_label(node.origin).to_owned()];
         if let (Some(old), Some(new)) = (old, new) {
             if old.name != new.name {
@@ -151,8 +168,13 @@ fn change_review(
             }
             if old.owner != new.owner {
                 let owner_name = |owner: Option<ElementId>, view: &ViewProjection| {
+                    let nodes = if view.revision_id == after.revision_id {
+                        &after_nodes
+                    } else {
+                        &before_nodes
+                    };
                     owner
-                        .and_then(|id| view.nodes.iter().find(|node| node.id == id))
+                        .and_then(|id| nodes.get(&id))
                         .map_or("outside this view", |node| node.name.as_str())
                         .to_owned()
                 };
@@ -206,8 +228,13 @@ fn change_review(
         };
         let edge = new.or(old)?;
         let context = if new.is_some() { after } else { before };
-        let source = context.nodes.iter().find(|node| node.id == edge.source);
-        let target = context.nodes.iter().find(|node| node.id == edge.target);
+        let nodes = if new.is_some() {
+            &after_nodes
+        } else {
+            &before_nodes
+        };
+        let source = nodes.get(&edge.source).copied();
+        let target = nodes.get(&edge.target).copied();
         // Group relationships by the source's recorded owner, never by a
         // fabricated connector owner or a layout-inferred semantic direction.
         let owner = source.and_then(|node| node.owner);
@@ -232,7 +259,7 @@ fn change_review(
                 origin: edge.origin,
                 revision: edge.revision_id,
                 canonical_id: edge.relationship_id,
-                target: (scene.target_revision(&target_key) == Some(edge.revision_id))
+                target: (target_revision(scene, &lookup, &target_key) == Some(edge.revision_id))
                     .then_some(target_key),
                 relationship: true,
             },
@@ -274,8 +301,22 @@ fn change_review(
     })
 }
 
-fn object_bounds(scene: &SemanticScene, id: ElementId) -> Option<Rect> {
-    if let Some(node) = scene.node(id) {
+fn target_revision(
+    scene: &SemanticScene,
+    lookup: &SceneLookup,
+    target: &SceneTarget,
+) -> Option<ProjectRevisionId> {
+    match target {
+        SceneTarget::Node(id) | SceneTarget::Container(id) => lookup
+            .node(scene, *id)
+            .map(|node| node.semantic.revision_id),
+        SceneTarget::Port(id) => lookup.port(scene, *id).map(|port| port.revision_id),
+        SceneTarget::Edge(id) => lookup.edge(scene, id).map(|edge| edge.semantic.revision_id),
+    }
+}
+
+fn object_bounds(scene: &SemanticScene, lookup: &SceneLookup, id: ElementId) -> Option<Rect> {
+    if let Some(node) = lookup.node(scene, id) {
         return Some(if node.is_container {
             // Frame a legible owner header, not its potentially enormous envelope.
             Rect::new(
@@ -288,39 +329,36 @@ fn object_bounds(scene: &SemanticScene, id: ElementId) -> Option<Rect> {
             node.bounds
         });
     }
-    scene.target_bounds(&SceneTarget::Port(id))
+    lookup
+        .port(scene, id)
+        .map(|port| Rect::new(port.position.x - 7.0, port.position.y - 7.0, 14.0, 14.0))
 }
 
-fn change_bounds(scene: &SemanticScene, change: &Change) -> Vec<Rect> {
+fn change_bounds(scene: &SemanticScene, lookup: &SceneLookup, change: &Change) -> Vec<Rect> {
     let Some(target) = &change.target else {
         return vec![];
     };
-    if scene.target_revision(target) != Some(change.revision) {
+    if target_revision(scene, lookup, target) != Some(change.revision) {
         return vec![];
     }
     match target {
         SceneTarget::Node(id) | SceneTarget::Container(id) => {
-            object_bounds(scene, *id).into_iter().collect()
+            object_bounds(scene, lookup, *id).into_iter().collect()
         }
-        SceneTarget::Port(id) => scene
-            .target_bounds(target)
+        SceneTarget::Port(id) => object_bounds(scene, lookup, *id)
             .into_iter()
             .chain(
-                scene
-                    .ports
-                    .iter()
-                    .find(|port| port.id == *id)
-                    .and_then(|port| object_bounds(scene, port.owner)),
+                lookup
+                    .port(scene, *id)
+                    .and_then(|port| object_bounds(scene, lookup, port.owner)),
             )
             .collect(),
-        SceneTarget::Edge(id) => scene
-            .edges
-            .iter()
-            .find(|edge| edge.semantic.id == *id)
+        SceneTarget::Edge(id) => lookup
+            .edge(scene, id)
             .map(|edge| {
                 [edge.semantic.source, edge.semantic.target]
                     .into_iter()
-                    .filter_map(|id| object_bounds(scene, id))
+                    .filter_map(|id| object_bounds(scene, lookup, id))
                     .collect()
             })
             .unwrap_or_default(),
@@ -339,15 +377,16 @@ fn focus_group(
     camera: Camera2D,
     primary: Option<&SceneTarget>,
 ) -> Option<ChangeFocus> {
+    let lookup = SceneLookup::build(scene);
     let mut entries: Vec<_> = group
         .changes
         .iter()
         .filter_map(|change| {
-            let bounds = change_bounds(scene, change);
+            let bounds = change_bounds(scene, &lookup, change);
             (!bounds.is_empty()).then_some((change, bounds))
         })
         .collect();
-    entries.sort_by_key(|(change, _)| usize::from(change.target.as_ref() != primary));
+    entries.sort_by_key(|(change, _)| usize::from(!same_target(change.target.as_ref(), primary)));
     let mut bounds = *entries.first()?.1.first()?;
     let mut nearby = 0;
     for (_, anchors) in &entries {
@@ -363,7 +402,7 @@ fn focus_group(
         }
         nearby += usize::from(included);
     }
-    if let Some(owner) = group.owner.and_then(|id| object_bounds(scene, id)) {
+    if let Some(owner) = group.owner.and_then(|id| object_bounds(scene, &lookup, id)) {
         let mut fitted = camera;
         fitted.fit(bounds.union(owner), 72.0);
         if fitted.zoom >= 0.42 {
@@ -441,7 +480,14 @@ impl StudioApp {
             .iter()
             .find(|group| {
                 group.changes.iter().any(|change| {
-                    change.target.is_some() && change.target == self.selection.primary
+                    same_target(change.target.as_ref(), self.selection.primary.as_ref())
+                })
+            })
+            .or_else(|| {
+                review.groups.iter().find(|group| {
+                    group.owner.is_some()
+                        && group.owner == self.selected_element()
+                        && group.changes.iter().any(|change| change.target.is_some())
                 })
             })
             .or_else(|| {
@@ -494,7 +540,7 @@ impl StudioApp {
             });
             if review.groups.is_empty() { ui.label("No projected changes in this comparison."); return; }
             let key = ui.id().with(("change-review-group", self.generation, review.before.to_string(), review.after.to_string()));
-            let selected_group = review.groups.iter().position(|group| group.changes.iter().any(|change| change.target.is_some() && change.target == self.selection.primary));
+            let selected_group = review.groups.iter().position(|group| group.changes.iter().any(|change| same_target(change.target.as_ref(), self.selection.primary.as_ref())));
             let mut index = selected_group.or_else(|| ui.ctx().data(|data| data.get_temp::<usize>(key))).unwrap_or(0).min(review.groups.len() - 1);
             let previous = index;
             ui.horizontal_wrapped(|ui| {
@@ -675,7 +721,7 @@ mod tests {
         );
         let mut stale = review.groups[0].changes[0].clone();
         stale.revision = before.revision_id;
-        assert!(change_bounds(&edge_scene, &stale).is_empty());
+        assert!(change_bounds(&edge_scene, &SceneLookup::build(&edge_scene), &stale).is_empty());
         assert!(focus_group(&edge_scene, &review.groups[0], Camera2D::default(), None).is_some());
     }
 

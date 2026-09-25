@@ -680,6 +680,9 @@ impl StudioApp {
                                         Some(self.bundle_path.clone().into()),
                                     ) {
                                         Ok(id) => {
+                                            self.requested_definition = None;
+                                            self.deferred_definition = None;
+                                            self.focus_changes_pending = false;
                                             self.pending.insert(id);
                                             self.opening = Some(crate::loading::OpeningProgress::new(id));
                                             self.setup_reason =
