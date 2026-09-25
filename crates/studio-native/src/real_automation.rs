@@ -257,7 +257,7 @@ struct Report {
     last_state: State,
 }
 
-/// Native input-hook cadence during submission through first idle candidate view.
+/// Native input-hook cadence during submission through candidate response delivery.
 /// These observations do not measure physical input latency or GPU presentation.
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 struct PreparationResponsiveness {
@@ -721,7 +721,7 @@ impl Runner {
         if let Some(clock) = &mut self.preparation_clock {
             let now = Instant::now();
             clock.observe(now, &mut self.report.preparation_responsiveness);
-            if app.candidate.is_some() && idle(app) {
+            if app.candidate.is_some() && !app.bridge.mutation_pending() {
                 self.report.preparation_responsiveness.elapsed_ms =
                     Some(now.duration_since(clock.started).as_millis());
                 self.preparation_clock = None;
