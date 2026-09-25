@@ -1,0 +1,105 @@
+{
+  "format": "agq-independent-concrete-transport-review/1",
+  "finished_utc": "2026-09-25T18:10:44.332748+00:00",
+  "command": [
+    "C:\\Users\\phili\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-state-recovery\\verification\\native-studio-alpha\\reviews\\audit-concrete-systems-transport.py",
+    "C:/Users/phili/github/agentique-systems/agentique-alpha-runtime",
+    "C:/Users/phili/github/agentique-systems/agentique-alpha-state-recovery/verification/native-studio-alpha/reviews/concrete-systems-transport-review.json"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 8.234,
+  "reviewed_source_commit": "e44015b3982331c9edca5633ea7f7b6ef85dd6e8",
+  "eligible_for_finite_transport_registration": true,
+  "runtime_accepted": false,
+  "ordinary_catalogue_facade_authentication_observed": false,
+  "checks": {
+    "unchanged_original_semantic_receipt": true,
+    "unchanged_original_bindings": true,
+    "full_non_transport_contract_equal": true,
+    "complete_bindings_byte_equal": true,
+    "transport_schema_exact": true,
+    "transport_authority_exact": true,
+    "no_candidate_acceptance_claim": true,
+    "exact_archive_population": true,
+    "closure.json_actual_matches_generated_and_pin": true,
+    "closure.json_original_length": true,
+    "closure.json_allowed_transport_boundary": true,
+    "facade.json_actual_matches_generated_and_pin": true,
+    "facade.json_original_length": true,
+    "facade.json_allowed_transport_boundary": true,
+    "single_snapshot_record": true,
+    "kernel.jsonl_actual_matches_generated_and_pin": true,
+    "kernel.jsonl_original_length": true,
+    "kernel.jsonl_allowed_transport_boundary": true,
+    "same_handle_stable": true,
+    "retained_path_stable": true,
+    "outer_container_exact": true,
+    "content_record_matches_actual_artifact": true,
+    "artifact_gate_matches_retained_bytes": true,
+    "contract_comparison_retains_original_authority": true,
+    "producer_report_identity_equal": true,
+    "producer_report_gates": true,
+    "historical-systems-finalizer_command_and_log": true,
+    "systems-independent-artifact-gate_command_and_log": true,
+    "systems-existing-contract-comparison_command_and_log": true,
+    "systems-transport-preparation_command_and_log": true,
+    "historical_producer_source_still_exact": true,
+    "retained_producer_binary_exact": true,
+    "finalizer_journal_exact": true
+  },
+  "cache": {
+    "path": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\generated\\native-studio-alpha\\rematerialized-systems\\finalized\\canonical.publication.zip",
+    "bytes": 134322830,
+    "sha256": "02ba47ad99ceaddb853b198a556cbe40351a00361f077099a993f3a226bcc323"
+  },
+  "entries": {
+    "closure.json": {
+      "bytes": 6759870,
+      "sha256": "0e7527e9f1f49dc8a338dcaaba9b6af3ea92e03ad8818464a957f7a77fef3dc9",
+      "original_bytes_equal": true
+    },
+    "facade.json": {
+      "bytes": 19746846,
+      "sha256": "7a7e489805127b4fd057e95db58d19d53fb15ecaf5a0c2b0af871830cf6967e5",
+      "original_bytes_equal": true
+    },
+    "kernel.jsonl": {
+      "bytes": 748560767,
+      "sha256": "ec9d1c78d864d4ad2f671f93371c1988bcb8b952651b82afb9f3624b0756b828",
+      "original_bytes_equal": false
+    }
+  },
+  "snapshot_revision": "36f83b80-aa6a-4d4b-bd3c-c32117e1104e",
+  "transport_sha256": "12cc2aeff7aa7e4a1f3de16faf13d63aa158dd88248e9b3179ad4629e1ffeda0",
+  "content_record_sha256": "0461530f4e614dcd20045769eb45e3d2eb695a1452f7fe57471b41025315c3f7",
+  "source_receipt_sha256": "becc3cf991e69115dae905957d74292774164e3f5707eecefb06d8eb60e0269a",
+  "source_bindings_sha256": "dbd794bba9ebdfdea5af433945f6bb5d0475f0f05ad1d229cd004f5b57045789",
+  "producer_binary_sha256": "2610d2fe31e9b2ab99ed74cb4ad19e7302d4e33ce707ddcafabf2294275c743c",
+  "command_receipts": {
+    "historical-systems-finalizer": {
+      "receipt_sha256": "b36141d2acff90f3ca6c2844ae75101469ee67bf89df57b955db895856f4d7d0",
+      "source_commit": "4ac9b8e58695ad837fed6643b0cedfac05d15635",
+      "exit_code": 0,
+      "output_sha256": "c119717eb815992b89b9478b053e718c6d04ac6bdbc673b4852566cbf6f6f27c"
+    },
+    "systems-independent-artifact-gate": {
+      "receipt_sha256": "7d61444e562dbf513ce711c5335b42b27f1dfe924d4b4be6db8ae46c147908d8",
+      "source_commit": "f4fb8283436bf073d964a46d8738c110fc69e028",
+      "exit_code": 0,
+      "output_sha256": "6af700d7c605a8a5caf334775b11c9832bab54e068359526efa825601e69b1bc"
+    },
+    "systems-existing-contract-comparison": {
+      "receipt_sha256": "39c8a551c132016eb7f578f9518afe95f9330513661e4eb7a55fa0a64641e186",
+      "source_commit": "f4fb8283436bf073d964a46d8738c110fc69e028",
+      "exit_code": 0,
+      "output_sha256": "64b71b26eeb31f3cd2a9fcc759707c91c5cd29794741b1f70ef1abe67efc6586"
+    },
+    "systems-transport-preparation": {
+      "receipt_sha256": "cfbcb2037d2de6f149dbe2bfe532babaf7fb6165dda75b7ccd420d06bf3e53d8",
+      "source_commit": "f4fb8283436bf073d964a46d8738c110fc69e028",
+      "exit_code": 0,
+      "output_sha256": "89c77581cb27cb7a6440ee5fd180d315caf204d4bbff75b5151417ead2c4b0f0"
+    }
+  }
+}
