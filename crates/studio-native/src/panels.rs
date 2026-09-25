@@ -627,6 +627,16 @@ impl StudioApp {
                             "{} · bytes {}..{}\n\n{}",
                             source.path, source.start, source.end, source.source
                         )
+                    } else if self.fixture.is_none() {
+                        format!(
+                            "Loading source for selected revision {}…",
+                            self.selection
+                                .primary
+                                .as_ref()
+                                .and_then(|target| self.target_revision(target))
+                                .map(short_revision)
+                                .unwrap_or_default()
+                        )
                     } else if let Some(candidate) = &self.candidate {
                         candidate.source.clone()
                     } else {

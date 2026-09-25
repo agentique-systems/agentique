@@ -1,0 +1,17 @@
+{
+  "command": [
+    "cargo",
+    "doc",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-studio-scene",
+    "-p",
+    "agq-studio-platform",
+    "--no-deps"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 153.765,
+  "utc": "2026-09-25T07:35:39.244923+00:00",
+  "output": "verification/generated/native-studio/public-crate-docs.txt"
+}

@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "run",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-metamodel-gen",
+    "--",
+    "--check"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 157.25,
+  "utc": "2026-09-25T07:35:30.568106+00:00",
+  "output": "verification/generated/native-studio/metamodel-check.txt"
+}

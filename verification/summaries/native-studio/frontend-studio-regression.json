@@ -1,0 +1,11 @@
+{
+  "command": [
+    "npm.cmd",
+    "run",
+    "test:studio"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 188.078,
+  "utc": "2026-09-25T07:35:17.500141+00:00",
+  "output": "verification/generated/native-studio/frontend-studio-regression.txt"
+}
