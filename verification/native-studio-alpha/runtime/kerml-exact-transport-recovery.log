@@ -1,0 +1,19 @@
+{
+  "format": "agq-exact-accepted-cache-rematerialization/1",
+  "publication_semantic_digest": "815573353973607bc62a25195ed4461645182027407f8476be521ffc99174f12",
+  "accepted_revision": "5751331e-1f43-44a6-b18b-3816bd9df051",
+  "regenerated_revision": "c8e910b0-0fb8-4627-97ba-12a04a556b86",
+  "original_payload_bytes_reproduced": true,
+  "entries": {
+    "facade.json": {
+      "bytes": 78187642,
+      "sha256": "fa085293b1db9bcad7d350e2e1c75623b471e5eb0ac3d9308a3ec0e4f86fd8d0"
+    },
+    "kernel.jsonl": {
+      "bytes": 2176394780,
+      "sha256": "87af0c3a395b91968eb35b0ec85399599eccaa80a97e32d448e0f24e57dc6dde"
+    }
+  },
+  "facade_authentication_required": true,
+  "authority_receipt_changed": false
+}

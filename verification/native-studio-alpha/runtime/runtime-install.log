@@ -1,0 +1,53 @@
+"locating_package"
+"copying"
+"authenticating_kerml"
+"authenticating_sysml"
+"installing"
+"ready"
+{
+  "directory": "C:/Users/phili/.agentique\\publications\\633ea89eb39f8a9e301f2bd5199994455cdf28c8d373fdbd69be30a1402ebcf4",
+  "manifest": {
+    "format": "agq-accepted-publication-bundle/1",
+    "identity": "633ea89eb39f8a9e301f2bd5199994455cdf28c8d373fdbd69be30a1402ebcf4",
+    "kerml": {
+      "bytes": 475865571,
+      "file": "kerml.cache",
+      "publication": {
+        "binding_manifest_sha256": "274545be48e3644c2046a98a978f39ea715acf02e3b4d4ce52cef5dac16b8f5c",
+        "profile": "agentique-kerml-1.0-operational/9",
+        "publication_digest": "815573353973607bc62a25195ed4461645182027407f8476be521ffc99174f12",
+        "receipt_json_sha256": "7e2192ba4639eb2eee19ddb1e7a2e5507b566cd429984028e87cec030c37658a",
+        "receipt_path": "standards/kerml-accepted-publication.json",
+        "required_cache_formats": [
+          "zip",
+          "agq-kerml-publication-facade/1",
+          "agq-kernel-graph-archive/1"
+        ]
+      },
+      "sha256": "aadf9ff589eea35bcedc5d1e3d0521952058b55f3325614ecb0ab12ae36300c4"
+    },
+    "systems": {
+      "bytes": 134322830,
+      "file": "systems.cache",
+      "publication": {
+        "binding_manifest_sha256": "1783a8a7d3111c9d7029b8f33ff6841f5affc84f044b57ec8119cad2e7897477",
+        "profile": "agentique-sysml-2.0-operational/3",
+        "publication_digest": "25aeddb099be16462b553d6debcad97f43bf22e89ce8a9bbb53cf72eb7d193fa",
+        "receipt_json_sha256": "947a1cb8cb24c20929be3b51fb11745a35d7331cb657249ac6928ac77cba7032",
+        "receipt_path": "standards/sysml-accepted-publication.json",
+        "required_cache_formats": [
+          "zip",
+          "agq-sysml-publication-facade/1",
+          "agq-kernel-dependent-evidence-archive/1"
+        ]
+      },
+      "sha256": "02ba47ad99ceaddb853b198a556cbe40351a00361f077099a993f3a226bcc323"
+    }
+  },
+  "timings": {
+    "kerml_restore_ms": 36406,
+    "sources_verify_ms": 3,
+    "systems_restore_ms": 34756,
+    "transport_verify_ms": 1146
+  }
+}

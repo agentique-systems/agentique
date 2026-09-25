@@ -3,6 +3,15 @@
 This stream separates accepted semantic authority from cache recovery and release
 transport. Original receipts, profiles and binding manifests are unchanged.
 
+Exact command outputs are retained beside their JSON receipts, including
+`runtime-pack.log`, `runtime-verify.log`, `runtime-install.log`, both historical
+producer replays and the strict Systems finalizer. `output-retention.json` maps
+all 32 logs (684,650 bytes total) to their commands and hashes. Twenty-six logs
+match hashes recorded at command completion; six early records did not include
+output hashes, so the inventory explicitly records that limitation. The aborted
+optional preflight's exit 15 and original output remain visible. Cache archives
+and generated bulk are excluded from Git.
+
 The final storage search found no accepted cache candidate. GitHub returned no
 releases and zero Actions caches. The newest of 82 workflow artifacts was actually
 downloaded: run `36150517543`, 146,311,299 bytes. It contained 3,046 files and only

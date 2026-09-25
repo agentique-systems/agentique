@@ -1,0 +1,22 @@
+   Compiling agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-rematerialize-kerml\crates\kernel)
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-rematerialize-kerml\crates\kerml)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-rematerialize-kerml\crates\kerml-semantics)
+   Compiling agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-rematerialize-kerml\crates\kerml-syntax)
+   Compiling agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-rematerialize-kerml\crates\standard-libraries)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-rematerialize-kerml\crates\kerml-text)
+warning: associated items `replacement` and `replace` are never used
+  --> crates\kerml-text\examples\support\publication_output.rs:45:12
+   |
+14 | impl ReservedFile {
+   | ----------------- associated items in this implementation
+...
+45 |     pub fn replacement(destination: &Path) -> std::io::Result<Self> {
+   |            ^^^^^^^^^^^
+...
+67 |     pub fn replace(mut self, destination: &Path) -> std::io::Result<()> {
+   |            ^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `agq-kerml-text` (example "kerml_rematerialize") generated 1 warning
+    Finished `release` profile [optimized] target(s) in 5m 15s

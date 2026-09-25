@@ -1,0 +1,230 @@
+refinement 0: 4000/4000 references evaluated, 0 reused, 2110 endpoints, 4000 obligations; construction 2.267s, context 0.203s, diff 0.000s, resolution 18.435s
+refinement 1: 3972/4000 references evaluated, 28 reused, 3661 endpoints, 1890 obligations; construction 1.746s, context 0.170s, diff 0.117s, resolution 35.293s
+refinement 2: 3981/4000 references evaluated, 19 reused, 3838 endpoints, 339 obligations; construction 1.328s, context 0.136s, diff 0.086s, resolution 35.980s
+refinement 3: 3837/4000 references evaluated, 163 reused, 3919 endpoints, 162 obligations; construction 3.743s, context 0.268s, diff 0.416s, resolution 43.546s
+refinement 4: 3706/4000 references evaluated, 294 reused, 3952 endpoints, 81 obligations; construction 1.886s, context 0.192s, diff 0.122s, resolution 45.528s
+refinement 5: 3719/4000 references evaluated, 281 reused, 3973 endpoints, 48 obligations; construction 1.624s, context 0.167s, diff 0.100s, resolution 44.809s
+refinement 6: 3687/4000 references evaluated, 313 reused, 3994 endpoints, 27 obligations; construction 1.940s, context 0.179s, diff 0.135s, resolution 44.683s
+refinement 7: 917/4000 references evaluated, 3083 reused, 4000 endpoints, 6 obligations; construction 1.581s, context 0.154s, diff 0.122s, resolution 14.237s
+refinement 8: 215/4000 references evaluated, 3785 reused, 4000 endpoints, 0 obligations; construction 1.515s, context 0.155s, diff 0.097s, resolution 2.852s
+Shared publication preparation: 308.635s
+slice A: 7889 structural dependency subjects, 21 source documents
+slice A scope 1: 7889 declared subjects
+slice A round 0: 256/3112, 274 proposed Elements
+slice A round 0: 512/3112, 507 proposed Elements
+slice A round 0: 768/3112, 756 proposed Elements
+slice A round 0: 1024/3112, 1026 proposed Elements
+slice A round 0: 1280/3112, 1303 proposed Elements
+slice A round 0: 1536/3112, 1578 proposed Elements
+slice A round 0: 1792/3112, 1834 proposed Elements
+slice A round 0: 2048/3112, 2119 proposed Elements
+slice A round 0: 2304/3112, 2370 proposed Elements
+slice A round 0: 2560/3112, 2665 proposed Elements
+slice A round 0: 2816/3112, 2951 proposed Elements
+slice A round 0: 3072/3112, 3218 proposed Elements
+slice A round 0: 3112/3112, 3244 proposed Elements
+slice A round 0 (Structural): 3244 new Elements, 120 occurrences; Incomplete
+slice A round 1: 256/2758, 192 proposed Elements
+slice A round 1: 512/2758, 319 proposed Elements
+slice A round 1: 768/2758, 469 proposed Elements
+slice A round 1: 1024/2758, 638 proposed Elements
+slice A round 1: 1280/2758, 858 proposed Elements
+slice A round 1: 1536/2758, 1064 proposed Elements
+slice A round 1: 1792/2758, 1305 proposed Elements
+slice A round 1: 2048/2758, 1451 proposed Elements
+slice A round 1: 2304/2758, 1631 proposed Elements
+slice A round 1: 2560/2758, 1830 proposed Elements
+slice A round 1: 2758/2758, 1944 proposed Elements
+slice A round 1 (Structural): 468 new Elements, 0 occurrences; Complete
+slice A round 2: 256/2560, 152 proposed Elements
+slice A round 2: 512/2560, 247 proposed Elements
+slice A round 2: 768/2560, 373 proposed Elements
+slice A round 2: 1024/2560, 531 proposed Elements
+slice A round 2: 1280/2560, 716 proposed Elements
+slice A round 2: 1536/2560, 886 proposed Elements
+slice A round 2: 1792/2560, 1056 proposed Elements
+slice A round 2: 2048/2560, 1172 proposed Elements
+slice A round 2: 2304/2560, 1371 proposed Elements
+slice A round 2: 2560/2560, 1494 proposed Elements
+slice A round 2 (Structural): 0 new Elements, 0 occurrences; Complete
+slice A round 3: 256/431, 2817 proposed Elements
+slice A round 3: 431/431, 4714 proposed Elements
+slice A round 3 (ContextualBindings): 3879 new Elements, 0 occurrences; Complete
+slice A round 4: 256/4003, 385 proposed Elements
+slice A round 4: 512/4003, 737 proposed Elements
+slice A round 4: 768/4003, 1154 proposed Elements
+slice A round 4: 1024/4003, 1432 proposed Elements
+slice A round 4: 1280/4003, 1897 proposed Elements
+slice A round 4: 1536/4003, 2245 proposed Elements
+slice A round 4: 1792/4003, 2722 proposed Elements
+slice A round 4: 2048/4003, 3177 proposed Elements
+slice A round 4: 2304/4003, 3680 proposed Elements
+slice A round 4: 2560/4003, 4058 proposed Elements
+slice A round 4: 2816/4003, 4461 proposed Elements
+slice A round 4: 3072/4003, 4755 proposed Elements
+slice A round 4: 3328/4003, 5162 proposed Elements
+slice A round 4: 3584/4003, 5695 proposed Elements
+slice A round 4: 3840/4003, 6009 proposed Elements
+slice A round 4: 4003/4003, 6230 proposed Elements
+slice A round 4 (ContextualBindings): 862 new Elements, 0 occurrences; Complete
+slice A round 5: 256/990, 0 proposed Elements
+slice A round 5: 512/990, 0 proposed Elements
+slice A round 5: 768/990, 0 proposed Elements
+slice A round 5: 990/990, 0 proposed Elements
+slice A round 5 (ContextualBindings): 0 new Elements, 0 occurrences; Complete
+scope boundary: {"declared_name":"x","derived_rule":null,"metaclass":"Feature","source":{"document":"Kernel Function Library/BaseFunctions.kerml","excerpt":"in x: Anything[0..1];","range":[420,441]},"subject":"00bd7c8b-471d-5c30-bdf8-97f52d1567a2"}
+scope boundary: {"declared_name":null,"derived_rule":null,"metaclass":"LiteralInteger","source":{"document":"Kernel Function Library/DataFunctions.kerml","excerpt":"1","range":[1317,1318]},"subject":"00f68cdd-2ed2-56e3-a323-f33c3720c2d0"}
+scope boundary: {"declared_name":"allTrue","derived_rule":null,"metaclass":"Function","source":{"document":"Kernel Function Library/ControlFunctions.kerml","excerpt":"function allTrue {\n\t\tin collection: Boolean[0..*]; \n\t\treturn : Boolean[1] = collection->forAll {in x; x};\n\t}","range":[2954,3062]},"subject":"01d283d4-55b8-5c70-a4e5-b68a01638127"}
+scope boundary: {"declared_name":null,"derived_rule":null,"metaclass":"FeatureTyping","source":{"document":"Kernel Function Library/BaseFunctions.kerml","excerpt":"Anything","range":[535,543]},"subject":"020aa148-174d-51c5-85a8-70327a97d625"}
+scope boundary: {"declared_name":null,"derived_rule":null,"metaclass":"FeatureTyping","source":{"document":"Kernel Function Library/DataFunctions.kerml","excerpt":"DataValue","range":[1673,1682]},"subject":"02190247-8b46-5c74-afba-f72005799a92"}
+scope boundary: {"declared_name":null,"derived_rule":null,"metaclass":"FeatureTyping","source":{"document":"Kernel Function Library/BaseFunctions.kerml","excerpt":"Anything","range":[1220,1228]},"subject":"0348713c-f652-50be-b1d0-771fcd0ad199"}
+scope boundary: {"declared_name":null,"derived_rule":null,"metaclass":"FeatureTyping","source":{"document":"Kernel Function Library/DataFunctions.kerml","excerpt":"Boolean","range":[2031,2038]},"subject":"03d36f9c-7403-576f-89f9-ac6271afc8b2"}
+scope boundary: {"declared_name":null,"derived_rule":null,"metaclass":"OwningMembership","source":{"document":"Kernel Function Library/BaseFunctions.kerml","excerpt":"*","range":[1047,1048]},"subject":"0493bf0f-016b-54c6-8a0a-b0ab78991bfb"}
+scope boundary: {"declared_name":null,"derived_rule":null,"metaclass":"OwningMembership","source":{"document":"Kernel Function Library/DataFunctions.kerml","excerpt":"[1]","range":[2274,2277]},"subject":"05a64312-1059-52e9-baec-2c7a1d0b8ecd"}
+scope boundary: {"declared_name":null,"derived_rule":null,"metaclass":"LiteralInteger","source":{"document":"Kernel Function Library/BaseFunctions.kerml","excerpt":"0","range":[1275,1276]},"subject":"05b6815b-9a68-50a7-8348-28c7f5b92e26"}
+scope expansion: 675 missing providers, 7889 -> Some(10410) subjects (development limit 15778)
+slice A scope 2: 10410 declared subjects
+slice A round 0: 256/4186, 205 proposed Elements
+slice A round 0: 512/4186, 461 proposed Elements
+slice A round 0: 768/4186, 679 proposed Elements
+slice A round 0: 1024/4186, 897 proposed Elements
+slice A round 0: 1280/4186, 1137 proposed Elements
+slice A round 0: 1536/4186, 1341 proposed Elements
+slice A round 0: 1792/4186, 1597 proposed Elements
+slice A round 0: 2048/4186, 1819 proposed Elements
+slice A round 0: 2304/4186, 2062 proposed Elements
+slice A round 0: 2560/4186, 2288 proposed Elements
+slice A round 0: 2816/4186, 2561 proposed Elements
+slice A round 0: 3072/4186, 2797 proposed Elements
+slice A round 0: 3328/4186, 3040 proposed Elements
+slice A round 0: 3584/4186, 3252 proposed Elements
+slice A round 0: 3840/4186, 3546 proposed Elements
+slice A round 0: 4096/4186, 3797 proposed Elements
+slice A round 0: 4186/4186, 3844 proposed Elements
+slice A round 0 (Structural): 3844 new Elements, 134 occurrences; Incomplete
+slice A round 1: 256/3493, 144 proposed Elements
+slice A round 1: 512/3493, 290 proposed Elements
+slice A round 1: 768/3493, 420 proposed Elements
+slice A round 1: 1024/3493, 574 proposed Elements
+slice A round 1: 1280/3493, 709 proposed Elements
+slice A round 1: 1536/3493, 892 proposed Elements
+slice A round 1: 1792/3493, 1084 proposed Elements
+slice A round 1: 2048/3493, 1286 proposed Elements
+slice A round 1: 2304/3493, 1493 proposed Elements
+slice A round 1: 2560/3493, 1622 proposed Elements
+slice A round 1: 2816/3493, 1780 proposed Elements
+slice A round 1: 3072/3493, 1957 proposed Elements
+slice A round 1: 3328/3493, 2126 proposed Elements
+slice A round 1: 3493/3493, 2183 proposed Elements
+slice A round 1 (Structural): 535 new Elements, 0 occurrences; Complete
+slice A round 2: 256/3268, 114 proposed Elements
+slice A round 2: 512/3268, 225 proposed Elements
+slice A round 2: 768/3268, 327 proposed Elements
+slice A round 2: 1024/3268, 463 proposed Elements
+slice A round 2: 1280/3268, 563 proposed Elements
+slice A round 2: 1536/3268, 716 proposed Elements
+slice A round 2: 1792/3268, 877 proposed Elements
+slice A round 2: 2048/3268, 1034 proposed Elements
+slice A round 2: 2304/3268, 1192 proposed Elements
+slice A round 2: 2560/3268, 1293 proposed Elements
+slice A round 2: 2816/3268, 1445 proposed Elements
+slice A round 2: 3072/3268, 1598 proposed Elements
+slice A round 2: 3268/3268, 1671 proposed Elements
+slice A round 2 (Structural): 0 new Elements, 0 occurrences; Complete
+slice A round 3: 256/488, 2816 proposed Elements
+slice A round 3: 488/488, 5329 proposed Elements
+slice A round 3 (ContextualBindings): 4392 new Elements, 0 occurrences; Complete
+slice A round 4: 256/4851, 361 proposed Elements
+slice A round 4: 512/4851, 682 proposed Elements
+slice A round 4: 768/4851, 988 proposed Elements
+slice A round 4: 1024/4851, 1451 proposed Elements
+slice A round 4: 1280/4851, 1746 proposed Elements
+slice A round 4: 1536/4851, 2164 proposed Elements
+slice A round 4: 1792/4851, 2484 proposed Elements
+slice A round 4: 2048/4851, 2893 proposed Elements
+slice A round 4: 2304/4851, 3304 proposed Elements
+slice A round 4: 2560/4851, 3683 proposed Elements
+slice A round 4: 2816/4851, 4125 proposed Elements
+slice A round 4: 3072/4851, 4504 proposed Elements
+slice A round 4: 3328/4851, 4925 proposed Elements
+slice A round 4: 3584/4851, 5254 proposed Elements
+slice A round 4: 3840/4851, 5606 proposed Elements
+slice A round 4: 4096/4851, 5929 proposed Elements
+slice A round 4: 4352/4851, 6431 proposed Elements
+slice A round 4: 4608/4851, 6741 proposed Elements
+slice A round 4: 4851/4851, 7029 proposed Elements
+slice A round 4 (ContextualBindings): 976 new Elements, 0 occurrences; Complete
+slice A round 5: 256/1118, 0 proposed Elements
+slice A round 5: 512/1118, 0 proposed Elements
+slice A round 5: 768/1118, 0 proposed Elements
+slice A round 5: 1024/1118, 0 proposed Elements
+slice A round 5: 1118/1118, 0 proposed Elements
+slice A round 5 (ContextualBindings): 0 new Elements, 0 occurrences; Complete
+slice A capabilities: 512/20157, 0 findings
+slice A capabilities: 1024/20157, 0 findings
+slice A capabilities: 1536/20157, 0 findings
+slice A capabilities: 2048/20157, 0 findings
+slice A capabilities: 2560/20157, 0 findings
+slice A capabilities: 3072/20157, 0 findings
+slice A capabilities: 3584/20157, 0 findings
+slice A capabilities: 4096/20157, 0 findings
+slice A capabilities: 4608/20157, 0 findings
+slice A capabilities: 5120/20157, 0 findings
+slice A capabilities: 5632/20157, 0 findings
+slice A capabilities: 6144/20157, 0 findings
+slice A capabilities: 6656/20157, 0 findings
+slice A capabilities: 7168/20157, 0 findings
+slice A capabilities: 7680/20157, 0 findings
+slice A capabilities: 8192/20157, 0 findings
+slice A capabilities: 8704/20157, 0 findings
+slice A capabilities: 9216/20157, 0 findings
+slice A capabilities: 9728/20157, 0 findings
+slice A capabilities: 10240/20157, 0 findings
+slice A capabilities: 10752/20157, 0 findings
+slice A capabilities: 11264/20157, 0 findings
+slice A capabilities: 11776/20157, 0 findings
+slice A capabilities: 12288/20157, 0 findings
+slice A capabilities: 12800/20157, 0 findings
+slice A capabilities: 13312/20157, 0 findings
+slice A capabilities: 13824/20157, 0 findings
+slice A capabilities: 14336/20157, 0 findings
+slice A capabilities: 14848/20157, 0 findings
+slice A capabilities: 15360/20157, 0 findings
+slice A capabilities: 15872/20157, 0 findings
+slice A capabilities: 16384/20157, 0 findings
+slice A capabilities: 16896/20157, 0 findings
+slice A capabilities: 17408/20157, 0 findings
+slice A capabilities: 17920/20157, 0 findings
+slice A capabilities: 18432/20157, 0 findings
+slice A capabilities: 18944/20157, 0 findings
+slice A capabilities: 19456/20157, 0 findings
+slice A capabilities: 19968/20157, 0 findings
+slice A capabilities: 20157/20157, 0 findings
+scope boundary: {"declared_name":"messageTransfers","derived_rule":null,"metaclass":"Flow","source":{"document":"Kernel Semantic Library/Transfers.kerml","excerpt":"abstract flow messageTransfers: MessageTransfer[0..*] nonunique subsets transfers {\n        doc\n        /*\n         * messageTransfers is a specialization of transfers restricted to type MessageTransfers.\n         */\n        \n        end fe","range":[6903,7326]},"subject":"50a49449-2ede-55d6-81d4-7b18b906225d"}
+scope boundary: {"declared_name":"acceptPerformances","derived_rule":null,"metaclass":"Step","source":{"document":"Kernel Semantic Library/Transfers.kerml","excerpt":"abstract step acceptPerformances: AcceptPerformance[0..*] nonunique subsets performances {\n        doc\n        /*\n         * acceptPerformances is a specialization of performances for AcceptPerformances.\n         */\n    }","range":[10594,10815]},"subject":"60cde8e3-6ddc-504c-8152-e09f771bf3cc"}
+scope boundary: {"declared_name":"transfersBefore","derived_rule":null,"metaclass":"Flow","source":{"document":"Kernel Semantic Library/Transfers.kerml","excerpt":"abstract flow transfersBefore: TransferBefore[0..*] nonunique subsets transfers, happensBeforeLinks\n        intersects transfers, happensBeforeLinks {\n        doc\n        /*\n         * transfersBefore is a specialization of transfers and ha","range":[7814,8399]},"subject":"88dcb443-1c23-5148-b38b-628a1447554d"}
+scope boundary: {"declared_name":"i","derived_rule":null,"metaclass":"Feature","source":{"document":"Kernel Function Library/ComplexFunctions.kerml","excerpt":"feature i: Complex[1] = rect(0.0, 1.0);","range":[242,281]},"subject":"d300ed9a-26df-59e0-a1b0-36a7bbedd3b6"}
+scope boundary: {"declared_name":"flowTransfers","derived_rule":null,"metaclass":"Flow","source":{"document":"Kernel Semantic Library/Transfers.kerml","excerpt":"abstract flow flowTransfers: FlowTransfer[0..*] nonunique subsets transfers {\n        doc\n        /*\n         * flowTransfers is a specialization of transfers restricted to type FlowTransfers.\n         * It is the default subsetting for non","range":[7336,7802]},"subject":"e909cd59-6625-5b42-b196-8a3b7eec7cfd"}
+scope boundary: {"declared_name":"sendPerformances","derived_rule":null,"metaclass":"Step","source":{"document":"Kernel Semantic Library/Transfers.kerml","excerpt":"abstract step sendPerformances: SendPerformance[0..*] nonunique subsets performances {\n        doc\n        /*\n         * sendPerformances is a specialization of performances for SendPerformances.\n         */\n    }","range":[10367,10580]},"subject":"f0c9717b-bd17-5492-a3cc-8232672ab640"}
+scope boundary: {"declared_name":"flowTransfersBefore","derived_rule":null,"metaclass":"Flow","source":{"document":"Kernel Semantic Library/Transfers.kerml","excerpt":"abstract flow flowTransfersBefore: FlowTransferBefore[0..*] nonunique subsets flowTransfers, transfersBefore\n        intersects flowTransfers, transfersBefore {\n        doc\n        /*\n         * flowTransfersBefore is a specialization of fl","range":[8409,9062]},"subject":"f453f403-73fb-5bd0-bf43-be4bc1c12b49"}
+scope expansion: 7 missing providers, 10410 -> Some(11227) subjects (development limit 15778)
+slice A scope 3: 11227 declared subjects
+slice A round 0: 256/4493, 201 proposed Elements
+slice A round 0: 512/4493, 455 proposed Elements
+slice A round 0: 768/4493, 665 proposed Elements
+slice A round 0: 1024/4493, 916 proposed Elements
+slice A round 0: 1280/4493, 1163 proposed Elements
+slice A round 0: 1536/4493, 1343 proposed Elements
+slice A round 0: 1792/4493, 1585 proposed Elements
+slice A round 0: 2048/4493, 1829 proposed Elements
+slice A round 0: 2304/4493, 2062 proposed Elements
+slice A round 0: 2560/4493, 2297 proposed Elements
+slice A round 0: 2816/4493, 2527 proposed Elements
+slice A round 0: 3072/4493, 2798 proposed Elements
+slice A round 0: 3328/4493, 3016 proposed Elements
+slice A round 0: 3584/4493, 3254 proposed Elements
+slice A round 0: 3840/4493, 3478 proposed Elements
+slice A round 0: 4096/4493, 3751 proposed Elements
+slice A round 0: 4352/4493, 3999 proposed Elements
+slice A round 0: 4493/4493, 4105 proposed Elements
+slice A round 0 (Structural): 4105 new Elements, 162 occurrences; Incomplete
