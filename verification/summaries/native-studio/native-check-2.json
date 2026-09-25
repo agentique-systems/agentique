@@ -1,0 +1,12 @@
+{
+  "command": [
+    "cargo",
+    "check",
+    "-p",
+    "agq-studio-native"
+  ],
+  "exit_code": 101,
+  "elapsed_seconds": 1.562,
+  "utc": "2026-09-25T07:00:43.494199+00:00",
+  "output": "verification/generated/native-studio/native-check-2.txt"
+}

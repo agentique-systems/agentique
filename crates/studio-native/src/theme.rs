@@ -32,6 +32,7 @@ impl Theme {
         }
     }
     pub fn install(self, ctx: &egui::Context) {
+        ctx.set_theme(if self.dark {egui::ThemePreference::Dark}else{egui::ThemePreference::Light});
         let mut style = (*ctx.style()).clone();
         style.visuals = if self.dark { egui::Visuals::dark() } else { egui::Visuals::light() };
         style.visuals.panel_fill = self.surface;
@@ -51,7 +52,7 @@ impl Theme {
         style.text_styles.insert(egui::TextStyle::Body, FontId::proportional(BODY));
         style.text_styles.insert(egui::TextStyle::Button, FontId::proportional(BODY));
         style.text_styles.insert(egui::TextStyle::Small, FontId::proportional(CAPTION));
-        ctx.set_style(style);
+        ctx.set_style_of(if self.dark {egui::Theme::Dark}else{egui::Theme::Light},style);
     }
     pub fn section(self, ui: &mut egui::Ui, text: &str) {
         ui.add_space(14.0);

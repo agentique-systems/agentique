@@ -7,10 +7,11 @@ struct VertexOutput {
     @location(2) fill: vec4<f32>,
     @location(3) border: vec4<f32>,
     @location(4) style: vec2<f32>,
+    @location(5) dash: vec2<f32>,
 }
 @vertex fn vertex(@builtin(vertex_index) index: u32,
                   @location(0) rect: vec4<f32>, @location(1) fill: vec4<f32>,
-                  @location(2) border: vec4<f32>, @location(3) style: vec4<f32>) -> VertexOutput {
+                  @location(2) border: vec4<f32>, @location(3) style: vec4<f32>, @location(4) detail: vec4<f32>) -> VertexOutput {
     let corners = array<vec2<f32>,6>(vec2(0.,0.),vec2(1.,0.),vec2(0.,1.),vec2(0.,1.),vec2(1.,0.),vec2(1.,1.));
     let fringe = 1.5 / (camera.zoom * camera.dpi);
     let local = corners[index] * (rect.zw + vec2(fringe * 2.)) - vec2(fringe);
@@ -19,6 +20,7 @@ struct VertexOutput {
     var out: VertexOutput;
     out.position = vec4(screen.x / camera.viewport.x * 2. - 1., 1. - screen.y / camera.viewport.y * 2., 0., 1.);
     out.local = local; out.size = rect.zw; out.fill = fill; out.border = border; out.style = style.xy;
+    out.dash = detail.xy;
     return out;
 }
 @fragment fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
@@ -29,5 +31,7 @@ struct VertexOutput {
     let cover = 1. - smoothstep(-aa * 0.5, aa * 0.5, distance);
     let inside = 1. - smoothstep(-aa * 0.5, aa * 0.5, distance + in.style.y);
     let color = mix(in.border, in.fill, inside);
-    return color * cover;
+    let phase = in.local.x - floor(in.local.x / max(in.dash.x,1.)) * max(in.dash.x,1.);
+    let dash_cover = select(1.,1. - smoothstep(in.dash.y-aa*0.5,in.dash.y+aa*0.5,phase),in.dash.x>0.);
+    return color * cover * dash_cover;
 }

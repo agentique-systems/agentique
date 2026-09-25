@@ -17,15 +17,17 @@ pub struct Quad {
     pub border: [f32; 4],
     /// radius, border width, cos, sin
     pub style: [f32; 4],
+    /// Dash period / ink length in world units; zero period is solid.
+    pub detail: [f32; 4],
 }
 impl Quad {
     pub fn rect(rect: [f32; 4], fill: egui::Color32, border: egui::Color32, radius: f32, width: f32) -> Self {
-        Self { rect, fill: color(fill), border: color(border), style: [radius, width, 1.0, 0.0] }
+        Self { rect, fill: color(fill), border: color(border), style: [radius, width, 1.0, 0.0],detail:[0.0;4] }
     }
     pub fn segment(a: [f32; 2], b: [f32; 2], width: f32, fill: egui::Color32) -> Option<Self> {
         let dx = b[0] - a[0]; let dy = b[1] - a[1];
         let length = dx.hypot(dy);
-        (length > 0.001).then(|| Self { rect: [a[0] + dy / length * width * 0.5, a[1] - dx / length * width * 0.5, length, width], fill: color(fill), border: color(fill), style: [width * 0.5, 0.0, dx / length, dy / length] })
+        (length > 0.001).then(|| Self { rect: [a[0] + dy / length * width * 0.5, a[1] - dx / length * width * 0.5, length, width], fill: color(fill), border: color(fill), style: [width * 0.5, 0.0, dx / length, dy / length],detail:[0.0;4] })
     }
 }
 fn color(value: egui::Color32) -> [f32; 4] { value.to_array().map(|v| v as f32 / 255.0) }
@@ -64,7 +66,7 @@ pub fn install(cc: &eframe::CreationContext<'_>) -> Result<(), String> {
         label: Some("Scene camera"), entries: &[wgpu::BindGroupLayoutEntry { binding: 0, visibility: wgpu::ShaderStages::VERTEX_FRAGMENT, ty: wgpu::BindingType::Buffer { ty: wgpu::BufferBindingType::Uniform, has_dynamic_offset: false, min_binding_size: std::num::NonZeroU64::new(32) }, count: None }],
     });
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor { label: Some("Scene pipeline"), bind_group_layouts: &[&layout], push_constant_ranges: &[] });
-    let attributes = wgpu::vertex_attr_array![0=>Float32x4,1=>Float32x4,2=>Float32x4,3=>Float32x4];
+    let attributes = wgpu::vertex_attr_array![0=>Float32x4,1=>Float32x4,2=>Float32x4,3=>Float32x4,4=>Float32x4];
     let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
         label: Some("Scene quads and routes"), layout: Some(&pipeline_layout),
         vertex: wgpu::VertexState { module: &shader, entry_point: Some("vertex"), compilation_options: Default::default(), buffers: &[wgpu::VertexBufferLayout { array_stride: std::mem::size_of::<Quad>() as u64, step_mode: wgpu::VertexStepMode::Instance, attributes: &attributes }] },

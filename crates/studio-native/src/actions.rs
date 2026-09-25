@@ -317,6 +317,7 @@ impl StudioApp {
         self.compare_before = None;
         self.comparison = ComparisonMode::Current;
         self.layout = Default::default();
+        self.layouts.clear();
         self.selection.clear();
         self.rebuild();
         self.fit_pending = true;

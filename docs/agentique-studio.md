@@ -1,6 +1,8 @@
-# Agentique Studio
+# Agentique Studio Prototype 0 / web client
 
-Studio is the first Generation 2 spatial operator surface. It reads immutable
+The React Studio is the Generation 2 interaction reference, backend contract client,
+browser compatibility surface and regression client. The production architecture
+is [Rust-native Studio](native-studio.md). This web surface reads immutable
 durable model revisions, with System, Graph, Requirements, History, Agents and
 Source lenses. The backend projects canonical IDs; the browser stores selection,
 camera and presentation choices.

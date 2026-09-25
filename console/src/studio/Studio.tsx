@@ -387,7 +387,7 @@ export function Studio() {
     <div className={`studio studio-${theme}`}>
       <header className="studio-topbar">
         <a className="studio-brand" href="/studio">
-          <span>◈</span> AGENTIQUE <small>STUDIO</small>
+          <span>◈</span> AGENTIQUE <small>PROTOTYPE 0</small>
         </a>
         <span className="studio-top-divider" />
         <div className="studio-project-name">

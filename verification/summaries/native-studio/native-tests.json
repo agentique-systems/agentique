@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-studio-native",
+    "-p",
+    "agq-studio-scene",
+    "-p",
+    "agq-studio-platform"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 11.828,
+  "utc": "2026-09-25T07:08:25.883987+00:00",
+  "output": "verification/generated/native-studio/native-tests.txt"
+}

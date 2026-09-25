@@ -3,7 +3,7 @@ use agq_kernel::ElementId;
 use agq_modeling_workspace::ProjectRevisionId;
 use serde::{Deserialize, Serialize};
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 pub enum World {
     #[default]
     System,
@@ -64,4 +64,3 @@ impl Navigation {
         self.entries.get(self.cursor).cloned()
     }
 }
-

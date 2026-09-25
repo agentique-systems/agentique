@@ -3,9 +3,9 @@ use agq_kernel::ElementId;
 use agq_modeling_repository::{BranchId, Project, ProjectId};
 use agq_modeling_view::{ElementInspector, ExplanationProjection, RelationshipFamily, ViewProjection};
 use agq_studio_platform::{CandidateId,CandidatePhase,NativeConfig,ProjectHistory,RevisionBinding,SourceProjection};
-use agq_studio_scene::{Camera2D,LayoutMemory,LodController,Point,SceneOptions,SemanticScene,SpatialIndex,fixtures};
-use eframe::egui::{self, Color32};
-use std::{collections::BTreeSet,path::PathBuf,sync::{Arc,Mutex},time::{Duration,Instant}};
+use agq_studio_scene::{Camera2D,LayoutMemory,LodController,Point,SceneLookup,SceneOptions,SemanticScene,SpatialIndex,fixtures};
+use eframe::egui;
+use std::{collections::{BTreeMap,BTreeSet},path::PathBuf,sync::{Arc,Mutex},time::{Duration,Instant}};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ComparisonMode { Current, Candidate, Diff }
@@ -41,10 +41,14 @@ pub struct StudioApp {
     pub projection: ViewProjection,
     pub scene: SemanticScene,
     pub spatial: SpatialIndex,
+    pub lookup: SceneLookup,
+    pub outliner_order: Vec<usize>,
     pub camera: Camera2D,
     pub camera_target: Option<Camera2D>,
     pub lod: LodController,
     pub layout: LayoutMemory,
+    pub layouts: BTreeMap<World,LayoutMemory>,
+    pub layout_world: World,
     pub generation: u64,
     pub batch: Arc<Batch>,
     pub batch_key: Option<u64>,
@@ -98,6 +102,8 @@ impl StudioApp {
         let projection = fixture_projection(fixture.as_deref().unwrap_or("architecture"));
         let scene = SemanticScene::from_projection(&projection,&SceneOptions::default(),None)?;
         let spatial = SpatialIndex::build(&scene);
+        let lookup = SceneLookup::build(&scene);
+        let outliner_order=hierarchy_order(&scene);
         let layout = scene.memory().clone();
         let selection = Selection::new(projection.revision_id);
         let dark = restore.as_ref().map_or(!args.light,|r|r.dark);
@@ -113,11 +119,12 @@ impl StudioApp {
         let mut app = Self {
             args, theme, reduced_motion: restore.as_ref().is_some_and(|r|r.reduced_motion), ready:fixture.is_some(), fixture,
             config, setup_reason:setup.reason.unwrap_or_else(|| "Authenticating accepted publications…".into()), bundle_path:String::new(), projects:vec![],binding:None,branch:None,history:None,bridge,pending,scene_request:0,inspector_request:0,explanation_request:0,source_request:0,project_request:0,
-            projection,scene,spatial,camera:Camera2D::default(),camera_target:None,lod:LodController::default(),layout,generation:1,batch:Arc::new(Batch::default()),batch_key:None,gpu_stats:Arc::new(Mutex::new(GpuStats::default())),selection,navigation:Navigation::default(),world:World::System,focus:None,collapsed:BTreeSet::new(),families:RelationshipFamily::all().into_iter().collect(),expanded:None,include_standard:false,
+            projection,scene,spatial,lookup,outliner_order,camera:Camera2D::default(),camera_target:None,lod:LodController::default(),layout,layouts:BTreeMap::new(),layout_world:World::System,generation:1,batch:Arc::new(Batch::default()),batch_key:None,gpu_stats:Arc::new(Mutex::new(GpuStats::default())),selection,navigation:Navigation::default(),world:World::System,focus:None,collapsed:BTreeSet::new(),families:RelationshipFamily::all().into_iter().collect(),expanded:None,include_standard:false,
             inspector:None,explanation:None,source:None,show_explain:false,show_source:false,palette:false,palette_query:String::new(),palette_focus:false,create_dialog:false,new_part_name:"newPart".into(),candidate:None,comparison:ComparisonMode::Current,compare_before:None,dependencies:None,show_agent:false,search:String::new(),status:"Ready".into(),fit_pending:true,marquee_start:None,marquee_end:None,timing:FrameTiming::default(),frame_number:0,capture_requested:false,capture_done:false,session_path,restore,last_saved:Instant::now(),adapter,
         };
         if app.fixture.as_deref() == Some("requirements") {app.world = World::Requirements;}
         if matches!(app.fixture.as_deref(),Some("stress1000"|"stress10000"|"ports")) {app.world = World::Graph;}
+        app.rebuild();
         if app.fixture.as_deref() == Some("diff") {app.show_fixture_diff();}
         if let Some(id) = app.projection.nodes.iter().find(|n|n.name=="ModelRepository").map(|n|n.id) {app.select(agq_studio_scene::SceneTarget::Node(id),false);}
         app.record_location();
@@ -126,13 +133,18 @@ impl StudioApp {
     pub fn project_id(&self) -> Option<ProjectId> { self.binding.map(|b|b.project) }
     pub fn rebuild(&mut self) {
         let started = Instant::now();
+        if self.layout_world != self.world {
+            self.layouts.insert(self.layout_world,self.layout.clone());
+            self.layout=self.layouts.get(&self.world).cloned().unwrap_or_default();
+            self.layout_world=self.world;
+        }
         let mut projection = self.active_projection().clone();
         projection.edges.retain(|e|self.families.contains(&e.family));
         if let Some(expanded) = &self.expanded {
             projection.nodes.retain(|n|expanded.contains(&n.id));
             projection.edges.retain(|e|expanded.contains(&e.source)&&expanded.contains(&e.target));
         }
-        let options = SceneOptions {collapsed:self.collapsed.clone(),focus:if self.world==World::System {self.focus}else{None}};
+        let options = SceneOptions {collapsed:self.collapsed.clone(),focus:if self.world==World::System {self.focus}else{None},hierarchy:matches!(self.world,World::System|World::History)};
         match SemanticScene::from_projection(&projection,&options,Some(&self.layout)) {
             Ok(mut scene) => {
                 if self.comparison == ComparisonMode::Diff {
@@ -141,6 +153,8 @@ impl StudioApp {
                 }
                 self.layout = scene.memory().clone();
                 self.spatial = SpatialIndex::build(&scene);
+                self.lookup = SceneLookup::build(&scene);
+                self.outliner_order=hierarchy_order(&scene);
                 self.selection.reconcile(&scene);
                 self.scene = scene; self.generation += 1; self.batch_key = None;
                 self.inspector = None; self.explanation = None; self.source = None;
@@ -208,9 +222,24 @@ fn install_fonts(ctx:&egui::Context) {
             break;
         }
     }
+    for (name,paths) in [
+        ("studio-symbols",vec!["C:/Windows/Fonts/seguisym.ttf","/usr/share/fonts/truetype/noto/NotoSansSymbols-Regular.ttf"]),
+        ("studio-cjk",vec!["C:/Windows/Fonts/msyh.ttc","/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc"]),
+    ] {
+        for path in paths {if let Ok(bytes)=std::fs::read(path){fonts.font_data.insert(name.into(),Arc::new(egui::FontData::from_owned(bytes)));fonts.families.entry(egui::FontFamily::Proportional).or_default().push(name.into());break;}}
+    }
     ctx.set_fonts(fonts);
 }
 
 pub fn muted(text:impl Into<String>,theme:Theme)->egui::RichText {egui::RichText::new(text).color(theme.muted)}
-pub fn short_revision(id:agq_modeling_workspace::ProjectRevisionId)->String {format!("{:08x}",(id.as_u128()>>96) as u32)}
-pub fn border_color(theme:Theme,selected:bool)->Color32 {if selected {theme.accent}else{theme.border}}
+pub fn short_revision(id:agq_modeling_workspace::ProjectRevisionId)->String {format!("{:04x}…{:04x}",(id.as_u128()>>112) as u16,id.as_u128() as u16)}
+
+fn hierarchy_order(scene:&SemanticScene)->Vec<usize> {
+    let ids:BTreeSet<_>=scene.nodes.iter().map(|n|n.id()).collect();
+    let mut children=BTreeMap::<Option<ElementId>,Vec<usize>>::new();
+    for (index,node) in scene.nodes.iter().enumerate(){children.entry(node.semantic.owner.filter(|id|ids.contains(id))).or_default().push(index);}
+    let mut stack=children.get(&None).cloned().unwrap_or_default();stack.reverse();
+    let mut ordered=Vec::with_capacity(scene.nodes.len());let mut seen=BTreeSet::new();
+    while let Some(index)=stack.pop(){if !seen.insert(index){continue;}ordered.push(index);if let Some(owned)=children.get(&Some(scene.nodes[index].id())){stack.extend(owned.iter().rev().copied());}}
+    ordered
+}

@@ -1,6 +1,6 @@
 use crate::{app::{ComparisonMode,StudioApp,muted,short_revision},commands::{self,CommandId},navigation::World,theme::{CAPTION,PANEL_WIDTH}};
 use agq_studio_scene::{SceneTarget,NodeCategory};
-use eframe::egui::{self,Align,Align2,Color32,FontId,Layout,RichText,Stroke,Vec2};
+use eframe::egui::{self,Align,Align2,FontId,Layout,RichText,Stroke,Vec2};
 
 impl StudioApp {
     pub fn shell(&mut self,ctx:&egui::Context) {
@@ -14,7 +14,8 @@ impl StudioApp {
                 painter.line_segment([center+Vec2::new(-5.0,2.0),center+Vec2::new(6.0,2.0)],Stroke::new(2.4,theme.accent));
                 ui.label(RichText::new("AGENTIQUE").size(19.0).strong());
                 ui.add_space(18.0);ui.separator();ui.add_space(12.0);
-                ui.menu_button(self.history.as_ref().map_or("Agentique",|h|h.project.name.as_str()),|ui|{
+                let project_name=self.history.as_ref().map_or("Agentique",|h|h.project.name.as_str()).to_owned();
+                ui.menu_button(project_name,|ui|{
                     ui.label(muted("PROJECTS",theme).small());
                     for project in self.projects.clone() {if ui.button(&project.name).clicked(){self.open_project(project.id);ui.close();}}
                     ui.separator();ui.label(muted("VISUAL FIXTURES",theme).small());
@@ -96,9 +97,12 @@ impl StudioApp {
         ui.add_space(14.0);ui.horizontal(|ui|{ui.label(RichText::new("Architecture").strong());ui.label(muted(self.projection.nodes.len().to_string(),theme).small());});
         ui.add_space(8.0);
         let search=self.search.to_lowercase();
-        let nodes:Vec<_>=self.scene.nodes.iter().filter(|n|search.is_empty()||n.semantic.name.to_lowercase().contains(&search)).map(|n|(n.id(),n.semantic.name.clone(),n.depth,n.is_container,n.category,n.collapsed)).collect();
+        let nodes:Vec<_>=self.outliner_order.iter().copied().filter(|index|search.is_empty()||self.scene.nodes[*index].semantic.name.to_lowercase().contains(&search)).collect();
         egui::ScrollArea::vertical().auto_shrink([false,false]).show_rows(ui,32.0,nodes.len(),|ui,range|{
-            for index in range {let (id,name,depth,container,category,collapsed)=&nodes[index];
+            for index in range {
+                let node=&self.scene.nodes[nodes[index]];
+                let row=(node.id(),node.semantic.name.clone(),node.depth,node.is_container,node.category,node.collapsed);
+                let (id,name,depth,container,category,collapsed)=&row;
                 ui.horizontal(|ui|{
                     ui.add_space((*depth as f32*12.0).min(48.0));
                     if *container {if ui.add(egui::Button::new(if *collapsed {"▸"}else{"▾"}).frame(false).small()).clicked(){if !self.collapsed.remove(id){self.collapsed.insert(*id);}self.rebuild();}}
@@ -146,7 +150,8 @@ impl StudioApp {
                 ui.add_space(8.0);
                 let enter=ui.input(|i|i.key_pressed(egui::Key::Enter));
                 egui::ScrollArea::vertical().show(ui,|ui|{
-                    for (index,command) in commands::search(&self.palette_query).enumerate(){
+                    let results:Vec<_>=commands::search(&self.palette_query).collect();
+                    for (index,command) in results.into_iter().enumerate(){
                         let reason=commands::unavailable(command.id,&self.context());
                         let label=format!("{}    {}\n{}",command.label,command.shortcut,reason.unwrap_or(command.description));
                         let response=ui.add_enabled(reason.is_none(),egui::Button::new(label).min_size(Vec2::new(ui.available_width(),52.0)));
@@ -216,10 +221,7 @@ impl StudioApp {
                 ui.painter().text(card.min+Vec2::new(20.0,17.0),Align2::LEFT_TOP,name,FontId::proportional(18.0),theme.text);
                 ui.painter().text(card.min+Vec2::new(20.0,49.0),Align2::LEFT_TOP,format!("{}   ·   {}   ·   {}",short_revision(*revision),status,if index==0{"main"}else{"architecture-experiment"}),FontId::proportional(12.0),theme.muted);
                 if response.clicked(){
-                    self.focus=None;self.candidate=None;self.comparison=ComparisonMode::Current;
-                    if let Some(binding)=self.binding {self.binding=Some(agq_studio_platform::RevisionBinding {revision:*revision,..binding});self.request_projection();}
-                    else{let (before,after)=agq_studio_scene::fixtures::revision_diff();self.projection=if index==0{before}else{after};self.rebuild();}
-                    self.record_location();
+                    self.select_revision(*revision);
                 }
             }
         });

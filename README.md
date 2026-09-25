@@ -14,8 +14,11 @@ See [baseline discrepancies](docs/standards-discrepancies.md) and
 
 ## Setup and launch
 
-The new **Generation 2 Agentique Studio** has its own local host and semantic
-viewport. See [Studio launch and operator workflow](docs/agentique-studio.md).
+The **Rust-native Agentique Studio** foundation has its own GPU semantic scene and
+in-process modeling boundary. See [Native Studio launch and architecture](docs/native-studio.md).
+
+The browser **Agentique Studio Prototype 0** retains its local host and semantic
+viewport as a contract and regression client. See [web-client launch and workflow](docs/agentique-studio.md).
 Its semantic runtime is installed once with `agq-studio setup --bundle <path>`
 and discovered in the normal user runtime store on launch. The
 [runtime distribution guide](docs/runtime-publication-distribution.md) describes

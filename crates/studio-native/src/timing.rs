@@ -6,12 +6,10 @@ pub struct FrameTiming {
     frames: VecDeque<f64>,
     pub scene_ms: f64,
     pub layout_ms: f64,
-    pub upload_ms: f64,
     pub hit_us: f64,
     pub input_to_frame_ms: f64,
     pub visible_nodes: usize,
     pub total_nodes: usize,
-    pub draw_calls: usize,
     last_frame: Option<Instant>,
     input_at: Option<Instant>,
 }

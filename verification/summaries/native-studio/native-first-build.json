@@ -1,0 +1,12 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "-p",
+    "agq-studio-native"
+  ],
+  "exit_code": 101,
+  "elapsed_seconds": 122.922,
+  "utc": "2026-09-25T07:03:54.724914+00:00",
+  "output": "verification/generated/native-studio/native-first-build.txt"
+}
