@@ -1,3 +1,3 @@
 # Evidence hashes refer to the exact recorded bytes.
-*.json -text
-*.log -text
+*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+*.log -text -whitespace

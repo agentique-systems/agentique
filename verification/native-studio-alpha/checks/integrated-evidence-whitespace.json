@@ -1,0 +1,15 @@
+{
+  "command": [
+    "git",
+    "diff",
+    "--check",
+    "HEAD~1"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T18:48:29.940461+00:00",
+  "elapsed_seconds": 0.063,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/integrated-evidence-whitespace.txt",
+  "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "build_environment": {}
+}

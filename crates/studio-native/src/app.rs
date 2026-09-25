@@ -658,6 +658,11 @@ impl eframe::App for StudioApp {
         self.capture(ctx);
         if self.args.frames.is_some() {
             ctx.request_repaint();
+        } else if self.args.scenario.is_some() {
+            // raw_input_hook runs before begin_pass, which can clear a delayed
+            // repaint requested by a scenario. Keep its opt-in input clock in
+            // the actual UI pass, including when every visible widget is idle.
+            ctx.request_repaint_after(Duration::from_millis(16));
         }
         if self.last_saved.elapsed() > Duration::from_secs(8) {
             self.save_session();

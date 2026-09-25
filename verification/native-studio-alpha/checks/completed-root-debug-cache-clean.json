@@ -1,0 +1,17 @@
+{
+  "command": [
+    "cargo",
+    "clean",
+    "--target-dir",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target",
+    "--profile",
+    "dev"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T18:47:13.894811+00:00",
+  "elapsed_seconds": 3.11,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/completed-root-debug-cache-clean.txt",
+  "output_sha256": "30552324a0f48dafc56a516894156b9481fbbe71b94611c6b569254e743ba075",
+  "build_environment": {}
+}

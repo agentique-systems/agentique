@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python",
+    "verification/scripts/native_alpha_redraw.py",
+    "--pid",
+    "10300",
+    "--executable",
+    "target/native-alpha/release/agq-studio-native.exe",
+    "--seconds",
+    "180"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T18:53:47.120608+00:00",
+  "elapsed_seconds": 0.156,
+  "exit_code": 1,
+  "output": "verification/native-studio-alpha/checks/real-first-light-diagnostic-redraw.txt",
+  "output_sha256": "56924ac6f7839a1b1674e4b3f70f40759068630ac051240f483518576a460238",
+  "build_environment": {}
+}

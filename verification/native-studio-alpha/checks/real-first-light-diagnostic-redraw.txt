@@ -1,0 +1,32 @@
+Traceback (most recent call last):
+  File "C:\Users\phili\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\psutil\_pswindows.py", line 730, in wrapper
+    return fun(self, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\phili\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\psutil\_pswindows.py", line 991, in create_time
+    user, system, created = cext.proc_times(self.pid)
+                            ^^^^^^^^^^^^^^^^^^^^^^^^^
+ProcessLookupError: [Errno 3] assume no such process (originated from OpenProcess -> ERROR_INVALID_PARAMETER)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\phili\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\psutil\__init__.py", line 359, in _init
+    self.create_time()
+  File "C:\Users\phili\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\psutil\__init__.py", line 752, in create_time
+    self._create_time = self._proc.create_time()
+                        ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\phili\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\psutil\_pswindows.py", line 732, in wrapper
+    raise convert_oserror(err, pid=self.pid, name=self._name)
+psutil.NoSuchProcess: process no longer exists (pid=10300)
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\phili\github\agentique-systems\agentique\verification\scripts\native_alpha_redraw.py", line 22, in <module>
+    process = psutil.Process(args.pid)
+              ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\phili\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\psutil\__init__.py", line 323, in __init__
+    self._init(pid)
+  File "C:\Users\phili\AppData\Local\Packages\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\LocalCache\local-packages\Python312\site-packages\psutil\__init__.py", line 372, in _init
+    raise NoSuchProcess(pid, msg=msg)
+psutil.NoSuchProcess: process PID not found (pid=10300)
