@@ -103,6 +103,22 @@ not be converted to a passing report by a wrapper script.
 Current verification status: the first three actual native runs exposed palette
 input timing, cross-object click counting and a port-identity assertion mismatch.
 Those corrections are recorded in [the quality review](quality-review.md).
-The final corrected 37-stage run is **pending** until its actual report and
-successful process exit are recorded. This runner verifies visual fixtures;
-disabled fixture validation/commit are intentional authority-boundary checks.
+The corrected release runs `interaction-4.json` and `interaction-final.json`
+both passed all **37 stages**, with zero failed assertions and process exit
+code **0**. The actual final invocation from the repository root was:
+
+```powershell
+target/release/agq-studio-native.exe --fixture architecture --no-restore --scenario vertical --scenario-report verification/generated/native-studio/interaction-final.json
+```
+
+Run 4 used the same arguments with report path
+`verification/generated/native-studio/interaction-4.json`. Both deterministic
+reports have SHA-256
+`e90f0dda72946dcd35c89c89e5e6fbc45ba9b0334fe41233e974aad472ae78a8`.
+The [compact acceptance record](interaction-acceptance.json) retains their
+commands, process results, scope and all assertion names/results. No current
+executable hash is attributed to these runs: the executable was subsequently
+rebuilt. This evidence accepts the visual fixture interaction path; disabled
+fixture validation/commit are intentional authority-boundary checks. Real
+runtime-backed semantic reconstruction, validation and commit are not established
+by the scenario.

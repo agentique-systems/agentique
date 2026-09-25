@@ -86,10 +86,27 @@ the failures are retained as engineering evidence, not counted as acceptance.
 
 Reports and process output are under
 `verification/generated/native-studio/interaction-{1,2,3}.json` and
-`native-interaction-{1,2,3}.txt`. At the time of this review, the corrected
-37-stage run is **pending**. Do not infer success from these corrections or
-from compilation. Acceptance requires an actual report with all 37 assertions
-passing and a successful process exit.
+`native-interaction-{1,2,3}.txt`.
+
+Both subsequent actual release runs, `interaction-4.json` and
+`interaction-final.json`, passed all **37 assertions**, with no failed assertion
+and process exit code **0**. The final invocation from the repository root was:
+
+```powershell
+target/release/agq-studio-native.exe --fixture architecture --no-restore --scenario vertical --scenario-report verification/generated/native-studio/interaction-final.json
+```
+
+The preceding passing invocation used the same arguments with report path
+`verification/generated/native-studio/interaction-4.json`. Recorded process
+durations were 13.531 seconds for run 4 and 15.359 seconds for the final run;
+these are automation durations, not a five-minute user study or latency metric.
+The deterministic reports are byte-identical with SHA-256
+`e90f0dda72946dcd35c89c89e5e6fbc45ba9b0334fe41233e974aad472ae78a8`.
+[The retained acceptance summary](interaction-acceptance.json) records every
+assertion name/result, both exact invocations, exit codes and report identities.
+Process records are `verification/summaries/native-studio/native-interaction-4.json`
+and `native-interaction-final.json` in that directory. The executable was rebuilt
+after these runs; no hash of the current executable is attributed to either run.
 
 ## Product judgment and limits
 
@@ -100,12 +117,19 @@ engineering relationships. The first screenshot did not meet that bar; the
 review loop materially improved it. The final comparison is suitable to show
 publicly when clearly labeled as a visual fixture.
 
+Together, the three visual rounds and two passing native input runs support
+accepting a serious foundation for the fixture experience. The exercised path
+includes camera/navigation, derived-edge selection, Explain, semantic dependency
+presentation, stable comparison, nested-part candidate preview, disabled fixture
+validation/commit, cancellation and revision-context changes. This is measured
+application-state evidence from actual native frames, not a claim that a
+five-minute independent user study occurred.
+
 This judgment is bounded. The small architecture fixture is deliberately
 composed; it does not establish routing quality for arbitrary dense models.
 Some parallel relationships share narrow corridors. Long inspector sections
 require scrolling. Full semantic screen-reader coverage of the GPU canvas,
 cross-platform text/IME behavior and extended hands-on ergonomics are not
-established by screenshots. The five-minute interaction acceptance question
-also remains open until the corrected native input run completes and should
-not be replaced by this visual judgment. Runtime-backed reconstruction,
-validation and durable commit remain separate semantic acceptance obligations.
+established by these captures and automated runs. Runtime-backed reconstruction,
+validation and durable commit remain separate semantic acceptance obligations
+and are not accepted by the fixture scenario.
