@@ -4,6 +4,7 @@ import path from "node:path";
 import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { hash, safePath, root as repositoryRoot } from "./extract.mjs";
+import { verifyLanguageLockCompatibility } from "./sysml-lock-compatibility.mjs";
 
 export const receiptPath = "standards/sysml-accepted-publication.json";
 export const bindingsPath = "standards/sysml-standard-bindings.json";
@@ -331,15 +332,34 @@ export function verifySystemsPublicationFreshness(root) {
   );
   const expected = JSON.parse(fs.readFileSync(safePath(root, inputsPath)));
   const actual = capturePublicationInputs(root);
+  // Preserve every original input pin. When only the workspace lock differs,
+  // an authenticated baseline can prove the complete language dependency
+  // closure unchanged. A changed transitive edge still fails this gate.
+  let lockCompatibility;
+  let comparable = actual;
+  if (actual.inputs["Cargo.lock"] !== expected.inputs?.["Cargo.lock"]) {
+    lockCompatibility = verifyLanguageLockCompatibility(
+      root,
+      expected.inputs?.["Cargo.lock"],
+      sourceRoots.map((name) => `agq-${name}`),
+    );
+    comparable = {
+      ...actual,
+      inputs: { ...actual.inputs, "Cargo.lock": expected.inputs["Cargo.lock"] },
+    };
+  }
   assert.deepEqual(
-    actual,
+    comparable,
     expected,
     "stale accepted Systems publication; review changed source/profile/descriptor/registry/binding/semantic identities",
   );
   return {
-    status: "accepted-inputs-current",
+    status: lockCompatibility
+      ? "accepted-inputs-compatible"
+      : "accepted-inputs-current",
     publication_digest: digest(actual.publication_identity.publication_digest),
     checked_inputs: Object.keys(actual.inputs).length,
+    ...(lockCompatibility ? { lock_compatibility: lockCompatibility } : {}),
   };
 }
 

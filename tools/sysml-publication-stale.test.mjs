@@ -11,6 +11,11 @@ import {
   capturePublicationInputs,
   verifySystemsPublicationFreshness,
 } from "./sysml-publication-stale.mjs";
+import {
+  acceptedLockPath,
+  languageLockClosure,
+  parseCargoLock,
+} from "./sysml-lock-compatibility.mjs";
 
 const canonical = (value) =>
   JSON.stringify(value, (_, v) =>
@@ -264,4 +269,186 @@ test("unrecognized compiled authority cannot imply a preaccept state", (t) => {
     write("crates/kerml-semantics/src/trusted_publication.rs", source);
     assert.throws(() => verifySystemsPublicationFreshness(root));
   }
+});
+
+const languageRoots = [
+  "kernel",
+  "kerml",
+  "kerml-semantics",
+  "kerml-syntax",
+  "kerml-text",
+  "sysml",
+  "sysml-semantics",
+  "standard-libraries",
+].map((name) => `agq-${name}`);
+const registry = "registry+https://github.com/rust-lang/crates.io-index";
+function lockText(packages) {
+  return (
+    "# Test lock; no publication authority\nversion = 4\n" +
+    packages
+      .map(
+        (pkg) =>
+          "\n[[package]]\n" +
+          Object.entries(pkg)
+            .map(([key, value]) =>
+              Array.isArray(value)
+                ? `${key} = [\n${value.map((s) => ` ${JSON.stringify(s)},\n`).join("")}]\n`
+                : `${key} = ${JSON.stringify(value)}\n`,
+            )
+            .join(""),
+      )
+      .join("")
+  );
+}
+function lockFixture(t) {
+  const f = fixture(t, 3);
+  const packages = [
+    ...languageRoots.map((name) => ({
+      name,
+      version: "0.1.0",
+      dependencies: ["semantic-helper"],
+    })),
+    {
+      name: "semantic-helper",
+      version: "1.0.0",
+      source: registry,
+      checksum: "12".repeat(32),
+      dependencies: ["leaf"],
+    },
+    {
+      name: "leaf",
+      version: "1.0.0",
+      source: registry,
+      checksum: "34".repeat(32),
+    },
+    { name: "app", version: "0.1.0" },
+  ];
+  const baseline = lockText(packages);
+  f.write("Cargo.lock", baseline);
+  f.write(acceptedLockPath, baseline);
+  f.write(inputsPath, capturePublicationInputs(f.root));
+  return { ...f, packages, baseline };
+}
+
+test("app-only lock additions prove unchanged full language closure without recapturing authority", (t) => {
+  const { root, write, packages } = lockFixture(t);
+  const authority = fs.readFileSync(path.join(root, inputsPath));
+  packages.push({ name: "native-ui", version: "0.1.0", dependencies: ["app"] });
+  write("Cargo.lock", lockText(packages));
+  const proof = verifySystemsPublicationFreshness(root);
+  assert.equal(proof.status, "accepted-inputs-compatible");
+  assert.equal(proof.lock_compatibility.reachable_packages, 10);
+  assert.equal(proof.lock_compatibility.grants_publication_authority, false);
+  assert.notEqual(
+    proof.lock_compatibility.current_lock_sha256,
+    proof.lock_compatibility.accepted_lock_sha256,
+  );
+  assert.deepEqual(fs.readFileSync(path.join(root, inputsPath)), authority);
+  // Compatibility cannot cover even an unrelated new interpretation file.
+  write("crates/sysml/src/new.rs", "// new semantic implementation");
+  assert.throws(
+    () => verifySystemsPublicationFreshness(root),
+    /stale accepted Systems/,
+  );
+});
+
+test("every reachable package identity, checksum and edge remains immutable", (t) => {
+  const { root, write, packages } = lockFixture(t);
+  for (const change of [
+    (p) => {
+      p[8].version = "1.0.1";
+    },
+    (p) => {
+      p[8].source = "registry+https://example.invalid/index";
+    },
+    (p) => {
+      p[8].checksum = "ff".repeat(32);
+    },
+    (p) => {
+      p[8].dependencies = [];
+    },
+    (p) => {
+      p[8].dependencies.push("app");
+    },
+    (p) => {
+      p[0].dependencies.push("app");
+    },
+    (p) => {
+      p[0].name = "renamed-language-root";
+    },
+  ]) {
+    const changed = structuredClone(packages);
+    change(changed);
+    write("Cargo.lock", lockText(changed));
+    assert.throws(() => verifySystemsPublicationFreshness(root));
+  }
+});
+
+test("duplicate-version lock qualification resolves exact edges and rejects ambiguity", (t) => {
+  const { root, write, packages } = lockFixture(t);
+  packages.push({
+    name: "leaf",
+    version: "2.0.0",
+    source: registry,
+    checksum: "56".repeat(32),
+  });
+  write("Cargo.lock", lockText(packages));
+  assert.throws(() => verifySystemsPublicationFreshness(root), /ambiguous/);
+  packages[8].dependencies = ["leaf 1.0.0"];
+  write("Cargo.lock", lockText(packages));
+  assert.equal(
+    verifySystemsPublicationFreshness(root).status,
+    "accepted-inputs-compatible",
+  );
+  packages[8].dependencies = [`leaf 1.0.0 (${registry})`];
+  write("Cargo.lock", lockText(packages));
+  assert.equal(
+    verifySystemsPublicationFreshness(root).status,
+    "accepted-inputs-compatible",
+  );
+  packages[8].dependencies = ["leaf 2.0.0"];
+  write("Cargo.lock", lockText(packages));
+  assert.throws(
+    () => verifySystemsPublicationFreshness(root),
+    /language dependency closure/,
+  );
+});
+
+test("compatibility authenticates original baseline bytes and fails on missing reference", (t) => {
+  const { root, write, packages, baseline } = lockFixture(t);
+  packages.push({ name: "native-ui", version: "0.1.0" });
+  write("Cargo.lock", lockText(packages));
+  write(acceptedLockPath, baseline + "\n");
+  assert.throws(
+    () => verifySystemsPublicationFreshness(root),
+    /unauthenticated/,
+  );
+  fs.unlinkSync(path.join(root, acceptedLockPath));
+  assert.throws(() => verifySystemsPublicationFreshness(root), /ENOENT/);
+});
+
+test("lock parser rejects unknown fields, tables, duplicates and malformed resolution", (t) => {
+  const { packages, baseline } = lockFixture(t);
+  for (const text of [
+    baseline.replace("version = 4", "version = 3"),
+    baseline + "[metadata]\nignored = true\n",
+    baseline + 'replace = "hidden-package"\n',
+    baseline + 'name = "duplicate-name"\n',
+    baseline.replace('checksum = "' + "12".repeat(32) + '"\n', ""),
+    lockText([...packages, packages[0]]),
+    lockText([
+      { ...packages[0], dependencies: ["missing-package"] },
+      ...packages.slice(1),
+    ]),
+    lockText([
+      {
+        ...packages[0],
+        dependencies: ["semantic-helper", "semantic-helper 1.0.0"],
+      },
+      ...packages.slice(1),
+    ]),
+  ]) {
+    assert.throws(() => languageLockClosure(text, languageRoots));
+  }
+  assert.equal(parseCargoLock(baseline).length, packages.length);
 });
