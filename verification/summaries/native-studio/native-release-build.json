@@ -1,0 +1,17 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--offline",
+    "--release",
+    "--config",
+    "profile.release.lto=false",
+    "-p",
+    "agq-studio-native"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 378.812,
+  "utc": "2026-09-25T07:18:50.493275+00:00",
+  "output": "verification/generated/native-studio/native-release-build.txt"
+}

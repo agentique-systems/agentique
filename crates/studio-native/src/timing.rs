@@ -14,12 +14,17 @@ pub struct FrameTiming {
     input_at: Option<Instant>,
 }
 impl FrameTiming {
-    pub fn input(&mut self) { self.input_at = Some(Instant::now()); }
+    pub fn input(&mut self) {
+        self.input_at = Some(Instant::now());
+    }
     pub fn frame(&mut self) {
         let now = Instant::now();
         if let Some(previous) = self.last_frame.replace(now) {
-            if self.frames.len() == 240 { self.frames.pop_front(); }
-            self.frames.push_back((now - previous).as_secs_f64() * 1000.0);
+            if self.frames.len() == 240 {
+                self.frames.pop_front();
+            }
+            self.frames
+                .push_back((now - previous).as_secs_f64() * 1000.0);
         }
         if let Some(input) = self.input_at.take() {
             self.input_to_frame_ms = (now - input).as_secs_f64() * 1000.0;
@@ -33,6 +38,9 @@ impl FrameTiming {
     pub fn p95_ms(&self) -> f64 {
         let mut frames: Vec<_> = self.frames.iter().copied().collect();
         frames.sort_by(f64::total_cmp);
-        frames.get(frames.len().saturating_sub(1) * 95 / 100).copied().unwrap_or(0.0)
+        frames
+            .get(frames.len().saturating_sub(1) * 95 / 100)
+            .copied()
+            .unwrap_or(0.0)
     }
 }

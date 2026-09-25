@@ -1,0 +1,16 @@
+{
+  "command": [
+    "target/debug/agq-studio-native.exe",
+    "--fixture",
+    "diff",
+    "--no-restore",
+    "--screenshot",
+    "verification/generated/native-studio/diff-review.png",
+    "--frames",
+    "90"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 3.265,
+  "utc": "2026-09-25T07:11:36.948551+00:00",
+  "output": "verification/generated/native-studio/visual-diff.txt"
+}

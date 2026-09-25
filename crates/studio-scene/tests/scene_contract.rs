@@ -421,3 +421,24 @@ fn stale_scene_lookup_cannot_return_unrelated_records_or_cross_revisions() {
             .is_empty()
     );
 }
+#[test]
+fn comparison_preserves_container_envelope_around_removed_ghosts() {
+    let (before, after) = fixtures::revision_diff();
+    let parent = SemanticScene::from_projection(&before, &SceneOptions::default(), None).unwrap();
+    let mut child =
+        SemanticScene::from_projection(&after, &SceneOptions::default(), Some(parent.memory()))
+            .unwrap();
+    child.apply_diff(&parent);
+    let removed = child
+        .nodes
+        .iter()
+        .find(|n| n.diff == DiffMark::Removed)
+        .unwrap();
+    let owner = child.node(removed.semantic.owner.unwrap()).unwrap();
+    assert!(owner.bounds.contains_rect(removed.bounds));
+    assert!(
+        owner
+            .bounds
+            .contains_rect(parent.node(owner.id()).unwrap().bounds)
+    );
+}

@@ -4,7 +4,10 @@ import datetime
 import json
 import pathlib
 import subprocess
+import sys
 import time
+
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("name")

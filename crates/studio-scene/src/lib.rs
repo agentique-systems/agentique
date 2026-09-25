@@ -446,6 +446,23 @@ impl SemanticScene {
                 self.nodes.push(ghost);
             }
         }
+        // A comparison keeps the earlier containment envelope around removed
+        // ghosts. Shrinking it would visually detach a removed child from its
+        // original system even though that ownership has not changed.
+        for node in &mut self.nodes {
+            if node.is_container
+                && let Some(old) = before.get(&node.id())
+                && old.is_container
+            {
+                node.bounds = node.bounds.union(old.bounds);
+            }
+        }
+        let node_bounds: BTreeMap<_, _> = self.nodes.iter().map(|n| (n.id(), n.bounds)).collect();
+        for container in &mut self.containers {
+            if let Some(bounds) = node_bounds.get(&container.element_id) {
+                container.bounds = *bounds;
+            }
+        }
         let before_ports: BTreeMap<_, _> = parent.ports.iter().map(|p| (p.id, p)).collect();
         let after_ports: BTreeSet<_> = self.ports.iter().map(|p| p.id).collect();
         for p in &mut self.ports {

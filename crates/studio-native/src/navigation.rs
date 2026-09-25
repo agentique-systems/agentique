@@ -38,7 +38,9 @@ pub struct Navigation {
 }
 impl Navigation {
     pub fn push(&mut self, location: Location) {
-        if self.entries.get(self.cursor) == Some(&location) { return; }
+        if self.entries.get(self.cursor) == Some(&location) {
+            return;
+        }
         self.entries.truncate(self.cursor + 1);
         self.entries.push(location);
         self.cursor = self.entries.len() - 1;
@@ -54,12 +56,16 @@ impl Navigation {
         }
     }
     pub fn back(&mut self) -> Option<Location> {
-        if self.cursor == 0 { return None; }
+        if self.cursor == 0 {
+            return None;
+        }
         self.cursor -= 1;
         self.entries.get(self.cursor).cloned()
     }
     pub fn forward(&mut self) -> Option<Location> {
-        if self.cursor + 1 >= self.entries.len() { return None; }
+        if self.cursor + 1 >= self.entries.len() {
+            return None;
+        }
         self.cursor += 1;
         self.entries.get(self.cursor).cloned()
     }

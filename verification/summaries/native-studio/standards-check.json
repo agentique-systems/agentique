@@ -1,0 +1,11 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "standards:check"
+  ],
+  "exit_code": 1,
+  "elapsed_seconds": 2.359,
+  "utc": "2026-09-25T07:15:54.274615+00:00",
+  "output": "verification/generated/native-studio/standards-check.txt"
+}

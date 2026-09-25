@@ -1,7 +1,9 @@
 //! Agentique Native Studio. Semantic work crosses the in-process platform boundary.
 #![forbid(unsafe_code)]
 mod actions;
+mod agents;
 mod app;
+mod automation;
 mod bridge;
 mod commands;
 mod gpu;
@@ -42,6 +44,11 @@ pub struct Args {
     light: bool,
     #[arg(long)]
     no_restore: bool,
+    /// Exercise real native pointer/keyboard routing against the architecture fixture.
+    #[arg(long, value_parser = ["vertical"])]
+    scenario: Option<String>,
+    #[arg(long, default_value = "verification/generated/native-studio/interaction-report.json")]
+    scenario_report: PathBuf,
 }
 
 fn main() -> eframe::Result {
@@ -55,8 +62,12 @@ fn main() -> eframe::Result {
             .with_app_id("systems.agentique.studio.native"),
         ..Default::default()
     };
-    eframe::run_native("Agentique Native Studio", options, Box::new(move |cc| {
-        gpu::install(cc).map_err(std::io::Error::other)?;
-        Ok(Box::new(app::StudioApp::new(cc, args)?))
-    }))
+    eframe::run_native(
+        "Agentique Native Studio",
+        options,
+        Box::new(move |cc| {
+            gpu::install(cc).map_err(std::io::Error::other)?;
+            Ok(Box::new(app::StudioApp::new(cc, args)?))
+        }),
+    )
 }

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "target/debug/agq-studio-native.exe",
+    "--fixture",
+    "architecture",
+    "--no-restore",
+    "--screenshot",
+    "verification/generated/native-studio/round-2.png",
+    "--frames",
+    "180",
+    "--metrics",
+    "verification/generated/native-studio/round-2.json"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 5.718,
+  "utc": "2026-09-25T07:11:08.148595+00:00",
+  "output": "verification/generated/native-studio/visual-round-2.txt"
+}

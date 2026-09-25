@@ -1,0 +1,14 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-studio-native"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 10.828,
+  "utc": "2026-09-25T07:18:18.659716+00:00",
+  "output": "verification/generated/native-studio/native-interaction-build.txt"
+}
