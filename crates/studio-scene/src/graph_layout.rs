@@ -24,6 +24,11 @@ impl Default for GraphLayout {
 impl LayoutEngine for GraphLayout {
     fn layout(&self, input: &LayoutInput, previous: Option<&LayoutMemory>) -> LayoutResult {
         let ids: BTreeSet<_> = input.nodes.iter().map(|n| n.id).collect();
+        let sizes: BTreeMap<_, _> = input
+            .nodes
+            .iter()
+            .map(|node| (node.id, input.node_size(node, self.node_size)))
+            .collect();
         let mut outgoing: BTreeMap<ElementId, Vec<ElementId>> =
             ids.iter().map(|id| (*id, Vec::new())).collect();
         let mut incoming = outgoing.clone();
@@ -142,12 +147,7 @@ impl LayoutEngine for GraphLayout {
         if let Some(previous) = previous {
             for id in &ids {
                 if let Some(old) = previous.bounds.get(id).filter(|r| r.finite()) {
-                    let r = Rect::new(
-                        old.min.x,
-                        old.min.y,
-                        self.node_size.width,
-                        self.node_size.height,
-                    );
+                    let r = Rect::new(old.min.x, old.min.y, sizes[id].width, sizes[id].height);
                     if occupied.query(r.inflate(14.0)).is_empty() {
                         occupied.insert(r, *id);
                         result.bounds.insert(*id, r);
@@ -157,6 +157,10 @@ impl LayoutEngine for GraphLayout {
         }
         let mut x = 0.0;
         for members in by_rank.values_mut() {
+            let row_height = members
+                .iter()
+                .map(|id| sizes[id].height)
+                .fold(self.node_size.height, f32::max);
             // Dense cycles form a compact field instead of an unbounded column.
             let columns = if members.len() > 16 {
                 (members.len() as f32).sqrt().ceil() as usize
@@ -173,15 +177,10 @@ impl LayoutEngine for GraphLayout {
                 loop {
                     let position = Point::new(
                         x + (slot % columns) as f32 * (self.node_size.width + self.node_gap),
-                        (slot / columns) as f32 * (self.node_size.height + self.node_gap),
+                        (slot / columns) as f32 * (row_height + self.node_gap),
                     );
                     slot += 1;
-                    let r = Rect::new(
-                        position.x,
-                        position.y,
-                        self.node_size.width,
-                        self.node_size.height,
-                    );
+                    let r = Rect::new(position.x, position.y, sizes[id].width, sizes[id].height);
                     if occupied.query(r.inflate(14.0)).is_empty() {
                         occupied.insert(r, *id);
                         result.bounds.insert(*id, r);

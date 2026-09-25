@@ -203,6 +203,139 @@ fn collapsed_and_focused_views_retain_original_ids() {
     );
 }
 #[test]
+fn collapsed_subsystem_preserves_external_port_connections_without_inventing_ports() {
+    let projection = fixtures::architecture();
+    let mut options = SceneOptions::default();
+    options.collapsed.insert(fixtures::id(2));
+    let scene = SemanticScene::from_projection(&projection, &options, None).unwrap();
+    let proxy = scene
+        .ports
+        .iter()
+        .find(|port| port.id == fixtures::id(2101))
+        .unwrap();
+    assert_eq!(proxy.owner, fixtures::id(2));
+    assert_eq!(proxy.proxy_for_owner, Some(fixtures::id(21)));
+    assert_eq!(proxy.revision_id, projection.revision_id);
+    assert_eq!(proxy.direction, PortDirection::Unspecified);
+    assert!(proxy.name.contains("ModelRepository"));
+    let connection = scene
+        .edges
+        .iter()
+        .find(|edge| edge.semantic.target == proxy.id)
+        .unwrap();
+    assert_eq!(connection.points.last(), Some(&proxy.position));
+    assert_eq!(connection.semantic, projection.edges[0]);
+    assert_eq!(scene.edges.iter().filter(|edge| edge.semantic.family == agq_modeling_view::RelationshipFamily::Connection).count(), 6);
+}
+
+#[test]
+fn candidate_diff_does_not_union_old_absolute_container_positions() {
+    let (_, before_projection) = fixtures::revision_diff();
+    let before =
+        SemanticScene::from_projection(&before_projection, &SceneOptions::default(), None).unwrap();
+    let mut candidate = before_projection.clone();
+    let mut added = candidate
+        .nodes
+        .iter()
+        .find(|node| node.id == fixtures::id(24))
+        .unwrap()
+        .clone();
+    added.id = ElementId::from_u128(17);
+    added.name = "ScenarioNestedPart".into();
+    candidate.nodes.push(added);
+    let mut after =
+        SemanticScene::from_projection(&candidate, &SceneOptions::default(), Some(before.memory()))
+            .unwrap();
+    after.apply_diff(&before);
+    for node in &after.nodes {
+        if let Some(owner) = node.semantic.owner {
+            assert!(
+                after.node(owner).unwrap().bounds.contains_rect(node.bounds),
+                "{} escaped owner",
+                node.semantic.name
+            );
+        }
+        for sibling in after
+            .nodes
+            .iter()
+            .filter(|other| other.id() > node.id() && other.semantic.owner == node.semantic.owner)
+        {
+            assert!(
+                !node.bounds.intersects(sibling.bounds),
+                "{} overlaps {}",
+                node.semantic.name,
+                sibling.semantic.name
+            );
+        }
+    }
+}
+
+#[test]
+fn moved_diff_container_keeps_extent_in_current_coordinate_frame() {
+    let before = architecture();
+    let mut memory = before.memory().clone();
+    for node in &before.nodes {
+        if node.id() == fixtures::id(3) || node.semantic.owner == Some(fixtures::id(3)) {
+            memory
+                .bounds
+                .insert(node.id(), node.bounds.translate(Point::new(1000.0, 0.0)));
+        }
+    }
+    let mut after = SemanticScene::from_projection(
+        &fixtures::architecture(),
+        &SceneOptions::default(),
+        Some(&memory),
+    )
+    .unwrap();
+    let expected = after.node(fixtures::id(3)).unwrap().bounds;
+    after.apply_diff(&before);
+    assert_eq!(after.node(fixtures::id(3)).unwrap().bounds, expected);
+    assert_eq!(
+        expected.width(),
+        before.node(fixtures::id(3)).unwrap().bounds.width()
+    );
+}
+
+#[test]
+fn many_ports_have_readable_separation_in_both_layouts() {
+    let mut projection = fixtures::architecture();
+    let node = projection
+        .nodes
+        .iter_mut()
+        .find(|node| node.id == fixtures::id(21))
+        .unwrap();
+    node.features = (0..24)
+        .map(|index| agq_modeling_view::FeatureSummary {
+            id: fixtures::id(80_000 + index),
+            name: format!("pressure_{index}_μPa"),
+            semantic_kind: "PortUsage".into(),
+        })
+        .collect();
+    node.counts.ports = 24;
+    for hierarchy in [true, false] {
+        let scene = SemanticScene::from_projection(
+            &projection,
+            &SceneOptions {
+                hierarchy,
+                ..Default::default()
+            },
+            None,
+        )
+        .unwrap();
+        let mut left: Vec<_> = scene
+            .ports
+            .iter()
+            .filter(|port| port.owner == fixtures::id(21) && port.side == PortSide::Left)
+            .collect();
+        left.sort_by(|a, b| a.position.y.total_cmp(&b.position.y));
+        assert_eq!(left.len(), 12);
+        assert!(
+            left.windows(2)
+                .all(|pair| pair[1].position.y - pair[0].position.y >= 20.0)
+        );
+    }
+}
+#[test]
 fn diff_retains_ghost_revision_and_does_not_mark_unchanged_revision_ids() {
     let (a, b) = fixtures::revision_diff();
     let before = SemanticScene::from_projection(&a, &SceneOptions::default(), None).unwrap();

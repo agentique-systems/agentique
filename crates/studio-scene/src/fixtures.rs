@@ -204,6 +204,68 @@ pub fn dense_ports() -> ViewProjection {
     }
     view
 }
+/// Adversarial presentation fixtures; none claim language-semantic acceptance.
+pub fn adversarial() -> Vec<(&'static str, ViewProjection)> {
+    let mut wide = architecture();
+    for index in 0..32 {
+        wide.nodes.push(node(
+            10_000 + index,
+            &format!("Branch_{index:02}"),
+            "PartUsage",
+            Some(2),
+        ));
+    }
+    let mut deep = projection(
+        "Deep hierarchy · VISUAL FIXTURE",
+        ViewKind::Architecture,
+        (1..=64)
+            .map(|index| {
+                node(
+                    index,
+                    &format!("Level_{index:02}"),
+                    "PartUsage",
+                    (index > 1).then_some(index - 1),
+                )
+            })
+            .collect(),
+        vec![],
+    );
+    deep.nodes[0].semantic_kind = "PartDefinition".into();
+    let mut ports = architecture();
+    for node in ports.nodes.iter_mut().filter(|node| node.owner.is_some()) {
+        let base = (node.id.as_u128() & 0xffff) * 1000;
+        node.features.extend((0..22).map(|index| FeatureSummary {
+            id: id(base + index),
+            name: format!("thermalPressure_{index:02}_μPa"),
+            semantic_kind: "PortUsage".into(),
+        }));
+        node.counts.ports = 24;
+    }
+    let mut parallel = architecture();
+    for index in 0..12 {
+        let mut edge = parallel.edges[0].clone();
+        edge.id = format!("parallel-{index}");
+        parallel.edges.push(edge);
+    }
+    let mut names = architecture();
+    for node in &mut names.nodes {
+        node.name = format!(
+            "{}::ThermalProtection_ΔT_μPa_長い工学名_InterfaceRequirement",
+            node.name
+        );
+    }
+    vec![
+        ("wide-fan-out", wide),
+        ("deep-hierarchy", deep),
+        ("many-ports", ports),
+        ("dense-cross-links", dense_ports()),
+        ("parallel-edges", parallel),
+        ("long-unicode-names", names),
+        ("mixed-requirements", requirements()),
+        ("candidate-growth", revision_diff().1),
+        ("cycles", stress(80, 160)),
+    ]
+}
 pub fn requirements() -> ViewProjection {
     let nodes = vec![
         node(

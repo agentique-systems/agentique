@@ -142,6 +142,9 @@ pub struct ScenePort {
     pub id: ElementId,
     pub revision_id: ProjectRevisionId,
     pub owner: ElementId,
+    /// Original semantic owner when this is a boundary proxy on a collapsed
+    /// subsystem. The port ID and revision still identify the actual port.
+    pub proxy_for_owner: Option<ElementId>,
     pub name: String,
     pub position: Point,
     pub side: PortSide,
@@ -304,19 +307,26 @@ impl SemanticScene {
                 .filter(|f| {
                     NodeCategory::from_semantic_kind(&f.semantic_kind) == NodeCategory::Port
                 })
-                .map(|f| (f.id, f.name.clone(), n.semantic.origin))
+                .map(|f| (f.id, f.name.clone(), n.semantic.origin, None))
                 .collect();
             features.extend(
                 owned_ports
                     .get(&n.id())
                     .into_iter()
                     .flatten()
-                    .map(|p| (p.id, p.name.clone(), p.origin)),
+                    .map(|p| (p.id, p.name.clone(), p.origin, None)),
             );
-            features.sort_by_key(|(id, _, _)| *id);
-            features.dedup_by_key(|(id, _, _)| *id);
+            features.extend(
+                input
+                    .boundary_ports
+                    .iter()
+                    .filter(|p| p.owner == n.id())
+                    .map(|p| (p.id, p.name.clone(), p.origin, Some(p.semantic_owner))),
+            );
+            features.sort_by_key(|(id, _, _, _)| *id);
+            features.dedup_by_key(|(id, _, _, _)| *id);
             let count = features.len();
-            for (i, (id, name, origin)) in features.into_iter().enumerate() {
+            for (i, (id, name, origin, proxy_for_owner)) in features.into_iter().enumerate() {
                 if !port_ids.insert(id) {
                     continue;
                 }
@@ -338,6 +348,7 @@ impl SemanticScene {
                     id,
                     revision_id: projection.revision_id,
                     owner: n.id(),
+                    proxy_for_owner,
                     name,
                     position: Point::new(x, y),
                     side,
@@ -442,6 +453,16 @@ impl SemanticScene {
         for n in &parent.nodes {
             if !after.contains(&n.id()) {
                 let mut ghost = n.clone();
+                if let Some(owner) = n.semantic.owner
+                    && let (Some(old), Some(new)) = (
+                        before.get(&owner),
+                        self.nodes.iter().find(|node| node.id() == owner),
+                    )
+                {
+                    let dx = new.bounds.min.x - old.bounds.min.x;
+                    let dy = new.bounds.min.y - old.bounds.min.y;
+                    ghost.bounds = ghost.bounds.translate(Point::new(dx, dy));
+                }
                 ghost.diff = DiffMark::Removed;
                 self.nodes.push(ghost);
             }
@@ -454,7 +475,15 @@ impl SemanticScene {
                 && let Some(old) = before.get(&node.id())
                 && old.is_container
             {
-                node.bounds = node.bounds.union(old.bounds);
+                // Compare extents in the owner's current coordinate frame.
+                // Unioning old absolute positions creates a giant overlapping
+                // container whenever collision avoidance moves a subsystem.
+                node.bounds = Rect::new(
+                    node.bounds.min.x,
+                    node.bounds.min.y,
+                    node.bounds.width().max(old.bounds.width()),
+                    node.bounds.height().max(old.bounds.height()),
+                );
             }
         }
         let node_bounds: BTreeMap<_, _> = self.nodes.iter().map(|n| (n.id(), n.bounds)).collect();
@@ -475,6 +504,10 @@ impl SemanticScene {
         for p in &parent.ports {
             if !after_ports.contains(&p.id) {
                 let mut ghost = p.clone();
+                if let (Some(old), Some(new)) = (before.get(&p.owner), node_bounds.get(&p.owner)) {
+                    ghost.position.x += new.min.x - old.bounds.min.x;
+                    ghost.position.y += new.min.y - old.bounds.min.y;
+                }
                 ghost.diff = DiffMark::Removed;
                 self.ports.push(ghost);
             }
@@ -494,6 +527,21 @@ impl SemanticScene {
                 ghost.diff = DiffMark::Removed;
                 self.edges.push(ghost);
             }
+        }
+        // Ghost routes follow their displayed endpoints after containment moves.
+        let marks: BTreeMap<_, _> = self
+            .edges
+            .iter()
+            .map(|edge| (edge.semantic.id.clone(), edge.diff))
+            .collect();
+        let semantics: Vec<_> = self
+            .edges
+            .iter()
+            .map(|edge| edge.semantic.clone())
+            .collect();
+        self.edges = route_edges(&self.nodes, &self.ports, &semantics);
+        for edge in &mut self.edges {
+            edge.diff = marks[&edge.semantic.id];
         }
         self.bounds = self
             .nodes

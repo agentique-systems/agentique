@@ -428,18 +428,26 @@ impl StudioApp {
                 {
                     let point = self.camera.world_to_screen(port.position);
                     let position = rect.min + Vec2::new(point.x, point.y);
-                    let (offset, align) = if port.side == PortSide::Left {
-                        (Vec2::new(10.0, 10.0), Align2::LEFT_TOP)
-                    } else {
-                        (Vec2::new(-10.0, 10.0), Align2::RIGHT_TOP)
-                    };
-                    painter.text(
-                        position + offset,
-                        align,
-                        &port.name,
+                    let width = self
+                        .lookup
+                        .node(&self.scene, port.owner)
+                        .map_or(100.0, |node| node.bounds.width() * self.camera.zoom * 0.44);
+                    let mut job = egui::text::LayoutJob::simple_singleline(
+                        port.name.clone(),
                         FontId::proportional(11.0),
                         theme.muted,
                     );
+                    job.wrap.max_width = width;
+                    job.wrap.max_rows = 1;
+                    job.wrap.break_anywhere = true;
+                    job.wrap.overflow_character = Some('…');
+                    let galley = painter.layout_job(job);
+                    let offset = if port.side == PortSide::Left {
+                        10.0
+                    } else {
+                        -10.0 - galley.size().x
+                    };
+                    painter.galley(position + Vec2::new(offset, 10.0), galley, theme.muted);
                 }
             }
         }
@@ -449,12 +457,23 @@ impl StudioApp {
                     .scene
                     .node(*id)
                     .map(|n| format!("{} · {}", n.semantic.name, n.semantic.semantic_kind)),
-                SceneTarget::Port(id) => self
-                    .scene
-                    .ports
-                    .iter()
-                    .find(|p| p.id == *id)
-                    .map(|p| format!("{} · Port · {:?}", p.name, p.direction)),
+                SceneTarget::Port(id) => self.scene.ports.iter().find(|p| p.id == *id).map(|p| {
+                    format!(
+                        "{} · Port · direction {}{}",
+                        p.name,
+                        match p.direction {
+                            agq_studio_scene::PortDirection::Unspecified => "not specified",
+                            agq_studio_scene::PortDirection::In => "in",
+                            agq_studio_scene::PortDirection::Out => "out",
+                            agq_studio_scene::PortDirection::InOut => "in/out",
+                        },
+                        if p.proxy_for_owner.is_some() {
+                            " · collapsed boundary proxy; original port identity"
+                        } else {
+                            ""
+                        }
+                    )
+                }),
                 SceneTarget::Edge(id) => self
                     .scene
                     .edges
