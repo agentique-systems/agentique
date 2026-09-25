@@ -1265,7 +1265,10 @@ fn idle(app: &StudioApp) -> bool {
     app.pending.is_empty()
         && !app.bridge.mutation_pending()
         && !app.scene_builder.busy
-        && (!app.ready || (!app.fit_pending && app.camera_target.is_none()))
+        // Setup and History do not render the canvas that consumes fit_pending.
+        && (!app.ready
+            || app.world == World::History
+            || (!app.fit_pending && app.camera_target.is_none()))
 }
 
 fn assert_bound(app: &StudioApp) -> Result<(), String> {
