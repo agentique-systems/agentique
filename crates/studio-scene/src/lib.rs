@@ -9,6 +9,7 @@ pub mod fixtures;
 mod geometry;
 mod graph_layout;
 mod layout;
+mod neighborhood;
 mod routing;
 mod spatial;
 use agq_kernel::ElementId;
@@ -18,6 +19,7 @@ pub use camera::*;
 pub use geometry::*;
 pub use graph_layout::*;
 pub use layout::*;
+pub use neighborhood::*;
 pub use routing::*;
 pub use spatial::*;
 use std::collections::{BTreeMap, BTreeSet};
@@ -404,6 +406,24 @@ impl SemanticScene {
                 .iter()
                 .find(|e| e.semantic.id == *id)
                 .map(|e| e.bounds),
+        }
+    }
+    /// Removed diff ghosts bind their original revision, not the active one.
+    pub fn target_revision(&self, target: &SceneTarget) -> Option<ProjectRevisionId> {
+        match target {
+            SceneTarget::Node(id) | SceneTarget::Container(id) => {
+                self.node(*id).map(|n| n.semantic.revision_id)
+            }
+            SceneTarget::Port(id) => self
+                .ports
+                .iter()
+                .find(|p| p.id == *id)
+                .map(|p| p.revision_id),
+            SceneTarget::Edge(id) => self
+                .edges
+                .iter()
+                .find(|e| e.semantic.id == *id)
+                .map(|e| e.semantic.revision_id),
         }
     }
     /// Diff presentation retains removed objects with their original revision.

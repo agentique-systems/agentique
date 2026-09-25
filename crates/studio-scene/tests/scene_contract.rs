@@ -289,3 +289,68 @@ fn collapsed_layout_restores_hidden_component_positions() {
         assert_eq!(n.bounds.min, expanded.node(n.id()).unwrap().bounds.min);
     }
 }
+
+#[test]
+fn routing_detours_around_an_unrelated_node() {
+    let mut projection = fixtures::stress(3, 1);
+    projection.edges[0].source = projection.nodes[0].id;
+    projection.edges[0].target = projection.nodes[2].id;
+    let options = SceneOptions {
+        hierarchy: false,
+        ..Default::default()
+    };
+    let memory = LayoutMemory {
+        bounds: std::collections::BTreeMap::from([
+            (projection.nodes[0].id, Rect::new(0.0, 0.0, 232.0, 118.0)),
+            (projection.nodes[1].id, Rect::new(300.0, 0.0, 232.0, 118.0)),
+            (projection.nodes[2].id, Rect::new(600.0, 0.0, 232.0, 118.0)),
+        ]),
+    };
+    let scene = SemanticScene::from_projection(&projection, &options, Some(&memory)).unwrap();
+    assert_eq!(scene.edges[0].quality, RouteQuality::Clear);
+    assert!(
+        scene.edges[0]
+            .points
+            .iter()
+            .any(|p| p.y < 0.0 || p.y > 118.0)
+    );
+}
+
+#[test]
+fn self_relationship_routes_form_a_visible_loop() {
+    let mut projection = fixtures::stress(1, 1);
+    projection.edges[0].target = projection.edges[0].source;
+    let scene =
+        SemanticScene::from_projection(&projection, &SceneOptions::default(), None).unwrap();
+    assert!(scene.edges[0].points.len() >= 5);
+    assert!(scene.edges[0].bounds.width() > 0.0 && scene.edges[0].bounds.height() > 0.0);
+    assert_eq!(scene.edges[0].quality, RouteQuality::Clear);
+}
+
+#[test]
+fn huge_spatial_queries_use_overflow_lane_without_integer_overflow() {
+    let scene = architecture();
+    let index = SpatialIndex::build(&scene);
+    let hits = index.visible(Rect::new(-1.0e20, -1.0e20, 2.0e20, 2.0e20));
+    assert!(hits.contains(&SceneTarget::Node(fixtures::id(21))));
+    assert!(!Rect::from_points(Point::new(-f32::MAX, 0.0), Point::new(f32::MAX, 1.0)).finite());
+}
+
+#[test]
+fn neighborhood_is_one_hop_order_independent_and_resolves_port_owners() {
+    use agq_modeling_view::RelationshipFamily;
+    use std::collections::BTreeSet;
+    let mut projection = fixtures::architecture();
+    let seeds = BTreeSet::from([fixtures::id(21)]);
+    let families = BTreeSet::from([RelationshipFamily::Connection]);
+    let before = expand_neighborhood(&projection, &seeds, &families, NeighborhoodDirection::Both);
+    assert!(before.elements.contains(&fixtures::id(11)));
+    assert!(before.elements.contains(&fixtures::id(31)));
+    assert!(!before.elements.contains(&fixtures::id(23)));
+    assert_eq!(before.relationships.len(), 2);
+    projection.edges.reverse();
+    assert_eq!(
+        before,
+        expand_neighborhood(&projection, &seeds, &families, NeighborhoodDirection::Both)
+    );
+}

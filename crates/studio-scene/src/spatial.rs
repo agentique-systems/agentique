@@ -31,7 +31,7 @@ impl<T> RectIndex<T> {
         let id = self.items.len();
         self.items.push((r, item));
         let (x0, y0, x1, y1) = self.range(r);
-        if (i64::from(x1) - i64::from(x0) + 1) * (i64::from(y1) - i64::from(y0) + 1) > 128 {
+        if (i128::from(x1) - i128::from(x0) + 1) * (i128::from(y1) - i128::from(y0) + 1) > 128 {
             self.large.push(id);
             return;
         }
@@ -43,7 +43,7 @@ impl<T> RectIndex<T> {
     }
     pub fn query(&self, r: Rect) -> Vec<&T> {
         let (x0, y0, x1, y1) = self.range(r);
-        if (i64::from(x1) - i64::from(x0) + 1) * (i64::from(y1) - i64::from(y0) + 1) > 4096 {
+        if (i128::from(x1) - i128::from(x0) + 1) * (i128::from(y1) - i128::from(y0) + 1) > 4096 {
             return self
                 .items
                 .iter()

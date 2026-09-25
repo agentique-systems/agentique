@@ -111,6 +111,32 @@ impl LayoutEngine for GraphLayout {
         for (i, members) in components.iter().enumerate() {
             by_rank.entry(ranks[i]).or_default().extend(members);
         }
+        for members in by_rank.values_mut() {
+            members.sort();
+        }
+        // Two deterministic barycenter sweeps reduce avoidable crossings in
+        // small engineering graphs. Large cyclic components keep their stable
+        // identity order; topology edits never override restored positions.
+        for adjacency in [&outgoing, &incoming] {
+            let order: BTreeMap<_, _> = by_rank
+                .values()
+                .flat_map(|members| members.iter().enumerate().map(|(i, id)| (*id, i as f32)))
+                .collect();
+            for members in by_rank.values_mut().filter(|members| members.len() <= 64) {
+                let score = |id: &ElementId| {
+                    let neighbors: Vec<_> = adjacency[id]
+                        .iter()
+                        .filter(|other| ranks[component[other]] != ranks[component[id]])
+                        .collect();
+                    if neighbors.is_empty() {
+                        order[id]
+                    } else {
+                        neighbors.iter().map(|id| order[id]).sum::<f32>() / neighbors.len() as f32
+                    }
+                };
+                members.sort_by(|a, b| score(a).total_cmp(&score(b)).then_with(|| a.cmp(b)));
+            }
+        }
         let mut result = LayoutResult::default();
         let mut occupied = RectIndex::new(320.0);
         if let Some(previous) = previous {
@@ -131,10 +157,11 @@ impl LayoutEngine for GraphLayout {
         }
         let mut x = 0.0;
         for members in by_rank.values_mut() {
-            members.sort();
             // Dense cycles form a compact field instead of an unbounded column.
             let columns = if members.len() > 16 {
                 (members.len() as f32).sqrt().ceil() as usize
+            } else if members.len() > 4 {
+                2
             } else {
                 1
             };

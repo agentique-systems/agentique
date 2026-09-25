@@ -95,7 +95,9 @@ impl Rect {
         [self.min.x, self.min.y, self.max.x, self.max.y]
             .iter()
             .all(|v| v.is_finite())
+            && self.width().is_finite()
             && self.width() >= 0.0
+            && self.height().is_finite()
             && self.height() >= 0.0
     }
 }
