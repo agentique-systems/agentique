@@ -1,0 +1,71 @@
+   Compiling agq-studio-native v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-native)
+    Finished `release` profile [optimized] target(s) in 1m 03s
+     Running unittests src\main.rs (target/native-alpha\release\deps\agq_studio_native-1e5927e03df32038.exe)
+
+running 63 tests
+test automation::tests::key_and_pointer_injection_use_real_events ... ok
+test agents::tests::agent_decision_and_overlay_retain_observation_revision_without_commit_capability ... ok
+test automation::tests::scenario_covers_visual_edit_and_fixture_authority_boundary ... ok
+test bridge::tests::replies_cannot_cross_project_revision_fixture_or_candidate_context ... ok
+test app::bootstrap_tests::unloaded_workspace_has_no_hidden_fixture_objects_or_selection_targets ... ok
+test app::bootstrap_tests::fixture_session_restoration_requires_known_name_exact_revision_and_no_project ... ok
+test commands::tests::candidate_lifecycle_copy_never_calls_working_validated_or_unresolved_committed ... ok
+test commands::tests::only_validated_semantic_candidate_can_commit_and_visual_preview_can_cancel ... ok
+test commands::tests::fixture_cannot_enable_validation_or_commit ... ok
+test actions::tests::neighbor_selection_preserves_real_ports_and_visible_endpoint_owners ... ok
+test bridge::tests::unresolved_worker_request_blocks_runtime_switch_and_keeps_its_context ... ok
+test commands::tests::source_edit_eligibility_excludes_requirements_derived_standard_and_old_ghosts ... ok
+test commands::tests::palette_finds_abbreviations_without_losing_exact_match_priority ... ok
+test bridge::tests::failed_bootstrap_emits_nonterminal_progress_before_terminal_error ... ok
+test commands::tests::unknown_acknowledgement_exposes_only_commit_retry_among_mutations ... ok
+test loading::tests::observed_phase_does_not_reset_opening_time_or_accept_stale_progress ... ok
+test loading::tests::runtime_phases_have_human_labels_without_debug_payloads ... ok
+test presentation::tests::breadcrumbs_use_ownership_and_stop_at_missing_ancestors_or_cycles ... ok
+test real_automation::tests::created_identity_and_name_do_not_substitute_for_canonical_owner ... ok
+test real_automation::tests::preparation_cannot_hide_a_frozen_ui_behind_few_observed_frames ... ok
+test presentation_automation::tests::restart_cannot_be_requested_as_a_fresh_fixture_launch ... ok
+test saved_views::tests::mismatched_lens_and_invalid_camera_never_replace_a_bookmark ... ok
+test saved_views::tests::missing_id_recovery_keeps_existing_references_and_never_empties_the_world ... ok
+test saved_views::tests::save_rename_update_preserve_binding_and_never_move_between_projects ... ok
+test real_automation::tests::real_launch_refuses_fixture_default_database_and_session_restoration ... ok
+test scene_build::tests::stale_scene_cannot_replace_newer_context ... ok
+test selection::tests::double_click_requires_same_object_context_and_pointer_location ... ok
+test selection::tests::stale_revision_or_missing_target_cannot_become_an_inspector_request ... ok
+test real_automation::tests::real_launch_preserves_existing_database_bytes_before_any_worker_starts ... ok
+test surface_recovery::tests::lost_surface_reconfigures_and_schedules_only_five_automatic_retries ... ok
+test real_automation::tests::restart_cannot_proceed_from_missing_or_invalid_first_report ... ok
+test surface_recovery::tests::normal_device_teardown_does_not_report_loss ... ok
+test surface_recovery::tests::surface_acquisition_resets_retry_budget_but_cannot_reset_a_lost_device ... ok
+test surface_recovery::tests::timeout_skips_without_reconfigure_and_oom_never_auto_retries ... ok
+test timing::tests::absent_measurements_are_unavailable_including_serialized_output ... ok
+test session::tests::interrupted_or_oversized_replacement_retains_previous_presentation ... ok
+test timing::tests::gestures_keep_earliest_event_and_remain_separate ... ok
+test timing::tests::startup_stalls_are_discarded_and_storage_stays_bounded ... ok
+test timing::tests::tail_latency_survives_the_summary ... ok
+test saved_views::tests::saved_view_roundtrip_retains_exact_revision_lens_and_presentation ... ok
+test saved_views::tests::corrupt_existing_store_is_an_error_not_an_empty_store_to_overwrite ... ok
+test presentation_automation::tests::presentation_launch_requires_fresh_explicit_isolation_before_autosave ... ok
+test session::tests::oversized_or_future_session_is_rejected_without_touching_model_state ... ok
+test updates::tests::presentation_restore_requires_exact_revision_world_and_focus ... ok
+test session::tests::session_roundtrip_preserves_presentation_and_rejects_unsafe_camera ... ok
+test session::tests::old_sessions_without_extended_presentation_remain_readable ... ok
+test part_edit::tests::stale_dialog_cannot_prepare_a_candidate_for_a_new_revision ... ok
+test part_edit::tests::rename_cannot_use_visual_fixture_authority ... ok
+test updates::tests::commit_receipt_and_history_survive_failed_revision_loading ... ok
+test updates::tests::failed_lifecycle_refresh_keeps_mutations_blocked_until_a_matching_retry ... ok
+test updates::tests::history_refresh_rejects_superseded_requests_and_other_projects ... ok
+test part_edit::tests::dialog_intent_retains_original_owner_after_another_canvas_selection ... ok
+test updates::tests::mode_change_and_agent_return_reject_bad_disposable_projections ... ok
+test updates::tests::project_history_retains_exact_matching_saved_query_before_projection_arrives ... ok
+test updates::tests::rejected_candidate_view_retains_new_lifecycle_but_displays_current_revision ... ok
+test updates::tests::validation_completion_survives_agent_dismissal_and_a_superseded_lens ... ok
+test updates::tests::rejected_new_candidate_preserves_cancel_authority_without_publishing_bad_scene ... ok
+test updates::tests::rejected_comparison_keeps_the_previous_display_and_selection ... ok
+test updates::tests::unresolved_commit_reconciliation_is_independent_of_disposable_query_ids ... ok
+test updates::tests::rejected_revision_scene_keeps_binding_projection_and_retry_target_coherent ... ok
+test updates::tests::prepared_candidate_after_navigation_waits_for_matching_pair_without_changing_current ... ok
+test updates::tests::project_history_discards_unmatched_session_and_previous_project_filters ... ok
+test updates::tests::candidate_view_rejects_mixed_lenses_and_wrong_base_even_with_current_request ... ok
+
+test result: ok. 63 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+

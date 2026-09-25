@@ -4,7 +4,9 @@ This mission is still in progress. The current evidence does not establish overa
 alpha acceptance. The native fixture journeys work, five independent product review
 loops have resulted in changes, and the accepted KerML v9 / Systems v3 runtime has
 been rematerialized, authenticated, packaged and installed through ordinary
-facades. The real Agentique native journey is still pending.
+facades. The first real native run reached a durable Validated Agentique revision,
+then failed screenshot delivery after a scenario redraw scheduling defect. The
+complete real journey, candidate and separate restart remain pending.
 No fixture screenshot is presented as real model acceptance.
 
 ## Product evidence
@@ -30,6 +32,8 @@ No fixture screenshot is presented as real model acceptance.
   records the authentication boundary and inspection race regression.
 - [Real native acceptance runner](real-acceptance-runner.md) specifies ordinary
   bootstrap, semantic candidate review/commit and a separate restart process.
+- [First actual native attempt](real-run01/diagnosis.md) retains the successful
+  semantic baseline, failed visual gate and identified scheduling defect.
 - [Runtime distribution](../../docs/runtime-publication-distribution.md) describes
   content-addressed bundles and offline installation. A workflow being present
   does not mean a release asset has been published.

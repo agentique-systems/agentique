@@ -1,10 +1,12 @@
 # Real native acceptance runner
 
-**Prepared, not yet executed against accepted runtime.** Runtime rematerialization,
-ordinary authentication, bundle verification and installation have now passed.
-The runner is being rebuilt with independent acceptance-review fixes. No real screenshot, successful
-candidate, semantic validation, durable commit or restart result is claimed by
-this document.
+**First actual run reached Validated; the complete journey remains pending.**
+Runtime rematerialization, ordinary authentication, bundle verification and
+installation passed. [Run 01](real-run01/diagnosis.md) created the real durable
+repository and passed its baseline semantic assertion, then failed screenshot
+delivery after an identified scenario repaint scheduling defect. No successful
+visual journey, authored candidate or candidate commit/restart is claimed by
+that run.
 
 The `real` and `real-restart` scenarios use the ordinary native application,
 authenticated runtime bootstrap, ModelRepository, ModelingService, semantic
