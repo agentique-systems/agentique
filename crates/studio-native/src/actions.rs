@@ -39,6 +39,14 @@ impl StudioApp {
             ),
             live: self.binding.is_some() && self.fixture.is_none(),
             busy: !self.pending.is_empty(),
+            graph_node: self.world == World::Graph
+                && self
+                    .selected_element()
+                    .is_some_and(|id| self.lookup.node(&self.scene, id).is_some()),
+            pinned: self
+                .selected_element()
+                .is_some_and(|id| self.layout.is_pinned(id)),
+            agent_view: self.show_agent,
         }
     }
     pub fn change_comparison(&mut self, mode: ComparisonMode) {
@@ -96,7 +104,9 @@ impl StudioApp {
             self.status = "Wait for the model operation before changing project or revision".into();
             return false;
         }
-        if self.candidate.as_ref().is_some_and(|c| c.id.is_some()) {
+        if self.candidate.as_ref().is_some_and(|c| {
+            c.id.is_some() && c.phase != Some(agq_studio_platform::CandidatePhase::Committed)
+        }) {
             self.status =
                 "Review or cancel the retained candidate before changing project or revision"
                     .into();
@@ -112,6 +122,14 @@ impl StudioApp {
         self.explanation_request = 0;
         self.source_request = 0;
     }
+    /// An explicit action on the visible revision supersedes queued navigation.
+    /// Its worker result cannot later replace this newer operator intent.
+    pub fn cancel_revision_navigation(&mut self) {
+        if self.pending_revision.take().is_some() {
+            self.scene_request = 0;
+            self.restore = None;
+        }
+    }
     pub fn select_revision(&mut self, revision: ProjectRevisionId) {
         if !self.allow_context_change() {
             return;
@@ -119,6 +137,9 @@ impl StudioApp {
         self.focus = None;
         self.expanded = None;
         self.dependencies = None;
+        self.show_agent = false;
+        self.agent_activity = None;
+        self.agent_return = None;
         self.candidate = None;
         self.compare_before = None;
         self.comparison = ComparisonMode::Current;
@@ -135,10 +156,11 @@ impl StudioApp {
                 self.status = "Revision is outside this project".into();
                 return;
             }
-            self.binding = Some(agq_studio_platform::RevisionBinding {
+            self.pending_revision = Some(agq_studio_platform::RevisionBinding {
                 revision,
                 ..binding
             });
+            self.status = "Loading requested revision · current revision retained".into();
             self.request_projection();
         } else {
             let (before, after) = fixtures::revision_diff();
@@ -271,10 +293,12 @@ impl StudioApp {
         self.focus = location.focus;
         self.expanded = None;
         if let Some(binding) = self.binding {
-            self.binding = Some(agq_studio_platform::RevisionBinding {
-                revision: location.revision,
-                ..binding
-            });
+            self.pending_revision = (binding.revision != location.revision).then_some(
+                agq_studio_platform::RevisionBinding {
+                    revision: location.revision,
+                    ..binding
+                },
+            );
             // Apply the navigation camera after the asynchronous lens query.
             // This is the same disposable presentation restoration used at startup.
             let mut camera = self.camera;
@@ -322,10 +346,15 @@ impl StudioApp {
             self.status = "Model operation running · exploring the loaded revision".into();
             return;
         }
-        if let Some(binding) = self.binding {
+        if let Some(binding) = self.pending_revision.or(self.binding) {
             let definition = self.definition();
-            let candidate = self.visible_candidate_id();
-            let comparison_base = (self.candidate.is_none()
+            let candidate = self
+                .pending_revision
+                .is_none()
+                .then(|| self.visible_candidate_id())
+                .flatten();
+            let comparison_base = (self.pending_revision.is_none()
+                && self.candidate.is_none()
                 && self.comparison == ComparisonMode::Diff)
                 .then(|| {
                     self.compare_before
@@ -360,6 +389,7 @@ impl StudioApp {
         self.expanded = None;
         self.dependencies = None;
         self.show_agent = false;
+        self.agent_return = None;
         self.status = format!("{} · selected revision", world.title());
         if world != World::System {
             self.focus = None;
@@ -409,6 +439,7 @@ impl StudioApp {
         }
         self.fixture = Some(name.into());
         self.binding = None;
+        self.pending_revision = None;
         self.branch = None;
         self.history = None;
         // Fence all outstanding read responses when entering fixture mode.
@@ -455,6 +486,29 @@ impl StudioApp {
             return;
         }
         match id {
+            Pin | Unpin => {
+                if let Some((element, bounds)) = self.selected_element().and_then(|id| {
+                    self.lookup
+                        .node(&self.scene, id)
+                        .map(|node| (id, node.bounds))
+                }) {
+                    if id == Pin {
+                        if let Err(error) = self.layout.pin(element, bounds) {
+                            self.status = error.to_string();
+                            return;
+                        }
+                    } else {
+                        self.layout.unpin(element);
+                    }
+                    self.rebuild();
+                    self.status = if id == Pin {
+                        "Graph position pinned · presentation only"
+                    } else {
+                        "Graph position unpinned · presentation only"
+                    }
+                    .into();
+                }
+            }
             ShowLoadedGraph => {
                 self.expanded = None;
                 self.focus = None;
@@ -518,6 +572,7 @@ impl StudioApp {
             }
             Fit => self.fit_pending = true,
             Focus => {
+                self.cancel_revision_navigation();
                 self.navigation.update_camera(
                     [self.camera.center.x, self.camera.center.y],
                     self.camera.zoom,
@@ -590,7 +645,10 @@ impl StudioApp {
                     }));
                 }
             }
+            DismissAgent => self.dismiss_agent_view(),
             Dependencies => {
+                self.cancel_revision_navigation();
+                self.remember_agent_return();
                 if let Some(root) = self.selected_element() {
                     self.agent_activity = Some(crate::agents::DependencyActivity {
                         revision: self.scene.revision_id,
@@ -664,6 +722,7 @@ impl StudioApp {
                 }
             }
             ExpandIncoming | ExpandOutgoing | ExpandBoth | CollapseNeighborhood | Neighbors => {
+                self.cancel_revision_navigation();
                 if let Some(selected) = self.selected_element() {
                     let direction = match id {
                         ExpandIncoming => NeighborhoodDirection::Incoming,
@@ -703,6 +762,7 @@ impl StudioApp {
             }
             CreatePart => {
                 self.create_dialog = true;
+                self.create_dialog_focus = true;
                 self.new_part_name = "newPart".into();
             }
             Compare => self.compare_parent(),
@@ -861,6 +921,7 @@ impl StudioApp {
             self.status = reason.into();
             return;
         }
+        self.cancel_revision_navigation();
         if self.fixture.is_some() {
             self.show_fixture_diff();
             return;
@@ -935,27 +996,41 @@ impl StudioApp {
                 self.execute(command, ctx);
             }
         }
-        if ctx.input(|i| i.key_pressed(Key::ArrowDown) || i.key_pressed(Key::ArrowUp))
-            && !self.outliner_order.is_empty()
-        {
-            let current = self
-                .selected_element()
-                .and_then(|id| {
-                    self.outliner_order
-                        .iter()
-                        .position(|index| self.scene.nodes[*index].id() == id)
-                })
-                .unwrap_or(0);
+        if ctx.input(|i| i.key_pressed(Key::ArrowDown) || i.key_pressed(Key::ArrowUp)) {
+            let nodes = self.filtered_outliner();
+            if nodes.is_empty() {
+                return;
+            }
+            let current = self.selected_element().and_then(|id| {
+                nodes
+                    .iter()
+                    .position(|index| self.scene.nodes[*index].id() == id)
+            });
             let next = if ctx.input(|i| i.key_pressed(Key::ArrowDown)) {
-                (current + 1) % self.outliner_order.len()
+                current.map_or(0, |current| (current + 1) % nodes.len())
             } else {
-                (current + self.outliner_order.len() - 1) % self.outliner_order.len()
+                current.map_or(nodes.len() - 1, |current| {
+                    (current + nodes.len() - 1) % nodes.len()
+                })
             };
-            self.select(
-                SceneTarget::Node(self.scene.nodes[self.outliner_order[next]].id()),
-                false,
-            );
+            self.select(SceneTarget::Node(self.scene.nodes[nodes[next]].id()), false);
         }
+    }
+
+    pub fn filtered_outliner(&self) -> Vec<usize> {
+        let search = self.search.to_lowercase();
+        self.outliner_order
+            .iter()
+            .copied()
+            .filter(|index| {
+                search.is_empty()
+                    || self.scene.nodes[*index]
+                        .semantic
+                        .name
+                        .to_lowercase()
+                        .contains(&search)
+            })
+            .collect()
     }
 }
 

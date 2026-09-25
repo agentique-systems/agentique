@@ -28,8 +28,9 @@ cargo run --release --locked --offline --manifest-path crates/studio-native/Carg
 ```
 
 Studio opens its setup screen when no accepted semantic runtime is installed.
-Choose a locally supplied authenticated `.agq-runtime` bundle, then create or open
-a project. Runtime authentication is required to edit the real Agentique model.
+Choose a locally supplied authenticated `.agq-runtime` bundle, then open the
+Agentique project seeded from `models/agentique/`. Runtime authentication is required
+to edit the real model.
 The [runtime distribution guide](docs/runtime-publication-distribution.md) explains
 packaging and offline installation; a successful build does not supply those assets.
 

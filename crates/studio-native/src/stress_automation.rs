@@ -209,7 +209,7 @@ impl Runner {
                 "minimum_visible_nodes": self.minimum_visible,
             },
             "native_metrics": app.metrics_report(),
-            "scope": "Deterministic synthetic pointer/wheel events enter the native RawInput path; camera behavior is asserted from resulting state. 60 warmup + 120 steady + 120 pan + 120 zoom intervals, then 30 settling frames. Vsync remains enabled. Neither GPU duration nor physical input-to-photon latency is measured."
+            "scope": "Deterministic synthetic pointer/wheel events enter the native RawInput path; camera behavior is asserted from resulting state. 60 warmup + 120 steady + 120 pan + 120 zoom intervals, then 30 settling frames. Vsync remains enabled. Optional GPU timestamps measure only the scene pass; see native_metrics for availability and scope. Physical input-to-photon latency is not measured."
         })
     }
 }

@@ -1,0 +1,25 @@
+    Blocking waiting for file lock on build directory
+   Compiling chrono v0.4.45
+   Compiling smallvec v1.16.1
+   Compiling rusqlite v0.37.0
+   Compiling agq-modeling-repository v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-repository)
+   Compiling windows-sys v0.61.2
+   Compiling tempfile v3.27.0
+   Compiling agq-modeling-sqlite v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\modeling-sqlite)
+   Compiling agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-service)
+   Compiling agq-modeling-agent v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-agent)
+    Finished `release` profile [optimized] target(s) in 2m 10s
+     Running unittests src\lib.rs (target\release\deps\agq_modeling_agent-9894dfce04967804.exe)
+
+running 8 tests
+test decision::tests::bounded_routing_retains_revision_and_rejects_unoffered_answers ... ok
+test tests::machine_proposal_cannot_grant_commit_or_validation ... ok
+test commands::tests::production_name_edits_replace_selected_and_ancestor_identity ... ok
+test commands::tests::semicolon_owner_becomes_body ... ok
+test commands::tests::nested_insertion_retains_disjoint_children_but_replaces_owner_identity ... ok
+test commands::tests::command_uses_selected_declaration_range_inside_a_package ... ok
+test commands::tests::nested_source_command_ignores_comment_braces_and_preserves_bytes ... ok
+test commands::tests::selected_definition_check_rejects_a_valid_but_different_canonical_target ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+

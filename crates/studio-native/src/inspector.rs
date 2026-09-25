@@ -269,13 +269,7 @@ impl StudioApp {
                         .small(),
                     );
                     if ui.button("Dismiss agent view").clicked() {
-                        self.show_agent = false;
-                        self.dependencies = None;
-                        self.expanded = None;
-                        self.focus = None;
-                        self.request_projection();
-                        self.fit_pending = true;
-                        self.status = "Agent view dismissed · model unchanged".into();
+                        self.dismiss_agent_view();
                     }
                 });
             ui.add_space(16.0);

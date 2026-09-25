@@ -152,23 +152,23 @@ impl StudioApp {
             }
         }
         let visibility_started = Instant::now();
-        let visible = self
-            .spatial
-            .visible(self.camera.visible_rect().inflate(20.0 / self.camera.zoom));
+        let objects = self.spatial.visible_scene(
+            &self.scene,
+            self.camera.visible_rect().inflate(20.0 / self.camera.zoom),
+        );
         let mut hasher = DefaultHasher::new();
         self.generation.hash(&mut hasher);
         self.theme.dark.hash(&mut hasher);
         self.theme.contrast.hash(&mut hasher);
         (self.lod.level() as u8).hash(&mut hasher);
-        visible.hash(&mut hasher);
+        objects.hash(&mut hasher);
         self.selection.targets.hash(&mut hasher);
         if let Some(ids) = &self.dependencies {
             ids.hash(&mut hasher);
         }
         let key = hasher.finish();
-        // Resolve exact, revision-checked targets once. The borrowed result is
-        // already ordered for containment and shared by GPU and text passes.
-        let objects = self.lookup.visible(&self.scene, &visible);
+        // The index checks revision and identity before borrowing objects in
+        // draw order; no per-frame target strings or reverse lookup are needed.
         self.timing.visibility(visibility_started.elapsed());
         let selected_edges: BTreeSet<&str> = self
             .selection
@@ -293,6 +293,16 @@ impl StudioApp {
                         },
                     );
                 }
+                if self.world == crate::navigation::World::Graph && self.layout.is_pinned(node.id())
+                {
+                    painter.text(
+                        bounds.right_top() + Vec2::new(-inset, 15.0 * scale),
+                        Align2::RIGHT_TOP,
+                        "Pinned",
+                        FontId::proportional(10.0),
+                        theme.text,
+                    );
+                }
                 if self.lod.level() >= LodLevel::Features && !node.is_container {
                     let subtitle = if node.semantic.counts.ports > 0 {
                         let parts = node.semantic.counts.parts;
@@ -413,12 +423,12 @@ impl StudioApp {
             let requirement_context = self.world == crate::navigation::World::Requirements
                 && objects.edges.len() <= 24
                 && self.lod.level() >= LodLevel::Summary;
-            if !selected_edges.contains(edge.semantic.id.as_str())
-                && !hovered_edge
-                && !requirement_context
-                && !(incident
+            if !(selected_edges.contains(edge.semantic.id.as_str())
+                || hovered_edge
+                || requirement_context
+                || (incident
                     && self.lod.level() >= LodLevel::Features
-                    && objects.edges.len() <= 24)
+                    && objects.edges.len() <= 24))
             {
                 continue;
             }
@@ -773,9 +783,16 @@ fn context_commands(target: Option<&SceneTarget>) -> &'static [CommandId] {
         None => &[Fit, Home, System, Graph, Requirements],
         Some(SceneTarget::Port(_)) => &[Focus, Explain, Source, Dependencies],
         Some(SceneTarget::Edge(_)) => &[Focus, Explain, Source],
-        Some(SceneTarget::Node(_) | SceneTarget::Container(_)) => {
-            &[Focus, Dependencies, Explain, Source, CreatePart, Neighbors]
-        }
+        Some(SceneTarget::Node(_) | SceneTarget::Container(_)) => &[
+            Focus,
+            Dependencies,
+            Explain,
+            Source,
+            CreatePart,
+            Pin,
+            Unpin,
+            Neighbors,
+        ],
     }
 }
 fn category_color(category: NodeCategory, theme: crate::theme::Theme) -> Color32 {

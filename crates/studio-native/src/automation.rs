@@ -94,6 +94,7 @@ enum Action {
     Palette(&'static str),
     PaletteKeys(&'static str, usize),
     PrepareNamedPart(&'static str),
+    PreparePartKeys(&'static str),
     ClickTarget(Target),
 }
 impl Action {
@@ -121,6 +122,7 @@ impl Action {
             Self::Palette(..) => 12,
             Self::PaletteKeys(..) => 9,
             Self::PrepareNamedPart(..) => 6,
+            Self::PreparePartKeys(..) => 6,
         }
     }
 }
@@ -139,10 +141,12 @@ enum Check {
     ExplainOpen,
     ExplainClosed,
     Dependencies,
+    AgentReturned,
     Diff,
     CreateDialog,
     Candidate,
     ReviewMode(ComparisonMode),
+    Pinned(bool),
     NamedSelected(&'static str),
     Disabled(CommandId),
     PaletteClosed,
@@ -241,6 +245,21 @@ fn vertical() -> Vec<Step> {
             Check::World(World::Graph),
         ),
         step(
+            "pin graph position",
+            Action::PaletteKeys("Pin position", 0),
+            Check::Pinned(true),
+        ),
+        step(
+            "pin survives projection rebuild",
+            Action::PaletteKeys("Show loaded graph overview", 0),
+            Check::Pinned(true),
+        ),
+        step(
+            "unpin graph position",
+            Action::PaletteKeys("Unpin position", 0),
+            Check::Pinned(false),
+        ),
+        step(
             "select derived relationship geometry",
             Action::ClickDerivedEdge,
             Check::DerivedSelected,
@@ -274,6 +293,11 @@ fn vertical() -> Vec<Step> {
             "command palette shows dependencies",
             Action::Palette("Show dependencies"),
             Check::Dependencies,
+        ),
+        step(
+            "dismiss dependency view restores operator context",
+            Action::PaletteKeys("Return from agent view", 0),
+            Check::AgentReturned,
         ),
         step(
             "command palette compares revisions",
@@ -398,6 +422,133 @@ fn vertical() -> Vec<Step> {
     ]
 }
 
+/// A complete visual review path with no injected pointer events or source edits.
+fn keyboard_journey() -> Vec<Step> {
+    let step = |name, action, check| Step {
+        name,
+        action,
+        check,
+        settle: 5,
+    };
+    vec![
+        Step {
+            name: "native fixture and GPU ready",
+            action: Action::Idle,
+            check: Check::Ready,
+            settle: 12,
+        },
+        step(
+            "keyboard reduced motion",
+            Action::PaletteKeys("Toggle reduced motion", 0),
+            Check::ReducedMotion,
+        ),
+        step(
+            "keyboard enters subsystem",
+            Action::PaletteKeys("Focus: ModelingPlatform", 0),
+            Check::Focused(2),
+        ),
+        step(
+            "keyboard inspects repository",
+            Action::PaletteKeys("Focus: ModelRepository", 0),
+            Check::Selected(21),
+        ),
+        step(
+            "keyboard returns to owner",
+            Action::Key(Key::Backspace, Modifiers::NONE),
+            Check::RootFocus,
+        ),
+        step(
+            "keyboard opens Graph",
+            Action::Key(Key::Num2, Modifiers::NONE),
+            Check::World(World::Graph),
+        ),
+        step(
+            "keyboard asks for dependencies",
+            Action::Key(Key::D, Modifiers::NONE),
+            Check::Dependencies,
+        ),
+        step(
+            "keyboard opens Explain",
+            Action::Key(Key::E, Modifiers::NONE),
+            Check::ExplainOpen,
+        ),
+        step(
+            "keyboard dismisses Explain",
+            Action::Key(Key::Escape, Modifiers::NONE),
+            Check::ExplainClosed,
+        ),
+        step(
+            "keyboard requirements",
+            Action::Key(Key::Num3, Modifiers::NONE),
+            Check::World(World::Requirements),
+        ),
+        step(
+            "keyboard architecture",
+            Action::Key(Key::Num1, Modifiers::NONE),
+            Check::World(World::System),
+        ),
+        step(
+            "keyboard selects candidate owner",
+            Action::PaletteKeys("Focus: ModelingPlatform", 0),
+            Check::Focused(2),
+        ),
+        step(
+            "keyboard opens create dialog",
+            Action::PaletteKeys("Create nested part", 0),
+            Check::CreateDialog,
+        ),
+        step(
+            "keyboard creates preview without source",
+            Action::PreparePartKeys("ScenarioNestedPart"),
+            Check::Candidate,
+        ),
+        step(
+            "keyboard inspects added component",
+            Action::PaletteKeys("Focus: ScenarioNestedPart", 0),
+            Check::NamedSelected("ScenarioNestedPart"),
+        ),
+        step(
+            "keyboard current revision",
+            Action::PaletteKeys("Review: Current revision", 0),
+            Check::ReviewMode(ComparisonMode::Current),
+        ),
+        step(
+            "keyboard candidate revision",
+            Action::PaletteKeys("Review: Candidate revision", 0),
+            Check::ReviewMode(ComparisonMode::Candidate),
+        ),
+        step(
+            "keyboard candidate difference",
+            Action::PaletteKeys("Review: Candidate difference", 0),
+            Check::ReviewMode(ComparisonMode::Diff),
+        ),
+        step(
+            "keyboard cancels preview",
+            Action::PaletteKeys("Cancel candidate", 0),
+            Check::Cancelled,
+        ),
+        step(
+            "keyboard immutable history",
+            Action::Key(Key::Num4, Modifiers::NONE),
+            Check::World(World::History),
+        ),
+        step(
+            "keyboard returns to architecture",
+            Action::Key(Key::Num1, Modifiers::NONE),
+            Check::World(World::System),
+        ),
+    ]
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct ReturnSnapshot {
+    world: String,
+    focus: Option<String>,
+    center: [f32; 2],
+    zoom: f32,
+    selection: Vec<String>,
+}
+
 #[derive(Clone, Debug, Serialize)]
 struct Snapshot {
     frame: u64,
@@ -412,6 +563,7 @@ struct Snapshot {
     edges: usize,
     dependency_elements: Option<Vec<String>>,
     agent_overlay: bool,
+    agent_return: Option<ReturnSnapshot>,
     added_elements: Vec<String>,
     removed_elements: Vec<String>,
     candidate: bool,
@@ -449,6 +601,18 @@ impl Snapshot {
                 .as_ref()
                 .map(|ids| ids.iter().map(ToString::to_string).collect()),
             agent_overlay: app.show_agent,
+            agent_return: app.agent_return.as_ref().map(|previous| ReturnSnapshot {
+                world: format!("{:?}", previous.world),
+                focus: previous.focus.map(|id| id.to_string()),
+                center: [previous.camera.center.x, previous.camera.center.y],
+                zoom: previous.camera.zoom,
+                selection: previous
+                    .selection
+                    .targets
+                    .iter()
+                    .map(|target| format!("{target:?}"))
+                    .collect(),
+            }),
             added_elements: app
                 .scene
                 .nodes
@@ -537,7 +701,11 @@ impl Runner {
                 failure: None,
                 gallery: vec![],
             },
-            steps: vertical(),
+            steps: if scenario == "keyboard" {
+                keyboard_journey()
+            } else {
+                vertical()
+            },
             index: 0,
             age: 0,
             total_frames: 0,
@@ -556,7 +724,7 @@ impl Runner {
         ctx: &egui::Context,
         input: &mut egui::RawInput,
     ) -> Result<ScenarioStatus, String> {
-        if self.report.scenario != "vertical" {
+        if !matches!(self.report.scenario.as_str(), "vertical" | "keyboard") {
             return Err(format!("Unknown native scenario {}", self.report.scenario));
         }
         if app.fixture.as_deref() != Some("architecture")
@@ -955,6 +1123,12 @@ fn inject(
                 Modifiers::NONE,
             ),
         },
+        Action::PreparePartKeys(name) => match frame {
+            0 => key(input, Key::A, Modifiers::COMMAND),
+            1 => input.events.push(Event::Text((*name).into())),
+            3 => key(input, Key::Enter, Modifiers::NONE),
+            _ => {}
+        },
     }
     Ok(())
 }
@@ -1039,6 +1213,24 @@ fn check(
                 })
                 && app.show_agent
         }
+        Check::AgentReturned => {
+            !app.show_agent
+                && app.dependencies.is_none()
+                && app.agent_return.is_none()
+                && before.agent_return.as_ref().is_some_and(|previous| {
+                    previous.world == format!("{:?}", app.world)
+                        && previous.focus == app.focus.map(|id| id.to_string())
+                        && previous.center == [app.camera.center.x, app.camera.center.y]
+                        && (previous.zoom - app.camera.zoom).abs() < 0.001
+                        && previous.selection
+                            == app
+                                .selection
+                                .targets
+                                .iter()
+                                .map(|target| format!("{target:?}"))
+                                .collect::<Vec<_>>()
+                })
+        }
         Check::Diff => {
             app.comparison == ComparisonMode::Diff
                 && [DiffMark::Added, DiffMark::Removed, DiffMark::Changed]
@@ -1076,6 +1268,24 @@ fn check(
                         .and_then(|id| app.lookup.node(&app.scene, id))
                         .is_some_and(|node| node.semantic.name == "ScenarioNestedPart")
                 }
+        }
+        Check::Pinned(pinned) => {
+            let id = fixtures::id(21);
+            commands::unavailable(
+                if *pinned {
+                    CommandId::Unpin
+                } else {
+                    CommandId::Pin
+                },
+                &app.context(),
+            )
+            .is_none()
+                && app.layout.is_pinned(id) == *pinned
+                && (!pinned
+                    || app
+                        .lookup
+                        .node(&app.scene, id)
+                        .is_some_and(|node| app.layout.pinned.get(&id) == Some(&node.bounds.min)))
         }
         Check::NamedSelected(name) => app
             .selected_element()

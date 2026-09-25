@@ -7,6 +7,7 @@ mod automation;
 mod bridge;
 mod commands;
 mod gpu;
+mod gpu_timing;
 mod inspector;
 mod navigation;
 mod palette_ui;
@@ -47,12 +48,15 @@ pub struct Args {
     frames: Option<u64>,
     #[arg(long)]
     metrics: Option<PathBuf>,
+    /// Measure the custom scene GPU pass when the adapter supports timestamp queries.
+    #[arg(long)]
+    gpu_timestamps: bool,
     #[arg(long)]
     light: bool,
     #[arg(long)]
     no_restore: bool,
     /// Exercise native input routing over explicit fixtures or the accepted real model.
-    #[arg(long, value_parser = ["vertical", "stress", "real", "real-restart"])]
+    #[arg(long, value_parser = ["vertical", "keyboard", "stress", "real", "real-restart"])]
     scenario: Option<String>,
     #[arg(
         long,
@@ -76,9 +80,21 @@ fn main() -> eframe::Result {
         eprintln!("Native real acceptance launch refused: {error}");
         std::process::exit(2);
     }
+    let mut wgpu_setup = egui_wgpu::WgpuSetupCreateNew::default();
+    if args.gpu_timestamps {
+        let original = wgpu_setup.device_descriptor.clone();
+        wgpu_setup.device_descriptor = std::sync::Arc::new(move |adapter| {
+            let mut descriptor = original(adapter);
+            if adapter.features().contains(gpu_timing::features()) {
+                descriptor.required_features |= gpu_timing::features();
+            }
+            descriptor
+        });
+    }
     let options = eframe::NativeOptions {
         renderer: eframe::Renderer::Wgpu,
         wgpu_options: egui_wgpu::WgpuConfiguration {
+            wgpu_setup: egui_wgpu::WgpuSetup::CreateNew(wgpu_setup),
             on_surface_error: std::sync::Arc::new(surface_error),
             ..Default::default()
         },
@@ -93,7 +109,7 @@ fn main() -> eframe::Result {
         "Agentique Native Studio",
         options,
         Box::new(move |cc| {
-            gpu::install(cc).map_err(std::io::Error::other)?;
+            gpu::install(cc, args.gpu_timestamps).map_err(std::io::Error::other)?;
             Ok(Box::new(app::StudioApp::new(cc, args)?))
         }),
     )

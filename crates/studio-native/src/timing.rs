@@ -34,7 +34,7 @@ pub struct SampleSummary {
     pub last: Option<f64>,
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone, Default, Debug)]
 pub(crate) struct Samples {
     values: VecDeque<f64>,
     total: usize,

@@ -76,6 +76,9 @@ pub struct GpuStats {
     pub uploads: usize,
     pub instances: usize,
     pub draw_calls: usize,
+    pub timestamp_ms: crate::timing::Samples,
+    pub timestamp_status: &'static str,
+    pub timestamp_errors: usize,
 }
 struct Resources {
     pipeline: wgpu::RenderPipeline,
@@ -85,9 +88,11 @@ struct Resources {
     capacity: usize,
     ranges: [std::ops::Range<u32>; 4],
     key: Option<u64>,
+    timing: Option<crate::gpu_timing::GpuTiming>,
+    timing_status: &'static str,
 }
 
-pub fn install(cc: &eframe::CreationContext<'_>) -> Result<(), String> {
+pub fn install(cc: &eframe::CreationContext<'_>, timestamps: bool) -> Result<(), String> {
     let state = cc
         .wgpu_render_state
         .as_ref()
@@ -173,6 +178,14 @@ pub fn install(cc: &eframe::CreationContext<'_>) -> Result<(), String> {
         capacity: 64,
         ranges: [0..0, 0..0, 0..0, 0..0],
         key: None,
+        timing: crate::gpu_timing::GpuTiming::new(device, &state.queue),
+        timing_status: if !timestamps {
+            "Not requested; use --gpu-timestamps"
+        } else if !device.features().contains(crate::gpu_timing::features()) {
+            "Adapter lacks timestamps inside render passes"
+        } else {
+            "Scene GPU pass only; excludes text, chrome, upload and presentation"
+        },
     });
     Ok(())
 }
@@ -189,12 +202,18 @@ impl CallbackTrait for SceneCallback {
         device: &wgpu::Device,
         queue: &wgpu::Queue,
         _screen: &ScreenDescriptor,
-        _encoder: &mut wgpu::CommandEncoder,
+        encoder: &mut wgpu::CommandEncoder,
         resources: &mut CallbackResources,
     ) -> Vec<wgpu::CommandBuffer> {
         let renderer = resources
             .get_mut::<Resources>()
             .expect("scene renderer installed");
+        if let Ok(mut stats) = self.stats.lock() {
+            stats.timestamp_status = renderer.timing_status;
+            if let Some(timing) = &mut renderer.timing {
+                timing.prepare(device, encoder, &mut stats);
+            }
+        }
         queue.write_buffer(&renderer.uniform, 0, bytemuck::cast_slice(&self.camera));
         if renderer.key != Some(self.batch.key) {
             let started = Instant::now();
@@ -247,6 +266,9 @@ impl CallbackTrait for SceneCallback {
         let renderer = resources
             .get::<Resources>()
             .expect("scene renderer installed");
+        if let Some(timing) = &renderer.timing {
+            timing.begin(pass);
+        }
         pass.set_pipeline(&renderer.pipeline);
         pass.set_bind_group(0, &renderer.bind_group, &[]);
         pass.set_vertex_buffer(0, renderer.instances.slice(..));
@@ -254,6 +276,9 @@ impl CallbackTrait for SceneCallback {
             if !range.is_empty() {
                 pass.draw(0..6, range.clone());
             }
+        }
+        if let Some(timing) = &renderer.timing {
+            timing.end(pass);
         }
     }
 }

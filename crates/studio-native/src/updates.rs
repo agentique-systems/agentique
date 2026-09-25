@@ -62,6 +62,9 @@ impl StudioApp {
                         self.request_projection();
                         continue;
                     }
+                    if reply.request == self.scene_request {
+                        self.pending_revision = None;
+                    }
                     if reply.mutation
                         && let Some(id) = self.candidate.as_ref().and_then(|c| c.id)
                     {
@@ -115,6 +118,7 @@ impl StudioApp {
                             project: history.project.id,
                             revision,
                         });
+                        self.pending_revision = None;
                         self.branch = Some(branch.id);
                         self.fixture = None;
                         self.ready = false;
@@ -159,18 +163,53 @@ impl StudioApp {
                 Ok(Output::Projection(projection))
                     if reply.request == self.scene_request
                         && self
-                            .binding
+                            .pending_revision
+                            .or(self.binding)
                             .is_some_and(|binding| binding.revision == projection.revision_id) =>
                 {
-                    self.projection = projection;
+                    let previous_projection = std::mem::replace(&mut self.projection, projection);
+                    let previous_comparison = self.comparison;
+                    let previous_candidate =
+                        self.pending_revision.and_then(|_| self.candidate.take());
+                    let committed_swap = previous_candidate.as_ref().is_some_and(|candidate| {
+                        candidate.phase == Some(agq_studio_platform::CandidatePhase::Committed)
+                    });
+                    let previous_before = self
+                        .pending_revision
+                        .and_then(|_| self.compare_before.take());
+                    if self.pending_revision.is_some() {
+                        self.comparison = ComparisonMode::Current;
+                    }
+                    // No frame can observe a new revision whose scene failed to build.
+                    if !self.rebuild() {
+                        self.projection = previous_projection;
+                        self.comparison = previous_comparison;
+                        if self.pending_revision.take().is_some() {
+                            self.candidate = previous_candidate;
+                            self.compare_before = previous_before;
+                        }
+                        self.restore = None;
+                        continue;
+                    }
+                    if let Some(binding) = self.pending_revision.take() {
+                        self.binding = Some(binding);
+                        self.show_agent = false;
+                        self.dependencies = None;
+                        self.agent_activity = None;
+                        self.agent_return = None;
+                    }
                     self.finish_agent_projection();
                     self.ready = true;
-                    self.rebuild();
                     self.fit_pending = true;
                     self.apply_pending_presentation();
                     self.request_inspection();
                     self.record_location();
                     self.status = "Revision restored in process".into();
+                    if committed_swap && let Some(binding) = self.binding {
+                        self.enqueue(Box::new(move |p| {
+                            p.history(binding.project).map(Output::HistoryRefresh)
+                        }));
+                    }
                 }
                 Ok(Output::Inspector(inspector))
                     if reply.request == self.inspector_request
@@ -240,6 +279,7 @@ impl StudioApp {
                     self.show_agent = false;
                     self.dependencies = None;
                     self.agent_activity = None;
+                    self.agent_return = None;
                     self.invalidate_inspection();
                     self.scene_request = 0;
                     self.comparison = ComparisonMode::Diff;
@@ -248,13 +288,23 @@ impl StudioApp {
                     self.status = "Candidate revision ready for review".into();
                 }
                 Ok(Output::CandidateView(candidate, before))
-                    if reply.request == self.scene_request
+                    if (reply.mutation || reply.request == self.scene_request)
                         && self.binding == Some(candidate.base)
                         && self
                             .candidate
                             .as_ref()
                             .is_some_and(|current| current.id == Some(candidate.id)) =>
                 {
+                    // Validation is a lifecycle result, independent of a disposable
+                    // lens request. Navigation may supersede its view, never its phase.
+                    if reply.mutation && candidate.projection.view != self.definition() {
+                        if let Some(current) = &mut self.candidate {
+                            current.phase = Some(candidate.phase);
+                        }
+                        self.request_projection();
+                        self.status = "Candidate validated · refreshing your current view".into();
+                        continue;
+                    }
                     if let Some(current) = &mut self.candidate {
                         current.before = before;
                         current.after = candidate.projection;
@@ -279,20 +329,15 @@ impl StudioApp {
                         }) =>
                 {
                     if let Some(binding) = reply.context.as_ref().and_then(|scope| scope.binding) {
-                        self.binding = Some(RevisionBinding {
+                        self.pending_revision = Some(RevisionBinding {
                             revision: receipt.revision_id,
                             ..binding
                         });
                     }
-                    self.candidate = None;
-                    self.compare_before = None;
-                    self.comparison = ComparisonMode::Current;
-                    self.request_projection();
-                    if let Some(binding) = self.binding {
-                        self.enqueue(Box::new(move |p| {
-                            p.history(binding.project).map(Output::HistoryRefresh)
-                        }));
+                    if let Some(candidate) = &mut self.candidate {
+                        candidate.phase = Some(agq_studio_platform::CandidatePhase::Committed);
                     }
+                    self.request_projection();
                     self.status = "Candidate durably committed".into();
                 }
                 Ok(Output::HistoryRefresh(history))
@@ -337,6 +382,7 @@ impl StudioApp {
             return;
         }
         self.invalidate_inspection();
+        self.pending_revision = None;
         self.scene_request = 0;
         self.project_request = self.enqueue(Box::new(move |platform| {
             platform.history(id).map(Output::History)
@@ -373,7 +419,9 @@ impl StudioApp {
             "visible_nodes": self.timing.visible_nodes,
             "total_nodes": self.scene.nodes.len(),
             "total_edges": self.scene.edges.len(),
-            "gpu_timestamp_ms": null,
+            "gpu_timestamp_ms": stats.as_ref().map(|s| s.timestamp_ms.summary()),
+            "gpu_timestamp_scope": stats.as_ref().map(|s| s.timestamp_status),
+            "gpu_timestamp_errors": stats.as_ref().map(|s| s.timestamp_errors),
             "physical_input_to_photon_ms": null,
             "note": "Native wgpu frames with vsync. CPU update intervals retain the latest 240 samples after 60 warmup intervals. Input spans start inside the viewport gesture handler and end at the next UI update; they exclude OS input delivery and do not measure presentation. GPU upload is CPU submission time for the last upload. Null means unmeasured."
         })

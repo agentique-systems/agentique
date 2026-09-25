@@ -1,0 +1,43 @@
+   Compiling agq-studio-native v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-native)
+    Finished `release` profile [optimized] target(s) in 44.22s
+     Running unittests src\main.rs (target/native-alpha\release\deps\agq_studio_native-3e88a2b358b8e67c.exe)
+
+running 35 tests
+test automation::tests::scenario_covers_visual_edit_and_fixture_authority_boundary ... ok
+test agents::tests::agent_decision_and_overlay_retain_observation_revision_without_commit_capability ... ok
+test automation::tests::key_and_pointer_injection_use_real_events ... ok
+test commands::tests::candidate_lifecycle_copy_never_calls_working_validated_or_unresolved_committed ... ok
+test bridge::tests::replies_cannot_cross_project_revision_fixture_or_candidate_context ... ok
+test commands::tests::only_validated_semantic_candidate_can_commit_and_visual_preview_can_cancel ... ok
+test app::bootstrap_tests::unloaded_workspace_has_no_hidden_fixture_objects_or_selection_targets ... ok
+test commands::tests::source_edit_eligibility_excludes_requirements_derived_standard_and_old_ghosts ... ok
+test commands::tests::unknown_acknowledgement_exposes_only_commit_retry_among_mutations ... ok
+test commands::tests::fixture_cannot_enable_validation_or_commit ... ok
+test commands::tests::palette_finds_abbreviations_without_losing_exact_match_priority ... ok
+test bridge::tests::unresolved_worker_request_blocks_runtime_switch_and_keeps_its_context ... ok
+test actions::tests::neighbor_selection_preserves_real_ports_and_visible_endpoint_owners ... ok
+test presentation::tests::breadcrumbs_use_ownership_and_stop_at_missing_ancestors_or_cycles ... ok
+test bridge::tests::failed_bootstrap_emits_nonterminal_progress_before_terminal_error ... ok
+test saved_views::tests::mismatched_lens_and_invalid_camera_never_replace_a_bookmark ... ok
+test saved_views::tests::save_rename_update_preserve_binding_and_never_move_between_projects ... ok
+test saved_views::tests::missing_id_recovery_keeps_existing_references_and_never_empties_the_world ... ok
+test real_automation::tests::real_launch_refuses_fixture_default_database_and_session_restoration ... ok
+test scene_build::tests::stale_scene_cannot_replace_newer_context ... ok
+test selection::tests::double_click_requires_same_object_context_and_pointer_location ... ok
+test selection::tests::stale_revision_or_missing_target_cannot_become_an_inspector_request ... ok
+test timing::tests::absent_measurements_are_unavailable_including_serialized_output ... ok
+test timing::tests::gestures_keep_earliest_event_and_remain_separate ... ok
+test timing::tests::startup_stalls_are_discarded_and_storage_stays_bounded ... ok
+test timing::tests::tail_latency_survives_the_summary ... ok
+test updates::tests::presentation_restore_requires_exact_revision_world_and_focus ... ok
+test real_automation::tests::restart_cannot_proceed_from_missing_or_invalid_first_report ... ok
+test session::tests::interrupted_or_oversized_replacement_retains_previous_presentation ... ok
+test real_automation::tests::real_launch_preserves_existing_database_bytes_before_any_worker_starts ... ok
+test session::tests::oversized_or_future_session_is_rejected_without_touching_model_state ... ok
+test saved_views::tests::saved_view_roundtrip_retains_exact_revision_lens_and_presentation ... ok
+test saved_views::tests::corrupt_existing_store_is_an_error_not_an_empty_store_to_overwrite ... ok
+test session::tests::session_roundtrip_preserves_presentation_and_rejects_unsafe_camera ... ok
+test session::tests::old_sessions_without_extended_presentation_remain_readable ... ok
+
+test result: ok. 35 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+

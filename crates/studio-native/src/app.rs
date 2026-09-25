@@ -62,6 +62,8 @@ pub struct StudioApp {
     pub bundle_path: String,
     pub projects: Vec<Project>,
     pub binding: Option<RevisionBinding>,
+    /// Requested revision becomes current only when its projection is ready.
+    pub pending_revision: Option<RevisionBinding>,
     pub branch: Option<BranchId>,
     pub history: Option<ProjectHistory>,
     pub bridge: Bridge,
@@ -105,6 +107,7 @@ pub struct StudioApp {
     pub palette_query: String,
     pub palette_focus: bool,
     pub create_dialog: bool,
+    pub create_dialog_focus: bool,
     pub new_part_name: String,
     pub candidate: Option<Candidate>,
     pub preparation: Option<PendingPreparation>,
@@ -113,6 +116,7 @@ pub struct StudioApp {
     pub dependencies: Option<BTreeSet<ElementId>>,
     pub show_agent: bool,
     pub agent_activity: Option<crate::agents::DependencyActivity>,
+    pub agent_return: Option<crate::agents::AgentReturn>,
     pub search: String,
     pub status: String,
     pub fit_pending: bool,
@@ -155,6 +159,13 @@ impl StudioApp {
         let dark = restore.as_ref().map_or(!args.light, |r| r.dark);
         let theme = Theme::new(dark, restore.as_ref().is_some_and(|r| r.high_contrast));
         theme.install(&cc.egui_ctx);
+        cc.egui_ctx.style_mut(|style| {
+            style.animation_time = if restore.as_ref().is_some_and(|r| r.reduced_motion) {
+                0.0
+            } else {
+                0.12
+            };
+        });
         let setup = agq_studio_platform::setup_surface(&config)?;
         let mut bridge = Bridge::new(cc.egui_ctx.clone());
         let mut pending = BTreeSet::new();
@@ -184,6 +195,7 @@ impl StudioApp {
             bundle_path: String::new(),
             projects: vec![],
             binding: None,
+            pending_revision: None,
             branch: None,
             history: None,
             bridge,
@@ -227,6 +239,7 @@ impl StudioApp {
             palette_query: String::new(),
             palette_focus: false,
             create_dialog: false,
+            create_dialog_focus: false,
             new_part_name: "newPart".into(),
             candidate: None,
             preparation: None,
@@ -235,6 +248,7 @@ impl StudioApp {
             dependencies: None,
             show_agent: false,
             agent_activity: None,
+            agent_return: None,
             search: String::new(),
             status: "Ready".into(),
             fit_pending: true,
@@ -277,7 +291,7 @@ impl StudioApp {
     pub fn project_id(&self) -> Option<ProjectId> {
         self.binding.map(|b| b.project)
     }
-    pub fn rebuild(&mut self) {
+    pub fn rebuild(&mut self) -> bool {
         if self.layout_world != self.world {
             self.layouts.insert(self.layout_world, self.layout.clone());
             self.layout = self.layouts.get(&self.world).cloned().unwrap_or_default();
@@ -326,17 +340,23 @@ impl StudioApp {
         // Revision swaps stay atomic until all revision-bound UI is staged.
         if input.projection.nodes.len() >= 750
             && input.projection.revision_id == self.scene.revision_id
+            && self.pending_revision.is_none()
         {
             if let Err(error) = self.scene_builder.request(input) {
                 self.status = error;
+                return false;
             }
         } else {
             self.scene_builder.invalidate();
             match crate::scene_build::build(input) {
                 Ok(built) => self.install_scene(built),
-                Err(error) => self.status = error,
+                Err(error) => {
+                    self.status = error;
+                    return false;
+                }
             }
         }
+        true
     }
     fn install_scene(&mut self, built: crate::scene_build::BuiltScene) {
         self.layout = built.scene.memory().clone();
@@ -399,6 +419,7 @@ impl StudioApp {
     }
     pub fn save_session(&mut self) {
         if !self.ready
+            || self.pending_revision.is_some()
             || self.args.screenshot.is_some()
             || self.args.frames.is_some()
             || self.args.scenario.is_some()

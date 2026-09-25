@@ -1,0 +1,20 @@
+{
+  "command": [
+    "target/native-alpha/release/agq-studio-native.exe",
+    "--fixture",
+    "stress1000",
+    "--no-restore",
+    "--scenario",
+    "stress",
+    "--gpu-timestamps",
+    "--scenario-report",
+    "verification/native-studio-alpha/performance/1k-gpu-smoke-concurrent.json"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T16:26:32.599438+00:00",
+  "elapsed_seconds": 4.281,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/gpu-timestamp-smoke-1k.txt",
+  "output_sha256": "7e53efd328706b6f4da25da376c27109bbd5bad447e4da794347422d7162b7af",
+  "build_environment": {}
+}

@@ -5,6 +5,28 @@ use agq_modeling_workspace::ProjectRevisionId;
 use agq_studio_scene::{OverlayKind, SceneOverlay, SceneTarget};
 use std::collections::BTreeSet;
 
+/// A temporary query has a return address in the same immutable model context.
+/// Candidate phase and authority are deliberately never copied back from this.
+pub struct AgentReturn {
+    context: crate::bridge::WorkContext,
+    projection: agq_modeling_view::ViewProjection,
+    candidate_views: Option<(
+        agq_modeling_view::ViewProjection,
+        agq_modeling_view::ViewProjection,
+    )>,
+    compare_before: Option<agq_modeling_view::ViewProjection>,
+    comparison: crate::app::ComparisonMode,
+    pub world: crate::navigation::World,
+    pub focus: Option<ElementId>,
+    pub camera: agq_studio_scene::Camera2D,
+    pub selection: crate::selection::Selection,
+    layout: agq_studio_scene::LayoutMemory,
+    collapsed: BTreeSet<ElementId>,
+    expanded: Option<BTreeSet<ElementId>>,
+    families: BTreeSet<agq_modeling_view::RelationshipFamily>,
+    include_standard: bool,
+}
+
 /// A query observation retains the requested subject even when selection changes.
 pub struct DependencyActivity {
     pub revision: ProjectRevisionId,
@@ -17,6 +39,83 @@ pub struct DependencyActivity {
 }
 
 impl crate::app::StudioApp {
+    pub fn remember_agent_return(&mut self) {
+        if self.show_agent && self.agent_return.is_some() {
+            return;
+        }
+        self.agent_return = Some(AgentReturn {
+            context: self.work_context(),
+            projection: self.projection.clone(),
+            candidate_views: self
+                .candidate
+                .as_ref()
+                .map(|candidate| (candidate.before.clone(), candidate.after.clone())),
+            compare_before: self.compare_before.clone(),
+            comparison: self.comparison,
+            world: self.world,
+            focus: self.focus,
+            camera: self.camera,
+            selection: self.selection.clone(),
+            layout: self.layout.clone(),
+            collapsed: self.collapsed.clone(),
+            expanded: self.expanded.clone(),
+            families: self.families.clone(),
+            include_standard: self.include_standard,
+        });
+    }
+
+    pub fn dismiss_agent_view(&mut self) {
+        self.cancel_revision_navigation();
+        self.show_agent = false;
+        self.dependencies = None;
+        self.agent_activity = None;
+        // Fence a query which may still be queued on the semantic worker.
+        self.scene_request = 0;
+        if let Some(previous) = self.agent_return.take().filter(|previous| {
+            previous.context.matches(&self.work_context())
+                && previous.projection.revision_id == self.projection.revision_id
+                && previous
+                    .candidate_views
+                    .as_ref()
+                    .map(|(_, after)| after.revision_id)
+                    == self
+                        .candidate
+                        .as_ref()
+                        .map(|candidate| candidate.after.revision_id)
+        }) {
+            self.projection = previous.projection;
+            if let Some((before, after)) = previous.candidate_views
+                && let Some(candidate) = &mut self.candidate
+            {
+                candidate.before = before;
+                candidate.after = after;
+            }
+            self.compare_before = previous.compare_before;
+            self.comparison = previous.comparison;
+            self.world = previous.world;
+            self.focus = previous.focus;
+            self.camera_target = Some(previous.camera);
+            self.selection = previous.selection;
+            self.layouts.insert(self.layout_world, self.layout.clone());
+            self.layout = previous.layout;
+            self.layout_world = self.world;
+            self.collapsed = previous.collapsed;
+            self.expanded = previous.expanded;
+            self.families = previous.families;
+            self.include_standard = previous.include_standard;
+            self.invalidate_inspection();
+            self.rebuild();
+            self.fit_pending = false;
+            self.request_inspection();
+            self.status = "Returned to your view · model unchanged".into();
+        } else {
+            // A restored session may retain an overlay without a return address.
+            // Keep that view intact and dismiss only its agent presentation.
+            self.batch_key = None;
+            self.status = "Agent overlay dismissed · current view retained".into();
+        }
+    }
+
     pub fn finish_agent_projection(&mut self) {
         if !self.show_agent {
             return;

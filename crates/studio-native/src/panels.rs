@@ -450,20 +450,7 @@ impl StudioApp {
             ui.label(muted(self.projection.nodes.len().to_string(), theme).small());
         });
         ui.add_space(8.0);
-        let search = self.search.to_lowercase();
-        let nodes: Vec<_> = self
-            .outliner_order
-            .iter()
-            .copied()
-            .filter(|index| {
-                search.is_empty()
-                    || self.scene.nodes[*index]
-                        .semantic
-                        .name
-                        .to_lowercase()
-                        .contains(&search)
-            })
-            .collect();
+        let nodes = self.filtered_outliner();
         egui::ScrollArea::vertical()
             .auto_shrink([false, false])
             .show_rows(ui, 32.0, nodes.len(), |ui, range| {
@@ -481,14 +468,22 @@ impl StudioApp {
                     ui.horizontal(|ui| {
                         ui.add_space((*depth as f32 * 12.0).min(48.0));
                         if *container {
-                            if ui
-                                .add(
-                                    egui::Button::new(if *collapsed { "▸" } else { "▾" })
-                                        .frame(false)
-                                        .small(),
+                            let disclosure = ui.add(
+                                egui::Button::new(if *collapsed { "▸" } else { "▾" })
+                                    .frame(false)
+                                    .small(),
+                            );
+                            disclosure.widget_info(|| {
+                                egui::WidgetInfo::labeled(
+                                    egui::WidgetType::Button,
+                                    true,
+                                    format!(
+                                        "{} {name}",
+                                        if *collapsed { "Expand" } else { "Collapse" }
+                                    ),
                                 )
-                                .clicked()
-                            {
+                            });
+                            if disclosure.clicked() {
                                 if !self.collapsed.remove(id) {
                                     self.collapsed.insert(*id);
                                 }
@@ -626,12 +621,14 @@ impl StudioApp {
             egui::Window::new("Create nested part").open(&mut open).collapsible(false).resizable(false).anchor(Align2::CENTER_CENTER,Vec2::ZERO).default_width(440.0).show(ctx,|ui|{
                 let owner=self.selected_element().and_then(|id|self.projection.nodes.iter().find(|n|n.id==id)).map_or("Selected owner",|n|n.name.as_str());
                 ui.label(format!("Inside {owner}"));ui.add_space(10.0);
-                ui.label("Part name");let name=ui.add(egui::TextEdit::singleline(&mut self.new_part_name).desired_width(f32::INFINITY));
+                let name_label=ui.label("Part name");let name=ui.add(egui::TextEdit::singleline(&mut self.new_part_name).desired_width(f32::INFINITY)).labelled_by(name_label.id);
+                if self.create_dialog_focus { name.request_focus(); self.create_dialog_focus=false; }
+                let submit = name.lost_focus() && ui.input(|input| input.key_pressed(egui::Key::Enter));
                 crate::automation::record(ctx,crate::automation::Target::CandidateName,name.rect);
                 ui.add_space(16.0);ui.label(muted(if self.fixture.is_some(){"This creates a visual preview of typed intent. Semantic reconstruction requires the accepted runtime."}else{"A source-backed Working candidate will be reconstructed. Review and validate it before committing."},theme));
                 ui.add_space(16.0);let prepare=ui.button("Prepare candidate");
                 crate::automation::record(ctx,crate::automation::Target::CandidatePrepare,prepare.rect);
-                if prepare.clicked(){self.prepare_part();}
+                if prepare.clicked() || submit {self.prepare_part();}
             });
             self.create_dialog &= open;
         }

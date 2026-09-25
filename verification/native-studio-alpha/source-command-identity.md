@@ -89,8 +89,11 @@ git diff --check
 exit 0
 ```
 
-The integration lead runs the focused modeling-agent Cargo test against the shared
-target. No test pass is claimed at this document's initial commit. The temporary
+The integration lead ran `cargo test --release --config profile.release.lto=false
+--locked --offline -p agq-modeling-agent --lib -j 2`: all eight tests passed,
+exit 0. Both identity-churn regressions reproduced. See the exact
+[command/output receipt](checks/source-command-identity-tests.json).
+The temporary
 Rename implementation was committed only in the isolated worktree and explicitly
 reverted before handoff; neither commit should be cherry-picked. Only the retained
 regression and this review are integration candidates.

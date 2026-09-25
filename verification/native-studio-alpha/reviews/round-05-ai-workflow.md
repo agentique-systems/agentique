@@ -51,4 +51,8 @@ Overall product acceptance additionally requires authenticated real Agentique fi
 
 ## Integration follow-up
 
-Changes made and new screenshot evidence are pending parent integration. This review alone does not close round 05 or grant alpha acceptance.
+The integration now retains the dependency request's original subject and revision, reports running/completed/failed query state, and names the built-in query separately from the illustrative decision mock. The visible card explicitly says that the mock's 0.72 weight is not calibrated confidence. Live projection completion populates actual result identities. [Agent after](../round-05-after/07-agent-view.png) shows this accountable result card. Incoming relationship labels now follow the actual directed endpoints; [candidate after](../round-05-after/08-candidate.png) shows `owns ← ModelingPlatform`. Explicit Focus changes prioritizes changed leaf objects so the new component is readable. Its owner is stated in the Inspector; the large container header may be above the viewport.
+
+The [native vertical journey](../round-05-after/journey.json) passed after these changes. A separate [keyboard-only journey](../keyboard-journey.json) passed navigation, inspection, dependency view, Explain, requirements, source-free component preparation, review mode switching, cancellation and History using key/text input only. These are fixture interaction qualifications, not semantic validation or commit acceptance.
+
+Dismissal still resets to the loaded view instead of restoring every earlier exploration setting. The candidate header does not yet retain a rich operator intent/agent rationale summary. These criticisms remain open; this completed review loop does not grant overall alpha or real-model acceptance.

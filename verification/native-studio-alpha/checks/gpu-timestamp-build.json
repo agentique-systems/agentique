@@ -1,0 +1,24 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--release",
+    "--locked",
+    "--offline",
+    "--manifest-path",
+    "crates/studio-native/Cargo.toml",
+    "--target-dir",
+    "target/native-alpha",
+    "--config",
+    "profile.release.lto=false",
+    "-j",
+    "2"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T16:21:12.077209+00:00",
+  "elapsed_seconds": 56.25,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/gpu-timestamp-build.txt",
+  "output_sha256": "93a71d621c205f338c683a36770ae16730c4fcaf066803806a0c360408358844",
+  "build_environment": {}
+}

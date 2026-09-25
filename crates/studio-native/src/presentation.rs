@@ -166,6 +166,7 @@ impl StudioApp {
             );
         }
         if self.scene_builder.busy
+            || self.pending_revision.is_some()
             || self.bridge.mutation_pending()
             || self.scene.revision_id != self.projection.revision_id
             || self
@@ -291,7 +292,7 @@ impl StudioApp {
                 project,
                 revision: saved.binding.revision,
             };
-            self.binding = Some(binding);
+            self.pending_revision = Some(binding);
             let definition = presentation.definition.clone();
             self.restore = Some(Session {
                 version: 1,

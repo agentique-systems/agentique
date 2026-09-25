@@ -1,0 +1,24 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--release",
+    "--locked",
+    "--offline",
+    "--manifest-path",
+    "crates/studio-native/Cargo.toml",
+    "--target-dir",
+    "target/native-alpha",
+    "--config",
+    "profile.release.lto=false",
+    "-j",
+    "2"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T16:19:58.370319+00:00",
+  "elapsed_seconds": 16.391,
+  "exit_code": 101,
+  "output": "verification/native-studio-alpha/checks/gpu-pins-native-tests.txt",
+  "output_sha256": "94142c6b95d1c1b8e69a1a9c42b3d9de4d3e6a459fd8929df14dd8799a7561cc",
+  "build_environment": {}
+}
