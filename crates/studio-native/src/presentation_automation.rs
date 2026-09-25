@@ -376,6 +376,11 @@ impl Runner {
         ctx: &egui::Context,
         input: &mut egui::RawInput,
     ) -> Result<ScenarioStatus, String> {
+        // Native close requests can leave another input hook queued. Completion
+        // remains terminal after its screenshot has been received and recorded.
+        if self.report.passed {
+            return Ok(ScenarioStatus::Complete);
+        }
         if app.fixture.as_deref() != Some("architecture")
             || app.binding.is_some()
             || app.branch.is_some()
@@ -562,7 +567,7 @@ impl Runner {
                     self.point = Some(point);
                     point
                 };
-                automation::click(input, point, frame % 2 == 0, Modifiers::NONE);
+                automation::click(input, point, frame.is_multiple_of(2), Modifiers::NONE);
             }
             Action::FocusPlatform => {}
             Action::Pan if frame < 4 => {

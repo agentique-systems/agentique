@@ -1164,6 +1164,15 @@ impl Runner {
             ),
             Check::World(world) => {
                 require(app.world == *world, "Requested World did not open")?;
+                let expected_kind = match world {
+                    World::System => ViewKind::Architecture,
+                    World::Graph | World::History => ViewKind::SemanticGraph,
+                    World::Requirements => ViewKind::Requirements,
+                };
+                require(
+                    app.active_projection().view.kind == expected_kind,
+                    "Requested World retained a projection from a different World",
+                )?;
                 if *world == World::Requirements {
                     require(
                         app.active_projection().view.kind == ViewKind::Requirements
@@ -1180,14 +1189,31 @@ impl Runner {
                     "Real World has no inspectable semantic relationships",
                 )
             }
-            Check::Dependencies => require(
-                app.world == World::Graph
-                    && app.show_agent
-                    && app.focus.is_some()
-                    && app.projection.view.focus == app.focus
-                    && !app.projection.edges.is_empty(),
-                "Agent action did not return an actual revision-bound dependency view",
-            ),
+            Check::Dependencies => {
+                let projection = app.active_projection();
+                let root = named(app, REPOSITORY)?;
+                require(
+                    app.world == World::Graph
+                        && app.show_agent
+                        && app.focus == Some(root)
+                        && projection.view.focus == Some(root)
+                        && projection.view.kind == ViewKind::SemanticGraph
+                        && !projection.edges.is_empty()
+                        && app.agent_activity.as_ref().is_some_and(|activity| {
+                            activity.root == root
+                                && activity.root_name == REPOSITORY.name
+                                && activity.revision == projection.revision_id
+                                && activity.complete
+                                && activity.error.is_none()
+                                && !activity.fixture
+                                && activity.result_count == projection.nodes.len()
+                        })
+                        && app.dependencies.as_ref().is_some_and(|targets| {
+                            *targets == projection.nodes.iter().map(|node| node.id).collect()
+                        }),
+                    "Agent action did not return the completed revision-bound ModelRepository dependency view and matching overlay",
+                )
+            }
             Check::GraphOverview => {
                 require(
                     app.world == World::Graph

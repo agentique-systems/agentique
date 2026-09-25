@@ -91,3 +91,22 @@ and keyboard focus. Assertion failures retain a native `*-failed.png` with state
 actual editor text and image identity before exiting nonzero. No persisted-model
 or semantic assertion was weakened. The repair is formatted; integrated compile
 and native rerun are delegated to the lead to preserve the shared build cache.
+
+## Completed native process and restart qualification
+
+The second attempt passed all presentation assertions and captured its surface,
+then panicked on a queued input hook after requesting window close. Its exit 101
+is retained in `checks/presentation-menu-fixed-journey.*`; its earlier report's
+`passed` value alone is not acceptance. The runner now treats recorded completion
+as terminal while native close events drain. Strict Clippy also identified a
+manual modulo predicate, which was corrected.
+
+The third run and separate restart both pass, with actual process exits 0 in
+17.203 and 1.484 seconds. Executable SHA-256:
+`8cf168f9806a9e19736fc3d98b4ce8816e63f28c7cd700e26be5e0dd32d687c0`.
+See `presentation-run03/journey.json`, `presentation-run03/restart.json` and their
+native galleries, plus `checks/presentation-terminal-fixed-journey.*` and
+`checks/presentation-actual-restart.*`. The restart restores the exact saved
+bookmark/session bytes, Graph view, camera, layout and presentation settings.
+The captured surface remains explicitly labelled VISUAL FIXTURE. This closes
+the presentation qualification, not real semantic edit/commit acceptance.
