@@ -460,6 +460,82 @@ mod tests {
     }
 
     #[test]
+    fn production_name_edits_replace_selected_and_ancestor_identity() {
+        use production::Production as P;
+        let source = "package System { part old; part retained; }";
+        let syntax = production::parse_sysml_with_profile(
+            production::SysmlSyntaxProfile::OperationalV3,
+            agq_kernel::DocumentId::new(),
+            agq_kernel::SourceRevisionId::new(),
+            source,
+            production::Limits::default(),
+        )
+        .unwrap();
+        assert!(syntax.is_complete());
+        let selected = syntax
+            .nodes()
+            .find(|node| node.kind() == P::PartUsage && node.text().trim() == "part old;")
+            .unwrap()
+            .id();
+        let retained = syntax
+            .nodes()
+            .find(|node| node.kind() == P::PartUsage && node.text().trim() == "part retained;")
+            .unwrap()
+            .id();
+        let owner = syntax
+            .nodes()
+            .find(|node| node.kind() == P::Package)
+            .unwrap()
+            .id();
+        let start = source.find("old").unwrap() as u64;
+        let edited = syntax
+            .edit(
+                &TextEdit {
+                    range: ByteRange::new(start, start + 3).unwrap(),
+                    replacement: "renamed".into(),
+                },
+                production::Limits::default(),
+            )
+            .unwrap();
+        assert!(edited.is_complete());
+        assert!(
+            edited
+                .nodes()
+                .all(|node| node.id() != selected && node.id() != owner)
+        );
+        assert!(edited.nodes().any(|node| node.id() == retained));
+    }
+
+    #[test]
+    fn nested_insertion_retains_disjoint_children_but_replaces_owner_identity() {
+        use production::Production as P;
+        let source = "package System { part def Platform { part retained; } }";
+        let syntax = production::parse_sysml_with_profile(
+            production::SysmlSyntaxProfile::OperationalV3,
+            agq_kernel::DocumentId::new(),
+            agq_kernel::SourceRevisionId::new(),
+            source,
+            production::Limits::default(),
+        )
+        .unwrap();
+        assert!(syntax.is_complete());
+        let owner = syntax
+            .nodes()
+            .find(|node| node.kind() == P::PartDefinition)
+            .unwrap();
+        let retained = syntax
+            .nodes()
+            .find(|node| node.kind() == P::PartUsage)
+            .unwrap()
+            .id();
+        let (edit, _) = nested_part_edit(&syntax, owner.range(), "child", None).unwrap();
+        let edited = syntax.edit(&edit, production::Limits::default()).unwrap();
+        assert!(edited.is_complete());
+        assert!(edited.nodes().all(|node| node.id() != owner.id()));
+        assert!(edited.nodes().any(|node| node.id() == retained));
+    }
+
+    #[test]
     fn selected_definition_check_rejects_a_valid_but_different_canonical_target() {
         use agq_kerml::{classes, properties};
         use agq_kernel::{
