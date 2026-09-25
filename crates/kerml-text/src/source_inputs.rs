@@ -333,30 +333,19 @@ impl SourceInputs {
                         .into(),
                 ));
             }
-            audit_authored_effective_population(&q, batch, &mut report);
             // Retain the existing native capability answer, including its full
-            // proof/search evidence, for consumers of Working diagnostics.
-            for &subject in batch {
-                let record = q.model().element(subject).expect("local audit subject");
-                if [agq_sysml::classes::DEFINITION, agq_sysml::classes::USAGE]
-                    .into_iter()
-                    .any(|class| {
-                        q.model()
-                            .registry()
-                            .is_subtype(record.metaclass(), class)
-                            .unwrap_or(false)
-                    })
-                {
-                    let answer = q.effective_usages(subject);
-                    if answer.completeness() != Completeness::Complete {
-                        capabilities.push(SourceDiagnostic::Capability {
-                            subject,
-                            origin: result.source_map().get(&FactKey::Element(subject)).cloned(),
-                            answer: Box::new(answer),
-                        });
-                    }
+            // proof/search evidence, from the query the audit already evaluated.
+            // Only incomplete/invalid answers are cloned. Subject order remains
+            // the audit order; report findings are appended after all capabilities.
+            audit_authored_effective_population(&q, batch, &mut report, |subject, answer| {
+                if answer.completeness() != Completeness::Complete {
+                    capabilities.push(SourceDiagnostic::Capability {
+                        subject,
+                        origin: result.source_map().get(&FactKey::Element(subject)).cloned(),
+                        answer: Box::new(answer.clone()),
+                    });
                 }
-            }
+            });
         }
         for finding in &report.findings {
             let origin = match finding {
