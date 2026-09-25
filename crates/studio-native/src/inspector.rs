@@ -152,10 +152,15 @@ impl StudioApp {
     pub fn explain_content(&self, ui: &mut egui::Ui) {
         let theme = self.theme;
         if let Some(explanation) = &self.explanation {
+            let consequence_label =
+                explanation_relationship_label(explanation, self.active_projection());
             ui.heading("Why this exists");
-            ui.label(explanation_summary(explanation));
+            ui.label(explanation_summary(
+                explanation,
+                consequence_label.as_deref(),
+            ));
             ui.add_space(12.0);
-            explanation_diagram(ui, explanation, theme);
+            explanation_diagram(ui, explanation, consequence_label.as_deref(), theme);
             ui.label(
                 muted(
                     "Arrows show evidence supporting a semantic conclusion.",
@@ -166,7 +171,7 @@ impl StudioApp {
             if explanation.truncated {
                 ui.label(
                     RichText::new(format!(
-                        "Showing a bounded explanation from {} evidence dependencies.",
+                        "Partial proof · {} recorded dependencies. Evidence retains all facts and links available in this view.",
                         explanation.evidence_count
                     ))
                     .color(theme.amber),
@@ -728,22 +733,26 @@ fn origin_label(origin: ViewOrigin) -> &'static str {
     }
 }
 
-fn explanation_summary(explanation: &ExplanationProjection) -> String {
-    let rule = explanation
+/// The summary follows the selected fact's actual incoming rule and that rule's
+/// immediate support. Unrelated rules/facts never become causes by list order.
+struct ExplanationSummaryGraph<'a> {
+    consequence: Option<&'a agq_modeling_view::ExplanationNode>,
+    rule: Option<&'a agq_modeling_view::ExplanationNode>,
+    support: Vec<&'a agq_modeling_view::ExplanationNode>,
+}
+
+fn explanation_summary_graph(explanation: &ExplanationProjection) -> ExplanationSummaryGraph<'_> {
+    let consequence = explanation
         .nodes
         .iter()
-        .find(|node| node.kind == ExplanationNodeKind::Rule);
-    let subject = rule
-        .and_then(|rule| {
-            explanation
-                .edges
-                .iter()
-                .filter(|edge| edge.source == rule.id)
-                .find_map(|edge| {
-                    explanation.nodes.iter().find(|node| {
-                        node.id == edge.target && node.kind != ExplanationNodeKind::Rule
+        .filter(|node| node.element_id == Some(explanation.subject_id))
+        .find(|node| {
+            explanation.edges.iter().any(|edge| {
+                edge.target == node.id
+                    && explanation.nodes.iter().any(|source| {
+                        source.id == edge.source && source.kind == ExplanationNodeKind::Rule
                     })
-                })
+            })
         })
         .or_else(|| {
             explanation
@@ -751,25 +760,110 @@ fn explanation_summary(explanation: &ExplanationProjection) -> String {
                 .iter()
                 .find(|node| node.element_id == Some(explanation.subject_id))
         });
-    let fact = subject.map_or_else(|| "this fact".into(), |node| format!("“{}”", node.label));
+    let rule = consequence.and_then(|consequence| {
+        explanation
+            .edges
+            .iter()
+            .filter(|edge| edge.target == consequence.id)
+            .find_map(|edge| {
+                explanation
+                    .nodes
+                    .iter()
+                    .find(|node| node.id == edge.source && node.kind == ExplanationNodeKind::Rule)
+            })
+    });
+    let mut seen = std::collections::BTreeSet::new();
+    let support = rule.map_or_else(Vec::new, |rule| {
+        explanation
+            .edges
+            .iter()
+            .filter(|edge| edge.target == rule.id && seen.insert(&edge.source))
+            .filter_map(|edge| {
+                explanation.nodes.iter().find(|node| {
+                    node.id == edge.source
+                        && node.kind != ExplanationNodeKind::Rule
+                        && consequence.is_none_or(|consequence| consequence.id != node.id)
+                })
+            })
+            .collect()
+    });
+    ExplanationSummaryGraph {
+        consequence,
+        rule,
+        support,
+    }
+}
+
+/// A relationship's readable endpoints must come from the same exact revision
+/// and producer. Only the known binary Subsetting projection is summarized;
+/// property facts and connectors retain their exact proof label.
+fn explanation_relationship_label(
+    explanation: &ExplanationProjection,
+    projection: &agq_modeling_view::ViewProjection,
+) -> Option<String> {
+    if projection.revision_id != explanation.revision_id
+        || explanation_summary_graph(explanation).consequence?.kind != ExplanationNodeKind::Element
+    {
+        return None;
+    }
+    let mut edges = projection
+        .edges
+        .iter()
+        .filter(|edge| edge.relationship_id == Some(explanation.subject_id));
+    let edge = edges.next()?;
+    if edges.next().is_some()
+        || edge.revision_id != explanation.revision_id
+        || edge.rule_id != explanation.rule_id
+        || edge.origin != explanation.origin
+        || edge.family != RelationshipFamily::Subsetting
+        || edge.semantic_kind != "Subsetting"
+        || !edge.directed
+    {
+        return None;
+    }
+    let endpoint = |id| {
+        projection
+            .nodes
+            .iter()
+            .find(|node| node.id == id && node.revision_id == explanation.revision_id)
+    };
+    Some(format!(
+        "{} {} {}",
+        endpoint(edge.source)?.name,
+        edge.label,
+        endpoint(edge.target)?.name
+    ))
+}
+
+fn explanation_rule_label(name: &str) -> &str {
+    match name {
+        // Presentation name only. The accepted rule's applicability and target
+        // remain in sysml-semantics/producers.rs, not in native UI logic.
+        "checkOccurrenceUsageSuboccurrenceSpecialization" => "Suboccurrence specialization",
+        _ => name,
+    }
+}
+
+fn explanation_summary(
+    explanation: &ExplanationProjection,
+    consequence_label: Option<&str>,
+) -> String {
+    let graph = explanation_summary_graph(explanation);
+    let fact = consequence_label
+        .or_else(|| graph.consequence.map(|node| node.label.as_str()))
+        .map_or_else(|| "this fact".into(), |label| format!("“{label}”"));
     match explanation.origin {
         ViewOrigin::Derived => {
             let mut summary = format!("The model derives {fact}");
             if let Some(name) = &explanation.rule_name {
+                let name = explanation_rule_label(name);
                 summary.push_str(&format!(" by applying “{name}”"));
             }
             summary.push('.');
-            if let Some(rule) = rule {
-                let mut seen = std::collections::BTreeSet::new();
-                let support: Vec<_> = explanation
-                    .edges
+            if graph.rule.is_some() {
+                let support: Vec<_> = graph
+                    .support
                     .iter()
-                    .filter(|edge| edge.target == rule.id && seen.insert(&edge.source))
-                    .filter_map(|edge| {
-                        explanation.nodes.iter().find(|node| {
-                            node.id == edge.source && node.kind != ExplanationNodeKind::Rule
-                        })
-                    })
                     .take(2)
                     .map(|node| format!("“{}”", node.label))
                     .collect();
@@ -803,9 +897,74 @@ fn explanation_display_label<'a>(
 ) -> &'a str {
     if node.kind == ExplanationNodeKind::Rule && rule_name.is_none() {
         "Semantic derivation rule"
+    } else if node.kind == ExplanationNodeKind::Rule
+        && rule_name == Some("checkOccurrenceUsageSuboccurrenceSpecialization")
+    {
+        "Suboccurrence specialization"
     } else {
         &node.label
     }
+}
+
+/// Fixed, legible card heights keep the entire causal summary in one viewport.
+/// Narrow windows stack the three stages; they never create horizontal scroll.
+fn explanation_card_layout(
+    width: f32,
+    support_count: usize,
+    has_rule: bool,
+    has_consequence: bool,
+) -> (egui::Vec2, Vec<egui::Rect>) {
+    use egui::{Pos2, Rect, Vec2};
+    let card_height = 76.0;
+    let gap = (width * 0.08).min(20.0);
+    let horizontal = width >= 600.0;
+    let mut cards = Vec::new();
+    let height = if !has_rule {
+        if has_consequence {
+            cards.push(Rect::from_min_size(
+                Pos2::ZERO,
+                Vec2::new(width, card_height),
+            ));
+        }
+        card_height
+    } else if horizontal {
+        let card_width = (width - gap * 2.0) / 3.0;
+        let height = (support_count.max(1) as f32 * (card_height + 12.0)) - 12.0;
+        for row in 0..support_count {
+            cards.push(Rect::from_min_size(
+                egui::pos2(0.0, row as f32 * (card_height + 12.0)),
+                Vec2::new(card_width, card_height),
+            ));
+        }
+        for column in 1..=(1 + usize::from(has_consequence)) {
+            cards.push(Rect::from_min_size(
+                egui::pos2(
+                    column as f32 * (card_width + gap),
+                    (height - card_height) * 0.5,
+                ),
+                Vec2::new(card_width, card_height),
+            ));
+        }
+        height
+    } else {
+        let support_width =
+            (width - gap * support_count.saturating_sub(1) as f32) / support_count.max(1) as f32;
+        for column in 0..support_count {
+            cards.push(Rect::from_min_size(
+                egui::pos2(column as f32 * (support_width + gap), 0.0),
+                Vec2::new(support_width, card_height),
+            ));
+        }
+        let first_row = usize::from(support_count > 0);
+        for row in first_row..=(first_row + usize::from(has_consequence)) {
+            cards.push(Rect::from_min_size(
+                egui::pos2(0.0, row as f32 * (card_height + gap)),
+                Vec2::new(width, card_height),
+            ));
+        }
+        (first_row + 1 + usize::from(has_consequence)) as f32 * (card_height + gap) - gap
+    };
+    (Vec2::new(width, height), cards)
 }
 
 /// The topology is taken only from the proof projection. A display arrow is
@@ -813,124 +972,146 @@ fn explanation_display_label<'a>(
 fn explanation_diagram(
     ui: &mut egui::Ui,
     explanation: &ExplanationProjection,
+    consequence_label: Option<&str>,
     theme: crate::theme::Theme,
 ) {
     use egui::{Align2, FontId, Pos2, Rect, Sense, Stroke, Vec2};
     use std::collections::BTreeMap;
-    let mut columns = [Vec::new(), Vec::new(), Vec::new()];
-    for node in &explanation.nodes {
-        let column = if node.kind == ExplanationNodeKind::Rule {
-            1
-        } else if explanation.edges.iter().any(|edge| {
-            edge.target == node.id
-                && explanation.nodes.iter().any(|source| {
-                    source.id == edge.source && source.kind == ExplanationNodeKind::Rule
-                })
-        }) {
-            2
-        } else {
-            0
-        };
-        columns[column].push(node);
+    let graph = explanation_summary_graph(explanation);
+    let width = ui.available_width().max(1.0);
+    let horizontal = width >= 600.0;
+    let support_limit = if horizontal && ui.available_height() >= 350.0 {
+        3
+    } else {
+        2
+    };
+    let mut nodes: Vec<_> = graph.support.iter().take(support_limit).copied().collect();
+    let shown_support = nodes.len();
+    nodes.extend(graph.rule);
+    nodes.extend(graph.consequence);
+    let (size, cards) = explanation_card_layout(
+        width,
+        shown_support,
+        graph.rule.is_some(),
+        graph.consequence.is_some(),
+    );
+    let (rect, _) = ui.allocate_exact_size(size, Sense::hover());
+    let positions: BTreeMap<_, Rect> = nodes
+        .iter()
+        .zip(cards)
+        .map(|(node, card)| (node.id.as_str(), card.translate(rect.min.to_vec2())))
+        .collect();
+    for edge in &explanation.edges {
+        if let (Some(source), Some(target)) = (
+            positions.get(edge.source.as_str()),
+            positions.get(edge.target.as_str()),
+        ) {
+            let (points, end, arrow) = if horizontal {
+                let start = source.right_center();
+                let end = target.left_center();
+                let middle = (start.x + end.x) * 0.5;
+                (
+                    vec![
+                        start,
+                        Pos2::new(middle, start.y),
+                        Pos2::new(middle, end.y),
+                        end,
+                    ],
+                    end,
+                    Vec2::new(8.0, 0.0),
+                )
+            } else {
+                let start = source.center_bottom();
+                let end = target.center_top();
+                let middle = (start.y + end.y) * 0.5;
+                (
+                    vec![
+                        start,
+                        Pos2::new(start.x, middle),
+                        Pos2::new(end.x, middle),
+                        end,
+                    ],
+                    end,
+                    Vec2::new(0.0, 8.0),
+                )
+            };
+            ui.painter()
+                .add(egui::Shape::line(points, Stroke::new(1.4, theme.muted)));
+            ui.painter()
+                .arrow(end - arrow, arrow, Stroke::new(1.4, theme.muted));
+        }
     }
-    let rows = columns.iter().map(Vec::len).max().unwrap_or(1).max(1);
-    let height = rows as f32 * 90.0 + 30.0;
-    egui::ScrollArea::both()
-        .id_salt("explanation-diagram")
-        .max_height(350.0)
-        .show(ui, |ui| {
-            let (rect, _) = ui.allocate_exact_size(Vec2::new(700.0, height), Sense::hover());
-            let mut positions = BTreeMap::new();
-            for (column, nodes) in columns.iter().enumerate() {
-                for (row, node) in nodes.iter().enumerate() {
-                    let y = if column == 0 {
-                        row as f32 * 90.0
-                    } else {
-                        (height - 100.0) * 0.5
-                    };
-                    positions.insert(
-                        node.id.as_str(),
-                        Rect::from_min_size(
-                            rect.min + Vec2::new(column as f32 * 246.0, y + 20.0),
-                            Vec2::new(208.0, 72.0),
-                        ),
-                    );
-                }
-            }
-            for edge in &explanation.edges {
-                if let (Some(source), Some(target)) = (
-                    positions.get(edge.source.as_str()),
-                    positions.get(edge.target.as_str()),
-                ) {
-                    let start = source.right_center();
-                    let end = target.left_center();
-                    let middle = (start.x + end.x) * 0.5;
-                    ui.painter().add(egui::Shape::line(
-                        vec![
-                            start,
-                            Pos2::new(middle, start.y),
-                            Pos2::new(middle, end.y),
-                            end,
-                        ],
-                        Stroke::new(1.4, theme.muted),
-                    ));
-                    ui.painter().arrow(
-                        end - Vec2::new(8.0, 0.0),
-                        Vec2::new(8.0, 0.0),
-                        Stroke::new(1.4, theme.muted),
-                    );
-                }
-            }
-            for node in &explanation.nodes {
-                let Some(card) = positions.get(node.id.as_str()).copied() else {
-                    continue;
-                };
-                let rule = node.kind == ExplanationNodeKind::Rule;
-                ui.painter().rect(
-                    card,
-                    7.0,
-                    if rule { theme.elevated } else { theme.surface },
-                    Stroke::new(1.0, if rule { theme.accent } else { theme.border }),
-                    egui::StrokeKind::Inside,
-                );
-                let heading = if rule {
-                    "SEMANTIC RULE"
-                } else if columns[2].iter().any(|outcome| outcome.id == node.id) {
-                    "CONSEQUENCE"
+    for node in nodes {
+        let card = positions[node.id.as_str()];
+        let rule = node.kind == ExplanationNodeKind::Rule;
+        let consequence = graph
+            .consequence
+            .is_some_and(|outcome| outcome.id == node.id);
+        ui.painter().rect(
+            card,
+            7.0,
+            if rule { theme.elevated } else { theme.surface },
+            Stroke::new(
+                if consequence { 1.5 } else { 1.0 },
+                if rule || consequence {
+                    theme.accent
                 } else {
-                    "EVIDENCE"
-                };
-                ui.painter().text(
-                    card.min + Vec2::new(10.0, 10.0),
-                    Align2::LEFT_TOP,
-                    heading,
-                    FontId::proportional(10.0),
-                    theme.muted,
-                );
-                let display_label =
-                    explanation_display_label(node, explanation.rule_name.as_deref());
-                let mut job = egui::text::LayoutJob::simple(
-                    display_label.to_owned(),
-                    FontId::proportional(12.0),
-                    theme.text,
-                    card.width() - 20.0,
-                );
-                job.wrap.max_rows = 2;
-                job.wrap.break_anywhere = true;
-                let galley = ui.fonts_mut(|fonts| fonts.layout_job(job));
-                ui.painter()
-                    .galley(card.min + Vec2::new(10.0, 28.0), galley, theme.text);
-                let response = ui.interact(card, ui.id().with(&node.id), Sense::hover());
-                response.widget_info(|| {
-                    egui::WidgetInfo::labeled(
-                        egui::WidgetType::Label,
-                        true,
-                        format!("{heading}: {display_label}"),
-                    )
-                });
-                response.on_hover_text(format!("{}\n{}", node.label, node.id));
+                    theme.border
+                },
+            ),
+            egui::StrokeKind::Inside,
+        );
+        let heading = if rule {
+            "SEMANTIC RULE"
+        } else if consequence {
+            if graph.rule.is_some() {
+                "CONSEQUENCE"
+            } else {
+                "SELECTED FACT"
             }
+        } else {
+            "EVIDENCE"
+        };
+        ui.painter().text(
+            card.min + Vec2::new(10.0, 10.0),
+            Align2::LEFT_TOP,
+            heading,
+            FontId::proportional(10.0),
+            theme.muted,
+        );
+        let display_label = if consequence {
+            consequence_label.unwrap_or(&node.label)
+        } else {
+            explanation_display_label(node, explanation.rule_name.as_deref())
+        };
+        let mut job = egui::text::LayoutJob::simple(
+            display_label.to_owned(),
+            FontId::proportional(12.0),
+            theme.text,
+            (card.width() - 20.0).max(1.0),
+        );
+        job.wrap.max_rows = 3;
+        job.wrap.break_anywhere = false;
+        let galley = ui.fonts_mut(|fonts| fonts.layout_job(job));
+        ui.painter()
+            .galley(card.min + Vec2::new(10.0, 28.0), galley, theme.text);
+        let response = ui.interact(card, ui.id().with(&node.id), Sense::hover());
+        response.widget_info(|| {
+            egui::WidgetInfo::labeled(
+                egui::WidgetType::Label,
+                true,
+                format!("{heading}: {display_label}"),
+            )
         });
+        response.on_hover_text(format!("{}\n{}", node.label, node.id));
+    }
+    if graph.rule.is_some() {
+        ui.add_space(8.0);
+        ui.label(muted(format!(
+            "Summary · {shown_support} of {} available supporting facts shown. Expand Evidence for exact details.",
+            graph.support.len(),
+        ), theme).small());
+    }
 }
 
 /// Presentation copy for known public projection kinds. Unknown kinds retain
@@ -1104,6 +1285,188 @@ mod tests {
         assert_eq!(explanation_display_label(&node, None), node.label);
     }
 
+    fn explanation_test_projection() -> ExplanationProjection {
+        use agq_modeling_view::{ExplanationEdge, ExplanationNode};
+        let mut projection = ExplanationProjection {
+            revision_id: agq_studio_scene::fixtures::revision(),
+            subject_id: ElementId::from_u128(12),
+            origin: ViewOrigin::Derived,
+            rule_id: Some(agq_kernel::RuleId::from_u128(13)),
+            rule_name: Some("checkOccurrenceUsageSuboccurrenceSpecialization".into()),
+            profile: "test-only-proof".into(),
+            nodes: vec![
+                ExplanationNode {
+                    id: "unrelated-rule".into(),
+                    element_id: None,
+                    label: "Unrelated rule".into(),
+                    kind: ExplanationNodeKind::Rule,
+                },
+                ExplanationNode {
+                    id: "consequence".into(),
+                    element_id: Some(ElementId::from_u128(12)),
+                    label: "Subsetting : Subsetting".into(),
+                    kind: ExplanationNodeKind::Element,
+                },
+                ExplanationNode {
+                    id: "rule".into(),
+                    element_id: None,
+                    label: "checkOccurrenceUsageSuboccurrenceSpecialization".into(),
+                    kind: ExplanationNodeKind::Rule,
+                },
+            ],
+            edges: vec![ExplanationEdge {
+                source: "rule".into(),
+                target: "consequence".into(),
+                label: "implies".into(),
+                presentation_only: true,
+            }],
+            evidence_count: 621,
+            truncated: true,
+        };
+        for n in 0..8 {
+            projection.nodes.push(ExplanationNode {
+                id: format!("support-{n}"),
+                element_id: None,
+                label: format!("Supporting fact {n}"),
+                kind: ExplanationNodeKind::Fact,
+            });
+            projection.edges.push(ExplanationEdge {
+                source: format!("support-{n}"),
+                target: "rule".into(),
+                label: "declared evidence".into(),
+                presentation_only: true,
+            });
+        }
+        projection
+    }
+
+    #[test]
+    fn explain_summary_keeps_rule_and_consequence_visible_with_many_dependencies() {
+        let projection = explanation_test_projection();
+        let original = projection.clone();
+        let graph = explanation_summary_graph(&projection);
+        assert_eq!(graph.consequence.unwrap().id, "consequence");
+        assert_eq!(graph.rule.unwrap().id, "rule");
+        assert_eq!(graph.support.len(), 8);
+        for (width, support) in [(720.0, 3), (600.0, 3), (599.0, 2), (320.0, 2)] {
+            let (size, cards) = explanation_card_layout(width, support, true, true);
+            assert_eq!(cards.len(), support + 2);
+            assert!(
+                size.y <= 268.0,
+                "the rule and conclusion must fit before the evidence disclosure"
+            );
+            let bounds = egui::Rect::from_min_size(egui::Pos2::ZERO, size).expand(0.001);
+            for (i, card) in cards.iter().enumerate() {
+                assert!(
+                    bounds.contains_rect(*card),
+                    "clipped card {i} at width {width}"
+                );
+                for other in cards.iter().skip(i + 1) {
+                    assert!(
+                        !card.intersects(*other),
+                        "overlapping cards at width {width}"
+                    );
+                }
+            }
+        }
+        assert_eq!(
+            projection, original,
+            "summary layout cannot truncate the exact evidence DTO"
+        );
+        assert_eq!(
+            explanation_display_label(graph.rule.unwrap(), projection.rule_name.as_deref()),
+            "Suboccurrence specialization"
+        );
+        assert_eq!(
+            graph.rule.unwrap().label,
+            "checkOccurrenceUsageSuboccurrenceSpecialization"
+        );
+    }
+
+    #[test]
+    fn explain_summary_never_infers_a_rule_or_support_from_unconnected_nodes() {
+        let mut projection = explanation_test_projection();
+        projection.edges.retain(|edge| edge.source != "rule");
+        let graph = explanation_summary_graph(&projection);
+        assert_eq!(graph.consequence.unwrap().id, "consequence");
+        assert!(graph.rule.is_none());
+        assert!(graph.support.is_empty());
+        let (_, cards) =
+            explanation_card_layout(320.0, graph.support.len(), graph.rule.is_some(), true);
+        assert_eq!(cards.len(), 1);
+    }
+
+    #[test]
+    fn explain_readable_consequence_requires_an_exact_revision_and_complete_edge() {
+        let mut explanation = explanation_test_projection();
+        let mut projection = agq_studio_scene::fixtures::architecture();
+        projection.edges.truncate(1);
+        let edge = &mut projection.edges[0];
+        edge.relationship_id = Some(explanation.subject_id);
+        edge.rule_id = explanation.rule_id;
+        edge.origin = explanation.origin;
+        edge.family = RelationshipFamily::Subsetting;
+        edge.semantic_kind = "Subsetting".into();
+        edge.directed = true;
+        let expected = format!(
+            "{} {} {}",
+            projection
+                .nodes
+                .iter()
+                .find(|node| node.id == edge.source)
+                .unwrap()
+                .name,
+            edge.label,
+            projection
+                .nodes
+                .iter()
+                .find(|node| node.id == edge.target)
+                .unwrap()
+                .name
+        );
+        assert_eq!(
+            explanation_relationship_label(&explanation, &projection),
+            Some(expected)
+        );
+        let valid = projection.clone();
+        let other_revision = agq_modeling_workspace::ProjectRevisionId::from_u128(88);
+        for defect in 0..10 {
+            let mut projection = valid.clone();
+            match defect {
+                0 => projection.revision_id = other_revision,
+                1 => projection.edges[0].revision_id = other_revision,
+                2 => projection.edges[0].rule_id = None,
+                3 => projection.edges.push(projection.edges[0].clone()),
+                4 => projection.nodes.clear(),
+                5 => projection
+                    .nodes
+                    .iter_mut()
+                    .for_each(|node| node.revision_id = other_revision),
+                6 => projection.edges[0].semantic_kind = "ConnectionUsage".into(),
+                7 => projection.edges[0].family = RelationshipFamily::Connection,
+                8 => projection.edges[0].directed = false,
+                9 => projection.edges[0].origin = ViewOrigin::Authored,
+                _ => unreachable!(),
+            }
+            assert_eq!(
+                explanation_relationship_label(&explanation, &projection),
+                None,
+                "defect {defect}"
+            );
+        }
+        explanation
+            .nodes
+            .iter_mut()
+            .find(|node| node.id == "consequence")
+            .unwrap()
+            .kind = ExplanationNodeKind::Fact;
+        assert_eq!(
+            explanation_relationship_label(&explanation, &valid),
+            None,
+            "a property proof is not the whole relationship"
+        );
+    }
+
     #[test]
     fn summary_names_only_actual_consequence_and_immediate_support() {
         use agq_modeling_view::{ExplanationEdge, ExplanationNode};
@@ -1164,7 +1527,7 @@ mod tests {
             truncated: true,
         };
         let original = projection.clone();
-        let summary = explanation_summary(&projection);
+        let summary = explanation_summary(&projection, None);
         assert_eq!(
             summary,
             "The model derives “engine · type”. Its recorded support includes “engine : PartUsage” and “Engine : PartDefinition”. This is a partial view of the recorded support."
@@ -1173,11 +1536,13 @@ mod tests {
         assert!(!summary.contains("Unrelated fact"));
         assert_eq!(projection, original);
         projection.rule_name = Some("actualRecordedRule".into());
-        assert!(explanation_summary(&projection).contains("by applying “actualRecordedRule”"));
+        assert!(
+            explanation_summary(&projection, None).contains("by applying “actualRecordedRule”")
+        );
         projection.origin = ViewOrigin::Authored;
         projection.edges.clear();
         assert_eq!(
-            explanation_summary(&projection),
+            explanation_summary(&projection, None),
             "The fact “engine · type” comes directly from the project's authored model."
         );
     }
