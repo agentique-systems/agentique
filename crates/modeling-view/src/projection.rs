@@ -10,6 +10,10 @@ use agq_modeling_workspace::ProjectRevision;
 use agq_sysml::classes as sc;
 use std::collections::{BTreeMap, BTreeSet};
 
+#[cfg(test)]
+#[path = "query_reuse/projection_reference.rs"]
+pub(crate) mod reference;
+
 /// Project a current canonical graph without reconstruction, validation or mutation.
 pub fn project(
     revision: &ProjectRevision,
@@ -59,19 +63,27 @@ fn project_observed(
     });
     profile.size("extracted_graph_edges", edges.len());
     let mut warnings = vec![];
+    // This evaluator never escapes the call or crosses immutable revisions.
+    // Preserve lazy construction and the order of all semantic queries.
+    let mut query_session = None;
+    let mut context_constructions = 0;
     // Connector endpoints are effective semantic queries, never inferred from the layout.
     if definition
         .relationship_families
         .contains(&RelationshipFamily::Connection)
     {
-        let queries = profile.measure("connector_kerml_context", None, || {
+        query_session = Some(profile.measure("connector_kerml_context", None, || {
             revision
                 .kerml_queries()
                 .map_err(|e| ViewError::Query(format!("{e:?}")))
-        })?;
+        })?);
+        context_constructions += 1;
+        let queries = query_session
+            .as_ref()
+            .expect("constructed connector context");
         let mut connector_queries = 0;
         edges.extend(profile.measure("connector_queries", None, || {
-            connector_edges(&queries, revision.revision(), &local, |id, answer| {
+            connector_edges(queries, revision.revision(), &local, |id, answer| {
                 connector_queries += 1;
                 query_warning(
                     &mut warnings,
@@ -110,16 +122,27 @@ fn project_observed(
                 definition.depth.saturating_mul(2).min(8),
             );
             if definition.focus.is_some() && is(model, focus, c::TYPE) {
-                let queries =
-                    profile.measure("focused_kerml_context", Some("selection_scope"), || {
-                        revision
-                            .kerml_queries()
-                            .map_err(|e| ViewError::Query(format!("{e:?}")))
-                    })?;
+                profile.size(
+                    "focused_context_reused",
+                    usize::from(query_session.is_some()),
+                );
+                if query_session.is_none() {
+                    query_session = Some(profile.measure(
+                        "focused_kerml_context",
+                        Some("selection_scope"),
+                        || {
+                            revision
+                                .kerml_queries()
+                                .map_err(|e| ViewError::Query(format!("{e:?}")))
+                        },
+                    )?);
+                    context_constructions += 1;
+                }
+                let queries = query_session.as_ref().expect("constructed focused context");
                 selected.extend(profile.measure(
                     "focused_interface_queries",
                     Some("selection_scope"),
-                    || focused_interfaces(&queries, focus, &context_allowed, &mut warnings),
+                    || focused_interfaces(queries, focus, &context_allowed, &mut warnings),
                 ));
             }
         }
@@ -190,6 +213,7 @@ fn project_observed(
         }
     }
     profile.end("group_mapping", None, groups_started);
+    profile.size("kerml_context_constructions", context_constructions);
     Ok(ViewProjection {
         revision_id: revision.revision(),
         view: definition.clone(),

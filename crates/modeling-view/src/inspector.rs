@@ -5,6 +5,43 @@ use agq_kernel::{DocumentId, SourceRevisionId, provenance::FactKey};
 use agq_modeling_workspace::ProjectRevision;
 use std::collections::{BTreeMap, BTreeSet};
 
+#[cfg(test)]
+#[path = "query_reuse/inspector_reference.rs"]
+pub(crate) mod reference;
+
+enum InspectorQuerySource<S, K> {
+    Sysml(S),
+    Kerml(K),
+}
+
+/// SysML errors retain the original Inspector's KerML-profile fallback. A
+/// failed fallback still returns the original KerML query factory error.
+fn inspector_query_source<S, K, E>(
+    sysml: Result<S, E>,
+    kerml: impl FnOnce() -> Result<K, ViewError>,
+) -> Result<InspectorQuerySource<S, K>, ViewError> {
+    match sysml {
+        Ok(queries) => Ok(InspectorQuerySource::Sysml(queries)),
+        Err(_) => kerml().map(InspectorQuerySource::Kerml),
+    }
+}
+
+impl<'m> InspectorQuerySource<agq_sysml_semantics::SysmlQueries<'m>, KerMlQueries<'m>> {
+    fn kerml(&self) -> &KerMlQueries<'m> {
+        match self {
+            Self::Sysml(queries) => queries.kerml(),
+            Self::Kerml(queries) => queries,
+        }
+    }
+
+    fn profile(&self) -> String {
+        match self {
+            Self::Sysml(queries) => queries.context().dependencies.sysml_profile.id().to_owned(),
+            Self::Kerml(queries) => queries.context().baseline_profile_id.to_owned(),
+        }
+    }
+}
+
 /// Exact half-open UTF-8 source range for the selected revision.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SourceLocation {
@@ -104,11 +141,21 @@ fn inspect_observed(
         "standard_elements",
         revision.accepted_sysml().overlay().model().len(),
     );
-    let q = timing.measure("kerml_context", None, || {
-        revision
-            .kerml_queries()
-            .map_err(|e| ViewError::Query(format!("{e:?}")))
+    // The ordinary SysML factory independently checks its full dependency
+    // contract. Its contained KerML evaluator serves this exact call only.
+    let sysml = timing.measure("sysml_context", None, || revision.sysml_queries());
+    let query_source = inspector_query_source(sysml, || {
+        timing.measure("fallback_kerml_context", None, || {
+            revision
+                .kerml_queries()
+                .map_err(|e| ViewError::Query(format!("{e:?}")))
+        })
     })?;
+    timing.size(
+        "sysml_kerml_reused",
+        usize::from(matches!(&query_source, InspectorQuerySource::Sysml(_))),
+    );
+    let q = query_source.kerml();
     let mut queries = vec![];
     let owner_started = timing.start();
     let owner_query = q.owner(id);
@@ -189,7 +236,7 @@ fn inspect_observed(
     timing.size("local_elements", local.len());
     let relationships_started = timing.start();
     let (relationships, connection_queries) =
-        inspect_relationships(&q, revision.revision(), &local, id, timing);
+        inspect_relationships(q, revision.revision(), &local, id, timing);
     queries.extend(connection_queries);
     timing.end("relationship_queries", None, relationships_started);
     let source_started = timing.start();
@@ -206,12 +253,7 @@ fn inspect_observed(
                 .map(|(path, _)| path.to_owned()),
         });
     timing.end("source_mapping", None, source_started);
-    let profile = timing.measure("sysml_profile_context", None, || {
-        revision
-            .sysml_queries()
-            .map(|q| q.context().dependencies.sysml_profile.id().to_owned())
-            .unwrap_or_else(|_| q.context().baseline_profile_id.to_owned())
-    });
+    let profile = timing.measure("profile_label", None, || query_source.profile());
     Ok(ElementInspector {
         revision_id: revision.revision(),
         element,
@@ -302,6 +344,30 @@ mod tests {
     use crate::projection::tests::{fixture_queries, references, semantic_fixture};
     use agq_kernel::{ElementRecord, value::Value};
     use agq_sysml::classes as sc;
+
+    #[test]
+    fn inspector_factory_preserves_success_fallback_and_exact_kerml_failure() {
+        let successful: Result<InspectorQuerySource<&str, ()>, ViewError> =
+            inspector_query_source(Ok::<_, &str>("checked SysML"), || {
+                panic!("successful SysML must not construct a second evaluator")
+            });
+        assert!(matches!(
+            successful,
+            Ok(InspectorQuerySource::Sysml("checked SysML"))
+        ));
+        let fallback =
+            inspector_query_source(Err::<(), _>("SysML unavailable"), || Ok("KerML fallback"));
+        assert!(matches!(
+            fallback,
+            Ok(InspectorQuerySource::Kerml("KerML fallback"))
+        ));
+        let failed = inspector_query_source(Err::<(), _>("SysML unavailable"), || {
+            Err::<(), _>(ViewError::Query("exact KerML factory failure".into()))
+        });
+        assert!(
+            matches!(failed, Err(ViewError::Query(message)) if message == "exact KerML factory failure")
+        );
+    }
 
     #[test]
     fn feature_metadata_uses_exact_standard_identity_and_canonical_declared_names() {

@@ -9,6 +9,10 @@ mod explain;
 mod inspector;
 mod projection;
 
+#[cfg(test)]
+#[path = "query_reuse/oracle.rs"]
+mod query_reuse_oracle;
+
 pub use explain::*;
 pub use inspector::*;
 pub use projection::*;

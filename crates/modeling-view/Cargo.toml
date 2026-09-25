@@ -19,3 +19,6 @@ thiserror.workspace = true
 [dev-dependencies]
 agq-kerml-text = { path = "../kerml-text" }
 agq-standard-libraries = { path = "../standard-libraries" }
+agq-modeling-service = { path = "../modeling-service" }
+agq-modeling-sqlite = { path = "../../adapters/modeling-sqlite" }
+tempfile.workspace = true

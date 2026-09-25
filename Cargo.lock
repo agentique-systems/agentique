@@ -256,12 +256,15 @@ dependencies = [
  "agq-kerml-semantics",
  "agq-kerml-text",
  "agq-kernel",
+ "agq-modeling-service",
+ "agq-modeling-sqlite",
  "agq-modeling-workspace",
  "agq-standard-libraries",
  "agq-sysml",
  "agq-sysml-semantics",
  "serde",
  "serde_json",
+ "tempfile",
  "thiserror",
 ]
 
