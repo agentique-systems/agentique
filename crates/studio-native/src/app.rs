@@ -447,11 +447,7 @@ impl StudioApp {
         }
         let options = SceneOptions {
             collapsed: self.collapsed.clone(),
-            focus: if self.world == World::System {
-                self.focus
-            } else {
-                None
-            },
+            focus: ownership_focus(&projection, self.world, self.focus, self.fixture.is_some()),
             hierarchy: matches!(self.world, World::System | World::History),
         };
         let input = crate::scene_build::SceneInput {
@@ -834,9 +830,62 @@ pub(crate) fn hierarchy_order(scene: &SemanticScene) -> Vec<usize> {
     ordered
 }
 
+/// A real focused architecture projection has already crossed canonical ownership
+/// and typing edges. A second lexical subtree filter would discard definitions
+/// referenced by its parts (for example ModelRepository inside ModelingPlatform).
+/// Fixtures and temporary local navigation still use presentation-only ownership.
+fn ownership_focus(
+    projection: &ViewProjection,
+    world: World,
+    focus: Option<ElementId>,
+    fixture: bool,
+) -> Option<ElementId> {
+    if world != World::System
+        || (!fixture
+            && projection.view.kind == agq_modeling_view::ViewKind::Architecture
+            && projection.view.focus == focus)
+    {
+        None
+    } else {
+        focus
+    }
+}
+
 #[cfg(test)]
 mod bootstrap_tests {
     use super::*;
+
+    #[test]
+    fn focused_semantic_architecture_keeps_referenced_definitions_outside_lexical_owner() {
+        let mut projection = fixture_projection("architecture");
+        let focus = projection
+            .nodes
+            .iter()
+            .find(|n| n.name == "ModelingPlatform")
+            .unwrap()
+            .id;
+        let external = projection
+            .nodes
+            .iter_mut()
+            .find(|n| n.name == "ModelRepository")
+            .unwrap();
+        external.owner = None;
+        let external_id = external.id;
+        projection.view.focus = Some(focus);
+        let options = SceneOptions {
+            focus: ownership_focus(&projection, World::System, Some(focus), false),
+            ..Default::default()
+        };
+        let scene = SemanticScene::from_projection(&projection, &options, None).unwrap();
+        assert!(scene.node(external_id).is_some());
+        assert_eq!(scene.node(external_id).unwrap().semantic.owner, None);
+        let fixture_options = SceneOptions {
+            focus: ownership_focus(&projection, World::System, Some(focus), true),
+            ..Default::default()
+        };
+        let local = SemanticScene::from_projection(&projection, &fixture_options, None).unwrap();
+        assert!(local.node(external_id).is_none());
+    }
 
     #[test]
     fn unloaded_workspace_has_no_hidden_fixture_objects_or_selection_targets() {
