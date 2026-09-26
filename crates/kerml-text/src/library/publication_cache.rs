@@ -151,6 +151,7 @@ impl CanonicalKermlStandardLibraries {
         reader: impl Read + Seek,
         sources: &VerifiedLibrarySet,
     ) -> Result<Self, PublicationCacheError> {
+        let mut trace = crate::runtime_restore_trace::RuntimeRestoreTrace::new("kerml");
         let receipt = AcceptedPublicationReceipt::checked_in()?;
         if receipt.source_content_set() != sources.content_set_id() {
             return Err(PublicationCacheError::Mismatch(
@@ -161,6 +162,7 @@ impl CanonicalKermlStandardLibraries {
         if archive.len() != 2 {
             return Err(PublicationCacheError::Mismatch("archive entries"));
         }
+        trace.phase("receipt_authority_and_archive_open");
         let metadata_bytes = receipt.facade_metadata_bytes()?;
         let metadata_digest = entry_digest(&mut archive, METADATA, metadata_bytes)?;
         receipt.verify_facade_digest(metadata_digest)?;
@@ -169,26 +171,33 @@ impl CanonicalKermlStandardLibraries {
         receipt.verify_facade_metadata(&metadata)?;
         let metadata: FacadeMetadata = serde_json::from_value(metadata)?;
         metadata.validate(sources)?;
+        trace.phase("facade_authentication_decode_validation");
         // Verify compressed input before allocating records. The semantics layer
         // also re-encodes and hashes the decoded graph before issuing Complete.
         receipt.verify_graph_digest(entry_digest(&mut archive, GRAPH, receipt.graph_bytes()?)?)?;
+        trace.phase("graph_input_authentication");
         let registry =
             agq_kerml::registry_for_profile(BaselineProfile::OPERATIONAL_V9).map_err(|error| {
                 LibraryLoadError::Interpretation(format!("Cache registry: {error:?}"))
             })?;
+        trace.phase("descriptor_registry");
         let overlay = agq_kernel::archive::read_overlay(
             BufReader::new(archive.by_name(GRAPH)?),
             Arc::new(registry),
         )?;
+        trace.phase("graph_decode_and_kernel_validation");
         let libraries = verified_libraries(sources)?;
+        trace.phase("verified_library_identity");
         let complete = CompletePublicationOverlay::restore_accepted(
             overlay,
             &metadata.roots,
             &libraries,
             &receipt,
         )?;
+        trace.phase("graph_recanonicalization_and_context_authentication");
         let publication = Self::from_restored_parts(complete, metadata);
         publication.check_binding_manifest(sources, receipt.binding_manifest())?;
+        trace.phase("facade_and_binding_manifest");
         Ok(publication)
     }
 

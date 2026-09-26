@@ -241,6 +241,7 @@ impl CanonicalSysmlSystemsLibrary {
         accepted_kerml: Arc<CanonicalKermlStandardLibraries>,
         receipt: ReceiptAuthority,
     ) -> Result<Self, SystemsPublicationCacheError> {
+        let mut trace = crate::runtime_restore_trace::RuntimeRestoreTrace::new("sysml");
         let identity = SystemsLibraryIdentity::pinned(SystemsLibraryIdentity::SOURCE_CONTENT_SET);
         let (profile, syntax_profile) = receipt.profile()?;
         let empty_bindings = StandardSysmlBindings::unbound(identity.clone());
@@ -249,13 +250,16 @@ impl CanonicalSysmlSystemsLibrary {
         check_interpretation(&receipt, sources, &accepted_kerml, &initial_contract)?;
         let mut archive = ZipArchive::new(reader)?;
         check_entries(&mut archive)?;
+        trace.phase("receipt_interpretation_and_archive_open");
         let metadata = authenticated_bytes(&mut archive, &receipt, "facade.json")?;
         let metadata: FacadeMetadata = serde_json::from_slice(&metadata)?;
         metadata.validate(sources, syntax_profile)?;
+        trace.phase("facade_authentication_decode_validation");
         // Hash the compressed entry before allocating decoded graph records.
         let graph_bytes = receipt.entry_bytes("kernel.jsonl")?;
         let digest = entry_digest(&mut archive, "kernel.jsonl", graph_bytes)?;
         receipt.verify_entry_digest("kernel.jsonl", digest)?;
+        trace.phase("graph_input_authentication");
         let registry = agq_sysml::registry_for_profile(agq_kerml::BaselineProfile::OPERATIONAL_V9)
             .map_err(|_| SystemsPublicationCacheError::Mismatch("combined descriptor registry"))?;
         let dependency = accepted_kerml
@@ -263,11 +267,13 @@ impl CanonicalSysmlSystemsLibrary {
             .immutable_dependency()
             .expect("accepted KerML dependency")
             .clone();
+        trace.phase("descriptor_registry_and_dependency_mount");
         let overlay = agq_kernel::archive::read_dependent_overlay_with_evidence(
             BufReader::new(archive.by_name("kernel.jsonl")?.take(graph_bytes)),
             Arc::new(registry),
             dependency,
         )?;
+        trace.phase("graph_decode_kernel_validation_and_dependency_authentication");
         // A changing seekable input cannot replace the graph after its first
         // hash. Authenticate what was actually decoded, retaining derived facts.
         let mut actual_graph = DigestWriter::new(io::sink());
@@ -278,11 +284,13 @@ impl CanonicalSysmlSystemsLibrary {
             ));
         }
         receipt.verify_entry_digest("kernel.jsonl", actual_graph.digest.finalize().into())?;
+        trace.phase("graph_recanonicalization_and_dependency_authentication");
         metadata.validate_graph(&overlay, identity.library)?;
         let source_map: LibrarySourceMap = metadata.source_map.iter().cloned().collect();
         let library = sources.libraries().get(&identity.library).ok_or(
             SystemsPublicationCacheError::Mismatch("Systems source library"),
         )?;
+        trace.phase("source_and_graph_validation");
         // Bind role validation to the same producer-aware model identity used
         // by the restored certificate and subsequent mounted dependency. The
         // explicit constructor derives the full registry independently; an
@@ -294,6 +302,7 @@ impl CanonicalSysmlSystemsLibrary {
             &initial_contract,
             empty_bindings,
         )?;
+        trace.phase("initial_producer_context");
         let queries = KerMlQueries::new(current.kerml_context().fork());
         let bindings = StandardSysmlBindings::validate(
             overlay.model(),
@@ -303,6 +312,7 @@ impl CanonicalSysmlSystemsLibrary {
             StandardSysmlRole::ALL,
         )?
         .with_verified_sources(library, &source_map)?;
+        trace.phase("standard_binding_validation");
         drop(queries);
         drop(current);
         let contract = SysmlDependencyContract::checked_in_for_profile(&bindings, profile)?;
@@ -313,17 +323,18 @@ impl CanonicalSysmlSystemsLibrary {
                 "dependency contract digest",
             ));
         }
+        trace.phase("bound_dependency_contract");
         let closure_bytes = authenticated_bytes(&mut archive, &receipt, "closure.json")?;
-        let context = receipt.attach_closure(
-            SysmlSemanticContext::for_producer_overlay(
-                &overlay,
-                accepted_kerml.complete_overlay(),
-                &metadata.roots,
-                &contract,
-                bindings.clone(),
-            )?,
-            closure_bytes,
+        trace.phase("closure_input_authentication");
+        let context = SysmlSemanticContext::for_producer_overlay(
+            &overlay,
+            accepted_kerml.complete_overlay(),
+            &metadata.roots,
+            &contract,
+            bindings.clone(),
         )?;
+        trace.phase("bound_producer_context");
+        let context = receipt.attach_closure(context, closure_bytes)?;
         let producer_closure = context
             .kerml_context()
             .producer_closure()
@@ -336,6 +347,7 @@ impl CanonicalSysmlSystemsLibrary {
                 "restored producer requirement coverage",
             ));
         }
+        trace.phase("producer_closure_authentication_and_coverage");
         let context_id = context.id().clone();
         let publication_identity = publication_identity(contract, &context_id.kerml);
         if receipt.identity()["publication_digest"]
@@ -346,6 +358,7 @@ impl CanonicalSysmlSystemsLibrary {
                 "restored publication identity",
             ));
         }
+        trace.phase("accepted_publication_identity");
         drop(context);
         let checked = metadata.checked_families()?;
         let publication = Self {
@@ -381,6 +394,7 @@ impl CanonicalSysmlSystemsLibrary {
             counters: PublicationCounters::default(),
         };
         publication.check_binding_manifest(sources, receipt.binding_manifest())?;
+        trace.phase("facade_and_binding_manifest");
         Ok(publication)
     }
 }

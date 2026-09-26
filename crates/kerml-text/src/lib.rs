@@ -3,6 +3,7 @@
 pub mod library;
 mod lowering;
 mod project;
+mod runtime_restore_trace;
 pub mod sysml;
 pub use project::*;
 
