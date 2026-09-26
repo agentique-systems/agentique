@@ -1,16 +1,17 @@
 # Native Studio mission completion audit
 
-The runtime artifact problem is solved. The remaining decisive proof is an
-ordinary native engineering edit through review, validation, durable commit and
-separate-process restart, followed by a credible real-model product review. A
-working renderer, a passing service oracle, and five fixture review loops answer
-different questions. None substitutes for that operator outcome.
+The runtime artifact problem is solved, and the ordinary real native journey
+has now passed through candidate review, validation, commit and new-revision
+History. Separate-process restart is still running at this snapshot. Real-model
+product review and remaining qualification limits are separate from that edit
+success; neither a renderer nor a service oracle substitutes for them.
 
-This is a read-only source/evidence audit at integration snapshot
-`b10fe62c7dbb62981a4cd3719820e9631ed99381`. Work continues after this snapshot.
-The combined reconstruction oracle and later native journeys are not credited
-before a terminal result exists. No build, accepted-runtime consumer or new
-native interaction was run for this audit, and it assigns no milestone label.
+This updates the earlier `b10fe62c` audit using completed run06 evidence at
+`c9bbc66c4739a6d9d46c6396db26eebc7266c5a9`. Its executable SHA256 is
+`c6a8013dbf7db7103153ca287758390f58e6f1db72e6a57405b2a87c6b5fc57b`.
+No build, accepted-runtime consumer or new native interaction was run for this
+offline update, and it assigns no milestone label. Held source changes are not
+credited to this tested binary.
 The reviewer read the retained five formal reviews and later real reviews, and
 directly inspected run05's focused System, Graph and agent images. The earlier
 real History image was also inspected during its correction review.
@@ -37,22 +38,34 @@ Graph, actual derived Explain, Requirements and exact parent comparison. It then
 constructs a real Working candidate while native pan and a current-revision
 Inspector read remain available. This is substantially beyond a graph fixture.
 
-**The latest completed real journey still fails.** It stops at the first
-Candidate-mode assertion, before explicit new-part selection, validation, commit
-or restart. The retained states preserve ViewService across that transition;
-the failure is a premature driver assertion, not demonstrated production
-selection loss. [Independent diagnosis](reviews/real-run05-editor-interaction.md)
-and the [corrected assertion contract](reviews/real-candidate-selection-gate-independent.md)
-keep later, stronger new-part selection checks. A corrected driver is not a
-passing rerun. The [run05 extraction](performance/run05-extracted.md) explicitly
-retains the failure and missing stages.
+**Run06 passes the real edit journey; restart remains a separate gate.**
+[All 33 native assertions pass](real-run06/journey.json), and its
+[process receipt](real-run06/process.json) records exit 0 after 534.436 s.
+The ordinary UI creates `alphaStudioObserver` inside ModelingPlatform, reviews
+Current/Candidate/Diff, validates, commits and shows revision
+`9539bfed-f725-43d9-b5f8-8254040e7d42` in History. The committed manifest retains
+Validated evidence and the accepted publication pair. The report explicitly
+says `journey_passed_restart_pending`; it is version 1 against the unchanged
+six-source historical model, not composed-Studio version 2 acceptance.
+
+The [run06 extraction](performance/run06-extracted.md) retains native stage
+boundaries, cache/query scopes and all 13 verified gallery images. Prepare
+observation takes 135.029 s from button release; complete asserted prepare,
+validate and commit steps take 138.028 s, 29.197 s and 8.823 s respectively.
+Those include input, worker work and UI observation, not isolated semantic-phase
+timers. The [failed run05 extraction](performance/run05-extracted.md) stays
+unchanged, alongside its [independent diagnosis](reviews/real-run05-editor-interaction.md)
+and [corrected assertion contract](reviews/real-candidate-selection-gate-independent.md).
 
 ## Ranked next outcomes
 
-1. **P0 — Close the real edit/durability chain.** Complete native prepare →
-   Candidate/Current/Diff → validate → commit → History → process exit → restart
-   → same canonical element/head. Retain actual candidate/diff/commit/restart
-   images and terminal process receipts. Independently complete the platform
+1. **P0 — Close the separate-process durability proof.** Run06 now closes native
+   prepare → Candidate/Current/Diff → validate → commit → History → process exit.
+   The restart must still verify the same canonical element/head with its own
+   terminal receipt. Actual [candidate](real-run06/gallery/08-candidate.png),
+   [candidate diff](real-run06/gallery/09-candidate-diff.png) and
+   [committed History](real-run06/gallery/10-committed-history.png) are retained.
+   Independently complete the platform
    gate's source-only restoration, second insertion, bounded rename and CAS
    obligations; normal cached restart is insufficient. The
    [gate sequence](reviews/post-proof-freshness-and-durable-gate.md) documents
@@ -64,7 +77,8 @@ retains the failure and missing stages.
    400 pixels on controls, leaves a clipped mesh and names an owner outside the
    frame. The compact complete-list/owner-focus correction has
    [source review](reviews/history-space-followup-independent.md) and integrated
-   regression evidence, but needs its new real image. Run05's
+   regression evidence, and now has its [new real image](real-run06/gallery/06-history-diff.png)
+   awaiting final product judgment. Run05's
    [Graph](real-run05/gallery/03-graph-world.png) and
    [agent result](real-run05/gallery/07-agent-view.png) remain horizontal bands
    with similar unlabeled relationships; ten elements should be comfortable to
@@ -81,8 +95,12 @@ retains the failure and missing stages.
    measures approximately 47.5% lower full-call medians, but first focus/Inspector
    calls still take about 2.9 seconds. Run05's nine Inspector cache hits have
    0.027 ms median *reader-call* time; that excludes queue/input/presentation.
-   Projection-cache focused tests now pass, but the final real hit/first-use
-   comparison is still needed. During candidate mutation, projection intent is
+   Run06 records seven Architecture projection-cache hits at 0.183 ms median
+   platform-call time, one Graph hit at 0.411 ms, and nine Inspector hits at
+   0.030 ms median reader-call time. Actual first-use Architecture misses remain
+   2.682–2.907 s on the baseline. Those call samples exclude worker queue and
+   visible presentation; they do not establish immediate end-to-end navigation.
+   During candidate mutation, projection intent is
    deferred behind the mutation worker: pan/selection/current Inspector remain
    available, while a new focus/filter/lens can wait for reconstruction. A cache
    does not remove that queue boundary. The first-use and during-edit experience
@@ -96,7 +114,10 @@ retains the failure and missing stages.
    restore are different operation boundaries, not a speed ratio. The audit
    answer-parity rerun [passed](performance/effective-audit-answer-parity02.json)
    after a retained first failure; the combined hot/cold wall-time/equivalence
-   result is pending at this snapshot. No deep local incremental semantic
+   result has now [passed](performance/create-part-shared-mount-and-audit.json):
+   [one exact oracle test](checks/create-part-shared-mount-and-audit.txt),
+   591.077 s process wall time and 6,500,315,136-byte observed process peak.
+   This retains full closure/audit reconstruction. No deep local incremental semantic
    speedup is established. Keep compile, closure, certificate, effective audit,
    validation and whole-process memory separate; never sum nested phase timers.
 
@@ -114,10 +135,13 @@ retains the failure and missing stages.
    authenticates and seeds/opens Agentique; it has no visible general blank
    project/create/import flow. Syntax-free nested Part creation within the
    self-model is narrower than the requested new-engineer project journey.
-   Ordinary [Back/Forward state](../../crates/studio-native/src/navigation.rs)
-   stores revision/world/focus/camera only; `restore_location` clears expanded
-   neighborhoods. The richer tested agent-dismiss return does not repair this
-   ordinary Back behavior. Visited focus should also be distinct from lexical
+   In the tested binary, ordinary [Back/Forward state](../../crates/studio-native/src/navigation.rs)
+   still stores revision/world/focus/camera only; `restore_location` clears
+   expanded neighborhoods. Patch `ced761e73a3e5c40dc0cb6bd90827baa652fdf62`
+   adds confirmed query/neighborhood/filter/pin retention and seven prepared
+   regressions, but is deliberately **held, unintegrated and unexecuted** during
+   wrap-up. It is not part of the run06 binary or an accepted fix. The richer
+   tested agent-dismiss return does not repair ordinary Back. Visited focus should also be distinct from lexical
    ownership: Repository focus currently omits the visited ModelingPlatform
    context, although its actual lexical owner is correctly PlatformArchitecture.
    Do not solve that by fabricating an ownership edge.
@@ -158,12 +182,13 @@ directory retains the eight-surface gallery and actual native input report.
 | 4 — [editor interaction designer](reviews/round-04-editor-interaction.md) | Wrong-context menus, weak palette keyboard use and candidate reframe/selection loss; [before candidate](round-03-after/08-candidate.png). | Target-specific menus, keyboard palette and preserved review camera/selection; [after candidate](round-04-after/08-candidate.png), [native journey](round-04-after/journey.json). | Ordinary Back still lost graph expansion; reduced-motion journey did not qualify normal-motion continuity. The egui context-lock deadlock was retained and repaired, not hidden. |
 | 5 — [AI-native workflow designer](reviews/round-05-ai-workflow.md) | Query/decision provenance unclear, mock weight sounded authoritative, proposed object too small; [before agent](round-04-after/07-agent-view.png), [before candidate](round-04-after/08-candidate.png). | Original inquiry/revision/authority, explicit mock provenance, correct endpoint direction and local change framing; [after agent](round-05-after/07-agent-view.png), [after candidate](round-05-after/08-candidate.png). | Agent return and intent were still incomplete then; later [return journey](agent-return-journey.json) and [intent capture](candidate-intent-after/08-candidate.png) close those bounded fixture gaps. The later real provider card removes invented weights entirely. Real edit/commit/restart remained unqualified. |
 
-The later [real run05 review](reviews/real-run05-editor-interaction.md) is the
-stronger product reference now. It closes the observed real connection-label
+The later [real run05 review](reviews/real-run05-editor-interaction.md) is a
+stronger product reference than the fixture loops. It closes the observed real connection-label
 overlap and Explain clipping for the captured examples, confirms the original
 inherited repositoryRevisions port, and leaves the ranked density/navigation
-issues above. The new History source review is not a sixth completed visual
-before/after loop until its replacement image exists.
+issues above. Run06 now provides the replacement History and complete real
+candidate/commit images. Their successful capture is not itself an independent
+formal product critique or a judgment that every remaining density issue closed.
 
 ## Mission coverage that must not be lost in the final handoff
 
@@ -172,9 +197,9 @@ before/after loop until its replacement image exists.
 | Product language/design system (III–IV) | [Product language](../../docs/native-studio-product-language.md), vector marks, engineering-first labels and [Unicode/long-name journey](typography-width-after/journey.json) exist. Definition context and generic Element/question-mark labels remain visible real product smells. Physical DPI/font fallback qualification is separate. |
 | System/containment/ports (V–VII) | Real focus and actual port/interface inspection are captured; original inherited IDs are preserved. Boundary proxies and adversarial layout are tested. Real collapsed-subsystem connectivity and normal-motion focus/back are not established by the default gallery. Connection authoring is deferred in favor of bounded rename. |
 | Graph/Requirements/Inspector/Explain (VIII–XI) | Real bounded neighborhoods, canonical dependency-scope fence, inherited/project feature provenance, subject/type path and actual derived Explain are present. Real Requirements currently demonstrates a small subject path; fixture satisfy/verify examples do not establish a dense real traceability workflow. Lightweight bundling was not adopted; exact relationship inspectability stays preferable to invented junctions. |
-| History/diff/candidate (XII–XIV) | Exact paired revisions, removed ghosts, complete change list, mode-specific selection and operator/intent attribution exist. Real candidate review completion/validation/commit/restart is still the acceptance gap. Selected/hovered display claims must remain bound to each original revision. |
+| History/diff/candidate (XII–XIV) | Exact paired revisions, removed ghosts, complete change list, mode-specific selection and operator/intent attribution exist. Run06 passes real candidate review, validation and commit; separate-process restart remains pending. Selected/hovered display claims stay bound to each original revision. |
 | Human/agent/decision division (XV–XVII) | Real dependency result visibly changes the world, retains inquiry/authority and uses an actual provider-neutral deterministic Choice mock; [real agent image](real-run05/gallery/07-agent-view.png). No calibrated probability or live LLM is claimed. Broader unconnected-requirement/impact/proposal actions are not demonstrated; dependencies are a useful bounded agent operation, not a general autonomous engineering agent. |
-| Performance/background work (XIX–XXIV) | Exact query-reuse and mount-only reconstruction oracles passed; [background read evidence](real-run05/journey.json) observes pan plus an immutable current Inspector while preparing. Its 13 ms maximum input-hook gap is a coarse non-freeze check, not a 60 Hz/presentation result. Actual phase/call windows and pending combined reconstruction are described above. |
+| Performance/background work (XIX–XXIV) | Exact query-reuse, mount-only and combined mount/audit reconstruction oracles passed. [Run06 background read evidence](real-run06/journey.json) observes pan plus an immutable current ViewService Inspector during preparation (2.927 s selection-to-response, mutation still pending). Its 11 ms maximum input-hook gap is a coarse non-freeze check, not a 60 Hz/presentation result. Actual phase/call windows and remaining incremental limitations are described above. |
 | Interaction/layout/projection (XXVII–XXXIV) | Fixture keyboard/context/palette journeys and [adversarial routing](product/routing-review.md) pass within their scopes. Nine fixture classes in two layouts report top-left world displacement; [layout output](product/routing-layout-quality.txt) is not real revision screen-space continuity. Pin/unpin has [scene contracts](product/graph-pins.md); final real exploration/default readability still requires review. |
 | Saved views/session (XXXV–XXXVI) | [Presentation journey and separate restart](reviews/presentation-qualification.md) passed with process exits 0, including save/rename/update/open and exact restored state. These are explicitly local presentation bookmarks retaining ViewDefinition/revision/camera/layout; they are not shared repository semantic revisions. Missing-ID recovery and atomic-file tests are not physical power-loss qualification. |
 | Release/accessibility (XXXVII–XXXVIII) | [Qualification matrix](release-qualification.md) records actual UIA, named port actions, keyboard fixture journey, resize/minimize and Narrator coexistence. Spoken screen-reader usability, real IME composition, mixed DPI and macOS/Linux remain unqualified. [Surface recovery audit](release/surface-device-recovery.md) documents bounded reconfiguration and a restart-required device-loss path, not full device recreation. This is the concrete pinned eframe limitation, not a reason to reopen the entire framework decision. |
@@ -198,12 +223,14 @@ The integration lead owns those corrections and final CI.
 Runtime distribution is sustainable for a maintainer with draft access, but an
 engineer without that access cannot obtain it solely by following `cargo run`.
 The README now says so. Keep this access boundary, multi-minute first open,
-unqualified physical/device/platform cases, pending real rename/durability, and
+unqualified physical/device/platform cases, pending restart/platform rename qualification, and
 the absence of a measured local incremental semantic speedup visible in the
 handoff. The product question remains whether an engineer can understand and
 change the system confidently, with those real limitations, through one coherent
 application.
 
-Audit-only checks: a Python path check resolved all 65 local evidence links
-(exit 0); `git diff --cached --check` passed (exit 0). No product check or runtime
-result was generated by this documentation change.
+The initial audit resolved all 65 then-present local evidence links. This
+offline update runs the existing extractor and its bookkeeping tests, verifies
+the new retained image hashes and checks all current evidence links; its exact
+receipt is [offline extraction checks](checks/offline-run06-extraction.json).
+No product check or runtime result is generated by this documentation change.
