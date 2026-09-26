@@ -53,7 +53,7 @@ impl StudioApp {
                         ui.label(muted("PROJECTS", theme).small());
                         if ui
                             .add_enabled(
-                                !self.projects.is_empty(),
+                                self.authenticated_runtime_ready(),
                                 egui::Button::new("New project…"),
                             )
                             .clicked()
@@ -714,8 +714,10 @@ impl StudioApp {
                                 "Opening your workspace"
                             } else if failed {
                                 "Workspace could not open"
-                            } else if self.projects.is_empty() {
+                            } else if !self.authenticated_runtime_ready() {
                                 "Set up your engineering workspace"
+                            } else if self.projects.is_empty() {
+                                "Create your first project"
                             } else {
                                 "Choose a project"
                             });
@@ -734,8 +736,10 @@ impl StudioApp {
                                     "Opening stopped before the workspace was ready. See the details below."
                                 } else if !self.pending.is_empty() {
                                     "Opening the selected project revision…"
-                                } else if self.projects.is_empty() {
+                                } else if !self.authenticated_runtime_ready() {
                                     "Choose a local Agentique runtime bundle to authenticate and install."
+                                } else if self.projects.is_empty() {
+                                    "Your semantic runtime is ready. Create an empty Working project to begin."
                                 } else {
                                     "Your semantic runtime is ready. Select a project to continue."
                                 });
@@ -755,10 +759,10 @@ impl StudioApp {
                                     self.open_project(project.id);
                                 }
                             }
-                            if !self.projects.is_empty() && ui.button("New project…").clicked() {
+                            if self.authenticated_runtime_ready() && ui.button("New project…").clicked() {
                                 self.new_project_dialog();
                             }
-                            if self.projects.is_empty() && !self.opening.as_ref().is_some_and(|opening| opening.running()) {
+                            if !self.authenticated_runtime_ready() && !self.opening.as_ref().is_some_and(|opening| opening.running()) {
                                 ui.label(muted("Required runtime: KerML v9 + SysML v3", theme));
                                 ui.add(
                                     egui::TextEdit::singleline(&mut self.bundle_path)

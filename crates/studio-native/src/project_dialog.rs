@@ -15,9 +15,105 @@ pub struct ProjectDialog {
     pub source_path: String,
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::bridge::Reply;
+    use agq_studio_platform::BootstrapPhase;
+    use clap::Parser;
+
+    #[test]
+    fn empty_authenticated_repository_can_create_but_fixture_progress_and_stale_ready_cannot() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let args = crate::Args::parse_from([
+            "studio",
+            "--fixture",
+            "architecture",
+            "--no-restore",
+            "--root",
+            root.to_str().unwrap(),
+        ]);
+        let ctx = egui::Context::default();
+        let creation = eframe::CreationContext::_new_kittest(ctx.clone());
+        let mut app = StudioApp::new(&creation, args).unwrap();
+        assert!(
+            app.ready,
+            "fixture is displayed without an authenticated host"
+        );
+        app.new_project_dialog();
+        assert!(!app.project_dialog.open);
+        app.fixture = None;
+        app.ready = false;
+        app.binding = None;
+        assert!(app.projects.is_empty());
+
+        // Exercise reply routing with explicit test messages. The actual worker
+        // is given a missing runtime, so this test grants no semantic authority
+        // and cannot create any repository or accepted publication.
+        let temporary = std::env::temp_dir().join(format!(
+            "agentique-empty-repository-test-{}",
+            agq_modeling_repository::ProjectId::new()
+        ));
+        let mut config = app.config.clone();
+        config.database = temporary.join("empty.sqlite");
+        config.runtime.bundle = Some(temporary.join("missing.agq-runtime"));
+        let first = app.bridge.open(config.clone(), None).unwrap();
+        let response = |request, terminal, result| Reply {
+            request,
+            epoch: request,
+            context: None,
+            read: None,
+            mutation: false,
+            terminal,
+            result,
+        };
+        app.receive_replies([response(
+            first,
+            false,
+            Ok(Output::Progress(BootstrapPhase::Ready)),
+        )]);
+        app.new_project_dialog();
+        assert!(!app.project_dialog.open);
+        app.receive_replies([response(first, false, Ok(Output::Ready(vec![])))]);
+        assert!(!app.authenticated_runtime_ready());
+
+        app.receive_replies([response(first, true, Ok(Output::Ready(vec![])))]);
+        assert!(app.authenticated_runtime_ready());
+        assert!(app.projects.is_empty() && app.binding.is_none());
+        let output = ctx.run(egui::RawInput::default(), |ctx| app.setup(ctx));
+        let text: Vec<_> = output
+            .shapes
+            .iter()
+            .filter_map(|shape| match &shape.shape {
+                egui::Shape::Text(text) => Some(text.galley.text()),
+                _ => None,
+            })
+            .collect();
+        assert!(text.contains(&"Create your first project"));
+        assert!(!text.contains(&"Authenticate and install runtime"));
+        app.new_project_dialog();
+        assert!(app.project_dialog.open);
+        app.project_dialog.open = false;
+
+        let next = app.bridge.open(config.clone(), None).unwrap();
+        assert!(!app.authenticated_runtime_ready());
+        app.receive_replies([response(first, true, Ok(Output::Ready(vec![])))]);
+        app.new_project_dialog();
+        assert!(!app.project_dialog.open);
+        app.receive_replies([response(next, true, Err("Runtime unavailable".into()))]);
+        assert_eq!(app.runtime_ready_epoch, None);
+        assert!(!app.authenticated_runtime_ready());
+        assert!(!config.database.exists());
+    }
+}
+
 impl StudioApp {
+    pub fn authenticated_runtime_ready(&self) -> bool {
+        self.runtime_ready_epoch == Some(self.bridge.epoch())
+    }
+
     pub fn new_project_dialog(&mut self) {
-        if self.allow_context_change() && !self.projects.is_empty() {
+        if self.authenticated_runtime_ready() && self.allow_context_change() {
             self.project_dialog.open = true;
             self.project_dialog.repository = self.config.database.display().to_string();
         }
@@ -25,6 +121,7 @@ impl StudioApp {
 
     pub fn project_dialogs(&mut self, ctx: &egui::Context) {
         let mut create = false;
+        let runtime_ready = self.authenticated_runtime_ready();
         egui::Window::new("New project")
             .open(&mut self.project_dialog.open)
             .collapsible(false)
@@ -35,9 +132,9 @@ impl StudioApp {
                 ui.label("Repository location (.sqlite)");
                 ui.add(egui::TextEdit::singleline(&mut self.project_dialog.repository).desired_width(f32::INFINITY));
                 ui.label("Creates an empty Working project. Add source, review, and validate when ready.");
-                create = ui.add_enabled(self.pending.is_empty() && !self.project_dialog.name.trim().is_empty(), egui::Button::new("Create project")).clicked();
+                create = ui.add_enabled(runtime_ready && self.pending.is_empty() && !self.project_dialog.name.trim().is_empty(), egui::Button::new("Create project")).clicked();
             });
-        if create && self.allow_context_change() {
+        if create && self.authenticated_runtime_ready() && self.allow_context_change() {
             let name = self.project_dialog.name.trim().to_owned();
             let database = PathBuf::from(&self.project_dialog.repository);
             if !database.is_absolute() {

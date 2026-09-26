@@ -120,6 +120,10 @@ impl StudioApp {
             }
             match reply.result {
                 Err(error) => {
+                    if reply.context.is_none() {
+                        self.runtime_ready_epoch = None;
+                        self.project_dialog.open = false;
+                    }
                     if !reply.mutation
                         && reply.context.is_some()
                         && ![
@@ -208,7 +212,8 @@ impl StudioApp {
                     self.setup_reason = crate::loading::phase_text(&phase).0.into();
                     self.status = self.setup_reason.clone();
                 }
-                Ok(Output::Ready(projects)) => {
+                Ok(Output::Ready(projects)) if reply.terminal && reply.context.is_none() => {
+                    self.runtime_ready_epoch = Some(reply.epoch);
                     if let Some(opening) = &mut self.opening {
                         opening.finish(reply.request, false);
                     }
@@ -222,7 +227,12 @@ impl StudioApp {
                     {
                         self.open_project(project);
                     } else {
-                        self.setup_reason = "Runtime authenticated. Choose a project.".into();
+                        self.setup_reason = if self.projects.is_empty() {
+                            "Runtime authenticated. Create your first project."
+                        } else {
+                            "Runtime authenticated. Choose a project."
+                        }
+                        .into();
                     }
                 }
                 Ok(Output::ProjectCreated {

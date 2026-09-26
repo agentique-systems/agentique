@@ -97,6 +97,8 @@ pub struct StudioApp {
     pub reduced_motion: bool,
     pub ime_composing: bool,
     pub ready: bool,
+    /// Successful worker host opening, distinct from a displayed scene or a nonempty project list.
+    pub runtime_ready_epoch: Option<u64>,
     pub fixture: Option<String>,
     pub config: NativeConfig,
     pub setup_reason: String,
@@ -250,6 +252,7 @@ impl StudioApp {
             reduced_motion: restore.as_ref().is_some_and(|r| r.reduced_motion),
             ime_composing: false,
             ready: fixture.is_some(),
+            runtime_ready_epoch: None,
             fixture,
             config,
             setup_reason: setup
