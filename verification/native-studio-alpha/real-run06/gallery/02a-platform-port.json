@@ -1,0 +1,2362 @@
+{
+  "adapter": "AdapterInfo { name: \"NVIDIA GeForce RTX 3060 Ti\", vendor: 4318, device: 9353, device_type: DiscreteGpu, driver: \"NVIDIA\", driver_info: \"616.92\", backend: Vulkan }",
+  "baseline": {
+    "accepted_publications": {
+      "kerml": "815573353973607bc62a25195ed4461645182027407f8476be521ffc99174f12",
+      "sysml": "25aeddb099be16462b553d6debcad97f43bf22e89ce8a9bbb53cf72eb7d193fa"
+    },
+    "checkpoint_digest": "2ef15715a476375cd40fd64c7d964b3bda9c05d6a7a39b0cafed80d1dcb0d2af",
+    "documents": [
+      {
+        "content_digest": "fb19fdb031aa524d9957f3a1498818bd66106c718d51274328bd47f381921617",
+        "document_id": "d038fb89-2c63-4c9b-895c-42685cf7561f",
+        "language": "SysMl",
+        "path": "AgentFabric.sysml",
+        "source_revision_id": "6d50a277-3244-42d4-a4a2-c53f85399821"
+      },
+      {
+        "content_digest": "17cc930b105b74d7001a70ab9cfddf3a2c65c906a57dcc2e1f341140b3636960",
+        "document_id": "b10fa5f1-0871-4e77-a2de-f5792a66d5ff",
+        "language": "SysMl",
+        "path": "Agentique.sysml",
+        "source_revision_id": "26163378-bb2f-4498-99a4-c891f546aa9b"
+      },
+      {
+        "content_digest": "4235d37c880ca5d43bb11b482d9414b4270a78ff6ee7287d3538961bcc94bc2a",
+        "document_id": "b2cfa3ce-2fbf-49a8-9176-1617a9fbec23",
+        "language": "SysMl",
+        "path": "Contracts.sysml",
+        "source_revision_id": "1f2ac833-3d04-48c0-936f-05465bee3449"
+      },
+      {
+        "content_digest": "7f753fe89a4158918481a52134df9df9218167433fe3869d65ae22ccf6d90691",
+        "document_id": "a98fe9db-76be-452c-b681-cea61ae96d88",
+        "language": "SysMl",
+        "path": "ExecutionRuntime.sysml",
+        "source_revision_id": "cccec7f2-4d9a-4248-9454-13d73039fdcb"
+      },
+      {
+        "content_digest": "3fbdf2caa9a6ee69c8807f513af0d1e822b053d9a86ff947782ff65f88536f39",
+        "document_id": "07134d44-11f1-4a2c-81da-183858f94a97",
+        "language": "SysMl",
+        "path": "LanguageEngine.sysml",
+        "source_revision_id": "7146a5ce-ec19-44c0-8c69-1dc1218c4553"
+      },
+      {
+        "content_digest": "12c198141d892e606f9cd2b3a419863cc02f994f1b31236af0b112faf5d31b79",
+        "document_id": "e2c0646f-23b0-4f71-9165-641d24c66dbf",
+        "language": "SysMl",
+        "path": "ModelingPlatform.sysml",
+        "source_revision_id": "de62e5af-ef81-4a9c-b429-8a30dec23f64"
+      }
+    ],
+    "format_version": 1,
+    "metadata": {
+      "alias": [],
+      "created": "2026-09-25T21:00:50.662029400+00:00",
+      "description": null,
+      "name": null
+    },
+    "parent_revision_id": "8d7fa8e8-3834-4048-b3bd-e85d1d675f16",
+    "project_id": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+    "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+    "semantic_cache": {
+      "closure_digest": "d85e4bb3ae067c827de1689b4ddcbc053444913c35797bd90e4e01fbbdd78a19",
+      "content_digest": "70d4d526e2d6036df2236f64041b27eb310dec8dd58a42f41858785817931e0e",
+      "format": "agq-project-semantic-cache/2",
+      "semantic_context": "4546f84eb050ceb3aca37ea3b9e2b0fc57a9aa58ffb45c2f02ffa38ac1a4bcef",
+      "source_binding": "ba2e6f420abcb2ef11c010a8edcf46bd4e2d66b5a96e231d8b3bb267d73d710a"
+    },
+    "validation": {
+      "Validated": {
+        "acceptance_contract": "agentique-modeling-workspace-phase1/1",
+        "closure_digest": "d85e4bb3ae067c827de1689b4ddcbc053444913c35797bd90e4e01fbbdd78a19",
+        "semantic_context": "4546f84eb050ceb3aca37ea3b9e2b0fc57a9aa58ffb45c2f02ffa38ac1a4bcef",
+        "semantic_digest": "ddbc45e346ef84f570e8109316d6eb7ff140946dde8c2de62eeb9fef170f3ef4",
+        "source_binding": "ba2e6f420abcb2ef11c010a8edcf46bd4e2d66b5a96e231d8b3bb267d73d710a"
+      }
+    }
+  },
+  "checkpoint": "02a-platform-port",
+  "committed": null,
+  "engineering_evidence": {
+    "connected_port": {
+      "effective_features": [
+        {
+          "id": "018942c7-80b8-5bc0-9a52-d9ae05524d17",
+          "name": "BindingConnector",
+          "semantic_kind": "BindingConnector"
+        },
+        {
+          "id": "07a042ef-b6a9-5e6c-828b-943a89c6f2ff",
+          "name": "Feature",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "0f1d2654-fa8b-52a6-bc33-c28f191d6580",
+          "name": "subports",
+          "semantic_kind": "PortUsage"
+        },
+        {
+          "id": "1209f128-41d1-50b7-b66f-eb9fca3a0f2e",
+          "name": "Invariant",
+          "semantic_kind": "Invariant"
+        },
+        {
+          "id": "1dfd585b-427b-54ab-8657-29a76142ecae",
+          "name": "spaceShots",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "20df1f5d-781d-5efa-9eb1-1cd23c98ab9a",
+          "name": "Connector",
+          "semantic_kind": "Connector"
+        },
+        {
+          "id": "22cd4e0e-4b78-5d2f-b5f1-636ab6cbac00",
+          "name": "spaceTimeEnclosedOccurrences",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "27b9a883-8ba9-5663-a3ae-fc0108932644",
+          "name": "Connector",
+          "semantic_kind": "Connector"
+        },
+        {
+          "id": "27f72a4d-e3f4-5123-9689-2ebb510b0a92",
+          "name": "spaceBoundaryOf",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "281473e1-8a46-5dc4-b1df-8a7b8489299f",
+          "name": "isRunToCompletion",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "2db9998d-83c3-517f-aea1-dc5548b3a036",
+          "name": "startShot",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "2e79b766-2704-5ec9-852f-bfb479797ee1",
+          "name": "snapshotOf",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "2ec76352-dfef-540c-b402-41e4cec7ac4d",
+          "name": "differencesOf",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "335fbbe5-c0fe-55a3-8814-8532622fd85a",
+          "name": "Feature",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "37e47cf7-a3e7-58ea-9269-685d28373c72",
+          "name": "outsideOfOccurrences",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "3c51597c-302c-5737-b052-ba231409a07e",
+          "name": "Invariant",
+          "semantic_kind": "Invariant"
+        },
+        {
+          "id": "3c9d6546-af7a-5904-9ef3-7f1c4747f254",
+          "name": "timeSliceOf",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "3ea87f0a-9d00-5e3b-8f2f-e628619f08de",
+          "name": "enactedPerformances",
+          "semantic_kind": "Step"
+        },
+        {
+          "id": "44ffce38-e5e6-5c71-b9d3-31335e159c53",
+          "name": "Connector",
+          "semantic_kind": "Connector"
+        },
+        {
+          "id": "48ab3335-42ed-5502-a6ee-50afab7643c9",
+          "name": "endShot",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "4ecd65d9-2c98-58c8-b7ac-24f9fcf48086",
+          "name": "suboccurrences",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "4f5ceb29-4154-5e33-99b4-6ee62b69364a",
+          "name": "runToCompletionScope",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "52b083ea-2040-58a0-b434-3889a5ae16a6",
+          "name": "immediatePredecessors",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "537aa9e5-7482-5bf5-89dd-e97415a59f2d",
+          "name": "outerSpaceDimension",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "5b4c5387-96e6-5d45-b436-4503b77c08a8",
+          "name": "dispatchScope",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "5c09d363-2e13-5b5b-9360-2b6aef643623",
+          "name": "ownedPerformances",
+          "semantic_kind": "Step"
+        },
+        {
+          "id": "5e528715-c2f7-5d3f-9180-5b6f3d2f6bf0",
+          "name": "spaceInteriorOf",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "5f7ffed6-8867-5b7e-a3cb-6197532d24fe",
+          "name": "self",
+          "semantic_kind": "ReferenceUsage"
+        },
+        {
+          "id": "614cdd21-a89c-5d9c-8bc3-7cbcd526b960",
+          "name": "isDispatch",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "6396453b-8d5a-5fd4-bd3b-04ccdd1a41c9",
+          "name": "interfacingPorts",
+          "semantic_kind": "PortUsage"
+        },
+        {
+          "id": "66b9c9c4-d5b8-50b2-9467-3f96cff319df",
+          "name": "Invariant",
+          "semantic_kind": "Invariant"
+        },
+        {
+          "id": "68bdadce-5662-5d12-90f9-c588e6f4cf45",
+          "name": "subobjects",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "7080088b-dd6b-5baf-ada9-0c7df83f08ee",
+          "name": "that",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "753d0f74-e799-5c99-9397-80b8111a0aa3",
+          "name": "Invariant",
+          "semantic_kind": "Invariant"
+        },
+        {
+          "id": "77e5f5c0-c6cc-584c-8489-c1bbbce1cb77",
+          "name": "intersectionsOf",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "7803a8e1-159f-5ea7-b3bf-1db8c04580d7",
+          "name": "matingOccurrences",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "81e2e116-fc46-562c-b1a3-425fef646fc4",
+          "name": "structuredSpaceBoundary",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "843843fc-2ecc-53f5-a391-24b36ca0d0c1",
+          "name": "semanticAnswer",
+          "semantic_kind": "ItemUsage"
+        },
+        {
+          "id": "84543de5-242e-5e4b-8825-13fc49eb72e5",
+          "name": "involvingPerformances",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "8881fbe2-8c28-5780-9745-0d43868adf26",
+          "name": "predecessors",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "88a7ea6c-8220-50b1-8a73-819bb4a9c031",
+          "name": "Invariant",
+          "semantic_kind": "Invariant"
+        },
+        {
+          "id": "8a9402ff-ca1d-5844-b48f-f59d32a5da8a",
+          "name": "spaceSliceOf",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "8ac95a40-70d4-5379-ba27-4d1bf6904852",
+          "name": "Connector",
+          "semantic_kind": "Connector"
+        },
+        {
+          "id": "8b6273e5-0868-5d52-a5bb-78316a2c0d04",
+          "name": "justOutsideOfOccurrences",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "8da646f9-754b-51b0-b18c-d88df9f39f88",
+          "name": "middleTimeSlice",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "8dcfa122-2aa7-58ba-8a3d-bb1d5f27794f",
+          "name": "innerSpaceOccurrences",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "8f66e1eb-0768-5ee8-bc05-967855f92080",
+          "name": "unionsOf",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "919d9eee-c6f5-5725-8e1a-9436b667b39f",
+          "name": "Feature",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "9777cc49-f52b-59e5-8701-1e903be585a9",
+          "name": "BindingConnector",
+          "semantic_kind": "BindingConnector"
+        },
+        {
+          "id": "98aa9d78-4a8e-5cef-b948-a914eb378f47",
+          "name": "portionOfLife",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "a3f7e45d-f2b2-58f4-8439-96fed53cc355",
+          "name": "Invariant",
+          "semantic_kind": "Invariant"
+        },
+        {
+          "id": "a4ca7ea4-c9ad-5ab5-9b74-7bb7838f3959",
+          "name": "spaceTimeCoincidentOccurrences",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "a5c930af-654f-5576-a606-a8d781bb5e17",
+          "name": "superoccurrence",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "a95a2e4d-3e5e-5672-8018-69486ab6016d",
+          "name": "timeEnclosedOccurrences",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "ac718d90-ad9e-5956-80df-4f9565905f5f",
+          "name": "longerOccurrence",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "b12a176a-55f7-51f9-9f58-74e369cd25a2",
+          "name": "spaceSlices",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "b265fd68-6725-537d-b9d7-944fb12bcd66",
+          "name": "isClosed",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "ba705efb-93e7-5066-b6ff-c7f73fdeaa4c",
+          "name": "this",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "bd3c9409-cf6e-5e27-bdb9-82198ce419cb",
+          "name": "spaceInterior",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "bef8e709-a974-5f08-8d4e-bee83238a93a",
+          "name": "Connector",
+          "semantic_kind": "Connector"
+        },
+        {
+          "id": "c02d7525-c895-51d7-ab4c-a0efb96bf24e",
+          "name": "portions",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "c3bd64cc-f1ba-56e3-b002-714b8079b005",
+          "name": "timeSlices",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "c6418c9e-9064-5245-96db-a92598baaf60",
+          "name": "incomingTransfersToSelf",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "cb33c736-c1c9-5c91-a655-5ffaf3e1277c",
+          "name": "Connector",
+          "semantic_kind": "Connector"
+        },
+        {
+          "id": "cc3b35b1-ecb2-57f4-9351-89ad48249fd1",
+          "name": "ReferenceUsage",
+          "semantic_kind": "ReferenceUsage"
+        },
+        {
+          "id": "cd4e41d2-667d-5556-9b36-2ef4e5e04541",
+          "name": "spaceEnclosedOccurrences",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "cf16c09d-241a-5881-841b-d2fc7c5b9a93",
+          "name": "Feature",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "d13aadbb-4bb3-5814-bf48-28e11a897094",
+          "name": "spaceBoundary",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "d5f29e3e-4646-5aeb-a25e-5897f79064ed",
+          "name": "Connector",
+          "semantic_kind": "Connector"
+        },
+        {
+          "id": "d8e08703-2b50-59e3-ac4c-83e4a919eaaa",
+          "name": "surroundedByOccurrences",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "d93a4a30-c545-50d8-b150-41c14020d89e",
+          "name": "portionOf",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "d95c0930-4eda-55fe-a4fe-e26a13274382",
+          "name": "sameLifeOccurrences",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "df6398e0-7f37-5e7d-b83c-98c284c9de99",
+          "name": "innerSpaceDimension",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "dfc2eb90-aa24-5ec9-8fea-07c730f79cc3",
+          "name": "Invariant",
+          "semantic_kind": "Invariant"
+        },
+        {
+          "id": "e115541d-ddcc-5270-97d4-a6aa5edc58be",
+          "name": "shorterOccurrence",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "e3b1590f-0a6e-52b5-8721-5d05ed934cf9",
+          "name": "incomingTransfers",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "e5e58091-50a3-5169-b7fb-97709dc4a81f",
+          "name": "successors",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "e72a1d2f-1053-58a7-9017-93c2c0dd5f20",
+          "name": "spaceTimeEnclosedPoints",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "e89be505-d6c0-5592-ae44-6a95c859baf9",
+          "name": "Invariant",
+          "semantic_kind": "Invariant"
+        },
+        {
+          "id": "ed077e4f-762a-5d94-b7a4-6232fe1b129b",
+          "name": "immediateSuccessors",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "efcdad69-2e0f-558d-9660-bb961fd666d9",
+          "name": "outgoingTransfers",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "f0e694b5-0526-5a9e-8dc4-f1e1742d77d5",
+          "name": "BindingConnector",
+          "semantic_kind": "BindingConnector"
+        },
+        {
+          "id": "f58c5bb7-682d-5a9c-9fe3-b8eb26023590",
+          "name": "timeCoincidentOccurrences",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "fbe8846e-504b-5299-93f6-53b6b0b5b73f",
+          "name": "spaceShotOf",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "fd672c72-714f-5ea3-bb4a-12bb2d1db4f9",
+          "name": "withoutOccurrences",
+          "semantic_kind": "Feature"
+        }
+      ],
+      "effective_types": [
+        {
+          "id": "470374e4-e572-518a-8eae-f9df03d8756e",
+          "name": "SemanticQuery",
+          "semantic_kind": "PortDefinition"
+        }
+      ],
+      "element": {
+        "badges": [],
+        "counts": {
+          "parts": 0,
+          "ports": 0,
+          "requirements": 0
+        },
+        "features": [],
+        "id": "206b48b1-d0bb-52ed-8248-50e05afe4ecc",
+        "name": "clientQueries",
+        "origin": "Authored",
+        "owner": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "qualified_name": "PlatformArchitecture::ModelingPlatform::clientQueries",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "semantic_kind": "PortUsage",
+        "source_available": true
+      },
+      "feature_provenance": {
+        "018942c7-80b8-5bc0-9a52-d9ae05524d17": {
+          "has_declared_name": false,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "07a042ef-b6a9-5e6c-828b-943a89c6f2ff": {
+          "has_declared_name": false,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "0f1d2654-fa8b-52a6-bc33-c28f191d6580": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "1209f128-41d1-50b7-b66f-eb9fca3a0f2e": {
+          "has_declared_name": false,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "1dfd585b-427b-54ab-8657-29a76142ecae": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "20df1f5d-781d-5efa-9eb1-1cd23c98ab9a": {
+          "has_declared_name": false,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "22cd4e0e-4b78-5d2f-b5f1-636ab6cbac00": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "27b9a883-8ba9-5663-a3ae-fc0108932644": {
+          "has_declared_name": false,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "27f72a4d-e3f4-5123-9689-2ebb510b0a92": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "281473e1-8a46-5dc4-b1df-8a7b8489299f": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "2db9998d-83c3-517f-aea1-dc5548b3a036": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "2e79b766-2704-5ec9-852f-bfb479797ee1": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "2ec76352-dfef-540c-b402-41e4cec7ac4d": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "335fbbe5-c0fe-55a3-8814-8532622fd85a": {
+          "has_declared_name": false,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "37e47cf7-a3e7-58ea-9269-685d28373c72": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "3c51597c-302c-5737-b052-ba231409a07e": {
+          "has_declared_name": false,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "3c9d6546-af7a-5904-9ef3-7f1c4747f254": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "3ea87f0a-9d00-5e3b-8f2f-e628619f08de": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "44ffce38-e5e6-5c71-b9d3-31335e159c53": {
+          "has_declared_name": false,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "48ab3335-42ed-5502-a6ee-50afab7643c9": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "4ecd65d9-2c98-58c8-b7ac-24f9fcf48086": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "4f5ceb29-4154-5e33-99b4-6ee62b69364a": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "52b083ea-2040-58a0-b434-3889a5ae16a6": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "537aa9e5-7482-5bf5-89dd-e97415a59f2d": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "5b4c5387-96e6-5d45-b436-4503b77c08a8": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "5c09d363-2e13-5b5b-9360-2b6aef643623": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "5e528715-c2f7-5d3f-9180-5b6f3d2f6bf0": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "5f7ffed6-8867-5b7e-a3cb-6197532d24fe": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "614cdd21-a89c-5d9c-8bc3-7cbcd526b960": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "6396453b-8d5a-5fd4-bd3b-04ccdd1a41c9": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "66b9c9c4-d5b8-50b2-9467-3f96cff319df": {
+          "has_declared_name": false,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "68bdadce-5662-5d12-90f9-c588e6f4cf45": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "7080088b-dd6b-5baf-ada9-0c7df83f08ee": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "753d0f74-e799-5c99-9397-80b8111a0aa3": {
+          "has_declared_name": false,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "77e5f5c0-c6cc-584c-8489-c1bbbce1cb77": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "7803a8e1-159f-5ea7-b3bf-1db8c04580d7": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "81e2e116-fc46-562c-b1a3-425fef646fc4": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "843843fc-2ecc-53f5-a391-24b36ca0d0c1": {
+          "has_declared_name": true,
+          "origin": "Authored",
+          "source_available": true
+        },
+        "84543de5-242e-5e4b-8825-13fc49eb72e5": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "8881fbe2-8c28-5780-9745-0d43868adf26": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "88a7ea6c-8220-50b1-8a73-819bb4a9c031": {
+          "has_declared_name": false,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "8a9402ff-ca1d-5844-b48f-f59d32a5da8a": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "8ac95a40-70d4-5379-ba27-4d1bf6904852": {
+          "has_declared_name": false,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "8b6273e5-0868-5d52-a5bb-78316a2c0d04": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "8da646f9-754b-51b0-b18c-d88df9f39f88": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "8dcfa122-2aa7-58ba-8a3d-bb1d5f27794f": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "8f66e1eb-0768-5ee8-bc05-967855f92080": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "919d9eee-c6f5-5725-8e1a-9436b667b39f": {
+          "has_declared_name": false,
+          "origin": "Derived",
+          "source_available": false
+        },
+        "9777cc49-f52b-59e5-8701-1e903be585a9": {
+          "has_declared_name": false,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "98aa9d78-4a8e-5cef-b948-a914eb378f47": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "a3f7e45d-f2b2-58f4-8439-96fed53cc355": {
+          "has_declared_name": false,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "a4ca7ea4-c9ad-5ab5-9b74-7bb7838f3959": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "a5c930af-654f-5576-a606-a8d781bb5e17": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "a95a2e4d-3e5e-5672-8018-69486ab6016d": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "ac718d90-ad9e-5956-80df-4f9565905f5f": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "b12a176a-55f7-51f9-9f58-74e369cd25a2": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "b265fd68-6725-537d-b9d7-944fb12bcd66": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "ba705efb-93e7-5066-b6ff-c7f73fdeaa4c": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "bd3c9409-cf6e-5e27-bdb9-82198ce419cb": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "bef8e709-a974-5f08-8d4e-bee83238a93a": {
+          "has_declared_name": false,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "c02d7525-c895-51d7-ab4c-a0efb96bf24e": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "c3bd64cc-f1ba-56e3-b002-714b8079b005": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "c6418c9e-9064-5245-96db-a92598baaf60": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "cb33c736-c1c9-5c91-a655-5ffaf3e1277c": {
+          "has_declared_name": false,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "cc3b35b1-ecb2-57f4-9351-89ad48249fd1": {
+          "has_declared_name": false,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "cd4e41d2-667d-5556-9b36-2ef4e5e04541": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "cf16c09d-241a-5881-841b-d2fc7c5b9a93": {
+          "has_declared_name": false,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "d13aadbb-4bb3-5814-bf48-28e11a897094": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "d5f29e3e-4646-5aeb-a25e-5897f79064ed": {
+          "has_declared_name": false,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "d8e08703-2b50-59e3-ac4c-83e4a919eaaa": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "d93a4a30-c545-50d8-b150-41c14020d89e": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "d95c0930-4eda-55fe-a4fe-e26a13274382": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "df6398e0-7f37-5e7d-b83c-98c284c9de99": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "dfc2eb90-aa24-5ec9-8fea-07c730f79cc3": {
+          "has_declared_name": false,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "e115541d-ddcc-5270-97d4-a6aa5edc58be": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "e3b1590f-0a6e-52b5-8721-5d05ed934cf9": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "e5e58091-50a3-5169-b7fb-97709dc4a81f": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "e72a1d2f-1053-58a7-9017-93c2c0dd5f20": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "e89be505-d6c0-5592-ae44-6a95c859baf9": {
+          "has_declared_name": false,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "ed077e4f-762a-5d94-b7a4-6232fe1b129b": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "efcdad69-2e0f-558d-9660-bb961fd666d9": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "f0e694b5-0526-5a9e-8dc4-f1e1742d77d5": {
+          "has_declared_name": false,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "f58c5bb7-682d-5a9c-9fe3-b8eb26023590": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "fbe8846e-504b-5299-93f6-53b6b0b5b73f": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        },
+        "fd672c72-714f-5ea3-bb4a-12bb2d1db4f9": {
+          "has_declared_name": true,
+          "origin": "Standard",
+          "source_available": false
+        }
+      },
+      "multiplicity": null,
+      "owned_features": [],
+      "owner": {
+        "id": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "name": "ModelingPlatform",
+        "semantic_kind": "PartDefinition"
+      },
+      "profile": "agentique-sysml-2.0-operational/3",
+      "queries": [
+        {
+          "completeness": "Complete",
+          "diagnostics": [],
+          "name": "Owner",
+          "positive_dependency_count": 13,
+          "search_dependency_count": 21
+        },
+        {
+          "completeness": "Complete",
+          "diagnostics": [],
+          "name": "Effective types",
+          "positive_dependency_count": 942,
+          "search_dependency_count": 992
+        },
+        {
+          "completeness": "Complete",
+          "diagnostics": [],
+          "name": "Subsettings",
+          "positive_dependency_count": 857,
+          "search_dependency_count": 862
+        },
+        {
+          "completeness": "Complete",
+          "diagnostics": [],
+          "name": "Redefinitions",
+          "positive_dependency_count": 3,
+          "search_dependency_count": 7
+        },
+        {
+          "completeness": "Complete",
+          "diagnostics": [],
+          "name": "Owned features",
+          "positive_dependency_count": 1,
+          "search_dependency_count": 3
+        },
+        {
+          "completeness": "Complete",
+          "diagnostics": [],
+          "name": "Effective features",
+          "positive_dependency_count": 2726,
+          "search_dependency_count": 5951
+        },
+        {
+          "completeness": "Complete",
+          "diagnostics": [],
+          "name": "Specializations",
+          "positive_dependency_count": 1060,
+          "search_dependency_count": 1663
+        },
+        {
+          "completeness": "Complete",
+          "diagnostics": [],
+          "name": "Connection endpoints: queryConnection [bf57b7b0-660f-5e0c-9a0c-4590634d51f8]",
+          "positive_dependency_count": 1202,
+          "search_dependency_count": 1637
+        }
+      ],
+      "redefinitions": [],
+      "relationships": [
+        {
+          "directed": true,
+          "family": "Ownership",
+          "id": "45224d61-ceaf-532a-90e8-94521343bd7c:6bf68ca1-ecfa-5883-9608-747f1824c0e3:206b48b1-d0bb-52ed-8248-50e05afe4ecc:0",
+          "label": "owns",
+          "order": 0,
+          "origin": "Authored",
+          "relationship_id": "45224d61-ceaf-532a-90e8-94521343bd7c",
+          "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+          "rule_id": null,
+          "semantic_kind": "FeatureMembership",
+          "source": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+          "target": "206b48b1-d0bb-52ed-8248-50e05afe4ecc"
+        },
+        {
+          "directed": true,
+          "family": "Typing",
+          "id": "60746f25-1a42-5237-9e90-fc99fb919a1c:206b48b1-d0bb-52ed-8248-50e05afe4ecc:470374e4-e572-518a-8eae-f9df03d8756e:0",
+          "label": "typed by",
+          "order": 0,
+          "origin": "Authored",
+          "relationship_id": "60746f25-1a42-5237-9e90-fc99fb919a1c",
+          "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+          "rule_id": null,
+          "semantic_kind": "FeatureTyping",
+          "source": "206b48b1-d0bb-52ed-8248-50e05afe4ecc",
+          "target": "470374e4-e572-518a-8eae-f9df03d8756e"
+        },
+        {
+          "directed": true,
+          "family": "Subsetting",
+          "id": "88f3bed7-c31f-5fa6-ba06-98ac24d84186:206b48b1-d0bb-52ed-8248-50e05afe4ecc:4ecd65d9-2c98-58c8-b7ac-24f9fcf48086:0",
+          "label": "subsets",
+          "order": 0,
+          "origin": "Derived",
+          "relationship_id": "88f3bed7-c31f-5fa6-ba06-98ac24d84186",
+          "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+          "rule_id": "94707247-8219-4686-d858-3b07bd519c9b",
+          "semantic_kind": "Subsetting",
+          "source": "206b48b1-d0bb-52ed-8248-50e05afe4ecc",
+          "target": "4ecd65d9-2c98-58c8-b7ac-24f9fcf48086"
+        },
+        {
+          "directed": true,
+          "family": "Subsetting",
+          "id": "9d7ee53b-4435-595b-988c-cac1bdb7f8e2:206b48b1-d0bb-52ed-8248-50e05afe4ecc:7adae769-a6bb-5eb2-a1fb-2fdda0a6fdb2:0",
+          "label": "subsets",
+          "order": 0,
+          "origin": "Derived",
+          "relationship_id": "9d7ee53b-4435-595b-988c-cac1bdb7f8e2",
+          "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+          "rule_id": "0b1d3f9c-0dc3-e7bf-c347-73f6c3eff818",
+          "semantic_kind": "Subsetting",
+          "source": "206b48b1-d0bb-52ed-8248-50e05afe4ecc",
+          "target": "7adae769-a6bb-5eb2-a1fb-2fdda0a6fdb2"
+        },
+        {
+          "directed": true,
+          "family": "Subsetting",
+          "id": "a88ed933-b5d0-5f4b-a312-50b1c7ed1929:206b48b1-d0bb-52ed-8248-50e05afe4ecc:2b96a15b-3980-502d-904c-b18586550976:0",
+          "label": "subsets",
+          "order": 0,
+          "origin": "Derived",
+          "relationship_id": "a88ed933-b5d0-5f4b-a312-50b1c7ed1929",
+          "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+          "rule_id": "7b9d9d9c-5dec-8dda-8817-dbe982a528a0",
+          "semantic_kind": "Subsetting",
+          "source": "206b48b1-d0bb-52ed-8248-50e05afe4ecc",
+          "target": "2b96a15b-3980-502d-904c-b18586550976"
+        },
+        {
+          "directed": false,
+          "family": "Connection",
+          "id": "bf57b7b0-660f-5e0c-9a0c-4590634d51f8:206b48b1-d0bb-52ed-8248-50e05afe4ecc:f1c9c9f3-1880-58bd-b1c9-df9e1eea8239:1",
+          "label": "queryConnection",
+          "order": 1,
+          "origin": "Authored",
+          "relationship_id": "bf57b7b0-660f-5e0c-9a0c-4590634d51f8",
+          "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+          "rule_id": null,
+          "semantic_kind": "InterfaceUsage",
+          "source": "206b48b1-d0bb-52ed-8248-50e05afe4ecc",
+          "target": "f1c9c9f3-1880-58bd-b1c9-df9e1eea8239"
+        }
+      ],
+      "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+      "source": {
+        "document_id": "e2c0646f-23b0-4f71-9165-641d24c66dbf",
+        "end": 2969,
+        "path": "ModelingPlatform.sysml",
+        "source_revision_id": "de62e5af-ef81-4a9c-b429-8a30dec23f64",
+        "start": 2911
+      },
+      "specializations": [
+        {
+          "id": "2b96a15b-3980-502d-904c-b18586550976",
+          "name": "ports",
+          "semantic_kind": "PortUsage"
+        },
+        {
+          "id": "470374e4-e572-518a-8eae-f9df03d8756e",
+          "name": "SemanticQuery",
+          "semantic_kind": "PortDefinition"
+        },
+        {
+          "id": "4ecd65d9-2c98-58c8-b7ac-24f9fcf48086",
+          "name": "suboccurrences",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "7adae769-a6bb-5eb2-a1fb-2fdda0a6fdb2",
+          "name": "ownedPorts",
+          "semantic_kind": "PortUsage"
+        }
+      ],
+      "subsettings": [
+        {
+          "id": "2b96a15b-3980-502d-904c-b18586550976",
+          "name": "ports",
+          "semantic_kind": "PortUsage"
+        },
+        {
+          "id": "4ecd65d9-2c98-58c8-b7ac-24f9fcf48086",
+          "name": "suboccurrences",
+          "semantic_kind": "Feature"
+        },
+        {
+          "id": "7adae769-a6bb-5eb2-a1fb-2fdda0a6fdb2",
+          "name": "ownedPorts",
+          "semantic_kind": "PortUsage"
+        }
+      ]
+    },
+    "inherited_port": null,
+    "repository_interfaces": null,
+    "requirement_subject_path": []
+  },
+  "fixture": null,
+  "format": "agentique-native-real-gallery/1",
+  "image_digest": "4fdedb3dbfef76a80312115d670353f3919bb41261db4d71996d0a07c2d9b7ca",
+  "image_size": [
+    1600,
+    1000
+  ],
+  "layout": {
+    "bounds": {
+      "1ce77981-59b7-5a69-b978-88f84b7d1f59": {
+        "max": {
+          "x": 1120.0,
+          "y": 118.0
+        },
+        "min": {
+          "x": 888.0,
+          "y": 0.0
+        }
+      },
+      "22e31e69-1e57-532a-a881-807c65d7f607": {
+        "max": {
+          "x": 1396.0,
+          "y": 118.0
+        },
+        "min": {
+          "x": 1164.0,
+          "y": 0.0
+        }
+      },
+      "2943ce23-3067-5b21-ae19-ed83a3bd280a": {
+        "max": {
+          "x": 1120.0,
+          "y": 280.0
+        },
+        "min": {
+          "x": 888.0,
+          "y": 162.0
+        }
+      },
+      "3460fa77-82eb-5909-8b34-382f5d42a97a": {
+        "max": {
+          "x": 262.0,
+          "y": 210.0
+        },
+        "min": {
+          "x": 30.0,
+          "y": 92.0
+        }
+      },
+      "4f8bd017-cd91-5375-99e2-795001ff9ded": {
+        "max": {
+          "x": 1396.0,
+          "y": 280.0
+        },
+        "min": {
+          "x": 1164.0,
+          "y": 162.0
+        }
+      },
+      "6164a518-c4f8-5e3f-814e-32d38ab5d943": {
+        "max": {
+          "x": 538.0,
+          "y": 210.0
+        },
+        "min": {
+          "x": 306.0,
+          "y": 92.0
+        }
+      },
+      "6bf68ca1-ecfa-5883-9608-747f1824c0e3": {
+        "max": {
+          "x": 844.0,
+          "y": 564.0
+        },
+        "min": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "7d6df7fe-db8f-5151-8028-d829a5e62c95": {
+        "max": {
+          "x": 814.0,
+          "y": 210.0
+        },
+        "min": {
+          "x": 582.0,
+          "y": 92.0
+        }
+      },
+      "91997214-44c0-51e1-affe-154e65cf4a4a": {
+        "max": {
+          "x": 262.0,
+          "y": 372.0
+        },
+        "min": {
+          "x": 30.0,
+          "y": 254.0
+        }
+      },
+      "9a0e88af-76b1-5c7f-bc14-c567032e20df": {
+        "max": {
+          "x": 538.0,
+          "y": 372.0
+        },
+        "min": {
+          "x": 306.0,
+          "y": 254.0
+        }
+      },
+      "aadc6231-0e4d-53e6-9cdf-43607e8157fa": {
+        "max": {
+          "x": 814.0,
+          "y": 372.0
+        },
+        "min": {
+          "x": 582.0,
+          "y": 254.0
+        }
+      },
+      "b773b69a-f522-5a1b-bb8e-2a13270dd58a": {
+        "max": {
+          "x": 1120.0,
+          "y": 442.0
+        },
+        "min": {
+          "x": 888.0,
+          "y": 324.0
+        }
+      },
+      "bf57b7b0-660f-5e0c-9a0c-4590634d51f8": {
+        "max": {
+          "x": 262.0,
+          "y": 534.0
+        },
+        "min": {
+          "x": 30.0,
+          "y": 416.0
+        }
+      },
+      "c657b588-9634-5cae-ab92-e0ee42ac483c": {
+        "max": {
+          "x": 1396.0,
+          "y": 442.0
+        },
+        "min": {
+          "x": 1164.0,
+          "y": 324.0
+        }
+      },
+      "c7a2444a-f32b-56f2-bf0e-dd72255b2140": {
+        "max": {
+          "x": 1120.0,
+          "y": 604.0
+        },
+        "min": {
+          "x": 888.0,
+          "y": 486.0
+        }
+      },
+      "e6e52e18-f75b-5a4d-b7f9-052f83633595": {
+        "max": {
+          "x": 538.0,
+          "y": 534.0
+        },
+        "min": {
+          "x": 306.0,
+          "y": 416.0
+        }
+      },
+      "edee19f9-18c7-556f-8fc9-c71c358438f3": {
+        "max": {
+          "x": 1396.0,
+          "y": 604.0
+        },
+        "min": {
+          "x": 1164.0,
+          "y": 486.0
+        }
+      },
+      "f03bedff-a29c-589e-8064-6c0badfaba25": {
+        "max": {
+          "x": 814.0,
+          "y": 534.0
+        },
+        "min": {
+          "x": 582.0,
+          "y": 416.0
+        }
+      }
+    }
+  },
+  "metrics": {
+    "adapter": "AdapterInfo { name: \"NVIDIA GeForce RTX 3060 Ti\", vendor: 4318, device: 9353, device_type: DiscreteGpu, driver: \"NVIDIA\", driver_info: \"616.92\", backend: Vulkan }",
+    "fixture": null,
+    "frame_count": 30559,
+    "frame_interval_median_ms": 6.0539000000000005,
+    "frame_interval_p95_ms": 6.6467,
+    "frame_intervals_ms": {
+      "last": 7.1792,
+      "median": 6.0539000000000005,
+      "p95": 6.6467,
+      "total_samples": 30498,
+      "window_samples": 240
+    },
+    "gpu_instances": 90,
+    "gpu_timestamp_errors": 0,
+    "gpu_timestamp_ms": {
+      "last": 0.014336,
+      "median": 0.013312,
+      "p95": 0.014336,
+      "total_samples": 2083,
+      "window_samples": 240
+    },
+    "gpu_timestamp_scope": "Scene GPU pass only; excludes text, chrome, upload and presentation",
+    "gpu_upload_count": 8,
+    "gpu_upload_cpu_ms": 0.0038,
+    "gpu_uploaded_bytes": 7200,
+    "handled_input_to_next_ui_update_ms": {
+      "pan": {
+        "last": null,
+        "median": null,
+        "p95": null,
+        "total_samples": 0,
+        "window_samples": 0
+      },
+      "selection": {
+        "last": null,
+        "median": null,
+        "p95": null,
+        "total_samples": 0,
+        "window_samples": 0
+      },
+      "zoom": {
+        "last": null,
+        "median": null,
+        "p95": null,
+        "total_samples": 0,
+        "window_samples": 0
+      }
+    },
+    "hit_test_us": {
+      "last": 0.5,
+      "median": 0.6,
+      "p95": 0.7999999999999999,
+      "total_samples": 498,
+      "window_samples": 240
+    },
+    "input_pipeline": {
+      "boundary": "eframe raw input hook -> UI shape construction complete -> following update; excludes OS delivery and GPU presentation",
+      "changed_batch_cpu_ms": {
+        "last": 0.004,
+        "median": 0.004,
+        "p95": 0.0054,
+        "total_samples": 8,
+        "window_samples": 8
+      },
+      "frame_submission_ms": null,
+      "labels_accessibility_cpu_ms": {
+        "last": 0.016,
+        "median": 0.01765,
+        "p95": 0.0205,
+        "total_samples": 2086,
+        "window_samples": 240
+      },
+      "presentation_ms": null,
+      "raw_input_to_next_update_ms": {
+        "last": 6.2879,
+        "median": 6.122800000000001,
+        "p95": 6.694,
+        "total_samples": 11,
+        "window_samples": 11
+      },
+      "raw_input_to_ui_complete_ms": {
+        "last": 0.37520000000000003,
+        "median": 0.1907,
+        "p95": 0.4998,
+        "total_samples": 11,
+        "window_samples": 11
+      },
+      "ui_cpu_ms": {
+        "last": 0.2307,
+        "median": 0.22315000000000002,
+        "p95": 0.24889999999999998,
+        "total_samples": 30559,
+        "window_samples": 240
+      },
+      "visibility_lookup_cpu_ms": {
+        "last": 0.007700000000000001,
+        "median": 0.0069,
+        "p95": 0.0092,
+        "total_samples": 2086,
+        "window_samples": 240
+      }
+    },
+    "layout_included_in_scene_build": true,
+    "note": "Native wgpu frames with vsync. CPU update intervals retain the latest 240 samples after 60 warmup intervals. Input spans start inside the viewport gesture handler and end at the next UI update; they exclude OS input delivery and do not measure presentation. GPU upload is CPU submission time for the last upload. Null means unmeasured.",
+    "physical_input_to_photon_ms": null,
+    "scene_background_pending": false,
+    "scene_build_ms": 0.26449999999999996,
+    "scene_draw_calls": 3,
+    "scene_index_lookup_outliner_ms": 0.0279,
+    "scene_layout_routing_diff_ms": 0.2364,
+    "total_edges": 9,
+    "total_nodes": 18,
+    "visible_nodes": 18,
+    "warmup_frame_intervals_discarded": 60
+  },
+  "projection": {
+    "edges": [
+      {
+        "directed": true,
+        "family": "Typing",
+        "id": "2bbe962a-9c0d-541b-bd42-3f1c6a14a98e:aadc6231-0e4d-53e6-9cdf-43607e8157fa:edee19f9-18c7-556f-8fc9-c71c358438f3:0",
+        "label": "typed by",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "2bbe962a-9c0d-541b-bd42-3f1c6a14a98e",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "rule_id": null,
+        "semantic_kind": "FeatureTyping",
+        "source": "aadc6231-0e4d-53e6-9cdf-43607e8157fa",
+        "target": "edee19f9-18c7-556f-8fc9-c71c358438f3"
+      },
+      {
+        "directed": true,
+        "family": "Typing",
+        "id": "420fbf18-4711-5061-8a69-26df2309294a:3460fa77-82eb-5909-8b34-382f5d42a97a:4f8bd017-cd91-5375-99e2-795001ff9ded:0",
+        "label": "typed by",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "420fbf18-4711-5061-8a69-26df2309294a",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "rule_id": null,
+        "semantic_kind": "FeatureTyping",
+        "source": "3460fa77-82eb-5909-8b34-382f5d42a97a",
+        "target": "4f8bd017-cd91-5375-99e2-795001ff9ded"
+      },
+      {
+        "directed": true,
+        "family": "Ownership",
+        "id": "45224d61-ceaf-532a-90e8-94521343bd7c:6bf68ca1-ecfa-5883-9608-747f1824c0e3:206b48b1-d0bb-52ed-8248-50e05afe4ecc:0",
+        "label": "owns",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "45224d61-ceaf-532a-90e8-94521343bd7c",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "rule_id": null,
+        "semantic_kind": "FeatureMembership",
+        "source": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "target": "206b48b1-d0bb-52ed-8248-50e05afe4ecc"
+      },
+      {
+        "directed": true,
+        "family": "Typing",
+        "id": "56851744-f110-5db3-a365-8de61addccae:7d6df7fe-db8f-5151-8028-d829a5e62c95:1ce77981-59b7-5a69-b978-88f84b7d1f59:0",
+        "label": "typed by",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "56851744-f110-5db3-a365-8de61addccae",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "rule_id": null,
+        "semantic_kind": "FeatureTyping",
+        "source": "7d6df7fe-db8f-5151-8028-d829a5e62c95",
+        "target": "1ce77981-59b7-5a69-b978-88f84b7d1f59"
+      },
+      {
+        "directed": true,
+        "family": "Ownership",
+        "id": "5b74fe47-b42e-5f65-8ec7-83dec9e74f52:6bf68ca1-ecfa-5883-9608-747f1824c0e3:f03bedff-a29c-589e-8064-6c0badfaba25:0",
+        "label": "owns",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "5b74fe47-b42e-5f65-8ec7-83dec9e74f52",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "rule_id": null,
+        "semantic_kind": "FeatureMembership",
+        "source": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "target": "f03bedff-a29c-589e-8064-6c0badfaba25"
+      },
+      {
+        "directed": true,
+        "family": "Typing",
+        "id": "6576b2df-4e40-534c-a3a7-ec5a72e4838f:f03bedff-a29c-589e-8064-6c0badfaba25:c7a2444a-f32b-56f2-bf0e-dd72255b2140:0",
+        "label": "typed by",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "6576b2df-4e40-534c-a3a7-ec5a72e4838f",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "rule_id": null,
+        "semantic_kind": "FeatureTyping",
+        "source": "f03bedff-a29c-589e-8064-6c0badfaba25",
+        "target": "c7a2444a-f32b-56f2-bf0e-dd72255b2140"
+      },
+      {
+        "directed": true,
+        "family": "Typing",
+        "id": "69e4e2d6-faaa-5324-93bb-5cf7e1812635:9a0e88af-76b1-5c7f-bc14-c567032e20df:c657b588-9634-5cae-ab92-e0ee42ac483c:0",
+        "label": "typed by",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "69e4e2d6-faaa-5324-93bb-5cf7e1812635",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "rule_id": null,
+        "semantic_kind": "FeatureTyping",
+        "source": "9a0e88af-76b1-5c7f-bc14-c567032e20df",
+        "target": "c657b588-9634-5cae-ab92-e0ee42ac483c"
+      },
+      {
+        "directed": true,
+        "family": "Ownership",
+        "id": "7ac16acd-694e-582d-bb59-2eb1c1667d5d:6bf68ca1-ecfa-5883-9608-747f1824c0e3:6164a518-c4f8-5e3f-814e-32d38ab5d943:0",
+        "label": "owns",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "7ac16acd-694e-582d-bb59-2eb1c1667d5d",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "rule_id": null,
+        "semantic_kind": "FeatureMembership",
+        "source": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "target": "6164a518-c4f8-5e3f-814e-32d38ab5d943"
+      },
+      {
+        "directed": true,
+        "family": "Ownership",
+        "id": "837e33e9-1441-5df6-aa0b-3c971fd604d9:6bf68ca1-ecfa-5883-9608-747f1824c0e3:9a0e88af-76b1-5c7f-bc14-c567032e20df:0",
+        "label": "owns",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "837e33e9-1441-5df6-aa0b-3c971fd604d9",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "rule_id": null,
+        "semantic_kind": "FeatureMembership",
+        "source": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "target": "9a0e88af-76b1-5c7f-bc14-c567032e20df"
+      },
+      {
+        "directed": true,
+        "family": "Ownership",
+        "id": "97a81a94-c0bb-5924-be68-ff80401aed17:6bf68ca1-ecfa-5883-9608-747f1824c0e3:7d6df7fe-db8f-5151-8028-d829a5e62c95:0",
+        "label": "owns",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "97a81a94-c0bb-5924-be68-ff80401aed17",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "rule_id": null,
+        "semantic_kind": "FeatureMembership",
+        "source": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "target": "7d6df7fe-db8f-5151-8028-d829a5e62c95"
+      },
+      {
+        "directed": true,
+        "family": "Ownership",
+        "id": "b95a7a41-f77a-5ae2-961e-fce200062427:6bf68ca1-ecfa-5883-9608-747f1824c0e3:bf57b7b0-660f-5e0c-9a0c-4590634d51f8:0",
+        "label": "owns",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "b95a7a41-f77a-5ae2-961e-fce200062427",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "rule_id": null,
+        "semantic_kind": "FeatureMembership",
+        "source": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "target": "bf57b7b0-660f-5e0c-9a0c-4590634d51f8"
+      },
+      {
+        "directed": true,
+        "family": "Typing",
+        "id": "ba5ec909-bc72-5050-81b3-32bb9d7148ad:6164a518-c4f8-5e3f-814e-32d38ab5d943:22e31e69-1e57-532a-a881-807c65d7f607:0",
+        "label": "typed by",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "ba5ec909-bc72-5050-81b3-32bb9d7148ad",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "rule_id": null,
+        "semantic_kind": "FeatureTyping",
+        "source": "6164a518-c4f8-5e3f-814e-32d38ab5d943",
+        "target": "22e31e69-1e57-532a-a881-807c65d7f607"
+      },
+      {
+        "directed": true,
+        "family": "Ownership",
+        "id": "bee4674c-5c93-5baa-9fa3-ecf6a644bf1d:6bf68ca1-ecfa-5883-9608-747f1824c0e3:f1c9c9f3-1880-58bd-b1c9-df9e1eea8239:0",
+        "label": "owns",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "bee4674c-5c93-5baa-9fa3-ecf6a644bf1d",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "rule_id": null,
+        "semantic_kind": "FeatureMembership",
+        "source": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "target": "f1c9c9f3-1880-58bd-b1c9-df9e1eea8239"
+      },
+      {
+        "directed": false,
+        "family": "Connection",
+        "id": "bf57b7b0-660f-5e0c-9a0c-4590634d51f8:206b48b1-d0bb-52ed-8248-50e05afe4ecc:f1c9c9f3-1880-58bd-b1c9-df9e1eea8239:1",
+        "label": "queryConnection",
+        "order": 1,
+        "origin": "Authored",
+        "relationship_id": "bf57b7b0-660f-5e0c-9a0c-4590634d51f8",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "rule_id": null,
+        "semantic_kind": "InterfaceUsage",
+        "source": "206b48b1-d0bb-52ed-8248-50e05afe4ecc",
+        "target": "f1c9c9f3-1880-58bd-b1c9-df9e1eea8239"
+      },
+      {
+        "directed": true,
+        "family": "Ownership",
+        "id": "c8b08e4f-bf1c-5655-bd85-b7bed2cee9e6:6bf68ca1-ecfa-5883-9608-747f1824c0e3:e6e52e18-f75b-5a4d-b7f9-052f83633595:0",
+        "label": "owns",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "c8b08e4f-bf1c-5655-bd85-b7bed2cee9e6",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "rule_id": null,
+        "semantic_kind": "FeatureMembership",
+        "source": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "target": "e6e52e18-f75b-5a4d-b7f9-052f83633595"
+      },
+      {
+        "directed": true,
+        "family": "Ownership",
+        "id": "cb7a4cc6-6ddd-5adb-bce6-a98095131784:6bf68ca1-ecfa-5883-9608-747f1824c0e3:3460fa77-82eb-5909-8b34-382f5d42a97a:0",
+        "label": "owns",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "cb7a4cc6-6ddd-5adb-bce6-a98095131784",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "rule_id": null,
+        "semantic_kind": "FeatureMembership",
+        "source": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "target": "3460fa77-82eb-5909-8b34-382f5d42a97a"
+      },
+      {
+        "directed": true,
+        "family": "Ownership",
+        "id": "cce24d95-fd1d-5c41-bf82-740485903435:6bf68ca1-ecfa-5883-9608-747f1824c0e3:91997214-44c0-51e1-affe-154e65cf4a4a:0",
+        "label": "owns",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "cce24d95-fd1d-5c41-bf82-740485903435",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "rule_id": null,
+        "semantic_kind": "FeatureMembership",
+        "source": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "target": "91997214-44c0-51e1-affe-154e65cf4a4a"
+      },
+      {
+        "directed": true,
+        "family": "Typing",
+        "id": "d6ab06c5-066a-528f-9773-becb789e4923:e6e52e18-f75b-5a4d-b7f9-052f83633595:2943ce23-3067-5b21-ae19-ed83a3bd280a:0",
+        "label": "typed by",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "d6ab06c5-066a-528f-9773-becb789e4923",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "rule_id": null,
+        "semantic_kind": "FeatureTyping",
+        "source": "e6e52e18-f75b-5a4d-b7f9-052f83633595",
+        "target": "2943ce23-3067-5b21-ae19-ed83a3bd280a"
+      },
+      {
+        "directed": true,
+        "family": "Ownership",
+        "id": "f362e049-b7e2-5049-94e1-69f0846392ce:6bf68ca1-ecfa-5883-9608-747f1824c0e3:aadc6231-0e4d-53e6-9cdf-43607e8157fa:0",
+        "label": "owns",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "f362e049-b7e2-5049-94e1-69f0846392ce",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "rule_id": null,
+        "semantic_kind": "FeatureMembership",
+        "source": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "target": "aadc6231-0e4d-53e6-9cdf-43607e8157fa"
+      },
+      {
+        "directed": true,
+        "family": "Typing",
+        "id": "fbbf2ee3-dc1b-5793-bf9f-b1dbf6d4142a:91997214-44c0-51e1-affe-154e65cf4a4a:b773b69a-f522-5a1b-bb8e-2a13270dd58a:0",
+        "label": "typed by",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "fbbf2ee3-dc1b-5793-bf9f-b1dbf6d4142a",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "rule_id": null,
+        "semantic_kind": "FeatureTyping",
+        "source": "91997214-44c0-51e1-affe-154e65cf4a4a",
+        "target": "b773b69a-f522-5a1b-bb8e-2a13270dd58a"
+      }
+    ],
+    "groups": [
+      {
+        "children": [
+          "206b48b1-d0bb-52ed-8248-50e05afe4ecc",
+          "3460fa77-82eb-5909-8b34-382f5d42a97a",
+          "6164a518-c4f8-5e3f-814e-32d38ab5d943",
+          "7d6df7fe-db8f-5151-8028-d829a5e62c95",
+          "91997214-44c0-51e1-affe-154e65cf4a4a",
+          "9a0e88af-76b1-5c7f-bc14-c567032e20df",
+          "aadc6231-0e4d-53e6-9cdf-43607e8157fa",
+          "bf57b7b0-660f-5e0c-9a0c-4590634d51f8",
+          "e6e52e18-f75b-5a4d-b7f9-052f83633595",
+          "f03bedff-a29c-589e-8064-6c0badfaba25",
+          "f1c9c9f3-1880-58bd-b1c9-df9e1eea8239"
+        ],
+        "element_id": "6bf68ca1-ecfa-5883-9608-747f1824c0e3"
+      }
+    ],
+    "metadata": {
+      "local_element_count": 785,
+      "omitted_standard_endpoints": 30,
+      "producer_completeness": "Complete",
+      "scope": "Current canonical graph; authored context, original identities",
+      "suggested_focus": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+      "warnings": []
+    },
+    "nodes": [
+      {
+        "badges": [],
+        "counts": {
+          "parts": 1,
+          "ports": 1,
+          "requirements": 0
+        },
+        "features": [
+          {
+            "id": "33922efa-e4a3-598e-97dc-76a23a544652",
+            "name": "projectionQuery",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "83694445-8e5f-5844-95ae-e4d935b4a8a1",
+            "name": "viewQuery",
+            "semantic_kind": "PortUsage"
+          }
+        ],
+        "id": "1ce77981-59b7-5a69-b978-88f84b7d1f59",
+        "name": "ViewService",
+        "origin": "Authored",
+        "owner": "0fdcd0b5-b0d8-560c-97d8-9fedfa6c86a1",
+        "qualified_name": "PlatformArchitecture::ViewService",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "semantic_kind": "PartDefinition",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 0,
+          "ports": 0,
+          "requirements": 0
+        },
+        "features": [],
+        "id": "206b48b1-d0bb-52ed-8248-50e05afe4ecc",
+        "name": "clientQueries",
+        "origin": "Authored",
+        "owner": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "qualified_name": "PlatformArchitecture::ModelingPlatform::clientQueries",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "semantic_kind": "PortUsage",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 0,
+          "ports": 1,
+          "requirements": 0
+        },
+        "features": [
+          {
+            "id": "ad1c2c8c-000e-5398-9601-bf7a705a0c20",
+            "name": "clientQuery",
+            "semantic_kind": "PortUsage"
+          }
+        ],
+        "id": "22e31e69-1e57-532a-a881-807c65d7f607",
+        "name": "Client",
+        "origin": "Authored",
+        "owner": "0fdcd0b5-b0d8-560c-97d8-9fedfa6c86a1",
+        "qualified_name": "PlatformArchitecture::Client",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "semantic_kind": "PartDefinition",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 3,
+          "ports": 0,
+          "requirements": 0
+        },
+        "features": [
+          {
+            "id": "4c7fa2d6-95dc-5ef0-b51c-c5e7601c1dc5",
+            "name": "durableHistory",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "ff8dfd5a-a289-58ca-be08-bae9ba689bbb",
+            "name": "authoredWorkspace",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "53445ae4-46a3-58b6-8376-f034c1fd4265",
+            "name": "revisionQueries",
+            "semantic_kind": "PartUsage"
+          }
+        ],
+        "id": "2943ce23-3067-5b21-ae19-ed83a3bd280a",
+        "name": "ModelingService",
+        "origin": "Authored",
+        "owner": "0fdcd0b5-b0d8-560c-97d8-9fedfa6c86a1",
+        "qualified_name": "PlatformArchitecture::ModelingService",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "semantic_kind": "PartDefinition",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 0,
+          "ports": 0,
+          "requirements": 0
+        },
+        "features": [],
+        "id": "3460fa77-82eb-5909-8b34-382f5d42a97a",
+        "name": "queryService",
+        "origin": "Authored",
+        "owner": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "qualified_name": "PlatformArchitecture::ModelingPlatform::queryService",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "semantic_kind": "PartUsage",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 1,
+          "ports": 1,
+          "requirements": 0
+        },
+        "features": [
+          {
+            "id": "25ac654a-f83e-5bc4-ab6f-5056bb539587",
+            "name": "queryKernel",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "ee4d4130-35bd-5eca-9eec-f67d6f7817d7",
+            "name": "queryRead",
+            "semantic_kind": "PortUsage"
+          }
+        ],
+        "id": "4f8bd017-cd91-5375-99e2-795001ff9ded",
+        "name": "QueryService",
+        "origin": "Authored",
+        "owner": "0fdcd0b5-b0d8-560c-97d8-9fedfa6c86a1",
+        "qualified_name": "PlatformArchitecture::QueryService",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "semantic_kind": "PartDefinition",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 0,
+          "ports": 0,
+          "requirements": 0
+        },
+        "features": [],
+        "id": "6164a518-c4f8-5e3f-814e-32d38ab5d943",
+        "name": "client",
+        "origin": "Authored",
+        "owner": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "qualified_name": "PlatformArchitecture::ModelingPlatform::client",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "semantic_kind": "PartUsage",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 8,
+          "ports": 2,
+          "requirements": 0
+        },
+        "features": [
+          {
+            "id": "91997214-44c0-51e1-affe-154e65cf4a4a",
+            "name": "workspace",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "3460fa77-82eb-5909-8b34-382f5d42a97a",
+            "name": "queryService",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "9a0e88af-76b1-5c7f-bc14-c567032e20df",
+            "name": "validationService",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "7d6df7fe-db8f-5151-8028-d829a5e62c95",
+            "name": "views",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "f03bedff-a29c-589e-8064-6c0badfaba25",
+            "name": "repository",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "e6e52e18-f75b-5a4d-b7f9-052f83633595",
+            "name": "modelingService",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "aadc6231-0e4d-53e6-9cdf-43607e8157fa",
+            "name": "systemsModelingApi",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "6164a518-c4f8-5e3f-814e-32d38ab5d943",
+            "name": "client",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "f1c9c9f3-1880-58bd-b1c9-df9e1eea8239",
+            "name": "platformQueries",
+            "semantic_kind": "PortUsage"
+          },
+          {
+            "id": "206b48b1-d0bb-52ed-8248-50e05afe4ecc",
+            "name": "clientQueries",
+            "semantic_kind": "PortUsage"
+          },
+          {
+            "id": "bf57b7b0-660f-5e0c-9a0c-4590634d51f8",
+            "name": "queryConnection",
+            "semantic_kind": "InterfaceUsage"
+          },
+          {
+            "id": "28114563-b210-541c-9351-cffebea30e20",
+            "name": "validate",
+            "semantic_kind": "ActionUsage"
+          },
+          {
+            "id": "17d6e685-eafd-576b-b641-1bdbe0c9a59f",
+            "name": "operating",
+            "semantic_kind": "StateUsage"
+          }
+        ],
+        "id": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "name": "ModelingPlatform",
+        "origin": "Authored",
+        "owner": "0fdcd0b5-b0d8-560c-97d8-9fedfa6c86a1",
+        "qualified_name": "PlatformArchitecture::ModelingPlatform",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "semantic_kind": "PartDefinition",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 0,
+          "ports": 0,
+          "requirements": 0
+        },
+        "features": [],
+        "id": "7d6df7fe-db8f-5151-8028-d829a5e62c95",
+        "name": "views",
+        "origin": "Authored",
+        "owner": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "qualified_name": "PlatformArchitecture::ModelingPlatform::views",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "semantic_kind": "PartUsage",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 0,
+          "ports": 0,
+          "requirements": 0
+        },
+        "features": [],
+        "id": "91997214-44c0-51e1-affe-154e65cf4a4a",
+        "name": "workspace",
+        "origin": "Authored",
+        "owner": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "qualified_name": "PlatformArchitecture::ModelingPlatform::workspace",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "semantic_kind": "PartUsage",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 0,
+          "ports": 0,
+          "requirements": 0
+        },
+        "features": [],
+        "id": "9a0e88af-76b1-5c7f-bc14-c567032e20df",
+        "name": "validationService",
+        "origin": "Authored",
+        "owner": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "qualified_name": "PlatformArchitecture::ModelingPlatform::validationService",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "semantic_kind": "PartUsage",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 0,
+          "ports": 0,
+          "requirements": 0
+        },
+        "features": [],
+        "id": "aadc6231-0e4d-53e6-9cdf-43607e8157fa",
+        "name": "systemsModelingApi",
+        "origin": "Authored",
+        "owner": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "qualified_name": "PlatformArchitecture::ModelingPlatform::systemsModelingApi",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "semantic_kind": "PartUsage",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 3,
+          "ports": 3,
+          "requirements": 0
+        },
+        "features": [
+          {
+            "id": "aa6e86d5-b503-57ce-a266-eac02f07ebd8",
+            "name": "kermlPublication",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "996d1fb5-8c6a-5503-af1a-2d275b811053",
+            "name": "systemsPublication",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "402b3d9c-7845-599f-ba77-e2462ce25ee8",
+            "name": "languageQueries",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "cfc4ace6-c239-52f9-867c-681e3ffc5b12",
+            "name": "revisionNumber",
+            "semantic_kind": "AttributeUsage"
+          },
+          {
+            "id": "917f83e3-4854-5c41-9ab7-c8a1da04f886",
+            "name": "workspaceRevision",
+            "semantic_kind": "PortUsage"
+          },
+          {
+            "id": "1f9cba05-24af-58bd-b19f-67389f631e53",
+            "name": "workspaceQuery",
+            "semantic_kind": "PortUsage"
+          },
+          {
+            "id": "93692e91-5aea-5a54-9389-c0e7fbb052d6",
+            "name": "workspaceDiagnostics",
+            "semantic_kind": "PortUsage"
+          }
+        ],
+        "id": "b773b69a-f522-5a1b-bb8e-2a13270dd58a",
+        "name": "ProjectWorkspace",
+        "origin": "Authored",
+        "owner": "0fdcd0b5-b0d8-560c-97d8-9fedfa6c86a1",
+        "qualified_name": "PlatformArchitecture::ProjectWorkspace",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "semantic_kind": "PartDefinition",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 0,
+          "ports": 2,
+          "requirements": 0
+        },
+        "features": [],
+        "id": "bf57b7b0-660f-5e0c-9a0c-4590634d51f8",
+        "name": "queryConnection",
+        "origin": "Authored",
+        "owner": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "qualified_name": "PlatformArchitecture::ModelingPlatform::queryConnection",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "semantic_kind": "InterfaceUsage",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 1,
+          "ports": 1,
+          "requirements": 0
+        },
+        "features": [
+          {
+            "id": "dcde826f-2141-5009-956b-3d15551b19c0",
+            "name": "validationLanguage",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "562cddfb-6bcd-5e16-8ec2-59c13f1d69d7",
+            "name": "validationDiagnostics",
+            "semantic_kind": "PortUsage"
+          },
+          {
+            "id": "55b334db-4a21-5b81-b67a-ba99831157c4",
+            "name": "validatedState",
+            "semantic_kind": "ItemUsage"
+          }
+        ],
+        "id": "c657b588-9634-5cae-ab92-e0ee42ac483c",
+        "name": "ValidationService",
+        "origin": "Authored",
+        "owner": "0fdcd0b5-b0d8-560c-97d8-9fedfa6c86a1",
+        "qualified_name": "PlatformArchitecture::ValidationService",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "semantic_kind": "PartDefinition",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 1,
+          "ports": 0,
+          "requirements": 0
+        },
+        "features": [
+          {
+            "id": "3d2db240-7e8c-5bab-a17a-49a1f2886e23",
+            "name": "workspaceContract",
+            "semantic_kind": "PartUsage"
+          }
+        ],
+        "id": "c7a2444a-f32b-56f2-bf0e-dd72255b2140",
+        "name": "ModelRepository",
+        "origin": "Authored",
+        "owner": "0fdcd0b5-b0d8-560c-97d8-9fedfa6c86a1",
+        "qualified_name": "PlatformArchitecture::ModelRepository",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "semantic_kind": "PartDefinition",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 0,
+          "ports": 0,
+          "requirements": 0
+        },
+        "features": [],
+        "id": "e6e52e18-f75b-5a4d-b7f9-052f83633595",
+        "name": "modelingService",
+        "origin": "Authored",
+        "owner": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "qualified_name": "PlatformArchitecture::ModelingPlatform::modelingService",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "semantic_kind": "PartUsage",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 1,
+          "ports": 0,
+          "requirements": 0
+        },
+        "features": [
+          {
+            "id": "9adc798e-1fac-56cb-8a9a-6dbe1a0dbc4c",
+            "name": "applicationContract",
+            "semantic_kind": "PartUsage"
+          }
+        ],
+        "id": "edee19f9-18c7-556f-8fc9-c71c358438f3",
+        "name": "SystemsModelingApiAdapter",
+        "origin": "Authored",
+        "owner": "0fdcd0b5-b0d8-560c-97d8-9fedfa6c86a1",
+        "qualified_name": "PlatformArchitecture::SystemsModelingApiAdapter",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "semantic_kind": "PartDefinition",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 0,
+          "ports": 0,
+          "requirements": 0
+        },
+        "features": [],
+        "id": "f03bedff-a29c-589e-8064-6c0badfaba25",
+        "name": "repository",
+        "origin": "Authored",
+        "owner": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "qualified_name": "PlatformArchitecture::ModelingPlatform::repository",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "semantic_kind": "PartUsage",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 0,
+          "ports": 0,
+          "requirements": 0
+        },
+        "features": [],
+        "id": "f1c9c9f3-1880-58bd-b1c9-df9e1eea8239",
+        "name": "platformQueries",
+        "origin": "Authored",
+        "owner": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "qualified_name": "PlatformArchitecture::ModelingPlatform::platformQueries",
+        "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+        "semantic_kind": "PortUsage",
+        "source_available": true
+      }
+    ],
+    "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+    "view": {
+      "depth": 1,
+      "focus": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+      "graph_scope": "Neighborhood",
+      "hidden_elements": [],
+      "include_standard_library": false,
+      "kind": "Architecture",
+      "name": "Agentique Architecture",
+      "relationship_families": [
+        "Ownership",
+        "Typing",
+        "Specialization",
+        "Subsetting",
+        "Redefinition",
+        "Connection",
+        "Requirement",
+        "Verification",
+        "Reference"
+      ],
+      "version": 1
+    }
+  },
+  "semantic_data": "real authenticated models/agentique",
+  "state": {
+    "agent_view": false,
+    "binding": {
+      "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+      "revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141"
+    },
+    "branch": "c51074f7-a379-4007-b3f6-46cbcb939e20",
+    "camera": [
+      681.0,
+      285.0,
+      0.7020978927612305
+    ],
+    "candidate_phase": null,
+    "candidate_revision": null,
+    "comparison": "Current",
+    "explanation_evidence": null,
+    "explanation_origin": null,
+    "explanation_revision": null,
+    "explanation_rule": null,
+    "explanation_subject": null,
+    "focus": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+    "frame": 30556,
+    "inspector_element": "206b48b1-d0bb-52ed-8248-50e05afe4ecc",
+    "inspector_revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+    "mutation_pending": false,
+    "pending_requests": 0,
+    "producer_completeness": "Complete",
+    "projection_edges": 20,
+    "projection_nodes": 20,
+    "scene_edges": 9,
+    "scene_nodes": 18,
+    "scene_revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+    "selected": [
+      "Port(ElementId(43092346050456105220658360373848461004))"
+    ],
+    "selection_revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+    "status": "View ready",
+    "world": "System"
+  }
+}

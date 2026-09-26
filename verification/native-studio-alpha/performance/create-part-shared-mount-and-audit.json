@@ -1,0 +1,17 @@
+{
+  "source_commit_at_start": "b10fe62c7dbb62981a4cd3719820e9631ed99381",
+  "executable_sha256": "61555bb696d1adab8378404b597c0b557c24f0c37f1af0fda2dba87afbed52a5",
+  "command": [
+    "target/release/deps/create_part_performance-10efcec309eb5e00.exe",
+    "create_part_command_matches_full_self_model_reconstruction",
+    "--exact",
+    "--ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 591.076900199987,
+  "maximum_process_peak_working_set_bytes": 6500315136,
+  "sampled_process_tree_peak_resident_bytes": 6493577216,
+  "sample_interval_seconds": 0.25
+}

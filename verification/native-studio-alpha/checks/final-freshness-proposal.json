@@ -1,0 +1,21 @@
+{
+  "command": [
+    "python",
+    "verification/scripts/native_alpha_freshness_plan.py",
+    "--root",
+    ".",
+    "--phase",
+    "mount-and-audit",
+    "--output",
+    "verification/native-studio-alpha/freshness-final"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "5c63bb83860d923308583bdba4f3b88e8c9f4668",
+  "tracked_changes_at_start": [],
+  "started_utc": "2026-09-26T05:46:24.824675+00:00",
+  "elapsed_seconds": 0.469,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/final-freshness-proposal.txt",
+  "output_sha256": "ad24599e231152dabe822d8d5061e9e339f4df09d995d33d0256e8703ae9c761",
+  "build_environment": {}
+}
