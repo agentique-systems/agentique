@@ -62,7 +62,7 @@ impl PendingPreparation {
     }
 }
 
-#[derive(Clone, Debug, serde::Serialize)]
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct PreparationCancellationReceipt {
     pub request: u64,
     pub epoch: u64,
