@@ -10,6 +10,7 @@ use agq_kernel::{
     provenance::{Dependency, FactKey},
 };
 use std::collections::{BTreeMap, BTreeSet};
+use std::sync::{Arc, Weak};
 
 /// Exact immutable graph signatures and context behind a successful audit.
 /// Construction requires an authenticated, fully closed semantic context.
@@ -17,6 +18,9 @@ use std::collections::{BTreeMap, BTreeSet};
 pub struct ClosedAuditSnapshot {
     context: SemanticContextId,
     signatures: BTreeMap<ElementId, [u8; 32]>,
+    // The factored immutable rows must belong to the same actual mount, including
+    // optional proof/contribution tables that semantic publication IDs may omit.
+    dependency: Option<Weak<ProducerClosedDependency>>,
 }
 
 /// Positive reads and negative/provider searches of an audit outcome. Closure
@@ -55,6 +59,11 @@ impl<'a, 'm> ClosedAuditContext<'a, 'm> {
             queries,
             snapshot: ClosedAuditSnapshot {
                 context: queries.context().clone(),
+                dependency: queries
+                    .context
+                    .closed_dependency
+                    .as_ref()
+                    .map(Arc::downgrade),
                 signatures: crate::producer_closure::audit_subject_signatures(
                     queries.model(),
                     queries
@@ -175,6 +184,11 @@ impl<'a, 'm> ClosedAuditContext<'a, 'm> {
 
     /// Compute the exact checked frontier once for all subjects in an audit.
     pub fn delta(&self, previous: &ClosedAuditSnapshot) -> Option<ClosedAuditDelta> {
+        match (&previous.dependency, &self.snapshot.dependency) {
+            (Some(previous), Some(current)) if Weak::ptr_eq(previous, current) => {}
+            (None, None) => {}
+            _ => return None,
+        }
         let mut current = self.snapshot.context.clone();
         // Both snapshots were created only after full producer closure. The
         // requested witnesses below must still exist and be closed in the new
