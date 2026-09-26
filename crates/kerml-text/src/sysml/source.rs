@@ -457,9 +457,14 @@ pub(crate) fn finish_accepted_source(
                 // its actual reads against this exact restored frontier. The
                 // scheduler still evaluates every reopened population.
                 if let Some(previous) = seed.take() {
+                    let rebound_started = Instant::now();
                     let rebound = previous
                         .rebind(&context, &registry)
                         .map_err(PublicationOverlayError::Context)?;
+                    if let Some(timings) = timings {
+                        timings.borrow_mut().closure_rebind_micros +=
+                            crate::elapsed_micros(rebound_started);
+                    }
                     retained_evaluations += rebound.retained_evaluations;
                     reopened_evaluations += rebound.reopened_evaluations;
                     context
