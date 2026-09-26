@@ -1,0 +1,54 @@
+
+> agentique@0.1.0 test:studio
+> cargo build --locked --offline -p agq-studio && playwright test --config playwright.studio.config.ts
+
+   Compiling syn v3.0.5
+   Compiling sync_wrapper v1.0.2
+   Compiling axum-core v0.5.6
+   Compiling serde_derive v1.0.229
+   Compiling thiserror-impl v2.0.20
+   Compiling displaydoc v0.2.7
+   Compiling tokio-macros v2.7.2
+   Compiling tokio v1.53.1
+   Compiling clap_derive v4.6.7
+   Compiling thiserror v2.0.20
+   Compiling zip v2.4.2
+   Compiling clap v4.6.7
+   Compiling serde v1.0.229
+   Compiling num-bigint v0.4.8
+   Compiling chrono v0.4.45
+   Compiling serde_urlencoded v0.7.1
+   Compiling agq-kernel v0.1.0 (/home/runner/work/agentique/agentique/crates/kernel)
+   Compiling hyper v1.11.1
+   Compiling tower v0.5.3
+   Compiling tokio-util v0.7.19
+   Compiling hyper-util v0.1.20
+   Compiling axum v0.8.9
+   Compiling tower-http v0.6.11
+   Compiling agq-kerml v0.1.0 (/home/runner/work/agentique/agentique/crates/kerml)
+   Compiling agq-standard-libraries v0.1.0 (/home/runner/work/agentique/agentique/crates/standard-libraries)
+   Compiling agq-kerml-syntax v0.1.0 (/home/runner/work/agentique/agentique/crates/kerml-syntax)
+   Compiling agq-sysml v0.1.0 (/home/runner/work/agentique/agentique/crates/sysml)
+   Compiling agq-kerml-semantics v0.1.0 (/home/runner/work/agentique/agentique/crates/kerml-semantics)
+   Compiling agq-sysml-semantics v0.1.0 (/home/runner/work/agentique/agentique/crates/sysml-semantics)
+   Compiling agq-kerml-text v0.1.0 (/home/runner/work/agentique/agentique/crates/kerml-text)
+   Compiling agq-modeling-workspace v0.1.0 (/home/runner/work/agentique/agentique/crates/modeling-workspace)
+   Compiling agq-modeling-repository v0.1.0 (/home/runner/work/agentique/agentique/crates/modeling-repository)
+   Compiling agq-modeling-service v0.1.0 (/home/runner/work/agentique/agentique/crates/modeling-service)
+   Compiling agq-modeling-view v0.1.0 (/home/runner/work/agentique/agentique/crates/modeling-view)
+   Compiling agq-modeling-agent v0.1.0 (/home/runner/work/agentique/agentique/crates/modeling-agent)
+   Compiling agq-modeling-api v0.1.0 (/home/runner/work/agentique/agentique/adapters/modeling-api)
+   Compiling agq-modeling-sqlite v0.1.0 (/home/runner/work/agentique/agentique/adapters/modeling-sqlite)
+   Compiling agq-runtime-publications v0.1.0 (/home/runner/work/agentique/agentique/crates/runtime-publications)
+   Compiling agq-studio-platform v0.1.0 (/home/runner/work/agentique/agentique/crates/studio-platform)
+   Compiling agq-modeling-http v0.1.0 (/home/runner/work/agentique/agentique/adapters/modeling-http)
+   Compiling agq-studio v0.1.0 (/home/runner/work/agentique/agentique/crates/studio)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 50.71s
+
+Running 2 tests using 1 worker
+
+  ✓  1 tests/studio/runtime.spec.ts:145:1 › fresh Studio serves genuine setup and fails closed without runtime assets (2.5s)
+  -  2 tests/studio/runtime.spec.ts:204:1 › real accepted-runtime self-model operator sequence survives restart
+
+  1 skipped
+  1 passed (3.6s)
