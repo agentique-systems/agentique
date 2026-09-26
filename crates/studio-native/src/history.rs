@@ -1311,7 +1311,7 @@ mod tests {
             node.id = fixtures::id(id);
             node.owner = Some(fixtures::id(owner));
             node.name = name.into();
-            node.qualified_name = name.into();
+            node.qualified_name = Some(name.into());
             node.semantic_kind = kind.into();
             node.features.clear();
             node.counts = Default::default();
@@ -1368,7 +1368,7 @@ mod tests {
         node.id = fixtures::id(900);
         node.owner = Some(fixtures::id(999_999));
         node.name = "detachedChange".into();
-        node.qualified_name = node.name.clone();
+        node.qualified_name = Some(node.name.clone());
         node.features.clear();
         node.counts = Default::default();
         after.nodes.push(node);
