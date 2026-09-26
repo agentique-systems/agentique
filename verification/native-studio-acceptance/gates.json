@@ -1,0 +1,30 @@
+{
+  "format": "agentique-native-alpha-acceptance-gates/1",
+  "baseline_origin_main": "98c881f0bbac2c55e2777664633a50cb67ab7bf0",
+  "branch": "platform/native-studio-alpha-acceptance",
+  "decision": "pending",
+  "qualification_rule": "Implemented is not accepted. Current-executable real-product evidence is required; earlier evidence is retained with its exact scope.",
+  "gates": {
+    "startup_profile": "passed on real retained-context baseline; warm open remains 193.691 seconds",
+    "loaded_reads": "focused System323ms, Graph56ms, Requirements57ms; Inspector252ms first and0.22ms repeat; UI display excluded",
+    "semantic_incremental_wall_time": "pending exact separate-process command/cold oracle on optimization drafts",
+    "zoom_anchor": "legacy defect reproduced; ordered event fix passes12000 native cycles and100000 camera cases; integrated real10k rerun pending",
+    "source_only_restore": "passed before optimization drafts: two source imports, two committed revisions, cache deletion, separate-process exact restoration",
+    "background_navigation": "unit reply fencing/cancellation tests passed; real rebuilt native journey pending",
+    "real_operator_journey": "pending rebuilt executable",
+    "durable_restart": "pending rebuilt executable",
+    "rename": "real automation implemented; execution pending",
+    "soak": "600-second real restart automation implemented; execution pending",
+    "five_product_review_rounds": "pending current real-product gallery",
+    "generic_project": "creation/import/restart implementation and lifecycle test added; accepted-runtime lifecycle execution pending",
+    "runtime_distribution": "reproducible verify/install gate and exact operator instructions implemented; current facade release-asset qualification and publication pending",
+    "linux": "first branch native job failed Clippy; diagnosed and fixed, rerun pending",
+    "macos": "first branch compile/link passed cf2e8113; no interactive qualification",
+    "required_checks": "see actual acceptance-* command records; semantic focused suites and npm check/build/e2e passed, publication freshness and later integrated gates remain open"
+  },
+  "resource_constraints": {
+    "local_windows": "16GB RAM; real profiling reached5.4GB process working set. Windows paging consumed remaining C: space; local build/large oracle artifacts currently constrained.",
+    "worktrees": "Auxiliary directories disappeared outside root's commands. All completed work was committed. Teams now edit explicitly assigned main-checkout files, with root alone staging/committing.",
+    "continuation": "Preparing isolated Windows CI release builds and same-runner baseline/current exact semantic oracle; independent diagnosis and source work continue."
+  }
+}
