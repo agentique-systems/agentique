@@ -6,6 +6,31 @@ use std::sync::{
     atomic::{AtomicBool, AtomicU8, Ordering},
 };
 
+/// Diagnostic categories are independent of the measured pass durations.
+/// A valid zero-duration interval is retained, not classified as an error.
+#[derive(Clone, Debug, Default, serde::Serialize)]
+pub struct Diagnostics {
+    pub zero_duration_samples: usize,
+    pub non_monotonic_samples: usize,
+    pub map_errors: usize,
+    pub poll_errors: usize,
+    pub surface_invalidations: usize,
+}
+
+fn record_sample(stats: &mut GpuStats, start: u64, end: u64, period_ns: f64) {
+    if let Some(delta) = end.checked_sub(start) {
+        stats
+            .timestamp_ms
+            .push(delta as f64 * period_ns / 1_000_000.0);
+        if delta == 0 {
+            stats.timestamp_diagnostics.zero_duration_samples += 1;
+        }
+    } else {
+        stats.timestamp_errors += 1;
+        stats.timestamp_diagnostics.non_monotonic_samples += 1;
+    }
+}
+
 pub fn features() -> wgpu::Features {
     wgpu::Features::TIMESTAMP_QUERY | wgpu::Features::TIMESTAMP_QUERY_INSIDE_PASSES
 }
@@ -75,6 +100,7 @@ impl GpuTiming {
         // Poll services completed maps without waiting for the GPU.
         if device.poll(wgpu::PollType::Poll).is_err() {
             stats.timestamp_errors += 1;
+            stats.timestamp_diagnostics.poll_errors += 1;
         }
         self.current = None;
         for (index, slot) in self.slots.iter_mut().enumerate() {
@@ -86,19 +112,14 @@ impl GpuTiming {
                             u64::from_le_bytes(bytes[0..8].try_into().expect("timestamp size"));
                         let end =
                             u64::from_le_bytes(bytes[8..16].try_into().expect("timestamp size"));
-                        if let Some(delta) = end.checked_sub(start).filter(|delta| *delta > 0) {
-                            stats
-                                .timestamp_ms
-                                .push(delta as f64 * self.period_ns / 1_000_000.0);
-                        } else {
-                            stats.timestamp_errors += 1;
-                        }
+                        record_sample(stats, start, end, self.period_ns);
                         drop(bytes);
                         slot.buffer.unmap();
                         slot.state = State::Idle;
                     }
                     2 => {
                         stats.timestamp_errors += 1;
+                        stats.timestamp_diagnostics.map_errors += 1;
                         slot.state = State::Idle;
                     }
                     _ => {}
@@ -153,5 +174,28 @@ impl GpuTiming {
             pass.write_timestamp(&self.queries, index as u32 * 2 + 1);
             self.slots[index].written.store(true, Ordering::Release);
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn zero_duration_measurements_are_retained_without_hiding_invalid_pairs() {
+        let mut stats = GpuStats::default();
+        record_sample(&mut stats, 100, 100, 1024.0);
+        record_sample(&mut stats, 100, 101, 1024.0);
+        record_sample(&mut stats, 101, 100, 1024.0);
+        let summary = stats.timestamp_ms.summary();
+        assert_eq!(summary.total_samples, 2);
+        assert_eq!(summary.median, Some(0.000512));
+        assert_eq!(summary.last, Some(0.001024));
+        assert_eq!(stats.timestamp_diagnostics.zero_duration_samples, 1);
+        assert_eq!(stats.timestamp_diagnostics.non_monotonic_samples, 1);
+        assert_eq!(stats.timestamp_errors, 1);
+        assert_eq!(stats.timestamp_diagnostics.map_errors, 0);
+        assert_eq!(stats.timestamp_diagnostics.poll_errors, 0);
+        assert_eq!(stats.timestamp_diagnostics.surface_invalidations, 0);
     }
 }

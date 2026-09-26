@@ -217,6 +217,7 @@ impl StudioApp {
         if !self.allow_context_change() {
             return;
         }
+        self.remember_location();
         self.focus = None;
         self.expanded = None;
         self.dependencies = None;
@@ -259,6 +260,14 @@ impl StudioApp {
             self.rebuild();
         }
         self.record_location();
+    }
+    pub fn return_to_revision(&mut self, revision: ProjectRevisionId) {
+        self.remember_location();
+        if let Some(location) = self.navigation.latest_for_revision(revision) {
+            self.restore_location(location);
+        } else {
+            self.select_revision(revision);
+        }
     }
     pub fn definition(&self) -> ViewDefinition {
         let mut view = match self.world {
@@ -315,6 +324,40 @@ impl StudioApp {
         self.invalidate_inspection();
         self.request_inspection();
     }
+    /// An outliner row can select content outside the current camera. Reveal
+    /// that exact scene object without changing its semantic neighborhood. A
+    /// visible object (including a partially visible container) keeps the
+    /// operator's camera; ordinary canvas selection never calls this method.
+    pub fn select_from_outliner(&mut self, target: SceneTarget, extend: bool) {
+        self.select(target.clone(), extend);
+        if self.world == World::History
+            || self.selection.revision != self.scene.revision_id
+            || !self.selection.targets.contains(&target)
+            || !matches!(target, SceneTarget::Node(_) | SceneTarget::Container(_))
+        {
+            return;
+        }
+        let Some(bounds) = self.scene.target_bounds(&target) else {
+            return;
+        };
+        if !bounds.finite() || self.camera.visible_rect().intersects(bounds) {
+            return;
+        }
+        let mut camera = self.camera;
+        camera.fit(bounds, 32.0);
+        // Preserve the current scale whenever the selected object can fit. An
+        // oversized offscreen container may need a smaller scale to be revealed.
+        camera.zoom = camera.zoom.min(self.camera.zoom);
+        self.fit_pending = false;
+        if self.reduced_motion {
+            self.camera = camera;
+            self.camera_target = None;
+            self.navigation
+                .update_camera([camera.center.x, camera.center.y], camera.zoom);
+        } else {
+            self.camera_target = Some(camera);
+        }
+    }
     /// Refresh the exact primary object after a projection without changing
     /// the current multi-selection or promoting a ghost to the active revision.
     pub fn request_inspection(&mut self) {
@@ -327,6 +370,22 @@ impl StudioApp {
                 candidate,
                 element,
             );
+            if self.show_explain {
+                self.explanation_request = self.request_panel_read(
+                    crate::read_lane::PanelRead::Explain,
+                    binding,
+                    candidate,
+                    element,
+                );
+            }
+            if self.show_source {
+                self.source_request = self.request_panel_read(
+                    crate::read_lane::PanelRead::Source,
+                    binding,
+                    candidate,
+                    element,
+                );
+            }
         }
     }
     pub fn selected_context(
@@ -374,32 +433,60 @@ impl StudioApp {
         }
     }
     pub fn record_location(&mut self) {
-        self.navigation.push(Location {
+        if self.pending_revision.is_some() || self.restore.is_some() {
+            return;
+        }
+        self.navigation.push(self.current_location());
+    }
+    pub fn remember_location(&mut self) {
+        if self.pending_revision.is_none() && self.restore.is_none() {
+            self.navigation.update_current(self.current_location());
+        }
+    }
+    fn current_location(&self) -> Location {
+        Location {
             revision: self.projection.revision_id,
             world: self.world,
             focus: self.focus,
             center: [self.camera.center.x, self.camera.center.y],
             zoom: self.camera.zoom,
-        });
+            presentation: self.capture_presentation(),
+        }
     }
-    pub fn restore_location(&mut self, location: Location) {
+    pub fn restore_location(&mut self, location: Location) -> bool {
         self.focus_changes_pending = false;
         if self.bridge.mutation_pending() && location.revision != self.projection.revision_id {
             self.status = "The current revision remains explorable while model work runs".into();
-            return;
+            return false;
         }
         if self
             .binding
             .is_some_and(|binding| binding.revision != location.revision)
             && !self.allow_context_change()
         {
-            return;
+            return false;
         }
         // Model revisions are immutable, but may require a worker restoration.
+        if self.candidate.is_none() {
+            // Presentation visits name a durable revision. A historical Diff
+            // must not silently turn its restored Current view into a new pair.
+            self.comparison = ComparisonMode::Current;
+            self.compare_before = None;
+        }
         self.restore_world_filters(location.world);
         self.world = location.world;
         self.focus = location.focus;
-        self.expanded = None;
+        self.expanded = location.presentation.expanded.clone();
+        self.collapsed = location.presentation.collapsed.clone();
+        self.families = location
+            .presentation
+            .definition
+            .relationship_families
+            .iter()
+            .copied()
+            .collect();
+        self.include_standard = location.presentation.definition.include_standard_library;
+        let definition = location.presentation.definition.clone();
         if let Some(binding) = self.binding {
             self.pending_revision = (binding.revision != location.revision).then_some(
                 agq_studio_platform::RevisionBinding {
@@ -433,17 +520,27 @@ impl StudioApp {
                 dark: self.theme.dark,
                 high_contrast: self.theme.contrast,
                 reduced_motion: self.reduced_motion,
-                presentation: None,
+                presentation: Some(location.presentation),
             });
-            self.request_projection();
+            self.request_projection_definition(definition);
         } else {
-            self.rebuild();
+            // Fixture Worlds can use different projections; rebuild the visited
+            // World before reconciling its revision-scoped saved selection.
+            self.projection = if location.world == World::Requirements {
+                fixtures::requirements()
+            } else {
+                fixture_projection(self.fixture.as_deref().unwrap_or("architecture"))
+            };
+            self.apply_saved_presentation(location.presentation);
+            self.rebuild_immediate();
+            self.request_inspection();
         }
         let mut target = self.camera;
         target.center = Point::new(location.center[0], location.center[1]);
         target.zoom = location.zoom;
         self.camera_target = Some(target);
         self.fit_pending = false;
+        true
     }
     pub fn request_projection(&mut self) {
         self.request_projection_definition(self.definition());
@@ -462,6 +559,27 @@ impl StudioApp {
         }
         self.scene_builder.invalidate();
         self.invalidate_inspection();
+        if self.pending_revision.is_none()
+            && self.comparison == ComparisonMode::Current
+            && self.fixture.is_none()
+            && let Some(binding) = self.binding
+        {
+            self.pin_current_reader();
+            match self.bridge.project_read(binding, definition.clone()) {
+                Ok(request) => {
+                    self.scene_request = request;
+                    self.pending.insert(request);
+                    self.requested_definition = Some((request, definition));
+                    self.deferred_definition = None;
+                    return;
+                }
+                Err(error) if self.bridge.mutation_pending() => {
+                    self.status = format!("Current revision view unavailable: {error}");
+                    return;
+                }
+                Err(_) => {} // Initial opening can still acquire its first projection serially.
+            }
+        }
         if self.bridge.mutation_pending() {
             self.deferred_definition = Some(definition);
             self.status =
@@ -517,15 +635,16 @@ impl StudioApp {
         }
     }
     pub fn switch_world(&mut self, world: World) {
+        self.remember_location();
         let selected = self.selected_element();
         if self.show_agent && self.agent_return.is_some() {
             self.dismiss_agent_view();
         }
-        self.restore_world_filters(world);
         self.navigation.update_camera(
             [self.camera.center.x, self.camera.center.y],
             self.camera.zoom,
         );
+        self.restore_world_filters(world);
         self.world = world;
         self.search.clear();
         self.expanded = None;
@@ -665,12 +784,14 @@ impl StudioApp {
                 | System
                 | Graph
                 | Requirements
+                | SelectionRequirements
                 | History
                 | DismissAgent
         ) {
+            self.remember_location();
             self.focus_changes_pending = false;
         }
-        if self.bridge.mutation_pending() && matches!(id, Compare | Dependencies) {
+        if self.bridge.mutation_pending() && id == Compare {
             self.status = "Wait for the model operation before changing the view".into();
             return;
         }
@@ -731,6 +852,7 @@ impl StudioApp {
             System => self.switch_world(World::System),
             Graph => self.switch_world(World::Graph),
             Requirements => self.switch_world(World::Requirements),
+            SelectionRequirements => self.show_requirements_selection(),
             History => self.switch_world(World::History),
             Home => {
                 self.focus = None;
@@ -794,13 +916,17 @@ impl StudioApp {
                 self.record_location();
             }
             Back => {
-                if let Some(location) = self.navigation.back() {
-                    self.restore_location(location);
+                if let Some(location) = self.navigation.back()
+                    && !self.restore_location(location)
+                {
+                    let _ = self.navigation.forward();
                 }
             }
             Forward => {
-                if let Some(location) = self.navigation.forward() {
-                    self.restore_location(location);
+                if let Some(location) = self.navigation.forward()
+                    && !self.restore_location(location)
+                {
+                    let _ = self.navigation.back();
                 }
             }
             Explain => {
@@ -858,6 +984,14 @@ impl StudioApp {
                     let view =
                         ViewDefinition::dependency_neighborhood(element, families, 2, standards);
                     self.fit_pending = true;
+                    if candidate.is_none()
+                        && self.binding == Some(binding)
+                        && self.comparison == ComparisonMode::Current
+                    {
+                        self.request_projection_definition(view);
+                        self.status = "Querying revision-bound dependency neighborhood".into();
+                        return;
+                    }
                     let requested = view.clone();
                     self.scene_request = self.enqueue(Box::new(move |p| {
                         if let Some(id) = candidate {
@@ -906,8 +1040,6 @@ impl StudioApp {
                 self.cancel_revision_navigation();
                 if let Some(selected) = self.selected_element() {
                     if self.fixture.is_none()
-                        && !self.bridge.mutation_pending()
-                        && self.candidate.is_none()
                         && self.comparison == ComparisonMode::Current
                         && self.world == World::Graph
                         && self.focus == Some(selected)
@@ -1028,13 +1160,22 @@ impl StudioApp {
                 selection: vec![owner],
             };
             let view = self.definition();
-            let request =
-                self.enqueue_mutation(crate::bridge::nested_part(context, owner, name, view));
+            let control = agq_studio_platform::CompilationControl::new();
+            self.last_preparation_cancellation = None;
+            let request = self.enqueue_mutation(crate::bridge::nested_part(
+                context,
+                owner,
+                name,
+                view,
+                control.clone(),
+            ));
             if request != 0 {
                 self.preparation = Some(crate::app::PendingPreparation {
                     request,
                     started: std::time::Instant::now(),
                     cancelled: false,
+                    control,
+                    cancel_requested_at: None,
                     intent,
                 });
                 self.status = "Constructing a Working candidate in the background".into();
@@ -1242,7 +1383,7 @@ impl StudioApp {
                     (current + nodes.len() - 1) % nodes.len()
                 })
             };
-            self.select(SceneTarget::Node(self.scene.nodes[nodes[next]].id()), false);
+            self.select_from_outliner(SceneTarget::Node(self.scene.nodes[nodes[next]].id()), false);
         }
     }
 
@@ -1303,6 +1444,195 @@ mod tests {
         ]);
         let context = eframe::CreationContext::_new_kittest(egui::Context::default());
         StudioApp::new(&context, args).unwrap()
+    }
+
+    #[test]
+    fn returning_to_current_exploration_leaves_durable_diff() {
+        let mut app = application();
+        let location = app.current_location();
+        app.comparison = ComparisonMode::Diff;
+        app.compare_before = Some(fixtures::revision_diff().0);
+        app.world = World::History;
+        assert!(app.restore_location(location));
+        assert_eq!(app.comparison, ComparisonMode::Current);
+        assert!(app.compare_before.is_none());
+        assert_eq!(app.world, World::System);
+    }
+
+    #[test]
+    fn outliner_reveals_offscreen_object_without_changing_revision_or_focus() {
+        let mut app = application();
+        let node = app
+            .scene
+            .nodes
+            .iter()
+            .find(|node| !node.is_container)
+            .unwrap();
+        let target = SceneTarget::Node(node.id());
+        let bounds = node.bounds;
+        let revision = app.scene.revision_id;
+        let focus = app.focus;
+        let world = app.world;
+        let definition = app.definition();
+        for dpi in [1.0, 1.25, 1.5, 2.0] {
+            app.camera.viewport = agq_studio_scene::Size::new(1088.0 / dpi, 723.0 / dpi);
+            app.camera.zoom = 1.2;
+            app.camera.center = Point::new(bounds.max.x + 20_000.0, bounds.max.y + 20_000.0);
+            app.camera_target = None;
+            let before = app.camera;
+            assert!(!before.visible_rect().intersects(bounds));
+            app.select_from_outliner(target.clone(), false);
+            let revealed = app
+                .camera_target
+                .expect("Offscreen selection must be revealed");
+            assert!(revealed.visible_rect().contains_rect(bounds));
+            assert!(
+                revealed.zoom <= before.zoom,
+                "Revealing selection must not magnify the scene"
+            );
+            assert_eq!(
+                revealed.zoom, before.zoom,
+                "An ordinary part fits at the operator's existing scale"
+            );
+            assert_eq!(
+                app.camera, before,
+                "Camera animation starts from the operator's current camera"
+            );
+            assert_eq!(app.selection.primary, Some(target.clone()));
+            assert_eq!(app.selected_element(), target.element_id());
+            assert_eq!(app.selection.revision, revision);
+            assert_eq!(app.scene.revision_id, revision);
+            assert_eq!(app.world, world);
+            assert_eq!(app.focus, focus);
+            assert_eq!(app.definition(), definition);
+            assert!(!app.fit_pending);
+        }
+        app.camera.viewport = agq_studio_scene::Size::new(160.0, 100.0);
+        app.camera.zoom = 4.0;
+        app.select_from_outliner(target.clone(), false);
+        let revealed = app.camera_target.unwrap();
+        assert!(
+            revealed.zoom < app.camera.zoom,
+            "An oversized offscreen object needs a smaller scale"
+        );
+        assert!(revealed.visible_rect().contains_rect(bounds));
+
+        app.reduced_motion = true;
+        app.select_from_outliner(target, false);
+        assert_eq!(app.camera, revealed, "Reduced motion reveals immediately");
+        assert_eq!(app.camera_target, None);
+    }
+
+    #[test]
+    fn visible_outliner_selection_canvas_selection_and_deselection_preserve_camera() {
+        let mut app = application();
+        let node = app
+            .scene
+            .nodes
+            .iter()
+            .find(|node| !node.is_container)
+            .unwrap();
+        let target = SceneTarget::Node(node.id());
+        let bounds = node.bounds;
+        app.camera.fit(bounds.inflate(80.0), 32.0);
+        app.camera_target = None;
+        let visible = app.camera;
+        assert!(visible.visible_rect().contains_rect(bounds));
+        app.select_from_outliner(target.clone(), false);
+        assert_eq!(app.camera, visible);
+        assert_eq!(app.camera_target, None);
+
+        // Partially visible content also retains the existing exploration state.
+        app.camera.center.x = bounds.max.x + app.camera.visible_rect().width() * 0.25;
+        let partial = app.camera;
+        assert!(partial.visible_rect().intersects(bounds));
+        app.select_from_outliner(target.clone(), false);
+        assert_eq!(app.camera, partial);
+        assert_eq!(app.camera_target, None);
+
+        app.camera.center = Point::new(100_000.0, 100_000.0);
+        let offscreen = app.camera;
+        app.select(target.clone(), false);
+        assert_eq!(
+            app.camera, offscreen,
+            "Canvas selection must not request outliner framing"
+        );
+        assert_eq!(app.camera_target, None);
+        app.select_from_outliner(target.clone(), true);
+        assert!(!app.selection.targets.contains(&target));
+        assert_eq!(
+            app.camera, offscreen,
+            "Shift-deselect must not reveal removed selection"
+        );
+        assert_eq!(app.camera_target, None);
+
+        app.world = World::History;
+        app.select_from_outliner(target, false);
+        assert_eq!(app.camera, offscreen, "History has no canvas to reframe");
+        assert_eq!(app.camera_target, None);
+    }
+
+    #[test]
+    fn rejected_revision_back_does_not_advance_navigation_cursor() {
+        let mut app = application();
+        let current = app.current_location();
+        let mut previous = current.clone();
+        previous.revision = ProjectRevisionId::new();
+        app.navigation.push(previous);
+        app.navigation.push(current);
+        app.bridge
+            .work(
+                Box::new(|_| panic!("no service in routing test")),
+                app.work_context(),
+                true,
+            )
+            .unwrap();
+        app.execute(CommandId::Back, &egui::Context::default());
+        assert!(app.navigation.forward().is_none());
+        assert!(app.status.contains("remains explorable"));
+    }
+
+    #[test]
+    fn back_forward_restores_each_visits_camera_selection_filters_and_world() {
+        let mut app = application();
+        let context = egui::Context::default();
+        let target = SceneTarget::Node(app.scene.nodes[0].id());
+        app.selection.select(target.clone(), false);
+        app.camera.center = Point::new(341.0, 625.0);
+        app.camera.zoom = 0.63;
+        app.include_standard = true;
+        app.families = BTreeSet::from([RelationshipFamily::Ownership]);
+        let system = app.capture_presentation();
+        app.switch_world(World::Graph);
+        app.selection.clear();
+        app.camera.center = Point::new(-80.0, 90.0);
+        app.camera.zoom = 1.73;
+        app.include_standard = false;
+        app.families = RelationshipFamily::all().into_iter().collect();
+        let graph = app.capture_presentation();
+        app.execute(CommandId::Back, &context);
+        assert_eq!(app.world, World::System);
+        assert_eq!(app.camera.center, system.camera.center);
+        assert_eq!(app.camera.zoom, system.camera.zoom);
+        assert_eq!(app.selection.primary, Some(target));
+        assert!(app.include_standard);
+        assert_eq!(
+            app.families,
+            BTreeSet::from([RelationshipFamily::Ownership])
+        );
+        // Projection completion records the restored visit. It must not truncate
+        // the forward chain just because camera/filter/selection values differ.
+        app.record_location();
+        app.execute(CommandId::Forward, &context);
+        assert_eq!(app.world, World::Graph);
+        assert_eq!(app.camera.center, graph.camera.center);
+        assert_eq!(app.camera.zoom, graph.camera.zoom);
+        assert!(app.selection.primary.is_none());
+        assert!(!app.include_standard);
+        assert_eq!(
+            app.families,
+            RelationshipFamily::all().into_iter().collect()
+        );
     }
 
     #[test]

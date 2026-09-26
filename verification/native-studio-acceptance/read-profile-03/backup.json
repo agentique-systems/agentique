@@ -1,0 +1,8 @@
+{
+  "source_database": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\native-studio-acceptance\\real-run03\\agentique.sqlite",
+  "backup": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\native-studio-acceptance\\read-profile-03\\agentique.sqlite",
+  "method": "sqlite3 Connection.backup; native process already exited",
+  "helper_source_commit": "42e7e187de823a3b855d530dcee84dbe8c06b59f",
+  "helper_sha256": "1036d124dfb01198b30f21289e6ad891d902e6663b147405836d454c15ccd114",
+  "backup_sha256": "f9a64ebc0d3967eb27be10601d1e99f562c8fae1ef0b9905d0f141924e771154"
+}

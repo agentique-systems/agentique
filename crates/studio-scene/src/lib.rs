@@ -11,6 +11,7 @@ mod graph_layout;
 mod layout;
 mod lookup;
 mod neighborhood;
+mod requirements;
 mod routing;
 mod spatial;
 use agq_kernel::ElementId;
@@ -22,6 +23,7 @@ pub use graph_layout::*;
 pub use layout::*;
 pub use lookup::*;
 pub use neighborhood::*;
+pub use requirements::*;
 pub use routing::*;
 pub use spatial::*;
 use std::collections::{BTreeMap, BTreeSet};
@@ -34,6 +36,8 @@ pub enum NodeCategory {
     Port,
     Interface,
     Requirement,
+    Constraint,
+    Reference,
     Action,
     State,
     Agent,
@@ -57,6 +61,8 @@ impl NodeCategory {
             "RequirementDefinition" | "RequirementUsage" | "RequirementConstraintMembership" => {
                 Self::Requirement
             }
+            "ConstraintUsage" => Self::Constraint,
+            "ReferenceUsage" => Self::Reference,
             "ActionDefinition" | "ActionUsage" | "CalculationDefinition" | "CalculationUsage" => {
                 Self::Action
             }
@@ -73,6 +79,8 @@ impl NodeCategory {
             Self::Port => "PORT",
             Self::Interface => "INTERFACE",
             Self::Requirement => "REQUIREMENT",
+            Self::Constraint => "CONSTRAINT",
+            Self::Reference => "REFERENCE",
             Self::Action => "ACTION",
             Self::State => "STATE",
             Self::Agent => "AGENT",
@@ -92,7 +100,9 @@ pub enum DiffMark {
     Changed,
 }
 /// Selection identity remains independent of screen coordinates and layout.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub enum SceneTarget {
     Node(ElementId),
     Port(ElementId),
@@ -235,7 +245,14 @@ impl SemanticScene {
         options: &SceneOptions,
         previous: Option<&LayoutMemory>,
     ) -> Result<Self, SceneError> {
-        if options.hierarchy {
+        if projection.view.kind == agq_modeling_view::ViewKind::Requirements {
+            Self::with_layout(
+                projection,
+                options,
+                previous,
+                &RequirementsLayout::new(projection),
+            )
+        } else if options.hierarchy {
             Self::with_layout(projection, options, previous, &HierarchyLayout::default())
         } else {
             Self::with_layout(projection, options, previous, &GraphLayout::default())

@@ -1,0 +1,58 @@
+{
+  "source_commit": "4e82e36b284aafb37e9488299131658fa866864f",
+  "paths": [
+    "crates/kerml-semantics/src/producer_worklist.rs",
+    "crates/kerml-semantics/src/producer_closure_incremental.rs",
+    "crates/kerml-semantics/tests/unit/producer_closure_incremental.rs"
+  ],
+  "files": {
+    "crates/kerml-semantics/src/producer_worklist.rs": {
+      "before_sha256": "8e5920231c0aab98d95a73c24464032b484d7f68ed7a0293be78dd239ea158ca",
+      "after_sha256": "87978c08319fd2860addb48939f26d3d05a634f86db135b15fde209503d67aa9"
+    },
+    "crates/kerml-semantics/src/producer_closure_incremental.rs": {
+      "before_sha256": "62d0adeceb6d95b43d362e789f97b1597c2ab356a01163e29b1abf8fe09f5420",
+      "after_sha256": "32bfde61ee576d8c077059c42a065b23c51d81b9bf9f7229177d58408c688ef1"
+    },
+    "crates/kerml-semantics/tests/unit/producer_closure_incremental.rs": {
+      "before_sha256": "94f8f1312a50ee9ad78228bfde3c4bcc150e8ce4d42f19838cd70a2008a5111d",
+      "after_sha256": "d57d0824d6febd4e6de5e5f1c3a92f9d96a8ec327d9277fc4f1b604f8c2ff94b"
+    }
+  },
+  "patch_sha256": "e35a498b43f1e0083c6c26fb00bf01470fee98a7518eb475ab9671931d06cf31",
+  "file_hash_encoding": "UTF-8 text with universal newlines normalized to LF",
+  "validation": {
+    "compiled": false,
+    "tests_executed": false,
+    "production_sources_unchanged": true,
+    "rustfmt": {
+      "command": [
+        "rustfmt",
+        "--check",
+        "--edition",
+        "2024",
+        "--config",
+        "skip_children=true",
+        "verification\\generated\\native-studio-acceptance\\initial-certificate-draft\\after\\crates\\kerml-semantics\\src\\producer_worklist.rs",
+        "verification\\generated\\native-studio-acceptance\\initial-certificate-draft\\after\\crates\\kerml-semantics\\src\\producer_closure_incremental.rs",
+        "verification\\generated\\native-studio-acceptance\\initial-certificate-draft\\after\\crates\\kerml-semantics\\tests\\unit\\producer_closure_incremental.rs"
+      ],
+      "elapsed_seconds": 0.125,
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "git_apply_check": {
+      "command": [
+        "git",
+        "apply",
+        "--check",
+        "verification\\native-studio-acceptance\\semantics\\initial-certificate-cache.patch"
+      ],
+      "elapsed_seconds": 0.016,
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  }
+}

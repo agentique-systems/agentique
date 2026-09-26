@@ -1,0 +1,3 @@
+   Compiling agq-studio-platform v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-platform)
+   Compiling agq-studio-native v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-native)
+    Finished `release` profile [optimized] target(s) in 5m 37s

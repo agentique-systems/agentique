@@ -1,0 +1,94 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.24
+   Compiling quote v1.0.47
+   Compiling cfg-if v1.0.5
+   Compiling version_check v0.9.5
+   Compiling serde_core v1.0.229
+   Compiling syn v3.0.5
+   Compiling generic-array v0.14.7
+   Compiling autocfg v1.5.1
+   Compiling num-traits v0.2.19
+   Compiling typenum v1.20.1
+   Compiling serde v1.0.229
+   Compiling getrandom v0.4.3
+   Compiling serde_derive v1.0.229
+   Compiling thiserror v2.0.20
+   Compiling zmij v1.0.23
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling thiserror-impl v2.0.20
+   Compiling serde_json v1.0.151
+   Compiling memchr v2.8.3
+   Compiling digest v0.10.7
+   Compiling num-integer v0.1.47
+   Compiling crc32fast v1.5.2
+   Compiling sha1_smol v1.0.1
+   Compiling cpufeatures v0.2.17
+   Compiling itoa v1.0.18
+   Compiling sha2 v0.10.9
+   Compiling uuid v1.26.1
+   Compiling num-bigint v0.4.8
+   Compiling simd-adler32 v0.3.10
+   Compiling adler2 v2.0.1
+   Compiling miniz_oxide v0.9.1
+   Compiling agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+   Compiling equivalent v1.0.2
+   Compiling zip v2.4.2
+   Compiling windows-link v0.2.1
+   Compiling hashbrown v0.17.1
+   Compiling log v0.4.34
+   Compiling bumpalo v3.20.3
+   Compiling zopfli v0.8.3
+   Compiling indexmap v2.14.2
+   Compiling flate2 v1.1.10
+   Compiling displaydoc v0.2.7
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml)
+   Compiling agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\standard-libraries)
+   Compiling agq-sysml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml-semantics)
+   Compiling agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-syntax)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+   Compiling windows-sys v0.61.2
+   Compiling find-msvc-tools v0.1.12
+   Compiling shlex v2.0.1
+   Compiling cc v1.4.6
+   Compiling agq-modeling-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-workspace)
+   Compiling vcpkg v0.2.15
+   Compiling pkg-config v0.3.34
+   Compiling libsqlite3-sys v0.35.0
+   Compiling chrono v0.4.45
+   Compiling once_cell_polyfill v1.70.2
+   Compiling utf8parse v0.2.2
+   Compiling anstyle v1.0.14
+   Compiling foldhash v0.1.5
+   Compiling hashbrown v0.15.5
+   Compiling anstyle-wincon v3.0.11
+   Compiling anstyle-parse v1.0.0
+   Compiling agq-modeling-repository v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-repository)
+   Compiling anstyle-query v1.1.5
+   Compiling colorchoice v1.0.5
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling anstream v1.0.0
+   Compiling hashlink v0.10.0
+   Compiling strsim v0.11.1
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling clap_lex v1.1.1
+   Compiling bitflags v2.13.2
+   Compiling fallible-iterator v0.3.0
+   Compiling heck v0.5.0
+   Compiling fastrand v2.5.0
+   Compiling once_cell v1.21.4
+   Compiling smallvec v1.16.1
+   Compiling rusqlite v0.37.0
+   Compiling tempfile v3.27.0
+   Compiling clap_derive v4.6.7
+   Compiling clap_builder v4.6.7
+   Compiling agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-service)
+   Compiling agq-modeling-view v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-view)
+   Compiling agq-modeling-agent v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-agent)
+   Compiling clap v4.6.7
+   Compiling agq-modeling-sqlite v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\modeling-sqlite)
+   Compiling agq-runtime-publications v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\runtime-publications)
+   Compiling agq-studio-platform v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-platform)
+    Finished `release` profile [optimized] target(s) in 15m 35s

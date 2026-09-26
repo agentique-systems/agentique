@@ -1,0 +1,149 @@
+{
+  "format": "agentique-native-gallery-evidence/1",
+  "native_sha256": "c2d023c62b80c89791a6a1d4ea11626b86b46c87b51812dedd2034ccefddfa5a",
+  "compiled_source": "42e7e187de823a3b855d530dcee84dbe8c06b59f; clean tracked checkout",
+  "build_receipt": "../../native-studio-alpha/checks/acceptance-native-release-build-03.json",
+  "scope": "Actual self-model journey; fresh repository bootstrap with two source imports; restart and soak are separate gates. All 16 observed screenshots retained, including unreadable initial durable Diff.",
+  "files": {
+    "gallery/01-system-world.json": {
+      "bytes": 23392,
+      "sha256": "8bf4c397be98a39ac1bc6c646437a1862b01e66174d27e846b852a3e8e075889"
+    },
+    "gallery/01-system-world.png": {
+      "bytes": 348334,
+      "sha256": "89d0b7a99761d0f2427f908ed07d4260e0c299572b13b3fc467ba3436a3ed81e"
+    },
+    "gallery/02-focused-subsystem.json": {
+      "bytes": 43331,
+      "sha256": "6133c9ac36372decd07989f05b4b83696a0338199a6a0df2168f8bdaf1a1393f"
+    },
+    "gallery/02-focused-subsystem.png": {
+      "bytes": 393333,
+      "sha256": "480c5f31beb28c1477e45ab6c9c07fb45cef920b57c6c543f20929849043f093"
+    },
+    "gallery/02a-platform-port.json": {
+      "bytes": 78439,
+      "sha256": "48f7afd1eb954f76af1acb6ea29f4ebaccd11f44af5a78610c30a1f164c9b52d"
+    },
+    "gallery/02a-platform-port.png": {
+      "bytes": 396658,
+      "sha256": "5c216a8bdd56baa01a4ffc5212894f5c588766be496fbb5ace53a64bd8c17087"
+    },
+    "gallery/02b-focused-repository.json": {
+      "bytes": 89934,
+      "sha256": "b85f1b6c18937ec06b86ba09ee3d578ae4d8c439105724985b6fb83939303bd2"
+    },
+    "gallery/02b-focused-repository.png": {
+      "bytes": 371181,
+      "sha256": "997ebdbbf62475ca00685aa2820a3c14600448abc4c32383661f443e91443200"
+    },
+    "gallery/02c-repository-port.json": {
+      "bytes": 124086,
+      "sha256": "15c7fa0987b6eef1664ce4460b24c63778866b47f83a52372fa207488d14c3cc"
+    },
+    "gallery/02c-repository-port.png": {
+      "bytes": 363337,
+      "sha256": "08e8f30f20b9e4ed5269307dbd043895ff532853961685b0a10c3a3ea6e81a52"
+    },
+    "gallery/03-graph-world.json": {
+      "bytes": 125714,
+      "sha256": "66d1c26912823df312c26329b2ff282ef0a42f9c85a34d21e3e275f3b70c5ced"
+    },
+    "gallery/03-graph-world.png": {
+      "bytes": 415187,
+      "sha256": "9baab676fa69d2349f529e7e83ec0ad77f4c239dbbc027f27eca84da60ffa9c8"
+    },
+    "gallery/04-requirements-world.json": {
+      "bytes": 123900,
+      "sha256": "5b396effbf2b0aca0a1671997f7aba869319c14a6bd07326e4dce573496e8bb0"
+    },
+    "gallery/04-requirements-world.png": {
+      "bytes": 372166,
+      "sha256": "f8cf7c6233c4a266978eab343a118a31ffaf43fa8fe830deb8bd0ff519a512b3"
+    },
+    "gallery/04a-requirement-neighborhood.json": {
+      "bytes": 162131,
+      "sha256": "0f1f8757b837b1c72f02ab406e7e7d5db0c91e6794e805b2c50a4d4e948dac05"
+    },
+    "gallery/04a-requirement-neighborhood.png": {
+      "bytes": 401732,
+      "sha256": "b77890708578b802c01cd1b01ec99832113cc2b0e96be86fd7dd49b2164601eb"
+    },
+    "gallery/05-explain.json": {
+      "bytes": 129206,
+      "sha256": "1d7b136d729161258e8b1cc5c5607c299b112a39833c7ec81ef40e2be14d7934"
+    },
+    "gallery/05-explain.png": {
+      "bytes": 430695,
+      "sha256": "9b3236f8a9700f473d15c39944fa13b67f3b85ac23c7eae18be9eeefc18307bc"
+    },
+    "gallery/06-history-diff.json": {
+      "bytes": 580562,
+      "sha256": "a0200310e331765fab71df37241f31c7784f398ae8af5f72ca3cf5af4f1b7d94"
+    },
+    "gallery/06-history-diff.png": {
+      "bytes": 529637,
+      "sha256": "8c288622dc96e1a4ce1746bc41fc1b3cedebb450ef300ce9558b43935b61a384"
+    },
+    "gallery/06a-earlier-revision.json": {
+      "bytes": 375098,
+      "sha256": "4703c9e48c082f0da77bcb3abed899908a12117b0fd850b23e3983593536f5bc"
+    },
+    "gallery/06a-earlier-revision.png": {
+      "bytes": 399600,
+      "sha256": "e8120dec656b55f0dc8ac9ab5baec4d4fb6998e9ecf9303c25c413e4b142bded"
+    },
+    "gallery/06b-restored-requirement-exploration.json": {
+      "bytes": 179120,
+      "sha256": "96d90211755460346528ab4356b949f5c0a2998f727e15875f8ad7a21080286e"
+    },
+    "gallery/06b-restored-requirement-exploration.png": {
+      "bytes": 401732,
+      "sha256": "b77890708578b802c01cd1b01ec99832113cc2b0e96be86fd7dd49b2164601eb"
+    },
+    "gallery/07-agent-view.json": {
+      "bytes": 136482,
+      "sha256": "a68eb22b5ac9ff18c73be5d96c3d678b8e3e733444c0b2be8ae0a0064adf5e75"
+    },
+    "gallery/07-agent-view.png": {
+      "bytes": 452487,
+      "sha256": "6df4a3fddf33d7f3464c3b443d090d0b0f891ddb4fe84abeadd268c72e8431b7"
+    },
+    "gallery/08-candidate.json": {
+      "bytes": 294293,
+      "sha256": "2bc34a214ab645cda23ceb33076452168f641885ebfd206d3419e3d38c6b35a3"
+    },
+    "gallery/08-candidate.png": {
+      "bytes": 345355,
+      "sha256": "be043801dcab065dabeb38ba7a43646a6c313547eb515d1915bf43d600bfe69e"
+    },
+    "gallery/09-candidate-diff.json": {
+      "bytes": 294159,
+      "sha256": "6ee4f0902582b145a6a52f8beca5ecd39796d2351932e83987b68b6c16af42b6"
+    },
+    "gallery/09-candidate-diff.png": {
+      "bytes": 405013,
+      "sha256": "f2157f93510aeeb3537b54717457ac25fa01b57b7ce328742828b7b0d496c2e9"
+    },
+    "gallery/10-committed-history.json": {
+      "bytes": 298831,
+      "sha256": "80ee1817d3d05beccf6dff10164d4c84b91a5c9ba9b0ebcb037179f08bd88adf"
+    },
+    "gallery/10-committed-history.png": {
+      "bytes": 425666,
+      "sha256": "274fbe3e3e5e578347b3154495dcef00a58fa865b765bff9f9cd6fffe76a4ad9"
+    },
+    "journey.json": {
+      "bytes": 442971,
+      "sha256": "eb6136fa6466732e0a1b9c605702a67d0b5abf73ebad038fc70b19bdaca47205"
+    },
+    "process.json": {
+      "bytes": 1095,
+      "sha256": "c8d3a3504304331df591f2e6ab72ce381d1a6e1a29378f29d4d2f7266c3bdfe9"
+    },
+    "process.log": {
+      "bytes": 128665,
+      "sha256": "902f0d503d95741dec5ede78591039069302bd3c5af518e3762f1f0d4e59ac33"
+    }
+  }
+}

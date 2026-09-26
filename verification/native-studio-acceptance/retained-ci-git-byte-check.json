@@ -1,0 +1,17 @@
+{
+  "format": "agentique-git-retained-byte-check/1",
+  "source_commit": "7c497334e7345d4a2f17d016410e77ac8a92e4f9",
+  "checked_utc": "2026-09-26T10:34:47.073426+00:00",
+  "method": "git show HEAD:path compared byte-for-byte with every retained file",
+  "outcome": "passed",
+  "directories": [
+    {
+      "directory": "verification/native-studio-acceptance/ci-helpers-02",
+      "tracked_exact_files": 16
+    },
+    {
+      "directory": "verification/native-studio-acceptance/ci-oracle-01",
+      "tracked_exact_files": 64
+    }
+  ]
+}

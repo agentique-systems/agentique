@@ -1,0 +1,25 @@
+{
+  "command": [
+    "python",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "verification/native-studio-acceptance",
+    "-p",
+    "test_run_real_soak.py"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "2dfe03e46dc093808b7976b9cf47c363a5273c4b",
+  "tracked_changes_at_start": [
+    " M crates/kerml-semantics/tests/unit/closed_query_audit.rs",
+    " M crates/studio-native/src/project_dialog.rs",
+    " M verification/native-studio-acceptance/run_real_soak.py"
+  ],
+  "started_utc": "2026-09-26T09:07:19.005336+00:00",
+  "elapsed_seconds": 0.281,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/acceptance-soak-runner-tests.txt",
+  "output_sha256": "ea9af967c835f9c22c62835554870d93d25e38bfd3438561e2d4535b639ad8c4",
+  "build_environment": {}
+}

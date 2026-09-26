@@ -1,0 +1,14 @@
+   Compiling agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\kernel)
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\kerml)
+   Compiling agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\sysml)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\kerml-semantics)
+    Finished `test` profile [unoptimized] target(s) in 1m 02s
+     Running unittests src\lib.rs (C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\agq_kerml_semantics-b5418ca7e740cfba.exe)
+
+running 3 tests
+test cancellation::tests::request_is_shared_with_only_the_same_operation ... ok
+test producer_worklist_tests::pre_cancelled_closure_never_constructs_a_query_context ... ok
+test producer_worklist_tests::cancellation_after_a_producer_batch_returns_no_partial_closure_and_retry_is_exact ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 322 filtered out; finished in 1.34s
+

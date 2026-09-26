@@ -241,6 +241,7 @@ impl CanonicalSysmlSystemsLibrary {
         accepted_kerml: Arc<CanonicalKermlStandardLibraries>,
         receipt: ReceiptAuthority,
     ) -> Result<Self, SystemsPublicationCacheError> {
+        let mut trace = crate::runtime_restore_trace::RuntimeRestoreTrace::new("sysml");
         let identity = SystemsLibraryIdentity::pinned(SystemsLibraryIdentity::SOURCE_CONTENT_SET);
         let (profile, syntax_profile) = receipt.profile()?;
         let empty_bindings = StandardSysmlBindings::unbound(identity.clone());
@@ -249,13 +250,11 @@ impl CanonicalSysmlSystemsLibrary {
         check_interpretation(&receipt, sources, &accepted_kerml, &initial_contract)?;
         let mut archive = ZipArchive::new(reader)?;
         check_entries(&mut archive)?;
+        trace.phase("receipt_interpretation_and_archive_open");
         let metadata = authenticated_bytes(&mut archive, &receipt, "facade.json")?;
         let metadata: FacadeMetadata = serde_json::from_slice(&metadata)?;
         metadata.validate(sources, syntax_profile)?;
-        // Hash the compressed entry before allocating decoded graph records.
-        let graph_bytes = receipt.entry_bytes("kernel.jsonl")?;
-        let digest = entry_digest(&mut archive, "kernel.jsonl", graph_bytes)?;
-        receipt.verify_entry_digest("kernel.jsonl", digest)?;
+        trace.phase("facade_authentication_decode_validation");
         let registry = agq_sysml::registry_for_profile(agq_kerml::BaselineProfile::OPERATIONAL_V9)
             .map_err(|_| SystemsPublicationCacheError::Mismatch("combined descriptor registry"))?;
         let dependency = accepted_kerml
@@ -263,13 +262,24 @@ impl CanonicalSysmlSystemsLibrary {
             .immutable_dependency()
             .expect("accepted KerML dependency")
             .clone();
+        trace.phase("descriptor_registry_and_dependency_mount");
+        let graph_bytes = receipt.entry_bytes("kernel.jsonl")?;
+        let graph = archive.by_name("kernel.jsonl")?;
+        if graph.size() != graph_bytes {
+            return Err(SystemsPublicationCacheError::Mismatch(
+                "archive entry byte count",
+            ));
+        }
+        let mut input = crate::authenticated_input::AuthenticatedInput::new(graph, graph_bytes)?;
         let overlay = agq_kernel::archive::read_dependent_overlay_with_evidence(
-            BufReader::new(archive.by_name("kernel.jsonl")?.take(graph_bytes)),
+            BufReader::new(&mut input),
             Arc::new(registry),
             dependency,
         )?;
-        // A changing seekable input cannot replace the graph after its first
-        // hash. Authenticate what was actually decoded, retaining derived facts.
+        receipt.verify_entry_digest("kernel.jsonl", input.finish()?)?;
+        trace.phase("graph_decode_kernel_validation_dependency_and_input_authentication");
+        // Independently authenticate the actual decoded graph, retaining all
+        // derived facts, optional proof contributions and canonical encoding.
         let mut actual_graph = DigestWriter::new(io::sink());
         agq_kernel::archive::write_dependent_overlay_with_evidence(&overlay, &mut actual_graph)?;
         if actual_graph.bytes != graph_bytes {
@@ -278,11 +288,13 @@ impl CanonicalSysmlSystemsLibrary {
             ));
         }
         receipt.verify_entry_digest("kernel.jsonl", actual_graph.digest.finalize().into())?;
+        trace.phase("graph_recanonicalization_and_dependency_authentication");
         metadata.validate_graph(&overlay, identity.library)?;
         let source_map: LibrarySourceMap = metadata.source_map.iter().cloned().collect();
         let library = sources.libraries().get(&identity.library).ok_or(
             SystemsPublicationCacheError::Mismatch("Systems source library"),
         )?;
+        trace.phase("source_and_graph_validation");
         // Bind role validation to the same producer-aware model identity used
         // by the restored certificate and subsequent mounted dependency. The
         // explicit constructor derives the full registry independently; an
@@ -294,6 +306,7 @@ impl CanonicalSysmlSystemsLibrary {
             &initial_contract,
             empty_bindings,
         )?;
+        trace.phase("initial_producer_context");
         let queries = KerMlQueries::new(current.kerml_context().fork());
         let bindings = StandardSysmlBindings::validate(
             overlay.model(),
@@ -303,6 +316,7 @@ impl CanonicalSysmlSystemsLibrary {
             StandardSysmlRole::ALL,
         )?
         .with_verified_sources(library, &source_map)?;
+        trace.phase("standard_binding_validation");
         drop(queries);
         drop(current);
         let contract = SysmlDependencyContract::checked_in_for_profile(&bindings, profile)?;
@@ -313,17 +327,18 @@ impl CanonicalSysmlSystemsLibrary {
                 "dependency contract digest",
             ));
         }
+        trace.phase("bound_dependency_contract");
         let closure_bytes = authenticated_bytes(&mut archive, &receipt, "closure.json")?;
-        let context = receipt.attach_closure(
-            SysmlSemanticContext::for_producer_overlay(
-                &overlay,
-                accepted_kerml.complete_overlay(),
-                &metadata.roots,
-                &contract,
-                bindings.clone(),
-            )?,
-            closure_bytes,
+        trace.phase("closure_input_authentication");
+        let context = SysmlSemanticContext::for_producer_overlay(
+            &overlay,
+            accepted_kerml.complete_overlay(),
+            &metadata.roots,
+            &contract,
+            bindings.clone(),
         )?;
+        trace.phase("bound_producer_context");
+        let context = receipt.attach_closure(context, closure_bytes)?;
         let producer_closure = context
             .kerml_context()
             .producer_closure()
@@ -336,6 +351,7 @@ impl CanonicalSysmlSystemsLibrary {
                 "restored producer requirement coverage",
             ));
         }
+        trace.phase("producer_closure_authentication_and_coverage");
         let context_id = context.id().clone();
         let publication_identity = publication_identity(contract, &context_id.kerml);
         if receipt.identity()["publication_digest"]
@@ -346,6 +362,7 @@ impl CanonicalSysmlSystemsLibrary {
                 "restored publication identity",
             ));
         }
+        trace.phase("accepted_publication_identity");
         drop(context);
         let checked = metadata.checked_families()?;
         let publication = Self {
@@ -381,6 +398,7 @@ impl CanonicalSysmlSystemsLibrary {
             counters: PublicationCounters::default(),
         };
         publication.check_binding_manifest(sources, receipt.binding_manifest())?;
+        trace.phase("facade_and_binding_manifest");
         Ok(publication)
     }
 }
@@ -686,28 +704,6 @@ fn authenticated_bytes<R: Read + Seek>(
     Ok(bytes)
 }
 
-fn entry_digest<R: Read + Seek>(
-    archive: &mut ZipArchive<R>,
-    name: &str,
-    expected: u64,
-) -> Result<[u8; 32], SystemsPublicationCacheError> {
-    let entry = archive.by_name(name)?;
-    if entry.size() != expected {
-        return Err(SystemsPublicationCacheError::Mismatch(
-            "archive entry byte count",
-        ));
-    }
-    let mut reader = entry.take(expected + 1);
-    let mut writer = DigestWriter::new(io::sink());
-    io::copy(&mut reader, &mut writer)?;
-    if writer.bytes != expected {
-        return Err(SystemsPublicationCacheError::Mismatch(
-            "actual archive entry byte count",
-        ));
-    }
-    Ok(writer.digest.finalize().into())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -838,12 +834,22 @@ mod tests {
     fn systems_archive_checks_declared_and_actual_entry_bounds() {
         let bytes = archive(&ENTRIES);
         let mut input = ZipArchive::new(Cursor::new(&bytes)).unwrap();
-        assert_eq!(
-            entry_digest(&mut input, "kernel.jsonl", 2).unwrap(),
-            <[u8; 32]>::from(Sha256::digest(b"{}"))
-        );
-        assert!(entry_digest(&mut input, "kernel.jsonl", 1).is_err());
-        assert!(entry_digest(&mut input, "kernel.jsonl", 3).is_err());
+        for expected in [1, 2, 3] {
+            let entry = input.by_name("kernel.jsonl").unwrap();
+            assert_eq!(entry.size(), 2);
+            let mut checked =
+                crate::authenticated_input::AuthenticatedInput::new(entry, expected).unwrap();
+            let read = checked.read_to_end(&mut Vec::new());
+            if expected == 2 {
+                read.unwrap();
+                assert_eq!(
+                    checked.finish().unwrap(),
+                    <[u8; 32]>::from(Sha256::digest(b"{}"))
+                );
+            } else {
+                assert!(checked.finish().is_err());
+            }
+        }
         assert!(ZipArchive::new(Cursor::new(&bytes[..bytes.len() / 2])).is_err());
     }
 

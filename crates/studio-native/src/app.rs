@@ -50,7 +50,26 @@ pub struct PendingPreparation {
     pub request: u64,
     pub started: Instant,
     pub cancelled: bool,
+    pub cancel_requested_at: Option<Instant>,
+    pub control: agq_studio_platform::CompilationControl,
     pub intent: String,
+}
+impl PendingPreparation {
+    pub fn cancel(&mut self) {
+        self.cancelled = true;
+        self.cancel_requested_at.get_or_insert_with(Instant::now);
+        self.control.cancel();
+    }
+}
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct PreparationCancellationReceipt {
+    pub request: u64,
+    pub epoch: u64,
+    pub binding: Option<RevisionBinding>,
+    pub preparation_elapsed_ms: u128,
+    pub request_to_ack_ms: Option<u128>,
+    pub last_stage: Option<String>,
 }
 
 /// Disposable display state only. Restoring this must never restore a lifecycle
@@ -97,6 +116,8 @@ pub struct StudioApp {
     pub reduced_motion: bool,
     pub ime_composing: bool,
     pub ready: bool,
+    /// Successful worker host opening, distinct from a displayed scene or a nonempty project list.
+    pub runtime_ready_epoch: Option<u64>,
     pub fixture: Option<String>,
     pub config: NativeConfig,
     pub setup_reason: String,
@@ -158,11 +179,13 @@ pub struct StudioApp {
     pub palette_query: String,
     pub palette_focus: bool,
     pub create_dialog: bool,
+    pub project_dialog: crate::project_dialog::ProjectDialog,
     pub edit_target: Option<crate::part_edit::EditTarget>,
     pub create_dialog_focus: bool,
     pub new_part_name: String,
     pub candidate: Option<Candidate>,
     pub preparation: Option<PendingPreparation>,
+    pub last_preparation_cancellation: Option<PreparationCancellationReceipt>,
     pub comparison: ComparisonMode,
     pub compare_before: Option<ViewProjection>,
     pub dependencies: Option<BTreeSet<ElementId>>,
@@ -184,6 +207,7 @@ pub struct StudioApp {
     pub session_path: PathBuf,
     pub restore: Option<Session>,
     pub last_saved: Instant,
+    graphics_checkpoint: crate::surface_recovery::PresentationCheckpoint,
     pub adapter: String,
 }
 
@@ -197,6 +221,8 @@ impl StudioApp {
         if let Some(database) = &args.database {
             config.database = database.clone();
         }
+        config.seed_agentique_on_empty =
+            crate::real_automation::seed_isolated_project(&args).map_err(std::io::Error::other)?;
         let session_path = config.database.with_extension("native-session.json");
         let restore = if args.no_restore || args.fixture.is_some() {
             None
@@ -249,6 +275,7 @@ impl StudioApp {
             reduced_motion: restore.as_ref().is_some_and(|r| r.reduced_motion),
             ime_composing: false,
             ready: fixture.is_some(),
+            runtime_ready_epoch: None,
             fixture,
             config,
             setup_reason: setup
@@ -310,11 +337,13 @@ impl StudioApp {
             palette_query: String::new(),
             palette_focus: false,
             create_dialog: false,
+            project_dialog: Default::default(),
             edit_target: None,
             create_dialog_focus: false,
             new_part_name: "newPart".into(),
             candidate: None,
             preparation: None,
+            last_preparation_cancellation: None,
             comparison: ComparisonMode::Current,
             compare_before: None,
             dependencies: None,
@@ -336,6 +365,7 @@ impl StudioApp {
             session_path,
             restore,
             last_saved: Instant::now(),
+            graphics_checkpoint: Default::default(),
             adapter,
         };
         if app.fixture.as_deref() == Some("requirements") {
@@ -588,6 +618,13 @@ impl StudioApp {
         }
     }
     pub fn save_session(&mut self) {
+        if let Err(error) = self.persist_session() {
+            self.status = format!("Presentation state was not saved: {error}");
+        }
+    }
+
+    /// `false` means the current view is not stable enough to checkpoint.
+    fn persist_session(&mut self) -> Result<bool, String> {
         if !self.ready
             || self.pending_revision.is_some()
             || self.deferred_definition.is_some()
@@ -605,7 +642,7 @@ impl StudioApp {
                 .as_deref()
                 .is_some_and(|scenario| scenario != "presentation")
         {
-            return;
+            return Ok(false);
         }
         // Never restore a process-local candidate as durable model state.
         let session = Session {
@@ -622,10 +659,28 @@ impl StudioApp {
             reduced_motion: self.reduced_motion,
             presentation: Some(self.capture_presentation()),
         };
-        if let Err(error) = session.save(&self.session_path) {
-            self.status = format!("Presentation state was not saved: {error}");
-        }
+        let result = session.save(&self.session_path);
         self.last_saved = Instant::now();
+        result.map(|()| true).map_err(|error| error.to_string())
+    }
+
+    fn checkpoint_graphics_fault(&mut self, ctx: &egui::Context, message: &str, device: bool) {
+        if self.graphics_checkpoint.needs_attempt(message) {
+            let result = self.persist_session();
+            if let Err(error) = &result {
+                eprintln!("Graphics recovery could not save presentation state: {error}");
+            }
+            self.graphics_checkpoint.record(result);
+            crate::surface_recovery::checkpoint_title(
+                ctx,
+                device,
+                self.graphics_checkpoint.failed(),
+            );
+        }
+        self.status = self.graphics_checkpoint.status(message);
+        // A pending view completion requests a repaint itself. Retry I/O failures
+        // at the normal checkpoint cadence, without writing on every fault frame.
+        ctx.request_repaint_after(Duration::from_secs(8));
     }
 }
 
@@ -673,18 +728,15 @@ impl eframe::App for StudioApp {
         if let Some(message) = crate::surface_recovery::device_fault(ctx) {
             // Keep processing in-flight semantic outcomes, but do not accept new
             // blind editor actions while its graphics device cannot show them.
-            self.status = message;
-            if self.last_saved.elapsed() > Duration::from_secs(8) {
-                self.save_session();
-            }
+            self.checkpoint_graphics_fault(ctx, &message, true);
             self.timing.ui_complete();
             return;
         }
         if let Some(message) = crate::surface_recovery::surface_fault(ctx) {
-            self.status = message.clone();
+            self.checkpoint_graphics_fault(ctx, &message, false);
             egui::CentralPanel::default().show(ctx, |ui| {
                 ui.heading("Graphics surface unavailable");
-                ui.label(message);
+                ui.label(&self.status);
             });
             // Resizing or a later input can acquire a surface again. The minimal
             // recovery view accepts no model-edit commands while pixels are stale.
@@ -692,6 +744,7 @@ impl eframe::App for StudioApp {
             self.timing.ui_complete();
             return;
         }
+        self.graphics_checkpoint = Default::default();
         self.animate(ctx);
         self.keyboard(ctx);
         if self.ready {
@@ -974,6 +1027,7 @@ mod bootstrap_tests {
             expanded: None,
             branch: None,
             panels: Default::default(),
+            selection: None,
         };
         let mut session = Session {
             version: 1,

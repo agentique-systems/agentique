@@ -1,0 +1,327 @@
+{
+  "format": "agentique-audit-batch-independent-retention/1",
+  "outcome": "passed",
+  "command": [
+    "C:\\Users\\phili\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\native-studio-acceptance\\audit-batch-01\\retain_evidence.py"
+  ],
+  "exit_code": 0,
+  "verified_utc": "2026-09-26T11:02:04.284134+00:00",
+  "source_commit": "167cbeca9f4c6e276c68459e51fb16b62e3b383c",
+  "run": 36235278112,
+  "artifact_id": 10905095102,
+  "trials": {
+    "32": {
+      "observations_sha256": "0beea518acd35a012856c938f0e34ee90ba07b098b0e274d4d6d4d725e6f508a",
+      "process_exit_code": 0
+    },
+    "128": {
+      "observations_sha256": "0beea518acd35a012856c938f0e34ee90ba07b098b0e274d4d6d4d725e6f508a",
+      "process_exit_code": 0
+    },
+    "256": {
+      "observations_sha256": "0beea518acd35a012856c938f0e34ee90ba07b098b0e274d4d6d4d725e6f508a",
+      "process_exit_code": 0
+    }
+  },
+  "prior_retained_observations_sha256": "0beea518acd35a012856c938f0e34ee90ba07b098b0e274d4d6d4d725e6f508a",
+  "retained_gzip_sha256": "10b9ecd966ddb25283623e55671c9bea6a3b108315d9e480c08124d017245811",
+  "retention_script_sha256": "7ceadbef23fa257ec1a2812d416469c47ea6a295287c025d4a043b966b70cac5",
+  "files": {
+    "artifact-metadata.json": {
+      "bytes": 904,
+      "sha256": "55e0548c86dca76d4a2f4a103bf003a71d39b260d497a09c09ccc12e0a9815e4",
+      "retained_as": "artifact-metadata.json",
+      "encoding": "original bytes"
+    },
+    "artifact.zip": {
+      "bytes": 55869106,
+      "sha256": "1c37ac94f6338477bb4cebede7724ac2f73c5a40e21a35bb07525c39fc4da775",
+      "retained_as": null,
+      "reason": "Generated local copy and authenticated remote artifact; binary not committed"
+    },
+    "build/bin/create_part_performance.exe": {
+      "bytes": 24036352,
+      "sha256": "c4e680aea3f952b62118656c897d592f9db097aca056333c88056a0a4b734578",
+      "retained_as": null,
+      "reason": "Generated local copy and authenticated remote artifact; binary not committed"
+    },
+    "build/build.json": {
+      "bytes": 6013,
+      "sha256": "ac5ab579bde0060c6a33fed3e91b2205c1a2528f5a2ecdb3864d80688c5126b8",
+      "retained_as": "build/build.json",
+      "encoding": "original bytes"
+    },
+    "build/logs/01-source-commit.log": {
+      "bytes": 42,
+      "sha256": "f2cc3b3c717f7af4177adbdd6ee582d8fc2460dcb9878d766da5d6c8276383e9",
+      "retained_as": "build/logs/01-source-commit.log",
+      "encoding": "original bytes"
+    },
+    "build/logs/02-tracked-status.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "retained_as": "build/logs/02-tracked-status.log",
+      "encoding": "original bytes"
+    },
+    "build/logs/03-install-pinned-toolchain.log": {
+      "bytes": 259,
+      "sha256": "9d90ac9e9245aaab25f87e637a4ce88ab4ccc2f2d4747a40c79b71f68bd09801",
+      "retained_as": "build/logs/03-install-pinned-toolchain.log",
+      "encoding": "original bytes"
+    },
+    "build/logs/04-rustc-version.log": {
+      "bytes": 201,
+      "sha256": "a648c9943f6d13872c43bfcef380550091c9f56d79bcb61de0241c3dc990dcbd",
+      "retained_as": "build/logs/04-rustc-version.log",
+      "encoding": "original bytes"
+    },
+    "build/logs/05-cargo-version.log": {
+      "bytes": 336,
+      "sha256": "a4e861db19f0422a59c24ace4d840685e48d90f8123089bf79faba6eef7143d7",
+      "retained_as": "build/logs/05-cargo-version.log",
+      "encoding": "original bytes"
+    },
+    "build/logs/06-fetch-locked.log": {
+      "bytes": 7156,
+      "sha256": "fc62692dd22a619727155181cbea37799672f13d2691afc6218a7058c748b4cd",
+      "retained_as": "build/logs/06-fetch-locked.log",
+      "encoding": "original bytes"
+    },
+    "build/logs/07-release-build.log": {
+      "bytes": 89510,
+      "sha256": "1d0932c112ddcfed996c034103d69e56e30bd6c0208622493e8a7f5cf49ecd74",
+      "retained_as": "build/logs/07-release-build.log",
+      "encoding": "original bytes"
+    },
+    "build/logs/08-final-tracked-status.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "retained_as": "build/logs/08-final-tracked-status.log",
+      "encoding": "original bytes"
+    },
+    "build/SHA256SUMS": {
+      "bytes": 99,
+      "sha256": "9216d46c8241b2307e81b9f8815893c57c16d613a1ca6346bb51f471324c872f",
+      "retained_as": "build/SHA256SUMS",
+      "encoding": "original bytes"
+    },
+    "build/source/Cargo.lock": {
+      "bytes": 58510,
+      "sha256": "41113bc2e13973d6f4d97edfbfc4034fd0da66a80700fea0d589b1a365b02d88",
+      "retained_as": "build/source/Cargo.lock",
+      "encoding": "original bytes"
+    },
+    "build/source/Cargo.toml": {
+      "bytes": 2148,
+      "sha256": "95f1eddc388d34b26744162cdf73fb0fa8b14e23956eda454d100e60aed62598",
+      "retained_as": "build/source/Cargo.toml",
+      "encoding": "original bytes"
+    },
+    "build/source/native-Cargo.lock": {
+      "bytes": 114351,
+      "sha256": "0d7eed8a0036ee7b35d19652ff24fea58bae6e5597c73eb09270ca78e63514c1",
+      "retained_as": "build/source/native-Cargo.lock",
+      "encoding": "original bytes"
+    },
+    "build/source/native-Cargo.toml": {
+      "bytes": 1165,
+      "sha256": "d4116b143c679f63dcd5252656a897d876f39e61b8bd7be3241300cac624d034",
+      "retained_as": "build/source/native-Cargo.toml",
+      "encoding": "original bytes"
+    },
+    "build/source/oracle-test.rs": {
+      "bytes": 26213,
+      "sha256": "ac560af7a6ea338c5da86700d2119d8a7abc5f94a46f8b1d68d12612bc28d10f",
+      "retained_as": "build/source/oracle-test.rs",
+      "encoding": "original bytes"
+    },
+    "build/source/rust-toolchain.toml": {
+      "bytes": 103,
+      "sha256": "467fec76153022a4e5a673e43ab3ea02c57c7de4d5509045867430befee8107b",
+      "retained_as": "build/source/rust-toolchain.toml",
+      "encoding": "original bytes"
+    },
+    "logs/experiment.log": {
+      "bytes": 12417,
+      "sha256": "d4f246c66f6148dbb500b472bc02f80bab4ba2430d5f4339acd668af0fc6faf0",
+      "retained_as": "logs/experiment.log",
+      "encoding": "original bytes"
+    },
+    "logs/observer-install.log": {
+      "bytes": 230,
+      "sha256": "a83f1dac9699b86d529cbfb4561d6e10266c652ac9b056fc7fc26fa66341f191",
+      "retained_as": "logs/observer-install.log",
+      "encoding": "original bytes"
+    },
+    "logs/runner-tests.log": {
+      "bytes": 949,
+      "sha256": "b81cfa53fba0e1f6d2bfa4ba71fcd1d2f8274538e204127df159ce1e90fe477f",
+      "retained_as": "logs/runner-tests.log",
+      "encoding": "original bytes"
+    },
+    "measurements/batch-128/checkpoint.json": {
+      "bytes": 464865,
+      "sha256": "740da901d19d316112b5e87d041f2605e990b1669a589aa000a9a5148c30c3a0",
+      "retained_as": "measurements/batch-128/checkpoint.json",
+      "encoding": "original bytes"
+    },
+    "measurements/batch-128/cold-metrics.json": {
+      "bytes": 2112,
+      "sha256": "15a68a78f155e469f36c5f77268d7c273c6d95a27885f3541d2141a243c50754",
+      "retained_as": "measurements/batch-128/cold-metrics.json",
+      "encoding": "original bytes"
+    },
+    "measurements/batch-128/cold-observations.json": {
+      "bytes": 105985804,
+      "sha256": "0beea518acd35a012856c938f0e34ee90ba07b098b0e274d4d6d4d725e6f508a",
+      "retained_as": "observations/cold-observations.json.gz",
+      "encoding": "gzip; one byte-identical map shared by all three trials"
+    },
+    "measurements/batch-128/memory.jsonl": {
+      "bytes": 300512,
+      "sha256": "ff7442c5b2dc21f328f9cf2d321dc5bb8d768e17d54fd4ab94442231660b6d2e",
+      "retained_as": "measurements/batch-128/memory.jsonl",
+      "encoding": "original bytes"
+    },
+    "measurements/batch-128/process.json": {
+      "bytes": 765,
+      "sha256": "8336850f9c29c0fd9c59637d5d39751720035d1ffd8a7684e53c8e1443c301fd",
+      "retained_as": "measurements/batch-128/process.json",
+      "encoding": "original bytes"
+    },
+    "measurements/batch-128/process.log": {
+      "bytes": 1501,
+      "sha256": "1c90a1b7a0c3817dfcae4fc2a9b1ef1d89f647cecd192232574c3b393107f5b1",
+      "retained_as": "measurements/batch-128/process.log",
+      "encoding": "original bytes"
+    },
+    "measurements/batch-128/sources.json": {
+      "bytes": 6926,
+      "sha256": "1e65f97ba88ea825250adc834de28fa192a58b761904b275f0268492d93315b5",
+      "retained_as": "measurements/batch-128/sources.json",
+      "encoding": "original bytes"
+    },
+    "measurements/batch-256/checkpoint.json": {
+      "bytes": 464865,
+      "sha256": "740da901d19d316112b5e87d041f2605e990b1669a589aa000a9a5148c30c3a0",
+      "retained_as": "measurements/batch-256/checkpoint.json",
+      "encoding": "original bytes"
+    },
+    "measurements/batch-256/cold-metrics.json": {
+      "bytes": 2112,
+      "sha256": "13a2fae4d77e7d1d7a36ee06b4f245fabdaaaf7dc7909bd9fdf4a84ebc1e839c",
+      "retained_as": "measurements/batch-256/cold-metrics.json",
+      "encoding": "original bytes"
+    },
+    "measurements/batch-256/cold-observations.json": {
+      "bytes": 105985804,
+      "sha256": "0beea518acd35a012856c938f0e34ee90ba07b098b0e274d4d6d4d725e6f508a",
+      "retained_as": "observations/cold-observations.json.gz",
+      "encoding": "gzip; one byte-identical map shared by all three trials"
+    },
+    "measurements/batch-256/memory.jsonl": {
+      "bytes": 301643,
+      "sha256": "5b32eb90a5bf5085f6f501bacf0c0cac456e44f462bf91cbfe01639b61bd3855",
+      "retained_as": "measurements/batch-256/memory.jsonl",
+      "encoding": "original bytes"
+    },
+    "measurements/batch-256/process.json": {
+      "bytes": 765,
+      "sha256": "0624f81cccc9d2cd60765890e5239b652b19fd953611c2ddcedad3528023a463",
+      "retained_as": "measurements/batch-256/process.json",
+      "encoding": "original bytes"
+    },
+    "measurements/batch-256/process.log": {
+      "bytes": 1501,
+      "sha256": "be9f5d5a51d5c929256b6167dd9cc37de8bca8f73509bd16d1b2269e397e4b79",
+      "retained_as": "measurements/batch-256/process.log",
+      "encoding": "original bytes"
+    },
+    "measurements/batch-256/sources.json": {
+      "bytes": 6926,
+      "sha256": "1e65f97ba88ea825250adc834de28fa192a58b761904b275f0268492d93315b5",
+      "retained_as": "measurements/batch-256/sources.json",
+      "encoding": "original bytes"
+    },
+    "measurements/batch-32/checkpoint.json": {
+      "bytes": 464865,
+      "sha256": "740da901d19d316112b5e87d041f2605e990b1669a589aa000a9a5148c30c3a0",
+      "retained_as": "measurements/batch-32/checkpoint.json",
+      "encoding": "original bytes"
+    },
+    "measurements/batch-32/cold-metrics.json": {
+      "bytes": 2112,
+      "sha256": "851465d4a9b048ba6fb2b21eb4b509b95e8fcc9d98753bb9621b05a6fadd8bab",
+      "retained_as": "measurements/batch-32/cold-metrics.json",
+      "encoding": "original bytes"
+    },
+    "measurements/batch-32/cold-observations.json": {
+      "bytes": 105985804,
+      "sha256": "0beea518acd35a012856c938f0e34ee90ba07b098b0e274d4d6d4d725e6f508a",
+      "retained_as": "observations/cold-observations.json.gz",
+      "encoding": "gzip; one byte-identical map shared by all three trials"
+    },
+    "measurements/batch-32/memory.jsonl": {
+      "bytes": 303832,
+      "sha256": "8b2679a38346c6c2534be012084d7a866e0e72c06464047e84e1d936e0d8bb40",
+      "retained_as": "measurements/batch-32/memory.jsonl",
+      "encoding": "original bytes"
+    },
+    "measurements/batch-32/process.json": {
+      "bytes": 755,
+      "sha256": "a74f567b25d593459495a09c999ec1e64daddaedd14bcf5bcea655a0a9260bbe",
+      "retained_as": "measurements/batch-32/process.json",
+      "encoding": "original bytes"
+    },
+    "measurements/batch-32/process.log": {
+      "bytes": 1500,
+      "sha256": "0a5c5700501eb775e4720f125cfd189fe7430bb60c8fe7fdbf6bf34adbac08e3",
+      "retained_as": "measurements/batch-32/process.log",
+      "encoding": "original bytes"
+    },
+    "measurements/batch-32/sources.json": {
+      "bytes": 6926,
+      "sha256": "1e65f97ba88ea825250adc834de28fa192a58b761904b275f0268492d93315b5",
+      "retained_as": "measurements/batch-32/sources.json",
+      "encoding": "original bytes"
+    },
+    "measurements/result.json": {
+      "bytes": 16050,
+      "sha256": "ee3eb0a5441da64e6ae992dae65ee48b7b7c6a756e400c1fe7a47f4750faff5d",
+      "retained_as": "measurements/result.json",
+      "encoding": "original bytes"
+    },
+    "provenance/inputs.json": {
+      "bytes": 1573,
+      "sha256": "75a13c1b9bed1cae6de33dac12c1eb4ea9538b048b45f2c59e32ee4c0b0825a5",
+      "retained_as": "provenance/inputs.json",
+      "encoding": "original bytes"
+    },
+    "provenance/prior-build.json": {
+      "bytes": 6011,
+      "sha256": "8498b2dd66a9da2114aa4aca0d7c38742903edbb4716c45cd482eb3894ed8d4f",
+      "retained_as": "provenance/prior-build.json",
+      "encoding": "original bytes"
+    },
+    "provenance/prior-oracle-invocation.json": {
+      "bytes": 1063,
+      "sha256": "dbdc43dcdd9afffc96e2b3b8062df20f46ac5a6d3fd06fef578849fbcfa157d9",
+      "retained_as": "provenance/prior-oracle-invocation.json",
+      "encoding": "original bytes"
+    },
+    "provenance/prior-oracle-observations-result.json": {
+      "bytes": 4929,
+      "sha256": "f984ccc1f5a7e483776c44b08b1e5767231f917e163ba6779724715fe2935ae1",
+      "retained_as": "provenance/prior-oracle-observations-result.json",
+      "encoding": "original bytes"
+    },
+    "provenance/runtime.json": {
+      "bytes": 614,
+      "sha256": "8657fc60b4a43b8c8bc7d633a4140ee73874fc0a90a9f15e1d09546f08caf92d",
+      "retained_as": "provenance/runtime.json",
+      "encoding": "original bytes"
+    }
+  },
+  "contract": "Streaming SHA-256 compares all original observation bytes, including the previously retained cold oracle. CI performed full parsed-map comparison. No local semantic process was run. Evidence was copied byte-for-byte; the one shared gzip map decompresses to all three original trial maps."
+}

@@ -1,0 +1,704 @@
+{
+  "adapter": "AdapterInfo { name: \"NVIDIA GeForce RTX 3060 Ti\", vendor: 4318, device: 9353, device_type: DiscreteGpu, driver: \"NVIDIA\", driver_info: \"616.92\", backend: Vulkan }",
+  "baseline": {
+    "accepted_publications": {
+      "kerml": "815573353973607bc62a25195ed4461645182027407f8476be521ffc99174f12",
+      "sysml": "25aeddb099be16462b553d6debcad97f43bf22e89ce8a9bbb53cf72eb7d193fa"
+    },
+    "checkpoint_digest": "89b956a9d516fd0dabf70c7c2864024685f39e0a103c04a4d461cdee9fc4cde4",
+    "documents": [
+      {
+        "content_digest": "fb19fdb031aa524d9957f3a1498818bd66106c718d51274328bd47f381921617",
+        "document_id": "9dadbff2-b68c-46de-8f28-202308fc9256",
+        "language": "SysMl",
+        "path": "AgentFabric.sysml",
+        "source_revision_id": "03536f43-6953-43bf-93cf-68b665c6f1ad"
+      },
+      {
+        "content_digest": "17cc930b105b74d7001a70ab9cfddf3a2c65c906a57dcc2e1f341140b3636960",
+        "document_id": "b2988ea7-0304-45f2-b0b6-71d97180c879",
+        "language": "SysMl",
+        "path": "Agentique.sysml",
+        "source_revision_id": "c3f8230e-da21-4d9c-8111-1bd8572d96a1"
+      },
+      {
+        "content_digest": "4235d37c880ca5d43bb11b482d9414b4270a78ff6ee7287d3538961bcc94bc2a",
+        "document_id": "32beeb44-48a7-4f79-a9c2-b4a76f6bc56e",
+        "language": "SysMl",
+        "path": "Contracts.sysml",
+        "source_revision_id": "3462d02b-a3fe-4e58-9b64-21b73613cf37"
+      },
+      {
+        "content_digest": "7f753fe89a4158918481a52134df9df9218167433fe3869d65ae22ccf6d90691",
+        "document_id": "16763328-8076-4825-93c9-bf19d584ae6e",
+        "language": "SysMl",
+        "path": "ExecutionRuntime.sysml",
+        "source_revision_id": "d7ff32cc-fa97-42b9-b4bd-68ad8c986de6"
+      },
+      {
+        "content_digest": "3fbdf2caa9a6ee69c8807f513af0d1e822b053d9a86ff947782ff65f88536f39",
+        "document_id": "fc319827-7736-4639-a139-213ffff67d91",
+        "language": "SysMl",
+        "path": "LanguageEngine.sysml",
+        "source_revision_id": "29cf6863-6931-401c-8161-0acefc9a218e"
+      },
+      {
+        "content_digest": "12c198141d892e606f9cd2b3a419863cc02f994f1b31236af0b112faf5d31b79",
+        "document_id": "bc1cc3a5-a2e3-47ad-bc4f-eb529c479176",
+        "language": "SysMl",
+        "path": "ModelingPlatform.sysml",
+        "source_revision_id": "703e974b-34fb-4f93-a785-e577cb5b8aea"
+      }
+    ],
+    "format_version": 1,
+    "metadata": {
+      "alias": [],
+      "created": "2026-09-26T10:56:41.366322400+00:00",
+      "description": null,
+      "name": null
+    },
+    "parent_revision_id": "d12de5ad-2950-486e-848f-9c990cea3888",
+    "project_id": "51ccfe33-6315-4d75-89c4-b7e7d27b2533",
+    "revision_id": "cce9510f-dab3-467e-944e-45b8c38afa8b",
+    "semantic_cache": {
+      "closure_digest": "d653dd5169d0550c968cd17472d7c491090e6af8616ae4a894d20d7aedf41131",
+      "content_digest": "96fc917f763954caa4b26b988d1e45d16216b39597eae175ce88b5f22b7ad027",
+      "format": "agq-project-semantic-cache/2",
+      "semantic_context": "ad5812898b82cf260a8b0d1ded002951dac615cb6a2595551e62a9a0cc896978",
+      "source_binding": "f70b61dc95d44ee3971edced829cf89b8f1274e0cd593aba0ce1beb4ecc00fcc"
+    },
+    "validation": {
+      "Validated": {
+        "acceptance_contract": "agentique-modeling-workspace-phase1/1",
+        "closure_digest": "d653dd5169d0550c968cd17472d7c491090e6af8616ae4a894d20d7aedf41131",
+        "semantic_context": "ad5812898b82cf260a8b0d1ded002951dac615cb6a2595551e62a9a0cc896978",
+        "semantic_digest": "cd2420f8fb2ec51289dfca10f7fd81ceb0989f4ff9123309fece8b397fd42242",
+        "source_binding": "f70b61dc95d44ee3971edced829cf89b8f1274e0cd593aba0ce1beb4ecc00fcc"
+      }
+    }
+  },
+  "checkpoint": "01-system-world",
+  "committed": null,
+  "engineering_evidence": {
+    "connected_port": null,
+    "history_visits": [],
+    "inherited_port": null,
+    "repository_interfaces": null,
+    "requirement_neighborhood": null,
+    "requirement_subject_path": [],
+    "requirements_overview_nodes": 0
+  },
+  "fixture": null,
+  "format": "agentique-native-real-gallery/1",
+  "image_digest": "89d0b7a99761d0f2427f908ed07d4260e0c299572b13b3fc467ba3436a3ed81e",
+  "image_size": [
+    1600,
+    1000
+  ],
+  "layout": {
+    "bounds": {
+      "12de7130-7772-5366-a61f-2d0264ad825b": {
+        "max": {
+          "x": 568.0,
+          "y": 118.0
+        },
+        "min": {
+          "x": 336.0,
+          "y": 0.0
+        }
+      },
+      "30d42ed2-745b-5840-bea6-c3a54416a668": {
+        "max": {
+          "x": 262.0,
+          "y": 190.0
+        },
+        "min": {
+          "x": 30.0,
+          "y": 72.0
+        }
+      },
+      "3b9f0f96-c372-5f4f-b4e9-31116edd79b2": {
+        "max": {
+          "x": 262.0,
+          "y": 352.0
+        },
+        "min": {
+          "x": 30.0,
+          "y": 234.0
+        }
+      },
+      "40f563d9-a3c4-51e0-9594-456eec816d83": {
+        "max": {
+          "x": 844.0,
+          "y": 118.0
+        },
+        "min": {
+          "x": 612.0,
+          "y": 0.0
+        }
+      },
+      "46038f2b-d597-5e12-b8d5-08ab3fbfdb41": {
+        "max": {
+          "x": 568.0,
+          "y": 280.0
+        },
+        "min": {
+          "x": 336.0,
+          "y": 162.0
+        }
+      },
+      "4928089b-ae0a-58f8-bc4b-bf230c737e1a": {
+        "max": {
+          "x": 292.0,
+          "y": 544.0
+        },
+        "min": {
+          "x": 0.0,
+          "y": 0.0
+        }
+      },
+      "d324d8ef-6c22-579b-8038-5cf88e04a309": {
+        "max": {
+          "x": 262.0,
+          "y": 514.0
+        },
+        "min": {
+          "x": 30.0,
+          "y": 396.0
+        }
+      }
+    }
+  },
+  "metrics": {
+    "adapter": "AdapterInfo { name: \"NVIDIA GeForce RTX 3060 Ti\", vendor: 4318, device: 9353, device_type: DiscreteGpu, driver: \"NVIDIA\", driver_info: \"616.92\", backend: Vulkan }",
+    "fixture": null,
+    "frame_count": 62887,
+    "frame_interval_median_ms": 6.0626,
+    "frame_interval_p95_ms": 6.9359,
+    "frame_intervals_ms": {
+      "last": 0.781,
+      "median": 6.0626,
+      "p95": 6.9359,
+      "total_samples": 62826,
+      "window_samples": 240
+    },
+    "gpu_instances": 33,
+    "gpu_timestamp_diagnostics": {
+      "map_errors": 0,
+      "non_monotonic_samples": 0,
+      "poll_errors": 0,
+      "surface_invalidations": 0,
+      "zero_duration_samples": 0
+    },
+    "gpu_timestamp_diagnostics_contract": "Zero-duration samples are retained in gpu_timestamp_ms. gpu_timestamp_errors sums non-monotonic samples, map errors, poll errors and surface invalidations; it is not a device-loss count. Diagnostics categories are cumulative for this process; historical reports without categories cannot identify their aggregate causes.",
+    "gpu_timestamp_errors": 0,
+    "gpu_timestamp_ms": {
+      "last": 0.029696,
+      "median": 0.028672,
+      "p95": 0.029696,
+      "total_samples": 86,
+      "window_samples": 86
+    },
+    "gpu_timestamp_scope": "Scene GPU pass only; excludes text, chrome, upload and presentation",
+    "gpu_upload_count": 3,
+    "gpu_upload_cpu_ms": 0.0034000000000000002,
+    "gpu_uploaded_bytes": 2640,
+    "handled_input_to_next_ui_update_ms": {
+      "pan": {
+        "last": null,
+        "median": null,
+        "p95": null,
+        "total_samples": 0,
+        "window_samples": 0
+      },
+      "selection": {
+        "last": null,
+        "median": null,
+        "p95": null,
+        "total_samples": 0,
+        "window_samples": 0
+      },
+      "zoom": {
+        "last": null,
+        "median": null,
+        "p95": null,
+        "total_samples": 0,
+        "window_samples": 0
+      }
+    },
+    "hit_test_us": {
+      "last": 0.8999999999999999,
+      "median": 0.7999999999999999,
+      "p95": 1.5,
+      "total_samples": 90,
+      "window_samples": 90
+    },
+    "input_pipeline": {
+      "boundary": "eframe raw input hook -> UI shape construction complete -> following update; excludes OS delivery and GPU presentation",
+      "changed_batch_cpu_ms": {
+        "last": 0.004,
+        "median": 0.0055,
+        "p95": 0.0084,
+        "total_samples": 3,
+        "window_samples": 3
+      },
+      "frame_submission_ms": null,
+      "labels_accessibility_cpu_ms": {
+        "last": 0.0189,
+        "median": 0.2803,
+        "p95": 0.5113,
+        "total_samples": 91,
+        "window_samples": 91
+      },
+      "presentation_ms": null,
+      "raw_input_to_next_update_ms": {
+        "last": 6.9527,
+        "median": 5.99115,
+        "p95": 6.9527,
+        "total_samples": 2,
+        "window_samples": 2
+      },
+      "raw_input_to_ui_complete_ms": {
+        "last": 1.5423,
+        "median": 1.05445,
+        "p95": 1.5423,
+        "total_samples": 2,
+        "window_samples": 2
+      },
+      "ui_cpu_ms": {
+        "last": 0.215,
+        "median": 0.034350000000000006,
+        "p95": 0.5788,
+        "total_samples": 62887,
+        "window_samples": 240
+      },
+      "visibility_lookup_cpu_ms": {
+        "last": 0.0040999999999999995,
+        "median": 0.0031999999999999997,
+        "p95": 0.0046,
+        "total_samples": 91,
+        "window_samples": 91
+      }
+    },
+    "layout_included_in_scene_build": true,
+    "note": "Native wgpu frames with vsync. CPU update intervals retain the latest 240 samples after 60 warmup intervals. Input spans start inside the viewport gesture handler and end at the next UI update; they exclude OS input delivery and do not measure presentation. GPU upload is CPU submission time for the last upload. Null means unmeasured.",
+    "physical_input_to_photon_ms": null,
+    "scene_background_pending": false,
+    "scene_build_ms": 2.8232,
+    "scene_draw_calls": 4,
+    "scene_index_lookup_outliner_ms": 0.34909999999999997,
+    "scene_layout_routing_diff_ms": 2.4737999999999998,
+    "total_edges": 3,
+    "total_nodes": 7,
+    "visible_nodes": 7,
+    "warmup_frame_intervals_discarded": 60
+  },
+  "projection": {
+    "edges": [
+      {
+        "directed": true,
+        "family": "Ownership",
+        "id": "6c9d9741-bfc3-5921-997a-1c24f4b74a3d:4928089b-ae0a-58f8-bc4b-bf230c737e1a:d324d8ef-6c22-579b-8038-5cf88e04a309:0",
+        "label": "owns",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "6c9d9741-bfc3-5921-997a-1c24f4b74a3d",
+        "revision_id": "cce9510f-dab3-467e-944e-45b8c38afa8b",
+        "rule_id": null,
+        "semantic_kind": "FeatureMembership",
+        "source": "4928089b-ae0a-58f8-bc4b-bf230c737e1a",
+        "target": "d324d8ef-6c22-579b-8038-5cf88e04a309"
+      },
+      {
+        "directed": true,
+        "family": "Typing",
+        "id": "8bc3bf09-29f3-5de0-9c78-fa879db04a1d:3b9f0f96-c372-5f4f-b4e9-31116edd79b2:46038f2b-d597-5e12-b8d5-08ab3fbfdb41:0",
+        "label": "typed by",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "8bc3bf09-29f3-5de0-9c78-fa879db04a1d",
+        "revision_id": "cce9510f-dab3-467e-944e-45b8c38afa8b",
+        "rule_id": null,
+        "semantic_kind": "FeatureTyping",
+        "source": "3b9f0f96-c372-5f4f-b4e9-31116edd79b2",
+        "target": "46038f2b-d597-5e12-b8d5-08ab3fbfdb41"
+      },
+      {
+        "directed": true,
+        "family": "Typing",
+        "id": "9b51aaf0-2966-5b0f-8153-986153cd5892:30d42ed2-745b-5840-bea6-c3a54416a668:12de7130-7772-5366-a61f-2d0264ad825b:0",
+        "label": "typed by",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "9b51aaf0-2966-5b0f-8153-986153cd5892",
+        "revision_id": "cce9510f-dab3-467e-944e-45b8c38afa8b",
+        "rule_id": null,
+        "semantic_kind": "FeatureTyping",
+        "source": "30d42ed2-745b-5840-bea6-c3a54416a668",
+        "target": "12de7130-7772-5366-a61f-2d0264ad825b"
+      },
+      {
+        "directed": true,
+        "family": "Typing",
+        "id": "9c3bdd34-7ba2-5a60-92ba-c26d3160292c:d324d8ef-6c22-579b-8038-5cf88e04a309:40f563d9-a3c4-51e0-9594-456eec816d83:0",
+        "label": "typed by",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "9c3bdd34-7ba2-5a60-92ba-c26d3160292c",
+        "revision_id": "cce9510f-dab3-467e-944e-45b8c38afa8b",
+        "rule_id": null,
+        "semantic_kind": "FeatureTyping",
+        "source": "d324d8ef-6c22-579b-8038-5cf88e04a309",
+        "target": "40f563d9-a3c4-51e0-9594-456eec816d83"
+      },
+      {
+        "directed": true,
+        "family": "Ownership",
+        "id": "a1bd00c2-452f-5617-aca6-c29e86582fe0:4928089b-ae0a-58f8-bc4b-bf230c737e1a:3b9f0f96-c372-5f4f-b4e9-31116edd79b2:0",
+        "label": "owns",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "a1bd00c2-452f-5617-aca6-c29e86582fe0",
+        "revision_id": "cce9510f-dab3-467e-944e-45b8c38afa8b",
+        "rule_id": null,
+        "semantic_kind": "FeatureMembership",
+        "source": "4928089b-ae0a-58f8-bc4b-bf230c737e1a",
+        "target": "3b9f0f96-c372-5f4f-b4e9-31116edd79b2"
+      },
+      {
+        "directed": true,
+        "family": "Ownership",
+        "id": "b146f931-5ad1-56ce-aec8-0572c4635ca2:4928089b-ae0a-58f8-bc4b-bf230c737e1a:30d42ed2-745b-5840-bea6-c3a54416a668:0",
+        "label": "owns",
+        "order": 0,
+        "origin": "Authored",
+        "relationship_id": "b146f931-5ad1-56ce-aec8-0572c4635ca2",
+        "revision_id": "cce9510f-dab3-467e-944e-45b8c38afa8b",
+        "rule_id": null,
+        "semantic_kind": "FeatureMembership",
+        "source": "4928089b-ae0a-58f8-bc4b-bf230c737e1a",
+        "target": "30d42ed2-745b-5840-bea6-c3a54416a668"
+      }
+    ],
+    "groups": [
+      {
+        "children": [
+          "30d42ed2-745b-5840-bea6-c3a54416a668",
+          "3b9f0f96-c372-5f4f-b4e9-31116edd79b2",
+          "d324d8ef-6c22-579b-8038-5cf88e04a309"
+        ],
+        "element_id": "4928089b-ae0a-58f8-bc4b-bf230c737e1a"
+      }
+    ],
+    "metadata": {
+      "local_element_count": 785,
+      "omitted_standard_endpoints": 30,
+      "producer_completeness": "Complete",
+      "scope": "Current canonical graph; authored context, original identities",
+      "suggested_focus": "4928089b-ae0a-58f8-bc4b-bf230c737e1a",
+      "warnings": []
+    },
+    "nodes": [
+      {
+        "badges": [],
+        "counts": {
+          "parts": 3,
+          "ports": 0,
+          "requirements": 0
+        },
+        "features": [
+          {
+            "id": "25b95d68-28c7-5a83-bb11-78f8e0136569",
+            "name": "compiler",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "0c4c18c0-2e81-5407-a72b-daf100f5efd9",
+            "name": "executionIR",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "6b8c8585-0eba-5aaf-941f-2d71affe09c6",
+            "name": "simulation",
+            "semantic_kind": "PartUsage"
+          }
+        ],
+        "id": "12de7130-7772-5366-a61f-2d0264ad825b",
+        "name": "ExecutionSubsystem",
+        "origin": "Authored",
+        "owner": "002cfa6d-67d9-5532-8c31-c8213759b2b4",
+        "qualified_name": "ExecutionArchitecture::ExecutionSubsystem",
+        "revision_id": "cce9510f-dab3-467e-944e-45b8c38afa8b",
+        "semantic_kind": "PartDefinition",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 0,
+          "ports": 0,
+          "requirements": 0
+        },
+        "features": [],
+        "id": "30d42ed2-745b-5840-bea6-c3a54416a668",
+        "name": "execution",
+        "origin": "Authored",
+        "owner": "4928089b-ae0a-58f8-bc4b-bf230c737e1a",
+        "qualified_name": "AgentiqueSystem::Agentique::execution",
+        "revision_id": "cce9510f-dab3-467e-944e-45b8c38afa8b",
+        "semantic_kind": "PartUsage",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 0,
+          "ports": 0,
+          "requirements": 0
+        },
+        "features": [],
+        "id": "3b9f0f96-c372-5f4f-b4e9-31116edd79b2",
+        "name": "languageSubsystem",
+        "origin": "Authored",
+        "owner": "4928089b-ae0a-58f8-bc4b-bf230c737e1a",
+        "qualified_name": "AgentiqueSystem::Agentique::languageSubsystem",
+        "revision_id": "cce9510f-dab3-467e-944e-45b8c38afa8b",
+        "semantic_kind": "PartUsage",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 8,
+          "ports": 2,
+          "requirements": 0
+        },
+        "features": [
+          {
+            "id": "78193a42-0c64-5ef9-9959-d64ccf061b8f",
+            "name": "workspace",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "e511b6ef-296e-5740-a405-67e85c4d308a",
+            "name": "queryService",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "047ad258-d99f-5072-bf41-70435708b51f",
+            "name": "validationService",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "4a366636-7bd5-53ed-8bd3-8f8e4c4b3534",
+            "name": "views",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "4c7fe96c-a83f-5c9f-8adf-79105d42d5e8",
+            "name": "repository",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "f68b02c9-ff5c-5246-81f2-98537d9fa44f",
+            "name": "modelingService",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "22a4ea9e-08f2-50bb-b7a4-15333f79a26e",
+            "name": "systemsModelingApi",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "67c78e33-c8a3-5d27-9e5e-bb8cb797b585",
+            "name": "client",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "b1809f88-39d7-5b43-b3db-feb8b403aec3",
+            "name": "platformQueries",
+            "semantic_kind": "PortUsage"
+          },
+          {
+            "id": "1b76cd5b-f7d0-5a77-833e-ac9bed14b22c",
+            "name": "clientQueries",
+            "semantic_kind": "PortUsage"
+          },
+          {
+            "id": "19fe543c-6fd6-595d-8b31-f5187b0d6b02",
+            "name": "queryConnection",
+            "semantic_kind": "InterfaceUsage"
+          },
+          {
+            "id": "f32c9c0c-1200-56c6-bdf1-488304dc08ee",
+            "name": "validate",
+            "semantic_kind": "ActionUsage"
+          },
+          {
+            "id": "2eb37f30-529b-5b1b-b5c1-a6ca4e7d92a3",
+            "name": "operating",
+            "semantic_kind": "StateUsage"
+          }
+        ],
+        "id": "40f563d9-a3c4-51e0-9594-456eec816d83",
+        "name": "ModelingPlatform",
+        "origin": "Authored",
+        "owner": "aeb3a982-a51e-5ed3-9aa2-5509a2c55b31",
+        "qualified_name": "PlatformArchitecture::ModelingPlatform",
+        "revision_id": "cce9510f-dab3-467e-944e-45b8c38afa8b",
+        "semantic_kind": "PartDefinition",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 4,
+          "ports": 0,
+          "requirements": 0
+        },
+        "features": [
+          {
+            "id": "5e519d8b-6a35-578e-b56c-951d381e8efd",
+            "name": "semanticKernel",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "87d94fa5-ac30-5fbe-aed1-0f0de1020fdc",
+            "name": "kermlEngine",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "49148b62-eced-588c-968e-3a2130d5086e",
+            "name": "sysmlEngine",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "81a0cc7a-5ad2-56bc-94fb-478533c70613",
+            "name": "standardLibraries",
+            "semantic_kind": "PartUsage"
+          }
+        ],
+        "id": "46038f2b-d597-5e12-b8d5-08ab3fbfdb41",
+        "name": "LanguageEngine",
+        "origin": "Authored",
+        "owner": "77f773ad-ef7e-5d18-b121-9fd4693a5fc3",
+        "qualified_name": "LanguageArchitecture::LanguageEngine",
+        "revision_id": "cce9510f-dab3-467e-944e-45b8c38afa8b",
+        "semantic_kind": "PartDefinition",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 3,
+          "ports": 0,
+          "requirements": 0
+        },
+        "features": [
+          {
+            "id": "3b9f0f96-c372-5f4f-b4e9-31116edd79b2",
+            "name": "languageSubsystem",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "d324d8ef-6c22-579b-8038-5cf88e04a309",
+            "name": "modeling",
+            "semantic_kind": "PartUsage"
+          },
+          {
+            "id": "30d42ed2-745b-5840-bea6-c3a54416a668",
+            "name": "execution",
+            "semantic_kind": "PartUsage"
+          }
+        ],
+        "id": "4928089b-ae0a-58f8-bc4b-bf230c737e1a",
+        "name": "Agentique",
+        "origin": "Authored",
+        "owner": "b23d3030-e354-5a5e-87de-4264d79940d6",
+        "qualified_name": "AgentiqueSystem::Agentique",
+        "revision_id": "cce9510f-dab3-467e-944e-45b8c38afa8b",
+        "semantic_kind": "PartDefinition",
+        "source_available": true
+      },
+      {
+        "badges": [],
+        "counts": {
+          "parts": 0,
+          "ports": 0,
+          "requirements": 0
+        },
+        "features": [],
+        "id": "d324d8ef-6c22-579b-8038-5cf88e04a309",
+        "name": "modeling",
+        "origin": "Authored",
+        "owner": "4928089b-ae0a-58f8-bc4b-bf230c737e1a",
+        "qualified_name": "AgentiqueSystem::Agentique::modeling",
+        "revision_id": "cce9510f-dab3-467e-944e-45b8c38afa8b",
+        "semantic_kind": "PartUsage",
+        "source_available": true
+      }
+    ],
+    "revision_id": "cce9510f-dab3-467e-944e-45b8c38afa8b",
+    "view": {
+      "depth": 1,
+      "focus": null,
+      "graph_scope": "Neighborhood",
+      "hidden_elements": [],
+      "include_standard_library": false,
+      "kind": "Architecture",
+      "name": "Agentique Architecture",
+      "relationship_families": [
+        "Ownership",
+        "Typing",
+        "Specialization",
+        "Subsetting",
+        "Redefinition",
+        "Connection",
+        "Requirement",
+        "Verification",
+        "Reference"
+      ],
+      "version": 1
+    }
+  },
+  "semantic_data": "real authenticated models/agentique",
+  "state": {
+    "agent_view": false,
+    "binding": {
+      "project": "51ccfe33-6315-4d75-89c4-b7e7d27b2533",
+      "revision": "cce9510f-dab3-467e-944e-45b8c38afa8b"
+    },
+    "branch": "8750fcdc-835f-4e5f-b7ab-dc6b37668aa5",
+    "camera": [
+      422.0,
+      272.0,
+      1.1895734071731567
+    ],
+    "candidate_phase": null,
+    "candidate_revision": null,
+    "comparison": "Current",
+    "explanation_evidence": null,
+    "explanation_origin": null,
+    "explanation_revision": null,
+    "explanation_rule": null,
+    "explanation_subject": null,
+    "focus": null,
+    "frame": 62882,
+    "inspector_element": "4928089b-ae0a-58f8-bc4b-bf230c737e1a",
+    "inspector_revision": "cce9510f-dab3-467e-944e-45b8c38afa8b",
+    "mutation_pending": false,
+    "pending_requests": 0,
+    "producer_completeness": "Complete",
+    "projection_edges": 6,
+    "projection_nodes": 7,
+    "scene_edges": 3,
+    "scene_nodes": 7,
+    "scene_revision": "cce9510f-dab3-467e-944e-45b8c38afa8b",
+    "selected": [
+      "Container(ElementId(97241510160145171875176213349200526874))"
+    ],
+    "selection_revision": "cce9510f-dab3-467e-944e-45b8c38afa8b",
+    "status": "View ready",
+    "world": "System"
+  }
+}

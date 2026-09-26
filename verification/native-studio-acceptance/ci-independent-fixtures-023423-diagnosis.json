@@ -1,0 +1,180 @@
+{
+  "format": "agentique-native-ci-independent-fixtures-diagnosis/1",
+  "run_url": "https://github.com/agentique-systems/agentique/actions/runs/36233529549",
+  "source_commit": "023423a743a66b92d2126ab8a2740f3c7d273163",
+  "artifact": {
+    "name": "verification-evidence",
+    "id": 10903946497,
+    "download_command": "gh run download 36233529549 --repo agentique-systems/agentique --name verification-evidence --dir verification/generated/native-studio-acceptance/ci-36233529549",
+    "exit_code": 0,
+    "isolated_ignored_directory": "verification/generated/native-studio-acceptance/ci-36233529549",
+    "files": [
+      {
+        "relative_path": "independent-fixtures.json",
+        "sha256": "99a52db50c41a7911047b8a5a824943f3dd9bbab8cfb4dae8da1d4c974660df5",
+        "bytes": 661
+      },
+      {
+        "relative_path": "pilot-validation.json",
+        "sha256": "09853ed131c812c44f285ca6e78dafd405882237dce3e82ae08f720255711d94",
+        "bytes": 2944
+      },
+      {
+        "relative_path": "results.json",
+        "sha256": "dd591fed755c0a1a3c6bec27815cc065d55bc356db205758216d00f77a142d35",
+        "bytes": 90660
+      },
+      {
+        "relative_path": "generated/logs/independent-fixtures.txt",
+        "sha256": "f95a8a36082010cd3b3e5bd29a7f2340c5168adaea35a4a1257cc8fa9a029714",
+        "bytes": 79
+      },
+      {
+        "relative_path": "generated/logs/official-pilot.txt",
+        "sha256": "079ab96ddb0eb348beff7d1d284bd05dfc00a919fca0fce849d6f1aabc904969",
+        "bytes": 900
+      }
+    ]
+  },
+  "remote_records": [
+    {
+      "id": "independent-fixtures",
+      "executable": "node",
+      "args": [
+        "node_modules/sysml-validate/out/main.js",
+        "tests/fixtures/",
+        "--library",
+        "standards/libraries-2026-04",
+        "--no-config",
+        "--format",
+        "json",
+        "--out",
+        "verification/independent-fixtures.json"
+      ],
+      "started_at": "2026-09-26T10:04:08.479Z",
+      "duration_ms": 5670,
+      "exit_code": 1,
+      "result": "fail",
+      "output": "verification/generated/logs/independent-fixtures.txt"
+    },
+    {
+      "id": "official-pilot",
+      "executable": "node",
+      "args": [
+        "tools/pilot-validate.mjs"
+      ],
+      "started_at": "2026-09-26T10:04:14.149Z",
+      "duration_ms": 10014,
+      "exit_code": 0,
+      "result": "pass",
+      "output": "verification/generated/logs/official-pilot.txt"
+    }
+  ],
+  "independent_fixture_diagnostics": {
+    "tool": "sysml-validate",
+    "version": "0.43.1",
+    "files": [
+      "tests/fixtures/Controller.sysml",
+      "tests/fixtures/Parallel.sysml",
+      "tests/fixtures/Types.kerml"
+    ],
+    "counts": {
+      "error": 1,
+      "warning": 0,
+      "info": 0,
+      "hint": 1
+    },
+    "diagnostics": [
+      {
+        "file": "tests/fixtures/Controller.sysml",
+        "severity": "error",
+        "code": "RES001",
+        "message": "Feature path segment 'r' does not exist on 'the current scope'.",
+        "range": {
+          "start": {
+            "line": 20,
+            "character": 72
+          },
+          "end": {
+            "line": 20,
+            "character": 73
+          }
+        }
+      }
+    ]
+  },
+  "exactly_matches_retained_repository_diagnostics": true,
+  "fixture_sources": [
+    {
+      "path": "tests/fixtures/Controller.sysml",
+      "ci_manifest_sha256": "801be1493f9937a53e11b8113352d07fe84843e1e676070b67db983911174b76",
+      "ci_commit_object_sha256": "801be1493f9937a53e11b8113352d07fe84843e1e676070b67db983911174b76",
+      "current_commit_object_sha256": "801be1493f9937a53e11b8113352d07fe84843e1e676070b67db983911174b76",
+      "ci_manifest_matches_commit_object": true,
+      "unchanged_in_current_commit": true
+    },
+    {
+      "path": "tests/fixtures/Parallel.sysml",
+      "ci_manifest_sha256": "296f98bed4f7719a0faa462b1bd298ea1a3a6b8e6061eaaffa9dc941d7792350",
+      "ci_commit_object_sha256": "296f98bed4f7719a0faa462b1bd298ea1a3a6b8e6061eaaffa9dc941d7792350",
+      "current_commit_object_sha256": "296f98bed4f7719a0faa462b1bd298ea1a3a6b8e6061eaaffa9dc941d7792350",
+      "ci_manifest_matches_commit_object": true,
+      "unchanged_in_current_commit": true
+    },
+    {
+      "path": "tests/fixtures/Types.kerml",
+      "ci_manifest_sha256": "3ed57896e6e513b41d2285bf1ad34a7743514aa730fa3327f1979199ad91b49e",
+      "ci_commit_object_sha256": "3ed57896e6e513b41d2285bf1ad34a7743514aa730fa3327f1979199ad91b49e",
+      "current_commit_object_sha256": "3ed57896e6e513b41d2285bf1ad34a7743514aa730fa3327f1979199ad91b49e",
+      "ci_manifest_matches_commit_object": true,
+      "unchanged_in_current_commit": true
+    }
+  ],
+  "official_pilot": {
+    "validator": "OMG SysML v2 pilot 0.59.0 / CheckMode.ALL",
+    "files": [
+      "models/AgentiqueArchitecture.sysml",
+      "models/AgentiqueBehaviour.sysml",
+      "models/AgentiqueRequirements.sysml",
+      "models/AgentiqueVerification.sysml",
+      "tests/fixtures/Controller.sysml",
+      "tests/fixtures/Parallel.sysml",
+      "tests/fixtures/Types.kerml"
+    ],
+    "issues": [
+      {
+        "file": "models/AgentiqueArchitecture.sysml",
+        "severity": "WARNING",
+        "code": "validateNamespaceDistinguishablity",
+        "message": "Duplicate of inherited member name 'accepted' from RequestLifecycle, StatePerformance",
+        "line": 34,
+        "column": 9,
+        "metaclass": "ExhibitStateUsage",
+        "name": "AgentiqueArchitecture::ModelService::requestLifecycle",
+        "direction": "null",
+        "redefines": []
+      },
+      {
+        "file": "models/AgentiqueBehaviour.sysml",
+        "severity": "WARNING",
+        "code": "validateNamespaceDistinguishablity",
+        "message": "Duplicate of inherited member name 'accepted' from StatePerformance",
+        "line": 20,
+        "column": 15,
+        "metaclass": "StateUsage",
+        "name": "AgentiqueBehaviour::RequestLifecycle::accepted",
+        "direction": "null",
+        "redefines": []
+      }
+    ],
+    "errors": 0,
+    "executed_at": "2026-09-26T10:04:23.979Z",
+    "exit_code": 0,
+    "jar_sha256": "7d6f1f2d555ddde2538a2b4f726709ba261567aa6c7eb172ad7db762d01efbaf",
+    "library_lock_sha256": "990825c477a5d1e206a9d1d504587eb9f57fd060e27feb8bf66229574be830ae"
+  },
+  "gen1_obligation": "Preserve standards/coverage.json, verification/traceability.json and docs/standards-discrepancies.md. Unsupported execution remains rejected; this syntactically/semantically valid named-payload fixture is not rewritten to satisfy the npm validator.",
+  "harness_issue_found": false,
+  "production_or_fixture_change": "None. CI remains intentionally nonzero for the external-validator disagreement; other stale publication checks are outside this diagnosis.",
+  "local_cargo_commands_executed": []
+}

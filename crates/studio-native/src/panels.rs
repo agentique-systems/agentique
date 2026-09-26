@@ -51,6 +51,27 @@ impl StudioApp {
                         .to_owned();
                     ui.menu_button(project_name, |ui| {
                         ui.label(muted("PROJECTS", theme).small());
+                        if ui
+                            .add_enabled(
+                                self.authenticated_runtime_ready(),
+                                egui::Button::new("New project…"),
+                            )
+                            .clicked()
+                        {
+                            self.new_project_dialog();
+                            ui.close();
+                        }
+                        if ui
+                            .add_enabled(
+                                self.fixture.is_none() && self.binding.is_some(),
+                                egui::Button::new("Add source document…"),
+                            )
+                            .clicked()
+                            && self.allow_context_change()
+                        {
+                            self.project_dialog.import_open = true;
+                            ui.close();
+                        }
                         for project in self.projects.clone() {
                             if ui.button(&project.name).clicked() {
                                 self.open_project(project.id);
@@ -148,14 +169,32 @@ impl StudioApp {
                             ui.strong(if preparation.cancelled { "CANCELLATION REQUESTED" } else { "PREPARING WORKING CANDIDATE" });
                             ui.label(&preparation.intent);
                             ui.label(if preparation.cancelled {
-                                "Current reconstruction will finish safely; its result will be discarded."
+                                if preparation.control.stage().is_some() {
+                                    "Stopping at the next safe semantic boundary; current revision remains available."
+                                } else {
+                                    "Current reconstruction will finish safely; its result will be discarded."
+                                }
                             } else {
-                                "Source edit and semantic reconstruction running · validation has not started"
+                                "Current revision remains available. Review and validate the Working candidate before commit."
                             });
+                            if let Some(stage) = preparation.control.stage() {
+                                use agq_studio_platform::CompilationStage::*;
+                                ui.label(match stage {
+                                    Queued => "Queued",
+                                    Parsing => "Parsing source",
+                                    DeclaredModel => "Declared model",
+                                    Resolving => "Resolving references",
+                                    SemanticClosure => "Semantic closure",
+                                    EffectiveValidation => "Effective validation · candidate remains Working",
+                                    PreparingReview => "Preparing candidate review",
+                                });
+                            }
                             ui.label(muted(format!("Elapsed {:.1} s · current revision remains available", preparation.started.elapsed().as_secs_f32()), theme).small());
                         });
-                        if ui.add_enabled(!preparation.cancelled, egui::Button::new("Cancel preparation")).clicked() {
-                            preparation.cancelled = true;
+                        let cancel = ui.add_enabled(!preparation.cancelled, egui::Button::new("Cancel preparation"));
+                        crate::automation::record(ui.ctx(), crate::automation::Target::CancelPreparation, cancel.rect);
+                        if cancel.clicked() {
+                            preparation.cancel();
                         }
                     });
                 });
@@ -375,47 +414,90 @@ impl StudioApp {
                                 );
                             }
                             if self.comparison == ComparisonMode::Diff {
-                                let before = self.candidate.as_ref().map(|c| c.before.revision_id)
-                                    .or_else(|| self.compare_before.as_ref().map(|p| p.revision_id));
+                                let before = self
+                                    .candidate
+                                    .as_ref()
+                                    .map(|c| c.before.revision_id)
+                                    .or_else(|| {
+                                        self.compare_before.as_ref().map(|p| p.revision_id)
+                                    });
                                 if let Some(before) = before {
-                                    ui.label(muted(format!("{} → {}", short_revision(before), short_revision(self.scene.revision_id)), theme).small());
+                                    ui.label(
+                                        muted(
+                                            format!(
+                                                "{} → {}",
+                                                short_revision(before),
+                                                short_revision(self.scene.revision_id)
+                                            ),
+                                            theme,
+                                        )
+                                        .small(),
+                                    );
                                 }
-                                let count = |mark| self.scene.nodes.iter().filter(|n| n.diff == mark).count();
+                                let count = |mark| {
+                                    self.scene.nodes.iter().filter(|n| n.diff == mark).count()
+                                };
                                 ui.label(
-                                    RichText::new(format!("+ {} added   − {} removed   ~ {} changed", count(agq_studio_scene::DiffMark::Added), count(agq_studio_scene::DiffMark::Removed), count(agq_studio_scene::DiffMark::Changed)))
-                                        .size(11.0)
-                                        .color(theme.green),
+                                    RichText::new(format!(
+                                        "+ {} added   − {} removed   ~ {} changed",
+                                        count(agq_studio_scene::DiffMark::Added),
+                                        count(agq_studio_scene::DiffMark::Removed),
+                                        count(agq_studio_scene::DiffMark::Changed)
+                                    ))
+                                    .size(11.0)
+                                    .color(theme.green),
                                 );
-                                if ui.small_button("Focus changes").clicked() { self.execute(CommandId::FocusChanges, ctx); }
+                                if ui.small_button("Focus changes").clicked() {
+                                    self.execute(CommandId::FocusChanges, ctx);
+                                }
                             }
                         });
                         if self.comparison == ComparisonMode::Diff {
                             self.diff_review_panel(ui);
                         }
                         if self.world == World::System && self.focus.is_some() {
-                            let visible: std::collections::BTreeSet<_> = self.scene.nodes.iter()
-                                .flat_map(|node| std::iter::once(node.id()).chain(node.semantic.features.iter().map(|feature| feature.id)))
+                            let visible: std::collections::BTreeSet<_> = self
+                                .scene
+                                .nodes
+                                .iter()
+                                .flat_map(|node| {
+                                    std::iter::once(node.id()).chain(
+                                        node.semantic.features.iter().map(|feature| feature.id),
+                                    )
+                                })
                                 .collect();
-                            let external = self.active_projection().edges.iter().filter(|edge|
-                                edge.family == agq_modeling_view::RelationshipFamily::Connection
-                                && (visible.contains(&edge.source) != visible.contains(&edge.target))).count();
+                            let external = self
+                                .active_projection()
+                                .edges
+                                .iter()
+                                .filter(|edge| {
+                                    edge.family == agq_modeling_view::RelationshipFamily::Connection
+                                        && (visible.contains(&edge.source)
+                                            != visible.contains(&edge.target))
+                                })
+                                .count();
                             if external > 0 {
                                 ui.horizontal_wrapped(|ui| {
-                                    ui.label(muted(format!("{external} connections continue outside this focus"), theme).small());
+                                    ui.label(
+                                        muted(
+                                            format!(
+                                                "{external} connections continue outside this focus"
+                                            ),
+                                            theme,
+                                        )
+                                        .small(),
+                                    );
                                     if ui.small_button("Explore connection context").clicked() {
-                                        if let Some(focus) = self.focus { self.select(SceneTarget::Node(focus), false); }
+                                        if let Some(focus) = self.focus {
+                                            self.select(SceneTarget::Node(focus), false);
+                                        }
                                         self.switch_world(World::Graph);
                                     }
                                 });
                             }
                         }
                         if self.world == World::Requirements {
-                            let requirements: Vec<_> = self.active_projection().nodes.iter()
-                                .filter(|node| NodeCategory::from_semantic_kind(&node.semantic_kind) == NodeCategory::Requirement)
-                                .map(|node| node.id).collect();
-                            let linked = requirements.iter().filter(|id| self.active_projection().edges.iter().any(|edge|
-                                (edge.source == **id || edge.target == **id) && matches!(edge.family, agq_modeling_view::RelationshipFamily::Requirement | agq_modeling_view::RelationshipFamily::Verification))).count();
-                            ui.label(muted(format!("{} requirements · {} linked in this view · relationship presence does not assert verification success", requirements.len(), linked), theme).small());
+                            self.requirements_summary(ui);
                         }
                         if self.world == World::Graph {
                             ui.add_enabled_ui(!self.bridge.mutation_pending(), |ui| {
@@ -424,7 +506,10 @@ impl StudioApp {
                                     ui.horizontal_wrapped(|ui| {
                                         ui.menu_button("Graph filters", |ui| {
                                             ui.set_max_width(560.0);
-                                            ui.label(muted("Filters apply to both revisions.", theme).small());
+                                            ui.label(
+                                                muted("Filters apply to both revisions.", theme)
+                                                    .small(),
+                                            );
                                             self.graph_family_controls(ui);
                                             self.graph_standard_control(ui);
                                         });
@@ -436,29 +521,33 @@ impl StudioApp {
                                     });
                                 } else {
                                     self.graph_family_controls(ui);
-                                ui.horizontal_wrapped(|ui| {
-                                    for (label, command) in [
-                                        ("Incoming", CommandId::ExpandIncoming),
-                                        ("Outgoing", CommandId::ExpandOutgoing),
-                                        ("Next hop", CommandId::ExpandBoth),
-                                        ("One hop", CommandId::CollapseNeighborhood),
-                                    ] {
-                                        let reason =
-                                            commands::unavailable(command, &self.context());
-                                        if ui
-                                            .add_enabled(reason.is_none(), egui::Button::new(label))
-                                            .clicked()
-                                        {
-                                            self.execute(command, ctx);
+                                    ui.horizontal_wrapped(|ui| {
+                                        for (label, command) in [
+                                            ("Incoming", CommandId::ExpandIncoming),
+                                            ("Outgoing", CommandId::ExpandOutgoing),
+                                            ("Next hop", CommandId::ExpandBoth),
+                                            ("One hop", CommandId::CollapseNeighborhood),
+                                        ] {
+                                            let reason =
+                                                commands::unavailable(command, &self.context());
+                                            if ui
+                                                .add_enabled(
+                                                    reason.is_none(),
+                                                    egui::Button::new(label),
+                                                )
+                                                .clicked()
+                                            {
+                                                self.execute(command, ctx);
+                                            }
                                         }
-                                    }
-                                    if self.comparison != ComparisonMode::Diff && self.expanded.is_some()
-                                        && ui.button("Show loaded view").clicked()
-                                    {
-                                        self.expanded = None;
-                                        self.rebuild();
-                                    }
-                                });
+                                        if self.comparison != ComparisonMode::Diff
+                                            && self.expanded.is_some()
+                                            && ui.button("Show loaded view").clicked()
+                                        {
+                                            self.expanded = None;
+                                            self.rebuild();
+                                        }
+                                    });
                                     self.graph_standard_control(ui);
                                 }
                             });
@@ -528,7 +617,14 @@ impl StudioApp {
         );
         ui.add_space(14.0);
         ui.horizontal(|ui| {
-            ui.label(RichText::new("Architecture").strong());
+            ui.label(
+                RichText::new(if self.world == World::Requirements {
+                    "Requirement neighborhood"
+                } else {
+                    "Architecture"
+                })
+                .strong(),
+            );
             ui.label(muted(self.projection.nodes.len().to_string(), theme).small());
         });
         ui.add_space(8.0);
@@ -603,7 +699,7 @@ impl StudioApp {
                                     .map_or([0.0, 0.0], |p| [p.x, p.y]),
                                 ui.input(|i| i.time),
                             );
-                            self.select(target, ui.input(|i| i.modifiers.shift));
+                            self.select_from_outliner(target, ui.input(|i| i.modifiers.shift));
                         }
                         if response.double_clicked() && same_object_click {
                             self.execute(CommandId::Focus, ui.ctx());
@@ -634,8 +730,10 @@ impl StudioApp {
                                 "Opening your workspace"
                             } else if failed {
                                 "Workspace could not open"
-                            } else if self.projects.is_empty() {
+                            } else if !self.authenticated_runtime_ready() {
                                 "Set up your engineering workspace"
+                            } else if self.projects.is_empty() {
+                                "Create your first project"
                             } else {
                                 "Choose a project"
                             });
@@ -654,8 +752,10 @@ impl StudioApp {
                                     "Opening stopped before the workspace was ready. See the details below."
                                 } else if !self.pending.is_empty() {
                                     "Opening the selected project revision…"
-                                } else if self.projects.is_empty() {
+                                } else if !self.authenticated_runtime_ready() {
                                     "Choose a local Agentique runtime bundle to authenticate and install."
+                                } else if self.projects.is_empty() {
+                                    "Your semantic runtime is ready. Create an empty Working project to begin."
                                 } else {
                                     "Your semantic runtime is ready. Select a project to continue."
                                 });
@@ -675,7 +775,10 @@ impl StudioApp {
                                     self.open_project(project.id);
                                 }
                             }
-                            if self.projects.is_empty() && !self.opening.as_ref().is_some_and(|opening| opening.running()) {
+                            if self.authenticated_runtime_ready() && ui.button("New project…").clicked() {
+                                self.new_project_dialog();
+                            }
+                            if !self.authenticated_runtime_ready() && !self.opening.as_ref().is_some_and(|opening| opening.running()) {
                                 ui.label(muted("Required runtime: KerML v9 + SysML v3", theme));
                                 ui.add(
                                     egui::TextEdit::singleline(&mut self.bundle_path)
@@ -734,6 +837,7 @@ impl StudioApp {
             });
     }
     pub fn dialogs(&mut self, ctx: &egui::Context) {
+        self.project_dialogs(ctx);
         if self.palette {
             self.command_palette(ctx);
         }
@@ -798,24 +902,20 @@ impl StudioApp {
         ui.horizontal(|ui| {
             ui.add_space(28.0);
             ui.vertical(|ui| {
-                ui.heading("Immutable design history");
+                ui.heading("Design history");
                 ui.label(muted(
-                    "Select a revision to change the entire workspace context.",
+                    "Explore a revision, compare its design changes, then return to the branch head.",
                     theme,
                 ));
             });
         });
         let revisions: Vec<_> = if let Some(history) = &self.history {
-            history
-                .revisions
-                .iter()
+            crate::history::ordered_history(history)
+                .into_iter()
                 .map(|r| {
                     (
                         r.revision_id,
-                        r.metadata
-                            .name
-                            .clone()
-                            .unwrap_or_else(|| "Design revision".into()),
+                        revision_title(r, &history.revisions),
                         format!("{:?}", r.validation)
                             .split('(')
                             .next()
@@ -829,6 +929,8 @@ impl StudioApp {
                             .map(|b| b.name.as_str())
                             .collect::<Vec<_>>()
                             .join(" · "),
+                        r.metadata.created.clone(),
+                        r.metadata.description.clone().unwrap_or_default(),
                     )
                 })
                 .collect()
@@ -841,6 +943,8 @@ impl StudioApp {
                     "Visual fixture".into(),
                     None,
                     "main".into(),
+                    String::new(),
+                    "Authored architecture before candidate coordination".into(),
                 ),
                 (
                     after.revision_id,
@@ -848,20 +952,102 @@ impl StudioApp {
                     "Visual fixture".into(),
                     Some(before.revision_id),
                     "architecture-experiment".into(),
+                    String::new(),
+                    "Add CandidateCoordinator within ModelingPlatform".into(),
                 ),
             ]
         };
+        ui.add_space(12.0);
+        ui.horizontal_wrapped(|ui| {
+            ui.add_space(28.0);
+            let base_key = ui
+                .id()
+                .with(("history-comparison-base", self.binding.map(|b| b.project)));
+            let mut base = ui
+                .ctx()
+                .data(|data| data.get_temp::<agq_modeling_workspace::ProjectRevisionId>(base_key))
+                .or_else(|| {
+                    revisions
+                        .iter()
+                        .find(|r| r.0 == self.projection.revision_id)
+                        .and_then(|r| r.3)
+                })
+                .or_else(|| revisions.first().map(|r| r.0));
+            egui::ComboBox::from_id_salt(base_key)
+                .width(230.0)
+                .selected_text(
+                    base.and_then(|id| revisions.iter().find(|r| r.0 == id))
+                        .map_or("Choose comparison base", |r| r.1.as_str()),
+                )
+                .show_ui(ui, |ui| {
+                    for revision in &revisions {
+                        ui.selectable_value(
+                            &mut base,
+                            Some(revision.0),
+                            format!("{} · {}", revision.1, short_revision(revision.0)),
+                        );
+                    }
+                });
+            if let Some(base) = base {
+                ui.ctx().data_mut(|data| data.insert_temp(base_key, base));
+                if ui
+                    .add_enabled(
+                        base != self.projection.revision_id
+                            && self.binding.is_some()
+                            && self.candidate.is_none(),
+                        egui::Button::new("Compare with selected revision"),
+                    )
+                    .clicked()
+                {
+                    self.compare_selected_revision(base);
+                }
+            }
+            if ui.button("Compare parent").clicked() {
+                self.switch_world(World::System);
+                self.execute(CommandId::Compare, ui.ctx());
+            }
+            let head = self
+                .history
+                .as_ref()
+                .and_then(|history| {
+                    history
+                        .branches
+                        .iter()
+                        .find(|branch| branch.id == history.project.default_branch)
+                })
+                .map(|branch| (branch.head, branch.name.clone()));
+            if let Some((head, branch)) = head {
+                let response = ui.add_enabled(
+                    head != self.projection.revision_id,
+                    egui::Button::new(format!("Return to {branch} head")),
+                );
+                crate::real_targets::record(
+                    ui.ctx(),
+                    crate::real_targets::Target::HistoryReturnHead,
+                    response.rect,
+                );
+                if response.clicked() {
+                    self.return_to_revision(head);
+                }
+            }
+        });
         egui::ScrollArea::vertical().show(ui, |ui| {
             ui.add_space(20.0);
-            for (index, (revision, name, status, parent, branches)) in revisions.iter().enumerate()
+            for (index, (revision, name, status, parent, branches, created, description)) in
+                revisions.iter().enumerate()
             {
                 let (rect, response) = ui.allocate_exact_size(
-                    Vec2::new(ui.available_width(), 110.0),
+                    Vec2::new(ui.available_width(), 132.0),
                     egui::Sense::click(),
                 );
                 crate::automation::record(
                     ui.ctx(),
                     crate::automation::Target::HistoryRevision(*revision),
+                    rect,
+                );
+                crate::real_targets::record(
+                    ui.ctx(),
+                    crate::real_targets::Target::HistoryRevision(*revision),
                     rect,
                 );
                 let selected = *revision == self.projection.revision_id;
@@ -883,7 +1069,7 @@ impl StudioApp {
                             dot + Vec2::new(
                                 0.0,
                                 (parent_index as f32 - index as f32)
-                                    * (110.0 + ui.spacing().item_spacing.y),
+                                    * (132.0 + ui.spacing().item_spacing.y),
                             ),
                         ],
                         Stroke::new(2.0, theme.border),
@@ -941,19 +1127,116 @@ impl StudioApp {
                     FontId::proportional(12.0),
                     theme.muted,
                 );
+                let summary = crate::history::history_description(description);
+                let detail = if summary.is_empty() {
+                    created.clone()
+                } else if created.is_empty() {
+                    summary
+                } else {
+                    format!("{created} · {summary}")
+                };
+                let mut detail_job = egui::text::LayoutJob::simple_singleline(
+                    detail,
+                    FontId::proportional(11.0),
+                    theme.muted,
+                );
+                detail_job.wrap.max_width = (card.width() - 40.0).max(1.0);
+                detail_job.wrap.max_rows = 1;
+                detail_job.wrap.break_anywhere = true;
+                ui.painter().galley(
+                    card.min + Vec2::new(20.0, 76.0),
+                    ui.painter().layout_job(detail_job),
+                    theme.muted,
+                );
                 if response.clicked() {
                     self.select_revision(*revision);
                 }
-                response.on_hover_text(name);
+                response.on_hover_text(format!(
+                    "{name}\n{description}\nCreated {created}\nRevision {revision}"
+                ));
             }
         });
-        ui.horizontal(|ui| {
-            ui.add_space(78.0);
-            if ui.button("Compare with parent").clicked() {
-                self.switch_world(World::System);
-                self.execute(CommandId::Compare, ui.ctx());
-            }
-        });
+    }
+}
+
+/// Use recorded edit intent where available. Generic imports fall back to exact
+/// source differences, explicitly named as source changes rather than invented
+/// semantic summaries. No semantic revision reconstruction is needed for cards.
+fn revision_title(
+    revision: &agq_modeling_repository::RevisionManifest,
+    revisions: &[agq_modeling_repository::RevisionManifest],
+) -> String {
+    if let Some(name) = revision
+        .metadata
+        .name
+        .as_ref()
+        .filter(|name| !name.trim().is_empty())
+    {
+        return name.clone();
+    }
+    let parent = revision
+        .parent_revision_id
+        .and_then(|id| revisions.iter().find(|r| r.revision_id == id));
+    let changed: Vec<_> = revision
+        .documents
+        .iter()
+        .filter(|document| {
+            !parent.is_some_and(|parent| {
+                parent.documents.iter().any(|old| {
+                    old.path == document.path && old.content_digest == document.content_digest
+                })
+            })
+        })
+        .map(|document| document.path.as_str())
+        .collect();
+    let removed: Vec<_> = parent
+        .into_iter()
+        .flat_map(|parent| &parent.documents)
+        .filter(|document| {
+            !revision
+                .documents
+                .iter()
+                .any(|current| current.path == document.path)
+        })
+        .map(|document| document.path.as_str())
+        .collect();
+    if !removed.is_empty() {
+        return if removed.len() == 1 && changed.is_empty() {
+            format!("Removed source {}", removed[0])
+        } else {
+            format!(
+                "Updated {} · removed {} source documents",
+                changed.len(),
+                removed.len()
+            )
+        };
+    }
+    if changed.is_empty() {
+        if revision.documents.is_empty() {
+            "Empty working project".into()
+        } else {
+            "Design checkpoint".into()
+        }
+    } else if changed.len() == 1 {
+        format!(
+            "{} {}",
+            if parent.is_some() {
+                "Updated source"
+            } else {
+                "Imported"
+            },
+            changed[0]
+        )
+    } else {
+        format!(
+            "{} {} source documents",
+            if parent.is_some() {
+                "Updated"
+            } else {
+                "Imported"
+            },
+            changed.len()
+        )
     }
 }
 pub fn category_icon(category: NodeCategory) -> &'static str {
@@ -963,6 +1246,8 @@ pub fn category_icon(category: NodeCategory) -> &'static str {
         NodeCategory::Port => "◇",
         NodeCategory::Interface => "↔",
         NodeCategory::Requirement => "≡",
+        NodeCategory::Constraint => "≡",
+        NodeCategory::Reference => "↗",
         NodeCategory::Action => "▶",
         NodeCategory::State => "○",
         NodeCategory::Agent => "✦",

@@ -1,0 +1,45 @@
+{
+  "source_parent": "42e7e187de823a3b855d530dcee84dbe8c06b59f",
+  "files": {
+    "tools\\native-acceptance-build.ps1": "ffb7d3a1e0969e2b34dde2dcf1e860fb4f76e47c56cbee38fbde325a0eea8860",
+    ".github\\workflows\\native-acceptance-build.yml": "39c451dfa5d4a2ea84f9be4ff83e6d8b92e94ac0e9c8567ec2ea447c40c54ad1",
+    ".github\\workflows\\runtime-asset.yml": "298e64df8274f5ea2e2e8f44288c4c33d192ab8a5e724d723d080c93fe7ff208"
+  },
+  "checks": [
+    {
+      "command": [
+        "powershell",
+        "-NoProfile",
+        "-Command",
+        "$tokens=$null; $parseErrors=$null; [System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path tools/native-acceptance-build.ps1),[ref]$tokens,[ref]$parseErrors) | Out-Null; if ($parseErrors.Count) { $parseErrors | Out-String | Write-Output; exit 1 }; Write-Output 'PowerShell parser passed'"
+      ],
+      "exit_code": 0,
+      "seconds": 0.21507879998534918,
+      "stdout": "PowerShell parser passed\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 0.04560329997912049,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "yaml_checks": [
+    {
+      "file": ".github/workflows/native-acceptance-build.yml",
+      "yaml_parse": "passed",
+      "explicit_boolean_inputs": "passed"
+    },
+    {
+      "file": ".github/workflows/runtime-asset.yml",
+      "yaml_parse": "passed",
+      "explicit_boolean_inputs": "passed"
+    }
+  ]
+}

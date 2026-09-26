@@ -1,0 +1,51 @@
+{
+  "source_commit": "69287bdb9e0ad838d6355d981bf5b9ce7131edac",
+  "paths": [
+    "crates/kerml-text/src/source_effective_audit.rs",
+    "crates/modeling-agent/tests/create_part_performance.rs"
+  ],
+  "files": {
+    "crates/kerml-text/src/source_effective_audit.rs": {
+      "before_sha256": "2e9a36679e855f18b7c0724237d1fbcf05fe241b9de829b16d2dd42e7bc62fce",
+      "after_sha256": "82c7d7c8fb77120698f090f7536d6330f30cc0fdf3c703e7b6c3363a2d9f5468"
+    },
+    "crates/modeling-agent/tests/create_part_performance.rs": {
+      "before_sha256": "7fdde70821f09f347df3051b3b1643fdbdbe1a6c13789d73edde786e17b6814f",
+      "after_sha256": "ac560af7a6ea338c5da86700d2119d8a7abc5f94a46f8b1d68d12612bc28d10f"
+    }
+  },
+  "patch_sha256": "c0ed9852140f8e2a3228ddbfd8bd54eb6aaf091c99d09eed696e431d992305b6",
+  "validation": {
+    "rustfmt": {
+      "command": [
+        "rustfmt",
+        "--check",
+        "--edition",
+        "2024",
+        "--config",
+        "skip_children=true",
+        "verification\\generated\\native-studio-acceptance\\audit-batch-draft\\after\\crates\\kerml-text\\src\\source_effective_audit.rs",
+        "verification\\generated\\native-studio-acceptance\\audit-batch-draft\\after\\crates\\modeling-agent\\tests\\create_part_performance.rs"
+      ],
+      "elapsed_seconds": 0.094,
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "compiled": false,
+    "production_sources_unchanged": true,
+    "git_apply_check": {
+      "command": [
+        "git",
+        "apply",
+        "--check",
+        "verification\\native-studio-acceptance\\semantics\\audit-batch-experiment.patch"
+      ],
+      "elapsed_seconds": 0.016,
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  "file_hash_encoding": "UTF-8 text with universal newlines normalized to LF"
+}

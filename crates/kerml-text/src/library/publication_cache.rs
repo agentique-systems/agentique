@@ -151,6 +151,7 @@ impl CanonicalKermlStandardLibraries {
         reader: impl Read + Seek,
         sources: &VerifiedLibrarySet,
     ) -> Result<Self, PublicationCacheError> {
+        let mut trace = crate::runtime_restore_trace::RuntimeRestoreTrace::new("kerml");
         let receipt = AcceptedPublicationReceipt::checked_in()?;
         if receipt.source_content_set() != sources.content_set_id() {
             return Err(PublicationCacheError::Mismatch(
@@ -161,6 +162,7 @@ impl CanonicalKermlStandardLibraries {
         if archive.len() != 2 {
             return Err(PublicationCacheError::Mismatch("archive entries"));
         }
+        trace.phase("receipt_authority_and_archive_open");
         let metadata_bytes = receipt.facade_metadata_bytes()?;
         let metadata_digest = entry_digest(&mut archive, METADATA, metadata_bytes)?;
         receipt.verify_facade_digest(metadata_digest)?;
@@ -169,26 +171,37 @@ impl CanonicalKermlStandardLibraries {
         receipt.verify_facade_metadata(&metadata)?;
         let metadata: FacadeMetadata = serde_json::from_value(metadata)?;
         metadata.validate(sources)?;
-        // Verify compressed input before allocating records. The semantics layer
-        // also re-encodes and hashes the decoded graph before issuing Complete.
-        receipt.verify_graph_digest(entry_digest(&mut archive, GRAPH, receipt.graph_bytes()?)?)?;
+        trace.phase("facade_authentication_decode_validation");
         let registry =
             agq_kerml::registry_for_profile(BaselineProfile::OPERATIONAL_V9).map_err(|error| {
                 LibraryLoadError::Interpretation(format!("Cache registry: {error:?}"))
             })?;
-        let overlay = agq_kernel::archive::read_overlay(
-            BufReader::new(archive.by_name(GRAPH)?),
-            Arc::new(registry),
-        )?;
+        trace.phase("descriptor_registry");
+        // Hash the same bounded stream the decoder consumes, including real EOF
+        // and ZIP CRC checks. No facade is accepted until raw authentication and
+        // the unchanged decoded-graph/context authentication both succeed.
+        let graph_bytes = receipt.graph_bytes()?;
+        let graph = archive.by_name(GRAPH)?;
+        if graph.size() != graph_bytes {
+            return Err(PublicationCacheError::Mismatch("archive entry byte count"));
+        }
+        let mut input = crate::authenticated_input::AuthenticatedInput::new(graph, graph_bytes)?;
+        let overlay =
+            agq_kernel::archive::read_overlay(BufReader::new(&mut input), Arc::new(registry))?;
+        receipt.verify_graph_digest(input.finish()?)?;
+        trace.phase("graph_decode_kernel_validation_and_input_authentication");
         let libraries = verified_libraries(sources)?;
+        trace.phase("verified_library_identity");
         let complete = CompletePublicationOverlay::restore_accepted(
             overlay,
             &metadata.roots,
             &libraries,
             &receipt,
         )?;
+        trace.phase("graph_recanonicalization_and_context_authentication");
         let publication = Self::from_restored_parts(complete, metadata);
         publication.check_binding_manifest(sources, receipt.binding_manifest())?;
+        trace.phase("facade_and_binding_manifest");
         Ok(publication)
     }
 
@@ -387,5 +400,83 @@ mod tests {
             <[u8; 32]>::from(Sha256::digest(bytes))
         );
         assert!(bounded_digest(Cursor::new(bytes), u64::MAX).is_err());
+    }
+
+    #[test]
+    fn decoder_authenticates_consumed_graph_bytes_and_rejects_unparsed_suffixes() {
+        let publication = super::super::tests::synthetic_publication();
+        let mut bytes = Vec::new();
+        publication
+            .complete_overlay()
+            .write_accepted_archive(&mut bytes)
+            .unwrap();
+        let expected = <[u8; 32]>::from(Sha256::digest(&bytes));
+        let mut input = crate::authenticated_input::AuthenticatedInput::new(
+            Cursor::new(&bytes),
+            bytes.len() as u64,
+        )
+        .unwrap();
+        let registry =
+            Arc::new(agq_kerml::registry_for_profile(BaselineProfile::OPERATIONAL_V9).unwrap());
+        let overlay = agq_kernel::archive::read_overlay(
+            BufReader::with_capacity(7, &mut input),
+            registry.clone(),
+        )
+        .unwrap();
+        assert_eq!(input.finish().unwrap(), expected);
+        let mut canonical = Vec::new();
+        agq_kernel::archive::write_overlay(&overlay, &mut canonical).unwrap();
+        assert_eq!(canonical, bytes);
+        // UUID decoding normalizes case. Equal reconstructed graphs therefore
+        // cannot replace authentication of the exact accepted transport bytes.
+        let uuid = bytes
+            .windows(36)
+            .position(|window| {
+                window.iter().enumerate().all(|(i, byte)| {
+                    if [8, 13, 18, 23].contains(&i) {
+                        *byte == b'-'
+                    } else {
+                        byte.is_ascii_hexdigit()
+                    }
+                }) && window.iter().any(u8::is_ascii_lowercase)
+            })
+            .expect("archive contains a UUID with hexadecimal letters");
+        let mut normalized = bytes.clone();
+        normalized[uuid..uuid + 36].make_ascii_uppercase();
+        let mut input = crate::authenticated_input::AuthenticatedInput::new(
+            Cursor::new(&normalized),
+            normalized.len() as u64,
+        )
+        .unwrap();
+        let same = agq_kernel::archive::read_overlay(BufReader::new(&mut input), registry.clone())
+            .unwrap();
+        assert_ne!(input.finish().unwrap(), expected);
+        let mut recanonicalized = Vec::new();
+        agq_kernel::archive::write_overlay(&same, &mut recanonicalized).unwrap();
+        assert_eq!(recanonicalized, bytes);
+        for suffix in [b"\n".as_slice(), b"{}\n".as_slice(), b" ".as_slice()] {
+            let mut changed = bytes.clone();
+            changed.extend_from_slice(suffix);
+            let mut input = crate::authenticated_input::AuthenticatedInput::new(
+                Cursor::new(&changed),
+                changed.len() as u64,
+            )
+            .unwrap();
+            assert!(
+                agq_kernel::archive::read_overlay(BufReader::new(&mut input), registry.clone())
+                    .is_err()
+            );
+        }
+        // A transport stream with different bytes cannot borrow an earlier
+        // successful raw digest. Graph recanonicalization remains independent.
+        let mut changed = bytes.clone();
+        changed[0] ^= 1;
+        let mut input = crate::authenticated_input::AuthenticatedInput::new(
+            Cursor::new(&changed),
+            changed.len() as u64,
+        )
+        .unwrap();
+        input.read_to_end(&mut Vec::new()).unwrap();
+        assert_ne!(input.finish().unwrap(), expected);
     }
 }

@@ -1,0 +1,70 @@
+{
+  "format": "agentique-retained-helper-evidence/1",
+  "compiled_source": "42e7e187de823a3b855d530dcee84dbe8c06b59f",
+  "files": {
+    "artifact-metadata.json": {
+      "bytes": 898,
+      "sha256": "a3fbea7dd7ec5b9e021cd701ecbec2df33c2cb3565e71f954863936b403d68a5"
+    },
+    "build.json": {
+      "bytes": 6482,
+      "sha256": "bc50fc0e0bd94dda55ecea78840434148d04f1ad2f0b7ee2fbf495178e4cca18"
+    },
+    "SHA256SUMS": {
+      "bytes": 271,
+      "sha256": "df59523a5ac625600024d970d1c2bfce18e2f4eca996c6a75c27ca6c9d9c9412"
+    },
+    "logs/01-source-commit.log": {
+      "bytes": 42,
+      "sha256": "e86c0221202d3d3e41e7a32d58daa3b040a5be758304b38e757c6d30ec792f76"
+    },
+    "logs/02-tracked-status.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "logs/03-install-pinned-toolchain.log": {
+      "bytes": 259,
+      "sha256": "9d90ac9e9245aaab25f87e637a4ce88ab4ccc2f2d4747a40c79b71f68bd09801"
+    },
+    "logs/04-rustc-version.log": {
+      "bytes": 201,
+      "sha256": "a648c9943f6d13872c43bfcef380550091c9f56d79bcb61de0241c3dc990dcbd"
+    },
+    "logs/05-cargo-version.log": {
+      "bytes": 336,
+      "sha256": "a4e861db19f0422a59c24ace4d840685e48d90f8123089bf79faba6eef7143d7"
+    },
+    "logs/06-fetch-locked.log": {
+      "bytes": 7156,
+      "sha256": "773d8ea58aa6ce084e339bd0fd79047070ec82b39f8faebcd16700f5bfc680ed"
+    },
+    "logs/07-release-build.log": {
+      "bytes": 107755,
+      "sha256": "c5d5b526ba641eaea0dc5329eb6f4a33f4a2a923015f4f0db2f3c5d9157712af"
+    },
+    "logs/08-final-tracked-status.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "source/Cargo.lock": {
+      "bytes": 58510,
+      "sha256": "41113bc2e13973d6f4d97edfbfc4034fd0da66a80700fea0d589b1a365b02d88"
+    },
+    "source/Cargo.toml": {
+      "bytes": 2148,
+      "sha256": "95f1eddc388d34b26744162cdf73fb0fa8b14e23956eda454d100e60aed62598"
+    },
+    "source/native-Cargo.lock": {
+      "bytes": 114351,
+      "sha256": "0d7eed8a0036ee7b35d19652ff24fea58bae6e5597c73eb09270ca78e63514c1"
+    },
+    "source/native-Cargo.toml": {
+      "bytes": 1165,
+      "sha256": "d4116b143c679f63dcd5252656a897d876f39e61b8bd7be3241300cac624d034"
+    },
+    "source/rust-toolchain.toml": {
+      "bytes": 103,
+      "sha256": "467fec76153022a4e5a673e43ab3ea02c57c7de4d5509045867430befee8107b"
+    }
+  }
+}

@@ -26,6 +26,8 @@ pub struct SavedPresentation {
     pub branch: Option<BranchId>,
     #[serde(default)]
     pub panels: PanelState,
+    #[serde(default)]
+    pub selection: Option<crate::selection::Selection>,
 }
 
 impl SavedPresentation {
@@ -289,6 +291,7 @@ mod tests {
                 expanded: None,
                 branch: None,
                 panels: PanelState::default(),
+                selection: None,
             },
         )
     }

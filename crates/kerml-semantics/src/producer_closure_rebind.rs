@@ -5,6 +5,7 @@ use agq_kernel::{
     provenance::{Dependency, FactKey, Origin},
     value::Value,
 };
+use std::sync::Weak;
 
 /// Outcome of transporting producer evaluations to a reconstructed semantic graph.
 #[derive(Clone, Debug)]
@@ -62,6 +63,37 @@ impl ProducerClosureCertificate {
             certificate: self.clone(),
             context: old.id().clone(),
             signatures: subject_signatures(old.model),
+            shared_dependency: None,
+        })
+    }
+
+    /// Capture a reconstruction frontier sharing this exact immutable closed
+    /// dependency. Physically shared dependency facts need not be rehashed;
+    /// every local record, incoming carrier and proof/search delta still does.
+    ///
+    /// The resulting checkpoint rejects a different dependency mount, even one
+    /// with equal semantic identities. Use [`Self::checkpoint`] when transport
+    /// between independently restored mounts is required. Without a closed
+    /// dependency this falls back to the full fingerprint representation.
+    pub fn checkpoint_sharing_dependency(
+        &self,
+        old: &SemanticContext<'_>,
+    ) -> Result<ProducerClosureCheckpoint, ContextError> {
+        let Some(dependency) = old.closed_dependency.as_ref() else {
+            return self.checkpoint(old);
+        };
+        if !self.compatible_context(old.id()) {
+            return Err(ContextError::ProducerClosureMismatch);
+        }
+        Ok(ProducerClosureCheckpoint {
+            certificate: self.clone(),
+            context: old.id().clone(),
+            signatures: subject_signatures_with_dependency(
+                old.model,
+                Some(dependency.overlay().model()),
+                true,
+            ),
+            shared_dependency: Some(Arc::downgrade(dependency)),
         })
     }
 
@@ -121,12 +153,31 @@ pub struct ProducerClosureCheckpoint {
     certificate: ProducerClosureCertificate,
     context: SemanticContextId,
     signatures: BTreeMap<ElementId, [u8; 32]>,
+    shared_dependency: Option<Weak<crate::ProducerClosedDependency>>,
 }
 impl ProducerClosureCheckpoint {
     pub fn rebind(
         &self,
         new: &SemanticContext<'_>,
         registry: &ProducerRegistry,
+    ) -> Result<ReboundClosure, ContextError> {
+        self.rebind_rows(new, registry, true)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn rebind_full_family_rows(
+        &self,
+        new: &SemanticContext<'_>,
+        registry: &ProducerRegistry,
+    ) -> Result<ReboundClosure, ContextError> {
+        self.rebind_rows(new, registry, false)
+    }
+
+    fn rebind_rows(
+        &self,
+        new: &SemanticContext<'_>,
+        registry: &ProducerRegistry,
+        skip_immutable_rows: bool,
     ) -> Result<ReboundClosure, ContextError> {
         if self.certificate.registry_digest != registry.digest()
             || new.id().producer_registry_digest != Some(registry.digest())
@@ -139,7 +190,18 @@ impl ProducerClosureCheckpoint {
         if !QueryReadSet::context_compatible(&self.context, &current) {
             return Err(ContextError::ProducerClosureMismatch);
         }
-        let signatures = subject_signatures(new.model);
+        let shared_dependency = match &self.shared_dependency {
+            Some(previous) => {
+                let current = new
+                    .closed_dependency
+                    .as_ref()
+                    .filter(|current| Weak::ptr_eq(previous, &Arc::downgrade(current)))
+                    .ok_or(ContextError::ProducerClosureMismatch)?;
+                Some(current.overlay().model())
+            }
+            None => None,
+        };
+        let signatures = subject_signatures_with_dependency(new.model, shared_dependency, true);
         let mut affected: BTreeSet<_> = self
             .signatures
             .keys()
@@ -170,6 +232,24 @@ impl ProducerClosureCheckpoint {
         let mut reopened = 0;
         for record in new.model.elements() {
             let subject = record.id();
+            if skip_immutable_rows
+                && new.dependency_closure_source(subject).is_some()
+                && self
+                    .certificate
+                    .subjects
+                    .binary_search(&subject)
+                    .is_ok_and(|index| {
+                        (0..self.certificate.families).all(|family| {
+                            let pair = index * self.certificate.families + family;
+                            (self.certificate.states[pair / 4] >> ((pair % 4) * 2)) & 3 == 0
+                        })
+                    })
+            {
+                // The old row contains no evaluations or read receipts to
+                // transport. Initializing pending pairs for an immutable new
+                // dependency would be discarded by certificate issuance.
+                continue;
+            }
             table.pending(subject, new.model, registry);
             for family in 0..registry.descriptors.len() {
                 let Some(state) = self.certificate.evaluation(subject, family) else {
@@ -223,11 +303,45 @@ impl ProducerClosureCheckpoint {
 }
 
 fn subject_signatures(model: &ModelView) -> BTreeMap<ElementId, [u8; 32]> {
+    subject_signatures_with_dependency(model, None, true)
+}
+
+/// Audit-only signatures factor out physically identical accepted dependency
+/// material. The enclosing audit context binds that exact publication identity.
+/// Every local incoming carrier and proof/search delta still participates.
+/// Unlike producer evaluations, a query outcome does not promise to recreate
+/// outputs it never read. Audit collectors must retain both canonical roots and
+/// expanded positive proof dependencies; changing an unread output must not make
+/// its unchanged supporting input appear to have changed.
+pub(crate) fn audit_subject_signatures(
+    model: &ModelView,
+    dependency: Option<&ModelView>,
+) -> BTreeMap<ElementId, [u8; 32]> {
+    subject_signatures_with_dependency(model, dependency, false)
+}
+
+fn subject_signatures_with_dependency(
+    model: &ModelView,
+    dependency: Option<&ModelView>,
+    include_output_support: bool,
+) -> BTreeMap<ElementId, [u8; 32]> {
+    let shared_record = |record: &agq_kernel::ElementRecord| {
+        dependency
+            .and_then(|base| base.element(record.id()))
+            .is_some_and(|base| std::ptr::eq(base, record))
+    };
+
     // Hash each record once, then include source identities/content at both
     // endpoints. New inverse carriers therefore invalidate an earlier empty search.
     let records: BTreeMap<_, [u8; 32]> = model
         .elements()
         .map(|record| {
+            if shared_record(record) {
+                return (
+                    record.id(),
+                    hash_debug(&("exact-shared-publication-record", record.id())),
+                );
+            }
             let mut hash = Sha256::new();
             hash.update(hash_debug(record));
             // Equal aggregate values can conceal a different original source
@@ -250,14 +364,21 @@ fn subject_signatures(model: &ModelView) -> BTreeMap<ElementId, [u8; 32]> {
         })
         .collect();
     for record in model.elements() {
-        output_support(&mut hashes, model, record.origin(), records[&record.id()]);
+        if shared_record(record) {
+            continue;
+        }
+        if include_output_support {
+            output_support(&mut hashes, model, record.origin(), records[&record.id()]);
+        }
         for (property, slot) in record.slots() {
-            output_support(
-                &mut hashes,
-                model,
-                slot.origin(),
-                hash_debug(&(record.id(), property, slot)),
-            );
+            if include_output_support {
+                output_support(
+                    &mut hashes,
+                    model,
+                    slot.origin(),
+                    hash_debug(&(record.id(), property, slot)),
+                );
+            }
             for (index, value) in slot.value().values().enumerate() {
                 if let Value::Reference(target) = value
                     && let Some(hash) = hashes.get_mut(target)
@@ -270,8 +391,16 @@ fn subject_signatures(model: &ModelView) -> BTreeMap<ElementId, [u8; 32]> {
         }
     }
     for occurrence in model.association_occurrences() {
+        if dependency
+            .and_then(|base| base.association_occurrence(occurrence.id()))
+            .is_some_and(|base| std::ptr::eq(base, occurrence))
+        {
+            continue;
+        }
         let digest = hash_debug(occurrence);
-        output_support(&mut hashes, model, occurrence.origin(), digest);
+        if include_output_support {
+            output_support(&mut hashes, model, occurrence.origin(), digest);
+        }
         for target in occurrence.ends().values() {
             if let Some(hash) = hashes.get_mut(target) {
                 hash.update(digest);
@@ -282,6 +411,12 @@ fn subject_signatures(model: &ModelView) -> BTreeMap<ElementId, [u8; 32]> {
     // restoration. Losing it or changing its proof reopens affected readers;
     // equal aggregate values do not authenticate a different contribution.
     for ((element, property, target), contribution) in model.ordered_reference_contributions() {
+        if dependency
+            .and_then(|base| base.ordered_reference_contribution(element, property, target))
+            .is_some_and(|base| std::ptr::eq(base, contribution))
+        {
+            continue;
+        }
         let digest = hash_debug(&(element, property, target, contribution));
         if let Some(hash) = hashes.get_mut(&element) {
             hash.update(digest);
@@ -291,6 +426,12 @@ fn subject_signatures(model: &ModelView) -> BTreeMap<ElementId, [u8; 32]> {
         }
     }
     for (fact, searches) in model.computation_searches() {
+        if dependency
+            .and_then(|base| base.computation_searches_shared(*fact))
+            .is_some_and(|base| std::ptr::eq(base.as_ref(), searches))
+        {
+            continue;
+        }
         let digest = hash_debug(&(fact, searches));
         match fact {
             FactKey::Element(id) | FactKey::Property { element: id, .. } => {
@@ -309,18 +450,40 @@ fn subject_signatures(model: &ModelView) -> BTreeMap<ElementId, [u8; 32]> {
             }
         }
     }
+    let shared_navigation: BTreeMap<_, _> = dependency
+        .into_iter()
+        .flat_map(ModelView::derived_navigation_results)
+        .collect();
     for (&(id, property), value) in model.derived_navigation_results() {
-        output_support(
-            &mut hashes,
-            model,
-            value.origin(),
-            hash_debug(&(id, property, value)),
-        );
+        if shared_navigation
+            .get(&(id, property))
+            .is_some_and(|base| std::ptr::eq(*base, value))
+        {
+            continue;
+        }
+        if include_output_support {
+            output_support(
+                &mut hashes,
+                model,
+                value.origin(),
+                hash_debug(&(id, property, value)),
+            );
+        }
         if let Some(hash) = hashes.get_mut(&id) {
             hash.update(hash_debug(&(property, value)));
         }
     }
+    let shared_failures: BTreeMap<_, _> = dependency
+        .into_iter()
+        .flat_map(ModelView::computation_failures)
+        .collect();
     for (&(id, property), value) in model.computation_failures() {
+        if shared_failures
+            .get(&(id, property))
+            .is_some_and(|base| std::ptr::eq(*base, value))
+        {
+            continue;
+        }
         if let Some(hash) = hashes.get_mut(&id) {
             hash.update(hash_debug(&(property, value)));
         }

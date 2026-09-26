@@ -727,6 +727,91 @@ fn publication_frontier_preserves_ordered_support_without_changing_legacy_archiv
 }
 
 #[test]
+fn dependency_digest_cache_preserves_format_evidence_and_rebuilt_overlay_identity() {
+    fn dependent_bytes(dependency: DerivedOverlay, evidence: bool) -> Vec<u8> {
+        let declared = Snapshot::with_immutable_dependency(Arc::new(dependency));
+        let project = DerivationBuilder::new(declared).build().unwrap();
+        let mut bytes = vec![];
+        if evidence {
+            write_dependent_overlay_with_evidence(&project, &mut bytes).unwrap();
+        } else {
+            write_dependent_overlay(&project, &mut bytes).unwrap();
+        }
+        bytes
+    }
+    fn dependency_identity(bytes: &[u8]) -> serde_json::Value {
+        let header: serde_json::Value =
+            serde_json::from_slice(bytes.split(|byte| *byte == b'\n').next().unwrap()).unwrap();
+        header["DependentHeader"]["dependency"].clone()
+    }
+    for retain_previous in [false, true] {
+        let original = overlay();
+        let legacy = dependency_identity(&dependent_bytes(original.clone(), false));
+        let evidence = dependency_identity(&dependent_bytes(original.clone(), true));
+        assert_ne!(
+            legacy, evidence,
+            "archive contracts have distinct cache entries"
+        );
+        assert_eq!(
+            evidence,
+            dependency_identity(&dependent_bytes(original.clone(), true))
+        );
+
+        // The legacy archive intentionally drops selected contribution metadata.
+        // Equal aggregate graph bytes must not reuse the evidence-format digest.
+        let mut archived = vec![];
+        write_overlay(&original, &mut archived).unwrap();
+        let restored = read_overlay(Cursor::new(archived), registry()).unwrap();
+        assert_eq!(
+            legacy,
+            dependency_identity(&dependent_bytes(restored.clone(), false))
+        );
+        assert_ne!(
+            evidence,
+            dependency_identity(&dependent_bytes(restored, true))
+        );
+
+        let prior = retain_previous.then(|| original.clone());
+        let mut builder = DerivationBuilder::from_overlay(original);
+        builder.element(
+            key(100),
+            PART_DEF,
+            [(NAME, text("later frontier"))],
+            proof().dependencies,
+        );
+        let updated = builder.build().unwrap();
+        assert_eq!(
+            updated.build_metrics().reused_owned_storage,
+            !retain_previous
+        );
+        let updated_bytes = dependent_bytes(updated.clone(), true);
+        assert_ne!(
+            evidence,
+            dependency_identity(&updated_bytes),
+            "rebuilt overlay cannot retain the old cached digest"
+        );
+        assert!(
+            read_dependent_overlay_with_evidence(
+                Cursor::new(&updated_bytes),
+                registry(),
+                Arc::new(updated)
+            )
+            .is_ok()
+        );
+        if let Some(prior) = prior {
+            assert!(
+                read_dependent_overlay_with_evidence(
+                    Cursor::new(&updated_bytes),
+                    registry(),
+                    Arc::new(prior)
+                )
+                .is_err()
+            );
+        }
+    }
+}
+
+#[test]
 fn construction_frontier_roundtrip_keeps_obligations_and_protected_dependency() {
     let dependency = Arc::new(overlay());
     let base = Snapshot::with_immutable_dependency(dependency.clone());

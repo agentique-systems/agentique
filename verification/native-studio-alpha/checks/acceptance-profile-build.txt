@@ -1,0 +1,2 @@
+error: target `create_part_performance` in package `agq-modeling-agent` requires the features: `verification`
+Consider enabling them by passing, e.g., `--features="verification"`

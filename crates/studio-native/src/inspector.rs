@@ -23,7 +23,7 @@ impl StudioApp {
         };
         let response = ui.add_enabled(
             target.is_some(),
-            egui::Button::new(&feature.name).frame(false),
+            egui::Button::new(&feature.name).frame(false).wrap(),
         );
         crate::real_targets::record(
             ui.ctx(),
@@ -32,7 +32,8 @@ impl StudioApp {
         );
         let clicked = response
             .on_hover_text(format!(
-                "{}\n{}",
+                "{}\n{}\n{}",
+                feature.name,
                 kind_label(&feature.semantic_kind),
                 feature.id
             ))
@@ -135,7 +136,7 @@ impl StudioApp {
                     .iter()
                     .any(|item| item.semantic.id == edge.id);
                 let response = ui
-                    .add_enabled(visible, egui::Button::new(label).frame(false))
+                    .add_enabled(visible, egui::Button::new(label).frame(false).wrap())
                     .on_hover_text(format!("{:?} · {:?}", edge.family, edge.origin));
                 crate::real_targets::record(
                     ui.ctx(),
@@ -354,9 +355,15 @@ impl StudioApp {
         let element = self.selected_element();
         let node = element.and_then(|id| self.scene.node(id)).cloned();
         if let Some(inspector) = self.inspector.clone() {
-            ui.label(RichText::new(&inspector.element.name).size(TITLE).strong());
+            inspector_name(ui, &inspector.element.name);
             ui.label(muted(kind_label(&inspector.element.semantic_kind), theme));
             ui.label(muted(origin_label(inspector.element.origin), theme).small());
+            if ui
+                .small_button("Show requirements affecting this")
+                .clicked()
+            {
+                self.execute(CommandId::SelectionRequirements, ui.ctx());
+            }
             if let Some(owner) = &inspector.owner {
                 theme.section(ui, "WITHIN");
                 self.feature_link(ui, owner);
@@ -490,7 +497,7 @@ impl StudioApp {
                 }
             });
         } else if let Some(node) = node {
-            ui.label(RichText::new(&node.semantic.name).size(TITLE).strong());
+            inspector_name(ui, &node.semantic.name);
             ui.label(muted(kind_label(&node.semantic.semantic_kind), theme));
             ui.add_space(9.0);
             ui.label(
@@ -720,8 +727,27 @@ fn section_features<'a>(
 fn value(ui: &mut egui::Ui, key: &str, value: &str, theme: crate::theme::Theme) {
     ui.horizontal_wrapped(|ui| {
         ui.label(muted(key, theme));
-        ui.label(value);
+        ui.add(egui::Label::new(value).wrap()).on_hover_text(value);
     });
+}
+
+fn inspector_name(ui: &mut egui::Ui, name: &str) -> egui::Response {
+    let mut title = egui::text::LayoutJob::simple_singleline(
+        name.to_owned(),
+        egui::FontId::proportional(TITLE),
+        ui.visuals().strong_text_color(),
+    );
+    title.wrap.max_width = ui.available_width();
+    title.wrap.max_rows = 3;
+    title.wrap.break_anywhere = true;
+    let response = ui.add(egui::Label::new(title).wrap()).on_hover_text(name);
+    response.context_menu(|ui| {
+        if ui.button("Copy full name").clicked() {
+            ui.ctx().copy_text(name.to_owned());
+            ui.close();
+        }
+    });
+    response
 }
 
 fn origin_label(origin: ViewOrigin) -> &'static str {
@@ -1139,6 +1165,8 @@ fn kind_label(kind: &str) -> &str {
         "ConnectionUsage" => "Connection",
         "RequirementDefinition" => "Requirement definition",
         "RequirementUsage" => "Requirement",
+        "ConstraintUsage" => "Constraint",
+        "ReferenceUsage" => "Reference",
         "ActionDefinition" => "Action definition",
         "ActionUsage" => "Action",
         "StateDefinition" => "State definition",
@@ -1152,6 +1180,32 @@ fn kind_label(kind: &str) -> &str {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn very_long_qualified_inspector_names_stay_within_the_panel_and_three_lines() {
+        let ctx = egui::Context::default();
+        let name = format!(
+            "Architecture::{}::NestedPart",
+            "VeryLongNamespaceWithoutWordBreaks".repeat(30)
+        );
+        for width in [214.0, 254.0, 380.0] {
+            let _ = ctx.run(egui::RawInput::default(), |ctx| {
+                egui::SidePanel::right("qualified-name-inspector")
+                    .exact_width(width)
+                    .resizable(false)
+                    .frame(egui::Frame::NONE)
+                    .show(ctx, |ui| {
+                        let response = inspector_name(ui, &name);
+                        assert!(
+                            response.rect.width() <= width + 1.0,
+                            "name width {} exceeds actual inspector width {width}",
+                            response.rect.width()
+                        );
+                        assert!(response.rect.height() <= TITLE * 4.0);
+                    });
+            });
+        }
+    }
 
     fn feature(id: u128, name: &str, kind: &str) -> FeatureSummary {
         FeatureSummary {

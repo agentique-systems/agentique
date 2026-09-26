@@ -98,6 +98,46 @@ pub struct SemanticContext<'m> {
     pub(crate) closed_dependency: Option<Arc<crate::ProducerClosedDependency>>,
 }
 
+/// Own the exact immutable inputs of an already checked context for later reads.
+///
+/// Canonical records and indexes retain their shared storage. This has no rebind,
+/// deserialization or caller-supplied identity path: each borrowed context uses
+/// only the model and evidence retained when this value was created.
+#[derive(Clone)]
+pub struct RetainedSemanticContext {
+    model: ModelView,
+    id: SemanticContextId,
+    naming_extension: Option<(&'static str, Arc<dyn SemanticNamingExtension>)>,
+    producer_closure: Option<Arc<crate::ProducerClosureCertificate>>,
+    immutable_dependency: Option<ModelView>,
+    accepted_dependency: Option<Arc<DerivedOverlay>>,
+    closed_dependency: Option<Arc<crate::ProducerClosedDependency>>,
+}
+
+impl std::fmt::Debug for RetainedSemanticContext {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RetainedSemanticContext")
+            .field("identity", &self.id)
+            .finish_non_exhaustive()
+    }
+}
+
+impl RetainedSemanticContext {
+    /// Borrow the authenticated input without repeating graph fingerprinting.
+    /// Evaluator traversal caches remain independent and bounded by each call.
+    pub fn borrow(&self) -> SemanticContext<'_> {
+        SemanticContext {
+            model: &self.model,
+            id: self.id.clone(),
+            naming_extension: self.naming_extension.clone(),
+            producer_closure: self.producer_closure.clone(),
+            immutable_dependency: self.immutable_dependency.as_ref(),
+            accepted_dependency: self.accepted_dependency.clone(),
+            closed_dependency: self.closed_dependency.clone(),
+        }
+    }
+}
+
 impl SemanticContextId {
     /// Identify a rejected scheduler input without expanding graph evidence or
     /// serializing the potentially large binding and obligation populations.
@@ -190,6 +230,19 @@ pub enum ContextError {
 }
 
 impl<'m> SemanticContext<'m> {
+    /// Retain this exact checked input for immutable readers. No acceptance work
+    /// is waived for another graph, revision, language contract or certificate.
+    pub fn retain(&self) -> RetainedSemanticContext {
+        RetainedSemanticContext {
+            model: self.model.clone(),
+            id: self.id.clone(),
+            naming_extension: self.naming_extension.clone(),
+            producer_closure: self.producer_closure.clone(),
+            immutable_dependency: self.immutable_dependency.cloned(),
+            accepted_dependency: self.accepted_dependency.clone(),
+            closed_dependency: self.closed_dependency.clone(),
+        }
+    }
     /// Borrow the exact immutable canonical view bound to this context.
     pub fn model(&self) -> &'m ModelView {
         self.model

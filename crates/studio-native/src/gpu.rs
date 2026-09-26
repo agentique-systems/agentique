@@ -79,6 +79,7 @@ pub struct GpuStats {
     pub timestamp_ms: crate::timing::Samples,
     pub timestamp_status: &'static str,
     pub timestamp_errors: usize,
+    pub timestamp_diagnostics: crate::gpu_timing::Diagnostics,
 }
 struct Resources {
     pipeline: wgpu::RenderPipeline,
@@ -227,6 +228,7 @@ impl CallbackTrait for SceneCallback {
             renderer.surface_epoch = epoch;
             if let Ok(mut stats) = self.stats.lock() {
                 stats.timestamp_errors += 1;
+                stats.timestamp_diagnostics.surface_invalidations += 1;
             }
         }
         if let Ok(mut stats) = self.stats.lock() {

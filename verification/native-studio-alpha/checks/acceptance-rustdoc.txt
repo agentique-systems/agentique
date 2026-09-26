@@ -1,0 +1,14 @@
+    Blocking waiting for file lock on build directory
+    Checking serde v1.0.229
+    Checking thiserror v2.0.20
+    Checking zip v2.4.2
+    Checking num-bigint v0.4.8
+    Checking agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+    Checking agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+    Checking agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\standard-libraries)
+    Checking agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml)
+    Checking agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+ Documenting agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+ Documenting agq-sysml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml-semantics)
+    Finished `dev` profile [unoptimized] target(s) in 1m 05s
+   Generated C:\Users\phili\github\agentique-systems\agentique\target\doc\agq_kerml_semantics\index.html and 1 other file

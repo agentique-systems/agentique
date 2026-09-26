@@ -1,0 +1,29 @@
+{
+  "errors": 0,
+  "issues": [
+    {
+      "file": "models/AgentiqueArchitecture.sysml",
+      "severity": "WARNING",
+      "code": "validateNamespaceDistinguishablity",
+      "message": "Duplicate of inherited member name 'accepted' from RequestLifecycle, StatePerformance",
+      "line": 34,
+      "column": 9,
+      "metaclass": "ExhibitStateUsage",
+      "name": "AgentiqueArchitecture::ModelService::requestLifecycle",
+      "direction": "null",
+      "redefines": []
+    },
+    {
+      "file": "models/AgentiqueBehaviour.sysml",
+      "severity": "WARNING",
+      "code": "validateNamespaceDistinguishablity",
+      "message": "Duplicate of inherited member name 'accepted' from StatePerformance",
+      "line": 20,
+      "column": 15,
+      "metaclass": "StateUsage",
+      "name": "AgentiqueBehaviour::RequestLifecycle::accepted",
+      "direction": "null",
+      "redefines": []
+    }
+  ]
+}

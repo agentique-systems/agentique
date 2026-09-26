@@ -1,0 +1,42 @@
+{
+  "format": "agentique-product-fix-source-checks/1",
+  "base_commit": "42e7e187de823a3b855d530dcee84dbe8c06b59f",
+  "trigger": "real-run03 actual 06-history-diff capture: unreadable all-owner fit and absent enclosing-owner chooser",
+  "production_files": [
+    "crates/studio-native/src/history.rs"
+  ],
+  "normalized_source_sha256": "c7fc5ca4f4e8d19a65f763c4b9ec10e9b39db042b2f0403f0fb3f3b052a85ce6",
+  "commands": [
+    {
+      "command": [
+        "rustfmt",
+        "--edition",
+        "2024",
+        "--check",
+        "crates/studio-native/src/history.rs"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "compiled_or_tested": false,
+  "regression_cases": [
+    "readable initial owner context despite distant owners",
+    "added package has absent enclosing owner but owns a present changed child",
+    "all owners absent uses actual visible changed object",
+    "candidate explicit/ghost selection keeps prior camera and group policy",
+    "explicit enclosing-group choice retained",
+    "comparison scene contents and projection pair unchanged"
+  ]
+}

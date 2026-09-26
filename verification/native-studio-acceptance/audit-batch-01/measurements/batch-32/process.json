@@ -1,0 +1,21 @@
+{
+  "command": [
+    "D:\\a\\_temp\\audit-batch-experiment\\build\\bin\\create_part_performance.exe",
+    "create_part_command_matches_full_self_model_reconstruction",
+    "--exact",
+    "--ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "D:\\a\\agentique\\agentique",
+  "started_utc": "2026-09-26T10:25:10.865761+00:00",
+  "sample_interval_seconds": 0.25,
+  "terminated_reason": null,
+  "peak_rss_bytes": 5955940352,
+  "peak_private_bytes": 6666133504,
+  "minimum_host_available_bytes": 8897179648,
+  "memory_scope": "single cold-oracle process; no simultaneous semantic child",
+  "exit_code": 0,
+  "elapsed_seconds": 596.094,
+  "output_sha256": "0a5c5700501eb775e4720f125cfd189fe7430bb60c8fe7fdbf6bf34adbac08e3"
+}

@@ -31,3 +31,7 @@ verification = ["agq-modeling-workspace/verification"]
 [[test]]
 name = "create_part_performance"
 required-features = ["verification"]
+
+[[test]]
+name = "create_part_controlled"
+required-features = ["verification"]

@@ -269,6 +269,8 @@ fn restore(
         build_metrics,
         element_reservations: OnceLock::new(),
         occurrence_reservations: OnceLock::new(),
+        archive_dependency_digest: OnceLock::new(),
+        evidence_archive_dependency_digest: OnceLock::new(),
     }))
 }
 fn origin(

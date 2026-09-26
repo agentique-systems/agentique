@@ -45,6 +45,7 @@ impl ClosureCertificateBuilder {
             table,
             &immutable_source,
             Some(&mut self.cache),
+            true,
         );
         if std::env::var_os("AGQ_CERTIFICATE_TRACE").is_some() {
             eprintln!(
@@ -56,12 +57,14 @@ impl ClosureCertificateBuilder {
             );
         }
         if std::env::var_os("AGQ_CERTIFICATE_VERIFY_FULL_REBUILD").is_some() {
-            let full = ProducerClosureCertificate::issue(
+            let full = ProducerClosureCertificate::issue_with_cache(
                 model,
                 context,
                 registry,
                 table,
                 immutable_source,
+                None,
+                false,
             );
             certificate.assert_exact(&full);
         }

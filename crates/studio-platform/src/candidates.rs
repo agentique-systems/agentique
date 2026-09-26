@@ -21,6 +21,11 @@ pub(crate) struct RetainedCandidate {
     candidate: AgentCandidate,
     lifecycle: CandidateLifecycle,
 }
+impl RetainedCandidate {
+    pub(crate) fn phase(&self) -> CandidatePhase {
+        self.lifecycle.phase
+    }
+}
 
 /// Review state is separate from the semantic candidate so failure/acknowledgement
 /// transitions can be checked independently of an expensive accepted publication.
@@ -157,14 +162,38 @@ impl StudioPlatform {
         command: ModelCommand,
         definition: &ViewDefinition,
     ) -> Result<CandidateProjection> {
+        self.propose_controlled(context, command, definition, &CompilationControl::default())
+    }
+
+    /// Prepare an unpublished edit with explicit cooperative cancellation.
+    /// Cancellation never advances a durable branch or retains a partial candidate.
+    pub fn propose_controlled(
+        &mut self,
+        context: AgentContext,
+        command: ModelCommand,
+        definition: &ViewDefinition,
+        control: &CompilationControl,
+    ) -> Result<CandidateProjection> {
         self.policy.require(Authority::Read)?;
         self.policy.require(Authority::Propose)?;
+        control
+            .check()
+            .map_err(agq_modeling_service::ServiceError::from)?;
         let expired = admission(
             self.candidates
                 .iter()
                 .map(|(id, c)| (*id, c.lifecycle.phase)),
         )?;
-        let candidate = agq_modeling_agent::propose(&self.service, &self.policy, context, command)?;
+        let candidate = agq_modeling_agent::propose_controlled(
+            &self.service,
+            &self.policy,
+            context,
+            command,
+            control,
+        )?;
+        control
+            .enter(CompilationStage::PreparingReview)
+            .map_err(agq_modeling_service::ServiceError::from)?;
         let id = CandidateId(uuid::Uuid::new_v4());
         self.candidates.insert(
             id,
@@ -175,6 +204,10 @@ impl StudioPlatform {
         );
         match self.candidate(id, definition) {
             Ok(projection) => {
+                if let Err(cancelled) = control.check() {
+                    self.candidates.remove(&id);
+                    return Err(agq_modeling_service::ServiceError::from(cancelled).into());
+                }
                 if let Some(id) = expired {
                     self.candidates.remove(&id);
                 }

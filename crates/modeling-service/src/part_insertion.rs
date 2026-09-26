@@ -41,6 +41,18 @@ impl ModelingService {
         command: ApplyDocumentChanges,
         owner: ElementId,
     ) -> Result<PreparedChanges, ServiceError> {
+        self.prepare_part_insertion_controlled(command, owner, &CompilationControl::default())
+    }
+
+    /// Prepare the same source-proven nested part with cancellation checkpoints.
+    /// Interruption returns no prepared child and never changes durable head.
+    pub fn prepare_part_insertion_controlled(
+        &self,
+        command: ApplyDocumentChanges,
+        owner: ElementId,
+        control: &CompilationControl,
+    ) -> Result<PreparedChanges, ServiceError> {
+        control.check()?;
         let branch = self
             .repository
             .get_branch(command.project, command.branch)?;
@@ -91,9 +103,15 @@ impl ModelingService {
                 node.range() == origin.range && node.kind().name() == target.metaclass_name
             })
             .ok_or_else(|| invalid("owner declaration provenance does not match"))?;
+        control.enter(CompilationStage::Parsing)?;
         let proof = prove_insertion(syntax, owner_node.id(), edit)?;
-        let (working, checkpoint) =
-            source_identity::reconstruct(base.revision(), &proof.parsed, proof.identities)?;
+        control.check()?;
+        let (working, checkpoint) = source_identity::reconstruct(
+            base.revision(),
+            &proof.parsed,
+            proof.identities,
+            control,
+        )?;
         verify_continuity(
             base.revision(),
             &working,
@@ -120,7 +138,9 @@ impl ModelingService {
             "retired_identity_reservations_preserved": true,
             "previous_reference_targets_preserved": true,
         });
+        control.enter(CompilationStage::PreparingReview)?;
         let mut candidate = prepare_candidate(&working, command.validate)?;
+        control.check()?;
         let owner_name = target
             .declared_qualified_name
             .as_deref()
@@ -135,6 +155,7 @@ impl ModelingService {
         } else {
             None
         };
+        control.check()?;
         Ok(PreparedChanges {
             request: CommitRevision {
                 operation_id: command.operation_id,

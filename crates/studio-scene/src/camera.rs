@@ -40,7 +40,8 @@ impl Camera2D {
     }
     /// Keep the world point beneath the pointer fixed through zoom.
     pub fn zoom_at(&mut self, pointer: Point, factor: f32) {
-        if !factor.is_finite() || factor <= 0.0 {
+        if !factor.is_finite() || factor <= 0.0 || !pointer.x.is_finite() || !pointer.y.is_finite()
+        {
             return;
         }
         let before = self.screen_to_world(pointer);
@@ -103,5 +104,54 @@ impl LodController {
         }
         self.level = LEVELS[index];
         self.level
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pointer_anchor_property_across_100000_scene_scale_and_zoom_cases() {
+        let mut seed = 0x41_47_51_u64;
+        let mut next = || {
+            seed = seed.wrapping_mul(6364136223846793005).wrapping_add(1);
+            ((seed >> 32) as u32) as f32 / u32::MAX as f32
+        };
+        let mut maximum = 0.0_f32;
+        for case in 0..100_000 {
+            let extent = [100.0, 1000.0, 10_000.0, 40_000.0][case % 4];
+            let mut camera = Camera2D {
+                center: Point::new((next() - 0.5) * extent, (next() - 0.5) * extent),
+                zoom: (Camera2D::MIN_ZOOM * (1.0_f32 + 319.0 * next()))
+                    .clamp(Camera2D::MIN_ZOOM, Camera2D::MAX_ZOOM),
+                viewport: Size::new(200.0 + 3000.0 * next(), 160.0 + 1800.0 * next()),
+            };
+            let pointer = Point::new(
+                next() * camera.viewport.width,
+                next() * camera.viewport.height,
+            );
+            let before = camera.screen_to_world(pointer);
+            camera.zoom_at(pointer, (next() * 4.0 - 2.0).exp());
+            let error = before.distance(camera.screen_to_world(pointer));
+            maximum = maximum.max(error);
+            assert!(error <= 0.025, "case {case}: error {error}");
+        }
+        println!("100000 camera cases; maximum anchor error {maximum} world units");
+    }
+
+    #[test]
+    fn invalid_pointer_or_factor_cannot_corrupt_camera() {
+        let initial = Camera2D::default();
+        for (pointer, factor) in [
+            (Point::new(f32::NAN, 10.0), 2.0),
+            (Point::new(1.0, f32::INFINITY), 0.5),
+            (Point::default(), f32::NAN),
+            (Point::default(), 0.0),
+        ] {
+            let mut camera = initial;
+            camera.zoom_at(pointer, factor);
+            assert_eq!(camera, initial);
+        }
     }
 }

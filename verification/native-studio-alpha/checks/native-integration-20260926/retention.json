@@ -1,0 +1,26 @@
+[
+  {
+    "relocated": "verification/native-studio-alpha/checks/native-integration-20260926/acceptance-native-tests-05.json",
+    "sha256": "76ee8332fa4427019421a5433baabc1c0ed0f099e9ddf36fbf857c50ba06bcac",
+    "restored_historical": "verification/native-studio-alpha/checks/acceptance-native-tests-05.json",
+    "historical_sha256": "25d05d5729c375a2f0bed7b4664b21530f74cef4f6eced2aa003302bcb78e280"
+  },
+  {
+    "relocated": "verification/native-studio-alpha/checks/native-integration-20260926/acceptance-native-tests-05.txt",
+    "sha256": "d0259874b5fc400701a6d262e8a206cd6b1f909e98d2ff9284f91aef480c2bad",
+    "restored_historical": "verification/native-studio-alpha/checks/acceptance-native-tests-05.txt",
+    "historical_sha256": "078d06baa58bfaf93c06af4c13fae60d327be9e21918413fab36ced430d828b6"
+  },
+  {
+    "relocated": "verification/native-studio-alpha/checks/native-integration-20260926/acceptance-native-tests-06.json",
+    "sha256": "b4d1cd7dd41a4b294a1e8cefb31e510cbd3d050c44f2134dc26fa2653b809be7",
+    "restored_historical": "verification/native-studio-alpha/checks/acceptance-native-tests-06.json",
+    "historical_sha256": "3c87cce7f22c9a40d44d6a272ac2a7e9e9189f4bb8295bc51fa3421ae15d1e2b"
+  },
+  {
+    "relocated": "verification/native-studio-alpha/checks/native-integration-20260926/acceptance-native-tests-06.txt",
+    "sha256": "78b45405476cb4b36705bb0a2c28ba0c41f337d2c375e5b2800d8bb5c6675d0d",
+    "restored_historical": "verification/native-studio-alpha/checks/acceptance-native-tests-06.txt",
+    "historical_sha256": "a39904219fea3cea6d76257020272030fddf812ee247c87938e2abfc081d7c0b"
+  }
+]

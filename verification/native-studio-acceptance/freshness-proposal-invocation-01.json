@@ -1,0 +1,21 @@
+{
+  "format": "agentique-alpha-freshness-proposal-invocation/1",
+  "command": [
+    "C:\\Users\\phili\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+    "verification/native-studio-acceptance/freshness_proposal.py",
+    "--root",
+    ".",
+    "--proof-set",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\native-studio-acceptance-proof-set-01.json",
+    "--proof-set-sha256",
+    "d394485f03001b2a3a4f209b7be0ca0d759d4d4fe351f829cbc80dc5b946a97d",
+    "--output",
+    "verification/native-studio-acceptance/freshness-proposal-01"
+  ],
+  "source_head": "fea3339dbf0e84d408cb7d47c802a7b047826f1f",
+  "proof_set_sha256": "d394485f03001b2a3a4f209b7be0ca0d759d4d4fe351f829cbc80dc5b946a97d",
+  "exit_code": 0,
+  "stdout": "{\"proposal_directory\": \"verification\\\\native-studio-acceptance\\\\freshness-proposal-01\", \"changed_entries\": 23}\n",
+  "stderr": "",
+  "scope": "Proposal only; no ledger, receipt, library, artifact or source mutation. Baseline/current raw logs and binaries separately hash checked; original result verified equal to unique logged JSON."
+}

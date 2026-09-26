@@ -13,9 +13,14 @@ root = pathlib.Path(__file__).resolve().parents[2]
 name, *command = sys.argv[1:]
 if command and command[0] == "--":
     command.pop(0)
+if not command or pathlib.Path(name).name != name or name in (".", ".."):
+    raise SystemExit("Supply a simple unused evidence name and a command")
 directory = root / "verification/native-studio-alpha/checks"
 directory.mkdir(parents=True, exist_ok=True)
 output_path = directory / f"{name}.txt"
+record_path = directory / f"{name}.json"
+if output_path.exists() or record_path.exists():
+    raise SystemExit(f"Refusing to overwrite prior gate evidence: {name}")
 executable = pathlib.Path(command[0])
 if not executable.is_absolute():
     executable = root / executable
@@ -37,7 +42,7 @@ started = time.monotonic()
 utc = datetime.datetime.now(datetime.timezone.utc).isoformat()
 return_code = None
 launch_error = None
-with output_path.open("w", encoding="utf-8") as output:
+with output_path.open("x", encoding="utf-8") as output:
     try:
         process = subprocess.run(command, cwd=root, stdout=output, stderr=subprocess.STDOUT,
                                  shell=command[0] == "npm")
@@ -70,7 +75,8 @@ if executable_before is not None:
         "sha256_after": executable_after,
         "unchanged_during_run": executable_before == executable_after,
     }
-(directory / f"{name}.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
+with record_path.open("x", encoding="utf-8") as receipt:
+    receipt.write(json.dumps(record, indent=2) + "\n")
 print(json.dumps(record))
 print(output.decode("utf-8", errors="replace")[-4500:])
 raise SystemExit(1 if launch_error else return_code or (2 if executable_before != executable_after else 0))

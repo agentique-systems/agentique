@@ -1,0 +1,14 @@
+{
+  "current_run": "success",
+  "baseline_run": "success",
+  "same_runner": true,
+  "runtime": "success",
+  "release": "default thin LTO",
+  "runtime_sha256": "37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026",
+  "baseline": "bd72aee4e1bf2aa2b894dc0201bcef111ddf337b",
+  "source_commit": "a6e1f41d2b549a8be10a79dfa3ec786c090b65b3",
+  "current_build": "success",
+  "baseline_build": "success",
+  "contract": "Compare measured command preparation separately from independent cold reconstruction; each requested oracle must establish exact equivalence",
+  "outcome": "passed"
+}

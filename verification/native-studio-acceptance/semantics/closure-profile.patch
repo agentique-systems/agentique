@@ -1,0 +1,273 @@
+--- a/crates/kerml-semantics/src/producer_worklist/metrics.rs
++++ b/crates/kerml-semantics/src/producer_worklist/metrics.rs
+@@ -82,10 +82,20 @@
+     pub next_dirty_subjects: usize,
+     pub next_dirty_by_reason: BTreeMap<PublicationReopenReason, usize>,
+     pub families: BTreeMap<ProducerFamilyId, PublicationFamilyMetrics>,
++    /// Authentication of the round's current graph and registry, before planning.
++    /// Disjoint from the certificate construction interval below.
++    pub context_setup_micros: u128,
++    pub context_setup_calls: usize,
+     pub planning_micros: u128,
+     pub dependency_index_micros: u128,
+     pub model_materialization_micros: u128,
+     pub certificate_revalidation_micros: u128,
++    /// Next-graph context authentication inside `certificate_build_micros`.
++    /// Subtract this to isolate certificate issuance; do not sum it again.
++    pub certificate_context_micros: u128,
++    pub certificate_context_calls: usize,
++    /// Initial certificate and subsequent issuance, including next-graph context
++    /// authentication. This preserves the preexisting measurement boundary.
+     pub certificate_build_micros: u128,
+     pub elapsed_micros: u128,
+ }
+--- a/crates/kerml-semantics/src/producer_worklist.rs
++++ b/crates/kerml-semantics/src/producer_worklist.rs
+@@ -870,6 +870,7 @@
+         let reopened_before = counters.dirty_reevaluations;
+         let certificate_before = counters.certificate_build_micros;
+         let mut round_metrics = PublicationRoundMetrics::default();
++        let context_started = Instant::now();
+         let mut current_context = context_factory(&overlay)?;
+         let registry = registry.get_or_insert_with(|| {
+             let descriptors = ProducerFamily::ALL
+@@ -882,6 +883,8 @@
+         current_context = current_context
+             .with_producer_registry_digest(registry.digest())
+             .map_err(PublicationOverlayError::Context)?;
++        round_metrics.context_setup_micros = context_started.elapsed().as_micros();
++        round_metrics.context_setup_calls += 1;
+         if round == 0
+             && let Some(witness) = current_context.producer_closure()
+         {
+@@ -1230,6 +1233,8 @@
+                 let next_context = context_factory(&next)?
+                     .with_producer_registry_digest(registry.digest())
+                     .map_err(PublicationOverlayError::Context)?;
++                round_metrics.certificate_context_micros += started.elapsed().as_micros();
++                round_metrics.certificate_context_calls += 1;
+                 let issued = std::sync::Arc::new(
+                     if options.strategy == PublicationClosureStrategy::ReferenceFullScan {
+                         ProducerClosureCertificate::issue(
+@@ -1385,6 +1390,8 @@
+             let next_context = context_factory(&next)?
+                 .with_producer_registry_digest(registry.digest())
+                 .map_err(PublicationOverlayError::Context)?;
++            round_metrics.certificate_context_micros += started.elapsed().as_micros();
++            round_metrics.certificate_context_calls += 1;
+             let issued = std::sync::Arc::new(
+                 if options.strategy == PublicationClosureStrategy::ReferenceFullScan {
+                     ProducerClosureCertificate::issue(
+--- a/crates/kerml-text/src/source_semantic_cache.rs
++++ b/crates/kerml-text/src/source_semantic_cache.rs
+@@ -90,6 +90,7 @@
+         dependency: &AcceptedSourceDependency,
+         root: ElementId,
+     ) -> Result<DerivedOverlay, LibraryLoadError> {
++        let restore_started = Instant::now();
+         let mismatch = |field| {
+             LibraryLoadError::Interpretation(format!("authored semantic cache mismatch: {field}"))
+         };
+@@ -106,15 +107,19 @@
+                 "format or language/descriptor/producer dependencies",
+             ));
+         }
++        let metadata_micros = restore_started.elapsed().as_micros();
+         // The existing kernel reader compares exact declarations, source origins,
+         // ordered values and retired reservations against this source-derived input.
+         // Decoded standard records cannot replace the protected dependency.
++        let decode_started = Instant::now();
+         let overlay = agq_kernel::archive::read_bound_frontier_on(
+             std::io::Cursor::new(&self.kernel_frontier),
+             declared,
+             Self::dependency_identity(&dependency.publication),
+         )
+         .map_err(|error| LibraryLoadError::Interpretation(error.to_string()))?;
++        let decode_micros = decode_started.elapsed().as_micros();
++        let context_started = Instant::now();
+         let context = dependency
+             .mounted
+             .project_overlay_context(&overlay, &[root])
+@@ -125,6 +130,28 @@
+             return Err(mismatch("canonical graph/provenance or semantic context"));
+         }
+         drop(context);
++        let context_micros = context_started.elapsed().as_micros();
++        if std::env::var_os("AGENTIQUE_SOURCE_CLOSURE_TRACE").is_some() {
++            use std::io::Write;
++            let total_micros = restore_started.elapsed().as_micros();
++            let accounted_micros = metadata_micros + decode_micros + context_micros;
++            let _ = writeln!(
++                std::io::stderr().lock(),
++                "SOURCE_CLOSURE_PROFILE {}",
++                serde_json::json!({
++                    "format": "agentique-source-closure-profile/1",
++                    "boundary": "cache_frontier",
++                    "root": root,
++                    "metadata_authentication_micros": metadata_micros,
++                    "kernel_decode_and_validation_micros": decode_micros,
++                    "graph_context_authentication_micros": context_micros,
++                    "elapsed_micros": total_micros,
++                    "accounted_micros": accounted_micros,
++                    "unattributed_micros": total_micros.saturating_sub(accounted_micros),
++                    "accounting_overrun_micros": accounted_micros.saturating_sub(total_micros),
++                })
++            );
++        }
+         Ok(overlay)
+     }
+     pub(crate) fn verify_closed(
+--- a/crates/kerml-text/src/sysml/source.rs
++++ b/crates/kerml-text/src/sysml/source.rs
+@@ -21,6 +21,98 @@
+     /// the scheduler's actual final completeness or convergence result.
+     pub retained_evaluations: usize,
+     pub reopened_evaluations: usize,
++}
++
++/// Diagnostic partitions only: no timing participates in acceptance or evidence.
++#[derive(Default)]
++struct FinalClosureProfile {
++    snapshot_setup_micros: u128,
++    checkpoint_micros: u128,
++    construction_release_micros: u128,
++    cache_frontier_restore_micros: u128,
++}
++impl FinalClosureProfile {
++    fn emit(&self, root: ElementId, elapsed_micros: u64, status: &AuthoredProducerStatus) {
++        if std::env::var_os("AGENTIQUE_SOURCE_CLOSURE_TRACE").is_none() {
++            return;
++        }
++        use std::io::Write;
++        let mut output = std::io::stderr().lock();
++        let mut rounds_micros = 0;
++        let mut context_calls = 0;
++        let mut context_micros = 0;
++        for stage in &status.stages {
++            let round = &stage.counters.round;
++            rounds_micros += round.elapsed_micros;
++            context_calls += round.context_setup_calls + round.certificate_context_calls;
++            context_micros += round.context_setup_micros + round.certificate_context_micros;
++            // Certificate totals historically include the next context. Preserve
++            // that boundary and expose its subset, rather than double-counting it.
++            let accounted = round.context_setup_micros
++                + round.planning_micros
++                + round.dependency_index_micros
++                + round.model_materialization_micros
++                + round.certificate_revalidation_micros
++                + round.certificate_build_micros;
++            let _ = writeln!(
++                output,
++                "SOURCE_CLOSURE_PROFILE {}",
++                serde_json::json!({
++                    "format": "agentique-source-closure-profile/1",
++                    "boundary": "scheduler_round",
++                    "root": root,
++                    "round": stage.stage,
++                    "stratum": format!("{:?}", stage.stratum),
++                    "input_elements": stage.input_elements,
++                    "added_elements": stage.added_elements,
++                    "added_occurrences": stage.added_occurrences,
++                    "subjects_evaluated": round.subjects_evaluated,
++                    "subjects_skipped": round.subjects_skipped,
++                    "context_setup_calls": round.context_setup_calls,
++                    "context_setup_micros": round.context_setup_micros,
++                    "planning_micros": round.planning_micros,
++                    "dependency_index_micros": round.dependency_index_micros,
++                    "model_materialization_micros": round.model_materialization_micros,
++                    "certificate_revalidation_micros": round.certificate_revalidation_micros,
++                    "certificate_context_calls": round.certificate_context_calls,
++                    "certificate_context_micros": round.certificate_context_micros,
++                    "certificate_build_inclusive_micros": round.certificate_build_micros,
++                    "certificate_build_exclusive_micros": round.certificate_build_micros
++                        .saturating_sub(round.certificate_context_micros),
++                    "elapsed_micros": round.elapsed_micros,
++                    "accounted_micros": accounted,
++                    "unattributed_micros": round.elapsed_micros.saturating_sub(accounted),
++                    "accounting_overrun_micros": accounted.saturating_sub(round.elapsed_micros),
++                })
++            );
++        }
++        let accounted = self.snapshot_setup_micros
++            + self.checkpoint_micros
++            + self.construction_release_micros
++            + self.cache_frontier_restore_micros
++            + rounds_micros;
++        let _ = writeln!(
++            output,
++            "SOURCE_CLOSURE_PROFILE {}",
++            serde_json::json!({
++                "format": "agentique-source-closure-profile/1",
++                "boundary": "final_closure",
++                "root": root,
++                "snapshot_setup_micros": self.snapshot_setup_micros,
++                "checkpoint_micros": self.checkpoint_micros,
++                "construction_release_micros": self.construction_release_micros,
++                "cache_frontier_restore_micros": self.cache_frontier_restore_micros,
++                "scheduler_rounds_micros": rounds_micros,
++                "scheduler_context_calls": context_calls,
++                "scheduler_context_micros": context_micros,
++                "scheduler_counters": status.counters,
++                "elapsed_micros": elapsed_micros,
++                "accounted_micros": accounted,
++                "unattributed_micros": u128::from(elapsed_micros).saturating_sub(accounted),
++                "accounting_overrun_micros": accounted.saturating_sub(u128::from(elapsed_micros)),
++            })
++        );
++    }
+ }
+ 
+ /// Minted once per source history from the accepted facade, never from an
+@@ -399,6 +491,7 @@
+     timings: Option<&std::cell::RefCell<crate::CompilationTimings>>,
+ ) -> Result<SourceModel, LibraryLoadError> {
+     let closure_started = Instant::now();
++    let mut closure_profile = FinalClosureProfile::default();
+     let PreparedSource {
+         draft,
+         mut retained_evaluations,
+@@ -416,6 +509,7 @@
+             desired
+         }
+     };
++    closure_profile.snapshot_setup_micros = closure_started.elapsed().as_micros();
+     // Final strict reconstruction changes graph identity. Retain only evaluations
+     // whose actual semantic reads survive the checked delta. Prior revisions are
+     // immutable; no producer result is copied into declared source records.
+@@ -433,17 +527,22 @@
+     } else {
+         None
+     };
++    closure_profile.checkpoint_micros = checkpoint_started.elapsed().as_micros();
+     if let Some(timings) = timings {
+         timings.borrow_mut().closure_checkpoint_micros += crate::elapsed_micros(checkpoint_started);
+     }
+     // The final audit needs only source metadata. Release construction indexes,
+     // any partial overlay and the temporary mount before strict closure starts.
+     // The checkpoint retains semantic fingerprints, not the previous graph.
++    let release_started = Instant::now();
+     let pending_references = draft.references().to_vec();
+     let source_map = draft.source_map().clone();
+     drop(draft);
++    closure_profile.construction_release_micros = release_started.elapsed().as_micros();
+     let closed = if let Some(cache) = semantic_cache {
++        let restore_started = Instant::now();
+         let overlay = cache.restore_frontier(snapshot.clone(), &dependency, root)?;
++        closure_profile.cache_frontier_restore_micros = restore_started.elapsed().as_micros();
+         agq_kerml_semantics::close_result_structure_on_overlay_with_extension(
+             overlay,
+             Default::default(),
+@@ -524,9 +623,11 @@
+             reopened_evaluations,
+         },
+     };
++    let closure_micros = crate::elapsed_micros(closure_started);
+     if let Some(timings) = timings {
+-        timings.borrow_mut().final_closure_micros += crate::elapsed_micros(closure_started);
+-    }
++        timings.borrow_mut().final_closure_micros += closure_micros;
++    }
++    closure_profile.emit(root, closure_micros, &effective.status);
+     let references_started = Instant::now();
+     let queries = KerMlQueries::new(effective.context(root));
+     if let Some(cache) = semantic_cache {

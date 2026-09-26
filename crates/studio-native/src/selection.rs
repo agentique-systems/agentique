@@ -33,7 +33,7 @@ impl CanvasClicks {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Selection {
     pub revision: ProjectRevisionId,
     pub targets: BTreeSet<SceneTarget>,

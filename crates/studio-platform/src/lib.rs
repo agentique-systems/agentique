@@ -11,6 +11,8 @@ mod projection_cache;
 mod reader;
 mod seed;
 
+pub use agq_kerml_text::SourceLanguage;
+pub use agq_kerml_text::{CompilationControl, CompilationStage};
 pub use bootstrap::*;
 pub use candidates::*;
 pub use reader::StudioRevisionReader;
@@ -75,6 +77,13 @@ pub enum PlatformError {
     #[error("Studio platform: {0}")]
     Invalid(String),
 }
+impl PlatformError {
+    /// Typed operator interruption, distinct from semantic/authentication failure.
+    pub fn is_cancelled(&self) -> bool {
+        matches!(self, Self::Service(error) if error.is_cancelled())
+            || matches!(self, Self::Agent(error) if error.is_cancelled())
+    }
+}
 
 pub type Result<T> = std::result::Result<T, PlatformError>;
 
@@ -100,6 +109,44 @@ impl StudioPlatform {
     pub fn projects(&self) -> Result<Vec<Project>> {
         self.policy.require(Authority::Read)?;
         Ok(self.service.repository().list_projects()?)
+    }
+
+    /// Create an empty Working project in an explicitly chosen local repository.
+    /// Replace this host only after the project transaction is durable.
+    pub fn create_project_at(
+        &mut self,
+        name: &str,
+        database: &std::path::Path,
+    ) -> Result<(Project, Vec<Project>)> {
+        self.policy.require(Authority::Read)?;
+        self.policy.require(Authority::Propose)?;
+        self.policy.require(Authority::Commit)?;
+        if name.trim().is_empty() || !database.is_absolute() || database.file_name().is_none() {
+            return Err(PlatformError::Invalid(
+                "Enter a project name and an absolute repository file path".into(),
+            ));
+        }
+        if self
+            .candidates
+            .values()
+            .any(|candidate| candidate.phase() != CandidatePhase::Committed)
+        {
+            return Err(PlatformError::Invalid(
+                "Finish or cancel existing candidates before creating a project".into(),
+            ));
+        }
+        if let Some(parent) = database.parent() {
+            std::fs::create_dir_all(parent)
+                .map_err(|error| PlatformError::Invalid(error.to_string()))?;
+        }
+        let repository = Arc::new(agq_modeling_sqlite::SqliteRepository::open(database)?);
+        let service = Arc::new(self.service.for_repository(repository));
+        let mut projects = service.repository().list_projects()?;
+        let project = service.create_project(name.trim(), None)?;
+        projects.push(project.clone());
+        projects.sort_by(|a, b| a.name.cmp(&b.name).then(a.id.cmp(&b.id)));
+        *self = Self::new(service, self.policy.clone());
+        Ok((project, projects))
     }
 
     pub fn history(&self, project: ProjectId) -> Result<ProjectHistory> {
@@ -263,6 +310,32 @@ fn source_projection(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn cancellation_stays_typed_through_agent_and_platform_without_matching_error_text() {
+        let control = CompilationControl::new();
+        control.cancel();
+        let stopped = control.check().unwrap_err();
+        let service = agq_modeling_service::ServiceError::from(stopped);
+        let agent = agq_modeling_agent::AgentError::from(service);
+        assert!(agent.is_cancelled());
+        assert!(PlatformError::from(agent).is_cancelled());
+        assert!(
+            PlatformError::from(agq_modeling_service::ServiceError::from(stopped)).is_cancelled()
+        );
+        assert!(
+            !PlatformError::from(agq_modeling_agent::AgentError::Invalid(
+                "operation cancelled".into(),
+            ))
+            .is_cancelled()
+        );
+        assert!(
+            !PlatformError::from(agq_modeling_service::ServiceError::Invalid(
+                "operation cancelled".into(),
+            ))
+            .is_cancelled()
+        );
+    }
 
     #[test]
     fn platform_and_results_can_cross_the_native_worker_boundary() {

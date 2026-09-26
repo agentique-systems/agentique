@@ -336,6 +336,37 @@ fn programmatic_vertical_reuses_original_inherited_usage_without_allocating_reco
 }
 
 #[test]
+fn retained_sysml_context_preserves_answers_and_outlives_original_snapshot() {
+    fn send_sync<T: Send + Sync>() {}
+    send_sync::<crate::RetainedSysmlContext>();
+    let snapshot = vertical().finish();
+    let original = q(&snapshot);
+    let inherited = original.current_effective_usages(id(4));
+    let unclosed = original.effective_usages(id(4));
+    let absent = original.current_part_definitions(id(999));
+    let context = original.context().clone();
+    let retained = original.retain_context();
+    drop(original);
+    drop(snapshot);
+    let queries = retained.queries();
+    assert_eq!(queries.context(), &context);
+    // Include every composed evidence/status field, even fields which have no
+    // public PartialEq implementation. No identity normalization is performed.
+    assert_eq!(
+        format!("{:?}", queries.current_effective_usages(id(4))),
+        format!("{inherited:?}")
+    );
+    assert_eq!(
+        format!("{:?}", queries.effective_usages(id(4))),
+        format!("{unclosed:?}")
+    );
+    assert_eq!(
+        format!("{:?}", queries.current_part_definitions(id(999))),
+        format!("{absent:?}")
+    );
+}
+
+#[test]
 fn attribute_and_item_projections_keep_valid_non_sysml_classifier_targets() {
     let mut f = Fixture::new();
     f.create(1, kc::DATA_TYPE, "OrdinaryKerMlData");

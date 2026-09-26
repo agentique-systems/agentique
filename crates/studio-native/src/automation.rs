@@ -21,6 +21,7 @@ pub enum Target {
     PaletteInput,
     CandidateName,
     CandidatePrepare,
+    CancelPreparation,
     ExplainWindow,
     HistoryRevision(ProjectRevisionId),
 }

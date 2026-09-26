@@ -1,6 +1,21 @@
 name: Engine and Console verification
 on: [push, pull_request]
 jobs:
+  native-studio-macos:
+    # Compile/link qualification only. This does not claim interactive macOS use.
+    runs-on: macos-14
+    timeout-minutes: 30
+    env:
+      CARGO_BUILD_JOBS: 2
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: 0
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - run: rustup show
+      - run: cargo fetch --locked --manifest-path crates/studio-native/Cargo.toml
+      - run: cargo build --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target
   native-studio:
     # The GPU application has an independent lock so application features do
     # not alter the accepted language workspace's dependency closure.

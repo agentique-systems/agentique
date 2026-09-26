@@ -1,0 +1,96 @@
+--- a/crates/kerml-text/src/source_effective_audit.rs
++++ b/crates/kerml-text/src/source_effective_audit.rs
+@@ -21,6 +21,14 @@
+     result: &SourceCompilation,
+     previous: Option<&SourceCompilation>,
+ ) -> Result<(SourceEffectiveAudit, Vec<SourceDiagnostic>, usize), LibraryLoadError> {
++    #[cfg(feature = "verification")]
++    let experiment_started = Instant::now();
++    // Verification experiment only. Shipping builds retain the same bounded
++    // population; the experiment changes evaluator lifetime, never context.
++    #[cfg(feature = "verification")]
++    let batch_size = verification_batch_size()?;
++    #[cfg(not(feature = "verification"))]
++    let batch_size = 32;
+     let bound = result
+         .sysml_queries()
+         .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))?;
+@@ -61,7 +69,7 @@
+     let mut reused_checks = 0;
+     let mut report = SystemsPublicationAudit::default();
+     let mut capabilities = Vec::new();
+-    for batch in subjects.chunks(32) {
++    for batch in subjects.chunks(batch_size) {
+         let q = bound.fork();
+         for &subject in batch {
+             if let Some(entry) = previous.and_then(|previous| previous.subjects.get(&subject))
+@@ -141,6 +149,24 @@
+         snapshot: closed.into_snapshot(),
+         subjects: retained,
+     });
++    #[cfg(feature = "verification")]
++    if std::env::var_os("AGENTIQUE_AUDIT_BATCH_SIZE").is_some() {
++        use std::io::Write;
++        let _ = writeln!(
++            std::io::stderr().lock(),
++            "SOURCE_AUDIT_BATCH_EXPERIMENT {}",
++            serde_json::json!({
++                "format": "agentique-audit-batch-experiment/1",
++                "batch_size": batch_size,
++                "subjects": subjects.len(),
++                "batches": subjects.len().div_ceil(batch_size),
++                "subjects_evaluated": subjects.len() - reused,
++                "subjects_reused": reused,
++                "checks_reused": reused_checks,
++                "elapsed_micros": experiment_started.elapsed().as_micros(),
++            })
++        );
++    }
+     Ok((
+         SourceEffectiveAudit {
+             context,
+@@ -154,3 +180,16 @@
+         reused,
+     ))
+ }
++
++#[cfg(feature = "verification")]
++fn verification_batch_size() -> Result<usize, LibraryLoadError> {
++    match std::env::var("AGENTIQUE_AUDIT_BATCH_SIZE") {
++        Err(std::env::VarError::NotPresent) => Ok(32),
++        Ok(value) if value == "32" => Ok(32),
++        Ok(value) if value == "128" => Ok(128),
++        Ok(value) if value == "256" => Ok(256),
++        _ => Err(LibraryLoadError::Interpretation(
++            "verification audit batch size must be exactly 32, 128 or 256".into(),
++        )),
++    }
++}
+--- a/crates/modeling-agent/tests/create_part_performance.rs
++++ b/crates/modeling-agent/tests/create_part_performance.rs
+@@ -358,6 +358,16 @@
+ /// only the freshly allocated kernel revision label is normalized.
+ fn write_observations(output: &Path, label: &str, revision: &WorkingProjectRevision) {
+     use agq_sysml::classes as sc;
++    // Match the verification-only audit experiment so comparison across runs
++    // covers query values and complete evidence at the actual batch size.
++    let batch_size = match std::env::var("AGENTIQUE_AUDIT_BATCH_SIZE") {
++        Err(std::env::VarError::NotPresent) => 32,
++        Ok(value) if value == "32" => 32,
++        Ok(value) if value == "128" => 128,
++        Ok(value) if value == "256" => 256,
++        _ => panic!("verification audit batch size must be exactly 32, 128 or 256"),
++    };
++    eprintln!("{label}: exact query observations use batch size {batch_size}");
+     let kernel_revision = format!("{:?}", revision.kernel_revision().unwrap());
+     let mut observations = BTreeMap::new();
+     fn observe(
+@@ -431,7 +441,7 @@
+     }
+     let bound = revision.sysml_queries().unwrap();
+     let subjects = revision.effective_audit().unwrap().subjects();
+-    for batch in subjects.chunks(32) {
++    for batch in subjects.chunks(batch_size) {
+         let q = bound.fork();
+         for &subject in batch {
+             let class = model.element(subject).unwrap().metaclass();

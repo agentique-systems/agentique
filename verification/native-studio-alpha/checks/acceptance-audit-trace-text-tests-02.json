@@ -1,0 +1,34 @@
+{
+  "command": [
+    "target/debug/deps/agq_kerml_text-0580b4cc20829f5a.exe",
+    "reuse_trace_counts_all_subjects_but_bounds_failed_checked_samples",
+    "--nocapture"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "7c497334e7345d4a2f17d016410e77ac8a92e4f9",
+  "tracked_changes_at_start": [
+    " M .github/workflows/native-acceptance-build.yml",
+    " M crates/kerml-semantics/src/closed_query_audit.rs",
+    " M crates/kerml-semantics/src/contract.rs",
+    " M crates/kerml-semantics/src/producer_closure_rebind.rs",
+    " M crates/kerml-semantics/src/queries.rs",
+    " M crates/kerml-semantics/tests/unit/closed_query_audit.rs",
+    " M crates/kerml-semantics/tests/unit/producer_closure.rs",
+    " M crates/kerml-text/src/source_effective_audit.rs",
+    " M crates/kerml-text/src/sysml/source.rs",
+    " M verification/native-studio-acceptance/README.md",
+    " M verification/native-studio-acceptance/semantics/runtime-diagnosis.md"
+  ],
+  "started_utc": "2026-09-26T10:39:04.689036+00:00",
+  "elapsed_seconds": 0.047,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/acceptance-audit-trace-text-tests-02.txt",
+  "output_sha256": "d0182049a82f98434ccb95524d7762b78d0cc1c08a34089176c92c3bcc231de3",
+  "build_environment": {},
+  "executable": {
+    "path": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\debug\\deps\\agq_kerml_text-0580b4cc20829f5a.exe",
+    "sha256_before": "cac5aecf15b515c749d9c8f8f19a3b7196c855c6cc5c07d8601bd576ef7efce3",
+    "sha256_after": "cac5aecf15b515c749d9c8f8f19a3b7196c855c6cc5c07d8601bd576ef7efce3",
+    "unchanged_during_run": true
+  }
+}

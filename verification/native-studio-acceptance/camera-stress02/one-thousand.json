@@ -1,0 +1,5266 @@
+{
+  "camera_checks": {
+    "final_zoom": 0.1136273667216301,
+    "initial_zoom": 0.11362741142511368,
+    "maximum_pan_displacement_world": 1614.1539306640625,
+    "maximum_zoom": 0.37725594639778137,
+    "maximum_zoom_anchor_error_world": 0.0013427734375,
+    "minimum_visible_nodes": 144,
+    "zoom_anchor_error_world": 0.000244140625
+  },
+  "failure": null,
+  "first_anchor_divergence_frame": null,
+  "format": "agentique-native-stress-v1",
+  "native_metrics": {
+    "adapter": "AdapterInfo { name: \"NVIDIA GeForce RTX 3060 Ti\", vendor: 4318, device: 9353, device_type: DiscreteGpu, driver: \"NVIDIA\", driver_info: \"616.92\", backend: Vulkan }",
+    "fixture": "stress1000",
+    "frame_count": 452,
+    "frame_interval_median_ms": 6.05015,
+    "frame_interval_p95_ms": 6.5182,
+    "frame_intervals_ms": {
+      "last": 9.972999999999999,
+      "median": 6.05015,
+      "p95": 6.5182,
+      "total_samples": 391,
+      "window_samples": 240
+    },
+    "gpu_instances": 9280,
+    "gpu_timestamp_diagnostics": {
+      "map_errors": 0,
+      "non_monotonic_samples": 0,
+      "poll_errors": 0,
+      "surface_invalidations": 0,
+      "zero_duration_samples": 0
+    },
+    "gpu_timestamp_diagnostics_contract": "Zero-duration samples are retained in gpu_timestamp_ms. gpu_timestamp_errors sums non-monotonic samples, map errors, poll errors and surface invalidations; it is not a device-loss count. Diagnostics categories are cumulative for this process; historical reports without categories cannot identify their aggregate causes.",
+    "gpu_timestamp_errors": 0,
+    "gpu_timestamp_ms": {
+      "last": 0.06656,
+      "median": 0.030208,
+      "p95": 0.07168,
+      "total_samples": 449,
+      "window_samples": 240
+    },
+    "gpu_timestamp_scope": "Scene GPU pass only; excludes text, chrome, upload and presentation",
+    "gpu_upload_count": 116,
+    "gpu_upload_cpu_ms": 0.2328,
+    "gpu_uploaded_bytes": 742400,
+    "handled_input_to_next_ui_update_ms": {
+      "pan": {
+        "last": 5.935099999999999,
+        "median": 5.8492,
+        "p95": 6.1211,
+        "total_samples": 117,
+        "window_samples": 117
+      },
+      "selection": {
+        "last": null,
+        "median": null,
+        "p95": null,
+        "total_samples": 0,
+        "window_samples": 0
+      },
+      "zoom": {
+        "last": 6.003900000000001,
+        "median": 5.8355,
+        "p95": 6.340199999999999,
+        "total_samples": 120,
+        "window_samples": 120
+      }
+    },
+    "hit_test_us": {
+      "last": 5.3,
+      "median": 1.4,
+      "p95": 3.5,
+      "total_samples": 270,
+      "window_samples": 240
+    },
+    "input_pipeline": {
+      "boundary": "eframe raw input hook -> UI shape construction complete -> following update; excludes OS delivery and GPU presentation",
+      "changed_batch_cpu_ms": {
+        "last": 0.26039999999999996,
+        "median": 0.1224,
+        "p95": 0.3038,
+        "total_samples": 116,
+        "window_samples": 116
+      },
+      "frame_submission_ms": null,
+      "labels_accessibility_cpu_ms": {
+        "last": 0.050300000000000004,
+        "median": 0.030750000000000003,
+        "p95": 0.8642,
+        "total_samples": 452,
+        "window_samples": 240
+      },
+      "presentation_ms": null,
+      "raw_input_to_next_update_ms": {
+        "last": 6.2139999999999995,
+        "median": 6.090300000000001,
+        "p95": 6.468500000000001,
+        "total_samples": 240,
+        "window_samples": 240
+      },
+      "raw_input_to_ui_complete_ms": {
+        "last": 0.5379,
+        "median": 0.6091,
+        "p95": 1.5972,
+        "total_samples": 240,
+        "window_samples": 240
+      },
+      "ui_cpu_ms": {
+        "last": 1.2973999999999999,
+        "median": 0.6396,
+        "p95": 1.4535,
+        "total_samples": 452,
+        "window_samples": 240
+      },
+      "visibility_lookup_cpu_ms": {
+        "last": 0.7266,
+        "median": 0.26749999999999996,
+        "p95": 0.5534,
+        "total_samples": 452,
+        "window_samples": 240
+      }
+    },
+    "layout_included_in_scene_build": true,
+    "note": "Native wgpu frames with vsync. CPU update intervals retain the latest 240 samples after 60 warmup intervals. Input spans start inside the viewport gesture handler and end at the next UI update; they exclude OS input delivery and do not measure presentation. GPU upload is CPU submission time for the last upload. Null means unmeasured.",
+    "physical_input_to_photon_ms": null,
+    "scene_background_pending": false,
+    "scene_build_ms": 15.986199999999998,
+    "scene_draw_calls": 2,
+    "scene_index_lookup_outliner_ms": 1.8659,
+    "scene_layout_routing_diff_ms": 14.1199,
+    "total_edges": 2000,
+    "total_nodes": 1000,
+    "visible_nodes": 1000,
+    "warmup_frame_intervals_discarded": 60
+  },
+  "passed": true,
+  "phase_frame_intervals_ms": {
+    "pan": {
+      "last": 6.0308,
+      "median": 6.05295,
+      "p95": 6.2871999999999995,
+      "total_samples": 120,
+      "window_samples": 120
+    },
+    "steady": {
+      "last": 6.1538,
+      "median": 6.0472,
+      "p95": 6.5808,
+      "total_samples": 120,
+      "window_samples": 120
+    },
+    "zoom": {
+      "last": 6.1886,
+      "median": 6.03595,
+      "p95": 6.439,
+      "total_samples": 120,
+      "window_samples": 120
+    }
+  },
+  "scope": "Deterministic synthetic pointer/wheel events enter the native RawInput path; camera behavior is asserted from resulting state. 60 warmup + 120 steady + 120 pan + 120 zoom intervals, then 30 settling frames. Vsync remains enabled. Optional GPU timestamps measure only the scene pass; see native_metrics for availability and scope. Physical input-to-photon latency is not measured.",
+  "warmup_frames": 60,
+  "zoom_input_trace": [
+    {
+      "anchor_error_world": 0.0,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4439.822265625,
+          "y": 2533.97802734375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.11592283844947815
+      },
+      "frame": 301,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 1.0373430252075195,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0001220703125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4476.9912109375,
+          "y": 2520.42919921875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.11826463043689728
+      },
+      "frame": 302,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 1.9521044492721558,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0001220703125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4513.4248046875,
+          "y": 2507.1484375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.12065373361110687
+      },
+      "frame": 303,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 2.697974443435669,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4549.13671875,
+          "y": 2494.130859375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.12309110164642334
+      },
+      "frame": 304,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 3.4783987998962402,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4584.14111328125,
+          "y": 2481.370849609375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.12557770311832428
+      },
+      "frame": 305,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 3.9311976432800293,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4618.45263671875,
+          "y": 2468.863525390625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.12811453640460968
+      },
+      "frame": 306,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 4.732131004333496,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0003662109375,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4652.08447265625,
+          "y": 2456.60400390625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.13070261478424072
+      },
+      "frame": 307,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 4.797190189361572,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4685.05078125,
+          "y": 2444.5869140625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.13334298133850098
+      },
+      "frame": 308,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 5.364833831787109,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4717.3642578125,
+          "y": 2432.80810546875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.136036679148674
+      },
+      "frame": 309,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 5.71067476272583,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4749.03759765625,
+          "y": 2421.262451171875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.13878479599952698
+      },
+      "frame": 310,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 6.306285381317139,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4780.083984375,
+          "y": 2409.9453125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.14158843457698822
+      },
+      "frame": 311,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 6.188941955566406,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4810.515625,
+          "y": 2398.852294921875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.14444871246814728
+      },
+      "frame": 312,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 6.42079496383667,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4840.3447265625,
+          "y": 2387.97900390625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.14736676216125488
+      },
+      "frame": 313,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 6.494659900665283,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0001220703125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4869.5830078125,
+          "y": 2377.32080078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.15034376084804535
+      },
+      "frame": 314,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.132020473480225,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4898.2421875,
+          "y": 2366.8740234375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.15338090062141418
+      },
+      "frame": 315,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.1291961669921875,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4926.33447265625,
+          "y": 2356.6337890625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.15647940337657928
+      },
+      "frame": 316,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.01611852645874,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4953.8701171875,
+          "y": 2346.596435546875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.15964049100875854
+      },
+      "frame": 317,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.177850723266602,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4980.8603515625,
+          "y": 2336.7578125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.16286544501781464
+      },
+      "frame": 318,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.202078342437744,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5007.31640625,
+          "y": 2327.114013671875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.16615554690361023
+      },
+      "frame": 319,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.595970630645752,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5033.24853515625,
+          "y": 2317.6611328125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.16951210796833038
+      },
+      "frame": 320,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.471460342407227,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5058.66748046875,
+          "y": 2308.3955078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.17293648421764374
+      },
+      "frame": 321,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.593102931976318,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0003662109375,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5083.58251953125,
+          "y": 2299.3134765625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.17643003165721893
+      },
+      "frame": 322,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.599534511566162,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0003662109375,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5108.00439453125,
+          "y": 2290.4111328125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1799941509962082
+      },
+      "frame": 323,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.474060535430908,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0003662109375,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5131.94287109375,
+          "y": 2281.68505859375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.18363027274608612
+      },
+      "frame": 324,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.954186916351318,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0003662109375,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5155.4072265625,
+          "y": 2273.1318359375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.18733984231948853
+      },
+      "frame": 325,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.705037593841553,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.00048828125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5178.4072265625,
+          "y": 2264.748046875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1911243498325348
+      },
+      "frame": 326,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.802191257476807,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0006103515625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5200.951171875,
+          "y": 2256.5302734375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1949853152036667
+      },
+      "frame": 327,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.927540302276611,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0006103515625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5223.04931640625,
+          "y": 2248.47509765625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.19892427325248718
+      },
+      "frame": 328,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.668179512023926,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000732421875,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5244.70947265625,
+          "y": 2240.57958984375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.20294280350208282
+      },
+      "frame": 329,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.9593000411987305,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0008544921875,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5265.94091796875,
+          "y": 2232.84033203125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.20704251527786255
+      },
+      "frame": 330,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 8.169340133666992,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0009765625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5286.751953125,
+          "y": 2225.25439453125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.21122504770755768
+      },
+      "frame": 331,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.577661514282227,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0009765625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5307.15087890625,
+          "y": 2217.818603515625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.21549206972122192
+      },
+      "frame": 332,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.938809394836426,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0008544921875,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5327.14599609375,
+          "y": 2210.52978515625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.21984529495239258
+      },
+      "frame": 333,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.85924768447876,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0008544921875,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5346.74462890625,
+          "y": 2203.385498046875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.22428646683692932
+      },
+      "frame": 334,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.968377590179443,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0009765625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5365.9560546875,
+          "y": 2196.3828125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.22881734371185303
+      },
+      "frame": 335,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 8.032148361206055,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0009765625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5384.78662109375,
+          "y": 2189.5185546875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.23343975841999054
+      },
+      "frame": 336,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 8.016584396362305,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0010986328125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5403.244140625,
+          "y": 2182.79052734375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.2381555438041687
+      },
+      "frame": 337,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.778531551361084,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0009765625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5421.33642578125,
+          "y": 2176.1953125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.24296660721302032
+      },
+      "frame": 338,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.856524467468262,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0009765625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5439.0703125,
+          "y": 2169.73095703125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.24787485599517822
+      },
+      "frame": 339,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 8.13184928894043,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0009765625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5456.453125,
+          "y": 2163.39453125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.2528822422027588
+      },
+      "frame": 340,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.9423747062683105,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0009765625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5473.49169921875,
+          "y": 2157.18359375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.2579908072948456
+      },
+      "frame": 341,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.838516712188721,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0010986328125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5490.19287109375,
+          "y": 2151.095703125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.26320257782936096
+      },
+      "frame": 342,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 8.102723121643066,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.001220703125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5506.5634765625,
+          "y": 2145.12841796875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.2685196101665497
+      },
+      "frame": 343,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.755061149597168,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0013427734375,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5522.60986328125,
+          "y": 2139.279296875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.27394405007362366
+      },
+      "frame": 344,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 8.370477676391602,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0013427734375,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5538.33837890625,
+          "y": 2133.5458984375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.2794780731201172
+      },
+      "frame": 345,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.857333660125732,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.001220703125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5553.755859375,
+          "y": 2127.92578125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.28512391448020935
+      },
+      "frame": 346,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 9.870992660522461,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.001220703125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5568.86767578125,
+          "y": 2122.417236328125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.2908838093280792
+      },
+      "frame": 347,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 5.936323642730713,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.001220703125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5583.68017578125,
+          "y": 2117.017578125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.29676005244255066
+      },
+      "frame": 348,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.761215686798096,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0013427734375,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5598.19970703125,
+          "y": 2111.72509765625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.3027549982070923
+      },
+      "frame": 349,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 8.586921691894531,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.001220703125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5612.431640625,
+          "y": 2106.537109375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.3088710606098175
+      },
+      "frame": 350,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.414361953735352,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0013427734375,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5626.3818359375,
+          "y": 2101.4521484375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.3151106536388397
+      },
+      "frame": 351,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 8.204187393188477,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0013427734375,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5640.0556640625,
+          "y": 2096.4677734375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.3214763104915619
+      },
+      "frame": 352,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.96380090713501,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0013427734375,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5653.45849609375,
+          "y": 2091.58203125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.32797056436538696
+      },
+      "frame": 353,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.892932415008545,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.001220703125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5666.59619140625,
+          "y": 2086.79296875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.33459600806236267
+      },
+      "frame": 354,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 8.150774002075195,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.001220703125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5679.4736328125,
+          "y": 2082.098876953125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.3413552939891815
+      },
+      "frame": 355,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.9554314613342285,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0010986328125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5692.09619140625,
+          "y": 2077.49755859375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.3482511341571808
+      },
+      "frame": 356,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 8.103519439697266,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0009765625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5704.46875,
+          "y": 2072.9873046875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.35528627038002014
+      },
+      "frame": 357,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.961231708526611,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0008544921875,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5716.5966796875,
+          "y": 2068.56640625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.3624635338783264
+      },
+      "frame": 358,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.783939361572266,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0008544921875,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5728.48388671875,
+          "y": 2064.233154296875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.36978578567504883
+      },
+      "frame": 359,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 8.258472442626953,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0009765625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5740.1357421875,
+          "y": 2059.98583984375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.37725594639778137
+      },
+      "frame": 360,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 7.932305335998535,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0010986328125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5728.48388671875,
+          "y": 2064.2333984375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.36978578567504883
+      },
+      "frame": 361,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 6.135205268859863,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0010986328125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5716.59619140625,
+          "y": 2068.566650390625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.3624635338783264
+      },
+      "frame": 362,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 3.9616050720214844,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0009765625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5704.46875,
+          "y": 2072.9873046875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.35528627038002014
+      },
+      "frame": 363,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 2.468388319015503,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0010986328125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5692.09619140625,
+          "y": 2077.49755859375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.3482511341571808
+      },
+      "frame": 364,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": 1.2067190408706665,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0009765625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5679.4736328125,
+          "y": 2082.0986328125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.3413552939891815
+      },
+      "frame": 365,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -0.26424455642700195,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0009765625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5666.59619140625,
+          "y": 2086.792724609375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.33459600806236267
+      },
+      "frame": 366,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -1.0330290794372559,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0008544921875,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5653.45849609375,
+          "y": 2091.58154296875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.32797056436538696
+      },
+      "frame": 367,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -1.9192419052124023,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0008544921875,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5640.05517578125,
+          "y": 2096.46728515625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.3214763104915619
+      },
+      "frame": 368,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -2.7459099292755127,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0008544921875,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5626.38134765625,
+          "y": 2101.45166015625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.3151106536388397
+      },
+      "frame": 369,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -3.453840494155884,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000732421875,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5612.431640625,
+          "y": 2106.53662109375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.3088710606098175
+      },
+      "frame": 370,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -3.9309751987457275,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0008544921875,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5598.19970703125,
+          "y": 2111.724609375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.3027549982070923
+      },
+      "frame": 371,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -4.7432756423950195,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000732421875,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5583.68017578125,
+          "y": 2117.01708984375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.29676005244255066
+      },
+      "frame": 372,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -5.443685054779053,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000732421875,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5568.86767578125,
+          "y": 2122.416748046875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.2908838093280792
+      },
+      "frame": 373,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -5.1346435546875,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000732421875,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5553.755859375,
+          "y": 2127.92529296875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.28512391448020935
+      },
+      "frame": 374,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -5.78635835647583,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0008544921875,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5538.33837890625,
+          "y": 2133.54541015625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.2794780731201172
+      },
+      "frame": 375,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -5.782025337219238,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0008544921875,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5522.60986328125,
+          "y": 2139.27880859375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.27394405007362366
+      },
+      "frame": 376,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -6.428713321685791,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000732421875,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5506.5634765625,
+          "y": 2145.1279296875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.2685196101665497
+      },
+      "frame": 377,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -6.156103134155273,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0006103515625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5490.193359375,
+          "y": 2151.09521484375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.26320257782936096
+      },
+      "frame": 378,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -6.61799955368042,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.00048828125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5473.49169921875,
+          "y": 2157.18310546875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.2579908072948456
+      },
+      "frame": 379,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -6.921427249908447,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.00048828125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5456.453125,
+          "y": 2163.39404296875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.2528822422027588
+      },
+      "frame": 380,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.365586757659912,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.00048828125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5439.0703125,
+          "y": 2169.73046875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.24787484109401703
+      },
+      "frame": 381,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -6.660319805145264,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.00048828125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5421.33642578125,
+          "y": 2176.19482421875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.24296659231185913
+      },
+      "frame": 382,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.244202136993408,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0006103515625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5403.244140625,
+          "y": 2182.7900390625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.2381555289030075
+      },
+      "frame": 383,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.563912868499756,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0006103515625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5384.7861328125,
+          "y": 2189.518310546875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.23343972861766815
+      },
+      "frame": 384,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.400211811065674,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.00048828125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5365.95556640625,
+          "y": 2196.38232421875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.22881731390953064
+      },
+      "frame": 385,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.496824264526367,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.00048828125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5346.74462890625,
+          "y": 2203.38525390625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.22428642213344574
+      },
+      "frame": 386,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.405839920043945,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.00048828125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5327.1455078125,
+          "y": 2210.529541015625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.219845250248909
+      },
+      "frame": 387,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -8.40500545501709,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.00048828125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5307.150390625,
+          "y": 2217.818115234375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.21549202501773834
+      },
+      "frame": 388,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.408809661865234,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0003662109375,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5286.751953125,
+          "y": 2225.25390625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.2112250030040741
+      },
+      "frame": 389,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.256530284881592,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5265.9404296875,
+          "y": 2232.83984375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.20704247057437897
+      },
+      "frame": 390,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.791531085968018,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5244.708984375,
+          "y": 2240.5791015625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.20294275879859924
+      },
+      "frame": 391,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -8.230147361755371,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5223.048828125,
+          "y": 2248.474853515625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1989242285490036
+      },
+      "frame": 392,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.294745445251465,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5200.951171875,
+          "y": 2256.530029296875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1949852705001831
+      },
+      "frame": 393,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.906008720397949,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5178.40673828125,
+          "y": 2264.747802734375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1911243051290512
+      },
+      "frame": 394,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.624406814575195,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5155.40673828125,
+          "y": 2273.1318359375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.18733979761600494
+      },
+      "frame": 395,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -8.277447700500488,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5131.94287109375,
+          "y": 2281.68505859375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.18363022804260254
+      },
+      "frame": 396,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.888243675231934,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5108.00439453125,
+          "y": 2290.4111328125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1799941062927246
+      },
+      "frame": 397,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.955999851226807,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5083.58251953125,
+          "y": 2299.3134765625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.17642998695373535
+      },
+      "frame": 398,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.8274664878845215,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0001220703125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5058.6669921875,
+          "y": 2308.3955078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.17293643951416016
+      },
+      "frame": 399,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.970740795135498,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5033.248046875,
+          "y": 2317.6611328125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1695120632648468
+      },
+      "frame": 400,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.74116849899292,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0001220703125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 5007.31640625,
+          "y": 2327.11376953125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.16615550220012665
+      },
+      "frame": 401,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.893221378326416,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0001220703125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4980.8603515625,
+          "y": 2336.757568359375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.16286540031433105
+      },
+      "frame": 402,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -8.121444702148438,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0001220703125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4953.86962890625,
+          "y": 2346.59619140625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.15964044630527496
+      },
+      "frame": 403,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -8.535184860229492,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0001220703125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4926.333984375,
+          "y": 2356.633544921875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1564793586730957
+      },
+      "frame": 404,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.92579984664917,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4898.2421875,
+          "y": 2366.87353515625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1533808559179306
+      },
+      "frame": 405,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.399313449859619,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4869.58251953125,
+          "y": 2377.320556640625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.15034371614456177
+      },
+      "frame": 406,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.93271017074585,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0003662109375,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4840.34423828125,
+          "y": 2387.978515625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1473667174577713
+      },
+      "frame": 407,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -8.425732612609863,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0003662109375,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4810.51513671875,
+          "y": 2398.851806640625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1444486677646637
+      },
+      "frame": 408,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.5375518798828125,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0003662109375,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4780.08349609375,
+          "y": 2409.94482421875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.14158838987350464
+      },
+      "frame": 409,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -8.04997730255127,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0003662109375,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4749.037109375,
+          "y": 2421.261962890625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1387847512960434
+      },
+      "frame": 410,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -8.172314643859863,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.00048828125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4717.36376953125,
+          "y": 2432.8076171875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.13603663444519043
+      },
+      "frame": 411,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.639436721801758,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.00048828125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4685.05029296875,
+          "y": 2444.58642578125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1333429366350174
+      },
+      "frame": 412,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.886135578155518,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0003662109375,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4652.083984375,
+          "y": 2456.603515625
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.13070257008075714
+      },
+      "frame": 413,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -8.237406730651855,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4618.4521484375,
+          "y": 2468.86328125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1281144917011261
+      },
+      "frame": 414,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -8.192825317382812,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4584.140625,
+          "y": 2481.37060546875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1255776584148407
+      },
+      "frame": 415,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.9421491622924805,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4549.1357421875,
+          "y": 2494.130615234375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.12309105694293976
+      },
+      "frame": 416,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.767175197601318,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0001220703125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4513.423828125,
+          "y": 2507.1484375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.12065368890762329
+      },
+      "frame": 417,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.925441265106201,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.0001220703125,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4476.99072265625,
+          "y": 2520.42919921875
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1182645857334137
+      },
+      "frame": 418,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -8.336274147033691,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4439.8212890625,
+          "y": 2533.97802734375
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.11592279374599457
+      },
+      "frame": 419,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.781127452850342,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 420,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -8.020600318908691,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 421,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -7.145956039428711,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 422,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -6.145749568939209,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 423,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -4.920849800109863,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 424,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -4.666792869567871,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 425,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -3.8670876026153564,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 426,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -3.5929057598114014,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 427,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -2.9412083625793457,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 428,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -2.6837947368621826,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 429,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -2.2831544876098633,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 430,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -1.994594693183899,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 431,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -1.6641751527786255,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 432,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -1.6158032417297363,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 433,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -1.262338399887085,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 434,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -1.089231252670288,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 435,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -0.9758113622665405,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 436,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -0.8682206273078918,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 437,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -0.775883138179779,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 438,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -0.6866158246994019,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 439,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -0.5561800599098206,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 440,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -0.46630099415779114,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 441,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -0.4318090081214905,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 442,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -0.37957310676574707,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 443,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -0.32038959860801697,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 444,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -0.2731342017650604,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 445,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -0.2503330111503601,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 446,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -0.2106507569551468,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 447,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -0.17743214964866638,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 448,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -0.1571958214044571,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 449,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -0.13704702258110046,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    },
+    {
+      "anchor_error_world": 0.000244140625,
+      "camera_animation_pending": false,
+      "camera_from_previous_update": {
+        "center": {
+          "x": 4401.9013671875,
+          "y": 2547.80078125
+        },
+        "viewport": {
+          "height": 661.0,
+          "width": 1088.0
+        },
+        "zoom": 0.1136273667216301
+      },
+      "frame": 450,
+      "incoming_os_events_before_synthetic_injection": [],
+      "pixels_per_point": 1.0,
+      "previous_input_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "previous_smooth_scroll_y": -0.9255783557891846,
+      "scene_generation": 2,
+      "stored_zoom_pointer": [
+        999.5999755859375,
+        558.1799926757812
+      ],
+      "viewport": [
+        238.0,
+        307.0,
+        1088.0,
+        661.0
+      ]
+    }
+  ]
+}

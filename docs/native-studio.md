@@ -19,6 +19,28 @@ project/revision and presentation session. A missing runtime never silently beco
 a fixture. Fixtures are opened explicitly and remain labeled in the title surface,
 viewport, inspector and candidate controls.
 
+## Create a project and add source
+
+After runtime authentication, open the project menu and choose **New project**.
+Enter a name and an absolute `.sqlite` repository path, then choose **Create
+project**. The resulting project is empty and Working. An existing repository
+can hold several projects; selecting a new repository does not delete the old
+one.
+
+Choose **Add source document**, enter an absolute local `.sysml` or `.kerml`
+file path, and choose **Prepare source candidate**. Review the exact imported
+text and its Current/Candidate/Diff views. Validate and commit to advance the
+durable head, or cancel to keep the original revision. Invalid source remains
+an uncommitted candidate with diagnostics. The imported file's basename is the
+document path in the project; a duplicate path is rejected.
+
+Current-world navigation and inspection remain available during candidate
+construction. Cancelling prevents its result from becoming the current revision;
+the underlying semantic operation may still need to finish before its worker can
+start another edit. Runtime authentication and project reconstruction still take
+minutes on the measured real model. See the
+[current measurements](../verification/native-studio-acceptance/read-profile-02/README.md).
+
 ## Architecture
 
 ```text

@@ -1,0 +1,28 @@
+[
+  {
+    "platform": "linux",
+    "job": 108381032975,
+    "run": 36233529549,
+    "source_commit": "023423a743a66b92d2126ab8a2740f3c7d273163",
+    "conclusion": "success",
+    "log": "ci-linux-native-023423a7.txt",
+    "log_encoding": "utf-16 (PowerShell transcript redirection)",
+    "log_sha256": "9007f8a66bd66273c64d937e6407ccb1c417b71cb7bfbcc2bf7113513d21f061",
+    "test_summaries": [
+      "test result: ok. 150 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.96s"
+    ],
+    "scope": "Linux native fmt+Clippy+tests; macOS compile/link only. Neither establishes actual interactive qualification."
+  },
+  {
+    "platform": "macos",
+    "job": 108381032814,
+    "run": 36233529549,
+    "source_commit": "023423a743a66b92d2126ab8a2740f3c7d273163",
+    "conclusion": "success",
+    "log": "ci-macos-native-023423a7.txt",
+    "log_encoding": "utf-16 (PowerShell transcript redirection)",
+    "log_sha256": "990e3cbb8fa021322990dc0f4d1b497929d30fb5b22507314c3af8f908339880",
+    "test_summaries": [],
+    "scope": "Linux native fmt+Clippy+tests; macOS compile/link only. Neither establishes actual interactive qualification."
+  }
+]

@@ -1,0 +1,26 @@
+[
+  {
+    "command": "cargo fmt --all -- --check",
+    "chunk_id": "fa1f7e",
+    "wall_time_seconds": 3.8109229,
+    "exit_code": 0,
+    "original_token_count": 0,
+    "output": ""
+  },
+  {
+    "command": "cargo fmt --manifest-path crates/studio-native/Cargo.toml --all -- --check",
+    "chunk_id": "975903",
+    "wall_time_seconds": 4.5584795,
+    "exit_code": 0,
+    "original_token_count": 0,
+    "output": ""
+  },
+  {
+    "command": "git diff --check",
+    "chunk_id": "13d96b",
+    "wall_time_seconds": 0.4298216,
+    "exit_code": 0,
+    "original_token_count": 0,
+    "output": ""
+  }
+]

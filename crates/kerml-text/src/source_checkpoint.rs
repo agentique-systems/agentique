@@ -46,6 +46,8 @@ pub struct SourceIdentityCheckpoint {
 /// A source checkpoint failed authentication or ordinary source reconstruction.
 #[derive(Debug, thiserror::Error)]
 pub enum SourceCheckpointError {
+    #[error(transparent)]
+    Cancelled(#[from] agq_kerml_semantics::Cancelled),
     #[error("source checkpoint does not match {0}")]
     Mismatch(&'static str),
     #[error(transparent)]
@@ -58,6 +60,14 @@ pub enum SourceCheckpointError {
     Archive(Box<agq_kernel::archive::ArchiveError>),
     #[error(transparent)]
     Json(#[from] serde_json::Error),
+}
+
+impl SourceCheckpointError {
+    /// Detect operational interruption without string-matching semantic errors.
+    pub fn is_cancelled(&self) -> bool {
+        matches!(self, Self::Cancelled(_))
+            || matches!(self, Self::Build(error) if error.is_cancelled())
+    }
 }
 
 impl From<agq_kernel::archive::ArchiveError> for SourceCheckpointError {
@@ -126,15 +136,21 @@ impl SourceIdentityCheckpoint {
         publication: Arc<CanonicalSysmlSystemsLibrary>,
         sources: &BTreeMap<DocumentId, String>,
     ) -> Result<SourceCompilation, SourceCheckpointError> {
-        self.restore_maybe_cached(publication, sources, None, None)
+        self.restore_maybe_cached(
+            publication,
+            sources,
+            None,
+            None,
+            &CompilationControl::default(),
+        )
     }
-    /// Reconstruct within an existing source history, sharing only its already
-    /// authenticated immutable standard dependency. Project/root and publication
-    /// identities must match. Every source blob and syntax arena is checked again;
-    /// local declarations, references, producers, closure and audit are rebuilt.
-    ///
-    /// No prior local graph, lowering cache, certificate or validation handle is
-    /// reused. This returns a Working compilation, just like [`Self::restore`].
+    /// Reconstruct within an existing source history, sharing its authenticated
+    /// immutable dependency and unchanged declared fragments. Project/root and
+    /// publication identities must match. Every source blob and syntax arena is
+    /// checked again. Producers and closure still authenticate the new graph;
+    /// successful audit outcomes are reused only with explicit read/writer proof.
+    /// This returns a Working compilation, just like [`Self::restore`], and never
+    /// inherits a validation handle.
     /// The outer workspace remains responsible for exact revision-parent checks.
     ///
     /// # Checkpoint lineage precondition
@@ -153,11 +169,27 @@ impl SourceIdentityCheckpoint {
         predecessor: &SourceCompilation,
         sources: &BTreeMap<DocumentId, String>,
     ) -> Result<SourceCompilation, SourceCheckpointError> {
+        self.restore_sharing_dependency_controlled(
+            predecessor,
+            sources,
+            &CompilationControl::default(),
+        )
+    }
+
+    /// Restore the exact successor with explicit cancellation of unpublished work.
+    /// All identity and predecessor preconditions of `restore_sharing_dependency` apply.
+    pub fn restore_sharing_dependency_controlled(
+        &self,
+        predecessor: &SourceCompilation,
+        sources: &BTreeMap<DocumentId, String>,
+        control: &CompilationControl,
+    ) -> Result<SourceCompilation, SourceCheckpointError> {
         self.restore_maybe_cached(
             predecessor.inputs.accepted_sysml().clone(),
             sources,
             None,
             Some(predecessor),
+            control,
         )
     }
     /// Restore authenticated local effective facts, then rerun producer and audit
@@ -179,7 +211,13 @@ impl SourceIdentityCheckpoint {
                 "semantic cache archive checksum",
             ));
         }
-        self.restore_maybe_cached(publication, sources, Some(cache), None)
+        self.restore_maybe_cached(
+            publication,
+            sources,
+            Some(cache),
+            None,
+            &CompilationControl::default(),
+        )
     }
     fn restore_maybe_cached(
         &self,
@@ -187,7 +225,9 @@ impl SourceIdentityCheckpoint {
         sources: &BTreeMap<DocumentId, String>,
         cache: Option<&SourceSemanticCache>,
         predecessor: Option<&SourceCompilation>,
+        control: &CompilationControl,
     ) -> Result<SourceCompilation, SourceCheckpointError> {
+        control.check()?;
         use SourceCheckpointError::Mismatch;
         if self.format_version != 1 {
             return Err(Mismatch("format version"));
@@ -207,8 +247,9 @@ impl SourceIdentityCheckpoint {
             if predecessor.inputs.root != self.root {
                 return Err(Mismatch("predecessor canonical root"));
             }
-            // Only the immutable authenticated dependency crosses this boundary.
-            // Use the same parser limits and empty document state as cold restore.
+            // Inputs share the immutable authenticated dependency. Compilation below
+            // separately checks predecessor fragments and reusable audit outcomes.
+            // Source parsing keeps the same limits and arena checks as cold restore.
             SourceInputs {
                 project: self.project_id,
                 root: self.root,
@@ -226,6 +267,7 @@ impl SourceIdentityCheckpoint {
         let mut document_ids = BTreeSet::new();
         let mut syntax_ids = BTreeSet::new();
         for saved in &self.documents {
+            control.enter(CompilationStage::Parsing)?;
             if !document_ids.insert(saved.document_id) {
                 return Err(Mismatch("duplicate document identity"));
             }
@@ -262,6 +304,7 @@ impl SourceIdentityCheckpoint {
                 )?,
             }
             .restore_identities(&saved.syntax_nodes)?;
+            control.check()?;
             let document = Arc::new(ProjectDocument {
                 id: saved.document_id,
                 revision: saved.source_revision_id,
@@ -286,6 +329,12 @@ impl SourceIdentityCheckpoint {
         if ledger.len() != self.identity_sources.len() {
             return Err(Mismatch("duplicate identity origin"));
         }
-        Ok(Arc::new(inputs).compile_with_history(None, Some((history, ledger)), false, cache)?)
+        Ok(Arc::new(inputs).compile_with_history(
+            predecessor,
+            Some((history, ledger)),
+            predecessor.is_some(),
+            cache,
+            control,
+        )?)
     }
 }

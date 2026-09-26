@@ -3,8 +3,9 @@ use super::*;
 use crate::library::{LibraryDraft, LibraryLoadError, LibrarySourceMap, construction::SourceInput};
 use crate::sysml::{
     AcceptedSourceDependency, AuthoredProducerStatus, CanonicalSysmlSystemsLibrary,
-    SystemsPublicationAudit, SystemsPublicationFinding, audit_authored_effective_population,
+    SystemsPublicationAudit, SystemsPublicationFinding,
 };
+use crate::{CompilationControl, CompilationStage};
 use agq_kerml_semantics::{Completeness, ProducerClosureCertificate};
 use agq_kernel::provenance::{DeclaredOrigin, FactKey, SourceOrigin};
 use agq_kernel::{ConstructionView, DeclaredConstructionHistory, DeclaredIdentitySet, ModelView};
@@ -19,6 +20,8 @@ pub use checkpoint::*;
 #[path = "source_semantic_cache.rs"]
 mod semantic_cache;
 pub use semantic_cache::*;
+#[path = "source_effective_audit.rs"]
+mod effective_audit;
 
 /// Exact source inputs. Applying edits shares every unchanged document and syntax arena.
 #[derive(Clone, Debug)]
@@ -103,7 +106,7 @@ impl SourceInputs {
         self: &Arc<Self>,
         previous: Option<&SourceCompilation>,
     ) -> Result<SourceCompilation, LibraryLoadError> {
-        self.compile_with_history(previous, None, true, None)
+        self.compile_with_history(previous, None, true, None, &CompilationControl::default())
     }
     fn compile_with_history(
         self: &Arc<Self>,
@@ -111,7 +114,9 @@ impl SourceInputs {
         restored: Option<(DeclaredConstructionHistory, LibrarySourceMap)>,
         incremental: bool,
         semantic_cache: Option<&SourceSemanticCache>,
+        control: &CompilationControl,
     ) -> Result<SourceCompilation, LibraryLoadError> {
+        control.check()?;
         let compilation_started = Instant::now();
         let timings = std::cell::RefCell::new(CompilationTimings::default());
         if previous.is_some_and(|previous| {
@@ -171,6 +176,7 @@ impl SourceInputs {
         timings.borrow_mut().identity_preparation_micros = elapsed_micros(compilation_started);
         let preparation_started = Instant::now();
         let (prepared, pending) = loop {
+            control.check()?;
             let inputs = self.lowering_inputs(&omitted);
             let pending = if omitted.is_empty() {
                 BTreeSet::new()
@@ -188,6 +194,7 @@ impl SourceInputs {
                 Some(&history),
                 Some(&cache),
                 Some(&timings),
+                control,
             ) {
                 Ok(prepared) => break (prepared, pending),
                 Err(LibraryLoadError::UnsupportedSource { origin, construct }) => {
@@ -216,7 +223,9 @@ impl SourceInputs {
         let frontier = if pending.is_empty() && prepared.draft.candidate().obligations().is_empty()
         {
             let validation_started = Instant::now();
+            control.enter(CompilationStage::DeclaredModel)?;
             let snapshot = prepared.draft.candidate().clone().revalidate_declared()?;
+            control.check()?;
             timings.borrow_mut().strict_kernel_validation_micros =
                 elapsed_micros(validation_started);
             let previous = previous.and_then(|previous| match &previous.frontier {
@@ -232,6 +241,7 @@ impl SourceInputs {
                 Some(snapshot),
                 semantic_cache,
                 Some(&timings),
+                control,
             )?;
             diagnostics.extend(
                 model
@@ -288,6 +298,8 @@ impl SourceInputs {
             history,
             identities: ledger,
             effective_audit: None,
+            kerml_read_context: Default::default(),
+            sysml_read_context: Default::default(),
             lowering_cache: cache.into_inner(),
             work: CompilationWork::default(),
             timings: CompilationTimings::default(),
@@ -303,70 +315,12 @@ impl SourceInputs {
         // have no direct source-map entry. The accepted dependency is borrowed,
         // never reevaluated as an authored population.
         let audit_started = Instant::now();
-        let bound_queries = result
-            .sysml_queries()
-            .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))?;
-        let context = bound_queries.context().clone();
-        let mut subjects: Vec<_> = bound_queries
-            .model()
-            .elements()
-            .filter(|record| {
-                self.dependency
-                    .publication
-                    .overlay()
-                    .model()
-                    .element(record.id())
-                    .is_none()
-            })
-            .map(|record| record.id())
-            .collect();
-        subjects.sort_unstable();
-        let mut report = SystemsPublicationAudit::default();
-        let mut capabilities = Vec::new();
-        // Bind the immutable graph once, then bound evaluator memoization without
-        // repeating graph authentication for each deterministic audit batch.
-        for batch in subjects.chunks(32) {
-            let q = bound_queries.fork();
-            if q.context() != &context {
-                return Err(LibraryLoadError::Interpretation(
-                    "authored effective audit context changed within an immutable compilation"
-                        .into(),
-                ));
-            }
-            // Retain the existing native capability answer, including its full
-            // proof/search evidence, from the query the audit already evaluated.
-            // Only incomplete/invalid answers are cloned. Subject order remains
-            // the audit order; report findings are appended after all capabilities.
-            audit_authored_effective_population(&q, batch, &mut report, |subject, answer| {
-                if answer.completeness() != Completeness::Complete {
-                    capabilities.push(SourceDiagnostic::Capability {
-                        subject,
-                        origin: result.source_map().get(&FactKey::Element(subject)).cloned(),
-                        answer: Box::new(answer.clone()),
-                    });
-                }
-            });
-        }
-        for finding in &report.findings {
-            let origin = match finding {
-                SystemsPublicationFinding::Capability { diagnostic, .. } => result
-                    .source_map()
-                    .get(&FactKey::Element(diagnostic.subject))
-                    .cloned(),
-                _ => None,
-            };
-            capabilities.push(SourceDiagnostic::EffectiveAudit {
-                origin,
-                finding: Box::new(finding.clone()),
-            });
-        }
-        drop(bound_queries);
+        control.enter(CompilationStage::EffectiveValidation)?;
+        let (audit, capabilities, audit_reused) = effective_audit::run(&result, previous, control)?;
+        control.check()?;
+        timings.borrow_mut().effective_audit_reuse_setup_micros = audit.reuse_setup_micros;
         result.diagnostics.extend(capabilities);
-        result.effective_audit = Some(SourceEffectiveAudit {
-            context,
-            subjects,
-            report,
-        });
+        result.effective_audit = Some(audit);
         timings.borrow_mut().effective_audit_micros = elapsed_micros(audit_started);
         result.work = CompilationWork {
             semantic_cache_used: semantic_cache.is_some(),
@@ -388,13 +342,19 @@ impl SourceInputs {
             effective_audit_subjects_evaluated: result
                 .effective_audit
                 .as_ref()
-                .map_or(0, |audit| audit.subjects.len()),
+                .map_or(0, |audit| audit.subjects.len() - audit_reused),
+            effective_audit_subjects_reused: audit_reused,
+            effective_audit_checks_reused: result
+                .effective_audit
+                .as_ref()
+                .map_or(0, |audit| audit.reused_checks),
         };
         let delta_started = Instant::now();
         result.edit_frontier = SourceEditFrontier::between(previous, &result);
         timings.borrow_mut().edit_frontier_micros = elapsed_micros(delta_started);
         timings.borrow_mut().total_compile_micros = elapsed_micros(compilation_started);
         result.timings = timings.into_inner();
+        control.check()?;
         Ok(result)
     }
     fn lowering_inputs(&self, omitted: &BTreeSet<DocumentId>) -> Vec<SourceInput<'_>> {
@@ -483,6 +443,9 @@ pub struct SourceEffectiveAudit {
     context: SysmlSemanticContextId,
     subjects: Vec<ElementId>,
     report: SystemsPublicationAudit,
+    reuse: Option<effective_audit::AuditReuse>,
+    reused_checks: usize,
+    reuse_setup_micros: u64,
 }
 impl SourceEffectiveAudit {
     /// Exact semantic revision and accepted dependencies used by every batch.
@@ -541,6 +504,13 @@ pub struct CompilationWork {
     pub producer_subjects_evaluated: usize,
     /// Current local canonical subjects visited by the final effective audit.
     pub effective_audit_subjects_evaluated: usize,
+    /// Successful strict audit outcomes retained after explicit read/writer proof.
+    #[serde(default)]
+    pub effective_audit_subjects_reused: usize,
+    /// Actual successful query/family checks transported; zero-query subjects
+    /// do not inflate this work-elimination measure.
+    #[serde(default)]
+    pub effective_audit_checks_reused: usize,
 }
 
 /// Observed elapsed times for one authored compilation, in microseconds.
@@ -569,10 +539,19 @@ pub struct CompilationTimings {
     /// Final producer schedule, certificate checkpoint/rebinding and certification.
     /// Certification remains inside the measured closure operation.
     pub final_closure_micros: u64,
+    /// Prior producer certificate/context/signature capture inside final closure.
+    #[serde(default)]
+    pub closure_checkpoint_micros: u64,
+    /// Exact prior producer read revalidation inside final closure.
+    #[serde(default)]
+    pub closure_rebind_micros: u64,
     /// Final source references checked against the closed semantic context.
     pub final_references_micros: u64,
     /// Strict current local-subject audit, including effective context binding.
     pub effective_audit_micros: u64,
+    /// Closed-context read signature capture/delta inside the strict audit.
+    #[serde(default)]
+    pub effective_audit_reuse_setup_micros: u64,
     /// Exact source and declared-fact delta capture after the effective audit.
     pub edit_frontier_micros: u64,
 }
@@ -771,6 +750,10 @@ pub struct SourceCompilation {
     history: DeclaredConstructionHistory,
     identities: LibrarySourceMap,
     effective_audit: Option<SourceEffectiveAudit>,
+    kerml_read_context:
+        std::sync::OnceLock<Result<agq_kerml_semantics::RetainedSemanticContext, QueryUnavailable>>,
+    sysml_read_context:
+        std::sync::OnceLock<Result<agq_sysml_semantics::RetainedSysmlContext, QueryUnavailable>>,
     lowering_cache: crate::library::construction::LoweringCache,
     work: CompilationWork,
     timings: CompilationTimings,
@@ -798,6 +781,7 @@ impl SourceCompilation {
             Some((self.history.clone(), self.identities.clone())),
             false,
             None,
+            &CompilationControl::default(),
         )?;
         // The oracle deliberately retains the same parsed source identity inputs.
         rebuilt.work.documents_reparsed = 0;
@@ -861,6 +845,16 @@ impl SourceCompilation {
         }
     }
     pub fn kerml_queries(&self) -> Result<KerMlQueries<'_>, QueryUnavailable> {
+        self.kerml_read_context
+            .get_or_init(|| {
+                self.fresh_kerml_queries()
+                    .map(|queries| queries.retain_context())
+            })
+            .as_ref()
+            .map(|context| KerMlQueries::new(context.borrow()))
+            .map_err(Clone::clone)
+    }
+    fn fresh_kerml_queries(&self) -> Result<KerMlQueries<'_>, QueryUnavailable> {
         match &self.frontier {
             SourceFrontier::Strict(model) => Ok(model.queries()),
             SourceFrontier::Construction { draft, .. } => self
@@ -872,6 +866,16 @@ impl SourceCompilation {
         }
     }
     pub fn sysml_queries(&self) -> Result<SysmlQueries<'_>, QueryUnavailable> {
+        self.sysml_read_context
+            .get_or_init(|| {
+                self.fresh_sysml_queries()
+                    .map(|queries| queries.retain_context())
+            })
+            .as_ref()
+            .map(agq_sysml_semantics::RetainedSysmlContext::queries)
+            .map_err(Clone::clone)
+    }
+    fn fresh_sysml_queries(&self) -> Result<SysmlQueries<'_>, QueryUnavailable> {
         match &self.frontier {
             SourceFrontier::Strict(model) => model.sysml_queries().ok_or_else(|| {
                 QueryUnavailable::Context("missing authenticated SysML context".into())

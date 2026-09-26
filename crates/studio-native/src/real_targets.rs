@@ -1,7 +1,7 @@
 //! Geometry from ordinary widgets for opt-in real-runtime input qualification.
 //! Recording a rectangle never changes application or semantic state.
 use agq_kernel::ElementId;
-use agq_modeling_repository::ProjectId;
+use agq_modeling_repository::{ProjectId, ProjectRevisionId};
 use eframe::egui::{self, Rect};
 
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
@@ -15,6 +15,8 @@ pub enum Target {
     Standards,
     InspectorElement(ElementId),
     InspectorRelationship(String),
+    HistoryRevision(ProjectRevisionId),
+    HistoryReturnHead,
 }
 
 #[derive(Clone)]

@@ -1,0 +1,24 @@
+{
+  "command": [
+    "python",
+    "verification/scripts/native_alpha_check.py",
+    "acceptance-native-tests-06",
+    "--",
+    "python",
+    "-c",
+    "raise SystemExit(99)"
+  ],
+  "exit_code": 1,
+  "stdout": "",
+  "stderr": "Refusing to overwrite prior gate evidence: acceptance-native-tests-06\n",
+  "existing_sha256_before": [
+    "3c87cce7f22c9a40d44d6a272ac2a7e9e9189f4bb8295bc51fa3421ae15d1e2b",
+    "a39904219fea3cea6d76257020272030fddf812ee247c87938e2abfc081d7c0b"
+  ],
+  "existing_sha256_after": [
+    "3c87cce7f22c9a40d44d6a272ac2a7e9e9189f4bb8295bc51fa3421ae15d1e2b",
+    "a39904219fea3cea6d76257020272030fddf812ee247c87938e2abfc081d7c0b"
+  ],
+  "prior_evidence_preserved": true,
+  "expected_rejection": true
+}

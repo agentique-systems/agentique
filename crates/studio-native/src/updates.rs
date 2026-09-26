@@ -13,7 +13,7 @@ impl StudioApp {
         self.receive_replies(replies);
     }
     pub fn receive_replies(&mut self, replies: impl IntoIterator<Item = crate::bridge::Reply>) {
-        for reply in replies {
+        for mut reply in replies {
             if reply.terminal {
                 self.pending.remove(&reply.request);
                 self.bridge.complete(reply.request);
@@ -21,7 +21,26 @@ impl StudioApp {
             if !self.bridge.current_epoch(reply.epoch) {
                 continue;
             }
-            if reply.read.is_some() {
+            if let Some(read) = reply.read
+                && read.panel == crate::read_lane::PanelRead::Projection
+            {
+                if !reply.terminal
+                    || reply.mutation
+                    || reply.request != self.scene_request
+                    || reply.epoch != read.scope.epoch
+                    || self.binding != Some(read.scope.binding)
+                    || self.pending_revision.is_some()
+                    || self.fixture.is_some()
+                    || self.comparison != ComparisonMode::Current
+                {
+                    continue;
+                }
+                // This capability is permanently revision-bound and unaffected
+                // by concurrent candidate construction. The ordinary projection
+                // install below still checks the exact requested definition.
+                reply.read = None;
+                reply.context = Some(self.work_context());
+            } else if reply.read.is_some() {
                 self.receive_panel_read(reply);
                 continue;
             }
@@ -61,7 +80,35 @@ impl StudioApp {
                     .is_some_and(|p| p.request == reply.request)
             {
                 let preparation = self.preparation.take().expect("matching preparation");
+                if matches!(reply.result, Ok(Output::PreparationCancelled)) {
+                    let acknowledged = std::time::Instant::now();
+                    self.last_preparation_cancellation =
+                        Some(crate::app::PreparationCancellationReceipt {
+                            request: reply.request,
+                            epoch: reply.epoch,
+                            binding: reply.context.as_ref().and_then(|context| context.binding),
+                            preparation_elapsed_ms: acknowledged
+                                .duration_since(preparation.started)
+                                .as_millis(),
+                            request_to_ack_ms: preparation
+                                .cancel_requested_at
+                                .map(|at| acknowledged.duration_since(at).as_millis()),
+                            last_stage: preparation
+                                .control
+                                .stage()
+                                .map(|stage| format!("{stage:?}")),
+                        });
+                    self.status =
+                        "Candidate preparation cancelled; current revision retained".into();
+                    continue;
+                }
                 if preparation.cancelled {
+                    if let Err(error) = &reply.result {
+                        self.status = format!(
+                            "Candidate preparation failed after cancellation: {error}. Current revision retained."
+                        );
+                        continue;
+                    }
                     if let Ok(Output::Candidate(candidate)) = reply.result {
                         let id = candidate.id;
                         if self.binding == Some(candidate.base) && self.fixture.is_none() {
@@ -101,6 +148,10 @@ impl StudioApp {
             }
             match reply.result {
                 Err(error) => {
+                    if reply.context.is_none() {
+                        self.runtime_ready_epoch = None;
+                        self.project_dialog.open = false;
+                    }
                     if !reply.mutation
                         && reply.context.is_some()
                         && ![
@@ -189,7 +240,8 @@ impl StudioApp {
                     self.setup_reason = crate::loading::phase_text(&phase).0.into();
                     self.status = self.setup_reason.clone();
                 }
-                Ok(Output::Ready(projects)) => {
+                Ok(Output::Ready(projects)) if reply.terminal && reply.context.is_none() => {
+                    self.runtime_ready_epoch = Some(reply.epoch);
                     if let Some(opening) = &mut self.opening {
                         opening.finish(reply.request, false);
                     }
@@ -203,8 +255,27 @@ impl StudioApp {
                     {
                         self.open_project(project);
                     } else {
-                        self.setup_reason = "Runtime authenticated. Choose a project.".into();
+                        self.setup_reason = if self.projects.is_empty() {
+                            "Runtime authenticated. Create your first project."
+                        } else {
+                            "Runtime authenticated. Choose a project."
+                        }
+                        .into();
                     }
+                }
+                Ok(Output::ProjectCreated {
+                    project,
+                    projects,
+                    database,
+                }) => {
+                    self.save_session();
+                    self.config.database = database;
+                    self.session_path = self.config.database.with_extension("native-session.json");
+                    self.restore = None;
+                    self.projects = projects;
+                    self.candidate = None;
+                    self.status = format!("Created {} as an empty Working project", project.name);
+                    self.open_project(project.id);
                 }
                 Ok(Output::History(history)) if reply.request == self.project_request => {
                     let preferred_branch = self
@@ -425,6 +496,9 @@ impl StudioApp {
                     self.fit_pending = false;
                     self.requested_definition = None;
                     self.focus_changes_pending = initial_comparison;
+                    if initial_comparison {
+                        self.initialize_durable_comparison();
+                    }
                     self.request_inspection();
                 }
                 Ok(Output::Candidate(candidate))
@@ -588,6 +662,14 @@ impl StudioApp {
                     self.status = "Candidate durably committed".into();
                 }
                 Ok(Output::Cancelled) if reply.mutation => {
+                    // A current-revision read can outlive candidate cancellation.
+                    // Retain its exact latest lens before retiring requests that
+                    // may instead belong to the discarded candidate context.
+                    let desired = self.deferred_definition.take().or_else(|| {
+                        self.requested_definition
+                            .as_ref()
+                            .map(|(_, definition)| definition.clone())
+                    });
                     self.candidate = None;
                     self.lifecycle_unknown = false;
                     self.lifecycle_request = 0;
@@ -603,6 +685,8 @@ impl StudioApp {
                         );
                         continue;
                     }
+                    self.deferred_definition =
+                        desired.filter(|definition| definition != &self.projection.view);
                     if self.deferred_definition.is_none() {
                         self.request_inspection();
                     }
@@ -740,6 +824,9 @@ impl StudioApp {
             "gpu_timestamp_ms": stats.as_ref().map(|s| s.timestamp_ms.summary()),
             "gpu_timestamp_scope": stats.as_ref().map(|s| s.timestamp_status),
             "gpu_timestamp_errors": stats.as_ref().map(|s| s.timestamp_errors),
+            "last_preparation_cancellation": self.last_preparation_cancellation,
+            "gpu_timestamp_diagnostics": stats.as_ref().map(|s| &s.timestamp_diagnostics),
+            "gpu_timestamp_diagnostics_contract": "Zero-duration samples are retained in gpu_timestamp_ms. gpu_timestamp_errors sums non-monotonic samples, map errors, poll errors and surface invalidations; it is not a device-loss count. Diagnostics categories are cumulative for this process; historical reports without categories cannot identify their aggregate causes.",
             "physical_input_to_photon_ms": null,
             "note": "Native wgpu frames with vsync. CPU update intervals retain the latest 240 samples after 60 warmup intervals. Input spans start inside the viewport gesture handler and end at the next UI update; they exclude OS input delivery and do not measure presentation. GPU upload is CPU submission time for the last upload. Null means unmeasured."
         })
@@ -1247,6 +1334,135 @@ mod tests {
             app.candidate.as_ref().unwrap().phase,
             Some(CandidatePhase::Validated)
         );
+    }
+
+    #[test]
+    fn cooperative_cancellation_ack_releases_mutation_without_changing_the_current_world() {
+        let mut app = application();
+        let current = app.projection.clone();
+        let camera = app.camera;
+        let selection = app.selection.clone();
+        let binding = app.binding;
+        let context = app.work_context();
+        // Register a real mutation request; the fixture worker has no platform.
+        // This test injects its terminal DTO to exercise the same receive path.
+        let request = app
+            .bridge
+            .work(
+                Box::new(|_| unreachable!("fixture has no runtime")),
+                context.clone(),
+                true,
+            )
+            .unwrap();
+        let control = agq_studio_platform::CompilationControl::new();
+        control
+            .enter(agq_studio_platform::CompilationStage::SemanticClosure)
+            .unwrap();
+        let mut preparation = crate::app::PendingPreparation {
+            request,
+            started: std::time::Instant::now(),
+            cancelled: false,
+            control: control.clone(),
+            cancel_requested_at: None,
+            intent: "Cancelled nested part".into(),
+        };
+        preparation.cancel();
+        assert!(control.check().is_err());
+        app.preparation = Some(preparation);
+        assert!(app.bridge.mutation_pending());
+        app.receive_replies([reply(
+            request,
+            context,
+            true,
+            Ok(Output::PreparationCancelled),
+        )]);
+        assert!(app.preparation.is_none());
+        assert!(app.candidate.is_none());
+        assert!(!app.bridge.mutation_pending());
+        assert_eq!(app.comparison, ComparisonMode::Current);
+        assert_eq!(app.binding, binding);
+        assert_eq!(app.projection, current);
+        assert_eq!(app.scene.revision_id, current.revision_id);
+        assert_eq!(app.camera, camera);
+        assert_eq!(app.selection, selection);
+        let receipt = app.last_preparation_cancellation.as_ref().unwrap();
+        assert_eq!(receipt.request, request);
+        assert_eq!(receipt.binding, binding);
+        assert_eq!(receipt.last_stage.as_deref(), Some("SemanticClosure"));
+        assert!(receipt.request_to_ack_ms.is_some());
+        assert!(app.status.contains("preparation cancelled"));
+        // Completion releases the existing serialized lane for another task.
+        assert!(
+            app.bridge
+                .work(Box::new(|_| unreachable!()), app.work_context(), true)
+                .is_ok()
+        );
+    }
+
+    #[test]
+    fn cancelled_preparation_completion_never_replaces_current_revision_or_scene() {
+        let mut app = application();
+        let current = app.projection.clone();
+        let camera = app.camera;
+        let selection = app.selection.clone();
+        let prepared = candidate(&app, CandidatePhase::Working);
+        let candidate_id = prepared.id;
+        app.preparation = Some(crate::app::PendingPreparation {
+            request: 1200,
+            started: std::time::Instant::now(),
+            cancelled: true,
+            control: Default::default(),
+            cancel_requested_at: None,
+            intent: "Cancelled nested part".into(),
+        });
+        let context = app.work_context();
+        app.receive_replies([reply(1200, context, true, Ok(Output::Candidate(prepared)))]);
+        assert!(app.preparation.is_none());
+        assert_eq!(app.comparison, ComparisonMode::Current);
+        assert_eq!(app.projection, current);
+        assert_eq!(app.scene.revision_id, current.revision_id);
+        assert_eq!(app.camera, camera);
+        assert_eq!(app.selection, selection);
+        // Retaining the handle is cancellation authority, not publication. Its
+        // serial cancellation acknowledgement must arrive before it is dropped.
+        assert_eq!(app.candidate.as_ref().unwrap().id, Some(candidate_id));
+        assert!(app.bridge.mutation_pending());
+        assert!(app.status.contains("Discarding prepared candidate"));
+    }
+
+    #[test]
+    fn failed_preparation_after_cancellation_reports_the_failure_without_a_phantom_candidate() {
+        let mut app = application();
+        let current = app.projection.clone();
+        let camera = app.camera;
+        let selection = app.selection.clone();
+        let binding = app.binding;
+        app.preparation = Some(crate::app::PendingPreparation {
+            request: 1200,
+            started: std::time::Instant::now(),
+            cancelled: true,
+            control: Default::default(),
+            cancel_requested_at: None,
+            intent: "Cancelled nested part".into(),
+        });
+        let context = app.work_context();
+        app.receive_replies([reply(
+            1200,
+            context,
+            true,
+            Err("Semantic closure failed".into()),
+        )]);
+        assert!(app.preparation.is_none());
+        assert!(app.candidate.is_none());
+        assert!(!app.bridge.mutation_pending());
+        assert_eq!(app.projection, current);
+        assert_eq!(app.scene.revision_id, current.revision_id);
+        assert_eq!(app.binding, binding);
+        assert_eq!(app.camera, camera);
+        assert_eq!(app.selection, selection);
+        assert!(app.status.contains("Semantic closure failed"));
+        assert!(app.status.contains("Current revision retained"));
+        assert!(!app.status.contains("Discarding prepared candidate"));
     }
 
     #[test]

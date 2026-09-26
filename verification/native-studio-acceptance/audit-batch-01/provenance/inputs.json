@@ -1,0 +1,40 @@
+{
+  "format": "agentique-audit-experiment-inputs/1",
+  "run": 36231357374,
+  "source_commit": "a6e1f41d2b549a8be10a79dfa3ec786c090b65b3",
+  "artifact": {
+    "id": 10903159805,
+    "node_id": "MDg6QXJ0aWZhY3QxMDkwMzE1OTgwNQ==",
+    "name": "native-acceptance-windows-oracle-a6e1f41d2b549a8be10a79dfa3ec786c090b65b3-1",
+    "size_in_bytes": 79610131,
+    "url": "https://api.github.com/repos/agentique-systems/agentique/actions/artifacts/10903159805",
+    "archive_download_url": "https://api.github.com/repos/agentique-systems/agentique/actions/artifacts/10903159805/zip",
+    "expired": false,
+    "digest": "sha256:c7ba273399d37aa3c8cea61ab6be07b285bd7beca84dbb70fa82598913542697",
+    "created_at": "2026-09-26T10:06:13Z",
+    "updated_at": "2026-09-26T10:06:13Z",
+    "expires_at": "2026-10-26T10:06:09Z",
+    "workflow_run": {
+      "id": 36231357374,
+      "repository_id": 1373444581,
+      "head_repository_id": 1373444581,
+      "head_branch": "platform/native-studio-alpha-acceptance",
+      "head_sha": "a6e1f41d2b549a8be10a79dfa3ec786c090b65b3"
+    }
+  },
+  "files": {
+    "checkpoint.json": {
+      "sha256": "740da901d19d316112b5e87d041f2605e990b1669a589aa000a9a5148c30c3a0",
+      "bytes": 464865
+    },
+    "sources.json": {
+      "sha256": "1e65f97ba88ea825250adc834de28fa192a58b761904b275f0268492d93315b5",
+      "bytes": 6926
+    },
+    "cold-observations.json": {
+      "sha256": "0beea518acd35a012856c938f0e34ee90ba07b098b0e274d4d6d4d725e6f508a",
+      "bytes": 105985804
+    }
+  },
+  "outcome": "authenticated"
+}

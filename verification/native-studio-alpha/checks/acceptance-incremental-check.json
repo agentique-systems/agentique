@@ -1,0 +1,31 @@
+{
+  "command": [
+    "cargo",
+    "check",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-kerml-text",
+    "-p",
+    "agq-modeling-agent",
+    "-p",
+    "agq-studio-platform",
+    "--all-targets",
+    "--features",
+    "agq-modeling-agent/verification"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "c88d11ca1bb9b58756516b553e506f16226e37a4",
+  "tracked_changes_at_start": [],
+  "started_utc": "2026-09-26T08:48:45.374530+00:00",
+  "elapsed_seconds": 14.656,
+  "exit_code": 101,
+  "output": "verification/native-studio-alpha/checks/acceptance-incremental-check.txt",
+  "output_sha256": "1f9cbe43c497500c19ad6fa128a5fd8007d8782239db2e3a55c876adc21a32ae",
+  "build_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "2"
+  }
+}

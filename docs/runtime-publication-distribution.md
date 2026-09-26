@@ -12,15 +12,16 @@ bundle verification and normal-store installation. The resulting
 `37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026`.
 The [manifest](../verification/native-studio-alpha/runtime/runtime-manifest.json)
 and [actual verification record](../verification/native-studio-alpha/runtime/runtime-verification.json)
-retain the accepted identities and command results. The
-[runtime draft](https://github.com/agentique-systems/agentique/releases/tag/untagged-05ba0adcc0765264ca72)
-now retains all four assets. An independent download matched every local asset
-and GitHub-reported digest exactly. Access requires repository push permission;
-the draft remains unpublished. See the [download evidence](../verification/native-studio-alpha/runtime/remote-distribution-result.json)
-and [handoff](../verification/native-studio-alpha/runtime/distribution-handoff.md).
-A fresh ordinary facade run on the downloaded copy also passed in 72.391 seconds,
-authenticating both accepted profiles. Its [command and timing evidence](../verification/native-studio-alpha/runtime/remote-runtime-authentication.json)
-completes the remote distribution gate without publishing the draft.
+retain the accepted identities and command results. On 2026-09-26 the same four
+assets were published as a
+[public prerelease](https://github.com/agentique-systems/agentique/releases/tag/runtime-kerml-v9-sysml-v3-bundle1),
+after a fresh Linux download, facade verification and installation passed in
+[CI run 36231482800](https://github.com/agentique-systems/agentique/actions/runs/36231482800).
+The [retained qualification](../verification/native-studio-acceptance/runtime-qualification-01/)
+records exact outputs and identities. The
+[publication command](../verification/native-studio-alpha/checks/acceptance-runtime-publication.json)
+did not replace or regenerate any runtime bytes. Public availability qualifies
+distribution; it does not itself grant Native Studio Alpha acceptance.
 
 ## Package and authenticate
 
@@ -61,21 +62,57 @@ The notes must contain the package SHA-256, bundle identity, source commit and
 both accepted publication identities, and link the install instructions. Review
 the uploaded draft asset and independently verify its downloaded bytes before
 publishing the release. The manual `runtime-asset.yml` workflow performs this
-independent download/hash/facade check for an existing draft tag and recorded
-SHA-256, retaining its manifest and actual authentication output. It never
-publishes the draft. Publishing is a release operation, never a build step.
+independent download/hash/facade check for an existing draft or published tag and
+recorded SHA-256. It then installs into a fresh isolated store and compares both
+installed caches to the authenticated manifest. Each actual command, exit code,
+stdout/stderr digest and elapsed time is retained by
+`tools/verify-runtime-distribution.py`. It never publishes a release. Publishing
+is a release operation, never a build step.
+
+For the existing bundle, dispatch qualification on the reviewed application branch:
+
+```powershell
+gh workflow run runtime-asset.yml --repo agentique-systems/agentique --ref platform/native-studio-alpha-acceptance -f draft_tag=runtime-kerml-v9-sysml-v3-bundle1 -f transport_sha256=37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026
+```
+
+The existing tag and asset need no recreation. They are already published; the
+commands above describe reproduction and qualification of future reviewed
+packages. Record each qualification's workflow URL and authentication source
+commit; older timing evidence does not qualify changed semantic behavior.
 
 ## Install the released bytes
 
-Once that release exists, an engineer can obtain the exact named package:
+Download the exact
+[accepted-runtime.agq-runtime](https://github.com/agentique-systems/agentique/releases/download/runtime-kerml-v9-sysml-v3-bundle1/accepted-runtime.agq-runtime)
+from the public release, or use the CLI:
 
 ```powershell
 cargo fetch --locked
 cargo fetch --locked --manifest-path crates/studio-native/Cargo.toml
 gh release download runtime-kerml-v9-sysml-v3-bundle1 --repo agentique-systems/agentique --pattern accepted-runtime.agq-runtime --dir .runtime-download
+$runtimePackageSha = (Get-FileHash -Algorithm SHA256 -LiteralPath .runtime-download/accepted-runtime.agq-runtime).Hash.ToLowerInvariant()
+if ($runtimePackageSha -ne "37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026") { throw "Runtime package transport mismatch" }
 cargo run --release --config profile.release.lto=false --locked --offline -p agq-runtime-publications --bin agq-publications -- install --bundle .runtime-download/accepted-runtime.agq-runtime
-cargo run --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target
+cargo run --release --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target
 ```
+
+Use a new download directory. The direct public asset link does not require
+repository push access. On Linux/macOS,
+compare `shasum -a 256` output against the same hash, then run the identical Cargo
+installation command. Installation authenticates both facades; a matching outer
+hash alone is not an installation pass.
+
+To reproduce the full release qualification locally without touching the normal
+operator store, build the CLI and provide unused installation/evidence directories:
+
+```powershell
+cargo build --release --config profile.release.lto=false --locked --offline -p agq-runtime-publications --bin agq-publications
+python tools/verify-runtime-distribution.py --publications target/release/agq-publications.exe --bundle .runtime-download/accepted-runtime.agq-runtime --sha256 37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026 --install-dir verification/generated/runtime-qualification-store --evidence-dir verification/generated/runtime-qualification
+```
+
+On Linux/macOS omit `.exe`. The helper fails if either directory already exists;
+it never overwrites an installed runtime. It leaves the isolated store available
+for diagnosis and writes only logs/metadata to evidence, not runtime cache bytes.
 
 For offline installation, copy the same package from removable or local storage
 and use the same install command. A bundle directory works as well. Installation

@@ -1,0 +1,8 @@
+    Finished `test` profile [unoptimized] target(s) in 0.23s
+     Running unittests src\lib.rs (target\debug\deps\agq_kerml_semantics-b5418ca7e740cfba.exe)
+
+running 1 test
+test producer_closure_tests::immutable_family_shortcut_preserves_full_certificate_with_cross_subject_blockers ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 310 filtered out; finished in 0.42s
+

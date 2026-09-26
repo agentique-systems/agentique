@@ -1,0 +1,11 @@
+# Soak01 rejected: terminal cycle counted twice
+
+The fail-closed external runner correctly rejected `verification/generated/native-studio-acceptance/soak01/process.json` with acceptance exit code 2, despite native process exit 0 and 77 passing native assertions. The native report said `passed`, `restart_verified: true` and active soak duration 843,528 ms. It claimed three completed cycles, while the independent navigation, preparation-cancellation, validated-Rename and background-Graph-read observations each showed two.
+
+The final rejected journey SHA-256 is `63dc03aa764737c61f340adcc024123d574a11dd1dcb45b4529d0e5a4f818a93`. The executable SHA-256 is `fb2fedafc3d2e1574f526d1763cc99521cce64b4e7ad058e29665d616004e30e`. The original journey, process receipt, memory stream, stdout/stderr and gallery remain unchanged. Two actual completed interaction cycles and separate-process restoration were observed, but this run is **not accepted soak evidence**.
+
+Root cause: `soak_automation::next_cycle` incremented `completed_cycles` whenever the active step list was exhausted and `started` existed. At the duration threshold it returned Complete without recording a terminal state. The native input hook requests an asynchronous viewport close, which permits a following input hook before the window closes. The same exhausted step list then entered `next_cycle` again and incremented the count a second time. A completed cycle was counted once per terminal frame rather than once per plan.
+
+The source fix records the terminal boundary and returns Complete without changing cycle evidence on subsequent calls. A regression invokes the same actual boundary 128 additional times after two observed cycles and checks that cycle count, every associated observation counter, duration and exhausted index remain unchanged. It exercises only driver accounting with a labeled fixture and does not manufacture real semantic acceptance. The external report gate was not relaxed, and no existing report was rewritten.
+
+`rustfmt --edition 2024 crates/studio-native/src/soak_automation.rs` and `git diff --check` exited 0. Integrated native tests, rebuild and a full real soak rerun are required. No cycle correction is applied retroactively to the rejected run.

@@ -1,0 +1,20 @@
+{
+  "source_commit_at_start": "2dfe03e46dc093808b7976b9cf47c363a5273c4b",
+  "executable_sha256": "510483a90f641cff64b6f930444c1561d2631eb7970582b0453d7b0981d2ad25",
+  "command": [
+    "target/native-alpha/release/agq-studio-native.exe",
+    "--fixture",
+    "stress10000",
+    "--no-restore",
+    "--gpu-timestamps",
+    "--scenario",
+    "stress",
+    "--scenario-report",
+    "verification/generated/native-studio-acceptance/camera-stress01/journey.json"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 5.885278899921104,
+  "maximum_process_peak_working_set_bytes": 431951872,
+  "sampled_process_tree_peak_resident_bytes": 421556224,
+  "sample_interval_seconds": 0.25
+}

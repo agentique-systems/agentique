@@ -1,0 +1,26 @@
+{
+  "source_commit_at_start": "42e7e187de823a3b855d530dcee84dbe8c06b59f",
+  "executable_sha256": "c2d023c62b80c89791a6a1d4ea11626b86b46c87b51812dedd2034ccefddfa5a",
+  "command": [
+    "target/native-alpha/release/agq-studio-native.exe",
+    "--root",
+    ".",
+    "--runtime-dir",
+    "C:/Users/phili/.agentique",
+    "--database",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\native-studio-acceptance\\real-run03/agentique.sqlite",
+    "--no-restore",
+    "--gpu-timestamps",
+    "--scenario",
+    "real",
+    "--scenario-report",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\native-studio-acceptance\\real-run03/journey.json",
+    "--gallery",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\native-studio-acceptance\\real-run03/gallery"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 540.194165899884,
+  "maximum_process_peak_working_set_bytes": 6464499712,
+  "sampled_process_tree_peak_resident_bytes": 6450053120,
+  "sample_interval_seconds": 0.25
+}

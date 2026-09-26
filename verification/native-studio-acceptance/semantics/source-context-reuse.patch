@@ -1,0 +1,214 @@
+--- a/crates/kerml-text/src/source_inputs.rs
++++ b/crates/kerml-text/src/source_inputs.rs
+@@ -833,13 +833,18 @@
+         }
+     }
+     pub fn kerml_queries(&self) -> Result<KerMlQueries<'_>, QueryUnavailable> {
++        self.retained_kerml_context()
++            .map(|context| KerMlQueries::new(context.borrow()))
++    }
++    fn retained_kerml_context(
++        &self,
++    ) -> Result<&agq_kerml_semantics::RetainedSemanticContext, QueryUnavailable> {
+         self.kerml_read_context
+             .get_or_init(|| {
+                 self.fresh_kerml_queries()
+                     .map(|queries| queries.retain_context())
+             })
+             .as_ref()
+-            .map(|context| KerMlQueries::new(context.borrow()))
+             .map_err(Clone::clone)
+     }
+     fn fresh_kerml_queries(&self) -> Result<KerMlQueries<'_>, QueryUnavailable> {
+@@ -864,26 +869,18 @@
+             .map_err(Clone::clone)
+     }
+     fn fresh_sysml_queries(&self) -> Result<SysmlQueries<'_>, QueryUnavailable> {
+-        match &self.frontier {
+-            SourceFrontier::Strict(model) => model.sysml_queries().ok_or_else(|| {
+-                QueryUnavailable::Context("missing authenticated SysML context".into())
+-            }),
+-            SourceFrontier::Construction { draft, .. } => {
+-                let context = self
+-                    .inputs
+-                    .dependency
+-                    .candidate_context_with_pending(draft, self.inputs.root, &self.pending)
+-                    .map_err(|error| QueryUnavailable::Context(error.to_string()))?;
+-                let accepted = &self.inputs.dependency.publication;
+-                SysmlSemanticContext::for_closed_dependency(
+-                    context,
+-                    &accepted.identity().dependencies,
+-                    accepted.bindings().clone(),
+-                )
+-                .map(SysmlQueries::new)
+-                .map_err(|error| QueryUnavailable::Context(format!("{error:?}")))
+-            }
+-        }
++        // Compose from the original checked KerML input. SysML still performs
++        // its dependency, binding and naming-contract checks; its enriched
++        // context is never substituted back into the base KerML identity.
++        let context = self.retained_kerml_context()?.borrow();
++        let accepted = &self.inputs.dependency.publication;
++        SysmlSemanticContext::for_closed_dependency(
++            context,
++            &accepted.identity().dependencies,
++            accepted.bindings().clone(),
++        )
++        .map(SysmlQueries::new)
++        .map_err(|error| QueryUnavailable::Context(format!("{error:?}")))
+     }
+     /// Actual evaluation events captured at the scheduler boundary, verification only.
+     #[cfg(feature = "verification")]
+@@ -902,6 +899,10 @@
+         }
+     }
+ }
++
++#[cfg(test)]
++#[path = "source_read_context_tests.rs"]
++mod retained_read_context_tests;
+ 
+ #[cfg(test)]
+ mod tests {
+--- /dev/null
++++ b/crates/kerml-text/src/source_read_context_tests.rs
+@@ -0,0 +1,139 @@
++//! Compare retained composition with the prior independent authentication path.
++use super::*;
++
++fn independently_bound_sysml(revision: &SourceCompilation) -> SysmlQueries<'_> {
++    match &revision.frontier {
++        SourceFrontier::Strict(model) => model.sysml_queries().unwrap(),
++        SourceFrontier::Construction { draft, .. } => {
++            let context = revision
++                .inputs
++                .dependency
++                .candidate_context_with_pending(draft, revision.inputs.root, &revision.pending)
++                .unwrap();
++            let accepted = &revision.inputs.dependency.publication;
++            SysmlQueries::new(
++                SysmlSemanticContext::for_closed_dependency(
++                    context,
++                    &accepted.identity().dependencies,
++                    accepted.bindings().clone(),
++                )
++                .unwrap(),
++            )
++        }
++    }
++}
++
++fn assert_exact_queries(revision: &SourceCompilation) {
++    let original_kerml = revision.fresh_kerml_queries().unwrap();
++    let original_sysml = independently_bound_sysml(revision);
++    let retained_kerml = revision.kerml_queries().unwrap();
++    let retained_sysml = revision.sysml_queries().unwrap();
++    assert_eq!(retained_kerml.context(), original_kerml.context());
++    assert_eq!(retained_sysml.context(), original_sysml.context());
++    let missing = ElementId::new();
++    assert!(retained_kerml.model().element(missing).is_none());
++    for subject in revision
++        .effective_audit()
++        .unwrap()
++        .subjects()
++        .iter()
++        .copied()
++        .chain([missing])
++    {
++        assert_eq!(
++            retained_kerml.effective_names(subject),
++            original_kerml.effective_names(subject)
++        );
++        assert_eq!(
++            retained_kerml.effective_features(subject),
++            original_kerml.effective_features(subject)
++        );
++        for requirement in agq_kerml_semantics::SemanticClosureRequirement::ALL {
++            assert_eq!(
++                retained_kerml.producer_closure(subject, requirement),
++                original_kerml.producer_closure(subject, requirement)
++            );
++        }
++        macro_rules! exact_sysml {
++            ($query:ident) => {
++                assert_eq!(
++                    format!("{:?}", retained_sysml.$query(subject)),
++                    format!("{:?}", original_sysml.$query(subject)),
++                    "complete composed value/evidence/status for {} on {subject}",
++                    stringify!($query)
++                )
++            };
++        }
++        exact_sysml!(effective_names);
++        exact_sysml!(current_effective_usages);
++        exact_sysml!(effective_usages);
++        exact_sysml!(effective_usage_types);
++        exact_sysml!(effective_part_definitions);
++    }
++}
++
++#[test]
++#[ignore = "requires authenticated KerML/Systems runtime caches; never rebuilds standards"]
++fn retained_composed_reads_match_independent_binding_for_strict_and_working_revisions() {
++    use crate::library::CanonicalKermlStandardLibraries;
++    use std::{fs::File, path::PathBuf};
++    let kerml = File::open(std::env::var_os("AGENTIQUE_KERML_CACHE").unwrap()).unwrap();
++    let systems = File::open(std::env::var_os("AGENTIQUE_SYSTEMS_CACHE").unwrap()).unwrap();
++    let root = std::env::var_os("AGENTIQUE_SOURCE_ROOT").map_or_else(
++        || PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.."),
++        PathBuf::from,
++    );
++    let libraries = agq_standard_libraries::VerifiedLibrarySet::load_from_directory(&root).unwrap();
++    let kerml =
++        Arc::new(CanonicalKermlStandardLibraries::restore_cache(kerml, &libraries).unwrap());
++    let accepted =
++        Arc::new(CanonicalSysmlSystemsLibrary::restore_cache(systems, &libraries, kerml).unwrap());
++    let inputs = Arc::new(
++        SourceInputs::with_accepted_sysml(accepted)
++            .unwrap()
++            .apply([ProjectChange::Add {
++                path: "retained.sysml".into(),
++                language: SourceLanguage::SysMl,
++                source:
++                    "package Retained { part def Unit; part def Assembly { part nested : Unit; } }"
++                        .into(),
++            }])
++            .unwrap(),
++    );
++    let mut strict = inputs.compile(None).unwrap();
++    assert!(strict.strict_snapshot().is_some());
++    assert!(strict.diagnostics().is_empty());
++    // Exercise both public initialization orders after the normal audit. These
++    // cells are private disposable readers; clearing them changes no semantics.
++    for sysml_first in [true, false] {
++        strict.sysml_read_context.take();
++        strict.kerml_read_context.take();
++        if sysml_first {
++            drop(strict.sysml_queries().unwrap());
++            assert!(strict.kerml_read_context.get().is_some());
++        } else {
++            drop(strict.kerml_queries().unwrap());
++        }
++        assert_exact_queries(&strict);
++    }
++    let old_reader = strict.kerml_queries().unwrap();
++    let before = old_reader.effective_names(inputs.root());
++    let working_inputs = Arc::new(
++        inputs
++            .apply([ProjectChange::Replace {
++                document: inputs.document_at("retained.sysml").unwrap().id(),
++                source: "package Retained { part def Assembly { part unresolved : Missing; } }"
++                    .into(),
++            }])
++            .unwrap(),
++    );
++    let working = working_inputs.compile(Some(&strict)).unwrap();
++    assert!(!working.diagnostics().is_empty());
++    assert_exact_queries(&working);
++    assert_ne!(working.kernel_revision(), strict.kernel_revision());
++    assert_eq!(old_reader.effective_names(inputs.root()), before);
++    assert_eq!(
++        strict.kerml_queries().unwrap().context(),
++        old_reader.context()
++    );
++}

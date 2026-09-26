@@ -1,0 +1,24 @@
+   Compiling agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\kernel)
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\kerml)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\kerml-semantics)
+   Compiling agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\sysml)
+   Compiling agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\standard-libraries)
+   Compiling agq-sysml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\sysml-semantics)
+   Compiling agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\kerml-syntax)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\kerml-text)
+   Compiling agq-modeling-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\modeling-workspace)
+   Compiling agq-modeling-repository v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\modeling-repository)
+   Compiling agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\modeling-service)
+   Compiling agq-modeling-view v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\modeling-view)
+   Compiling agq-modeling-agent v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\modeling-agent)
+   Compiling agq-modeling-sqlite v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\adapters\modeling-sqlite)
+   Compiling agq-runtime-publications v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\runtime-publications)
+   Compiling agq-studio-platform v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\studio-platform)
+    Finished `test` profile [unoptimized] target(s) in 30.41s
+     Running unittests src\lib.rs (C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\agq_studio_platform-dab881f7ff9d49eb.exe)
+
+running 1 test
+test tests::cancellation_stays_typed_through_agent_and_platform_without_matching_error_text ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 30 filtered out; finished in 0.00s
+

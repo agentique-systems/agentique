@@ -259,6 +259,8 @@ impl LibraryDraft {
 #[derive(Debug, thiserror::Error)]
 pub enum LibraryLoadError {
     #[error(transparent)]
+    Cancelled(#[from] agq_kerml_semantics::Cancelled),
+    #[error(transparent)]
     Source(#[from] agq_kerml_syntax::SourceError),
     #[error(transparent)]
     Library(#[from] agq_standard_libraries::LibraryError),
@@ -275,6 +277,17 @@ pub enum LibraryLoadError {
     },
     #[error("semantic producer closure failed: {0}")]
     ProducerClosure(#[from] agq_kerml_semantics::PublicationOverlayError),
+}
+
+impl LibraryLoadError {
+    /// Operational cancellation is distinct from failed semantic acceptance.
+    pub fn is_cancelled(&self) -> bool {
+        matches!(
+            self,
+            Self::Cancelled(_)
+                | Self::ProducerClosure(agq_kerml_semantics::PublicationOverlayError::Cancelled(_))
+        )
+    }
 }
 
 struct Input {

@@ -1,0 +1,66 @@
+{
+  "format": "agq-runtime-distribution-qualification/1",
+  "started_utc": "2026-09-26T09:05:32.674806+00:00",
+  "checkout": "/home/runner/work/agentique/agentique",
+  "installer": "/home/runner/work/agentique/agentique/target/release/agq-publications",
+  "installer_sha256": "b46ab22f3ba73825ea129f447d7f672dd69f85cb5db3d11a0f0337343b99396e",
+  "bundle": "/home/runner/work/agentique/agentique/runtime-input/accepted-runtime.agq-runtime",
+  "expected_sha256": "37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026",
+  "bundle_sha256": "37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026",
+  "install_dir": "/home/runner/work/agentique/agentique/runtime-installed",
+  "commands": [
+    {
+      "command": [
+        "/home/runner/work/agentique/agentique/target/release/agq-publications",
+        "--root",
+        "/home/runner/work/agentique/agentique",
+        "verify",
+        "--bundle",
+        "/home/runner/work/agentique/agentique/runtime-input/accepted-runtime.agq-runtime"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 61.422653793999984,
+      "stdout": "verify.stdout.json",
+      "stdout_sha256": "07970c2486a15b57ae350cb5296c5aaed9b91bbf3fe9f1715b174a1c2b6f4c07",
+      "stderr": "verify.stderr.txt",
+      "stderr_sha256": "3cc5338a4a238cc10a70ab9dd6ff82cba36598444f888dd3ea701c75d1dafb23"
+    },
+    {
+      "command": [
+        "/home/runner/work/agentique/agentique/target/release/agq-publications",
+        "--root",
+        "/home/runner/work/agentique/agentique",
+        "--runtime-dir",
+        "/home/runner/work/agentique/agentique/runtime-installed",
+        "install",
+        "--bundle",
+        "/home/runner/work/agentique/agentique/runtime-input/accepted-runtime.agq-runtime"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 60.79956321899999,
+      "stdout": "install.stdout.json",
+      "stdout_sha256": "067203349b5d3be6cb220cce124564b917481f5bc4a4e300bd9493b1b98b5e7d",
+      "stderr": "install.stderr.txt",
+      "stderr_sha256": "89321ec89f313987a093e5b46270af4e2f2e555d8b9548d24f5f5d3c0318a697"
+    },
+    {
+      "command": [
+        "/home/runner/work/agentique/agentique/target/release/agq-publications",
+        "--root",
+        "/home/runner/work/agentique/agentique",
+        "--runtime-dir",
+        "/home/runner/work/agentique/agentique/runtime-installed",
+        "status"
+      ],
+      "exit_code": 0,
+      "elapsed_seconds": 0.001749334999999519,
+      "stdout": "status.stdout.json",
+      "stdout_sha256": "f2c97e198bfc7e6e25f6c75a96bb53ed502a84cc8f9c095ce365165f84d2db89",
+      "stderr": "status.stderr.txt",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "passed": true,
+  "bundle_identity": "633ea89eb39f8a9e301f2bd5199994455cdf28c8d373fdbd69be30a1402ebcf4",
+  "installed_directory": "/home/runner/work/agentique/agentique/runtime-installed/publications/633ea89eb39f8a9e301f2bd5199994455cdf28c8d373fdbd69be30a1402ebcf4"
+}

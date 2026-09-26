@@ -1,0 +1,18 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "standards:check"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "cbca2fa2cd64341a5131eae49280b6fc46ef6d98",
+  "tracked_changes_at_start": [
+    " M crates/sysml-semantics/src/tests.rs"
+  ],
+  "started_utc": "2026-09-26T08:20:26.753924+00:00",
+  "elapsed_seconds": 0.765,
+  "exit_code": 1,
+  "output": "verification/native-studio-alpha/checks/acceptance-standards.txt",
+  "output_sha256": "0fb840e20215bfebf4be7c0d30b298e6c0cc60253c1166ad8e559ec05cc161d8",
+  "build_environment": {}
+}

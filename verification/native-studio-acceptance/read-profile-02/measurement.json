@@ -1,0 +1,15 @@
+{
+  "source_commit_at_start": "69287bdb9e0ad838d6355d981bf5b9ce7131edac",
+  "executable_sha256": "d129a08fc2626c8477bd231c2121de43d2006efe5d8fff4a2fa64376b9990dbe",
+  "command": [
+    "verification/generated/native-studio-acceptance/ci-helpers-01/bin/profile_open.exe",
+    ".",
+    "C:/Users/phili/.agentique",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\native-studio-acceptance\\read-profile-01\\agentique.sqlite"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 184.9235146001447,
+  "maximum_process_peak_working_set_bytes": 5516029952,
+  "sampled_process_tree_peak_resident_bytes": 5513334784,
+  "sample_interval_seconds": 0.25
+}

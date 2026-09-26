@@ -1,0 +1,27 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--manifest-path",
+    "crates/studio-native/Cargo.toml",
+    "--locked",
+    "--offline",
+    "--",
+    "--test-threads=2"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique-cancellation",
+  "source_commit": "afb3582858db86e829b2e9994cee57e03c4b85fe",
+  "tracked_changes": [],
+  "started_utc": "2026-09-26T11:05:19.937299+00:00",
+  "elapsed_seconds": 46.14,
+  "exit_code": 0,
+  "output": "verification/native-studio-acceptance/cancellation/native-tests-01.txt",
+  "output_sha256": "57e1ce0f6ccb14ebce93a957657f4bcb88c3358512b6fe864dcc1675aad1c91e",
+  "environment": {
+    "CARGO_BUILD_JOBS": "2",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\native-alpha"
+  }
+}

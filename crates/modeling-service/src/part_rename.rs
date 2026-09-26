@@ -47,6 +47,17 @@ impl ModelingService {
         &self,
         command: RenamePart,
     ) -> Result<PreparedChanges, ServiceError> {
+        self.prepare_part_rename_controlled(command, &CompilationControl::default())
+    }
+
+    /// Construct the same identity-preserving rename with operational cancellation.
+    /// A cancelled reconstruction cannot become a prepared or durable revision.
+    pub fn prepare_part_rename_controlled(
+        &self,
+        command: RenamePart,
+        control: &CompilationControl,
+    ) -> Result<PreparedChanges, ServiceError> {
+        control.check()?;
         let branch = self
             .repository
             .get_branch(command.project, command.branch)?;
@@ -93,7 +104,9 @@ impl ModelingService {
                 node.range() == origin.range && node.kind().name() == target.metaclass_name
             })
             .ok_or_else(|| invalid("declaration provenance does not match"))?;
+        control.enter(CompilationStage::Parsing)?;
         let proof = prove_rename(syntax, selected.id(), &command.name)?;
+        control.check()?;
         let model = base
             .revision()
             .strict_snapshot()
@@ -140,8 +153,12 @@ impl ModelingService {
             return Err(invalid("a direct member already has this name"));
         }
         let retained = proof.identities.len();
-        let (working, checkpoint) =
-            source_identity::reconstruct(base.revision(), &proof.parsed, proof.identities)?;
+        let (working, checkpoint) = source_identity::reconstruct(
+            base.revision(),
+            &proof.parsed,
+            proof.identities,
+            control,
+        )?;
         source_identity::verify_existing(
             base.revision(),
             &working,
@@ -176,7 +193,9 @@ impl ModelingService {
             "previous_reference_targets_preserved": true,
             "effective_structure_preserved": true,
         });
+        control.enter(CompilationStage::PreparingReview)?;
         let mut candidate = prepare_candidate(&working, command.validate)?;
+        control.check()?;
         candidate.manifest.metadata.name =
             Some(format!("Rename {} to {}", proof.before_name, command.name));
         candidate.manifest.metadata.description = Some(serde_json::to_string(&evidence)?);
@@ -187,6 +206,7 @@ impl ModelingService {
         } else {
             None
         };
+        control.check()?;
         Ok(PreparedChanges {
             request: CommitRevision {
                 operation_id: command.operation_id,

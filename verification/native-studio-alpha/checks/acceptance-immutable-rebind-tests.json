@@ -1,0 +1,26 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-kerml-semantics",
+    "--lib",
+    "immutable_rebind_shortcut"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "cecf38df390c6c79fba6919204057bd11e896ef1",
+  "tracked_changes_at_start": [],
+  "started_utc": "2026-09-26T08:52:39.717614+00:00",
+  "elapsed_seconds": 0.484,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/acceptance-immutable-rebind-tests.txt",
+  "output_sha256": "69b24aa536b736ae72b4fad56c199c6430968141a7b77ca7e65e1b2045353681",
+  "build_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "2"
+  }
+}

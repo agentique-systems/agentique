@@ -1,0 +1,6 @@
+"locating_package"
+"copying"
+"authenticating_kerml"
+"authenticating_sysml"
+"installing"
+"ready"

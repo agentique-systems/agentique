@@ -11,6 +11,7 @@ use std::{
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum PanelRead {
+    Projection,
     Inspector,
     Explain,
     Source,
@@ -29,17 +30,18 @@ pub struct ReadContext {
     pub element: ElementId,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct Request {
     id: u64,
     context: ReadContext,
+    definition: Option<agq_modeling_view::ViewDefinition>,
 }
 
 #[derive(Default)]
 struct Mailbox {
     scope: Option<ReadScope>,
     reader: Option<Arc<StudioRevisionReader>>,
-    // At most three waiting reads, in addition to one executing read.
+    // At most one waiting projection and three panel reads, plus one executing read.
     pending: BTreeMap<PanelRead, Request>,
 }
 impl Mailbox {
@@ -83,6 +85,14 @@ impl ReadLane {
                                 ));
                             }
                             match request.context.panel {
+                                PanelRead::Projection => reader
+                                    .project(request.definition.as_ref().ok_or_else(|| {
+                                        agq_studio_platform::PlatformError::Invalid(
+                                            "Projection read is missing its exact view definition"
+                                                .into(),
+                                        )
+                                    })?)
+                                    .map(Output::Projection),
                                 PanelRead::Inspector => reader
                                     .inspect(request.context.element)
                                     .map(Output::Inspector),
@@ -162,7 +172,16 @@ impl ReadLane {
     }
 
     pub fn cancel_pending(&self) {
-        let cancelled = std::mem::take(&mut self.mailbox.lock().expect("read mailbox").pending);
+        // A selection change invalidates panels, never an independent view read.
+        let cancelled = {
+            let mut mailbox = self.mailbox.lock().expect("read mailbox");
+            let projection = mailbox.pending.remove(&PanelRead::Projection);
+            let cancelled = std::mem::take(&mut mailbox.pending);
+            if let Some(projection) = projection {
+                mailbox.pending.insert(PanelRead::Projection, projection);
+            }
+            cancelled
+        };
         for request in cancelled.into_values() {
             self.finish(
                 request,
@@ -172,14 +191,39 @@ impl ReadLane {
     }
 
     pub fn request(&self, id: u64, context: ReadContext) -> Result<(), String> {
+        self.enqueue(Request {
+            id,
+            context,
+            definition: None,
+        })
+    }
+
+    pub fn project(
+        &self,
+        id: u64,
+        scope: ReadScope,
+        definition: agq_modeling_view::ViewDefinition,
+    ) -> Result<(), String> {
+        self.enqueue(Request {
+            id,
+            // Projection requests have no selected element. This field is never
+            // interpreted for Projection; exact scope and definition bind them.
+            context: ReadContext {
+                scope,
+                panel: PanelRead::Projection,
+                element: ElementId::from_u128(0),
+            },
+            definition: Some(definition),
+        })
+    }
+
+    fn enqueue(&self, request: Request) -> Result<(), String> {
         let replaced = {
             let mut mailbox = self.mailbox.lock().expect("read mailbox");
-            if mailbox.scope != Some(context.scope) {
+            if mailbox.scope != Some(request.context.scope) {
                 return Err("Read-only access has not been pinned for this revision".into());
             }
-            mailbox
-                .pending
-                .insert(context.panel, Request { id, context })
+            mailbox.pending.insert(request.context.panel, request)
         };
         if let Some(request) = replaced {
             self.finish(request, "Read superseded by newer panel input");
@@ -247,6 +291,31 @@ mod tests {
             panel,
             element: ElementId::from_u128(element),
         }
+    }
+
+    #[test]
+    fn projection_slot_is_bounded_and_selection_cancellation_preserves_view_work() {
+        let (send, replies) = mpsc::channel();
+        let lane = ReadLane::new(egui::Context::default(), send);
+        let scope = scope();
+        lane.reset(Some(scope));
+        for id in 1..=1000 {
+            let mut definition = agq_modeling_view::ViewDefinition::architecture();
+            definition.focus = Some(ElementId::from_u128(id as u128));
+            lane.project(id, scope, definition).unwrap();
+        }
+        lane.request(1001, context(scope, PanelRead::Inspector, 1))
+            .unwrap();
+        lane.cancel_pending();
+        let mailbox = lane.mailbox.lock().unwrap();
+        assert_eq!(mailbox.pending.len(), 1);
+        let request = &mailbox.pending[&PanelRead::Projection];
+        assert_eq!(request.id, 1000);
+        assert_eq!(
+            request.definition.as_ref().unwrap().focus,
+            Some(ElementId::from_u128(1000))
+        );
+        assert_eq!(replies.try_iter().count(), 1000);
     }
 
     #[test]
@@ -333,6 +402,7 @@ mod tests {
                 Request {
                     id: 9,
                     context: context(scope(), PanelRead::Inspector, 1),
+                    definition: None,
                 },
                 result,
             );

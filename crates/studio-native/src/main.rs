@@ -17,10 +17,12 @@ mod panels;
 mod part_edit;
 mod presentation;
 mod presentation_automation;
+mod project_dialog;
 mod read_lane;
 mod real_automation;
 mod real_targets;
 mod relationship_labels;
+mod requirements;
 mod revision_reads;
 mod saved_views;
 mod scene_build;
@@ -34,6 +36,7 @@ mod updates;
 #[cfg(test)]
 mod view_intent_tests;
 mod viewport;
+mod zoom_input;
 
 use clap::Parser;
 use std::path::PathBuf;
@@ -85,6 +88,9 @@ pub struct Args {
     /// Real acceptance wall-time deadline including runtime restore and semantic work.
     #[arg(long, default_value_t = 14400)]
     scenario_timeout_seconds: u64,
+    /// After real restart verification, repeat operator navigation/edit/cancel cycles for this many seconds (minimum 600).
+    #[arg(long, default_value_t = 0)]
+    soak_seconds: u64,
 }
 
 fn main() -> eframe::Result {

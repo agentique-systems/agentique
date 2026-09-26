@@ -1,0 +1,36 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-kerml-semantics",
+    "--features",
+    "verification",
+    "--lib"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "211c14ff122ef9ea3046c55a999e7278f2ecc96f",
+  "tracked_changes_at_start": [
+    " M .github/workflows/native-acceptance-build.yml",
+    " M crates/kerml-semantics/src/closed_query_audit.rs",
+    " M crates/kerml-semantics/src/contract.rs",
+    " M crates/kerml-semantics/src/producer_closure_rebind.rs",
+    " M crates/kerml-semantics/tests/unit/closed_query_audit.rs",
+    " M crates/kerml-semantics/tests/unit/producer_closure.rs",
+    " M crates/kerml-text/src/source_effective_audit.rs",
+    " M crates/kerml-text/src/sysml/source.rs"
+  ],
+  "started_utc": "2026-09-26T10:29:55.544672+00:00",
+  "elapsed_seconds": 118.109,
+  "exit_code": 101,
+  "output": "verification/native-studio-alpha/checks/acceptance-audit-split-tests-02.txt",
+  "output_sha256": "cddb337a0095ef4bb4622d534c671ea9f3ca54cf8156a8016b2fbe3aba1b40b1",
+  "build_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "2"
+  }
+}

@@ -95,6 +95,12 @@ pub enum AgentError {
     #[error(transparent)]
     Service(#[from] agq_modeling_service::ServiceError),
 }
+impl AgentError {
+    /// Whether the explicit source task stopped without producing a candidate.
+    pub fn is_cancelled(&self) -> bool {
+        matches!(self, Self::Service(error) if error.is_cancelled())
+    }
+}
 
 #[cfg(test)]
 mod tests {

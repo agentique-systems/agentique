@@ -39,6 +39,8 @@ struct OverlayData {
     build_metrics: DerivationBuildMetrics,
     element_reservations: OnceLock<crate::shared_map::SharedSet<ElementId>>,
     occurrence_reservations: OnceLock<crate::shared_map::SharedSet<AssociationOccurrenceId>>,
+    archive_dependency_digest: OnceLock<[u8; 32]>,
+    evidence_archive_dependency_digest: OnceLock<[u8; 32]>,
 }
 
 /// Work performed by the latest additive overlay materialization. These counters
@@ -94,6 +96,28 @@ impl OrderedReferenceContribution {
     }
 }
 impl DerivedOverlay {
+    /// Internal acceleration tied to this exact immutable allocation, including
+    /// reservations and optional contribution evidence omitted by semantic hashes.
+    /// A caller cannot supply a digest; rebuilding always starts with empty cells.
+    pub(crate) fn dependency_archive_digest(
+        &self,
+        include_contributions: bool,
+    ) -> Result<[u8; 32], crate::archive::ArchiveError> {
+        let cache = if include_contributions {
+            &self.inner.evidence_archive_dependency_digest
+        } else {
+            &self.inner.archive_dependency_digest
+        };
+        if let Some(digest) = cache.get() {
+            return Ok(*digest);
+        }
+        let digest = crate::archive::uncached_dependency_digest(self, include_contributions)?;
+        // Concurrent callers may compute the same immutable bytes. Errors are
+        // never retained and no partially computed value can enter the cache.
+        let _ = cache.set(digest);
+        Ok(digest)
+    }
+
     pub(crate) fn element_reservations(&self) -> &crate::shared_map::SharedSet<ElementId> {
         self.inner.element_reservations.get_or_init(|| {
             let mut reserved = self.inner.declared.element_reservations().clone();
@@ -889,6 +913,8 @@ impl<Input> DerivationBuilder<Input> {
             build_metrics: metrics,
             element_reservations: OnceLock::new(),
             occurrence_reservations: OnceLock::new(),
+            archive_dependency_digest: OnceLock::new(),
+            evidence_archive_dependency_digest: OnceLock::new(),
         }))
     }
 }

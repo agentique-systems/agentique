@@ -11,6 +11,7 @@ pub enum CommandId {
     System,
     Graph,
     Requirements,
+    SelectionRequirements,
     History,
     Dependencies,
     DismissAgent,
@@ -47,6 +48,12 @@ pub struct Command {
 }
 
 pub const COMMANDS: &[Command] = &[
+    Command {
+        id: CommandId::SelectionRequirements,
+        label: "Show requirements affecting selection",
+        shortcut: "",
+        description: "Follow modeled requirement subjects and verification links for this element",
+    },
     Command {
         id: CommandId::DismissAgent,
         label: "Return from agent view",
@@ -334,7 +341,12 @@ pub fn unavailable(id: CommandId, context: &CommandContext) -> Option<&'static s
         return Some("A model operation is running");
     }
     match id {
-        ExpandIncoming | ExpandOutgoing | ExpandBoth | CollapseNeighborhood | Neighbors
+        ExpandIncoming
+        | ExpandOutgoing
+        | ExpandBoth
+        | CollapseNeighborhood
+        | Neighbors
+        | SelectionRequirements
             if context.diff =>
         {
             Some(
@@ -353,8 +365,18 @@ pub fn unavailable(id: CommandId, context: &CommandContext) -> Option<&'static s
         Compare if context.candidate != CandidateReview::None => {
             Some("Review or cancel the candidate before comparing durable revisions")
         }
-        Focus | Dependencies | Explain | Source | Neighbors | CreatePart | RenamePart
-        | ExpandIncoming | ExpandOutgoing | ExpandBoth | CollapseNeighborhood
+        Focus
+        | Dependencies
+        | Explain
+        | Source
+        | Neighbors
+        | CreatePart
+        | RenamePart
+        | SelectionRequirements
+        | ExpandIncoming
+        | ExpandOutgoing
+        | ExpandBoth
+        | CollapseNeighborhood
             if !context.selected =>
         {
             Some("Select an element first")

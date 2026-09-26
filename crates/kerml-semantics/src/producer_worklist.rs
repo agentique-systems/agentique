@@ -390,6 +390,8 @@ pub enum PublicationWorklistOrder {
 }
 #[derive(Clone, Debug)]
 pub struct PublicationClosureOptions {
+    /// Optional operation-local interruption. Never part of semantic identity.
+    pub cancellation: Option<crate::CancellationToken>,
     /// Optional durable, unaccepted scheduler frontiers. A restored session is
     /// authenticated by an independently retained journal digest and input pins.
     pub frontier_checkpoints: Option<std::sync::Arc<PublicationFrontierSession>>,
@@ -406,6 +408,7 @@ pub struct PublicationClosureOptions {
 impl Default for PublicationClosureOptions {
     fn default() -> Self {
         Self {
+            cancellation: None,
             frontier_checkpoints: None,
             initial_subjects: None,
             max_rounds: 32,
@@ -413,6 +416,14 @@ impl Default for PublicationClosureOptions {
             order: Default::default(),
             strategy: Default::default(),
         }
+    }
+}
+impl PublicationClosureOptions {
+    fn check_cancelled(&self) -> Result<(), PublicationOverlayError> {
+        if let Some(token) = &self.cancellation {
+            token.check().map_err(PublicationOverlayError::Cancelled)?;
+        }
+        Ok(())
     }
 }
 /// Work accounting and bounded diagnostic observations. Neither counts nor
@@ -735,6 +746,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
     mut batch_progress: impl FnMut(usize, usize, usize, usize),
     mut progress: impl FnMut(&PublicationStage),
 ) -> Result<PublicationClosure<Overlay>, PublicationOverlayError> {
+    options.check_cancelled()?;
     let mut overlay = if let Some(overlay) = initial_overlay {
         overlay
     } else {
@@ -785,6 +797,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
     let mut pending_reasons = BTreeMap::<ElementId, ReopenReasons>::new();
     let mut first_round = 0;
     let invocation = if let Some(session) = &options.frontier_checkpoints {
+        options.check_cancelled()?;
         let initial = context_factory(&overlay)?;
         let combined = ProducerRegistry::new(
             ProducerFamily::ALL
@@ -812,6 +825,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
         }
         if let Some((restored, state)) = invocation.restore::<Overlay>(input)? {
             overlay = restored;
+            options.check_cancelled()?;
             let restored_context = context_factory(&overlay)?
                 .with_producer_registry_digest(combined.digest())
                 .map_err(PublicationOverlayError::Context)?;
@@ -870,6 +884,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
         let reopened_before = counters.dirty_reevaluations;
         let certificate_before = counters.certificate_build_micros;
         let mut round_metrics = PublicationRoundMetrics::default();
+        options.check_cancelled()?;
         let mut current_context = context_factory(&overlay)?;
         let registry = registry.get_or_insert_with(|| {
             let descriptors = ProducerFamily::ALL
@@ -1021,6 +1036,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
             KerMlQueries::new(context.fork()).plan_result_structure_in_stratum([], kerml_stratum);
         let planning_started = Instant::now();
         for (batch_index, batch) in subjects.chunks(options.batch_size.max(1)).enumerate() {
+            options.check_cancelled()?;
             let q = match options.strategy {
                 PublicationClosureStrategy::Worklist => {
                     KerMlQueries::for_production(context.fork())
@@ -1031,6 +1047,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                 let mut part =
                     q.plan_result_structure_reference(batch.iter().copied(), kerml_stratum);
                 for &subject in batch {
+                    options.check_cancelled()?;
                     if extension.applies(
                         overlay.model(),
                         overlay
@@ -1045,6 +1062,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                 counters.subjects_evaluated += batch.len();
                 counters.producer_families_attempted += part.producer_families_attempted;
                 for &subject in batch {
+                    options.check_cancelled()?;
                     #[cfg(feature = "verification")]
                     crate::testing::record(subject);
                     // The reference batch shares a graph/proof accumulator;
@@ -1072,6 +1090,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                 plan.merge(part)?;
             } else {
                 for &subject in batch {
+                    options.check_cancelled()?;
                     #[cfg(feature = "verification")]
                     crate::testing::record(subject);
                     counters.subjects_evaluated += 1;
@@ -1113,6 +1132,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
                     plan.merge(part)?;
                 }
             }
+            options.check_cancelled()?;
             counters.negative_queries_certified += q.negative_queries_certified();
             batch_progress(
                 round,
@@ -1157,6 +1177,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
         let reference_input = (options.strategy == PublicationClosureStrategy::ReferenceFullScan)
             .then(|| overlay.clone());
         let materialization_started = Instant::now();
+        options.check_cancelled()?;
         let prepared = Overlay::prepare(plan, &overlay)?;
         drop(context);
         // Preparation validates every reused record and proposed slot even when
@@ -1168,6 +1189,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
         } else {
             overlay
         };
+        options.check_cancelled()?;
         round_metrics.model_materialization_micros = materialization_started.elapsed().as_micros();
         changed.extend(
             prior_obligations
@@ -1227,6 +1249,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
         if stable {
             if !unregistered_extension {
                 let started = std::time::Instant::now();
+                options.check_cancelled()?;
                 let next_context = context_factory(&next)?
                     .with_producer_registry_digest(registry.digest())
                     .map_err(PublicationOverlayError::Context)?;
@@ -1382,6 +1405,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
             None
         } else {
             let started = std::time::Instant::now();
+            options.check_cancelled()?;
             let next_context = context_factory(&next)?
                 .with_producer_registry_digest(registry.digest())
                 .map_err(PublicationOverlayError::Context)?;
@@ -1456,6 +1480,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
         && converged
         && counters.fixed_point_rounds > first_round
     {
+        options.check_cancelled()?;
         let final_context = context_factory(&overlay)?
             .with_producer_registry_digest(
                 registry
@@ -1483,6 +1508,7 @@ fn close_frontiers<Overlay: ProducerFrontier>(
             certificate.as_deref(),
         )?;
     }
+    options.check_cancelled()?;
     Ok(PublicationClosure {
         overlay,
         stages,

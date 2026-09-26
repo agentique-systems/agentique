@@ -192,3 +192,36 @@ fn missing_closure_is_a_typed_dependency_without_a_fake_canonical_fact() {
             })
     );
 }
+
+#[test]
+fn retained_context_owns_exact_input_and_preserves_incomplete_evidence() {
+    fn send_sync<T: Send + Sync>() {}
+    send_sync::<RetainedSemanticContext>();
+    let snapshot = snapshot();
+    let context = SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_semantic_extension_identity("retention-test/1", [17; 32])
+        .unwrap();
+    let queries = KerMlQueries::new(context);
+    let subject = ElementId::from_u128(5);
+    let before =
+        queries.producer_closure(subject, crate::SemanticClosureRequirement::EffectiveTyping);
+    let retained = queries.retain_context();
+    let identity = queries.context().clone();
+    drop(queries);
+    drop(snapshot);
+    let after = KerMlQueries::new(retained.borrow());
+    assert_eq!(after.context(), &identity);
+    assert_eq!(
+        before,
+        after.producer_closure(subject, crate::SemanticClosureRequirement::EffectiveTyping)
+    );
+    assert_eq!(before.completeness, crate::Completeness::Incomplete);
+    // Mutating a newly borrowed context cannot change the retained identity.
+    let changed = retained
+        .borrow()
+        .with_semantic_extension_identity("different/1", [9; 32])
+        .unwrap();
+    assert_ne!(changed.id(), &identity);
+    assert_eq!(retained.borrow().id(), &identity);
+}

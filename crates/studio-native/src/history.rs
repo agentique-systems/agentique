@@ -2,12 +2,154 @@
 //! canonical projections, scene coordinates, ghosts and lifecycle stay intact.
 use crate::app::{ComparisonMode, StudioApp, muted};
 use agq_kernel::ElementId;
-use agq_modeling_view::{ViewDefinition, ViewNode, ViewOrigin, ViewProjection};
+use agq_modeling_view::{RelationshipFamily, ViewDefinition, ViewNode, ViewOrigin, ViewProjection};
 use agq_modeling_workspace::ProjectRevisionId;
 use agq_studio_scene::{Camera2D, DiffMark, Rect, SceneLookup, SceneTarget, SemanticScene};
 use eframe::egui::{self, RichText};
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
+
+/// Children precede their actual parents. The default branch is read first;
+/// named branch priority breaks ties between independent lineages, never UUID
+/// order masquerading as time. Identity is only a deterministic final tie-break.
+fn lineage_order(
+    parents: &BTreeMap<ProjectRevisionId, Option<ProjectRevisionId>>,
+    branch_heads: &[ProjectRevisionId],
+) -> Vec<ProjectRevisionId> {
+    let mut priority = BTreeMap::new();
+    for (rank, head) in branch_heads.iter().enumerate() {
+        let mut cursor = Some(*head);
+        let mut visited = BTreeSet::new();
+        while let Some(id) = cursor.filter(|id| parents.contains_key(id) && visited.insert(*id)) {
+            priority.entry(id).or_insert(rank);
+            cursor = parents[&id];
+        }
+    }
+    let mut children: BTreeMap<_, usize> = parents.keys().map(|id| (*id, 0)).collect();
+    for parent in parents.values().flatten() {
+        if let Some(count) = children.get_mut(parent) {
+            *count += 1;
+        }
+    }
+    let mut remaining: BTreeSet<_> = parents.keys().copied().collect();
+    let mut ordered = Vec::with_capacity(remaining.len());
+    while !remaining.is_empty() {
+        let rank =
+            |id: &&ProjectRevisionId| (priority.get(*id).copied().unwrap_or(usize::MAX), **id);
+        // Durable revisions cannot form cycles. Still retain all cards if an
+        // incomplete/corrupt history reaches presentation, without looping.
+        let next = remaining
+            .iter()
+            .filter(|id| children[*id] == 0)
+            .min_by_key(rank)
+            .or_else(|| remaining.iter().min_by_key(rank))
+            .copied()
+            .unwrap();
+        remaining.remove(&next);
+        ordered.push(next);
+        if let Some(parent) = parents[&next]
+            && let Some(count) = children.get_mut(&parent)
+        {
+            *count = count.saturating_sub(1);
+        }
+    }
+    ordered
+}
+
+pub(crate) fn ordered_history(
+    history: &agq_studio_platform::ProjectHistory,
+) -> Vec<&agq_modeling_repository::RevisionManifest> {
+    let revisions: BTreeMap<_, _> = history
+        .revisions
+        .iter()
+        .map(|r| (r.revision_id, r))
+        .collect();
+    let parents = revisions
+        .iter()
+        .map(|(id, r)| (*id, r.parent_revision_id))
+        .collect();
+    let mut branches: Vec<_> = history.branches.iter().collect();
+    branches.sort_by(|a, b| {
+        (a.id != history.project.default_branch)
+            .cmp(&(b.id != history.project.default_branch))
+            .then(a.name.cmp(&b.name))
+            .then(a.id.cmp(&b.id))
+    });
+    lineage_order(
+        &parents,
+        &branches
+            .iter()
+            .map(|branch| branch.head)
+            .collect::<Vec<_>>(),
+    )
+    .iter()
+    .map(|id| revisions[id])
+    .collect()
+}
+
+pub(crate) fn history_description(description: &str) -> String {
+    if serde_json::from_str::<serde_json::Value>(description)
+        .is_ok_and(|value| value.is_object() || value.is_array())
+    {
+        "Recorded edit evidence · hover for details".into()
+    } else {
+        description.into()
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub(crate) enum DiffMode {
+    #[default]
+    Structure,
+    Relationships,
+    Requirements,
+    All,
+}
+impl DiffMode {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Structure => "Structure",
+            Self::Relationships => "Relationships",
+            Self::Requirements => "Requirements",
+            Self::All => "All",
+        }
+    }
+    pub fn includes_edge(self, family: RelationshipFamily) -> bool {
+        match self {
+            Self::Structure => matches!(
+                family,
+                RelationshipFamily::Ownership | RelationshipFamily::Typing
+            ),
+            Self::Relationships | Self::All => true,
+            Self::Requirements => matches!(
+                family,
+                RelationshipFamily::Requirement | RelationshipFamily::Verification
+            ),
+        }
+    }
+    fn includes_change(self, change: &Change) -> bool {
+        match self {
+            Self::Structure => !change.relationship,
+            Self::Relationships => change.relationship,
+            Self::Requirements => change.requirement,
+            Self::All => true,
+        }
+    }
+}
+pub(crate) fn diff_mode(ctx: &egui::Context) -> DiffMode {
+    ctx.data(|data| data.get_temp::<DiffMode>(egui::Id::new("semantic-diff-mode")))
+        .unwrap_or_default()
+}
+fn requirement_kind(kind: &str) -> bool {
+    matches!(
+        kind,
+        "RequirementDefinition"
+            | "RequirementUsage"
+            | "SatisfyRequirementUsage"
+            | "VerificationCaseDefinition"
+            | "VerificationCaseUsage"
+    )
+}
 
 #[derive(Clone)]
 struct Change {
@@ -19,12 +161,54 @@ struct Change {
     canonical_id: Option<ElementId>,
     target: Option<SceneTarget>,
     relationship: bool,
+    requirement: bool,
 }
 
+#[derive(Clone)]
 struct ChangeGroup {
     owner: Option<ElementId>,
     name: String,
     changes: Vec<Change>,
+}
+
+fn filtered_review(review: &ChangeReview, mode: DiffMode) -> ChangeReview {
+    let groups: Vec<_> = review
+        .groups
+        .iter()
+        .filter_map(|group| {
+            let changes: Vec<_> = group
+                .changes
+                .iter()
+                .filter(|change| mode.includes_change(change))
+                .cloned()
+                .collect();
+            if changes.is_empty() {
+                return None;
+            }
+            Some(ChangeGroup {
+                owner: group.owner,
+                name: group.name.clone(),
+                changes,
+            })
+        })
+        .collect();
+    let objects = groups
+        .iter()
+        .flat_map(|g| &g.changes)
+        .filter(|c| !c.relationship)
+        .count();
+    let relationships = groups
+        .iter()
+        .flat_map(|g| &g.changes)
+        .filter(|c| c.relationship)
+        .count();
+    ChangeReview {
+        before: review.before,
+        after: review.after,
+        groups,
+        objects,
+        relationships,
+    }
 }
 
 struct ChangeReview {
@@ -52,6 +236,13 @@ struct CachedReview {
 }
 
 #[derive(Clone)]
+struct CachedFilteredReview {
+    complete: Arc<ChangeReview>,
+    mode: DiffMode,
+    review: Arc<ChangeReview>,
+}
+
+#[derive(Clone)]
 struct RememberedGroup {
     index: usize,
     selection: Option<SceneTarget>,
@@ -61,24 +252,38 @@ fn displayed_group(
     review: &ChangeReview,
     selection: Option<&SceneTarget>,
     remembered: Option<&RememberedGroup>,
+    prefer_selected_owner: bool,
 ) -> usize {
     if let Some(remembered) = remembered
         && remembered.selection.as_ref() == selection
     {
         return remembered.index.min(review.groups.len().saturating_sub(1));
     }
-    review
-        .groups
-        .iter()
-        .position(|group| {
-            group
-                .changes
-                .iter()
-                .any(|change| same_target(change.target.as_ref(), selection))
+    prefer_selected_owner
+        .then(|| selected_owner_group(review, selection))
+        .flatten()
+        .or_else(|| {
+            review.groups.iter().position(|group| {
+                group
+                    .changes
+                    .iter()
+                    .any(|change| same_target(change.target.as_ref(), selection))
+            })
         })
         .or_else(|| remembered.map(|remembered| remembered.index))
         .unwrap_or(0)
         .min(review.groups.len().saturating_sub(1))
+}
+
+fn selected_owner_group(review: &ChangeReview, selection: Option<&SceneTarget>) -> Option<usize> {
+    let id = match selection? {
+        SceneTarget::Node(id) | SceneTarget::Container(id) | SceneTarget::Port(id) => *id,
+        SceneTarget::Edge(_) => return None,
+    };
+    review
+        .groups
+        .iter()
+        .position(|group| group.owner == Some(id))
 }
 
 fn mark_label(mark: DiffMark) -> &'static str {
@@ -228,6 +433,7 @@ fn change_review(
                 canonical_id: Some(id),
                 target,
                 relationship: false,
+                requirement: requirement_kind(&node.semantic_kind),
             },
         );
         objects += 1;
@@ -292,6 +498,10 @@ fn change_review(
                 target: (target_revision(scene, &lookup, &target_key) == Some(edge.revision_id))
                     .then_some(target_key),
                 relationship: true,
+                requirement: matches!(
+                    edge.family,
+                    RelationshipFamily::Requirement | RelationshipFamily::Verification
+                ),
             },
         );
         relationships += 1;
@@ -369,6 +579,35 @@ fn owner_target(scene: &SemanticScene, owner: Option<ElementId>) -> Option<Scene
     [SceneTarget::Port(id), SceneTarget::Node(id)]
         .into_iter()
         .find(|target| scene.target_revision(target).is_some())
+}
+
+fn initial_durable_target(
+    review: &ChangeReview,
+    scene: &SemanticScene,
+    selected: Option<&SceneTarget>,
+) -> Option<SceneTarget> {
+    if review.groups.iter().any(|group| {
+        same_target(owner_target(scene, group.owner).as_ref(), selected)
+            || group
+                .changes
+                .iter()
+                .any(|change| same_target(change.target.as_ref(), selected))
+    }) {
+        return selected.cloned();
+    }
+    // Prefer a real present owner over a changed object's absent enclosing
+    // namespace. An added package can occur in both of those change groups.
+    review
+        .groups
+        .iter()
+        .find_map(|group| owner_target(scene, group.owner))
+        .or_else(|| {
+            review
+                .groups
+                .iter()
+                .flat_map(|group| &group.changes)
+                .find_map(|change| change.target.clone())
+        })
 }
 
 fn change_bounds(scene: &SemanticScene, lookup: &SceneLookup, change: &Change) -> Vec<Rect> {
@@ -458,7 +697,7 @@ fn focus_group(
             let proposed = bounds.union(*anchor);
             let mut fitted = camera;
             fitted.fit(proposed, 72.0);
-            if fitted.zoom >= 0.42 {
+            if fitted.zoom >= 0.68 {
                 bounds = proposed;
                 included = true;
             }
@@ -468,7 +707,7 @@ fn focus_group(
     if let Some(owner) = owner {
         let mut fitted = camera;
         fitted.fit(bounds.union(owner), 72.0);
-        if fitted.zoom >= 0.42 {
+        if fitted.zoom >= 0.68 {
             bounds = bounds.union(owner);
         }
     }
@@ -487,6 +726,94 @@ fn focus_group(
 }
 
 impl StudioApp {
+    /// A newly chosen durable pair starts in its own design-change context.
+    /// Candidate selection and restored presentation use separate contracts.
+    pub(crate) fn initialize_durable_comparison(&mut self) {
+        if self.candidate.is_some() || self.comparison != ComparisonMode::Diff {
+            return;
+        }
+        let target = self.change_review().and_then(|review| {
+            let structure = filtered_review(&review, DiffMode::Structure);
+            let review = if structure.groups.is_empty() {
+                &review
+            } else {
+                &structure
+            };
+            initial_durable_target(review, &self.scene, self.selection.primary.as_ref())
+        });
+        self.invalidate_inspection();
+        self.selection.clear();
+        self.batch_key = None;
+        if let Some(target) = target {
+            self.selection.select(target, false);
+        }
+    }
+
+    /// Enter a durable comparison through readable local owner context. The
+    /// complete comparison and explicit entire-comparison fit remain available.
+    pub(crate) fn focus_durable_change_overview(&mut self) {
+        if self.candidate.is_some() || self.comparison != ComparisonMode::Diff {
+            return;
+        }
+        let Some(review) = self.change_review() else {
+            return;
+        };
+        let structure = filtered_review(&review, DiffMode::Structure);
+        let review = if structure.groups.is_empty() {
+            &review
+        } else {
+            &structure
+        };
+        let selected = self.selection.primary.clone();
+        let index = displayed_group(review, selected.as_ref(), None, true);
+        if let Some(group) = review.groups.get(index) {
+            self.frame_change_group(group, selected.as_ref());
+        }
+    }
+
+    pub(crate) fn compare_selected_revision(&mut self, before: ProjectRevisionId) {
+        if let Some(reason) =
+            crate::commands::unavailable(crate::commands::CommandId::Compare, &self.context())
+        {
+            self.status = reason.into();
+            return;
+        }
+        if self.bridge.mutation_pending() {
+            self.status = "Wait for the model operation before comparing revisions".into();
+            return;
+        }
+        let Some(binding) = self.binding else {
+            return;
+        };
+        if before == binding.revision
+            || !self.history.as_ref().is_some_and(|history| {
+                history.project.id == binding.project
+                    && history
+                        .revisions
+                        .iter()
+                        .any(|revision| revision.revision_id == before)
+            })
+        {
+            self.status = "Choose a different revision from this project's history".into();
+            return;
+        }
+        self.remember_location();
+        self.cancel_revision_navigation();
+        self.restore_world_filters(crate::navigation::World::Graph);
+        self.world = crate::navigation::World::Graph;
+        self.focus = None;
+        self.expanded = None;
+        let definition = self.definition();
+        let requested = definition.clone();
+        self.scene_request = self.enqueue(Box::new(move |platform| {
+            platform
+                .compare(binding.project, before, binding.revision, &definition)
+                .map(crate::bridge::Output::Comparison)
+        }));
+        self.requested_definition =
+            (self.scene_request != 0).then_some((self.scene_request, requested));
+    }
+
     fn change_pair(&self) -> Option<(&ViewProjection, &ViewProjection)> {
         if self.comparison != ComparisonMode::Diff {
             return None;
@@ -589,19 +916,79 @@ impl StudioApp {
             self.camera_target = Some(focus.camera);
         }
         self.status = format!(
-            "{} · nearby context for {} of {} visible changes; full comparison retained",
+            "{} · framed nearby context ({} of {} changes at entry); full comparison retained",
             group.name, focus.nearby, focus.visible
         );
         if focus.owner_visible {
-            self.status.push_str("; owner in frame");
+            self.status.push_str("; included owner context");
         } else if group.owner.is_some() {
             self.status.push_str("; use Focus group for owner context");
         }
     }
 
     pub fn diff_review_panel(&mut self, ui: &mut egui::Ui) {
-        let Some(review) = self.cached_change_review(ui) else {
+        // This is a compact canvas toolbar. Keep its three rows readable without
+        // inheriting the larger form-button padding used by the side panels.
+        ui.scope(|ui| {
+            let spacing = &mut ui.style_mut().spacing;
+            spacing.item_spacing = egui::vec2(6.0, 4.0);
+            spacing.button_padding = egui::vec2(8.0, 4.0);
+            spacing.interact_size.y = 24.0;
+            self.diff_review_contents(ui);
+        });
+    }
+
+    fn diff_review_contents(&mut self, ui: &mut egui::Ui) {
+        let Some(complete) = self.cached_change_review(ui) else {
             return;
+        };
+        let mut mode = diff_mode(ui.ctx());
+        let mut navigate = None;
+        ui.horizontal_wrapped(|ui| {
+            ui.label(muted("Review", self.theme).small());
+            for choice in [
+                DiffMode::Structure,
+                DiffMode::Relationships,
+                DiffMode::Requirements,
+                DiffMode::All,
+            ] {
+                if ui
+                    .selectable_value(&mut mode, choice, choice.label())
+                    .changed()
+                {
+                    ui.ctx().data_mut(|data| {
+                        data.insert_temp(egui::Id::new("semantic-diff-mode"), mode)
+                    });
+                    self.batch_key = None;
+                }
+            }
+            for (label, forward) in [("Previous change", false), ("Next change", true)] {
+                if ui.small_button(label).clicked() {
+                    navigate = Some(forward);
+                }
+            }
+        });
+        let filtered_key = ui.id().with("filtered-change-review-cache");
+        let cached = ui
+            .ctx()
+            .data(|data| data.get_temp::<CachedFilteredReview>(filtered_key));
+        let review = if let Some(cached) =
+            cached.filter(|cached| cached.mode == mode && Arc::ptr_eq(&cached.complete, &complete))
+        {
+            cached.review
+        } else {
+            let review = Arc::new(filtered_review(&complete, mode));
+            ui.ctx().data_mut(|data| {
+                data.insert_temp(
+                    filtered_key,
+                    CachedFilteredReview {
+                        complete: complete.clone(),
+                        mode,
+                        review: review.clone(),
+                    },
+                )
+            });
+            review
         };
         let theme = self.theme;
         egui::Frame::new()
@@ -610,7 +997,7 @@ impl StudioApp {
             .corner_radius(6.0)
             .show(ui, |ui| {
                 if review.groups.is_empty() {
-                    ui.label("No projected changes in this comparison.");
+                    ui.label(format!("No {} changes in this view. {} total projected changes remain available under All.", mode.label().to_lowercase(), complete.objects + complete.relationships));
                     return;
                 }
                 let key = ui.id().with((
@@ -624,18 +1011,35 @@ impl StudioApp {
                     &review,
                     self.selection.primary.as_ref(),
                     remembered.as_ref(),
+                    self.candidate.is_none(),
                 );
                 let previous = index;
+                if let Some(forward) = navigate {
+                    let changes: Vec<_> = review.groups.iter().enumerate().flat_map(|(group, entry)| entry.changes.iter().filter(|change| change.target.is_some()).map(move |change| (group, change))).collect();
+                    if !changes.is_empty() {
+                        let current = changes.iter().position(|(_, change)| same_target(change.target.as_ref(), self.selection.primary.as_ref()));
+                        let next = match (current, forward) {
+                            (Some(i), true) => (i + 1) % changes.len(),
+                            (Some(i), false) => (i + changes.len() - 1) % changes.len(),
+                            (None, true) => 0,
+                            (None, false) => changes.len() - 1,
+                        };
+                        let (group, change) = changes[next];
+                        index = group;
+                        self.select(change.target.clone().expect("visible change"), false);
+                        self.frame_change_group(&review.groups[index], change.target.as_ref());
+                    }
+                }
                 ui.horizontal_wrapped(|ui| {
                     ui.strong("Design changes");
                     ui.label(muted(
-                        format!("{} objects · {} relationships · {} owner groups", review.objects, review.relationships, review.groups.len()),
+                        format!("{} owner groups · {} / {} projected changes", review.groups.len(), review.objects + review.relationships, complete.objects + complete.relationships),
                         theme,
                     ).small());
-                    ui.menu_button(format!("Browse all {} changes", review.objects + review.relationships), |ui| {
+                    ui.menu_button(format!("Browse {} changes", review.objects + review.relationships), |ui| {
                         ui.set_min_width(400.0);
                         ui.set_max_width(620.0);
-                        ui.strong("Complete changes in this view");
+                        ui.strong(format!("{} changes in this view", mode.label()));
                         ui.label(muted(format!("{} → {}", review.before, review.after), theme).small());
                         ui.label(muted("Selecting a change frames its local context. All positions and removed objects are retained.", theme).small());
                         let height = (ui.ctx().content_rect().height() * 0.55).min(420.0);
@@ -675,7 +1079,7 @@ impl StudioApp {
                             }
                         });
                     let group = &review.groups[index];
-                    if ui.small_button("Focus group").clicked() {
+                    if ui.small_button("Focus changed owner").clicked() {
                         // Explicit group focus gives the owner priority even
                         // when the previously selected change is far away.
                         self.frame_change_group(group, None);
@@ -748,12 +1152,247 @@ mod tests {
     use super::*;
     use agq_studio_scene::{SceneOptions, Size, fixtures};
 
+    #[test]
+    fn history_follows_parents_even_when_identity_order_disagrees_and_branches_diverge() {
+        let id = ProjectRevisionId::from_u128;
+        // Real failure shape: baseline ID sorts before empty project, then head.
+        let parents = BTreeMap::from([(id(1), Some(id(2))), (id(2), None), (id(3), Some(id(1)))]);
+        assert_eq!(lineage_order(&parents, &[id(3)]), vec![id(3), id(1), id(2)]);
+        let mut fork = parents.clone();
+        fork.insert(id(90), Some(id(1)));
+        fork.insert(id(4), Some(id(90)));
+        let ordered = lineage_order(&fork, &[id(3), id(4)]);
+        assert_eq!(ordered, vec![id(3), id(4), id(90), id(1), id(2)]);
+        for (child, parent) in &fork {
+            if let Some(parent) = parent {
+                assert!(
+                    ordered.iter().position(|id| id == child)
+                        < ordered.iter().position(|id| id == parent)
+                );
+            }
+        }
+        // Input iteration and arbitrary identities cannot reverse a branch.
+        let reverse = fork.into_iter().rev().collect();
+        assert_eq!(lineage_order(&reverse, &[id(3), id(4)]), ordered);
+        let incomplete = BTreeMap::from([(id(5), Some(id(999)))]);
+        assert_eq!(lineage_order(&incomplete, &[id(5)]), vec![id(5)]);
+        let cycle = BTreeMap::from([(id(5), Some(id(6))), (id(6), Some(id(5)))]);
+        assert_eq!(lineage_order(&cycle, &[]).len(), 2);
+    }
+
+    #[test]
+    fn history_keeps_prose_but_moves_structured_receipt_details_out_of_card_subtitle() {
+        let receipt =
+            r#"{"added_part_syntax_node":"exact-identity","after_arena_sha256":"recorded-proof"}"#;
+        assert_eq!(
+            history_description(receipt),
+            "Recorded edit evidence · hover for details"
+        );
+        assert_eq!(
+            history_description("Clarify repository ownership"),
+            "Clarify repository ownership"
+        );
+        assert_eq!(history_description(""), "");
+        // Presentation does not rewrite the durable source string used by hover.
+        assert!(receipt.contains("added_part_syntax_node"));
+    }
+
+    #[test]
+    fn initial_durable_diff_replaces_unrelated_inspection_with_readable_owner_context() {
+        use clap::Parser;
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let args = crate::Args::parse_from([
+            "studio",
+            "--fixture",
+            "architecture",
+            "--no-restore",
+            "--root",
+            root.to_str().unwrap(),
+        ]);
+        let ctx = eframe::CreationContext::_new_kittest(egui::Context::default());
+        let mut app = StudioApp::new(&ctx, args).unwrap();
+        let (before, after) = pair();
+        app.projection = after.clone();
+        app.compare_before = Some(before.clone());
+        app.scene = scene(&before, &after);
+        app.lookup = SceneLookup::build(&app.scene);
+        app.selection.reconcile(&app.scene);
+        app.selection
+            .select(SceneTarget::Node(fixtures::id(21)), false);
+        app.inspector_request = 42;
+        app.comparison = ComparisonMode::Diff;
+        app.reduced_motion = true;
+        app.camera.viewport = Size::new(1000.0, 520.0);
+        let scene_before = format!("{:?}", app.scene);
+        let prior_selection = app.selection.clone();
+        app.initialize_durable_comparison();
+        assert_ne!(app.selection, prior_selection);
+        assert_eq!(app.inspector_request, 0);
+        assert!(app.inspector.is_none());
+        assert_eq!(app.selection.revision, after.revision_id);
+        let review = filtered_review(&app.change_review().unwrap(), DiffMode::Structure);
+        assert!(review.groups.iter().any(|group| {
+            same_target(
+                owner_target(&app.scene, group.owner).as_ref(),
+                app.selection.primary.as_ref(),
+            )
+        }));
+        // Real failure shape: all-owner fit makes dispersed changes unreadable.
+        // The initial neighborhood must remain legible without relocating nodes.
+        for (index, group) in review.groups.iter().enumerate() {
+            if let Some(owner) = group
+                .owner
+                .and_then(|id| app.scene.nodes.iter_mut().find(|node| node.id() == id))
+            {
+                owner.bounds = Rect::new(index as f32 * 1_800.0, 100.0, 232.0, 118.0);
+            }
+        }
+        let displaced_scene = format!("{:?}", app.scene);
+        app.focus_durable_change_overview();
+        let visible = app.camera.visible_rect();
+        let lookup = SceneLookup::build(&app.scene);
+        assert!(app.camera.zoom >= 0.68);
+        let selected_owner = review.groups
+            [selected_owner_group(&review, app.selection.primary.as_ref()).unwrap()]
+        .owner
+        .unwrap();
+        let bounds = object_bounds(&app.scene, &lookup, selected_owner).unwrap();
+        assert!(visible.contains(bounds.min) && visible.contains(bounds.max));
+        assert!(
+            review
+                .groups
+                .iter()
+                .filter_map(|group| group.owner)
+                .filter_map(|id| object_bounds(&app.scene, &lookup, id))
+                .any(|bounds| !visible.contains(bounds.center())),
+            "the overview action, not initial entry, frames distant owners"
+        );
+        assert_eq!(format!("{:?}", app.scene), displaced_scene);
+        assert_eq!(app.projection, after);
+        assert_eq!(app.compare_before.as_ref(), Some(&before));
+        assert_ne!(scene_before, displaced_scene);
+        // Explicitly selecting a real changed object is still respected.
+        app.selection
+            .select(SceneTarget::Node(fixtures::id(24)), false);
+        app.initialize_durable_comparison();
+        assert_eq!(
+            app.selection.primary,
+            Some(SceneTarget::Node(fixtures::id(24)))
+        );
+    }
+
     fn pair() -> (ViewProjection, ViewProjection) {
         let (before, mut after) = fixtures::revision_diff();
         // The explicit visual fixture has different cosmetic view names. These
         // test DTOs deliberately describe one exact query on two revisions.
         after.view = before.view.clone();
         (before, after)
+    }
+
+    #[test]
+    fn durable_entry_prefers_present_package_context_over_its_absent_enclosing_owner() {
+        let before = fixtures::architecture();
+        let mut after = next_revision(&before);
+        let template = after
+            .nodes
+            .iter()
+            .find(|node| node.id == fixtures::id(21))
+            .unwrap()
+            .clone();
+        // The absent-owner group has more changes and sorts first. Its added
+        // package is also a real present owner of a separately grouped child.
+        for (id, owner, name, kind) in [
+            (900, 999_999, "ZAddedPackage", "Package"),
+            (901, 900, "newPart", "PartUsage"),
+            (902, 999_999, "OtherAddedPackage", "Package"),
+            (903, 999_999, "AnotherAddedPackage", "Package"),
+        ] {
+            let mut node = template.clone();
+            node.id = fixtures::id(id);
+            node.owner = Some(fixtures::id(owner));
+            node.name = name.into();
+            node.qualified_name = Some(name.into());
+            node.semantic_kind = kind.into();
+            node.features.clear();
+            node.counts = Default::default();
+            after.nodes.push(node);
+        }
+        let scene = scene(&before, &after);
+        let review = filtered_review(
+            &change_review(&before, &after, &scene).unwrap(),
+            DiffMode::Structure,
+        );
+        assert_eq!(review.objects, 4);
+        assert_eq!(review.groups.len(), 2);
+        assert_eq!(review.groups[0].owner, Some(fixtures::id(999_999)));
+        let expected = SceneTarget::Node(fixtures::id(900));
+        assert_eq!(
+            initial_durable_target(&review, &scene, Some(&SceneTarget::Node(fixtures::id(21)))),
+            Some(expected.clone())
+        );
+        let present = displayed_group(&review, Some(&expected), None, true);
+        assert_eq!(review.groups[present].owner, Some(fixtures::id(900)));
+        assert_eq!(
+            displayed_group(&review, Some(&expected), None, false),
+            0,
+            "candidate review retains its existing explicit-change group behavior"
+        );
+        let explicit = RememberedGroup {
+            index: 0,
+            selection: Some(expected.clone()),
+        };
+        assert_eq!(
+            displayed_group(&review, Some(&expected), Some(&explicit), true),
+            0,
+            "an operator's explicit enclosing-group choice must remain available"
+        );
+        let changed_child = SceneTarget::Node(fixtures::id(901));
+        assert_eq!(
+            initial_durable_target(&review, &scene, Some(&changed_child)),
+            Some(changed_child)
+        );
+        // No canonical owner is fabricated from a layout or a shared name.
+        assert!(owner_target(&scene, Some(fixtures::id(999_999))).is_none());
+    }
+
+    #[test]
+    fn durable_entry_with_only_absent_owners_frames_the_real_visible_change() {
+        let before = fixtures::architecture();
+        let mut after = next_revision(&before);
+        let mut node = after
+            .nodes
+            .iter()
+            .find(|node| node.id == fixtures::id(21))
+            .unwrap()
+            .clone();
+        node.id = fixtures::id(900);
+        node.owner = Some(fixtures::id(999_999));
+        node.name = "detachedChange".into();
+        node.qualified_name = Some(node.name.clone());
+        node.features.clear();
+        node.counts = Default::default();
+        after.nodes.push(node);
+        let scene = scene(&before, &after);
+        let unchanged_scene = format!("{scene:?}");
+        let review = filtered_review(
+            &change_review(&before, &after, &scene).unwrap(),
+            DiffMode::Structure,
+        );
+        let target = initial_durable_target(&review, &scene, None).unwrap();
+        assert_eq!(target, SceneTarget::Node(fixtures::id(900)));
+        let group = &review.groups[displayed_group(&review, Some(&target), None, true)];
+        assert!(owner_target(&scene, group.owner).is_none());
+        let camera = Camera2D {
+            viewport: Size::new(1000.0, 520.0),
+            ..Default::default()
+        };
+        let focus = focus_group(&scene, group, camera, Some(&target)).unwrap();
+        assert!(!focus.owner_visible);
+        assert!(focus.camera.zoom >= 0.68);
+        let bounds = scene.target_bounds(&target).unwrap();
+        assert!(focus.camera.visible_rect().contains(bounds.min));
+        assert!(focus.camera.visible_rect().contains(bounds.max));
+        assert_eq!(format!("{scene:?}"), unchanged_scene);
     }
 
     fn scene(before: &ViewProjection, after: &ViewProjection) -> SemanticScene {
@@ -777,6 +1416,39 @@ mod tests {
             edge.revision_id = after.revision_id;
         }
         after
+    }
+
+    #[test]
+    fn review_modes_partition_structural_and_relationship_changes_without_changing_pair() {
+        let (before, after) = pair();
+        let scene = scene(&before, &after);
+        let complete = change_review(&before, &after, &scene).unwrap();
+        let structure = filtered_review(&complete, DiffMode::Structure);
+        let relationships = filtered_review(&complete, DiffMode::Relationships);
+        assert!(structure.objects > 0);
+        assert_eq!(structure.relationships, 0);
+        assert_eq!(relationships.objects, 0);
+        assert_eq!(structure.objects, complete.objects);
+        assert_eq!(relationships.relationships, complete.relationships);
+        for mode in [
+            DiffMode::Structure,
+            DiffMode::Relationships,
+            DiffMode::Requirements,
+            DiffMode::All,
+        ] {
+            let review = filtered_review(&complete, mode);
+            assert_eq!(
+                (review.before, review.after),
+                (before.revision_id, after.revision_id)
+            );
+            assert!(review.groups.iter().all(|group| !group.changes.is_empty()));
+            for change in review.groups.iter().flat_map(|group| &group.changes) {
+                assert!(mode.includes_change(change));
+                if let Some(target) = &change.target {
+                    assert_eq!(scene.target_revision(target), Some(change.revision));
+                }
+            }
+        }
     }
 
     #[test]
@@ -834,7 +1506,7 @@ mod tests {
             selection: Some(old_selection.clone()),
         };
         assert_eq!(
-            displayed_group(&review, Some(&old_selection), Some(&remembered)),
+            displayed_group(&review, Some(&old_selection), Some(&remembered), false),
             hidden
         );
         let changed_selection = review
@@ -851,14 +1523,17 @@ mod tests {
             .find(|(_, target)| **target != old_selection)
             .unwrap();
         assert_eq!(
-            displayed_group(&review, Some(changed_selection.1), Some(&remembered)),
+            displayed_group(&review, Some(changed_selection.1), Some(&remembered), false),
             changed_selection.0
         );
         let no_selection = RememberedGroup {
             index: hidden,
             selection: None,
         };
-        assert_eq!(displayed_group(&review, None, Some(&no_selection)), hidden);
+        assert_eq!(
+            displayed_group(&review, None, Some(&no_selection), false),
+            hidden
+        );
     }
 
     #[test]
@@ -1142,6 +1817,10 @@ mod tests {
         app.focus_changes();
         assert_eq!(app.camera, old_camera);
         app.comparison = ComparisonMode::Diff;
+        app.initialize_durable_comparison();
+        app.focus_durable_change_overview();
+        assert_eq!(app.camera, old_camera);
+        assert_eq!(app.selection.primary, selection);
         app.focus_changes();
         assert_eq!(app.binding, binding);
         assert_eq!(app.selection.primary, selection);

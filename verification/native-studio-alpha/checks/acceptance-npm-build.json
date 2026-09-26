@@ -1,0 +1,16 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "build"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "cbca2fa2cd64341a5131eae49280b6fc46ef6d98",
+  "tracked_changes_at_start": [],
+  "started_utc": "2026-09-26T08:17:17.388063+00:00",
+  "elapsed_seconds": 2.547,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/acceptance-npm-build.txt",
+  "output_sha256": "c0751e0975105e55970c8e5bfec47da6419e167b0c494f1844030398210cc8af",
+  "build_environment": {}
+}

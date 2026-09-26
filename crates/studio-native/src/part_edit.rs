@@ -231,16 +231,21 @@ impl StudioApp {
             revision: binding.revision,
             selection: vec![element],
         };
+        let control = agq_studio_platform::CompilationControl::new();
+        self.last_preparation_cancellation = None;
         let request = self.enqueue_mutation(crate::bridge::propose(
             context,
             agq_modeling_agent::ModelCommand::RenameElement { element, name },
             self.definition(),
+            control.clone(),
         ));
         if request != 0 {
             self.preparation = Some(PendingPreparation {
                 request,
                 started: std::time::Instant::now(),
                 cancelled: false,
+                control,
+                cancel_requested_at: None,
                 intent,
             });
             self.create_dialog = false;

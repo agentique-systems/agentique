@@ -184,6 +184,21 @@ impl CompletePublicationOverlay {
         libraries: &LibrarySetIdentity,
         receipt: &AcceptedPublicationReceipt,
     ) -> Result<Self, PublicationRestoreError> {
+        let mut timing =
+            std::env::var_os("AGENTIQUE_RUNTIME_RESTORE_TRACE").map(|_| std::time::Instant::now());
+        let mut phase = |phase: &'static str| {
+            if let Some(previous) = &mut timing {
+                let now = std::time::Instant::now();
+                eprintln!(
+                    "RUNTIME_RESTORE_SUBPHASE {}",
+                    json!({
+                        "publication": "kerml", "phase": phase,
+                        "elapsed_micros": now.duration_since(*previous).as_micros(),
+                    })
+                );
+                *previous = now;
+            }
+        };
         let expected = &receipt.receipt["complete_overlay"];
         if expected["format"] != "agq-kerml-sealed-graph/1" {
             return Err(PublicationRestoreError::Mismatch("sealed graph format"));
@@ -198,6 +213,7 @@ impl CompletePublicationOverlay {
         agq_kernel::archive::write_overlay(&overlay, &mut writer)?;
         let digest: [u8; 32] = writer.digest.finalize().into();
         receipt.verify_graph_digest(digest)?;
+        phase("decoded_graph_recanonicalization");
         let builder = CanonicalPublicationBuilder::new(overlay.declared(), roots, libraries);
         let mut context = builder
             .context(&overlay)
@@ -205,6 +221,7 @@ impl CompletePublicationOverlay {
             .id()
             .clone();
         context.derivation_phase = DerivationPhase::CompletePublicationOverlay;
+        phase("semantic_context_bindings_and_formal_targets");
         let certificate = if let Some(proof) = expected.get("producer_closure") {
             let registry = ProducerRegistry::new(
                 ProducerFamily::ALL
@@ -229,6 +246,7 @@ impl CompletePublicationOverlay {
         } else {
             None
         };
+        phase("producer_graph_identity_and_certificate");
         if expected["identity"] != context_identity(&context) {
             return Err(PublicationRestoreError::Mismatch("semantic context"));
         }
@@ -257,6 +275,7 @@ impl CompletePublicationOverlay {
                 "complete capability population",
             ));
         }
+        phase("accepted_context_and_capability_identity");
         Ok(Self {
             overlay,
             context,

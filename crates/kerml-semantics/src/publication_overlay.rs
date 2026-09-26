@@ -252,6 +252,8 @@ pub struct ProducerEffectAuditFailure {
 
 #[derive(Debug)]
 pub enum PublicationOverlayError {
+    /// Operational interruption; no closure or certificate is returned.
+    Cancelled(crate::Cancelled),
     FrontierCheckpoint(String),
     UnsupportedProfile(BaselineProfile),
     Context(ContextError),

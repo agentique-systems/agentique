@@ -1,0 +1,18 @@
+   Compiling uuid v1.26.1
+   Compiling displaydoc v0.2.7
+   Compiling agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+   Compiling zip v2.4.2
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+   Compiling agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+    Finished `test` profile [unoptimized] target(s) in 1m 32s
+     Running unittests src\lib.rs (target\debug\deps\agq_kerml_semantics-b5418ca7e740cfba.exe)
+
+running 4 tests
+test closed_query_audit::tests::closed_audit_shared_dependency_signatures_keep_local_incoming_changes ... ok
+test closed_query_audit::tests::closed_audit_refuses_open_or_missing_writer_certificates ... ok
+test closed_query_audit::tests::closed_audit_reproves_closure_witnesses_and_preserves_real_global_reads ... ok
+test closed_query_audit::tests::closed_audit_retains_unrelated_changes_but_rejects_new_negative_search_matches ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 307 filtered out; finished in 0.18s
+

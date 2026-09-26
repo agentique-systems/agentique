@@ -1,0 +1,18 @@
+[
+  {
+    "command": "cargo fmt --manifest-path crates/studio-native/Cargo.toml --all -- --check",
+    "chunk_id": "5bc4e2",
+    "wall_time_seconds": 4.5233431,
+    "exit_code": 0,
+    "original_token_count": 0,
+    "output": ""
+  },
+  {
+    "command": "git diff --check",
+    "chunk_id": "c4b57b",
+    "wall_time_seconds": 0.412706,
+    "exit_code": 0,
+    "original_token_count": 0,
+    "output": ""
+  }
+]

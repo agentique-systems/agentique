@@ -1,0 +1,88 @@
+{
+    "observed_utc":  "2026-09-26T08:07:34.0493608Z",
+    "os":  {
+               "TotalVisibleMemorySize":  16692400,
+               "FreePhysicalMemory":  1024140,
+               "TotalVirtualMemorySize":  40546684,
+               "FreeVirtualMemory":  306000
+           },
+    "disk":  {
+                 "Used":  499218411520,
+                 "Free":  224161792
+             },
+    "processes":  [
+                      {
+                          "Name":  "create_part_performance-10efcec309eb5e00",
+                          "Id":  26280,
+                          "CPU":  518.59375,
+                          "WorkingSet64":  5865693184
+                      },
+                      {
+                          "Name":  "msedgewebview2",
+                          "Id":  18092,
+                          "CPU":  364.15625,
+                          "WorkingSet64":  944504832
+                      },
+                      {
+                          "Name":  "FL64",
+                          "Id":  1892,
+                          "CPU":  278.65625,
+                          "WorkingSet64":  680419328
+                      },
+                      {
+                          "Name":  "vmmem",
+                          "Id":  18016,
+                          "CPU":  12962.921875,
+                          "WorkingSet64":  615657472
+                      },
+                      {
+                          "Name":  "MsMpEng",
+                          "Id":  16256,
+                          "CPU":  28113.21875,
+                          "WorkingSet64":  374824960
+                      },
+                      {
+                          "Name":  "Code",
+                          "Id":  5836,
+                          "CPU":  5890.15625,
+                          "WorkingSet64":  362602496
+                      },
+                      {
+                          "Name":  "codex",
+                          "Id":  2868,
+                          "CPU":  3887.0625,
+                          "WorkingSet64":  344629248
+                      },
+                      {
+                          "Name":  "NordVPN",
+                          "Id":  24872,
+                          "CPU":  3493.203125,
+                          "WorkingSet64":  324202496
+                      },
+                      {
+                          "Name":  "Code",
+                          "Id":  26472,
+                          "CPU":  1153.125,
+                          "WorkingSet64":  266600448
+                      },
+                      {
+                          "Name":  "Memory Compression",
+                          "Id":  2232,
+                          "CPU":  3030.8125,
+                          "WorkingSet64":  251793408
+                      },
+                      {
+                          "Name":  "explorer",
+                          "Id":  10224,
+                          "CPU":  2697.171875,
+                          "WorkingSet64":  219201536
+                      },
+                      {
+                          "Name":  "chrome",
+                          "Id":  3324,
+                          "CPU":  22.953125,
+                          "WorkingSet64":  192561152
+                      }
+                  ],
+    "limitation":  "Ordinary desktop applications remained active. No other semantic executable or compiler was observed during baseline sampling. System virtual-memory and disk headroom were low."
+}

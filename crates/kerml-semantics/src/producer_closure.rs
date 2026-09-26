@@ -10,6 +10,7 @@ use std::sync::Arc;
 
 #[path = "producer_closure_rebind.rs"]
 mod rebind;
+pub(crate) use rebind::audit_subject_signatures;
 pub use rebind::{ProducerClosureCheckpoint, ReboundClosure};
 
 #[path = "component_closure_audit.rs"]
@@ -1840,10 +1841,13 @@ impl ProducerClosureCertificate {
     /// the certificate to the exact semantic context and independently required
     /// producer registry before treating this coverage as an acceptance gate.
     pub fn is_fully_closed(&self, model: &ModelView) -> bool {
+        let required = SemanticClosureRequirement::ALL
+            .into_iter()
+            .fold(0_u8, |mask, requirement| mask | requirement.bit());
         model.elements().all(|record| {
-            SemanticClosureRequirement::ALL
-                .into_iter()
-                .all(|requirement| self.is_closed(record.id(), requirement))
+            self.subjects
+                .binary_search(&record.id())
+                .is_ok_and(|index| self.closed[index] & required == required)
         })
     }
     pub fn evaluation(
@@ -1892,7 +1896,34 @@ impl ProducerClosureCertificate {
         table: &ProducerEvaluationTable,
         immutable_source: impl Fn(ElementId) -> Option<ClosureSource>,
     ) -> Self {
-        Self::issue_with_cache(model, context, registry, table, immutable_source, None)
+        Self::issue_with_cache(
+            model,
+            context,
+            registry,
+            table,
+            immutable_source,
+            None,
+            true,
+        )
+    }
+
+    #[cfg(test)]
+    pub(crate) fn issue_full_family_rows(
+        model: &ModelView,
+        context: &SemanticContextId,
+        registry: &ProducerRegistry,
+        table: &ProducerEvaluationTable,
+        immutable_source: impl Fn(ElementId) -> Option<ClosureSource>,
+    ) -> Self {
+        Self::issue_with_cache(
+            model,
+            context,
+            registry,
+            table,
+            immutable_source,
+            None,
+            false,
+        )
     }
 
     fn issue_with_cache(
@@ -1902,6 +1933,7 @@ impl ProducerClosureCertificate {
         table: &ProducerEvaluationTable,
         immutable_source: impl Fn(ElementId) -> Option<ClosureSource>,
         mut cache: Option<&mut CertificateUpdateCache>,
+        skip_immutable_rows: bool,
     ) -> Self {
         let immutable = |id| immutable_source(id).is_some();
         let subjects: Vec<_> = model.elements().map(|r| r.id()).collect();
@@ -1958,8 +1990,16 @@ impl ProducerClosureCertificate {
         let dependency_blocked =
             table.dependency_blocked(model, registry, &subjects, &positions, &immutable, &blocked);
         for (i, &subject) in subjects.iter().enumerate() {
-            let record = model.element(subject).expect("indexed subject");
             let subject_immutable = immutable(subject);
+            if skip_immutable_rows && subject_immutable {
+                // The exact authenticated dependency has no local producer
+                // pairs: its packed row is already all Inapplicable (zero),
+                // with no scope or pair counts to contribute. Keep this subject
+                // in topology and blocker propagation below; a local writer can
+                // still open a requirement through cross-subject dependencies.
+                continue;
+            }
+            let record = model.element(subject).expect("indexed subject");
             for (j, descriptor) in registry.descriptors.iter().enumerate() {
                 let mut state = if subject_immutable {
                     ProducerEvaluationState::Inapplicable

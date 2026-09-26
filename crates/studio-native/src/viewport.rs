@@ -33,7 +33,11 @@ impl StudioApp {
             self.focus_changes_pending = false;
             if self.comparison == crate::app::ComparisonMode::Diff {
                 self.fit_pending = false;
-                self.focus_changes();
+                if self.candidate.is_none() {
+                    self.focus_durable_change_overview();
+                } else {
+                    self.focus_changes();
+                }
             }
         }
         if self.fit_pending && !self.scene_builder.busy {
@@ -48,6 +52,11 @@ impl StudioApp {
             }
             self.fit_pending = false;
         }
+        if crate::zoom_input::apply(ui, &response, &mut self.camera) {
+            self.camera_target = None;
+            self.timing.input(crate::timing::InputKind::Zoom);
+            ui.ctx().request_repaint();
+        }
         self.lod.update(self.camera.zoom);
         let pointer = response
             .hover_pos()
@@ -60,6 +69,18 @@ impl StudioApp {
         {
             let started = Instant::now();
             hovered = self.spatial.hit_test(point, 6.0 / self.camera.zoom);
+            if self.comparison == crate::app::ComparisonMode::Diff
+                && let Some(SceneTarget::Edge(id)) = &hovered
+                && !self
+                    .selection
+                    .targets
+                    .contains(&SceneTarget::Edge(id.clone()))
+                && self.lookup.edge(&self.scene, id).is_some_and(|edge| {
+                    !crate::history::diff_mode(ui.ctx()).includes_edge(edge.semantic.family)
+                })
+            {
+                hovered = None;
+            }
             // A hidden feature port is represented by its owning node at low LOD.
             if self.lod.level() < LodLevel::Features
                 && let Some(SceneTarget::Port(id)) = hovered.as_ref()
@@ -69,13 +90,6 @@ impl StudioApp {
                 hovered = Some(SceneTarget::Node(port.owner));
             }
             self.timing.hit(started.elapsed());
-            let wheel = ui.input(|i| i.smooth_scroll_delta.y);
-            if wheel.abs() > 0.01 {
-                self.camera_target = None;
-                self.camera.zoom_at(local.unwrap(), (wheel * 0.0025).exp());
-                self.timing.input(crate::timing::InputKind::Zoom);
-                ui.ctx().request_repaint();
-            }
         }
         if response.drag_started() && ui.input(|i| i.modifiers.shift) {
             self.marquee_start = world;
@@ -174,6 +188,12 @@ impl StudioApp {
             self.camera.visible_rect().inflate(20.0 / self.camera.zoom),
         );
         let mut hasher = DefaultHasher::new();
+        let diff_mode = if self.comparison == crate::app::ComparisonMode::Diff {
+            crate::history::diff_mode(ui.ctx())
+        } else {
+            crate::history::DiffMode::All
+        };
+        diff_mode.hash(&mut hasher);
         self.generation.hash(&mut hasher);
         self.theme.dark.hash(&mut hasher);
         self.theme.contrast.hash(&mut hasher);
@@ -198,7 +218,7 @@ impl StudioApp {
             .collect();
         if self.batch_key != Some(key) {
             let started = Instant::now();
-            self.batch = Arc::new(self.make_batch(key, &objects, &selected_edges));
+            self.batch = Arc::new(self.make_batch(key, &objects, &selected_edges, diff_mode));
             self.batch_key = Some(key);
             self.timing.batch(started.elapsed());
         }
@@ -220,6 +240,7 @@ impl StudioApp {
             },
         ));
         self.timing.visible_nodes = 0;
+        self.requirement_lane_labels(&painter, rect);
         let labels_started = Instant::now();
         self.timing.total_nodes = self.scene.nodes.len();
         let mut keyboard_selection = None;
@@ -442,6 +463,11 @@ impl StudioApp {
         }
         let mut label_edges = Vec::new();
         for edge in &objects.edges {
+            if !diff_mode.includes_edge(edge.semantic.family)
+                && !selected_edges.contains(edge.semantic.id.as_str())
+            {
+                continue;
+            }
             let incident = self
                 .selection
                 .contains(self.lookup.endpoint_owner(edge.semantic.source))
@@ -490,7 +516,7 @@ impl StudioApp {
                     .or_insert(bottom);
             }
         }
-        let obstacles: Vec<_> = if label_edges.is_empty() {
+        let mut obstacles: Vec<_> = if label_edges.is_empty() {
             Vec::new()
         } else {
             objects
@@ -516,6 +542,31 @@ impl StudioApp {
                 })
                 .collect()
         };
+        let mut route_obstacles = crate::relationship_labels::RouteObstacles::default();
+        if !label_edges.is_empty() {
+            for port in &objects.ports {
+                let screen = self.camera.world_to_screen(port.position);
+                obstacles.push(egui::Rect::from_center_size(
+                    rect.min + Vec2::new(screen.x, screen.y),
+                    Vec2::splat(12.0),
+                ));
+            }
+            for edge in &objects.edges {
+                if diff_mode.includes_edge(edge.semantic.family)
+                    || selected_edges.contains(edge.semantic.id.as_str())
+                {
+                    for pair in edge.points.windows(2) {
+                        let a = self.camera.world_to_screen(pair[0]);
+                        let b = self.camera.world_to_screen(pair[1]);
+                        route_obstacles.insert(
+                            rect.min + Vec2::new(a.x, a.y),
+                            rect.min + Vec2::new(b.x, b.y),
+                            rect,
+                        );
+                    }
+                }
+            }
+        }
         let mut placed_labels = Vec::new();
         let mut automatic_labels = 0;
         for (priority, edge) in label_edges {
@@ -531,7 +582,15 @@ impl StudioApp {
                     ""
                 }
             );
-            let galley = painter.layout_no_wrap(label, FontId::proportional(12.0), theme.accent);
+            let mut label_job = egui::text::LayoutJob::simple_singleline(
+                label,
+                FontId::proportional(12.0),
+                theme.accent,
+            );
+            label_job.wrap.max_width = (rect.width() * 0.35).clamp(80.0, 320.0);
+            label_job.wrap.max_rows = 2;
+            label_job.wrap.break_anywhere = true;
+            let galley = painter.layout_job(label_job);
             let route: Vec<_> = edge
                 .points
                 .iter()
@@ -547,6 +606,7 @@ impl StudioApp {
                 &obstacles,
                 &placed_labels,
                 priority < 2,
+                &route_obstacles,
             ) else {
                 continue;
             };
@@ -848,10 +908,21 @@ impl StudioApp {
             theme.muted,
         );
         if self.scene.nodes.is_empty() {
+            let empty_project = self.fixture.is_none()
+                && self.history.as_ref().is_some_and(|history| {
+                    history.revisions.iter().any(|revision| {
+                        revision.revision_id == self.projection.revision_id
+                            && revision.documents.is_empty()
+                    })
+                });
             painter.text(
                 rect.center(),
                 Align2::CENTER_CENTER,
-                "No elements in this view",
+                if empty_project {
+                    "Empty Working project · use the project menu to Add source document"
+                } else {
+                    "No elements in this view"
+                },
                 FontId::proportional(20.0),
                 theme.muted,
             );
@@ -862,6 +933,7 @@ impl StudioApp {
         key: u64,
         objects: &VisibleScene<'_>,
         selected_edges: &BTreeSet<&str>,
+        diff_mode: crate::history::DiffMode,
     ) -> Batch {
         let mut batch = Batch {
             key,
@@ -936,6 +1008,11 @@ impl StudioApp {
             }
         }
         for edge in &objects.edges {
+            if !diff_mode.includes_edge(edge.semantic.family)
+                && !selected_edges.contains(edge.semantic.id.as_str())
+            {
+                continue;
+            }
             // Ownership is already explicit spatially; graph mode exposes its actual edges.
             if self.world == crate::navigation::World::System
                 && edge.semantic.family == RelationshipFamily::Ownership
@@ -972,6 +1049,15 @@ impl StudioApp {
                 color = theme.green;
             } else if edge.diff == DiffMark::Removed {
                 color = theme.amber.gamma_multiply(0.6);
+            }
+            // Change coloring must respect the same explicit-selection priority
+            // as ordinary edges, otherwise every added relation shouts at once.
+            if self.comparison == crate::app::ComparisonMode::Diff
+                && !self.selection.targets.is_empty()
+                && !selected
+                && !incident
+            {
+                color = color.gamma_multiply(0.35);
             }
             if self.dependencies.as_ref().is_some_and(|ids| {
                 !ids.contains(&edge.semantic.source) || !ids.contains(&edge.semantic.target)
@@ -1096,10 +1182,13 @@ fn context_commands(target: Option<&SceneTarget>) -> &'static [CommandId] {
     use CommandId::*;
     match target {
         None => &[Fit, Home, System, Graph, Requirements],
-        Some(SceneTarget::Port(_)) => &[Focus, Explain, Source, Dependencies],
+        Some(SceneTarget::Port(_)) => {
+            &[Focus, Explain, Source, Dependencies, SelectionRequirements]
+        }
         Some(SceneTarget::Edge(_)) => &[Focus, Explain, Source],
         Some(SceneTarget::Node(_) | SceneTarget::Container(_)) => &[
             Focus,
+            SelectionRequirements,
             Dependencies,
             Explain,
             Source,

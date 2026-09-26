@@ -1,0 +1,20 @@
+{
+  "format": "agq-native-oracle-runtime/1",
+  "outcome": "transport_verified",
+  "tag": "runtime-kerml-v9-sysml-v3-bundle1",
+  "expected_sha256": "37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026",
+  "source_commit": "a6e1f41d2b549a8be10a79dfa3ec786c090b65b3",
+  "entries": {
+    "kerml.cache": {
+      "bytes": 475865571,
+      "sha256": "aadf9ff589eea35bcedc5d1e3d0521952058b55f3325614ecb0ab12ae36300c4"
+    },
+    "systems.cache": {
+      "bytes": 134322830,
+      "sha256": "02ba47ad99ceaddb853b198a556cbe40351a00361f077099a993f3a226bcc323"
+    }
+  },
+  "sha256": "37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026",
+  "bytes": 610190454,
+  "contract": "Transport checks only; both language facades independently authenticate compiled accepted receipts inside the oracle."
+}

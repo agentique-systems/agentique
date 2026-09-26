@@ -14,9 +14,21 @@ use inspector_cache::InspectorCache;
 pub struct StudioRevisionReader {
     bound: BoundRevision,
     inspectors: InspectorCache,
+    projections: crate::projection_cache::ProjectionCache,
 }
 
 impl StudioRevisionReader {
+    /// Project this immutable revision without waiting for candidate construction.
+    /// Only query DTOs are cached; every result retains this reader's binding.
+    pub fn project(&self, definition: &ViewDefinition) -> Result<ViewProjection> {
+        let (_, result) = self.projections.read(
+            self.binding(),
+            definition,
+            || Ok((self.binding(), &self.bound)),
+            |bound| Ok(agq_modeling_view::project(bound.revision(), definition)?),
+        );
+        result
+    }
     /// Exact project and immutable revision authenticated when this reader was minted.
     pub fn binding(&self) -> RevisionBinding {
         RevisionBinding {
@@ -84,7 +96,11 @@ fn authorize_reader(
         project: bound.manifest().project_id,
         revision: bound.manifest().revision_id,
     });
-    Ok(StudioRevisionReader { bound, inspectors })
+    Ok(StudioRevisionReader {
+        bound,
+        inspectors,
+        projections: Default::default(),
+    })
 }
 
 #[cfg(test)]
