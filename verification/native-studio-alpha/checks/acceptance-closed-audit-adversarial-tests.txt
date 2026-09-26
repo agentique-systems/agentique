@@ -1,0 +1,16 @@
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+    Finished `test` profile [unoptimized] target(s) in 1m 23s
+     Running unittests src\lib.rs (target\debug\deps\agq_kerml_semantics-b5418ca7e740cfba.exe)
+
+running 8 tests
+test closed_query_audit::tests::closed_audit_shared_dependency_signatures_keep_local_incoming_changes ... ok
+test closed_query_audit::tests::closed_audit_failed_subject_cannot_be_reused_after_later_successful_answers ... ok
+test closed_query_audit::tests::closed_audit_reproves_closure_witnesses_and_preserves_real_global_reads ... ok
+test closed_query_audit::tests::closed_audit_refuses_open_or_missing_writer_certificates ... ok
+test closed_query_audit::tests::closed_audit_negative_name_search_reopens_when_an_existing_member_is_renamed ... ok
+test closed_query_audit::tests::closed_audit_rejects_a_separate_equal_dependency_mount ... ok
+test closed_query_audit::tests::closed_audit_rejects_static_query_and_writer_contract_changes_on_equal_records ... ok
+test closed_query_audit::tests::closed_audit_retains_unrelated_changes_but_rejects_new_negative_search_matches ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 307 filtered out; finished in 0.26s
+
