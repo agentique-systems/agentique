@@ -324,6 +324,40 @@ impl StudioApp {
         self.invalidate_inspection();
         self.request_inspection();
     }
+    /// An outliner row can select content outside the current camera. Reveal
+    /// that exact scene object without changing its semantic neighborhood. A
+    /// visible object (including a partially visible container) keeps the
+    /// operator's camera; ordinary canvas selection never calls this method.
+    pub fn select_from_outliner(&mut self, target: SceneTarget, extend: bool) {
+        self.select(target.clone(), extend);
+        if self.world == World::History
+            || self.selection.revision != self.scene.revision_id
+            || !self.selection.targets.contains(&target)
+            || !matches!(target, SceneTarget::Node(_) | SceneTarget::Container(_))
+        {
+            return;
+        }
+        let Some(bounds) = self.scene.target_bounds(&target) else {
+            return;
+        };
+        if !bounds.finite() || self.camera.visible_rect().intersects(bounds) {
+            return;
+        }
+        let mut camera = self.camera;
+        camera.fit(bounds, 32.0);
+        // Preserve the current scale whenever the selected object can fit. An
+        // oversized offscreen container may need a smaller scale to be revealed.
+        camera.zoom = camera.zoom.min(self.camera.zoom);
+        self.fit_pending = false;
+        if self.reduced_motion {
+            self.camera = camera;
+            self.camera_target = None;
+            self.navigation
+                .update_camera([camera.center.x, camera.center.y], camera.zoom);
+        } else {
+            self.camera_target = Some(camera);
+        }
+    }
     /// Refresh the exact primary object after a projection without changing
     /// the current multi-selection or promoting a ghost to the active revision.
     pub fn request_inspection(&mut self) {
@@ -1340,7 +1374,7 @@ impl StudioApp {
                     (current + nodes.len() - 1) % nodes.len()
                 })
             };
-            self.select(SceneTarget::Node(self.scene.nodes[nodes[next]].id()), false);
+            self.select_from_outliner(SceneTarget::Node(self.scene.nodes[nodes[next]].id()), false);
         }
     }
 
@@ -1414,6 +1448,119 @@ mod tests {
         assert_eq!(app.comparison, ComparisonMode::Current);
         assert!(app.compare_before.is_none());
         assert_eq!(app.world, World::System);
+    }
+
+    #[test]
+    fn outliner_reveals_offscreen_object_without_changing_revision_or_focus() {
+        let mut app = application();
+        let node = app
+            .scene
+            .nodes
+            .iter()
+            .find(|node| !node.is_container)
+            .unwrap();
+        let target = SceneTarget::Node(node.id());
+        let bounds = node.bounds;
+        let revision = app.scene.revision_id;
+        let focus = app.focus;
+        let world = app.world;
+        let definition = app.definition();
+        for dpi in [1.0, 1.25, 1.5, 2.0] {
+            app.camera.viewport = agq_studio_scene::Size::new(1088.0 / dpi, 723.0 / dpi);
+            app.camera.zoom = 1.2;
+            app.camera.center = Point::new(bounds.max.x + 20_000.0, bounds.max.y + 20_000.0);
+            app.camera_target = None;
+            let before = app.camera;
+            assert!(!before.visible_rect().intersects(bounds));
+            app.select_from_outliner(target.clone(), false);
+            let revealed = app
+                .camera_target
+                .expect("Offscreen selection must be revealed");
+            assert!(revealed.visible_rect().contains_rect(bounds));
+            assert!(
+                revealed.zoom <= before.zoom,
+                "Revealing selection must not magnify the scene"
+            );
+            assert_eq!(
+                revealed.zoom, before.zoom,
+                "An ordinary part fits at the operator's existing scale"
+            );
+            assert_eq!(
+                app.camera, before,
+                "Camera animation starts from the operator's current camera"
+            );
+            assert_eq!(app.selection.primary, Some(target.clone()));
+            assert_eq!(app.selected_element(), target.element_id());
+            assert_eq!(app.selection.revision, revision);
+            assert_eq!(app.scene.revision_id, revision);
+            assert_eq!(app.world, world);
+            assert_eq!(app.focus, focus);
+            assert_eq!(app.definition(), definition);
+            assert!(!app.fit_pending);
+        }
+        app.camera.viewport = agq_studio_scene::Size::new(160.0, 100.0);
+        app.camera.zoom = 4.0;
+        app.select_from_outliner(target.clone(), false);
+        let revealed = app.camera_target.unwrap();
+        assert!(
+            revealed.zoom < app.camera.zoom,
+            "An oversized offscreen object needs a smaller scale"
+        );
+        assert!(revealed.visible_rect().contains_rect(bounds));
+
+        app.reduced_motion = true;
+        app.select_from_outliner(target, false);
+        assert_eq!(app.camera, revealed, "Reduced motion reveals immediately");
+        assert_eq!(app.camera_target, None);
+    }
+
+    #[test]
+    fn visible_outliner_selection_canvas_selection_and_deselection_preserve_camera() {
+        let mut app = application();
+        let node = app
+            .scene
+            .nodes
+            .iter()
+            .find(|node| !node.is_container)
+            .unwrap();
+        let target = SceneTarget::Node(node.id());
+        let bounds = node.bounds;
+        app.camera.fit(bounds.inflate(80.0), 32.0);
+        app.camera_target = None;
+        let visible = app.camera;
+        assert!(visible.visible_rect().contains_rect(bounds));
+        app.select_from_outliner(target.clone(), false);
+        assert_eq!(app.camera, visible);
+        assert_eq!(app.camera_target, None);
+
+        // Partially visible content also retains the existing exploration state.
+        app.camera.center.x = bounds.max.x + app.camera.visible_rect().width() * 0.25;
+        let partial = app.camera;
+        assert!(partial.visible_rect().intersects(bounds));
+        app.select_from_outliner(target.clone(), false);
+        assert_eq!(app.camera, partial);
+        assert_eq!(app.camera_target, None);
+
+        app.camera.center = Point::new(100_000.0, 100_000.0);
+        let offscreen = app.camera;
+        app.select(target.clone(), false);
+        assert_eq!(
+            app.camera, offscreen,
+            "Canvas selection must not request outliner framing"
+        );
+        assert_eq!(app.camera_target, None);
+        app.select_from_outliner(target.clone(), true);
+        assert!(!app.selection.targets.contains(&target));
+        assert_eq!(
+            app.camera, offscreen,
+            "Shift-deselect must not reveal removed selection"
+        );
+        assert_eq!(app.camera_target, None);
+
+        app.world = World::History;
+        app.select_from_outliner(target, false);
+        assert_eq!(app.camera, offscreen, "History has no canvas to reframe");
+        assert_eq!(app.camera_target, None);
     }
 
     #[test]

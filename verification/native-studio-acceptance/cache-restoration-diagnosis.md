@@ -1,5 +1,39 @@
 # Cache restoration diagnosis and bounded next step
 
+## Measured follow-up, 2026-09-26
+
+The retained real profiles now confirm the source-inspection diagnosis below.
+See `read-profile-02/README.md` and its raw command output. The same immutable
+repository revision opened in 193.691 s before the producer/audit optimizations
+and 181.258 s afterward. This is not the required dramatic warm-open improvement.
+
+The latest cache blob authentication took 32 ms and compressed decoding/frontier
+hashing 208 ms. In contrast, source compilation still took 108.494 s: source
+preparation 14.702 s, strict kernel validation 620 ms, final closure 37.723 s,
+final reference resolution 7.439 s and effective audit 47.949 s. It rebuilt
+1,101 declared records, evaluated 332 producer subjects and audited all 791
+local subjects. Persisted restoration has no in-memory predecessor audit to
+reuse. Expensive source-derived semantic work, not compressed byte decoding,
+dominates this path.
+
+Runtime publication restoration adds 65.722 s. The trace includes large accepted
+archive decode/kernel-validation passes and recanonicalization against the pinned
+publication identity. Those are distinct from the project cache. Loaded project
+reads are already much cheaper: System focus 377 ms, Graph and Requirements
+about 60 ms, cached projections about 1 ms. The native journey separately
+observed 132 ms durable repository commit and retained-candidate validation
+without redoing the whole audit. These improvements do not establish faster
+project restoration or candidate construction.
+
+The historical draft descriptions below record the reasoning before integration;
+they are not a current list of untested changes. The source-only restoration gate
+has since passed again in a separate process after deleting the disposable cache.
+The next isolated measurements partition context/certificate costs and test audit
+batch lifetime with full query-value/evidence/completeness equivalence. Neither
+experiment has produced a speed result yet.
+
+## Initial source inspection
+
 This is a source inspection, not a new wall-clock result. The integration lead is running the first instrumented real project opening; its measurements determine which draft to integrate. No v3 acceptance shortcut is implemented here.
 
 ## Why an authenticated cache still resembles reconstruction

@@ -69,6 +69,7 @@ jobs:
 
   oracle:
     name: Windows baseline and current semantic oracle
+    if: inputs.run_oracle
     runs-on: windows-2022
     timeout-minutes: 120
     # GitHub requires push access to read draft assets. The token is passed only

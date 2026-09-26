@@ -1353,6 +1353,10 @@ fn assert_explicit_part_in_review_scene(
         // Raw target identity is insufficient: this also resolves its geometry
         // and checks the selection's exact active scene revision.
         return Err("Explicit candidate selection has no matching object in this scene".into());
+    } else if !app.scene.node(added).is_some_and(|node| {
+        node.bounds.finite() && app.camera.visible_rect().intersects(node.bounds)
+    }) {
+        return Err("Explicit candidate selection is outside the settled viewport".into());
     }
     Ok(())
 }
@@ -2055,6 +2059,7 @@ impl Runner {
                             candidate.after.revision_id == app.scene.revision_id
                         })
                     {
+                        assert_explicit_part_in_review_scene(app, app.comparison, id)?;
                         self.explicitly_selected_candidate_part = Some(id);
                     }
                 }
@@ -3586,7 +3591,20 @@ mod tests {
                 .is_err(),
             "The created part has not been explicitly selected yet"
         );
+        // Selecting the real Explorer target must reveal it through production
+        // behavior. Reduced motion makes the unit's presentation settle now;
+        // the actual native journey waits for the ordinary animation instead.
+        app.reduced_motion = true;
+        app.camera.center = Point::new(100_000.0, 100_000.0);
         app.select(SceneTarget::Node(added), false);
+        assert!(
+            assert_explicit_part_in_review_scene(&app, ComparisonMode::Candidate, added).is_err(),
+            "A selected object and valid Inspector are insufficient when it remains offscreen"
+        );
+        app.select_from_outliner(SceneTarget::Node(added), false);
+        assert!(
+            assert_explicit_part_in_review_scene(&app, ComparisonMode::Candidate, added).is_ok()
+        );
         app.change_comparison(ComparisonMode::Current);
         assert!(app.scene.node(added).is_none());
         assert_ne!(app.selected_element(), Some(added));

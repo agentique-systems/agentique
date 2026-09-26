@@ -10,7 +10,18 @@ use std::{path::PathBuf, sync::Arc};
 #[test]
 #[ignore = "requires installed accepted runtime; explicit project/import acceptance gate"]
 fn operator_project_import_retains_durable_boundaries_on_rejection_cancel_and_commit() {
-    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    // Release test artifacts may be built by CI and exercised on the operator's
+    // machine. The accepted runtime still authenticates this explicit checkout's
+    // pinned authority; a missing source root is never an acquisition request.
+    let root = std::env::var_os("AGENTIQUE_SOURCE_ROOT")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.."))
+        .canonicalize()
+        .expect("project creation acceptance source root must exist");
+    assert!(
+        root.join("standards/normative/sysml-2.0/library-set.json")
+            .is_file()
+    );
     let runtime = agq_runtime_publications::load(
         &agq_runtime_publications::RuntimeConfig {
             runtime_dir: std::env::var_os("AGENTIQUE_RUNTIME_DIR").map(Into::into),

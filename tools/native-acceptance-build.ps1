@@ -249,7 +249,7 @@ try {
         '--target-dir', $targetDirectory, '--message-format=json-render-diagnostics')
     switch ($Component) {
         'native' { $arguments += @('--bin', 'agq-studio-native') }
-        'helpers' { $arguments += @('-p', 'agq-studio-platform', '--example', 'profile_open', '--example', 'source_recovery') }
+        'helpers' { $arguments += @('-p', 'agq-studio-platform', '--example', 'profile_open', '--example', 'source_recovery', '--test', 'project_creation') }
         'oracle' { $arguments += @('-p', 'agq-modeling-agent', '--features', 'agq-modeling-agent/verification', '--test', 'create_part_performance') }
     }
     $buildLog = Invoke-RecordedCommand 'cargo' $arguments 'release-build'
@@ -257,7 +257,7 @@ try {
     # stale files or a guessed filename cannot enter a successful artifact.
     $expected = switch ($Component) {
         'native' { @('agq-studio-native') }
-        'helpers' { @('profile_open', 'source_recovery') }
+        'helpers' { @('profile_open', 'source_recovery', 'project_creation') }
         'oracle' { @('create_part_performance') }
     }
     $executables = @{}

@@ -683,7 +683,7 @@ impl StudioApp {
                                     .map_or([0.0, 0.0], |p| [p.x, p.y]),
                                 ui.input(|i| i.time),
                             );
-                            self.select(target, ui.input(|i| i.modifiers.shift));
+                            self.select_from_outliner(target, ui.input(|i| i.modifiers.shift));
                         }
                         if response.double_clicked() && same_object_click {
                             self.execute(CommandId::Focus, ui.ctx());
@@ -894,9 +894,8 @@ impl StudioApp {
             });
         });
         let revisions: Vec<_> = if let Some(history) = &self.history {
-            history
-                .revisions
-                .iter()
+            crate::history::ordered_history(history)
+                .into_iter()
                 .map(|r| {
                     (
                         r.revision_id,
@@ -1112,12 +1111,13 @@ impl StudioApp {
                     FontId::proportional(12.0),
                     theme.muted,
                 );
-                let detail = if description.is_empty() {
+                let summary = crate::history::history_description(description);
+                let detail = if summary.is_empty() {
                     created.clone()
                 } else if created.is_empty() {
-                    description.clone()
+                    summary
                 } else {
-                    format!("{created} · {description}")
+                    format!("{created} · {summary}")
                 };
                 let mut detail_job = egui::text::LayoutJob::simple_singleline(
                     detail,

@@ -9,6 +9,94 @@ use eframe::egui::{self, RichText};
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
 
+/// Children precede their actual parents. The default branch is read first;
+/// named branch priority breaks ties between independent lineages, never UUID
+/// order masquerading as time. Identity is only a deterministic final tie-break.
+fn lineage_order(
+    parents: &BTreeMap<ProjectRevisionId, Option<ProjectRevisionId>>,
+    branch_heads: &[ProjectRevisionId],
+) -> Vec<ProjectRevisionId> {
+    let mut priority = BTreeMap::new();
+    for (rank, head) in branch_heads.iter().enumerate() {
+        let mut cursor = Some(*head);
+        let mut visited = BTreeSet::new();
+        while let Some(id) = cursor.filter(|id| parents.contains_key(id) && visited.insert(*id)) {
+            priority.entry(id).or_insert(rank);
+            cursor = parents[&id];
+        }
+    }
+    let mut children: BTreeMap<_, usize> = parents.keys().map(|id| (*id, 0)).collect();
+    for parent in parents.values().flatten() {
+        if let Some(count) = children.get_mut(parent) {
+            *count += 1;
+        }
+    }
+    let mut remaining: BTreeSet<_> = parents.keys().copied().collect();
+    let mut ordered = Vec::with_capacity(remaining.len());
+    while !remaining.is_empty() {
+        let rank =
+            |id: &&ProjectRevisionId| (priority.get(*id).copied().unwrap_or(usize::MAX), **id);
+        // Durable revisions cannot form cycles. Still retain all cards if an
+        // incomplete/corrupt history reaches presentation, without looping.
+        let next = remaining
+            .iter()
+            .filter(|id| children[*id] == 0)
+            .min_by_key(rank)
+            .or_else(|| remaining.iter().min_by_key(rank))
+            .copied()
+            .unwrap();
+        remaining.remove(&next);
+        ordered.push(next);
+        if let Some(parent) = parents[&next]
+            && let Some(count) = children.get_mut(&parent)
+        {
+            *count = count.saturating_sub(1);
+        }
+    }
+    ordered
+}
+
+pub(crate) fn ordered_history(
+    history: &agq_studio_platform::ProjectHistory,
+) -> Vec<&agq_modeling_repository::RevisionManifest> {
+    let revisions: BTreeMap<_, _> = history
+        .revisions
+        .iter()
+        .map(|r| (r.revision_id, r))
+        .collect();
+    let parents = revisions
+        .iter()
+        .map(|(id, r)| (*id, r.parent_revision_id))
+        .collect();
+    let mut branches: Vec<_> = history.branches.iter().collect();
+    branches.sort_by(|a, b| {
+        (a.id != history.project.default_branch)
+            .cmp(&(b.id != history.project.default_branch))
+            .then(a.name.cmp(&b.name))
+            .then(a.id.cmp(&b.id))
+    });
+    lineage_order(
+        &parents,
+        &branches
+            .iter()
+            .map(|branch| branch.head)
+            .collect::<Vec<_>>(),
+    )
+    .iter()
+    .map(|id| revisions[id])
+    .collect()
+}
+
+pub(crate) fn history_description(description: &str) -> String {
+    if serde_json::from_str::<serde_json::Value>(description)
+        .is_ok_and(|value| value.is_object() || value.is_array())
+    {
+        "Recorded edit evidence · hover for details".into()
+    } else {
+        description.into()
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub(crate) enum DiffMode {
     #[default]
@@ -595,6 +683,104 @@ fn focus_group(
 }
 
 impl StudioApp {
+    /// A newly chosen durable pair starts in its own design-change context.
+    /// Candidate selection and restored presentation use separate contracts.
+    pub(crate) fn initialize_durable_comparison(&mut self) {
+        if self.candidate.is_some() || self.comparison != ComparisonMode::Diff {
+            return;
+        }
+        let target = self.change_review().and_then(|review| {
+            let structure = filtered_review(&review, DiffMode::Structure);
+            let review = if structure.groups.is_empty() {
+                &review
+            } else {
+                &structure
+            };
+            let selected = self.selection.primary.as_ref();
+            let relevant = review.groups.iter().any(|group| {
+                same_target(owner_target(&self.scene, group.owner).as_ref(), selected)
+                    || group
+                        .changes
+                        .iter()
+                        .any(|change| same_target(change.target.as_ref(), selected))
+            });
+            if relevant {
+                return selected.cloned();
+            }
+            review.groups.iter().find_map(|group| {
+                owner_target(&self.scene, group.owner).or_else(|| {
+                    group
+                        .changes
+                        .iter()
+                        .find_map(|change| change.target.clone())
+                })
+            })
+        });
+        self.invalidate_inspection();
+        self.selection.clear();
+        self.batch_key = None;
+        if let Some(target) = target {
+            self.selection.select(target, false);
+        }
+    }
+
+    /// An initial durable overview frames every changed owner. Local owner
+    /// navigation remains available for readable detail in dispersed graphs.
+    pub(crate) fn focus_durable_change_overview(&mut self) {
+        if self.candidate.is_some() {
+            return;
+        }
+        let Some(review) = self.change_review() else {
+            return;
+        };
+        let structure = filtered_review(&review, DiffMode::Structure);
+        let review = if structure.groups.is_empty() {
+            &review
+        } else {
+            &structure
+        };
+        let lookup = SceneLookup::build(&self.scene);
+        let mut bounds = review
+            .groups
+            .iter()
+            .filter_map(|group| {
+                group
+                    .owner
+                    .and_then(|owner| object_bounds(&self.scene, &lookup, owner))
+                    .or_else(|| {
+                        group.changes.iter().find_map(|change| {
+                            change_bounds(&self.scene, &lookup, change).first().copied()
+                        })
+                    })
+            })
+            .reduce(Rect::union);
+        if let Some(selected) = self
+            .selection
+            .primary
+            .as_ref()
+            .and_then(|target| self.scene.target_bounds(target))
+        {
+            bounds = Some(bounds.map_or(selected, |bounds| bounds.union(selected)));
+        }
+        let Some(bounds) = bounds else {
+            return;
+        };
+        let mut camera = self.camera;
+        camera.fit(bounds, 72.0);
+        camera.zoom = camera.zoom.min(1.2);
+        self.fit_pending = false;
+        if self.reduced_motion {
+            self.camera = camera;
+            self.camera_target = None;
+        } else {
+            self.camera_target = Some(camera);
+        }
+        self.status = format!(
+            "{} changed owner contexts · overview; Focus changed owner for detail",
+            review.groups.len()
+        );
+    }
+
     pub(crate) fn compare_selected_revision(&mut self, before: ProjectRevisionId) {
         if let Some(reason) =
             crate::commands::unavailable(crate::commands::CommandId::Compare, &self.context())
@@ -974,6 +1160,127 @@ impl StudioApp {
 mod tests {
     use super::*;
     use agq_studio_scene::{SceneOptions, Size, fixtures};
+
+    #[test]
+    fn history_follows_parents_even_when_identity_order_disagrees_and_branches_diverge() {
+        let id = ProjectRevisionId::from_u128;
+        // Real failure shape: baseline ID sorts before empty project, then head.
+        let parents = BTreeMap::from([(id(1), Some(id(2))), (id(2), None), (id(3), Some(id(1)))]);
+        assert_eq!(lineage_order(&parents, &[id(3)]), vec![id(3), id(1), id(2)]);
+        let mut fork = parents.clone();
+        fork.insert(id(90), Some(id(1)));
+        fork.insert(id(4), Some(id(90)));
+        let ordered = lineage_order(&fork, &[id(3), id(4)]);
+        assert_eq!(ordered, vec![id(3), id(4), id(90), id(1), id(2)]);
+        for (child, parent) in &fork {
+            if let Some(parent) = parent {
+                assert!(
+                    ordered.iter().position(|id| id == child)
+                        < ordered.iter().position(|id| id == parent)
+                );
+            }
+        }
+        // Input iteration and arbitrary identities cannot reverse a branch.
+        let reverse = fork.into_iter().rev().collect();
+        assert_eq!(lineage_order(&reverse, &[id(3), id(4)]), ordered);
+        let incomplete = BTreeMap::from([(id(5), Some(id(999)))]);
+        assert_eq!(lineage_order(&incomplete, &[id(5)]), vec![id(5)]);
+        let cycle = BTreeMap::from([(id(5), Some(id(6))), (id(6), Some(id(5)))]);
+        assert_eq!(lineage_order(&cycle, &[]).len(), 2);
+    }
+
+    #[test]
+    fn history_keeps_prose_but_moves_structured_receipt_details_out_of_card_subtitle() {
+        let receipt =
+            r#"{"added_part_syntax_node":"exact-identity","after_arena_sha256":"recorded-proof"}"#;
+        assert_eq!(
+            history_description(receipt),
+            "Recorded edit evidence · hover for details"
+        );
+        assert_eq!(
+            history_description("Clarify repository ownership"),
+            "Clarify repository ownership"
+        );
+        assert_eq!(history_description(""), "");
+        // Presentation does not rewrite the durable source string used by hover.
+        assert!(receipt.contains("added_part_syntax_node"));
+    }
+
+    #[test]
+    fn initial_durable_diff_replaces_unrelated_inspection_and_frames_changed_owners() {
+        use clap::Parser;
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let args = crate::Args::parse_from([
+            "studio",
+            "--fixture",
+            "architecture",
+            "--no-restore",
+            "--root",
+            root.to_str().unwrap(),
+        ]);
+        let ctx = eframe::CreationContext::_new_kittest(egui::Context::default());
+        let mut app = StudioApp::new(&ctx, args).unwrap();
+        let (before, after) = pair();
+        app.projection = after.clone();
+        app.compare_before = Some(before.clone());
+        app.scene = scene(&before, &after);
+        app.lookup = SceneLookup::build(&app.scene);
+        app.selection.reconcile(&app.scene);
+        app.selection
+            .select(SceneTarget::Node(fixtures::id(21)), false);
+        app.inspector_request = 42;
+        app.comparison = ComparisonMode::Diff;
+        app.reduced_motion = true;
+        app.camera.viewport = Size::new(1000.0, 520.0);
+        let scene_before = format!("{:?}", app.scene);
+        let prior_selection = app.selection.clone();
+        app.initialize_durable_comparison();
+        assert_ne!(app.selection, prior_selection);
+        assert_eq!(app.inspector_request, 0);
+        assert!(app.inspector.is_none());
+        assert_eq!(app.selection.revision, after.revision_id);
+        let review = filtered_review(&app.change_review().unwrap(), DiffMode::Structure);
+        assert!(review.groups.iter().any(|group| {
+            same_target(
+                owner_target(&app.scene, group.owner).as_ref(),
+                app.selection.primary.as_ref(),
+            )
+        }));
+        // Spread owner headers enough to reproduce initial clipping at a prior
+        // zoom; overview must include every changed context without relocating it.
+        for (index, group) in review.groups.iter().enumerate() {
+            if let Some(owner) = group
+                .owner
+                .and_then(|id| app.scene.nodes.iter_mut().find(|node| node.id() == id))
+            {
+                owner.bounds = Rect::new(index as f32 * 1_800.0, 100.0, 232.0, 118.0);
+            }
+        }
+        let displaced_scene = format!("{:?}", app.scene);
+        app.focus_durable_change_overview();
+        let visible = app.camera.visible_rect();
+        let lookup = SceneLookup::build(&app.scene);
+        for group in &review.groups {
+            if let Some(bounds) = group
+                .owner
+                .and_then(|id| object_bounds(&app.scene, &lookup, id))
+            {
+                assert!(visible.contains(bounds.min) && visible.contains(bounds.max));
+            }
+        }
+        assert_eq!(format!("{:?}", app.scene), displaced_scene);
+        assert_eq!(app.projection, after);
+        assert_eq!(app.compare_before.as_ref(), Some(&before));
+        assert_ne!(scene_before, displaced_scene);
+        // Explicitly selecting a real changed object is still respected.
+        app.selection
+            .select(SceneTarget::Node(fixtures::id(24)), false);
+        app.initialize_durable_comparison();
+        assert_eq!(
+            app.selection.primary,
+            Some(SceneTarget::Node(fixtures::id(24)))
+        );
+    }
 
     fn pair() -> (ViewProjection, ViewProjection) {
         let (before, mut after) = fixtures::revision_diff();
@@ -1402,6 +1709,10 @@ mod tests {
         app.focus_changes();
         assert_eq!(app.camera, old_camera);
         app.comparison = ComparisonMode::Diff;
+        app.initialize_durable_comparison();
+        app.focus_durable_change_overview();
+        assert_eq!(app.camera, old_camera);
+        assert_eq!(app.selection.primary, selection);
         app.focus_changes();
         assert_eq!(app.binding, binding);
         assert_eq!(app.selection.primary, selection);

@@ -33,7 +33,11 @@ impl StudioApp {
             self.focus_changes_pending = false;
             if self.comparison == crate::app::ComparisonMode::Diff {
                 self.fit_pending = false;
-                self.focus_changes();
+                if self.candidate.is_none() {
+                    self.focus_durable_change_overview();
+                } else {
+                    self.focus_changes();
+                }
             }
         }
         if self.fit_pending && !self.scene_builder.busy {

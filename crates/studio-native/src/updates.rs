@@ -468,6 +468,9 @@ impl StudioApp {
                     self.fit_pending = false;
                     self.requested_definition = None;
                     self.focus_changes_pending = initial_comparison;
+                    if initial_comparison {
+                        self.initialize_durable_comparison();
+                    }
                     self.request_inspection();
                 }
                 Ok(Output::Candidate(candidate))

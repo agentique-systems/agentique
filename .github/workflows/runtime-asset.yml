@@ -16,6 +16,11 @@ on:
         required: false
         type: boolean
         default: false
+      run_oracle:
+        description: Run the exact semantic oracle in native acceptance mode; false produces build artifacts only
+        required: false
+        type: boolean
+        default: true
       baseline_ref:
         description: Optional full baseline commit for native acceptance mode
         required: false
@@ -34,7 +39,7 @@ jobs:
       contents: write
     uses: ./.github/workflows/native-acceptance-build.yml
     with:
-      run_oracle: true
+      run_oracle: ${{ inputs.run_oracle }}
       baseline_ref: ${{ inputs.baseline_ref }}
   authenticate:
     if: ${{ !inputs.native_acceptance }}
