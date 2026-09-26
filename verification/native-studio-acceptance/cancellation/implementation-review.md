@@ -45,7 +45,7 @@ The draft above records the pre-build review state. Subsequent coordinated check
 The deterministic accepted-audit interruption regression now exists and compiles. It authenticates the supplied accepted cache pair, compiles 80 authored Part usages, requests cancellation after the second completed audit batch, requires a typed error before a third batch, retains exact parent identity/context/certificate/subject-read proof, then compares a fresh full audit and all its subject read/writer receipts. The ordinary audit entry uses a private no-op callback; no public or global test hook exists. The ignored test still needs an actual accepted-runtime execution:
 
 ```
-cargo test --release --locked --offline -p agq-kerml-text --lib --features verification source_inputs::effective_audit::cancellation_tests::cancellation_after_second_effective_audit_batch_returns_no_partial_receipt -- --exact --ignored --nocapture --test-threads=1
+cargo test --release --locked --offline -p agq-kerml-text --lib --features verification project::source_inputs::effective_audit::cancellation_tests::cancellation_after_second_effective_audit_batch_returns_no_partial_receipt -- --exact --ignored --nocapture --test-threads=1
 ```
 
 Linux Native Studio tests and macOS native build succeeded in CI run 36237504129 at afb35828. Its general verification job was still active at this record; no whole-CI success is asserted. No actual native cooperative Cancel -> next candidate run has occurred yet. The previous real journey and soak records still refer to their original binaries.

@@ -916,11 +916,11 @@ impl StudioApp {
             self.camera_target = Some(focus.camera);
         }
         self.status = format!(
-            "{} · nearby context for {} of {} visible changes; full comparison retained",
+            "{} · framed nearby context ({} of {} changes at entry); full comparison retained",
             group.name, focus.nearby, focus.visible
         );
         if focus.owner_visible {
-            self.status.push_str("; owner in frame");
+            self.status.push_str("; included owner context");
         } else if group.owner.is_some() {
             self.status.push_str("; use Focus group for owner context");
         }

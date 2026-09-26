@@ -1,5 +1,6 @@
 //! Source-to-kernel orchestration. The canonical model has no parser dependency.
 #![forbid(unsafe_code)]
+mod authenticated_input;
 mod compilation_control;
 pub mod library;
 pub use compilation_control::{CompilationControl, CompilationStage};

@@ -13,6 +13,16 @@ on:
         required: false
         type: string
         default: bd72aee4e1bf2aa2b894dc0201bcef111ddf337b
+      run_baseline:
+        description: Execute the pinned baseline in addition to the current oracle
+        required: true
+        type: boolean
+        default: true
+      controlled_oracle:
+        description: Exercise enabled non-cancelled compilation controls in the current exact oracle
+        required: true
+        type: boolean
+        default: false
   workflow_call:
     inputs:
       run_oracle:
@@ -25,6 +35,15 @@ on:
         required: false
         type: string
         default: bd72aee4e1bf2aa2b894dc0201bcef111ddf337b
+
+      run_baseline:
+        required: false
+        type: boolean
+        default: true
+      controlled_oracle:
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -72,10 +91,8 @@ jobs:
     if: inputs.run_oracle
     runs-on: windows-2022
     timeout-minutes: 120
-    # GitHub requires push access to read draft assets. The token is passed only
-    # to download; no command creates or publishes a release.
     permissions:
-      contents: write
+      contents: read
     env:
       CARGO_BUILD_JOBS: '2'
       CARGO_INCREMENTAL: '0'
@@ -85,6 +102,8 @@ jobs:
       RUNTIME_TAG: runtime-kerml-v9-sysml-v3-bundle1
       RUNTIME_SHA256: 37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026
       BASELINE_REF: ${{ inputs.baseline_ref }}
+      RUN_BASELINE: ${{ inputs.run_baseline }}
+      ORACLE_CONTROL: ${{ inputs.controlled_oracle && 'Enabled' || 'Disabled' }}
       AGENTIQUE_AUDIT_REUSE_TRACE: '1'
     defaults:
       run:
@@ -99,12 +118,12 @@ jobs:
         with:
           persist-credentials: false
       - name: Require an exact optional baseline commit
-        if: inputs.run_oracle && inputs.baseline_ref != ''
+        if: inputs.run_baseline
         run: |
           if ($env:BASELINE_REF -notmatch '^[0-9a-f]{40}$') { throw 'Baseline must be an exact lowercase full commit SHA' }
       - name: Check out isolated baseline source
         id: baseline_checkout
-        if: inputs.run_oracle && inputs.baseline_ref != ''
+        if: inputs.run_baseline
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           ref: ${{ inputs.baseline_ref }}
@@ -112,7 +131,7 @@ jobs:
           persist-credentials: false
       - name: Overlay only the identical portable oracle test
         id: harness
-        if: inputs.run_oracle && inputs.baseline_ref != ''
+        if: inputs.run_baseline
         run: |
           $harness = 'crates/modeling-agent/tests/create_part_performance.rs'
           $digest = (Get-FileHash -LiteralPath $harness -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -128,7 +147,7 @@ jobs:
           New-Item -ItemType Directory -Path "$env:ORACLE_ARTIFACT/logs", "$env:ORACLE_ARTIFACT/runtime" -ErrorAction Stop | Out-Null
           python -m pip install psutil==5.9.8 2>&1 | Tee-Object -FilePath "$env:ORACLE_ARTIFACT/logs/oracle-observer-install.log"
           if ($LASTEXITCODE -ne 0) { throw 'Memory observer installation failed' }
-      - name: Download the explicit accepted runtime draft asset
+      - name: Download the pinned public accepted runtime asset
         if: inputs.run_oracle
         env:
           GH_TOKEN: ${{ github.token }}
@@ -199,7 +218,7 @@ jobs:
               (evidence / 'runtime-transport.json').write_text(json.dumps(record, indent=2), encoding='utf-8')
       - name: Build baseline with the exact current test harness
         id: baseline_build
-        if: inputs.run_oracle && inputs.baseline_ref != '' && steps.runtime.outcome == 'success'
+        if: inputs.run_baseline && steps.runtime.outcome == 'success'
         continue-on-error: true
         run: >-
           ./tools/native-acceptance-build.ps1 -Component oracle
@@ -208,7 +227,7 @@ jobs:
           -ArtifactDirectory "$env:ORACLE_ARTIFACT/baseline"
       - name: Execute baseline command and cold reconstruction in separate processes
         id: baseline_run
-        if: inputs.run_oracle && inputs.baseline_ref != '' && steps.baseline_build.outcome == 'success'
+        if: inputs.run_baseline && steps.baseline_build.outcome == 'success'
         timeout-minutes: 45
         continue-on-error: true
         env:
@@ -220,7 +239,7 @@ jobs:
       - name: Build current release oracle independently of baseline outcome
         id: current_build
         if: always() && steps.checkout.outcome == 'success'
-        run: ./tools/native-acceptance-build.ps1 -Component oracle -ArtifactDirectory "$env:ORACLE_ARTIFACT/current"
+        run: ./tools/native-acceptance-build.ps1 -Component oracle -OracleControl $env:ORACLE_CONTROL -ArtifactDirectory "$env:ORACLE_ARTIFACT/current"
       - name: Execute current command and cold reconstruction on the same runner
         id: current_run
         if: always() && inputs.run_oracle && steps.current_build.outcome == 'success' && steps.runtime.outcome == 'success'
@@ -228,7 +247,7 @@ jobs:
         env:
           AGENTIQUE_KERML_CACHE: ${{ runner.temp }}/native-acceptance-runtime/extracted/kerml.cache
           AGENTIQUE_SYSTEMS_CACHE: ${{ runner.temp }}/native-acceptance-runtime/extracted/systems.cache
-        run: ./tools/native-acceptance-build.ps1 -Component oracle -Phase oracle -ArtifactDirectory "$env:ORACLE_ARTIFACT/current"
+        run: ./tools/native-acceptance-build.ps1 -Component oracle -OracleControl $env:ORACLE_CONTROL -Phase oracle -ArtifactDirectory "$env:ORACLE_ARTIFACT/current"
       - name: Record requested gate outcomes without hiding failures
         if: always()
         env:
@@ -243,9 +262,9 @@ jobs:
           $passed = $env:CURRENT_BUILD -eq 'success'
           if ($env:RUN_ORACLE -eq 'true') {
             $passed = $passed -and $env:RUNTIME_OUTCOME -eq 'success' -and $env:CURRENT_RUN -eq 'success'
-            if ($env:BASELINE_REF) { $passed = $passed -and $env:BASELINE_BUILD -eq 'success' -and $env:BASELINE_RUN -eq 'success' }
+            if ($env:RUN_BASELINE -eq 'true') { $passed = $passed -and $env:BASELINE_BUILD -eq 'success' -and $env:BASELINE_RUN -eq 'success' }
           }
-          @{ source_commit=$env:GITHUB_SHA; baseline=$env:BASELINE_REF; same_runner=$true; release='default thin LTO';
+          @{ source_commit=$env:GITHUB_SHA; baseline=$env:BASELINE_REF; run_baseline=$env:RUN_BASELINE; current_control=$env:ORACLE_CONTROL; same_runner=($env:RUN_BASELINE -eq 'true'); release='default thin LTO';
              runtime_sha256=$env:RUNTIME_SHA256; current_build=$env:CURRENT_BUILD; current_run=$env:CURRENT_RUN;
              baseline_build=$env:BASELINE_BUILD; baseline_run=$env:BASELINE_RUN; runtime=$env:RUNTIME_OUTCOME;
              outcome=$(if ($passed) {'passed'} else {'failed'}); contract='Compare measured command preparation separately from independent cold reconstruction; each requested oracle must establish exact equivalence' } |

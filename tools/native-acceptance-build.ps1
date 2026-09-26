@@ -8,6 +8,8 @@ param(
     [string] $CheckoutDirectory,
     [string] $ExpectedSourceCommit,
     [string] $ExpectedOracleHarnessSha256,
+    [ValidateSet('Disabled', 'Enabled')]
+    [string] $OracleControl = 'Disabled',
     [ValidateSet('build', 'oracle')]
     [string] $Phase = 'build'
 )
@@ -20,10 +22,22 @@ Set-StrictMode -Version Latest
 $driverRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $checkout = if ($CheckoutDirectory) { (Resolve-Path -LiteralPath $CheckoutDirectory).Path } else { $driverRoot }
 $artifact = [IO.Path]::GetFullPath($ArtifactDirectory)
+$oracleTest = if ($OracleControl -eq 'Enabled') { 'create_part_controlled' } else { 'create_part_performance' }
+$oracleEntry = if ($OracleControl -eq 'Enabled') {
+    'enabled_control_create_part_matches_full_self_model_reconstruction'
+} else {
+    'create_part_command_matches_full_self_model_reconstruction'
+}
+if ($OracleControl -eq 'Enabled' -and ($Component -ne 'oracle' -or $ExpectedOracleHarnessSha256)) {
+    throw 'Enabled controls require the current-only oracle; baseline overlays use the portable ordinary API'
+}
 if ($Phase -eq 'oracle') {
     if ($Component -ne 'oracle') { throw 'Only the oracle component has an execution phase' }
     $build = Get-Content -LiteralPath (Join-Path $artifact 'build.json') -Raw | ConvertFrom-Json
     if ($build.outcome -ne 'passed' -or $build.component -ne 'oracle') { throw 'A successful oracle build receipt is required' }
+    if ($build.oracle_control -ne $OracleControl -or $build.oracle_test -ne $oracleTest -or $build.oracle_entry -ne $oracleEntry) {
+        throw 'Requested oracle control mode differs from its build receipt'
+    }
     $currentCommit = & git -C $checkout rev-parse HEAD
     if ($LASTEXITCODE -ne 0 -or $currentCommit -ne $build.source_commit) { throw 'Oracle source commit differs from its build' }
     foreach ($sourceFile in $build.source_files.PSObject.Properties) {
@@ -36,7 +50,7 @@ if ($Phase -eq 'oracle') {
     if ($LASTEXITCODE -ne 0 -or ($changedPaths | Where-Object { $_ -ne 'crates/modeling-agent/tests/create_part_performance.rs' })) {
         throw 'Oracle source has unrelated modifications after building'
     }
-    $binary = Join-Path $artifact 'bin/create_part_performance.exe'
+    $binary = Join-Path $artifact "bin/$oracleTest.exe"
     $digest = (Get-FileHash -LiteralPath $binary -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($build.binaries.Count -ne 1 -or $build.binaries[0].sha256 -ne $digest) { throw 'Oracle executable changed after its build' }
     $evidence = Join-Path $artifact 'oracle'
@@ -47,11 +61,14 @@ if ($Phase -eq 'oracle') {
     $env:AGENTIQUE_SOURCE_ROOT = $checkout
     $env:AGENTIQUE_CREATE_PART_ORACLE_OUTPUT = Join-Path $evidence 'observations'
     $arguments = @($observer, '--cwd', $checkout, '--name', 'windows-create-part-oracle', '--', $binary,
-        'create_part_command_matches_full_self_model_reconstruction', '--exact', '--ignored', '--nocapture', '--test-threads=1')
+        $oracleEntry, '--exact', '--ignored', '--nocapture', '--test-threads=1')
     $invocation = [ordered]@{
         command = @('python') + $arguments
         source_commit = $build.source_commit
         executable_sha256 = $digest
+        oracle_control = $OracleControl
+        oracle_test = $oracleTest
+        oracle_entry = $oracleEntry
         observer_sha256 = (Get-FileHash -LiteralPath $observer -Algorithm SHA256).Hash.ToLowerInvariant()
         runtime_sha256 = $env:RUNTIME_SHA256
         source_root = $checkout
@@ -65,6 +82,9 @@ if ($Phase -eq 'oracle') {
         python @arguments 2>&1 | Tee-Object -FilePath (Join-Path $artifact 'logs/oracle-observer.log')
         $invocation.exit_code = $LASTEXITCODE
         if ($LASTEXITCODE -ne 0) { throw "Semantic oracle failed with exit $LASTEXITCODE" }
+        $metrics = Get-Content -LiteralPath (Join-Path $env:AGENTIQUE_CREATE_PART_ORACLE_OUTPUT 'command-metrics.json') -Raw | ConvertFrom-Json
+        $expectedMode = if ($OracleControl -eq 'Enabled') { 'enabled-not-requested' } else { 'default-disabled' }
+        if ($metrics.command_control_mode -ne $expectedMode) { throw 'Oracle executed a different compilation control mode' }
         $invocation.outcome = 'passed'
     }
     catch {
@@ -91,6 +111,9 @@ $watch = [Diagnostics.Stopwatch]::StartNew()
 $script:receipt = [ordered]@{
     format = 'agentique-native-acceptance-build/1'
     component = $Component
+    oracle_control = $OracleControl
+    oracle_test = $oracleTest
+    oracle_entry = $oracleEntry
     outcome = 'incomplete'
     started_utc = [DateTime]::UtcNow.ToString('o')
     source_commit = $null
@@ -232,6 +255,10 @@ try {
         'rust-toolchain.toml' = 'rust-toolchain.toml'
     }
     if ($Component -eq 'oracle') { $files[$harness] = 'oracle-test.rs' }
+    if ($Component -eq 'oracle' -and $OracleControl -eq 'Enabled') {
+        $files['crates/modeling-agent/tests/create_part_controlled.rs'] = 'controlled-oracle-test.rs'
+        $files['crates/modeling-agent/Cargo.toml'] = 'agent-Cargo.toml'
+    }
     foreach ($path in $files.Keys) {
         $script:receipt.source_files[$path] = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
         Copy-Item -LiteralPath $path -Destination (Join-Path $artifact ('source/' + $files[$path]))
@@ -250,7 +277,7 @@ try {
     switch ($Component) {
         'native' { $arguments += @('--bin', 'agq-studio-native') }
         'helpers' { $arguments += @('-p', 'agq-studio-platform', '--example', 'profile_open', '--example', 'source_recovery', '--test', 'project_creation') }
-        'oracle' { $arguments += @('-p', 'agq-modeling-agent', '--features', 'agq-modeling-agent/verification', '--test', 'create_part_performance') }
+        'oracle' { $arguments += @('-p', 'agq-modeling-agent', '--features', 'agq-modeling-agent/verification', '--test', $oracleTest) }
     }
     $buildLog = Invoke-RecordedCommand 'cargo' $arguments 'release-build'
     # Use Cargo's actual executable paths, including the hashed test harness;
@@ -258,7 +285,7 @@ try {
     $expected = switch ($Component) {
         'native' { @('agq-studio-native') }
         'helpers' { @('profile_open', 'source_recovery', 'project_creation') }
-        'oracle' { @('create_part_performance') }
+        'oracle' { @($oracleTest) }
     }
     $executables = @{}
     foreach ($line in Get-Content -LiteralPath $buildLog) {

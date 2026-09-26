@@ -255,11 +255,6 @@ impl CanonicalSysmlSystemsLibrary {
         let metadata: FacadeMetadata = serde_json::from_slice(&metadata)?;
         metadata.validate(sources, syntax_profile)?;
         trace.phase("facade_authentication_decode_validation");
-        // Hash the compressed entry before allocating decoded graph records.
-        let graph_bytes = receipt.entry_bytes("kernel.jsonl")?;
-        let digest = entry_digest(&mut archive, "kernel.jsonl", graph_bytes)?;
-        receipt.verify_entry_digest("kernel.jsonl", digest)?;
-        trace.phase("graph_input_authentication");
         let registry = agq_sysml::registry_for_profile(agq_kerml::BaselineProfile::OPERATIONAL_V9)
             .map_err(|_| SystemsPublicationCacheError::Mismatch("combined descriptor registry"))?;
         let dependency = accepted_kerml
@@ -268,14 +263,23 @@ impl CanonicalSysmlSystemsLibrary {
             .expect("accepted KerML dependency")
             .clone();
         trace.phase("descriptor_registry_and_dependency_mount");
+        let graph_bytes = receipt.entry_bytes("kernel.jsonl")?;
+        let graph = archive.by_name("kernel.jsonl")?;
+        if graph.size() != graph_bytes {
+            return Err(SystemsPublicationCacheError::Mismatch(
+                "archive entry byte count",
+            ));
+        }
+        let mut input = crate::authenticated_input::AuthenticatedInput::new(graph, graph_bytes)?;
         let overlay = agq_kernel::archive::read_dependent_overlay_with_evidence(
-            BufReader::new(archive.by_name("kernel.jsonl")?.take(graph_bytes)),
+            BufReader::new(&mut input),
             Arc::new(registry),
             dependency,
         )?;
-        trace.phase("graph_decode_kernel_validation_and_dependency_authentication");
-        // A changing seekable input cannot replace the graph after its first
-        // hash. Authenticate what was actually decoded, retaining derived facts.
+        receipt.verify_entry_digest("kernel.jsonl", input.finish()?)?;
+        trace.phase("graph_decode_kernel_validation_dependency_and_input_authentication");
+        // Independently authenticate the actual decoded graph, retaining all
+        // derived facts, optional proof contributions and canonical encoding.
         let mut actual_graph = DigestWriter::new(io::sink());
         agq_kernel::archive::write_dependent_overlay_with_evidence(&overlay, &mut actual_graph)?;
         if actual_graph.bytes != graph_bytes {
@@ -700,28 +704,6 @@ fn authenticated_bytes<R: Read + Seek>(
     Ok(bytes)
 }
 
-fn entry_digest<R: Read + Seek>(
-    archive: &mut ZipArchive<R>,
-    name: &str,
-    expected: u64,
-) -> Result<[u8; 32], SystemsPublicationCacheError> {
-    let entry = archive.by_name(name)?;
-    if entry.size() != expected {
-        return Err(SystemsPublicationCacheError::Mismatch(
-            "archive entry byte count",
-        ));
-    }
-    let mut reader = entry.take(expected + 1);
-    let mut writer = DigestWriter::new(io::sink());
-    io::copy(&mut reader, &mut writer)?;
-    if writer.bytes != expected {
-        return Err(SystemsPublicationCacheError::Mismatch(
-            "actual archive entry byte count",
-        ));
-    }
-    Ok(writer.digest.finalize().into())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -852,12 +834,22 @@ mod tests {
     fn systems_archive_checks_declared_and_actual_entry_bounds() {
         let bytes = archive(&ENTRIES);
         let mut input = ZipArchive::new(Cursor::new(&bytes)).unwrap();
-        assert_eq!(
-            entry_digest(&mut input, "kernel.jsonl", 2).unwrap(),
-            <[u8; 32]>::from(Sha256::digest(b"{}"))
-        );
-        assert!(entry_digest(&mut input, "kernel.jsonl", 1).is_err());
-        assert!(entry_digest(&mut input, "kernel.jsonl", 3).is_err());
+        for expected in [1, 2, 3] {
+            let entry = input.by_name("kernel.jsonl").unwrap();
+            assert_eq!(entry.size(), 2);
+            let mut checked =
+                crate::authenticated_input::AuthenticatedInput::new(entry, expected).unwrap();
+            let read = checked.read_to_end(&mut Vec::new());
+            if expected == 2 {
+                read.unwrap();
+                assert_eq!(
+                    checked.finish().unwrap(),
+                    <[u8; 32]>::from(Sha256::digest(b"{}"))
+                );
+            } else {
+                assert!(checked.finish().is_err());
+            }
+        }
         assert!(ZipArchive::new(Cursor::new(&bytes[..bytes.len() / 2])).is_err());
     }
 

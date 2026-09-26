@@ -1,0 +1,20 @@
+{
+  "id": 10905220154,
+  "node_id": "MDg6QXJ0aWZhY3QxMDkwNTIyMDE1NA==",
+  "name": "native-acceptance-windows-helpers-42e7e187de823a3b855d530dcee84dbe8c06b59f-1",
+  "size_in_bytes": 24056129,
+  "url": "https://api.github.com/repos/agentique-systems/agentique/actions/artifacts/10905220154",
+  "archive_download_url": "https://api.github.com/repos/agentique-systems/agentique/actions/artifacts/10905220154/zip",
+  "expired": false,
+  "digest": "sha256:e373033ba1feebfd84a98c652ba85efe71faafb78d0f3bb4882b91790ced65ce",
+  "created_at": "2026-09-26T11:01:58Z",
+  "updated_at": "2026-09-26T11:01:58Z",
+  "expires_at": "2026-10-26T11:01:56Z",
+  "workflow_run": {
+    "id": 36236552181,
+    "repository_id": 1373444581,
+    "head_repository_id": 1373444581,
+    "head_branch": "platform/native-studio-alpha-acceptance",
+    "head_sha": "42e7e187de823a3b855d530dcee84dbe8c06b59f"
+  }
+}

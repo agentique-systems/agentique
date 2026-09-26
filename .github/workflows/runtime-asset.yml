@@ -27,20 +27,31 @@ on:
         type: string
         default: bd72aee4e1bf2aa2b894dc0201bcef111ddf337b
 
+      run_baseline:
+        description: Execute the pinned baseline in native acceptance mode
+        required: false
+        type: boolean
+        default: true
+      controlled_oracle:
+        description: Exercise enabled compilation controls in the current exact oracle
+        required: false
+        type: boolean
+        default: false
+
 permissions:
   contents: read
 
 jobs:
   native-acceptance:
     if: inputs.native_acceptance
-    # The called oracle needs this only to download the existing draft asset.
-    # Reusable workflows cannot increase the caller's token permissions.
     permissions:
-      contents: write
+      contents: read
     uses: ./.github/workflows/native-acceptance-build.yml
     with:
       run_oracle: ${{ inputs.run_oracle }}
       baseline_ref: ${{ inputs.baseline_ref }}
+      run_baseline: ${{ inputs.run_baseline }}
+      controlled_oracle: ${{ inputs.controlled_oracle }}
   authenticate:
     if: ${{ !inputs.native_acceptance }}
     runs-on: ubuntu-24.04

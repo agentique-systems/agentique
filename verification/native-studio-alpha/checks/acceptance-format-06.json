@@ -1,0 +1,27 @@
+{
+  "command": [
+    "cargo",
+    "fmt",
+    "--all",
+    "--",
+    "--check"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "16639b66d0b16520df413dc2797e972afa4b7d00",
+  "tracked_changes_at_start": [
+    " M .github/workflows/native-acceptance-build.yml",
+    " M .github/workflows/runtime-asset.yml",
+    " M crates/kerml-text/src/lib.rs",
+    " M crates/kerml-text/src/library/publication_cache.rs",
+    " M crates/kerml-text/src/sysml/publication_restore.rs",
+    " M crates/studio-native/src/history.rs",
+    " M tools/native-acceptance-build.ps1",
+    " M verification/native-studio-acceptance/cancellation/implementation-review.md"
+  ],
+  "started_utc": "2026-09-26T11:19:20.892237+00:00",
+  "elapsed_seconds": 3.14,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/acceptance-format-06.txt",
+  "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "build_environment": {}
+}

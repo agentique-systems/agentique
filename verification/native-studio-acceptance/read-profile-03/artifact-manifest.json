@@ -1,0 +1,18 @@
+{
+  "format": "agentique-retained-helper-evidence/1",
+  "compiled_source": "42e7e187de823a3b855d530dcee84dbe8c06b59f",
+  "files": {
+    "backup.json": {
+      "bytes": 643,
+      "sha256": "413742ce1ad0e1b40bcee0c6c5894374947db8f1aab80805179cf9ece9cefd9e"
+    },
+    "measurement.json": {
+      "bytes": 675,
+      "sha256": "da3ea5cffd98e7d57945259a3ec72f9ba6bbe5fb1dc35d77f535a5b73fb03a43"
+    },
+    "measurement.log": {
+      "bytes": 31731,
+      "sha256": "70cd54d3fad343dc522e9d9cde79f475ec81afae24790c5de8f80102b4b30a6d"
+    }
+  }
+}
