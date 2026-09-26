@@ -223,11 +223,40 @@ impl ProducerClosureCheckpoint {
 }
 
 fn subject_signatures(model: &ModelView) -> BTreeMap<ElementId, [u8; 32]> {
+    subject_signatures_with_dependency(model, None)
+}
+
+/// Audit-only signatures factor out physically identical accepted dependency
+/// material. The enclosing audit context binds that exact publication identity.
+/// Every local incoming carrier and proof/search delta still participates.
+pub(crate) fn audit_subject_signatures(
+    model: &ModelView,
+    dependency: Option<&ModelView>,
+) -> BTreeMap<ElementId, [u8; 32]> {
+    subject_signatures_with_dependency(model, dependency)
+}
+
+fn subject_signatures_with_dependency(
+    model: &ModelView,
+    dependency: Option<&ModelView>,
+) -> BTreeMap<ElementId, [u8; 32]> {
+    let shared_record = |record: &agq_kernel::ElementRecord| {
+        dependency
+            .and_then(|base| base.element(record.id()))
+            .is_some_and(|base| std::ptr::eq(base, record))
+    };
+
     // Hash each record once, then include source identities/content at both
     // endpoints. New inverse carriers therefore invalidate an earlier empty search.
     let records: BTreeMap<_, [u8; 32]> = model
         .elements()
         .map(|record| {
+            if shared_record(record) {
+                return (
+                    record.id(),
+                    hash_debug(&("exact-shared-publication-record", record.id())),
+                );
+            }
             let mut hash = Sha256::new();
             hash.update(hash_debug(record));
             // Equal aggregate values can conceal a different original source
@@ -250,6 +279,9 @@ fn subject_signatures(model: &ModelView) -> BTreeMap<ElementId, [u8; 32]> {
         })
         .collect();
     for record in model.elements() {
+        if shared_record(record) {
+            continue;
+        }
         output_support(&mut hashes, model, record.origin(), records[&record.id()]);
         for (property, slot) in record.slots() {
             output_support(
@@ -270,6 +302,12 @@ fn subject_signatures(model: &ModelView) -> BTreeMap<ElementId, [u8; 32]> {
         }
     }
     for occurrence in model.association_occurrences() {
+        if dependency
+            .and_then(|base| base.association_occurrence(occurrence.id()))
+            .is_some_and(|base| std::ptr::eq(base, occurrence))
+        {
+            continue;
+        }
         let digest = hash_debug(occurrence);
         output_support(&mut hashes, model, occurrence.origin(), digest);
         for target in occurrence.ends().values() {
@@ -282,6 +320,12 @@ fn subject_signatures(model: &ModelView) -> BTreeMap<ElementId, [u8; 32]> {
     // restoration. Losing it or changing its proof reopens affected readers;
     // equal aggregate values do not authenticate a different contribution.
     for ((element, property, target), contribution) in model.ordered_reference_contributions() {
+        if dependency
+            .and_then(|base| base.ordered_reference_contribution(element, property, target))
+            .is_some_and(|base| std::ptr::eq(base, contribution))
+        {
+            continue;
+        }
         let digest = hash_debug(&(element, property, target, contribution));
         if let Some(hash) = hashes.get_mut(&element) {
             hash.update(digest);
@@ -291,6 +335,12 @@ fn subject_signatures(model: &ModelView) -> BTreeMap<ElementId, [u8; 32]> {
         }
     }
     for (fact, searches) in model.computation_searches() {
+        if dependency
+            .and_then(|base| base.computation_searches_shared(*fact))
+            .is_some_and(|base| std::ptr::eq(base.as_ref(), searches))
+        {
+            continue;
+        }
         let digest = hash_debug(&(fact, searches));
         match fact {
             FactKey::Element(id) | FactKey::Property { element: id, .. } => {
@@ -309,7 +359,17 @@ fn subject_signatures(model: &ModelView) -> BTreeMap<ElementId, [u8; 32]> {
             }
         }
     }
+    let shared_navigation: BTreeMap<_, _> = dependency
+        .into_iter()
+        .flat_map(ModelView::derived_navigation_results)
+        .collect();
     for (&(id, property), value) in model.derived_navigation_results() {
+        if shared_navigation
+            .get(&(id, property))
+            .is_some_and(|base| std::ptr::eq(*base, value))
+        {
+            continue;
+        }
         output_support(
             &mut hashes,
             model,
@@ -320,7 +380,17 @@ fn subject_signatures(model: &ModelView) -> BTreeMap<ElementId, [u8; 32]> {
             hash.update(hash_debug(&(property, value)));
         }
     }
+    let shared_failures: BTreeMap<_, _> = dependency
+        .into_iter()
+        .flat_map(ModelView::computation_failures)
+        .collect();
     for (&(id, property), value) in model.computation_failures() {
+        if shared_failures
+            .get(&(id, property))
+            .is_some_and(|base| std::ptr::eq(*base, value))
+        {
+            continue;
+        }
         if let Some(hash) = hashes.get_mut(&id) {
             hash.update(hash_debug(&(property, value)));
         }

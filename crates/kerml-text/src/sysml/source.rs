@@ -419,6 +419,7 @@ pub(crate) fn finish_accepted_source(
     // Final strict reconstruction changes graph identity. Retain only evaluations
     // whose actual semantic reads survive the checked delta. Prior revisions are
     // immutable; no producer result is copied into declared source records.
+    let checkpoint_started = Instant::now();
     let mut seed = if let Some(certificate) = draft.producer_closure() {
         let context = dependency.candidate_context(&draft, root)?;
         Some(certificate.checkpoint(&context).map_err(interpretation)?)
@@ -432,6 +433,9 @@ pub(crate) fn finish_accepted_source(
     } else {
         None
     };
+    if let Some(timings) = timings {
+        timings.borrow_mut().closure_checkpoint_micros += crate::elapsed_micros(checkpoint_started);
+    }
     // The final audit needs only source metadata. Release construction indexes,
     // any partial overlay and the temporary mount before strict closure starts.
     // The checkpoint retains semantic fingerprints, not the previous graph.
@@ -463,9 +467,14 @@ pub(crate) fn finish_accepted_source(
                     .project_overlay_context(overlay, &[root])
                     .map_err(PublicationOverlayError::Context)?;
                 if let Some(previous) = seed.take() {
+                    let rebound_started = Instant::now();
                     let rebound = previous
                         .rebind(&context, &registry)
                         .map_err(PublicationOverlayError::Context)?;
+                    if let Some(timings) = timings {
+                        timings.borrow_mut().closure_rebind_micros +=
+                            crate::elapsed_micros(rebound_started);
+                    }
                     retained_evaluations += rebound.retained_evaluations;
                     reopened_evaluations += rebound.reopened_evaluations;
                     context

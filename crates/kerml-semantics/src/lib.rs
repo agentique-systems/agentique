@@ -3,6 +3,7 @@
 #![forbid(unsafe_code)]
 
 mod bindings;
+mod closed_query_audit;
 mod connector_structure;
 mod context;
 mod context_digest;
@@ -63,6 +64,9 @@ mod publication;
 mod publication_overlay;
 mod queries;
 mod read_dependencies;
+pub use closed_query_audit::{
+    ClosedAuditContext, ClosedAuditDelta, ClosedAuditReads, ClosedAuditSnapshot,
+};
 mod relationship_sources;
 mod resolution;
 mod result_structure;

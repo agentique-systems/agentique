@@ -99,9 +99,9 @@ impl ProjectRevision {
 }
 
 impl ProjectRevisionCheckpoint {
-    /// Fully reconstruct a successor while sharing the predecessor's immutable,
-    /// already authenticated standard dependency. This is not local semantic
-    /// cache reuse, validation inheritance, or a durable head change.
+    /// Reconstruct a successor with unchanged declared fragments and proven
+    /// audit outcomes from its predecessor. The immutable standard dependency
+    /// remains shared. This never inherits validation or changes durable head.
     ///
     /// The caller must supply a checkpoint obtained by trusted identity
     /// reconciliation with this predecessor, preserving retirement and

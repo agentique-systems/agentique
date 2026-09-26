@@ -1093,13 +1093,32 @@ fn audit_population_batches(
 /// Reuse the strict effective query dispatcher for an authored local population.
 /// This neither authenticates nor issues a standard publication. The caller
 /// supplies its exact revision-bound query context and retains the report.
-pub(crate) fn audit_authored_effective_population(
+#[cfg(test)]
+fn audit_authored_effective_population(
     queries: &SysmlQueries<'_>,
     subjects: &[ElementId],
     audit: &mut SystemsPublicationAudit,
     observe_usages: impl FnMut(ElementId, &SysmlQueryResult<Vec<ElementId>>),
 ) {
-    audit_sysml_population_observed(queries, subjects, audit, observe_usages);
+    audit_sysml_population_observed(queries, subjects, audit, observe_usages, None);
+}
+
+/// Collect every strict typed-query read while preserving the shared dispatcher.
+pub(crate) fn audit_authored_effective_subject(
+    queries: &SysmlQueries<'_>,
+    subject: ElementId,
+    audit: &mut SystemsPublicationAudit,
+    observe_usages: impl FnMut(ElementId, &SysmlQueryResult<Vec<ElementId>>),
+    context: Option<&agq_kerml_semantics::ClosedAuditContext<'_, '_>>,
+    reads: &mut agq_kerml_semantics::ClosedAuditReads,
+) {
+    audit_sysml_population_observed(
+        queries,
+        &[subject],
+        audit,
+        observe_usages,
+        context.map(|context| (context, reads)),
+    );
 }
 
 fn audit_sysml_population(
@@ -1109,7 +1128,7 @@ fn audit_sysml_population(
 ) {
     // Standard publication keeps exactly the same dispatcher and checks; it
     // does not retain authored capability payloads or observe query delivery.
-    audit_sysml_population_observed(q, subjects, audit, |_, _| {});
+    audit_sysml_population_observed(q, subjects, audit, |_, _| {}, None);
 }
 
 fn audit_sysml_population_observed<'m>(
@@ -1117,6 +1136,10 @@ fn audit_sysml_population_observed<'m>(
     subjects: &[ElementId],
     audit: &mut SystemsPublicationAudit,
     mut observe_usages: impl FnMut(ElementId, &SysmlQueryResult<Vec<ElementId>>),
+    mut read_observer: Option<(
+        &agq_kerml_semantics::ClosedAuditContext<'_, '_>,
+        &mut agq_kerml_semantics::ClosedAuditReads,
+    )>,
 ) {
     let profile = q.context().dependencies.sysml_profile;
     for &subject in subjects {
@@ -1207,6 +1230,7 @@ fn audit_sysml_population_observed<'m>(
         }
         if is(sc::DEFINITION) || is(sc::USAGE) {
             audit_typed_answer(
+                &mut read_observer,
                 audit,
                 &families,
                 subject,
@@ -1214,14 +1238,23 @@ fn audit_sysml_population_observed<'m>(
                 q.effective_names(subject),
             );
             audit_typed_answer(
+                &mut read_observer,
                 audit,
                 &families,
                 subject,
                 "current effective usages",
                 q.current_effective_usages(subject),
             );
-            audit_effective_usages(q, audit, &families, subject, &mut observe_usages);
+            audit_effective_usages(
+                q,
+                audit,
+                &families,
+                subject,
+                &mut observe_usages,
+                &mut read_observer,
+            );
             audit_typed_answer(
+                &mut read_observer,
                 audit,
                 &families,
                 subject,
@@ -1229,6 +1262,7 @@ fn audit_sysml_population_observed<'m>(
                 q.effective_ports(subject),
             );
             audit_typed_answer(
+                &mut read_observer,
                 audit,
                 &families,
                 subject,
@@ -1238,6 +1272,7 @@ fn audit_sysml_population_observed<'m>(
         }
         if is(sc::DEFINITION) {
             audit_typed_answer(
+                &mut read_observer,
                 audit,
                 &families,
                 subject,
@@ -1245,6 +1280,7 @@ fn audit_sysml_population_observed<'m>(
                 q.direct_specializations(subject),
             );
             audit_typed_answer(
+                &mut read_observer,
                 audit,
                 &families,
                 subject,
@@ -1254,6 +1290,7 @@ fn audit_sysml_population_observed<'m>(
         }
         if is(sc::USAGE) {
             audit_typed_answer(
+                &mut read_observer,
                 audit,
                 &families,
                 subject,
@@ -1261,6 +1298,7 @@ fn audit_sysml_population_observed<'m>(
                 q.current_usage_types(subject),
             );
             audit_typed_answer(
+                &mut read_observer,
                 audit,
                 &families,
                 subject,
@@ -1268,6 +1306,7 @@ fn audit_sysml_population_observed<'m>(
                 q.effective_usage_types(subject),
             );
             audit_typed_answer(
+                &mut read_observer,
                 audit,
                 &families,
                 subject,
@@ -1275,6 +1314,7 @@ fn audit_sysml_population_observed<'m>(
                 q.effective_subsetted_features(subject),
             );
             audit_typed_answer(
+                &mut read_observer,
                 audit,
                 &families,
                 subject,
@@ -1415,7 +1455,14 @@ fn audit_sysml_population_observed<'m>(
             ),
         ] {
             if is(applies) {
-                audit_typed_answer(audit, &families, subject, name, query(q, subject));
+                audit_typed_answer(
+                    &mut read_observer,
+                    audit,
+                    &families,
+                    subject,
+                    name,
+                    query(q, subject),
+                );
             }
         }
     }
@@ -1429,19 +1476,46 @@ fn audit_effective_usages(
     families: &[SystemsPublicationFamily],
     subject: ElementId,
     observe: &mut impl FnMut(ElementId, &SysmlQueryResult<Vec<ElementId>>),
+    read_observer: &mut Option<(
+        &agq_kerml_semantics::ClosedAuditContext<'_, '_>,
+        &mut agq_kerml_semantics::ClosedAuditReads,
+    )>,
 ) {
     let answer = q.effective_usages(subject);
     observe(subject, &answer);
-    audit_typed_answer(audit, families, subject, "effective usages", answer);
+    audit_typed_answer(
+        read_observer,
+        audit,
+        families,
+        subject,
+        "effective usages",
+        answer,
+    );
 }
 
 fn audit_typed_answer<T>(
+    read_observer: &mut Option<(
+        &agq_kerml_semantics::ClosedAuditContext<'_, '_>,
+        &mut agq_kerml_semantics::ClosedAuditReads,
+    )>,
     audit: &mut SystemsPublicationAudit,
     families: &[SystemsPublicationFamily],
     subject: ElementId,
     operation: &'static str,
     answer: SysmlQueryResult<T>,
 ) {
+    if let Some((context, reads)) = read_observer.as_mut() {
+        context.observe(reads, &answer.kerml);
+        for supporting in &answer.supporting_queries {
+            context.observe(reads, supporting);
+        }
+        for supporting in &answer.supporting_names {
+            context.observe(reads, supporting);
+        }
+        for observation in answer.observations.values() {
+            context.observe(reads, observation);
+        }
+    }
     let completeness = answer.completeness();
     if completeness == Completeness::Complete {
         for &family in families {

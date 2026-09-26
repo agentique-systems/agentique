@@ -73,3 +73,14 @@ directory when running the test to keep checkpoint, sources, per-observation has
 per-child timings and final comparison JSON. Candidate and cold compilation timers
 exclude these comparison exports and are printed before export starts. The parent
 returns failure if either child fails or any exact observation differs.
+
+The audit signature implementation factors physically identical immutable
+publication records/occurrences/proof/search/navigation/contribution rows out of
+repeated hashing. Exact publication/context identity remains mandatory. Local
+carriers and output proof support still update shared target signatures. This is
+not a source-membership assumption: the fast path requires actual pointer identity
+with the authenticated dependency. A dedicated adversarial test compares the full
+and factored invalidation frontier when a new local typing targets a standard
+element. Existing producer checkpoint signatures retain their original behavior.
+The audit setup, producer checkpoint and producer rebind costs are separately
+reported; testing/measurement of the draft remains pending integration.

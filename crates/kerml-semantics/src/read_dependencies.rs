@@ -18,7 +18,7 @@ pub(crate) enum InvalidationKey {
     Global,
 }
 
-fn structural_search_key(search: &StructuralSearch) -> Option<InvalidationKey> {
+pub(crate) fn structural_search_key(search: &StructuralSearch) -> Option<InvalidationKey> {
     use InvalidationKey as K;
     match search {
         StructuralSearch::Element(id)
@@ -41,7 +41,7 @@ fn structural_search_key(search: &StructuralSearch) -> Option<InvalidationKey> {
         StructuralSearch::DescriptorGraph => None,
     }
 }
-fn search_keys(search: &SearchDependency) -> impl Iterator<Item = InvalidationKey> {
+pub(crate) fn search_keys(search: &SearchDependency) -> impl Iterator<Item = InvalidationKey> {
     use InvalidationKey as K;
     use SearchDependency as S;
     match search {

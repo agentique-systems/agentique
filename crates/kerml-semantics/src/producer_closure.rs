@@ -10,6 +10,7 @@ use std::sync::Arc;
 
 #[path = "producer_closure_rebind.rs"]
 mod rebind;
+pub(crate) use rebind::audit_subject_signatures;
 pub use rebind::{ProducerClosureCheckpoint, ReboundClosure};
 
 #[path = "component_closure_audit.rs"]

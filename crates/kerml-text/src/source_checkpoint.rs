@@ -128,13 +128,13 @@ impl SourceIdentityCheckpoint {
     ) -> Result<SourceCompilation, SourceCheckpointError> {
         self.restore_maybe_cached(publication, sources, None, None)
     }
-    /// Reconstruct within an existing source history, sharing only its already
-    /// authenticated immutable standard dependency. Project/root and publication
-    /// identities must match. Every source blob and syntax arena is checked again;
-    /// local declarations, references, producers, closure and audit are rebuilt.
-    ///
-    /// No prior local graph, lowering cache, certificate or validation handle is
-    /// reused. This returns a Working compilation, just like [`Self::restore`].
+    /// Reconstruct within an existing source history, sharing its authenticated
+    /// immutable dependency and unchanged declared fragments. Project/root and
+    /// publication identities must match. Every source blob and syntax arena is
+    /// checked again. Producers and closure still authenticate the new graph;
+    /// successful audit outcomes are reused only with explicit read/writer proof.
+    /// This returns a Working compilation, just like [`Self::restore`], and never
+    /// inherits a validation handle.
     /// The outer workspace remains responsible for exact revision-parent checks.
     ///
     /// # Checkpoint lineage precondition
@@ -207,8 +207,9 @@ impl SourceIdentityCheckpoint {
             if predecessor.inputs.root != self.root {
                 return Err(Mismatch("predecessor canonical root"));
             }
-            // Only the immutable authenticated dependency crosses this boundary.
-            // Use the same parser limits and empty document state as cold restore.
+            // Inputs share the immutable authenticated dependency. Compilation below
+            // separately checks predecessor fragments and reusable audit outcomes.
+            // Source parsing keeps the same limits and arena checks as cold restore.
             SourceInputs {
                 project: self.project_id,
                 root: self.root,
@@ -286,6 +287,11 @@ impl SourceIdentityCheckpoint {
         if ledger.len() != self.identity_sources.len() {
             return Err(Mismatch("duplicate identity origin"));
         }
-        Ok(Arc::new(inputs).compile_with_history(None, Some((history, ledger)), false, cache)?)
+        Ok(Arc::new(inputs).compile_with_history(
+            predecessor,
+            Some((history, ledger)),
+            predecessor.is_some(),
+            cache,
+        )?)
     }
 }
