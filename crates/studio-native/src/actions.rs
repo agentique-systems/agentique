@@ -1404,6 +1404,39 @@ mod tests {
     }
 
     #[test]
+    fn returning_to_current_exploration_leaves_durable_diff() {
+        let mut app = application();
+        let location = app.current_location();
+        app.comparison = ComparisonMode::Diff;
+        app.compare_before = Some(fixtures::revision_diff().0);
+        app.world = World::History;
+        assert!(app.restore_location(location));
+        assert_eq!(app.comparison, ComparisonMode::Current);
+        assert!(app.compare_before.is_none());
+        assert_eq!(app.world, World::System);
+    }
+
+    #[test]
+    fn rejected_revision_back_does_not_advance_navigation_cursor() {
+        let mut app = application();
+        let current = app.current_location();
+        let mut previous = current.clone();
+        previous.revision = ProjectRevisionId::new();
+        app.navigation.push(previous);
+        app.navigation.push(current);
+        app.bridge
+            .work(
+                Box::new(|_| panic!("no service in routing test")),
+                app.work_context(),
+                true,
+            )
+            .unwrap();
+        app.execute(CommandId::Back, &egui::Context::default());
+        assert!(app.navigation.forward().is_none());
+        assert!(app.status.contains("remains explorable"));
+    }
+
+    #[test]
     fn back_forward_restores_each_visits_camera_selection_filters_and_world() {
         let mut app = application();
         let context = egui::Context::default();
