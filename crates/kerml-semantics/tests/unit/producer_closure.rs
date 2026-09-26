@@ -3869,6 +3869,187 @@ fn accepted_dependency_population_is_closed_without_replaying_local_subject_writ
 }
 
 #[test]
+fn immutable_family_shortcut_preserves_full_certificate_with_cross_subject_blockers() {
+    use crate::producer_closure::ProducerEvaluationTable;
+    let dependency = Arc::new(
+        agq_kernel::derived::DerivationBuilder::new(fixture())
+            .build()
+            .unwrap(),
+    );
+    let base = Snapshot::with_immutable_dependency(dependency);
+    let mut f = Fixture {
+        changes: base.change_set(),
+        base,
+        owned: BTreeMap::new(),
+    };
+    f.create(4, c::FEATURE);
+    let snapshot = f.finish();
+    for accepted in [false, true] {
+        for scope in [ProducerEffectScope::Subject, ProducerEffectScope::Model] {
+            // Three families intentionally cross packed-byte subject boundaries.
+            let registry = ProducerRegistry::new(
+                [
+                    (ACTIVATE, ProducerEffect::Ownership),
+                    (TYPE, ProducerEffect::Typing),
+                    (
+                        ProducerFamilyId::new("Fixture.Membership"),
+                        ProducerEffect::Membership,
+                    ),
+                ]
+                .map(|(family, effect)| {
+                    let mut writer =
+                        ProducerDescriptor::new(family, [effect], ProducerApplicability::Any);
+                    writer.scope = scope;
+                    writer
+                }),
+            )
+            .unwrap();
+            for pending_provider in [false, true] {
+                let mut context =
+                    SemanticContext::for_snapshot(&snapshot, Default::default(), BTreeSet::new())
+                        .unwrap()
+                        .with_producer_registry_digest(registry.digest())
+                        .unwrap();
+                if accepted {
+                    context.id.publication_dependency_digest = Some([7; 32]);
+                    context.accepted_dependency = snapshot.immutable_dependency().cloned();
+                }
+                if pending_provider {
+                    context.id.pending_namespace_scopes.insert(id(1));
+                }
+                for result in [
+                    None,
+                    Some(Completeness::Complete),
+                    Some(Completeness::Incomplete),
+                ] {
+                    let mut table = ProducerEvaluationTable::default();
+                    for record in snapshot.model().elements() {
+                        table.pending(record.id(), snapshot.model(), &registry);
+                        if let Some(result) = result {
+                            for descriptor in registry.descriptors() {
+                                table
+                                    .record(&[(record.id(), descriptor.id, result)], &registry)
+                                    .unwrap();
+                            }
+                        }
+                    }
+                    let fast = ProducerClosureCertificate::issue(
+                        snapshot.model(),
+                        context.id(),
+                        &registry,
+                        &table,
+                        |subject| context.dependency_closure_source(subject),
+                    );
+                    let full = ProducerClosureCertificate::issue_full_family_rows(
+                        snapshot.model(),
+                        context.id(),
+                        &registry,
+                        &table,
+                        |subject| context.dependency_closure_source(subject),
+                    );
+                    fast.assert_exact(&full);
+                    if accepted {
+                        assert!((0..3).all(|family| fast.evaluation(id(1), family)
+                            == Some(ProducerEvaluationState::Inapplicable)));
+                        if scope == ProducerEffectScope::Model && result.is_none() {
+                            assert!(
+                                !fast.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping),
+                                "immutable dependency still receives the local model-scope blocker"
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn immutable_rebind_shortcut_preserves_evaluations_reads_and_negative_search_reopening() {
+    use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
+    let dependency = Arc::new(
+        agq_kernel::derived::DerivationBuilder::new(fixture())
+            .build()
+            .unwrap(),
+    );
+    let base = Snapshot::with_immutable_dependency(dependency);
+    let mut f = Fixture {
+        changes: base.change_set(),
+        base,
+        owned: BTreeMap::new(),
+    };
+    f.create(4, c::FEATURE);
+    let snapshot = f.finish();
+    let mut writer =
+        ProducerDescriptor::new(TYPE, [ProducerEffect::Typing], ProducerApplicability::Any);
+    writer.scope = ProducerEffectScope::Subject;
+    let registry = ProducerRegistry::new([writer]).unwrap();
+    fn context<'a>(snapshot: &'a Snapshot, registry: &ProducerRegistry) -> SemanticContext<'a> {
+        let mut context =
+            SemanticContext::for_snapshot(snapshot, Default::default(), BTreeSet::new())
+                .unwrap()
+                .with_producer_registry_digest(registry.digest())
+                .unwrap();
+        context.id.publication_dependency_digest = Some([7; 32]);
+        context.accepted_dependency = snapshot.immutable_dependency().cloned();
+        context
+    }
+    let old = context(&snapshot, &registry);
+    let mut table = ProducerEvaluationTable::default();
+    table.pending(id(4), snapshot.model(), &registry);
+    table
+        .record(&[(id(4), TYPE, Completeness::Complete)], &registry)
+        .unwrap();
+    table.record_reads(
+        &[(
+            id(4),
+            TYPE,
+            vec![ProducerRead::Source(
+                id(4),
+                c::FEATURE_TYPING,
+                p::FEATURE_TYPING_TYPED_FEATURE,
+            )]
+            .into(),
+        )],
+        &registry,
+    );
+    let certificate = ProducerClosureCertificate::issue(
+        snapshot.model(),
+        old.id(),
+        &registry,
+        &table,
+        |subject| old.dependency_closure_source(subject),
+    );
+    let checkpoint = certificate.checkpoint(&old).unwrap();
+    for changes_read in [false, true] {
+        let mut f = Fixture {
+            changes: snapshot.change_set(),
+            base: snapshot.clone(),
+            owned: BTreeMap::new(),
+        };
+        if changes_read {
+            f.create(5, c::FEATURE_TYPING);
+            f.value(5, p::FEATURE_TYPING_TYPED_FEATURE, Value::Reference(id(4)));
+            f.value(5, p::FEATURE_TYPING_TYPE, Value::Reference(id(2)));
+        } else {
+            f.create(5, c::CLASSIFIER);
+        }
+        let next = f.finish();
+        let next = context(&next, &registry);
+        let fast = checkpoint.rebind(&next, &registry).unwrap();
+        let full = checkpoint
+            .rebind_full_family_rows(&next, &registry)
+            .unwrap();
+        fast.certificate.assert_exact(&full.certificate);
+        assert_eq!(fast.affected_subjects, full.affected_subjects);
+        assert_eq!(fast.retained_evaluations, full.retained_evaluations);
+        assert_eq!(fast.reopened_evaluations, full.reopened_evaluations);
+        assert_eq!(fast.reopened_evaluations, usize::from(changes_read));
+        assert_eq!(fast.retained_evaluations, usize::from(!changes_read));
+    }
+}
+
+#[test]
 fn closure_checkpoint_retains_unrelated_evaluations_and_reopens_changed_negative_searches() {
     use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
     let snapshot = fixture();

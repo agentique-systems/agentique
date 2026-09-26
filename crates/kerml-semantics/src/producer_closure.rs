@@ -1893,7 +1893,34 @@ impl ProducerClosureCertificate {
         table: &ProducerEvaluationTable,
         immutable_source: impl Fn(ElementId) -> Option<ClosureSource>,
     ) -> Self {
-        Self::issue_with_cache(model, context, registry, table, immutable_source, None)
+        Self::issue_with_cache(
+            model,
+            context,
+            registry,
+            table,
+            immutable_source,
+            None,
+            true,
+        )
+    }
+
+    #[cfg(test)]
+    pub(crate) fn issue_full_family_rows(
+        model: &ModelView,
+        context: &SemanticContextId,
+        registry: &ProducerRegistry,
+        table: &ProducerEvaluationTable,
+        immutable_source: impl Fn(ElementId) -> Option<ClosureSource>,
+    ) -> Self {
+        Self::issue_with_cache(
+            model,
+            context,
+            registry,
+            table,
+            immutable_source,
+            None,
+            false,
+        )
     }
 
     fn issue_with_cache(
@@ -1903,6 +1930,7 @@ impl ProducerClosureCertificate {
         table: &ProducerEvaluationTable,
         immutable_source: impl Fn(ElementId) -> Option<ClosureSource>,
         mut cache: Option<&mut CertificateUpdateCache>,
+        skip_immutable_rows: bool,
     ) -> Self {
         let immutable = |id| immutable_source(id).is_some();
         let subjects: Vec<_> = model.elements().map(|r| r.id()).collect();
@@ -1959,8 +1987,16 @@ impl ProducerClosureCertificate {
         let dependency_blocked =
             table.dependency_blocked(model, registry, &subjects, &positions, &immutable, &blocked);
         for (i, &subject) in subjects.iter().enumerate() {
-            let record = model.element(subject).expect("indexed subject");
             let subject_immutable = immutable(subject);
+            if skip_immutable_rows && subject_immutable {
+                // The exact authenticated dependency has no local producer
+                // pairs: its packed row is already all Inapplicable (zero),
+                // with no scope or pair counts to contribute. Keep this subject
+                // in topology and blocker propagation below; a local writer can
+                // still open a requirement through cross-subject dependencies.
+                continue;
+            }
+            let record = model.element(subject).expect("indexed subject");
             for (j, descriptor) in registry.descriptors.iter().enumerate() {
                 let mut state = if subject_immutable {
                     ProducerEvaluationState::Inapplicable

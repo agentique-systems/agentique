@@ -84,3 +84,20 @@ and factored invalidation frontier when a new local typing targets a standard
 element. Existing producer checkpoint signatures retain their original behavior.
 The audit setup, producer checkpoint and producer rebind costs are separately
 reported; testing/measurement of the draft remains pending integration.
+# Immutable producer-row draft
+
+Code inspection against the historical 64.3 s final closure found per-certificate
+family work over every accepted runtime subject: approximately 75,000 subjects
+times 88 families, even though those subjects' producer rows are all inapplicable.
+The draft skips that state/scope-row work only at the existing authenticated
+dependency boundary. Topology, provider blockers, cross-subject causal closure,
+and certificate hashing still cover the whole model. Checkpoint rebind skips its
+pending-row allocation only when that same boundary applies and the exact old
+packed row contains no producer evaluations.
+
+The full-rebuild certificate verifier retains the original family-row algorithm
+as an independent comparison path. New tests compare complete certificates,
+transport reads and counters across accepted/unaccepted mounts, model-scoped
+writers, pending providers, producer evaluation states, and negative-search
+reopening. These tests await the integration build; no wall-time win is claimed.
+`immutable-row-format.json` records the targeted rustfmt check and exit code 0.

@@ -128,6 +128,24 @@ impl ProducerClosureCheckpoint {
         new: &SemanticContext<'_>,
         registry: &ProducerRegistry,
     ) -> Result<ReboundClosure, ContextError> {
+        self.rebind_rows(new, registry, true)
+    }
+
+    #[cfg(test)]
+    pub(crate) fn rebind_full_family_rows(
+        &self,
+        new: &SemanticContext<'_>,
+        registry: &ProducerRegistry,
+    ) -> Result<ReboundClosure, ContextError> {
+        self.rebind_rows(new, registry, false)
+    }
+
+    fn rebind_rows(
+        &self,
+        new: &SemanticContext<'_>,
+        registry: &ProducerRegistry,
+        skip_immutable_rows: bool,
+    ) -> Result<ReboundClosure, ContextError> {
         if self.certificate.registry_digest != registry.digest()
             || new.id().producer_registry_digest != Some(registry.digest())
         {
@@ -170,6 +188,24 @@ impl ProducerClosureCheckpoint {
         let mut reopened = 0;
         for record in new.model.elements() {
             let subject = record.id();
+            if skip_immutable_rows
+                && new.dependency_closure_source(subject).is_some()
+                && self
+                    .certificate
+                    .subjects
+                    .binary_search(&subject)
+                    .is_ok_and(|index| {
+                        (0..self.certificate.families).all(|family| {
+                            let pair = index * self.certificate.families + family;
+                            (self.certificate.states[pair / 4] >> ((pair % 4) * 2)) & 3 == 0
+                        })
+                    })
+            {
+                // The old row contains no evaluations or read receipts to
+                // transport. Initializing pending pairs for an immutable new
+                // dependency would be discarded by certificate issuance.
+                continue;
+            }
             table.pending(subject, new.model, registry);
             for family in 0..registry.descriptors.len() {
                 let Some(state) = self.certificate.evaluation(subject, family) else {
