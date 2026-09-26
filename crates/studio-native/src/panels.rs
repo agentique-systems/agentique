@@ -601,7 +601,14 @@ impl StudioApp {
         );
         ui.add_space(14.0);
         ui.horizontal(|ui| {
-            ui.label(RichText::new("Architecture").strong());
+            ui.label(
+                RichText::new(if self.world == World::Requirements {
+                    "Requirement neighborhood"
+                } else {
+                    "Architecture"
+                })
+                .strong(),
+            );
             ui.label(muted(self.projection.nodes.len().to_string(), theme).small());
         });
         ui.add_space(8.0);
@@ -990,16 +997,15 @@ impl StudioApp {
                         .find(|branch| branch.id == history.project.default_branch)
                 })
                 .map(|branch| (branch.head, branch.name.clone()));
-            if let Some((head, branch)) = head {
-                if ui
+            if let Some((head, branch)) = head
+                && ui
                     .add_enabled(
                         head != self.projection.revision_id,
                         egui::Button::new(format!("Return to {branch} head")),
                     )
                     .clicked()
-                {
-                    self.select_revision(head);
-                }
+            {
+                self.return_to_revision(head);
             }
         });
         egui::ScrollArea::vertical().show(ui, |ui| {
@@ -1154,6 +1160,28 @@ fn revision_title(
         })
         .map(|document| document.path.as_str())
         .collect();
+    let removed: Vec<_> = parent
+        .into_iter()
+        .flat_map(|parent| &parent.documents)
+        .filter(|document| {
+            !revision
+                .documents
+                .iter()
+                .any(|current| current.path == document.path)
+        })
+        .map(|document| document.path.as_str())
+        .collect();
+    if !removed.is_empty() {
+        return if removed.len() == 1 && changed.is_empty() {
+            format!("Removed source {}", removed[0])
+        } else {
+            format!(
+                "Updated {} · removed {} source documents",
+                changed.len(),
+                removed.len()
+            )
+        };
+    }
     if changed.is_empty() {
         if revision.documents.is_empty() {
             "Empty working project".into()

@@ -94,7 +94,10 @@ fn filtered_review(review: &ChangeReview, mode: DiffMode) -> ChangeReview {
                 .filter(|change| mode.includes_change(change))
                 .cloned()
                 .collect();
-            (!changes.is_empty()).then(|| ChangeGroup {
+            if changes.is_empty() {
+                return None;
+            }
+            Some(ChangeGroup {
                 owner: group.owner,
                 name: group.name.clone(),
                 changes,
