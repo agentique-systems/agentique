@@ -1,0 +1,912 @@
+﻿2026-09-26T10:41:26.5811110Z Current runner version: '2.337.0'
+2026-09-26T10:41:26.5828750Z ##[group]Runner Image Provisioner
+2026-09-26T10:41:26.5829320Z Hosted Compute Agent
+2026-09-26T10:41:26.5829690Z Version: 20260828.587
+2026-09-26T10:41:26.5830090Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+2026-09-26T10:41:26.5830570Z Build Date: 2026-08-28T16:44:25Z
+2026-09-26T10:41:26.5831010Z Worker ID: {79f737f3-48d9-4d77-ad01-c4942991d0d4}
+2026-09-26T10:41:26.5831500Z Azure Region: westus
+2026-09-26T10:41:26.5831920Z ##[endgroup]
+2026-09-26T10:41:26.5832790Z ##[group]Operating System
+2026-09-26T10:41:26.5833180Z macOS
+2026-09-26T10:41:26.5833500Z 14.8.9
+2026-09-26T10:41:26.5833810Z 23J631
+2026-09-26T10:41:26.5834140Z ##[endgroup]
+2026-09-26T10:41:26.5834480Z ##[group]Runner Image
+2026-09-26T10:41:26.5834860Z Image: macos-14-arm64
+2026-09-26T10:41:26.5835230Z Version: 20260831.0302.1
+2026-09-26T10:41:26.5836090Z Included Software: https://github.com/actions/runner-images/blob/macos-14-arm64/20260831.0302/images/macos/macos-14-arm64-Readme.md
+2026-09-26T10:41:26.5837110Z Image Release: https://github.com/actions/runner-images/releases/tag/macos-14-arm64%2F20260831.0302
+2026-09-26T10:41:26.5837760Z ##[endgroup]
+2026-09-26T10:41:26.5838670Z ##[group]GITHUB_TOKEN Permissions
+2026-09-26T10:41:26.5840200Z Contents: read
+2026-09-26T10:41:26.5840560Z Metadata: read
+2026-09-26T10:41:26.5840960Z Packages: read
+2026-09-26T10:41:26.5841380Z ##[endgroup]
+2026-09-26T10:41:26.5842830Z Secret source: Actions
+2026-09-26T10:41:26.5843510Z Cache mode: write
+2026-09-26T10:41:26.5844070Z Prepare workflow directory
+2026-09-26T10:41:26.6118480Z Prepare all required actions
+2026-09-26T10:41:26.6158320Z Getting action download info
+2026-09-26T10:41:26.9845030Z Download action repository 'actions/checkout@11d5960a326750d5838078e36cf38b85af677262' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+2026-09-26T10:41:27.2908820Z Complete job name: native-studio-macos
+2026-09-26T10:41:27.3298990Z ##[group]Run actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+2026-09-26T10:41:27.3299620Z with:
+2026-09-26T10:41:27.3299930Z   persist-credentials: false
+2026-09-26T10:41:27.3300300Z   repository: agentique-systems/agentique
+2026-09-26T10:41:27.3302800Z   token: ***
+2026-09-26T10:41:27.3303090Z   ssh-strict: true
+2026-09-26T10:41:27.3303390Z   ssh-user: git
+2026-09-26T10:41:27.3303680Z   clean: true
+2026-09-26T10:41:27.3303990Z   sparse-checkout-cone-mode: true
+2026-09-26T10:41:27.3304340Z   fetch-depth: 1
+2026-09-26T10:41:27.3304640Z   fetch-tags: false
+2026-09-26T10:41:27.3304950Z   show-progress: true
+2026-09-26T10:41:27.3305260Z   lfs: false
+2026-09-26T10:41:27.3305540Z   submodules: false
+2026-09-26T10:41:27.3305850Z   set-safe-directory: true
+2026-09-26T10:41:27.3306200Z   allow-unsafe-pr-checkout: false
+2026-09-26T10:41:27.3306640Z env:
+2026-09-26T10:41:27.3306930Z   CARGO_BUILD_JOBS: 2
+2026-09-26T10:41:27.3307240Z   CARGO_INCREMENTAL: 0
+2026-09-26T10:41:27.3307590Z   CARGO_PROFILE_DEV_DEBUG: 0
+2026-09-26T10:41:27.3307930Z ##[endgroup]
+2026-09-26T10:41:27.7672870Z Syncing repository: agentique-systems/agentique
+2026-09-26T10:41:27.7674560Z ##[group]Getting Git version info
+2026-09-26T10:41:27.7675470Z Working directory is '/Users/runner/work/agentique/agentique'
+2026-09-26T10:41:27.7676280Z [command]/opt/homebrew/bin/git version
+2026-09-26T10:41:27.7854280Z git version 2.55.0
+2026-09-26T10:41:27.7868230Z ##[endgroup]
+2026-09-26T10:41:27.7878220Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/a18d86ea-c792-44d4-8a80-622e43050de7/.gitconfig'
+2026-09-26T10:41:27.7887290Z Temporarily overriding HOME='/Users/runner/work/_temp/a18d86ea-c792-44d4-8a80-622e43050de7' before making global git config changes
+2026-09-26T10:41:27.7890350Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-26T10:41:27.7900910Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/agentique/agentique
+2026-09-26T10:41:27.7981550Z Deleting the contents of '/Users/runner/work/agentique/agentique'
+2026-09-26T10:41:27.7985550Z ##[group]Initializing the repository
+2026-09-26T10:41:27.7987890Z [command]/opt/homebrew/bin/git init /Users/runner/work/agentique/agentique
+2026-09-26T10:41:27.8191820Z hint: Using 'master' as the name for the initial branch. This default branch name
+2026-09-26T10:41:27.8195930Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+2026-09-26T10:41:27.8196720Z hint: to use in all of your new repositories, which will suppress this warning,
+2026-09-26T10:41:27.8216680Z hint: call:
+2026-09-26T10:41:27.8220450Z hint:
+2026-09-26T10:41:27.8230130Z hint: 	git config --global init.defaultBranch <name>
+2026-09-26T10:41:27.8232840Z hint:
+2026-09-26T10:41:27.8233310Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+2026-09-26T10:41:27.8234040Z hint: 'development'. The just-created branch can be renamed via this command:
+2026-09-26T10:41:27.8234650Z hint:
+2026-09-26T10:41:27.8235100Z hint: 	git branch -m <name>
+2026-09-26T10:41:27.8235590Z hint:
+2026-09-26T10:41:27.8236100Z hint: Disable this message with "git config set advice.defaultBranchName false"
+2026-09-26T10:41:27.8236970Z Initialized empty Git repository in /Users/runner/work/agentique/agentique/.git/
+2026-09-26T10:41:27.8238560Z [command]/opt/homebrew/bin/git remote add origin https://github.com/agentique-systems/agentique
+2026-09-26T10:41:27.8257230Z ##[endgroup]
+2026-09-26T10:41:27.8258010Z ##[group]Disabling automatic garbage collection
+2026-09-26T10:41:27.8259800Z [command]/opt/homebrew/bin/git config --local gc.auto 0
+2026-09-26T10:41:27.8303080Z ##[endgroup]
+2026-09-26T10:41:27.8303820Z ##[group]Setting up auth
+2026-09-26T10:41:27.8307210Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-26T10:41:27.8349790Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-26T10:41:27.9222900Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-26T10:41:27.9274560Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-26T10:41:27.9823410Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-26T10:41:27.9864260Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-26T10:41:28.0586370Z [command]/opt/homebrew/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+2026-09-26T10:41:28.0658560Z ##[endgroup]
+2026-09-26T10:41:28.0659680Z ##[group]Fetching the repository
+2026-09-26T10:41:28.0664080Z [command]/opt/homebrew/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +42e7e187de823a3b855d530dcee84dbe8c06b59f:refs/remotes/origin/platform/native-studio-alpha-acceptance
+2026-09-26T10:41:39.6550370Z From https://github.com/agentique-systems/agentique
+2026-09-26T10:41:39.6555660Z  * [new ref]         42e7e187de823a3b855d530dcee84dbe8c06b59f -> origin/platform/native-studio-alpha-acceptance
+2026-09-26T10:41:39.6563870Z ##[endgroup]
+2026-09-26T10:41:39.6566370Z ##[group]Determining the checkout info
+2026-09-26T10:41:39.6568900Z ##[endgroup]
+2026-09-26T10:41:39.6570600Z [command]/opt/homebrew/bin/git sparse-checkout disable
+2026-09-26T10:41:39.6653790Z [command]/opt/homebrew/bin/git config --local --unset-all extensions.worktreeConfig
+2026-09-26T10:41:39.6768660Z ##[group]Checking out the ref
+2026-09-26T10:41:39.6788470Z [command]/opt/homebrew/bin/git checkout --progress --force -B platform/native-studio-alpha-acceptance refs/remotes/origin/platform/native-studio-alpha-acceptance
+2026-09-26T10:41:40.9557730Z Updating files:  26% (1497/5718)
+2026-09-26T10:41:41.3421460Z Updating files:  27% (1544/5718)
+2026-09-26T10:41:41.5457990Z Updating files:  28% (1602/5718)
+2026-09-26T10:41:41.5692570Z Updating files:  29% (1659/5718)
+2026-09-26T10:41:41.6063170Z Updating files:  30% (1716/5718)
+2026-09-26T10:41:41.6154750Z Updating files:  31% (1773/5718)
+2026-09-26T10:41:41.6377450Z Updating files:  32% (1830/5718)
+2026-09-26T10:41:41.6664330Z Updating files:  33% (1887/5718)
+2026-09-26T10:41:41.6829080Z Updating files:  34% (1945/5718)
+2026-09-26T10:41:41.7104520Z Updating files:  35% (2002/5718)
+2026-09-26T10:41:41.7332210Z Updating files:  35% (2006/5718)
+2026-09-26T10:41:41.7541920Z Updating files:  36% (2059/5718)
+2026-09-26T10:41:41.9149890Z Updating files:  37% (2116/5718)
+2026-09-26T10:41:41.9687030Z Updating files:  38% (2173/5718)
+2026-09-26T10:41:42.0697560Z Updating files:  39% (2231/5718)
+2026-09-26T10:41:42.0888140Z Updating files:  40% (2288/5718)
+2026-09-26T10:41:42.0967100Z Updating files:  41% (2345/5718)
+2026-09-26T10:41:42.1064700Z Updating files:  42% (2402/5718)
+2026-09-26T10:41:42.1168750Z Updating files:  43% (2459/5718)
+2026-09-26T10:41:42.1242290Z Updating files:  44% (2516/5718)
+2026-09-26T10:41:42.1301540Z Updating files:  45% (2574/5718)
+2026-09-26T10:41:42.1433480Z Updating files:  46% (2631/5718)
+2026-09-26T10:41:42.1584270Z Updating files:  47% (2688/5718)
+2026-09-26T10:41:42.2032600Z Updating files:  48% (2745/5718)
+2026-09-26T10:41:42.2210550Z Updating files:  49% (2802/5718)
+2026-09-26T10:41:42.2385310Z Updating files:  50% (2859/5718)
+2026-09-26T10:41:42.2524990Z Updating files:  51% (2917/5718)
+2026-09-26T10:41:42.2714420Z Updating files:  52% (2974/5718)
+2026-09-26T10:41:42.2922270Z Updating files:  53% (3031/5718)
+2026-09-26T10:41:42.4635980Z Updating files:  54% (3088/5718)
+2026-09-26T10:41:42.4773500Z Updating files:  55% (3145/5718)
+2026-09-26T10:41:42.4989190Z Updating files:  56% (3203/5718)
+2026-09-26T10:41:42.5093990Z Updating files:  57% (3260/5718)
+2026-09-26T10:41:42.5315630Z Updating files:  58% (3317/5718)
+2026-09-26T10:41:42.5413110Z Updating files:  59% (3374/5718)
+2026-09-26T10:41:42.5514500Z Updating files:  60% (3431/5718)
+2026-09-26T10:41:42.6980710Z Updating files:  61% (3488/5718)
+2026-09-26T10:41:42.7032240Z Updating files:  61% (3529/5718)
+2026-09-26T10:41:42.7363990Z Updating files:  62% (3546/5718)
+2026-09-26T10:41:42.7922360Z Updating files:  63% (3603/5718)
+2026-09-26T10:41:42.8169980Z Updating files:  64% (3660/5718)
+2026-09-26T10:41:42.8457320Z Updating files:  65% (3717/5718)
+2026-09-26T10:41:42.8504070Z Updating files:  66% (3774/5718)
+2026-09-26T10:41:42.8573960Z Updating files:  67% (3832/5718)
+2026-09-26T10:41:42.8619730Z Updating files:  68% (3889/5718)
+2026-09-26T10:41:42.8680830Z Updating files:  69% (3946/5718)
+2026-09-26T10:41:42.8747870Z Updating files:  70% (4003/5718)
+2026-09-26T10:41:42.8839880Z Updating files:  71% (4060/5718)
+2026-09-26T10:41:42.8925720Z Updating files:  72% (4117/5718)
+2026-09-26T10:41:42.8965650Z Updating files:  73% (4175/5718)
+2026-09-26T10:41:42.9008570Z Updating files:  74% (4232/5718)
+2026-09-26T10:41:42.9069100Z Updating files:  75% (4289/5718)
+2026-09-26T10:41:42.9099480Z Updating files:  76% (4346/5718)
+2026-09-26T10:41:42.9158230Z Updating files:  77% (4403/5718)
+2026-09-26T10:41:42.9212020Z Updating files:  78% (4461/5718)
+2026-09-26T10:41:42.9407670Z Updating files:  79% (4518/5718)
+2026-09-26T10:41:42.9597470Z Updating files:  80% (4575/5718)
+2026-09-26T10:41:42.9955980Z Updating files:  81% (4632/5718)
+2026-09-26T10:41:43.0578250Z Updating files:  82% (4689/5718)
+2026-09-26T10:41:43.1206840Z Updating files:  83% (4746/5718)
+2026-09-26T10:41:43.1288690Z Updating files:  84% (4804/5718)
+2026-09-26T10:41:43.1717450Z Updating files:  85% (4861/5718)
+2026-09-26T10:41:43.2201350Z Updating files:  86% (4918/5718)
+2026-09-26T10:41:43.2420560Z Updating files:  87% (4975/5718)
+2026-09-26T10:41:43.2486840Z Updating files:  88% (5032/5718)
+2026-09-26T10:41:43.2682660Z Updating files:  89% (5090/5718)
+2026-09-26T10:41:43.3097700Z Updating files:  90% (5147/5718)
+2026-09-26T10:41:43.3216600Z Updating files:  91% (5204/5718)
+2026-09-26T10:41:43.3298290Z Updating files:  92% (5261/5718)
+2026-09-26T10:41:43.3381290Z Updating files:  93% (5318/5718)
+2026-09-26T10:41:43.3479750Z Updating files:  94% (5375/5718)
+2026-09-26T10:41:43.3524460Z Updating files:  95% (5433/5718)
+2026-09-26T10:41:43.3618610Z Updating files:  96% (5490/5718)
+2026-09-26T10:41:43.3734380Z Updating files:  97% (5547/5718)
+2026-09-26T10:41:43.3838720Z Updating files:  98% (5604/5718)
+2026-09-26T10:41:43.3928020Z Updating files:  99% (5661/5718)
+2026-09-26T10:41:43.3930070Z Updating files: 100% (5718/5718)
+2026-09-26T10:41:43.3931630Z Updating files: 100% (5718/5718), done.
+2026-09-26T10:41:43.4082410Z Switched to a new branch 'platform/native-studio-alpha-acceptance'
+2026-09-26T10:41:43.4086560Z branch 'platform/native-studio-alpha-acceptance' set up to track 'origin/platform/native-studio-alpha-acceptance'.
+2026-09-26T10:41:43.4219660Z ##[endgroup]
+2026-09-26T10:41:43.4455070Z [command]/opt/homebrew/bin/git log -1 --format=%H
+2026-09-26T10:41:43.4515580Z 42e7e187de823a3b855d530dcee84dbe8c06b59f
+2026-09-26T10:41:43.4536870Z ##[group]Removing auth
+2026-09-26T10:41:43.4542340Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-26T10:41:43.4603250Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-26T10:41:43.5795590Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-26T10:41:43.5837100Z http.https://github.com/.extraheader
+2026-09-26T10:41:43.5844180Z [command]/opt/homebrew/bin/git config --local --unset-all http.https://github.com/.extraheader
+2026-09-26T10:41:43.5891600Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-26T10:41:43.6385650Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-26T10:41:43.6423640Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-26T10:41:43.7021380Z ##[endgroup]
+2026-09-26T10:41:43.7411140Z ##[group]Run rustup show
+2026-09-26T10:41:43.7412080Z [36;1mrustup show[0m
+2026-09-26T10:41:43.7536410Z shell: /bin/bash -e {0}
+2026-09-26T10:41:43.7536790Z env:
+2026-09-26T10:41:43.7537010Z   CARGO_BUILD_JOBS: 2
+2026-09-26T10:41:43.7537330Z   CARGO_INCREMENTAL: 0
+2026-09-26T10:41:43.7537780Z   CARGO_PROFILE_DEV_DEBUG: 0
+2026-09-26T10:41:43.7538080Z ##[endgroup]
+2026-09-26T10:41:43.8552060Z Default host: aarch64-apple-darwin
+2026-09-26T10:41:43.8552460Z rustup home:  /Users/runner/.rustup
+2026-09-26T10:41:43.8552680Z 
+2026-09-26T10:41:43.8586870Z info: syncing channel updates for 1.92.0-aarch64-apple-darwin
+2026-09-26T10:41:44.0925430Z info: latest update on 2025-12-11 for version 1.92.0 (ded5c06cf 2025-12-08)
+2026-09-26T10:41:44.0937510Z info: downloading 6 components
+2026-09-26T10:41:52.5024250Z installed toolchains
+2026-09-26T10:41:52.5025900Z --------------------
+2026-09-26T10:41:52.5027410Z stable-aarch64-apple-darwin (default)
+2026-09-26T10:41:52.5027710Z 
+2026-09-26T10:41:52.5028870Z active toolchain
+2026-09-26T10:41:52.5029200Z ----------------
+2026-09-26T10:41:52.5029450Z name: 1.92.0-aarch64-apple-darwin
+2026-09-26T10:41:52.5030040Z active because: overridden by '/Users/runner/work/agentique/agentique/rust-toolchain.toml'
+2026-09-26T10:41:52.5034340Z installed targets:
+2026-09-26T10:41:52.5046110Z   aarch64-apple-darwin
+2026-09-26T10:41:52.5348420Z ##[group]Run cargo fetch --locked --manifest-path crates/studio-native/Cargo.toml
+2026-09-26T10:41:52.5348990Z [36;1mcargo fetch --locked --manifest-path crates/studio-native/Cargo.toml[0m
+2026-09-26T10:41:52.5411960Z shell: /bin/bash -e {0}
+2026-09-26T10:41:52.5412230Z env:
+2026-09-26T10:41:52.5416560Z   CARGO_BUILD_JOBS: 2
+2026-09-26T10:41:52.5416830Z   CARGO_INCREMENTAL: 0
+2026-09-26T10:41:52.5417060Z   CARGO_PROFILE_DEV_DEBUG: 0
+2026-09-26T10:41:52.5417340Z ##[endgroup]
+2026-09-26T10:41:52.6981210Z     Updating crates.io index
+2026-09-26T10:41:54.2104090Z  Downloading crates ...
+2026-09-26T10:41:54.3500580Z   Downloaded hermit-abi v0.5.3
+2026-09-26T10:41:54.3601030Z   Downloaded range-alloc v0.1.5
+2026-09-26T10:41:54.3644890Z   Downloaded rustc-hash v1.1.0
+2026-09-26T10:41:54.3699380Z   Downloaded windows-link v0.2.1
+2026-09-26T10:41:54.3700100Z   Downloaded core-foundation v0.10.1
+2026-09-26T10:41:54.3701670Z   Downloaded concurrent-queue v2.5.0
+2026-09-26T10:41:54.3725280Z   Downloaded objc2-symbols v0.2.2
+2026-09-26T10:41:54.3825580Z   Downloaded percent-encoding v2.3.2
+2026-09-26T10:41:54.3877520Z   Downloaded core-graphics-types v0.1.3
+2026-09-26T10:41:54.3979380Z   Downloaded objc2-core-location v0.2.2
+2026-09-26T10:41:54.4064740Z   Downloaded objc2-core-image v0.2.2
+2026-09-26T10:41:54.4065410Z   Downloaded derive_arbitrary v1.4.2
+2026-09-26T10:41:54.4143730Z   Downloaded termcolor v1.4.1
+2026-09-26T10:41:54.4258970Z   Downloaded fallible-streaming-iterator v0.1.9
+2026-09-26T10:41:54.5206500Z   Downloaded form_urlencoded v1.2.2
+2026-09-26T10:41:54.5479860Z   Downloaded parking v2.2.1
+2026-09-26T10:41:54.5762670Z   Downloaded futures-lite v2.6.1
+2026-09-26T10:41:54.6135370Z   Downloaded serde_repr v0.1.21
+2026-09-26T10:41:54.6552010Z   Downloaded x11rb v0.13.2
+2026-09-26T10:41:54.6956490Z   Downloaded yoke-derive v0.8.3
+2026-09-26T10:41:54.7250870Z   Downloaded calloop v0.14.4
+2026-09-26T10:41:54.7525510Z   Downloaded windows-interface v0.59.3
+2026-09-26T10:41:54.7654560Z   Downloaded windows-implement v0.60.2
+2026-09-26T10:41:54.7783080Z   Downloaded wayland-csd-frame v0.3.0
+2026-09-26T10:41:54.7920700Z   Downloaded wayland-scanner v0.31.11
+2026-09-26T10:41:54.8087980Z   Downloaded wayland-protocols-plasma v0.3.12
+2026-09-26T10:41:54.8370300Z   Downloaded async-process v2.5.0
+2026-09-26T10:41:54.8532070Z   Downloaded async-channel v2.5.0
+2026-09-26T10:41:54.8684510Z   Downloaded cpufeatures v0.2.17
+2026-09-26T10:41:54.8745010Z   Downloaded hashlink v0.10.0
+2026-09-26T10:41:54.8825810Z   Downloaded wasm-bindgen-futures v0.4.78
+2026-09-26T10:41:54.8871080Z   Downloaded document-features v0.2.12
+2026-09-26T10:41:54.8916000Z   Downloaded static_assertions v1.1.0
+2026-09-26T10:41:54.8970950Z   Downloaded litrs v1.0.0
+2026-09-26T10:41:54.9046710Z   Downloaded foldhash v0.1.5
+2026-09-26T10:41:54.9080280Z   Downloaded core-foundation-sys v0.8.7
+2026-09-26T10:41:54.9150370Z   Downloaded hashbrown v0.15.5
+2026-09-26T10:41:54.9250690Z   Downloaded gpu-descriptor v0.3.2
+2026-09-26T10:41:54.9271730Z   Downloaded vcpkg v0.2.15
+2026-09-26T10:41:55.0579690Z   Downloaded pkg-config v0.3.34
+2026-09-26T10:41:55.0623520Z   Downloaded khronos-egl v6.0.0
+2026-09-26T10:41:55.0691920Z   Downloaded libloading v0.8.9
+2026-09-26T10:41:55.0763970Z   Downloaded windows-result v0.4.1
+2026-09-26T10:41:55.0805450Z   Downloaded rusqlite v0.37.0
+2026-09-26T10:41:55.0966910Z   Downloaded gpu-alloc v0.6.2
+2026-09-26T10:41:55.1012030Z   Downloaded thiserror v1.0.69
+2026-09-26T10:41:55.1223720Z   Downloaded gpu-allocator v0.27.0
+2026-09-26T10:41:55.1365060Z   Downloaded block v0.1.6
+2026-09-26T10:41:55.1396050Z   Downloaded iana-time-zone-haiku v0.1.2
+2026-09-26T10:41:55.1430160Z   Downloaded presser v0.3.1
+2026-09-26T10:41:55.1488320Z   Downloaded thiserror-impl v1.0.69
+2026-09-26T10:41:55.1534960Z   Downloaded wgpu-core-deps-apple v27.0.0
+2026-09-26T10:41:55.1573380Z   Downloaded wgpu-core-deps-emscripten v27.0.0
+2026-09-26T10:41:55.1607560Z   Downloaded itoa v1.0.18
+2026-09-26T10:41:55.1656420Z   Downloaded wgpu-core-deps-windows-linux-android v27.0.0
+2026-09-26T10:41:55.1683040Z   Downloaded zmij v1.0.23
+2026-09-26T10:41:55.1726480Z   Downloaded pxfm v0.1.30
+2026-09-26T10:41:55.2442680Z   Downloaded gpu-alloc-types v0.3.1
+2026-09-26T10:41:55.2461570Z   Downloaded gpu-descriptor-types v0.2.0
+2026-09-26T10:41:55.2477590Z   Downloaded memchr v2.8.3
+2026-09-26T10:41:55.2603040Z   Downloaded zip v2.4.2
+2026-09-26T10:41:55.2684590Z   Downloaded clap_builder v4.6.7
+2026-09-26T10:41:55.2805690Z   Downloaded serde_json v1.0.151
+2026-09-26T10:41:55.2943120Z   Downloaded zopfli v0.8.3
+2026-09-26T10:41:55.2987030Z   Downloaded clap v4.6.7
+2026-09-26T10:41:55.3230810Z   Downloaded zbus_xml v5.2.1
+2026-09-26T10:41:55.3294160Z   Downloaded atspi-common v0.9.0
+2026-09-26T10:41:55.3417140Z   Downloaded async-io v2.6.0
+2026-09-26T10:41:55.3488430Z   Downloaded arbitrary v1.4.2
+2026-09-26T10:41:55.3621640Z   Downloaded num-integer v0.1.47
+2026-09-26T10:41:55.3667030Z   Downloaded generic-array v0.14.7
+2026-09-26T10:41:55.3708490Z   Downloaded digest v0.10.7
+2026-09-26T10:41:55.3752120Z   Downloaded sha2 v0.10.9
+2026-09-26T10:41:55.3834090Z   Downloaded anstyle-parse v1.0.0
+2026-09-26T10:41:55.3890400Z   Downloaded colorchoice v1.0.5
+2026-09-26T10:41:55.3922360Z   Downloaded anstream v1.0.0
+2026-09-26T10:41:55.3975810Z   Downloaded anstyle v1.0.14
+2026-09-26T10:41:55.4026650Z   Downloaded clap_derive v4.6.7
+2026-09-26T10:41:55.4105570Z   Downloaded accesskit_macos v0.22.2
+2026-09-26T10:41:55.4199850Z   Downloaded accesskit_atspi_common v0.14.2
+2026-09-26T10:41:55.4259230Z   Downloaded atspi-connection v0.9.0
+2026-09-26T10:41:55.4302430Z   Downloaded zbus-lockstep-macros v0.5.2
+2026-09-26T10:41:55.4315720Z   Downloaded atspi-proxies v0.9.0
+2026-09-26T10:41:55.4421760Z   Downloaded atspi v0.25.0
+2026-09-26T10:41:55.4457920Z   Downloaded async-broadcast v0.7.2
+2026-09-26T10:41:55.4502040Z   Downloaded async-executor v1.14.0
+2026-09-26T10:41:55.4588660Z   Downloaded signal-hook-registry v1.4.8
+2026-09-26T10:41:55.4608950Z   Downloaded async-signal v0.2.14
+2026-09-26T10:41:55.4647420Z   Downloaded image v0.25.10
+2026-09-26T10:41:55.4873610Z   Downloaded block-buffer v0.10.4
+2026-09-26T10:41:55.4910080Z   Downloaded crypto-common v0.1.7
+2026-09-26T10:41:55.4942050Z   Downloaded once_cell_polyfill v1.70.2
+2026-09-26T10:41:55.4982240Z   Downloaded anstyle-wincon v3.0.11
+2026-09-26T10:41:55.5090190Z   Downloaded is_terminal_polyfill v1.70.2
+2026-09-26T10:41:55.5139060Z   Downloaded utf8parse v0.2.2
+2026-09-26T10:41:55.5177090Z   Downloaded clap_lex v1.1.1
+2026-09-26T10:41:55.5205840Z   Downloaded strsim v0.11.1
+2026-09-26T10:41:55.5260270Z   Downloaded heck v0.5.0
+2026-09-26T10:41:55.5301780Z   Downloaded zbus-lockstep v0.5.2
+2026-09-26T10:41:55.5329350Z   Downloaded async-lock v3.4.2
+2026-09-26T10:41:55.5408870Z   Downloaded rustix v0.38.44
+2026-09-26T10:41:55.6105640Z   Downloaded windows-sys v0.61.2
+2026-09-26T10:41:55.7178300Z   Downloaded async-task v4.7.1
+2026-09-26T10:41:55.7261950Z   Downloaded blocking v1.7.0
+2026-09-26T10:41:55.7286910Z   Downloaded event-listener v5.4.2
+2026-09-26T10:41:55.7319260Z   Downloaded quick-xml v0.41.0
+2026-09-26T10:41:55.7418920Z   Downloaded async-recursion v1.1.1
+2026-09-26T10:41:55.7486090Z   Downloaded async-trait v0.1.92
+2026-09-26T10:41:55.7556220Z   Downloaded event-listener-strategy v0.5.4
+2026-09-26T10:41:55.7581080Z   Downloaded piper v0.2.5
+2026-09-26T10:41:55.7614320Z   Downloaded futures-io v0.3.34
+2026-09-26T10:41:55.7634070Z   Downloaded windows-threading v0.1.0
+2026-09-26T10:41:55.7652420Z   Downloaded windows-future v0.2.1
+2026-09-26T10:41:55.7677440Z   Downloaded linux-raw-sys v0.4.15
+2026-09-26T10:41:55.8598650Z   Downloaded windows-numerics v0.2.0
+2026-09-26T10:41:55.8630930Z   Downloaded x11-dl v2.21.0
+2026-09-26T10:41:55.8711530Z   Downloaded moxcms v0.8.1
+2026-09-26T10:41:55.8973700Z   Downloaded tiff v0.11.3
+2026-09-26T10:41:55.9073200Z   Downloaded libc v0.2.189
+2026-09-26T10:41:55.9975120Z   Downloaded windows_i686_gnu v0.52.6
+2026-09-26T10:41:56.0239060Z   Downloaded windows_i686_msvc v0.52.6
+2026-09-26T10:41:56.0430670Z   Downloaded web-time v1.1.0
+2026-09-26T10:41:56.0475510Z   Downloaded as-raw-xcb-connection v1.0.1
+2026-09-26T10:41:56.0496600Z   Downloaded winit v0.30.13
+2026-09-26T10:41:56.0943800Z   Downloaded naga v27.0.3
+2026-09-26T10:41:56.1244940Z   Downloaded windows_aarch64_msvc v0.52.6
+2026-09-26T10:41:56.1382260Z   Downloaded windows_x86_64_gnu v0.52.6
+2026-09-26T10:41:56.1580680Z   Downloaded windows_x86_64_msvc v0.52.6
+2026-09-26T10:41:56.1725800Z   Downloaded gethostname v1.1.0
+2026-09-26T10:41:56.1746040Z   Downloaded errno v0.3.14
+2026-09-26T10:41:56.1778520Z   Downloaded byteorder-lite v0.1.0
+2026-09-26T10:41:56.1797580Z   Downloaded smithay-client-toolkit v0.19.2
+2026-09-26T10:41:56.1913680Z   Downloaded tracing-attributes v0.1.31
+2026-09-26T10:41:56.1958950Z   Downloaded metal v0.32.0
+2026-09-26T10:41:56.2362820Z   Downloaded xcursor v0.3.11
+2026-09-26T10:41:56.2390790Z   Downloaded wayland-cursor v0.31.14
+2026-09-26T10:41:56.2412360Z   Downloaded wayland-protocols-wlr v0.3.12
+2026-09-26T10:41:56.2484050Z   Downloaded smol_str v0.2.2
+2026-09-26T10:41:56.2520900Z   Downloaded ash v0.38.0+1.3.281
+2026-09-26T10:41:56.2800080Z   Downloaded icu_normalizer v2.3.0
+2026-09-26T10:41:56.2947160Z   Downloaded khronos_api v3.1.0
+2026-09-26T10:41:56.3218340Z   Downloaded web-sys v0.3.105
+2026-09-26T10:41:56.6069370Z   Downloaded accesskit_windows v0.29.2
+2026-09-26T10:41:56.6114720Z   Downloaded tracing v0.1.44
+2026-09-26T10:41:56.6392120Z   Downloaded unicode-segmentation v1.13.3
+2026-09-26T10:41:56.6459610Z   Downloaded windows-sys v0.52.0
+2026-09-26T10:41:56.7333020Z   Downloaded wgpu-core v27.0.3
+2026-09-26T10:41:56.7475120Z   Downloaded windows_i686_gnullvm v0.52.6
+2026-09-26T10:41:56.7566900Z   Downloaded windows-result v0.3.4
+2026-09-26T10:41:56.7594660Z   Downloaded windows-link v0.1.3
+2026-09-26T10:41:56.7612440Z   Downloaded windows-strings v0.4.2
+2026-09-26T10:41:56.7647160Z   Downloaded windows-core v0.61.2
+2026-09-26T10:41:56.7696590Z   Downloaded accesskit_winit v0.29.2
+2026-09-26T10:41:56.7725540Z   Downloaded error-code v3.4.0
+2026-09-26T10:41:56.7745400Z   Downloaded tracing-core v0.1.36
+2026-09-26T10:41:56.7791020Z   Downloaded find-msvc-tools v0.1.12
+2026-09-26T10:41:56.7821410Z   Downloaded r-efi v6.0.0
+2026-09-26T10:41:56.7912180Z   Downloaded getrandom v0.4.3
+2026-09-26T10:41:56.7971500Z   Downloaded jobserver v0.1.35
+2026-09-26T10:41:56.8004090Z   Downloaded shlex v2.0.1
+2026-09-26T10:41:56.8026010Z   Downloaded cc v1.4.6
+2026-09-26T10:41:56.8075190Z   Downloaded downcast-rs v1.2.1
+2026-09-26T10:41:56.8097350Z   Downloaded scoped-tls v1.0.1
+2026-09-26T10:41:56.8113490Z   Downloaded wayland-sys v0.31.11
+2026-09-26T10:41:56.8133230Z   Downloaded wayland-backend v0.3.17
+2026-09-26T10:41:56.8199200Z   Downloaded wayland-client v0.31.15
+2026-09-26T10:41:56.8321130Z   Downloaded wayland-protocols v0.32.13
+2026-09-26T10:41:56.8462290Z   Downloaded clipboard-win v5.4.1
+2026-09-26T10:41:56.8497410Z   Downloaded arboard v3.6.1
+2026-09-26T10:41:56.8554090Z   Downloaded wayland-protocols-experimental v20250721.0.1
+2026-09-26T10:41:56.8599210Z   Downloaded wayland-protocols-misc v0.3.12
+2026-09-26T10:41:56.8629000Z   Downloaded linux-raw-sys v0.12.1
+2026-09-26T10:41:56.9845890Z   Downloaded icu_collections v2.3.0
+2026-09-26T10:41:56.9971520Z   Downloaded icu_properties_data v2.3.0
+2026-09-26T10:41:57.0181180Z   Downloaded litemap v0.8.3
+2026-09-26T10:41:57.0223450Z   Downloaded windows_aarch64_gnullvm v0.52.6
+2026-09-26T10:41:57.0342210Z   Downloaded windows_x86_64_gnullvm v0.52.6
+2026-09-26T10:41:57.0448470Z   Downloaded calloop-wayland-source v0.4.1
+2026-09-26T10:41:57.0476380Z   Downloaded tinystr v0.8.4
+2026-09-26T10:41:57.0510290Z   Downloaded icu_locale_core v2.3.0
+2026-09-26T10:41:57.0630810Z   Downloaded writeable v0.6.4
+2026-09-26T10:41:57.0665770Z   Downloaded icu_provider v2.3.1
+2026-09-26T10:41:57.0718800Z   Downloaded displaydoc v0.2.7
+2026-09-26T10:41:57.0763390Z   Downloaded zerotrie v0.2.5
+2026-09-26T10:41:57.0838810Z   Downloaded stable_deref_trait v1.2.1
+2026-09-26T10:41:57.0855700Z   Downloaded yoke v0.8.3
+2026-09-26T10:41:57.0896540Z   Downloaded synstructure v0.14.0
+2026-09-26T10:41:57.0907590Z   Downloaded memmap2 v0.9.11
+2026-09-26T10:41:57.0937510Z   Downloaded xkeysym v0.2.1
+2026-09-26T10:41:57.0978370Z   Downloaded zbus v5.19.0
+2026-09-26T10:41:57.1154200Z   Downloaded epaint_default_fonts v0.33.3
+2026-09-26T10:41:57.1263080Z   Downloaded orbclient v0.3.55
+2026-09-26T10:41:57.1492220Z   Downloaded ndk-sys v0.6.0+11769913
+2026-09-26T10:41:57.1584870Z   Downloaded syn v2.0.119
+2026-09-26T10:41:57.1779560Z   Downloaded wgpu-hal v27.0.4
+2026-09-26T10:41:57.2067150Z   Downloaded syn v3.0.5
+2026-09-26T10:41:57.2199010Z   Downloaded zerofrom-derive v0.1.8
+2026-09-26T10:41:57.2222850Z   Downloaded calloop-wayland-source v0.3.0
+2026-09-26T10:41:57.2258880Z   Downloaded rustix v1.1.4
+2026-09-26T10:41:57.3268950Z   Downloaded x11rb-protocol v0.13.2
+2026-09-26T10:41:57.3521410Z   Downloaded egui-wgpu v0.33.3
+2026-09-26T10:41:57.3600170Z   Downloaded zlib-rs v0.6.8
+2026-09-26T10:41:57.3700900Z   Downloaded chrono v0.4.45
+2026-09-26T10:41:57.3782880Z   Downloaded windows v0.61.3
+2026-09-26T10:41:57.7960070Z   Downloaded objc2-app-kit v0.3.2
+2026-09-26T10:41:57.8622870Z   Downloaded objc2-foundation v0.3.2
+2026-09-26T10:41:57.9041830Z   Downloaded egui v0.33.3
+2026-09-26T10:41:57.9249730Z   Downloaded simd_cesu8 v1.2.0
+2026-09-26T10:41:57.9327750Z   Downloaded android-activity v0.6.1
+2026-09-26T10:41:57.9449600Z   Downloaded objc2-app-kit v0.2.2
+2026-09-26T10:41:57.9900050Z   Downloaded objc2-ui-kit v0.2.2
+2026-09-26T10:41:58.0563350Z   Downloaded unicode-width v0.2.2
+2026-09-26T10:41:58.0648720Z   Downloaded zerocopy v0.8.58
+2026-09-26T10:41:58.1030660Z   Downloaded dlib v0.5.3
+2026-09-26T10:41:58.1062200Z   Downloaded xkbcommon-dl v0.4.2
+2026-09-26T10:41:58.1087610Z   Downloaded android_system_properties v0.1.6
+2026-09-26T10:41:58.1130040Z   Downloaded gl_generator v0.14.0
+2026-09-26T10:41:58.1166570Z   Downloaded glutin_wgl_sys v0.6.1
+2026-09-26T10:41:58.1186560Z   Downloaded tempfile v3.27.0
+2026-09-26T10:41:58.1265770Z   Downloaded uuid v1.26.1
+2026-09-26T10:41:58.1327070Z   Downloaded zbus_macros v5.19.0
+2026-09-26T10:41:58.1353450Z   Downloaded zvariant v5.15.0
+2026-09-26T10:41:58.1544440Z   Downloaded accesskit_unix v0.17.2
+2026-09-26T10:41:58.1584640Z   Downloaded accesskit_consumer v0.31.0
+2026-09-26T10:41:58.1613000Z   Downloaded glow v0.16.0
+2026-09-26T10:41:58.1685550Z   Downloaded objc2 v0.6.4
+2026-09-26T10:41:58.1957000Z   Downloaded objc2-core-foundation v0.3.2
+2026-09-26T10:41:58.2734480Z   Downloaded ttf-parser v0.25.1
+2026-09-26T10:41:58.2919660Z   Downloaded jni v0.22.4
+2026-09-26T10:41:58.3052410Z   Downloaded winnow v1.0.4
+2026-09-26T10:41:58.3238570Z   Downloaded objc2 v0.5.2
+2026-09-26T10:41:58.3380290Z   Downloaded objc2-foundation v0.2.2
+2026-09-26T10:41:58.3767190Z   Downloaded portable-atomic v1.15.0
+2026-09-26T10:41:58.3955900Z   Downloaded wgpu v27.0.1
+2026-09-26T10:41:58.4279970Z   Downloaded fastrand v2.5.0
+2026-09-26T10:41:58.4317280Z   Downloaded uds_windows v1.2.1
+2026-09-26T10:41:58.4352110Z   Downloaded sha1_smol v1.0.1
+2026-09-26T10:41:58.4378590Z   Downloaded zbus_names v4.3.4
+2026-09-26T10:41:58.4413200Z   Downloaded endi v1.1.1
+2026-09-26T10:41:58.4446860Z   Downloaded enumflags2_derive v0.7.12
+2026-09-26T10:41:58.4461750Z   Downloaded enumflags2 v0.7.12
+2026-09-26T10:41:58.4488890Z   Downloaded zcheapstr v1.1.0
+2026-09-26T10:41:58.4525920Z   Downloaded zvariant_derive v5.15.0
+2026-09-26T10:41:58.4551420Z   Downloaded zvariant_utils v4.2.0
+2026-09-26T10:41:58.4587160Z   Downloaded windows-collections v0.2.0
+2026-09-26T10:41:58.4614600Z   Downloaded smithay-client-toolkit v0.20.0
+2026-09-26T10:41:58.5160530Z   Downloaded png v0.18.1
+2026-09-26T10:41:58.5239850Z   Downloaded zune-jpeg v0.5.15
+2026-09-26T10:41:58.5309000Z   Downloaded zerovec v0.11.8
+2026-09-26T10:41:58.5417480Z   Downloaded icu_properties v2.3.0
+2026-09-26T10:41:58.5511770Z   Downloaded idna v1.1.0
+2026-09-26T10:41:58.5593790Z   Downloaded eframe v0.33.3
+2026-09-26T10:41:58.5706550Z   Downloaded epaint v0.33.3
+2026-09-26T10:41:58.5780560Z   Downloaded wasip2 v1.0.4+wasi-0.2.12
+2026-09-26T10:41:58.5853950Z   Downloaded combine v4.6.8
+2026-09-26T10:41:58.5941420Z   Downloaded toml_edit v0.25.15+spec-1.1.0
+2026-09-26T10:41:58.6024730Z   Downloaded ndk v0.9.0
+2026-09-26T10:41:58.6112960Z   Downloaded zerocopy-derive v0.8.58
+2026-09-26T10:41:58.6391920Z   Downloaded hashbrown v0.16.1
+2026-09-26T10:41:58.6480810Z   Downloaded hashbrown v0.17.1
+2026-09-26T10:41:58.6573830Z   Downloaded libm v0.2.16
+2026-09-26T10:41:58.6795730Z   Downloaded futures-util v0.3.34
+2026-09-26T10:41:58.7090720Z   Downloaded ordered-stream v0.2.0
+2026-09-26T10:41:58.7112960Z   Downloaded icu_normalizer_data v2.3.0
+2026-09-26T10:41:58.7152930Z   Downloaded potential_utf v0.1.6
+2026-09-26T10:41:58.7170850Z   Downloaded polling v3.11.0
+2026-09-26T10:41:58.7357580Z   Downloaded calloop v0.13.0
+2026-09-26T10:41:58.7449790Z   Downloaded miniz_oxide v0.8.9
+2026-09-26T10:41:58.7499520Z   Downloaded miniz_oxide v0.9.1
+2026-09-26T10:41:58.7540970Z   Downloaded flate2 v1.1.10
+2026-09-26T10:41:58.7666160Z   Downloaded slotmap v1.1.1
+2026-09-26T10:41:58.7697900Z   Downloaded num-bigint v0.4.8
+2026-09-26T10:41:58.7772780Z   Downloaded typenum v1.20.1
+2026-09-26T10:41:58.7832910Z   Downloaded url v2.5.8
+2026-09-26T10:41:58.7871180Z   Downloaded webbrowser v1.2.4
+2026-09-26T10:41:58.7938330Z   Downloaded objc2-core-graphics v0.3.2
+2026-09-26T10:41:58.8052510Z   Downloaded dispatch2 v0.3.1
+2026-09-26T10:41:58.8096020Z   Downloaded glutin v0.32.3
+2026-09-26T10:41:58.8166650Z   Downloaded accesskit v0.21.1
+2026-09-26T10:41:58.8185340Z   Downloaded emath v0.33.3
+2026-09-26T10:41:58.8219190Z   Downloaded r-efi v5.3.0
+2026-09-26T10:41:58.8319400Z   Downloaded wit-bindgen v0.57.1
+2026-09-26T10:41:58.8395160Z   Downloaded getrandom v0.3.4
+2026-09-26T10:41:58.8483910Z   Downloaded bytes v1.12.1
+2026-09-26T10:41:58.8562100Z   Downloaded jni-macros v0.22.4
+2026-09-26T10:41:58.8591810Z   Downloaded semver v1.0.28
+2026-09-26T10:41:58.8642820Z   Downloaded simdutf8 v0.1.5
+2026-09-26T10:41:58.8691810Z   Downloaded toml_parser v1.1.3+spec-1.1.0
+2026-09-26T10:41:58.8778980Z   Downloaded objc2-metal v0.2.2
+2026-09-26T10:41:58.8922320Z   Downloaded objc2-contacts v0.2.2
+2026-09-26T10:41:58.9050140Z   Downloaded redox_syscall v0.9.4
+2026-09-26T10:41:58.9117510Z   Downloaded pin-project v1.1.13
+2026-09-26T10:41:58.9474440Z   Downloaded serde v1.0.229
+2026-09-26T10:41:58.9563130Z   Downloaded indexmap v2.14.2
+2026-09-26T10:41:58.9657820Z   Downloaded js-sys v0.3.105
+2026-09-26T10:41:58.9713620Z   Downloaded wasm-bindgen-macro-support v0.2.128
+2026-09-26T10:41:58.9769190Z   Downloaded wasm-bindgen v0.2.128
+2026-09-26T10:41:58.9823810Z   Downloaded wgpu-types v27.0.1
+2026-09-26T10:41:58.9880600Z   Downloaded hex v0.4.3
+2026-09-26T10:41:58.9925030Z   Downloaded smithay-clipboard v0.7.3
+2026-09-26T10:41:58.9960840Z   Downloaded zerovec-derive v0.11.6
+2026-09-26T10:41:59.0003590Z   Downloaded cursor-icon v1.2.0
+2026-09-26T10:41:59.0037930Z   Downloaded fdeflate v0.3.7
+2026-09-26T10:41:59.0073490Z   Downloaded fax v0.2.7
+2026-09-26T10:41:59.0114130Z   Downloaded crc32fast v1.5.2
+2026-09-26T10:41:59.0149090Z   Downloaded simd-adler32 v0.3.10
+2026-09-26T10:41:59.0182720Z   Downloaded quick-error v2.0.1
+2026-09-26T10:41:59.0201950Z   Downloaded weezl v0.1.12
+2026-09-26T10:41:59.0241660Z   Downloaded zune-core v0.5.3
+2026-09-26T10:41:59.0381500Z   Downloaded xml-rs v0.8.29
+2026-09-26T10:41:59.0433970Z   Downloaded windows-core v0.62.2
+2026-09-26T10:41:59.0485030Z   Downloaded libsqlite3-sys v0.35.0
+2026-09-26T10:41:59.1190940Z   Downloaded iana-time-zone v0.1.65
+2026-09-26T10:41:59.1265730Z   Downloaded egui-winit v0.33.3
+2026-09-26T10:41:59.1287260Z   Downloaded egui_glow v0.33.3
+2026-09-26T10:41:59.1312510Z   Downloaded ab_glyph v0.2.32
+2026-09-26T10:41:59.1336000Z   Downloaded ecolor v0.33.3
+2026-09-26T10:41:59.1364140Z   Downloaded ahash v0.8.12
+2026-09-26T10:41:59.1402410Z   Downloaded walkdir v2.5.0
+2026-09-26T10:41:59.1430970Z   Downloaded core-foundation v0.9.4
+2026-09-26T10:41:59.1467870Z   Downloaded core-graphics v0.23.2
+2026-09-26T10:41:59.1508980Z   Downloaded toml_datetime v1.1.1+spec-1.1.0
+2026-09-26T10:41:59.1529450Z   Downloaded num_enum_derive v0.7.6
+2026-09-26T10:41:59.1559260Z   Downloaded num_enum v0.7.6
+2026-09-26T10:41:59.1700290Z   Downloaded objc2-cloud-kit v0.2.2
+2026-09-26T10:41:59.1787960Z   Downloaded objc2-core-data v0.2.2
+2026-09-26T10:41:59.1893330Z   Downloaded objc2-quartz-core v0.2.2
+2026-09-26T10:41:59.1959010Z   Downloaded block2 v0.5.1
+2026-09-26T10:41:59.1982980Z   Downloaded objc2-encode v4.1.0
+2026-09-26T10:41:59.2012720Z   Downloaded libredox v0.1.25
+2026-09-26T10:41:59.2030730Z   Downloaded pin-project-internal v1.1.13
+2026-09-26T10:41:59.2063240Z   Downloaded bitflags v1.3.2
+2026-09-26T10:41:59.2126480Z   Downloaded half v2.7.1
+2026-09-26T10:41:59.2191550Z   Downloaded windows-core v0.58.0
+2026-09-26T10:41:59.2261450Z   Downloaded bitflags v2.13.2
+2026-09-26T10:41:59.2367520Z   Downloaded log v0.4.34
+2026-09-26T10:41:59.2417620Z   Downloaded bumpalo v3.20.3
+2026-09-26T10:41:59.2468870Z   Downloaded proc-macro2 v1.0.107
+2026-09-26T10:41:59.2531730Z   Downloaded zerofrom v0.1.8
+2026-09-26T10:41:59.2568330Z   Downloaded adler2 v2.0.1
+2026-09-26T10:41:59.2595550Z   Downloaded version_check v0.9.5
+2026-09-26T10:41:59.2624540Z   Downloaded windows-strings v0.5.1
+2026-09-26T10:41:59.2656920Z   Downloaded fallible-iterator v0.3.0
+2026-09-26T10:41:59.2692570Z   Downloaded anstyle-query v1.1.5
+2026-09-26T10:41:59.2718430Z   Downloaded utf8_iter v1.0.4
+2026-09-26T10:41:59.2736920Z   Downloaded memoffset v0.9.1
+2026-09-26T10:41:59.2767810Z   Downloaded glutin_egl_sys v0.7.1
+2026-09-26T10:41:59.2783030Z   Downloaded objc2-io-surface v0.3.2
+2026-09-26T10:41:59.2810600Z   Downloaded glutin-winit v0.5.0
+2026-09-26T10:41:59.2835730Z   Downloaded ab_glyph_rasterizer v0.1.10
+2026-09-26T10:41:59.2876300Z   Downloaded owned_ttf_parser v0.25.1
+2026-09-26T10:41:59.2892170Z   Downloaded nohash-hasher v0.2.0
+2026-09-26T10:41:59.2906280Z   Downloaded rustc-hash v2.1.3
+2026-09-26T10:41:59.2933570Z   Downloaded type-map v0.5.1
+2026-09-26T10:41:59.2946600Z   Downloaded rustc_version v0.4.1
+2026-09-26T10:41:59.2968360Z   Downloaded same-file v1.0.6
+2026-09-26T10:41:59.2993590Z   Downloaded ndk-context v0.1.1
+2026-09-26T10:41:59.3003170Z   Downloaded atomic-waker v1.1.2
+2026-09-26T10:41:59.3024130Z   Downloaded dpi v0.1.2
+2026-09-26T10:41:59.3039900Z   Downloaded proc-macro-crate v3.5.0
+2026-09-26T10:41:59.3065890Z   Downloaded objc2-link-presentation v0.2.2
+2026-09-26T10:41:59.3084360Z   Downloaded arrayvec v0.7.8
+2026-09-26T10:41:59.3117420Z   Downloaded serde_core v1.0.229
+2026-09-26T10:41:59.3160730Z   Downloaded serde_derive v1.0.229
+2026-09-26T10:41:59.3223900Z   Downloaded codespan-reporting v0.12.0
+2026-09-26T10:41:59.3373760Z   Downloaded num-traits v0.2.19
+2026-09-26T10:41:59.3413740Z   Downloaded portable-atomic-util v0.2.8
+2026-09-26T10:41:59.3441560Z   Downloaded bytemuck v1.25.2
+2026-09-26T10:41:59.3495590Z   Downloaded idna_adapter v1.2.2
+2026-09-26T10:41:59.3507390Z   Downloaded pollster v0.4.0
+2026-09-26T10:41:59.3532160Z   Downloaded android-properties v0.2.2
+2026-09-26T10:41:59.3554870Z   Downloaded lock_api v0.4.14
+2026-09-26T10:41:59.3572550Z   Downloaded parking_lot_core v0.9.12
+2026-09-26T10:41:59.3604200Z   Downloaded parking_lot v0.12.5
+2026-09-26T10:41:59.3645810Z   Downloaded thiserror-impl v2.0.20
+2026-09-26T10:41:59.3668010Z   Downloaded ordered-float v5.5.0
+2026-09-26T10:41:59.3690720Z   Downloaded pin-project-lite v0.2.17
+2026-09-26T10:41:59.3790980Z   Downloaded once_cell v1.21.4
+2026-09-26T10:41:59.3825990Z   Downloaded unicode-ident v1.0.24
+2026-09-26T10:41:59.3867160Z   Downloaded cgl v0.3.2
+2026-09-26T10:41:59.3882180Z   Downloaded glutin_glx_sys v0.6.1
+2026-09-26T10:41:59.3892680Z   Downloaded objc2-user-notifications v0.2.2
+2026-09-26T10:41:59.3920310Z   Downloaded plain v0.2.3
+2026-09-26T10:41:59.3940760Z   Downloaded paste v1.0.15
+2026-09-26T10:41:59.3999420Z   Downloaded bit-vec v0.8.0
+2026-09-26T10:41:59.4022180Z   Downloaded foldhash v0.2.0
+2026-09-26T10:41:59.4041350Z   Downloaded hexf-parse v0.2.1
+2026-09-26T10:41:59.4049100Z   Downloaded equivalent v1.0.2
+2026-09-26T10:41:59.4063140Z   Downloaded spirv v0.3.0+sdk-1.3.268.0
+2026-09-26T10:41:59.4078180Z   Downloaded objc v0.2.7
+2026-09-26T10:41:59.4116750Z   Downloaded autocfg v1.5.1
+2026-09-26T10:41:59.4147400Z   Downloaded scopeguard v1.2.0
+2026-09-26T10:41:59.4163610Z   Downloaded redox_syscall v0.5.18
+2026-09-26T10:41:59.4201060Z   Downloaded raw-window-handle v0.6.2
+2026-09-26T10:41:59.4231170Z   Downloaded smallvec v1.16.1
+2026-09-26T10:41:59.4253570Z   Downloaded windows-strings v0.1.0
+2026-09-26T10:41:59.4288580Z   Downloaded bytemuck_derive v1.12.1
+2026-09-26T10:41:59.4331270Z   Downloaded slab v0.4.12
+2026-09-26T10:41:59.4345430Z   Downloaded rustversion v1.0.23
+2026-09-26T10:41:59.4415670Z   Downloaded quote v1.0.47
+2026-09-26T10:41:59.4482090Z   Downloaded wasm-bindgen-shared v0.2.128
+2026-09-26T10:41:59.4505920Z   Downloaded objc2-uniform-type-identifiers v0.2.2
+2026-09-26T10:41:59.4528840Z   Downloaded objc-sys v0.3.5
+2026-09-26T10:41:59.4565550Z   Downloaded redox_syscall v0.4.1
+2026-09-26T10:41:59.4625230Z   Downloaded windows-interface v0.58.0
+2026-09-26T10:41:59.4638390Z   Downloaded thiserror v2.0.20
+2026-09-26T10:41:59.4844660Z   Downloaded dispatch v0.2.0
+2026-09-26T10:41:59.4870930Z   Downloaded crossbeam-utils v0.8.23
+2026-09-26T10:41:59.4932690Z   Downloaded foreign-types-macros v0.2.4
+2026-09-26T10:41:59.4950570Z   Downloaded foreign-types-shared v0.3.1
+2026-09-26T10:41:59.4984990Z   Downloaded cfg_aliases v0.2.2
+2026-09-26T10:41:59.5008980Z   Downloaded crunchy v0.2.4
+2026-09-26T10:41:59.5028230Z   Downloaded jni-sys v0.4.1
+2026-09-26T10:41:59.5057020Z   Downloaded jni-sys v0.3.1
+2026-09-26T10:41:59.5077780Z   Downloaded malloc_buf v0.0.6
+2026-09-26T10:41:59.5083930Z   Downloaded profiling v1.0.18
+2026-09-26T10:41:59.5114230Z   Downloaded renderdoc-sys v1.1.0
+2026-09-26T10:41:59.5132670Z   Downloaded windows-implement v0.58.0
+2026-09-26T10:41:59.5154630Z   Downloaded windows-result v0.2.0
+2026-09-26T10:41:59.5189500Z   Downloaded windows-targets v0.52.6
+2026-09-26T10:41:59.5208270Z   Downloaded futures-core v0.3.34
+2026-09-26T10:41:59.5236160Z   Downloaded foreign-types v0.5.0
+2026-09-26T10:41:59.5253290Z   Downloaded bit-set v0.8.0
+2026-09-26T10:41:59.5286090Z   Downloaded winapi-util v0.1.11
+2026-09-26T10:41:59.5338840Z   Downloaded futures-macro v0.3.34
+2026-09-26T10:41:59.5381790Z   Downloaded core-graphics-types v0.2.0
+2026-09-26T10:41:59.5392930Z   Downloaded jni-sys-macros v0.4.1
+2026-09-26T10:41:59.5406230Z   Downloaded futures-task v0.3.34
+2026-09-26T10:41:59.5433150Z   Downloaded cfg-if v1.0.5
+2026-09-26T10:41:59.5456750Z   Downloaded wasm-bindgen-macro v0.2.128
+2026-09-26T10:41:59.5537320Z   Downloaded windows v0.58.0
+2026-09-26T10:42:00.1808920Z ##[group]Run cargo build --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target
+2026-09-26T10:42:00.1809870Z [36;1mcargo build --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target[0m
+2026-09-26T10:42:00.1954070Z shell: /bin/bash -e {0}
+2026-09-26T10:42:00.1954600Z env:
+2026-09-26T10:42:00.1955070Z   CARGO_BUILD_JOBS: 2
+2026-09-26T10:42:00.1955500Z   CARGO_INCREMENTAL: 0
+2026-09-26T10:42:00.1956140Z   CARGO_PROFILE_DEV_DEBUG: 0
+2026-09-26T10:42:00.1956650Z ##[endgroup]
+2026-09-26T10:42:00.7667720Z    Compiling proc-macro2 v1.0.107
+2026-09-26T10:42:00.7669330Z    Compiling unicode-ident v1.0.24
+2026-09-26T10:42:01.2422700Z    Compiling quote v1.0.47
+2026-09-26T10:42:04.2538070Z    Compiling libc v0.2.189
+2026-09-26T10:42:05.0103110Z    Compiling syn v3.0.5
+2026-09-26T10:42:05.0431240Z    Compiling cfg-if v1.0.5
+2026-09-26T10:42:05.0597240Z    Compiling autocfg v1.5.1
+2026-09-26T10:42:05.3764100Z    Compiling libm v0.2.16
+2026-09-26T10:42:05.5778970Z    Compiling num-traits v0.2.19
+2026-09-26T10:42:07.1408870Z    Compiling version_check v0.9.5
+2026-09-26T10:42:07.3191420Z    Compiling bitflags v2.13.2
+2026-09-26T10:42:07.4464100Z    Compiling log v0.4.34
+2026-09-26T10:42:07.5471330Z    Compiling thiserror v2.0.20
+2026-09-26T10:42:07.7470010Z    Compiling simd-adler32 v0.3.10
+2026-09-26T10:42:07.8578350Z    Compiling crc32fast v1.5.2
+2026-09-26T10:42:07.9768010Z    Compiling serde_core v1.0.229
+2026-09-26T10:42:08.1644030Z    Compiling generic-array v0.14.7
+2026-09-26T10:42:08.2782100Z    Compiling adler2 v2.0.1
+2026-09-26T10:42:08.7033230Z    Compiling thiserror-impl v2.0.20
+2026-09-26T10:42:09.7054620Z    Compiling displaydoc v0.2.7
+2026-09-26T10:42:10.1032680Z    Compiling core-foundation-sys v0.8.7
+2026-09-26T10:42:10.1292620Z    Compiling hashbrown v0.17.1
+2026-09-26T10:42:10.1986930Z    Compiling typenum v1.20.1
+2026-09-26T10:42:10.4303520Z    Compiling equivalent v1.0.2
+2026-09-26T10:42:10.4496740Z    Compiling indexmap v2.14.2
+2026-09-26T10:42:10.8190480Z    Compiling miniz_oxide v0.9.1
+2026-09-26T10:42:10.8916890Z    Compiling serde v1.0.229
+2026-09-26T10:42:11.0459110Z    Compiling getrandom v0.4.3
+2026-09-26T10:42:11.1713490Z    Compiling flate2 v1.1.10
+2026-09-26T10:42:11.2593730Z    Compiling serde_derive v1.0.229
+2026-09-26T10:42:11.4345620Z    Compiling cfg_aliases v0.2.2
+2026-09-26T10:42:11.4519610Z    Compiling zmij v1.0.23
+2026-09-26T10:42:11.6866120Z    Compiling block-buffer v0.10.4
+2026-09-26T10:42:11.7673110Z    Compiling crypto-common v0.1.7
+2026-09-26T10:42:11.8079070Z    Compiling synstructure v0.14.0
+2026-09-26T10:42:12.5761100Z    Compiling memchr v2.8.3
+2026-09-26T10:42:12.8890620Z    Compiling smallvec v1.16.1
+2026-09-26T10:42:12.9888270Z    Compiling serde_json v1.0.151
+2026-09-26T10:42:13.0792100Z    Compiling digest v0.10.7
+2026-09-26T10:42:13.3606620Z    Compiling num-integer v0.1.47
+2026-09-26T10:42:13.5508500Z    Compiling cpufeatures v0.2.17
+2026-09-26T10:42:13.5793590Z    Compiling sha1_smol v1.0.1
+2026-09-26T10:42:13.6684610Z    Compiling itoa v1.0.18
+2026-09-26T10:42:13.9156940Z    Compiling num-bigint v0.4.8
+2026-09-26T10:42:14.5487250Z    Compiling uuid v1.26.1
+2026-09-26T10:42:14.7900990Z    Compiling sha2 v0.10.9
+2026-09-26T10:42:14.8771380Z    Compiling zerofrom-derive v0.1.8
+2026-09-26T10:42:14.9301770Z    Compiling syn v2.0.119
+2026-09-26T10:42:15.6352590Z    Compiling objc2-encode v4.1.0
+2026-09-26T10:42:15.8444920Z    Compiling zerocopy v0.8.58
+2026-09-26T10:42:16.0562710Z    Compiling zerofrom v0.1.8
+2026-09-26T10:42:16.1054040Z    Compiling agq-kernel v0.1.0 (/Users/runner/work/agentique/agentique/crates/kernel)
+2026-09-26T10:42:17.4783260Z    Compiling zerocopy-derive v0.8.58
+2026-09-26T10:42:18.5871660Z    Compiling yoke-derive v0.8.3
+2026-09-26T10:42:19.1997920Z    Compiling stable_deref_trait v1.2.1
+2026-09-26T10:42:19.2195630Z    Compiling yoke v0.8.3
+2026-09-26T10:42:20.5767300Z    Compiling bytemuck_derive v1.12.1
+2026-09-26T10:42:21.2940430Z    Compiling zip v2.4.2
+2026-09-26T10:42:21.3780400Z    Compiling bumpalo v3.20.3
+2026-09-26T10:42:21.4929020Z    Compiling zopfli v0.8.3
+2026-09-26T10:42:21.8790420Z    Compiling bytemuck v1.25.2
+2026-09-26T10:42:21.9641660Z    Compiling zerovec-derive v0.11.6
+2026-09-26T10:42:22.0280090Z    Compiling once_cell v1.21.4
+2026-09-26T10:42:22.5936660Z    Compiling zerovec v0.11.8
+2026-09-26T10:42:22.8243930Z    Compiling agq-kerml v0.1.0 (/Users/runner/work/agentique/agentique/crates/kerml)
+2026-09-26T10:42:23.0058540Z    Compiling foreign-types-macros v0.2.4
+2026-09-26T10:42:23.3739610Z    Compiling objc-sys v0.3.5
+2026-09-26T10:42:23.4892360Z    Compiling parking_lot_core v0.9.12
+2026-09-26T10:42:23.5814250Z    Compiling foreign-types-shared v0.3.1
+2026-09-26T10:42:23.6009240Z    Compiling foreign-types v0.5.0
+2026-09-26T10:42:23.6273490Z    Compiling agq-standard-libraries v0.1.0 (/Users/runner/work/agentique/agentique/crates/standard-libraries)
+2026-09-26T10:42:24.3601790Z    Compiling half v2.7.1
+2026-09-26T10:42:24.6304830Z    Compiling agq-sysml v0.1.0 (/Users/runner/work/agentique/agentique/crates/sysml)
+2026-09-26T10:42:26.3724710Z    Compiling agq-kerml-semantics v0.1.0 (/Users/runner/work/agentique/agentique/crates/kerml-semantics)
+2026-09-26T10:42:29.7923970Z    Compiling scopeguard v1.2.0
+2026-09-26T10:42:29.8251030Z    Compiling lock_api v0.4.14
+2026-09-26T10:42:30.1840860Z    Compiling tinystr v0.8.4
+2026-09-26T10:42:30.2981760Z    Compiling agq-sysml-semantics v0.1.0 (/Users/runner/work/agentique/agentique/crates/sysml-semantics)
+2026-09-26T10:42:31.3877940Z    Compiling agq-kerml-syntax v0.1.0 (/Users/runner/work/agentique/agentique/crates/kerml-syntax)
+2026-09-26T10:42:32.6130240Z    Compiling foldhash v0.1.5
+2026-09-26T10:42:32.6795960Z    Compiling objc2 v0.6.4
+2026-09-26T10:42:32.8110620Z    Compiling litemap v0.8.3
+2026-09-26T10:42:32.9196100Z    Compiling writeable v0.6.4
+2026-09-26T10:42:33.0309910Z    Compiling icu_locale_core v2.3.0
+2026-09-26T10:42:34.0285300Z    Compiling hashbrown v0.15.5
+2026-09-26T10:42:34.5767140Z    Compiling agq-kerml-text v0.1.0 (/Users/runner/work/agentique/agentique/crates/kerml-text)
+2026-09-26T10:42:36.5341590Z    Compiling parking_lot v0.12.5
+2026-09-26T10:42:36.7721060Z    Compiling objc2 v0.5.2
+2026-09-26T10:42:37.5137460Z    Compiling potential_utf v0.1.6
+2026-09-26T10:42:37.5869560Z    Compiling zerotrie v0.2.5
+2026-09-26T10:42:37.8282210Z    Compiling paste v1.0.15
+2026-09-26T10:42:37.9931860Z    Compiling raw-window-handle v0.6.2
+2026-09-26T10:42:38.1161920Z    Compiling utf8_iter v1.0.4
+2026-09-26T10:42:38.1646340Z    Compiling icu_properties_data v2.3.0
+2026-09-26T10:42:38.2698330Z    Compiling icu_normalizer_data v2.3.0
+2026-09-26T10:42:38.3744090Z    Compiling profiling v1.0.18
+2026-09-26T10:42:38.4126420Z    Compiling icu_collections v2.3.0
+2026-09-26T10:42:38.7892470Z    Compiling icu_provider v2.3.1
+2026-09-26T10:42:38.9453290Z    Compiling block2 v0.5.1
+2026-09-26T10:42:40.0202450Z    Compiling naga v27.0.3
+2026-09-26T10:42:40.2113700Z    Compiling core-foundation v0.10.1
+2026-09-26T10:42:40.4629500Z    Compiling malloc_buf v0.0.6
+2026-09-26T10:42:40.4972190Z    Compiling unicode-width v0.2.2
+2026-09-26T10:42:40.6667220Z    Compiling bit-vec v0.8.0
+2026-09-26T10:42:40.8074490Z    Compiling dispatch v0.2.0
+2026-09-26T10:42:40.8973540Z    Compiling foldhash v0.2.0
+2026-09-26T10:42:40.9733650Z    Compiling hashbrown v0.16.1
+2026-09-26T10:42:41.3428280Z    Compiling objc2-foundation v0.2.2
+2026-09-26T10:42:44.2104270Z    Compiling bit-set v0.8.0
+2026-09-26T10:42:44.2883400Z    Compiling codespan-reporting v0.12.0
+2026-09-26T10:42:44.5660570Z    Compiling objc v0.2.7
+2026-09-26T10:42:44.8015460Z    Compiling core-graphics-types v0.2.0
+2026-09-26T10:42:44.8907900Z    Compiling objc2-core-foundation v0.3.2
+2026-09-26T10:42:45.6689510Z    Compiling agq-modeling-workspace v0.1.0 (/Users/runner/work/agentique/agentique/crates/modeling-workspace)
+2026-09-26T10:42:45.8656430Z    Compiling wgpu-hal v27.0.4
+2026-09-26T10:42:46.0469570Z    Compiling core-foundation v0.9.4
+2026-09-26T10:42:46.0636820Z    Compiling ahash v0.8.12
+2026-09-26T10:42:46.1963210Z    Compiling hexf-parse v0.2.1
+2026-09-26T10:42:46.2803030Z    Compiling rustc-hash v1.1.0
+2026-09-26T10:42:46.3202020Z    Compiling shlex v2.0.1
+2026-09-26T10:42:46.3305400Z    Compiling arrayvec v0.7.8
+2026-09-26T10:42:46.4425310Z    Compiling bitflags v1.3.2
+2026-09-26T10:42:46.4693430Z    Compiling accesskit v0.21.1
+2026-09-26T10:42:46.4696860Z    Compiling block v0.1.6
+2026-09-26T10:42:46.5226660Z    Compiling ttf-parser v0.25.1
+2026-09-26T10:42:46.7040970Z    Compiling find-msvc-tools v0.1.12
+2026-09-26T10:42:46.8020470Z    Compiling cc v1.4.6
+2026-09-26T10:42:47.8960060Z    Compiling owned_ttf_parser v0.25.1
+2026-09-26T10:42:48.0084400Z    Compiling metal v0.32.0
+2026-09-26T10:42:48.4247970Z    Compiling core-graphics-types v0.1.3
+2026-09-26T10:42:51.3414680Z    Compiling icu_normalizer v2.3.0
+2026-09-26T10:42:51.7160210Z    Compiling icu_properties v2.3.0
+2026-09-26T10:42:52.5924350Z    Compiling objc2-app-kit v0.2.2
+2026-09-26T10:42:56.2572720Z    Compiling emath v0.33.3
+2026-09-26T10:42:56.4967680Z    Compiling wgpu-types v27.0.1
+2026-09-26T10:42:57.7431200Z    Compiling winit v0.30.13
+2026-09-26T10:42:57.8176480Z    Compiling iana-time-zone v0.1.65
+2026-09-26T10:42:57.8660610Z    Compiling utf8parse v0.2.2
+2026-09-26T10:42:57.9075600Z    Compiling vcpkg v0.2.15
+2026-09-26T10:42:57.9620360Z    Compiling ab_glyph_rasterizer v0.1.10
+2026-09-26T10:42:58.0291420Z    Compiling pin-project-lite v0.2.17
+2026-09-26T10:42:58.0563730Z    Compiling tracing-core v0.1.36
+2026-09-26T10:42:58.3047100Z    Compiling pkg-config v0.3.34
+2026-09-26T10:42:58.3085800Z    Compiling zune-core v0.5.3
+2026-09-26T10:42:58.4393880Z    Compiling zune-jpeg v0.5.15
+2026-09-26T10:42:58.5990340Z    Compiling libsqlite3-sys v0.35.0
+2026-09-26T10:42:58.7812770Z    Compiling tracing v0.1.44
+2026-09-26T10:42:58.8723520Z    Compiling ab_glyph v0.2.32
+2026-09-26T10:42:58.9737880Z    Compiling anstyle-parse v1.0.0
+2026-09-26T10:42:59.0545410Z    Compiling chrono v0.4.45
+2026-09-26T10:43:00.1377840Z    Compiling ecolor v0.33.3
+2026-09-26T10:43:00.3058060Z    Compiling idna_adapter v1.2.2
+2026-09-26T10:43:00.4706450Z    Compiling core-graphics v0.23.2
+2026-09-26T10:43:00.6963900Z    Compiling objc2-foundation v0.3.2
+2026-09-26T10:43:00.7102180Z    Compiling objc2-core-graphics v0.3.2
+2026-09-26T10:43:01.0491730Z    Compiling wgpu-core v27.0.3
+2026-09-26T10:43:01.2652920Z    Compiling miniz_oxide v0.8.9
+2026-09-26T10:43:01.7252720Z    Compiling fdeflate v0.3.7
+2026-09-26T10:43:01.9862070Z    Compiling pxfm v0.1.30
+2026-09-26T10:43:03.0450720Z    Compiling weezl v0.1.12
+2026-09-26T10:43:03.3590190Z    Compiling is_terminal_polyfill v1.70.2
+2026-09-26T10:43:03.4014720Z    Compiling cursor-icon v1.2.0
+2026-09-26T10:43:03.4512160Z    Compiling smol_str v0.2.2
+2026-09-26T10:43:03.5338890Z    Compiling fax v0.2.7
+2026-09-26T10:43:03.6869430Z    Compiling dpi v0.1.2
+2026-09-26T10:43:03.7589870Z    Compiling quick-error v2.0.1
+2026-09-26T10:43:03.7851150Z    Compiling colorchoice v1.0.5
+2026-09-26T10:43:03.8218570Z    Compiling percent-encoding v2.3.2
+2026-09-26T10:43:03.9355010Z    Compiling epaint_default_fonts v0.33.3
+2026-09-26T10:43:03.9413170Z    Compiling anstyle v1.0.14
+2026-09-26T10:43:03.9940020Z    Compiling nohash-hasher v0.2.0
+2026-09-26T10:43:04.0229060Z    Compiling litrs v1.0.0
+2026-09-26T10:43:04.0465060Z    Compiling anstyle-query v1.1.5
+2026-09-26T10:43:04.0793470Z    Compiling rustix v1.1.4
+2026-09-26T10:43:04.3593280Z    Compiling anstream v1.0.0
+2026-09-26T10:43:04.4263630Z    Compiling document-features v0.2.12
+2026-09-26T10:43:04.5502670Z    Compiling epaint v0.33.3
+2026-09-26T10:43:04.7310970Z    Compiling form_urlencoded v1.2.2
+2026-09-26T10:43:04.7968280Z    Compiling tiff v0.11.3
+2026-09-26T10:43:05.9631590Z    Compiling moxcms v0.8.1
+2026-09-26T10:43:07.8540940Z    Compiling objc2-app-kit v0.3.2
+2026-09-26T10:43:08.4927320Z    Compiling png v0.18.1
+2026-09-26T10:43:09.3841600Z    Compiling idna v1.1.0
+2026-09-26T10:43:09.8349920Z    Compiling wgpu-core-deps-apple v27.0.0
+2026-09-26T10:43:09.8519590Z    Compiling agq-modeling-repository v0.1.0 (/Users/runner/work/agentique/agentique/crates/modeling-repository)
+2026-09-26T10:43:10.6430030Z    Compiling accesskit_consumer v0.31.0
+2026-09-26T10:43:11.3266960Z    Compiling wgpu v27.0.1
+2026-09-26T10:43:11.6651990Z    Compiling errno v0.3.14
+2026-09-26T10:43:11.7539580Z    Compiling byteorder-lite v0.1.0
+2026-09-26T10:43:11.9476420Z    Compiling clap_lex v1.1.1
+2026-09-26T10:43:12.0877300Z    Compiling heck v0.5.0
+2026-09-26T10:43:12.2606360Z    Compiling strsim v0.11.1
+2026-09-26T10:43:12.4638960Z    Compiling unicode-segmentation v1.13.3
+2026-09-26T10:43:12.7838550Z    Compiling egui v0.33.3
+2026-09-26T10:43:14.8855690Z    Compiling clap_builder v4.6.7
+2026-09-26T10:43:16.9536900Z    Compiling clap_derive v4.6.7
+2026-09-26T10:43:17.9425380Z    Compiling image v0.25.10
+2026-09-26T10:43:19.6391600Z    Compiling accesskit_macos v0.22.2
+2026-09-26T10:43:22.1213310Z    Compiling url v2.5.8
+2026-09-26T10:43:22.7373700Z    Compiling agq-modeling-view v0.1.0 (/Users/runner/work/agentique/agentique/crates/modeling-view)
+2026-09-26T10:43:24.0748940Z    Compiling hashlink v0.10.0
+2026-09-26T10:43:24.2881980Z    Compiling fastrand v2.5.0
+2026-09-26T10:43:24.4174050Z    Compiling static_assertions v1.1.0
+2026-09-26T10:43:24.4521580Z    Compiling fallible-streaming-iterator v0.1.9
+2026-09-26T10:43:24.5196360Z    Compiling fallible-iterator v0.3.0
+2026-09-26T10:43:24.7467850Z    Compiling web-time v1.1.0
+2026-09-26T10:43:24.7757370Z    Compiling rustc-hash v2.1.3
+2026-09-26T10:43:24.8267260Z    Compiling type-map v0.5.1
+2026-09-26T10:43:24.9222850Z    Compiling rusqlite v0.37.0
+2026-09-26T10:43:27.6262610Z    Compiling tempfile v3.27.0
+2026-09-26T10:43:27.8475200Z    Compiling webbrowser v1.2.4
+2026-09-26T10:43:28.1107140Z    Compiling arboard v3.6.1
+2026-09-26T10:43:28.2366460Z    Compiling accesskit_winit v0.29.2
+2026-09-26T10:43:28.3309370Z    Compiling clap v4.6.7
+2026-09-26T10:43:28.3487100Z    Compiling agq-modeling-service v0.1.0 (/Users/runner/work/agentique/agentique/crates/modeling-service)
+2026-09-26T10:43:28.3651140Z    Compiling agq-runtime-publications v0.1.0 (/Users/runner/work/agentique/agentique/crates/runtime-publications)
+2026-09-26T10:43:28.7710040Z    Compiling egui-winit v0.33.3
+2026-09-26T10:43:29.2811420Z    Compiling egui-wgpu v0.33.3
+2026-09-26T10:43:29.8986000Z    Compiling agq-modeling-agent v0.1.0 (/Users/runner/work/agentique/agentique/crates/modeling-agent)
+2026-09-26T10:43:30.4331270Z    Compiling agq-modeling-sqlite v0.1.0 (/Users/runner/work/agentique/agentique/adapters/modeling-sqlite)
+2026-09-26T10:43:30.4901540Z    Compiling pollster v0.4.0
+2026-09-26T10:43:30.5465830Z    Compiling eframe v0.33.3
+2026-09-26T10:43:31.1952670Z    Compiling agq-studio-platform v0.1.0 (/Users/runner/work/agentique/agentique/crates/studio-platform)
+2026-09-26T10:43:31.6279890Z    Compiling agq-studio-scene v0.1.0 (/Users/runner/work/agentique/agentique/crates/studio-scene)
+2026-09-26T10:43:33.0693010Z    Compiling agq-studio-native v0.1.0 (/Users/runner/work/agentique/agentique/crates/studio-native)
+2026-09-26T10:43:42.2332050Z     Finished `dev` profile [unoptimized] target(s) in 1m 41s
+2026-09-26T10:43:42.3028820Z Post job cleanup.
+2026-09-26T10:43:42.8919370Z [command]/opt/homebrew/bin/git version
+2026-09-26T10:43:42.9185720Z git version 2.55.0
+2026-09-26T10:43:42.9232150Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/d9d46f4b-7d12-4875-be74-b0e5b341fe9a/.gitconfig'
+2026-09-26T10:43:42.9247910Z Temporarily overriding HOME='/Users/runner/work/_temp/d9d46f4b-7d12-4875-be74-b0e5b341fe9a' before making global git config changes
+2026-09-26T10:43:42.9250440Z Adding repository directory to the temporary git global config as a safe directory
+2026-09-26T10:43:42.9257760Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/agentique/agentique
+2026-09-26T10:43:42.9383570Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+2026-09-26T10:43:42.9440960Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+2026-09-26T10:43:43.0363190Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+2026-09-26T10:43:43.0413240Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+2026-09-26T10:43:43.1168220Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+2026-09-26T10:43:43.1235010Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+2026-09-26T10:43:43.2743410Z Cleaning up orphan processes
+2026-09-26T10:43:43.5517170Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@11d5960a326750d5838078e36cf38b85af677262. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

@@ -1,5 +1,11 @@
 # Isolated effective-audit batching experiment
 
+The isolated executable experiment subsequently ran on 2026-09-26. All three
+batch sizes passed exact comparison, but the measured improvement was small and
+memory increased. See [the measured result](audit-batch-result.md). The draft
+instructions and pre-execution evidence below are retained as the historical
+proposal; they do not describe the experiment's current execution status.
+
 `audit-batch-experiment.patch` is unapplied. It changes only the lifetime of
 temporary evaluators in a verification build and the independent oracle's
 observation batches. Production files in the active checkout remain untouched.

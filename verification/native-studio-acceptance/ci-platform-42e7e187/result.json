@@ -1,0 +1,23 @@
+{
+  "format": "agentique-platform-ci-evidence/1",
+  "source_commit": "42e7e187de823a3b855d530dcee84dbe8c06b59f",
+  "run": 36236540319,
+  "recorded_utc": "2026-09-26T10:46:31.474613+00:00",
+  "jobs": [
+    {
+      "name": "linux-native",
+      "job": 108389234764,
+      "conclusion": "success",
+      "metadata_sha256": "730c0198e814b74bcb54361654b4678c5dad9a8fdfe0e4df96e8502ad4d5659f",
+      "log_sha256": "1b541cdb25b9036ce11e5a9ee43acd7da49a259ef665f4042b3b6e7ce220d380"
+    },
+    {
+      "name": "macos-compile",
+      "job": 108389234781,
+      "conclusion": "success",
+      "metadata_sha256": "0b89d0272e546370d7e02b391db8a084128dc5515220ca06b983352a42158d24",
+      "log_sha256": "babd08210e006a143756ad5f88e9da4bafbe415fe227ff43cc86b03a137814b4"
+    }
+  ],
+  "qualification": "Linux native formatting, Clippy and tests; macOS native compile/link. No interactive qualification is implied."
+}

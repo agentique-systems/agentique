@@ -1,0 +1,10 @@
+test_empty_or_count_only_baseline_cannot_pass (tools.test_audit_batch_experiment.ExperimentEvidenceTests.test_empty_or_count_only_baseline_cannot_pass) ... ok
+test_equal_full_observations_pass (tools.test_audit_batch_experiment.ExperimentEvidenceTests.test_equal_full_observations_pass) ... ok
+test_exact_query_proof_change_fails_even_when_graph_and_audit_match (tools.test_audit_batch_experiment.ExperimentEvidenceTests.test_exact_query_proof_change_fails_even_when_graph_and_audit_match) ... ok
+test_larger_batch_requires_success_and_measured_memory_headroom (tools.test_audit_batch_experiment.ExperimentEvidenceTests.test_larger_batch_requires_success_and_measured_memory_headroom) ... ok
+test_missing_and_extra_observations_fail (tools.test_audit_batch_experiment.ExperimentEvidenceTests.test_missing_and_extra_observations_fail) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.000s
+
+OK

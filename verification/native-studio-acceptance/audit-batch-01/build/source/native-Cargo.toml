@@ -1,0 +1,30 @@
+[package]
+name = "agq-studio-native"
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+description = "Agentique's native spatial engineering shell"
+
+[dependencies]
+agq-kernel = { path = "../kernel" }
+agq-modeling-view = { path = "../modeling-view" }
+agq-modeling-workspace = { path = "../modeling-workspace" }
+agq-modeling-agent = { path = "../modeling-agent" }
+agq-modeling-repository = { path = "../modeling-repository" }
+agq-studio-scene = { path = "../studio-scene" }
+agq-studio-platform = { path = "../studio-platform" }
+eframe = { version = "=0.33.3", default-features = false, features = ["default_fonts", "wgpu", "accesskit", "x11", "wayland"] }
+egui-wgpu = "=0.33.3"
+wgpu = { version = "=27.0.1", features = ["dx12", "metal", "vulkan", "wgsl"] }
+bytemuck = { version = "1.24", features = ["derive"] }
+serde = { version = "1.0.228", features = ["derive", "rc"] }
+serde_json = "1.0.145"
+clap = { version = "4.5.50", features = ["derive"] }
+image = { version = "0.25", default-features = false, features = ["png"] }
+
+# The GPU shell resolves independently of the accepted language workspace.
+[workspace]
+resolver = "2"
+
+[profile.release]
+lto = "thin"

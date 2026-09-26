@@ -1,0 +1,20 @@
+{
+  "id": 10905095102,
+  "node_id": "MDg6QXJ0aWZhY3QxMDkwNTA5NTEwMg==",
+  "name": "audit-batch-experiment-windows-167cbeca9f4c6e276c68459e51fb16b62e3b383c-1",
+  "size_in_bytes": 55869106,
+  "url": "https://api.github.com/repos/agentique-systems/agentique/actions/artifacts/10905095102",
+  "archive_download_url": "https://api.github.com/repos/agentique-systems/agentique/actions/artifacts/10905095102/zip",
+  "expired": false,
+  "digest": "sha256:1c37ac94f6338477bb4cebede7724ac2f73c5a40e21a35bb07525c39fc4da775",
+  "created_at": "2026-09-26T10:54:55Z",
+  "updated_at": "2026-09-26T10:54:55Z",
+  "expires_at": "2026-10-26T10:54:51Z",
+  "workflow_run": {
+    "id": 36235278112,
+    "repository_id": 1373444581,
+    "head_repository_id": 1373444581,
+    "head_branch": "platform/native-studio-alpha-semantic-experiment",
+    "head_sha": "167cbeca9f4c6e276c68459e51fb16b62e3b383c"
+  }
+}

@@ -1,6 +1,16 @@
 # Alpha product review ledger
 
-**Current judgment: not yet a confident Alpha demonstration.** This ledger records five reviewer perspectives on the actual real-run02 gallery. They are five reviews within one image-backed review/change cycle, not five completed post-fix critique/change/recapture rounds. The new capture is pending. No fixture or source test is counted as a new real-product review.
+**Current judgment: not yet a confident Alpha demonstration. Two actual image-backed review rounds are recorded.** Each round applies five reviewer perspectives to a real self-model capture; these are not five completed rounds. No fixture or source test is counted as a new real-product review.
+
+## Round 2: real-run03, source 42e7e187
+
+The corrected executable `c2d023c62b80c89791a6a1d4ea11626b86b46c87b51812dedd2034ccefddfa5a` completed all 39 real journey assertions and exited 0. [Actual round 2 review](real-run03-round02.md) and [hashed evidence](real-run03-round02-evidence.json) cover all 16 new images. Requirement kind labels, newest-first History lineage, structured receipt disclosure and candidate selection visibility visibly improved. Returning from History again restores identical Requirements pixels and the saved Graph context.
+
+The largest remaining visual flaw is the initial durable Diff: its all-owner overview reduces labels to approximately 25% and clips the scene, while the owner chooser favors an absent enclosing owner over the present selected AgentArchitecture group. The proposed correction is a readable initial owner neighborhood with the complete owner summary and explicit whole-comparison action retained. Recommendation chrome and the wide agent layout remain weak. A stale candidate framing status is also recorded. This is a proposal following actual review; no third recapture or fix is claimed here.
+
+Performance, restart and soak evidence remain separate. Round 2's outcome is `journey_passed_restart_pending`, so the successful first process alone cannot establish durable restart or overall Alpha acceptance.
+
+## Round 1: real-run02, before image fixes
 
 The reviewed executable is `fb2fedafc3d2e1574f526d1763cc99521cce64b4e7ad058e29665d616004e30e`. The real self-model gallery is retained at `verification/generated/native-studio-acceptance/real-run02/gallery`. The completed first process has 39 passed journey assertions and exit 0; its outcome is `journey_passed_restart_pending`. Restart and source-only recovery evidence belong to separate gates.
 
@@ -20,7 +30,7 @@ For exact source `fea3339dbf0e84d408cb7d47c802a7b047826f1f`, GitHub Actions run 
 
 The initial durable Diff implementation preserves an explicit candidate selection: its initializer returns immediately when a candidate exists. It acts only on the initial durable comparison, preserves an already relevant changed target, and frames all available changed-owner headers after actual viewport dimensions are known. Canonical scene contents and historical Return-to-head restoration are not rewritten. Regressions cover non-chronological UUIDs, branching lineage, initial unrelated selection, unchanged semantic scene contents, and candidate ghost selection.
 
-## Next actual recapture obligations
+## Round 1 recapture obligations, assessed in round 2 above
 
 The same real journey must show the corrected lineage and structured receipt disclosure, an initially useful durable Diff with relevant Inspector, a visibly selected new candidate part, and intentionally named Reference/Constraint cards. It must again visit the earlier revision through a real card and restore exact saved Requirements and Graph exploration state. The review should retain crowded Diff and agent scenes even if still unflattering. Each of the five perspectives should then record what visibly improved and what remains; only those observations complete another review cycle.
 

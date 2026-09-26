@@ -1,0 +1,80 @@
+{
+  "format": "agentique-retained-camera-stress/1",
+  "source_commit": "42e7e187de823a3b855d530dcee84dbe8c06b59f",
+  "executable_sha256": "c2d023c62b80c89791a6a1d4ea11626b86b46c87b51812dedd2034ccefddfa5a",
+  "recorded_utc": "2026-09-26T10:50:53.034054+00:00",
+  "files": [
+    {
+      "path": "one-thousand-process.json",
+      "bytes": 749,
+      "sha256": "63820a6bf2367d7ee8b79a83755472bf5406ae53f1219d03355731307cd40835"
+    },
+    {
+      "path": "one-thousand-process.log",
+      "bytes": 85043,
+      "sha256": "ecb8066b236a31d116020bfda8f8e8824a4455ed999e39b6a128bd7820fd2279"
+    },
+    {
+      "path": "one-thousand.json",
+      "bytes": 130369,
+      "sha256": "5e0e196a98877a661872b6bdfa062db7b49226419f9227c40e68cac4e6242674"
+    },
+    {
+      "path": "ten-thousand-first-process.json",
+      "bytes": 755,
+      "sha256": "f02f6ee357ba61b3492dcf7833a47208aee4d05e8654eeaf4b8d2ba34d6158ca"
+    },
+    {
+      "path": "ten-thousand-first-process.log",
+      "bytes": 85827,
+      "sha256": "aed807970c9ebc1e9260665958c62a3777a4f41212badd2964df382b0e0d62fd"
+    },
+    {
+      "path": "ten-thousand-first.json",
+      "bytes": 131153,
+      "sha256": "4d4a0f12bb7459b2da9091cde2188b899c7940171ea8eea0f2136a2f3ad9c3a1"
+    },
+    {
+      "path": "ten-thousand-repeat-process.json",
+      "bytes": 756,
+      "sha256": "35bfec7621f19a3e5ebffcba9406c8c65cbcdeb11d92ca1d3213f4ac5ccd0319"
+    },
+    {
+      "path": "ten-thousand-repeat-process.log",
+      "bytes": 85902,
+      "sha256": "c06b05576a6ae4c31b32d93e7e467539520dd09368f6e4f18bdeeedb68bd15b4"
+    },
+    {
+      "path": "ten-thousand-repeat.json",
+      "bytes": 131228,
+      "sha256": "a4922f73339c9347f53517e797ecdb05bf3143f8d4f7687f12e0705792867e29"
+    }
+  ],
+  "metrics": [
+    {
+      "name": "ten-thousand-first",
+      "anchor_error_world": 0.002013235120102763,
+      "pan_p95_ms": 16.1632,
+      "zoom_p95_ms": 15.8522,
+      "frame_median_ms": 6.1198,
+      "gpu_errors": 0
+    },
+    {
+      "name": "ten-thousand-repeat",
+      "anchor_error_world": 0.002013235120102763,
+      "pan_p95_ms": 14.5823,
+      "zoom_p95_ms": 14.4294,
+      "frame_median_ms": 6.1517,
+      "gpu_errors": 0
+    },
+    {
+      "name": "one-thousand",
+      "anchor_error_world": 0.0013427734375,
+      "pan_p95_ms": 6.1211,
+      "zoom_p95_ms": 6.340199999999999,
+      "frame_median_ms": 6.05015,
+      "gpu_errors": 0
+    }
+  ],
+  "scope": "Three fresh native processes after compilation ended; no other semantic benchmark or local compiler was running. Handled-input intervals are not physical input-to-photon measurements."
+}
