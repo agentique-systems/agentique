@@ -7,6 +7,7 @@ use crate::{
     app::{Candidate, ComparisonMode, PendingPreparation, StudioApp},
     bridge::{Output, Reply, WorkContext},
     navigation::World,
+    read_lane::{PanelRead, ReadContext, ReadScope},
 };
 use agq_modeling_view::{GraphScope, RelationshipFamily, ViewDefinition, ViewProjection};
 use agq_modeling_workspace::ProjectRevisionId;
@@ -86,6 +87,25 @@ fn reply(
     }
 }
 
+fn projection_reply(app: &StudioApp, request: u64, projection: ViewProjection) -> Reply {
+    Reply {
+        request,
+        epoch: app.bridge.epoch(),
+        context: None,
+        read: Some(ReadContext {
+            scope: ReadScope {
+                epoch: app.bridge.epoch(),
+                binding: app.binding.unwrap(),
+            },
+            panel: PanelRead::Projection,
+            element: agq_kernel::ElementId::from_u128(0),
+        }),
+        mutation: false,
+        terminal: true,
+        result: Ok(Output::Projection(projection)),
+    }
+}
+
 fn candidate(app: &StudioApp, view: ViewDefinition) -> CandidateProjection {
     let mut projection = app.projection.clone();
     projection.revision_id = ProjectRevisionId::from_u128(0xcade_0004);
@@ -153,7 +173,7 @@ fn with_view(mut projection: ViewProjection, view: &ViewDefinition) -> ViewProje
 }
 
 #[test]
-fn pending_mutation_coalesces_latest_lens_without_query_or_scene_change_then_flushes_once() {
+fn pending_mutation_allows_latest_current_lens_to_complete_without_waiting_for_model_work() {
     let mut app = application();
     let before = app.projection.clone();
     let generation = app.generation;
@@ -161,17 +181,35 @@ fn pending_mutation_coalesces_latest_lens_without_query_or_scene_change_then_flu
     let (work, context) = mutation(&mut app);
     let a = graph(&app, 2, GraphScope::Neighborhood);
     let b = graph(&app, 5, GraphScope::DependencyNeighborhood);
-    app.request_projection_definition(a);
+    app.request_projection_definition(a.clone());
+    let old = assert_requested(&app, &a);
     app.request_projection_definition(b.clone());
-    assert_eq!(app.deferred_definition.as_ref(), Some(&b));
-    assert_eq!(app.definition(), b);
-    assert!(app.requested_definition.is_none());
-    assert_eq!(app.pending, BTreeSet::from([work]));
+    let latest = assert_requested(&app, &b);
+    assert_ne!(old, latest);
+    assert!(app.pending.contains(&work));
+    assert!(app.bridge.mutation_pending());
     assert_eq!(app.projection, before);
     assert_eq!(app.generation, generation);
     assert_eq!(app.camera, camera);
 
-    // A failed preparation also releases the latest requested presentation.
+    // A superseded read terminates without changing the requested lens.
+    let stale = projection_reply(&app, old, with_view(before.clone(), &a));
+    app.receive_replies([stale]);
+    assert_eq!(assert_requested(&app, &b), latest);
+    assert_eq!(app.projection, before);
+    assert!(!app.pending.contains(&old));
+
+    let expected = with_view(before, &b);
+    let current = projection_reply(&app, latest, expected.clone());
+    app.receive_replies([current]);
+    assert_eq!(app.projection, expected);
+    assert!(app.requested_definition.is_none());
+    assert!(app.deferred_definition.is_none());
+    assert!(app.bridge.mutation_pending());
+    assert!(app.pending.contains(&work));
+
+    // Reconstruction failure cannot roll back an independently completed read.
+    let installed_generation = app.generation;
     app.receive_replies([reply(
         work,
         context,
@@ -179,13 +217,10 @@ fn pending_mutation_coalesces_latest_lens_without_query_or_scene_change_then_flu
         Err("unit preparation failed".into()),
     )]);
     assert!(!app.bridge.mutation_pending());
-    let query = assert_requested(&app, &b);
-    assert_eq!(app.pending, BTreeSet::from([query]));
-    assert_eq!(app.projection, before);
-    assert_eq!(app.generation, generation);
-    app.receive_replies(std::iter::empty());
-    assert_eq!(assert_requested(&app, &b), query);
-    assert_eq!(app.pending, BTreeSet::from([query]));
+    assert_eq!(app.projection, expected);
+    assert_eq!(app.generation, installed_generation);
+    assert!(app.requested_definition.is_none());
+    assert!(!app.pending.contains(&latest));
 }
 
 #[test]
@@ -379,7 +414,7 @@ fn coherent_candidate_pair_with_wrong_scope_is_requeried_without_publishing_it()
 }
 
 #[test]
-fn preparation_reissues_deferred_lens_as_candidate_pair_in_the_new_candidate_context() {
+fn preparation_supersedes_inflight_current_read_with_exact_candidate_pair() {
     let mut app = application();
     let before = app.projection.clone();
     let prepared = candidate(&app, app.definition());
@@ -387,6 +422,7 @@ fn preparation_reissues_deferred_lens_as_candidate_pair_in_the_new_candidate_con
     let (work, context) = mutation(&mut app);
     let desired = graph(&app, 5, GraphScope::DependencyNeighborhood);
     app.request_projection_definition(desired.clone());
+    let current_read = assert_requested(&app, &desired);
     app.receive_replies([reply(
         work,
         context.clone(),
@@ -398,7 +434,16 @@ fn preparation_reissues_deferred_lens_as_candidate_pair_in_the_new_candidate_con
     assert_eq!(app.projection, before);
     assert_eq!(app.comparison, ComparisonMode::Current);
     let query = assert_requested(&app, &desired);
-    assert_eq!(app.pending, BTreeSet::from([query]));
+    assert_ne!(query, current_read);
+    assert!(app.pending.contains(&query));
+    assert!(!app.pending.contains(&work));
+    // The old immutable read remains semantically valid, but its lens request
+    // has been superseded by review. It cannot install over the candidate pair.
+    let stale = projection_reply(&app, current_read, with_view(before.clone(), &desired));
+    app.receive_replies([stale]);
+    assert_eq!(assert_requested(&app, &desired), query);
+    assert_eq!(app.projection, before);
+    assert!(!app.pending.contains(&current_read));
     let paired = candidate(&app, desired.clone());
     let paired_before = with_view(before, &desired);
     let new_context = app.work_context();
@@ -415,24 +460,50 @@ fn preparation_reissues_deferred_lens_as_candidate_pair_in_the_new_candidate_con
 }
 
 #[test]
-fn cancellation_acknowledgement_flushes_desired_view_against_current_without_candidate() {
-    let mut app = application();
-    retain_candidate(&mut app);
-    let before = app.projection.clone();
-    let (work, context) = mutation(&mut app);
-    let desired = graph(&app, 3, GraphScope::DependencyNeighborhood);
-    app.request_projection_definition(desired.clone());
-    app.receive_replies([reply(work, context, true, Ok(Output::Cancelled))]);
-    assert!(app.candidate.is_none());
-    assert_eq!(app.comparison, ComparisonMode::Current);
-    assert_eq!(app.projection, before);
-    assert!(!app.bridge.mutation_pending());
-    let query = assert_requested(&app, &desired);
-    assert_eq!(app.pending, BTreeSet::from([query]));
+fn cancellation_acknowledgement_retains_latest_lens_whether_current_read_has_completed() {
+    for completes_before_ack in [false, true] {
+        let mut app = application();
+        retain_candidate(&mut app);
+        let before = app.projection.clone();
+        let (work, context) = mutation(&mut app);
+        let desired = graph(&app, 3, GraphScope::DependencyNeighborhood);
+        app.request_projection_definition(desired.clone());
+        let current_read = assert_requested(&app, &desired);
+        let projected = with_view(before.clone(), &desired);
+        if completes_before_ack {
+            let current = projection_reply(&app, current_read, projected.clone());
+            app.receive_replies([current]);
+            assert_eq!(app.projection, projected);
+            assert!(app.bridge.mutation_pending());
+        }
+        app.receive_replies([reply(work, context, true, Ok(Output::Cancelled))]);
+        assert!(app.candidate.is_none());
+        assert_eq!(app.comparison, ComparisonMode::Current);
+        assert!(!app.bridge.mutation_pending());
+        if completes_before_ack {
+            assert_eq!(app.projection, projected);
+            assert!(app.requested_definition.is_none());
+        } else {
+            assert_eq!(app.projection, before);
+            let query = assert_requested(&app, &desired);
+            assert_ne!(query, current_read);
+            let stale = projection_reply(&app, current_read, projected.clone());
+            app.receive_replies([stale]);
+            assert_eq!(assert_requested(&app, &desired), query);
+            assert_eq!(app.projection, before);
+            let current = projection_reply(&app, query, projected.clone());
+            app.receive_replies([current]);
+            assert_eq!(app.projection, projected);
+            assert!(app.requested_definition.is_none());
+        }
+        assert!(app.deferred_definition.is_none());
+        assert!(!app.pending.contains(&work));
+        assert!(!app.pending.contains(&current_read));
+    }
 }
 
 #[test]
-fn cancelled_preparation_waits_for_cancel_ack_before_flushing_deferred_view() {
+fn cancelled_preparation_keeps_current_read_live_until_and_after_cancel_acknowledgement() {
     let mut app = application();
     let before = app.projection.clone();
     let prepared = candidate(&app, app.definition());
@@ -445,20 +516,59 @@ fn cancelled_preparation_waits_for_cancel_ack_before_flushing_deferred_view() {
     });
     let desired = graph(&app, 4, GraphScope::DependencyNeighborhood);
     app.request_projection_definition(desired.clone());
+    let current_read = assert_requested(&app, &desired);
+    let earlier_pending = app.pending.clone();
     app.receive_replies([reply(work, context, true, Ok(Output::Candidate(prepared)))]);
     assert!(app.bridge.mutation_pending());
     assert!(app.candidate.is_some());
-    assert_eq!(app.deferred_definition.as_ref(), Some(&desired));
-    assert!(app.requested_definition.is_none());
+    assert_eq!(assert_requested(&app, &desired), current_read);
     assert_eq!(app.projection, before);
-    assert_eq!(app.pending.len(), 1);
-    let cancel = *app.pending.first().unwrap();
+    let cancel_requests: Vec<_> = app.pending.difference(&earlier_pending).copied().collect();
+    assert_eq!(cancel_requests.len(), 1);
+    let cancel = cancel_requests[0];
     assert_ne!(cancel, work);
+    let projected = with_view(before, &desired);
+    let current = projection_reply(&app, current_read, projected.clone());
+    app.receive_replies([current]);
+    assert_eq!(app.projection, projected);
+    assert!(app.bridge.mutation_pending());
+    assert!(app.candidate.is_some());
+    assert!(app.requested_definition.is_none());
     let cancel_context = app.work_context();
     app.receive_replies([reply(cancel, cancel_context, true, Ok(Output::Cancelled))]);
     assert!(app.candidate.is_none());
     assert!(!app.bridge.mutation_pending());
-    let query = assert_requested(&app, &desired);
-    assert_eq!(app.pending, BTreeSet::from([query]));
+    assert_eq!(app.projection, projected);
+    assert!(app.requested_definition.is_none());
+    assert!(app.deferred_definition.is_none());
+    assert!(!app.pending.contains(&cancel));
+    assert!(!app.pending.contains(&current_read));
+}
+
+#[test]
+fn candidate_lens_waits_for_cancel_ack_then_reissues_against_current() {
+    let mut app = application();
+    retain_candidate(&mut app);
+    app.comparison = ComparisonMode::Candidate;
+    assert!(app.rebuild_immediate());
+    let before = app.projection.clone();
+    let (work, context) = mutation(&mut app);
+    let desired = graph(&app, 3, GraphScope::DependencyNeighborhood);
+    app.request_projection_definition(desired.clone());
+    assert_eq!(app.deferred_definition.as_ref(), Some(&desired));
+    assert!(app.requested_definition.is_none());
+    assert_eq!(app.pending, BTreeSet::from([work]));
+    app.receive_replies([reply(work, context, true, Ok(Output::Cancelled))]);
+    assert!(app.candidate.is_none());
+    assert_eq!(app.comparison, ComparisonMode::Current);
     assert_eq!(app.projection, before);
+    let request = assert_requested(&app, &desired);
+    assert!(!app.bridge.mutation_pending());
+    app.receive_replies(std::iter::empty());
+    assert_eq!(assert_requested(&app, &desired), request);
+    let projected = with_view(before, &desired);
+    let current = projection_reply(&app, request, projected.clone());
+    app.receive_replies([current]);
+    assert_eq!(app.projection, projected);
+    assert!(app.requested_definition.is_none());
 }

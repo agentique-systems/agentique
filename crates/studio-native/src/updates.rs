@@ -621,6 +621,14 @@ impl StudioApp {
                     self.status = "Candidate durably committed".into();
                 }
                 Ok(Output::Cancelled) if reply.mutation => {
+                    // A current-revision read can outlive candidate cancellation.
+                    // Retain its exact latest lens before retiring requests that
+                    // may instead belong to the discarded candidate context.
+                    let desired = self.deferred_definition.take().or_else(|| {
+                        self.requested_definition
+                            .as_ref()
+                            .map(|(_, definition)| definition.clone())
+                    });
                     self.candidate = None;
                     self.lifecycle_unknown = false;
                     self.lifecycle_request = 0;
@@ -636,6 +644,8 @@ impl StudioApp {
                         );
                         continue;
                     }
+                    self.deferred_definition =
+                        desired.filter(|definition| definition != &self.projection.view);
                     if self.deferred_definition.is_none() {
                         self.request_inspection();
                     }
