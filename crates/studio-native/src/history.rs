@@ -755,6 +755,7 @@ impl StudioApp {
             return;
         };
         let mut mode = diff_mode(ui.ctx());
+        let mut navigate = None;
         ui.horizontal_wrapped(|ui| {
             ui.label(muted("Review", self.theme).small());
             for choice in [
@@ -771,6 +772,11 @@ impl StudioApp {
                         data.insert_temp(egui::Id::new("semantic-diff-mode"), mode)
                     });
                     self.batch_key = None;
+                }
+            }
+            for (label, forward) in [("Previous change", false), ("Next change", true)] {
+                if ui.small_button(label).clicked() {
+                    navigate = Some(forward);
                 }
             }
         });
@@ -819,10 +825,26 @@ impl StudioApp {
                     remembered.as_ref(),
                 );
                 let previous = index;
+                if let Some(forward) = navigate {
+                    let changes: Vec<_> = review.groups.iter().enumerate().flat_map(|(group, entry)| entry.changes.iter().filter(|change| change.target.is_some()).map(move |change| (group, change))).collect();
+                    if !changes.is_empty() {
+                        let current = changes.iter().position(|(_, change)| same_target(change.target.as_ref(), self.selection.primary.as_ref()));
+                        let next = match (current, forward) {
+                            (Some(i), true) => (i + 1) % changes.len(),
+                            (Some(i), false) => (i + changes.len() - 1) % changes.len(),
+                            (None, true) => 0,
+                            (None, false) => changes.len() - 1,
+                        };
+                        let (group, change) = changes[next];
+                        index = group;
+                        self.select(change.target.clone().expect("visible change"), false);
+                        self.frame_change_group(&review.groups[index], change.target.as_ref());
+                    }
+                }
                 ui.horizontal_wrapped(|ui| {
                     ui.strong("Design changes");
                     ui.label(muted(
-                        format!("{} owner groups · {} changes shown / {} total", review.groups.len(), review.objects + review.relationships, complete.objects + complete.relationships),
+                        format!("{} owner groups · {} / {} projected changes", review.groups.len(), review.objects + review.relationships, complete.objects + complete.relationships),
                         theme,
                     ).small());
                     ui.menu_button(format!("Browse {} changes", review.objects + review.relationships), |ui| {
@@ -882,24 +904,6 @@ impl StudioApp {
                     inspect.on_hover_text("Inspect the canonical owner in its displayed revision. Owners outside this scene remain in the complete change list.");
                     let objects = group.changes.iter().filter(|change| !change.relationship).count();
                     ui.label(muted(format!("{} objects · {} relationships", objects, group.changes.len() - objects), theme).small());
-                    for (label, forward) in [("Previous change", false), ("Next change", true)] {
-                        if ui.small_button(label).clicked() {
-                            let changes: Vec<_> = review.groups.iter().enumerate().flat_map(|(group, entry)| entry.changes.iter().filter(|change| change.target.is_some()).map(move |change| (group, change))).collect();
-                            if !changes.is_empty() {
-                                let current = changes.iter().position(|(_, change)| same_target(change.target.as_ref(), self.selection.primary.as_ref()));
-                                let next = match (current, forward) {
-                                    (Some(i), true) => (i + 1) % changes.len(),
-                                    (Some(i), false) => (i + changes.len() - 1) % changes.len(),
-                                    (None, true) => 0,
-                                    (None, false) => changes.len() - 1,
-                                };
-                                let (group, change) = changes[next];
-                                index = group;
-                                self.select(change.target.clone().expect("visible change"), false);
-                                self.frame_change_group(&review.groups[index], change.target.as_ref());
-                            }
-                        }
-                    }
                 });
                 if owner_changed && index != previous {
                     // Select the real owner where it is present; a group never

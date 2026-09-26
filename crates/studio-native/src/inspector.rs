@@ -737,6 +737,7 @@ fn inspector_name(ui: &mut egui::Ui, name: &str) -> egui::Response {
         egui::FontId::proportional(TITLE),
         ui.visuals().strong_text_color(),
     );
+    title.wrap.max_width = ui.available_width();
     title.wrap.max_rows = 3;
     title.wrap.break_anywhere = true;
     let response = ui.add(egui::Label::new(title).wrap()).on_hover_text(name);
@@ -1187,12 +1188,19 @@ mod tests {
         );
         for width in [214.0, 254.0, 380.0] {
             let _ = ctx.run(egui::RawInput::default(), |ctx| {
-                egui::CentralPanel::default().show(ctx, |ui| {
-                    ui.set_max_width(width);
-                    let response = inspector_name(ui, &name);
-                    assert!(response.rect.width() <= width + 1.0);
-                    assert!(response.rect.height() <= TITLE * 4.0);
-                });
+                egui::SidePanel::right("qualified-name-inspector")
+                    .exact_width(width)
+                    .resizable(false)
+                    .frame(egui::Frame::NONE)
+                    .show(ctx, |ui| {
+                        let response = inspector_name(ui, &name);
+                        assert!(
+                            response.rect.width() <= width + 1.0,
+                            "name width {} exceeds actual inspector width {width}",
+                            response.rect.width()
+                        );
+                        assert!(response.rect.height() <= TITLE * 4.0);
+                    });
             });
         }
     }
