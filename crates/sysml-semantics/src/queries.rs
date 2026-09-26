@@ -116,6 +116,28 @@ pub struct SysmlQueries<'m> {
     context: SysmlSemanticContextId,
     bindings: StandardSysmlBindings,
 }
+
+/// Immutable query input retained after complete SysML context authentication.
+/// Its graph, bindings and composed language identities cannot be replaced.
+#[derive(Clone, Debug)]
+pub struct RetainedSysmlContext {
+    kerml: agq_kerml_semantics::RetainedSemanticContext,
+    context: SysmlSemanticContextId,
+    bindings: StandardSysmlBindings,
+}
+
+impl RetainedSysmlContext {
+    /// Start a bounded evaluator over exactly the retained immutable revision.
+    pub fn queries(&self) -> SysmlQueries<'_> {
+        let context = self.kerml.borrow();
+        SysmlQueries {
+            model: context.model(),
+            kerml: KerMlQueries::new(context),
+            context: self.context.clone(),
+            bindings: self.bindings.clone(),
+        }
+    }
+}
 impl<'m> SysmlQueries<'m> {
     pub fn new(context: SysmlSemanticContext<'m>) -> Self {
         Self {
@@ -127,6 +149,14 @@ impl<'m> SysmlQueries<'m> {
     }
     pub fn context(&self) -> &SysmlSemanticContextId {
         &self.context
+    }
+    /// Retain the exact composed semantic input, excluding temporary query caches.
+    pub fn retain_context(&self) -> RetainedSysmlContext {
+        RetainedSysmlContext {
+            kerml: self.kerml.retain_context(),
+            context: self.context.clone(),
+            bindings: self.bindings.clone(),
+        }
     }
     /// Start a fresh evaluator over the same borrowed model, authenticated
     /// context and bindings. Query caches are independent; graph fingerprints,

@@ -288,6 +288,8 @@ impl SourceInputs {
             history,
             identities: ledger,
             effective_audit: None,
+            kerml_read_context: Default::default(),
+            sysml_read_context: Default::default(),
             lowering_cache: cache.into_inner(),
             work: CompilationWork::default(),
             timings: CompilationTimings::default(),
@@ -771,6 +773,10 @@ pub struct SourceCompilation {
     history: DeclaredConstructionHistory,
     identities: LibrarySourceMap,
     effective_audit: Option<SourceEffectiveAudit>,
+    kerml_read_context:
+        std::sync::OnceLock<Result<agq_kerml_semantics::RetainedSemanticContext, QueryUnavailable>>,
+    sysml_read_context:
+        std::sync::OnceLock<Result<agq_sysml_semantics::RetainedSysmlContext, QueryUnavailable>>,
     lowering_cache: crate::library::construction::LoweringCache,
     work: CompilationWork,
     timings: CompilationTimings,
@@ -861,6 +867,16 @@ impl SourceCompilation {
         }
     }
     pub fn kerml_queries(&self) -> Result<KerMlQueries<'_>, QueryUnavailable> {
+        self.kerml_read_context
+            .get_or_init(|| {
+                self.fresh_kerml_queries()
+                    .map(|queries| queries.retain_context())
+            })
+            .as_ref()
+            .map(|context| KerMlQueries::new(context.borrow()))
+            .map_err(Clone::clone)
+    }
+    fn fresh_kerml_queries(&self) -> Result<KerMlQueries<'_>, QueryUnavailable> {
         match &self.frontier {
             SourceFrontier::Strict(model) => Ok(model.queries()),
             SourceFrontier::Construction { draft, .. } => self
@@ -872,6 +888,16 @@ impl SourceCompilation {
         }
     }
     pub fn sysml_queries(&self) -> Result<SysmlQueries<'_>, QueryUnavailable> {
+        self.sysml_read_context
+            .get_or_init(|| {
+                self.fresh_sysml_queries()
+                    .map(|queries| queries.retain_context())
+            })
+            .as_ref()
+            .map(agq_sysml_semantics::RetainedSysmlContext::queries)
+            .map_err(Clone::clone)
+    }
+    fn fresh_sysml_queries(&self) -> Result<SysmlQueries<'_>, QueryUnavailable> {
         match &self.frontier {
             SourceFrontier::Strict(model) => model.sysml_queries().ok_or_else(|| {
                 QueryUnavailable::Context("missing authenticated SysML context".into())

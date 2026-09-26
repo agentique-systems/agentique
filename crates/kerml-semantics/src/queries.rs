@@ -57,6 +57,11 @@ impl<'m> KerMlQueries<'m> {
     pub fn context(&self) -> &SemanticContextId {
         self.context.id()
     }
+    /// Retain authenticated graph/context infrastructure, without retaining this
+    /// evaluator's temporary traversal results or changing its query contract.
+    pub fn retain_context(&self) -> RetainedSemanticContext {
+        self.context.retain()
+    }
     /// Start a fresh bounded query batch over the exact same immutable input.
     /// Validated bindings and context identity are shared; traversal caches and
     /// retained query proofs are released when the previous evaluator is dropped.

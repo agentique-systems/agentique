@@ -7,6 +7,7 @@
 mod cache_codec;
 mod part_insertion;
 mod part_rename;
+mod profile;
 mod source_identity;
 pub use part_rename::RenamePart;
 mod query;
@@ -171,6 +172,7 @@ impl ModelingService {
         project: ProjectId,
         selector: RevisionSelector,
     ) -> Result<BoundRevision, ServiceError> {
+        let mut profile = profile::ReadProfile::new("resolve_revision");
         let revision = match selector {
             RevisionSelector::Revision(id) => id,
             RevisionSelector::Branch(id) => self.repository.get_branch(project, id)?.head,
@@ -195,9 +197,11 @@ impl ModelingService {
                 // Each cached entry was authenticated against its immutable semantic context.
                 let mut bound = bound.clone();
                 bound.load_path = RevisionLoadPath::ImmutableMemory;
+                profile.phase("immutable_memory_lookup");
                 return Ok(bound);
             }
         }
+        profile.phase("repository_manifest_authentication");
         let checkpoint_bytes = self.repository.read_blob(manifest.checkpoint_digest)?;
         if ContentDigest::of(&checkpoint_bytes) != manifest.checkpoint_digest {
             return Err(ServiceError::Invalid(
@@ -214,6 +218,7 @@ impl ModelingService {
                     .map_err(|_| ServiceError::Invalid("non-UTF8 source blob".into()))?,
             );
         }
+        profile.phase("source_and_identity_load");
         let (working, load_path) =
             match self.restore_semantic_cache(&manifest, &checkpoint, &sources) {
                 Some(working) => (working, RevisionLoadPath::AuthenticatedSemanticCache),
@@ -224,6 +229,24 @@ impl ModelingService {
                     RevisionLoadPath::DurableSource,
                 ),
             };
+        profile.phase(match load_path {
+            RevisionLoadPath::DurableSource => "source_fallback",
+            _ => "semantic_cache_restoration",
+        });
+        if std::env::var_os("AGENTIQUE_STARTUP_PROFILE").is_some_and(|value| value == "1") {
+            use std::io::Write;
+            let _ = writeln!(
+                std::io::stderr().lock(),
+                "{}",
+                serde_json::json!({
+                    "format": "agentique-restored-compilation-profile/1",
+                    "revision": revision,
+                    "load_path": format!("{load_path:?}"),
+                    "timings": working.compilation_timings(),
+                    "work": working.compilation_work(),
+                })
+            );
+        }
         verify_restored_documents(&manifest, &working)?;
         let validated = match &manifest.validation {
             ValidationState::Working => None,
@@ -241,6 +264,7 @@ impl ModelingService {
                 Some(working.validate()?)
             }
         };
+        profile.phase("revision_receipt_and_validation_authentication");
         let bound = BoundRevision {
             manifest: Arc::new(manifest),
             working,
@@ -251,6 +275,7 @@ impl ModelingService {
             .lock()
             .expect("revision cache")
             .insert(bound.clone());
+        profile.phase("immutable_revision_cache_insert");
         Ok(bound)
     }
     fn restore_semantic_cache(
@@ -259,6 +284,7 @@ impl ModelingService {
         checkpoint: &ProjectRevisionCheckpoint,
         sources: &BTreeMap<DocumentId, String>,
     ) -> Option<Arc<WorkingProjectRevision>> {
+        let mut profile = profile::ReadProfile::new("restore_semantic_cache");
         // Cache failure never grants validation or removes the durable source path.
         let reference = manifest.semantic_cache.as_ref()?;
         if reference.source_binding != manifest.source_binding().ok()? {
@@ -274,7 +300,9 @@ impl ModelingService {
         if ContentDigest::of(&bytes) != reference.content_digest {
             return None;
         }
+        profile.phase("cache_load_and_blob_authentication");
         let cache = cache_codec::decode(&reference.format, &bytes)?;
+        profile.phase("cache_decode_and_frontier_digest");
         if let ValidationState::Validated(receipt) = &manifest.validation
             && receipt.semantic_digest != ContentDigest(cache.source.model_digest)
         {
@@ -288,6 +316,7 @@ impl ModelingService {
         let working = checkpoint
             .restore_cached(self.publication.clone(), sources, &cache)
             .ok()?;
+        profile.phase("source_bound_graph_closure_and_audit_restore");
         if !working.compilation_work().semantic_cache_used
             || context_digest(&working).ok()? != reference.semantic_context
             || working
@@ -298,6 +327,7 @@ impl ModelingService {
         {
             return None;
         }
+        profile.phase("cache_semantic_identity_authentication");
         Some(working)
     }
     /// Create a project with a real parentless empty Working revision and main head.
