@@ -350,9 +350,11 @@ fn retained_sysml_context_preserves_answers_and_outlives_original_snapshot() {
     drop(snapshot);
     let queries = retained.queries();
     assert_eq!(queries.context(), &context);
-    assert_eq!(queries.current_effective_usages(id(4)), inherited);
-    assert_eq!(queries.effective_usages(id(4)), unclosed);
-    assert_eq!(queries.current_part_definitions(id(999)), absent);
+    // Include every composed evidence/status field, even fields which have no
+    // public PartialEq implementation. No identity normalization is performed.
+    assert_eq!(format!("{:?}", queries.current_effective_usages(id(4))), format!("{inherited:?}"));
+    assert_eq!(format!("{:?}", queries.effective_usages(id(4))), format!("{unclosed:?}"));
+    assert_eq!(format!("{:?}", queries.current_part_definitions(id(999))), format!("{absent:?}"));
 }
 
 #[test]

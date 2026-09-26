@@ -186,7 +186,7 @@ fn mixed_dpi_scene_hit_ports_and_popup_anchor_use_logical_coordinates() {
                 .hit_test(world, 6.0 / camera.zoom)
                 .unwrap()
                 .element_id(),
-            Some(node.id)
+            Some(node.id())
         );
         for port in &scene.ports {
             let logical = camera.world_to_screen(port.position);

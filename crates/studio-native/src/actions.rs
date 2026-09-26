@@ -1380,7 +1380,7 @@ mod tests {
     fn back_forward_restores_each_visits_camera_selection_filters_and_world() {
         let mut app = application();
         let context = egui::Context::default();
-        let target = SceneTarget::Node(app.scene.nodes[0].id);
+        let target = SceneTarget::Node(app.scene.nodes[0].id());
         app.selection.select(target.clone(), false);
         app.camera.center = Point::new(341.0, 625.0);
         app.camera.zoom = 0.63;
