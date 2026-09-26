@@ -11,12 +11,33 @@ on:
         description: Independently recorded SHA-256 of accepted-runtime.agq-runtime
         required: true
         type: string
+      native_acceptance:
+        description: Run Windows Native Studio builds and semantic oracles instead of runtime installation qualification
+        required: false
+        type: boolean
+        default: false
+      baseline_ref:
+        description: Optional full baseline commit for native acceptance mode
+        required: false
+        type: string
+        default: bd72aee4e1bf2aa2b894dc0201bcef111ddf337b
 
 permissions:
   contents: read
 
 jobs:
+  native-acceptance:
+    if: inputs.native_acceptance
+    # The called oracle needs this only to download the existing draft asset.
+    # Reusable workflows cannot increase the caller's token permissions.
+    permissions:
+      contents: write
+    uses: ./.github/workflows/native-acceptance-build.yml
+    with:
+      run_oracle: true
+      baseline_ref: ${{ inputs.baseline_ref }}
   authenticate:
+    if: ${{ !inputs.native_acceptance }}
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     # GitHub limits draft-release visibility to identities with push access.

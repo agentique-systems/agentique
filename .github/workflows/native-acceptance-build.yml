@@ -13,6 +13,18 @@ on:
         required: false
         type: string
         default: bd72aee4e1bf2aa2b894dc0201bcef111ddf337b
+  workflow_call:
+    inputs:
+      run_oracle:
+        description: Execute the independent real self-model oracle using the pinned accepted runtime
+        required: false
+        type: boolean
+        default: true
+      baseline_ref:
+        description: Optional full baseline commit; overlays only the identical current portable test harness
+        required: false
+        type: string
+        default: bd72aee4e1bf2aa2b894dc0201bcef111ddf337b
 
 permissions:
   contents: read
