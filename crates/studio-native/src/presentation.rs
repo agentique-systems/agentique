@@ -162,6 +162,7 @@ impl StudioApp {
                 explain: self.show_explain,
                 source: self.show_source,
             },
+            selection: Some(self.selection.clone()),
         }
     }
 
@@ -382,9 +383,14 @@ impl StudioApp {
         self.fit_pending = recovery.focus_reset;
         self.show_agent = presentation.panels.agent;
         self.dependencies = self.show_agent.then(|| self.expanded.clone()).flatten();
-        // Evidence/source require a revision-bound selection, which is not saved.
-        self.show_explain = false;
-        self.show_source = false;
+        self.selection = presentation
+            .selection
+            .filter(|selection| selection.revision == self.projection.revision_id)
+            .unwrap_or_else(|| crate::selection::Selection::new(self.projection.revision_id));
+        // Reconcile after the restored layout/scene is rebuilt. Inspection is
+        // subsequently queried against this exact revision and selection.
+        self.show_explain = presentation.panels.explain && self.selection.primary.is_some();
+        self.show_source = presentation.panels.source && self.selection.primary.is_some();
         if let Some(branch) = presentation.branch
             && self
                 .history

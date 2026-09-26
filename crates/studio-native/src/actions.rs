@@ -217,6 +217,7 @@ impl StudioApp {
         if !self.allow_context_change() {
             return;
         }
+        self.remember_location();
         self.focus = None;
         self.expanded = None;
         self.dependencies = None;
@@ -374,13 +375,25 @@ impl StudioApp {
         }
     }
     pub fn record_location(&mut self) {
-        self.navigation.push(Location {
+        if self.pending_revision.is_some() || self.restore.is_some() {
+            return;
+        }
+        self.navigation.push(self.current_location());
+    }
+    pub fn remember_location(&mut self) {
+        if self.pending_revision.is_none() && self.restore.is_none() {
+            self.navigation.update_current(self.current_location());
+        }
+    }
+    fn current_location(&self) -> Location {
+        Location {
             revision: self.projection.revision_id,
             world: self.world,
             focus: self.focus,
             center: [self.camera.center.x, self.camera.center.y],
             zoom: self.camera.zoom,
-        });
+            presentation: self.capture_presentation(),
+        }
     }
     pub fn restore_location(&mut self, location: Location) {
         self.focus_changes_pending = false;
@@ -399,7 +412,17 @@ impl StudioApp {
         self.restore_world_filters(location.world);
         self.world = location.world;
         self.focus = location.focus;
-        self.expanded = None;
+        self.expanded = location.presentation.expanded.clone();
+        self.collapsed = location.presentation.collapsed.clone();
+        self.families = location
+            .presentation
+            .definition
+            .relationship_families
+            .iter()
+            .copied()
+            .collect();
+        self.include_standard = location.presentation.definition.include_standard_library;
+        let definition = location.presentation.definition.clone();
         if let Some(binding) = self.binding {
             self.pending_revision = (binding.revision != location.revision).then_some(
                 agq_studio_platform::RevisionBinding {
@@ -433,11 +456,20 @@ impl StudioApp {
                 dark: self.theme.dark,
                 high_contrast: self.theme.contrast,
                 reduced_motion: self.reduced_motion,
-                presentation: None,
+                presentation: Some(location.presentation),
             });
-            self.request_projection();
+            self.request_projection_definition(definition);
         } else {
-            self.rebuild();
+            // Fixture Worlds can use different projections; rebuild the visited
+            // World before reconciling its revision-scoped saved selection.
+            self.projection = if location.world == World::Requirements {
+                fixtures::requirements()
+            } else {
+                fixture_projection(self.fixture.as_deref().unwrap_or("architecture"))
+            };
+            self.apply_saved_presentation(location.presentation);
+            self.rebuild_immediate();
+            self.request_inspection();
         }
         let mut target = self.camera;
         target.center = Point::new(location.center[0], location.center[1]);
@@ -462,6 +494,27 @@ impl StudioApp {
         }
         self.scene_builder.invalidate();
         self.invalidate_inspection();
+        if self.pending_revision.is_none()
+            && self.comparison == ComparisonMode::Current
+            && self.fixture.is_none()
+            && let Some(binding) = self.binding
+        {
+            self.pin_current_reader();
+            match self.bridge.project_read(binding, definition.clone()) {
+                Ok(request) => {
+                    self.scene_request = request;
+                    self.pending.insert(request);
+                    self.requested_definition = Some((request, definition));
+                    self.deferred_definition = None;
+                    return;
+                }
+                Err(error) if self.bridge.mutation_pending() => {
+                    self.status = format!("Current revision view unavailable: {error}");
+                    return;
+                }
+                Err(_) => {} // Initial opening can still acquire its first projection serially.
+            }
+        }
         if self.bridge.mutation_pending() {
             self.deferred_definition = Some(definition);
             self.status =
@@ -517,15 +570,16 @@ impl StudioApp {
         }
     }
     pub fn switch_world(&mut self, world: World) {
+        self.remember_location();
         let selected = self.selected_element();
         if self.show_agent && self.agent_return.is_some() {
             self.dismiss_agent_view();
         }
-        self.restore_world_filters(world);
         self.navigation.update_camera(
             [self.camera.center.x, self.camera.center.y],
             self.camera.zoom,
         );
+        self.restore_world_filters(world);
         self.world = world;
         self.search.clear();
         self.expanded = None;
@@ -668,6 +722,7 @@ impl StudioApp {
                 | History
                 | DismissAgent
         ) {
+            self.remember_location();
             self.focus_changes_pending = false;
         }
         if self.bridge.mutation_pending() && matches!(id, Compare | Dependencies) {
@@ -1303,6 +1358,49 @@ mod tests {
         ]);
         let context = eframe::CreationContext::_new_kittest(egui::Context::default());
         StudioApp::new(&context, args).unwrap()
+    }
+
+    #[test]
+    fn back_forward_restores_each_visits_camera_selection_filters_and_world() {
+        let mut app = application();
+        let context = egui::Context::default();
+        let target = SceneTarget::Node(app.scene.nodes[0].id);
+        app.selection.select(target.clone(), false);
+        app.camera.center = Point::new(341.0, 625.0);
+        app.camera.zoom = 0.63;
+        app.include_standard = true;
+        app.families = BTreeSet::from([RelationshipFamily::Ownership]);
+        let system = app.capture_presentation();
+        app.switch_world(World::Graph);
+        app.selection.clear();
+        app.camera.center = Point::new(-80.0, 90.0);
+        app.camera.zoom = 1.73;
+        app.include_standard = false;
+        app.families = RelationshipFamily::all().into_iter().collect();
+        let graph = app.capture_presentation();
+        app.execute(CommandId::Back, &context);
+        assert_eq!(app.world, World::System);
+        assert_eq!(app.camera.center, system.camera.center);
+        assert_eq!(app.camera.zoom, system.camera.zoom);
+        assert_eq!(app.selection.primary, Some(target));
+        assert!(app.include_standard);
+        assert_eq!(
+            app.families,
+            BTreeSet::from([RelationshipFamily::Ownership])
+        );
+        // Projection completion records the restored visit. It must not truncate
+        // the forward chain just because camera/filter/selection values differ.
+        app.record_location();
+        app.execute(CommandId::Forward, &context);
+        assert_eq!(app.world, World::Graph);
+        assert_eq!(app.camera.center, graph.camera.center);
+        assert_eq!(app.camera.zoom, graph.camera.zoom);
+        assert!(app.selection.primary.is_none());
+        assert!(!app.include_standard);
+        assert_eq!(
+            app.families,
+            RelationshipFamily::all().into_iter().collect()
+        );
     }
 
     #[test]

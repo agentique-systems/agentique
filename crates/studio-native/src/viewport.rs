@@ -48,6 +48,11 @@ impl StudioApp {
             }
             self.fit_pending = false;
         }
+        if crate::zoom_input::apply(ui, &response, &mut self.camera) {
+            self.camera_target = None;
+            self.timing.input(crate::timing::InputKind::Zoom);
+            ui.ctx().request_repaint();
+        }
         self.lod.update(self.camera.zoom);
         let pointer = response
             .hover_pos()
@@ -69,13 +74,6 @@ impl StudioApp {
                 hovered = Some(SceneTarget::Node(port.owner));
             }
             self.timing.hit(started.elapsed());
-            let wheel = ui.input(|i| i.smooth_scroll_delta.y);
-            if wheel.abs() > 0.01 {
-                self.camera_target = None;
-                self.camera.zoom_at(local.unwrap(), (wheel * 0.0025).exp());
-                self.timing.input(crate::timing::InputKind::Zoom);
-                ui.ctx().request_repaint();
-            }
         }
         if response.drag_started() && ui.input(|i| i.modifiers.shift) {
             self.marquee_start = world;

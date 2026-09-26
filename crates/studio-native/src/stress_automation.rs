@@ -26,6 +26,8 @@ struct Runner {
     maximum_anchor_error_world: f32,
     minimum_visible: Option<usize>,
     completed: bool,
+    zoom_trace: Vec<serde_json::Value>,
+    first_anchor_divergence_frame: Option<usize>,
 }
 
 pub fn drive(
@@ -88,6 +90,27 @@ impl Runner {
             return Ok(ScenarioStatus::Running);
         }
         let viewport = automation::target(ctx, Target::Viewport)?;
+        if self.zoom_anchor.is_some() {
+            let error = self.anchor_error(app, ctx);
+            if error.is_some_and(|error| error > 0.25)
+                && self.first_anchor_divergence_frame.is_none()
+            {
+                self.first_anchor_divergence_frame = Some(self.frame);
+            }
+            self.zoom_trace.push(serde_json::json!({
+                "frame": self.frame,
+                "camera_from_previous_update": app.camera,
+                "viewport": [viewport.left(), viewport.top(), viewport.width(), viewport.height()],
+                "stored_zoom_pointer": self.zoom_pointer.map(|p| [p.x, p.y]),
+                "previous_input_pointer": ctx.input(|i| i.pointer.latest_pos()).map(|p| [p.x, p.y]),
+                "previous_smooth_scroll_y": ctx.input(|i| i.smooth_scroll_delta.y),
+                "incoming_os_events_before_synthetic_injection": input.events.iter().map(|event| format!("{event:?}")).collect::<Vec<_>>(),
+                "pixels_per_point": ctx.pixels_per_point(),
+                "scene_generation": app.generation,
+                "camera_animation_pending": app.camera_target.is_some(),
+                "anchor_error_world": error,
+            }));
+        }
         let now = Instant::now();
         if let Some(previous) = self.last.replace(now) {
             let interval = now.duration_since(previous).as_secs_f64() * 1000.0;
@@ -197,6 +220,8 @@ impl Runner {
             "format": "agentique-native-stress-v1",
             "passed": matches!(result, Ok(ScenarioStatus::Complete)),
             "failure": result.as_ref().err(),
+            "first_anchor_divergence_frame": self.first_anchor_divergence_frame,
+            "zoom_input_trace": self.zoom_trace,
             "warmup_frames": 60,
             "phase_frame_intervals_ms": { "steady": self.steady.summary(), "pan": self.pan.summary(), "zoom": self.zoom.summary() },
             "camera_checks": {

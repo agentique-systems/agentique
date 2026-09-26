@@ -92,7 +92,9 @@ pub enum DiffMark {
     Changed,
 }
 /// Selection identity remains independent of screen coordinates and layout.
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(
+    Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, serde::Serialize, serde::Deserialize,
+)]
 pub enum SceneTarget {
     Node(ElementId),
     Port(ElementId),

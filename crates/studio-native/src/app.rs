@@ -673,8 +673,9 @@ impl eframe::App for StudioApp {
         if let Some(message) = crate::surface_recovery::device_fault(ctx) {
             // Keep processing in-flight semantic outcomes, but do not accept new
             // blind editor actions while its graphics device cannot show them.
+            let first_notice = self.status != message;
             self.status = message;
-            if self.last_saved.elapsed() > Duration::from_secs(8) {
+            if first_notice || self.last_saved.elapsed() > Duration::from_secs(8) {
                 self.save_session();
             }
             self.timing.ui_complete();
@@ -974,6 +975,7 @@ mod bootstrap_tests {
             expanded: None,
             branch: None,
             panels: Default::default(),
+            selection: None,
         };
         let mut session = Session {
             version: 1,

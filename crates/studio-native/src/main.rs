@@ -34,6 +34,7 @@ mod updates;
 #[cfg(test)]
 mod view_intent_tests;
 mod viewport;
+mod zoom_input;
 
 use clap::Parser;
 use std::path::PathBuf;

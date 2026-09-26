@@ -13,7 +13,7 @@ impl StudioApp {
         self.receive_replies(replies);
     }
     pub fn receive_replies(&mut self, replies: impl IntoIterator<Item = crate::bridge::Reply>) {
-        for reply in replies {
+        for mut reply in replies {
             if reply.terminal {
                 self.pending.remove(&reply.request);
                 self.bridge.complete(reply.request);
@@ -21,7 +21,26 @@ impl StudioApp {
             if !self.bridge.current_epoch(reply.epoch) {
                 continue;
             }
-            if reply.read.is_some() {
+            if let Some(read) = reply.read
+                && read.panel == crate::read_lane::PanelRead::Projection
+            {
+                if !reply.terminal
+                    || reply.mutation
+                    || reply.request != self.scene_request
+                    || reply.epoch != read.scope.epoch
+                    || self.binding != Some(read.scope.binding)
+                    || self.pending_revision.is_some()
+                    || self.fixture.is_some()
+                    || self.comparison != ComparisonMode::Current
+                {
+                    continue;
+                }
+                // This capability is permanently revision-bound and unaffected
+                // by concurrent candidate construction. The ordinary projection
+                // install below still checks the exact requested definition.
+                reply.read = None;
+                reply.context = Some(self.work_context());
+            } else if reply.read.is_some() {
                 self.receive_panel_read(reply);
                 continue;
             }

@@ -50,6 +50,9 @@ impl StudioApp {
         // Candidate objects and historical ghosts retain their existing serial
         // authority path. They cannot be observed through a current reader.
         self.enqueue(Box::new(move |platform| match (candidate, panel) {
+            (_, PanelRead::Projection) => Err(agq_studio_platform::PlatformError::Invalid(
+                "Projection reads require an exact view definition".into(),
+            )),
             (Some(id), PanelRead::Inspector) => platform
                 .inspect_candidate(id, element)
                 .map(Output::Inspector),
@@ -106,6 +109,7 @@ impl StudioApp {
     pub fn receive_panel_read(&mut self, reply: Reply) {
         let Some(context) = reply.read else { return };
         let latest = match context.panel {
+            PanelRead::Projection => return,
             PanelRead::Inspector => self.inspector_request,
             PanelRead::Explain => self.explanation_request,
             PanelRead::Source => self.source_request,
@@ -220,6 +224,50 @@ mod tests {
             mutation: false,
             terminal: true,
             result: Ok(result),
+        }
+    }
+
+    #[test]
+    fn current_projection_completion_is_revision_definition_and_request_fenced_during_mutation() {
+        for invalid in 0..6 {
+            let mut app = application();
+            let pending = app
+                .bridge
+                .work(
+                    Box::new(|_| panic!("no authenticated service in routing test")),
+                    app.work_context(),
+                    true,
+                )
+                .unwrap();
+            app.pending.insert(pending);
+            app.scene_request = 70;
+            let mut projection = app.projection.clone();
+            projection.view = app.definition();
+            projection.view.focus = Some(projection.nodes[0].id);
+            app.requested_definition = Some((70, projection.view.clone()));
+            let mut reply = read_reply(
+                &app,
+                70,
+                PanelRead::Projection,
+                Output::Projection(projection.clone()),
+            );
+            match invalid {
+                1 => reply.request = 69,
+                2 => reply.read.as_mut().unwrap().scope.binding.revision = ProjectRevisionId::new(),
+                3 => reply.epoch += 1,
+                4 => app.comparison = ComparisonMode::Candidate,
+                5 => app.requested_definition.as_mut().unwrap().1.focus = None,
+                _ => {}
+            }
+            let generation = app.generation;
+            app.receive_replies([reply]);
+            if invalid == 0 {
+                assert_eq!(app.projection, projection);
+                assert!(app.generation > generation);
+            } else {
+                assert_eq!(app.generation, generation, "invalid case {invalid}");
+            }
+            assert!(app.bridge.mutation_pending());
         }
     }
 

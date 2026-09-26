@@ -305,6 +305,24 @@ impl Bridge {
         )?;
         Ok(request)
     }
+
+    pub fn project_read(
+        &mut self,
+        binding: RevisionBinding,
+        definition: agq_modeling_view::ViewDefinition,
+    ) -> Result<u64, String> {
+        let request = self.next;
+        self.next += 1;
+        self.reads.project(
+            request,
+            ReadScope {
+                epoch: self.epoch(),
+                binding,
+            },
+            definition,
+        )?;
+        Ok(request)
+    }
 }
 
 /// All visual edit entry points construct this existing provider-neutral intent.

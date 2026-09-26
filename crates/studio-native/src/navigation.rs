@@ -22,13 +22,14 @@ impl World {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
 pub struct Location {
     pub revision: ProjectRevisionId,
     pub world: World,
     pub focus: Option<ElementId>,
     pub center: [f32; 2],
     pub zoom: f32,
+    pub presentation: crate::saved_views::SavedPresentation,
 }
 
 #[derive(Default, Debug)]
@@ -46,7 +47,7 @@ impl Navigation {
             .collect()
     }
     pub fn push(&mut self, location: Location) {
-        if self.entries.get(self.cursor) == Some(&location) {
+        if self.update_current(location.clone()) {
             return;
         }
         self.entries.truncate(self.cursor + 1);
@@ -57,10 +58,26 @@ impl Navigation {
             self.cursor -= 1;
         }
     }
+    /// Refresh the current visit without creating a second visit or discarding
+    /// Forward history when an asynchronous projection finishes restoration.
+    pub fn update_current(&mut self, location: Location) -> bool {
+        if let Some(entry) = self.entries.get_mut(self.cursor)
+            && entry.revision == location.revision
+            && entry.world == location.world
+            && entry.focus == location.focus
+        {
+            *entry = location;
+            true
+        } else {
+            false
+        }
+    }
     pub fn update_camera(&mut self, center: [f32; 2], zoom: f32) {
         if let Some(entry) = self.entries.get_mut(self.cursor) {
             entry.center = center;
             entry.zoom = zoom;
+            entry.presentation.camera.center = agq_studio_scene::Point::new(center[0], center[1]);
+            entry.presentation.camera.zoom = zoom;
         }
     }
     pub fn back(&mut self) -> Option<Location> {
