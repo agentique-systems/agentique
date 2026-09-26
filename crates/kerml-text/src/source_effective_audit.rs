@@ -7,6 +7,8 @@ use agq_kerml_semantics::{ClosedAuditContext, ClosedAuditReads, ClosedAuditSnaps
 pub(super) struct SuccessfulAudit {
     reads: ClosedAuditReads,
     checked: BTreeMap<SystemsPublicationFamily, usize>,
+    mandatory_references: usize,
+    complete_references: usize,
 }
 
 #[derive(Debug)]
@@ -70,11 +72,15 @@ pub(super) fn run(
                     *report.checked.entry(family).or_default() += count;
                     reused_checks += count;
                 }
+                report.mandatory_references += entry.mandatory_references;
+                report.complete_references += entry.complete_references;
                 retained.insert(
                     subject,
                     SuccessfulAudit {
                         reads,
                         checked: entry.checked.clone(),
+                        mandatory_references: entry.mandatory_references,
+                        complete_references: entry.complete_references,
                     },
                 );
                 reused += 1;
@@ -105,6 +111,8 @@ pub(super) fn run(
                     SuccessfulAudit {
                         reads,
                         checked: one.checked.clone(),
+                        mandatory_references: one.mandatory_references,
+                        complete_references: one.complete_references,
                     },
                 );
             }
