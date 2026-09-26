@@ -1165,6 +1165,8 @@ fn kind_label(kind: &str) -> &str {
         "ConnectionUsage" => "Connection",
         "RequirementDefinition" => "Requirement definition",
         "RequirementUsage" => "Requirement",
+        "ConstraintUsage" => "Constraint",
+        "ReferenceUsage" => "Reference",
         "ActionDefinition" => "Action definition",
         "ActionUsage" => "Action",
         "StateDefinition" => "State definition",

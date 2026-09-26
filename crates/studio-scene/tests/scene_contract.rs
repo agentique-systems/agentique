@@ -386,6 +386,23 @@ fn unknown_categories_are_never_guessed_by_substring() {
         NodeCategory::from_semantic_kind("Agent"),
         NodeCategory::Unknown
     );
+    assert_eq!(
+        NodeCategory::from_semantic_kind("ReferenceUsage"),
+        NodeCategory::Reference
+    );
+    assert_eq!(
+        NodeCategory::from_semantic_kind("ConstraintUsage"),
+        NodeCategory::Constraint
+    );
+    assert_eq!(
+        NodeCategory::from_semantic_kind("MisleadingConstraintUsage"),
+        NodeCategory::Unknown
+    );
+    assert_ne!(
+        NodeCategory::from_semantic_kind("ConstraintUsage"),
+        NodeCategory::Requirement,
+        "a modeled constraint is not an evaluated or satisfied requirement"
+    );
 }
 
 #[test]
@@ -407,6 +424,84 @@ fn parallel_relationships_have_distinct_routes() {
         .find(|e| e.semantic.id == "parallel")
         .unwrap();
     assert_ne!(a.points, b.points);
+}
+
+#[test]
+fn twenty_parallel_routes_select_the_nearest_exact_relationship_across_zoom_and_order() {
+    let mut projection = fixtures::stress(2, 1);
+    let original = projection.edges[0].clone();
+    projection.edges = (0..20)
+        .map(|index| {
+            let mut edge = original.clone();
+            edge.id = format!("parallel-{index:02}");
+            edge.relationship_id = Some(fixtures::id(1000 + index));
+            edge
+        })
+        .collect();
+    let options = SceneOptions {
+        hierarchy: false,
+        ..Default::default()
+    };
+    let scene = SemanticScene::from_projection(&projection, &options, None).unwrap();
+    let index = SpatialIndex::build(&scene);
+    assert_eq!(scene.edges.len(), 20);
+    assert!(
+        scene.ports.is_empty(),
+        "drawing anchors must not invent modeled ports"
+    );
+    for edge in &scene.edges {
+        assert_eq!(
+            &edge.semantic,
+            projection
+                .edges
+                .iter()
+                .find(|input| input.id == edge.semantic.id)
+                .unwrap()
+        );
+        let start = edge.points[0];
+        let stub = edge.points[1];
+        assert!((start.y - stub.y).abs() < 0.001 && start.distance(stub) >= 12.0);
+        let direction = (stub.x - start.x).signum();
+        // Dense node-side attachments are about four world units apart. A
+        // normal pointer radius contains multiple routes; identity ordering
+        // must not steal a click from the closer visible line.
+        for zoom in [0.45, 0.75, 1.0, 2.0, 4.0] {
+            for offset in [-0.7, 0.0, 0.7] {
+                let point = Point::new(start.x + direction * 10.0, start.y + offset);
+                assert_eq!(
+                    index.hit_test(point, 6.0 / zoom),
+                    Some(SceneTarget::Edge(edge.semantic.id.clone())),
+                    "wrong relationship at zoom {zoom}, offset {offset}"
+                );
+            }
+        }
+    }
+    let mut reordered = projection.clone();
+    reordered.edges.reverse();
+    let reordered = SemanticScene::from_projection(&reordered, &options, None).unwrap();
+    let reordered_index = SpatialIndex::build(&reordered);
+    for edge in &scene.edges {
+        let other = reordered
+            .edges
+            .iter()
+            .find(|other| other.semantic.id == edge.semantic.id)
+            .unwrap();
+        assert_eq!(edge.points, other.points);
+        let point = Point::new(
+            edge.points[0].x + (edge.points[1].x - edge.points[0].x).signum() * 10.0,
+            edge.points[0].y,
+        );
+        assert_eq!(
+            index.hit_test(point, 12.0),
+            reordered_index.hit_test(point, 12.0)
+        );
+    }
+    let node = &scene.nodes[0];
+    assert_eq!(
+        index.hit_test(node.bounds.center(), 12.0),
+        Some(SceneTarget::Node(node.id())),
+        "nearest-edge correction must preserve node selection priority"
+    );
 }
 
 #[test]

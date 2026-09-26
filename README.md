@@ -42,8 +42,9 @@ to edit the real model.
 The current alpha can take several minutes to authenticate and restore a real
 project; Studio shows the opening stage and elapsed time.
 The [runtime distribution guide](docs/runtime-publication-distribution.md) explains
-download and offline installation. The authenticated runtime is currently retained
-as a maintainer-access draft release; a successful build alone does not supply it.
+download and offline installation. The authenticated runtime is available as a
+[public prerelease](https://github.com/agentique-systems/agentique/releases/tag/runtime-kerml-v9-sysml-v3-bundle1);
+a successful application build alone does not install it.
 
 To explore the native interface without the runtime, explicitly open the labeled
 architecture fixture:

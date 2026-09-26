@@ -81,6 +81,12 @@ impl StudioApp {
             {
                 let preparation = self.preparation.take().expect("matching preparation");
                 if preparation.cancelled {
+                    if let Err(error) = &reply.result {
+                        self.status = format!(
+                            "Candidate preparation failed after cancellation: {error}. Current revision retained."
+                        );
+                        continue;
+                    }
                     if let Ok(Output::Candidate(candidate)) = reply.result {
                         let id = candidate.id;
                         if self.binding == Some(candidate.base) && self.fixture.is_none() {
@@ -796,6 +802,8 @@ impl StudioApp {
             "gpu_timestamp_ms": stats.as_ref().map(|s| s.timestamp_ms.summary()),
             "gpu_timestamp_scope": stats.as_ref().map(|s| s.timestamp_status),
             "gpu_timestamp_errors": stats.as_ref().map(|s| s.timestamp_errors),
+            "gpu_timestamp_diagnostics": stats.as_ref().map(|s| &s.timestamp_diagnostics),
+            "gpu_timestamp_diagnostics_contract": "Zero-duration samples are retained in gpu_timestamp_ms. gpu_timestamp_errors sums non-monotonic samples, map errors, poll errors and surface invalidations; it is not a device-loss count. Diagnostics categories are cumulative for this process; historical reports without categories cannot identify their aggregate causes.",
             "physical_input_to_photon_ms": null,
             "note": "Native wgpu frames with vsync. CPU update intervals retain the latest 240 samples after 60 warmup intervals. Input spans start inside the viewport gesture handler and end at the next UI update; they exclude OS input delivery and do not measure presentation. GPU upload is CPU submission time for the last upload. Null means unmeasured."
         })
@@ -1332,6 +1340,39 @@ mod tests {
         assert_eq!(app.candidate.as_ref().unwrap().id, Some(candidate_id));
         assert!(app.bridge.mutation_pending());
         assert!(app.status.contains("Discarding prepared candidate"));
+    }
+
+    #[test]
+    fn failed_preparation_after_cancellation_reports_the_failure_without_a_phantom_candidate() {
+        let mut app = application();
+        let current = app.projection.clone();
+        let camera = app.camera;
+        let selection = app.selection.clone();
+        let binding = app.binding;
+        app.preparation = Some(crate::app::PendingPreparation {
+            request: 1200,
+            started: std::time::Instant::now(),
+            cancelled: true,
+            intent: "Cancelled nested part".into(),
+        });
+        let context = app.work_context();
+        app.receive_replies([reply(
+            1200,
+            context,
+            true,
+            Err("Semantic closure failed".into()),
+        )]);
+        assert!(app.preparation.is_none());
+        assert!(app.candidate.is_none());
+        assert!(!app.bridge.mutation_pending());
+        assert_eq!(app.projection, current);
+        assert_eq!(app.scene.revision_id, current.revision_id);
+        assert_eq!(app.binding, binding);
+        assert_eq!(app.camera, camera);
+        assert_eq!(app.selection, selection);
+        assert!(app.status.contains("Semantic closure failed"));
+        assert!(app.status.contains("Current revision retained"));
+        assert!(!app.status.contains("Discarding prepared candidate"));
     }
 
     #[test]

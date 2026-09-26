@@ -1,0 +1,40 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-studio-scene"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "fea3339dbf0e84d408cb7d47c802a7b047826f1f",
+  "tracked_changes_at_start": [
+    " M README.md",
+    " M crates/kerml-semantics/src/producer_closure_rebind.rs",
+    " M crates/kerml-semantics/tests/unit/producer_closure.rs",
+    " M crates/kerml-text/src/sysml/source.rs",
+    " M crates/studio-native/src/gpu.rs",
+    " M crates/studio-native/src/gpu_timing.rs",
+    " M crates/studio-native/src/inspector.rs",
+    " M crates/studio-native/src/panels.rs",
+    " M crates/studio-native/src/soak_automation.rs",
+    " M crates/studio-native/src/updates.rs",
+    " M crates/studio-scene/src/lib.rs",
+    " M crates/studio-scene/src/spatial.rs",
+    " M crates/studio-scene/tests/scene_contract.rs",
+    " M docs/native-studio.md",
+    " M docs/runtime-publication-distribution.md"
+  ],
+  "started_utc": "2026-09-26T10:15:23.324526+00:00",
+  "elapsed_seconds": 33.172,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/acceptance-scene-tests-03.txt",
+  "output_sha256": "ba162c7309078b4ab6e3780831a5ecee9eba43ded6fa983ab713cb725c254520",
+  "build_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "2"
+  }
+}

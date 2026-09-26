@@ -1230,6 +1230,8 @@ pub fn category_icon(category: NodeCategory) -> &'static str {
         NodeCategory::Port => "◇",
         NodeCategory::Interface => "↔",
         NodeCategory::Requirement => "≡",
+        NodeCategory::Constraint => "≡",
+        NodeCategory::Reference => "↗",
         NodeCategory::Action => "▶",
         NodeCategory::State => "○",
         NodeCategory::Agent => "✦",

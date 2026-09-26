@@ -168,13 +168,24 @@ impl SpatialIndex {
         self.index
             .query(query)
             .into_iter()
-            .filter(|hit| match hit.segment {
-                Some((a, b)) => segment_distance(point, a, b) <= tolerance,
-                None => hit.bounds.inflate(tolerance.min(3.0)).contains(point),
+            .filter_map(|hit| match hit.segment {
+                Some((a, b)) => {
+                    let distance = segment_distance(point, a, b);
+                    (distance <= tolerance).then_some((hit, distance))
+                }
+                None => hit
+                    .bounds
+                    .inflate(tolerance.min(3.0))
+                    .contains(point)
+                    .then_some((hit, 0.0)),
             })
-            .min_by(|a, b| {
+            .min_by(|(a, a_distance), (b, b_distance)| {
                 a.priority
                     .cmp(&b.priority)
+                    // Parallel orthogonal segments all have zero-area bounds.
+                    // Within the existing port/node/edge priority, choose the
+                    // line nearest the pointer before using identity as a tie.
+                    .then_with(|| a_distance.total_cmp(b_distance))
                     .then_with(|| {
                         (a.bounds.width() * a.bounds.height())
                             .total_cmp(&(b.bounds.width() * b.bounds.height()))
@@ -185,7 +196,7 @@ impl SpatialIndex {
                             .cmp(&self.targets[b.target].identity)
                     })
             })
-            .map(|item| self.targets[item.target].identity.clone())
+            .map(|(item, _)| self.targets[item.target].identity.clone())
     }
     /// Culling includes edges crossing the viewport with both endpoints outside.
     pub fn query(&self, bounds: Rect) -> Vec<SceneTarget> {

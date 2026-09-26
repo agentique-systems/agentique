@@ -18,6 +18,7 @@ pub(super) struct Evidence {
 #[derive(Clone, Default)]
 pub(super) struct State {
     pub(super) started: Option<Instant>,
+    finished: bool,
     saved: Option<crate::saved_views::SavedPresentation>,
     pan_origin: Option<Point>,
     zoom_anchor: Option<(Point, Point)>,
@@ -60,13 +61,17 @@ pub(super) enum Check {
 }
 
 pub(super) fn next_cycle(runner: &mut Runner, app: &StudioApp) -> Result<bool, String> {
-    if app.args.soak_seconds == 0 {
+    if app.args.soak_seconds == 0 || runner.soak.finished {
         return Ok(false);
     }
     if let Some(started) = runner.soak.started {
         runner.report.soak.elapsed_ms = started.elapsed().as_millis();
         runner.report.soak.completed_cycles += 1;
         if started.elapsed().as_secs() >= app.args.soak_seconds {
+            // A viewport-close command is asynchronous. Another raw-input hook
+            // may arrive before the OS closes the window; it must not complete
+            // this same plan again or manufacture a third soak cycle.
+            runner.soak.finished = true;
             return Ok(false);
         }
     } else {
@@ -583,5 +588,47 @@ pub(super) fn check(runner: &mut Runner, check: &Check, app: &StudioApp) -> Resu
                 }),
             "Cancelled Rename changed the durable design",
         ),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use clap::Parser;
+
+    #[test]
+    fn repeated_terminal_frames_cannot_complete_the_same_soak_cycle_twice() {
+        // Only driver accounting is under test; this labeled scene never
+        // establishes real runtime or semantic acceptance evidence.
+        let mut args = Args::parse_from([
+            "studio",
+            "--fixture",
+            "architecture",
+            "--no-restore",
+            "--scenario",
+            "real",
+        ]);
+        args.soak_seconds = 600;
+        let context = eframe::CreationContext::_new_kittest(egui::Context::default());
+        let app = StudioApp::new(&context, args).unwrap();
+        let mut runner = Runner::new(&app).unwrap();
+        runner.soak.started = Some(Instant::now() - std::time::Duration::from_secs(601));
+        runner.report.soak.completed_cycles = 1;
+        runner.report.soak.navigation_restorations = 2;
+        runner.report.soak.cancelled_preparations = 2;
+        runner.report.soak.validated_renames = 2;
+        runner.report.soak.graph_reads_completed_during_preparation = 2;
+        runner.index = runner.steps.len();
+        assert!(!next_cycle(&mut runner, &app).unwrap());
+        assert_eq!(runner.report.soak.completed_cycles, 2);
+        let completed = serde_json::to_value(&runner.report.soak).unwrap();
+        for _ in 0..128 {
+            assert!(!next_cycle(&mut runner, &app).unwrap());
+            assert_eq!(
+                serde_json::to_value(&runner.report.soak).unwrap(),
+                completed
+            );
+            assert_eq!(runner.index, runner.steps.len());
+        }
     }
 }

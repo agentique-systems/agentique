@@ -36,6 +36,8 @@ pub enum NodeCategory {
     Port,
     Interface,
     Requirement,
+    Constraint,
+    Reference,
     Action,
     State,
     Agent,
@@ -59,6 +61,8 @@ impl NodeCategory {
             "RequirementDefinition" | "RequirementUsage" | "RequirementConstraintMembership" => {
                 Self::Requirement
             }
+            "ConstraintUsage" => Self::Constraint,
+            "ReferenceUsage" => Self::Reference,
             "ActionDefinition" | "ActionUsage" | "CalculationDefinition" | "CalculationUsage" => {
                 Self::Action
             }
@@ -75,6 +79,8 @@ impl NodeCategory {
             Self::Port => "PORT",
             Self::Interface => "INTERFACE",
             Self::Requirement => "REQUIREMENT",
+            Self::Constraint => "CONSTRAINT",
+            Self::Reference => "REFERENCE",
             Self::Action => "ACTION",
             Self::State => "STATE",
             Self::Agent => "AGENT",
