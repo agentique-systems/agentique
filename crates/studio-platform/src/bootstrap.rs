@@ -126,18 +126,28 @@ fn open_authenticated(
         &config.database,
     )?);
     let service = Arc::new(ModelingService::new(repository, runtime.systems, 8));
-    // This database contains bootstrap bookkeeping only. It never stores semantic truth.
-    let journal = rusqlite::Connection::open(config.database.with_extension("views.sqlite"))
-        .map_err(|e| PlatformError::Invalid(e.to_string()))?;
-    journal
-        .execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;")
-        .map_err(|e| PlatformError::Invalid(e.to_string()))?;
     progress(BootstrapPhase::OpeningProject);
-    seed_agentique(&service, &config.root, &journal, &mut |phase| match phase {
-        "validating_architecture" => progress(BootstrapPhase::ValidatingArchitecture),
-        "validating_agent_fabric" => progress(BootstrapPhase::ValidatingAgentFabric),
-        _ => {}
-    })?;
+    let default_database =
+        agq_runtime_publications::runtime_directory(config.runtime.runtime_dir.as_deref())?
+            .join("projects/agentique.sqlite");
+    let projects = service.repository().list_projects()?;
+    if should_seed_agentique(
+        &config.database,
+        &default_database,
+        projects.iter().map(|project| project.name.as_str()),
+    ) {
+        // This database contains bootstrap bookkeeping only. It never stores semantic truth.
+        let journal = rusqlite::Connection::open(config.database.with_extension("views.sqlite"))
+            .map_err(|e| PlatformError::Invalid(e.to_string()))?;
+        journal
+            .execute_batch("PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL;")
+            .map_err(|e| PlatformError::Invalid(e.to_string()))?;
+        seed_agentique(&service, &config.root, &journal, &mut |phase| match phase {
+            "validating_architecture" => progress(BootstrapPhase::ValidatingArchitecture),
+            "validating_agent_fabric" => progress(BootstrapPhase::ValidatingAgentFabric),
+            _ => {}
+        })?;
+    }
     progress(BootstrapPhase::RestoringRevision);
     for project in service.repository().list_projects()? {
         let branch = service
@@ -149,9 +159,56 @@ fn open_authenticated(
     Ok(StudioPlatform::new(service, AgentPolicy::operator()))
 }
 
+fn should_seed_agentique<'a>(
+    database: &Path,
+    default_database: &Path,
+    project_names: impl Iterator<Item = &'a str>,
+) -> bool {
+    let mut empty = true;
+    for name in project_names {
+        empty = false;
+        if name == "Agentique" {
+            // The seed operation authenticates its persisted plan or exact
+            // untouched bootstrap metadata before it may resume any work.
+            return true;
+        }
+    }
+    empty && database == default_database
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn generic_restart_never_creates_sample_but_pending_seed_can_resume() {
+        let default = Path::new("runtime/projects/agentique.sqlite");
+        let generic = Path::new("user-projects/engine.sqlite");
+        // A first launch creates the self-model only in the default repository.
+        assert!(should_seed_agentique(default, default, [].into_iter()));
+        assert!(!should_seed_agentique(generic, default, [].into_iter()));
+        // New Project persists an initially empty Working project. On restart
+        // that authored project must remain the only project at either path.
+        for path in [default, generic] {
+            assert!(!should_seed_agentique(
+                path,
+                default,
+                ["Engine"].into_iter()
+            ));
+            assert!(!should_seed_agentique(
+                path,
+                default,
+                ["Engine", "Sensor"].into_iter()
+            ));
+            // Existing bootstrap journals also remain resumable in an explicit
+            // acceptance repository or after creating another project beside it.
+            assert!(should_seed_agentique(
+                path,
+                default,
+                ["Engine", "Agentique"].into_iter()
+            ));
+        }
+    }
 
     #[test]
     fn discovery_is_not_authentication_and_missing_runtime_never_creates_a_database() {
