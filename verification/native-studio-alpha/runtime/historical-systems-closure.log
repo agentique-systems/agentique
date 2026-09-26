@@ -1,0 +1,732 @@
+Systems: restoring sealed KerML dependency
+Systems: dependency restored in 40.882s
+Systems: references round=0 selected=806 obligations=1325 evaluated=1327 reused=0 elapsed=56.084s
+Systems: references round=1 selected=1139 obligations=519 evaluated=1327 reused=0 elapsed=70.367s
+Systems: withdrawn reference=(ElementId(62935226462878452827403305161046163695), PropertyId(247725546121220333578043905212815633670)) candidates=(ElementId(290608157154414767373627029811900965796), {ElementId(35578246714781057953520177448810056313), ElementId(177262207447117310767824097114798630768), ElementId(269721905488752732259841715477711386312), ElementId(290608157154414767373627029811900965796)})
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(69600192712157660057310474197099341812), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(312408630859252679977454153808610632245), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(69600192712157660057310474197099341812), message: "MissingRequired { element: ElementId(69600192712157660057310474197099341812), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(312408630859252679977454153808610632245), message: "MissingRequired { element: ElementId(312408630859252679977454153808610632245), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawn reference=(ElementId(89541266694161312054139260619696034078), PropertyId(265518105109923055411423219294112123986)) candidates=(ElementId(144227272893045865874948066040813852875), {ElementId(60693389203214567771472719256246369144), ElementId(140930852072068039689355128804113574195), ElementId(313695171893505685256277447088326190955), ElementId(336739068280196008867685164704446846468)})
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(78978007231360668787575309316630920876), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(130513456709768435181230211420985820145), message: "Required property 9c555808-0757-5077-a7bd-6d4607a3704d is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(150109919491318329798287267148957196977), message: "Required property 0bdf3b5b-03eb-5d5d-8012-c145b713a986 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(260140140121927379702907988152986741270), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(78978007231360668787575309316630920876), message: "MissingRequired { element: ElementId(78978007231360668787575309316630920876), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(130513456709768435181230211420985820145), message: "MissingRequired { element: ElementId(130513456709768435181230211420985820145), property: PropertyId(207802698063564709594155001382984446029) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(150109919491318329798287267148957196977), message: "MissingRequired { element: ElementId(150109919491318329798287267148957196977), property: PropertyId(15780594026229738911646142130652686726) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(260140140121927379702907988152986741270), message: "MissingRequired { element: ElementId(260140140121927379702907988152986741270), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_NAMING_TARGET", subject: ElementId(78978007231360668787575309316630920876), message: "The first owned Redefinition has no established target" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_PRODUCER_CLOSURE", subject: ElementId(289327173691791494113018550752252556970), message: "No compatible scheduler certificate closes EffectiveTyping for this subject" }
+Systems: withdrawn reference=(ElementId(141113078867730915676633371547988862393), PropertyId(180697270152700011951986247726597737400)) candidates=(ElementId(336625219970939394923179301816045907330), {ElementId(25210448727113354531330196200514355784), ElementId(216765372980319703337171975198866273339)})
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(33873073354635904424816688786444205771), message: "Required property 9c555808-0757-5077-a7bd-6d4607a3704d is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(182387706137713336323409389477621709930), message: "Required property 0bdf3b5b-03eb-5d5d-8012-c145b713a986 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(245110790580663742760129324536000368802), message: "Required property 0bdf3b5b-03eb-5d5d-8012-c145b713a986 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(281739818521961963643119885603623977241), message: "Required property ba5e3468-f3f0-5830-bb84-f9efff91ed06 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(33873073354635904424816688786444205771), message: "MissingRequired { element: ElementId(33873073354635904424816688786444205771), property: PropertyId(207802698063564709594155001382984446029) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(182387706137713336323409389477621709930), message: "MissingRequired { element: ElementId(182387706137713336323409389477621709930), property: PropertyId(15780594026229738911646142130652686726) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(245110790580663742760129324536000368802), message: "MissingRequired { element: ElementId(245110790580663742760129324536000368802), property: PropertyId(15780594026229738911646142130652686726) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(281739818521961963643119885603623977241), message: "MissingRequired { element: ElementId(281739818521961963643119885603623977241), property: PropertyId(247725546121220333578043905212815633670) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_ORDERED_GENERAL", subject: ElementId(33873073354635904424816688786444205771), message: "Ordered owned specialization projection requires its general Type" }
+Systems: withdrawn reference=(ElementId(228424596569332085271707829477083126174), PropertyId(180697270152700011951986247726597737400)) candidates=(ElementId(213382760753045512186200946019778354720), {ElementId(67422252566543431700071794449395060022), ElementId(97179687450632951985592322237648995889)})
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(294706461244775336777831238006668470938), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(294706461244775336777831238006668470938), message: "MissingRequired { element: ElementId(294706461244775336777831238006668470938), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_ORDERED_GENERAL", subject: ElementId(294706461244775336777831238006668470938), message: "Ordered owned specialization projection requires its general Type" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_PRODUCER_CLOSURE", subject: ElementId(86591952534362072027311935593342906135), message: "No compatible scheduler certificate closes EffectiveTyping for this subject" }
+Systems: withdrawn reference=(ElementId(239513258134176228864152024848703545349), PropertyId(265518105109923055411423219294112123986)) candidates=(ElementId(140590757877017037764348819749733795646), {ElementId(38192113019729538667957380436402972241), ElementId(267459383423264850461480031703377158806)})
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(69600192712157660057310474197099341812), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(312408630859252679977454153808610632245), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(69600192712157660057310474197099341812), message: "MissingRequired { element: ElementId(69600192712157660057310474197099341812), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(312408630859252679977454153808610632245), message: "MissingRequired { element: ElementId(312408630859252679977454153808610632245), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: references round=2 selected=1251 obligations=188 evaluated=1327 reused=0 elapsed=92.742s
+Systems: withdrawn reference=(ElementId(7568938502295920922077234963089983606), PropertyId(265518105109923055411423219294112123986)) candidates=(ElementId(336739068280196008867685164704446846468), {ElementId(2485978558526163751829956969721791693), ElementId(60693389203214567771472719256246369144), ElementId(140930852072068039689355128804113574195), ElementId(221299491321644537910062871612668635533), ElementId(313695171893505685256277447088326190955), ElementId(336739068280196008867685164704446846468)})
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(14081671565661373908895540100868121377), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(192477766988230379666704028138103875905), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(260140140121927379702907988152986741270), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(308479820789613057459272267029880652090), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(14081671565661373908895540100868121377), message: "MissingRequired { element: ElementId(14081671565661373908895540100868121377), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(192477766988230379666704028138103875905), message: "MissingRequired { element: ElementId(192477766988230379666704028138103875905), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(260140140121927379702907988152986741270), message: "MissingRequired { element: ElementId(260140140121927379702907988152986741270), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(308479820789613057459272267029880652090), message: "MissingRequired { element: ElementId(308479820789613057459272267029880652090), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawn reference=(ElementId(29741003524204667788322150200243616395), PropertyId(265518105109923055411423219294112123986)) candidates=(ElementId(144227272893045865874948066040813852875), {ElementId(17115071041822497927076103898980772030), ElementId(126941250029681949378106536508376556798), ElementId(140930852072068039689355128804113574195), ElementId(336739068280196008867685164704446846468)})
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(217833368598324288640316811141659298733), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(217833368598324288640316811141659298733), message: "MissingRequired { element: ElementId(217833368598324288640316811141659298733), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawn reference=(ElementId(91660359287472798657104937757097514764), PropertyId(219329289991978411399070407852631026425)) candidates=(ElementId(140590757877017037764348819749733795646), {ElementId(83196969310448604742471381987115471556), ElementId(100857438974959203556766817786785329884), ElementId(140590757877017037764348819749733795646), ElementId(149887392789324044771453276764978155221)})
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(6262762106962731008217533379215162426), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(6372318483486497585376966028033693000), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(125222889352548804977669957696912720577), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(242483038114598031571818883751316727760), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(243150585995550832229056362366264395833), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(332927067949019377080095078831285698325), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(6262762106962731008217533379215162426), message: "MissingRequired { element: ElementId(6262762106962731008217533379215162426), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(6372318483486497585376966028033693000), message: "MissingRequired { element: ElementId(6372318483486497585376966028033693000), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(125222889352548804977669957696912720577), message: "MissingRequired { element: ElementId(125222889352548804977669957696912720577), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(242483038114598031571818883751316727760), message: "MissingRequired { element: ElementId(242483038114598031571818883751316727760), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(243150585995550832229056362366264395833), message: "MissingRequired { element: ElementId(243150585995550832229056362366264395833), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(332927067949019377080095078831285698325), message: "MissingRequired { element: ElementId(332927067949019377080095078831285698325), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawn reference=(ElementId(95710882360667021283015384884760391896), PropertyId(265518105109923055411423219294112123986)) candidates=(ElementId(106491214919499021781833361712654785394), {ElementId(175110939779350346097864628464759820191), ElementId(264211285735843886277445938738037778524)})
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(6262762106962731008217533379215162426), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(89581659238743364357190060208328395029), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(324500278882167150332401790363284007331), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(328787619574140463040587139940063603466), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(332927067949019377080095078831285698325), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(6262762106962731008217533379215162426), message: "MissingRequired { element: ElementId(6262762106962731008217533379215162426), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(89581659238743364357190060208328395029), message: "MissingRequired { element: ElementId(89581659238743364357190060208328395029), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(324500278882167150332401790363284007331), message: "MissingRequired { element: ElementId(324500278882167150332401790363284007331), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(328787619574140463040587139940063603466), message: "MissingRequired { element: ElementId(328787619574140463040587139940063603466), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(332927067949019377080095078831285698325), message: "MissingRequired { element: ElementId(332927067949019377080095078831285698325), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawn reference=(ElementId(112344429445908903603239259565234858858), PropertyId(180697270152700011951986247726597737400)) candidates=(ElementId(86591952534362072027311935593342906135), {ElementId(86591952534362072027311935593342906135), ElementId(166375562670362785868628566918577354589), ElementId(193991546855790735285613179958317723017), ElementId(195076200271081591018635089953446510305)})
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(6262762106962731008217533379215162426), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(16346433939733511392633037700824031393), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(89581659238743364357190060208328395029), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(172268030575261277000919016951759938154), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(294706461244775336777831238006668470938), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(324500278882167150332401790363284007331), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(328787619574140463040587139940063603466), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(332927067949019377080095078831285698325), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(6262762106962731008217533379215162426), message: "MissingRequired { element: ElementId(6262762106962731008217533379215162426), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(16346433939733511392633037700824031393), message: "MissingRequired { element: ElementId(16346433939733511392633037700824031393), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(89581659238743364357190060208328395029), message: "MissingRequired { element: ElementId(89581659238743364357190060208328395029), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(172268030575261277000919016951759938154), message: "MissingRequired { element: ElementId(172268030575261277000919016951759938154), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(294706461244775336777831238006668470938), message: "MissingRequired { element: ElementId(294706461244775336777831238006668470938), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(324500278882167150332401790363284007331), message: "MissingRequired { element: ElementId(324500278882167150332401790363284007331), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(328787619574140463040587139940063603466), message: "MissingRequired { element: ElementId(328787619574140463040587139940063603466), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(332927067949019377080095078831285698325), message: "MissingRequired { element: ElementId(332927067949019377080095078831285698325), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawn reference=(ElementId(147816156134907014639903825171583884047), PropertyId(265518105109923055411423219294112123986)) candidates=(ElementId(336739068280196008867685164704446846468), {ElementId(2485978558526163751829956969721791693), ElementId(60693389203214567771472719256246369144), ElementId(140930852072068039689355128804113574195), ElementId(221299491321644537910062871612668635533), ElementId(313695171893505685256277447088326190955), ElementId(336739068280196008867685164704446846468)})
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(14081671565661373908895540100868121377), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(192477766988230379666704028138103875905), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(260140140121927379702907988152986741270), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(308479820789613057459272267029880652090), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(14081671565661373908895540100868121377), message: "MissingRequired { element: ElementId(14081671565661373908895540100868121377), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(192477766988230379666704028138103875905), message: "MissingRequired { element: ElementId(192477766988230379666704028138103875905), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(260140140121927379702907988152986741270), message: "MissingRequired { element: ElementId(260140140121927379702907988152986741270), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(308479820789613057459272267029880652090), message: "MissingRequired { element: ElementId(308479820789613057459272267029880652090), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawn reference=(ElementId(185871619120274017428440529714834559891), PropertyId(265518105109923055411423219294112123986)) candidates=(ElementId(139650908686367430367359848322133645030), {ElementId(16335910890924190530238584426749149551), ElementId(139650908686367430367359848322133645030), ElementId(295044039627577555642032095843318604817), ElementId(308199976890474103783564398477676472936)})
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(6262762106962731008217533379215162426), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(36535944236364595573499160359855019546), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(121885378533339447314613560079040595624), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(132035445120165730365570545904010120599), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(138420451667729627191045748278717081542), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(244311320892021095013596775047214200514), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(332927067949019377080095078831285698325), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(6262762106962731008217533379215162426), message: "MissingRequired { element: ElementId(6262762106962731008217533379215162426), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(36535944236364595573499160359855019546), message: "MissingRequired { element: ElementId(36535944236364595573499160359855019546), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(121885378533339447314613560079040595624), message: "MissingRequired { element: ElementId(121885378533339447314613560079040595624), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(132035445120165730365570545904010120599), message: "MissingRequired { element: ElementId(132035445120165730365570545904010120599), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(138420451667729627191045748278717081542), message: "MissingRequired { element: ElementId(138420451667729627191045748278717081542), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(244311320892021095013596775047214200514), message: "MissingRequired { element: ElementId(244311320892021095013596775047214200514), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(332927067949019377080095078831285698325), message: "MissingRequired { element: ElementId(332927067949019377080095078831285698325), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawn reference=(ElementId(242578454692169135152315770211403001142), PropertyId(265518105109923055411423219294112123986)) candidates=(ElementId(140590757877017037764348819749733795646), {ElementId(38192113019729538667957380436402972241), ElementId(267459383423264850461480031703377158806)})
+Systems: withdrawn reference=(ElementId(243946612536204001097398850372595806141), PropertyId(219329289991978411399070407852631026425)) candidates=(ElementId(140590757877017037764348819749733795646), {ElementId(83196969310448604742471381987115471556), ElementId(100857438974959203556766817786785329884), ElementId(140590757877017037764348819749733795646), ElementId(149887392789324044771453276764978155221)})
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(6262762106962731008217533379215162426), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(6372318483486497585376966028033693000), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(125222889352548804977669957696912720577), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(242483038114598031571818883751316727760), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(243150585995550832229056362366264395833), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(332927067949019377080095078831285698325), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(6262762106962731008217533379215162426), message: "MissingRequired { element: ElementId(6262762106962731008217533379215162426), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(6372318483486497585376966028033693000), message: "MissingRequired { element: ElementId(6372318483486497585376966028033693000), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(125222889352548804977669957696912720577), message: "MissingRequired { element: ElementId(125222889352548804977669957696912720577), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(242483038114598031571818883751316727760), message: "MissingRequired { element: ElementId(242483038114598031571818883751316727760), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(243150585995550832229056362366264395833), message: "MissingRequired { element: ElementId(243150585995550832229056362366264395833), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(332927067949019377080095078831285698325), message: "MissingRequired { element: ElementId(332927067949019377080095078831285698325), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawn reference=(ElementId(274370872562044140583764357053143282556), PropertyId(291509966492188829100115526807629567513)) candidates=(ElementId(26240430642984716196519699431152616585), {ElementId(6269510101684001733169097560590752226), ElementId(99614146335580433181012612140441747811)})
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(6262762106962731008217533379215162426), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(168421713294262363059367275558093411936), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(244311320892021095013596775047214200514), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(274530415825398240099250666190404981927), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(332927067949019377080095078831285698325), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(6262762106962731008217533379215162426), message: "MissingRequired { element: ElementId(6262762106962731008217533379215162426), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(168421713294262363059367275558093411936), message: "MissingRequired { element: ElementId(168421713294262363059367275558093411936), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(244311320892021095013596775047214200514), message: "MissingRequired { element: ElementId(244311320892021095013596775047214200514), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(274530415825398240099250666190404981927), message: "MissingRequired { element: ElementId(274530415825398240099250666190404981927), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(332927067949019377080095078831285698325), message: "MissingRequired { element: ElementId(332927067949019377080095078831285698325), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_NAMING_TARGET", subject: ElementId(168421713294262363059367275558093411936), message: "The first owned Redefinition has no established target" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_PRODUCER_CLOSURE", subject: ElementId(327693885709811053950831718084384375703), message: "No compatible scheduler certificate closes EffectiveTyping for this subject" }
+Systems: references round=3 selected=1275 obligations=76 evaluated=1327 reused=0 elapsed=115.374s
+Systems: withdrawn reference=(ElementId(7463783615985757066599025342963129457), PropertyId(219329289991978411399070407852631026425)) candidates=(ElementId(26240430642984716196519699431152616585), {ElementId(100997005787049565109393855232389829739), ElementId(160450083596259379538928211293982629053)})
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(132035445120165730365570545904010120599), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(138420451667729627191045748278717081542), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(252307865792526680767737028882505981806), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(300724128403426068416325945586592586950), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(132035445120165730365570545904010120599), message: "MissingRequired { element: ElementId(132035445120165730365570545904010120599), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(138420451667729627191045748278717081542), message: "MissingRequired { element: ElementId(138420451667729627191045748278717081542), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(252307865792526680767737028882505981806), message: "MissingRequired { element: ElementId(252307865792526680767737028882505981806), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(300724128403426068416325945586592586950), message: "MissingRequired { element: ElementId(300724128403426068416325945586592586950), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawn reference=(ElementId(138059327282815644257481313087350908124), PropertyId(247725546121220333578043905212815633670)) candidates=(ElementId(251550739846988583359190785457526398113), {ElementId(174195530146618583773379780278026521526), ElementId(321337315073537883681850980448679303952)})
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(59766956342446942746455772803251489396), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(60667687931989916248150362828784553172), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(103692871425532545771751804769485073226), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(112670005507490923747847149217305428280), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(248503965679315025857385870152242507432), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(282318963213596391104692891424193215991), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(59766956342446942746455772803251489396), message: "MissingRequired { element: ElementId(59766956342446942746455772803251489396), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(60667687931989916248150362828784553172), message: "MissingRequired { element: ElementId(60667687931989916248150362828784553172), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(103692871425532545771751804769485073226), message: "MissingRequired { element: ElementId(103692871425532545771751804769485073226), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(112670005507490923747847149217305428280), message: "MissingRequired { element: ElementId(112670005507490923747847149217305428280), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(248503965679315025857385870152242507432), message: "MissingRequired { element: ElementId(248503965679315025857385870152242507432), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(282318963213596391104692891424193215991), message: "MissingRequired { element: ElementId(282318963213596391104692891424193215991), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawn reference=(ElementId(167691393427874903774915837360971156355), PropertyId(265518105109923055411423219294112123986)) candidates=(ElementId(144227272893045865874948066040813852875), {ElementId(140930852072068039689355128804113574195), ElementId(336739068280196008867685164704446846468)})
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_PRODUCER_CLOSURE", subject: ElementId(303503282437975714785294158762025572382), message: "No compatible scheduler certificate closes EffectiveTyping for this subject" }
+Systems: withdrawn reference=(ElementId(226481896389773658703304251027679315457), PropertyId(265518105109923055411423219294112123986)) candidates=(ElementId(144227272893045865874948066040813852875), {ElementId(140930852072068039689355128804113574195), ElementId(336739068280196008867685164704446846468)})
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_PRODUCER_CLOSURE", subject: ElementId(214951558486136465028604077855917926986), message: "No compatible scheduler certificate closes EffectiveTyping for this subject" }
+Systems: withdrawn reference=(ElementId(228424596569332085271707829477083126174), PropertyId(180697270152700011951986247726597737400)) candidates=(ElementId(97179687450632951985592322237648995889), {ElementId(43010558827825025305832547341310821988), ElementId(213382760753045512186200946019778354720)})
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(16346433939733511392633037700824031393), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(89581659238743364357190060208328395029), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(112344429445908903603239259565234858858), message: "Required property 87f10741-a872-520c-bf55-286fddc10bb8 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(172268030575261277000919016951759938154), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(294706461244775336777831238006668470938), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(324500278882167150332401790363284007331), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_CONSTRUCTION_OBLIGATION", subject: ElementId(328787619574140463040587139940063603466), message: "Required property c7c0ed4b-fe49-572e-80d8-2537bc910c52 is pending structural construction" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(16346433939733511392633037700824031393), message: "MissingRequired { element: ElementId(16346433939733511392633037700824031393), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(89581659238743364357190060208328395029), message: "MissingRequired { element: ElementId(89581659238743364357190060208328395029), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(112344429445908903603239259565234858858), message: "MissingRequired { element: ElementId(112344429445908903603239259565234858858), property: PropertyId(180697270152700011951986247726597737400) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(172268030575261277000919016951759938154), message: "MissingRequired { element: ElementId(172268030575261277000919016951759938154), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(294706461244775336777831238006668470938), message: "MissingRequired { element: ElementId(294706461244775336777831238006668470938), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(324500278882167150332401790363284007331), message: "MissingRequired { element: ElementId(324500278882167150332401790363284007331), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_EVIDENCE", subject: ElementId(328787619574140463040587139940063603466), message: "MissingRequired { element: ElementId(328787619574140463040587139940063603466), property: PropertyId(265518105109923055411423219294112123986) }" }
+Systems: withdrawn reference=(ElementId(274370872562044140583764357053143282556), PropertyId(291509966492188829100115526807629567513)) candidates=(ElementId(6269510101684001733169097560590752226), {ElementId(113357717524886061496756777775765476896), ElementId(251383274236627606934665030809881735374)})
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_PRODUCER_CLOSURE", subject: ElementId(327693885709811053950831718084384375703), message: "No compatible scheduler certificate closes EffectiveTyping for this subject" }
+Systems: references round=4 selected=1291 obligations=52 evaluated=1327 reused=0 elapsed=137.992s
+Systems: references round=5 selected=1315 obligations=36 evaluated=1327 reused=0 elapsed=163.950s
+Systems: references round=6 selected=1323 obligations=12 evaluated=1327 reused=0 elapsed=188.236s
+Systems: references round=7 selected=1323 obligations=4 evaluated=1327 reused=0 elapsed=213.212s
+Systems: withdrawn reference=(ElementId(228424596569332085271707829477083126174), PropertyId(180697270152700011951986247726597737400)) candidates=(ElementId(213382760753045512186200946019778354720), {ElementId(67422252566543431700071794449395060022), ElementId(97179687450632951985592322237648995889)})
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_PRODUCER_CLOSURE", subject: ElementId(86591952534362072027311935593342906135), message: "No compatible scheduler certificate closes EffectiveTyping for this subject" }
+Systems: withdrawal diagnostic=Diagnostic { code: "KQ_PRODUCER_CLOSURE", subject: ElementId(166375562670362785868628566918577354589), message: "No compatible scheduler certificate closes EffectiveTyping for this subject" }
+Systems: references round=8 selected=1323 obligations=4 evaluated=1327 reused=0 elapsed=240.497s
+Systems: producers round=0 evaluated=256/2878 planned=160 elapsed=251.785s
+Systems: producers round=0 evaluated=512/2878 planned=309 elapsed=252.810s
+Systems: producers round=0 evaluated=768/2878 planned=471 elapsed=253.559s
+Systems: producers round=0 evaluated=1024/2878 planned=656 elapsed=254.360s
+Systems: producers round=0 evaluated=1280/2878 planned=840 elapsed=255.095s
+Systems: producers round=0 evaluated=1536/2878 planned=1029 elapsed=255.968s
+Systems: producers round=0 evaluated=1792/2878 planned=1193 elapsed=257.187s
+Systems: producers round=0 evaluated=2048/2878 planned=1361 elapsed=258.122s
+Systems: producers round=0 evaluated=2304/2878 planned=1546 elapsed=258.926s
+Systems: producers round=0 evaluated=2560/2878 planned=1745 elapsed=259.687s
+Systems: producers round=0 evaluated=2816/2878 planned=1930 elapsed=260.465s
+Systems: producers round=0 evaluated=2878/2878 planned=1970 elapsed=260.672s
+Systems: producer frontier=0 stratum=Structural added=1970 closed_pairs=8240 completeness=Incomplete diagnostics=38 elapsed=268.125s
+Systems: producer diagnostics={"KQ_CONSTRUCTION_OBLIGATION": 1, "KQ_EVIDENCE": 1, "KQ_FEATURE_CHAIN_STRUCTURE": 1, "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE": 3, "KQ_PRODUCER_CLOSURE": 31, "KQ_REFERENCE_REFERENT": 1}
+Systems: producers round=1 evaluated=256/2108 planned=33 elapsed=272.465s
+Systems: producers round=1 evaluated=512/2108 planned=63 elapsed=273.491s
+Systems: producers round=1 evaluated=768/2108 planned=92 elapsed=274.985s
+Systems: producers round=1 evaluated=1024/2108 planned=131 elapsed=275.988s
+Systems: producers round=1 evaluated=1280/2108 planned=179 elapsed=277.429s
+Systems: producers round=1 evaluated=1536/2108 planned=235 elapsed=278.957s
+Systems: producers round=1 evaluated=1792/2108 planned=274 elapsed=280.197s
+Systems: producers round=1 evaluated=2048/2108 planned=313 elapsed=281.083s
+Systems: producers round=1 evaluated=2108/2108 planned=332 elapsed=281.333s
+Systems: producer frontier=1 stratum=Structural added=193 closed_pairs=16287 completeness=Incomplete diagnostics=38 elapsed=286.269s
+Systems: producer diagnostics={"KQ_CONSTRUCTION_OBLIGATION": 1, "KQ_EVIDENCE": 1, "KQ_FEATURE_CHAIN_STRUCTURE": 1, "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE": 3, "KQ_PRODUCER_CLOSURE": 31, "KQ_REFERENCE_REFERENT": 1}
+Systems: producers round=2 evaluated=256/1738 planned=12 elapsed=289.837s
+Systems: producers round=2 evaluated=512/1738 planned=20 elapsed=290.903s
+Systems: producers round=2 evaluated=768/1738 planned=43 elapsed=292.167s
+Systems: producers round=2 evaluated=1024/1738 planned=73 elapsed=293.494s
+Systems: producers round=2 evaluated=1280/1738 planned=98 elapsed=294.689s
+Systems: producers round=2 evaluated=1536/1738 planned=110 elapsed=295.810s
+Systems: producers round=2 evaluated=1738/1738 planned=138 elapsed=296.678s
+Systems: producer frontier=2 stratum=Structural added=0 closed_pairs=19244 completeness=Incomplete diagnostics=36 elapsed=300.452s
+Systems: producer diagnostics={"KQ_CONSTRUCTION_OBLIGATION": 1, "KQ_EVIDENCE": 1, "KQ_FEATURE_CHAIN_STRUCTURE": 1, "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE": 3, "KQ_PRODUCER_CLOSURE": 29, "KQ_REFERENCE_REFERENT": 1}
+Systems: producers round=3 evaluated=32/32 planned=93 elapsed=304.210s
+Systems: producer frontier=3 stratum=Structural added=93 closed_pairs=17657 completeness=Incomplete diagnostics=6 elapsed=309.123s
+Systems: producer diagnostics={"KQ_CONSTRUCTION_OBLIGATION": 1, "KQ_EVIDENCE": 1, "KQ_FEATURE_CHAIN_STRUCTURE": 1, "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE": 1, "KQ_PRODUCER_CLOSURE": 1, "KQ_REFERENCE_REFERENT": 1}
+Systems: producers round=4 evaluated=256/1297 planned=18 elapsed=313.224s
+Systems: producers round=4 evaluated=512/1297 planned=38 elapsed=314.585s
+Systems: producers round=4 evaluated=768/1297 planned=77 elapsed=316.069s
+Systems: producers round=4 evaluated=1024/1297 planned=109 elapsed=317.561s
+Systems: producers round=4 evaluated=1280/1297 planned=148 elapsed=318.949s
+Systems: producers round=4 evaluated=1297/1297 planned=148 elapsed=319.033s
+Systems: producer frontier=4 stratum=Structural added=10 closed_pairs=19224 completeness=Incomplete diagnostics=38 elapsed=324.670s
+Systems: producer diagnostics={"KQ_CONSTRUCTION_OBLIGATION": 1, "KQ_EVIDENCE": 1, "KQ_FEATURE_CHAIN_STRUCTURE": 1, "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE": 3, "KQ_PRODUCER_CLOSURE": 31, "KQ_REFERENCE_REFERENT": 1}
+Systems: producers round=5 evaluated=256/1123 planned=17 elapsed=328.967s
+Systems: producers round=5 evaluated=512/1123 planned=60 elapsed=330.259s
+Systems: producers round=5 evaluated=768/1123 planned=133 elapsed=331.554s
+Systems: producers round=5 evaluated=1024/1123 planned=179 elapsed=332.854s
+Systems: producers round=5 evaluated=1123/1123 planned=201 elapsed=333.230s
+Systems: producer frontier=5 stratum=Structural added=0 closed_pairs=19265 completeness=Incomplete diagnostics=6 elapsed=337.024s
+Systems: producer diagnostics={"KQ_CONSTRUCTION_OBLIGATION": 1, "KQ_EVIDENCE": 1, "KQ_FEATURE_CHAIN_STRUCTURE": 1, "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE": 1, "KQ_PRODUCER_CLOSURE": 1, "KQ_REFERENCE_REFERENT": 1}
+Systems: producers round=6 evaluated=5/5 planned=4 elapsed=339.907s
+Systems: producer frontier=6 stratum=Structural added=4 closed_pairs=19207 completeness=Incomplete diagnostics=4 elapsed=344.735s
+Systems: producer diagnostics={"KQ_CONSTRUCTION_OBLIGATION": 1, "KQ_EVIDENCE": 1, "KQ_FEATURE_CHAIN_STRUCTURE": 1, "KQ_REFERENCE_REFERENT": 1}
+Systems: producers round=7 evaluated=256/1129 planned=17 elapsed=348.492s
+Systems: producers round=7 evaluated=512/1129 planned=60 elapsed=349.774s
+Systems: producers round=7 evaluated=768/1129 planned=133 elapsed=351.005s
+Systems: producers round=7 evaluated=1024/1129 planned=179 elapsed=352.423s
+Systems: producers round=7 evaluated=1129/1129 planned=201 elapsed=352.952s
+Systems: producer frontier=7 stratum=Structural added=0 closed_pairs=19269 completeness=Incomplete diagnostics=4 elapsed=356.819s
+Systems: producer diagnostics={"KQ_CONSTRUCTION_OBLIGATION": 1, "KQ_EVIDENCE": 1, "KQ_FEATURE_CHAIN_STRUCTURE": 1, "KQ_REFERENCE_REFERENT": 1}
+Systems: producers round=8 evaluated=1/1 planned=0 elapsed=359.574s
+Systems: producer frontier=8 stratum=Structural added=0 closed_pairs=19269 completeness=Incomplete diagnostics=4 elapsed=363.229s
+Systems: producer diagnostics={"KQ_CONSTRUCTION_OBLIGATION": 1, "KQ_EVIDENCE": 1, "KQ_FEATURE_CHAIN_STRUCTURE": 1, "KQ_REFERENCE_REFERENT": 1}
+Publication checkpoint committed: journal=C:\Users\phili\github\agentique-systems\agentique-alpha-runtime\verification\generated\native-studio-alpha\rematerialized-systems\frontiers\journal-fe2f262758e84e34228c162d78a0d2d67b6ee6a3631f42b10265d6c6b123c7ee.json sha256=fe2f262758e84e34228c162d78a0d2d67b6ee6a3631f42b10265d6c6b123c7ee invocation=0 round=9 stratum=ContextualBindings
+Systems: producers round=9 evaluated=196/196 planned=1244 elapsed=390.883s
+Systems: producer frontier=9 stratum=ContextualBindings added=1236 closed_pairs=17108 completeness=Incomplete diagnostics=130 elapsed=396.365s
+Systems: producer diagnostics={"KQ_CONSTRUCTION_OBLIGATION": 1, "KQ_EVIDENCE": 1, "KQ_FEATURE_CHAIN_STRUCTURE": 1, "KQ_REFERENCE_REFERENT": 1, "KQ_VALUE_CONTEXT": 20, "KQ_VARIABLE_FEATURING": 106}
+Systems: producers round=10 evaluated=256/1674 planned=262 elapsed=399.908s
+Systems: producers round=10 evaluated=512/1674 planned=536 elapsed=400.909s
+Systems: producers round=10 evaluated=768/1674 planned=723 elapsed=401.931s
+Systems: producers round=10 evaluated=1024/1674 planned=898 elapsed=402.994s
+Systems: producers round=10 evaluated=1280/1674 planned=1167 elapsed=404.048s
+Systems: producers round=10 evaluated=1536/1674 planned=1506 elapsed=405.067s
+Systems: producers round=10 evaluated=1674/1674 planned=1643 elapsed=405.489s
+Systems: producer frontier=10 stratum=ContextualBindings added=206 closed_pairs=20980 completeness=Incomplete diagnostics=132 elapsed=410.597s
+Systems: producer diagnostics={"KQ_CONSTRUCTION_OBLIGATION": 1, "KQ_EVIDENCE": 1, "KQ_FEATURE_CHAIN_STRUCTURE": 1, "KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE": 1, "KQ_PRODUCER_CLOSURE": 1, "KQ_REFERENCE_REFERENT": 1, "KQ_VALUE_CONTEXT": 20, "KQ_VARIABLE_FEATURING": 106}
+Systems: producers round=11 evaluated=256/1608 planned=265 elapsed=414.285s
+Systems: producers round=11 evaluated=512/1608 planned=502 elapsed=415.244s
+Systems: producers round=11 evaluated=768/1608 planned=624 elapsed=416.346s
+Systems: producers round=11 evaluated=1024/1608 planned=808 elapsed=417.547s
+Systems: producers round=11 evaluated=1280/1608 planned=1079 elapsed=418.571s
+Systems: producers round=11 evaluated=1536/1608 planned=1347 elapsed=419.608s
+Systems: producers round=11 evaluated=1608/1608 planned=1437 elapsed=419.839s
+Systems: producer frontier=11 stratum=ContextualBindings added=0 closed_pairs=22190 completeness=Incomplete diagnostics=130 elapsed=423.520s
+Systems: producer diagnostics={"KQ_CONSTRUCTION_OBLIGATION": 1, "KQ_EVIDENCE": 1, "KQ_FEATURE_CHAIN_STRUCTURE": 1, "KQ_REFERENCE_REFERENT": 1, "KQ_VALUE_CONTEXT": 20, "KQ_VARIABLE_FEATURING": 106}
+Systems: producers round=12 evaluated=94/94 planned=8 elapsed=427.121s
+Systems: producer frontier=12 stratum=ContextualBindings added=0 closed_pairs=22190 completeness=Incomplete diagnostics=130 elapsed=430.956s
+Systems: producer diagnostics={"KQ_CONSTRUCTION_OBLIGATION": 1, "KQ_EVIDENCE": 1, "KQ_FEATURE_CHAIN_STRUCTURE": 1, "KQ_REFERENCE_REFERENT": 1, "KQ_VALUE_CONTEXT": 20, "KQ_VARIABLE_FEATURING": 106}
+Publication checkpoint committed: journal=C:\Users\phili\github\agentique-systems\agentique-alpha-runtime\verification\generated\native-studio-alpha\rematerialized-systems\frontiers\journal-feeb2c51398921ed930518cafa03dcb8ab8bfb2606f24d223090b17321f0f1fe.json sha256=feeb2c51398921ed930518cafa03dcb8ab8bfb2606f24d223090b17321f0f1fe invocation=0 round=13 stratum=ContextualBindings
+Systems: references round=0 selected=1324 obligations=4 evaluated=1327 reused=0 elapsed=510.153s
+Systems: withdrawn reference=(ElementId(139536616729718209055565627117073106567), PropertyId(180697270152700011951986247726597737400)) candidates=(ElementId(140590757877017037764348819749733795646), {ElementId(83196969310448604742471381987115471556), ElementId(149887392789324044771453276764978155221)})
+Systems: withdrawn reference=(ElementId(167691393427874903774915837360971156355), PropertyId(265518105109923055411423219294112123986)) candidates=(ElementId(336739068280196008867685164704446846468), {ElementId(60693389203214567771472719256246369144), ElementId(313695171893505685256277447088326190955)})
+Systems: withdrawn reference=(ElementId(181479856947045983763821990654732953414), PropertyId(265518105109923055411423219294112123986)) candidates=(ElementId(140590757877017037764348819749733795646), {ElementId(203796512502262619261341532081360601851), ElementId(269745094596663286847155001010439723297)})
+Systems: withdrawn reference=(ElementId(191634687382921960497648967644219469456), PropertyId(180697270152700011951986247726597737400)) candidates=(ElementId(6269510101684001733169097560590752226), {ElementId(215331496742266554695643318956451314803), ElementId(331947556608527158274970628268850255722)})
+Systems: withdrawn reference=(ElementId(196938135543380131616328625122815540085), PropertyId(219329289991978411399070407852631026425)) candidates=(ElementId(38555715253831402101010771449319475304), {ElementId(137584123497987094334872079302656777312), ElementId(243713283715716701536410398633491741445)})
+Systems: withdrawn reference=(ElementId(226481896389773658703304251027679315457), PropertyId(265518105109923055411423219294112123986)) candidates=(ElementId(336739068280196008867685164704446846468), {ElementId(60693389203214567771472719256246369144), ElementId(313695171893505685256277447088326190955)})
+Systems: withdrawn reference=(ElementId(239513258134176228864152024848703545349), PropertyId(265518105109923055411423219294112123986)) candidates=(ElementId(38192113019729538667957380436402972241), {ElementId(38192113019729538667957380436402972241), ElementId(203796512502262619261341532081360601851), ElementId(267459383423264850461480031703377158806), ElementId(269745094596663286847155001010439723297)})
+Systems: withdrawn reference=(ElementId(242578454692169135152315770211403001142), PropertyId(265518105109923055411423219294112123986)) candidates=(ElementId(38192113019729538667957380436402972241), {ElementId(38192113019729538667957380436402972241), ElementId(203796512502262619261341532081360601851), ElementId(267459383423264850461480031703377158806), ElementId(269745094596663286847155001010439723297)})
+Systems: producers round=0 evaluated=256/2878 planned=168 elapsed=537.992s
+Systems: producers round=0 evaluated=512/2878 planned=317 elapsed=538.608s
+Systems: producers round=0 evaluated=768/2878 planned=479 elapsed=539.246s
+Systems: producers round=0 evaluated=1024/2878 planned=664 elapsed=539.956s
+Systems: producers round=0 evaluated=1280/2878 planned=848 elapsed=540.565s
+Systems: producers round=0 evaluated=1536/2878 planned=1037 elapsed=541.323s
+Systems: producers round=0 evaluated=1792/2878 planned=1201 elapsed=542.147s
+Systems: producers round=0 evaluated=2048/2878 planned=1369 elapsed=542.862s
+Systems: producers round=0 evaluated=2304/2878 planned=1554 elapsed=543.506s
+Systems: producers round=0 evaluated=2560/2878 planned=1753 elapsed=544.191s
+Systems: producers round=0 evaluated=2816/2878 planned=1938 elapsed=544.853s
+Systems: producers round=0 evaluated=2878/2878 planned=1978 elapsed=545.036s
+Systems: producer frontier=0 stratum=Structural added=1978 closed_pairs=8237 completeness=Incomplete diagnostics=33 elapsed=551.762s
+Systems: producer diagnostics={"KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE": 3, "KQ_PRODUCER_CLOSURE": 30}
+Systems: producers round=1 evaluated=256/2111 planned=37 elapsed=555.651s
+Systems: producers round=1 evaluated=512/2111 planned=67 elapsed=556.492s
+Systems: producers round=1 evaluated=768/2111 planned=96 elapsed=557.693s
+Systems: producers round=1 evaluated=1024/2111 planned=135 elapsed=558.701s
+Systems: producers round=1 evaluated=1280/2111 planned=183 elapsed=560.013s
+Systems: producers round=1 evaluated=1536/2111 planned=238 elapsed=561.126s
+Systems: producers round=1 evaluated=1792/2111 planned=278 elapsed=562.219s
+Systems: producers round=1 evaluated=2048/2111 planned=317 elapsed=563.083s
+Systems: producers round=1 evaluated=2111/2111 planned=336 elapsed=563.314s
+Systems: producer frontier=1 stratum=Structural added=193 closed_pairs=16275 completeness=Incomplete diagnostics=34 elapsed=568.004s
+Systems: producer diagnostics={"KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE": 3, "KQ_PRODUCER_CLOSURE": 31}
+Systems: producers round=2 evaluated=256/1740 planned=16 elapsed=571.315s
+Systems: producers round=2 evaluated=512/1740 planned=24 elapsed=572.231s
+Systems: producers round=2 evaluated=768/1740 planned=47 elapsed=573.132s
+Systems: producers round=2 evaluated=1024/1740 planned=77 elapsed=574.134s
+Systems: producers round=2 evaluated=1280/1740 planned=102 elapsed=575.210s
+Systems: producers round=2 evaluated=1536/1740 planned=114 elapsed=576.153s
+Systems: producers round=2 evaluated=1740/1740 planned=142 elapsed=576.856s
+Systems: producer frontier=2 stratum=Structural added=0 closed_pairs=19232 completeness=Incomplete diagnostics=32 elapsed=580.096s
+Systems: producer diagnostics={"KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE": 3, "KQ_PRODUCER_CLOSURE": 29}
+Systems: producers round=3 evaluated=31/31 planned=93 elapsed=583.208s
+Systems: producer frontier=3 stratum=Structural added=93 closed_pairs=17646 completeness=Incomplete diagnostics=2 elapsed=587.355s
+Systems: producer diagnostics={"KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE": 1, "KQ_PRODUCER_CLOSURE": 1}
+Systems: producers round=4 evaluated=256/1299 planned=22 elapsed=590.704s
+Systems: producers round=4 evaluated=512/1299 planned=42 elapsed=591.774s
+Systems: producers round=4 evaluated=768/1299 planned=81 elapsed=592.990s
+Systems: producers round=4 evaluated=1024/1299 planned=113 elapsed=594.053s
+Systems: producers round=4 evaluated=1280/1299 planned=152 elapsed=595.096s
+Systems: producers round=4 evaluated=1299/1299 planned=152 elapsed=595.180s
+Systems: producer frontier=4 stratum=Structural added=10 closed_pairs=19212 completeness=Incomplete diagnostics=34 elapsed=599.239s
+Systems: producer diagnostics={"KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE": 3, "KQ_PRODUCER_CLOSURE": 31}
+Systems: producers round=5 evaluated=256/1125 planned=21 elapsed=602.516s
+Systems: producers round=5 evaluated=512/1125 planned=64 elapsed=603.475s
+Systems: producers round=5 evaluated=768/1125 planned=137 elapsed=604.378s
+Systems: producers round=5 evaluated=1024/1125 planned=183 elapsed=605.318s
+Systems: producers round=5 evaluated=1125/1125 planned=205 elapsed=605.625s
+Systems: producer frontier=5 stratum=Structural added=0 closed_pairs=19253 completeness=Incomplete diagnostics=2 elapsed=608.704s
+Systems: producer diagnostics={"KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE": 1, "KQ_PRODUCER_CLOSURE": 1}
+Systems: producers round=6 evaluated=4/4 planned=4 elapsed=611.141s
+Systems: producer frontier=6 stratum=Structural added=4 closed_pairs=19195 completeness=Complete diagnostics=0 elapsed=615.486s
+Systems: producers round=7 evaluated=256/1131 planned=21 elapsed=618.752s
+Systems: producers round=7 evaluated=512/1131 planned=64 elapsed=619.677s
+Systems: producers round=7 evaluated=768/1131 planned=137 elapsed=620.601s
+Systems: producers round=7 evaluated=1024/1131 planned=183 elapsed=621.550s
+Systems: producers round=7 evaluated=1131/1131 planned=205 elapsed=621.855s
+Systems: producer frontier=7 stratum=Structural added=0 closed_pairs=19257 completeness=Complete diagnostics=0 elapsed=625.165s
+Publication checkpoint committed: journal=C:\Users\phili\github\agentique-systems\agentique-alpha-runtime\verification\generated\native-studio-alpha\rematerialized-systems\frontiers\journal-e919aa80c9c748afc798ad691b3888942fdca0ce0db9b4d2c493071d194b2082.json sha256=e919aa80c9c748afc798ad691b3888942fdca0ce0db9b4d2c493071d194b2082 invocation=1 round=8 stratum=ContextualBindings
+Systems: producers round=8 evaluated=196/196 planned=1244 elapsed=653.257s
+Systems: producer frontier=8 stratum=ContextualBindings added=1236 closed_pairs=17094 completeness=Incomplete diagnostics=127 elapsed=657.998s
+Systems: producer diagnostics={"KQ_VALUE_CONTEXT": 20, "KQ_VARIABLE_FEATURING": 107}
+Systems: producers round=9 evaluated=256/1676 planned=266 elapsed=661.108s
+Systems: producers round=9 evaluated=512/1676 planned=540 elapsed=661.929s
+Systems: producers round=9 evaluated=768/1676 planned=727 elapsed=662.797s
+Systems: producers round=9 evaluated=1024/1676 planned=902 elapsed=663.794s
+Systems: producers round=9 evaluated=1280/1676 planned=1171 elapsed=664.848s
+Systems: producers round=9 evaluated=1536/1676 planned=1510 elapsed=665.695s
+Systems: producers round=9 evaluated=1676/1676 planned=1647 elapsed=666.070s
+Systems: producer frontier=9 stratum=ContextualBindings added=206 closed_pairs=21005 completeness=Incomplete diagnostics=129 elapsed=670.459s
+Systems: producer diagnostics={"KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE": 1, "KQ_PRODUCER_CLOSURE": 1, "KQ_VALUE_CONTEXT": 20, "KQ_VARIABLE_FEATURING": 107}
+Systems: producers round=10 evaluated=256/1610 planned=269 elapsed=673.687s
+Systems: producers round=10 evaluated=512/1610 planned=506 elapsed=674.567s
+Systems: producers round=10 evaluated=768/1610 planned=628 elapsed=675.503s
+Systems: producers round=10 evaluated=1024/1610 planned=812 elapsed=676.503s
+Systems: producers round=10 evaluated=1280/1610 planned=1083 elapsed=677.352s
+Systems: producers round=10 evaluated=1536/1610 planned=1351 elapsed=678.232s
+Systems: producers round=10 evaluated=1610/1610 planned=1441 elapsed=678.417s
+Systems: producer frontier=10 stratum=ContextualBindings added=0 closed_pairs=22227 completeness=Incomplete diagnostics=127 elapsed=681.631s
+Systems: producer diagnostics={"KQ_VALUE_CONTEXT": 20, "KQ_VARIABLE_FEATURING": 107}
+Systems: producers round=11 evaluated=93/93 planned=8 elapsed=684.675s
+Systems: producer frontier=11 stratum=ContextualBindings added=0 closed_pairs=22227 completeness=Incomplete diagnostics=127 elapsed=688.124s
+Systems: producer diagnostics={"KQ_VALUE_CONTEXT": 20, "KQ_VARIABLE_FEATURING": 107}
+Publication checkpoint committed: journal=C:\Users\phili\github\agentique-systems\agentique-alpha-runtime\verification\generated\native-studio-alpha\rematerialized-systems\frontiers\journal-07c95117727d970b6432ee369699b97e6c8dd4d3b25dbdce06f476e87411e0c7.json sha256=07c95117727d970b6432ee369699b97e6c8dd4d3b25dbdce06f476e87411e0c7 invocation=1 round=12 stratum=ContextualBindings
+Systems: references round=1 selected=1327 obligations=3 evaluated=1327 reused=0 elapsed=767.742s
+Systems: withdrawn reference=(ElementId(165103619761667538043497656146872790905), PropertyId(180697270152700011951986247726597737400)) candidates=(ElementId(96860565326089605185134213742477236524), {ElementId(85500011625268204091250025131942903747), ElementId(299498556349124577301157981899101158107)})
+Systems: producers round=0 evaluated=256/2878 planned=168 elapsed=799.997s
+Systems: producers round=0 evaluated=512/2878 planned=317 elapsed=800.650s
+Systems: producers round=0 evaluated=768/2878 planned=479 elapsed=801.202s
+Systems: producers round=0 evaluated=1024/2878 planned=664 elapsed=801.910s
+Systems: producers round=0 evaluated=1280/2878 planned=848 elapsed=802.568s
+Systems: producers round=0 evaluated=1536/2878 planned=1037 elapsed=803.322s
+Systems: producers round=0 evaluated=1792/2878 planned=1201 elapsed=804.089s
+Systems: producers round=0 evaluated=2048/2878 planned=1369 elapsed=804.774s
+Systems: producers round=0 evaluated=2304/2878 planned=1554 elapsed=805.432s
+Systems: producers round=0 evaluated=2560/2878 planned=1753 elapsed=806.123s
+Systems: producers round=0 evaluated=2816/2878 planned=1938 elapsed=806.872s
+Systems: producers round=0 evaluated=2878/2878 planned=1978 elapsed=807.056s
+Systems: producer frontier=0 stratum=Structural added=1978 closed_pairs=8237 completeness=Incomplete diagnostics=33 elapsed=813.153s
+Systems: producer diagnostics={"KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE": 3, "KQ_PRODUCER_CLOSURE": 30}
+Systems: producers round=1 evaluated=256/2111 planned=37 elapsed=816.294s
+Systems: producers round=1 evaluated=512/2111 planned=67 elapsed=816.942s
+Systems: producers round=1 evaluated=768/2111 planned=96 elapsed=817.875s
+Systems: producers round=1 evaluated=1024/2111 planned=135 elapsed=818.506s
+Systems: producers round=1 evaluated=1280/2111 planned=183 elapsed=819.537s
+Systems: producers round=1 evaluated=1536/2111 planned=238 elapsed=820.473s
+Systems: producers round=1 evaluated=1792/2111 planned=278 elapsed=821.289s
+Systems: producers round=1 evaluated=2048/2111 planned=317 elapsed=821.971s
+Systems: producers round=1 evaluated=2111/2111 planned=336 elapsed=822.149s
+Systems: producer frontier=1 stratum=Structural added=193 closed_pairs=16299 completeness=Incomplete diagnostics=34 elapsed=826.081s
+Systems: producer diagnostics={"KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE": 3, "KQ_PRODUCER_CLOSURE": 31}
+Systems: producers round=2 evaluated=256/1740 planned=16 elapsed=829.274s
+Systems: producers round=2 evaluated=512/1740 planned=24 elapsed=830.159s
+Systems: producers round=2 evaluated=768/1740 planned=47 elapsed=831.037s
+Systems: producers round=2 evaluated=1024/1740 planned=77 elapsed=832.029s
+Systems: producers round=2 evaluated=1280/1740 planned=102 elapsed=833.024s
+Systems: producers round=2 evaluated=1536/1740 planned=114 elapsed=833.895s
+Systems: producers round=2 evaluated=1740/1740 planned=142 elapsed=834.572s
+Systems: producer frontier=2 stratum=Structural added=0 closed_pairs=19257 completeness=Incomplete diagnostics=32 elapsed=837.513s
+Systems: producer diagnostics={"KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE": 3, "KQ_PRODUCER_CLOSURE": 29}
+Systems: producers round=3 evaluated=31/31 planned=93 elapsed=840.753s
+Systems: producer frontier=3 stratum=Structural added=93 closed_pairs=17670 completeness=Incomplete diagnostics=2 elapsed=844.789s
+Systems: producer diagnostics={"KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE": 1, "KQ_PRODUCER_CLOSURE": 1}
+Systems: producers round=4 evaluated=256/1299 planned=22 elapsed=848.218s
+Systems: producers round=4 evaluated=512/1299 planned=42 elapsed=849.300s
+Systems: producers round=4 evaluated=768/1299 planned=81 elapsed=850.400s
+Systems: producers round=4 evaluated=1024/1299 planned=113 elapsed=851.522s
+Systems: producers round=4 evaluated=1280/1299 planned=152 elapsed=852.607s
+Systems: producers round=4 evaluated=1299/1299 planned=152 elapsed=852.684s
+Systems: producer frontier=4 stratum=Structural added=10 closed_pairs=19237 completeness=Incomplete diagnostics=34 elapsed=856.828s
+Systems: producer diagnostics={"KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE": 3, "KQ_PRODUCER_CLOSURE": 31}
+Systems: producers round=5 evaluated=256/1125 planned=21 elapsed=860.023s
+Systems: producers round=5 evaluated=512/1125 planned=64 elapsed=861.038s
+Systems: producers round=5 evaluated=768/1125 planned=137 elapsed=862.063s
+Systems: producers round=5 evaluated=1024/1125 planned=183 elapsed=863.002s
+Systems: producers round=5 evaluated=1125/1125 planned=205 elapsed=863.278s
+Systems: producer frontier=5 stratum=Structural added=0 closed_pairs=19278 completeness=Incomplete diagnostics=2 elapsed=866.279s
+Systems: producer diagnostics={"KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE": 1, "KQ_PRODUCER_CLOSURE": 1}
+Systems: producers round=6 evaluated=4/4 planned=4 elapsed=868.676s
+Systems: producer frontier=6 stratum=Structural added=4 closed_pairs=19220 completeness=Complete diagnostics=0 elapsed=872.540s
+Systems: producers round=7 evaluated=256/1131 planned=21 elapsed=875.691s
+Systems: producers round=7 evaluated=512/1131 planned=64 elapsed=876.843s
+Systems: producers round=7 evaluated=768/1131 planned=137 elapsed=877.801s
+Systems: producers round=7 evaluated=1024/1131 planned=183 elapsed=878.783s
+Systems: producers round=7 evaluated=1131/1131 planned=205 elapsed=879.075s
+Systems: producer frontier=7 stratum=Structural added=0 closed_pairs=19282 completeness=Complete diagnostics=0 elapsed=882.156s
+Publication checkpoint committed: journal=C:\Users\phili\github\agentique-systems\agentique-alpha-runtime\verification\generated\native-studio-alpha\rematerialized-systems\frontiers\journal-42750a542736be0bb12ce249f4ce624e9bbc5d335b9735ca6ae852a2f06d3035.json sha256=42750a542736be0bb12ce249f4ce624e9bbc5d335b9735ca6ae852a2f06d3035 invocation=2 round=8 stratum=ContextualBindings
+Systems: producers round=8 evaluated=196/196 planned=1244 elapsed=910.235s
+Systems: producer frontier=8 stratum=ContextualBindings added=1236 closed_pairs=17118 completeness=Incomplete diagnostics=127 elapsed=914.844s
+Systems: producer diagnostics={"KQ_VALUE_CONTEXT": 20, "KQ_VARIABLE_FEATURING": 107}
+Systems: producers round=9 evaluated=256/1676 planned=266 elapsed=918.124s
+Systems: producers round=9 evaluated=512/1676 planned=540 elapsed=919.092s
+Systems: producers round=9 evaluated=768/1676 planned=727 elapsed=920.080s
+Systems: producers round=9 evaluated=1024/1676 planned=902 elapsed=921.186s
+Systems: producers round=9 evaluated=1280/1676 planned=1171 elapsed=922.304s
+Systems: producers round=9 evaluated=1536/1676 planned=1510 elapsed=923.334s
+Systems: producers round=9 evaluated=1676/1676 planned=1647 elapsed=923.785s
+Systems: producer frontier=9 stratum=ContextualBindings added=206 closed_pairs=21030 completeness=Incomplete diagnostics=129 elapsed=928.881s
+Systems: producer diagnostics={"KQ_FORMAL_ANTECEDENT_TYPE_CLOSURE": 1, "KQ_PRODUCER_CLOSURE": 1, "KQ_VALUE_CONTEXT": 20, "KQ_VARIABLE_FEATURING": 107}
+Systems: producers round=10 evaluated=256/1610 planned=269 elapsed=932.507s
+Systems: producers round=10 evaluated=512/1610 planned=506 elapsed=933.409s
+Systems: producers round=10 evaluated=768/1610 planned=628 elapsed=934.412s
+Systems: producers round=10 evaluated=1024/1610 planned=812 elapsed=935.582s
+Systems: producers round=10 evaluated=1280/1610 planned=1083 elapsed=936.617s
+Systems: producers round=10 evaluated=1536/1610 planned=1351 elapsed=937.652s
+Systems: producers round=10 evaluated=1610/1610 planned=1441 elapsed=937.880s
+Systems: producer frontier=10 stratum=ContextualBindings added=0 closed_pairs=22252 completeness=Incomplete diagnostics=127 elapsed=941.373s
+Systems: producer diagnostics={"KQ_VALUE_CONTEXT": 20, "KQ_VARIABLE_FEATURING": 107}
+Systems: producers round=11 evaluated=93/93 planned=8 elapsed=945.239s
+Systems: producer frontier=11 stratum=ContextualBindings added=0 closed_pairs=22252 completeness=Incomplete diagnostics=127 elapsed=949.151s
+Systems: producer diagnostics={"KQ_VALUE_CONTEXT": 20, "KQ_VARIABLE_FEATURING": 107}
+Publication checkpoint committed: journal=C:\Users\phili\github\agentique-systems\agentique-alpha-runtime\verification\generated\native-studio-alpha\rematerialized-systems\frontiers\journal-83cc3bbf53833eb9c42bdb10e270d095cbb033e76df9ed3a06db73d6da5364af.json sha256=83cc3bbf53833eb9c42bdb10e270d095cbb033e76df9ed3a06db73d6da5364af invocation=2 round=12 stratum=ContextualBindings
+Systems: references round=2 selected=1327 obligations=0 evaluated=1327 reused=0 elapsed=1029.681s
+Systems: mandatory references audited=32 failures=0
+Systems: mandatory references audited=64 failures=0
+Systems: mandatory references audited=96 failures=0
+Systems: mandatory references audited=128 failures=0
+Systems: mandatory references audited=160 failures=0
+Systems: mandatory references audited=192 failures=0
+Systems: mandatory references audited=224 failures=0
+Systems: mandatory references audited=256 failures=0
+Systems: mandatory references audited=288 failures=0
+Systems: mandatory references audited=320 failures=0
+Systems: mandatory references audited=352 failures=0
+Systems: mandatory references audited=384 failures=0
+Systems: mandatory references audited=416 failures=0
+Systems: mandatory references audited=448 failures=0
+Systems: mandatory references audited=480 failures=0
+Systems: mandatory references audited=512 failures=0
+Systems: mandatory references audited=544 failures=0
+Systems: mandatory references audited=576 failures=0
+Systems: mandatory references audited=608 failures=0
+Systems: mandatory references audited=640 failures=0
+Systems: mandatory references audited=672 failures=0
+Systems: mandatory references audited=704 failures=0
+Systems: mandatory references audited=736 failures=0
+Systems: mandatory references audited=768 failures=0
+Systems: mandatory references audited=800 failures=0
+Systems: mandatory references audited=832 failures=0
+Systems: mandatory references audited=864 failures=0
+Systems: mandatory references audited=896 failures=0
+Systems: mandatory references audited=928 failures=0
+Systems: mandatory references audited=960 failures=0
+Systems: mandatory references audited=992 failures=0
+Systems: mandatory references audited=1024 failures=0
+Systems: mandatory references audited=1056 failures=0
+Systems: mandatory references audited=1088 failures=0
+Systems: mandatory references audited=1120 failures=0
+Systems: mandatory references audited=1152 failures=0
+Systems: mandatory references audited=1184 failures=0
+Systems: mandatory references audited=1216 failures=0
+Systems: mandatory references audited=1248 failures=0
+Systems: mandatory references audited=1280 failures=0
+Systems: mandatory references audited=1312 failures=0
+Systems: mandatory references audited=1327 failures=0
+Systems publication: round=0 evaluated=256/3375 planned=8 elapsed=1068.577s
+Systems publication: round=0 evaluated=512/3375 planned=12 elapsed=1069.018s
+Systems publication: round=0 evaluated=768/3375 planned=20 elapsed=1069.529s
+Systems publication: round=0 evaluated=1024/3375 planned=24 elapsed=1070.114s
+Systems publication: round=0 evaluated=1280/3375 planned=30 elapsed=1070.780s
+Systems publication: round=0 evaluated=1536/3375 planned=51 elapsed=1071.287s
+Systems publication: round=0 evaluated=1792/3375 planned=77 elapsed=1071.857s
+Systems publication: round=0 evaluated=2048/3375 planned=77 elapsed=1072.582s
+Systems publication: round=0 evaluated=2304/3375 planned=98 elapsed=1073.176s
+Systems publication: round=0 evaluated=2560/3375 planned=102 elapsed=1073.831s
+Systems publication: round=0 evaluated=2816/3375 planned=110 elapsed=1074.502s
+Systems publication: round=0 evaluated=3072/3375 planned=118 elapsed=1075.023s
+Systems publication: round=0 evaluated=3328/3375 planned=143 elapsed=1075.591s
+Systems publication: round=0 evaluated=3375/3375 planned=143 elapsed=1075.677s
+Systems publication: frontier=0 completeness=Incomplete closed_pairs=20958 elapsed=1079.423s
+Systems publication: round=1 evaluated=58/58 planned=67 elapsed=1083.075s
+Systems publication: frontier=1 completeness=Incomplete closed_pairs=21006 elapsed=1086.665s
+Systems publication: round=2 evaluated=4/4 planned=0 elapsed=1089.293s
+Systems publication: frontier=2 completeness=Complete closed_pairs=21010 elapsed=1093.101s
+Publication checkpoint committed: journal=C:\Users\phili\github\agentique-systems\agentique-alpha-runtime\verification\generated\native-studio-alpha\rematerialized-systems\frontiers\journal-31dca730520349ad64db767eaeb93773e349edf6e0c0ea8b8abd54167f00470f.json sha256=31dca730520349ad64db767eaeb93773e349edf6e0c0ea8b8abd54167f00470f invocation=3 round=3 stratum=StableProperties
+Systems publication: round=3 evaluated=256/3375 planned=8 elapsed=1124.456s
+Systems publication: round=3 evaluated=512/3375 planned=13 elapsed=1125.861s
+Systems publication: round=3 evaluated=768/3375 planned=21 elapsed=1128.203s
+Systems publication: round=3 evaluated=1024/3375 planned=38 elapsed=1130.380s
+Systems publication: round=3 evaluated=1280/3375 planned=45 elapsed=1133.218s
+Systems publication: round=3 evaluated=1536/3375 planned=66 elapsed=1135.067s
+Systems publication: round=3 evaluated=1792/3375 planned=105 elapsed=1137.028s
+Systems publication: round=3 evaluated=2048/3375 planned=118 elapsed=1138.911s
+Systems publication: round=3 evaluated=2304/3375 planned=139 elapsed=1140.835s
+Systems publication: round=3 evaluated=2560/3375 planned=169 elapsed=1142.863s
+Systems publication: round=3 evaluated=2816/3375 planned=177 elapsed=1144.803s
+Systems publication: round=3 evaluated=3072/3375 planned=185 elapsed=1147.114s
+Systems publication: round=3 evaluated=3328/3375 planned=210 elapsed=1149.060s
+Systems publication: round=3 evaluated=3375/3375 planned=210 elapsed=1149.633s
+Systems publication: frontier=3 completeness=Incomplete closed_pairs=13146 elapsed=1154.441s
+Systems publication: round=4 evaluated=256/2550 planned=168 elapsed=1164.123s
+Systems publication: round=4 evaluated=512/2550 planned=323 elapsed=1170.174s
+Systems publication: round=4 evaluated=768/2550 planned=457 elapsed=1176.489s
+Systems publication: round=4 evaluated=1024/2550 planned=571 elapsed=1183.221s
+Systems publication: round=4 evaluated=1280/2550 planned=710 elapsed=1188.008s
+Systems publication: round=4 evaluated=1536/2550 planned=817 elapsed=1195.330s
+Systems publication: round=4 evaluated=1792/2550 planned=909 elapsed=1200.478s
+Systems publication: round=4 evaluated=2048/2550 planned=1053 elapsed=1206.209s
+Systems publication: round=4 evaluated=2304/2550 planned=1155 elapsed=1212.052s
+Systems publication: round=4 evaluated=2550/2550 planned=1276 elapsed=1217.441s
+Systems publication: frontier=4 completeness=Incomplete closed_pairs=13272 elapsed=1222.609s
+Systems publication: round=5 evaluated=256/2783 planned=12 elapsed=1235.756s
+Systems publication: round=5 evaluated=512/2783 planned=20 elapsed=1247.262s
+Systems publication: round=5 evaluated=768/2783 planned=24 elapsed=1263.068s
+Systems publication: round=5 evaluated=1024/2783 planned=30 elapsed=1282.287s
+Systems publication: round=5 evaluated=1280/2783 planned=51 elapsed=1296.047s
+Systems publication: round=5 evaluated=1536/2783 planned=77 elapsed=1310.484s
+Systems publication: round=5 evaluated=1792/2783 planned=77 elapsed=1323.447s
+Systems publication: round=5 evaluated=2048/2783 planned=102 elapsed=1335.081s
+Systems publication: round=5 evaluated=2304/2783 planned=110 elapsed=1349.021s
+Systems publication: round=5 evaluated=2560/2783 planned=118 elapsed=1365.647s
+Systems publication: round=5 evaluated=2783/2783 planned=143 elapsed=1378.678s
+Systems publication: frontier=5 completeness=Incomplete closed_pairs=22139 elapsed=1387.436s
+Systems publication: round=6 evaluated=256/527 planned=69 elapsed=1444.238s
+Systems publication: round=6 evaluated=512/527 planned=156 elapsed=1493.744s
+Systems publication: round=6 evaluated=527/527 planned=156 elapsed=1496.453s
+Systems publication: frontier=6 completeness=Incomplete closed_pairs=20592 elapsed=1501.652s
+Systems publication: round=7 evaluated=256/2280 planned=12 elapsed=1519.676s
+Systems publication: round=7 evaluated=512/2280 planned=20 elapsed=1538.455s
+Systems publication: round=7 evaluated=768/2280 planned=26 elapsed=1557.846s
+Systems publication: round=7 evaluated=1024/2280 planned=55 elapsed=1573.052s
+Systems publication: round=7 evaluated=1280/2280 planned=82 elapsed=1587.014s
+Systems publication: round=7 evaluated=1536/2280 planned=104 elapsed=1598.505s
+Systems publication: round=7 evaluated=1792/2280 planned=114 elapsed=1611.918s
+Systems publication: round=7 evaluated=2048/2280 planned=126 elapsed=1628.186s
+Systems publication: round=7 evaluated=2280/2280 planned=151 elapsed=1643.907s
+Systems publication: frontier=7 completeness=Incomplete closed_pairs=20501 elapsed=1649.189s
+Systems publication: round=8 evaluated=256/2375 planned=12 elapsed=1669.512s
+Systems publication: round=8 evaluated=512/2375 planned=20 elapsed=1684.164s
+Systems publication: round=8 evaluated=768/2375 planned=24 elapsed=1703.887s
+Systems publication: round=8 evaluated=1024/2375 planned=47 elapsed=1722.217s
+Systems publication: round=8 evaluated=1280/2375 planned=77 elapsed=1738.639s
+Systems publication: round=8 evaluated=1536/2375 planned=81 elapsed=1752.891s
+Systems publication: round=8 evaluated=1792/2375 planned=102 elapsed=1767.205s
+Systems publication: round=8 evaluated=2048/2375 planned=110 elapsed=1783.206s
+Systems publication: round=8 evaluated=2304/2375 planned=129 elapsed=1800.040s
+Systems publication: round=8 evaluated=2375/2375 planned=142 elapsed=1804.065s
+Systems publication: frontier=8 completeness=Incomplete closed_pairs=22379 elapsed=1812.205s
+Systems publication: round=9 evaluated=256/370 planned=67 elapsed=1889.503s
+Systems publication: round=9 evaluated=370/370 planned=67 elapsed=1918.566s
+Systems publication: frontier=9 completeness=Incomplete closed_pairs=22840 elapsed=1924.828s
+Systems publication: round=10 evaluated=29/29 planned=10 elapsed=1932.614s
+Systems publication: frontier=10 completeness=Incomplete closed_pairs=21118 elapsed=1937.224s
+Systems publication: round=11 evaluated=256/2257 planned=12 elapsed=1953.141s
+Systems publication: round=11 evaluated=512/2257 planned=20 elapsed=1967.572s
+Systems publication: round=11 evaluated=768/2257 planned=30 elapsed=1986.320s
+Systems publication: round=11 evaluated=1024/2257 planned=51 elapsed=2004.454s
+Systems publication: round=11 evaluated=1280/2257 planned=77 elapsed=2019.198s
+Systems publication: round=11 evaluated=1536/2257 planned=98 elapsed=2031.268s
+Systems publication: round=11 evaluated=1792/2257 planned=106 elapsed=2046.749s
+Systems publication: round=11 evaluated=2048/2257 planned=118 elapsed=2064.800s
+Systems publication: round=11 evaluated=2257/2257 planned=142 elapsed=2075.997s
+Systems publication: frontier=11 completeness=Incomplete closed_pairs=22571 elapsed=2082.518s
+Systems publication: round=12 evaluated=180/180 planned=75 elapsed=2120.187s
+Systems publication: frontier=12 completeness=Incomplete closed_pairs=21164 elapsed=2125.013s
+Systems publication: round=13 evaluated=256/2260 planned=12 elapsed=2141.534s
+Systems publication: round=13 evaluated=512/2260 planned=20 elapsed=2153.438s
+Systems publication: round=13 evaluated=768/2260 planned=30 elapsed=2166.916s
+Systems publication: round=13 evaluated=1024/2260 planned=51 elapsed=2180.276s
+Systems publication: round=13 evaluated=1280/2260 planned=77 elapsed=2194.804s
+Systems publication: round=13 evaluated=1536/2260 planned=98 elapsed=2205.806s
+Systems publication: round=13 evaluated=1792/2260 planned=106 elapsed=2219.830s
+Systems publication: round=13 evaluated=2048/2260 planned=118 elapsed=2233.518s
+Systems publication: round=13 evaluated=2260/2260 planned=142 elapsed=2244.337s
+Systems publication: frontier=13 completeness=Incomplete closed_pairs=22572 elapsed=2250.582s
+Systems publication: round=14 evaluated=179/179 planned=67 elapsed=2288.633s
+Systems publication: frontier=14 completeness=Incomplete closed_pairs=22854 elapsed=2295.726s
+Systems publication: round=15 evaluated=29/29 planned=0 elapsed=2303.454s
+Systems publication: frontier=15 completeness=Incomplete closed_pairs=22877 elapsed=2309.455s
+Systems publication: round=16 evaluated=10/10 planned=0 elapsed=2312.999s
+Systems publication: frontier=16 completeness=Incomplete closed_pairs=22881 elapsed=2319.009s
+Systems publication: round=17 evaluated=6/6 planned=0 elapsed=2321.710s
+Systems publication: frontier=17 completeness=Incomplete closed_pairs=22881 elapsed=2327.634s
+Publication checkpoint committed: journal=C:\Users\phili\github\agentique-systems\agentique-alpha-runtime\verification\generated\native-studio-alpha\rematerialized-systems\frontiers\journal-126093f90963f933d802fa9872a56c5bbcfe754bb8aae33ca2ab0211aa6d7ee2.json sha256=126093f90963f933d802fa9872a56c5bbcfe754bb8aae33ca2ab0211aa6d7ee2 invocation=3 round=18 stratum=ContextualBindings
+Systems publication: round=18 evaluated=196/196 planned=2033 elapsed=2424.667s
+Systems publication: frontier=18 completeness=Incomplete closed_pairs=18138 elapsed=2430.265s
+Systems publication: round=19 evaluated=256/2636 planned=238 elapsed=2449.650s
+Systems publication: round=19 evaluated=512/2636 planned=442 elapsed=2466.903s
+Systems publication: round=19 evaluated=768/2636 planned=578 elapsed=2484.216s
+Systems publication: round=19 evaluated=1024/2636 planned=826 elapsed=2502.135s
+Systems publication: round=19 evaluated=1280/2636 planned=950 elapsed=2516.623s
+Systems publication: round=19 evaluated=1536/2636 planned=1118 elapsed=2533.491s
+Systems publication: round=19 evaluated=1792/2636 planned=1341 elapsed=2548.034s
+Systems publication: round=19 evaluated=2048/2636 planned=1547 elapsed=2562.046s
+Systems publication: round=19 evaluated=2304/2636 planned=1798 elapsed=2579.143s
+Systems publication: round=19 evaluated=2560/2636 planned=1968 elapsed=2597.299s
+Systems publication: round=19 evaluated=2636/2636 planned=2030 elapsed=2601.617s
+Systems publication: frontier=19 completeness=Incomplete closed_pairs=23934 elapsed=2610.264s
+Systems publication: round=20 evaluated=256/2555 planned=274 elapsed=2630.672s
+Systems publication: round=20 evaluated=512/2555 planned=462 elapsed=2647.715s
+Systems publication: round=20 evaluated=768/2555 planned=677 elapsed=2666.497s
+Systems publication: round=20 evaluated=1024/2555 planned=914 elapsed=2685.148s
+Systems publication: round=20 evaluated=1280/2555 planned=1115 elapsed=2699.836s
+Systems publication: round=20 evaluated=1536/2555 planned=1318 elapsed=2716.144s
+Systems publication: round=20 evaluated=1792/2555 planned=1583 elapsed=2731.780s
+Systems publication: round=20 evaluated=2048/2555 planned=1835 elapsed=2745.089s
+Systems publication: round=20 evaluated=2304/2555 planned=2048 elapsed=2760.087s
+Systems publication: round=20 evaluated=2555/2555 planned=2207 elapsed=2774.283s
+Systems publication: frontier=20 completeness=Incomplete closed_pairs=26077 elapsed=2780.483s
+Systems publication: round=21 evaluated=256/2560 planned=275 elapsed=2799.976s
+Systems publication: round=21 evaluated=512/2560 planned=464 elapsed=2817.231s
+Systems publication: round=21 evaluated=768/2560 planned=683 elapsed=2835.208s
+Systems publication: round=21 evaluated=1024/2560 planned=924 elapsed=2852.963s
+Systems publication: round=21 evaluated=1280/2560 planned=1129 elapsed=2867.236s
+Systems publication: round=21 evaluated=1536/2560 planned=1332 elapsed=2885.326s
+Systems publication: round=21 evaluated=1792/2560 planned=1598 elapsed=2905.843s
+Systems publication: round=21 evaluated=2048/2560 planned=1850 elapsed=2922.979s
+Systems publication: round=21 evaluated=2304/2560 planned=2063 elapsed=2941.258s
+Systems publication: round=21 evaluated=2560/2560 planned=2222 elapsed=2958.218s
+Systems publication: frontier=21 completeness=Incomplete closed_pairs=20905 elapsed=2963.984s
+Systems publication: round=22 evaluated=256/2633 planned=255 elapsed=2987.325s
+Systems publication: round=22 evaluated=512/2633 planned=437 elapsed=3003.580s
+Systems publication: round=22 evaluated=768/2633 planned=567 elapsed=3023.354s
+Systems publication: round=22 evaluated=1024/2633 planned=812 elapsed=3043.582s
+Systems publication: round=22 evaluated=1280/2633 planned=936 elapsed=3059.818s
+Systems publication: round=22 evaluated=1536/2633 planned=1091 elapsed=3076.316s
+Systems publication: round=22 evaluated=1792/2633 planned=1325 elapsed=3090.361s
+Systems publication: round=22 evaluated=2048/2633 planned=1534 elapsed=3103.742s
+Systems publication: round=22 evaluated=2304/2633 planned=1758 elapsed=3118.848s
+Systems publication: round=22 evaluated=2560/2633 planned=1899 elapsed=3134.028s
+Systems publication: round=22 evaluated=2633/2633 planned=1957 elapsed=3137.536s
+Systems publication: frontier=22 completeness=Incomplete closed_pairs=22238 elapsed=3142.898s
+Systems publication: round=23 evaluated=256/2665 planned=297 elapsed=3162.675s
+Systems publication: round=23 evaluated=512/2665 planned=500 elapsed=3178.484s
+Systems publication: round=23 evaluated=768/2665 planned=647 elapsed=3195.533s
+Systems publication: round=23 evaluated=1024/2665 planned=918 elapsed=3213.533s
+Systems publication: round=23 evaluated=1280/2665 planned=1088 elapsed=3230.065s
+Systems publication: round=23 evaluated=1536/2665 planned=1304 elapsed=3249.613s
+Systems publication: round=23 evaluated=1792/2665 planned=1560 elapsed=3268.119s
+Systems publication: round=23 evaluated=2048/2665 planned=1793 elapsed=3281.493s
+Systems publication: round=23 evaluated=2304/2665 planned=2010 elapsed=3295.833s
+Systems publication: round=23 evaluated=2560/2665 planned=2167 elapsed=3310.930s
+Systems publication: round=23 evaluated=2665/2665 planned=2264 elapsed=3316.087s
+Systems publication: frontier=23 completeness=Incomplete closed_pairs=25915 elapsed=3323.689s
+Systems publication: round=24 evaluated=256/2589 planned=301 elapsed=3344.190s
+Systems publication: round=24 evaluated=512/2589 planned=501 elapsed=3361.119s
+Systems publication: round=24 evaluated=768/2589 planned=680 elapsed=3379.172s
+Systems publication: round=24 evaluated=1024/2589 planned=974 elapsed=3398.250s
+Systems publication: round=24 evaluated=1280/2589 planned=1165 elapsed=3412.193s
+Systems publication: round=24 evaluated=1536/2589 planned=1378 elapsed=3429.107s
+Systems publication: round=24 evaluated=1792/2589 planned=1642 elapsed=3447.217s
+Systems publication: round=24 evaluated=2048/2589 planned=1913 elapsed=3468.588s
+Systems publication: round=24 evaluated=2304/2589 planned=2138 elapsed=3490.152s
+Systems publication: round=24 evaluated=2560/2589 planned=2273 elapsed=3506.955s
+Systems publication: round=24 evaluated=2589/2589 planned=2309 elapsed=3508.848s
+Systems publication: frontier=24 completeness=Incomplete closed_pairs=21482 elapsed=3515.729s
+Systems publication: round=25 evaluated=256/2593 planned=301 elapsed=3537.870s
+Systems publication: round=25 evaluated=512/2593 planned=501 elapsed=3560.873s
+Systems publication: round=25 evaluated=768/2593 planned=681 elapsed=3586.460s
+Systems publication: round=25 evaluated=1024/2593 planned=975 elapsed=3606.842s
+Systems publication: round=25 evaluated=1280/2593 planned=1166 elapsed=3621.820s
+Systems publication: round=25 evaluated=1536/2593 planned=1379 elapsed=3639.539s
+Systems publication: round=25 evaluated=1792/2593 planned=1644 elapsed=3657.611s
+Systems publication: round=25 evaluated=2048/2593 planned=1903 elapsed=3671.533s
+Systems publication: round=25 evaluated=2304/2593 planned=2128 elapsed=3687.309s
+Systems publication: round=25 evaluated=2560/2593 planned=2275 elapsed=3704.751s
+Systems publication: round=25 evaluated=2593/2593 planned=2311 elapsed=3706.524s
+Systems publication: frontier=25 completeness=Incomplete closed_pairs=26517 elapsed=3713.724s
+Systems publication: round=26 evaluated=256/2592 planned=301 elapsed=3734.589s
+Systems publication: round=26 evaluated=512/2592 planned=510 elapsed=3751.769s
+Systems publication: round=26 evaluated=768/2592 planned=698 elapsed=3770.753s
+Systems publication: round=26 evaluated=1024/2592 planned=992 elapsed=3790.498s
+Systems publication: round=26 evaluated=1280/2592 planned=1183 elapsed=3804.751s
+Systems publication: round=26 evaluated=1536/2592 planned=1396 elapsed=3823.367s
+Systems publication: round=26 evaluated=1792/2592 planned=1669 elapsed=3841.982s
+Systems publication: round=26 evaluated=2048/2592 planned=1928 elapsed=3855.657s
+Systems publication: round=26 evaluated=2304/2592 planned=2153 elapsed=3871.704s
+Systems publication: round=26 evaluated=2560/2592 planned=2300 elapsed=3889.802s
+Systems publication: round=26 evaluated=2592/2592 planned=2336 elapsed=3892.141s
+Systems publication: frontier=26 completeness=Incomplete closed_pairs=27173 elapsed=3899.390s
+Systems publication: round=27 evaluated=4/4 planned=24 elapsed=3903.472s
+Systems publication: frontier=27 completeness=Complete closed_pairs=27177 elapsed=3906.756s
+Publication checkpoint committed: journal=C:\Users\phili\github\agentique-systems\agentique-alpha-runtime\verification\generated\native-studio-alpha\rematerialized-systems\frontiers\journal-c0e02c3e53c40a7a8dee4de4e2dd7b46e3d34367976e12cc07584e8695e092d1.json sha256=c0e02c3e53c40a7a8dee4de4e2dd7b46e3d34367976e12cc07584e8695e092d1 invocation=3 round=28 stratum=ContextualBindings

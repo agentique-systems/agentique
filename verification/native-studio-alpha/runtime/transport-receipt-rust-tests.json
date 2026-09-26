@@ -1,0 +1,31 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--release",
+    "--config",
+    "profile.release.lto=false",
+    "--locked",
+    "--offline",
+    "-j",
+    "1",
+    "--target-dir",
+    "C:/Users/phili/github/agentique-systems/agentique-alpha-rematerialize-kerml/target",
+    "-p",
+    "agq-kerml-semantics",
+    "--lib",
+    "trusted_publication"
+  ],
+  "cwd": "C:/Users/phili/github/agentique-systems/agentique-alpha-runtime",
+  "started_utc": "2026-09-25T16:22:06.591774+00:00",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "source_commit": "287e0a873ec8a6b48a52036a14a4da1a97f3b409",
+  "working_diff_sha256": "27ca78d6c3f0cb33e75137b6caf20a0be617848044988aea9b28923a977a3c08",
+  "exit_code": 0,
+  "elapsed_seconds": 1858.422,
+  "peak_rss_bytes": 11595776,
+  "peak_private_bytes": 7208960,
+  "memory_scope": "direct child process sampled at 1 second; excludes descendant compilers",
+  "output_sha256": "c6364624b7df9ed6b53d627acb15d2c0216ab579cb070af29fd4154937fed660",
+  "raw_output": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\native-studio-alpha\\runtime\\transport-receipt-rust-tests.log"
+}

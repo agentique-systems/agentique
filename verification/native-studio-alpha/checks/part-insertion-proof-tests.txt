@@ -1,0 +1,33 @@
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling chrono v0.4.45
+   Compiling smallvec v1.16.1
+   Compiling rusqlite v0.37.0
+   Compiling windows-sys v0.61.2
+   Compiling once_cell v1.21.4
+   Compiling tempfile v3.27.0
+   Compiling agq-sysml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml-semantics)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+   Compiling agq-modeling-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-workspace)
+   Compiling agq-modeling-repository v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-repository)
+   Compiling agq-modeling-sqlite v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\modeling-sqlite)
+   Compiling agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-service)
+    Finished `test` profile [unoptimized] target(s) in 21.97s
+     Running unittests src\lib.rs (target\debug\deps\agq_modeling_service-045040c4c90fcc3e.exe)
+
+running 3 tests
+test part_insertion::tests::proof_rejects_header_rename_wrong_owner_and_other_source_changes ... ok
+
+thread 'part_insertion::tests::proof_preserves_every_old_identity_for_braces_and_semicolon_bodies' (22152) panicked at crates\modeling-service\src\part_insertion.rs:566:75:
+part def Platform;: modeling service: Part insertion identity proof: an existing production disappeared or changed kind
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test part_insertion::tests::proof_preserves_every_old_identity_for_braces_and_semicolon_bodies ... FAILED
+test part_insertion::tests::proof_accepts_one_qualified_typing_but_no_hidden_declarations ... ok
+
+failures:
+
+failures:
+    part_insertion::tests::proof_preserves_every_old_identity_for_braces_and_semicolon_bodies
+
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 8 filtered out; finished in 0.08s
+
+error: test failed, to rerun pass `-p agq-modeling-service --lib`

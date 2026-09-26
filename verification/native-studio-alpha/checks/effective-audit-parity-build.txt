@@ -1,0 +1,3 @@
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+    Finished `release` profile [optimized] target(s) in 3m 09s
+  Executable unittests src\lib.rs (target\release\deps\agq_kerml_text-1ae1689677397383.exe)

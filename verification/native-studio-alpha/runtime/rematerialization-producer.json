@@ -1,0 +1,8 @@
+{
+  "producer_commit": "a1a7b847ef83f8e4c54bea9242cac94a9ce665fe",
+  "wrapper_source": "tools\\runtime-recovery\\kerml_rematerialize.rs",
+  "wrapper_sha256": "84011458800cbd01d8f90f4df4194e7bfa9bfee4b6df6521e6c12c47235de92b",
+  "language_diff_bytes": 0,
+  "wrapper_binary_sha256": "0e0245e61a0165f28c7a876c0a133d18060c5eb4343ebf90bfd1130e22c577a8",
+  "systems_binary_sha256": "2610d2fe31e9b2ab99ed74cb4ad19e7302d4e33ce707ddcafabf2294275c743c"
+}

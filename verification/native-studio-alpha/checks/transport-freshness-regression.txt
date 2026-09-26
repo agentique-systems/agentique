@@ -1,0 +1,85 @@
+TAP version 13
+# Subtest: accepted Systems freshness binds interpretation population and identities
+ok 1 - accepted Systems freshness binds interpretation population and identities
+  ---
+  duration_ms: 140.9409
+  ...
+# Subtest: transport content and population require reviewed freshness without changing authority
+ok 2 - transport content and population require reviewed freshness without changing authority
+  ---
+  duration_ms: 194.4897
+  ...
+# Subtest: v3 freshness authenticates the v3 manifest while preserving v2 fixtures
+ok 3 - v3 freshness authenticates the v3 manifest while preserving v2 fixtures
+  ---
+  duration_ms: 111.6539
+  ...
+# Subtest: descriptor, registry, profile and source changes fail the repository stale gate
+ok 4 - descriptor, registry, profile and source changes fail the repository stale gate
+  ---
+  duration_ms: 149.3209
+  ...
+# Subtest: changed receipt, semantic identity or binding cannot retain old freshness
+ok 5 - changed receipt, semantic identity or binding cannot retain old freshness
+  ---
+  duration_ms: 106.2689
+  ...
+# Subtest: partial authority installation fails closed
+ok 6 - partial authority installation fails closed
+  ---
+  duration_ms: 56.9482
+  ...
+# Subtest: deleting all authority artifacts after compiled Systems v2 activation fails closed
+ok 7 - deleting all authority artifacts after compiled Systems v2 activation fails closed
+  ---
+  duration_ms: 54.4663
+  ...
+# Subtest: deleting all authority artifacts after compiled Systems v3 activation fails closed
+ok 8 - deleting all authority artifacts after compiled Systems v3 activation fails closed
+  ---
+  duration_ms: 50.8421
+  ...
+# Subtest: comments, strings and test module entries do not activate compiled authority
+ok 9 - comments, strings and test module entries do not activate compiled authority
+  ---
+  duration_ms: 49.4481
+  ...
+# Subtest: unrecognized compiled authority cannot imply a preaccept state
+ok 10 - unrecognized compiled authority cannot imply a preaccept state
+  ---
+  duration_ms: 53.7711
+  ...
+# Subtest: app-only lock additions prove unchanged full language closure without recapturing authority
+ok 11 - app-only lock additions prove unchanged full language closure without recapturing authority
+  ---
+  duration_ms: 130.9638
+  ...
+# Subtest: every reachable package identity, checksum and edge remains immutable
+ok 12 - every reachable package identity, checksum and edge remains immutable
+  ---
+  duration_ms: 239.6325
+  ...
+# Subtest: duplicate-version lock qualification resolves exact edges and rejects ambiguity
+ok 13 - duplicate-version lock qualification resolves exact edges and rejects ambiguity
+  ---
+  duration_ms: 158.2739
+  ...
+# Subtest: compatibility authenticates original baseline bytes and fails on missing reference
+ok 14 - compatibility authenticates original baseline bytes and fails on missing reference
+  ---
+  duration_ms: 112.3573
+  ...
+# Subtest: lock parser rejects unknown fields, tables, duplicates and malformed resolution
+ok 15 - lock parser rejects unknown fields, tables, duplicates and malformed resolution
+  ---
+  duration_ms: 67.6365
+  ...
+1..15
+# tests 15
+# suites 0
+# pass 15
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 1800.0584

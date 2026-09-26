@@ -1,0 +1,22 @@
+{
+  "format": "agentique-review-command-evidence/1",
+  "working_directory": "C:/Users/phili/github/agentique-systems/agentique-alpha-runtime",
+  "commands": [
+    {
+      "command": "python verification/native-studio-alpha/reviews/interrupted-proposal-storage-audit.py --root C:/Users/phili/github/agentique-systems/agentique --report C:/Users/phili/github/agentique-systems/agentique/verification/native-studio-alpha/real-run03/journey.json --output verification/native-studio-alpha/reviews/interrupted-proposal-storage-audit.json",
+      "chunk_id": "f268f2",
+      "wall_time_seconds": 0.9669066,
+      "exit_code": 0,
+      "original_token_count": 33,
+      "output": "PASS: 3 ancestor revisions, 3 receipts, 11 authenticated blob addresses; unchanged baseline 8dcfb224-55e6-4d0d-ac3a-84fcfffb9a46\r\n"
+    },
+    {
+      "command": "python verification/native-studio-alpha/reviews/interrupted-proposal-storage-audit.py --root C:/Users/phili/github/agentique-systems/agentique --report C:/Users/phili/github/agentique-systems/agentique/verification/native-studio-alpha/real-run03/journey.json --output verification/native-studio-alpha/reviews/interrupted-proposal-storage-audit-v2.json",
+      "chunk_id": "2aa98d",
+      "wall_time_seconds": 0.7134264,
+      "exit_code": 0,
+      "original_token_count": 33,
+      "output": "PASS: 3 ancestor revisions, 3 receipts, 11 authenticated blob addresses; unchanged baseline 8dcfb224-55e6-4d0d-ac3a-84fcfffb9a46\r\n"
+    }
+  ]
+}

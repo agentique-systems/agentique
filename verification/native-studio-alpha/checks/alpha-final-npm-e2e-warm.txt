@@ -1,0 +1,20 @@
+
+> agentique@0.1.0 test:e2e
+> playwright test
+
+[WebServer]    Compiling agq-server v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\server)
+[WebServer]     Finished `dev` profile [unoptimized] target(s) in 5.13s
+[WebServer]      Running `target\debug\agq-server.exe --port 7342 --workspace .workspaces/e2e-9ce6a4ed-44ce-4223-82d8-04b5b64beb16.db`
+
+Running 8 tests using 1 worker
+
+  ✓  1 tests\browser\console.spec.ts:5:1 › Cancellable model work and paged history use durable Engine results (18.2s)
+  ✓  2 tests\browser\console.spec.ts:143:1 › Console lifecycle, source navigation, shared context and reviewed Assistant change (16.8s)
+  ✓  3 tests\browser\console.spec.ts:242:1 › API authentication, scope, identity mapping and revision checks (2.1s)
+  ✓  4 tests\browser\console.spec.ts:330:1 › Keyboard inspection and recoverable source drafts (4.9s)
+  ✓  5 tests\browser\studio.spec.ts:272:1 › Studio reports missing durable inputs without substituting model content (417ms)
+  ✓  6 tests\browser\studio.spec.ts:298:1 › Studio shared selection, semantic filters, explanation and revision binding (1.3s)
+  ✓  7 tests\browser\studio.spec.ts:386:1 › Agent view and explicit candidate validation, commit, history, and rejection (1.6s)
+  ✓  8 tests\browser\studio.spec.ts:470:1 › Studio refuses a projection from the wrong immutable revision (285ms)
+
+  8 passed (54.3s)

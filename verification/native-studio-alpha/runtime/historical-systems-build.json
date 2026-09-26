@@ -1,0 +1,27 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--release",
+    "--config",
+    "profile.release.lto=false",
+    "--locked",
+    "--offline",
+    "-j",
+    "2",
+    "--target-dir",
+    "C:/Users/phili/github/agentique-systems/agentique-alpha-rematerialize-kerml/target",
+    "-p",
+    "agq-kerml-text",
+    "--example",
+    "sysml_systems_publication",
+    "--example",
+    "restore_publication"
+  ],
+  "cwd": "C:/Users/phili/github/agentique-systems/agentique-alpha-rematerialize-systems",
+  "started_utc": "2026-09-25T15:27:30.046698+00:00",
+  "exit_code": 0,
+  "elapsed_seconds": 689.625,
+  "peak_rss_bytes": 11730944,
+  "peak_private_bytes": 9543680
+}

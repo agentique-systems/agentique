@@ -1,0 +1,4 @@
+  File "<string>", line 1
+    import pathlib,shutil,hashlib,json; source=pathlib.Path(target/release/deps/create_part_performance-6184f8b9327774b2.exe); destination=pathlib.Path(verification/generated/native-studio-alpha/oracles/create-part-before-sharing.exe); destination.parent.mkdir(parents=True,exist_ok=True); assert not destination.exists(); shutil.copy2(source,destination); digest=lambda p:hashlib.sha256(p.read_bytes()).hexdigest(); assert digest(source)==digest(destination); print(json.dumps({source:str(source.resolve()),retained:str(destination.resolve()),sha256:digest(destination),bytes:destination.stat().st_size}))
+                                                                                                           ^
+SyntaxError: invalid decimal literal

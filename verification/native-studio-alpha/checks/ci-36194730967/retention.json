@@ -1,0 +1,52 @@
+{
+  "format": "agentique-ci-failure-retention/1",
+  "artifact_id": 10890283026,
+  "run_id": 36194730967,
+  "source_commit": "4747f8eee085c939932d7be00abbf6af5a1c0ad2",
+  "executed_command": "python verification/generated/ci-36194730967/read_artifact.py",
+  "exit_code": 0,
+  "full_archive_sha256_verified": false,
+  "independent_fixture_byte_equal_to_baseline": "ded2a6e7dc616b9305508da2976d65282ebd7b4d",
+  "files": [
+    {
+      "generated": "verification/generated/ci-36194730967/rust-clippy.txt",
+      "retained": "verification/native-studio-alpha/checks/ci-36194730967/rust-clippy.txt",
+      "sha256": "73aa37f85302938406e3f3e630e90a646c8132a347f71294e3fb39366bb2489b"
+    },
+    {
+      "generated": "verification/generated/ci-36194730967/engineering-tests.txt",
+      "retained": "verification/native-studio-alpha/checks/ci-36194730967/engineering-tests.txt",
+      "sha256": "a0acd75c043ef0f4ec1a77bdb7a77a8363fab1e96fc4b1e6d43117ba853c278d"
+    },
+    {
+      "generated": "verification/generated/ci-36194730967/independent-fixtures.txt",
+      "retained": "verification/native-studio-alpha/checks/ci-36194730967/independent-fixtures.txt",
+      "sha256": "f95a8a36082010cd3b3e5bd29a7f2340c5168adaea35a4a1257cc8fa9a029714"
+    },
+    {
+      "generated": "verification/generated/ci-36194730967/standards.txt",
+      "retained": "verification/native-studio-alpha/checks/ci-36194730967/standards.txt",
+      "sha256": "ba3eafb125921da29557102cc766888fafa2399cb558703603ffb84d215f9d55"
+    },
+    {
+      "generated": "verification/generated/ci-36194730967/independent-fixtures.json",
+      "retained": "verification/native-studio-alpha/checks/ci-36194730967/independent-fixtures.json",
+      "sha256": "99a52db50c41a7911047b8a5a824943f3dd9bbab8cfb4dae8da1d4c974660df5"
+    },
+    {
+      "generated": "verification/generated/ci-36194730967/results.json",
+      "retained": "verification/native-studio-alpha/checks/ci-36194730967/ci-results.json",
+      "sha256": "7d1eaca0883a87ff549c4f9f2732903b467dfba7929f5f60443c0ad0601175d6"
+    },
+    {
+      "generated": "verification/generated/ci-36194730967/acquisition.json",
+      "retained": "verification/native-studio-alpha/checks/ci-36194730967/acquisition.json",
+      "sha256": "3d67232e5a4cc1d3b20069c017db51fa905cc2dfcea26111522c245254fff646"
+    },
+    {
+      "generated": "verification/generated/ci-36194730967/read_artifact.py",
+      "retained": "verification/native-studio-alpha/checks/ci-36194730967/read_artifact.py",
+      "sha256": "bc409e804f31005e6a9929593482515965d03f6ff2901d1beb476ea91c691592"
+    }
+  ]
+}

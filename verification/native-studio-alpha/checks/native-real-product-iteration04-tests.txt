@@ -1,0 +1,13 @@
+   Compiling agq-modeling-view v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-view)
+   Compiling agq-modeling-agent v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-agent)
+   Compiling agq-studio-platform v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-platform)
+   Compiling agq-studio-scene v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-scene)
+   Compiling agq-studio-native v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-native)
+error[E0063]: missing field `diff` in initializer of `commands::CommandContext`
+   --> src\commands.rs:505:27
+    |
+505 |         let mut context = CommandContext {
+    |                           ^^^^^^^^^^^^^^ missing `diff`
+
+For more information about this error, try `rustc --explain E0063`.
+error: could not compile `agq-studio-native` (bin "agq-studio-native" test) due to 1 previous error

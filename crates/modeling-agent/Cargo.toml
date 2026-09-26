@@ -12,9 +12,22 @@ agq-modeling-workspace = { path = "../modeling-workspace" }
 agq-modeling-repository = { path = "../modeling-repository" }
 agq-kernel = { path = "../kernel" }
 agq-kerml = { path = "../kerml" }
+agq-kerml-semantics = { path = "../kerml-semantics" }
 agq-sysml = { path = "../sysml" }
 agq-kerml-text = { path = "../kerml-text" }
 agq-kerml-syntax = { path = "../kerml-syntax" }
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
+
+[dev-dependencies]
+agq-modeling-sqlite = { path = "../../adapters/modeling-sqlite" }
+agq-standard-libraries = { path = "../standard-libraries" }
+tempfile.workspace = true
+
+[features]
+verification = ["agq-modeling-workspace/verification"]
+
+[[test]]
+name = "create_part_performance"
+required-features = ["verification"]

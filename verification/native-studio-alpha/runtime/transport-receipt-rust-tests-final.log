@@ -1,0 +1,12 @@
+    Finished `release` profile [optimized] target(s) in 0.30s
+     Running unittests src\lib.rs (C:/Users/phili/github/agentique-systems/agentique-alpha-rematerialize-kerml/target\release\deps\agq_kerml_semantics-fce2e5fe674f5f0f.exe)
+
+running 5 tests
+test trusted_publication::tests::caller_identifier_cannot_enable_unaccepted_systems_restoration ... ok
+test trusted_publication::tests::catalogue_authenticates_generic_envelope_and_opaque_binding_payload ... ok
+test trusted_publication::tests::compiled_transport_keeps_original_semantic_and_evidence_authority ... ok
+test trusted_publication::tests::exact_closure_restores_but_changed_bytes_bounds_and_context_do_not ... ok
+test trusted_publication::tests::weaker_registry_and_recomputed_cache_certificate_cannot_replace_authority ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 298 filtered out; finished in 0.02s
+

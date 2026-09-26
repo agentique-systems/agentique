@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python",
+    "verification/scripts/native_alpha_snapshot.py",
+    "--report",
+    "verification/native-studio-alpha/real-run03/journey.json",
+    "--snapshot",
+    "verification/generated/native-studio-alpha/view-query-oracle/baseline.sqlite",
+    "--output",
+    "verification/native-studio-alpha/performance/view-query-baseline-snapshot.json"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T21:15:44.611056+00:00",
+  "elapsed_seconds": 0.39,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/view-query-baseline-snapshot.txt",
+  "output_sha256": "50cdd67b80d6fc8c3b79741d9ab27f9287074e1f37ed781361fcd309d4aa6d23",
+  "build_environment": {}
+}

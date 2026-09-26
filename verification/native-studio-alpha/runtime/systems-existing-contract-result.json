@@ -1,0 +1,16 @@
+{
+  "semantic_contract_equal": true,
+  "semantic_fields": {
+    "binding_manifest_sha256": true,
+    "format": true,
+    "identity": true,
+    "source_content_set": true,
+    "status": true
+  },
+  "accepted_bindings_equal": true,
+  "transport_entry_schema_equal": true,
+  "original_transport_entries_equal": false,
+  "ordinary_facade_authentication_required": true,
+  "accepted_receipt_changed": false,
+  "runtime_accepted": false
+}

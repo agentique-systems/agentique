@@ -1,0 +1,10 @@
+# Opt-in semantic view profiling
+
+Source change based on `bb4a76631d39696d07bbf898dd81f44851ad4ffa`. Set `AGENTIQUE_VIEW_PROFILE=1` on the native process to emit one JSON line per completed modeling-view `project` or `inspect` call to stderr, including failed Results. Ordinary use emits no records and reads no clocks. The public query signatures, DTOs, query order, completeness, evidence and error mapping are unchanged. No cache or semantic optimization is introduced.
+
+Records use `agentique-modeling-view-profile/1` and carry project, exact revision, focus, operation, view kind/scope, full projection ViewDefinition, actual population/result sizes, independently timed total and named wall-time phases. Projection separates local population, graph extraction, connector context construction, connector endpoint queries, selection/scope, focused context/interface queries, node mapping and group mapping. Inspector separates KerML context construction, owner/feature/type queries, provenance, graph/connector queries, source mapping and the existing separate SysML context construction used for the profile label.
+
+`included_in` explicitly names an inclusive parent phase: focused query phases are inside `selection_scope`; Inspector graph and connector phases are inside `relationship_queries`. Do not sum nested timings. A missing phase was skipped or did not complete. Totals exclude JSON emission and initial record-identity construction; they include operation timing-bookkeeping overhead. These are application wall times, not CPU-only, GPU or input-to-photon measurements. No measurements are claimed by this source change; run04 must retain actual stderr alongside its binary/source provenance.
+
+The runtime dependency promotion of serde_json requires one dependency line in the separate native lockfile. Offline Cargo metadata resolved 449 packages; root Cargo.lock is unchanged. No accepted publication receipt, language source, authority identity or freshness pin was changed. No build, test or accepted-runtime consumer ran in this worktree. Parent integration owns compilation and the real run.
+

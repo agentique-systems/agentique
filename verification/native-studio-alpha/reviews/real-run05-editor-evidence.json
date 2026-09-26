@@ -1,0 +1,106 @@
+{
+  "format": "agentique-independent-product-review-evidence/1",
+  "scope": "Read-only artifact hashing and comparison; no semantic consumer or UI process run by reviewer.",
+  "report": "verification/native-studio-alpha/real-run05/journey.json",
+  "report_sha256": "4754e75f1d19e0ad478a474fd926ea116ff969af38459921170ed7ac8d328a6c",
+  "outcome": "failed",
+  "elapsed_ms": 504943,
+  "passed_assertions": 25,
+  "total_assertions": 26,
+  "previous_report_sha256": "6c79d97d6a5b1331f19fdc92e3d140a9b3a1f4e531afde6467ff118b46ed36b9",
+  "baseline_manifest_equal_to_predecessor": true,
+  "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+  "revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+  "images": [
+    {
+      "checkpoint": "01-system-world",
+      "png": "verification/native-studio-alpha/real-run05/gallery/01-system-world.png",
+      "png_sha256": "ca0f34fa10ee565cd25e4f3e3539032d0aa514197aae83e8b19599ff51a028ed",
+      "sidecar": "verification/native-studio-alpha/real-run05/gallery/01-system-world.json",
+      "sidecar_sha256": "003fb05074d128fe57a96603db5f8a4bd7f07c0431508799b8987a79fd6797e2",
+      "semantic_data": "real authenticated models/agentique",
+      "scene_revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141"
+    },
+    {
+      "checkpoint": "02-focused-subsystem",
+      "png": "verification/native-studio-alpha/real-run05/gallery/02-focused-subsystem.png",
+      "png_sha256": "c66dd85f210d5f008aca329102db45e6d5600748454c42dde7292ee0d80be5fe",
+      "sidecar": "verification/native-studio-alpha/real-run05/gallery/02-focused-subsystem.json",
+      "sidecar_sha256": "47c13788553d3220ccb13b399033f8bafc1023dd7f3f87a26e56cfcb3cd0db38",
+      "semantic_data": "real authenticated models/agentique",
+      "scene_revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141"
+    },
+    {
+      "checkpoint": "02a-platform-port",
+      "png": "verification/native-studio-alpha/real-run05/gallery/02a-platform-port.png",
+      "png_sha256": "4fdedb3dbfef76a80312115d670353f3919bb41261db4d71996d0a07c2d9b7ca",
+      "sidecar": "verification/native-studio-alpha/real-run05/gallery/02a-platform-port.json",
+      "sidecar_sha256": "94670e27b5d274bd5f1c1edd83fd11855ce6c317489e79b1b8a1c2ba4e624f15",
+      "semantic_data": "real authenticated models/agentique",
+      "scene_revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141"
+    },
+    {
+      "checkpoint": "02b-focused-repository",
+      "png": "verification/native-studio-alpha/real-run05/gallery/02b-focused-repository.png",
+      "png_sha256": "5c8cc15b387501f3cee8e18b267cf6e24bb7c14f9f195d81c3305d3cc45a971e",
+      "sidecar": "verification/native-studio-alpha/real-run05/gallery/02b-focused-repository.json",
+      "sidecar_sha256": "794d5c0e42a31d9d8c7dd86b8f324be0e4bb4d282990e8b8c4475cb196d9f855",
+      "semantic_data": "real authenticated models/agentique",
+      "scene_revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141"
+    },
+    {
+      "checkpoint": "02c-repository-port",
+      "png": "verification/native-studio-alpha/real-run05/gallery/02c-repository-port.png",
+      "png_sha256": "ddf69b85268e57f7da6c1e28f9fa8a4de002cc0774d195bb09ebd63eda78c225",
+      "sidecar": "verification/native-studio-alpha/real-run05/gallery/02c-repository-port.json",
+      "sidecar_sha256": "c83786fcbf87f6ab713ccb72afe4e5d0b7897629f4cd2be7546505f681a5fb3f",
+      "semantic_data": "real authenticated models/agentique",
+      "scene_revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141"
+    },
+    {
+      "checkpoint": "03-graph-world",
+      "png": "verification/native-studio-alpha/real-run05/gallery/03-graph-world.png",
+      "png_sha256": "26efaf57ef269cff95272ed98bf0926437f615009c3ecc96cc8dd9325c4ca179",
+      "sidecar": "verification/native-studio-alpha/real-run05/gallery/03-graph-world.json",
+      "sidecar_sha256": "eae7c41ec9a180aae6f81efb61f7ea04acbedbbfc7ca95bd3ff673f64eb6aeee",
+      "semantic_data": "real authenticated models/agentique",
+      "scene_revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141"
+    },
+    {
+      "checkpoint": "04-requirements-world",
+      "png": "verification/native-studio-alpha/real-run05/gallery/04-requirements-world.png",
+      "png_sha256": "9b1f2a0f60ca64af538969827ef6dca16fefcc439e452000c708514bbb3bb7dd",
+      "sidecar": "verification/native-studio-alpha/real-run05/gallery/04-requirements-world.json",
+      "sidecar_sha256": "8c97e6a622a97e764d8d7531105398900381591f0995e9b09247f2fd3acf5008",
+      "semantic_data": "real authenticated models/agentique",
+      "scene_revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141"
+    },
+    {
+      "checkpoint": "05-explain",
+      "png": "verification/native-studio-alpha/real-run05/gallery/05-explain.png",
+      "png_sha256": "33366ae5543a7d62b865725470a5191118f96a467983c952711e231acfd20400",
+      "sidecar": "verification/native-studio-alpha/real-run05/gallery/05-explain.json",
+      "sidecar_sha256": "88a2faad9f6f9ee5f9059faf85118449f50f2dedb652644536f4d16831023ff8",
+      "semantic_data": "real authenticated models/agentique",
+      "scene_revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141"
+    },
+    {
+      "checkpoint": "06-history-diff",
+      "png": "verification/native-studio-alpha/real-run05/gallery/06-history-diff.png",
+      "png_sha256": "ca611350746993fd5dd6ea2febf613ec0a19b8898777682b99649880057716fd",
+      "sidecar": "verification/native-studio-alpha/real-run05/gallery/06-history-diff.json",
+      "sidecar_sha256": "f476c535fd6c745b3387d7b159ffd9c13edcb15c5ba7fc197d5f1899c8eec812",
+      "semantic_data": "real authenticated models/agentique",
+      "scene_revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141"
+    },
+    {
+      "checkpoint": "07-agent-view",
+      "png": "verification/native-studio-alpha/real-run05/gallery/07-agent-view.png",
+      "png_sha256": "947f75a1f61d47cc8536ff50961fbfd132ac97b22c0aefe790cac6c7c30c50d5",
+      "sidecar": "verification/native-studio-alpha/real-run05/gallery/07-agent-view.json",
+      "sidecar_sha256": "7b913c1398100df9573c5dcf85714258888e7180e345546146393f1af4ee0c5d",
+      "semantic_data": "real authenticated models/agentique",
+      "scene_revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141"
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+    Checking serde v1.0.229
+    Checking thiserror v2.0.20
+    Checking zip v2.4.2
+    Checking num-bigint v0.4.8
+    Checking windows-sys v0.61.2
+    Checking agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\kernel)
+    Checking chrono v0.4.45
+    Checking anstyle-wincon v3.0.11
+    Checking anstyle-query v1.1.5
+    Checking anstream v1.0.0
+    Checking tempfile v3.27.0
+    Checking clap_builder v4.6.7
+    Checking agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\kerml)
+    Checking agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\standard-libraries)
+    Checking agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\kerml-syntax)
+    Checking clap v4.6.7
+    Checking agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\kerml-semantics)
+    Checking agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\sysml)
+    Checking agq-sysml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\sysml-semantics)
+    Checking agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\kerml-text)
+    Checking agq-modeling-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\modeling-workspace)
+    Checking agq-runtime-publications v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\runtime-publications)
+    Checking agq-modeling-repository v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\modeling-repository)
+    Checking agq-modeling-view v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\modeling-view)
+    Checking agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\modeling-service)
+    Checking agq-modeling-sqlite v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\adapters\modeling-sqlite)
+error: this `if` statement can be collapsed
+   --> crates\modeling-service\src\part_insertion.rs:342:5
+    |
+342 | /     if texts.len() != 3 {
+343 | |         if texts.get(2) != Some(&":")
+344 | |             || tokens[3..tokens.len() - 1]
+345 | |                 .iter()
+...   |
+358 | |     }
+    | |_____^
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.92.0/index.html#collapsible_if
+    = note: `-D clippy::collapsible-if` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::collapsible_if)]`
+help: collapse nested if block
+    |
+342 ~     if texts.len() != 3
+343 ~         && (texts.get(2) != Some(&":")
+344 |             || tokens[3..tokens.len() - 1]
+...
+353 |                 })
+354 ~             || (tokens.len() - 4) % 2 != 1)
+355 |         {
+356 |             return Err(invalid("part typing must be one simple qualified name"));
+357 ~         }
+    |
+
+error: could not compile `agq-modeling-service` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

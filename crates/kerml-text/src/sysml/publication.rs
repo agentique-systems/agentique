@@ -1097,14 +1097,26 @@ pub(crate) fn audit_authored_effective_population(
     queries: &SysmlQueries<'_>,
     subjects: &[ElementId],
     audit: &mut SystemsPublicationAudit,
+    observe_usages: impl FnMut(ElementId, &SysmlQueryResult<Vec<ElementId>>),
 ) {
-    audit_sysml_population(queries, subjects, audit);
+    audit_sysml_population_observed(queries, subjects, audit, observe_usages);
 }
 
-fn audit_sysml_population<'m>(
+fn audit_sysml_population(
+    q: &SysmlQueries<'_>,
+    subjects: &[ElementId],
+    audit: &mut SystemsPublicationAudit,
+) {
+    // Standard publication keeps exactly the same dispatcher and checks; it
+    // does not retain authored capability payloads or observe query delivery.
+    audit_sysml_population_observed(q, subjects, audit, |_, _| {});
+}
+
+fn audit_sysml_population_observed<'m>(
     q: &SysmlQueries<'m>,
     subjects: &[ElementId],
     audit: &mut SystemsPublicationAudit,
+    mut observe_usages: impl FnMut(ElementId, &SysmlQueryResult<Vec<ElementId>>),
 ) {
     let profile = q.context().dependencies.sysml_profile;
     for &subject in subjects {
@@ -1208,13 +1220,7 @@ fn audit_sysml_population<'m>(
                 "current effective usages",
                 q.current_effective_usages(subject),
             );
-            audit_typed_answer(
-                audit,
-                &families,
-                subject,
-                "effective usages",
-                q.effective_usages(subject),
-            );
+            audit_effective_usages(q, audit, &families, subject, &mut observe_usages);
             audit_typed_answer(
                 audit,
                 &families,
@@ -1415,6 +1421,20 @@ fn audit_sysml_population<'m>(
     }
 }
 
+/// Deliver the same immutable answer before the ordinary audit consumes it.
+/// The observer cannot alter the query, its evidence or the audit's result.
+fn audit_effective_usages(
+    q: &SysmlQueries<'_>,
+    audit: &mut SystemsPublicationAudit,
+    families: &[SystemsPublicationFamily],
+    subject: ElementId,
+    observe: &mut impl FnMut(ElementId, &SysmlQueryResult<Vec<ElementId>>),
+) {
+    let answer = q.effective_usages(subject);
+    observe(subject, &answer);
+    audit_typed_answer(audit, families, subject, "effective usages", answer);
+}
+
 fn audit_typed_answer<T>(
     audit: &mut SystemsPublicationAudit,
     families: &[SystemsPublicationFamily],
@@ -1457,6 +1477,10 @@ fn audit_typed_answer<T>(
         );
     }
 }
+
+#[cfg(test)]
+#[path = "publication_audit_tests.rs"]
+mod authored_audit_parity_tests;
 
 fn authority_conflict(
     rule: &'static str,

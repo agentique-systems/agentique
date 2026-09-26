@@ -1,0 +1,25 @@
+{
+  "command": [
+    "gh",
+    "release",
+    "list",
+    "--repo",
+    "agentique-systems/agentique",
+    "--limit",
+    "100",
+    "--json",
+    "tagName,name,isDraft,isPrerelease,publishedAt"
+  ],
+  "cwd": "C:/Users/phili/github/agentique-systems/agentique-alpha-runtime",
+  "started_utc": "2026-09-25T18:15:06.259300+00:00",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "source_commit": "6a6f07f93b8ed40f28da08451f825eecb89676d4",
+  "working_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "exit_code": 0,
+  "elapsed_seconds": 1.156,
+  "peak_rss_bytes": 1568768,
+  "peak_private_bytes": 36012032,
+  "memory_scope": "direct child process sampled at 1 second; excludes descendant compilers",
+  "output_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+  "raw_output": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\native-studio-alpha\\runtime\\draft-release-existing.log"
+}

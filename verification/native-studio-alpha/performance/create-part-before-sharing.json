@@ -1,0 +1,15 @@
+{
+  "source_commit_at_start": "7166703746d542c579ff4a560fe5551bb4d48949",
+  "executable_sha256": "ea007d101d7ed846038415c6ff8f31e41b1c30e8fb20eb2e6eac70dd5e49678d",
+  "command": [
+    "target/release/deps/create_part_performance-6184f8b9327774b2.exe",
+    "--ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 699.4658258000854,
+  "maximum_process_peak_working_set_bytes": 5925900288,
+  "sampled_process_tree_peak_resident_bytes": 5895331840,
+  "sample_interval_seconds": 0.25
+}

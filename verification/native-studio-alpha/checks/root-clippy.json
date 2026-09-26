@@ -1,0 +1,17 @@
+{
+  "command": [
+    "cargo",
+    "clippy",
+    "--workspace",
+    "--all-targets",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T15:22:55.250771+00:00",
+  "elapsed_seconds": 99.031,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/root-clippy.txt",
+  "output_sha256": "f578171f5ffbb06a78bd51bdb9e50eb86157239833a05db3404a8e77deb9a752"
+}

@@ -1,0 +1,30 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-studio-platform",
+    "--lib",
+    "projection_cache::tests",
+    "--",
+    "--test-threads=1"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "0f7221a300b25454ea2abaa96369389f754a7c89",
+  "tracked_changes_at_start": [
+    " M crates/studio-native/src/viewport.rs"
+  ],
+  "started_utc": "2026-09-25T22:12:07.788452+00:00",
+  "elapsed_seconds": 71.859,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/completed-projection-cache-tests.txt",
+  "output_sha256": "2c6d2f202710df208e720a9c8c81fb99963f0a7a261ba93713a96ad198264e8d",
+  "build_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "1"
+  }
+}

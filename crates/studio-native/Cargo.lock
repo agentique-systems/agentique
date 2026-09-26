@@ -181,6 +181,7 @@ name = "agq-modeling-agent"
 version = "0.1.0"
 dependencies = [
  "agq-kerml",
+ "agq-kerml-semantics",
  "agq-kerml-syntax",
  "agq-kerml-text",
  "agq-kernel",
@@ -215,6 +216,7 @@ version = "0.1.0"
 dependencies = [
  "agq-kerml",
  "agq-kerml-semantics",
+ "agq-kerml-syntax",
  "agq-kerml-text",
  "agq-kernel",
  "agq-modeling-repository",
@@ -248,6 +250,7 @@ dependencies = [
  "agq-sysml",
  "agq-sysml-semantics",
  "serde",
+ "serde_json",
  "thiserror 2.0.20",
 ]
 

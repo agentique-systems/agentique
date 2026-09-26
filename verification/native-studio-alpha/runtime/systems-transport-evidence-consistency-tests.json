@@ -1,0 +1,18 @@
+{
+  "command": [
+    "python",
+    "verification/scripts/test_runtime_rematerialization.py"
+  ],
+  "cwd": "C:/Users/phili/github/agentique-systems/agentique-alpha-runtime",
+  "started_utc": "2026-09-25T17:21:44.520501+00:00",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "source_commit": "8ea785e791f163914cf653f1d15ea258fbc5e352",
+  "working_diff_sha256": "948a35adc25490e77254d6442474e5520c2dad08f764dab7988889a658af2e1d",
+  "exit_code": 0,
+  "elapsed_seconds": 1.094,
+  "peak_rss_bytes": 1536000,
+  "peak_private_bytes": 397312,
+  "memory_scope": "direct child process sampled at 1 second; excludes descendant compilers",
+  "output_sha256": "8c7b48518ec30f1ea1b12187ff63bdf22cf995bed108446f99cbc30c446529ee",
+  "raw_output": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\native-studio-alpha\\runtime\\systems-transport-evidence-consistency-tests.log"
+}

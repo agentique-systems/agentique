@@ -1,0 +1,98 @@
+   Compiling serde_json v1.0.151
+   Compiling fastrand v2.5.0
+   Compiling roxmltree v0.21.1
+   Compiling tempfile v3.27.0
+   Compiling agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+   Compiling agq-model v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\model)
+   Compiling axum v0.8.9
+   Compiling reqwest v0.12.28
+   Compiling agq-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\syntax)
+   Compiling agq-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\semantics)
+   Compiling agq-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\workspace)
+   Compiling agq-simulation v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\simulation)
+   Compiling agq-application v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\application)
+   Compiling agq-storage v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\storage)
+   Compiling agq-assistant v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\assistant)
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+   Compiling agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\standard-libraries)
+   Compiling agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-syntax)
+   Compiling agq-metamodel-gen v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen)
+   Compiling agentique v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\cli)
+   Compiling agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling agq-server v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\server)
+   Compiling agq-sysml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml-semantics)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+   Compiling agq-modeling-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-workspace)
+   Compiling agq-runtime-publications v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\runtime-publications)
+   Compiling agq-modeling-repository v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-repository)
+   Compiling agq-modeling-view v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-view)
+   Compiling agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-service)
+   Compiling agq-modeling-sqlite v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\modeling-sqlite)
+   Compiling agq-studio-scene v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-scene)
+   Compiling agq-modeling-api v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\modeling-api)
+   Compiling agq-modeling-agent v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-agent)
+   Compiling agq-modeling-http v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\modeling-http)
+   Compiling agq-studio-platform v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-platform)
+   Compiling agq-studio v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio)
+rustc-LLVM ERROR: IO failure on output stream: no space on device
+rustc-LLVM ERROR: IO failure on output stream: no space on device
+error: could not compile `agq-kerml-semantics` (test "library_authority_conflict")
+
+Caused by:
+  failed to create file `C:\Users\phili\github\agentique-systems\agentique\target\debug\.fingerprint\agq-kerml-semantics-5f37812be8460bd0\output-test-integration-test-library_authority_conflict`
+
+Caused by:
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `agq-kerml-semantics` (test "imports")
+
+Caused by:
+error: could not compile `agq-kerml-semantics` (test "producer_closure_evidence")
+
+Caused by:
+  failed to create file `C:\Users\phili\github\agentique-systems\agentique\target\debug\.fingerprint\agq-kerml-semantics-d6d506b5eea70470\output-test-integration-test-producer_closure_evidence`
+
+Caused by:
+  failed to parse process output: `C:\Users\phili\.rustup\toolchains\1.92.0-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name producer_closure_evidence --edition=2024 crates\kerml-semantics\tests\producer_closure_evidence.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 --test --check-cfg cfg(docsrs,test) --check-cfg "cfg(feature, values(\"verification\"))" -C metadata=e71d30a0a4140e04 -C extra-filename=-d6d506b5eea70470 --out-dir C:\Users\phili\github\agentique-systems\agentique\target\debug\deps -C incremental=C:\Users\phili\github\agentique-systems\agentique\target\debug\incremental -L dependency=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps --extern agq_kerml=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libagq_kerml-6f23df37e7b82bd5.rlib --extern agq_kerml_semantics=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libagq_kerml_semantics-6eaa7d75d9d2b428.rlib --extern agq_kernel=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libagq_kernel-d0ee026c77bb81c2.rlib --extern agq_sysml=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libagq_sysml-9999213dc634a950.rlib --extern serde=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libserde-908bfd1fc9846597.rlib --extern serde_json=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libserde_json-d15267bfae4aa83b.rlib --extern sha2=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libsha2-d6fd5dcf81160826.rlib --extern zip=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libzip-ded809ca0e499f7d.rlib` (exit code: 101)
+rustc-LLVM ERROR: IO failure on output stream: no space on device
+error: could not compile `agq-kerml-semantics` (test "reference_binding_v9")
+
+Caused by:
+  failed to create file `C:\Users\phili\github\agentique-systems\agentique\target\debug\.fingerprint\agq-kerml-semantics-74d00318524446d2\output-test-integration-test-reference_binding_v9`
+
+Caused by:
+  failed to parse process output: `C:\Users\phili\.rustup\toolchains\1.92.0-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name reference_binding_v9 --edition=2024 crates\kerml-semantics\tests\reference_binding_v9.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 --test --check-cfg cfg(docsrs,test) --check-cfg "cfg(feature, values(\"verification\"))" -C metadata=d547dfb33e2f6d8f -C extra-filename=-74d00318524446d2 --out-dir C:\Users\phili\github\agentique-systems\agentique\target\debug\deps -C incremental=C:\Users\phili\github\agentique-systems\agentique\target\debug\incremental -L dependency=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps --extern agq_kerml=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libagq_kerml-6f23df37e7b82bd5.rlib --extern agq_kerml_semantics=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libagq_kerml_semantics-6eaa7d75d9d2b428.rlib --extern agq_kernel=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libagq_kernel-d0ee026c77bb81c2.rlib --extern agq_sysml=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libagq_sysml-9999213dc634a950.rlib --extern serde=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libserde-908bfd1fc9846597.rlib --extern serde_json=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libserde_json-d15267bfae4aa83b.rlib --extern sha2=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libsha2-d6fd5dcf81160826.rlib --extern zip=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libzip-ded809ca0e499f7d.rlib` (exit code: 101)
+error: could not compile `agq-kerml-text` (test "publication_slice_dependencies")
+
+Caused by:
+  failed to create file `C:\Users\phili\github\agentique-systems\agentique\target\debug\.fingerprint\agq-kerml-text-90c18737d336b422\output-test-integration-test-publication_slice_dependencies`
+
+Caused by:
+  failed to parse process output: `C:\Users\phili\.rustup\toolchains\1.92.0-x86_64-pc-windows-msvc\bin\rustc.exe --crate-name publication_slice_dependencies --edition=2024 crates\kerml-text\tests\publication_slice_dependencies.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C embed-bitcode=no -C debuginfo=2 --test --check-cfg cfg(docsrs,test) --check-cfg "cfg(feature, values(\"verification\"))" -C metadata=abf6cf5eadb5c1fa -C extra-filename=-90c18737d336b422 --out-dir C:\Users\phili\github\agentique-systems\agentique\target\debug\deps -C incremental=C:\Users\phili\github\agentique-systems\agentique\target\debug\incremental -L dependency=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps --extern agq_kerml=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libagq_kerml-6f23df37e7b82bd5.rlib --extern agq_kerml_semantics=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libagq_kerml_semantics-6eaa7d75d9d2b428.rlib --extern agq_kerml_syntax=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libagq_kerml_syntax-52935bb0d43fdd5e.rlib --extern agq_kerml_text=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libagq_kerml_text-d10c224620d10eae.rlib --extern agq_kernel=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libagq_kernel-d0ee026c77bb81c2.rlib --extern agq_standard_libraries=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libagq_standard_libraries-1c329652b0b030f6.rlib --extern agq_sysml=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libagq_sysml-9999213dc634a950.rlib --extern agq_sysml_semantics=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libagq_sysml_semantics-045fbe6854ed8238.rlib --extern serde=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libserde-908bfd1fc9846597.rlib --extern serde_json=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libserde_json-d15267bfae4aa83b.rlib --extern sha2=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libsha2-d6fd5dcf81160826.rlib --extern thiserror=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libthiserror-4f153b16000b06b9.rlib --extern uuid=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libuuid-f8d0dd9eede325b7.rlib --extern zip=C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\libzip-ded809ca0e499f7d.rlib` (exit code: 101)
+error: linking with `link.exe` failed: exit code: 1140
+  |
+  = note: "C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\link.exe" "/NOLOGO" "C:\\Users\\phili\\AppData\\Local\\Temp\\rustcV9Npt7\\symbols.o" "<45 object files omitted>" "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\debug\\deps/{libagq_kerml_semantics-6eaa7d75d9d2b428,libzip-ded809ca0e499f7d,libzopfli-fcbcfb0ce690448f,libbumpalo-52028ec1aef148c3,liblog-2cfc0d682c0f298e,libflate2-0c429ab51905a82b,libminiz_oxide-88b1ee36dfe1f67f,libsimd_adler32-954353a3e962a543,libindexmap-531247467871d5f2,libequivalent-3b13bca411cdf860,libhashbrown-bc835c84d6b0a2d0,libcrc32fast-95072267d3ff5d66}.rlib" "<sysroot>\\lib\\rustlib\\x86_64-pc-windows-msvc\\lib/{libtest-*,libgetopts-*,librustc_std_workspace_std-*}.rlib" "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\debug\\deps/{libagq_kerml-6f23df37e7b82bd5,libagq_kernel-d0ee026c77bb81c2,libserde_json-d15267bfae4aa83b,libmemchr-513f9f4c6052dc73,libitoa-f8d5e24d697a839c,libzmij-934829f6c63a6575,libuuid-f8d0dd9eede325b7,libgetrandom-4fa13c76e14f4da2,libsha1_smol-240156c274d442ac,libthiserror-4f153b16000b06b9,libnum_bigint-ee99b8ba906e5dc3,libnum_integer-ba7da75d9eae9aa0,libnum_traits-43fff0dd67680e5e,libsha2-d6fd5dcf81160826,libcpufeatures-e9f6add8b507f973,libcfg_if-7ff0f61f1d72f6ea,libdigest-657e70c0175b25f5,libblock_buffer-74aba399fc410183,libcrypto_common-fe50b181e9b835ab,libgeneric_array-2b866bb5e74b1165,libtypenum-22b0857804c3f632,libserde-908bfd1fc9846597,libserde_core-6eed3085a3679957}.rlib" "<sysroot>\\lib\\rustlib\\x86_64-pc-windows-msvc\\lib/{libstd-*,libpanic_unwind-*,libcfg_if-*,libwindows_targets-*,librustc_demangle-*,libstd_detect-*,libhashbrown-*,librustc_std_workspace_alloc-*,libunwind-*,librustc_std_workspace_core-*,liballoc-*,libcore-*,libcompiler_builtins-*}.rlib" "kernel32.lib" "kernel32.lib" "kernel32.lib" "kernel32.lib" "ntdll.lib" "userenv.lib" "ws2_32.lib" "dbghelp.lib" "/defaultlib:msvcrt" "/NXCOMPAT" "/OUT:C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\debug\\deps\\connector_related_features-c0ca659359290c8b.exe" "/OPT:REF,NOICF" "/DEBUG" "/PDBALTPATH:%_PDB%" "/NATVIS:<sysroot>\\lib\\rustlib\\etc\\intrinsic.natvis" "/NATVIS:<sysroot>\\lib\\rustlib\\etc\\liballoc.natvis" "/NATVIS:<sysroot>\\lib\\rustlib\\etc\\libcore.natvis" "/NATVIS:<sysroot>\\lib\\rustlib\\etc\\libstd.natvis"
+  = note: some arguments are omitted. use `--verbose` to show all linker arguments
+  = note: LINK : fatal error LNK1140: limit exceeded for program database; link with /PDB:NONE␍
+          
+
+error: linking with `link.exe` failed: exit code: 1201
+  |
+  = note: "C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\link.exe" "/NOLOGO" "C:\\Users\\phili\\AppData\\Local\\Temp\\rustcUB30hE\\symbols.o" "<44 object files omitted>" "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\debug\\deps/{libagq_kerml_semantics-6eaa7d75d9d2b428,libzip-ded809ca0e499f7d,libzopfli-fcbcfb0ce690448f,libbumpalo-52028ec1aef148c3,liblog-2cfc0d682c0f298e,libflate2-0c429ab51905a82b,libminiz_oxide-88b1ee36dfe1f67f,libsimd_adler32-954353a3e962a543,libindexmap-531247467871d5f2,libequivalent-3b13bca411cdf860,libhashbrown-bc835c84d6b0a2d0,libcrc32fast-95072267d3ff5d66,libagq_kerml-6f23df37e7b82bd5,libagq_kernel-d0ee026c77bb81c2,libserde_json-d15267bfae4aa83b,libmemchr-513f9f4c6052dc73,libitoa-f8d5e24d697a839c,libzmij-934829f6c63a6575,libuuid-f8d0dd9eede325b7,libgetrandom-4fa13c76e14f4da2,libsha1_smol-240156c274d442ac,libthiserror-4f153b16000b06b9,libnum_bigint-ee99b8ba906e5dc3,libnum_integer-ba7da75d9eae9aa0,libnum_traits-43fff0dd67680e5e,libsha2-d6fd5dcf81160826,libcpufeatures-e9f6add8b507f973,libcfg_if-7ff0f61f1d72f6ea,libdigest-657e70c0175b25f5,libblock_buffer-74aba399fc410183,libcrypto_common-fe50b181e9b835ab,libgeneric_array-2b866bb5e74b1165,libtypenum-22b0857804c3f632,libserde-908bfd1fc9846597,libserde_core-6eed3085a3679957}.rlib" "<sysroot>\\lib\\rustlib\\x86_64-pc-windows-msvc\\lib/{libtest-*,libgetopts-*,librustc_std_workspace_std-*,libstd-*,libpanic_unwind-*,libcfg_if-*,libwindows_targets-*,librustc_demangle-*,libstd_detect-*,libhashbrown-*,librustc_std_workspace_alloc-*,libunwind-*,librustc_std_workspace_core-*,liballoc-*,libcore-*,libcompiler_builtins-*}.rlib" "kernel32.lib" "kernel32.lib" "kernel32.lib" "kernel32.lib" "ntdll.lib" "userenv.lib" "ws2_32.lib" "dbghelp.lib" "/defaultlib:msvcrt" "/NXCOMPAT" "/OUT:C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\debug\\deps\\connector_publication-b9cd3bfc0712e2e8.exe" "/OPT:REF,NOICF" "/DEBUG" "/PDBALTPATH:%_PDB%" "/NATVIS:<sysroot>\\lib\\rustlib\\etc\\intrinsic.natvis" "/NATVIS:<sysroot>\\lib\\rustlib\\etc\\liballoc.natvis" "/NATVIS:<sysroot>\\lib\\rustlib\\etc\\libcore.natvis" "/NATVIS:<sysroot>\\lib\\rustlib\\etc\\libstd.natvis"
+  = note: some arguments are omitted. use `--verbose` to show all linker arguments
+  = note: LINK : fatal error LNK1201: error writing to program database 'C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\connector_publication-b9cd3bfc0712e2e8.pdb'; check for insufficient disk space, invalid path, or insufficient privilege␍
+          
+
+error: could not compile `agq-kerml-semantics` (test "connector_related_features") due to 1 previous error
+error: could not compile `agq-kerml-semantics` (test "connector_publication") due to 1 previous error
+error: linking with `link.exe` failed: exit code: 1140
+  |
+  = note: "C:\\Program Files (x86)\\Microsoft Visual Studio\\18\\BuildTools\\VC\\Tools\\MSVC\\14.50.35717\\bin\\HostX64\\x64\\link.exe" "/NOLOGO" "C:\\Users\\phili\\AppData\\Local\\Temp\\rustc4YxtrB\\symbols.o" "<47 object files omitted>" "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\debug\\deps/{libagq_kerml_semantics-6eaa7d75d9d2b428,libzip-ded809ca0e499f7d,libzopfli-fcbcfb0ce690448f,libbumpalo-52028ec1aef148c3,liblog-2cfc0d682c0f298e,libflate2-0c429ab51905a82b,libminiz_oxide-88b1ee36dfe1f67f,libsimd_adler32-954353a3e962a543,libindexmap-531247467871d5f2,libequivalent-3b13bca411cdf860,libhashbrown-bc835c84d6b0a2d0,libcrc32fast-95072267d3ff5d66,libagq_kerml-6f23df37e7b82bd5,libagq_kernel-d0ee026c77bb81c2,libserde_json-d15267bfae4aa83b,libmemchr-513f9f4c6052dc73,libitoa-f8d5e24d697a839c,libzmij-934829f6c63a6575,libuuid-f8d0dd9eede325b7,libgetrandom-4fa13c76e14f4da2,libsha1_smol-240156c274d442ac,libthiserror-4f153b16000b06b9,libnum_bigint-ee99b8ba906e5dc3,libnum_integer-ba7da75d9eae9aa0,libnum_traits-43fff0dd67680e5e,libsha2-d6fd5dcf81160826,libcpufeatures-e9f6add8b507f973,libcfg_if-7ff0f61f1d72f6ea,libdigest-657e70c0175b25f5,libblock_buffer-74aba399fc410183,libcrypto_common-fe50b181e9b835ab,libgeneric_array-2b866bb5e74b1165,libtypenum-22b0857804c3f632,libserde-908bfd1fc9846597,libserde_core-6eed3085a3679957}.rlib" "<sysroot>\\lib\\rustlib\\x86_64-pc-windows-msvc\\lib/{libtest-*,libgetopts-*,librustc_std_workspace_std-*,libstd-*,libpanic_unwind-*,libcfg_if-*,libwindows_targets-*,librustc_demangle-*,libstd_detect-*,libhashbrown-*,librustc_std_workspace_alloc-*,libunwind-*,librustc_std_workspace_core-*,liballoc-*,libcore-*,libcompiler_builtins-*}.rlib" "kernel32.lib" "kernel32.lib" "kernel32.lib" "kernel32.lib" "ntdll.lib" "userenv.lib" "ws2_32.lib" "dbghelp.lib" "/defaultlib:msvcrt" "/NXCOMPAT" "/OUT:C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\debug\\deps\\relationship_population-32cd5e0279a5300d.exe" "/OPT:REF,NOICF" "/DEBUG" "/PDBALTPATH:%_PDB%" "/NATVIS:<sysroot>\\lib\\rustlib\\etc\\intrinsic.natvis" "/NATVIS:<sysroot>\\lib\\rustlib\\etc\\liballoc.natvis" "/NATVIS:<sysroot>\\lib\\rustlib\\etc\\libcore.natvis" "/NATVIS:<sysroot>\\lib\\rustlib\\etc\\libstd.natvis"
+  = note: some arguments are omitted. use `--verbose` to show all linker arguments
+  = note: LINK : fatal error LNK1140: limit exceeded for program database; link with /PDB:NONE␍
+          
+
+error: could not compile `agq-kerml-semantics` (test "relationship_population") due to 1 previous error
+error: failed to write file \\?\C:\Users\phili\github\agentique-systems\agentique\target\debug\incremental\agq_kerml_semantics-2qnttcjazffek\s-hmmjeh44bc-0t9rzp6-working\dep-graph.part.bin: There is not enough space on the disk. (os error 112)"
+
+error: could not compile `agq-kerml-semantics` (lib test) due to 1 previous error

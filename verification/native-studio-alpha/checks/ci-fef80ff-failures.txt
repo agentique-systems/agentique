@@ -1,0 +1,36 @@
+native-studio	Run cargo fmt --manifest-path crates/studio-native/Cargo.toml -- --check	﻿2026-09-25T21:44:24.1791474Z ##[group]Run cargo fmt --manifest-path crates/studio-native/Cargo.toml -- --check
+native-studio	Run cargo fmt --manifest-path crates/studio-native/Cargo.toml -- --check	2026-09-25T21:44:24.1792128Z [36;1mcargo fmt --manifest-path crates/studio-native/Cargo.toml -- --check[0m
+native-studio	Run cargo fmt --manifest-path crates/studio-native/Cargo.toml -- --check	2026-09-25T21:44:24.1855089Z shell: /usr/bin/bash -e {0}
+native-studio	Run cargo fmt --manifest-path crates/studio-native/Cargo.toml -- --check	2026-09-25T21:44:24.1855355Z ##[endgroup]
+native-studio	Run cargo fmt --manifest-path crates/studio-native/Cargo.toml -- --check	2026-09-25T21:44:24.4553058Z Diff in /home/runner/work/agentique/agentique/crates/studio-native/src/panels.rs:119:
+native-studio	Run cargo fmt --manifest-path crates/studio-native/Cargo.toml -- --check	2026-09-25T21:44:24.4554146Z                      ui.label(muted(&self.status, theme).small());
+native-studio	Run cargo fmt --manifest-path crates/studio-native/Cargo.toml -- --check	2026-09-25T21:44:24.4559267Z                      ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
+native-studio	Run cargo fmt --manifest-path crates/studio-native/Cargo.toml -- --check	2026-09-25T21:44:24.4559842Z                          ui.label(
+native-studio	Run cargo fmt --manifest-path crates/studio-native/Cargo.toml -- --check	2026-09-25T21:44:24.4560188Z -                            muted(
+native-studio	Run cargo fmt --manifest-path crates/studio-native/Cargo.toml -- --check	2026-09-25T21:44:24.4560924Z -                                format!("{}%", (self.camera.zoom * 100.0) as u32),
+native-studio	Run cargo fmt --manifest-path crates/studio-native/Cargo.toml -- --check	2026-09-25T21:44:24.4561422Z -                                theme,
+native-studio	Run cargo fmt --manifest-path crates/studio-native/Cargo.toml -- --check	2026-09-25T21:44:24.4561778Z -                            )
+native-studio	Run cargo fmt --manifest-path crates/studio-native/Cargo.toml -- --check	2026-09-25T21:44:24.4562109Z -                            .small(),
+native-studio	Run cargo fmt --manifest-path crates/studio-native/Cargo.toml -- --check	2026-09-25T21:44:24.4562769Z +                            muted(format!("{}%", (self.camera.zoom * 100.0) as u32), theme).small(),
+native-studio	Run cargo fmt --manifest-path crates/studio-native/Cargo.toml -- --check	2026-09-25T21:44:24.4563243Z                          );
+native-studio	Run cargo fmt --manifest-path crates/studio-native/Cargo.toml -- --check	2026-09-25T21:44:24.4563523Z                          ui.separator();
+native-studio	Run cargo fmt --manifest-path crates/studio-native/Cargo.toml -- --check	2026-09-25T21:44:24.4563838Z                          ui.label(
+native-studio	Run cargo fmt --manifest-path crates/studio-native/Cargo.toml -- --check	2026-09-25T21:44:24.5766373Z ##[error]Process completed with exit code 1.
+checks	Run actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3	﻿2026-09-25T21:44:16.0422918Z ##[group]Run actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+checks	Run actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3	2026-09-25T21:44:16.0423342Z with:
+checks	Run actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3	2026-09-25T21:44:16.0423547Z   distribution: temurin
+checks	Run actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3	2026-09-25T21:44:16.0423779Z   java-version: 21.0.12.1
+checks	Run actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3	2026-09-25T21:44:16.0424007Z   java-package: jdk
+checks	Run actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3	2026-09-25T21:44:16.0424219Z   check-latest: false
+checks	Run actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3	2026-09-25T21:44:16.0424425Z   server-id: github
+checks	Run actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3	2026-09-25T21:44:16.0424636Z   server-username: GITHUB_ACTOR
+checks	Run actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3	2026-09-25T21:44:16.0424885Z   server-password: GITHUB_TOKEN
+checks	Run actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3	2026-09-25T21:44:16.0425139Z   overwrite-settings: true
+checks	Run actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3	2026-09-25T21:44:16.0425375Z   job-status: success
+checks	Run actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3	2026-09-25T21:44:16.0427695Z   token: ***
+checks	Run actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3	2026-09-25T21:44:16.0427898Z ##[endgroup]
+checks	Run actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3	2026-09-25T21:44:16.2127984Z ##[warning]setup-java v4 is deprecated and will no longer receive updates. Please migrate to actions/setup-java@v5.
+checks	Run actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3	2026-09-25T21:44:16.2142658Z (node:2369) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+checks	Run actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3	2026-09-25T21:44:16.2144071Z (Use `node --trace-deprecation ...` to show where the warning was created)
+checks	Run actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3	2026-09-25T21:44:16.2145131Z ##[group]Installed distributions
+checks	Run actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3	2026-09-25T21:44:16.2148863Z ##[error]The string '21.0.12.1' is not valid SemVer notation for a Java version. Please check README file for code snippets and more detailed information

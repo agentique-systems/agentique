@@ -1,0 +1,26 @@
+
+> agentique@0.1.0 test:e2e
+> playwright test
+
+[WebServer]     Blocking waiting for file lock on package cache
+[WebServer]     Blocking waiting for file lock on package cache
+[WebServer]     Blocking waiting for file lock on package cache
+[WebServer]    Compiling agq-application v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\application)
+[WebServer]    Compiling agq-assistant v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\assistant)
+[WebServer]    Compiling agq-storage v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\storage)
+[WebServer]    Compiling agq-server v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\server)
+[WebServer]     Finished `dev` profile [unoptimized + debuginfo] target(s) in 9.93s
+[WebServer]      Running `target\debug\agq-server.exe --port 7342 --workspace .workspaces/e2e-5d274d58-f3cf-4278-b917-b0df101de124.db`
+
+Running 8 tests using 1 worker
+
+  ✓  1 tests\browser\console.spec.ts:5:1 › Cancellable model work and paged history use durable Engine results (18.8s)
+  ✓  2 tests\browser\console.spec.ts:143:1 › Console lifecycle, source navigation, shared context and reviewed Assistant change (20.1s)
+  ✓  3 tests\browser\console.spec.ts:242:1 › API authentication, scope, identity mapping and revision checks (2.4s)
+  ✓  4 tests\browser\console.spec.ts:330:1 › Keyboard inspection and recoverable source drafts (5.1s)
+  ✓  5 tests\browser\studio.spec.ts:272:1 › Studio reports missing durable inputs without substituting model content (385ms)
+  ✓  6 tests\browser\studio.spec.ts:298:1 › Studio shared selection, semantic filters, explanation and revision binding (1.1s)
+  ✓  7 tests\browser\studio.spec.ts:386:1 › Agent view and explicit candidate validation, commit, history, and rejection (1.4s)
+  ✓  8 tests\browser\studio.spec.ts:470:1 › Studio refuses a projection from the wrong immutable revision (267ms)
+
+  8 passed (1.1m)

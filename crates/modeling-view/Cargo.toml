@@ -13,9 +13,12 @@ agq-sysml = { path = "../sysml" }
 agq-kerml-semantics = { path = "../kerml-semantics" }
 agq-sysml-semantics = { path = "../sysml-semantics" }
 serde.workspace = true
+serde_json.workspace = true
 thiserror.workspace = true
 
 [dev-dependencies]
-serde_json.workspace = true
 agq-kerml-text = { path = "../kerml-text" }
 agq-standard-libraries = { path = "../standard-libraries" }
+agq-modeling-service = { path = "../modeling-service" }
+agq-modeling-sqlite = { path = "../../adapters/modeling-sqlite" }
+tempfile.workspace = true

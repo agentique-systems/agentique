@@ -29,7 +29,8 @@ jobs:
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4, verified 2026-09-16
         with:
           distribution: temurin
-          java-version: '21.0.12.1'
+          # Adoptium SemVer for the same Temurin 21.0.12.1+1 release as pilot setup.
+          java-version: '21.0.12+101.0.LTS'
       - run: node tools/pilot-setup.mjs
       - run: npx playwright install --with-deps chromium
       - run: cargo fetch --locked

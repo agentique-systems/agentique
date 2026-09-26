@@ -1,0 +1,14 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "standards:check"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T18:26:33.869885+00:00",
+  "elapsed_seconds": 0.969,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/integrated-standards-transport-fixed.txt",
+  "output_sha256": "5fd24f56b36de034395a0561a6a86a85409f2c4d47acc810c8320ce743e7c449",
+  "build_environment": {}
+}

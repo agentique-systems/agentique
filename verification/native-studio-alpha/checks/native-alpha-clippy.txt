@@ -1,0 +1,20 @@
+    Checking agq-studio-native v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-native)
+error: this boolean expression can be simplified
+   --> src\viewport.rs:416:16
+    |
+416 |               if !selected_edges.contains(edge.semantic.id.as_str())
+    |  ________________^
+417 | |                 && !hovered_edge
+418 | |                 && !requirement_context
+419 | |                 && !(incident
+420 | |                     && self.lod.level() >= LodLevel::Features
+421 | |                     && objects.edges.len() <= 24)
+    | |_________________________________________________^ help: try: `!(selected_edges.contains(edge.semantic.id.as_str()) || hovered_edge || requirement_context || incident && self.lod.level() >= LodLevel::Features && objects.edges.len() <= 24)`
+    |
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.92.0/index.html#nonminimal_bool
+    = note: `-D clippy::nonminimal-bool` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(clippy::nonminimal_bool)]`
+
+error: could not compile `agq-studio-native` (bin "agq-studio-native") due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `agq-studio-native` (bin "agq-studio-native" test) due to 1 previous error

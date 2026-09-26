@@ -77,7 +77,11 @@ impl Runner {
                     .into(),
             );
         }
-        if !app.ready || app.fit_pending || app.gpu_stats.lock().is_ok_and(|s| s.draw_calls == 0) {
+        if !app.ready
+            || app.scene_builder.busy
+            || app.fit_pending
+            || app.gpu_stats.lock().is_ok_and(|s| s.draw_calls == 0)
+        {
             if app.frame_number > 600 {
                 return Err("Native stress fixture did not become ready".into());
             }
@@ -205,7 +209,7 @@ impl Runner {
                 "minimum_visible_nodes": self.minimum_visible,
             },
             "native_metrics": app.metrics_report(),
-            "scope": "Deterministic synthetic pointer/wheel events enter the native RawInput path; camera behavior is asserted from resulting state. 60 warmup + 120 steady + 120 pan + 120 zoom intervals, then 30 settling frames. Vsync remains enabled. Neither GPU duration nor physical input-to-photon latency is measured."
+            "scope": "Deterministic synthetic pointer/wheel events enter the native RawInput path; camera behavior is asserted from resulting state. 60 warmup + 120 steady + 120 pan + 120 zoom intervals, then 30 settling frames. Vsync remains enabled. Optional GPU timestamps measure only the scene pass; see native_metrics for availability and scope. Physical input-to-photon latency is not measured."
         })
     }
 }

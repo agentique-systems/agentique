@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python",
+    "verification/scripts/native_alpha_evidence.py",
+    "--repair-line-endings"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T17:15:23.540857+00:00",
+  "elapsed_seconds": 1.156,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/retained-evidence-line-endings.txt",
+  "output_sha256": "1a4da86211236d6cae54a7663fa8ef6de71c517669d5dbef70ed32cea66e33fe",
+  "build_environment": {}
+}

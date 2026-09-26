@@ -1,0 +1,86 @@
+name: Authenticate accepted runtime release asset
+
+on:
+  workflow_dispatch:
+    inputs:
+      draft_tag:
+        description: Existing draft release containing accepted-runtime.agq-runtime
+        required: true
+        type: string
+      transport_sha256:
+        description: Independently recorded SHA-256 of accepted-runtime.agq-runtime
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  authenticate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    # GitHub limits draft-release visibility to identities with push access.
+    # This workflow only reads the asset; no step creates or publishes releases.
+    permissions:
+      contents: write
+    env:
+      CARGO_BUILD_JOBS: 2
+      GH_REPO: ${{ github.repository }}
+      RUNTIME_TAG: ${{ inputs.draft_tag }}
+      RUNTIME_SHA256: ${{ inputs.transport_sha256 }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Check strict transport recovery rejection behavior
+        run: python3 verification/scripts/test_runtime_rematerialization.py
+      - name: Download explicit draft asset
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python - <<'PY'
+          import os, re
+          assert re.fullmatch(r'[0-9a-fA-F]{64}', os.environ['RUNTIME_SHA256']), 'Expected SHA-256 is required'
+          assert os.environ['RUNTIME_TAG'] and not os.environ['RUNTIME_TAG'].startswith('-'), 'Explicit draft tag required'
+          PY
+          test "$(gh release view "$RUNTIME_TAG" --json isDraft --jq .isDraft)" = true
+          gh release download "$RUNTIME_TAG" --pattern accepted-runtime.agq-runtime --dir runtime-input
+      - name: Check independent transport identity
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib, json, os, pathlib, zipfile
+          path = pathlib.Path('runtime-input/accepted-runtime.agq-runtime')
+          with path.open('rb') as stream:
+              digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+              assert digest == os.environ['RUNTIME_SHA256'].lower(), 'Transport identity mismatch'
+              stream.seek(0)
+              with zipfile.ZipFile(stream) as archive:
+                  assert sorted(archive.namelist()) == ['kerml.cache', 'manifest.json', 'systems.cache']
+                  assert 0 < archive.getinfo('manifest.json').file_size <= 64 * 1024, 'Manifest size limit'
+                  manifest = json.loads(archive.read('manifest.json'))
+              transport_bytes = stream.seek(0, 2)
+              stream.seek(0)
+              assert hashlib.file_digest(stream, 'sha256').hexdigest() == digest, 'Transport changed during inspection'
+          evidence = pathlib.Path('runtime-evidence')
+          evidence.mkdir()
+          (evidence / 'manifest.json').write_text(json.dumps(manifest, indent=2))
+          (evidence / 'transport.json').write_text(json.dumps({'sha256': digest, 'bytes': transport_bytes,
+              'source_commit': os.environ['GITHUB_SHA'], 'draft_tag': os.environ['RUNTIME_TAG']}, indent=2))
+          PY
+      - run: cargo fetch --locked
+      - name: Independently authenticate both language facades
+        shell: bash
+        run: |
+          set -o pipefail
+          cargo run --release --config profile.release.lto=false --locked --offline -p agq-runtime-publications --bin agq-publications -- verify --bundle runtime-input/accepted-runtime.agq-runtime 2>&1 | tee runtime-evidence/authentication.log
+      - name: Retain content-addressed manifest and actual verification result
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: accepted-runtime-authentication-${{ github.run_id }}
+          path: runtime-evidence/
+          if-no-files-found: error
+          retention-days: 90
+      # Authentication never publishes the draft or changes semantic receipts.

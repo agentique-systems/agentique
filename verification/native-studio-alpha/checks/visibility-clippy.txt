@@ -1,0 +1,45 @@
+    Checking cfg-if v1.0.5
+    Checking typenum v1.20.1
+    Checking serde_core v1.0.229
+    Checking generic-array v0.14.7
+    Checking num-traits v0.2.19
+    Checking crypto-common v0.1.7
+    Checking block-buffer v0.10.4
+    Checking memchr v2.8.3
+    Checking digest v0.10.7
+    Checking serde v1.0.229
+    Checking thiserror v2.0.20
+    Checking num-integer v0.1.47
+    Checking zmij v1.0.23
+    Checking getrandom v0.4.3
+    Checking sha1_smol v1.0.1
+    Checking itoa v1.0.18
+    Checking cpufeatures v0.2.17
+    Checking sha2 v0.10.9
+    Checking serde_json v1.0.151
+    Checking uuid v1.26.1
+    Checking num-bigint v0.4.8
+    Checking simd-adler32 v0.3.10
+    Checking crc32fast v1.5.2
+    Checking adler2 v2.0.1
+    Checking miniz_oxide v0.9.1
+    Checking hashbrown v0.17.1
+    Checking agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\kernel)
+    Checking log v0.4.34
+    Checking bumpalo v3.20.3
+    Checking equivalent v1.0.2
+    Checking indexmap v2.14.2
+    Checking zopfli v0.8.3
+    Checking flate2 v1.1.10
+    Checking agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\kerml)
+    Checking zip v2.4.2
+    Checking agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\standard-libraries)
+    Checking agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\kerml-syntax)
+    Checking agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\kerml-semantics)
+    Checking agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\sysml)
+    Checking agq-sysml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\sysml-semantics)
+    Checking agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\kerml-text)
+    Checking agq-modeling-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\modeling-workspace)
+    Checking agq-modeling-view v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\modeling-view)
+    Checking agq-studio-scene v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\studio-scene)
+    Finished `release` profile [optimized] target(s) in 26.28s

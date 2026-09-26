@@ -1,0 +1,19 @@
+{
+  "command": [
+    "cargo",
+    "fmt",
+    "--manifest-path",
+    "crates/studio-native/Cargo.toml",
+    "--",
+    "--check"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "b10fe62c7dbb62981a4cd3719820e9631ed99381",
+  "tracked_changes_at_start": [],
+  "started_utc": "2026-09-25T22:29:50.920659+00:00",
+  "elapsed_seconds": 0.516,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/pre-real06-native-format.txt",
+  "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "build_environment": {}
+}

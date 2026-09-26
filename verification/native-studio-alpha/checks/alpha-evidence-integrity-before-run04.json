@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python",
+    "verification/scripts/native_alpha_evidence.py"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T20:56:50.552982+00:00",
+  "elapsed_seconds": 0.203,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/alpha-evidence-integrity-before-run04.txt",
+  "output_sha256": "2fc525b4baf8cf4d1ef6a0607d3cc6792fd03aea3a032daeb20ecf16e4c6d565",
+  "build_environment": {}
+}

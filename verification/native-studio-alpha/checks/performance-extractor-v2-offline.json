@@ -1,0 +1,38 @@
+{
+  "format": "agentique-native-performance-extractor-v2-checks/1",
+  "observed_utc": "2026-09-25T22:28:17.479358+00:00",
+  "scope": "Offline schema/bookkeeping fixtures only; no v2 native journey, model validation, build or runtime consumer executed.",
+  "held_driver_commit": "63725707ab02187a90c7ec7f02db63953e44386c",
+  "held_driver_source_sha256": "f377ffd2e17d6a790c9bdff20be57ec74bf939661a4477415bd82b787c03c918",
+  "exact_stage_names_present": [
+    "prepare real source-backed candidate while current remains responsive",
+    "validate the retained semantic candidate",
+    "commit only the validated candidate"
+  ],
+  "command": [
+    "python",
+    "verification/native-studio-alpha/performance/test_summarize_native_performance.py"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 0.1566762998700142,
+  "stdout": "",
+  "stderr": "........\n----------------------------------------------------------------------\nRan 8 tests in 0.010s\n\nOK\n",
+  "historical_evidence": [
+    {
+      "path": "verification/native-studio-alpha/performance/run05-extracted.json",
+      "sha256": "e17d46294f877b23410fba768208c2cb0e8482b143745d9d884ce8a9bcd36d0c",
+      "unchanged_from_base": true
+    },
+    {
+      "path": "verification/native-studio-alpha/performance/run05-extracted.md",
+      "sha256": "f3250c26393d3a0abbb7b3e6a28e3bba4f1efb9b8af61befddc69f4e85d53923",
+      "unchanged_from_base": true
+    },
+    {
+      "path": "verification/native-studio-alpha/checks/performance-extractor-offline.json",
+      "sha256": "9f02757a6fbdb1ed76b7db71a274d0420611bc7bd1838b75af29345ac2201cb7",
+      "unchanged_from_base": true
+    }
+  ],
+  "git_diff_check_exit_code": 0
+}

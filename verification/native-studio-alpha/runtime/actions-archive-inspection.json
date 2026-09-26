@@ -1,0 +1,12 @@
+{
+  "command": [
+    "python",
+    "verification/native-studio-alpha/runtime/inspect_actions_archives.py"
+  ],
+  "cwd": "C:/Users/phili/github/agentique-systems/agentique-alpha-runtime",
+  "started_utc": "2026-09-25T15:36:10.264660+00:00",
+  "exit_code": 0,
+  "elapsed_seconds": 77.062,
+  "peak_rss_bytes": 40382464,
+  "peak_private_bytes": 28819456
+}

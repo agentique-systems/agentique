@@ -4,6 +4,7 @@ use crate::{ProducerClosureCertificate, ProducerRegistry, SemanticContext};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::{
+    collections::{BTreeMap, BTreeSet},
     io::{self, Read},
     sync::Arc,
 };
@@ -13,6 +14,8 @@ struct CatalogueEntry<'a> {
     receipt_format: &'static str,
     receipt: &'a str,
     bindings: &'a str,
+    transport_entry: Option<&'static str>,
+    transports: &'a [&'a str],
 }
 
 // Add only independently accepted receipt/binding documents. Cache files and
@@ -22,7 +25,32 @@ const CATALOGUE: &[CatalogueEntry<'static>] = &[CatalogueEntry {
     receipt_format: "agq-sysml-accepted-publication/1",
     receipt: include_str!("../../../standards/sysml-accepted-publication.json"),
     bindings: include_str!("../../../standards/sysml-standard-bindings.json"),
+    transport_entry: Some("kernel.jsonl"),
+    transports: &[include_str!(
+        "../../../standards/runtime-transports/sysml-v3-rematerialized-2026-09-25.json"
+    )],
 }];
+
+/// A transport receipt never supplies semantic authority. It is compiled beside
+/// an existing authority document and can pin a different encoding only for the
+/// single archive entry explicitly allowed by that catalogue entry.
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TransportReceipt {
+    format: String,
+    transport_id: String,
+    publication_catalogue_id: String,
+    semantic_authority_sha256: [u8; 32],
+    identity: Value,
+    entries: BTreeMap<String, TransportEntry>,
+}
+
+#[derive(serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+struct TransportEntry {
+    bytes: u64,
+    sha256: [u8; 32],
+}
 
 /// Failure to authenticate previously accepted producer evidence.
 #[derive(Debug)]
@@ -55,6 +83,7 @@ pub struct TrustedPublicationReceipt {
     id: &'static str,
     receipt: Value,
     bindings: Value,
+    transport_digests: BTreeMap<String, BTreeSet<[u8; 32]>>,
 }
 
 impl TrustedPublicationReceipt {
@@ -78,10 +107,11 @@ impl TrustedPublicationReceipt {
         {
             return Err(TrustedPublicationError::Mismatch("catalogue documents"));
         }
-        let result = Self {
+        let mut result = Self {
             id: entry.id,
             receipt,
             bindings,
+            transport_digests: BTreeMap::new(),
         };
         let entries =
             result.receipt["entries"]
@@ -98,6 +128,39 @@ impl TrustedPublicationReceipt {
             result.entry_bytes(name)?;
             let _: [u8; 32] =
                 serde_json::from_value(result.receipt["entries"][name]["sha256"].clone())?;
+        }
+        let original_authority: [u8; 32] = Sha256::digest(entry.receipt.as_bytes()).into();
+        let mut identifiers = BTreeSet::new();
+        for transport in entry.transports {
+            let transport: TransportReceipt = serde_json::from_str(transport)?;
+            if transport.format != "agq-publication-transport/1"
+                || transport.transport_id.is_empty()
+                || !identifiers.insert(transport.transport_id)
+                || transport.publication_catalogue_id != entry.id
+                || transport.semantic_authority_sha256 != original_authority
+                || transport.identity != result.receipt["identity"]
+                || transport.entries.keys().collect::<BTreeSet<_>>()
+                    != entries.keys().collect::<BTreeSet<_>>()
+            {
+                return Err(TrustedPublicationError::Mismatch("transport authority"));
+            }
+            for (name, alternate) in transport.entries {
+                // Revision labels are fixed width. A rematerialization with a
+                // different population or encoding size needs separate review.
+                if alternate.bytes != result.entry_bytes(&name)?
+                    || (Some(name.as_str()) != entry.transport_entry
+                        && result.receipt["entries"][&name]["sha256"] != json!(alternate.sha256))
+                {
+                    return Err(TrustedPublicationError::Mismatch(
+                        "transport entry contract",
+                    ));
+                }
+                result
+                    .transport_digests
+                    .entry(name)
+                    .or_default()
+                    .insert(alternate.sha256);
+            }
         }
         Ok(result)
     }
@@ -141,14 +204,20 @@ impl TrustedPublicationReceipt {
                 "archive entry byte count",
             ))
     }
-    /// Compare actual bytes with independent authority; this alone grants no
-    /// model acceptance and does not bypass decoded graph revalidation.
+    /// Compare actual bytes with independently compiled transport pins. The
+    /// original semantic receipt remains unchanged; an explicitly versioned
+    /// alternate transport grants no acceptance without decoded revalidation.
     pub fn verify_entry_digest(
         &self,
         name: &str,
         digest: [u8; 32],
     ) -> Result<(), TrustedPublicationError> {
-        if self.receipt["entries"][name]["sha256"] != json!(digest) {
+        if self.receipt["entries"][name]["sha256"] != json!(digest)
+            && !self
+                .transport_digests
+                .get(name)
+                .is_some_and(|accepted| accepted.contains(&digest))
+        {
             return Err(TrustedPublicationError::Mismatch("archive entry digest"));
         }
         Ok(())
@@ -240,6 +309,8 @@ mod tests {
             receipt_format: "fixture-publication/1",
             receipt: &receipt_text,
             bindings: &bindings_text,
+            transport_entry: None,
+            transports: &[],
         })
         .unwrap();
         (trusted, bytes)
@@ -269,6 +340,8 @@ mod tests {
                 receipt_format: "different-publication/1",
                 receipt: &receipt_text,
                 bindings: &bindings_text,
+                transport_entry: None,
+                transports: &[],
             })
             .is_err()
         );
@@ -383,8 +456,136 @@ mod tests {
                 receipt_format: "fixture-publication/1",
                 receipt: &receipt_text,
                 bindings: &binding_text,
+                transport_entry: None,
+                transports: &[],
             })
             .is_err()
         );
+    }
+
+    #[test]
+    fn rematerialized_systems_keeps_original_authority_and_rejects_other_transports() {
+        let trusted =
+            TrustedPublicationReceipt::checked_in("sysml-systems-operational-v3").unwrap();
+        let original: Value = serde_json::from_str(include_str!(
+            "../../../standards/sysml-accepted-publication.json"
+        ))
+        .unwrap();
+        let transport: TransportReceipt = serde_json::from_str(include_str!(
+            "../../../standards/runtime-transports/sysml-v3-rematerialized-2026-09-25.json"
+        ))
+        .unwrap();
+        assert_eq!(trusted.receipt, original);
+        let graph = transport.entries.get("kernel.jsonl").unwrap();
+        assert_eq!(trusted.entry_bytes("kernel.jsonl").unwrap(), graph.bytes);
+        trusted
+            .verify_entry_digest("kernel.jsonl", graph.sha256)
+            .unwrap();
+        let mut unreviewed = graph.sha256;
+        unreviewed[0] ^= 1;
+        assert!(
+            trusted
+                .verify_entry_digest("kernel.jsonl", unreviewed)
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn compiled_transport_keeps_original_semantic_and_evidence_authority() {
+        let snapshot = Snapshot::new(Arc::new(agq_kerml::registry().unwrap()));
+        let registry = ProducerRegistry::new([]).unwrap();
+        let context =
+            SemanticContext::for_snapshot(&snapshot, SemanticOptions::default(), BTreeSet::new())
+                .unwrap()
+                .with_producer_registry_digest(registry.digest())
+                .unwrap();
+        let (original, closure) = fixture_receipt(&context, &registry);
+        let mut receipt = original.receipt.clone();
+        receipt["entries"]["kernel.jsonl"] = json!({"bytes":42,"sha256":vec![3u8;32]});
+        receipt["entries"]["facade.json"] = json!({"bytes":25,"sha256":vec![6u8;32]});
+        receipt["identity"]["operational_profile"] = json!("fixture-profile/1");
+        let receipt_text = receipt.to_string();
+        let bindings_text = original.bindings.to_string();
+        let mut transport = json!({
+            "format":"agq-publication-transport/1",
+            "transport_id":"fixture-rematerialization/1",
+            "publication_catalogue_id":"private-unit-fixture",
+            "semantic_authority_sha256":<[u8;32]>::from(Sha256::digest(receipt_text.as_bytes())),
+            "identity":receipt["identity"], "entries":receipt["entries"],
+        });
+        transport["entries"]["kernel.jsonl"]["sha256"] = json!(vec![4u8; 32]);
+        let load = |value: &Value| {
+            let text = value.to_string();
+            TrustedPublicationReceipt::from_catalogue(&CatalogueEntry {
+                id: "private-unit-fixture",
+                receipt_format: "fixture-publication/1",
+                receipt: &receipt_text,
+                bindings: &bindings_text,
+                transport_entry: Some("kernel.jsonl"),
+                transports: &[&text],
+            })
+        };
+        let trusted = load(&transport).unwrap();
+        let unregistered = TrustedPublicationReceipt::from_catalogue(&CatalogueEntry {
+            id: "private-unit-fixture",
+            receipt_format: "fixture-publication/1",
+            receipt: &receipt_text,
+            bindings: &bindings_text,
+            transport_entry: Some("kernel.jsonl"),
+            transports: &[],
+        })
+        .unwrap();
+        assert!(
+            unregistered
+                .verify_entry_digest("kernel.jsonl", [4; 32])
+                .is_err()
+        );
+        assert_eq!(trusted.receipt, receipt);
+        assert_eq!(trusted.bindings, original.bindings);
+        assert!(trusted.verify_entry_digest("kernel.jsonl", [3; 32]).is_ok());
+        assert!(trusted.verify_entry_digest("kernel.jsonl", [4; 32]).is_ok());
+        assert!(
+            trusted
+                .verify_entry_digest("kernel.jsonl", [5; 32])
+                .is_err()
+        );
+        trusted
+            .restore_producer_closure(closure.as_slice(), &context, &registry)
+            .unwrap();
+        // Compiled transport registration cannot retarget semantic authority,
+        // loosen entry bounds, replace evidence, or silently grow the archive.
+        for pointer in [
+            "/semantic_authority_sha256",
+            "/identity/semantic_digest",
+            "/entries/closure.json/sha256",
+            "/entries/facade.json/sha256",
+        ] {
+            let mut changed = transport.clone();
+            *changed.pointer_mut(pointer).unwrap() = json!(vec![9u8; 32]);
+            assert!(load(&changed).is_err(), "{pointer}");
+        }
+        for (pointer, value) in [
+            ("/publication_catalogue_id", json!("unaccepted")),
+            ("/format", json!("different")),
+            ("/identity/operational_profile", json!("fixture-profile/2")),
+            ("/transport_id", json!("")),
+            ("/entries/kernel.jsonl/bytes", json!(43)),
+        ] {
+            let mut changed = transport.clone();
+            *changed.pointer_mut(pointer).unwrap() = value;
+            assert!(load(&changed).is_err(), "{pointer}");
+        }
+        let mut additional = transport.clone();
+        additional["entries"]["authority.json"] = json!({"bytes":42,"sha256":vec![4u8;32]});
+        assert!(load(&additional).is_err());
+        let mut omitted = transport.clone();
+        omitted["entries"]
+            .as_object_mut()
+            .unwrap()
+            .remove("closure.json");
+        assert!(load(&omitted).is_err());
+        let mut extra_field = transport;
+        extra_field["bindings"] = json!({"accepted":true});
+        assert!(load(&extra_field).is_err());
     }
 }

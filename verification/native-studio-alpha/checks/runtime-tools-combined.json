@@ -1,0 +1,15 @@
+{
+  "command": [
+    "python",
+    "-m",
+    "unittest",
+    "verification.scripts.test_runtime_rematerialization"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T17:17:14.594599+00:00",
+  "elapsed_seconds": 0.328,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/runtime-tools-combined.txt",
+  "output_sha256": "ddb76fd529448a07eafc1b0977fbc30fbb36b3377d9edb8c59dcef4ad8d2a4af",
+  "build_environment": {}
+}

@@ -1,0 +1,11 @@
+{
+  "format": "agentique-native-interaction/1",
+  "scenario": "vertical",
+  "scope": "Actual native egui input over deterministic visual fixture; no semantic validation or durable commit acceptance",
+  "outcome": "failed",
+  "passed": false,
+  "adapter": "AdapterInfo { name: \"NVIDIA GeForce RTX 3060 Ti\", vendor: 4318, device: 9353, device_type: DiscreteGpu, driver: \"NVIDIA\", driver_info: \"616.92\", backend: Vulkan }",
+  "assertions": [],
+  "failure": "Integration defect: real_targets::record recursively locked egui context while recording widget frame. Process27396 terminated after hang diagnosis; no semantic operation.",
+  "gallery": []
+}

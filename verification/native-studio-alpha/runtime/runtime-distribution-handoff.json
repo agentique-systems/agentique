@@ -1,0 +1,18 @@
+{
+  "command": [
+    "python",
+    "verification/native-studio-alpha/runtime/prepare_distribution_handoff.py"
+  ],
+  "cwd": "C:/Users/phili/github/agentique-systems/agentique-alpha-runtime",
+  "started_utc": "2026-09-25T18:27:46.591263+00:00",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "source_commit": "585c3c366d9438946f08f25e5aa6439a56eca37c",
+  "working_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "exit_code": 0,
+  "elapsed_seconds": 3.141,
+  "peak_rss_bytes": 17563648,
+  "peak_private_bytes": 10649600,
+  "memory_scope": "direct child process sampled at 1 second; excludes descendant compilers",
+  "output_sha256": "df519f5ce99e7a5c5e20a0b5a48b485e983b3f64cdc6647b69efa7649e9d7b84",
+  "raw_output": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\native-studio-alpha\\runtime\\runtime-distribution-handoff.log"
+}

@@ -1,0 +1,22 @@
+   Compiling agq-modeling-view v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-view)
+   Compiling agq-modeling-agent v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-agent)
+   Compiling agq-studio-platform v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-platform)
+   Compiling agq-studio-scene v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-scene)
+   Compiling agq-studio-native v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-native)
+    Finished `test` profile [unoptimized] target(s) in 15.50s
+     Running unittests src\main.rs (target/native-alpha\debug\deps\agq_studio_native-bf930b514bc3e945.exe)
+
+running 10 tests
+test view_intent_tests::cancellation_acknowledgement_flushes_desired_view_against_current_without_candidate ... ok
+test view_intent_tests::cancelled_preparation_waits_for_cancel_ack_before_flushing_deferred_view ... ok
+test view_intent_tests::preparation_reissues_deferred_lens_as_candidate_pair_in_the_new_candidate_context ... ok
+test view_intent_tests::stale_success_and_error_cannot_clear_newer_requested_view ... ok
+test view_intent_tests::pending_mutation_coalesces_latest_lens_without_query_or_scene_change_then_flushes_once ... ok
+test view_intent_tests::agent_dependency_command_accepts_the_exact_shared_platform_lens ... ok
+test view_intent_tests::matching_projection_installs_exact_requested_depth_and_scope_then_retires_intent ... ok
+test view_intent_tests::coherent_candidate_pair_with_wrong_scope_is_requeried_without_publishing_it ... ok
+test view_intent_tests::candidate_pair_uses_requested_graph_scope_instead_of_old_active_depth ... ok
+test view_intent_tests::same_request_wrong_scope_depth_or_name_cannot_replace_current_projection ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 106 filtered out; finished in 0.12s
+

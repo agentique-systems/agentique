@@ -1,0 +1,43 @@
+{
+  "adapter": "AdapterInfo { name: \"NVIDIA GeForce RTX 3060 Ti\", vendor: 4318, device: 9353, device_type: DiscreteGpu, driver: \"NVIDIA\", driver_info: \"616.92\", backend: Vulkan }",
+  "checkpoint": "02-focused-subsystem",
+  "fixture": "architecture",
+  "format": "agentique-native-gallery/1",
+  "image_size": [
+    1600,
+    1000
+  ],
+  "semantic_data": "explicit architecture fixture, not real-model acceptance",
+  "state": {
+    "added_elements": [],
+    "agent_overlay": false,
+    "camera_center": [
+      482.0,
+      272.0
+    ],
+    "candidate": false,
+    "candidate_phase": null,
+    "comparison": "Current",
+    "create_dialog": false,
+    "dark": true,
+    "dependency_elements": null,
+    "edges": 2,
+    "explanation_open": false,
+    "focus": "fa170000-0000-0000-0000-000000000002",
+    "frame": 177,
+    "high_contrast": false,
+    "nodes": 4,
+    "palette": false,
+    "palette_query": "Toggle reduced motion",
+    "reduced_motion": true,
+    "removed_elements": [],
+    "revision": "fa170000-0000-0000-0000-000000000001",
+    "selected": [
+      "Container(ElementId(332426421773975269261407966485658206210))"
+    ],
+    "selection_revision": "fa170000-0000-0000-0000-000000000001",
+    "status": "Ready",
+    "world": "System",
+    "zoom": 1.216911792755127
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "command": [
+    "cargo",
+    "run",
+    "--release",
+    "--config",
+    "profile.release.lto=false",
+    "--locked",
+    "--offline",
+    "-j1",
+    "-p",
+    "agq-studio-scene",
+    "--example",
+    "layout_quality"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T20:44:09.781181+00:00",
+  "elapsed_seconds": 26.313,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/alpha-iteration04-adversarial-layout.txt",
+  "output_sha256": "1a395afb6a5575c673c619d9c1533ae490e1b5b5941fdf8b30784f759ec985ab",
+  "build_environment": {}
+}

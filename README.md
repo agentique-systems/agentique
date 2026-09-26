@@ -1,8 +1,16 @@
-# Agentique 0.1
+# Agentique
 
-A Rust modelling and simulation Engine with a persistent local workspace, browser
-Console and one tool-equipped Assistant. This repository contains a working
-integrated **release candidate**, not a completed standards-verified v0.1 release.
+Agentique develops a native spatial environment for systems engineering. Native
+Studio presents a canonical KerML/SysML model through System, Graph and
+Requirements views, with semantic inspection, candidate review and durable design
+history. The real Agentique journey now includes validated candidate creation,
+durable commit and a separate successful restart. Overall alpha quality remains
+unaccepted; see the [product judgment and qualification](verification/native-studio-alpha/FINAL.md).
+
+The operational generation-1 product is a Rust modelling and simulation Engine
+with a persistent local workspace, browser Console and tool-equipped Assistant.
+It remains an integrated **release candidate**, not a completed standards-verified
+v0.1 release.
 The [implementation report](verification/RELEASE.md), [requirement register](verification/traceability.json) and
 [five-axis coverage](standards/coverage.json) identify remaining obligations.
 
@@ -14,16 +22,52 @@ See [baseline discrepancies](docs/standards-discrepancies.md) and
 
 ## Setup and launch
 
-The **Rust-native Agentique Studio** foundation has its own GPU semantic scene and
+**Rust-native Agentique Studio** has its own GPU semantic scene and
 in-process modeling boundary. See [Native Studio launch and architecture](docs/native-studio.md).
+
+### Run Native Studio
+
+Install the pinned Rust toolchain (via rustup) and a native C/C++ build toolchain
+(Visual Studio C++ Build Tools on Windows). Run these commands from this repository:
+
+```sh
+cargo fetch --locked --manifest-path crates/studio-native/Cargo.toml
+cargo run --release --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target
+```
+
+Studio opens its setup screen when no accepted semantic runtime is installed.
+Choose a locally supplied authenticated `.agq-runtime` bundle, then open the
+Agentique project seeded from `models/agentique/`. Runtime authentication is required
+to edit the real model.
+The current alpha can take several minutes to authenticate and restore a real
+project; Studio shows the opening stage and elapsed time.
+The [runtime distribution guide](docs/runtime-publication-distribution.md) explains
+download and offline installation. The authenticated runtime is currently retained
+as a maintainer-access draft release; a successful build alone does not supply it.
+
+To explore the native interface without the runtime, explicitly open the labeled
+architecture fixture:
+
+```sh
+cargo run --release --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target -- --fixture architecture --no-restore
+```
+
+The fixture supports navigation and illustrative candidate review; it cannot
+validate or commit semantic changes. Use **Ctrl/Cmd+K** for commands, **F** to
+focus a selection, **Home** to fit the view, and **1–4** for System, Graph,
+Requirements and History. The native application needs neither Node nor a local
+HTTP server. Its graphics dependencies have a separate lockfile, so root-workspace
+`cargo run` alone does not launch Native Studio.
+
+### Browser prototype and generation 1
 
 The browser **Agentique Studio Prototype 0** retains its local host and semantic
 viewport as a contract and regression client. See [web-client launch and workflow](docs/agentique-studio.md).
 Its semantic runtime is installed once with `agq-studio setup --bundle <path>`
 and discovered in the normal user runtime store on launch. The
 [runtime distribution guide](docs/runtime-publication-distribution.md) describes
-packaging and installing existing accepted KerML v9 / Systems v3 bytes. No runtime
-release asset was available during this milestone; the
+packaging and installing accepted KerML v9 / Systems v3 bytes. The earlier browser
+prototype milestone had no runtime release asset; its historical
 [First Light record](verification/summaries/agentique-studio-first-light/README.md)
 distinguishes implemented startup from real semantic product acceptance.
 
@@ -48,7 +92,9 @@ gate with 100 documents, five Validated revisions and four parallel readers have
 passed. All 12 accepted-cache workspace tests passed and ADR 0024 is adopted;
 the [runtime record](verification/summaries/final-audit-semantic-closure/workspace-runtime-acceptance.md)
 retains the exact results, failures and measured costs.
-This does not provide Gen2 persistence, application migration or execution.
+Native Studio now builds on a generation-2 ModelRepository and ModelingService
+with durable revisions. The earlier workspace gate does not establish native
+product acceptance, generation-1 application migration or execution support.
 
 Prerequisites: Rust/rustup with the pinned 1.92.0 toolchain, Node 22.11 or newer,
 npm, and a native C/C++ build toolchain for Rust and bundled SQLite. On Windows,

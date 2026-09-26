@@ -1,0 +1,14 @@
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+    Finished `test` profile [unoptimized] target(s) in 1m 50s
+     Running unittests src\lib.rs (target\debug\deps\agq_kerml_semantics-b5418ca7e740cfba.exe)
+
+running 6 tests
+test trusted_publication::tests::caller_identifier_cannot_enable_unaccepted_systems_restoration ... ok
+test trusted_publication::tests::rematerialized_systems_keeps_original_authority_and_rejects_other_transports ... ok
+test trusted_publication::tests::catalogue_authenticates_generic_envelope_and_opaque_binding_payload ... ok
+test trusted_publication::tests::compiled_transport_keeps_original_semantic_and_evidence_authority ... ok
+test trusted_publication::tests::exact_closure_restores_but_changed_bytes_bounds_and_context_do_not ... ok
+test trusted_publication::tests::weaker_registry_and_recomputed_cache_certificate_cannot_replace_authority ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 298 filtered out; finished in 0.13s
+

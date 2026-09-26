@@ -1,0 +1,36 @@
+{
+  "format": "agentique-native-source-check/1",
+  "base": "774f065",
+  "checks": [
+    {
+      "command": "rustfmt --edition 2024 crates/studio-scene/src/routing.rs crates/studio-scene/src/layout.rs crates/studio-scene/src/lib.rs crates/studio-scene/tests/scene_contract.rs crates/studio-native/src/viewport.rs",
+      "chunk_id": "2de997",
+      "wall_time_seconds": 0.4754931,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "command": "git diff --check",
+      "chunk_id": "17eb00",
+      "wall_time_seconds": 0.3593318,
+      "exit_code": 0,
+      "original_token_count": 0,
+      "output": ""
+    },
+    {
+      "command": "git diff --cached --check",
+      "exit_code": 1,
+      "output": "verification/native-studio-alpha/reviews/owner-boundary-routing.md:16: new blank line at EOF.\n",
+      "resolution": "Removed extra final documentation blank line before final handoff."
+    },
+    {
+      "command": "git diff --cached --check",
+      "exit_code": 0,
+      "wall_time_seconds": 0.3538449,
+      "output": "",
+      "scope": "Final staged source/documentation after EOF whitespace correction."
+    }
+  ],
+  "scope": "Source formatting only; no build, tests or accepted-runtime consumer executed."
+}

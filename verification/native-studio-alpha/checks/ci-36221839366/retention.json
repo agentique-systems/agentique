@@ -1,0 +1,32 @@
+{
+  "source": "4241d7e9e524e5b858aa379e81b20bcb6f2d6a96",
+  "run": 36221839366,
+  "artifact_entry_checks": [
+    {
+      "file": "rust-clippy.txt",
+      "matches": true
+    },
+    {
+      "file": "engineering-tests.txt",
+      "matches": true
+    },
+    {
+      "file": "independent-fixtures.txt",
+      "matches": true
+    },
+    {
+      "file": "standards.txt",
+      "matches": true
+    },
+    {
+      "file": "independent-fixtures.json",
+      "matches": true
+    },
+    {
+      "file": "results.json",
+      "matches": true
+    }
+  ],
+  "independent_fixture_result_equals_previous_ci": true,
+  "outer_archive_hash_verified": false
+}

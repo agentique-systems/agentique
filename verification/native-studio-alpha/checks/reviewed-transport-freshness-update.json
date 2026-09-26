@@ -1,0 +1,15 @@
+{
+  "command": [
+    "node",
+    "--input-type=module",
+    "-e",
+    "import fs from 'node:fs';\nimport assert from 'node:assert/strict';\nimport { capturePublicationInputs, verifySystemsPublicationFreshness, inputsPath } from './tools/sysml-publication-stale.mjs';\nconst previous = JSON.parse(fs.readFileSync(inputsPath));\nconst current = capturePublicationInputs(process.cwd());\nassert.deepEqual({...current, inputs: null}, {...previous, inputs: null});\nconst source = 'crates/kerml-semantics/src/trusted_publication.rs';\nconst transport = 'standards/runtime-transports/sysml-v3-rematerialized-2026-09-25.json';\nassert.equal(previous.inputs[source], '962820f0ce931f98684574dcbd651a8335b4ac8536c0d9c5d47ebea9750eea47');\nassert.equal(current.inputs[source], 'f280efebad2e03cc194c88ff64dd0a046d5c5a5d28e5e06003bfb05df423261a');\nassert.equal(current.inputs[transport], '12cc2aeff7aa7e4a1f3de16faf13d63aa158dd88248e9b3179ad4629e1ffeda0');\nassert.equal(previous.inputs[transport], undefined);\nconst reviewed = {...previous, inputs: {...previous.inputs, [source]: current.inputs[source], [transport]: current.inputs[transport]}};\nassert.deepEqual({...current.inputs, 'Cargo.lock': previous.inputs['Cargo.lock']}, reviewed.inputs);\nreviewed.inputs = Object.fromEntries(Object.entries(reviewed.inputs).sort(([a], [b]) => a < b ? -1 : a > b ? 1 : 0));\nfs.writeFileSync(inputsPath, JSON.stringify(reviewed, null, 2) + '\\n');\nconst verified = verifySystemsPublicationFreshness(process.cwd());\nconsole.log(JSON.stringify({grants_publication_authority: false, authority_fields_unchanged: true, prior_lock_pin_preserved: true, reviewed_changes: [source, transport], verified}, null, 2));"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T18:26:19.997650+00:00",
+  "elapsed_seconds": 0.391,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/reviewed-transport-freshness-update.txt",
+  "output_sha256": "d5409e513218fefac0e64f7a6a21b4a75a0540955d08bd44b16a0795ceedbac3",
+  "build_environment": {}
+}

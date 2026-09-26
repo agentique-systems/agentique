@@ -1,0 +1,15 @@
+   Compiling serde_core v1.0.229
+   Compiling serde_json v1.0.151
+   Compiling syn v3.0.5
+   Compiling uuid v1.26.1
+   Compiling serde_derive v1.0.229
+   Compiling thiserror-impl v2.0.20
+   Compiling displaydoc v0.2.7
+   Compiling thiserror v2.0.20
+   Compiling zip v2.4.2
+   Compiling serde v1.0.229
+   Compiling num-bigint v0.4.8
+   Compiling agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+   Compiling agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)

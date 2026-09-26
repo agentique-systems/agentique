@@ -1,0 +1,18 @@
+   Compiling agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-service)
+   Compiling agq-runtime-publications v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\runtime-publications)
+   Compiling agq-modeling-agent v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-agent)
+   Compiling agq-studio-platform v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-platform)
+   Compiling agq-studio-native v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-native)
+    Finished `release` profile [optimized] target(s) in 58.76s
+     Running unittests src\main.rs (target/native-alpha\release\deps\agq_studio_native-43ada88829d1e927.exe)
+
+running 4 tests
+Graphics surface recovery: The swap chain has been lost and needs to be recreated
+test surface_recovery::tests::normal_device_teardown_does_not_report_loss ... ok
+test surface_recovery::tests::lost_surface_reconfigures_and_schedules_only_five_automatic_retries ... ok
+test surface_recovery::tests::timeout_skips_without_reconfigure_and_oom_never_auto_retries ... ok
+Graphics device lost (Unknown): injected device-loss callback. Restart Native Studio to recreate the renderer; committed model history remains durable.
+test surface_recovery::tests::surface_acquisition_resets_retry_budget_but_cannot_reset_a_lost_device ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 45 filtered out; finished in 0.00s
+

@@ -1,0 +1,24 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--release",
+    "--locked",
+    "--offline",
+    "--manifest-path",
+    "crates/studio-native/Cargo.toml",
+    "--target-dir",
+    "target/native-alpha",
+    "--config",
+    "profile.release.lto=false",
+    "-j",
+    "2"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T15:59:42.620283+00:00",
+  "elapsed_seconds": 45.25,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/native-round-four-deadlock-fix-build.txt",
+  "output_sha256": "1a9727d228d69e5ea050593d6b985c9191882cf949a4c87990dd7e1be75d0f09",
+  "build_environment": {}
+}

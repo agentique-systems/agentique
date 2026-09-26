@@ -1,0 +1,23 @@
+{
+  "command": [
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-rematerialize-kerml\\target\\release\\examples\\sysml_systems_publication.exe",
+    "--cache=C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\generated\\native-studio-alpha\\rematerialized-kerml\\accepted.cache",
+    "--profile=operational-v3",
+    "--finalize-converged=C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\generated\\native-studio-alpha\\rematerialized-systems\\frontiers\\journal-c0e02c3e53c40a7a8dee4de4e2dd7b46e3d34367976e12cc07584e8695e092d1.json",
+    "--resume-sha256=c0e02c3e53c40a7a8dee4de4e2dd7b46e3d34367976e12cc07584e8695e092d1",
+    "--audit-workers=2",
+    "--output=C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\generated\\native-studio-alpha\\rematerialized-systems\\finalized\\report.json"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-rematerialize-systems",
+  "started_utc": "2026-09-25T17:24:34.145728+00:00",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "source_commit": "4ac9b8e58695ad837fed6643b0cedfac05d15635",
+  "working_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "exit_code": 0,
+  "elapsed_seconds": 2291.282,
+  "peak_rss_bytes": 5813383168,
+  "peak_private_bytes": 6004252672,
+  "memory_scope": "direct child process sampled at 1 second; excludes descendant compilers",
+  "output_sha256": "c119717eb815992b89b9478b053e718c6d04ac6bdbc673b4852566cbf6f6f27c",
+  "raw_output": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\native-studio-alpha\\runtime\\historical-systems-finalizer.log"
+}

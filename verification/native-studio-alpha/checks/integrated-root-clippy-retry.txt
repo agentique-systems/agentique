@@ -1,0 +1,57 @@
+   Compiling agq-application v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\application)
+    Checking agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-service)
+    Checking idna v1.1.0
+    Checking unicase v2.9.0
+    Checking zeroize v1.9.0
+    Checking futures-sink v0.3.34
+    Checking rustls-pki-types v1.15.1
+    Checking tokio-util v0.7.19
+    Checking mime_guess v2.0.5
+    Checking url v2.5.8
+    Checking agq-modeling-sqlite v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\modeling-sqlite)
+    Checking getrandom v0.2.17
+    Checking untrusted v0.9.0
+    Checking http-range-header v0.4.2
+    Checking ring v0.17.14
+    Checking tower-http v0.6.11
+    Checking axum-core v0.5.6
+    Checking roxmltree v0.21.1
+    Checking serde_path_to_error v0.1.20
+    Checking matchit v0.8.4
+    Checking rustls-webpki v0.103.15
+    Checking axum v0.8.9
+    Checking agq-runtime-publications v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\runtime-publications)
+    Checking subtle v2.6.1
+    Checking rustls v0.23.45
+    Checking agq-metamodel-gen v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\tools\metamodel-gen)
+    Checking tokio-rustls v0.26.5
+    Checking webpki-roots v1.0.9
+    Checking agq-modeling-api v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\modeling-api)
+    Checking agq-modeling-agent v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-agent)
+    Checking hyper-rustls v0.27.9
+    Checking agq-storage v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\storage)
+    Checking agq-studio-scene v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-scene)
+    Checking agq-studio-platform v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-platform)
+    Checking reqwest v0.12.28
+    Checking agq-modeling-http v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\modeling-http)
+    Checking agq-studio v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio)
+    Checking agq-assistant v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\assistant)
+    Checking agq-server v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\server)
+    Checking agentique v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\cli)
+    Checking agq-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\workspace)
+    Checking agq-simulation v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\simulation)
+    Checking agq-modeling-view v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-view)
+    Checking agq-modeling-repository v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-repository)
+    Checking agq-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\semantics)
+    Checking agq-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\syntax)
+    Checking agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+    Checking agq-modeling-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-workspace)
+    Checking agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-syntax)
+    Checking agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\standard-libraries)
+    Checking agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+    Checking agq-sysml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml-semantics)
+    Checking agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml)
+    Checking agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+    Checking agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+    Checking agq-model v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\model)
+    Finished `dev` profile [unoptimized] target(s) in 40.21s

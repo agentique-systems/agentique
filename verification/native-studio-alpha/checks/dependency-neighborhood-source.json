@@ -1,0 +1,27 @@
+{
+  "status": "source-only checks; tests, builds and runtime not run",
+  "results": [
+    {
+      "command": "rustfmt --edition 2024 --check crates/modeling-view/src/lib.rs crates/modeling-view/src/projection.rs crates/studio-platform/src/lib.rs",
+      "status": "fulfilled",
+      "value": {
+        "chunk_id": "e3d7fe",
+        "wall_time_seconds": 0.195635,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    },
+    {
+      "command": "git diff --check",
+      "status": "fulfilled",
+      "value": {
+        "chunk_id": "318b84",
+        "wall_time_seconds": 0.0652051,
+        "exit_code": 0,
+        "original_token_count": 0,
+        "output": ""
+      }
+    }
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "standards:check"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T18:23:35.519867+00:00",
+  "elapsed_seconds": 2.922,
+  "exit_code": 1,
+  "output": "verification/native-studio-alpha/checks/integrated-standards-current.txt",
+  "output_sha256": "b8bf8a1da73f26713ca6887b8f27ba64e85314b1531781a74d5254674960cc12",
+  "build_environment": {}
+}

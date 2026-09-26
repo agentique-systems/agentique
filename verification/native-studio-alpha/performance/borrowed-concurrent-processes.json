@@ -1,0 +1,20 @@
+﻿[
+    {
+        "ProcessId":  13660,
+        "Name":  "cargo.exe",
+        "WorkingSetSize":  7741440,
+        "CommandLine":  "cargo test --release --config profile.release.lto=false --locked --offline -j 1 --target-dir C:/Users/phili/github/agentique-systems/agentique-alpha-rematerialize-kerml/target -p agq-kerml-semantics --lib trusted_publication"
+    },
+    {
+        "ProcessId":  15260,
+        "Name":  "cargo.exe",
+        "WorkingSetSize":  16982016,
+        "CommandLine":  "\"C:\\Users\\phili\\.rustup\\toolchains\\1.92.0-x86_64-pc-windows-msvc\\bin\\cargo.exe\" test --release --config profile.release.lto=false --locked --offline -j 1 --target-dir C:/Users/phili/github/agentique-systems/agentique-alpha-rematerialize-kerml/target -p agq-kerml-semantics --lib trusted_publication"
+    },
+    {
+        "ProcessId":  8952,
+        "Name":  "rustc.exe",
+        "WorkingSetSize":  216358912,
+        "CommandLine":  "\"C:\\Users\\phili\\.rustup\\toolchains\\1.92.0-x86_64-pc-windows-msvc\\bin\\rustc.exe\" --crate-name agq_sysml --edition=2024 crates\\sysml\\src\\lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --crate-type lib --emit=dep-info,metadata,link -C opt-level=3 -C embed-bitcode=no --check-cfg cfg(docsrs,test) --check-cfg \"cfg(feature, values())\" -C metadata=5a92de716dc07320 -C extra-filename=-eaba61f859a9c632 --out-dir C:/Users/phili/github/agentique-systems/agentique-alpha-rematerialize-kerml/target\\release\\deps -C strip=debuginfo -L dependency=C:/Users/phili/github/agentique-systems/agentique-alpha-rematerialize-kerml/target\\release\\deps --extern agq_kerml=C:/Users/phili/github/agentique-systems/agentique-alpha-rematerialize-kerml/target\\release\\deps\\libagq_kerml-721a758fcb9ca9c0.rmeta --extern agq_kernel=C:/Users/phili/github/agentique-systems/agentique-alpha-rematerialize-kerml/target\\release\\deps\\libagq_kernel-828ba075845b42d2.rmeta"
+    }
+]

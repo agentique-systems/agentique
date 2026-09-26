@@ -1,0 +1,28 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-modeling-service",
+    "--lib",
+    "part_rename::tests",
+    "--target-dir",
+    "C:/Users/phili/github/agentique-systems/agentique/target",
+    "--",
+    "--nocapture"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-state-recovery",
+  "started_utc": "2026-09-25T17:50:23.005894+00:00",
+  "elapsed_seconds": 63.828,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/rename-query-state-tests.txt",
+  "output_sha256": "bda23e79243bc3c9ab3a52fa940d03cec41e6079eb84ee15e1f20fd52a54d8ca",
+  "build_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "1"
+  }
+}

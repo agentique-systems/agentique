@@ -1,0 +1,38 @@
+    Checking cfg-if v1.0.5
+    Checking typenum v1.20.1
+    Checking generic-array v0.14.7
+    Checking serde_core v1.0.229
+    Checking num-traits v0.2.19
+    Checking block-buffer v0.10.4
+    Checking crypto-common v0.1.7
+    Checking memchr v2.8.3
+    Checking thiserror v2.0.20
+    Checking serde v1.0.229
+    Checking digest v0.10.7
+    Checking num-integer v0.1.47
+    Checking zmij v1.0.23
+    Checking getrandom v0.4.3
+    Checking sha1_smol v1.0.1
+    Checking cpufeatures v0.2.17
+    Checking simd-adler32 v0.3.10
+    Checking itoa v1.0.18
+    Checking serde_json v1.0.151
+    Checking sha2 v0.10.9
+    Checking uuid v1.26.1
+    Checking num-bigint v0.4.8
+    Checking crc32fast v1.5.2
+    Checking adler2 v2.0.1
+    Checking miniz_oxide v0.9.1
+    Checking agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-runtime\crates\kernel)
+    Checking bumpalo v3.20.3
+    Checking log v0.4.34
+    Checking equivalent v1.0.2
+    Checking hashbrown v0.17.1
+    Checking indexmap v2.14.2
+    Checking zopfli v0.8.3
+    Checking agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-runtime\crates\kerml)
+    Checking flate2 v1.1.10
+    Checking zip v2.4.2
+    Checking agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-runtime\crates\sysml)
+    Checking agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-runtime\crates\kerml-semantics)
+    Finished `release` profile [optimized] target(s) in 36.23s

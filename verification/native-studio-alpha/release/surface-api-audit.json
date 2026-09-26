@@ -1,0 +1,81 @@
+{
+  "scope": "Pinned local Cargo dependency source inspection; no hardware failure injection",
+  "utc": "2026-09-25T17:14:04.723878+00:00",
+  "files": [
+    {
+      "file": "eframe-0.33.3/src/epi.rs",
+      "sha256": "c2eea4c758dddaed407058bed94007c10f5576af0f3676a6fc2013b0b9e32867",
+      "inspected_lines": [
+        53,
+        112,
+        632,
+        654,
+        783
+      ]
+    },
+    {
+      "file": "eframe-0.33.3/src/native/wgpu_integration.rs",
+      "sha256": "39d9e176097231ef1b4519f241ea77f46860ae30dc81d770782ee1bd62e83154",
+      "inspected_lines": [
+        690,
+        827
+      ]
+    },
+    {
+      "file": "egui-wgpu-0.33.3/src/lib.rs",
+      "sha256": "9ed0d977010caa4dbab533fa18e6e0ac1f2b7ae4cd5cd39380b774b5a29fca30",
+      "inspected_lines": [
+        66,
+        276
+      ]
+    },
+    {
+      "file": "egui-wgpu-0.33.3/src/winit.rs",
+      "sha256": "2e2a3bca930697140e208bda230b7bff350ad1374d9b80c76435f4c14339ca41",
+      "inspected_lines": [
+        33,
+        87,
+        91,
+        198,
+        260,
+        384,
+        433,
+        446,
+        476,
+        570
+      ]
+    },
+    {
+      "file": "wgpu-27.0.1/src/api/device.rs",
+      "sha256": "02d3a6be80612a669ace9a27d9f90691547989e8b41c69ed903ff25484dcf8f0",
+      "inspected_lines": [
+        410,
+        550
+      ]
+    },
+    {
+      "file": "wgpu-27.0.1/src/api/surface_texture.rs",
+      "sha256": "47bfd5580f7b034c580c194e5e281eab5826581af23a95065b95927f7e135dd6",
+      "inspected_lines": [
+        56
+      ]
+    },
+    {
+      "file": "wgpu-27.0.1/src/backend/wgpu_core.rs",
+      "sha256": "b6c50b4b90165e30e7c9170cb9e4d95c38486c0e63909ab90369f34da00a76de",
+      "inspected_lines": [
+        303,
+        645,
+        672
+      ]
+    }
+  ],
+  "commands": [
+    "rg -n SurfaceError|on_surface_error|device_lost|RecreateSurface in pinned dependency sources",
+    "Get-Content bounded ranges listed in inspected_lines"
+  ],
+  "exit_codes": [
+    0,
+    0
+  ]
+}

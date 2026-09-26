@@ -1,0 +1,35 @@
+   Compiling agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-service)
+   Compiling agq-modeling-agent v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-agent)
+    Finished `test` profile [unoptimized] target(s) in 3.40s
+     Running unittests src\lib.rs (target\debug\deps\agq_modeling_agent-e364bc98b4701ec2.exe)
+
+running 8 tests
+test decision::tests::bounded_routing_retains_revision_and_rejects_unoffered_answers ... ok
+test tests::machine_proposal_cannot_grant_commit_or_validation ... ok
+test commands::tests::semicolon_owner_becomes_body ... ok
+test commands::tests::production_name_edits_replace_selected_and_ancestor_identity ... ok
+test commands::tests::nested_insertion_retains_disjoint_children_but_replaces_owner_identity ... ok
+test commands::tests::command_uses_selected_declaration_range_inside_a_package ... ok
+test commands::tests::nested_source_command_ignores_comment_braces_and_preserves_bytes ... ok
+test commands::tests::selected_definition_check_rejects_a_valid_but_different_canonical_target ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running unittests src\lib.rs (target\debug\deps\agq_modeling_service-045040c4c90fcc3e.exe)
+
+running 12 tests
+test cache_codec::tests::characterize_legacy_cache_encoding ... ignored, offline codec measurement of an explicitly supplied legacy cache; no semantic acceptance claim
+test query::tests::changed_range_respects_unicode_and_insertions ... ok
+test cache_codec::tests::compact_cache_roundtrip_is_exact_and_deterministic ... ok
+test part_insertion::tests::proof_rejects_header_rename_wrong_owner_and_other_source_changes ... ok
+test cache_codec::tests::archive_entry_bounds_names_and_frontier_digest_are_checked ... ok
+test cache_codec::tests::legacy_cache_remains_readable_and_invalid_caches_are_discarded ... ok
+test query::tests::derived_only_slot_change_does_not_claim_an_authored_change ... ok
+test query::tests::declared_property_edit_remains_an_authored_change ... ok
+test query::tests::changed_producer_evidence_remains_a_derived_consequence ... ok
+test part_insertion::tests::proof_preserves_restored_identity_arena_across_two_insertions ... ok
+test part_insertion::tests::proof_preserves_every_old_identity_for_braces_and_semicolon_bodies ... ok
+test part_insertion::tests::proof_accepts_one_qualified_typing_but_no_hidden_declarations ... ok
+
+test result: ok. 11 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.08s
+

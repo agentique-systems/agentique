@@ -1,0 +1,228 @@
+{
+  "format": "agentique-native-real-acceptance/1",
+  "scenario": "real",
+  "scope": "Actual native input, authenticated runtime, real models/agentique and ordinary in-process service workers. First process alone does not establish durable restart or overall alpha acceptance.",
+  "database": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\native-studio-alpha\\real-run01\\agentique.sqlite",
+  "root": ".",
+  "outcome": "failed",
+  "passed": false,
+  "restart_verified": false,
+  "previous_report_digest": null,
+  "project": "c20c4a5c-ea43-45ea-89d2-db2742e2c20a",
+  "branch": "6de4fea6-7924-4465-83b3-0c90782c7019",
+  "baseline": {
+    "format_version": 1,
+    "revision_id": "8dcfb224-55e6-4d0d-ac3a-84fcfffb9a46",
+    "parent_revision_id": "a0ce9ecb-728a-40ce-87b5-88f8cbc84105",
+    "project_id": "c20c4a5c-ea43-45ea-89d2-db2742e2c20a",
+    "metadata": {
+      "created": "2026-09-25T18:46:55.748517800+00:00",
+      "name": null,
+      "description": null,
+      "alias": []
+    },
+    "documents": [
+      {
+        "document_id": "0473f35d-539e-43f5-a7b6-d3f54bccf1b7",
+        "path": "AgentFabric.sysml",
+        "language": "SysMl",
+        "source_revision_id": "24da0d92-458d-41fc-a4c1-ddb9dfa40f05",
+        "content_digest": "fb19fdb031aa524d9957f3a1498818bd66106c718d51274328bd47f381921617"
+      },
+      {
+        "document_id": "b9415032-eb90-4bbd-a6f4-76664c7f064f",
+        "path": "Agentique.sysml",
+        "language": "SysMl",
+        "source_revision_id": "7f48f750-e3bb-479b-bc6c-8da352c3697c",
+        "content_digest": "17cc930b105b74d7001a70ab9cfddf3a2c65c906a57dcc2e1f341140b3636960"
+      },
+      {
+        "document_id": "ab682d57-2832-465a-b186-cc92b13b0453",
+        "path": "Contracts.sysml",
+        "language": "SysMl",
+        "source_revision_id": "f2c6b6d7-52c4-4617-881e-144f0e8b8816",
+        "content_digest": "4235d37c880ca5d43bb11b482d9414b4270a78ff6ee7287d3538961bcc94bc2a"
+      },
+      {
+        "document_id": "1435b595-ebd7-4c94-a017-076ee1c2ff4b",
+        "path": "ExecutionRuntime.sysml",
+        "language": "SysMl",
+        "source_revision_id": "ef8ad97c-e1eb-4439-9da5-34c94c9665b7",
+        "content_digest": "7f753fe89a4158918481a52134df9df9218167433fe3869d65ae22ccf6d90691"
+      },
+      {
+        "document_id": "32128c12-5690-4070-a062-3e8cc2e16ddd",
+        "path": "LanguageEngine.sysml",
+        "language": "SysMl",
+        "source_revision_id": "5baccce0-b01b-4b84-8553-e20669a2a4a4",
+        "content_digest": "3fbdf2caa9a6ee69c8807f513af0d1e822b053d9a86ff947782ff65f88536f39"
+      },
+      {
+        "document_id": "8582f373-2d6f-4edb-9e9a-8ee2dfc8a6bd",
+        "path": "ModelingPlatform.sysml",
+        "language": "SysMl",
+        "source_revision_id": "561c7733-94f1-42ef-a1ac-ac8ea952304a",
+        "content_digest": "12c198141d892e606f9cd2b3a419863cc02f994f1b31236af0b112faf5d31b79"
+      }
+    ],
+    "accepted_publications": {
+      "kerml": "815573353973607bc62a25195ed4461645182027407f8476be521ffc99174f12",
+      "sysml": "25aeddb099be16462b553d6debcad97f43bf22e89ce8a9bbb53cf72eb7d193fa"
+    },
+    "checkpoint_digest": "a926fd8e382c280bddc35eda7be5e4f446371895bd138e726047228e482a18a2",
+    "validation": {
+      "Validated": {
+        "acceptance_contract": "agentique-modeling-workspace-phase1/1",
+        "source_binding": "83bd33499adb37ca8ab6cee5634edb4a5f826b82c078e9a69196f2a387a95610",
+        "semantic_digest": "83fd3b603de1cf7ca605031357e092d2462efe328cbe25cbadde72e0b2cde9fa",
+        "semantic_context": "07bf3a7e26dc15d0046998fae647a57268e04a520ae3aee2f61c4616a83068e8",
+        "closure_digest": "b32dbb2ca5a74b1aa293cee982d11553ef2724aed69ec3e76c3f9ada825e70d4"
+      }
+    },
+    "semantic_cache": {
+      "format": "agq-project-semantic-cache/2",
+      "content_digest": "a200df28927db426461939d02e480419c15adb79b132730a88ce6b7eae9cac18",
+      "source_binding": "83bd33499adb37ca8ab6cee5634edb4a5f826b82c078e9a69196f2a387a95610",
+      "semantic_context": "07bf3a7e26dc15d0046998fae647a57268e04a520ae3aee2f61c4616a83068e8",
+      "closure_digest": "b32dbb2ca5a74b1aa293cee982d11553ef2724aed69ec3e76c3f9ada825e70d4"
+    }
+  },
+  "committed": null,
+  "added_element": null,
+  "added_owner": null,
+  "added_name": "alphaStudioObserver",
+  "assertions": [
+    {
+      "name": "open authenticated Agentique with Validated semantic closure",
+      "passed": true,
+      "elapsed_ms": 289916,
+      "since_start_ms": 916817,
+      "before": {
+        "frame": 103350,
+        "binding": null,
+        "branch": null,
+        "scene_revision": "00000000-0000-0000-0000-000000000000",
+        "selection_revision": "00000000-0000-0000-0000-000000000000",
+        "selected": [],
+        "focus": null,
+        "world": "System",
+        "comparison": "Current",
+        "candidate_revision": null,
+        "candidate_phase": null,
+        "producer_completeness": "Unavailable",
+        "projection_nodes": 0,
+        "projection_edges": 0,
+        "scene_nodes": 0,
+        "scene_edges": 0,
+        "camera": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "pending_requests": 0,
+        "mutation_pending": false,
+        "inspector_revision": null,
+        "inspector_element": null,
+        "explanation_revision": null,
+        "explanation_subject": null,
+        "explanation_origin": null,
+        "explanation_rule": null,
+        "explanation_evidence": null,
+        "agent_view": false,
+        "status": "Ready"
+      },
+      "after": {
+        "frame": 104111,
+        "binding": {
+          "project": "c20c4a5c-ea43-45ea-89d2-db2742e2c20a",
+          "revision": "8dcfb224-55e6-4d0d-ac3a-84fcfffb9a46"
+        },
+        "branch": "6de4fea6-7924-4465-83b3-0c90782c7019",
+        "scene_revision": "8dcfb224-55e6-4d0d-ac3a-84fcfffb9a46",
+        "selection_revision": "8dcfb224-55e6-4d0d-ac3a-84fcfffb9a46",
+        "selected": [],
+        "focus": null,
+        "world": "System",
+        "comparison": "Current",
+        "candidate_revision": null,
+        "candidate_phase": null,
+        "producer_completeness": "Complete",
+        "projection_nodes": 38,
+        "projection_edges": 37,
+        "scene_nodes": 38,
+        "scene_edges": 37,
+        "camera": [
+          1892.0,
+          1478.0,
+          0.23782139
+        ],
+        "pending_requests": 0,
+        "mutation_pending": false,
+        "inspector_revision": null,
+        "inspector_element": null,
+        "explanation_revision": null,
+        "explanation_subject": null,
+        "explanation_origin": null,
+        "explanation_rule": null,
+        "explanation_evidence": null,
+        "agent_view": false,
+        "status": "Revision restored in process"
+      },
+      "inputs": [
+        "PointerMoved([800.0 418.0])",
+        "PointerButton { pos: [800.0 418.0], button: Primary, pressed: true, modifiers: Modifiers::NONE }",
+        "PointerMoved([800.0 418.0])",
+        "PointerButton { pos: [800.0 418.0], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+      ]
+    }
+  ],
+  "gallery": [],
+  "failure": "Native screenshot 01-system-world was not delivered within 30 seconds",
+  "elapsed_ms": 982695,
+  "background_frames": 0,
+  "background_pan_observed": false,
+  "preparation_responsiveness": {
+    "elapsed_ms": null,
+    "maximum_input_hook_gap_ms": 0,
+    "observed_input_hooks": 0,
+    "assessment": null
+  },
+  "metrics": null,
+  "last_state": {
+    "frame": 104113,
+    "binding": {
+      "project": "c20c4a5c-ea43-45ea-89d2-db2742e2c20a",
+      "revision": "8dcfb224-55e6-4d0d-ac3a-84fcfffb9a46"
+    },
+    "branch": "6de4fea6-7924-4465-83b3-0c90782c7019",
+    "scene_revision": "8dcfb224-55e6-4d0d-ac3a-84fcfffb9a46",
+    "selection_revision": "8dcfb224-55e6-4d0d-ac3a-84fcfffb9a46",
+    "selected": [],
+    "focus": null,
+    "world": "System",
+    "comparison": "Current",
+    "candidate_revision": null,
+    "candidate_phase": null,
+    "producer_completeness": "Complete",
+    "projection_nodes": 38,
+    "projection_edges": 37,
+    "scene_nodes": 38,
+    "scene_edges": 37,
+    "camera": [
+      1892.0,
+      1478.0,
+      0.23782139
+    ],
+    "pending_requests": 0,
+    "mutation_pending": false,
+    "inspector_revision": null,
+    "inspector_element": null,
+    "explanation_revision": null,
+    "explanation_subject": null,
+    "explanation_origin": null,
+    "explanation_rule": null,
+    "explanation_evidence": null,
+    "agent_view": false,
+    "status": "Revision restored in process"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--release",
+    "--config",
+    "profile.release.lto=false",
+    "--locked",
+    "--offline",
+    "-j",
+    "2",
+    "--target-dir",
+    "C:/Users/phili/github/agentique-systems/agentique-alpha-rematerialize-kerml/target",
+    "-p",
+    "agq-runtime-publications",
+    "--bin",
+    "agq-publications"
+  ],
+  "cwd": "C:/Users/phili/github/agentique-systems/agentique-alpha-runtime",
+  "started_utc": "2026-09-25T15:52:16.236080+00:00",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "source_commit": "aff28a9351ddf1afbff84883c539e958390b77ad",
+  "working_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "exit_code": 0,
+  "elapsed_seconds": 610.484,
+  "peak_rss_bytes": 11915264,
+  "peak_private_bytes": 7585792,
+  "memory_scope": "direct child process sampled at 1 second; excludes descendant compilers",
+  "output_sha256": "0fddb8936e0da3b5a54cfd10c8a69109a96fb331f81d7aa070a27a34fe3d5e3b",
+  "raw_output": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\native-studio-alpha\\runtime\\current-runtime-authenticator-build.log"
+}

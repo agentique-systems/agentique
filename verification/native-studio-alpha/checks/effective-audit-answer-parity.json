@@ -1,0 +1,26 @@
+{
+  "command": [
+    "python",
+    "verification/scripts/measure-phase2-frontend.py",
+    "verification/native-studio-alpha/performance/effective-audit-answer-parity.json",
+    "target/release/deps/agq_kerml_text-1ae1689677397383.exe",
+    "sysml::publication::authored_audit_parity_tests::authored_audit_observer_matches_two_pass_queries_and_diagnostics",
+    "--exact",
+    "--ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "99ee17c11a4a58aee64ac0f3a1c82ab9dfb04caf",
+  "tracked_changes_at_start": [
+    " M crates/studio-native/src/main.rs",
+    " M crates/studio-native/src/viewport.rs",
+    " M verification/native-studio-alpha/reviews/audit_view_profile.py"
+  ],
+  "started_utc": "2026-09-25T22:08:14.286378+00:00",
+  "elapsed_seconds": 127.875,
+  "exit_code": 101,
+  "output": "verification/native-studio-alpha/checks/effective-audit-answer-parity.txt",
+  "output_sha256": "4ee06ee4d645c9eecddf4f12d50a2248d9258b0d928dd78841911cb5191435ec",
+  "build_environment": {}
+}

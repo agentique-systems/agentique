@@ -1,7 +1,10 @@
 use crate::{SceneEdge, SceneNode, ScenePort, SceneTarget, SemanticScene};
 use agq_kernel::ElementId;
 use agq_modeling_workspace::ProjectRevisionId;
-use std::collections::{BTreeSet, HashMap};
+use std::{
+    collections::HashMap,
+    hash::{Hash, Hasher},
+};
 
 /// Identity-to-position accelerator for one disposable scene generation.
 ///
@@ -24,6 +27,26 @@ pub struct VisibleScene<'scene> {
     pub nodes: Vec<&'scene SceneNode>,
     pub ports: Vec<&'scene ScenePort>,
     pub edges: Vec<&'scene SceneEdge>,
+}
+/// Hash only visible identities in original draw order. A renderer must combine
+/// this with its scene generation and rendering options: identity alone is not
+/// a geometry fingerprint or an authorization to reuse another revision.
+impl Hash for VisibleScene<'_> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.nodes.len().hash(state);
+        for node in &self.nodes {
+            node.id().hash(state);
+            node.is_container.hash(state);
+        }
+        self.ports.len().hash(state);
+        for port in &self.ports {
+            port.id.hash(state);
+        }
+        self.edges.len().hash(state);
+        for edge in &self.edges {
+            edge.semantic.id.hash(state);
+        }
+    }
 }
 impl SceneLookup {
     pub fn build(scene: &SemanticScene) -> Self {
@@ -104,23 +127,23 @@ impl SceneLookup {
         if scene.revision_id != self.revision_id {
             return VisibleScene::default();
         }
-        let mut nodes = BTreeSet::new();
-        let mut ports = BTreeSet::new();
-        let mut edges = BTreeSet::new();
+        let mut nodes = Vec::new();
+        let mut ports = Vec::new();
+        let mut edges = Vec::new();
         for target in targets {
             match target {
                 SceneTarget::Node(id) | SceneTarget::Container(id) => {
                     if let Some(index) = self.nodes.get(id)
                         && scene.nodes.get(*index).is_some_and(|n| n.id() == *id)
                     {
-                        nodes.insert(*index);
+                        nodes.push(*index);
                     }
                 }
                 SceneTarget::Port(id) => {
                     if let Some(index) = self.ports.get(id)
                         && scene.ports.get(*index).is_some_and(|p| p.id == *id)
                     {
-                        ports.insert(*index);
+                        ports.push(*index);
                     }
                 }
                 SceneTarget::Edge(id) => {
@@ -130,10 +153,14 @@ impl SceneLookup {
                             .get(*index)
                             .is_some_and(|e| e.semantic.id == *id)
                     {
-                        edges.insert(*index);
+                        edges.push(*index);
                     }
                 }
             }
+        }
+        for indices in [&mut nodes, &mut ports, &mut edges] {
+            indices.sort_unstable();
+            indices.dedup();
         }
         VisibleScene {
             nodes: nodes.into_iter().map(|i| &scene.nodes[i]).collect(),

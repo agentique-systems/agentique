@@ -1,0 +1,25 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--release",
+    "--config",
+    "profile.release.lto=false",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-studio-platform",
+    "--test",
+    "real_model",
+    "--no-run",
+    "-j",
+    "1"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T17:55:07.759133+00:00",
+  "elapsed_seconds": 1272.875,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/real-platform-release-compile.txt",
+  "output_sha256": "02ff8c5ddb22d6b0e37c4e151784e4e40fc4de9f60949b44f5b535ad963ccbca",
+  "build_environment": {}
+}

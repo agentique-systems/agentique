@@ -1,0 +1,54 @@
+checks	Run npm run verify	﻿2026-09-25T22:04:15.7338050Z ##[group]Run npm run verify
+checks	Run npm run verify	2026-09-25T22:04:15.7338298Z [36;1mnpm run verify[0m
+checks	Run npm run verify	2026-09-25T22:04:15.7394654Z shell: /usr/bin/bash -e {0}
+checks	Run npm run verify	2026-09-25T22:04:15.7394871Z env:
+checks	Run npm run verify	2026-09-25T22:04:15.7395141Z   JAVA_HOME: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.12-101.0.LTS/x64
+checks	Run npm run verify	2026-09-25T22:04:15.7395569Z   JAVA_HOME_21_X64: /opt/hostedtoolcache/Java_Temurin-Hotspot_jdk/21.0.12-101.0.LTS/x64
+checks	Run npm run verify	2026-09-25T22:04:15.7395893Z   CARGO_NET_OFFLINE: true
+checks	Run npm run verify	2026-09-25T22:04:15.7396082Z ##[endgroup]
+checks	Run npm run verify	2026-09-25T22:04:15.8276520Z 
+checks	Run npm run verify	2026-09-25T22:04:15.8277232Z > agentique@0.1.0 verify
+checks	Run npm run verify	2026-09-25T22:04:15.8277666Z > node tools/verify.mjs
+checks	Run npm run verify	2026-09-25T22:04:15.8277854Z 
+checks	Run npm run verify	2026-09-25T22:04:15.8948821Z [registers] node tools/registers.mjs
+checks	Run npm run verify	2026-09-25T22:04:15.9765006Z [registers] exit 0 (83 ms)
+checks	Run npm run verify	2026-09-25T22:04:15.9765533Z [extraction] node tools/extract.mjs --check
+checks	Run npm run verify	2026-09-25T22:04:16.0058088Z [extraction] exit 0 (29 ms)
+checks	Run npm run verify	2026-09-25T22:04:16.0058786Z [standards] node tools/standards-check.mjs
+checks	Run npm run verify	2026-09-25T22:04:16.1579779Z [standards] exit 1 (152 ms)
+checks	Run npm run verify	2026-09-25T22:04:16.1580600Z [metamodel] cargo run --locked --offline -p agq-metamodel-gen -- --check
+checks	Run npm run verify	2026-09-25T22:04:31.8318959Z [metamodel] exit 0 (15674 ms)
+checks	Run npm run verify	2026-09-25T22:04:31.8319364Z [rust-format] cargo fmt --all -- --check
+checks	Run npm run verify	2026-09-25T22:04:34.1198257Z [rust-format] exit 0 (2288 ms)
+checks	Run npm run verify	2026-09-25T22:04:34.1199088Z [rust-clippy] cargo clippy --workspace --all-targets --locked -- -D warnings
+checks	Run npm run verify	2026-09-25T22:05:06.6225495Z [rust-clippy] exit 101 (32503 ms)
+checks	Run npm run verify	2026-09-25T22:05:06.6226025Z [rust-tests] cargo test --workspace --locked
+checks	Run npm run verify	2026-09-25T22:21:57.8179657Z [rust-tests] exit 0 (1011195 ms)
+checks	Run npm run verify	2026-09-25T22:21:57.8180307Z [rust-build] cargo build --workspace --locked
+checks	Run npm run verify	2026-09-25T22:22:04.1735635Z [rust-build] exit 0 (6356 ms)
+checks	Run npm run verify	2026-09-25T22:22:04.1736041Z [frontend-format] npm run format:check
+checks	Run npm run verify	2026-09-25T22:22:05.6545986Z [frontend-format] exit 0 (1481 ms)
+checks	Run npm run verify	2026-09-25T22:22:05.6546543Z [frontend-types] npm run check
+checks	Run npm run verify	2026-09-25T22:22:07.7843003Z [frontend-types] exit 0 (2130 ms)
+checks	Run npm run verify	2026-09-25T22:22:09.1083156Z [frontend-build] npm run build
+checks	Run npm run verify	2026-09-25T22:22:09.1083621Z [frontend-build] exit 0 (1324 ms)
+checks	Run npm run verify	2026-09-25T22:22:09.1084074Z [engineering-tests] npm test
+checks	Run npm run verify	2026-09-25T22:22:09.8220380Z [engineering-tests] exit 1 (711 ms)
+checks	Run npm run verify	2026-09-25T22:22:09.8223759Z [independent-starter] node node_modules/sysml-validate/out/main.js models/ --library standards/libraries-2026-04 --no-config --format json --out verification/independent-validation.json
+checks	Run npm run verify	2026-09-25T22:22:14.5590812Z [independent-starter] exit 0 (4739 ms)
+checks	Run npm run verify	2026-09-25T22:22:14.5591823Z [independent-fixtures] node node_modules/sysml-validate/out/main.js tests/fixtures/ --library standards/libraries-2026-04 --no-config --format json --out verification/independent-fixtures.json
+checks	Run npm run verify	2026-09-25T22:22:18.9490680Z [independent-fixtures] exit 1 (4390 ms)
+checks	Run npm run verify	2026-09-25T22:22:18.9491273Z [official-pilot] node tools/pilot-validate.mjs
+checks	Run npm run verify	2026-09-25T22:22:27.2189140Z [official-pilot] exit 0 (8270 ms)
+checks	Run npm run verify	2026-09-25T22:22:27.2189588Z [browser-tests] npm run test:e2e
+checks	Run npm run verify	2026-09-25T22:23:25.4161311Z [browser-tests] exit 0 (58197 ms)
+checks	Run npm run verify	2026-09-25T22:23:25.4161766Z [studio-runtime-setup] npm run test:studio
+checks	Run npm run verify	2026-09-25T22:24:10.2906715Z [studio-runtime-setup] exit 0 (44875 ms)
+checks	Run npm run verify	2026-09-25T22:24:10.2907192Z [process-recovery] node tools/process-test.mjs
+checks	Run npm run verify	2026-09-25T22:24:12.5143257Z [process-recovery] exit 0 (2224 ms)
+checks	Run npm run verify	2026-09-25T22:24:12.5148357Z [headless-demo] /home/runner/work/agentique/agentique/target/debug/agentique --workspace .workspaces/verified-demo-28d47a5a-908e-4b91-a58f-891f29fd592f.db demo
+checks	Run npm run verify	2026-09-25T22:24:16.3281188Z [headless-demo] exit 0 (3812 ms)
+checks	Run npm run verify	2026-09-25T22:24:16.8182965Z [update-registers] node tools/registers.mjs
+checks	Run npm run verify	2026-09-25T22:24:17.0343600Z [update-registers] exit 0 (216 ms)
+checks	Run npm run verify	2026-09-25T22:24:17.0645006Z Evidence: verification/results.json. Result: incomplete. See documented standards and resource-control gaps before any release claim.
+checks	Run npm run verify	2026-09-25T22:24:19.6650891Z ##[error]Process completed with exit code 1.

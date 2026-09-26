@@ -67,6 +67,16 @@ impl From<agq_kernel::archive::ArchiveError> for SourceCheckpointError {
 }
 
 impl SourceCompilation {
+    /// Verification-only storage observation, never semantic acceptance evidence.
+    /// This compares the authenticated mount, not merely shared graph records.
+    #[cfg(feature = "verification")]
+    pub fn shares_accepted_dependency_with(&self, other: &Self) -> bool {
+        Arc::ptr_eq(
+            &self.inputs.dependency.mounted,
+            &other.inputs.dependency.mounted,
+        )
+    }
+
     /// Export source identities and reservations without graphs or source bytes.
     pub fn identity_checkpoint(&self) -> SourceIdentityCheckpoint {
         SourceIdentityCheckpoint {
@@ -116,7 +126,39 @@ impl SourceIdentityCheckpoint {
         publication: Arc<CanonicalSysmlSystemsLibrary>,
         sources: &BTreeMap<DocumentId, String>,
     ) -> Result<SourceCompilation, SourceCheckpointError> {
-        self.restore_maybe_cached(publication, sources, None)
+        self.restore_maybe_cached(publication, sources, None, None)
+    }
+    /// Reconstruct within an existing source history, sharing only its already
+    /// authenticated immutable standard dependency. Project/root and publication
+    /// identities must match. Every source blob and syntax arena is checked again;
+    /// local declarations, references, producers, closure and audit are rebuilt.
+    ///
+    /// No prior local graph, lowering cache, certificate or validation handle is
+    /// reused. This returns a Working compilation, just like [`Self::restore`].
+    /// The outer workspace remains responsible for exact revision-parent checks.
+    ///
+    /// # Checkpoint lineage precondition
+    ///
+    /// The caller must establish that this checkpoint was derived from the
+    /// predecessor through a trusted identity reconciliation: previous retired
+    /// identities stay retired and existing reservations keep their lineage.
+    /// This method checks the checkpoint's internal consistency, source bytes,
+    /// project/root and publication identities; it does not authenticate an
+    /// arbitrary caller-supplied retirement/reservation/source ledger against
+    /// the predecessor. Matching project/root labels alone do not prove lineage.
+    /// The modeling service supplies its own proven checkpoint; a deserialized
+    /// or otherwise untrusted checkpoint needs independent lineage verification.
+    pub fn restore_sharing_dependency(
+        &self,
+        predecessor: &SourceCompilation,
+        sources: &BTreeMap<DocumentId, String>,
+    ) -> Result<SourceCompilation, SourceCheckpointError> {
+        self.restore_maybe_cached(
+            predecessor.inputs.accepted_sysml().clone(),
+            sources,
+            None,
+            Some(predecessor),
+        )
     }
     /// Restore authenticated local effective facts, then rerun producer and audit
     /// validation. Any mismatch is an error; the caller may rebuild from source.
@@ -137,13 +179,14 @@ impl SourceIdentityCheckpoint {
                 "semantic cache archive checksum",
             ));
         }
-        self.restore_maybe_cached(publication, sources, Some(cache))
+        self.restore_maybe_cached(publication, sources, Some(cache), None)
     }
     fn restore_maybe_cached(
         &self,
         publication: Arc<CanonicalSysmlSystemsLibrary>,
         sources: &BTreeMap<DocumentId, String>,
         cache: Option<&SourceSemanticCache>,
+        predecessor: Option<&SourceCompilation>,
     ) -> Result<SourceCompilation, SourceCheckpointError> {
         use SourceCheckpointError::Mismatch;
         if self.format_version != 1 {
@@ -157,7 +200,26 @@ impl SourceIdentityCheckpoint {
         if sources.len() != self.documents.len() {
             return Err(Mismatch("source population"));
         }
-        let mut inputs = SourceInputs::with_accepted_sysml(publication)?;
+        let mut inputs = if let Some(predecessor) = predecessor {
+            if predecessor.inputs.project != self.project_id {
+                return Err(Mismatch("predecessor source project"));
+            }
+            if predecessor.inputs.root != self.root {
+                return Err(Mismatch("predecessor canonical root"));
+            }
+            // Only the immutable authenticated dependency crosses this boundary.
+            // Use the same parser limits and empty document state as cold restore.
+            SourceInputs {
+                project: self.project_id,
+                root: self.root,
+                limits: ParseLimits::default(),
+                dependency: predecessor.inputs.dependency.clone(),
+                documents: BTreeMap::new(),
+                documents_reparsed: 0,
+            }
+        } else {
+            SourceInputs::with_accepted_sysml(publication)?
+        };
         inputs.project = self.project_id;
         inputs.root = self.root;
         inputs.documents_reparsed = self.documents.len();

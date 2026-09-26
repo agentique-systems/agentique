@@ -1,0 +1,36 @@
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling agq-sysml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml-semantics)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+   Compiling agq-modeling-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-workspace)
+   Compiling agq-modeling-view v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-view)
+    Finished `release` profile [optimized] target(s) in 5m 28s
+     Running unittests src\lib.rs (target\release\deps\agq_modeling_view-2b6e68a42d01dda1.exe)
+
+running 11 tests
+test projection::tests::architecture_expansion_preserves_usage_and_type_as_distinct_nodes ... ok
+test projection::tests::neighborhood_is_bounded_stable_and_handles_cycles ... ok
+test projection::tests::definitions_are_selection_metadata_and_preserve_hidden_identity ... ok
+test explain::tests::explanation_retains_rule_revision_and_explicitly_marks_display_links ... ok
+test projection::tests::ownership_projection_reads_canonical_memberships_and_keeps_revision_identity ... ok
+test projection::tests::requirement_subject_reaches_architecture_through_two_canonical_relationships_only ... ok
+test projection::tests::canonical_sysml_ownership_typing_and_feature_counts_resolve_effective_properties ... ok
+test projection::tests::verification_membership_is_a_modeled_link_and_case_subject_is_not_a_requirement ... ok
+test inspector::tests::inspector_and_scene_share_canonical_connection_and_query_completeness ... FAILED
+test inspector::tests::unresolved_connector_keeps_actual_incomplete_query_even_without_an_incident_edge ... ok
+test projection::tests::focused_inherited_port_keeps_owner_membership_and_original_identity ... ok
+
+failures:
+
+---- inspector::tests::inspector_and_scene_share_canonical_connection_and_query_completeness stdout ----
+
+thread 'inspector::tests::inspector_and_scene_share_canonical_connection_and_query_completeness' (29920) panicked at crates\modeling-view\src\projection.rs:746:30:
+called `Result::unwrap()` on an `Err` value: DerivedWrite { element: ElementId(13), property: PropertyId(161929828611358570716962090878309614038) }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    inspector::tests::inspector_and_scene_share_canonical_connection_and_query_completeness
+
+test result: FAILED. 10 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+error: test failed, to rerun pass `-p agq-modeling-view --lib`

@@ -1,0 +1,28 @@
+{
+  "command": [
+    "cargo",
+    "clippy",
+    "--release",
+    "--all-targets",
+    "--locked",
+    "--offline",
+    "--manifest-path",
+    "crates/studio-native/Cargo.toml",
+    "--target-dir",
+    "target/native-alpha",
+    "--config",
+    "profile.release.lto=false",
+    "-j",
+    "2",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T16:35:28.536451+00:00",
+  "elapsed_seconds": 89.594,
+  "exit_code": 101,
+  "output": "verification/native-studio-alpha/checks/gpu-agent-visibility-native-clippy.txt",
+  "output_sha256": "5304cc8cbd583f2e5b09ca8090f5475e4e07af3dc4fa93f158fe3a28bbcc2fa0",
+  "build_environment": {}
+}

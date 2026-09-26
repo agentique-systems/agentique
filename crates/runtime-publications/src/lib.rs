@@ -43,7 +43,7 @@ pub enum RuntimeError {
     #[error("runtime authentication rejected: {0}")]
     Rejected(String),
     #[error(
-        "accepted semantic runtime is not installed at {0}; install a local bundle with `cargo run -p agq-studio -- setup --bundle <path>`"
+        "accepted semantic runtime is not installed at {0}; install a local bundle with `cargo run --locked --offline -p agq-runtime-publications --bin agq-publications -- install --bundle <path>`"
     )]
     Missing(PathBuf),
 }

@@ -1,0 +1,23 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--release",
+    "--config",
+    "profile.release.lto=false",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-modeling-agent",
+    "--lib",
+    "-j",
+    "2"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T16:38:34.204821+00:00",
+  "elapsed_seconds": 130.594,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/source-command-identity-tests.txt",
+  "output_sha256": "f0eff8cdeb5f43a4abf82156c91681252f03b2d0e61354be1d417285764be715",
+  "build_environment": {}
+}

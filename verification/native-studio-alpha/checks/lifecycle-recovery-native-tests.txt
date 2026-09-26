@@ -1,0 +1,22 @@
+   Compiling agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-service)
+   Compiling agq-modeling-agent v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-agent)
+   Compiling agq-studio-platform v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-platform)
+   Compiling agq-studio-native v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-native)
+    Finished `release` profile [optimized] target(s) in 49.18s
+     Running unittests src\main.rs (target/native-alpha\release\deps\agq_studio_native-43ada88829d1e927.exe)
+
+running 11 tests
+test updates::tests::presentation_restore_requires_exact_revision_world_and_focus ... ok
+test updates::tests::history_refresh_rejects_superseded_requests_and_other_projects ... ok
+test updates::tests::commit_receipt_and_history_survive_failed_revision_loading ... ok
+test updates::tests::failed_lifecycle_refresh_keeps_mutations_blocked_until_a_matching_retry ... ok
+test updates::tests::rejected_revision_scene_keeps_binding_projection_and_retry_target_coherent ... ok
+test updates::tests::rejected_comparison_keeps_the_previous_display_and_selection ... ok
+test updates::tests::rejected_new_candidate_preserves_cancel_authority_without_publishing_bad_scene ... ok
+test updates::tests::mode_change_and_agent_return_reject_bad_disposable_projections ... ok
+test updates::tests::rejected_candidate_view_retains_new_lifecycle_but_displays_current_revision ... ok
+test updates::tests::validation_completion_survives_agent_dismissal_and_a_superseded_lens ... ok
+test updates::tests::unresolved_commit_reconciliation_is_independent_of_disposable_query_ids ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 34 filtered out; finished in 0.05s
+

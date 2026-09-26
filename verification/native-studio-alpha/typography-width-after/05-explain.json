@@ -1,0 +1,45 @@
+{
+  "adapter": "AdapterInfo { name: \"NVIDIA GeForce RTX 3060 Ti\", vendor: 4318, device: 9353, device_type: DiscreteGpu, driver: \"NVIDIA\", driver_info: \"616.92\", backend: Vulkan }",
+  "checkpoint": "05-explain",
+  "fixture": "typography",
+  "format": "agentique-native-gallery/1",
+  "image_sha256": "4de557b4f3513535edfa8baaa16df359f8c2932b71432a5814e9b6693d989f49",
+  "image_size": [
+    1600,
+    1000
+  ],
+  "semantic_data": "explicit typography visual fixture, not real-model acceptance",
+  "state": {
+    "added_elements": [],
+    "agent_overlay": false,
+    "agent_return": null,
+    "camera_center": [
+      1006.0,
+      299.0
+    ],
+    "candidate": false,
+    "candidate_phase": null,
+    "comparison": "Current",
+    "create_dialog": false,
+    "dark": true,
+    "dependency_elements": null,
+    "edges": 10,
+    "explanation_open": true,
+    "focus": null,
+    "frame": 427,
+    "high_contrast": false,
+    "nodes": 12,
+    "palette": false,
+    "palette_query": "Unpin position",
+    "reduced_motion": true,
+    "removed_elements": [],
+    "revision": "fa170000-0000-0000-0000-000000000001",
+    "selected": [
+      "Edge(\"fixture-edge-00000013\")"
+    ],
+    "selection_revision": "fa170000-0000-0000-0000-000000000001",
+    "status": "Graph position unpinned · presentation only",
+    "world": "Graph",
+    "zoom": 0.4880988597869873
+  }
+}

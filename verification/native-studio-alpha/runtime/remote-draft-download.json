@@ -1,0 +1,32 @@
+{
+  "command": [
+    "gh",
+    "release",
+    "download",
+    "runtime-kerml-v9-sysml-v3-bundle1",
+    "--repo",
+    "agentique-systems/agentique",
+    "--pattern",
+    "accepted-runtime.agq-runtime",
+    "--pattern",
+    "runtime-manifest.json",
+    "--pattern",
+    "accepted-runtime.agq-runtime.sha256",
+    "--pattern",
+    "runtime-verification.json",
+    "--dir",
+    "verification/generated/native-studio-alpha/runtime-remote-download-2026-09-25"
+  ],
+  "cwd": "C:/Users/phili/github/agentique-systems/agentique-alpha-runtime",
+  "started_utc": "2026-09-25T18:38:50.956228+00:00",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "source_commit": "2908dfd31c7cde219a5697cc72a68329bf13ca7e",
+  "working_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "exit_code": 0,
+  "elapsed_seconds": 54.125,
+  "peak_rss_bytes": 39743488,
+  "peak_private_bytes": 65757184,
+  "memory_scope": "direct child process sampled at 1 second; excludes descendant compilers",
+  "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "raw_output": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\native-studio-alpha\\runtime\\remote-draft-download.log"
+}

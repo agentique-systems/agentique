@@ -1,4 +1,5 @@
 use crate::{AgentContext, AgentError, AgentPolicy, Authority};
+use agq_kerml_semantics::{Completeness, KerMlQueries, MemberAccess};
 use agq_kerml_syntax::{TextEdit, TokenKind, production};
 use agq_kerml_text::ProjectChange;
 use agq_kernel::{ElementId, provenance::ByteRange};
@@ -8,7 +9,8 @@ use agq_modeling_service::{
 };
 use serde::{Deserialize, Serialize};
 
-/// Typed intent vocabulary. Only CreatePartUsage has a reviewed source mapping in v1.
+/// Typed intent vocabulary. CreatePartUsage and bounded authored Part renaming
+/// have service-proven source mappings.
 /// Unsupported operations fail before constructing any candidate.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "kind", deny_unknown_fields)]
@@ -93,6 +95,50 @@ pub fn propose(
 ) -> Result<AgentCandidate, AgentError> {
     policy.require(Authority::Read)?;
     policy.require(Authority::Propose)?;
+    if let ModelCommand::RenameElement { element, name } = &command {
+        let bound = service.resolve(
+            context.project,
+            RevisionSelector::Revision(context.revision),
+        )?;
+        let origin = bound
+            .current_element(*element)?
+            .source
+            .ok_or_else(|| AgentError::Invalid("element has no authored source".into()))?;
+        let (path, document) = bound
+            .revision()
+            .documents()
+            .find(|(_, document)| document.id() == origin.document)
+            .ok_or_else(|| {
+                AgentError::Invalid("standard-library and generated records are read-only".into())
+            })?;
+        let prepared = service.prepare_part_rename(agq_modeling_service::RenamePart {
+            operation_id: OperationId::new(),
+            project: context.project,
+            branch: context.branch,
+            expected_head: context.revision,
+            element: *element,
+            name: name.clone(),
+            validate: false,
+        })?;
+        let after = prepared
+            .revision()
+            .document(origin.document)
+            .ok_or_else(|| {
+                AgentError::Invalid("renamed candidate lost its source document".into())
+            })?;
+        let source_preview = SourcePreview {
+            path: path.into(),
+            before: document.source().into(),
+            after: after.source().into(),
+        };
+        return Ok(AgentCandidate {
+            context,
+            actor: policy.actor.clone(),
+            command,
+            source_preview,
+            prepared,
+        });
+    }
     let ModelCommand::CreatePartUsage {
         owner,
         name,
@@ -140,6 +186,11 @@ pub fn propose(
         .ok_or_else(|| {
             AgentError::Invalid("owner declaration cannot be reconciled to source".into())
         })?;
+    let queries = bound
+        .revision()
+        .kerml_queries()
+        .map_err(|error| AgentError::Invalid(format!("owner name query unavailable: {error:?}")))?;
+    ensure_distinct_direct_member(&queries, *owner, name)?;
     let type_name = definition
         .map(|id| {
             let target = bound.current_element(id)?;
@@ -166,17 +217,20 @@ pub fn propose(
         before,
         after,
     };
-    let prepared = service.prepare_changes(ApplyDocumentChanges {
-        operation_id: OperationId::new(),
-        project: context.project,
-        branch: context.branch,
-        expected_head: context.revision,
-        changes: vec![ProjectChange::Edit {
-            document: origin.document,
-            edit,
-        }],
-        validate: false,
-    })?;
+    let prepared = service.prepare_part_insertion(
+        ApplyDocumentChanges {
+            operation_id: OperationId::new(),
+            project: context.project,
+            branch: context.branch,
+            expected_head: context.revision,
+            changes: vec![ProjectChange::Edit {
+                document: origin.document,
+                edit,
+            }],
+            validate: false,
+        },
+        *owner,
+    )?;
     if let Some(definition) = definition {
         let candidate = prepared.revision();
         let document = candidate
@@ -291,6 +345,34 @@ fn identifier(name: &str) -> bool {
         && name.len() <= 120
 }
 
+/// Check actual direct-owner membership names (including aliases/short names).
+/// A grandchild name or a type-name token in source is not a sibling conflict.
+/// Inherited/imported bindings and shadowing are checked by service reconstruction.
+fn ensure_distinct_direct_member(
+    queries: &KerMlQueries<'_>,
+    owner: ElementId,
+    name: &str,
+) -> Result<(), AgentError> {
+    let owned = queries.memberships(owner);
+    let named = queries.lookup_member(owner, name, MemberAccess::All);
+    if owned.completeness != Completeness::Complete || named.completeness != Completeness::Complete
+    {
+        return Err(AgentError::Invalid(
+            "direct-owner member names could not be established completely".into(),
+        ));
+    }
+    if named
+        .value
+        .iter()
+        .any(|member| owned.value.contains(&member.membership))
+    {
+        return Err(AgentError::Invalid(
+            "a direct member already has this name; choose a distinct part name".into(),
+        ));
+    }
+    Ok(())
+}
+
 fn nested_part_edit(
     syntax: &production::Document,
     owner: ByteRange,
@@ -314,11 +396,6 @@ fn nested_part_edit(
             )
         })
         .collect();
-    if tokens.iter().any(|token| syntax.token_text(token) == name) {
-        return Err(AgentError::Invalid(
-            "name already occurs in the selected declaration; choose a distinct part name".into(),
-        ));
-    }
     let last = tokens
         .last()
         .ok_or_else(|| AgentError::Invalid("empty source declaration".into()))?;
@@ -404,7 +481,6 @@ mod tests {
         let edited = apply(source, "observer").unwrap();
         assert!(edited.contains("// } not the body end\r\n    part existing;"));
         assert!(edited.contains("part observer;\r\n}"));
-        assert!(apply(source, "existing").is_err());
         assert!(apply(source, "injected; part bad").is_err());
         assert!(apply(source, "part").is_err());
     }
@@ -415,6 +491,129 @@ mod tests {
                 .unwrap()
                 .contains("part component {\n    part child;\n}")
         );
+    }
+
+    #[test]
+    fn nested_name_and_type_tokens_are_not_source_level_sibling_conflicts() {
+        let nested = "part def Platform { part subsystem { part observer; } }";
+        let edited = apply(nested, "observer").unwrap();
+        assert_eq!(edited.matches("part observer;").count(), 2);
+        let typed = "part def Platform { part existing : Devices::Sensor; }";
+        assert!(apply(typed, "Sensor").unwrap().contains("part Sensor;"));
+    }
+
+    #[test]
+    fn direct_owner_semantic_names_reject_siblings_but_allow_nested_reuse() {
+        use agq_kerml::properties as p;
+        use agq_kerml_semantics::{SemanticContext, SemanticOptions};
+        use agq_kernel::{
+            Snapshot,
+            provenance::DeclaredOrigin,
+            value::{SlotValue, Value},
+        };
+        use std::{collections::BTreeSet, sync::Arc};
+        let origin = DeclaredOrigin::Authored { source: None };
+        let base = Snapshot::new(Arc::new(
+            agq_sysml::registry_for_profile(agq_kerml::BaselineProfile::OPERATIONAL_V9).unwrap(),
+        ));
+        let owner = ElementId::new();
+        let subsystem = ElementId::new();
+        let observer = ElementId::new();
+        let outer_membership = ElementId::new();
+        let inner_membership = ElementId::new();
+        let mut changes = base.change_set();
+        changes.create(owner, agq_sysml::classes::PART_DEFINITION, origin.clone());
+        for (namespace, membership, member, name) in [
+            (owner, outer_membership, subsystem, "subsystem"),
+            (subsystem, inner_membership, observer, "observer"),
+        ] {
+            changes.create(member, agq_sysml::classes::PART_USAGE, origin.clone());
+            changes.create(
+                membership,
+                agq_kerml::classes::FEATURE_MEMBERSHIP,
+                origin.clone(),
+            );
+            changes.set(
+                member,
+                p::FEATURE_IS_END,
+                SlotValue::Scalar(Value::Boolean(false)),
+                origin.clone(),
+            );
+            let registry = base.model().registry();
+            let agq_kernel::metamodel::ValueKind::Enumeration(domain) = registry
+                .storage_kind(
+                    registry
+                        .property(p::MEMBERSHIP_VISIBILITY)
+                        .unwrap()
+                        .value_kind,
+                )
+                .unwrap()
+            else {
+                panic!("membership visibility enum")
+            };
+            let visibility = registry
+                .enumeration(domain)
+                .unwrap()
+                .literals
+                .iter()
+                .find(|(_, name)| name.as_str() == "public")
+                .unwrap()
+                .0;
+            changes.set(
+                membership,
+                p::MEMBERSHIP_VISIBILITY,
+                SlotValue::Scalar(Value::Enumeration(*visibility)),
+                origin.clone(),
+            );
+            changes.set(
+                member,
+                p::ELEMENT_DECLARED_NAME,
+                SlotValue::Scalar(Value::String(name.into())),
+                origin.clone(),
+            );
+            changes.set(
+                namespace,
+                p::ELEMENT_OWNED_RELATIONSHIP,
+                SlotValue::Ordered(vec![Value::Reference(membership)]),
+                origin.clone(),
+            );
+            changes.set(
+                membership,
+                p::RELATIONSHIP_OWNED_RELATED_ELEMENT,
+                SlotValue::Ordered(vec![Value::Reference(member)]),
+                origin.clone(),
+            );
+        }
+        changes.set(
+            subsystem,
+            p::ELEMENT_DECLARED_SHORT_NAME,
+            SlotValue::Scalar(Value::String("sub".into())),
+            origin,
+        );
+        let model = base.preview(&changes).unwrap();
+        let context = SemanticContext::for_construction(
+            &model,
+            SemanticOptions {
+                baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V9,
+                ..Default::default()
+            },
+            BTreeSet::new(),
+        )
+        .unwrap();
+        let queries = KerMlQueries::new(context);
+        let owned = queries.memberships(owner);
+        let named = queries.lookup_member(owner, "observer", MemberAccess::All);
+        assert!(
+            ensure_distinct_direct_member(&queries, owner, "observer").is_ok(),
+            "owned={:?} {:?}; named={:?} {:?}",
+            owned.completeness,
+            owned.diagnostics,
+            named.completeness,
+            named.diagnostics
+        );
+        assert!(ensure_distinct_direct_member(&queries, owner, "subsystem").is_err());
+        assert!(ensure_distinct_direct_member(&queries, owner, "sub").is_err());
+        assert!(ensure_distinct_direct_member(&queries, subsystem, "observer").is_err());
     }
 
     #[test]
@@ -457,6 +656,82 @@ mod tests {
             &next.source()[..edit.range.start() as usize],
             &source[..edit.range.start() as usize]
         );
+    }
+
+    #[test]
+    fn production_name_edits_replace_selected_and_ancestor_identity() {
+        use production::Production as P;
+        let source = "package System { part old; part retained; }";
+        let syntax = production::parse_sysml_with_profile(
+            production::SysmlSyntaxProfile::OperationalV3,
+            agq_kernel::DocumentId::new(),
+            agq_kernel::SourceRevisionId::new(),
+            source,
+            production::Limits::default(),
+        )
+        .unwrap();
+        assert!(syntax.is_complete());
+        let selected = syntax
+            .nodes()
+            .find(|node| node.kind() == P::PartUsage && node.text().trim() == "part old;")
+            .unwrap()
+            .id();
+        let retained = syntax
+            .nodes()
+            .find(|node| node.kind() == P::PartUsage && node.text().trim() == "part retained;")
+            .unwrap()
+            .id();
+        let owner = syntax
+            .nodes()
+            .find(|node| node.kind() == P::Package)
+            .unwrap()
+            .id();
+        let start = source.find("old").unwrap() as u64;
+        let edited = syntax
+            .edit(
+                &TextEdit {
+                    range: ByteRange::new(start, start + 3).unwrap(),
+                    replacement: "renamed".into(),
+                },
+                production::Limits::default(),
+            )
+            .unwrap();
+        assert!(edited.is_complete());
+        assert!(
+            edited
+                .nodes()
+                .all(|node| node.id() != selected && node.id() != owner)
+        );
+        assert!(edited.nodes().any(|node| node.id() == retained));
+    }
+
+    #[test]
+    fn nested_insertion_retains_disjoint_children_but_replaces_owner_identity() {
+        use production::Production as P;
+        let source = "package System { part def Platform { part retained; } }";
+        let syntax = production::parse_sysml_with_profile(
+            production::SysmlSyntaxProfile::OperationalV3,
+            agq_kernel::DocumentId::new(),
+            agq_kernel::SourceRevisionId::new(),
+            source,
+            production::Limits::default(),
+        )
+        .unwrap();
+        assert!(syntax.is_complete());
+        let owner = syntax
+            .nodes()
+            .find(|node| node.kind() == P::PartDefinition)
+            .unwrap();
+        let retained = syntax
+            .nodes()
+            .find(|node| node.kind() == P::PartUsage)
+            .unwrap()
+            .id();
+        let (edit, _) = nested_part_edit(&syntax, owner.range(), "child", None).unwrap();
+        let edited = syntax.edit(&edit, production::Limits::default()).unwrap();
+        assert!(edited.is_complete());
+        assert!(edited.nodes().all(|node| node.id() != owner.id()));
+        assert!(edited.nodes().any(|node| node.id() == retained));
     }
 
     #[test]

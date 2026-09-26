@@ -1,0 +1,14 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "test:e2e"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T16:04:14.412653+00:00",
+  "elapsed_seconds": 126.281,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/npm-e2e-retry.txt",
+  "output_sha256": "91fee430c23d0a11fbcaecaf47a35d91ff43bda8c54bcc82a227f4df3f995374",
+  "build_environment": {}
+}

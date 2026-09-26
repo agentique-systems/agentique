@@ -1,0 +1,164 @@
+{
+  "format": "agentique-interrupted-proposal-storage-review/1",
+  "scope": "Read-only consistent SQLite snapshot. Storage identity only; not semantic authentication, rollback, or a resumed-journey result.",
+  "database": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\native-studio-alpha\\real-run01\\agentique.sqlite",
+  "failed_report": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\native-studio-alpha\\real-run03\\journey.json",
+  "failed_report_sha256": "6d98590d05c9f1bab1b7579658ecbeb181df65d94cad261ab2ca0c854514e53e",
+  "repository_metadata": [
+    [
+      "7fba99e1-ff5d-40ac-b5e5-c8646155d001",
+      "agentique-modeling-sqlite/1"
+    ]
+  ],
+  "inventory": {
+    "projects": [
+      {
+        "keys": [
+          "\"c20c4a5c-ea43-45ea-89d2-db2742e2c20a\""
+        ],
+        "sha256": "84104009cdb02f31545cd4025a416194a509772aa24dc9399119e844e999183b",
+        "bytes": 264
+      }
+    ],
+    "branches": [
+      {
+        "keys": [
+          "\"0ee6abd0-f9a2-456f-8d2c-9ff69a2bbcd7\"",
+          "\"c20c4a5c-ea43-45ea-89d2-db2742e2c20a\"",
+          "architecture-baseline",
+          "\"a0ce9ecb-728a-40ce-87b5-88f8cbc84105\""
+        ],
+        "sha256": "1f8a3eddf4a0d4373465fb33049f7148dc49200a8c18dbacd784f2fbe7ee5c11",
+        "bytes": 277
+      },
+      {
+        "keys": [
+          "\"6de4fea6-7924-4465-83b3-0c90782c7019\"",
+          "\"c20c4a5c-ea43-45ea-89d2-db2742e2c20a\"",
+          "main",
+          "\"8dcfb224-55e6-4d0d-ac3a-84fcfffb9a46\""
+        ],
+        "sha256": "ca99725c7fd18531b1d666823557b27b6c25802ac6f1175874b18f703356a357",
+        "bytes": 301
+      }
+    ],
+    "revisions": [
+      {
+        "keys": [
+          "\"753357f6-3a43-464c-bf14-cf90f48156c1\"",
+          "\"c20c4a5c-ea43-45ea-89d2-db2742e2c20a\"",
+          null
+        ],
+        "sha256": "d712f051c70d35d213169cf343719fc2120c3adaa836146e2f69dd5ad56d73c0",
+        "bytes": 577
+      },
+      {
+        "keys": [
+          "\"8dcfb224-55e6-4d0d-ac3a-84fcfffb9a46\"",
+          "\"c20c4a5c-ea43-45ea-89d2-db2742e2c20a\"",
+          "\"a0ce9ecb-728a-40ce-87b5-88f8cbc84105\""
+        ],
+        "sha256": "eabe8487a62faef65349b31791e8f659c9af2749e1f54c01cb2a1534f3fd0830",
+        "bytes": 2871
+      },
+      {
+        "keys": [
+          "\"a0ce9ecb-728a-40ce-87b5-88f8cbc84105\"",
+          "\"c20c4a5c-ea43-45ea-89d2-db2742e2c20a\"",
+          "\"753357f6-3a43-464c-bf14-cf90f48156c1\""
+        ],
+        "sha256": "eaea4a2917b914e279402dee759ae4a3a27b36882bcfa9c200e4a858749ace95",
+        "bytes": 2626
+      }
+    ],
+    "operation_receipts": [
+      {
+        "keys": [
+          "\"7445664c-3325-42cf-b5fc-1a8835d19fbb\"",
+          "a800a944f7f77a9476d18147536e8bfe21b0f154caa62c22dbea2329974e8535",
+          "\"a0ce9ecb-728a-40ce-87b5-88f8cbc84105\""
+        ],
+        "sha256": "c90461be281a69eb13e5ce22f3b876530e8168dd14f0680850b04ad3805d76d7",
+        "bytes": 176
+      },
+      {
+        "keys": [
+          "\"76faf9bc-abe4-4e80-a2bd-888df66cfebd\"",
+          "86f7199a3658f128579e77203c6ba537d62abf6d4e7c425653b57775400e5f4f",
+          "\"753357f6-3a43-464c-bf14-cf90f48156c1\""
+        ],
+        "sha256": "1f0370ce611cc2996a71b87a11f30062a52d9ffdf5c71df7fe4d6dd16fa8e358",
+        "bytes": 176
+      },
+      {
+        "keys": [
+          "\"ae205c2f-90ff-4fa5-ae6d-92d1a40a9c35\"",
+          "a7cf22e6ebb5b6d98b3049629079fd63cabfd2d3cecad2bb6fe126945891e528",
+          "\"8dcfb224-55e6-4d0d-ac3a-84fcfffb9a46\""
+        ],
+        "sha256": "40c80a1a6d7cff6dbee8be5311e14556224915981e0d720294da05e89b972204",
+        "bytes": 176
+      }
+    ]
+  },
+  "head_manifest_equals_failed_report_baseline": true,
+  "head": "8dcfb224-55e6-4d0d-ac3a-84fcfffb9a46",
+  "complete_revision_population_equals_baseline_ancestry": [
+    "8dcfb224-55e6-4d0d-ac3a-84fcfffb9a46",
+    "a0ce9ecb-728a-40ce-87b5-88f8cbc84105",
+    "753357f6-3a43-464c-bf14-cf90f48156c1"
+  ],
+  "all_operation_receipts_bound_only_to_baseline_ancestry": true,
+  "all_blob_content_addresses_verified": {
+    "12c198141d892e606f9cd2b3a419863cc02f994f1b31236af0b112faf5d31b79": {
+      "bytes": 3185,
+      "sha256_verified": true
+    },
+    "17cc930b105b74d7001a70ab9cfddf3a2c65c906a57dcc2e1f341140b3636960": {
+      "bytes": 262,
+      "sha256_verified": true
+    },
+    "3fbdf2caa9a6ee69c8807f513af0d1e822b053d9a86ff947782ff65f88536f39": {
+      "bytes": 816,
+      "sha256_verified": true
+    },
+    "4235d37c880ca5d43bb11b482d9414b4270a78ff6ee7287d3538961bcc94bc2a": {
+      "bytes": 731,
+      "sha256_verified": true
+    },
+    "54a29355fd43073ebb76b206f2f2c650fdd5f604971f14d1b895b1a6c360c250": {
+      "bytes": 13437252,
+      "sha256_verified": true
+    },
+    "6a96f403286e268bff94ab677d054f4a3a5164195e0b03acaf87bc23207256de": {
+      "bytes": 777,
+      "sha256_verified": true
+    },
+    "7f753fe89a4158918481a52134df9df9218167433fe3869d65ae22ccf6d90691": {
+      "bytes": 720,
+      "sha256_verified": true
+    },
+    "a200df28927db426461939d02e480419c15adb79b132730a88ce6b7eae9cac18": {
+      "bytes": 14777116,
+      "sha256_verified": true
+    },
+    "a926fd8e382c280bddc35eda7be5e4f446371895bd138e726047228e482a18a2": {
+      "bytes": 462006,
+      "sha256_verified": true
+    },
+    "e11ff998362b58f5cf42c64b394b7fa9c1821cb25075133c8a80d3f4b8074dcf": {
+      "bytes": 407204,
+      "sha256_verified": true
+    },
+    "fb19fdb031aa524d9957f3a1498818bd66106c718d51274328bd47f381921617": {
+      "bytes": 760,
+      "sha256_verified": true
+    }
+  },
+  "baseline_source_population_matches_current_model_files": true,
+  "candidate_name_absent_from_baseline_source_bytes": true,
+  "sqlite_integrity_check": "ok",
+  "foreign_key_violations": [],
+  "elapsed_seconds": 0.3040722000878304,
+  "exit_code": 0
+}

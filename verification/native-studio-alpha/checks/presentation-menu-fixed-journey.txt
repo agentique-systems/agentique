@@ -1,0 +1,4 @@
+
+thread 'main' (25516) panicked at src\presentation_automation.rs:448:30:
+index out of bounds: the len is 17 but the index is 17
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace

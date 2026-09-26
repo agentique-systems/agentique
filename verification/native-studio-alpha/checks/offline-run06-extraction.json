@@ -1,0 +1,29 @@
+{
+  "scope": "Offline bookkeeping only. No build or accepted-runtime consumer. Held ced761e7 remains unintegrated.",
+  "extractor_command": "python verification/native-studio-alpha/performance/summarize_native_performance.py --journey verification/native-studio-alpha/real-run06/journey.json --process verification/native-studio-alpha/real-run06/process.json --log verification/native-studio-alpha/real-run06/process.log --gallery verification/native-studio-alpha/real-run06/gallery --evidence verification/native-studio-alpha/performance/create-part-shared-mount-and-audit.json --out C:/Users/phili/github/agentique-systems/agentique-alpha-editperf/verification/native-studio-alpha/performance/run06-extracted.json --markdown C:/Users/phili/github/agentique-systems/agentique-alpha-editperf/verification/native-studio-alpha/performance/run06-extracted.md",
+  "extractor_cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "extractor_exit_code": 0,
+  "test_command": "python verification/native-studio-alpha/performance/test_summarize_native_performance.py",
+  "test_exit_code": 0,
+  "test_output": "Ran 8 tests in 0.035s; OK",
+  "verified_gallery_images": 13,
+  "retained_artifact_digests": 31,
+  "actual_assertions_passed": 33,
+  "actual_input_format": "agentique-native-real-acceptance/1",
+  "actual_outcome": "journey_passed_restart_pending",
+  "restart_verified": false,
+  "local_evidence_links_checked": 75,
+  "missing_local_evidence_links": [],
+  "generated_outputs": [
+    {
+      "path": "verification/native-studio-alpha/performance/run06-extracted.json",
+      "sha256": "f37632b18400a94169619de342298a29f6d006e3517f0f655cda8a62329e6faf",
+      "bytes": 431291
+    },
+    {
+      "path": "verification/native-studio-alpha/performance/run06-extracted.md",
+      "sha256": "b888a9246fe5e1c5c31bd28bf7082e3fd683a107850f441edbd1c97055cfa23f",
+      "bytes": 6344
+    }
+  ]
+}

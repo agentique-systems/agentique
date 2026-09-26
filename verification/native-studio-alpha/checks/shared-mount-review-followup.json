@@ -1,0 +1,16 @@
+{
+    "commands":  [
+                     "cargo fmt --all -- --check",
+                     "git diff --check"
+                 ],
+    "cwd":  "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-editperf",
+    "started_utc":  "2026-09-25T19:07:34.3246381+00:00",
+    "elapsed_seconds":  4.138692,
+    "exit_codes":  [
+                       0,
+                       0
+                   ],
+    "builds_run":  false,
+    "standards_consumers_run":  false,
+    "output":  "verification/native-studio-alpha/checks/shared-mount-review-followup.txt"
+}

@@ -1,0 +1,24 @@
+{
+  "command": [
+    "cargo",
+    "run",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-metamodel-gen",
+    "--",
+    "--check"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T21:10:54.985299+00:00",
+  "elapsed_seconds": 26.64,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/alpha-final-metamodel-generated-check.txt",
+  "output_sha256": "226f9fd30e3bb1ef8b494f2ad70b79ee09bad5e92bed4e3707a54ac6deb0f0e9",
+  "build_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "1"
+  }
+}

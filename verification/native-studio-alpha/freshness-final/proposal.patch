@@ -1,0 +1,17 @@
+--- a/standards/sysml-publication-inputs.json
++++ b/standards/sysml-publication-inputs.json
+@@ -454,11 +454,11 @@
+     "crates/kerml-text/src/library/vocabulary.rs": "3b953aa75a931d0fbccd5be48a16cb069fbf9b919b41bf9c7ab9a97be3af380d",
+     "crates/kerml-text/src/lowering.rs": "166b795e49a8d0c59be01d4f6c3ddedb4707f947022be48f8f424582557c124a",
+     "crates/kerml-text/src/project.rs": "8dcdeffee8667ab34684a91219da29afbf9279ff138709a24166bfaa757edfb5",
+-    "crates/kerml-text/src/source_checkpoint.rs": "eb86d74ead07e68664081b131c3dbd152877fdb12c1374d3ba2175764a57aa0e",
+-    "crates/kerml-text/src/source_inputs.rs": "b5b9aebdfbb0f5ecafb730fbd68beee8b7200a0eb86d0eebc601b6c3259c1e87",
++    "crates/kerml-text/src/source_checkpoint.rs": "8465c80bf7707c540399265d0447f5b0d44dba7730ff4ec3818a6f5e62010368",
++    "crates/kerml-text/src/source_inputs.rs": "f15171c15dd27c2e61c05c3dfffc426b1714b14cc09e7c8716bbb046d1f30128",
+     "crates/kerml-text/src/source_semantic_cache.rs": "447841ee5d0db7a73dee0f25984f36b789800da7fcb0c70e00eb67f6f6259ea2",
+     "crates/kerml-text/src/sysml.rs": "45cab8a05cde1859a2a9aaf88c6d3e3d4287f838d5b700078a9e261153638044",
+-    "crates/kerml-text/src/sysml/publication.rs": "c3c8c13d7a7a8c0ecbee5042e13b919ab15035b8e32340c0e536d096b481d8ac",
++    "crates/kerml-text/src/sysml/publication.rs": "682f079a4e2c6c412b897d159f93f3b495f7fd8d69a675aec11f8ae6df9fbef7",
+     "crates/kerml-text/src/sysml/publication_cache.rs": "fd710d2bd09814deff6ccaa08a39ae98cec5e7fa98c586814ee4f9c245d4f809",
+     "crates/kerml-text/src/sysml/publication_finalization.rs": "cacbb212c63e3acdab961d0f000359e0a51d2da6872a7675d251e271e94212c5",
+     "crates/kerml-text/src/sysml/publication_restore.rs": "0e7f27168ef50d236681fe07397ee0a7d5f49b0cb6f953f362b9e428a38684fe",

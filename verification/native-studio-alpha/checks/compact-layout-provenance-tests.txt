@@ -1,0 +1,32 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling agq-modeling-view v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-view)
+   Compiling agq-studio-scene v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-scene)
+    Finished `release` profile [optimized] target(s) in 37.68s
+     Running unittests src\lib.rs (target\release\deps\agq_modeling_view-2b6e68a42d01dda1.exe)
+
+running 12 tests
+test projection::tests::architecture_expansion_preserves_usage_and_type_as_distinct_nodes ... ok
+test projection::tests::neighborhood_is_bounded_stable_and_handles_cycles ... ok
+test projection::tests::definitions_are_selection_metadata_and_preserve_hidden_identity ... ok
+test explain::tests::explanation_retains_rule_revision_and_explicitly_marks_display_links ... ok
+test projection::tests::ownership_projection_reads_canonical_memberships_and_keeps_revision_identity ... ok
+test projection::tests::canonical_sysml_ownership_typing_and_feature_counts_resolve_effective_properties ... ok
+test projection::tests::requirement_subject_reaches_architecture_through_two_canonical_relationships_only ... ok
+test projection::tests::verification_membership_is_a_modeled_link_and_case_subject_is_not_a_requirement ... ok
+test inspector::tests::feature_metadata_uses_exact_standard_identity_and_canonical_declared_names ... ok
+test inspector::tests::unresolved_connector_keeps_actual_incomplete_query_even_without_an_incident_edge ... ok
+test projection::tests::focused_inherited_port_keeps_owner_membership_and_original_identity ... ok
+test inspector::tests::inspector_and_scene_share_canonical_connection_and_query_completeness ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running unittests src\lib.rs (target\release\deps\agq_studio_scene-7a88f16771e096ac.exe)
+
+running 2 tests
+test layout::root_packing_tests::a_large_subsystem_does_not_inflate_every_context_card_cell ... ok
+test fixtures::tests::comparison_fixture_updates_owned_group_summaries ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

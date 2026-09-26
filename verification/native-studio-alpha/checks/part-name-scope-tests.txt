@@ -1,0 +1,36 @@
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\kerml-semantics)
+   Compiling agq-sysml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\sysml-semantics)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\kerml-text)
+   Compiling agq-modeling-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\modeling-workspace)
+   Compiling agq-modeling-repository v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\modeling-repository)
+   Compiling agq-modeling-sqlite v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\adapters\modeling-sqlite)
+   Compiling agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\modeling-service)
+   Compiling agq-modeling-view v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\modeling-view)
+   Compiling agq-modeling-agent v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\modeling-agent)
+    Finished `test` profile [unoptimized] target(s) in 23.90s
+     Running unittests src\lib.rs (C:/Users/phili/github/agentique-systems/agentique/target\debug\deps\agq_modeling_agent-e364bc98b4701ec2.exe)
+
+running 10 tests
+test decision::tests::bounded_routing_retains_revision_and_rejects_unoffered_answers ... ok
+test tests::machine_proposal_cannot_grant_commit_or_validation ... ok
+test commands::tests::production_name_edits_replace_selected_and_ancestor_identity ... ok
+test commands::tests::semicolon_owner_becomes_body ... ok
+test commands::tests::nested_insertion_retains_disjoint_children_but_replaces_owner_identity ... ok
+test commands::tests::command_uses_selected_declaration_range_inside_a_package ... ok
+test commands::tests::nested_source_command_ignores_comment_braces_and_preserves_bytes ... ok
+test commands::tests::nested_name_and_type_tokens_are_not_source_level_sibling_conflicts ... ok
+test commands::tests::selected_definition_check_rejects_a_valid_but_different_canonical_target ... ok
+
+thread 'commands::tests::direct_owner_semantic_names_reject_siblings_but_allow_nested_reuse' (21216) panicked at crates\modeling-agent\src\commands.rs:527:9:
+assertion failed: ensure_distinct_direct_member(&queries, owner, "observer").is_ok()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test commands::tests::direct_owner_semantic_names_reject_siblings_but_allow_nested_reuse ... FAILED
+
+failures:
+
+failures:
+    commands::tests::direct_owner_semantic_names_reject_siblings_but_allow_nested_reuse
+
+test result: FAILED. 9 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+
+error: test failed, to rerun pass `-p agq-modeling-agent --lib`

@@ -1,0 +1,24 @@
+{
+  "command": [
+    "C:\\Users\\phili\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\tools\\runtime-recovery\\compare_systems_contract.py",
+    "--generated-receipt",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\generated\\native-studio-alpha\\rematerialized-systems\\finalized\\accepted-publication.json",
+    "--generated-bindings",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\generated\\native-studio-alpha\\rematerialized-systems\\finalized\\standard-bindings.json",
+    "--output",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\generated\\native-studio-alpha\\systems-existing-contract-comparison.json"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime",
+  "started_utc": "2026-09-25T18:03:42.906001+00:00",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "source_commit": "f4fb8283436bf073d964a46d8738c110fc69e028",
+  "working_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "exit_code": 0,
+  "elapsed_seconds": 1.094,
+  "peak_rss_bytes": 1667072,
+  "peak_private_bytes": 409600,
+  "memory_scope": "direct child process sampled at 1 second; excludes descendant compilers",
+  "output_sha256": "64b71b26eeb31f3cd2a9fcc759707c91c5cd29794741b1f70ef1abe67efc6586",
+  "raw_output": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\native-studio-alpha\\runtime\\systems-existing-contract-comparison.log"
+}

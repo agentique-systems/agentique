@@ -1,0 +1,24 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "--offline",
+    "--manifest-path",
+    "crates/studio-native/Cargo.toml",
+    "--target-dir",
+    "target/native-alpha"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T21:08:26.482404+00:00",
+  "elapsed_seconds": 10.171,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/native-owner-view-integrated-tests.txt",
+  "output_sha256": "a0b178abf6e2ed0897edd44faffae2a5dadcf431264a6aca47792975a16bd348",
+  "build_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "1"
+  }
+}

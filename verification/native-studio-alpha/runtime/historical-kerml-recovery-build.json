@@ -1,0 +1,28 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--release",
+    "--config",
+    "profile.release.lto=false",
+    "--locked",
+    "--offline",
+    "-j",
+    "2",
+    "-p",
+    "agq-kerml-text",
+    "--example",
+    "kerml_rematerialize"
+  ],
+  "cwd": "C:/Users/phili/github/agentique-systems/agentique-alpha-rematerialize-kerml",
+  "started_utc": "2026-09-25T15:41:08.355966+00:00",
+  "python": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "source_commit": "a1a7b847ef83f8e4c54bea9242cac94a9ce665fe",
+  "working_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "exit_code": 0,
+  "elapsed_seconds": 317.125,
+  "peak_rss_bytes": 11440128,
+  "peak_private_bytes": 6422528,
+  "output_sha256": "e29779d5bce2ac8fe28c40ee811f628d49509d33de5bc6db9994b0cb16d24f38",
+  "raw_output": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\native-studio-alpha\\runtime\\historical-kerml-recovery-build.log"
+}

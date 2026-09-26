@@ -1,0 +1,147 @@
+{
+  "camera_checks": {
+    "final_zoom": 0.03615739941596985,
+    "initial_zoom": 0.03615741431713104,
+    "maximum_pan_displacement_world": 5072.607421875,
+    "maximum_zoom": 0.11193101853132248,
+    "maximum_zoom_anchor_error_world": 0.002013235120102763,
+    "minimum_visible_nodes": 1520,
+    "zoom_anchor_error_world": 0.002013235120102763
+  },
+  "failure": null,
+  "format": "agentique-native-stress-v1",
+  "native_metrics": {
+    "adapter": "AdapterInfo { name: \"NVIDIA GeForce RTX 3060 Ti\", vendor: 4318, device: 9353, device_type: DiscreteGpu, driver: \"NVIDIA\", driver_info: \"616.92\", backend: Vulkan }",
+    "fixture": "stress10000",
+    "frame_count": 487,
+    "frame_interval_median_ms": 22.73505,
+    "frame_interval_p95_ms": 36.191300000000005,
+    "frame_intervals_ms": {
+      "last": 24.023,
+      "median": 22.73505,
+      "p95": 36.191300000000005,
+      "total_samples": 426,
+      "window_samples": 240
+    },
+    "gpu_instances": 90984,
+    "gpu_timestamp_ms": null,
+    "gpu_upload_count": 180,
+    "gpu_upload_cpu_ms": 4.872999999999999,
+    "gpu_uploaded_bytes": 7278720,
+    "handled_input_to_next_ui_update_ms": {
+      "pan": {
+        "last": 28.2136,
+        "median": 24.180400000000002,
+        "p95": 36.741099999999996,
+        "total_samples": 117,
+        "window_samples": 117
+      },
+      "selection": {
+        "last": null,
+        "median": null,
+        "p95": null,
+        "total_samples": 0,
+        "window_samples": 0
+      },
+      "zoom": {
+        "last": 24.645899999999997,
+        "median": 19.1436,
+        "p95": 34.1723,
+        "total_samples": 125,
+        "window_samples": 125
+      }
+    },
+    "hit_test_us": {
+      "last": 44.5,
+      "median": 6.95,
+      "p95": 16.4,
+      "total_samples": 270,
+      "window_samples": 240
+    },
+    "input_pipeline": {
+      "boundary": "eframe raw input hook -> UI shape construction complete -> following update; excludes OS delivery and GPU presentation",
+      "changed_batch_cpu_ms": {
+        "last": 8.435500000000001,
+        "median": 2.23315,
+        "p95": 7.2927,
+        "total_samples": 180,
+        "window_samples": 180
+      },
+      "frame_submission_ms": null,
+      "labels_accessibility_cpu_ms": {
+        "last": 0.7501,
+        "median": 0.45335000000000003,
+        "p95": 0.6552,
+        "total_samples": 487,
+        "window_samples": 240
+      },
+      "presentation_ms": null,
+      "raw_input_to_next_update_ms": {
+        "last": 28.6322,
+        "median": 22.6818,
+        "p95": 36.223,
+        "total_samples": 240,
+        "window_samples": 240
+      },
+      "raw_input_to_ui_complete_ms": {
+        "last": 27.0664,
+        "median": 21.02175,
+        "p95": 30.0611,
+        "total_samples": 240,
+        "window_samples": 240
+      },
+      "ui_cpu_ms": {
+        "last": 29.826700000000002,
+        "median": 21.1954,
+        "p95": 30.0904,
+        "total_samples": 487,
+        "window_samples": 240
+      },
+      "visibility_lookup_cpu_ms": {
+        "last": 24.818099999999998,
+        "median": 16.966499999999996,
+        "p95": 23.3612,
+        "total_samples": 487,
+        "window_samples": 240
+      }
+    },
+    "layout_included_in_scene_build": true,
+    "note": "Native wgpu frames with vsync. CPU update intervals retain the latest 240 samples after 60 warmup intervals. Input spans start inside the viewport gesture handler and end at the next UI update; they exclude OS input delivery and do not measure presentation. GPU upload is CPU submission time for the last upload. Null means unmeasured.",
+    "physical_input_to_photon_ms": null,
+    "scene_background_pending": false,
+    "scene_build_ms": 261.5861,
+    "scene_draw_calls": 2,
+    "scene_index_lookup_outliner_ms": 30.5456,
+    "scene_layout_routing_diff_ms": 231.0401,
+    "total_edges": 20000,
+    "total_nodes": 10000,
+    "visible_nodes": 10000,
+    "warmup_frame_intervals_discarded": 60
+  },
+  "passed": true,
+  "phase_frame_intervals_ms": {
+    "pan": {
+      "last": 23.2345,
+      "median": 24.53515,
+      "p95": 36.4019,
+      "total_samples": 120,
+      "window_samples": 120
+    },
+    "steady": {
+      "last": 20.638,
+      "median": 22.97635,
+      "p95": 28.074,
+      "total_samples": 120,
+      "window_samples": 120
+    },
+    "zoom": {
+      "last": 28.5866,
+      "median": 19.08605,
+      "p95": 34.5892,
+      "total_samples": 120,
+      "window_samples": 120
+    }
+  },
+  "scope": "Deterministic synthetic pointer/wheel events enter the native RawInput path; camera behavior is asserted from resulting state. 60 warmup + 120 steady + 120 pan + 120 zoom intervals, then 30 settling frames. Vsync remains enabled. Neither GPU duration nor physical input-to-photon latency is measured.",
+  "warmup_frames": 60
+}

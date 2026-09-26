@@ -1,0 +1,10 @@
+﻿test_combined_requires_exact_reviewed_source_not_any_current_hash (test_native_alpha_freshness_plan.FreshnessPlanTests.test_combined_requires_exact_reviewed_source_not_any_current_hash) ... ok
+test_mount_phase_cannot_silently_accept_audit_changes (test_native_alpha_freshness_plan.FreshnessPlanTests.test_mount_phase_cannot_silently_accept_audit_changes) ... ok
+test_mount_then_audit_changes_only_remaining_two_entries (test_native_alpha_freshness_plan.FreshnessPlanTests.test_mount_then_audit_changes_only_remaining_two_entries) ... ok
+test_unlisted_input_changes_and_authority_changes_are_refused (test_native_alpha_freshness_plan.FreshnessPlanTests.test_unlisted_input_changes_and_authority_changes_are_refused) ... ok
+test_unreviewed_existing_fingerprint_is_refused (test_native_alpha_freshness_plan.FreshnessPlanTests.test_unreviewed_existing_fingerprint_is_refused) ... ok
+System.Management.Automation.RemoteException
+----------------------------------------------------------------------
+Ran 5 tests in 0.001s
+System.Management.Automation.RemoteException
+OK

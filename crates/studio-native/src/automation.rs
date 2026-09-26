@@ -21,6 +21,7 @@ pub enum Target {
     PaletteInput,
     CandidateName,
     CandidatePrepare,
+    ExplainWindow,
     HistoryRevision(ProjectRevisionId),
 }
 pub fn record(ctx: &egui::Context, target: Target, rect: Rect) {
@@ -91,7 +92,9 @@ enum Action {
     Pan,
     Wheel,
     Palette(&'static str),
+    PaletteKeys(&'static str, usize),
     PrepareNamedPart(&'static str),
+    PreparePartKeys(&'static str),
     ClickTarget(Target),
 }
 impl Action {
@@ -117,7 +120,9 @@ impl Action {
             | Self::ClickTarget(..) => 2,
             Self::DoubleClickContainer(..) | Self::Pan => 4,
             Self::Palette(..) => 12,
+            Self::PaletteKeys(..) => 9,
             Self::PrepareNamedPart(..) => 6,
+            Self::PreparePartKeys(..) => 6,
         }
     }
 }
@@ -136,9 +141,12 @@ enum Check {
     ExplainOpen,
     ExplainClosed,
     Dependencies,
+    AgentReturned,
     Diff,
     CreateDialog,
     Candidate,
+    ReviewMode(ComparisonMode),
+    Pinned(bool),
     NamedSelected(&'static str),
     Disabled(CommandId),
     PaletteClosed,
@@ -222,9 +230,34 @@ fn vertical() -> Vec<Step> {
             settle: 15,
         },
         step(
+            "select repository before graph reasoning",
+            Action::ClickNode(21, false),
+            Check::Selected(21),
+        ),
+        step(
             "2 opens Graph World",
             Action::Key(Key::Num2, Modifiers::NONE),
             Check::World(World::Graph),
+        ),
+        step(
+            "expand from readable neighborhood to graph overview",
+            Action::Palette("Show loaded graph overview"),
+            Check::World(World::Graph),
+        ),
+        step(
+            "pin graph position",
+            Action::PaletteKeys("Pin position", 0),
+            Check::Pinned(true),
+        ),
+        step(
+            "pin survives projection rebuild",
+            Action::PaletteKeys("Show loaded graph overview", 0),
+            Check::Pinned(true),
+        ),
+        step(
+            "unpin graph position",
+            Action::PaletteKeys("Unpin position", 0),
+            Check::Pinned(false),
         ),
         step(
             "select derived relationship geometry",
@@ -242,6 +275,16 @@ fn vertical() -> Vec<Step> {
             Check::ExplainClosed,
         ),
         step(
+            "3 opens Requirements World",
+            Action::Key(Key::Num3, Modifiers::NONE),
+            Check::World(World::Requirements),
+        ),
+        step(
+            "return to Graph World after requirements",
+            Action::Key(Key::Num2, Modifiers::NONE),
+            Check::World(World::Graph),
+        ),
+        step(
             "select repository in Graph World",
             Action::ClickNode(21, false),
             Check::Selected(21),
@@ -250,6 +293,11 @@ fn vertical() -> Vec<Step> {
             "command palette shows dependencies",
             Action::Palette("Show dependencies"),
             Check::Dependencies,
+        ),
+        step(
+            "dismiss dependency view restores operator context",
+            Action::PaletteKeys("Return from agent view", 0),
+            Check::AgentReturned,
         ),
         step(
             "command palette compares revisions",
@@ -262,13 +310,18 @@ fn vertical() -> Vec<Step> {
             Check::World(World::System),
         ),
         step(
+            "keyboard palette arrows choose System World",
+            Action::PaletteKeys("World", 1),
+            Check::World(World::System),
+        ),
+        step(
             "select candidate parent",
             Action::ClickNode(2, false),
             Check::Selected(2),
         ),
         step(
             "palette opens nested-part dialog",
-            Action::Palette("Create nested PartUsage"),
+            Action::Palette("Create nested part"),
             Check::CreateDialog,
         ),
         step(
@@ -277,9 +330,29 @@ fn vertical() -> Vec<Step> {
             Check::Candidate,
         ),
         step(
+            "explicit focus changes frames candidate",
+            Action::PaletteKeys("Focus changes", 0),
+            Check::PaletteClosed,
+        ),
+        step(
             "candidate element is selectable",
             Action::ClickNamedNode("ScenarioNestedPart"),
             Check::NamedSelected("ScenarioNestedPart"),
+        ),
+        step(
+            "Current retains candidate review memory and camera",
+            Action::PaletteKeys("Review: Current revision", 0),
+            Check::ReviewMode(ComparisonMode::Current),
+        ),
+        step(
+            "Candidate restores its element selection and camera",
+            Action::PaletteKeys("Review: Candidate revision", 0),
+            Check::ReviewMode(ComparisonMode::Candidate),
+        ),
+        step(
+            "Diff preserves candidate element and camera",
+            Action::PaletteKeys("Review: Candidate difference", 0),
+            Check::ReviewMode(ComparisonMode::Diff),
         ),
         step(
             "fixture validation stays disabled",
@@ -343,10 +416,137 @@ fn vertical() -> Vec<Step> {
         ),
         step(
             "final engineering selection",
-            Action::ClickNode(21, false),
+            Action::PaletteKeys("Focus: ModelRepository", 0),
             Check::Selected(21),
         ),
     ]
+}
+
+/// A complete visual review path with no injected pointer events or source edits.
+fn keyboard_journey() -> Vec<Step> {
+    let step = |name, action, check| Step {
+        name,
+        action,
+        check,
+        settle: 5,
+    };
+    vec![
+        Step {
+            name: "native fixture and GPU ready",
+            action: Action::Idle,
+            check: Check::Ready,
+            settle: 12,
+        },
+        step(
+            "keyboard reduced motion",
+            Action::PaletteKeys("Toggle reduced motion", 0),
+            Check::ReducedMotion,
+        ),
+        step(
+            "keyboard enters subsystem",
+            Action::PaletteKeys("Focus: ModelingPlatform", 0),
+            Check::Focused(2),
+        ),
+        step(
+            "keyboard inspects repository",
+            Action::PaletteKeys("Focus: ModelRepository", 0),
+            Check::Selected(21),
+        ),
+        step(
+            "keyboard returns to owner",
+            Action::Key(Key::Backspace, Modifiers::NONE),
+            Check::RootFocus,
+        ),
+        step(
+            "keyboard opens Graph",
+            Action::Key(Key::Num2, Modifiers::NONE),
+            Check::World(World::Graph),
+        ),
+        step(
+            "keyboard asks for dependencies",
+            Action::Key(Key::D, Modifiers::NONE),
+            Check::Dependencies,
+        ),
+        step(
+            "keyboard opens Explain",
+            Action::Key(Key::E, Modifiers::NONE),
+            Check::ExplainOpen,
+        ),
+        step(
+            "keyboard dismisses Explain",
+            Action::Key(Key::Escape, Modifiers::NONE),
+            Check::ExplainClosed,
+        ),
+        step(
+            "keyboard requirements",
+            Action::Key(Key::Num3, Modifiers::NONE),
+            Check::World(World::Requirements),
+        ),
+        step(
+            "keyboard architecture",
+            Action::Key(Key::Num1, Modifiers::NONE),
+            Check::World(World::System),
+        ),
+        step(
+            "keyboard selects candidate owner",
+            Action::PaletteKeys("Focus: ModelingPlatform", 0),
+            Check::Focused(2),
+        ),
+        step(
+            "keyboard opens create dialog",
+            Action::PaletteKeys("Create nested part", 0),
+            Check::CreateDialog,
+        ),
+        step(
+            "keyboard creates preview without source",
+            Action::PreparePartKeys("ScenarioNestedPart"),
+            Check::Candidate,
+        ),
+        step(
+            "keyboard inspects added component",
+            Action::PaletteKeys("Focus: ScenarioNestedPart", 0),
+            Check::NamedSelected("ScenarioNestedPart"),
+        ),
+        step(
+            "keyboard current revision",
+            Action::PaletteKeys("Review: Current revision", 0),
+            Check::ReviewMode(ComparisonMode::Current),
+        ),
+        step(
+            "keyboard candidate revision",
+            Action::PaletteKeys("Review: Candidate revision", 0),
+            Check::ReviewMode(ComparisonMode::Candidate),
+        ),
+        step(
+            "keyboard candidate difference",
+            Action::PaletteKeys("Review: Candidate difference", 0),
+            Check::ReviewMode(ComparisonMode::Diff),
+        ),
+        step(
+            "keyboard cancels preview",
+            Action::PaletteKeys("Cancel candidate", 0),
+            Check::Cancelled,
+        ),
+        step(
+            "keyboard immutable history",
+            Action::Key(Key::Num4, Modifiers::NONE),
+            Check::World(World::History),
+        ),
+        step(
+            "keyboard returns to architecture",
+            Action::Key(Key::Num1, Modifiers::NONE),
+            Check::World(World::System),
+        ),
+    ]
+}
+
+#[derive(Clone, Debug, Serialize)]
+struct ReturnSnapshot {
+    world: String,
+    focus: Option<String>,
+    center: [f32; 2],
+    zoom: f32,
+    selection: Vec<String>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -363,10 +563,12 @@ struct Snapshot {
     edges: usize,
     dependency_elements: Option<Vec<String>>,
     agent_overlay: bool,
+    agent_return: Option<ReturnSnapshot>,
     added_elements: Vec<String>,
     removed_elements: Vec<String>,
     candidate: bool,
     candidate_phase: Option<String>,
+    comparison: String,
     palette: bool,
     palette_query: String,
     create_dialog: bool,
@@ -399,6 +601,18 @@ impl Snapshot {
                 .as_ref()
                 .map(|ids| ids.iter().map(ToString::to_string).collect()),
             agent_overlay: app.show_agent,
+            agent_return: app.agent_return.as_ref().map(|previous| ReturnSnapshot {
+                world: format!("{:?}", previous.world),
+                focus: previous.focus.map(|id| id.to_string()),
+                center: [previous.camera.center.x, previous.camera.center.y],
+                zoom: previous.camera.zoom,
+                selection: previous
+                    .selection
+                    .targets
+                    .iter()
+                    .map(|target| format!("{target:?}"))
+                    .collect(),
+            }),
             added_elements: app
                 .scene
                 .nodes
@@ -414,6 +628,7 @@ impl Snapshot {
                 .map(|n| n.semantic.name.clone())
                 .collect(),
             candidate: app.candidate.is_some(),
+            comparison: format!("{:?}", app.comparison),
             candidate_phase: app
                 .candidate
                 .as_ref()
@@ -455,6 +670,7 @@ struct Report {
     adapter: String,
     assertions: Vec<AssertionEvidence>,
     failure: Option<String>,
+    gallery: Vec<String>,
 }
 #[derive(Clone, Debug)]
 struct Runner {
@@ -469,6 +685,7 @@ struct Runner {
     events: Vec<InputEvidence>,
     report_dirty: bool,
     time_origin: Option<f64>,
+    pending_capture: Option<(&'static str, Snapshot, u64)>,
 }
 impl Runner {
     fn new(scenario: &str) -> Self {
@@ -482,8 +699,13 @@ impl Runner {
                 adapter: String::new(),
                 assertions: vec![],
                 failure: None,
+                gallery: vec![],
             },
-            steps: vertical(),
+            steps: if scenario == "keyboard" {
+                keyboard_journey()
+            } else {
+                vertical()
+            },
             index: 0,
             age: 0,
             total_frames: 0,
@@ -493,6 +715,7 @@ impl Runner {
             events: vec![],
             report_dirty: true,
             time_origin: None,
+            pending_capture: None,
         }
     }
     fn advance(
@@ -501,25 +724,23 @@ impl Runner {
         ctx: &egui::Context,
         input: &mut egui::RawInput,
     ) -> Result<ScenarioStatus, String> {
-        if self.report.scenario != "vertical" {
+        if !matches!(self.report.scenario.as_str(), "vertical" | "keyboard") {
             return Err(format!("Unknown native scenario {}", self.report.scenario));
         }
-        if app.fixture.as_deref() != Some("architecture")
+        if !matches!(app.fixture.as_deref(), Some("architecture" | "typography"))
             || app.binding.is_some()
             || app.branch.is_some()
         {
-            return Err("Native input scenario requires --fixture architecture and refuses every live service binding".into());
+            return Err("Native input scenario requires --fixture architecture or typography and refuses every live service binding".into());
         }
         self.report.adapter.clone_from(&app.adapter);
-        if self.index == self.steps.len() {
-            return Ok(ScenarioStatus::Complete);
-        }
+        // Keep one monotonic clock during capture delivery as well as input
+        // steps. Mixing synthetic event time with wall time made transient
+        // windows fade out while a screenshot was being delivered.
         self.total_frames += 1;
-        if self.total_frames > 2400 {
-            return Err("Native scenario exceeded its 2400-frame global deadline".into());
+        if self.total_frames > 3000 {
+            return Err("Native scenario exceeded its 3000-frame global deadline".into());
         }
-        // Ignore human keyboard/pointer interference while this explicit scenario
-        // owns input. Keep screenshot delivery and window lifecycle events.
         input
             .events
             .retain(|e| matches!(e, Event::Screenshot { .. } | Event::WindowFocused(_)));
@@ -528,6 +749,52 @@ impl Runner {
         let origin = *self.time_origin.get_or_insert(input.time.unwrap_or(0.0));
         input.time = Some(origin + self.total_frames as f64 / 60.0);
         input.predicted_dt = 1.0 / 60.0;
+        if let Some((name, snapshot, waiting)) = &mut self.pending_capture {
+            *waiting += 1;
+            if let Some(image) = input.events.iter().find_map(|event| match event {
+                Event::Screenshot { image, .. } => Some(image.clone()),
+                _ => None,
+            }) {
+                let directory = app.args.gallery.as_ref().expect("requested gallery");
+                std::fs::create_dir_all(directory).map_err(|error| error.to_string())?;
+                let path = directory.join(format!("{name}.png"));
+                let bytes: Vec<u8> = image.pixels.iter().flat_map(|p| p.to_array()).collect();
+                image::save_buffer(
+                    &path,
+                    &bytes,
+                    image.size[0] as u32,
+                    image.size[1] as u32,
+                    image::ColorType::Rgba8,
+                )
+                .map_err(|error| format!("Cannot save gallery screenshot: {error}"))?;
+                let evidence = serde_json::json!({
+                    "format": "agentique-native-gallery/1",
+                    "semantic_data": format!("explicit {} visual fixture, not real-model acceptance", app.fixture.as_deref().unwrap_or("unavailable")),
+                    "fixture": app.fixture,
+                    "checkpoint": name,
+                    "state": snapshot,
+                    "image_size": image.size,
+                    "image_sha256": agq_modeling_repository::ContentDigest::of(
+                        &std::fs::read(&path).map_err(|e| e.to_string())?
+                    ),
+                    "adapter": app.adapter,
+                });
+                std::fs::write(
+                    path.with_extension("json"),
+                    serde_json::to_vec_pretty(&evidence).map_err(|e| e.to_string())?,
+                )
+                .map_err(|e| e.to_string())?;
+                self.report.gallery.push(path.display().to_string());
+                self.report_dirty = true;
+                self.pending_capture = None;
+            } else if *waiting > 120 {
+                return Err(format!("Native gallery capture {name} did not arrive"));
+            }
+            return Ok(ScenarioStatus::Running);
+        }
+        if self.index == self.steps.len() {
+            return Ok(ScenarioStatus::Complete);
+        }
         let step = self.steps[self.index].clone();
         if self.age == 0 {
             self.before = Some(Snapshot::of(app));
@@ -559,6 +826,15 @@ impl Runner {
                 }
                 self.index += 1;
                 self.age = 0;
+                if app.args.gallery.is_some()
+                    && let Some(name) = gallery_checkpoint(step.name)
+                {
+                    self.pending_capture = Some((name, Snapshot::of(app), 0));
+                    ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(
+                        egui::UserData::default(),
+                    ));
+                    return Ok(ScenarioStatus::Running);
+                }
                 return Ok(if self.index == self.steps.len() {
                     ScenarioStatus::Complete
                 } else {
@@ -598,7 +874,21 @@ impl Runner {
     }
 }
 
-fn key(input: &mut egui::RawInput, key: Key, mut modifiers: Modifiers) {
+fn gallery_checkpoint(step: &str) -> Option<&'static str> {
+    match step {
+        "native fixture and GPU ready" => Some("01-system-world"),
+        "double-click focuses ModelingPlatform" => Some("02-focused-subsystem"),
+        "2 opens Graph World" => Some("03-graph-world"),
+        "3 opens Requirements World" => Some("04-requirements-world"),
+        "E opens semantic Explain" => Some("05-explain"),
+        "1 opens System World comparison" => Some("06-history-diff"),
+        "command palette shows dependencies" => Some("07-agent-view"),
+        "candidate element is selectable" => Some("08-candidate"),
+        _ => None,
+    }
+}
+
+pub(crate) fn key(input: &mut egui::RawInput, key: Key, mut modifiers: Modifiers) {
     // Match the actual native platform modifier as well as egui's logical
     // command bit; text widgets may inspect Ctrl/mac_cmd directly.
     if modifiers.command {
@@ -616,7 +906,12 @@ fn key(input: &mut egui::RawInput, key: Key, mut modifiers: Modifiers) {
         });
     }
 }
-fn click(input: &mut egui::RawInput, position: Pos2, pressed: bool, modifiers: Modifiers) {
+pub(crate) fn click(
+    input: &mut egui::RawInput,
+    position: Pos2,
+    pressed: bool,
+    modifiers: Modifiers,
+) {
     input.modifiers = modifiers;
     input.events.push(Event::PointerMoved(position));
     input.events.push(Event::PointerButton {
@@ -808,6 +1103,18 @@ fn inject(
             }
             _ => {}
         },
+        Action::PaletteKeys(query, down) => match frame {
+            0 => key(input, Key::K, Modifiers::COMMAND),
+            2 => key(input, Key::A, Modifiers::COMMAND),
+            3 => input.events.push(Event::Text((*query).into())),
+            5 => {
+                for _ in 0..*down {
+                    key(input, Key::ArrowDown, Modifiers::NONE);
+                }
+            }
+            7 => key(input, Key::Enter, Modifiers::NONE),
+            _ => {}
+        },
         Action::PrepareNamedPart(name) => match frame {
             0 | 1 => click(
                 input,
@@ -823,6 +1130,12 @@ fn inject(
                 frame == 4,
                 Modifiers::NONE,
             ),
+        },
+        Action::PreparePartKeys(name) => match frame {
+            0 => key(input, Key::A, Modifiers::COMMAND),
+            1 => input.events.push(Event::Text((*name).into())),
+            3 => key(input, Key::Enter, Modifiers::NONE),
+            _ => {}
         },
     }
     Ok(())
@@ -887,7 +1200,14 @@ fn check(
                 .is_some_and(|e| e.semantic.origin == ViewOrigin::Derived),
             _ => false,
         }),
-        Check::ExplainOpen => app.show_explain,
+        Check::ExplainOpen => {
+            app.show_explain
+                && target(ctx, Target::ExplainWindow).is_ok_and(|rect| {
+                    rect.intersects(ctx.viewport_rect())
+                        && rect.width() > 300.0
+                        && rect.height() > 150.0
+                })
+        }
         Check::ExplainClosed => !app.show_explain,
         Check::Dependencies => {
             app.world == World::Graph
@@ -900,6 +1220,24 @@ fn check(
                     })
                 })
                 && app.show_agent
+        }
+        Check::AgentReturned => {
+            !app.show_agent
+                && app.dependencies.is_none()
+                && app.agent_return.is_none()
+                && before.agent_return.as_ref().is_some_and(|previous| {
+                    previous.world == format!("{:?}", app.world)
+                        && previous.focus == app.focus.map(|id| id.to_string())
+                        && previous.center == [app.camera.center.x, app.camera.center.y]
+                        && (previous.zoom - app.camera.zoom).abs() < 0.001
+                        && previous.selection
+                            == app
+                                .selection
+                                .targets
+                                .iter()
+                                .map(|target| format!("{target:?}"))
+                                .collect::<Vec<_>>()
+                })
         }
         Check::Diff => {
             app.comparison == ComparisonMode::Diff
@@ -921,6 +1259,41 @@ fn check(
                         .any(|n| n.name == "ScenarioNestedPart")
             }) && app.comparison == ComparisonMode::Diff
                 && !app.create_dialog
+                && (app.camera.zoom - before.zoom).abs() < 0.001
+                && app.camera.center.x == before.camera_center[0]
+                && app.camera.center.y == before.camera_center[1]
+        }
+        Check::ReviewMode(mode) => {
+            app.comparison == *mode
+                && !app.palette
+                && (app.camera.zoom - before.zoom).abs() < 0.001
+                && app.camera.center.x == before.camera_center[0]
+                && app.camera.center.y == before.camera_center[1]
+                && if *mode == ComparisonMode::Current {
+                    app.selection.primary.is_none()
+                } else {
+                    app.selected_element()
+                        .and_then(|id| app.lookup.node(&app.scene, id))
+                        .is_some_and(|node| node.semantic.name == "ScenarioNestedPart")
+                }
+        }
+        Check::Pinned(pinned) => {
+            let id = fixtures::id(21);
+            commands::unavailable(
+                if *pinned {
+                    CommandId::Unpin
+                } else {
+                    CommandId::Pin
+                },
+                &app.context(),
+            )
+            .is_none()
+                && app.layout.is_pinned(id) == *pinned
+                && (!pinned
+                    || app
+                        .lookup
+                        .node(&app.scene, id)
+                        .is_some_and(|node| app.layout.pinned.get(&id) == Some(&node.bounds.min)))
         }
         Check::NamedSelected(name) => app
             .selected_element()

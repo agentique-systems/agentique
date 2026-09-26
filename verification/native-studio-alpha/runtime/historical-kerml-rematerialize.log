@@ -1,0 +1,254 @@
+refinement 0: 4000/4000 references evaluated, 0 reused, 2110 endpoints, 4000 obligations; construction 1.169s, context 0.120s, diff 0.000s, resolution 11.916s
+refinement 1: 3972/4000 references evaluated, 28 reused, 3661 endpoints, 1890 obligations; construction 1.189s, context 0.120s, diff 0.084s, resolution 29.052s
+refinement 2: 3981/4000 references evaluated, 19 reused, 3838 endpoints, 339 obligations; construction 1.301s, context 0.132s, diff 0.111s, resolution 32.958s
+refinement 3: 3837/4000 references evaluated, 163 reused, 3919 endpoints, 162 obligations; construction 1.146s, context 0.123s, diff 0.075s, resolution 29.913s
+refinement 4: 3706/4000 references evaluated, 294 reused, 3952 endpoints, 81 obligations; construction 1.096s, context 0.118s, diff 0.074s, resolution 33.207s
+refinement 5: 3719/4000 references evaluated, 281 reused, 3973 endpoints, 48 obligations; construction 1.275s, context 0.133s, diff 0.088s, resolution 32.709s
+refinement 6: 3687/4000 references evaluated, 313 reused, 3994 endpoints, 27 obligations; construction 1.192s, context 0.123s, diff 0.080s, resolution 31.307s
+refinement 7: 917/4000 references evaluated, 3083 reused, 4000 endpoints, 6 obligations; construction 1.161s, context 0.127s, diff 0.076s, resolution 10.198s
+refinement 8: 215/4000 references evaluated, 3785 reused, 4000 endpoints, 0 obligations; construction 1.158s, context 0.125s, diff 0.073s, resolution 2.177s
+producer stage 0: 512/11940, 425 proposed records
+producer stage 0: 1024/11940, 963 proposed records
+producer stage 0: 1536/11940, 1494 proposed records
+producer stage 0: 2048/11940, 2030 proposed records
+producer stage 0: 2560/11940, 2569 proposed records
+producer stage 0: 3072/11940, 3093 proposed records
+producer stage 0: 3584/11940, 3593 proposed records
+producer stage 0: 4096/11940, 4112 proposed records
+producer stage 0: 4608/11940, 4580 proposed records
+producer stage 0: 5120/11940, 5095 proposed records
+producer stage 0: 5632/11940, 5629 proposed records
+producer stage 0: 6144/11940, 6218 proposed records
+producer stage 0: 6656/11940, 6697 proposed records
+producer stage 0: 7168/11940, 7226 proposed records
+producer stage 0: 7680/11940, 7770 proposed records
+producer stage 0: 8192/11940, 8295 proposed records
+producer stage 0: 8704/11940, 8750 proposed records
+producer stage 0: 9216/11940, 9164 proposed records
+producer stage 0: 9728/11940, 9683 proposed records
+producer stage 0: 10240/11940, 10135 proposed records
+producer stage 0: 10752/11940, 10584 proposed records
+producer stage 0: 11264/11940, 11094 proposed records
+producer stage 0: 11776/11940, 11595 proposed records
+producer stage 0: 11940/11940, 11753 proposed records
+stage 0 Structural: 11753 new elements; Incomplete
+producer stage 1: 512/10794, 266 proposed records
+producer stage 1: 1024/10794, 626 proposed records
+producer stage 1: 1536/10794, 922 proposed records
+producer stage 1: 2048/10794, 1281 proposed records
+producer stage 1: 2560/10794, 1616 proposed records
+producer stage 1: 3072/10794, 1933 proposed records
+producer stage 1: 3584/10794, 2286 proposed records
+producer stage 1: 4096/10794, 2557 proposed records
+producer stage 1: 4608/10794, 2875 proposed records
+producer stage 1: 5120/10794, 3230 proposed records
+producer stage 1: 5632/10794, 3620 proposed records
+producer stage 1: 6144/10794, 3984 proposed records
+producer stage 1: 6656/10794, 4359 proposed records
+producer stage 1: 7168/10794, 4774 proposed records
+producer stage 1: 7680/10794, 5036 proposed records
+producer stage 1: 8192/10794, 5281 proposed records
+producer stage 1: 8704/10794, 5648 proposed records
+producer stage 1: 9216/10794, 5918 proposed records
+producer stage 1: 9728/10794, 6221 proposed records
+producer stage 1: 10240/10794, 6527 proposed records
+producer stage 1: 10752/10794, 6834 proposed records
+producer stage 1: 10794/10794, 6864 proposed records
+stage 1 Structural: 1666 new elements; Complete
+producer stage 2: 512/10531, 194 proposed records
+producer stage 2: 1024/10531, 477 proposed records
+producer stage 2: 1536/10531, 703 proposed records
+producer stage 2: 2048/10531, 998 proposed records
+producer stage 2: 2560/10531, 1255 proposed records
+producer stage 2: 3072/10531, 1487 proposed records
+producer stage 2: 3584/10531, 1791 proposed records
+producer stage 2: 4096/10531, 1994 proposed records
+producer stage 2: 4608/10531, 2267 proposed records
+producer stage 2: 5120/10531, 2571 proposed records
+producer stage 2: 5632/10531, 2844 proposed records
+producer stage 2: 6144/10531, 3107 proposed records
+producer stage 2: 6656/10531, 3429 proposed records
+producer stage 2: 7168/10531, 3737 proposed records
+producer stage 2: 7680/10531, 3922 proposed records
+producer stage 2: 8192/10531, 4117 proposed records
+producer stage 2: 8704/10531, 4389 proposed records
+producer stage 2: 9216/10531, 4619 proposed records
+producer stage 2: 9728/10531, 4823 proposed records
+producer stage 2: 10240/10531, 5083 proposed records
+producer stage 2: 10531/10531, 5232 proposed records
+stage 2 Structural: 0 new elements; Complete
+producer stage 3: 512/1742, 5614 proposed records
+producer stage 3: 1024/1742, 11231 proposed records
+producer stage 3: 1536/1742, 16774 proposed records
+producer stage 3: 1742/1742, 19000 proposed records
+stage 3 ContextualBindings: 15675 new elements; Complete
+producer stage 4: 512/15692, 718 proposed records
+producer stage 4: 1024/15692, 1549 proposed records
+producer stage 4: 1536/15692, 2397 proposed records
+producer stage 4: 2048/15692, 3121 proposed records
+producer stage 4: 2560/15692, 3934 proposed records
+producer stage 4: 3072/15692, 4994 proposed records
+producer stage 4: 3584/15692, 5649 proposed records
+producer stage 4: 4096/15692, 6464 proposed records
+producer stage 4: 4608/15692, 7305 proposed records
+producer stage 4: 5120/15692, 8222 proposed records
+producer stage 4: 5632/15692, 9010 proposed records
+producer stage 4: 6144/15692, 9732 proposed records
+producer stage 4: 6656/15692, 10508 proposed records
+producer stage 4: 7168/15692, 11364 proposed records
+producer stage 4: 7680/15692, 12206 proposed records
+producer stage 4: 8192/15692, 13010 proposed records
+producer stage 4: 8704/15692, 13880 proposed records
+producer stage 4: 9216/15692, 14634 proposed records
+producer stage 4: 9728/15692, 15471 proposed records
+producer stage 4: 10240/15692, 16453 proposed records
+producer stage 4: 10752/15692, 17302 proposed records
+producer stage 4: 11264/15692, 17961 proposed records
+producer stage 4: 11776/15692, 18689 proposed records
+producer stage 4: 12288/15692, 19456 proposed records
+producer stage 4: 12800/15692, 20185 proposed records
+producer stage 4: 13312/15692, 20924 proposed records
+producer stage 4: 13824/15692, 21722 proposed records
+producer stage 4: 14336/15692, 22400 proposed records
+producer stage 4: 14848/15692, 23234 proposed records
+producer stage 4: 15360/15692, 23984 proposed records
+producer stage 4: 15692/15692, 24381 proposed records
+stage 4 ContextualBindings: 3484 new elements; Complete
+producer stage 5: 512/3824, 0 proposed records
+producer stage 5: 1024/3824, 0 proposed records
+producer stage 5: 1536/3824, 0 proposed records
+producer stage 5: 2048/3824, 0 proposed records
+producer stage 5: 2560/3824, 0 proposed records
+producer stage 5: 3072/3824, 0 proposed records
+producer stage 5: 3584/3824, 0 proposed records
+producer stage 5: 3824/3824, 0 proposed records
+stage 5 ContextualBindings: 0 new elements; Complete
+capabilities: 512/61718, findings: 0
+capabilities: 1024/61718, findings: 0
+capabilities: 1536/61718, findings: 0
+capabilities: 2048/61718, findings: 0
+capabilities: 2560/61718, findings: 0
+capabilities: 3072/61718, findings: 0
+capabilities: 3584/61718, findings: 0
+capabilities: 4096/61718, findings: 0
+capabilities: 4608/61718, findings: 0
+capabilities: 5120/61718, findings: 0
+capabilities: 5632/61718, findings: 0
+capabilities: 6144/61718, findings: 0
+capabilities: 6656/61718, findings: 0
+capabilities: 7168/61718, findings: 0
+capabilities: 7680/61718, findings: 0
+capabilities: 8192/61718, findings: 0
+capabilities: 8704/61718, findings: 0
+capabilities: 9216/61718, findings: 0
+capabilities: 9728/61718, findings: 0
+capabilities: 10240/61718, findings: 0
+capabilities: 10752/61718, findings: 0
+capabilities: 11264/61718, findings: 0
+capabilities: 11776/61718, findings: 0
+capabilities: 12288/61718, findings: 0
+capabilities: 12800/61718, findings: 0
+capabilities: 13312/61718, findings: 0
+capabilities: 13824/61718, findings: 0
+capabilities: 14336/61718, findings: 0
+capabilities: 14848/61718, findings: 0
+capabilities: 15360/61718, findings: 0
+capabilities: 15872/61718, findings: 0
+capabilities: 16384/61718, findings: 0
+capabilities: 16896/61718, findings: 0
+capabilities: 17408/61718, findings: 0
+capabilities: 17920/61718, findings: 0
+capabilities: 18432/61718, findings: 0
+capabilities: 18944/61718, findings: 0
+capabilities: 19456/61718, findings: 0
+capabilities: 19968/61718, findings: 0
+capabilities: 20480/61718, findings: 0
+capabilities: 20992/61718, findings: 0
+capabilities: 21504/61718, findings: 0
+capabilities: 22016/61718, findings: 0
+capabilities: 22528/61718, findings: 0
+capabilities: 23040/61718, findings: 0
+capabilities: 23552/61718, findings: 0
+capabilities: 24064/61718, findings: 0
+capabilities: 24576/61718, findings: 0
+capabilities: 25088/61718, findings: 0
+capabilities: 25600/61718, findings: 0
+capabilities: 26112/61718, findings: 0
+capabilities: 26624/61718, findings: 0
+capabilities: 27136/61718, findings: 0
+capabilities: 27648/61718, findings: 0
+capabilities: 28160/61718, findings: 0
+capabilities: 28672/61718, findings: 0
+capabilities: 29184/61718, findings: 0
+capabilities: 29696/61718, findings: 0
+capabilities: 30208/61718, findings: 0
+capabilities: 30720/61718, findings: 0
+capabilities: 31232/61718, findings: 0
+capabilities: 31744/61718, findings: 0
+capabilities: 32256/61718, findings: 0
+capabilities: 32768/61718, findings: 0
+capabilities: 33280/61718, findings: 0
+capabilities: 33792/61718, findings: 0
+capabilities: 34304/61718, findings: 0
+capabilities: 34816/61718, findings: 0
+capabilities: 35328/61718, findings: 0
+capabilities: 35840/61718, findings: 0
+capabilities: 36352/61718, findings: 0
+capabilities: 36864/61718, findings: 0
+capabilities: 37376/61718, findings: 0
+capabilities: 37888/61718, findings: 0
+capabilities: 38400/61718, findings: 0
+capabilities: 38912/61718, findings: 0
+capabilities: 39424/61718, findings: 0
+capabilities: 39936/61718, findings: 0
+capabilities: 40448/61718, findings: 0
+capabilities: 40960/61718, findings: 0
+capabilities: 41472/61718, findings: 0
+capabilities: 41984/61718, findings: 0
+capabilities: 42496/61718, findings: 0
+capabilities: 43008/61718, findings: 0
+capabilities: 43520/61718, findings: 0
+capabilities: 44032/61718, findings: 0
+capabilities: 44544/61718, findings: 0
+capabilities: 45056/61718, findings: 0
+capabilities: 45568/61718, findings: 0
+capabilities: 46080/61718, findings: 0
+capabilities: 46592/61718, findings: 0
+capabilities: 47104/61718, findings: 0
+capabilities: 47616/61718, findings: 0
+capabilities: 48128/61718, findings: 0
+capabilities: 48640/61718, findings: 0
+capabilities: 49152/61718, findings: 0
+capabilities: 49664/61718, findings: 0
+capabilities: 50176/61718, findings: 0
+capabilities: 50688/61718, findings: 0
+capabilities: 51200/61718, findings: 0
+capabilities: 51712/61718, findings: 0
+capabilities: 52224/61718, findings: 0
+capabilities: 52736/61718, findings: 0
+capabilities: 53248/61718, findings: 0
+capabilities: 53760/61718, findings: 0
+capabilities: 54272/61718, findings: 0
+capabilities: 54784/61718, findings: 0
+capabilities: 55296/61718, findings: 0
+capabilities: 55808/61718, findings: 0
+capabilities: 56320/61718, findings: 0
+capabilities: 56832/61718, findings: 0
+capabilities: 57344/61718, findings: 0
+capabilities: 57856/61718, findings: 0
+capabilities: 58368/61718, findings: 0
+capabilities: 58880/61718, findings: 0
+capabilities: 59392/61718, findings: 0
+capabilities: 59904/61718, findings: 0
+capabilities: 60416/61718, findings: 0
+capabilities: 60928/61718, findings: 0
+capabilities: 61440/61718, findings: 0
+capabilities: 61718/61718, findings: 0
+references: 512, failures: 0
+references: 1024, failures: 0
+references: 1536, failures: 0
+references: 2048, failures: 0
+references: 2560, failures: 0
+references: 3072, failures: 0
+references: 3584, failures: 0
+Existing accepted semantic identity and all 31 bindings match; writing candidate cache

@@ -1,0 +1,27 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--release",
+    "--config",
+    "profile.release.lto=false",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-modeling-view",
+    "--lib",
+    "-j1"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T19:18:12.549269+00:00",
+  "elapsed_seconds": 328.969,
+  "exit_code": 101,
+  "output": "verification/native-studio-alpha/checks/real-model-view-quality-tests.txt",
+  "output_sha256": "edcf8fa1cbff9beb90a571123a67ada724412873f5683b8f252930cb2f802891",
+  "build_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "1"
+  }
+}

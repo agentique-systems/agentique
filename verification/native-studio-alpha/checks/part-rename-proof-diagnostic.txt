@@ -1,0 +1,19 @@
+   Compiling agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-editperf\crates\modeling-service)
+    Finished `test` profile [unoptimized] target(s) in 2.34s
+     Running unittests src\lib.rs (C:/Users/phili/github/agentique-systems/agentique/target\debug\deps\agq_modeling_service-045040c4c90fcc3e.exe)
+
+running 1 test
+
+thread 'part_rename::tests::rename_preserves_complete_identity_arena_and_only_replaces_name' (21872) panicked at crates\modeling-service\src\part_rename.rs:480:32:
+part /* header */ sensor { port observed; }: [SyntaxDiagnostic { code: "SG_RECOVERY", range: ByteRange { start: 5, end: 17 }, message: "Incomplete or unsupported grammar at this token; retained source is not a semantic declaration" }]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test part_rename::tests::rename_preserves_complete_identity_arena_and_only_replaces_name ... FAILED
+
+failures:
+
+failures:
+    part_rename::tests::rename_preserves_complete_identity_arena_and_only_replaces_name
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 14 filtered out; finished in 0.05s
+
+error: test failed, to rerun pass `-p agq-modeling-service --lib`

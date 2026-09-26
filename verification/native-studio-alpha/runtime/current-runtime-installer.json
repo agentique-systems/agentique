@@ -1,0 +1,9 @@
+{
+  "binary": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\native-alpha\\release\\agq-publications.exe",
+  "binary_sha256": "0f656a2c026acbe9bf859d9865a62dd9951202e8e3e4b570a7522e87ea553acb",
+  "build_source_commit": "23b7910dc79faac0d53a9d0113954a0c0fa6ada9",
+  "integrated_transport_commit": "8e8380c6709138967ac90d7c3039567cea29473d",
+  "reviewed_transport_commit": "e44015b3982331c9edca5633ea7f7b6ef85dd6e8",
+  "build_receipt": "verification/native-studio-alpha/checks/native-graph-runtime-cli-build.json",
+  "free_disk_bytes": 10254962688
+}

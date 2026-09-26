@@ -1,0 +1,21 @@
+{
+  "command": [
+    "python",
+    "verification/native-studio-alpha/reviews/interrupted-proposal-storage-audit.py",
+    "--root",
+    ".",
+    "--report",
+    "verification/native-studio-alpha/real-run05/journey.json",
+    "--output",
+    "verification/native-studio-alpha/reviews/run05-proposal-storage-audit.json"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "64e5c22bc32d76d6dbc049bce3fd80733abbb851",
+  "tracked_changes_at_start": [],
+  "started_utc": "2026-09-25T22:03:35.375686+00:00",
+  "elapsed_seconds": 0.188,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/real-run05-storage-audit.txt",
+  "output_sha256": "460d87b5a4ae52079b3d0867b1059295ea2914eef3584bed2b39a5f8e537a89d",
+  "build_environment": {}
+}

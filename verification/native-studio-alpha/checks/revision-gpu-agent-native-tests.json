@@ -1,0 +1,24 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--release",
+    "--locked",
+    "--offline",
+    "--manifest-path",
+    "crates/studio-native/Cargo.toml",
+    "--target-dir",
+    "target/native-alpha",
+    "--config",
+    "profile.release.lto=false",
+    "-j",
+    "2"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T16:42:46.249628+00:00",
+  "elapsed_seconds": 40.36,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/revision-gpu-agent-native-tests.txt",
+  "output_sha256": "87255f5a1c0e7ff8934f1272014d7488b5627f7194016785fee714e0a6795fe5",
+  "build_environment": {}
+}

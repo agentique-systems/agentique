@@ -203,6 +203,139 @@ fn collapsed_and_focused_views_retain_original_ids() {
     );
 }
 #[test]
+fn collapsed_subsystem_preserves_external_port_connections_without_inventing_ports() {
+    let projection = fixtures::architecture();
+    let mut options = SceneOptions::default();
+    options.collapsed.insert(fixtures::id(2));
+    let scene = SemanticScene::from_projection(&projection, &options, None).unwrap();
+    let proxy = scene
+        .ports
+        .iter()
+        .find(|port| port.id == fixtures::id(2101))
+        .unwrap();
+    assert_eq!(proxy.owner, fixtures::id(2));
+    assert_eq!(proxy.proxy_for_owner, Some(fixtures::id(21)));
+    assert_eq!(proxy.revision_id, projection.revision_id);
+    assert_eq!(proxy.direction, PortDirection::Unspecified);
+    assert!(proxy.name.contains("ModelRepository"));
+    let connection = scene
+        .edges
+        .iter()
+        .find(|edge| edge.semantic.target == proxy.id)
+        .unwrap();
+    assert_eq!(connection.points.last(), Some(&proxy.position));
+    assert_eq!(connection.semantic, projection.edges[0]);
+    assert_eq!(scene.edges.iter().filter(|edge| edge.semantic.family == agq_modeling_view::RelationshipFamily::Connection).count(), 6);
+}
+
+#[test]
+fn candidate_diff_does_not_union_old_absolute_container_positions() {
+    let (_, before_projection) = fixtures::revision_diff();
+    let before =
+        SemanticScene::from_projection(&before_projection, &SceneOptions::default(), None).unwrap();
+    let mut candidate = before_projection.clone();
+    let mut added = candidate
+        .nodes
+        .iter()
+        .find(|node| node.id == fixtures::id(24))
+        .unwrap()
+        .clone();
+    added.id = ElementId::from_u128(17);
+    added.name = "ScenarioNestedPart".into();
+    candidate.nodes.push(added);
+    let mut after =
+        SemanticScene::from_projection(&candidate, &SceneOptions::default(), Some(before.memory()))
+            .unwrap();
+    after.apply_diff(&before);
+    for node in &after.nodes {
+        if let Some(owner) = node.semantic.owner {
+            assert!(
+                after.node(owner).unwrap().bounds.contains_rect(node.bounds),
+                "{} escaped owner",
+                node.semantic.name
+            );
+        }
+        for sibling in after
+            .nodes
+            .iter()
+            .filter(|other| other.id() > node.id() && other.semantic.owner == node.semantic.owner)
+        {
+            assert!(
+                !node.bounds.intersects(sibling.bounds),
+                "{} overlaps {}",
+                node.semantic.name,
+                sibling.semantic.name
+            );
+        }
+    }
+}
+
+#[test]
+fn moved_diff_container_keeps_extent_in_current_coordinate_frame() {
+    let before = architecture();
+    let mut memory = before.memory().clone();
+    for node in &before.nodes {
+        if node.id() == fixtures::id(3) || node.semantic.owner == Some(fixtures::id(3)) {
+            memory
+                .bounds
+                .insert(node.id(), node.bounds.translate(Point::new(1000.0, 0.0)));
+        }
+    }
+    let mut after = SemanticScene::from_projection(
+        &fixtures::architecture(),
+        &SceneOptions::default(),
+        Some(&memory),
+    )
+    .unwrap();
+    let expected = after.node(fixtures::id(3)).unwrap().bounds;
+    after.apply_diff(&before);
+    assert_eq!(after.node(fixtures::id(3)).unwrap().bounds, expected);
+    assert_eq!(
+        expected.width(),
+        before.node(fixtures::id(3)).unwrap().bounds.width()
+    );
+}
+
+#[test]
+fn many_ports_have_readable_separation_in_both_layouts() {
+    let mut projection = fixtures::architecture();
+    let node = projection
+        .nodes
+        .iter_mut()
+        .find(|node| node.id == fixtures::id(21))
+        .unwrap();
+    node.features = (0..24)
+        .map(|index| agq_modeling_view::FeatureSummary {
+            id: fixtures::id(80_000 + index),
+            name: format!("pressure_{index}_μPa"),
+            semantic_kind: "PortUsage".into(),
+        })
+        .collect();
+    node.counts.ports = 24;
+    for hierarchy in [true, false] {
+        let scene = SemanticScene::from_projection(
+            &projection,
+            &SceneOptions {
+                hierarchy,
+                ..Default::default()
+            },
+            None,
+        )
+        .unwrap();
+        let mut left: Vec<_> = scene
+            .ports
+            .iter()
+            .filter(|port| port.owner == fixtures::id(21) && port.side == PortSide::Left)
+            .collect();
+        left.sort_by(|a, b| a.position.y.total_cmp(&b.position.y));
+        assert_eq!(left.len(), 12);
+        assert!(
+            left.windows(2)
+                .all(|pair| pair[1].position.y - pair[0].position.y >= 20.0)
+        );
+    }
+}
+#[test]
 fn diff_retains_ghost_revision_and_does_not_mark_unchanged_revision_ids() {
     let (a, b) = fixtures::revision_diff();
     let before = SemanticScene::from_projection(&a, &SceneOptions::default(), None).unwrap();
@@ -277,6 +410,141 @@ fn parallel_relationships_have_distinct_routes() {
 }
 
 #[test]
+fn satisfaction_and_verification_have_individually_selectable_target_lanes() {
+    let projection = fixtures::requirements();
+    let options = SceneOptions {
+        hierarchy: false,
+        ..Default::default()
+    };
+    let scene = SemanticScene::from_projection(&projection, &options, None).unwrap();
+    let index = SpatialIndex::build(&scene);
+    assert!(
+        scene.ports.is_empty(),
+        "drawing anchors must not invent semantic ports"
+    );
+    for requirement in [101, 102, 103] {
+        let edges: Vec<_> = scene
+            .edges
+            .iter()
+            .filter(|edge| edge.semantic.target == fixtures::id(requirement))
+            .collect();
+        assert_eq!(edges.len(), 2);
+        assert!(
+            edges[0]
+                .points
+                .last()
+                .unwrap()
+                .distance(*edges[1].points.last().unwrap())
+                >= 12.0,
+            "satisfies and verifies need distinct arrowheads"
+        );
+        for edge in edges {
+            let end = *edge.points.last().unwrap();
+            let before = edge.points[edge.points.len() - 2];
+            let length = end.distance(before);
+            assert!(length >= 12.0);
+            let probe = Point::new(
+                end.x + (before.x - end.x) / length * 10.0,
+                end.y + (before.y - end.y) / length * 10.0,
+            );
+            assert_eq!(
+                index.hit_test(probe, 3.0),
+                Some(SceneTarget::Edge(edge.semantic.id.clone())),
+                "each relationship must remain independently selectable at its target"
+            );
+            assert_eq!(edge.quality, RouteQuality::Clear);
+        }
+    }
+    let mut reordered = projection;
+    reordered.edges.reverse();
+    let reordered = SemanticScene::from_projection(&reordered, &options, None).unwrap();
+    for edge in &scene.edges {
+        assert_eq!(
+            edge.points,
+            reordered
+                .edges
+                .iter()
+                .find(|other| other.semantic.id == edge.semantic.id)
+                .unwrap()
+                .points
+        );
+    }
+}
+
+#[test]
+fn parallel_node_links_have_separate_endpoints_but_modeled_ports_remain_exact() {
+    let mut projection = fixtures::stress(2, 1);
+    for index in 0..3 {
+        let mut edge = projection.edges[0].clone();
+        edge.id = format!("independent-{index}");
+        projection.edges.push(edge);
+    }
+    let scene = SemanticScene::from_projection(
+        &projection,
+        &SceneOptions {
+            hierarchy: false,
+            ..Default::default()
+        },
+        None,
+    )
+    .unwrap();
+    for (index, edge) in scene.edges.iter().enumerate() {
+        for other in &scene.edges[index + 1..] {
+            assert_ne!(edge.points.first(), other.points.first());
+            assert_ne!(edge.points.last(), other.points.last());
+        }
+    }
+    let mut projection = fixtures::architecture();
+    let mut extra = projection.edges[0].clone();
+    extra.id = "same-modeled-port".into();
+    projection.edges.push(extra);
+    let scene =
+        SemanticScene::from_projection(&projection, &SceneOptions::default(), None).unwrap();
+    for edge in scene
+        .edges
+        .iter()
+        .filter(|edge| edge.semantic.source == fixtures::id(1102))
+    {
+        let source = scene
+            .ports
+            .iter()
+            .find(|port| port.id == edge.semantic.source)
+            .unwrap();
+        let target = scene
+            .ports
+            .iter()
+            .find(|port| port.id == edge.semantic.target)
+            .unwrap();
+        assert_eq!(edge.points.first(), Some(&source.position));
+        assert_eq!(edge.points.last(), Some(&target.position));
+    }
+}
+
+#[test]
+fn separated_attachment_stubs_stay_inside_dense_default_layout_gutters() {
+    let projection = fixtures::stress(80, 160);
+    for hierarchy in [true, false] {
+        let scene = SemanticScene::from_projection(
+            &projection,
+            &SceneOptions {
+                hierarchy,
+                ..Default::default()
+            },
+            None,
+        )
+        .unwrap();
+        assert_eq!(scene.edges.len(), 160);
+        assert!(
+            scene
+                .edges
+                .iter()
+                .all(|edge| edge.quality == RouteQuality::Clear),
+            "attachment staggering must not drive stubs through unrelated neighbors"
+        );
+    }
+}
+
+#[test]
 fn collapsed_layout_restores_hidden_component_positions() {
     let before = architecture();
     let mut options = SceneOptions::default();
@@ -310,6 +578,7 @@ fn routing_detours_around_an_unrelated_node() {
             (projection.nodes[1].id, Rect::new(300.0, 0.0, 232.0, 118.0)),
             (projection.nodes[2].id, Rect::new(600.0, 0.0, 232.0, 118.0)),
         ]),
+        ..Default::default()
     };
     let scene = SemanticScene::from_projection(&projection, &options, Some(&memory)).unwrap();
     assert_eq!(scene.edges[0].quality, RouteQuality::Clear);
@@ -330,6 +599,164 @@ fn self_relationship_routes_form_a_visible_loop() {
     assert!(scene.edges[0].points.len() >= 5);
     assert!(scene.edges[0].bounds.width() > 0.0 && scene.edges[0].bounds.height() > 0.0);
     assert_eq!(scene.edges[0].quality, RouteQuality::Clear);
+}
+
+#[test]
+fn parallel_self_relationships_keep_separate_anchors_and_visible_exterior_loops() {
+    for count in [1, 2, 5] {
+        let mut projection = fixtures::stress(1, count);
+        let owner = projection.nodes[0].id;
+        for edge in &mut projection.edges {
+            edge.source = owner;
+            edge.target = owner;
+        }
+        let scene =
+            SemanticScene::from_projection(&projection, &SceneOptions::default(), None).unwrap();
+        let bounds = scene.node(owner).unwrap().bounds;
+        assert_eq!(scene.edges.len(), count);
+        assert!(
+            scene.ports.is_empty(),
+            "drawing anchors are not semantic ports"
+        );
+        for route in &scene.edges {
+            assert_eq!(
+                &route.semantic,
+                projection
+                    .edges
+                    .iter()
+                    .find(|edge| edge.id == route.semantic.id)
+                    .unwrap()
+            );
+            let first = *route.points.first().unwrap();
+            let last = *route.points.last().unwrap();
+            assert_eq!(first.x, bounds.max.x);
+            assert_eq!(last.x, bounds.max.x);
+            assert_ne!(first, last, "self-link attachment lanes stay distinct");
+            assert!(
+                route.points.len() >= 6,
+                "a short U is not the self-link loop: {:?}",
+                route.points
+            );
+            assert!(route.points.iter().all(|point| point.x >= bounds.max.x));
+            assert!(route.points.iter().any(|point| {
+                point.y <= first.y.min(last.y) - 34.0 + 0.001
+                    || point.y >= first.y.max(last.y) + 34.0 - 0.001
+            }));
+            assert!(
+                route
+                    .points
+                    .windows(2)
+                    .all(|pair| pair[0].x == pair[1].x || pair[0].y == pair[1].y)
+            );
+            assert_eq!(route.quality, RouteQuality::Clear);
+        }
+        for pair in scene.edges.windows(2) {
+            assert_ne!(pair[0].points, pair[1].points);
+        }
+    }
+}
+
+#[test]
+fn expanded_owner_port_strips_are_clear_bounded_and_preserve_canonical_identity() {
+    for count in [1_usize, 2, 4, 5, 24] {
+        let mut projection = fixtures::architecture();
+        let owner = fixtures::id(2);
+        let features: Vec<_> = (0..count)
+            .map(|index| agq_modeling_view::FeatureSummary {
+                id: fixtures::id(80_000 + index as u128),
+                name: format!("actualBoundary_{index}"),
+                semantic_kind: "PortUsage".into(),
+            })
+            .collect();
+        let owner_node = projection
+            .nodes
+            .iter_mut()
+            .find(|node| node.id == owner)
+            .unwrap();
+        owner_node.features = features.clone();
+        // An advisory count must not reserve a made-up header or duplicate the
+        // actual ports also present as canonical records in this projection.
+        owner_node.counts.ports = 99;
+        for feature in &features {
+            let mut port = projection.nodes[0].clone();
+            port.id = feature.id;
+            port.owner = Some(owner);
+            port.semantic_kind = "PortUsage".into();
+            port.name = feature.name.clone();
+            port.features.clear();
+            port.counts = Default::default();
+            projection.nodes.push(port);
+        }
+        let scene =
+            SemanticScene::from_projection(&projection, &SceneOptions::default(), None).unwrap();
+        let container = scene.node(owner).unwrap();
+        let ports: Vec<_> = scene
+            .ports
+            .iter()
+            .filter(|port| port.owner == owner)
+            .collect();
+        assert_eq!(ports.len(), count);
+        assert_eq!(
+            ports
+                .iter()
+                .map(|port| port.id)
+                .collect::<std::collections::BTreeSet<_>>(),
+            features.iter().map(|feature| feature.id).collect()
+        );
+        assert!(
+            ports
+                .iter()
+                .all(|port| port.revision_id == projection.revision_id
+                    && port.proxy_for_owner.is_none()
+                    && port.direction == PortDirection::Unspecified)
+        );
+        let child_top = scene
+            .nodes
+            .iter()
+            .filter(|node| node.semantic.owner == Some(owner))
+            .map(|node| node.bounds.min.y)
+            .reduce(f32::min)
+            .unwrap();
+        let header = child_top - container.bounds.min.y;
+        if count <= 4 {
+            assert!((92.0..=116.0).contains(&header));
+            assert!(ports.iter().all(|port| port.label_in_header
+                && port.position.y >= container.bounds.min.y + 72.0
+                && port.position.y + 20.0 <= child_top));
+            let index = SpatialIndex::build(&scene);
+            for port in &ports {
+                assert_eq!(
+                    index.hit_test(port.position, 3.0),
+                    Some(SceneTarget::Port(port.id))
+                );
+            }
+        } else {
+            assert_eq!(
+                header, 72.0,
+                "dense ports must not grow an unbounded header"
+            );
+            assert!(ports.iter().all(|port| !port.label_in_header));
+        }
+        let again = SemanticScene::from_projection(
+            &projection,
+            &SceneOptions::default(),
+            Some(scene.memory()),
+        )
+        .unwrap();
+        assert_eq!(
+            scene
+                .nodes
+                .iter()
+                .map(|node| (node.id(), node.bounds))
+                .collect::<Vec<_>>(),
+            again
+                .nodes
+                .iter()
+                .map(|node| (node.id(), node.bounds))
+                .collect::<Vec<_>>(),
+            "unchanged port strips must not keep moving the layout"
+        );
+    }
 }
 
 #[test]

@@ -1,0 +1,19 @@
+{
+    "format":  "agentique-native-uia/1",
+    "started_utc":  "2026-09-25T16:55:06.7852792Z",
+    "binary":  "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\native-alpha\\release\\agq-studio-native.exe",
+    "binary_sha256":  "60306b41d2ae8e6dc7bc7514524ce15848ffd94d1c3ee970ea37fed3f59a98a1",
+    "scope":  "Actual Windows UI Automation on an explicit visual fixture. No screen-reader speech, IME or mixed-DPI claim.",
+    "passed":  false,
+    "assertions":  [
+                       {
+                           "name":  "Explorer search has an accessible name",
+                           "passed":  false,
+                           "observed":  null
+                       }
+                   ],
+    "error":  "Assertion failed: Explorer search has an accessible name",
+    "pid":  9488,
+    "process_exit_code":  null,
+    "finished_utc":  "2026-09-25T16:55:08.9966526Z"
+}

@@ -1,0 +1,46 @@
+{
+  "format": "agq-runtime-remote-distribution-check/1",
+  "checked_utc": "2026-09-25T18:40:24.481651+00:00",
+  "release_url": "https://github.com/agentique-systems/agentique/releases/tag/untagged-05ba0adcc0765264ca72",
+  "requested_tag": "runtime-kerml-v9-sysml-v3-bundle1",
+  "target_commit": "c00de91f348bc59934c721fd75b17cbd09217163",
+  "is_draft": true,
+  "published": false,
+  "download_directory": "C:\\Users\\phili\\github\\agentique-systems\\agentique-alpha-runtime\\verification\\generated\\native-studio-alpha\\runtime-remote-download-2026-09-25",
+  "assets": {
+    "accepted-runtime.agq-runtime": {
+      "bytes": 610190454,
+      "sha256": "37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026",
+      "matches_authenticated_local_bytes": true,
+      "matches_github_digest_and_size": true,
+      "asset_api_url": "https://api.github.com/repos/agentique-systems/agentique/releases/assets/588986549"
+    },
+    "accepted-runtime.agq-runtime.sha256": {
+      "bytes": 95,
+      "sha256": "2449cbfc5920be8d334acffbcd6ffd1e46ddda6a0d990b1c3873c4693acdef66",
+      "matches_authenticated_local_bytes": true,
+      "matches_github_digest_and_size": true,
+      "asset_api_url": "https://api.github.com/repos/agentique-systems/agentique/releases/assets/588986550"
+    },
+    "runtime-manifest.json": {
+      "bytes": 1609,
+      "sha256": "403ea690ebcb444510f55e9e60ddea3406dc3707528221d5245e50671bc3b260",
+      "matches_authenticated_local_bytes": true,
+      "matches_github_digest_and_size": true,
+      "asset_api_url": "https://api.github.com/repos/agentique-systems/agentique/releases/assets/588986553"
+    },
+    "runtime-verification.json": {
+      "bytes": 5856,
+      "sha256": "824402d7b513f8b5d2b8bbe9c91e066a7cca2047b6a84791ce020259f47dd718",
+      "matches_authenticated_local_bytes": true,
+      "matches_github_digest_and_size": true,
+      "asset_api_url": "https://api.github.com/repos/agentique-systems/agentique/releases/assets/588986557"
+    }
+  },
+  "release_body_matches_reviewed_notes": true,
+  "embedded_manifest_matches_separate_asset": true,
+  "bundle_identity": "633ea89eb39f8a9e301f2bd5199994455cdf28c8d373fdbd69be30a1402ebcf4",
+  "downloaded_bytes_equal_locally_authenticated_bundle": true,
+  "facades_rerun_on_downloaded_copy": false,
+  "deferred_gate": "Run ordinary facade verify serially after native real journey releases runtime; no standards consumer invoked by this check."
+}

@@ -1,0 +1,17 @@
+{
+  "command": [
+    "git",
+    "rev-list",
+    "--objects",
+    "--all",
+    "--",
+    "*.agq-runtime",
+    "*publication*.zip",
+    "*kerml.cache",
+    "*systems.cache"
+  ],
+  "exit_code": 0,
+  "output": "33b10f8fe45c2fba55dde0acfa92d44d274e64ab\n008464cfe9058f9c047fe015163a414a6ae15f5f \n",
+  "stderr": "",
+  "elapsed_seconds": 1.578
+}

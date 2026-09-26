@@ -37,6 +37,14 @@ pub struct Navigation {
     cursor: usize,
 }
 impl Navigation {
+    /// Layouts referenced by Back/Forward must retain the coordinate system
+    /// their cameras use. Navigation itself is bounded to 128 entries.
+    pub fn retained_views(&self) -> std::collections::BTreeSet<(World, Option<ElementId>)> {
+        self.entries
+            .iter()
+            .map(|entry| (entry.world, entry.focus))
+            .collect()
+    }
     pub fn push(&mut self, location: Location) {
         if self.entries.get(self.cursor) == Some(&location) {
             return;

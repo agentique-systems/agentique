@@ -1,0 +1,13 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--workspace"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T15:24:34.415352+00:00",
+  "elapsed_seconds": 159.594,
+  "exit_code": 101,
+  "output": "verification/native-studio-alpha/checks/root-tests.txt",
+  "output_sha256": "77a045b583aa1d17a2ce3a15022ca308a4a2a936f6fd5eef40dc48bee68629c0"
+}

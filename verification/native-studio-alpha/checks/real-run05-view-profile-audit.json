@@ -1,0 +1,20 @@
+{
+  "command": [
+    "python",
+    "verification/native-studio-alpha/reviews/audit_view_profile.py",
+    "verification/native-studio-alpha/real-run05/process.log",
+    "--gallery",
+    "verification/native-studio-alpha/real-run05/gallery"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "48656c8b010f07921d98e878c83b2f4607a96f09",
+  "tracked_changes_at_start": [
+    " M verification/native-studio-alpha/reviews/audit_view_profile.py"
+  ],
+  "started_utc": "2026-09-25T22:04:19.964591+00:00",
+  "elapsed_seconds": 0.109,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/real-run05-view-profile-audit.txt",
+  "output_sha256": "666a6f6607836d3b36e802b43bc3020d7b92bb16e6ccc6c6819596d072aa286e",
+  "build_environment": {}
+}

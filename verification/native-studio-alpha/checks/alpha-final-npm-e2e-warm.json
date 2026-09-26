@@ -1,0 +1,19 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "test:e2e"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T20:59:58.022646+00:00",
+  "elapsed_seconds": 55.36,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/alpha-final-npm-e2e-warm.txt",
+  "output_sha256": "3039c92a54edeb681703695c6c06c8d5c20a00ff165834b820f933e59cf863b9",
+  "build_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "1"
+  }
+}

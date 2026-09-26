@@ -61,6 +61,7 @@ impl StudioApp {
                         ui.label(muted("VISUAL FIXTURES", theme).small());
                         for (name, label) in [
                             ("architecture", "Agentique architecture"),
+                            ("typography", "Long engineering names and Unicode"),
                             ("ports", "Dense ports and connections"),
                             ("requirements", "Requirement knowledge graph"),
                             ("diff", "Revision comparison"),
@@ -87,20 +88,14 @@ impl StudioApp {
                             self.palette = true;
                             self.palette_focus = true;
                         }
-                        ui.add_space(10.0);
-                        ui.label(
-                            RichText::new(if self.fixture.is_some() {
-                                "VISUAL FIXTURE"
-                            } else {
-                                "IN-PROCESS"
-                            })
-                            .size(CAPTION)
-                            .color(if self.fixture.is_some() {
-                                theme.amber
-                            } else {
-                                theme.green
-                            }),
-                        );
+                        if self.fixture.is_some() {
+                            ui.add_space(10.0);
+                            ui.label(
+                                RichText::new("VISUAL FIXTURE")
+                                    .size(CAPTION)
+                                    .color(theme.amber),
+                            );
+                        }
                     });
                 });
             });
@@ -113,21 +108,18 @@ impl StudioApp {
             )
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
-                    if !self.pending.is_empty() {
+                    if !self.pending.is_empty() || self.scene_builder.busy {
                         ui.spinner();
+                    }
+                    if self.scene_builder.busy {
+                        ui.label(
+                            muted("Updating view · previous view remains available", theme).small(),
+                        );
                     }
                     ui.label(muted(&self.status, theme).small());
                     ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                         ui.label(
-                            muted(
-                                format!(
-                                    "{}%  ·  {:?}",
-                                    (self.camera.zoom * 100.0) as u32,
-                                    self.lod.level()
-                                ),
-                                theme,
-                            )
-                            .small(),
+                            muted(format!("{}%", (self.camera.zoom * 100.0) as u32), theme).small(),
                         );
                         ui.separator();
                         ui.label(
@@ -146,6 +138,61 @@ impl StudioApp {
                     });
                 });
             });
+        if let Some(preparation) = &mut self.preparation {
+            egui::TopBottomPanel::bottom("candidate_preparation")
+                .frame(egui::Frame::new().fill(theme.elevated).inner_margin(16))
+                .show(ctx, |ui| {
+                    ui.horizontal(|ui| {
+                        ui.spinner();
+                        ui.vertical(|ui| {
+                            ui.strong(if preparation.cancelled { "CANCELLATION REQUESTED" } else { "PREPARING WORKING CANDIDATE" });
+                            ui.label(&preparation.intent);
+                            ui.label(if preparation.cancelled {
+                                "Current reconstruction will finish safely; its result will be discarded."
+                            } else {
+                                "Source edit and semantic reconstruction running · validation has not started"
+                            });
+                            ui.label(muted(format!("Elapsed {:.1} s · current revision remains available", preparation.started.elapsed().as_secs_f32()), theme).small());
+                        });
+                        if ui.add_enabled(!preparation.cancelled, egui::Button::new("Cancel preparation")).clicked() {
+                            preparation.cancelled = true;
+                        }
+                    });
+                });
+            ctx.request_repaint_after(std::time::Duration::from_millis(100));
+        }
+        if let Some(target) = self
+            .revision_retry
+            .filter(|target| self.project_id() == Some(target.project))
+        {
+            egui::TopBottomPanel::bottom("revision_view_retry")
+                .frame(egui::Frame::new().fill(theme.elevated).inner_margin(12))
+                .show(ctx, |ui| {
+                    ui.horizontal(|ui| {
+                        let committed =
+                            self.committed_receipt
+                                .as_ref()
+                                .is_some_and(|(project, receipt)| {
+                                    *project == target.project
+                                        && receipt.revision_id == target.revision
+                                });
+                        ui.label(if committed {
+                            "Revision committed durably; its view is unavailable."
+                        } else {
+                            "Requested revision view is unavailable; current revision retained."
+                        });
+                        if ui
+                            .add_enabled(
+                                self.pending_revision.is_none() && !self.bridge.mutation_pending(),
+                                egui::Button::new("Retry revision view"),
+                            )
+                            .clicked()
+                        {
+                            self.retry_revision_view();
+                        }
+                    });
+                });
+        }
         if self.candidate.is_some() {
             egui::TopBottomPanel::bottom("candidate_review")
                 .exact_height(96.0)
@@ -157,15 +204,30 @@ impl StudioApp {
                 .show(ctx, |ui| {
                     ui.horizontal(|ui| {
                         ui.vertical(|ui| {
-                            ui.label(RichText::new("Candidate revision").strong().size(16.0));
-                            ui.label(muted(
-                                if self.fixture.is_some() {
-                                    "Visual preview · semantic validation unavailable"
-                                } else {
-                                    "Alternate revision · branch head has not moved"
-                                },
-                                theme,
-                            ));
+                            let review = self.context().candidate;
+                            if self.lifecycle_unknown {
+                                ui.label(
+                                    RichText::new("CANDIDATE STATE NEEDS REFRESH")
+                                        .strong()
+                                        .size(14.0),
+                                );
+                                ui.label(
+                                    muted("Model actions wait for the authoritative state", theme)
+                                        .small(),
+                                );
+                                if ui
+                                    .add_enabled(
+                                        self.lifecycle_request == 0,
+                                        egui::Button::new("Refresh candidate state"),
+                                    )
+                                    .clicked()
+                                {
+                                    self.reconcile_candidate_lifecycle();
+                                }
+                            } else {
+                                ui.label(RichText::new(review.title()).strong().size(14.0));
+                                ui.label(muted(review.description(), theme).small());
+                            }
                         });
                         ui.add_space(24.0);
                         for mode in [
@@ -173,16 +235,29 @@ impl StudioApp {
                             ComparisonMode::Candidate,
                             ComparisonMode::Diff,
                         ] {
-                            if ui
-                                .add_enabled(
-                                    !self.bridge.mutation_pending(),
-                                    egui::Button::selectable(
-                                        self.comparison == mode,
-                                        format!("{mode:?}"),
-                                    ),
-                                )
-                                .clicked()
-                            {
+                            let response = ui.add_enabled(
+                                !self.bridge.mutation_pending(),
+                                egui::Button::selectable(
+                                    self.comparison == mode,
+                                    format!("{mode:?}"),
+                                ),
+                            );
+                            crate::real_targets::record(
+                                ctx,
+                                match mode {
+                                    ComparisonMode::Current => {
+                                        crate::real_targets::Target::ComparisonCurrent
+                                    }
+                                    ComparisonMode::Candidate => {
+                                        crate::real_targets::Target::ComparisonCandidate
+                                    }
+                                    ComparisonMode::Diff => {
+                                        crate::real_targets::Target::ComparisonDiff
+                                    }
+                                },
+                                response.rect,
+                            );
+                            if response.clicked() {
                                 self.change_comparison(mode);
                             }
                         }
@@ -204,6 +279,16 @@ impl StudioApp {
                             }
                         });
                     });
+                    if let Some(candidate) = &self.candidate {
+                        let actor = if candidate.actor == "human-operator" {
+                            "Human operator"
+                        } else {
+                            candidate.actor.as_str()
+                        };
+                        let summary = format!("{} · Proposed by {actor}", candidate.intent);
+                        ui.add(egui::Label::new(&summary).truncate())
+                            .on_hover_text(summary);
+                    }
                 });
         }
         egui::SidePanel::left("outliner")
@@ -252,6 +337,7 @@ impl StudioApp {
                                     self.switch_world(world);
                                 }
                             }
+                            self.local_views_menu(ui);
                             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                                 if ui.button("Fit").on_hover_text("Fit view · Home").clicked() {
                                     self.fit_pending = true;
@@ -275,12 +361,8 @@ impl StudioApp {
                             {
                                 self.execute(CommandId::Home, ctx);
                             }
-                            if let Some(id) = self.focus
-                                && let Some(node) =
-                                    self.projection.nodes.iter().find(|n| n.id == id)
-                            {
-                                ui.label(muted("/", theme));
-                                ui.label(&node.name);
+                            if self.focus.is_some() {
+                                self.breadcrumb_navigation(ui);
                             } else {
                                 ui.label(muted("/", theme));
                                 ui.label(muted(self.world.title(), theme));
@@ -293,39 +375,91 @@ impl StudioApp {
                                 );
                             }
                             if self.comparison == ComparisonMode::Diff {
+                                let before = self.candidate.as_ref().map(|c| c.before.revision_id)
+                                    .or_else(|| self.compare_before.as_ref().map(|p| p.revision_id));
+                                if let Some(before) = before {
+                                    ui.label(muted(format!("{} → {}", short_revision(before), short_revision(self.scene.revision_id)), theme).small());
+                                }
+                                let count = |mark| self.scene.nodes.iter().filter(|n| n.diff == mark).count();
                                 ui.label(
-                                    RichText::new("+ added   − removed   ~ changed")
+                                    RichText::new(format!("+ {} added   − {} removed   ~ {} changed", count(agq_studio_scene::DiffMark::Added), count(agq_studio_scene::DiffMark::Removed), count(agq_studio_scene::DiffMark::Changed)))
                                         .size(11.0)
                                         .color(theme.green),
                                 );
+                                if ui.small_button("Focus changes").clicked() { self.execute(CommandId::FocusChanges, ctx); }
                             }
                         });
+                        if self.comparison == ComparisonMode::Diff {
+                            self.diff_review_panel(ui);
+                        }
+                        if self.world == World::System && self.focus.is_some() {
+                            let visible: std::collections::BTreeSet<_> = self.scene.nodes.iter()
+                                .flat_map(|node| std::iter::once(node.id()).chain(node.semantic.features.iter().map(|feature| feature.id)))
+                                .collect();
+                            let external = self.active_projection().edges.iter().filter(|edge|
+                                edge.family == agq_modeling_view::RelationshipFamily::Connection
+                                && (visible.contains(&edge.source) != visible.contains(&edge.target))).count();
+                            if external > 0 {
+                                ui.horizontal_wrapped(|ui| {
+                                    ui.label(muted(format!("{external} connections continue outside this focus"), theme).small());
+                                    if ui.small_button("Explore connection context").clicked() {
+                                        if let Some(focus) = self.focus { self.select(SceneTarget::Node(focus), false); }
+                                        self.switch_world(World::Graph);
+                                    }
+                                });
+                            }
+                        }
+                        if self.world == World::Requirements {
+                            let requirements: Vec<_> = self.active_projection().nodes.iter()
+                                .filter(|node| NodeCategory::from_semantic_kind(&node.semantic_kind) == NodeCategory::Requirement)
+                                .map(|node| node.id).collect();
+                            let linked = requirements.iter().filter(|id| self.active_projection().edges.iter().any(|edge|
+                                (edge.source == **id || edge.target == **id) && matches!(edge.family, agq_modeling_view::RelationshipFamily::Requirement | agq_modeling_view::RelationshipFamily::Verification))).count();
+                            ui.label(muted(format!("{} requirements · {} linked in this view · relationship presence does not assert verification success", requirements.len(), linked), theme).small());
+                        }
                         if self.world == World::Graph {
                             ui.add_enabled_ui(!self.bridge.mutation_pending(), |ui| {
                                 ui.add_space(6.0);
+                                if self.comparison == ComparisonMode::Diff {
+                                    ui.horizontal_wrapped(|ui| {
+                                        ui.menu_button("Graph filters", |ui| {
+                                            ui.set_max_width(560.0);
+                                            ui.label(muted("Filters apply to both revisions.", theme).small());
+                                            self.graph_family_controls(ui);
+                                            self.graph_standard_control(ui);
+                                        });
+                                        ui.label(muted(format!(
+                                            "{} relationship families · standard expansion {}",
+                                            self.families.len(),
+                                            if self.include_standard { "on" } else { "off" },
+                                        ), theme).small());
+                                    });
+                                } else {
+                                    self.graph_family_controls(ui);
                                 ui.horizontal_wrapped(|ui| {
-                                    for family in agq_modeling_view::RelationshipFamily::all() {
-                                        let mut enabled = self.families.contains(&family);
+                                    for (label, command) in [
+                                        ("Incoming", CommandId::ExpandIncoming),
+                                        ("Outgoing", CommandId::ExpandOutgoing),
+                                        ("Next hop", CommandId::ExpandBoth),
+                                        ("One hop", CommandId::CollapseNeighborhood),
+                                    ] {
+                                        let reason =
+                                            commands::unavailable(command, &self.context());
                                         if ui
-                                            .toggle_value(&mut enabled, format!("{family:?}"))
-                                            .changed()
+                                            .add_enabled(reason.is_none(), egui::Button::new(label))
+                                            .clicked()
                                         {
-                                            if enabled {
-                                                self.families.insert(family);
-                                            } else {
-                                                self.families.remove(&family);
-                                            }
-                                            self.request_projection();
+                                            self.execute(command, ctx);
                                         }
                                     }
+                                    if self.comparison != ComparisonMode::Diff && self.expanded.is_some()
+                                        && ui.button("Show loaded view").clicked()
+                                    {
+                                        self.expanded = None;
+                                        self.rebuild();
+                                    }
                                 });
-                                let mut include = self.include_standard;
-                                if ui
-                                    .checkbox(&mut include, "Expand adjacent standard dependencies")
-                                    .changed()
-                                {
-                                    self.include_standard = include;
-                                    self.request_projection();
+                                    self.graph_standard_control(ui);
                                 }
                             });
                         }
@@ -337,6 +471,39 @@ impl StudioApp {
                 }
             });
     }
+    fn graph_family_controls(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal_wrapped(|ui| {
+            for family in agq_modeling_view::RelationshipFamily::all() {
+                let mut enabled = self.families.contains(&family);
+                if ui
+                    .toggle_value(&mut enabled, format!("{family:?}"))
+                    .changed()
+                {
+                    if enabled {
+                        self.families.insert(family);
+                    } else {
+                        self.families.remove(&family);
+                    }
+                    self.request_projection();
+                }
+            }
+        });
+    }
+
+    fn graph_standard_control(&mut self, ui: &mut egui::Ui) {
+        let mut include = self.include_standard;
+        let standards = ui.checkbox(&mut include, "Expand adjacent standard dependencies");
+        crate::real_targets::record(
+            ui.ctx(),
+            crate::real_targets::Target::Standards,
+            standards.rect,
+        );
+        if standards.changed() {
+            self.include_standard = include;
+            self.request_projection();
+        }
+    }
+
     fn outliner(&mut self, ui: &mut egui::Ui) {
         let theme = self.theme;
         ui.label(
@@ -346,10 +513,18 @@ impl StudioApp {
                 .color(theme.muted),
         );
         ui.add_space(14.0);
-        ui.add(
-            egui::TextEdit::singleline(&mut self.search)
-                .hint_text("Find an element…")
-                .desired_width(f32::INFINITY),
+        let search_label = ui.label(muted("Find an element", theme).small());
+        let search_input = ui
+            .add(
+                egui::TextEdit::singleline(&mut self.search)
+                    .hint_text("Find an element…")
+                    .desired_width(f32::INFINITY),
+            )
+            .labelled_by(search_label.id);
+        crate::real_targets::record(
+            ui.ctx(),
+            crate::real_targets::Target::ExplorerSearch,
+            search_input.rect,
         );
         ui.add_space(14.0);
         ui.horizontal(|ui| {
@@ -357,20 +532,7 @@ impl StudioApp {
             ui.label(muted(self.projection.nodes.len().to_string(), theme).small());
         });
         ui.add_space(8.0);
-        let search = self.search.to_lowercase();
-        let nodes: Vec<_> = self
-            .outliner_order
-            .iter()
-            .copied()
-            .filter(|index| {
-                search.is_empty()
-                    || self.scene.nodes[*index]
-                        .semantic
-                        .name
-                        .to_lowercase()
-                        .contains(&search)
-            })
-            .collect();
+        let nodes = self.filtered_outliner();
         egui::ScrollArea::vertical()
             .auto_shrink([false, false])
             .show_rows(ui, 32.0, nodes.len(), |ui, range| {
@@ -388,14 +550,22 @@ impl StudioApp {
                     ui.horizontal(|ui| {
                         ui.add_space((*depth as f32 * 12.0).min(48.0));
                         if *container {
-                            if ui
-                                .add(
-                                    egui::Button::new(if *collapsed { "▸" } else { "▾" })
-                                        .frame(false)
-                                        .small(),
+                            let disclosure = ui.add(
+                                egui::Button::new(if *collapsed { "▸" } else { "▾" })
+                                    .frame(false)
+                                    .small(),
+                            );
+                            disclosure.widget_info(|| {
+                                egui::WidgetInfo::labeled(
+                                    egui::WidgetType::Button,
+                                    true,
+                                    format!(
+                                        "{} {name}",
+                                        if *collapsed { "Expand" } else { "Collapse" }
+                                    ),
                                 )
-                                .clicked()
-                            {
+                            });
+                            if disclosure.clicked() {
                                 if !self.collapsed.remove(id) {
                                     self.collapsed.insert(*id);
                                 }
@@ -405,19 +575,37 @@ impl StudioApp {
                             ui.label(RichText::new(category_icon(*category)).color(theme.muted));
                         }
                         let response = ui
-                            .selectable_label(self.selection.contains(*id), name)
+                            .add_sized(
+                                [ui.available_width().max(1.0), 28.0],
+                                egui::Button::selectable(self.selection.contains(*id), name)
+                                    .truncate(),
+                            )
                             .on_hover_text(name);
+                        crate::real_targets::record(
+                            ui.ctx(),
+                            crate::real_targets::Target::ExplorerElement(*id),
+                            response.rect,
+                        );
+                        let target = if *container {
+                            SceneTarget::Container(*id)
+                        } else {
+                            SceneTarget::Node(*id)
+                        };
+                        let mut same_object_click = false;
                         if response.clicked() {
-                            self.select(
-                                if *container {
-                                    SceneTarget::Container(*id)
-                                } else {
-                                    SceneTarget::Node(*id)
-                                },
-                                ui.input(|i| i.modifiers.shift),
+                            // Filtering can place a different canonical object
+                            // under the same toolkit row between two clicks.
+                            same_object_click = self.explorer_clicks.click(
+                                self.generation,
+                                Some(&target),
+                                response
+                                    .interact_pointer_pos()
+                                    .map_or([0.0, 0.0], |p| [p.x, p.y]),
+                                ui.input(|i| i.time),
                             );
+                            self.select(target, ui.input(|i| i.modifiers.shift));
                         }
-                        if response.double_clicked() {
+                        if response.double_clicked() && same_object_click {
                             self.execute(CommandId::Focus, ui.ctx());
                         }
                     });
@@ -440,33 +628,55 @@ impl StudioApp {
                         .inner_margin(32)
                         .show(ui, |ui| {
                             ui.set_max_width(610.0);
-                            ui.heading(if self.projects.is_empty() {
+                            let opening = self.opening.as_ref().filter(|opening| opening.running());
+                            let failed = self.opening.as_ref().is_some_and(|opening| opening.failed);
+                            ui.heading(if opening.is_some() {
+                                "Opening your workspace"
+                            } else if failed {
+                                "Workspace could not open"
+                            } else if self.projects.is_empty() {
                                 "Set up your engineering workspace"
                             } else {
                                 "Choose a project"
                             });
                             ui.add_space(14.0);
-                            ui.label(if !self.pending.is_empty() {
-                                "Preparing your engineering workspace…"
-                            } else if self.projects.is_empty() {
-                                "Install an authenticated Agentique runtime bundle to open real projects."
+                            if let Some(opening) = opening {
+                                ui.horizontal(|ui| {
+                                    if !self.reduced_motion { ui.spinner(); }
+                                    ui.label(RichText::new(opening.title).strong());
+                                });
+                                ui.label(opening.detail);
+                                ui.add_space(8.0);
+                                ui.label(muted(opening.elapsed_text(), theme));
+                                ctx.request_repaint_after(std::time::Duration::from_secs(1));
                             } else {
-                                "Your semantic runtime is ready. Select a project to continue."
-                            });
-                            ui.collapsing("Runtime details", |ui| {
+                                ui.label(if failed {
+                                    "Opening stopped before the workspace was ready. See the details below."
+                                } else if !self.pending.is_empty() {
+                                    "Opening the selected project revision…"
+                                } else if self.projects.is_empty() {
+                                    "Choose a local Agentique runtime bundle to authenticate and install."
+                                } else {
+                                    "Your semantic runtime is ready. Select a project to continue."
+                                });
+                                if failed && let Some(opening) = &self.opening {
+                                    ui.label(muted(format!("Stopped while: {}", opening.title), theme));
+                                    ui.label(muted(opening.elapsed_text(), theme));
+                                }
+                            }
+                            egui::CollapsingHeader::new("Opening details").open(failed.then_some(true)).show(ui, |ui| {
                                 ui.label(&self.setup_reason);
                             });
                             ui.add_space(18.0);
                             for project in self.projects.clone() {
-                                if ui
-                                    .add_sized([500.0, 42.0], egui::Button::new(&project.name))
-                                    .clicked()
-                                {
+                                let project_button = ui.add_sized([500.0, 42.0], egui::Button::new(&project.name));
+                                crate::real_targets::record(ctx, crate::real_targets::Target::Project(project.id), project_button.rect);
+                                if project_button.clicked() {
                                     self.open_project(project.id);
                                 }
                             }
-                            if self.projects.is_empty() {
-                                ui.label(muted("Accepted KerML v9 + SysML v3 runtime", theme));
+                            if self.projects.is_empty() && !self.opening.as_ref().is_some_and(|opening| opening.running()) {
+                                ui.label(muted("Required runtime: KerML v9 + SysML v3", theme));
                                 ui.add(
                                     egui::TextEdit::singleline(&mut self.bundle_path)
                                         .hint_text("Absolute path to accepted-runtime.agq-runtime")
@@ -484,7 +694,11 @@ impl StudioApp {
                                         Some(self.bundle_path.clone().into()),
                                     ) {
                                         Ok(id) => {
+                                            self.requested_definition = None;
+                                            self.deferred_definition = None;
+                                            self.focus_changes_pending = false;
                                             self.pending.insert(id);
+                                            self.opening = Some(crate::loading::OpeningProgress::new(id));
                                             self.setup_reason =
                                                 "Authenticating immutable runtime bundle…".into();
                                         }
@@ -496,7 +710,7 @@ impl StudioApp {
                             ui.separator();
                             ui.add_space(14.0);
                             ui.label(muted(
-                                "Explore the native interaction and rendering foundation",
+                                "Explore a sample architecture",
                                 theme,
                             ));
                             if ui.button("Open architecture visual fixture").clicked() {
@@ -509,7 +723,7 @@ impl StudioApp {
                                 .small()
                                 .color(theme.amber),
                             );
-                            if !self.pending.is_empty() {
+                            if !self.pending.is_empty() && !self.opening.as_ref().is_some_and(|opening| opening.running()) {
                                 ui.horizontal(|ui| {
                                     ui.spinner();
                                     ui.label("Modeling work continues in the background");
@@ -520,106 +734,24 @@ impl StudioApp {
             });
     }
     pub fn dialogs(&mut self, ctx: &egui::Context) {
-        let theme = self.theme;
         if self.palette {
-            let mut open = true;
-            egui::Window::new("Commands")
-                .open(&mut open)
-                .collapsible(false)
-                .resizable(false)
-                .anchor(Align2::CENTER_TOP, [0.0, 130.0])
-                .fixed_size([590.0, 420.0])
-                .show(ctx, |ui| {
-                    let input = ui.add(
-                        egui::TextEdit::singleline(&mut self.palette_query)
-                            .hint_text("Find a command or focus an element…")
-                            .desired_width(f32::INFINITY),
-                    );
-                    if self.palette_focus {
-                        input.request_focus();
-                        self.palette_focus = false;
-                    }
-                    crate::automation::record(
-                        ctx,
-                        crate::automation::Target::PaletteInput,
-                        input.rect,
-                    );
-                    ui.add_space(8.0);
-                    let enter = ui.input(|i| i.key_pressed(egui::Key::Enter));
-                    egui::ScrollArea::vertical().show(ui, |ui| {
-                        let results: Vec<_> = commands::search(&self.palette_query).collect();
-                        for (index, command) in results.into_iter().enumerate() {
-                            let reason = commands::unavailable(command.id, &self.context());
-                            let label = format!(
-                                "{}    {}\n{}",
-                                command.label,
-                                command.shortcut,
-                                reason.unwrap_or(command.description)
-                            );
-                            let response = ui.add_enabled(
-                                reason.is_none(),
-                                egui::Button::new(label)
-                                    .min_size(Vec2::new(ui.available_width(), 52.0)),
-                            );
-                            if response.clicked() || (index == 0 && enter && reason.is_none()) {
-                                self.execute(command.id, ctx);
-                                self.palette = false;
-                            }
-                        }
-                        if !self.palette_query.trim().is_empty() {
-                            let query = self
-                                .palette_query
-                                .trim_start_matches("Focus ")
-                                .to_lowercase();
-                            let nodes: Vec<_> = self
-                                .projection
-                                .nodes
-                                .iter()
-                                .filter(|n| n.name.to_lowercase().contains(&query))
-                                .take(8)
-                                .map(|n| (n.id, n.name.clone()))
-                                .collect();
-                            for (id, name) in nodes {
-                                if ui.button(format!("Focus {name}")).clicked() {
-                                    self.select(SceneTarget::Node(id), false);
-                                    self.execute(CommandId::Focus, ctx);
-                                    self.palette = false;
-                                }
-                            }
-                        }
-                    });
-                });
-            self.palette &= open;
+            self.command_palette(ctx);
         }
-        if self.create_dialog {
-            let mut open = true;
-            egui::Window::new("Create nested part").open(&mut open).collapsible(false).resizable(false).anchor(Align2::CENTER_CENTER,Vec2::ZERO).default_width(440.0).show(ctx,|ui|{
-                let owner=self.selected_element().and_then(|id|self.projection.nodes.iter().find(|n|n.id==id)).map_or("Selected owner",|n|n.name.as_str());
-                ui.label(format!("Inside {owner}"));ui.add_space(10.0);
-                ui.label("Part name");let name=ui.add(egui::TextEdit::singleline(&mut self.new_part_name).desired_width(f32::INFINITY));
-                crate::automation::record(ctx,crate::automation::Target::CandidateName,name.rect);
-                ui.add_space(16.0);ui.label(muted(if self.fixture.is_some(){"This creates a visual preview of typed intent. Semantic reconstruction requires the accepted runtime."}else{"A source-backed Working candidate will be reconstructed. Review and validate it before committing."},theme));
-                ui.add_space(16.0);let prepare=ui.button("Prepare candidate");
-                crate::automation::record(ctx,crate::automation::Target::CandidatePrepare,prepare.rect);
-                if prepare.clicked(){self.prepare_part();}
-            });
-            self.create_dialog &= open;
-        }
+        self.part_edit_dialog(ctx);
         if self.show_explain {
             let mut open = true;
-            egui::Window::new("Explain · semantic provenance").open(&mut open).default_size([620.0,360.0]).show(ctx,|ui|{
-                if let Some(explanation)=&self.explanation {
-                    ui.label(format!("{:?} · {}",explanation.origin,short_revision(explanation.revision_id)));
-                    if let Some(rule)=&explanation.rule_name {ui.heading(rule);}
-                    for node in &explanation.nodes {ui.group(|ui|{ui.label(&node.label);ui.label(muted(format!("{:?}",node.kind),theme).small());});}
-                    ui.label(format!("{} evidence dependencies{}",explanation.evidence_count,if explanation.truncated{" · display truncated"}else{""}));
-                }else if self.fixture.is_some(){
-                    ui.heading("Every derived relationship has a reason");ui.add_space(12.0);
-                    ui.label("This visual fixture illustrates the path from authored intent through a semantic rule to a derived relationship.");
-                    for text in ["Authored part / type reference","Semantic rule application","Derived relationship"] {ui.group(|ui|{ui.label(text);});ui.label("↓");}
-                    ui.label(RichText::new("Illustrative only. No canonical proof is asserted by this fixture.").color(theme.amber));
-                }else{ui.spinner();ui.label("Loading revision-bound evidence…");}
-            });
+            if let Some(window) = egui::Window::new("Explain · semantic provenance")
+                .open(&mut open)
+                .default_pos(egui::pos2(420.0, 240.0))
+                .default_size([750.0, 440.0])
+                .show(ctx, |ui| self.explain_content(ui))
+            {
+                crate::automation::record(
+                    ctx,
+                    crate::automation::Target::ExplainWindow,
+                    window.response.rect,
+                );
+            }
             self.show_explain = open;
         }
         if self.show_source {
@@ -733,6 +865,14 @@ impl StudioApp {
                     rect,
                 );
                 let selected = *revision == self.projection.revision_id;
+                response.widget_info(|| {
+                    egui::WidgetInfo::selected(
+                        egui::WidgetType::Button,
+                        true,
+                        selected,
+                        format!("{name}, {status}, revision {}", short_revision(*revision)),
+                    )
+                });
                 let dot = egui::pos2(rect.left() + 50.0, rect.center().y);
                 if let Some(parent_index) =
                     parent.and_then(|parent| revisions.iter().position(|r| r.0 == parent))
@@ -763,16 +903,30 @@ impl StudioApp {
                     8.0,
                     theme.surface,
                     Stroke::new(
-                        if selected { 1.5 } else { 1.0 },
-                        if selected { theme.accent } else { theme.border },
+                        if selected || response.has_focus() {
+                            1.5
+                        } else {
+                            1.0
+                        },
+                        if selected || response.has_focus() {
+                            theme.accent
+                        } else {
+                            theme.border
+                        },
                     ),
                     egui::StrokeKind::Inside,
                 );
-                ui.painter().text(
-                    card.min + Vec2::new(20.0, 17.0),
-                    Align2::LEFT_TOP,
-                    name,
+                let mut title = egui::text::LayoutJob::simple_singleline(
+                    name.clone(),
                     FontId::proportional(18.0),
+                    theme.text,
+                );
+                title.wrap.max_width = (card.width() - 40.0).max(1.0);
+                title.wrap.max_rows = 1;
+                title.wrap.break_anywhere = true;
+                ui.painter().galley(
+                    card.min + Vec2::new(20.0, 17.0),
+                    ui.painter().layout_job(title),
                     theme.text,
                 );
                 ui.painter().text(
@@ -790,6 +944,7 @@ impl StudioApp {
                 if response.clicked() {
                     self.select_revision(*revision);
                 }
+                response.on_hover_text(name);
             }
         });
         ui.horizontal(|ui| {

@@ -1,0 +1,17 @@
+{
+  "command": [
+    "powershell",
+    "-NoProfile",
+    "-File",
+    "verification/scripts/native_alpha_uia.ps1",
+    "-Report",
+    "verification/native-studio-alpha/accessibility/port-uia-settled.json"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T16:55:40.073435+00:00",
+  "elapsed_seconds": 7.907,
+  "exit_code": 1,
+  "output": "verification/native-studio-alpha/checks/actual-port-uia-settled.txt",
+  "output_sha256": "65ecf263c6cc87240774f0bcf8a3646003b67a2bafdb1d01f65756bab4a17a24",
+  "build_environment": {}
+}

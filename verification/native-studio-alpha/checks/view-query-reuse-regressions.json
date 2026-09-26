@@ -1,0 +1,19 @@
+{
+  "command": [
+    "target/release/deps/agq_modeling_view-0b264d7eb7ea2322.exe",
+    "--test-threads=1"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T21:31:48.893540+00:00",
+  "elapsed_seconds": 0.516,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/view-query-reuse-regressions.txt",
+  "output_sha256": "d4d72e8676240f4672df59b76dd579742bf75d0a2a94612a0c0b762e463f4e6e",
+  "build_environment": {},
+  "executable": {
+    "path": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\release\\deps\\agq_modeling_view-0b264d7eb7ea2322.exe",
+    "sha256_before": "75ee5c7fe298af999b9f71751bab8e8e0c000501b005e5ff7a7842a93c050d0a",
+    "sha256_after": "75ee5c7fe298af999b9f71751bab8e8e0c000501b005e5ff7a7842a93c050d0a",
+    "unchanged_during_run": true
+  }
+}

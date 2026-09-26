@@ -1,0 +1,23 @@
+   Compiling agq-modeling-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-workspace)
+   Compiling agq-modeling-repository v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-repository)
+   Compiling agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-service)
+   Compiling agq-modeling-view v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-view)
+   Compiling agq-modeling-agent v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-agent)
+   Compiling agq-modeling-sqlite v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\modeling-sqlite)
+   Compiling agq-studio-platform v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-platform)
+    Finished `release` profile [optimized] target(s) in 1m 18s
+     Running unittests src\lib.rs (target\release\deps\agq_studio_platform-e3879cf2be9b704a.exe)
+
+running 9 tests
+test reader::inspector_cache::tests::completed_incomplete_dto_is_exact_and_returned_clones_cannot_change_it ... ok
+test reader::inspector_cache::tests::failures_are_retried_and_never_become_negative_cache_entries ... ok
+test reader::inspector_cache::tests::equal_element_ids_in_different_reader_bindings_do_not_share_entries ... ok
+test reader::inspector_cache::tests::wrong_element_or_outer_or_nested_revision_is_never_cached ... ok
+test reader::tests::immutable_reader_can_cross_and_be_retained_by_the_read_worker ... ok
+test reader::inspector_cache::tests::fixed_bound_evicts_the_least_recently_used_completed_entry ... ok
+test reader::tests::read_authority_is_checked_before_revision_resolution ... ok
+test reader::inspector_cache::tests::concurrent_duplicate_completions_compute_outside_lock_and_retain_one_exact_entry ... ok
+test reader::inspector_cache::tests::conflicting_concurrent_completion_cannot_replace_a_completed_immutable_result ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 11 filtered out; finished in 0.00s
+

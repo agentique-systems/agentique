@@ -1,0 +1,118 @@
+   Compiling agq-modeling-view v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-view)
+   Compiling agq-studio-scene v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-scene)
+    Finished `release` profile [optimized] target(s) in 1m 21s
+     Running unittests src\lib.rs (target\release\deps\agq_modeling_view-2b6e68a42d01dda1.exe)
+
+running 17 tests
+test projection::tests::architecture_expansion_preserves_usage_and_type_as_distinct_nodes ... ok
+test projection::tests::dependency_scope_round_trips_defaults_old_views_and_applies_only_to_focused_graph ... ok
+test projection::tests::definitions_are_selection_metadata_and_preserve_hidden_identity ... ok
+test projection::tests::neighborhood_is_bounded_stable_and_handles_cycles ... ok
+test projection::tests::ownership_projection_reads_canonical_memberships_and_keeps_revision_identity ... ok
+test explain::tests::explanation_retains_rule_revision_and_explicitly_marks_display_links ... ok
+test projection::tests::engineering_part_count_excludes_connectors_without_losing_owned_features ... ok
+test projection::tests::explicit_package_seed_can_expand_members_without_changing_depth_contract ... ok
+test projection::tests::dependency_scope_stops_package_siblings_but_keeps_features_and_direct_dependencies ... ok
+test projection::tests::canonical_sysml_ownership_typing_and_feature_counts_resolve_effective_properties ... ok
+test projection::tests::verification_membership_is_a_modeled_link_and_case_subject_is_not_a_requirement ... ok
+test projection::tests::requirement_subject_reaches_architecture_through_two_canonical_relationships_only ... ok
+test inspector::tests::feature_metadata_uses_exact_standard_identity_and_canonical_declared_names ... ok
+test projection::tests::dependency_scope_respects_filtered_families_and_standard_eligibility ... ok
+test inspector::tests::unresolved_connector_keeps_actual_incomplete_query_even_without_an_incident_edge ... ok
+test inspector::tests::inspector_and_scene_share_canonical_connection_and_query_completeness ... ok
+test projection::tests::focused_inherited_port_keeps_owner_membership_and_original_identity ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests\accepted_views.rs (target\release\deps\accepted_views-9ca15186ce634d2a.exe)
+
+running 1 test
+test authored_view_inspector_proof_and_second_revision_keep_exact_semantic_identity ... ignored, requires accepted KerML and Systems caches; never rebuilds publications
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\release\deps\agq_studio_scene-7a88f16771e096ac.exe)
+
+running 2 tests
+test layout::root_packing_tests::a_large_subsystem_does_not_inflate_every_context_card_cell ... ok
+test fixtures::tests::comparison_fixture_updates_owned_group_summaries ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\graph_pins.rs (target\release\deps\graph_pins-237fc664706aabe3.exe)
+
+running 7 tests
+test invalid_pin_geometry_is_rejected_without_mutating_presentation_memory ... ok
+test card_growth_keeps_pinned_origin_and_reports_new_pin_conflicts ... ok
+test old_sessions_deserialize_and_new_sessions_round_trip_pins ... ok
+test conflicting_active_pins_are_explicit_and_unpin_recovers ... ok
+test hidden_and_stale_pins_reserve_no_space_but_return_when_visible ... ok
+test pin_precedes_soft_positions_and_survives_expansion_and_revision_change ... ok
+test hierarchy_ignores_graph_pins_without_overwriting_their_anchors ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\scene_contract.rs (target\release\deps\scene_contract-7f5289df1cd4970f.exe)
+
+running 29 tests
+test camera_pointer_anchor_fit_and_round_trip ... ok
+test lod_hysteresis_resists_boundary_noise ... ok
+test hierarchy_contains_children_and_siblings_do_not_overlap ... ok
+test collapsed_subsystem_preserves_external_port_connections_without_inventing_ports ... ok
+test collapsed_and_focused_views_retain_original_ids ... ok
+test culling_and_marquee_use_geometry_including_crossing_edges ... ok
+test huge_spatial_queries_use_overflow_lane_without_integer_overflow ... ok
+test neighborhood_is_one_hop_order_independent_and_resolves_port_owners ... ok
+test ownership_cycles_are_rejected_without_recursive_overflow ... ok
+test comparison_preserves_container_envelope_around_removed_ghosts ... ok
+test candidate_diff_does_not_union_old_absolute_container_positions ... ok
+test diff_retains_ghost_revision_and_does_not_mark_unchanged_revision_ids ... ok
+test collapsed_layout_restores_hidden_component_positions ... ok
+test moved_diff_container_keeps_extent_in_current_coordinate_frame ... ok
+test many_ports_have_readable_separation_in_both_layouts ... ok
+test parallel_relationships_have_distinct_routes ... ok
+test parallel_node_links_have_separate_endpoints_but_modeled_ports_remain_exact ... ok
+test ports_have_semantic_identity_and_edges_attach_exactly ... ok
+test revision_bindings_and_identity_are_enforced ... ok
+test routes_are_orthogonal_and_report_obstructions ... ok
+test routing_detours_around_an_unrelated_node ... ok
+test rebuild_is_deterministic_and_local_edits_keep_sibling_positions ... ok
+test self_relationship_routes_form_a_visible_loop ... ok
+test satisfaction_and_verification_have_individually_selectable_target_lanes ... ok
+test scene_lookup_resolves_only_culled_objects_in_containment_order ... ok
+test unknown_categories_are_never_guessed_by_substring ... ok
+test stale_scene_lookup_cannot_return_unrelated_records_or_cross_revisions ... ok
+test graph_layout_keeps_semantic_owners_and_handles_cycles ... ok
+test separated_attachment_stubs_stay_inside_dense_default_layout_gutters ... ok
+
+test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\visibility.rs (target\release\deps\visibility-1db0391111b64d4d.exe)
+
+running 5 tests
+test borrowed_identity_hash_tracks_visible_identity_without_cloning_records ... ok
+test stale_slots_cannot_borrow_different_identities_or_revisions ... ok
+test cross_viewport_relationships_are_retained_without_visible_endpoints ... ok
+test borrowed_culling_preserves_collapsed_proxy_ports_and_diff_ghosts ... ok
+test borrowed_culling_matches_scan_and_legacy_on_adversarial_scenes ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests examples\layout_quality.rs (target\release\examples\layout_quality-16a8326533844e6f.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples\scene_benchmark.rs (target\release\examples\scene_benchmark-b5d81ad930a1128f.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests examples\visibility_benchmark.rs (target\release\examples\visibility_benchmark-8ea7cbb134618264.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

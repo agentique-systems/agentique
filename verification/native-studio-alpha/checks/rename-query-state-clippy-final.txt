@@ -1,0 +1,2 @@
+    Checking agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\crates\modeling-service)
+    Finished `dev` profile [unoptimized] target(s) in 1.88s

@@ -1,0 +1,1099 @@
+{
+  "format": "agentique-native-presentation/1",
+  "scenario": "presentation",
+  "scope": "Native egui input over explicit architecture fixture. Presentation persistence only; no runtime authentication, semantic validation or durable model acceptance.",
+  "database": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\native-studio-alpha\\presentation-run01\\qualification.sqlite",
+  "adapter": "AdapterInfo { name: \"NVIDIA GeForce RTX 3060 Ti\", vendor: 4318, device: 9353, device_type: DiscreteGpu, driver: \"NVIDIA\", driver_info: \"616.92\", backend: Vulkan }",
+  "passed": false,
+  "failure": "Presentation assertion failed: enter view name; status=Ready",
+  "assertions": [
+    {
+      "name": "isolated fixture ready",
+      "passed": true,
+      "before": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 0.0,
+              "y": 0.0
+            },
+            "zoom": 1.0,
+            "viewport": {
+              "width": 1200.0,
+              "height": 800.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "after": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.0414938,
+            "viewport": {
+              "width": 1088.0,
+              "height": 787.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "inputs": []
+    },
+    {
+      "name": "open Local views",
+      "passed": true,
+      "before": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.0414938,
+            "viewport": {
+              "width": 1088.0,
+              "height": 787.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "after": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.0414938,
+            "viewport": {
+              "width": 1088.0,
+              "height": 787.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "inputs": [
+        "frame 133: PointerMoved([643.2 93.5])",
+        "frame 133: PointerButton { pos: [643.2 93.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }",
+        "frame 134: PointerMoved([643.2 93.5])",
+        "frame 134: PointerButton { pos: [643.2 93.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+      ]
+    },
+    {
+      "name": "enter view name",
+      "passed": false,
+      "before": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.0414938,
+            "viewport": {
+              "width": 1088.0,
+              "height": 787.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "after": {
+        "revision": "fa170000-0000-0000-0000-000000000001",
+        "selection": [
+          "Node(ElementId(332426421773975269261407966485658206229))"
+        ],
+        "fixture": "architecture",
+        "presentation": {
+          "world": "System",
+          "definition": {
+            "version": 1,
+            "name": "Agentique Architecture",
+            "kind": "Architecture",
+            "focus": null,
+            "depth": 2,
+            "relationship_families": [
+              "Ownership",
+              "Typing",
+              "Specialization",
+              "Subsetting",
+              "Redefinition",
+              "Connection",
+              "Requirement",
+              "Verification",
+              "Reference"
+            ],
+            "include_standard_library": false,
+            "hidden_elements": []
+          },
+          "camera": {
+            "center": {
+              "x": 482.0,
+              "y": 272.0
+            },
+            "zoom": 1.0414938,
+            "viewport": {
+              "width": 1088.0,
+              "height": 787.0
+            }
+          },
+          "layout": {
+            "bounds": {
+              "fa170000-0000-0000-0000-000000000001": {
+                "min": {
+                  "x": 0.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 292.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000002": {
+                "min": {
+                  "x": 336.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 628.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000003": {
+                "min": {
+                  "x": 672.0,
+                  "y": 0.0
+                },
+                "max": {
+                  "x": 964.0,
+                  "y": 544.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000b": {
+                "min": {
+                  "x": 30.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000c": {
+                "min": {
+                  "x": 30.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000000d": {
+                "min": {
+                  "x": 30.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 262.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000015": {
+                "min": {
+                  "x": 366.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000016": {
+                "min": {
+                  "x": 366.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000017": {
+                "min": {
+                  "x": 366.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 598.0,
+                  "y": 514.0
+                }
+              },
+              "fa170000-0000-0000-0000-00000000001f": {
+                "min": {
+                  "x": 702.0,
+                  "y": 72.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 190.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000020": {
+                "min": {
+                  "x": 702.0,
+                  "y": 234.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 352.0
+                }
+              },
+              "fa170000-0000-0000-0000-000000000021": {
+                "min": {
+                  "x": 702.0,
+                  "y": 396.0
+                },
+                "max": {
+                  "x": 934.0,
+                  "y": 514.0
+                }
+              }
+            }
+          },
+          "collapsed": [],
+          "expanded": null,
+          "branch": null,
+          "panels": {
+            "agent": false,
+            "explain": false,
+            "source": false
+          }
+        },
+        "dark": true,
+        "contrast": false,
+        "reduced_motion": false
+      },
+      "inputs": [
+        "frame 226: PointerMoved([834.0 283.5])",
+        "frame 226: PointerButton { pos: [834.0 283.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }",
+        "frame 227: PointerMoved([834.0 283.5])",
+        "frame 227: PointerButton { pos: [834.0 283.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }",
+        "frame 229: Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+        "frame 229: Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+        "frame 230: Text(\"Architecture overview\")"
+      ]
+    }
+  ],
+  "gallery": [],
+  "final_state": null,
+  "session_digest": null,
+  "views_digest": null
+}

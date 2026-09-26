@@ -46,6 +46,8 @@ through the conda-forge package recommended by the official 2026-04 installer.
 a pinned portable Temurin 21.0.12.1+1 JDK into `.cache`. On other hosts use Java 21
 or set `AGENTIQUE_JAVA` to its executable. `fzstd` 0.1.1 decodes the official
 package's Zstandard payload during setup; it is an engineering dependency only.
+Linux CI selects the same Temurin release with Adoptium's exact SemVer
+`21.0.12+101.0.LTS`, which the pinned setup-java action accepts.
 `node tools/pilot-validate.mjs` loads byte-identical copies of the active libraries,
 checks all starter/fixture files with CheckMode.ALL and records source/JAR hashes.
 

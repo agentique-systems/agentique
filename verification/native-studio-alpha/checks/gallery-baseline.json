@@ -1,0 +1,20 @@
+{
+  "command": [
+    "target/release/agq-studio-native.exe",
+    "--fixture",
+    "architecture",
+    "--no-restore",
+    "--scenario",
+    "vertical",
+    "--scenario-report",
+    "verification/native-studio-alpha/round-01-before/journey.json",
+    "--gallery",
+    "verification/native-studio-alpha/round-01-before"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T15:20:05.138997+00:00",
+  "elapsed_seconds": 9.14,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/gallery-baseline.txt",
+  "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

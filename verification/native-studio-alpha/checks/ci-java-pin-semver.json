@@ -1,0 +1,16 @@
+{
+  "format": "agentique-ci-java-pin-semantics/1",
+  "status": "passed",
+  "semver_version": "7.6.3",
+  "invalid_input": "21.0.12.1",
+  "exact_input": "21.0.12+101.0.LTS",
+  "exact_vendor_match": true,
+  "excluded_builds": [
+    "21.0.12+1.0.LTS",
+    "21.0.12+101.0",
+    "21.0.12+102.0.LTS"
+  ],
+  "scope": "Pure SemVer validation and the pinned action compareBuild condition using local npm dependency; no setup-java action execution or Java download/build/runtime.",
+  "command": "node - (pure validRange, parse.build and compareBuild assertions described in ci-java-version-review.md)",
+  "exit_code": 0
+}

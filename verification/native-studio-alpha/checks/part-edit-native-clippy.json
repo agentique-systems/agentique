@@ -1,0 +1,28 @@
+{
+  "command": [
+    "cargo",
+    "clippy",
+    "--release",
+    "--locked",
+    "--offline",
+    "--manifest-path",
+    "crates/studio-native/Cargo.toml",
+    "--target-dir",
+    "target/native-alpha",
+    "--config",
+    "profile.release.lto=false",
+    "--all-targets",
+    "-j",
+    "1",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T17:38:47.655806+00:00",
+  "elapsed_seconds": 5.672,
+  "exit_code": 101,
+  "output": "verification/native-studio-alpha/checks/part-edit-native-clippy.txt",
+  "output_sha256": "81af5e9e5b331e31fb8a95a4e7b23bb4301bc9f8611c3a0d622105a38aa8a958",
+  "build_environment": {}
+}

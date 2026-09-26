@@ -1,0 +1,72 @@
+{
+  "format": "agentique-ci-java-pin-review/1",
+  "observed_at_utc": "2026-09-25T21:57:16.962898+00:00",
+  "failed_run": "https://github.com/agentique-systems/agentique/actions/runs/36193104237",
+  "failed_input": "21.0.12.1",
+  "chosen_input": "21.0.12+101.0.LTS",
+  "release_name": "jdk-21.0.12.1+1",
+  "version_data": {
+    "build": 1,
+    "major": 21,
+    "minor": 0,
+    "openjdk_version": "21.0.12.1+1-LTS",
+    "optional": "LTS",
+    "patch": 1,
+    "security": 12,
+    "semver": "21.0.12+101.0.LTS"
+  },
+  "metadata_url": "https://api.adoptium.net/v3/assets/feature_releases/21/ga?architecture=x64&image_type=jdk&jvm_impl=hotspot&os=linux&page_size=20&project=jdk&vendor=adoptium",
+  "metadata_http_status": 200,
+  "response_sha256": "f7fb6b5fd0426c585801bded8e8b0fbb60bbf2dd6b56fd4bbb6aa9494fe6ba4a",
+  "linux_package": {
+    "checksum": "ce79869e1307ed8ee1e2baa86a412b1eb5b75d10a01006d788a6f968bcfaee94",
+    "checksum_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jdk_x64_linux_hotspot_21.0.12.1_1.tar.gz.sha256.txt",
+    "download_count": 2237694,
+    "link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jdk_x64_linux_hotspot_21.0.12.1_1.tar.gz",
+    "metadata_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jdk_x64_linux_hotspot_21.0.12.1_1.tar.gz.json",
+    "name": "OpenJDK21U-jdk_x64_linux_hotspot_21.0.12.1_1.tar.gz",
+    "signature_link": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.12.1%2B1/OpenJDK21U-jdk_x64_linux_hotspot_21.0.12.1_1.tar.gz.sig",
+    "size": 207473347
+  },
+  "setup_java_sources": [
+    {
+      "url": "https://raw.githubusercontent.com/actions/setup-java/cf277c60eb25467037889841efdb72551f06f6c3/README.md",
+      "http_status": 200,
+      "sha256": "691bf6345462c7e6c12749037530e31e6ed7e0f3598c7e4f35fbcc77eb49809b"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/actions/setup-java/cf277c60eb25467037889841efdb72551f06f6c3/src/distributions/base-installer.ts",
+      "http_status": 200,
+      "sha256": "c63feb9bb834b151f63c83019dcccc42116dcc08ef9888871b71fd44befaaf0c"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/actions/setup-java/cf277c60eb25467037889841efdb72551f06f6c3/src/distributions/temurin/installer.ts",
+      "http_status": 200,
+      "sha256": "61616144c10d3138652459313cb6e668bf377a13c69e1a0e1d57e52a01da79e6"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/actions/setup-java/cf277c60eb25467037889841efdb72551f06f6c3/src/util.ts",
+      "http_status": 200,
+      "sha256": "22b23502cea64c83bb80f767e065e36c91b32581a32e2f28dd96c64238e45c4d"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/actions/setup-java/cf277c60eb25467037889841efdb72551f06f6c3/package.json",
+      "http_status": 200,
+      "sha256": "d41b46486fb2984cfe819b6f333e1351622c6fdd8c13806dc706d986a0eae608",
+      "semver_dependency": "^7.6.0"
+    }
+  ],
+  "predates_mission": [
+    {
+      "commit": "ded2a6e7dc616b9305508da2976d65282ebd7b4d",
+      "java_version": "21.0.12.1"
+    },
+    {
+      "commit": "0dd51947fa0e0848028e23ccbbd11feb53bd6312",
+      "java_version": "21.0.12.1"
+    }
+  ],
+  "java_binary_downloaded": false,
+  "java_executed": false,
+  "ci_rerun_performed": false
+}

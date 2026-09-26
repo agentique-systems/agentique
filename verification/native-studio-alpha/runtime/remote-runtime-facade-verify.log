@@ -1,0 +1,11 @@
+"locating_package"
+"copying"
+"authenticating_kerml"
+"authenticating_sysml"
+"ready"
+{
+  "kerml_restore_ms": 34535,
+  "sources_verify_ms": 25,
+  "systems_restore_ms": 34005,
+  "transport_verify_ms": 847
+}

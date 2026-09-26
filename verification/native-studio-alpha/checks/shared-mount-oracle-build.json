@@ -1,0 +1,26 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--release",
+    "--config",
+    "profile.release.lto=false",
+    "--locked",
+    "--offline",
+    "-j1",
+    "--no-run",
+    "-p",
+    "agq-modeling-agent",
+    "--features",
+    "verification",
+    "--test",
+    "create_part_performance"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T21:13:00.108275+00:00",
+  "elapsed_seconds": 232.546,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/shared-mount-oracle-build.txt",
+  "output_sha256": "b6d75a7f6afb864abef0af191a7369f3814793a488b29908e4ff62f2c9b92935",
+  "build_environment": {}
+}

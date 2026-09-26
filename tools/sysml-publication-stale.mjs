@@ -87,6 +87,14 @@ function interpretationFiles(root) {
     if (/^(kerml|sysml)-.*(operational|errata).*\.json$/.test(file))
       result.push(`standards/${file}`);
   }
+  // Compiled include_str! transport pins can change without changing Rust source.
+  // Track their complete population without treating them as semantic authority.
+  const transports = "standards/runtime-transports";
+  if (fs.existsSync(safePath(root, transports))) {
+    for (const file of fs.readdirSync(safePath(root, transports))) {
+      if (file.endsWith(".json")) result.push(`${transports}/${file}`);
+    }
+  }
   return [...new Set(result)].sort();
 }
 

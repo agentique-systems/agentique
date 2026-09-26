@@ -9,6 +9,10 @@ mod explain;
 mod inspector;
 mod projection;
 
+#[cfg(test)]
+#[path = "query_reuse/oracle.rs"]
+mod query_reuse_oracle;
+
 pub use explain::*;
 pub use inspector::*;
 pub use projection::*;
@@ -40,6 +44,17 @@ pub enum ViewKind {
     Architecture,
     SemanticGraph,
     Requirements,
+}
+
+/// Traversal policy for a focused Semantic Graph. Other worlds ignore this field.
+/// A dependency neighborhood is a bounded view, not a complete impact analysis.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum GraphScope {
+    #[default]
+    Neighborhood,
+    /// Reached package owners are context anchors. Only an explicitly focused
+    /// package expands its outgoing Ownership relationships to members.
+    DependencyNeighborhood,
 }
 
 /// Canonical relationship families which a human may independently display.
@@ -78,6 +93,9 @@ pub struct ViewDefinition {
     pub version: u32,
     pub name: String,
     pub kind: ViewKind,
+    /// Retained with saved views so reprojecting an agent result preserves scope.
+    #[serde(default)]
+    pub graph_scope: GraphScope,
     /// Optional center for a bounded semantic neighborhood.
     pub focus: Option<ElementId>,
     /// Maximum relationship hops from focus, capped at eight by the engine.
@@ -96,6 +114,7 @@ impl ViewDefinition {
             version: Self::VERSION,
             name: "Agentique Architecture".into(),
             kind: ViewKind::Architecture,
+            graph_scope: GraphScope::Neighborhood,
             focus: None,
             depth: 2,
             relationship_families: vec![
@@ -114,6 +133,24 @@ impl ViewDefinition {
             kind: ViewKind::SemanticGraph,
             relationship_families: RelationshipFamily::all(),
             ..Self::architecture()
+        }
+    }
+    /// Exact bounded dependency lens shared by requesters and projectors.
+    /// Reached package owners supply context without expanding their siblings.
+    pub fn dependency_neighborhood(
+        selection: ElementId,
+        relationship_families: Vec<RelationshipFamily>,
+        depth: u8,
+        include_standard_library: bool,
+    ) -> Self {
+        Self {
+            name: "Dependency neighborhood".into(),
+            graph_scope: GraphScope::DependencyNeighborhood,
+            focus: Some(selection),
+            relationship_families,
+            depth: depth.min(8),
+            include_standard_library,
+            ..Self::semantic_graph()
         }
     }
     /// Requirement context is selected by metaclass, not label text.
@@ -152,6 +189,8 @@ pub struct FeatureSummary {
 /// Counts of canonical directly owned features, not effective/inherited totals.
 #[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FeatureCounts {
+    /// Engineering parts: PartUsage subtypes excluding canonical connectors,
+    /// which include ConnectionUsage and InterfaceUsage.
     pub parts: usize,
     pub ports: usize,
     pub requirements: usize,

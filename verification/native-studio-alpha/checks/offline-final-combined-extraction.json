@@ -1,0 +1,27 @@
+{
+  "scope": "Offline extraction/identity/bookkeeping only; no build, new native run, runtime restoration or feature changes.",
+  "extractor_exit_code": 0,
+  "combined_artifact_count": 40,
+  "artifact_hashes_verified": 40,
+  "gallery_images_verified": 13,
+  "stress_outcomes_in_original_order": [
+    true,
+    false,
+    true
+  ],
+  "separate_restart_verified": true,
+  "original_first_process_outcome_retained": "journey_passed_restart_pending",
+  "immutable_run06_outputs": [
+    {
+      "path": "run06-extracted.json",
+      "sha256": "f37632b18400a94169619de342298a29f6d006e3517f0f655cda8a62329e6faf"
+    },
+    {
+      "path": "run06-extracted.md",
+      "sha256": "b888a9246fe5e1c5c31bd28bf7082e3fd683a107850f441edbd1c97055cfa23f"
+    }
+  ],
+  "local_links_checked": 12,
+  "missing_links": [],
+  "cause_of_failed_10k_anchor": "Unproven; source review identifies an unisolated-input path but reports contain no event provenance or first-divergence frame."
+}

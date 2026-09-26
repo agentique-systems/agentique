@@ -1,0 +1,45 @@
+{
+  "adapter": "AdapterInfo { name: \"NVIDIA GeForce RTX 3060 Ti\", vendor: 4318, device: 9353, device_type: DiscreteGpu, driver: \"NVIDIA\", driver_info: \"616.92\", backend: Vulkan }",
+  "checkpoint": "03-graph-world",
+  "fixture": "architecture",
+  "format": "agentique-native-gallery/1",
+  "image_sha256": "6c36abd90d23efdb23ff2e96c6a86dbed62a0581061c43dd5655597a5c3a3359",
+  "image_size": [
+    1600,
+    1000
+  ],
+  "semantic_data": "explicit architecture visual fixture, not real-model acceptance",
+  "state": {
+    "added_elements": [],
+    "agent_overlay": false,
+    "agent_return": null,
+    "camera_center": [
+      498.0,
+      139.0
+    ],
+    "candidate": false,
+    "candidate_phase": null,
+    "comparison": "Current",
+    "create_dialog": false,
+    "dark": true,
+    "dependency_elements": null,
+    "edges": 4,
+    "explanation_open": false,
+    "focus": null,
+    "frame": 317,
+    "high_contrast": false,
+    "nodes": 5,
+    "palette": false,
+    "palette_query": "Toggle reduced motion",
+    "reduced_motion": true,
+    "removed_elements": [],
+    "revision": "fa170000-0000-0000-0000-000000000001",
+    "selected": [
+      "Node(ElementId(332426421773975269261407966485658206229))"
+    ],
+    "selection_revision": "fa170000-0000-0000-0000-000000000001",
+    "status": "Graph World · selected revision",
+    "world": "Graph",
+    "zoom": 1.0080320835113525
+  }
+}

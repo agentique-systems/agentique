@@ -1,0 +1,27 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--release",
+    "--locked",
+    "--offline",
+    "--manifest-path",
+    "crates/studio-native/Cargo.toml",
+    "--target-dir",
+    "target/native-alpha",
+    "--config",
+    "profile.release.lto=false",
+    "-j",
+    "2",
+    "surface_recovery::tests",
+    "--",
+    "--nocapture"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T17:16:20.117442+00:00",
+  "elapsed_seconds": 59.281,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/surface-recovery-native-tests.txt",
+  "output_sha256": "0912b14d9908453c2f2fd62730920651fdf3cc299e379825cb334dac82842830",
+  "build_environment": {}
+}

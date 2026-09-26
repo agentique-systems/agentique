@@ -1,0 +1,1252 @@
+﻿{
+  "format": "agentique-view-profile-read-audit/1",
+  "observed_utc": "2026-09-25T21:06:27.567132+00:00",
+  "source": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\native-studio-alpha\\real-run04\\process.log",
+  "source_prefix_bytes": 20128,
+  "source_prefix_sha256": "eec2423379e02b9cf9dc62019ae08d305d2d77db45294067b09a22d21ab0b88d",
+  "complete_profile_records": 12,
+  "scope": "A single read-only byte-prefix snapshot, possibly while the process runs. Context phases are non-overlapping within each call; inclusive parent phases are not summed. Per-call wall times are not frame/input/GPU latency. No runtime authentication or product acceptance is established by this audit.",
+  "summary": [
+    {
+      "revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+      "operation": "inspect",
+      "kind": "Inspector",
+      "observations": 8,
+      "successful": 8,
+      "total_ms_min": 5479.9762,
+      "total_ms_median": 5507.04115,
+      "total_ms_max": 5624.5059,
+      "context_ms_median": 5320.853800000001,
+      "context_fraction_median": 0.9661484375428888
+    },
+    {
+      "revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+      "operation": "project",
+      "kind": "Architecture",
+      "observations": 3,
+      "successful": 3,
+      "total_ms_min": 2768.5894,
+      "total_ms_median": 5512.905199999999,
+      "total_ms_max": 5582.5397,
+      "context_ms_median": 5316.8836,
+      "context_fraction_median": 0.9673193183151418
+    },
+    {
+      "revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+      "operation": "project",
+      "kind": "SemanticGraph",
+      "observations": 1,
+      "successful": 1,
+      "total_ms_min": 2699.9064000000003,
+      "total_ms_median": 2699.9064000000003,
+      "total_ms_max": 2699.9064000000003,
+      "context_ms_median": 2654.4157,
+      "context_fraction_median": 0.9831510084942203
+    }
+  ],
+  "records": [
+    {
+      "line": 1,
+      "operation": "project",
+      "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+      "revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+      "focus": null,
+      "focus_names_in_exact_revision_gallery": [],
+      "kind": "Architecture",
+      "scope": "Neighborhood",
+      "outcome": "ok",
+      "total_ms": 2768.5894,
+      "context_ms": 2719.8821,
+      "context_fraction": 0.9824071781825069,
+      "phases": [
+        {
+          "elapsed_ms": 11.4824,
+          "included_in": null,
+          "name": "local_population"
+        },
+        {
+          "elapsed_ms": 1.5708,
+          "included_in": null,
+          "name": "graph_extraction"
+        },
+        {
+          "elapsed_ms": 2719.8821,
+          "included_in": null,
+          "name": "connector_kerml_context"
+        },
+        {
+          "elapsed_ms": 31.203100000000003,
+          "included_in": null,
+          "name": "connector_queries"
+        },
+        {
+          "elapsed_ms": 1.7156,
+          "included_in": null,
+          "name": "selection_scope"
+        },
+        {
+          "elapsed_ms": 0.1287,
+          "included_in": null,
+          "name": "node_mapping"
+        },
+        {
+          "elapsed_ms": 0.0006,
+          "included_in": null,
+          "name": "group_mapping"
+        }
+      ],
+      "sizes": {
+        "canonical_elements": 76147,
+        "connector_queries": 1,
+        "extracted_graph_edges": 526,
+        "groups": 1,
+        "local_elements": 785,
+        "projected_edges": 6,
+        "projected_nodes": 7,
+        "standard_elements": 75362,
+        "warnings": 0
+      },
+      "view": {
+        "depth": 1,
+        "focus": null,
+        "graph_scope": "Neighborhood",
+        "hidden_elements": [],
+        "include_standard_library": false,
+        "kind": "Architecture",
+        "name": "Agentique Architecture",
+        "relationship_families": [
+          "Ownership",
+          "Typing",
+          "Specialization",
+          "Subsetting",
+          "Redefinition",
+          "Connection",
+          "Requirement",
+          "Verification",
+          "Reference"
+        ],
+        "version": 1
+      }
+    },
+    {
+      "line": 2,
+      "operation": "inspect",
+      "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+      "revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+      "focus": "5baa52c5-8b0c-5a2b-9748-4a196e618831",
+      "focus_names_in_exact_revision_gallery": [
+        "Agentique"
+      ],
+      "kind": "Inspector",
+      "scope": "SelectedElement",
+      "outcome": "ok",
+      "total_ms": 5488.2756,
+      "context_ms": 5340.8686,
+      "context_fraction": 0.973141472705926,
+      "phases": [
+        {
+          "elapsed_ms": 0.027399999999999997,
+          "included_in": null,
+          "name": "node_mapping"
+        },
+        {
+          "elapsed_ms": 2659.4321999999997,
+          "included_in": null,
+          "name": "kerml_context"
+        },
+        {
+          "elapsed_ms": 0.1157,
+          "included_in": null,
+          "name": "owner_query"
+        },
+        {
+          "elapsed_ms": 0.0040999999999999995,
+          "included_in": null,
+          "name": "feature_queries"
+        },
+        {
+          "elapsed_ms": 101.5073,
+          "included_in": null,
+          "name": "type_queries"
+        },
+        {
+          "elapsed_ms": 0.11,
+          "included_in": null,
+          "name": "feature_provenance"
+        },
+        {
+          "elapsed_ms": 11.419500000000001,
+          "included_in": null,
+          "name": "local_population"
+        },
+        {
+          "elapsed_ms": 1.119,
+          "included_in": "relationship_queries",
+          "name": "graph_extraction"
+        },
+        {
+          "elapsed_ms": 28.616,
+          "included_in": "relationship_queries",
+          "name": "connector_queries"
+        },
+        {
+          "elapsed_ms": 29.8243,
+          "included_in": null,
+          "name": "relationship_queries"
+        },
+        {
+          "elapsed_ms": 0.0022,
+          "included_in": null,
+          "name": "source_mapping"
+        },
+        {
+          "elapsed_ms": 2681.4364,
+          "included_in": null,
+          "name": "sysml_profile_context"
+        }
+      ],
+      "sizes": {
+        "canonical_elements": 76147,
+        "connector_queries": 1,
+        "effective_features": 92,
+        "effective_types": 0,
+        "extracted_graph_edges": 526,
+        "local_elements": 785,
+        "owned_features": 4,
+        "query_summaries": 4,
+        "relationships": 6,
+        "standard_elements": 75362
+      },
+      "view": null
+    },
+    {
+      "line": 3,
+      "operation": "inspect",
+      "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+      "revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+      "focus": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+      "focus_names_in_exact_revision_gallery": [
+        "ModelingPlatform"
+      ],
+      "kind": "Inspector",
+      "scope": "SelectedElement",
+      "outcome": "ok",
+      "total_ms": 5573.8382,
+      "context_ms": 5306.8976,
+      "context_fraction": 0.9521082976538501,
+      "phases": [
+        {
+          "elapsed_ms": 0.083,
+          "included_in": null,
+          "name": "node_mapping"
+        },
+        {
+          "elapsed_ms": 2655.2609,
+          "included_in": null,
+          "name": "kerml_context"
+        },
+        {
+          "elapsed_ms": 0.1164,
+          "included_in": null,
+          "name": "owner_query"
+        },
+        {
+          "elapsed_ms": 0.0003,
+          "included_in": null,
+          "name": "feature_queries"
+        },
+        {
+          "elapsed_ms": 221.5545,
+          "included_in": null,
+          "name": "type_queries"
+        },
+        {
+          "elapsed_ms": 0.1395,
+          "included_in": null,
+          "name": "feature_provenance"
+        },
+        {
+          "elapsed_ms": 11.3854,
+          "included_in": null,
+          "name": "local_population"
+        },
+        {
+          "elapsed_ms": 1.1239,
+          "included_in": "relationship_queries",
+          "name": "graph_extraction"
+        },
+        {
+          "elapsed_ms": 27.4994,
+          "included_in": "relationship_queries",
+          "name": "connector_queries"
+        },
+        {
+          "elapsed_ms": 28.698999999999998,
+          "included_in": null,
+          "name": "relationship_queries"
+        },
+        {
+          "elapsed_ms": 0.0026,
+          "included_in": null,
+          "name": "source_mapping"
+        },
+        {
+          "elapsed_ms": 2651.6367,
+          "included_in": null,
+          "name": "sysml_profile_context"
+        }
+      ],
+      "sizes": {
+        "canonical_elements": 76147,
+        "connector_queries": 1,
+        "effective_features": 102,
+        "effective_types": 0,
+        "extracted_graph_edges": 526,
+        "local_elements": 785,
+        "owned_features": 14,
+        "query_summaries": 4,
+        "relationships": 17,
+        "standard_elements": 75362
+      },
+      "view": null
+    },
+    {
+      "line": 4,
+      "operation": "project",
+      "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+      "revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+      "focus": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+      "focus_names_in_exact_revision_gallery": [
+        "ModelingPlatform"
+      ],
+      "kind": "Architecture",
+      "scope": "Neighborhood",
+      "outcome": "ok",
+      "total_ms": 5582.5397,
+      "context_ms": 5316.8836,
+      "context_fraction": 0.9524130388181565,
+      "phases": [
+        {
+          "elapsed_ms": 10.7621,
+          "included_in": null,
+          "name": "local_population"
+        },
+        {
+          "elapsed_ms": 1.1571,
+          "included_in": null,
+          "name": "graph_extraction"
+        },
+        {
+          "elapsed_ms": 2662.5128,
+          "included_in": null,
+          "name": "connector_kerml_context"
+        },
+        {
+          "elapsed_ms": 30.179299999999998,
+          "included_in": null,
+          "name": "connector_queries"
+        },
+        {
+          "elapsed_ms": 2654.3708,
+          "included_in": "selection_scope",
+          "name": "focused_kerml_context"
+        },
+        {
+          "elapsed_ms": 217.8959,
+          "included_in": "selection_scope",
+          "name": "focused_interface_queries"
+        },
+        {
+          "elapsed_ms": 2874.8981000000003,
+          "included_in": null,
+          "name": "selection_scope"
+        },
+        {
+          "elapsed_ms": 0.3466,
+          "included_in": null,
+          "name": "node_mapping"
+        },
+        {
+          "elapsed_ms": 0.001,
+          "included_in": null,
+          "name": "group_mapping"
+        }
+      ],
+      "sizes": {
+        "canonical_elements": 76147,
+        "connector_queries": 1,
+        "extracted_graph_edges": 526,
+        "groups": 1,
+        "local_elements": 785,
+        "projected_edges": 20,
+        "projected_nodes": 20,
+        "standard_elements": 75362,
+        "warnings": 0
+      },
+      "view": {
+        "depth": 1,
+        "focus": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "graph_scope": "Neighborhood",
+        "hidden_elements": [],
+        "include_standard_library": false,
+        "kind": "Architecture",
+        "name": "Agentique Architecture",
+        "relationship_families": [
+          "Ownership",
+          "Typing",
+          "Specialization",
+          "Subsetting",
+          "Redefinition",
+          "Connection",
+          "Requirement",
+          "Verification",
+          "Reference"
+        ],
+        "version": 1
+      }
+    },
+    {
+      "line": 5,
+      "operation": "inspect",
+      "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+      "revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+      "focus": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+      "focus_names_in_exact_revision_gallery": [
+        "ModelingPlatform"
+      ],
+      "kind": "Inspector",
+      "scope": "SelectedElement",
+      "outcome": "ok",
+      "total_ms": 5604.8442000000005,
+      "context_ms": 5337.5502,
+      "context_fraction": 0.9523101819672346,
+      "phases": [
+        {
+          "elapsed_ms": 0.0354,
+          "included_in": null,
+          "name": "node_mapping"
+        },
+        {
+          "elapsed_ms": 2657.3946,
+          "included_in": null,
+          "name": "kerml_context"
+        },
+        {
+          "elapsed_ms": 0.1236,
+          "included_in": null,
+          "name": "owner_query"
+        },
+        {
+          "elapsed_ms": 0.00039999999999999996,
+          "included_in": null,
+          "name": "feature_queries"
+        },
+        {
+          "elapsed_ms": 222.1876,
+          "included_in": null,
+          "name": "type_queries"
+        },
+        {
+          "elapsed_ms": 0.1206,
+          "included_in": null,
+          "name": "feature_provenance"
+        },
+        {
+          "elapsed_ms": 11.2614,
+          "included_in": null,
+          "name": "local_population"
+        },
+        {
+          "elapsed_ms": 1.1329,
+          "included_in": "relationship_queries",
+          "name": "graph_extraction"
+        },
+        {
+          "elapsed_ms": 27.9472,
+          "included_in": "relationship_queries",
+          "name": "connector_queries"
+        },
+        {
+          "elapsed_ms": 29.159399999999998,
+          "included_in": null,
+          "name": "relationship_queries"
+        },
+        {
+          "elapsed_ms": 0.0023,
+          "included_in": null,
+          "name": "source_mapping"
+        },
+        {
+          "elapsed_ms": 2680.1556,
+          "included_in": null,
+          "name": "sysml_profile_context"
+        }
+      ],
+      "sizes": {
+        "canonical_elements": 76147,
+        "connector_queries": 1,
+        "effective_features": 102,
+        "effective_types": 0,
+        "extracted_graph_edges": 526,
+        "local_elements": 785,
+        "owned_features": 14,
+        "query_summaries": 4,
+        "relationships": 17,
+        "standard_elements": 75362
+      },
+      "view": null
+    },
+    {
+      "line": 6,
+      "operation": "inspect",
+      "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+      "revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+      "focus": "206b48b1-d0bb-52ed-8248-50e05afe4ecc",
+      "focus_names_in_exact_revision_gallery": [
+        "clientQueries"
+      ],
+      "kind": "Inspector",
+      "scope": "SelectedElement",
+      "outcome": "ok",
+      "total_ms": 5624.5059,
+      "context_ms": 5419.6198,
+      "context_fraction": 0.963572604662038,
+      "phases": [
+        {
+          "elapsed_ms": 0.052500000000000005,
+          "included_in": null,
+          "name": "node_mapping"
+        },
+        {
+          "elapsed_ms": 2717.408,
+          "included_in": null,
+          "name": "kerml_context"
+        },
+        {
+          "elapsed_ms": 0.1467,
+          "included_in": null,
+          "name": "owner_query"
+        },
+        {
+          "elapsed_ms": 4.8632,
+          "included_in": null,
+          "name": "feature_queries"
+        },
+        {
+          "elapsed_ms": 150.60109999999997,
+          "included_in": null,
+          "name": "type_queries"
+        },
+        {
+          "elapsed_ms": 0.1633,
+          "included_in": null,
+          "name": "feature_provenance"
+        },
+        {
+          "elapsed_ms": 11.234900000000001,
+          "included_in": null,
+          "name": "local_population"
+        },
+        {
+          "elapsed_ms": 1.1157000000000001,
+          "included_in": "relationship_queries",
+          "name": "graph_extraction"
+        },
+        {
+          "elapsed_ms": 30.727899999999998,
+          "included_in": "relationship_queries",
+          "name": "connector_queries"
+        },
+        {
+          "elapsed_ms": 31.929199999999998,
+          "included_in": null,
+          "name": "relationship_queries"
+        },
+        {
+          "elapsed_ms": 0.0027,
+          "included_in": null,
+          "name": "source_mapping"
+        },
+        {
+          "elapsed_ms": 2702.2118,
+          "included_in": null,
+          "name": "sysml_profile_context"
+        }
+      ],
+      "sizes": {
+        "canonical_elements": 76147,
+        "connector_queries": 1,
+        "effective_features": 85,
+        "effective_types": 1,
+        "extracted_graph_edges": 526,
+        "local_elements": 785,
+        "owned_features": 0,
+        "query_summaries": 8,
+        "relationships": 6,
+        "standard_elements": 75362
+      },
+      "view": null
+    },
+    {
+      "line": 7,
+      "operation": "inspect",
+      "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+      "revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+      "focus": "c7a2444a-f32b-56f2-bf0e-dd72255b2140",
+      "focus_names_in_exact_revision_gallery": [
+        "ModelRepository"
+      ],
+      "kind": "Inspector",
+      "scope": "SelectedElement",
+      "outcome": "ok",
+      "total_ms": 5512.6124,
+      "context_ms": 5324.3739000000005,
+      "context_fraction": 0.9658531225594603,
+      "phases": [
+        {
+          "elapsed_ms": 0.056,
+          "included_in": null,
+          "name": "node_mapping"
+        },
+        {
+          "elapsed_ms": 2662.8586,
+          "included_in": null,
+          "name": "kerml_context"
+        },
+        {
+          "elapsed_ms": 0.1178,
+          "included_in": null,
+          "name": "owner_query"
+        },
+        {
+          "elapsed_ms": 0.0005,
+          "included_in": null,
+          "name": "feature_queries"
+        },
+        {
+          "elapsed_ms": 142.2054,
+          "included_in": null,
+          "name": "type_queries"
+        },
+        {
+          "elapsed_ms": 0.1062,
+          "included_in": null,
+          "name": "feature_provenance"
+        },
+        {
+          "elapsed_ms": 11.269400000000001,
+          "included_in": null,
+          "name": "local_population"
+        },
+        {
+          "elapsed_ms": 1.106,
+          "included_in": "relationship_queries",
+          "name": "graph_extraction"
+        },
+        {
+          "elapsed_ms": 28.033700000000003,
+          "included_in": "relationship_queries",
+          "name": "connector_queries"
+        },
+        {
+          "elapsed_ms": 29.2326,
+          "included_in": null,
+          "name": "relationship_queries"
+        },
+        {
+          "elapsed_ms": 0.0026,
+          "included_in": null,
+          "name": "source_mapping"
+        },
+        {
+          "elapsed_ms": 2661.5153,
+          "included_in": null,
+          "name": "sysml_profile_context"
+        }
+      ],
+      "sizes": {
+        "canonical_elements": 76147,
+        "connector_queries": 1,
+        "effective_features": 91,
+        "effective_types": 0,
+        "extracted_graph_edges": 526,
+        "local_elements": 785,
+        "owned_features": 2,
+        "query_summaries": 4,
+        "relationships": 7,
+        "standard_elements": 75362
+      },
+      "view": null
+    },
+    {
+      "line": 8,
+      "operation": "project",
+      "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+      "revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+      "focus": "c7a2444a-f32b-56f2-bf0e-dd72255b2140",
+      "focus_names_in_exact_revision_gallery": [
+        "ModelRepository"
+      ],
+      "kind": "Architecture",
+      "scope": "Neighborhood",
+      "outcome": "ok",
+      "total_ms": 5512.905199999999,
+      "context_ms": 5332.7397,
+      "context_fraction": 0.9673193183151418,
+      "phases": [
+        {
+          "elapsed_ms": 10.7203,
+          "included_in": null,
+          "name": "local_population"
+        },
+        {
+          "elapsed_ms": 1.1511,
+          "included_in": null,
+          "name": "graph_extraction"
+        },
+        {
+          "elapsed_ms": 2666.8568999999998,
+          "included_in": null,
+          "name": "connector_kerml_context"
+        },
+        {
+          "elapsed_ms": 30.3446,
+          "included_in": null,
+          "name": "connector_queries"
+        },
+        {
+          "elapsed_ms": 2665.8828,
+          "included_in": "selection_scope",
+          "name": "focused_kerml_context"
+        },
+        {
+          "elapsed_ms": 132.92170000000002,
+          "included_in": "selection_scope",
+          "name": "focused_interface_queries"
+        },
+        {
+          "elapsed_ms": 2801.1402,
+          "included_in": null,
+          "name": "selection_scope"
+        },
+        {
+          "elapsed_ms": 0.093,
+          "included_in": null,
+          "name": "node_mapping"
+        },
+        {
+          "elapsed_ms": 0.0085,
+          "included_in": null,
+          "name": "group_mapping"
+        }
+      ],
+      "sizes": {
+        "canonical_elements": 76147,
+        "connector_queries": 1,
+        "extracted_graph_edges": 526,
+        "groups": 2,
+        "local_elements": 785,
+        "projected_edges": 4,
+        "projected_nodes": 5,
+        "standard_elements": 75362,
+        "warnings": 0
+      },
+      "view": {
+        "depth": 1,
+        "focus": "c7a2444a-f32b-56f2-bf0e-dd72255b2140",
+        "graph_scope": "Neighborhood",
+        "hidden_elements": [],
+        "include_standard_library": false,
+        "kind": "Architecture",
+        "name": "Agentique Architecture",
+        "relationship_families": [
+          "Ownership",
+          "Typing",
+          "Specialization",
+          "Subsetting",
+          "Redefinition",
+          "Connection",
+          "Requirement",
+          "Verification",
+          "Reference"
+        ],
+        "version": 1
+      }
+    },
+    {
+      "line": 9,
+      "operation": "inspect",
+      "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+      "revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+      "focus": "c7a2444a-f32b-56f2-bf0e-dd72255b2140",
+      "focus_names_in_exact_revision_gallery": [
+        "ModelRepository"
+      ],
+      "kind": "Inspector",
+      "scope": "SelectedElement",
+      "outcome": "ok",
+      "total_ms": 5479.9762,
+      "context_ms": 5300.9716,
+      "context_fraction": 0.9673347851401252,
+      "phases": [
+        {
+          "elapsed_ms": 0.0172,
+          "included_in": null,
+          "name": "node_mapping"
+        },
+        {
+          "elapsed_ms": 2655.5559,
+          "included_in": null,
+          "name": "kerml_context"
+        },
+        {
+          "elapsed_ms": 0.1143,
+          "included_in": null,
+          "name": "owner_query"
+        },
+        {
+          "elapsed_ms": 0.00039999999999999996,
+          "included_in": null,
+          "name": "feature_queries"
+        },
+        {
+          "elapsed_ms": 133.40460000000002,
+          "included_in": null,
+          "name": "type_queries"
+        },
+        {
+          "elapsed_ms": 0.1031,
+          "included_in": null,
+          "name": "feature_provenance"
+        },
+        {
+          "elapsed_ms": 11.2686,
+          "included_in": null,
+          "name": "local_population"
+        },
+        {
+          "elapsed_ms": 1.0978999999999999,
+          "included_in": "relationship_queries",
+          "name": "graph_extraction"
+        },
+        {
+          "elapsed_ms": 28.3884,
+          "included_in": "relationship_queries",
+          "name": "connector_queries"
+        },
+        {
+          "elapsed_ms": 29.5749,
+          "included_in": null,
+          "name": "relationship_queries"
+        },
+        {
+          "elapsed_ms": 0.0022,
+          "included_in": null,
+          "name": "source_mapping"
+        },
+        {
+          "elapsed_ms": 2645.4157,
+          "included_in": null,
+          "name": "sysml_profile_context"
+        }
+      ],
+      "sizes": {
+        "canonical_elements": 76147,
+        "connector_queries": 1,
+        "effective_features": 91,
+        "effective_types": 0,
+        "extracted_graph_edges": 526,
+        "local_elements": 785,
+        "owned_features": 2,
+        "query_summaries": 4,
+        "relationships": 7,
+        "standard_elements": 75362
+      },
+      "view": null
+    },
+    {
+      "line": 10,
+      "operation": "inspect",
+      "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+      "revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+      "focus": "6f56807d-b79b-5a10-b23e-8b02a2b1b986",
+      "focus_names_in_exact_revision_gallery": [
+        "repositoryRevisions"
+      ],
+      "kind": "Inspector",
+      "scope": "SelectedElement",
+      "outcome": "ok",
+      "total_ms": 5501.4699,
+      "context_ms": 5317.3337,
+      "context_fraction": 0.9665296360160036,
+      "phases": [
+        {
+          "elapsed_ms": 0.0524,
+          "included_in": null,
+          "name": "node_mapping"
+        },
+        {
+          "elapsed_ms": 2663.5717,
+          "included_in": null,
+          "name": "kerml_context"
+        },
+        {
+          "elapsed_ms": 0.1503,
+          "included_in": null,
+          "name": "owner_query"
+        },
+        {
+          "elapsed_ms": 5.41,
+          "included_in": null,
+          "name": "feature_queries"
+        },
+        {
+          "elapsed_ms": 131.7465,
+          "included_in": null,
+          "name": "type_queries"
+        },
+        {
+          "elapsed_ms": 0.1235,
+          "included_in": null,
+          "name": "feature_provenance"
+        },
+        {
+          "elapsed_ms": 11.3755,
+          "included_in": null,
+          "name": "local_population"
+        },
+        {
+          "elapsed_ms": 1.1334,
+          "included_in": "relationship_queries",
+          "name": "graph_extraction"
+        },
+        {
+          "elapsed_ms": 28.3172,
+          "included_in": "relationship_queries",
+          "name": "connector_queries"
+        },
+        {
+          "elapsed_ms": 29.528,
+          "included_in": null,
+          "name": "relationship_queries"
+        },
+        {
+          "elapsed_ms": 0.0019,
+          "included_in": null,
+          "name": "source_mapping"
+        },
+        {
+          "elapsed_ms": 2653.762,
+          "included_in": null,
+          "name": "sysml_profile_context"
+        }
+      ],
+      "sizes": {
+        "canonical_elements": 76147,
+        "connector_queries": 1,
+        "effective_features": 85,
+        "effective_types": 1,
+        "extracted_graph_edges": 526,
+        "local_elements": 785,
+        "owned_features": 0,
+        "query_summaries": 7,
+        "relationships": 5,
+        "standard_elements": 75362
+      },
+      "view": null
+    },
+    {
+      "line": 11,
+      "operation": "inspect",
+      "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+      "revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+      "focus": "c7a2444a-f32b-56f2-bf0e-dd72255b2140",
+      "focus_names_in_exact_revision_gallery": [
+        "ModelRepository"
+      ],
+      "kind": "Inspector",
+      "scope": "SelectedElement",
+      "outcome": "ok",
+      "total_ms": 5494.1632,
+      "context_ms": 5309.7997,
+      "context_fraction": 0.9664437525263173,
+      "phases": [
+        {
+          "elapsed_ms": 0.046400000000000004,
+          "included_in": null,
+          "name": "node_mapping"
+        },
+        {
+          "elapsed_ms": 2665.6779,
+          "included_in": null,
+          "name": "kerml_context"
+        },
+        {
+          "elapsed_ms": 0.1147,
+          "included_in": null,
+          "name": "owner_query"
+        },
+        {
+          "elapsed_ms": 0.00039999999999999996,
+          "included_in": null,
+          "name": "feature_queries"
+        },
+        {
+          "elapsed_ms": 139.74710000000002,
+          "included_in": null,
+          "name": "type_queries"
+        },
+        {
+          "elapsed_ms": 0.11019999999999999,
+          "included_in": null,
+          "name": "feature_provenance"
+        },
+        {
+          "elapsed_ms": 11.2577,
+          "included_in": null,
+          "name": "local_population"
+        },
+        {
+          "elapsed_ms": 1.1111,
+          "included_in": "relationship_queries",
+          "name": "graph_extraction"
+        },
+        {
+          "elapsed_ms": 26.8461,
+          "included_in": "relationship_queries",
+          "name": "connector_queries"
+        },
+        {
+          "elapsed_ms": 28.0379,
+          "included_in": null,
+          "name": "relationship_queries"
+        },
+        {
+          "elapsed_ms": 0.0023,
+          "included_in": null,
+          "name": "source_mapping"
+        },
+        {
+          "elapsed_ms": 2644.1218,
+          "included_in": null,
+          "name": "sysml_profile_context"
+        }
+      ],
+      "sizes": {
+        "canonical_elements": 76147,
+        "connector_queries": 1,
+        "effective_features": 91,
+        "effective_types": 0,
+        "extracted_graph_edges": 526,
+        "local_elements": 785,
+        "owned_features": 2,
+        "query_summaries": 4,
+        "relationships": 7,
+        "standard_elements": 75362
+      },
+      "view": null
+    },
+    {
+      "line": 12,
+      "operation": "project",
+      "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+      "revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+      "focus": "c7a2444a-f32b-56f2-bf0e-dd72255b2140",
+      "focus_names_in_exact_revision_gallery": [
+        "ModelRepository"
+      ],
+      "kind": "SemanticGraph",
+      "scope": "DependencyNeighborhood",
+      "outcome": "ok",
+      "total_ms": 2699.9064000000003,
+      "context_ms": 2654.4157,
+      "context_fraction": 0.9831510084942203,
+      "phases": [
+        {
+          "elapsed_ms": 11.0254,
+          "included_in": null,
+          "name": "local_population"
+        },
+        {
+          "elapsed_ms": 1.1495,
+          "included_in": null,
+          "name": "graph_extraction"
+        },
+        {
+          "elapsed_ms": 2654.4157,
+          "included_in": null,
+          "name": "connector_kerml_context"
+        },
+        {
+          "elapsed_ms": 30.244799999999998,
+          "included_in": null,
+          "name": "connector_queries"
+        },
+        {
+          "elapsed_ms": 0.5917,
+          "included_in": null,
+          "name": "selection_scope"
+        },
+        {
+          "elapsed_ms": 0.1676,
+          "included_in": null,
+          "name": "node_mapping"
+        },
+        {
+          "elapsed_ms": 0.0019,
+          "included_in": null,
+          "name": "group_mapping"
+        }
+      ],
+      "sizes": {
+        "canonical_elements": 76147,
+        "connector_queries": 1,
+        "extracted_graph_edges": 526,
+        "groups": 5,
+        "local_elements": 785,
+        "projected_edges": 13,
+        "projected_nodes": 10,
+        "standard_elements": 75362,
+        "warnings": 0
+      },
+      "view": {
+        "depth": 2,
+        "focus": "c7a2444a-f32b-56f2-bf0e-dd72255b2140",
+        "graph_scope": "DependencyNeighborhood",
+        "hidden_elements": [],
+        "include_standard_library": false,
+        "kind": "SemanticGraph",
+        "name": "Dependency neighborhood",
+        "relationship_families": [
+          "Ownership",
+          "Typing",
+          "Specialization",
+          "Subsetting",
+          "Redefinition",
+          "Connection",
+          "Requirement",
+          "Verification",
+          "Reference"
+        ],
+        "version": 1
+      }
+    }
+  ],
+  "gallery": [
+    {
+      "metadata": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\native-studio-alpha\\real-run04\\gallery\\01-system-world.json",
+      "image": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\native-studio-alpha\\real-run04\\gallery\\01-system-world.png",
+      "image_sha256": "e4aa03b3e2cf65ddc844b51f992db4056de050442e9aa4064ccc4eca40417c92",
+      "image_matches_record": true,
+      "fixture": null,
+      "semantic_data": "real authenticated models/agentique",
+      "binding": {
+        "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+        "revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141"
+      },
+      "projection_revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+      "projection_nodes": 7,
+      "projection_edges": 6,
+      "scene_nodes": 7,
+      "scene_edges": 3,
+      "camera": [
+        422.0,
+        272.0,
+        1.1895734071731567
+      ],
+      "scene_build_ms": 1.9973
+    },
+    {
+      "metadata": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\native-studio-alpha\\real-run04\\gallery\\02-focused-subsystem.json",
+      "image": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\native-studio-alpha\\real-run04\\gallery\\02-focused-subsystem.png",
+      "image_sha256": "428d1358cd718c264d068a32a9532e9afa6f2aecafb32f18ca37ca80547997ee",
+      "image_matches_record": true,
+      "fixture": null,
+      "semantic_data": "real authenticated models/agentique",
+      "binding": {
+        "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+        "revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141"
+      },
+      "projection_revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+      "projection_nodes": 20,
+      "projection_edges": 20,
+      "scene_nodes": 18,
+      "scene_edges": 9,
+      "camera": [
+        687.0,
+        287.0,
+        0.7080394625663757
+      ],
+      "scene_build_ms": 0.3019
+    },
+    {
+      "metadata": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\native-studio-alpha\\real-run04\\gallery\\02a-platform-port.json",
+      "image": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\native-studio-alpha\\real-run04\\gallery\\02a-platform-port.png",
+      "image_sha256": "eb8b59e92686441ed70a8cfac0308d07486dcd2b5deab2a8b344c2382e741349",
+      "image_matches_record": true,
+      "fixture": null,
+      "semantic_data": "real authenticated models/agentique",
+      "binding": {
+        "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+        "revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141"
+      },
+      "projection_revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+      "projection_nodes": 20,
+      "projection_edges": 20,
+      "scene_nodes": 18,
+      "scene_edges": 9,
+      "camera": [
+        687.0,
+        287.0,
+        0.7080394625663757
+      ],
+      "scene_build_ms": 0.3019
+    },
+    {
+      "metadata": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\native-studio-alpha\\real-run04\\gallery\\02b-focused-repository.json",
+      "image": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\native-studio-alpha\\real-run04\\gallery\\02b-focused-repository.png",
+      "image_sha256": "6213227b9fb326a2f740885e0d9a58d9ecbd1d12d877e83cd42e272cfc141abb",
+      "image_matches_record": true,
+      "fixture": null,
+      "semantic_data": "real authenticated models/agentique",
+      "binding": {
+        "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+        "revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141"
+      },
+      "projection_revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+      "projection_nodes": 5,
+      "projection_edges": 4,
+      "scene_nodes": 4,
+      "scene_edges": 2,
+      "camera": [
+        422.0,
+        110.0,
+        1.1895734071731567
+      ],
+      "scene_build_ms": 0.0577
+    },
+    {
+      "metadata": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\native-studio-alpha\\real-run04\\gallery\\02c-repository-port.json",
+      "image": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\native-studio-alpha\\real-run04\\gallery\\02c-repository-port.png",
+      "image_sha256": "7ba42d45304a06e37d89a63d2c612ed86a85ccd5b6fa452d32b86da9c03ebd64",
+      "image_matches_record": true,
+      "fixture": null,
+      "semantic_data": "real authenticated models/agentique",
+      "binding": {
+        "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+        "revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141"
+      },
+      "projection_revision": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+      "projection_nodes": 5,
+      "projection_edges": 4,
+      "scene_nodes": 4,
+      "scene_edges": 2,
+      "camera": [
+        422.0,
+        110.0,
+        1.1895734071731567
+      ],
+      "scene_build_ms": 0.0577
+    }
+  ]
+}

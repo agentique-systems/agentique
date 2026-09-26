@@ -1,0 +1,27 @@
+    Checking agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\crates\kernel)
+    Checking agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\crates\kerml)
+    Checking agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\crates\kerml-semantics)
+    Checking agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\crates\sysml)
+    Checking agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\crates\standard-libraries)
+    Checking agq-sysml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\crates\sysml-semantics)
+    Checking agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\crates\kerml-syntax)
+    Checking agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\crates\kerml-text)
+    Checking agq-modeling-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\crates\modeling-workspace)
+    Checking agq-modeling-repository v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\crates\modeling-repository)
+    Checking agq-modeling-sqlite v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\adapters\modeling-sqlite)
+    Checking agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-alpha-state-recovery\crates\modeling-service)
+error: unused `std::result::Result` that must be used
+   --> crates\modeling-service\src\part_rename.rs:826:13
+    |
+826 |             builder.failure(element, property, failure);
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: this `Result` may be an `Err` variant, which should be handled
+    = note: `-D unused-must-use` implied by `-D warnings`
+    = help: to override `-D warnings` add `#[allow(unused_must_use)]`
+help: use `let _ = ...` to ignore the resulting value
+    |
+826 |             let _ = builder.failure(element, property, failure);
+    |             +++++++
+
+error: could not compile `agq-modeling-service` (lib test) due to 1 previous error

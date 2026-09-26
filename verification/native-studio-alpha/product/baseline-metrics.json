@@ -1,0 +1,58 @@
+{
+  "adapter": "AdapterInfo { name: \"NVIDIA GeForce RTX 3060 Ti\", vendor: 4318, device: 9353, device_type: DiscreteGpu, driver: \"NVIDIA\", driver_info: \"616.92\", backend: Vulkan }",
+  "fixture": "architecture",
+  "frame_count": 90,
+  "frame_interval_median_ms": 6.0243,
+  "frame_interval_p95_ms": 6.3943,
+  "frame_intervals_ms": {
+    "last": 6.3518,
+    "median": 6.0243,
+    "p95": 6.3943,
+    "total_samples": 29,
+    "window_samples": 29
+  },
+  "gpu_instances": 66,
+  "gpu_timestamp_ms": null,
+  "gpu_upload_count": 1,
+  "gpu_upload_cpu_ms": 0.0102,
+  "gpu_uploaded_bytes": 5280,
+  "handled_input_to_next_ui_update_ms": {
+    "pan": {
+      "last": null,
+      "median": null,
+      "p95": null,
+      "total_samples": 0,
+      "window_samples": 0
+    },
+    "selection": {
+      "last": null,
+      "median": null,
+      "p95": null,
+      "total_samples": 0,
+      "window_samples": 0
+    },
+    "zoom": {
+      "last": null,
+      "median": null,
+      "p95": null,
+      "total_samples": 0,
+      "window_samples": 0
+    }
+  },
+  "hit_test_us": {
+    "last": null,
+    "median": null,
+    "p95": null,
+    "total_samples": 0,
+    "window_samples": 0
+  },
+  "layout_included_in_scene_build": true,
+  "note": "Native wgpu frames with vsync. CPU update intervals retain the latest 240 samples after 60 warmup intervals. Input spans start inside the viewport gesture handler and end at the next UI update; they exclude OS input delivery and do not measure presentation. GPU upload is CPU submission time for the last upload. Null means unmeasured.",
+  "physical_input_to_photon_ms": null,
+  "scene_build_ms": 0.1256,
+  "scene_draw_calls": 4,
+  "total_edges": 10,
+  "total_nodes": 12,
+  "visible_nodes": 12,
+  "warmup_frame_intervals_discarded": 60
+}

@@ -1,0 +1,862 @@
+{
+  "artifacts": [
+    {
+      "id": 10871207354,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 3046,
+      "directory_bytes_read": 400504,
+      "archive_bytes": 146311299,
+      "candidates": [
+        {
+          "name": "verification/summaries/semantic-closure-structural/real-structural-query-closure.json",
+          "bytes": 23347
+        }
+      ]
+    },
+    {
+      "id": 10849224418,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2968,
+      "directory_bytes_read": 392423,
+      "archive_bytes": 145709278,
+      "candidates": [
+        {
+          "name": "verification/summaries/semantic-closure-structural/real-structural-query-closure.json",
+          "bytes": 23347
+        }
+      ]
+    },
+    {
+      "id": 10848631776,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2950,
+      "directory_bytes_read": 390357,
+      "archive_bytes": 145680509,
+      "candidates": [
+        {
+          "name": "verification/summaries/semantic-closure-structural/real-structural-query-closure.json",
+          "bytes": 23347
+        }
+      ]
+    },
+    {
+      "id": 10830538136,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2934,
+      "directory_bytes_read": 388565,
+      "archive_bytes": 145653668,
+      "candidates": [
+        {
+          "name": "verification/summaries/semantic-closure-structural/real-structural-query-closure.json",
+          "bytes": 23347
+        }
+      ]
+    },
+    {
+      "id": 10830349496,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2934,
+      "directory_bytes_read": 388565,
+      "archive_bytes": 145653668,
+      "candidates": [
+        {
+          "name": "verification/summaries/semantic-closure-structural/real-structural-query-closure.json",
+          "bytes": 23347
+        }
+      ]
+    },
+    {
+      "id": 10830299594,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2934,
+      "directory_bytes_read": 388565,
+      "archive_bytes": 145653668,
+      "candidates": [
+        {
+          "name": "verification/summaries/semantic-closure-structural/real-structural-query-closure.json",
+          "bytes": 23347
+        }
+      ]
+    },
+    {
+      "id": 10822650239,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2923,
+      "directory_bytes_read": 387369,
+      "archive_bytes": 145622782,
+      "candidates": [
+        {
+          "name": "verification/summaries/semantic-closure-structural/real-structural-query-closure.json",
+          "bytes": 23347
+        }
+      ]
+    },
+    {
+      "id": 10793100573,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2862,
+      "directory_bytes_read": 379953,
+      "archive_bytes": 145427709,
+      "candidates": []
+    },
+    {
+      "id": 10792521883,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2862,
+      "directory_bytes_read": 379953,
+      "archive_bytes": 145427709,
+      "candidates": []
+    },
+    {
+      "id": 10792174627,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2862,
+      "directory_bytes_read": 379953,
+      "archive_bytes": 145427709,
+      "candidates": []
+    },
+    {
+      "id": 10772879749,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2847,
+      "directory_bytes_read": 378308,
+      "archive_bytes": 145395555,
+      "candidates": []
+    },
+    {
+      "id": 10760317020,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2796,
+      "directory_bytes_read": 372354,
+      "archive_bytes": 145245222,
+      "candidates": []
+    },
+    {
+      "id": 10748578000,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2793,
+      "directory_bytes_read": 372030,
+      "archive_bytes": 145232257,
+      "candidates": []
+    },
+    {
+      "id": 10748324068,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2793,
+      "directory_bytes_read": 372030,
+      "archive_bytes": 145232257,
+      "candidates": []
+    },
+    {
+      "id": 10748149214,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2793,
+      "directory_bytes_read": 372030,
+      "archive_bytes": 145232257,
+      "candidates": []
+    },
+    {
+      "id": 10719588153,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2768,
+      "directory_bytes_read": 369327,
+      "archive_bytes": 145088028,
+      "candidates": []
+    },
+    {
+      "id": 10709389608,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2735,
+      "directory_bytes_read": 365356,
+      "archive_bytes": 145029440,
+      "candidates": []
+    },
+    {
+      "id": 10709136648,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2732,
+      "directory_bytes_read": 365042,
+      "archive_bytes": 145027437,
+      "candidates": []
+    },
+    {
+      "id": 10693481552,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2721,
+      "directory_bytes_read": 363819,
+      "archive_bytes": 144985830,
+      "candidates": []
+    },
+    {
+      "id": 10678504679,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2687,
+      "directory_bytes_read": 359952,
+      "archive_bytes": 144878541,
+      "candidates": []
+    },
+    {
+      "id": 10660975353,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 3595,
+      "directory_bytes_read": 470738,
+      "archive_bytes": 170845962,
+      "candidates": []
+    },
+    {
+      "id": 10635621910,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 3587,
+      "directory_bytes_read": 469906,
+      "archive_bytes": 170823578,
+      "candidates": []
+    },
+    {
+      "id": 10629394816,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 3580,
+      "directory_bytes_read": 469169,
+      "archive_bytes": 170806359,
+      "candidates": []
+    },
+    {
+      "id": 10624640264,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 3569,
+      "directory_bytes_read": 468032,
+      "archive_bytes": 170780829,
+      "candidates": []
+    },
+    {
+      "id": 10624605319,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 3569,
+      "directory_bytes_read": 468032,
+      "archive_bytes": 170780829,
+      "candidates": []
+    },
+    {
+      "id": 10623539140,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 3569,
+      "directory_bytes_read": 468032,
+      "archive_bytes": 170780829,
+      "candidates": []
+    },
+    {
+      "id": 10603649017,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2887,
+      "directory_bytes_read": 385203,
+      "archive_bytes": 161479481,
+      "candidates": []
+    },
+    {
+      "id": 10603314734,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2887,
+      "directory_bytes_read": 385203,
+      "archive_bytes": 161479481,
+      "candidates": []
+    },
+    {
+      "id": 10603224765,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2887,
+      "directory_bytes_read": 385203,
+      "archive_bytes": 161479481,
+      "candidates": []
+    },
+    {
+      "id": 10601921678,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2662,
+      "directory_bytes_read": 359423,
+      "archive_bytes": 158224566,
+      "candidates": []
+    },
+    {
+      "id": 10596838128,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2425,
+      "directory_bytes_read": 331776,
+      "archive_bytes": 148234031,
+      "candidates": []
+    },
+    {
+      "id": 10596823072,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2425,
+      "directory_bytes_read": 331776,
+      "archive_bytes": 148234031,
+      "candidates": []
+    },
+    {
+      "id": 10596702324,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 2425,
+      "directory_bytes_read": 331776,
+      "archive_bytes": 148234031,
+      "candidates": []
+    },
+    {
+      "id": 10590978160,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 1777,
+      "directory_bytes_read": 227832,
+      "archive_bytes": 137617978,
+      "candidates": []
+    },
+    {
+      "id": 10590653561,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 1777,
+      "directory_bytes_read": 227832,
+      "archive_bytes": 137617978,
+      "candidates": []
+    },
+    {
+      "id": 10590608658,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 1777,
+      "directory_bytes_read": 227832,
+      "archive_bytes": 137617978,
+      "candidates": []
+    },
+    {
+      "id": 10589693064,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 1509,
+      "directory_bytes_read": 193268,
+      "archive_bytes": 130072925,
+      "candidates": []
+    },
+    {
+      "id": 10589338518,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 1509,
+      "directory_bytes_read": 193268,
+      "archive_bytes": 130072925,
+      "candidates": []
+    },
+    {
+      "id": 10588903113,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 1509,
+      "directory_bytes_read": 193268,
+      "archive_bytes": 130072925,
+      "candidates": []
+    },
+    {
+      "id": 10586267747,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 1137,
+      "directory_bytes_read": 136347,
+      "archive_bytes": 86864808,
+      "candidates": []
+    },
+    {
+      "id": 10583626444,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 794,
+      "directory_bytes_read": 87346,
+      "archive_bytes": 22957182,
+      "candidates": []
+    },
+    {
+      "id": 10583416581,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 701,
+      "directory_bytes_read": 75847,
+      "archive_bytes": 13997541,
+      "candidates": []
+    },
+    {
+      "id": 10582293567,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 638,
+      "directory_bytes_read": 68073,
+      "archive_bytes": 6590966,
+      "candidates": []
+    },
+    {
+      "id": 10582283145,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 638,
+      "directory_bytes_read": 68073,
+      "archive_bytes": 6590966,
+      "candidates": []
+    },
+    {
+      "id": 10581813977,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 638,
+      "directory_bytes_read": 68073,
+      "archive_bytes": 6590966,
+      "candidates": []
+    },
+    {
+      "id": 10567402477,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 552,
+      "directory_bytes_read": 57733,
+      "archive_bytes": 5675250,
+      "candidates": []
+    },
+    {
+      "id": 10567142637,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 552,
+      "directory_bytes_read": 57733,
+      "archive_bytes": 5675250,
+      "candidates": []
+    },
+    {
+      "id": 10566684395,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 552,
+      "directory_bytes_read": 57733,
+      "archive_bytes": 5675250,
+      "candidates": []
+    },
+    {
+      "id": 10565680121,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 491,
+      "directory_bytes_read": 50738,
+      "archive_bytes": 5246829,
+      "candidates": []
+    },
+    {
+      "id": 10565650030,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 491,
+      "directory_bytes_read": 50738,
+      "archive_bytes": 5246829,
+      "candidates": []
+    },
+    {
+      "id": 10564709535,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 491,
+      "directory_bytes_read": 50738,
+      "archive_bytes": 5246829,
+      "candidates": []
+    },
+    {
+      "id": 10562790063,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 348,
+      "directory_bytes_read": 34442,
+      "archive_bytes": 3896303,
+      "candidates": []
+    },
+    {
+      "id": 10561824949,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 348,
+      "directory_bytes_read": 34442,
+      "archive_bytes": 3896303,
+      "candidates": []
+    },
+    {
+      "id": 10560879970,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 348,
+      "directory_bytes_read": 34442,
+      "archive_bytes": 3896303,
+      "candidates": []
+    },
+    {
+      "id": 10559101673,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 301,
+      "directory_bytes_read": 29353,
+      "archive_bytes": 3054563,
+      "candidates": []
+    },
+    {
+      "id": 10556377184,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 260,
+      "directory_bytes_read": 24873,
+      "archive_bytes": 2645095,
+      "candidates": []
+    },
+    {
+      "id": 10556082782,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 260,
+      "directory_bytes_read": 24873,
+      "archive_bytes": 2645095,
+      "candidates": []
+    },
+    {
+      "id": 10555747878,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 260,
+      "directory_bytes_read": 24873,
+      "archive_bytes": 2645095,
+      "candidates": []
+    },
+    {
+      "id": 10533540394,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 224,
+      "directory_bytes_read": 21109,
+      "archive_bytes": 2267944,
+      "candidates": []
+    },
+    {
+      "id": 10532378537,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 201,
+      "directory_bytes_read": 18731,
+      "archive_bytes": 1906453,
+      "candidates": []
+    },
+    {
+      "id": 10519681201,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 152,
+      "directory_bytes_read": 13929,
+      "archive_bytes": 1521864,
+      "candidates": []
+    },
+    {
+      "id": 10519187041,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 152,
+      "directory_bytes_read": 13929,
+      "archive_bytes": 1521864,
+      "candidates": []
+    },
+    {
+      "id": 10518486770,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 152,
+      "directory_bytes_read": 13929,
+      "archive_bytes": 1521864,
+      "candidates": []
+    },
+    {
+      "id": 10518116779,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 135,
+      "directory_bytes_read": 12436,
+      "archive_bytes": 1165654,
+      "candidates": []
+    },
+    {
+      "id": 10517762326,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 135,
+      "directory_bytes_read": 12436,
+      "archive_bytes": 1165654,
+      "candidates": []
+    },
+    {
+      "id": 10517273154,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 135,
+      "directory_bytes_read": 12436,
+      "archive_bytes": 1165654,
+      "candidates": []
+    },
+    {
+      "id": 10517035255,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 119,
+      "directory_bytes_read": 10888,
+      "archive_bytes": 810018,
+      "candidates": []
+    },
+    {
+      "id": 10517020163,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 119,
+      "directory_bytes_read": 10888,
+      "archive_bytes": 810018,
+      "candidates": []
+    },
+    {
+      "id": 10516875434,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 119,
+      "directory_bytes_read": 10888,
+      "archive_bytes": 810018,
+      "candidates": []
+    },
+    {
+      "id": 10516822485,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 120,
+      "directory_bytes_read": 10979,
+      "archive_bytes": 811057,
+      "candidates": []
+    },
+    {
+      "id": 10516195326,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 105,
+      "directory_bytes_read": 9621,
+      "archive_bytes": 796948,
+      "candidates": []
+    },
+    {
+      "id": 10515502228,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 105,
+      "directory_bytes_read": 9621,
+      "archive_bytes": 796948,
+      "candidates": []
+    },
+    {
+      "id": 10515257411,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 105,
+      "directory_bytes_read": 9621,
+      "archive_bytes": 796948,
+      "candidates": []
+    },
+    {
+      "id": 10515102792,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 105,
+      "directory_bytes_read": 9621,
+      "archive_bytes": 796948,
+      "candidates": []
+    },
+    {
+      "id": 10514936404,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 86,
+      "directory_bytes_read": 7764,
+      "archive_bytes": 435245,
+      "candidates": []
+    },
+    {
+      "id": 10514561685,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 86,
+      "directory_bytes_read": 7764,
+      "archive_bytes": 435245,
+      "candidates": []
+    },
+    {
+      "id": 10513833008,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 86,
+      "directory_bytes_read": 7764,
+      "archive_bytes": 435245,
+      "candidates": []
+    },
+    {
+      "id": 10513582808,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 64,
+      "directory_bytes_read": 5636,
+      "archive_bytes": 402087,
+      "candidates": []
+    },
+    {
+      "id": 10513418049,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 64,
+      "directory_bytes_read": 5636,
+      "archive_bytes": 402087,
+      "candidates": []
+    },
+    {
+      "id": 10512452869,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 64,
+      "directory_bytes_read": 5636,
+      "archive_bytes": 402087,
+      "candidates": []
+    },
+    {
+      "id": 10511962504,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 53,
+      "directory_bytes_read": 4535,
+      "archive_bytes": 391373,
+      "candidates": []
+    },
+    {
+      "id": 10509445570,
+      "name": "verification-evidence",
+      "expired": false,
+      "status": "inspected",
+      "files": 38,
+      "directory_bytes_read": 3109,
+      "archive_bytes": 377491,
+      "candidates": []
+    }
+  ],
+  "inspected": 82,
+  "candidate_entries": 7,
+  "failed": 0
+}

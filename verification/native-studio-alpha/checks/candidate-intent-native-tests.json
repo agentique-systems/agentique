@@ -1,0 +1,24 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--release",
+    "--locked",
+    "--offline",
+    "--manifest-path",
+    "crates/studio-native/Cargo.toml",
+    "--target-dir",
+    "target/native-alpha",
+    "--config",
+    "profile.release.lto=false",
+    "-j",
+    "2"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "started_utc": "2026-09-25T17:20:54.335712+00:00",
+  "elapsed_seconds": 34.812,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/candidate-intent-native-tests.txt",
+  "output_sha256": "fcc402305e57d85c35150f30cd05c26cacc41da788317a20c151ae2d06b6ec9a",
+  "build_environment": {}
+}

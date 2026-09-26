@@ -1,0 +1,6 @@
+﻿{
+    "scope":  "pure source-bookkeeping guards; no accepted runtime",
+    "command":  "python -m unittest discover -s verification/scripts -p test_native_alpha_freshness_plan.py -v",
+    "tests":  5,
+    "exit_code":  0
+}

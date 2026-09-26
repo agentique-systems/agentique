@@ -1,0 +1,159 @@
+{
+  "format": "agentique-ci-selective-artifact-read/1",
+  "started_at": "2026-09-25T22:32:54.849171+00:00",
+  "completed_at": "2026-09-25T22:33:05.339090+00:00",
+  "artifact": {
+    "id": 10890283026,
+    "node_id": "MDg6QXJ0aWZhY3QxMDg5MDI4MzAyNg==",
+    "name": "verification-evidence",
+    "size_in_bytes": 183970169,
+    "url": "https://api.github.com/repos/agentique-systems/agentique/actions/artifacts/10890283026",
+    "archive_download_url": "https://api.github.com/repos/agentique-systems/agentique/actions/artifacts/10890283026/zip",
+    "expired": false,
+    "digest": "sha256:8b6bf9c33c7c931975be1f271606466987f5f20d0a21e6e5e17cba943e81b188",
+    "created_at": "2026-09-25T22:24:43Z",
+    "updated_at": "2026-09-25T22:24:43Z",
+    "expires_at": "2026-12-24T22:02:43Z",
+    "workflow_run": {
+      "id": 36194730967,
+      "repository_id": 1373444581,
+      "head_repository_id": 1373444581,
+      "head_branch": "platform/native-studio-alpha",
+      "head_sha": "4747f8eee085c939932d7be00abbf6af5a1c0ad2"
+    }
+  },
+  "requests": [
+    {
+      "offset": 183970147,
+      "bytes": 22
+    },
+    {
+      "offset": 183970127,
+      "bytes": 20
+    },
+    {
+      "offset": 183434357,
+      "bytes": 535790
+    },
+    {
+      "offset": 424689,
+      "bytes": 30
+    },
+    {
+      "offset": 424719,
+      "bytes": 43
+    },
+    {
+      "offset": 424762,
+      "bytes": 2059
+    },
+    {
+      "offset": 406283,
+      "bytes": 30
+    },
+    {
+      "offset": 406313,
+      "bytes": 49
+    },
+    {
+      "offset": 406362,
+      "bytes": 11529
+    },
+    {
+      "offset": 422188,
+      "bytes": 30
+    },
+    {
+      "offset": 422218,
+      "bytes": 52
+    },
+    {
+      "offset": 422270,
+      "bytes": 72
+    },
+    {
+      "offset": 460284,
+      "bytes": 30
+    },
+    {
+      "offset": 460314,
+      "bytes": 41
+    },
+    {
+      "offset": 460355,
+      "bytes": 9321
+    },
+    {
+      "offset": 913770,
+      "bytes": 30
+    },
+    {
+      "offset": 913800,
+      "bytes": 38
+    },
+    {
+      "offset": 913838,
+      "bytes": 302
+    },
+    {
+      "offset": 181011977,
+      "bytes": 30
+    },
+    {
+      "offset": 181012007,
+      "bytes": 25
+    },
+    {
+      "offset": 181012032,
+      "bytes": 33777
+    }
+  ],
+  "transferred_bytes": 593320,
+  "etag": "\"0x8DF1B53CC60F607\"",
+  "outer_archive_digest_verified": false,
+  "qualification": "Authenticated exact artifact API and stable ETag range reads; ZIP entry CRC and retained entry SHA256 verified. Full archive SHA256 remains unverified without full transfer.",
+  "extracted": [
+    {
+      "member": "verification/generated/logs/rust-clippy.txt",
+      "local_name": "rust-clippy.txt",
+      "bytes": 7077,
+      "sha256": "73aa37f85302938406e3f3e630e90a646c8132a347f71294e3fb39366bb2489b",
+      "zip_crc32": "a981bcf5"
+    },
+    {
+      "member": "verification/generated/logs/engineering-tests.txt",
+      "local_name": "engineering-tests.txt",
+      "bytes": 55154,
+      "sha256": "a0acd75c043ef0f4ec1a77bdb7a77a8363fab1e96fc4b1e6d43117ba853c278d",
+      "zip_crc32": "60aa3e37"
+    },
+    {
+      "member": "verification/generated/logs/independent-fixtures.txt",
+      "local_name": "independent-fixtures.txt",
+      "bytes": 79,
+      "sha256": "f95a8a36082010cd3b3e5bd29a7f2340c5168adaea35a4a1257cc8fa9a029714",
+      "zip_crc32": "61b425b8"
+    },
+    {
+      "member": "verification/generated/logs/standards.txt",
+      "local_name": "standards.txt",
+      "bytes": 44287,
+      "sha256": "ba3eafb125921da29557102cc766888fafa2399cb558703603ffb84d215f9d55",
+      "zip_crc32": "0df10352"
+    },
+    {
+      "member": "verification/independent-fixtures.json",
+      "local_name": "independent-fixtures.json",
+      "bytes": 661,
+      "sha256": "99a52db50c41a7911047b8a5a824943f3dd9bbab8cfb4dae8da1d4c974660df5",
+      "zip_crc32": "46d2df83"
+    },
+    {
+      "member": "verification/results.json",
+      "local_name": "results.json",
+      "bytes": 88249,
+      "sha256": "7d1eaca0883a87ff549c4f9f2732903b467dfba7929f5f60443c0ad0601175d6",
+      "zip_crc32": "850bd867"
+    }
+  ]
+}
