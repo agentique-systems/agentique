@@ -1,0 +1,250 @@
+name: Build Windows Native Studio acceptance artifacts
+
+on:
+  workflow_dispatch:
+    inputs:
+      run_oracle:
+        description: Execute the independent real self-model oracle using the pinned accepted runtime
+        required: true
+        type: boolean
+        default: true
+      baseline_ref:
+        description: Optional full baseline commit; overlays only the identical current portable test harness
+        required: false
+        type: string
+        default: bd72aee4e1bf2aa2b894dc0201bcef111ddf337b
+
+permissions:
+  contents: read
+
+jobs:
+  release-artifact:
+    name: Windows release ${{ matrix.component }}
+    runs-on: windows-2022
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        component: [native, helpers]
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Build pinned release binaries and retain provenance
+        run: >-
+          ./tools/native-acceptance-build.ps1
+          -Component '${{ matrix.component }}'
+          -ArtifactDirectory '${{ runner.temp }}/native-acceptance-${{ matrix.component }}'
+      - name: Retain binaries, lockfiles, hashes and command results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: native-acceptance-windows-${{ matrix.component }}-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/native-acceptance-${{ matrix.component }}/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 1
+    # Build evidence only. No runtime is downloaded, embedded or published, and
+    # no interactive or semantic acceptance is claimed by a successful build.
+
+  oracle:
+    name: Windows baseline and current semantic oracle
+    runs-on: windows-2022
+    timeout-minutes: 120
+    # GitHub requires push access to read draft assets. The token is passed only
+    # to download; no command creates or publishes a release.
+    permissions:
+      contents: write
+    env:
+      CARGO_BUILD_JOBS: '2'
+      CARGO_INCREMENTAL: '0'
+      CARGO_PROFILE_DEV_DEBUG: '0'
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      GH_REPO: ${{ github.repository }}
+      RUNTIME_TAG: runtime-kerml-v9-sysml-v3-bundle1
+      RUNTIME_SHA256: 37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026
+      BASELINE_REF: ${{ inputs.baseline_ref }}
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Select isolated runner storage
+        run: |
+          "ORACLE_ARTIFACT=$(Join-Path $env:RUNNER_TEMP native-acceptance-oracle)" | Add-Content -LiteralPath $env:GITHUB_ENV
+          "ORACLE_RUNTIME=$(Join-Path $env:RUNNER_TEMP native-acceptance-runtime)" | Add-Content -LiteralPath $env:GITHUB_ENV
+      - id: checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Require an exact optional baseline commit
+        if: inputs.run_oracle && inputs.baseline_ref != ''
+        run: |
+          if ($env:BASELINE_REF -notmatch '^[0-9a-f]{40}$') { throw 'Baseline must be an exact lowercase full commit SHA' }
+      - name: Check out isolated baseline source
+        id: baseline_checkout
+        if: inputs.run_oracle && inputs.baseline_ref != ''
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          ref: ${{ inputs.baseline_ref }}
+          path: baseline-source
+          persist-credentials: false
+      - name: Overlay only the identical portable oracle test
+        id: harness
+        if: inputs.run_oracle && inputs.baseline_ref != ''
+        run: |
+          $harness = 'crates/modeling-agent/tests/create_part_performance.rs'
+          $digest = (Get-FileHash -LiteralPath $harness -Algorithm SHA256).Hash.ToLowerInvariant()
+          Copy-Item -LiteralPath $harness -Destination (Join-Path baseline-source $harness)
+          "ORACLE_HARNESS_SHA256=$digest" | Add-Content -LiteralPath $env:GITHUB_ENV
+      - if: inputs.run_oracle
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5, verified 2026-09-26
+        with:
+          python-version: '3.12.10'
+      - name: Prepare process-tree memory observer
+        if: inputs.run_oracle
+        run: |
+          New-Item -ItemType Directory -Path "$env:ORACLE_ARTIFACT/logs", "$env:ORACLE_ARTIFACT/runtime" -ErrorAction Stop | Out-Null
+          python -m pip install psutil==5.9.8 2>&1 | Tee-Object -FilePath "$env:ORACLE_ARTIFACT/logs/oracle-observer-install.log"
+          if ($LASTEXITCODE -ne 0) { throw 'Memory observer installation failed' }
+      - name: Download the explicit accepted runtime draft asset
+        if: inputs.run_oracle
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "$env:RUNTIME_TAG" --json tagName,isDraft,targetCommitish 2>&1 | Tee-Object -FilePath "$env:ORACLE_ARTIFACT/runtime/runtime-release.json"
+          if ($LASTEXITCODE -ne 0) { throw 'Could not read pinned runtime release' }
+          gh release download "$env:RUNTIME_TAG" --pattern accepted-runtime.agq-runtime --dir "$env:ORACLE_RUNTIME/input" 2>&1 | Tee-Object -FilePath "$env:ORACLE_ARTIFACT/logs/runtime-download.log"
+          if ($LASTEXITCODE -ne 0) { throw 'Could not download pinned runtime asset' }
+      - name: Authenticate exact transport and bounded cache extraction
+        id: runtime
+        if: inputs.run_oracle
+        shell: python
+        run: |
+          import hashlib, json, os, pathlib, zipfile
+          runtime = pathlib.Path(os.environ['ORACLE_RUNTIME'])
+          evidence = pathlib.Path(os.environ['ORACLE_ARTIFACT']) / 'runtime'
+          bundle = runtime / 'input' / 'accepted-runtime.agq-runtime'
+          expected = os.environ['RUNTIME_SHA256']
+          record = {'format': 'agq-native-oracle-runtime/1', 'outcome': 'incomplete',
+                    'tag': os.environ['RUNTIME_TAG'], 'expected_sha256': expected,
+                    'source_commit': os.environ['GITHUB_SHA'], 'entries': {}}
+          try:
+              with bundle.open('rb') as stream:
+                  digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+                  record['sha256'] = digest
+                  record['bytes'] = bundle.stat().st_size
+                  if digest != expected:
+                      raise ValueError('Runtime transport identity mismatch')
+                  stream.seek(0)
+                  with zipfile.ZipFile(stream) as archive:
+                      if sorted(archive.namelist()) != ['kerml.cache', 'manifest.json', 'systems.cache']:
+                          raise ValueError('Unexpected runtime archive entries')
+                      if not 0 < archive.getinfo('manifest.json').file_size <= 64 * 1024:
+                          raise ValueError('Runtime manifest size limit')
+                      manifest_bytes = archive.read('manifest.json')
+                      manifest = json.loads(manifest_bytes)
+                      if manifest['format'] != 'agq-accepted-publication-bundle/1':
+                          raise ValueError('Unsupported runtime manifest format')
+                      (evidence / 'runtime-manifest.json').write_bytes(manifest_bytes)
+                      destination = runtime / 'extracted'
+                      destination.mkdir(parents=True, exist_ok=False)
+                      for family, name in [('kerml', 'kerml.cache'), ('systems', 'systems.cache')]:
+                          asset = manifest[family]
+                          size = archive.getinfo(name).file_size
+                          if asset['file'] != name or size != asset['bytes'] or not 0 < size <= 16 * 1024**3:
+                              raise ValueError(f'Invalid {family} cache size or name')
+                          total, hashed = 0, hashlib.sha256()
+                          with archive.open(name) as source, (destination / name).open('xb') as target:
+                              while block := source.read(1024 * 1024):
+                                  total += len(block)
+                                  if total > size:
+                                      raise ValueError(f'{family} entry exceeds declared size')
+                                  hashed.update(block)
+                                  target.write(block)
+                          if total != size or hashed.hexdigest() != asset['sha256']:
+                              raise ValueError(f'{family} extracted cache identity mismatch')
+                          record['entries'][name] = {'bytes': total, 'sha256': hashed.hexdigest()}
+                  stream.seek(0)
+                  if hashlib.file_digest(stream, 'sha256').hexdigest() != digest:
+                      raise ValueError('Runtime transport changed during inspection')
+              record['outcome'] = 'transport_verified'
+              record['contract'] = 'Transport checks only; both language facades independently authenticate compiled accepted receipts inside the oracle.'
+          except Exception as error:
+              record['outcome'] = 'failed'
+              record['error'] = str(error)
+              raise
+          finally:
+              (evidence / 'runtime-transport.json').write_text(json.dumps(record, indent=2), encoding='utf-8')
+      - name: Build baseline with the exact current test harness
+        id: baseline_build
+        if: inputs.run_oracle && inputs.baseline_ref != '' && steps.runtime.outcome == 'success'
+        continue-on-error: true
+        run: >-
+          ./tools/native-acceptance-build.ps1 -Component oracle
+          -CheckoutDirectory baseline-source -ExpectedSourceCommit $env:BASELINE_REF
+          -ExpectedOracleHarnessSha256 $env:ORACLE_HARNESS_SHA256
+          -ArtifactDirectory "$env:ORACLE_ARTIFACT/baseline"
+      - name: Execute baseline command and cold reconstruction in separate processes
+        id: baseline_run
+        if: inputs.run_oracle && inputs.baseline_ref != '' && steps.baseline_build.outcome == 'success'
+        timeout-minutes: 45
+        continue-on-error: true
+        env:
+          AGENTIQUE_KERML_CACHE: ${{ runner.temp }}/native-acceptance-runtime/extracted/kerml.cache
+          AGENTIQUE_SYSTEMS_CACHE: ${{ runner.temp }}/native-acceptance-runtime/extracted/systems.cache
+        run: >-
+          ./tools/native-acceptance-build.ps1 -Component oracle -Phase oracle
+          -CheckoutDirectory baseline-source -ArtifactDirectory "$env:ORACLE_ARTIFACT/baseline"
+      - name: Build current release oracle independently of baseline outcome
+        id: current_build
+        if: always() && steps.checkout.outcome == 'success'
+        run: ./tools/native-acceptance-build.ps1 -Component oracle -ArtifactDirectory "$env:ORACLE_ARTIFACT/current"
+      - name: Execute current command and cold reconstruction on the same runner
+        id: current_run
+        if: always() && inputs.run_oracle && steps.current_build.outcome == 'success' && steps.runtime.outcome == 'success'
+        timeout-minutes: 45
+        env:
+          AGENTIQUE_KERML_CACHE: ${{ runner.temp }}/native-acceptance-runtime/extracted/kerml.cache
+          AGENTIQUE_SYSTEMS_CACHE: ${{ runner.temp }}/native-acceptance-runtime/extracted/systems.cache
+        run: ./tools/native-acceptance-build.ps1 -Component oracle -Phase oracle -ArtifactDirectory "$env:ORACLE_ARTIFACT/current"
+      - name: Record requested gate outcomes without hiding failures
+        if: always()
+        env:
+          RUN_ORACLE: ${{ inputs.run_oracle }}
+          BASELINE_BUILD: ${{ steps.baseline_build.outcome }}
+          BASELINE_RUN: ${{ steps.baseline_run.outcome }}
+          CURRENT_BUILD: ${{ steps.current_build.outcome }}
+          CURRENT_RUN: ${{ steps.current_run.outcome }}
+          RUNTIME_OUTCOME: ${{ steps.runtime.outcome }}
+        run: |
+          [IO.Directory]::CreateDirectory($env:ORACLE_ARTIFACT) | Out-Null
+          $passed = $env:CURRENT_BUILD -eq 'success'
+          if ($env:RUN_ORACLE -eq 'true') {
+            $passed = $passed -and $env:RUNTIME_OUTCOME -eq 'success' -and $env:CURRENT_RUN -eq 'success'
+            if ($env:BASELINE_REF) { $passed = $passed -and $env:BASELINE_BUILD -eq 'success' -and $env:BASELINE_RUN -eq 'success' }
+          }
+          @{ source_commit=$env:GITHUB_SHA; baseline=$env:BASELINE_REF; same_runner=$true; release='default thin LTO';
+             runtime_sha256=$env:RUNTIME_SHA256; current_build=$env:CURRENT_BUILD; current_run=$env:CURRENT_RUN;
+             baseline_build=$env:BASELINE_BUILD; baseline_run=$env:BASELINE_RUN; runtime=$env:RUNTIME_OUTCOME;
+             outcome=$(if ($passed) {'passed'} else {'failed'}); contract='Compare measured command preparation separately from independent cold reconstruction; each requested oracle must establish exact equivalence' } |
+            ConvertTo-Json -Depth 6 | Set-Content -LiteralPath "$env:ORACLE_ARTIFACT/gates.json" -Encoding utf8
+          if (-not $passed) { throw 'One or more requested build/oracle gates failed; evidence retained' }
+      - name: Retain both oracle binaries and actual execution evidence even after failure
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: native-acceptance-windows-oracle-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/native-acceptance-oracle/
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 1
+    # Runtime transport stays outside the artifact. No operator repository is
+    # uploaded. A passing semantic oracle does not establish interactive Alpha.
