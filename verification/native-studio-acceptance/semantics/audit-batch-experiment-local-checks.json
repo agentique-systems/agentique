@@ -1,0 +1,66 @@
+{
+  "format": "agentique-experiment-local-checks/1",
+  "time_utc": "2026-09-26T10:14:16.854185+00:00",
+  "source_base": "fea3339dbf0e84d408cb7d47c802a7b047826f1f",
+  "records": [
+    {
+      "command": [
+        "C:\\Users\\phili\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+        "-m",
+        "unittest",
+        "tools/test_audit_batch_experiment.py",
+        "-v"
+      ],
+      "exit_code": 0,
+      "output": "test_empty_or_count_only_baseline_cannot_pass (tools.test_audit_batch_experiment.ExperimentEvidenceTests.test_empty_or_count_only_baseline_cannot_pass) ... ok\ntest_equal_full_observations_pass (tools.test_audit_batch_experiment.ExperimentEvidenceTests.test_equal_full_observations_pass) ... ok\ntest_exact_query_proof_change_fails_even_when_graph_and_audit_match (tools.test_audit_batch_experiment.ExperimentEvidenceTests.test_exact_query_proof_change_fails_even_when_graph_and_audit_match) ... ok\ntest_larger_batch_requires_success_and_measured_memory_headroom (tools.test_audit_batch_experiment.ExperimentEvidenceTests.test_larger_batch_requires_success_and_measured_memory_headroom) ... ok\ntest_missing_and_extra_observations_fail (tools.test_audit_batch_experiment.ExperimentEvidenceTests.test_missing_and_extra_observations_fail) ... ok\n\n----------------------------------------------------------------------\nRan 5 tests in 0.000s\n\nOK\n"
+    },
+    {
+      "command": [
+        "C:\\Users\\phili\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+        "-m",
+        "py_compile",
+        "tools/audit-batch-experiment.py",
+        "tools/test_audit_batch_experiment.py"
+      ],
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "command": [
+        "PyYAML BaseLoader + compile embedded Python",
+        ".github/workflows/audit-batch-experiment.yml"
+      ],
+      "exit_code": 0,
+      "output": "YAML parsed; each Python workflow step compiled without execution."
+    },
+    {
+      "command": [
+        "PyYAML BaseLoader + compile embedded Python",
+        ".github/workflows/runtime-asset.yml"
+      ],
+      "exit_code": 0,
+      "output": "YAML parsed; each Python workflow step compiled without execution."
+    }
+  ],
+  "scope": "No Rust compile or semantic workload was run locally. CI owns actual release compilation, full semantic equivalence and timings."
+}

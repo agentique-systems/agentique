@@ -21,6 +21,14 @@ pub(super) fn run(
     result: &SourceCompilation,
     previous: Option<&SourceCompilation>,
 ) -> Result<(SourceEffectiveAudit, Vec<SourceDiagnostic>, usize), LibraryLoadError> {
+    #[cfg(feature = "verification")]
+    let experiment_started = Instant::now();
+    // Verification experiment only. Shipping builds retain the same bounded
+    // population; the experiment changes evaluator lifetime, never context.
+    #[cfg(feature = "verification")]
+    let batch_size = verification_batch_size()?;
+    #[cfg(not(feature = "verification"))]
+    let batch_size = 32;
     let bound = result
         .sysml_queries()
         .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))?;
@@ -61,7 +69,7 @@ pub(super) fn run(
     let mut reused_checks = 0;
     let mut report = SystemsPublicationAudit::default();
     let mut capabilities = Vec::new();
-    for batch in subjects.chunks(32) {
+    for batch in subjects.chunks(batch_size) {
         let q = bound.fork();
         for &subject in batch {
             if let Some(entry) = previous.and_then(|previous| previous.subjects.get(&subject))
@@ -141,6 +149,24 @@ pub(super) fn run(
         snapshot: closed.into_snapshot(),
         subjects: retained,
     });
+    #[cfg(feature = "verification")]
+    if std::env::var_os("AGENTIQUE_AUDIT_BATCH_SIZE").is_some() {
+        use std::io::Write;
+        let _ = writeln!(
+            std::io::stderr().lock(),
+            "SOURCE_AUDIT_BATCH_EXPERIMENT {}",
+            serde_json::json!({
+                "format": "agentique-audit-batch-experiment/1",
+                "batch_size": batch_size,
+                "subjects": subjects.len(),
+                "batches": subjects.len().div_ceil(batch_size),
+                "subjects_evaluated": subjects.len() - reused,
+                "subjects_reused": reused,
+                "checks_reused": reused_checks,
+                "elapsed_micros": experiment_started.elapsed().as_micros(),
+            })
+        );
+    }
     Ok((
         SourceEffectiveAudit {
             context,
@@ -153,4 +179,17 @@ pub(super) fn run(
         capabilities,
         reused,
     ))
+}
+
+#[cfg(feature = "verification")]
+fn verification_batch_size() -> Result<usize, LibraryLoadError> {
+    match std::env::var("AGENTIQUE_AUDIT_BATCH_SIZE") {
+        Err(std::env::VarError::NotPresent) => Ok(32),
+        Ok(value) if value == "32" => Ok(32),
+        Ok(value) if value == "128" => Ok(128),
+        Ok(value) if value == "256" => Ok(256),
+        _ => Err(LibraryLoadError::Interpretation(
+            "verification audit batch size must be exactly 32, 128 or 256".into(),
+        )),
+    }
 }

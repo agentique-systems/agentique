@@ -358,6 +358,16 @@ fn read_json<T: serde::de::DeserializeOwned>(output: &Path, name: &str) -> T {
 /// only the freshly allocated kernel revision label is normalized.
 fn write_observations(output: &Path, label: &str, revision: &WorkingProjectRevision) {
     use agq_sysml::classes as sc;
+    // Match the verification-only audit experiment so comparison across runs
+    // covers query values and complete evidence at the actual batch size.
+    let batch_size = match std::env::var("AGENTIQUE_AUDIT_BATCH_SIZE") {
+        Err(std::env::VarError::NotPresent) => 32,
+        Ok(value) if value == "32" => 32,
+        Ok(value) if value == "128" => 128,
+        Ok(value) if value == "256" => 256,
+        _ => panic!("verification audit batch size must be exactly 32, 128 or 256"),
+    };
+    eprintln!("{label}: exact query observations use batch size {batch_size}");
     let kernel_revision = format!("{:?}", revision.kernel_revision().unwrap());
     let mut observations = BTreeMap::new();
     fn observe(
@@ -431,7 +441,7 @@ fn write_observations(output: &Path, label: &str, revision: &WorkingProjectRevis
     }
     let bound = revision.sysml_queries().unwrap();
     let subjects = revision.effective_audit().unwrap().subjects();
-    for batch in subjects.chunks(32) {
+    for batch in subjects.chunks(batch_size) {
         let q = bound.fork();
         for &subject in batch {
             let class = model.element(subject).unwrap().metaclass();

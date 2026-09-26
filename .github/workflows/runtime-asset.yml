@@ -16,6 +16,11 @@ on:
         required: false
         type: boolean
         default: false
+      audit_batch_experiment:
+        description: Run the isolated exact-checkpoint Windows audit batch experiment only
+        required: false
+        type: boolean
+        default: false
       run_oracle:
         description: Run the exact semantic oracle in native acceptance mode; false produces build artifacts only
         required: false
@@ -31,8 +36,14 @@ permissions:
   contents: read
 
 jobs:
+  audit-batch-experiment:
+    if: inputs.audit_batch_experiment
+    permissions:
+      contents: write
+      actions: read
+    uses: ./.github/workflows/audit-batch-experiment.yml
   native-acceptance:
-    if: inputs.native_acceptance
+    if: inputs.native_acceptance && !inputs.audit_batch_experiment
     # The called oracle needs this only to download the existing draft asset.
     # Reusable workflows cannot increase the caller's token permissions.
     permissions:
@@ -42,7 +53,7 @@ jobs:
       run_oracle: ${{ inputs.run_oracle }}
       baseline_ref: ${{ inputs.baseline_ref }}
   authenticate:
-    if: ${{ !inputs.native_acceptance }}
+    if: ${{ !inputs.native_acceptance && !inputs.audit_batch_experiment }}
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     # GitHub limits draft-release visibility to identities with push access.
