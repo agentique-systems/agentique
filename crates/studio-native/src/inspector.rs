@@ -731,15 +731,22 @@ fn value(ui: &mut egui::Ui, key: &str, value: &str, theme: crate::theme::Theme) 
     });
 }
 
-fn inspector_name(ui: &mut egui::Ui, name: &str) {
-    ui.add(egui::Label::new(RichText::new(name).size(TITLE).strong()).wrap())
-        .on_hover_text(name)
-        .context_menu(|ui| {
-            if ui.button("Copy full name").clicked() {
-                ui.ctx().copy_text(name.to_owned());
-                ui.close();
-            }
-        });
+fn inspector_name(ui: &mut egui::Ui, name: &str) -> egui::Response {
+    let mut title = egui::text::LayoutJob::simple_singleline(
+        name.to_owned(),
+        egui::FontId::proportional(TITLE),
+        ui.visuals().strong_text_color(),
+    );
+    title.wrap.max_rows = 3;
+    title.wrap.break_anywhere = true;
+    let response = ui.add(egui::Label::new(title).wrap()).on_hover_text(name);
+    response.context_menu(|ui| {
+        if ui.button("Copy full name").clicked() {
+            ui.ctx().copy_text(name.to_owned());
+            ui.close();
+        }
+    });
+    response
 }
 
 fn origin_label(origin: ViewOrigin) -> &'static str {
@@ -1170,6 +1177,25 @@ fn kind_label(kind: &str) -> &str {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn very_long_qualified_inspector_names_stay_within_the_panel_and_three_lines() {
+        let ctx = egui::Context::default();
+        let name = format!(
+            "Architecture::{}::NestedPart",
+            "VeryLongNamespaceWithoutWordBreaks".repeat(30)
+        );
+        for width in [214.0, 254.0, 380.0] {
+            let _ = ctx.run(egui::RawInput::default(), |ctx| {
+                egui::CentralPanel::default().show(ctx, |ui| {
+                    ui.set_max_width(width);
+                    let response = inspector_name(ui, &name);
+                    assert!(response.rect.width() <= width + 1.0);
+                    assert!(response.rect.height() <= TITLE * 4.0);
+                });
+            });
+        }
+    }
 
     fn feature(id: u128, name: &str, kind: &str) -> FeatureSummary {
         FeatureSummary {

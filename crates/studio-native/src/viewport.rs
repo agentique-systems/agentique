@@ -512,7 +512,7 @@ impl StudioApp {
                     .or_insert(bottom);
             }
         }
-        let obstacles: Vec<_> = if label_edges.is_empty() {
+        let mut obstacles: Vec<_> = if label_edges.is_empty() {
             Vec::new()
         } else {
             objects
@@ -538,6 +538,31 @@ impl StudioApp {
                 })
                 .collect()
         };
+        let mut route_obstacles = crate::relationship_labels::RouteObstacles::default();
+        if !label_edges.is_empty() {
+            for port in &objects.ports {
+                let screen = self.camera.world_to_screen(port.position);
+                obstacles.push(egui::Rect::from_center_size(
+                    rect.min + Vec2::new(screen.x, screen.y),
+                    Vec2::splat(12.0),
+                ));
+            }
+            for edge in &objects.edges {
+                if diff_mode.includes_edge(edge.semantic.family)
+                    || selected_edges.contains(edge.semantic.id.as_str())
+                {
+                    for pair in edge.points.windows(2) {
+                        let a = self.camera.world_to_screen(pair[0]);
+                        let b = self.camera.world_to_screen(pair[1]);
+                        route_obstacles.insert(
+                            rect.min + Vec2::new(a.x, a.y),
+                            rect.min + Vec2::new(b.x, b.y),
+                            rect,
+                        );
+                    }
+                }
+            }
+        }
         let mut placed_labels = Vec::new();
         let mut automatic_labels = 0;
         for (priority, edge) in label_edges {
@@ -553,7 +578,15 @@ impl StudioApp {
                     ""
                 }
             );
-            let galley = painter.layout_no_wrap(label, FontId::proportional(12.0), theme.accent);
+            let mut label_job = egui::text::LayoutJob::simple_singleline(
+                label,
+                FontId::proportional(12.0),
+                theme.accent,
+            );
+            label_job.wrap.max_width = (rect.width() * 0.35).clamp(80.0, 320.0);
+            label_job.wrap.max_rows = 2;
+            label_job.wrap.break_anywhere = true;
+            let galley = painter.layout_job(label_job);
             let route: Vec<_> = edge
                 .points
                 .iter()
@@ -569,6 +602,7 @@ impl StudioApp {
                 &obstacles,
                 &placed_labels,
                 priority < 2,
+                &route_obstacles,
             ) else {
                 continue;
             };
