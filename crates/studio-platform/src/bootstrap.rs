@@ -8,6 +8,10 @@ pub struct NativeConfig {
     pub root: PathBuf,
     pub database: PathBuf,
     pub runtime: RuntimeConfig,
+    /// Explicit self-model import into an empty custom repository. The native
+    /// real-acceptance launch gate validates its isolated paths before enabling
+    /// this. Ordinary project opens leave it false; semantic gates are unchanged.
+    pub seed_agentique_on_empty: bool,
 }
 
 impl NativeConfig {
@@ -20,6 +24,7 @@ impl NativeConfig {
                 runtime_dir,
                 ..RuntimeConfig::default()
             },
+            seed_agentique_on_empty: false,
         })
     }
 }
@@ -134,6 +139,7 @@ fn open_authenticated(
     if should_seed_agentique(
         &config.database,
         &default_database,
+        config.seed_agentique_on_empty,
         projects.iter().map(|project| project.name.as_str()),
     ) {
         // This database contains bootstrap bookkeeping only. It never stores semantic truth.
@@ -162,6 +168,7 @@ fn open_authenticated(
 fn should_seed_agentique<'a>(
     database: &Path,
     default_database: &Path,
+    explicitly_seed_empty: bool,
     project_names: impl Iterator<Item = &'a str>,
 ) -> bool {
     let mut empty = true;
@@ -173,7 +180,7 @@ fn should_seed_agentique<'a>(
             return true;
         }
     }
-    empty && database == default_database
+    empty && (database == default_database || explicitly_seed_empty)
 }
 
 #[cfg(test)]
@@ -184,20 +191,39 @@ mod tests {
     fn generic_restart_never_creates_sample_but_pending_seed_can_resume() {
         let default = Path::new("runtime/projects/agentique.sqlite");
         let generic = Path::new("user-projects/engine.sqlite");
-        // A first launch creates the self-model only in the default repository.
-        assert!(should_seed_agentique(default, default, [].into_iter()));
-        assert!(!should_seed_agentique(generic, default, [].into_iter()));
+        // Ordinary first launch seeds only the default repository. A separately
+        // authorized self-model import can seed an empty isolated repository.
+        assert!(should_seed_agentique(
+            default,
+            default,
+            false,
+            [].into_iter()
+        ));
+        assert!(!should_seed_agentique(
+            generic,
+            default,
+            false,
+            [].into_iter()
+        ));
+        assert!(should_seed_agentique(
+            generic,
+            default,
+            true,
+            [].into_iter()
+        ));
         // New Project persists an initially empty Working project. On restart
         // that authored project must remain the only project at either path.
         for path in [default, generic] {
             assert!(!should_seed_agentique(
                 path,
                 default,
+                false,
                 ["Engine"].into_iter()
             ));
             assert!(!should_seed_agentique(
                 path,
                 default,
+                false,
                 ["Engine", "Sensor"].into_iter()
             ));
             // Existing bootstrap journals also remain resumable in an explicit
@@ -205,9 +231,14 @@ mod tests {
             assert!(should_seed_agentique(
                 path,
                 default,
+                false,
                 ["Engine", "Agentique"].into_iter()
             ));
         }
+        assert!(
+            !should_seed_agentique(generic, default, true, ["Engine"].into_iter()),
+            "Explicit empty-repository import must not replace an existing generic project"
+        );
     }
 
     #[test]
@@ -220,6 +251,7 @@ mod tests {
         .unwrap();
         // Explicit missing bundle makes the test independent of legacy environment inputs.
         config.runtime.bundle = Some(directory.path().join("absent.agq-runtime"));
+        config.seed_agentique_on_empty = true;
         assert!(open(&config, |_| {}).is_err());
         assert!(!config.database.exists());
         let setup = setup_surface(&config).unwrap();

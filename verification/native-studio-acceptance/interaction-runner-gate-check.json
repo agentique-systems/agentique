@@ -1,0 +1,8 @@
+{
+  "command": "python -B -m unittest discover -s verification/native-studio-acceptance -p test_run_real_soak.py -v",
+  "chunk_id": "c324d7",
+  "wall_time_seconds": 0.7208388,
+  "exit_code": 0,
+  "original_token_count": 281,
+  "output": "test_complete_observations_accept_zero_exit_and_retain_native_status (test_run_real_soak.SoakAcceptanceTests.test_complete_observations_accept_zero_exit_and_retain_native_status) ... ok\r\ntest_early_window_close_cannot_turn_zero_process_exit_into_acceptance (test_run_real_soak.SoakAcceptanceTests.test_early_window_close_cannot_turn_zero_process_exit_into_acceptance) ... ok\r\ntest_failed_missing_or_nonfinite_observations_fail (test_run_real_soak.SoakAcceptanceTests.test_failed_missing_or_nonfinite_observations_fail) ... ok\r\ntest_missing_partial_and_non_object_report_fail_closed (test_run_real_soak.SoakAcceptanceTests.test_missing_partial_and_non_object_report_fail_closed) ... ok\r\ntest_missing_short_or_incomplete_cycle_evidence_fails (test_run_real_soak.SoakAcceptanceTests.test_missing_short_or_incomplete_cycle_evidence_fails) ... ok\r\ntest_no_memory_observation_fails_without_rewriting_native_pass (test_run_real_soak.SoakAcceptanceTests.test_no_memory_observation_fails_without_rewriting_native_pass) ... ok\r\n\r\n----------------------------------------------------------------------\r\nRan 6 tests in 0.079s\r\n\r\nOK\r\n"
+}

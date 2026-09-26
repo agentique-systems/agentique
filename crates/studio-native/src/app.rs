@@ -200,6 +200,8 @@ impl StudioApp {
         if let Some(database) = &args.database {
             config.database = database.clone();
         }
+        config.seed_agentique_on_empty =
+            crate::real_automation::seed_isolated_project(&args).map_err(std::io::Error::other)?;
         let session_path = config.database.with_extension("native-session.json");
         let restore = if args.no_restore || args.fixture.is_some() {
             None

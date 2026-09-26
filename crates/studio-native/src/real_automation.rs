@@ -8,6 +8,7 @@ use crate::{
     automation::{self, ScenarioStatus},
     navigation::World,
     real_targets::{self, Target},
+    saved_views::SavedPresentation,
     selection::Selection,
 };
 use agq_kernel::ElementId;
@@ -107,6 +108,19 @@ pub fn validate_launch(args: &Args) -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+/// Fresh real acceptance explicitly imports the self-model into its isolated
+/// repository. Generic project creation, fixtures, restart and resume do not.
+pub fn seed_isolated_project(args: &Args) -> Result<bool, String> {
+    if args.fixture.is_some()
+        || args.scenario.as_deref() != Some("real")
+        || args.resume_report.is_some()
+    {
+        return Ok(false);
+    }
+    validate_launch(args)?;
+    Ok(true)
 }
 
 fn entry_exists(path: &Path) -> bool {
@@ -381,6 +395,36 @@ struct EngineeringEvidence {
     inherited_port: Option<ElementInspector>,
     connected_port: Option<ElementInspector>,
     requirement_subject_path: Vec<ViewEdge>,
+    #[serde(default)]
+    requirements_overview_nodes: usize,
+    #[serde(default)]
+    requirement_neighborhood: Option<RequirementNeighborhoodEvidence>,
+    #[serde(default)]
+    history_visits: Vec<HistoryVisit>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct RequirementNeighborhoodEvidence {
+    revision: ProjectRevisionId,
+    requirement: ElementId,
+    overview_nodes: usize,
+    focused_nodes: usize,
+    subject_path: Vec<ViewEdge>,
+    inspector: ElementInspector,
+}
+
+/// Expected and observed durable manifests are retained separately. A failed
+/// historical load must never be described as a successful revision visit.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+struct HistoryVisit {
+    head: RevisionManifest,
+    requested_parent: RevisionManifest,
+    before: SavedPresentation,
+    observed_parent: Option<RevisionManifest>,
+    parent_binding: Option<RevisionBinding>,
+    parent_projection_revision: Option<ProjectRevisionId>,
+    restored: Option<SavedPresentation>,
+    restored_revision: Option<ProjectRevisionId>,
 }
 
 /// Observed native input/query completion while actual candidate work was pending.
@@ -567,6 +611,10 @@ const PART: Named = Named {
     name: PART_NAME,
     kind: "PartUsage",
 };
+const REQUIREMENT: Named = Named {
+    name: "ImmutableRevisions",
+    kind: "RequirementDefinition",
+};
 
 fn named(app: &StudioApp, named: Named) -> Result<ElementId, String> {
     projection_named(app.active_projection(), named)
@@ -616,13 +664,7 @@ fn complete_query(inspector: &ElementInspector, name: &str) -> bool {
 }
 
 fn requirement_subject_path(projection: &ViewProjection) -> Result<Vec<ViewEdge>, String> {
-    let requirement = projection_named(
-        projection,
-        Named {
-            name: "ImmutableRevisions",
-            kind: "RequirementDefinition",
-        },
-    )?;
+    let requirement = projection_named(projection, REQUIREMENT)?;
     let subject = projection
         .nodes
         .iter()
@@ -671,6 +713,115 @@ fn requirement_subject_path(projection: &ViewProjection) -> Result<Vec<ViewEdge>
         );
     }
     Ok(path)
+}
+
+fn assert_requirement_neighborhood(
+    projection: &ViewProjection,
+    focus: Option<ElementId>,
+    selected: Option<ElementId>,
+    inspector: &ElementInspector,
+    overview_path: &[ViewEdge],
+    overview_nodes: usize,
+) -> Result<(), String> {
+    let requirement = projection_named(projection, REQUIREMENT)?;
+    let mut reachable = std::collections::BTreeSet::from([requirement]);
+    for _ in 0..projection.view.depth.min(8) {
+        let previous = reachable.clone();
+        for edge in &projection.edges {
+            if previous.contains(&edge.source) {
+                reachable.insert(edge.target);
+            }
+            if previous.contains(&edge.target) {
+                reachable.insert(edge.source);
+            }
+        }
+    }
+    if projection.view.kind != ViewKind::Requirements
+        || projection.view.depth != agq_modeling_view::ViewDefinition::requirements().depth
+        || focus != Some(requirement)
+        || projection.view.focus != focus
+        || selected != Some(requirement)
+        || inspector.revision_id != projection.revision_id
+        || inspector.element.revision_id != projection.revision_id
+        || inspector.element.id != requirement
+        || inspector.element.semantic_kind != REQUIREMENT.kind
+        || inspector.element.origin != ViewOrigin::Authored
+        || !inspector.element.source_available
+        || requirement_subject_path(projection)? != overview_path
+        || overview_nodes == 0
+        || projection.nodes.len() > overview_nodes
+        || projection
+            .nodes
+            .iter()
+            .any(|node| !reachable.contains(&node.id))
+    {
+        return Err("Requirement focus did not retain the selected authored obligation, exact Inspector/revision/subject relationships and a bounded local neighborhood".into());
+    }
+    Ok(())
+}
+
+fn assert_historical_revision(
+    visit: &HistoryVisit,
+    binding: RevisionBinding,
+    manifest: &RevisionManifest,
+    projection_revision: ProjectRevisionId,
+) -> Result<(), String> {
+    assert_validated(manifest).map_err(|reason| {
+        format!(
+            "Earlier revision {} cannot be accepted: {reason}",
+            manifest.revision_id
+        )
+    })?;
+    if visit.head.parent_revision_id != Some(visit.requested_parent.revision_id)
+        || visit.requested_parent.revision_id == visit.head.revision_id
+        || visit.requested_parent.project_id != visit.head.project_id
+        || manifest != &visit.requested_parent
+        || binding.project != manifest.project_id
+        || binding.revision != manifest.revision_id
+        || projection_revision != manifest.revision_id
+    {
+        return Err("Earlier revision selection did not install the exact retained parent manifest, binding and projection".into());
+    }
+    Ok(())
+}
+
+fn assert_history_restored(
+    visit: &HistoryVisit,
+    binding: RevisionBinding,
+    manifest: &RevisionManifest,
+    projection_revision: ProjectRevisionId,
+    after: &SavedPresentation,
+) -> Result<(), String> {
+    let before = &visit.before;
+    if visit.observed_parent.as_ref() != Some(&visit.requested_parent)
+        || visit.parent_binding
+            != Some(RevisionBinding {
+                project: visit.requested_parent.project_id,
+                revision: visit.requested_parent.revision_id,
+            })
+        || visit.parent_projection_revision != Some(visit.requested_parent.revision_id)
+        || manifest != &visit.head
+        || binding.project != visit.head.project_id
+        || binding.revision != visit.head.revision_id
+        || projection_revision != visit.head.revision_id
+        || before.world != after.world
+        || before.definition != after.definition
+        || before.camera.center.distance(after.camera.center) >= 0.01
+        || (before.camera.zoom - after.camera.zoom).abs() >= 0.001
+        || !after.camera.center.x.is_finite()
+        || !after.camera.center.y.is_finite()
+        || !after.camera.zoom.is_finite()
+        || before.selection != after.selection
+        || before.branch != after.branch
+        || before.collapsed != after.collapsed
+        || before.expanded != after.expanded
+        || before.panels.agent != after.panels.agent
+        || before.panels.explain != after.panels.explain
+        || before.panels.source != after.panels.source
+    {
+        return Err("Return to head did not restore the exact durable revision and its saved world, focus, camera, selection, filters and panels after a real earlier revision visit".into());
+    }
+    Ok(())
 }
 
 fn platform_connection<'a>(
@@ -797,7 +948,9 @@ enum Action {
     DerivedEdge,
     Prepare,
     Mode(ComparisonMode),
-    HistoryBaseline,
+    OpenHistory,
+    HistoryParent,
+    ReturnHead,
 }
 impl Action {
     fn frames(&self) -> u64 {
@@ -805,7 +958,7 @@ impl Action {
             Self::Soak(action) => action.frames(),
             Self::Select(_) | Self::Palette(_) => 12,
             Self::Prepare => 7,
-            Self::Key(_) => 1,
+            Self::Key(_) | Self::OpenHistory => 1,
             _ => 2,
         }
     }
@@ -830,6 +983,9 @@ enum Check {
     Explanation,
     ExplanationClosed,
     History,
+    HistoricalRevision,
+    HistoryRestored,
+    RequirementNeighborhood,
     ParentDiff,
     CreateDialog,
     CandidateWorking,
@@ -980,10 +1136,34 @@ fn steps(restart: bool) -> Vec<Step> {
             Some("04-requirements-world"),
         ),
         step(
+            "select the real ImmutableRevisions engineering obligation",
+            Action::Select(REQUIREMENT),
+            Check::Selected(REQUIREMENT),
+            None,
+        ),
+        step(
+            "focus and inspect the exact requirement subject neighborhood",
+            Action::Palette("Show requirements affecting selection"),
+            Check::RequirementNeighborhood,
+            Some("04a-requirement-neighborhood"),
+        ),
+        step(
             "open immutable real design history",
-            Action::Key(Key::Num4),
+            Action::OpenHistory,
             Check::History,
             None,
+        ),
+        step(
+            "select the actual earlier durable revision",
+            Action::HistoryParent,
+            Check::HistoricalRevision,
+            Some("06a-earlier-revision"),
+        ),
+        step(
+            "Return to head restores the requirement exploration state",
+            Action::ReturnHead,
+            Check::HistoryRestored,
+            Some("06b-restored-requirement-exploration"),
         ),
         step(
             "open Graph World to compare the added Agent Fabric",
@@ -1004,15 +1184,27 @@ fn steps(restart: bool) -> Vec<Step> {
             Some("06-history-diff"),
         ),
         step(
-            "select current revision in History to leave comparison",
-            Action::Key(Key::Num4),
+            "select the changed AgentRuntime in the actual parent comparison",
+            Action::Select(AGENT_RUNTIME),
+            Check::Selected(AGENT_RUNTIME),
+            None,
+        ),
+        step(
+            "open History while retaining the graph exploration state",
+            Action::OpenHistory,
             Check::History,
             None,
         ),
         step(
-            "restore current revision atomically",
-            Action::HistoryBaseline,
-            Check::Baseline,
+            "visit the earlier durable revision after reviewing semantic changes",
+            Action::HistoryParent,
+            Check::HistoricalRevision,
+            None,
+        ),
+        step(
+            "Return to head restores graph camera selection and filters",
+            Action::ReturnHead,
+            Check::HistoryRestored,
             None,
         ),
         step(
@@ -1557,17 +1749,60 @@ impl Runner {
                     frame == 0,
                 );
             }
-            Action::HistoryBaseline => {
+            Action::OpenHistory => {
+                let head = current_manifest(app)?.clone();
+                let parent = head
+                    .parent_revision_id
+                    .ok_or("Actual head has no earlier revision to explore")?;
+                let history = app
+                    .history
+                    .as_ref()
+                    .ok_or("Actual history is unavailable")?;
+                let requested_parent = history
+                    .revisions
+                    .iter()
+                    .find(|manifest| manifest.revision_id == parent)
+                    .cloned()
+                    .ok_or("Actual head's earlier revision manifest is unavailable")?;
+                if !history.branches.iter().any(|branch| {
+                    branch.id == history.project.default_branch && branch.head == head.revision_id
+                }) {
+                    return Err("Historical exploration must start at the real branch head".into());
+                }
+                self.report
+                    .engineering_evidence
+                    .history_visits
+                    .push(HistoryVisit {
+                        head,
+                        requested_parent,
+                        before: app.capture_presentation(),
+                        observed_parent: None,
+                        parent_binding: None,
+                        parent_projection_revision: None,
+                        restored: None,
+                        restored_revision: None,
+                    });
+                key(input, Key::Num4, Modifiers::NONE);
+            }
+            Action::HistoryParent => {
                 let revision = self
                     .report
-                    .baseline
-                    .as_ref()
-                    .ok_or("No retained baseline")?
+                    .engineering_evidence
+                    .history_visits
+                    .last()
+                    .ok_or("No saved exploration context before History")?
+                    .requested_parent
                     .revision_id;
                 click(
                     input,
-                    automation::target(ctx, automation::Target::HistoryRevision(revision))?
-                        .center(),
+                    real_targets::target(ctx, Target::HistoryRevision(revision))?.center(),
+                    frame == 0,
+                );
+            }
+            Action::ReturnHead => {
+                click(
+                    input,
+                    real_targets::target(ctx, Target::HistoryReturnHead)?.center(),
                     frame == 0,
                 );
             }
@@ -1972,12 +2207,43 @@ impl Runner {
                             .all(|edge| app.scene.edges.iter().any(|item| item.semantic == *edge)),
                         "Requirements scene omits a canonical edge of ImmutableRevisions -> subjectWorkspace -> ProjectWorkspace",
                     )?;
-                    self.report.engineering_evidence.requirement_subject_path = path;
+                    if app.active_projection().view.focus.is_none() {
+                        self.report.engineering_evidence.requirements_overview_nodes =
+                            app.active_projection().nodes.len();
+                        self.report.engineering_evidence.requirement_subject_path = path;
+                    }
                 }
                 require(
                     !app.scene.nodes.is_empty() && !app.scene.edges.is_empty(),
                     "Real World has no inspectable semantic relationships",
                 )
+            }
+            Check::RequirementNeighborhood => {
+                self.check(&Check::World(World::Requirements), app, ctx)?;
+                self.check(&Check::Selected(REQUIREMENT), app, ctx)?;
+                let projection = app.active_projection();
+                let inspector = app
+                    .inspector
+                    .as_ref()
+                    .ok_or("Focused requirement Inspector unavailable")?;
+                let evidence = &mut self.report.engineering_evidence;
+                assert_requirement_neighborhood(
+                    projection,
+                    app.focus,
+                    app.selected_element(),
+                    inspector,
+                    &evidence.requirement_subject_path,
+                    evidence.requirements_overview_nodes,
+                )?;
+                evidence.requirement_neighborhood = Some(RequirementNeighborhoodEvidence {
+                    revision: projection.revision_id,
+                    requirement: named(app, REQUIREMENT)?,
+                    overview_nodes: evidence.requirements_overview_nodes,
+                    focused_nodes: projection.nodes.len(),
+                    subject_path: requirement_subject_path(projection)?,
+                    inspector: inspector.clone(),
+                });
+                Ok(())
             }
             Check::Dependencies => {
                 let projection = app.active_projection();
@@ -2073,6 +2339,63 @@ impl Runner {
                     manifest == expected,
                     "History is not showing the expected durable revision",
                 )
+            }
+            Check::HistoricalRevision => {
+                let manifest = current_manifest(app)?;
+                let visit = self
+                    .report
+                    .engineering_evidence
+                    .history_visits
+                    .last_mut()
+                    .ok_or("No retained pre-History exploration context")?;
+                visit.observed_parent = Some(manifest.clone());
+                visit.parent_binding = app.binding;
+                visit.parent_projection_revision = Some(app.active_projection().revision_id);
+                require(
+                    app.world == World::History
+                        && app.comparison == ComparisonMode::Current
+                        && app.candidate.is_none(),
+                    "Earlier revision was not selected through ordinary History",
+                )?;
+                assert_historical_revision(
+                    visit,
+                    app.binding.ok_or("Earlier revision has no binding")?,
+                    manifest,
+                    app.active_projection().revision_id,
+                )?;
+                require(
+                    app.history.as_ref().is_some_and(|history| {
+                        history.branches.iter().any(|branch| {
+                            Some(branch.id) == self.report.branch
+                                && branch.head == visit.head.revision_id
+                        })
+                    }),
+                    "Visiting an earlier revision moved the durable branch head",
+                )
+            }
+            Check::HistoryRestored => {
+                let manifest = current_manifest(app)?;
+                let after = app.capture_presentation();
+                let visit = self
+                    .report
+                    .engineering_evidence
+                    .history_visits
+                    .last_mut()
+                    .ok_or("No retained history visit")?;
+                visit.restored = Some(after.clone());
+                visit.restored_revision = Some(app.active_projection().revision_id);
+                require(
+                    app.comparison == ComparisonMode::Current && app.candidate.is_none(),
+                    "Return to head retained a comparison or candidate",
+                )?;
+                assert_history_restored(
+                    visit,
+                    app.binding.ok_or("Restored head has no binding")?,
+                    manifest,
+                    app.active_projection().revision_id,
+                    &after,
+                )?;
+                self.check(&Check::Baseline, app, ctx)
             }
             Check::ParentDiff => {
                 let manifest = current_manifest(app)?;
@@ -2722,6 +3045,231 @@ mod tests {
         }
     }
 
+    #[test]
+    fn requirement_focus_gate_rejects_overview_wrong_subject_and_stale_inspection() {
+        // DTO counterexamples exercise the observation gate, not language acceptance.
+        let mut projection = agq_studio_scene::fixtures::architecture();
+        projection.nodes.truncate(3);
+        let requirement = projection.nodes[0].id;
+        let subject = projection.nodes[1].id;
+        let architecture = projection.nodes[2].id;
+        projection.nodes[0].name = REQUIREMENT.name.into();
+        projection.nodes[0].semantic_kind = REQUIREMENT.kind.into();
+        projection.nodes[0].origin = ViewOrigin::Authored;
+        projection.nodes[0].source_available = true;
+        projection.nodes[1].name = "subjectWorkspace".into();
+        projection.nodes[1].owner = Some(requirement);
+        projection.nodes[2].name = "ProjectWorkspace".into();
+        projection.nodes[2].semantic_kind = "PartDefinition".into();
+        projection.edges.truncate(2);
+        projection.edges[0].semantic_kind = "SubjectMembership".into();
+        projection.edges[0].source = requirement;
+        projection.edges[0].target = subject;
+        projection.edges[1].semantic_kind = "FeatureTyping".into();
+        projection.edges[1].source = subject;
+        projection.edges[1].target = architecture;
+        projection.view = agq_modeling_view::ViewDefinition {
+            focus: Some(requirement),
+            ..agq_modeling_view::ViewDefinition::requirements()
+        };
+        let inspector = ElementInspector {
+            revision_id: projection.revision_id,
+            element: projection.nodes[0].clone(),
+            owner: None,
+            effective_types: vec![],
+            owned_features: vec![],
+            effective_features: vec![],
+            feature_provenance: Default::default(),
+            specializations: vec![],
+            subsettings: vec![],
+            redefinitions: vec![],
+            relationships: vec![],
+            multiplicity: None,
+            source: None,
+            queries: vec![],
+            profile: "Counterexample only; not real semantic acceptance".into(),
+        };
+        let path = requirement_subject_path(&projection).unwrap();
+        assert!(
+            assert_requirement_neighborhood(
+                &projection,
+                Some(requirement),
+                Some(requirement),
+                &inspector,
+                &path,
+                20
+            )
+            .is_ok()
+        );
+        // A real project with one obligation can already have a minimal overview.
+        assert!(
+            assert_requirement_neighborhood(
+                &projection,
+                Some(requirement),
+                Some(requirement),
+                &inspector,
+                &path,
+                projection.nodes.len()
+            )
+            .is_ok()
+        );
+        for invalid in 0..11 {
+            let mut changed = projection.clone();
+            let mut inspection = inspector.clone();
+            let mut selection = Some(requirement);
+            let mut overview_nodes = 20;
+            match invalid {
+                0 => changed.view.focus = None,
+                1 => changed.edges[1].relationship_id = changed.edges[0].relationship_id,
+                2 => inspection.revision_id = ProjectRevisionId::new(),
+                3 => inspection.element.id = architecture,
+                4 => selection = None,
+                5 => overview_nodes = 0,
+                6 => inspection.element.source_available = false,
+                7 => changed.view.kind = ViewKind::SemanticGraph,
+                8 | 9 => {
+                    let mut outside = changed.nodes[2].clone();
+                    outside.id = ElementId::from_u128(8899);
+                    outside.name = "OutsideRequirementNeighborhood".into();
+                    if invalid == 9 {
+                        let mut third_hop = changed.edges[1].clone();
+                        third_hop.source = architecture;
+                        third_hop.target = outside.id;
+                        changed.edges.push(third_hop);
+                    }
+                    changed.nodes.push(outside);
+                }
+                10 => changed.view.depth = 8,
+                _ => unreachable!(),
+            }
+            assert!(
+                assert_requirement_neighborhood(
+                    &changed,
+                    Some(requirement),
+                    selection,
+                    &inspection,
+                    &path,
+                    overview_nodes
+                )
+                .is_err(),
+                "Accepted corrupt requirement focus case {invalid}"
+            );
+        }
+    }
+
+    #[test]
+    fn history_gate_requires_real_parent_visit_and_exact_exploration_restoration() {
+        let (args, report) = resume_fixture();
+        remove_resume_fixture(&args);
+        let mut head = report.baseline.unwrap();
+        let mut parent = head.clone();
+        parent.revision_id = ProjectRevisionId::new();
+        head.parent_revision_id = Some(parent.revision_id);
+        let id = ElementId::from_u128(981);
+        let mut selection = Selection::new(head.revision_id);
+        selection.select(SceneTarget::Node(id), false);
+        let before = SavedPresentation {
+            world: World::Requirements,
+            definition: agq_modeling_view::ViewDefinition {
+                focus: Some(id),
+                include_standard_library: true,
+                ..agq_modeling_view::ViewDefinition::requirements()
+            },
+            camera: agq_studio_scene::Camera2D::default(),
+            layout: Default::default(),
+            collapsed: Default::default(),
+            expanded: None,
+            branch: report.branch,
+            panels: Default::default(),
+            selection: Some(selection),
+        };
+        let binding = RevisionBinding {
+            project: head.project_id,
+            revision: parent.revision_id,
+        };
+        let head_binding = RevisionBinding {
+            revision: head.revision_id,
+            ..binding
+        };
+        let mut visit = HistoryVisit {
+            head: head.clone(),
+            requested_parent: parent.clone(),
+            before: before.clone(),
+            observed_parent: None,
+            parent_binding: None,
+            parent_projection_revision: None,
+            restored: None,
+            restored_revision: None,
+        };
+        assert!(assert_historical_revision(&visit, binding, &parent, parent.revision_id).is_ok());
+        assert!(
+            assert_historical_revision(&visit, head_binding, &parent, parent.revision_id).is_err()
+        );
+        assert!(assert_historical_revision(&visit, binding, &head, parent.revision_id).is_err());
+        assert!(assert_historical_revision(&visit, binding, &parent, head.revision_id).is_err());
+        let mut incomplete = parent.clone();
+        incomplete.validation = ValidationState::Working;
+        assert!(
+            assert_historical_revision(&visit, binding, &incomplete, parent.revision_id)
+                .unwrap_err()
+                .contains("Working")
+        );
+        assert!(
+            assert_history_restored(&visit, head_binding, &head, head.revision_id, &before)
+                .is_err(),
+            "Comparing parent alone must not establish a visited earlier revision"
+        );
+        visit.observed_parent = Some(parent.clone());
+        visit.parent_binding = Some(binding);
+        visit.parent_projection_revision = Some(parent.revision_id);
+        assert!(
+            assert_history_restored(&visit, head_binding, &head, head.revision_id, &before).is_ok()
+        );
+        for invalid in 0..12 {
+            let mut after = before.clone();
+            let mut changed = visit.clone();
+            match invalid {
+                0 => after.world = World::System,
+                1 => after.definition.focus = None,
+                2 => after.camera.center.x += 4.0,
+                3 => after.camera.zoom *= 1.2,
+                4 => after.selection.as_mut().unwrap().clear(),
+                5 => after.selection.as_mut().unwrap().revision = parent.revision_id,
+                6 => after.definition.include_standard_library = false,
+                7 => after.definition.relationship_families.clear(),
+                8 => after.definition.hidden_elements.push(id),
+                9 => changed.parent_binding = Some(head_binding),
+                10 => after.panels.explain = true,
+                11 => after.camera.center.x = f32::NAN,
+                _ => unreachable!(),
+            }
+            assert!(
+                assert_history_restored(&changed, head_binding, &head, head.revision_id, &after)
+                    .is_err(),
+                "Accepted corrupted historical return case {invalid}"
+            );
+        }
+        let mut other_manifest = head.clone();
+        other_manifest.checkpoint_digest = ContentDigest::of(b"different durable checkpoint");
+        assert!(
+            assert_history_restored(
+                &visit,
+                head_binding,
+                &other_manifest,
+                head.revision_id,
+                &before
+            )
+            .is_err()
+        );
+        assert!(
+            assert_history_restored(&visit, binding, &head, head.revision_id, &before).is_err()
+        );
+        assert!(
+            assert_history_restored(&visit, head_binding, &head, parent.revision_id, &before)
+                .is_err()
+        );
+    }
+
     fn resume_fixture() -> (Args, Report) {
         let mut args = isolated_args();
         args.root = args.database.as_ref().unwrap().with_extension("root");
@@ -3286,6 +3834,43 @@ mod tests {
                 .unwrap_err()
                 .contains("isolated --database")
         );
+    }
+
+    #[test]
+    fn only_authorized_fresh_real_scenario_requests_self_model_import() {
+        let mut args = isolated_args();
+        assert!(seed_isolated_project(&args).unwrap());
+        let config = agq_studio_platform::NativeConfig::for_root(args.root.clone(), None).unwrap();
+        assert!(
+            !config.seed_agentique_on_empty,
+            "Ordinary generic project opens must not opt in"
+        );
+        args.scenario = None;
+        assert!(!seed_isolated_project(&args).unwrap());
+        args.scenario = Some("real-restart".into());
+        assert!(!seed_isolated_project(&args).unwrap());
+        args.scenario = Some("real".into());
+        args.fixture = Some("architecture".into());
+        assert!(!seed_isolated_project(&args).unwrap());
+        args.fixture = None;
+        args.resume_report = Some(
+            args.database
+                .as_ref()
+                .unwrap()
+                .with_extension("previous.json"),
+        );
+        assert!(!seed_isolated_project(&args).unwrap());
+        args.resume_report = None;
+        args.no_restore = false;
+        assert!(seed_isolated_project(&args).is_err());
+        args.no_restore = true;
+        let database = args.database.as_ref().unwrap();
+        std::fs::write(database, b"existing database must remain untouched").unwrap();
+        let request = seed_isolated_project(&args);
+        let bytes = std::fs::read(database).unwrap();
+        std::fs::remove_file(database).unwrap();
+        assert!(request.unwrap_err().contains("new database"));
+        assert_eq!(bytes, b"existing database must remain untouched");
     }
 
     #[test]

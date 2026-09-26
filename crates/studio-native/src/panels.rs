@@ -1001,15 +1001,19 @@ impl StudioApp {
                         .find(|branch| branch.id == history.project.default_branch)
                 })
                 .map(|branch| (branch.head, branch.name.clone()));
-            if let Some((head, branch)) = head
-                && ui
-                    .add_enabled(
-                        head != self.projection.revision_id,
-                        egui::Button::new(format!("Return to {branch} head")),
-                    )
-                    .clicked()
-            {
-                self.return_to_revision(head);
+            if let Some((head, branch)) = head {
+                let response = ui.add_enabled(
+                    head != self.projection.revision_id,
+                    egui::Button::new(format!("Return to {branch} head")),
+                );
+                crate::real_targets::record(
+                    ui.ctx(),
+                    crate::real_targets::Target::HistoryReturnHead,
+                    response.rect,
+                );
+                if response.clicked() {
+                    self.return_to_revision(head);
+                }
             }
         });
         egui::ScrollArea::vertical().show(ui, |ui| {
@@ -1024,6 +1028,11 @@ impl StudioApp {
                 crate::automation::record(
                     ui.ctx(),
                     crate::automation::Target::HistoryRevision(*revision),
+                    rect,
+                );
+                crate::real_targets::record(
+                    ui.ctx(),
+                    crate::real_targets::Target::HistoryRevision(*revision),
                     rect,
                 );
                 let selected = *revision == self.projection.revision_id;
