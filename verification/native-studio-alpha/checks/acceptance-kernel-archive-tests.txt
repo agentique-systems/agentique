@@ -1,0 +1,22 @@
+   Compiling agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+    Finished `test` profile [unoptimized] target(s) in 8.16s
+     Running tests\archive.rs (target\debug\deps\archive-40cdacf6116d87fa.exe)
+
+running 14 tests
+test portable_ids_and_source_ranges_survive_json_values_without_numeric_loss ... ok
+test retired_element_and_occurrence_ids_remain_reserved_and_registry_is_exact ... ok
+test occurrences_positions_derived_navigation_and_retired_occurrences_roundtrip ... ok
+test strict_dependent_evidence_rejects_invalid_selected_proofs_and_searches ... ok
+test roundtrip_preserves_declared_overlay_values_provenance_searches_and_sharing ... ok
+test bound_local_frontier_roundtrips_nested_protected_dependencies_without_copying_them ... ok
+test dependent_delta_retains_exact_shared_graph_and_protected_history ... ok
+test frontier_rejects_selected_support_with_missing_or_cyclic_evidence ... ok
+test construction_frontier_roundtrip_keeps_obligations_and_protected_dependency ... ok
+test publication_frontier_preserves_ordered_support_without_changing_legacy_archive ... ok
+test corruption_rejects_missing_proofs_missing_dependencies_cycles_and_declared_replacement ... ok
+test strict_dependent_evidence_roundtrip_is_lossless_and_separate_from_frontiers ... ok
+test strict_frontier_attaches_exact_input_and_rejects_changed_declarations_and_history ... ok
+test dependency_digest_cache_preserves_format_evidence_and_rebuilt_overlay_identity ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+

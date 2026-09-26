@@ -52,7 +52,11 @@ it receives rather than trusting a digest supplied by its caller.
 
 Validation so far: targeted `rustfmt --check --edition 2024 --config
 skip_children=true` over the nine modified/new Rust files returned exit code 0;
-`git diff --check` returned exit code 0. Compiled tests and before/after timing
-remain pending. Local builds were deliberately not started while the real profile
-ran and C: had approximately 20 MB free. This document claims no measured runtime
-speedup yet.
+`git diff --check` returned exit code 0. After disk space became available, the
+integration lead ran all 14 kernel archive tests, including the new digest-cache
+regression; all passed. The four closed-audit reuse tests and two immutable
+producer-row/rebind tests also passed. Exact commands, output and exit codes are
+in `../../native-studio-alpha/checks/acceptance-kernel-archive-tests.*`,
+`acceptance-closed-audit-tests.*`, `acceptance-immutable-family-tests.*` and
+`acceptance-immutable-rebind-tests.*`. Real before/after timing remains pending.
+This document claims no measured runtime speedup yet.

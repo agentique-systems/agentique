@@ -1,0 +1,72 @@
+    Checking agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+    Checking agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+    Checking agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\standard-libraries)
+    Checking agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-syntax)
+    Checking agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+    Checking agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml)
+    Checking agq-sysml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml-semantics)
+    Checking agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+error[E0061]: this function takes 6 arguments but 5 arguments were supplied
+    --> crates\kerml-text\src\sysml\publication_audit_tests.rs:139:5
+     |
+ 139 |     audit_typed_answer(
+     |     ^^^^^^^^^^^^^^^^^^
+ 140 |         &mut old_report,
+     |         --------------- argument #1 of type `&mut std::option::Option<(&ClosedAuditContext<'_, '_>, &mut ClosedAuditReads)>` is missing
+     |
+note: function defined here
+    --> crates\kerml-text\src\sysml\publication.rs:1496:4
+     |
+1496 |   fn audit_typed_answer<T>(
+     |      ^^^^^^^^^^^^^^^^^^
+1497 | /     read_observer: &mut Option<(
+1498 | |         &agq_kerml_semantics::ClosedAuditContext<'_, '_>,
+1499 | |         &mut agq_kerml_semantics::ClosedAuditReads,
+1500 | |     )>,
+     | |______-
+help: provide the argument
+     |
+ 139 |     audit_typed_answer(
+ 140 ~         /* &mut std::option::Option<(&ClosedAuditContext<'_, '_>, &mut ClosedAuditReads)> */,
+ 141 ~         &mut old_report,
+     |
+
+error[E0061]: this function takes 6 arguments but 5 arguments were supplied
+    --> crates\kerml-text\src\sysml\publication_audit_tests.rs:168:5
+     |
+ 168 |       audit_effective_usages(
+     |  _____^^^^^^^^^^^^^^^^^^^^^^-
+ 169 | |         &q,
+ 170 | |         &mut observed_report,
+ 171 | |         &families,
+...    |
+ 184 | |         },
+ 185 | |     );
+     | |_____- argument #6 of type `&mut std::option::Option<(&ClosedAuditContext<'_, '_>, &mut ClosedAuditReads)>` is missing
+     |
+note: function defined here
+    --> crates\kerml-text\src\sysml\publication.rs:1473:4
+     |
+1473 |   fn audit_effective_usages(
+     |      ^^^^^^^^^^^^^^^^^^^^^^
+...
+1479 | /     read_observer: &mut Option<(
+1480 | |         &agq_kerml_semantics::ClosedAuditContext<'_, '_>,
+1481 | |         &mut agq_kerml_semantics::ClosedAuditReads,
+1482 | |     )>,
+     | |______-
+help: provide the argument
+     |
+ 168 |     audit_effective_usages(
+ ...
+ 184 |         },
+ 185 ~         /* &mut std::option::Option<(&ClosedAuditContext<'_, '_>, &mut ClosedAuditReads)> */,
+ 186 ~     );
+     |
+
+    Checking agq-modeling-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-workspace)
+    Checking agq-modeling-repository v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-repository)
+    Checking agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-service)
+For more information about this error, try `rustc --explain E0061`.
+error: could not compile `agq-kerml-text` (lib test) due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...
