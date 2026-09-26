@@ -419,18 +419,18 @@ impl StudioApp {
             presentation: self.capture_presentation(),
         }
     }
-    pub fn restore_location(&mut self, location: Location) {
+    pub fn restore_location(&mut self, location: Location) -> bool {
         self.focus_changes_pending = false;
         if self.bridge.mutation_pending() && location.revision != self.projection.revision_id {
             self.status = "The current revision remains explorable while model work runs".into();
-            return;
+            return false;
         }
         if self
             .binding
             .is_some_and(|binding| binding.revision != location.revision)
             && !self.allow_context_change()
         {
-            return;
+            return false;
         }
         // Model revisions are immutable, but may require a worker restoration.
         self.restore_world_filters(location.world);
@@ -500,6 +500,7 @@ impl StudioApp {
         target.zoom = location.zoom;
         self.camera_target = Some(target);
         self.fit_pending = false;
+        true
     }
     pub fn request_projection(&mut self) {
         self.request_projection_definition(self.definition());
@@ -875,13 +876,17 @@ impl StudioApp {
                 self.record_location();
             }
             Back => {
-                if let Some(location) = self.navigation.back() {
-                    self.restore_location(location);
+                if let Some(location) = self.navigation.back()
+                    && !self.restore_location(location)
+                {
+                    let _ = self.navigation.forward();
                 }
             }
             Forward => {
-                if let Some(location) = self.navigation.forward() {
-                    self.restore_location(location);
+                if let Some(location) = self.navigation.forward()
+                    && !self.restore_location(location)
+                {
+                    let _ = self.navigation.back();
                 }
             }
             Explain => {
