@@ -725,7 +725,7 @@ impl StudioApp {
             self.remember_location();
             self.focus_changes_pending = false;
         }
-        if self.bridge.mutation_pending() && matches!(id, Compare | Dependencies) {
+        if self.bridge.mutation_pending() && id == Compare {
             self.status = "Wait for the model operation before changing the view".into();
             return;
         }
@@ -913,6 +913,14 @@ impl StudioApp {
                     let view =
                         ViewDefinition::dependency_neighborhood(element, families, 2, standards);
                     self.fit_pending = true;
+                    if candidate.is_none()
+                        && self.binding == Some(binding)
+                        && self.comparison == ComparisonMode::Current
+                    {
+                        self.request_projection_definition(view);
+                        self.status = "Querying revision-bound dependency neighborhood".into();
+                        return;
+                    }
                     let requested = view.clone();
                     self.scene_request = self.enqueue(Box::new(move |p| {
                         if let Some(id) = candidate {
@@ -961,8 +969,6 @@ impl StudioApp {
                 self.cancel_revision_navigation();
                 if let Some(selected) = self.selected_element() {
                     if self.fixture.is_none()
-                        && !self.bridge.mutation_pending()
-                        && self.candidate.is_none()
                         && self.comparison == ComparisonMode::Current
                         && self.world == World::Graph
                         && self.focus == Some(selected)

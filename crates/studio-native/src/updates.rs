@@ -1269,6 +1269,35 @@ mod tests {
     }
 
     #[test]
+    fn cancelled_preparation_completion_never_replaces_current_revision_or_scene() {
+        let mut app = application();
+        let current = app.projection.clone();
+        let camera = app.camera;
+        let selection = app.selection.clone();
+        let prepared = candidate(&app, CandidatePhase::Working);
+        let candidate_id = prepared.id;
+        app.preparation = Some(crate::app::PendingPreparation {
+            request: 1200,
+            started: std::time::Instant::now(),
+            cancelled: true,
+            intent: "Cancelled nested part".into(),
+        });
+        let context = app.work_context();
+        app.receive_replies([reply(1200, context, true, Ok(Output::Candidate(prepared)))]);
+        assert!(app.preparation.is_none());
+        assert_eq!(app.comparison, ComparisonMode::Current);
+        assert_eq!(app.projection, current);
+        assert_eq!(app.scene.revision_id, current.revision_id);
+        assert_eq!(app.camera, camera);
+        assert_eq!(app.selection, selection);
+        // Retaining the handle is cancellation authority, not publication. Its
+        // serial cancellation acknowledgement must arrive before it is dropped.
+        assert_eq!(app.candidate.as_ref().unwrap().id, Some(candidate_id));
+        assert!(app.bridge.mutation_pending());
+        assert!(app.status.contains("Discarding prepared candidate"));
+    }
+
+    #[test]
     fn prepared_candidate_after_navigation_waits_for_matching_pair_without_changing_current() {
         for navigation in ["world", "focus", "filter"] {
             let mut app = application();
