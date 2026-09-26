@@ -2,7 +2,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { unzipSync } from "fflate";
-import { root, hash, safePath } from "./extract.mjs";
+import { root, hash, safePath } from "./files.mjs";
 const commit = "9baca5908ca28b53da085de69336fde48420ea8f";
 const baselinePath = path.join(root, "standards/baseline-lock.json");
 if (!fs.existsSync(baselinePath))

@@ -2,8 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import assert from "node:assert/strict";
 import { unzipSync } from "fflate";
-import { hash, safePath } from "./extract.mjs";
-import { verifySystemsPublicationFreshness } from "./sysml-publication-stale.mjs";
+import { hash, safePath } from "./files.mjs";
 
 export const sysmlLockPath = "standards/normative/sysml-2.0/lock.json";
 export const librarySetPath = "standards/normative/sysml-2.0/library-set.json";
@@ -170,7 +169,6 @@ export function verifySysmlArtifacts(root) {
     library_set: set.id,
     dependency_edges: edges,
     informative_example: lock.informative_example,
-    accepted_publication: verifySystemsPublicationFreshness(root),
   };
 }
 

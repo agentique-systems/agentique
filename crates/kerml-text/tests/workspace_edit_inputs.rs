@@ -1,6 +1,6 @@
 //! Parser-only preflight for the held Gen2 workspace integration suite.
 //! Passing this file does not establish workspace or publication acceptance.
-#[path = "../../../verification/fixtures/modeling-workspace-phase1/executable_inputs.rs"]
+#[path = "fixtures/modeling-workspace/executable_inputs.rs"]
 mod inputs;
 
 use agq_kerml_syntax::{

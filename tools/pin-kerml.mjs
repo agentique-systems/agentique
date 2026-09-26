@@ -3,7 +3,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import assert from "node:assert/strict";
-import { root, hash, safePath } from "./extract.mjs";
+import { root, hash, safePath } from "./files.mjs";
 import { readNormativeLock } from "./normative-artifacts.mjs";
 
 const { lock } = readNormativeLock(root);

@@ -21,7 +21,7 @@ use std::{
     sync::{Arc, OnceLock},
 };
 
-#[path = "../../../../verification/fixtures/modeling-workspace-phase1/executable_inputs.rs"]
+#[path = "../../../kerml-text/tests/fixtures/modeling-workspace/executable_inputs.rs"]
 pub mod inputs;
 
 pub fn accepted() -> Arc<CanonicalSysmlSystemsLibrary> {

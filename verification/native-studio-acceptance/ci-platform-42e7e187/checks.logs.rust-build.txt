@@ -1,5 +1,0 @@
-   Compiling agentique v0.1.0 (/home/runner/work/agentique/agentique/crates/cli)
-   Compiling agq-studio v0.1.0 (/home/runner/work/agentique/agentique/crates/studio)
-   Compiling agq-server v0.1.0 (/home/runner/work/agentique/agentique/crates/server)
-   Compiling agq-runtime-publications v0.1.0 (/home/runner/work/agentique/agentique/crates/runtime-publications)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.41s

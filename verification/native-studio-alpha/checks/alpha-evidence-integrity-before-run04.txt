@@ -1,5 +1,0 @@
-{
-  "checked": 240,
-  "repaired": [],
-  "failures": []
-}
