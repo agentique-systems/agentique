@@ -29,19 +29,39 @@ record = {"command": command, "cwd": args.cwd,
 with (destination / (args.name + ".log")).open("wb") as output:
     process = subprocess.Popen(command, cwd=args.cwd, stdout=output, stderr=subprocess.STDOUT)
     peak_rss = peak_private = 0
+    observed_processes = {}
+    samples = []
     while process.poll() is None:
         if psutil:
             try:
-                memory = psutil.Process(process.pid).memory_info()
-                peak_rss = max(peak_rss, memory.rss)
-                peak_private = max(peak_private, getattr(memory, "private", 0))
+                parent = psutil.Process(process.pid)
+                resident = private = 0
+                for child in [parent, *parent.children(recursive=True)]:
+                    try:
+                        memory = child.memory_info()
+                        resident += memory.rss
+                        private += getattr(memory, "private", 0)
+                        observation = observed_processes.setdefault(str(child.pid), {
+                            "executable": child.exe(), "command": child.cmdline(),
+                            "created": child.create_time(), "peak_rss_bytes": 0,
+                            "peak_private_bytes": 0, "os_peak_working_set_bytes": 0,
+                        })
+                        observation["peak_rss_bytes"] = max(observation["peak_rss_bytes"], memory.rss)
+                        observation["peak_private_bytes"] = max(observation["peak_private_bytes"], getattr(memory, "private", 0))
+                        observation["os_peak_working_set_bytes"] = max(observation["os_peak_working_set_bytes"], getattr(memory, "peak_wset", 0))
+                    except psutil.Error:
+                        pass
+                peak_rss = max(peak_rss, resident)
+                peak_private = max(peak_private, private)
+                samples.append({"elapsed_seconds": round(time.monotonic()-started, 3), "rss_bytes": resident, "private_bytes": private})
             except psutil.Error:
                 pass
         time.sleep(1)
 record.update(exit_code=process.returncode, elapsed_seconds=round(time.monotonic()-started, 3),
               peak_rss_bytes=peak_rss if psutil else None,
               peak_private_bytes=peak_private if psutil else None,
-              memory_scope="direct child process sampled at 1 second; excludes descendant compilers")
+              memory_scope="whole process tree sampled at 1 second; per-process observations distinguish compilers and separate semantic oracle children",
+              processes=observed_processes, memory_samples=samples)
 log = destination / (args.name + ".log")
 with log.open("rb") as stream:
     record["output_sha256"] = hashlib.file_digest(stream, "sha256").hexdigest()
