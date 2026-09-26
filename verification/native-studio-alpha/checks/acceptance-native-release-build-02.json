@@ -1,0 +1,36 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--offline",
+    "--release",
+    "--manifest-path",
+    "crates/studio-native/Cargo.toml",
+    "--target-dir",
+    "target/native-alpha"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "69287bdb9e0ad838d6355d981bf5b9ce7131edac",
+  "tracked_changes_at_start": [
+    " M crates/studio-native/src/app.rs",
+    " M crates/studio-native/src/panels.rs",
+    " M crates/studio-native/src/project_dialog.rs",
+    " M crates/studio-native/src/real_automation.rs",
+    " M crates/studio-native/src/real_targets.rs",
+    " M crates/studio-platform/src/bootstrap.rs",
+    " M verification/native-studio-acceptance/run_real_soak.py",
+    " M verification/native-studio-acceptance/semantics/audit-reuse-review.md"
+  ],
+  "started_utc": "2026-09-26T09:31:04.644303+00:00",
+  "elapsed_seconds": 337.922,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/acceptance-native-release-build-02.txt",
+  "output_sha256": "59d7e954271588e9c2e5f14537f9f9d2f0dc00999c4b3885db8494e3fa8d2d31",
+  "build_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "2"
+  }
+}

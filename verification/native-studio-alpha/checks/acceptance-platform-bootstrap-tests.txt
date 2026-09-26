@@ -1,0 +1,53 @@
+   Compiling agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kernel)
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml)
+   Compiling agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+   Compiling agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\standard-libraries)
+   Compiling agq-sysml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml-semantics)
+   Compiling agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-syntax)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+   Compiling agq-modeling-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-workspace)
+   Compiling agq-modeling-repository v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-repository)
+   Compiling agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-service)
+   Compiling agq-modeling-view v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-view)
+   Compiling agq-modeling-agent v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-agent)
+   Compiling agq-modeling-sqlite v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\modeling-sqlite)
+   Compiling agq-runtime-publications v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\runtime-publications)
+   Compiling agq-studio-platform v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-platform)
+    Finished `test` profile [unoptimized] target(s) in 32.74s
+     Running unittests src\lib.rs (target\debug\deps\agq_studio_platform-dab881f7ff9d49eb.exe)
+
+running 30 tests
+test bootstrap::tests::generic_restart_never_creates_sample_but_pending_seed_can_resume ... ok
+test candidates::tests::presentation_validated_state_cannot_replace_a_validated_revision ... ok
+test candidates::tests::validation_failure_retains_working_preview_and_allows_cancel ... ok
+test candidates::tests::lost_acknowledgement_requires_exact_retry_then_replays_without_persistence ... ok
+test candidates::tests::explicit_cas_refusal_allows_cancel_but_unknown_storage_failure_does_not ... ok
+test candidates::tests::machine_policy_never_calls_validation_or_commit_even_for_cached_receipts ... ok
+test candidates::tests::candidate_pressure_never_evicts_an_unresolved_commit_or_unreviewed_preview ... ok
+test projection_cache::tests::denied_read_or_failed_or_wrong_binding_resolution_cannot_use_cached_dto ... ok
+test projection_cache::tests::failed_computation_is_never_negative_cached ... ok
+test projection_cache::tests::every_view_field_and_ordered_filter_list_participates_in_exact_key ... ok
+test bootstrap::tests::relative_setup_path_is_rejected_before_installation ... ok
+test projection_cache::tests::project_revision_and_platform_instance_boundaries_do_not_share_entries ... ok
+test projection_cache::tests::concurrent_completion_equality_is_required_and_first_result_is_retained ... ok
+test projection_cache::tests::poisoned_cache_bypasses_retention_but_keeps_binding_and_result_checks ... ok
+test projection_cache::tests::returned_outer_nested_revisions_and_full_view_must_match_before_retention ... ok
+test reader::inspector_cache::tests::completed_incomplete_dto_is_exact_and_returned_clones_cannot_change_it ... ok
+test projection_cache::tests::complete_dto_is_exact_while_resolution_runs_on_every_hit ... ok
+test projection_cache::tests::sixteen_entries_evict_least_recently_used_definition_without_stale_reuse ... ok
+test reader::inspector_cache::tests::equal_element_ids_in_different_reader_bindings_do_not_share_entries ... ok
+test reader::inspector_cache::tests::conflicting_concurrent_completion_cannot_replace_a_completed_immutable_result ... ok
+test reader::inspector_cache::tests::concurrent_duplicate_completions_compute_outside_lock_and_retain_one_exact_entry ... ok
+test reader::inspector_cache::tests::failures_are_retried_and_never_become_negative_cache_entries ... ok
+test reader::inspector_cache::tests::fixed_bound_evicts_the_least_recently_used_completed_entry ... ok
+test reader::inspector_cache::tests::wrong_element_or_outer_or_nested_revision_is_never_cached ... ok
+test reader::tests::immutable_reader_can_cross_and_be_retained_by_the_read_worker ... ok
+test reader::tests::read_authority_is_checked_before_revision_resolution ... ok
+test seed::tests::bootstrap_never_adopts_an_authored_empty_revision_or_retained_history ... ok
+test tests::platform_and_results_can_cross_the_native_worker_boundary ... ok
+test bootstrap::tests::discovery_is_not_authentication_and_missing_runtime_never_creates_a_database ... ok
+test bootstrap::tests::existing_archive_does_not_claim_authenticated_runtime ... ok
+
+test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

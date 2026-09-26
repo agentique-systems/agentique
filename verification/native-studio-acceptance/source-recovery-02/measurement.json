@@ -1,0 +1,17 @@
+{
+  "source_commit_at_start": "69287bdb9e0ad838d6355d981bf5b9ce7131edac",
+  "executable_sha256": "5ee44d57f2ce4d103c58f59698383d6ddf88556035573743abc9134a9cca6c99",
+  "command": [
+    "verification/generated/native-studio-acceptance/ci-helpers-01/bin/source_recovery.exe",
+    "restore",
+    ".",
+    "C:/Users/phili/.agentique",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\native-studio-acceptance\\source-recovery-01\\recovery.sqlite",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\native-studio-acceptance\\source-recovery-01\\expected.json"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 180.3243217000272,
+  "maximum_process_peak_working_set_bytes": 5080182784,
+  "sampled_process_tree_peak_resident_bytes": 5026680832,
+  "sample_interval_seconds": 0.25
+}

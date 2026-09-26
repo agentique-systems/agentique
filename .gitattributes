@@ -28,6 +28,10 @@ verification/native-studio-alpha/**/*.json -text whitespace=blank-at-eol,blank-a
 # Raw command output may contain whitespace emitted by external programs.
 verification/native-studio-alpha/**/*.txt -text -whitespace
 verification/native-studio-alpha/**/*.log -text -whitespace
+verification/native-studio-acceptance/**/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
+verification/native-studio-acceptance/**/*.jsonl -text -whitespace
+verification/native-studio-acceptance/**/*.txt -text -whitespace
+verification/native-studio-acceptance/**/*.log -text -whitespace
 standards/kerml-1.0-operational-formal-target-errata-v5.json -text
 # Manifest hashes identify reviewed bytes, including line endings.
 standards/kerml-1.0-operational-errata*.json -text
