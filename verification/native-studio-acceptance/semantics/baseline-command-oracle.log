@@ -1,0 +1,40 @@
+   Compiling agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-acceptance-semantics\crates\kernel)
+   Compiling agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-acceptance-semantics\crates\kerml)
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-acceptance-semantics\crates\kerml-semantics)
+   Compiling agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-acceptance-semantics\crates\sysml)
+   Compiling agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-acceptance-semantics\crates\standard-libraries)
+   Compiling agq-sysml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-acceptance-semantics\crates\sysml-semantics)
+   Compiling agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-acceptance-semantics\crates\kerml-syntax)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-acceptance-semantics\crates\kerml-text)
+   Compiling agq-modeling-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-acceptance-semantics\crates\modeling-workspace)
+   Compiling agq-modeling-repository v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-acceptance-semantics\crates\modeling-repository)
+   Compiling agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-acceptance-semantics\crates\modeling-service)
+   Compiling agq-modeling-view v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-acceptance-semantics\crates\modeling-view)
+   Compiling agq-modeling-agent v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-acceptance-semantics\crates\modeling-agent)
+   Compiling agq-modeling-sqlite v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-acceptance-semantics\adapters\modeling-sqlite)
+    Finished `release` profile [optimized] target(s) in 8m 19s
+     Running tests\create_part_performance.rs (C:/Users/phili/github/agentique-systems/agentique/target\release\deps\create_part_performance-10efcec309eb5e00.exe)
+
+running 1 test
+test create_part_command_matches_full_self_model_reconstruction ... shared_mount_negative checkpoint version: unsupported project checkpoint version 2
+shared_mount_negative missing parent: checkpoint does not continue the supplied predecessor revision
+shared_mount_negative foreign parent: checkpoint does not continue the supplied predecessor revision
+shared_mount_negative reused project revision: checkpoint does not continue the supplied predecessor revision
+shared_mount_negative source checkpoint version: source checkpoint does not match format version
+shared_mount_negative foreign source project: source checkpoint does not match predecessor source project
+shared_mount_negative foreign canonical root: source checkpoint does not match predecessor canonical root
+shared_mount_negative foreign accepted KerML: source checkpoint does not match accepted publication identities
+shared_mount_negative foreign accepted Systems: source checkpoint does not match accepted publication identities
+shared_mount_negative changed source digest: source checkpoint does not match source content digest
+shared_mount_negative missing source: source checkpoint does not match source population
+shared_mount_negative substituted source identity: source checkpoint does not match source blob
+shared_mount_negative duplicate document identity: source checkpoint does not match duplicate document identity
+shared_mount_negative duplicate document path: source checkpoint does not match duplicate path label
+shared_mount_negative duplicate syntax identity: source checkpoint does not match duplicate syntax identity
+shared_mount_negative incomplete syntax arena: edit range is outside the source or splits a UTF-8 character
+oracle: independent cold checkpoint restore
+memory allocation of 631440 bytes failed
+error: test failed, to rerun pass `-p agq-modeling-agent --test create_part_performance`
+
+Caused by:
+  process didn't exit successfully: `C:/Users/phili/github/agentique-systems/agentique/target\release\deps\create_part_performance-10efcec309eb5e00.exe create_part_command_matches_full_self_model_reconstruction --exact --ignored --nocapture --test-threads=1` (exit code: 0xc0000409, STATUS_STACK_BUFFER_OVERRUN)

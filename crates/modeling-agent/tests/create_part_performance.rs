@@ -1,13 +1,13 @@
 //! Exact accepted-runtime oracle for the command used by Native Studio.
 //! Measurements describe this process, never grant semantic acceptance.
-use agq_kerml_semantics::{Completeness, QualifiedName, QueryResult};
+use agq_kerml_semantics::{Completeness, QualifiedName};
 use agq_kerml_text::{
     ProjectChange, SourceLanguage, library::CanonicalKermlStandardLibraries,
     sysml::CanonicalSysmlSystemsLibrary,
 };
 use agq_kernel::ElementId;
 use agq_modeling_agent::{AgentContext, AgentPolicy, ModelCommand};
-use agq_modeling_repository::OperationId;
+use agq_modeling_repository::{ContentDigest, OperationId};
 use agq_modeling_service::{ApplyDocumentChanges, ModelingService, RevisionSelector};
 use agq_modeling_workspace::{ProjectRevisionCheckpoint, WorkingProjectRevision};
 use std::{collections::BTreeMap, fs::File, path::Path, sync::Arc, time::Instant};
@@ -24,92 +24,6 @@ fn named(revision: &WorkingProjectRevision, segments: &[&str]) -> ElementId {
     let ids: std::collections::BTreeSet<_> = answer.value.iter().map(|m| m.element).collect();
     assert_eq!(ids.len(), 1, "{segments:?}: {answer:?}");
     *ids.first().unwrap()
-}
-
-fn assert_query<T: std::fmt::Debug + PartialEq>(left: &QueryResult<T>, right: &QueryResult<T>) {
-    let mut context = right.context.clone();
-    context.revision = left.context.revision;
-    assert_eq!(left.context, context);
-    assert_eq!(left.value, right.value);
-    assert_eq!(left.completeness, right.completeness);
-    assert_eq!(left.diagnostics, right.diagnostics);
-    assert_eq!(left.positive_dependencies, right.positive_dependencies);
-    assert_eq!(left.search_dependencies, right.search_dependencies);
-    assert_eq!(left.explanations, right.explanations);
-    assert_eq!(left.fact_origins, right.fact_origins);
-    assert_eq!(left.declared_fact_origins, right.declared_fact_origins);
-    assert_eq!(left.canonical_dependencies, right.canonical_dependencies);
-}
-
-fn assert_equivalent(left: &WorkingProjectRevision, right: &WorkingProjectRevision) {
-    assert_eq!(
-        left.checkpoint(),
-        right.checkpoint(),
-        "exact source/arena/retirement checkpoint"
-    );
-    assert_eq!(
-        left.semantic_fingerprint().unwrap(),
-        right.semantic_fingerprint().unwrap()
-    );
-    let a = left.semantic_model().unwrap();
-    let b = right.semantic_model().unwrap();
-    assert!(
-        a.elements().eq(b.elements()),
-        "canonical records, IDs and provenance"
-    );
-    assert!(
-        a.association_occurrences().eq(b.association_occurrences()),
-        "relationship identity and order"
-    );
-    assert_eq!(
-        left.producer_closure().unwrap().semantic_closure_digest(),
-        right.producer_closure().unwrap().semantic_closure_digest(),
-    );
-    assert_eq!(left.references().len(), right.references().len());
-    for (a, b) in left.references().iter().zip(right.references()) {
-        assert_eq!(a.relationship, b.relationship);
-        assert_eq!(a.specific, b.specific);
-        assert_eq!(a.kind, b.kind);
-        assert_eq!(a.name, b.name);
-        assert_eq!(a.origin, b.origin);
-        assert_eq!(a.alias(), b.alias());
-        assert_eq!(a.visibility(), b.visibility());
-        assert_query(&a.resolution, &b.resolution);
-    }
-    // Only the fresh kernel revision label differs; source and canonical identities do not.
-    let normalized = format!("{:?}", right.diagnostics()).replace(
-        &format!("{:?}", right.kernel_revision().unwrap()),
-        &format!("{:?}", left.kernel_revision().unwrap()),
-    );
-    assert_eq!(format!("{:?}", left.diagnostics()), normalized);
-    let path = ["PlatformArchitecture", "ModelingPlatform", "alphaObserver"];
-    let a = named(left, &path);
-    assert_eq!(a, named(right, &path));
-    let l = left.sysml_queries().unwrap().effective_usages(a);
-    let r = right.sysml_queries().unwrap().effective_usages(a);
-    // Only the fresh kernel revision differs. In particular the enclosing
-    // SysML dependency contract, bindings, profiles and metamodel stay exact.
-    let mut context = r.context.clone();
-    context.kerml.revision = l.context.kerml.revision;
-    assert_eq!(l.context, context);
-    assert_query(&l.kerml, &r.kerml);
-    assert_eq!(l.completeness(), r.completeness());
-    assert_eq!(l.pending, r.pending);
-    assert_eq!(l.diagnostics, r.diagnostics);
-    assert_eq!(l.rejected_targets, r.rejected_targets);
-    assert_eq!(l.filtered_targets, r.filtered_targets);
-    assert_eq!(l.supporting_queries.len(), r.supporting_queries.len());
-    for (a, b) in l.supporting_queries.iter().zip(&r.supporting_queries) {
-        assert_query(a, b);
-    }
-    assert_eq!(l.supporting_names.len(), r.supporting_names.len());
-    for (a, b) in l.supporting_names.iter().zip(&r.supporting_names) {
-        assert_query(a, b);
-    }
-    assert!(l.observations.keys().eq(r.observations.keys()));
-    for (fact, a) in &l.observations {
-        assert_query(a, &r.observations[fact]);
-    }
 }
 
 /// Malformed reuse requests must fail before they can become candidate graphs.
@@ -183,6 +97,14 @@ fn assert_restore_rejections(
 #[test]
 #[ignore = "requires exact accepted runtime caches; never acquires or rebuilds standards"]
 fn create_part_command_matches_full_self_model_reconstruction() {
+    match std::env::var("AGENTIQUE_CREATE_PART_ORACLE_STAGE").as_deref() {
+        Ok("command") => command_child(&oracle_directory()),
+        Ok("cold") => cold_child(&oracle_directory()),
+        _ => orchestrate(),
+    }
+}
+
+fn command_child(output: &Path) {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
     // Open both before expensive restoration: unavailable input fails immediately.
     let kerml_file = File::open(
@@ -201,6 +123,7 @@ fn create_part_command_matches_full_self_model_reconstruction() {
         CanonicalSysmlSystemsLibrary::restore_cache(systems_file, &sources, kerml).unwrap(),
     );
     let runtime_restore_ms = started.elapsed().as_millis();
+    eprintln!("CREATE_PART_RUNTIME {{\"runtime_restore_ms\":{runtime_restore_ms}}}");
     let directory = tempfile::tempdir().unwrap();
     let store = Arc::new(
         agq_modeling_sqlite::SqliteRepository::open(directory.path().join("command.sqlite"))
@@ -269,7 +192,18 @@ fn create_part_command_matches_full_self_model_reconstruction() {
     )
     .unwrap();
     let command_prepare_ms = started.elapsed().as_millis();
+    eprintln!("command prepared in {command_prepare_ms} ms");
     let command_full = candidate.prepared().revision().clone();
+    eprintln!(
+        "CREATE_PART_PREPARATION {}",
+        serde_json::json!({
+            "command_prepare_ms": command_prepare_ms,
+            "command_phases": command_full.compilation_timings(),
+            "command_work": command_full.compilation_work(),
+            "command_closure_counters": command_full.producer_status().map(|status| &status.counters),
+            "equivalence_status": "independent cold oracle has not run yet",
+        })
+    );
     assert!(
         agq_modeling_workspace::testing::shares_accepted_dependency(base.revision(), &command_full),
         "source command reuses the exact authenticated dependency mount"
@@ -319,71 +253,323 @@ fn create_part_command_matches_full_self_model_reconstruction() {
         .map(|(_, document)| (document.id(), document.source().to_owned()))
         .collect();
     let negative_cases = assert_restore_rejections(base.revision(), &checkpoint, &sources);
-    eprintln!("oracle: independent cold checkpoint restore");
-    let started = Instant::now();
-    let full = checkpoint
-        .restore(command_full.accepted_sysml().clone(), &sources)
-        .unwrap();
-    let cold_checkpoint_restore_ms = started.elapsed().as_millis();
-    assert!(
-        !agq_modeling_workspace::testing::shares_accepted_dependency(&command_full, &full),
-        "cold oracle must authenticate a separate mount"
-    );
-    assert_equivalent(&command_full, &full);
     let started = Instant::now();
     candidate.validate(&AgentPolicy::operator()).unwrap();
     let validation_ms = started.elapsed().as_millis();
-    let started = Instant::now();
-    full.validate().unwrap();
-    let cold_validation_ms = started.elapsed().as_millis();
     assert!(!command_full.compilation_work().semantic_cache_used);
-    assert!(!full.compilation_work().semantic_cache_used);
-    assert_eq!(
-        command_full.compilation_work().documents_reparsed,
-        command_full.documents().count()
+    write_json(output, "checkpoint", &checkpoint);
+    write_json(output, "sources", &sources);
+    write_observations(output, "command", &command_full);
+    write_json(
+        output,
+        "command-metrics",
+        &serde_json::json!({
+            "runtime_restore_ms": runtime_restore_ms,
+            "command_prepare_ms": command_prepare_ms,
+            "command_compile_ms": command_full.compilation_timings().total_compile_micros as f64 / 1000.0,
+            "validation_ms": validation_ms,
+            "command_phases": command_full.compilation_timings(),
+            "command_work": command_full.compilation_work(),
+            "command_closure_counters": command_full.producer_status().map(|status| &status.counters),
+            "canonical_elements": command_full.semantic_model().unwrap().elements().count(),
+            "authored_documents": command_full.documents().count(),
+            "negative_reuse_cases": negative_cases,
+            "owner_and_ancestor_identity_preserved": true,
+            "same_authenticated_mount_observed": true,
+            "validated": true,
+        }),
     );
+}
+
+fn oracle_directory() -> std::path::PathBuf {
+    std::env::var_os("AGENTIQUE_CREATE_PART_ORACLE_DIR")
+        .expect("oracle output directory")
+        .into()
+}
+
+fn write_json(output: &Path, name: &str, value: &impl serde::Serialize) {
+    let file = File::create(output.join(format!("{name}.json"))).unwrap();
+    serde_json::to_writer(std::io::BufWriter::new(file), value).unwrap();
+}
+
+fn read_json<T: serde::de::DeserializeOwned>(output: &Path, name: &str) -> T {
+    serde_json::from_reader(std::io::BufReader::new(
+        File::open(output.join(format!("{name}.json"))).unwrap(),
+    ))
+    .unwrap()
+}
+
+/// Exact per-observation hashes keep the independent oracles out of each
+/// other's address spaces. Debug includes full query evidence/private status;
+/// only the freshly allocated kernel revision label is normalized.
+fn write_observations(output: &Path, label: &str, revision: &WorkingProjectRevision) {
+    use agq_sysml::classes as sc;
+    let kernel_revision = format!("{:?}", revision.kernel_revision().unwrap());
+    let mut observations = BTreeMap::new();
+    fn observe(
+        observations: &mut BTreeMap<String, ContentDigest>,
+        revision: &str,
+        key: String,
+        value: &impl std::fmt::Debug,
+    ) {
+        let exact = format!("{value:?}").replace(revision, "<fresh-kernel-revision>");
+        assert!(
+            observations
+                .insert(key, ContentDigest::of(exact.as_bytes()))
+                .is_none()
+        );
+    }
+    macro_rules! observe {
+        ($key:expr, $value:expr) => {
+            observe(
+                &mut observations,
+                &kernel_revision,
+                $key.to_string(),
+                &$value,
+            )
+        };
+    }
+    observe!("source-checkpoint", revision.checkpoint());
+    observe!(
+        "semantic-fingerprint",
+        revision.semantic_fingerprint().unwrap()
+    );
+    observe!(
+        "semantic-closure",
+        revision
+            .producer_closure()
+            .unwrap()
+            .semantic_closure_digest()
+    );
+    observe!("diagnostics", revision.diagnostics());
+    observe!("strict-audit", revision.effective_audit().unwrap().report());
+    observe!(
+        "strict-audit-subjects",
+        revision.effective_audit().unwrap().subjects()
+    );
+    let model = revision.semantic_model().unwrap();
+    for record in model.elements() {
+        observe!(format!("element/{}", record.id()), record);
+        for (property, _) in record.slots() {
+            observe!(
+                format!("declared-slot/{}/{property}", record.id()),
+                model.declared_slot(record.id(), property)
+            );
+        }
+    }
+    for occurrence in model.association_occurrences() {
+        observe!(format!("occurrence/{}", occurrence.id()), occurrence);
+    }
+    for (fact, searches) in model.computation_searches() {
+        observe!(format!("searches/{fact:?}"), searches);
+    }
+    for (key, contribution) in model.ordered_reference_contributions() {
+        observe!(format!("contribution/{key:?}"), contribution);
+    }
+    for (key, navigation) in model.derived_navigation_results() {
+        observe!(format!("navigation/{key:?}"), navigation);
+    }
+    for (key, failure) in model.computation_failures() {
+        observe!(format!("failure/{key:?}"), failure);
+    }
+    for reference in revision.references() {
+        observe!(format!("reference/{}", reference.relationship), reference);
+    }
+    let bound = revision.sysml_queries().unwrap();
+    let subjects = revision.effective_audit().unwrap().subjects();
+    for batch in subjects.chunks(32) {
+        let q = bound.fork();
+        for &subject in batch {
+            let class = model.element(subject).unwrap().metaclass();
+            let is = |base| model.registry().is_subtype(class, base).unwrap_or(false);
+            macro_rules! query {
+                ($operation:ident) => {
+                    observe!(
+                        format!("query/{subject}/{}", stringify!($operation)),
+                        q.$operation(subject)
+                    )
+                };
+            }
+            if is(sc::DEFINITION) || is(sc::USAGE) {
+                query!(effective_names);
+                query!(current_effective_usages);
+                query!(effective_usages);
+                query!(effective_ports);
+                query!(effective_return_parameters);
+            }
+            if is(sc::DEFINITION) {
+                query!(direct_specializations);
+                query!(effective_supertypes);
+            }
+            if is(sc::USAGE) {
+                query!(current_usage_types);
+                query!(effective_usage_types);
+                query!(effective_subsetted_features);
+                query!(effective_redefined_features);
+            }
+            if is(sc::OCCURRENCE_USAGE) {
+                query!(current_occurrence_definitions);
+                query!(effective_occurrence_definitions);
+            }
+            if is(sc::CONNECTION_USAGE) {
+                query!(current_connection_definitions);
+                query!(effective_connection_definitions);
+            }
+            if is(sc::ATTRIBUTE_USAGE) {
+                query!(current_attribute_definitions);
+                query!(effective_attribute_definitions);
+            }
+            if is(sc::ITEM_USAGE) {
+                query!(current_item_definitions);
+                query!(effective_item_definitions);
+            }
+            if is(sc::PART_USAGE) {
+                query!(current_part_definitions);
+                query!(effective_part_definitions);
+            }
+            if is(sc::PORT_USAGE) {
+                query!(current_port_definitions);
+                query!(effective_port_definitions);
+            }
+            if is(sc::CONNECTOR_AS_USAGE) {
+                query!(current_connection_related_features);
+                query!(effective_connection_related_features);
+            }
+            if is(sc::CONNECTOR_AS_USAGE) || is(sc::CONNECTION_DEFINITION) {
+                query!(effective_connection_ends);
+            }
+            if is(sc::INTERFACE_DEFINITION) || is(sc::INTERFACE_USAGE) {
+                query!(effective_interface_ends);
+            }
+            if is(sc::OCCURRENCE_DEFINITION) || is(sc::OCCURRENCE_USAGE) {
+                query!(effective_parameters);
+            }
+            if is(sc::ACTION_DEFINITION) || is(sc::ACTION_USAGE) {
+                query!(effective_subactions);
+            }
+        }
+    }
+    observe!(
+        "created-part-identity",
+        named(
+            revision,
+            &["PlatformArchitecture", "ModelingPlatform", "alphaObserver"]
+        )
+    );
+    write_json(output, &format!("{label}-observations"), &observations);
+    eprintln!(
+        "{label}: exported {} exact semantic observations",
+        observations.len()
+    );
+}
+
+fn cold_child(output: &Path) {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let kerml_file = File::open(std::env::var_os("AGENTIQUE_KERML_CACHE").unwrap()).unwrap();
+    let systems_file = File::open(std::env::var_os("AGENTIQUE_SYSTEMS_CACHE").unwrap()).unwrap();
+    let libraries = agq_standard_libraries::VerifiedLibrarySet::load_from_directory(&root).unwrap();
+    let started = Instant::now();
+    let kerml =
+        Arc::new(CanonicalKermlStandardLibraries::restore_cache(kerml_file, &libraries).unwrap());
+    let accepted = Arc::new(
+        CanonicalSysmlSystemsLibrary::restore_cache(systems_file, &libraries, kerml).unwrap(),
+    );
+    let runtime_restore_ms = started.elapsed().as_millis();
+    let checkpoint: ProjectRevisionCheckpoint = read_json(output, "checkpoint");
+    let sources: BTreeMap<agq_kernel::DocumentId, String> = read_json(output, "sources");
+    eprintln!("oracle: independent process cold checkpoint restore");
+    let started = Instant::now();
+    let full = checkpoint.restore(accepted, &sources).unwrap();
+    let cold_checkpoint_restore_ms = started.elapsed().as_millis();
+    eprintln!(
+        "CREATE_PART_COLD {}",
+        serde_json::json!({
+            "cold_checkpoint_restore_ms": cold_checkpoint_restore_ms,
+            "full_phases": full.compilation_timings(), "full_work": full.compilation_work(),
+        })
+    );
+    assert!(!full.compilation_work().semantic_cache_used);
     assert_eq!(
         full.compilation_work().documents_reparsed,
         full.documents().count()
     );
-    // Keep semantic compile timings separate from command source mapping and service preparation.
-    println!(
-        "CREATE_PART_PERFORMANCE {}",
-        serde_json::json!({
-            "format": "agentique-create-part-performance/3",
-            "model": "models/agentique",
-            "command_reconstruction_mode": "full-source-reconstruction-with-verified-insertion-identities-and-shared-authenticated-mount",
-            "comparison_reconstruction_mode": "independent-cold-checkpoint-restore-with-identical-source-and-canonical-identities",
-            "runtime_restore_ms": runtime_restore_ms,
-            "command_prepare_ms": command_prepare_ms,
-            "command_compile_ms": command_full.compilation_timings().total_compile_micros as f64 / 1000.0,
+    let started = Instant::now();
+    full.validate().unwrap();
+    let cold_validation_ms = started.elapsed().as_millis();
+    write_observations(output, "cold", &full);
+    write_json(
+        output,
+        "cold-metrics",
+        &serde_json::json!({
+            "cold_runtime_restore_ms": runtime_restore_ms,
             "cold_checkpoint_restore_ms": cold_checkpoint_restore_ms,
             "full_compile_ms": full.compilation_timings().total_compile_micros as f64 / 1000.0,
-            "validation_ms": validation_ms,
             "cold_validation_ms": cold_validation_ms,
-            "command_noncompile_residual_ms": command_prepare_ms as f64 - command_full.compilation_timings().total_compile_micros as f64 / 1000.0,
-            "cold_noncompile_residual_ms": cold_checkpoint_restore_ms as f64 - full.compilation_timings().total_compile_micros as f64 / 1000.0,
-            "residual_scope": "mixed source/checkpoint/proof/postcheck/serialization overhead; not a measurement of mount time",
-            "command_phases": command_full.compilation_timings(),
-            "full_phases": full.compilation_timings(),
-            "command_work": command_full.compilation_work(),
-            "full_work": full.compilation_work(),
-            "command_closure_counters": command_full.producer_status().map(|status| &status.counters),
+            "full_phases": full.compilation_timings(), "full_work": full.compilation_work(),
             "full_closure_counters": full.producer_status().map(|status| &status.counters),
-            "command_certificate_build_ms": command_full.producer_status().map(|status| status.counters.certificate_build_micros as f64 / 1000.0),
-            "full_certificate_build_ms": full.producer_status().map(|status| status.counters.certificate_build_micros as f64 / 1000.0),
-            "closure_counter_scope": "final closure invocation cumulative counters; latest-round-only metrics intentionally omitted; certificate work is part of final_closure, not additional wall time",
-            "canonical_elements": command_full.semantic_model().unwrap().elements().count(),
-            "authored_documents": command_full.documents().count(),
-            "exact_equivalence": true,
-            "owner_and_ancestor_identity_preserved": true,
-            "same_authenticated_mount_observed": true,
-            "independent_cold_mount_observed": true,
-            "negative_reuse_cases": negative_cases,
-            "incremental_speedup_claimed": false,
-            "peak_memory_bytes": null,
-            "memory_scope": "measure the process externally; no per-edit allocation claim",
-            "comparison_scope": "two full reconstructions over identical source/checkpoint identities; cold restore independently authenticates its mount; hot command additionally includes source proof and continuity postchecks; no incremental semantic work-elimination claim",
-        })
+            "validated": true,
+        }),
     );
+}
+
+fn orchestrate() {
+    let temporary;
+    let directory = if let Some(directory) = std::env::var_os("AGENTIQUE_CREATE_PART_ORACLE_OUTPUT")
+    {
+        let directory = std::path::PathBuf::from(directory);
+        std::fs::create_dir_all(&directory).unwrap();
+        directory
+    } else {
+        temporary = tempfile::tempdir().unwrap();
+        temporary.path().to_path_buf()
+    };
+    for stage in ["command", "cold"] {
+        let status = std::process::Command::new(std::env::current_exe().unwrap())
+            .args([
+                "create_part_command_matches_full_self_model_reconstruction",
+                "--exact",
+                "--ignored",
+                "--nocapture",
+                "--test-threads=1",
+            ])
+            .env("AGENTIQUE_CREATE_PART_ORACLE_STAGE", stage)
+            .env("AGENTIQUE_CREATE_PART_ORACLE_DIR", &directory)
+            .status()
+            .unwrap();
+        assert!(
+            status.success(),
+            "{stage} process failed: {status}; retained output: {}",
+            directory.display()
+        );
+    }
+    let command: BTreeMap<String, ContentDigest> = read_json(&directory, "command-observations");
+    let cold: BTreeMap<String, ContentDigest> = read_json(&directory, "cold-observations");
+    assert!(
+        command.keys().eq(cold.keys()),
+        "exact observation population"
+    );
+    for (key, expected) in &command {
+        assert_eq!(expected, &cold[key], "exact semantic observation: {key}");
+    }
+    let mut measured: serde_json::Value = read_json(&directory, "command-metrics");
+    let cold: serde_json::Value = read_json(&directory, "cold-metrics");
+    assert_eq!(measured["validated"], true);
+    assert_eq!(cold["validated"], true);
+    measured
+        .as_object_mut()
+        .unwrap()
+        .extend(cold.as_object().unwrap().clone());
+    measured["format"] = "agentique-create-part-performance/4".into();
+    measured["exact_equivalence"] = true.into();
+    measured["exact_observation_count"] = command.len().into();
+    measured["comparison_scope"] = "separate-process exact per-record, occurrence, provenance, derivation, search, reference, strict-audit and full applicable local effective-query SHA-256 observations; only fresh kernel revision labels normalized; both revisions independently validate".into();
+    measured["independent_cold_mount_observed"] = true.into();
+    measured["command_reconstruction_mode"] =
+        "identity-preserving-source-command-see-work-counters".into();
+    measured["command_vs_cold_wall_speedup"] =
+        (measured["cold_checkpoint_restore_ms"].as_f64().unwrap()
+            / measured["command_prepare_ms"].as_f64().unwrap())
+        .into();
+    write_json(&directory, "result", &measured);
+    println!("CREATE_PART_PERFORMANCE {measured}");
 }
