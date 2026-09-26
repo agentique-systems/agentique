@@ -15,6 +15,12 @@ use serde::{Deserialize, Serialize};
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(tag = "kind", deny_unknown_fields)]
 pub enum ModelCommand {
+    /// Add a new exact source document through the ordinary candidate workflow.
+    AddSourceDocument {
+        path: String,
+        source: String,
+        language: agq_kerml_text::SourceLanguage,
+    },
     CreatePartUsage {
         owner: ElementId,
         name: String,
@@ -95,6 +101,54 @@ pub fn propose(
 ) -> Result<AgentCandidate, AgentError> {
     policy.require(Authority::Read)?;
     policy.require(Authority::Propose)?;
+    if let ModelCommand::AddSourceDocument {
+        path,
+        source,
+        language,
+    } = &command
+    {
+        let expected_extension = match language {
+            agq_kerml_text::SourceLanguage::SysMl => "sysml",
+            agq_kerml_text::SourceLanguage::KerMl => "kerml",
+        };
+        if path.is_empty()
+            || path.contains(['/', '\\'])
+            || path == "."
+            || path == ".."
+            || std::path::Path::new(path)
+                .extension()
+                .and_then(|value| value.to_str())
+                != Some(expected_extension)
+        {
+            return Err(AgentError::Invalid(
+                "Use a .sysml or .kerml document filename matching its language".into(),
+            ));
+        }
+        let prepared = service.prepare_changes(ApplyDocumentChanges {
+            operation_id: OperationId::new(),
+            project: context.project,
+            branch: context.branch,
+            expected_head: context.revision,
+            changes: vec![ProjectChange::Add {
+                path: path.clone(),
+                source: source.clone(),
+                language: *language,
+            }],
+            validate: false,
+        })?;
+        let source_preview = SourcePreview {
+            path: path.clone(),
+            before: String::new(),
+            after: source.clone(),
+        };
+        return Ok(AgentCandidate {
+            context,
+            actor: policy.actor.clone(),
+            command,
+            source_preview,
+            prepared,
+        });
+    }
     if let ModelCommand::RenameElement { element, name } = &command {
         let bound = service.resolve(
             context.project,

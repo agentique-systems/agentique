@@ -17,6 +17,11 @@ use std::{
 pub enum Output {
     Progress(BootstrapPhase),
     Ready(Vec<Project>),
+    ProjectCreated {
+        project: Project,
+        projects: Vec<Project>,
+        database: PathBuf,
+    },
     History(ProjectHistory),
     HistoryRefresh(ProjectHistory),
     Projection(ViewProjection),

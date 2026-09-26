@@ -17,6 +17,7 @@ mod panels;
 mod part_edit;
 mod presentation;
 mod presentation_automation;
+mod project_dialog;
 mod read_lane;
 mod real_automation;
 mod real_targets;

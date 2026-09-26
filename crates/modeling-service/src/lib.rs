@@ -160,6 +160,11 @@ impl ModelingService {
     pub fn repository(&self) -> &Arc<dyn ModelingRepository> {
         &self.repository
     }
+    /// Open another repository over the same authenticated immutable runtime.
+    /// Revision and candidate caches are independent of the previous repository.
+    pub fn for_repository(&self, repository: Arc<dyn ModelingRepository>) -> Self {
+        Self::new(repository, self.publication.clone(), 8)
+    }
     /// Cache eviction is unrelated to durability and does not affect retained readers.
     pub fn evict_all(&self) {
         let mut cache = self.cache.lock().expect("revision cache");

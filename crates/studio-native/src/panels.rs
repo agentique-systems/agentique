@@ -51,6 +51,27 @@ impl StudioApp {
                         .to_owned();
                     ui.menu_button(project_name, |ui| {
                         ui.label(muted("PROJECTS", theme).small());
+                        if ui
+                            .add_enabled(
+                                !self.projects.is_empty(),
+                                egui::Button::new("New project…"),
+                            )
+                            .clicked()
+                        {
+                            self.new_project_dialog();
+                            ui.close();
+                        }
+                        if ui
+                            .add_enabled(
+                                self.fixture.is_none() && self.binding.is_some(),
+                                egui::Button::new("Add source document…"),
+                            )
+                            .clicked()
+                            && self.allow_context_change()
+                        {
+                            self.project_dialog.import_open = true;
+                            ui.close();
+                        }
                         for project in self.projects.clone() {
                             if ui.button(&project.name).clicked() {
                                 self.open_project(project.id);
@@ -725,6 +746,9 @@ impl StudioApp {
                                     self.open_project(project.id);
                                 }
                             }
+                            if !self.projects.is_empty() && ui.button("New project…").clicked() {
+                                self.new_project_dialog();
+                            }
                             if self.projects.is_empty() && !self.opening.as_ref().is_some_and(|opening| opening.running()) {
                                 ui.label(muted("Required runtime: KerML v9 + SysML v3", theme));
                                 ui.add(
@@ -784,6 +808,7 @@ impl StudioApp {
             });
     }
     pub fn dialogs(&mut self, ctx: &egui::Context) {
+        self.project_dialogs(ctx);
         if self.palette {
             self.command_palette(ctx);
         }

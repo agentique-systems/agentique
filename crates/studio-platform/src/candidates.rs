@@ -21,6 +21,11 @@ pub(crate) struct RetainedCandidate {
     candidate: AgentCandidate,
     lifecycle: CandidateLifecycle,
 }
+impl RetainedCandidate {
+    pub(crate) fn phase(&self) -> CandidatePhase {
+        self.lifecycle.phase
+    }
+}
 
 /// Review state is separate from the semantic candidate so failure/acknowledgement
 /// transitions can be checked independently of an expensive accepted publication.

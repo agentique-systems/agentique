@@ -904,10 +904,21 @@ impl StudioApp {
             theme.muted,
         );
         if self.scene.nodes.is_empty() {
+            let empty_project = self.fixture.is_none()
+                && self.history.as_ref().is_some_and(|history| {
+                    history.revisions.iter().any(|revision| {
+                        revision.revision_id == self.projection.revision_id
+                            && revision.documents.is_empty()
+                    })
+                });
             painter.text(
                 rect.center(),
                 Align2::CENTER_CENTER,
-                "No elements in this view",
+                if empty_project {
+                    "Empty Working project · use the project menu to Add source document"
+                } else {
+                    "No elements in this view"
+                },
                 FontId::proportional(20.0),
                 theme.muted,
             );

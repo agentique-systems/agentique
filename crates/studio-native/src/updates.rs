@@ -225,6 +225,20 @@ impl StudioApp {
                         self.setup_reason = "Runtime authenticated. Choose a project.".into();
                     }
                 }
+                Ok(Output::ProjectCreated {
+                    project,
+                    projects,
+                    database,
+                }) => {
+                    self.save_session();
+                    self.config.database = database;
+                    self.session_path = self.config.database.with_extension("native-session.json");
+                    self.restore = None;
+                    self.projects = projects;
+                    self.candidate = None;
+                    self.status = format!("Created {} as an empty Working project", project.name);
+                    self.open_project(project.id);
+                }
                 Ok(Output::History(history)) if reply.request == self.project_request => {
                     let preferred_branch = self
                         .restore

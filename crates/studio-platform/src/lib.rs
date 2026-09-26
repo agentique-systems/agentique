@@ -11,6 +11,7 @@ mod projection_cache;
 mod reader;
 mod seed;
 
+pub use agq_kerml_text::SourceLanguage;
 pub use bootstrap::*;
 pub use candidates::*;
 pub use reader::StudioRevisionReader;
@@ -100,6 +101,44 @@ impl StudioPlatform {
     pub fn projects(&self) -> Result<Vec<Project>> {
         self.policy.require(Authority::Read)?;
         Ok(self.service.repository().list_projects()?)
+    }
+
+    /// Create an empty Working project in an explicitly chosen local repository.
+    /// Replace this host only after the project transaction is durable.
+    pub fn create_project_at(
+        &mut self,
+        name: &str,
+        database: &std::path::Path,
+    ) -> Result<(Project, Vec<Project>)> {
+        self.policy.require(Authority::Read)?;
+        self.policy.require(Authority::Propose)?;
+        self.policy.require(Authority::Commit)?;
+        if name.trim().is_empty() || !database.is_absolute() || database.file_name().is_none() {
+            return Err(PlatformError::Invalid(
+                "Enter a project name and an absolute repository file path".into(),
+            ));
+        }
+        if self
+            .candidates
+            .values()
+            .any(|candidate| candidate.phase() != CandidatePhase::Committed)
+        {
+            return Err(PlatformError::Invalid(
+                "Finish or cancel existing candidates before creating a project".into(),
+            ));
+        }
+        if let Some(parent) = database.parent() {
+            std::fs::create_dir_all(parent)
+                .map_err(|error| PlatformError::Invalid(error.to_string()))?;
+        }
+        let repository = Arc::new(agq_modeling_sqlite::SqliteRepository::open(database)?);
+        let service = Arc::new(self.service.for_repository(repository));
+        let mut projects = service.repository().list_projects()?;
+        let project = service.create_project(name.trim(), None)?;
+        projects.push(project.clone());
+        projects.sort_by(|a, b| a.name.cmp(&b.name).then(a.id.cmp(&b.id)));
+        *self = Self::new(service, self.policy.clone());
+        Ok((project, projects))
     }
 
     pub fn history(&self, project: ProjectId) -> Result<ProjectHistory> {
