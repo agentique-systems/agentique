@@ -1,0 +1,39 @@
+{
+  "command": [
+    "cargo",
+    "clippy",
+    "--locked",
+    "--offline",
+    "-p",
+    "agq-kerml-semantics",
+    "-p",
+    "agq-kerml-text",
+    "-p",
+    "agq-modeling-service",
+    "-p",
+    "agq-modeling-agent",
+    "-p",
+    "agq-studio-platform",
+    "--all-targets",
+    "--features",
+    "agq-modeling-agent/verification",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique-cancellation",
+  "source_commit": "afb3582858db86e829b2e9994cee57e03c4b85fe",
+  "tracked_changes": [],
+  "started_utc": "2026-09-26T11:02:00.799215+00:00",
+  "elapsed_seconds": 25.156,
+  "exit_code": 0,
+  "output": "verification/native-studio-acceptance/cancellation/workspace-clippy-01.txt",
+  "output_sha256": "4dc96c42598460717410e4962c0d749bb2c1fd63fe4d39fc72f7d67bdcf9a9b0",
+  "environment": {
+    "CARGO_BUILD_JOBS": "2",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_TARGET_DIR": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target"
+  }
+}

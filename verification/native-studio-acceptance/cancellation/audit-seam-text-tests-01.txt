@@ -1,0 +1,78 @@
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\kerml-text)
+    Finished `test` profile [unoptimized] target(s) in 11.76s
+     Running unittests src\lib.rs (C:/Users/phili/github/agentique-systems/agentique/target\debug\deps\agq_kerml_text-0580b4cc20829f5a.exe)
+
+running 70 tests
+test compilation_control::tests::disabled_control_stays_disabled_and_cancel_does_not_invent_progress ... ok
+test library::incremental_fragment_tests::full_construction_rejects_existing_identity_instead_of_reusing_it ... ok
+test library::incremental_fragment_tests::declared_reconstruction_frontier_matches_full_and_shares_unchanged_records ... ok
+test library::incremental_fragment_tests::unchanged_document_lowering_is_reused_with_exact_full_reconstruction ... ok
+test library::publication::cache::tests::bounded_stream_hash_rejects_short_and_excess_input_without_reading_past_limit ... ok
+test library::incremental_fragment_tests::hundred_document_declared_reconstruction_frontier_is_bounded ... ok
+test library::publication::cache::tests::caller_cache_cannot_replace_the_checked_in_acceptance_receipt ... ok
+test library::publication::cache::tests::compressed_facade_roundtrip_preserves_sources_roots_references_and_authored_readers ... ok
+test library::publication::tests::publication_profile_and_dependency_identity_cannot_be_rebound_by_an_authored_project ... ok
+test library::publication::tests::authored_revisions_and_parallel_readers_preserve_the_dependency_and_its_explanations ... ok
+test library::refinement::tests::changed_population_includes_old_and_new_occurrence_endpoints_and_owners ... ok
+test library::refinement::tests::compact_signature_invalidates_negative_lookup_after_derived_import ... ok
+test library::refinement::tests::compact_signature_omits_sealed_facts_but_preserves_dependency_endpoint_ownership ... ok
+test library::refinement::tests::dependency_refinement_matches_independent_full_scan_and_reuses_unrelated_queries ... ok
+test library::refinement::tests::negative_lookup_reads_invalidate_when_import_population_becomes_available ... ok
+test library::refinement::tests::next_refinement_construction_releases_prior_candidate_and_semantic_overlay ... ok
+test library::refinement::tests::pending_scope_changes_are_local_but_semantic_contract_changes_invalidate_all ... ok
+test project::source_inputs::effective_audit::cancellation_tests::cancellation_after_second_effective_audit_batch_returns_no_partial_receipt ... ignored, requires exact accepted runtime caches; never rebuilds standards
+test project::source_inputs::effective_audit::reuse_trace_counts_all_subjects_but_bounds_failed_checked_samples ... ok
+test project::source_inputs::frontier_tests::retained_syntax_frontier_reports_exact_content_ranges_and_children ... ok
+test project::source_inputs::tests::deletion_during_recovery_retires_identity_but_temporary_omission_does_not ... ok
+test project::source_inputs::tests::input_preparation_retains_recovery_without_losing_disjoint_syntax_identity ... ok
+test library::publication::tests::shared_publication_resolves_authored_structure_without_copying_library_records ... ok
+test project::source_inputs::tests::unsupported_source_errors_have_current_origin_and_do_not_mask_invariants ... ok
+test sysml::compositional_plan_tests::systems_declared_compositional_dependency_plan ... ignored, requires the exact accepted KerML cache and a generated report destination
+test sysml::case_shape_tests::verification_case_objective_and_requirement_value_shape ... ok
+test sysml::end_shape_tests::items_touched_ends_keep_named_cross_features_multiplicity_and_redefinitions ... ok
+test sysml::flow_end_shape_tests::flows_anonymous_connection_end_preserves_frontend_shape ... ok
+test sysml::inline_function_shape_tests::interfaces_inline_function_body_preserves_frontend_shape ... ok
+test sysml::other_participants_shape_tests::interfaces_other_participants_preserves_caller_shape ... ok
+test sysml::publication::authored_audit_parity_tests::authored_audit_observer_matches_two_pass_queries_and_diagnostics ... ignored, requires exact accepted runtime caches; never acquires or rebuilds standards
+test sysml::publication::cache::restoration::tests::systems_archive_checks_declared_and_actual_entry_bounds ... ok
+test sysml::publication::cache::restoration::tests::systems_archive_rejects_missing_extra_alias_and_duplicate_entries ... ok
+test sysml::publication::cache::restoration::tests::systems_metadata_rejects_incomplete_populations_and_stale_sources ... ok
+test sysml::publication::cache::restoration::tests::systems_receipt_schema_rejects_missing_or_mismatched_fields ... ok
+test sysml::index_shape_tests::actions_index_assignment_preserves_frontend_ownership_shape ... ok
+test sysml::publication::tests::authority_findings_require_the_exact_failed_target_read ... ok
+test sysml::publication::tests::authority_preflight_retains_ordinary_failures_and_ignores_superseded_frontiers ... ok
+test sysml::publication::tests::bounded_effective_audit_worker_panic_cannot_be_accepted_as_an_empty_report ... ok
+test sysml::publication::tests::bounded_effective_audit_workers_merge_findings_in_original_subject_order ... ok
+test sysml::publication::tests::pinned_reference_population_rejects_omissions_and_duplicate_padding ... ok
+test sysml::publication::tests::reference_gate_requires_complete_unique_correct_kind_matching_endpoint ... ok
+test sysml::publication::tests::source_gate_requires_exact_node_revision_range_and_origin_for_every_fact_kind ... ok
+test sysml::tests::accepted_self_model::accepted_agentique_self_model_closes_queries_edits_and_matches_programmatic_semantics ... ignored, requires exact accepted KerML and Systems caches; never rebuilds standards
+test sysml::tests::accepted_self_model::case_acceptance_fixture_uses_real_frontend_and_explicit_standard_redefinitions ... ok
+test sysml::tests::accepted_self_model::comparison_preserves_unnamed_members_multiplicity_dependency_ids_and_order ... ok
+test sysml::tests::accepted_self_model::view_metadata_acceptance_fixture_preserves_real_frontend_classes ... ok
+test sysml::tests::actions_trigger_lowering_preserves_input_parameter_defaults ... ok
+test sysml::publication::tests::all_systems_declared_fact_sources_match_exact_operational_syntax_nodes ... ok
+test sysml::tests::agentique_self_model::agentique_implementation_traceability_is_separate_and_resolves_existing_paths ... ok
+test sysml::tests::agentique_self_model::agentique_rich_platform_matches_independent_programmatic_semantics ... ok
+test sysml::tests::agentique_self_model::agentique_rich_platform_preserves_inheritance_redefinition_connections_and_ids ... ok
+test sysml::tests::agentique_self_model::agentique_self_model_parses_lowers_and_checks_architectural_dependencies ... ok
+test sysml::tests::authored_edit_reuses_unaffected_semantic_and_relationship_identities ... ok
+test sysml::tests::authority::exact_systems_authority_targets_have_complete_declared_owned_path_witnesses ... ok
+test sysml::tests::behavior_and_requirement_members_preserve_roles_and_referential_parameters ... ok
+test sysml::tests::end_cross_feature_modifiers_do_not_leak_to_the_end_usage ... ok
+test sysml::tests::all_pinned_systems_documents_construct_with_source_provenance ... ok
+test sysml::tests::enumeration::enumeration_text_defaults_are_exact_and_source_backed ... ok
+test sysml::tests::mixed_production_namespaces_compose_imports_visibility_shadowing_and_cycles ... ok
+test sysml::tests::operational_connection_interface_and_payload_preserve_canonical_families ... ok
+test sysml::tests::port_synthesis_and_reference_modifiers_use_canonical_storage ... ok
+test sysml::tests::programmatic_vertical::rich_vehicle_text_and_independent_changeset_have_equivalent_current_graph_answers ... ok
+test sysml::tests::reference_metadata_preserves_private_aliases_and_imports_and_rejects_unknown_kinds ... ok
+test sysml::tests::rich_vertical::rich_vehicle_vertical_parses_and_lowers_with_current_graph_identity ... ok
+test sysml::tests::source_reference_audit_outlives_construction_without_retaining_its_graph ... ok
+test sysml::tests::sysml_vertical_preserves_classes_relationships_provenance_and_inherited_identity ... ok
+test sysml::tests::textual_and_direct_changeset_graphs_have_equivalent_semantic_answers ... ok
+test sysml::views_shape_tests::views_satisfaction_keeps_subject_value_and_required_constraint_shape ... ok
+test sysml::tests::enumeration::all_systems_enumerations_lower_as_variations_and_retain_literal_memberships ... ok
+
+test result: ok. 66 passed; 0 failed; 4 ignored; 0 measured; 0 filtered out; finished in 24.54s
+

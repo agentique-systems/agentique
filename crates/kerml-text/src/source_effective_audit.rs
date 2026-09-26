@@ -22,6 +22,18 @@ pub(super) fn run(
     previous: Option<&SourceCompilation>,
     control: &CompilationControl,
 ) -> Result<(SourceEffectiveAudit, Vec<SourceDiagnostic>, usize), LibraryLoadError> {
+    run_with_batch_progress(result, previous, control, |_| {})
+}
+
+// Private deterministic observation seam for the accepted-runtime interruption
+// regression. Ordinary callers use the no-op monomorphization above. The callback
+// cannot supply a query answer, receipt or acceptance result.
+fn run_with_batch_progress(
+    result: &SourceCompilation,
+    previous: Option<&SourceCompilation>,
+    control: &CompilationControl,
+    mut completed_batch: impl FnMut(usize),
+) -> Result<(SourceEffectiveAudit, Vec<SourceDiagnostic>, usize), LibraryLoadError> {
     control.check()?;
     #[cfg(feature = "verification")]
     let mut trace = (std::env::var("AGENTIQUE_AUDIT_REUSE_TRACE").as_deref() == Ok("1"))
@@ -85,7 +97,7 @@ pub(super) fn run(
     let mut reused_checks = 0;
     let mut report = SystemsPublicationAudit::default();
     let mut capabilities = Vec::new();
-    for batch in subjects.chunks(32) {
+    for (index, batch) in subjects.chunks(32).enumerate() {
         control.check()?;
         let q = bound.fork();
         for &subject in batch {
@@ -167,6 +179,7 @@ pub(super) fn run(
             report.complete_references += one.complete_references;
             report.findings.extend(one.findings);
         }
+        completed_batch(index + 1);
     }
     for finding in &report.findings {
         let origin = match finding {
@@ -264,4 +277,140 @@ fn reuse_trace_counts_all_subjects_but_bounds_failed_checked_samples() {
     assert_eq!(trace.counts["no_successful_prior_subject"], 1);
     assert_eq!(trace.counts["preserved"], 1);
     assert_eq!(trace.samples.len(), 16);
+}
+
+#[cfg(test)]
+mod cancellation_tests {
+    use super::*;
+    use std::{fs::File, path::PathBuf};
+
+    fn subject_receipt_digest(audit: &SourceEffectiveAudit) -> [u8; 32] {
+        use sha2::Digest;
+        // Exact per-subject positive/negative/provider/writer reuse evidence,
+        // excluding setup timings and the shared immutable model signature.
+        sha2::Sha256::digest(format!("{:?}", audit.reuse.as_ref().unwrap().subjects).as_bytes())
+            .into()
+    }
+
+    #[test]
+    #[ignore = "requires exact accepted runtime caches; never rebuilds standards"]
+    fn cancellation_after_second_effective_audit_batch_returns_no_partial_receipt() {
+        let root = std::env::var_os("AGENTIQUE_SOURCE_ROOT")
+            .map(PathBuf::from)
+            .unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../.."));
+        let open = |name| {
+            File::open(
+                std::env::var_os(name)
+                    .unwrap_or_else(|| panic!("{name} is required for this requested gate")),
+            )
+            .unwrap()
+        };
+        let kerml_file = open("AGENTIQUE_KERML_CACHE");
+        let systems_file = open("AGENTIQUE_SYSTEMS_CACHE");
+        let libraries =
+            agq_standard_libraries::VerifiedLibrarySet::load_from_directory(&root).unwrap();
+        let kerml = Arc::new(
+            crate::library::CanonicalKermlStandardLibraries::restore_cache(kerml_file, &libraries)
+                .unwrap(),
+        );
+        let publication = Arc::new(
+            CanonicalSysmlSystemsLibrary::restore_cache(systems_file, &libraries, kerml).unwrap(),
+        );
+        let members: String = (0..80)
+            .map(|index| format!("part member{index}; "))
+            .collect();
+        let inputs = SourceInputs::with_accepted_sysml(publication)
+            .unwrap()
+            .apply([ProjectChange::Add {
+                path: "Cancellation.sysml".into(),
+                language: SourceLanguage::SysMl,
+                source: format!(
+                    "package AuditCancellation {{ part def Assembly {{ {members} }} }}"
+                ),
+            }])
+            .unwrap();
+        let parent = Arc::new(inputs).compile(None).unwrap();
+        let parent_audit = parent.effective_audit().unwrap();
+        assert!(
+            parent_audit.subjects().len() > 64,
+            "test must cross a later real audit batch"
+        );
+        assert!(
+            parent_audit.report().findings.is_empty(),
+            "{:?}",
+            parent_audit.report()
+        );
+        let before_identity = parent.identity_checkpoint();
+        let before_context = parent.sysml_queries().unwrap().context().clone();
+        let before_receipts = subject_receipt_digest(parent_audit);
+        let before_certificate = parent.producer_closure().unwrap().clone();
+        assert!(before_certificate.is_fully_closed(parent.semantic_model().unwrap()));
+
+        let control = CompilationControl::new();
+        control
+            .enter(CompilationStage::EffectiveValidation)
+            .unwrap();
+        let mut completed = 0;
+        let interrupted = run_with_batch_progress(&parent, None, &control, |batches| {
+            completed = batches;
+            if batches == 2 {
+                control.cancel();
+            }
+        });
+        assert!(
+            matches!(interrupted, Err(LibraryLoadError::Cancelled(_))),
+            "an interrupted audit must not return any completed report or reuse receipt"
+        );
+        assert_eq!(
+            completed, 2,
+            "the third batch must not start after cancellation"
+        );
+        assert_eq!(control.stage(), Some(CompilationStage::EffectiveValidation));
+        assert_eq!(parent.identity_checkpoint(), before_identity);
+        assert_eq!(parent.sysml_queries().unwrap().context(), &before_context);
+        assert!(Arc::ptr_eq(
+            parent.producer_closure().unwrap(),
+            &before_certificate
+        ));
+        assert_eq!(
+            subject_receipt_digest(parent.effective_audit().unwrap()),
+            before_receipts
+        );
+
+        let retry = CompilationControl::new();
+        retry.enter(CompilationStage::EffectiveValidation).unwrap();
+        let (audit, diagnostics, reused) = run(&parent, None, &retry).unwrap();
+        assert_eq!(
+            reused, 0,
+            "retry must perform the full audit rather than reuse interrupted work"
+        );
+        assert!(diagnostics.is_empty(), "{diagnostics:?}");
+        assert_eq!(audit.context(), parent_audit.context());
+        assert_eq!(audit.subjects(), parent_audit.subjects());
+        assert_eq!(audit.report().checked, parent_audit.report().checked);
+        assert_eq!(
+            audit.report().mandatory_references,
+            parent_audit.report().mandatory_references
+        );
+        assert_eq!(
+            audit.report().complete_references,
+            parent_audit.report().complete_references
+        );
+        assert!(audit.report().findings.is_empty());
+        assert_eq!(
+            subject_receipt_digest(&audit),
+            before_receipts,
+            "fresh full audit retains exact read/writer proof"
+        );
+        eprintln!(
+            "AUDIT_CANCELLATION {}",
+            serde_json::json!({
+                "completed_batches_before_stop": completed,
+                "subjects": audit.subjects().len(),
+                "retry_reused_subjects": reused,
+                "exact_subject_read_proof": true,
+                "parent_identity_context_certificate_preserved": true,
+            })
+        );
+    }
 }

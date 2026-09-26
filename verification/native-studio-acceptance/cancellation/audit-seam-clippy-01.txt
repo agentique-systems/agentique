@@ -1,0 +1,9 @@
+    Checking agq-kernel v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\kernel)
+    Checking agq-kerml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\kerml)
+    Checking agq-standard-libraries v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\standard-libraries)
+    Checking agq-kerml-syntax v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\kerml-syntax)
+    Checking agq-sysml v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\sysml)
+    Checking agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\kerml-semantics)
+    Checking agq-sysml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\sysml-semantics)
+    Checking agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\kerml-text)
+    Finished `dev` profile [unoptimized] target(s) in 13.58s

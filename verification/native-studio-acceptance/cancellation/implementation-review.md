@@ -31,3 +31,21 @@ cargo test --release --locked --offline -p agq-modeling-agent --features agq-mod
 ```
 
 Required next evidence: remote compile/Clippy/unit tests, this enabled-control full oracle over the installed accepted publications, and a fresh real Cancel -> acknowledgement -> next candidate soak. None is claimed from formatting or code inspection. Freshness updates remain forbidden until exact oracle qualification.
+
+## Subsequent local verification
+
+The draft above records the pre-build review state. Subsequent coordinated checks passed, with exact commands, output and exit codes in this directory:
+
+- Affected workspace Clippy with all targets and verification enabled; native Clippy with all targets.
+- Three producer/token tests, one source-control test, one service error-translation test and one platform forwarding test.
+- Current-only enabled-control oracle executable compiled. Its `--list` output includes `enabled_control_create_part_matches_full_self_model_reconstruction` and the nested portable ordinary entry; the requested full runtime oracle has not been executed locally.
+- All 160 native tests, including current-read/cancel reply ordering, the stricter soak receipt gate and 12,000 ordered zoom cycles.
+- After adding the private effective-audit batch seam: text all-targets Clippy with verification enabled, and 66 text unit tests passed (4 explicit accepted-runtime tests ignored).
+
+The deterministic accepted-audit interruption regression now exists and compiles. It authenticates the supplied accepted cache pair, compiles 80 authored Part usages, requests cancellation after the second completed audit batch, requires a typed error before a third batch, retains exact parent identity/context/certificate/subject-read proof, then compares a fresh full audit and all its subject read/writer receipts. The ordinary audit entry uses a private no-op callback; no public or global test hook exists. The ignored test still needs an actual accepted-runtime execution:
+
+```
+cargo test --release --locked --offline -p agq-kerml-text --lib --features verification source_inputs::effective_audit::cancellation_tests::cancellation_after_second_effective_audit_batch_returns_no_partial_receipt -- --exact --ignored --nocapture --test-threads=1
+```
+
+Linux Native Studio tests and macOS native build succeeded in CI run 36237504129 at afb35828. Its general verification job was still active at this record; no whole-CI success is asserted. No actual native cooperative Cancel -> next candidate run has occurred yet. The previous real journey and soak records still refer to their original binaries.

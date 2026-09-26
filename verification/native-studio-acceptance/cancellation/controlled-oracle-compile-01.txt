@@ -1,0 +1,11 @@
+   Compiling agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\kerml-semantics)
+   Compiling agq-sysml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\sysml-semantics)
+   Compiling agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\kerml-text)
+   Compiling agq-modeling-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\modeling-workspace)
+   Compiling agq-modeling-repository v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\modeling-repository)
+   Compiling agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\modeling-service)
+   Compiling agq-modeling-view v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\modeling-view)
+   Compiling agq-modeling-agent v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\crates\modeling-agent)
+   Compiling agq-modeling-sqlite v0.1.0 (C:\Users\phili\github\agentique-systems\agentique-cancellation\adapters\modeling-sqlite)
+    Finished `test` profile [unoptimized] target(s) in 19.15s
+  Executable tests\create_part_controlled.rs (C:\Users\phili\github\agentique-systems\agentique\target\debug\deps\create_part_controlled-25ce17c6eb96df0c.exe)
