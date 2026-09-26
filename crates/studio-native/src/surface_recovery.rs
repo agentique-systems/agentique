@@ -2,7 +2,67 @@
 //! remains renderer-owned in eframe 0.33; a lost device is an explicit stop state.
 use eframe::egui;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
+
+/// Presentation persistence is separate from renderer recovery and model writes.
+/// A skipped (unstable) view is retried as soon as it becomes saveable; an I/O
+/// failure is retained independently of the status text and retried at most every
+/// eight seconds, so a failed save cannot cause a write loop on each frame.
+#[derive(Default)]
+pub(crate) struct PresentationCheckpoint {
+    fault: Option<String>,
+    last_attempt: Option<Instant>,
+    result: Option<Result<(), String>>,
+}
+
+impl PresentationCheckpoint {
+    pub fn needs_attempt(&mut self, message: &str) -> bool {
+        if self.fault.as_deref() != Some(message) {
+            *self = Self {
+                fault: Some(message.to_owned()),
+                ..Self::default()
+            };
+        }
+        self.last_attempt
+            .is_none_or(|attempt| attempt.elapsed() >= Duration::from_secs(8))
+    }
+
+    pub fn record(&mut self, result: Result<bool, String>) {
+        if result == Ok(false) {
+            return;
+        }
+        self.last_attempt = Some(Instant::now());
+        self.result = Some(result.map(|_| ()));
+    }
+
+    pub fn failed(&self) -> bool {
+        matches!(self.result, Some(Err(_)))
+    }
+
+    pub fn status(&self, message: &str) -> String {
+        match &self.result {
+            Some(Ok(())) => format!("{message} Presentation state was saved."),
+            Some(Err(error)) => format!(
+                "{message} Presentation state was not saved: {error}. Restart restores the last successful presentation checkpoint."
+            ),
+            None => {
+                format!("{message} Presentation save is waiting for the current view to finish.")
+            }
+        }
+    }
+}
+
+pub(crate) fn checkpoint_title(context: &egui::Context, device: bool, failed: bool) {
+    // The OS title remains readable even when the GPU cannot draw the notice.
+    let title = if failed {
+        "Agentique · Graphics unavailable — presentation not saved; restart required"
+    } else if device {
+        "Agentique · Graphics device lost — restart required"
+    } else {
+        "Agentique · Graphics surface unavailable — resize or restart"
+    };
+    context.send_viewport_cmd(egui::ViewportCommand::Title(title.into()));
+}
 
 #[derive(Clone, Default)]
 pub struct Recovery(Arc<Mutex<State>>);
@@ -203,6 +263,10 @@ impl egui_wgpu::CallbackTrait for Heartbeat {
         self.recovery.acquired(&self.context);
     }
 }
+
+#[cfg(test)]
+#[path = "surface_recovery_host_tests.rs"]
+mod host_tests;
 
 #[cfg(test)]
 mod tests {

@@ -207,6 +207,7 @@ pub struct StudioApp {
     pub session_path: PathBuf,
     pub restore: Option<Session>,
     pub last_saved: Instant,
+    graphics_checkpoint: crate::surface_recovery::PresentationCheckpoint,
     pub adapter: String,
 }
 
@@ -364,6 +365,7 @@ impl StudioApp {
             session_path,
             restore,
             last_saved: Instant::now(),
+            graphics_checkpoint: Default::default(),
             adapter,
         };
         if app.fixture.as_deref() == Some("requirements") {
@@ -616,6 +618,13 @@ impl StudioApp {
         }
     }
     pub fn save_session(&mut self) {
+        if let Err(error) = self.persist_session() {
+            self.status = format!("Presentation state was not saved: {error}");
+        }
+    }
+
+    /// `false` means the current view is not stable enough to checkpoint.
+    fn persist_session(&mut self) -> Result<bool, String> {
         if !self.ready
             || self.pending_revision.is_some()
             || self.deferred_definition.is_some()
@@ -633,7 +642,7 @@ impl StudioApp {
                 .as_deref()
                 .is_some_and(|scenario| scenario != "presentation")
         {
-            return;
+            return Ok(false);
         }
         // Never restore a process-local candidate as durable model state.
         let session = Session {
@@ -650,10 +659,28 @@ impl StudioApp {
             reduced_motion: self.reduced_motion,
             presentation: Some(self.capture_presentation()),
         };
-        if let Err(error) = session.save(&self.session_path) {
-            self.status = format!("Presentation state was not saved: {error}");
-        }
+        let result = session.save(&self.session_path);
         self.last_saved = Instant::now();
+        result.map(|()| true).map_err(|error| error.to_string())
+    }
+
+    fn checkpoint_graphics_fault(&mut self, ctx: &egui::Context, message: &str, device: bool) {
+        if self.graphics_checkpoint.needs_attempt(message) {
+            let result = self.persist_session();
+            if let Err(error) = &result {
+                eprintln!("Graphics recovery could not save presentation state: {error}");
+            }
+            self.graphics_checkpoint.record(result);
+            crate::surface_recovery::checkpoint_title(
+                ctx,
+                device,
+                self.graphics_checkpoint.failed(),
+            );
+        }
+        self.status = self.graphics_checkpoint.status(message);
+        // A pending view completion requests a repaint itself. Retry I/O failures
+        // at the normal checkpoint cadence, without writing on every fault frame.
+        ctx.request_repaint_after(Duration::from_secs(8));
     }
 }
 
@@ -701,19 +728,15 @@ impl eframe::App for StudioApp {
         if let Some(message) = crate::surface_recovery::device_fault(ctx) {
             // Keep processing in-flight semantic outcomes, but do not accept new
             // blind editor actions while its graphics device cannot show them.
-            let first_notice = self.status != message;
-            self.status = message;
-            if first_notice || self.last_saved.elapsed() > Duration::from_secs(8) {
-                self.save_session();
-            }
+            self.checkpoint_graphics_fault(ctx, &message, true);
             self.timing.ui_complete();
             return;
         }
         if let Some(message) = crate::surface_recovery::surface_fault(ctx) {
-            self.status = message.clone();
+            self.checkpoint_graphics_fault(ctx, &message, false);
             egui::CentralPanel::default().show(ctx, |ui| {
                 ui.heading("Graphics surface unavailable");
-                ui.label(message);
+                ui.label(&self.status);
             });
             // Resizing or a later input can acquire a surface again. The minimal
             // recovery view accepts no model-edit commands while pixels are stale.
@@ -721,6 +744,7 @@ impl eframe::App for StudioApp {
             self.timing.ui_complete();
             return;
         }
+        self.graphics_checkpoint = Default::default();
         self.animate(ctx);
         self.keyboard(ctx);
         if self.ready {
