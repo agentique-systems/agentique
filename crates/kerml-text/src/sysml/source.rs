@@ -448,10 +448,26 @@ pub(crate) fn finish_accepted_source(
             overlay,
             Default::default(),
             |overlay| {
-                dependency
+                let context = dependency
                     .mounted
                     .project_overlay_context(overlay, &[root])
-                    .map_err(PublicationOverlayError::Context)
+                    .map_err(PublicationOverlayError::Context)?;
+                // Cache bytes supply no producer acceptance. Reuse only the
+                // source-derived checkpoint constructed above, after checking
+                // its actual reads against this exact restored frontier. The
+                // scheduler still evaluates every reopened population.
+                if let Some(previous) = seed.take() {
+                    let rebound = previous
+                        .rebind(&context, &registry)
+                        .map_err(PublicationOverlayError::Context)?;
+                    retained_evaluations += rebound.retained_evaluations;
+                    reopened_evaluations += rebound.reopened_evaluations;
+                    context
+                        .with_producer_closure(rebound.certificate)
+                        .map_err(PublicationOverlayError::Context)
+                } else {
+                    Ok(context)
+                }
             },
             &dependency.extension(root, true),
             |_, _, _, _| {},

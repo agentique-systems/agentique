@@ -137,6 +137,18 @@ fn persisted_semantic_cache_authenticates_exact_source_and_closure() {
         .collect();
     let fingerprint = candidate.semantic_fingerprint().unwrap();
     let element = support::element(&candidate, &["Platform", "repository"]);
+    let reference_answers: Vec<_> = candidate
+        .references()
+        .iter()
+        .map(|reference| (reference.relationship, reference.resolution.clone()))
+        .collect();
+    let audit_subjects = candidate.effective_audit().unwrap().subjects().to_vec();
+    let audit_counts = candidate
+        .effective_audit()
+        .unwrap()
+        .report()
+        .checked
+        .clone();
     let cache = validated.semantic_cache().unwrap();
     let cache_bytes = serde_json::to_vec(&cache).unwrap();
     eprintln!(
@@ -158,7 +170,35 @@ fn persisted_semantic_cache_authenticates_exact_source_and_closure() {
         started.elapsed().as_millis(),
         restored.compilation_work()
     );
+    eprintln!(
+        "authenticated_cache_restore_closure_retained={} reopened={} phases={:?}",
+        restored.producer_status().unwrap().retained_evaluations,
+        restored.producer_status().unwrap().reopened_evaluations,
+        restored.compilation_timings()
+    );
     assert!(restored.compilation_work().semantic_cache_used);
+    // Restored cache bytes do not replace the strict audit or its population.
+    assert_eq!(
+        restored.effective_audit().unwrap().subjects(),
+        audit_subjects
+    );
+    assert_eq!(
+        restored.effective_audit().unwrap().report().checked,
+        audit_counts
+    );
+    assert_eq!(
+        restored
+            .compilation_work()
+            .effective_audit_subjects_evaluated,
+        audit_subjects.len()
+    );
+    assert_eq!(restored.references().len(), reference_answers.len());
+    for (reference, (relationship, expected)) in
+        restored.references().iter().zip(&reference_answers)
+    {
+        assert_eq!(reference.relationship, *relationship);
+        assert_query(&reference.resolution, expected);
+    }
     assert_eq!(restored.checkpoint(), checkpoint);
     assert_eq!(restored.semantic_fingerprint().unwrap(), fingerprint);
     assert_eq!(
