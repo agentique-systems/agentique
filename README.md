@@ -3,8 +3,9 @@
 Agentique develops a native spatial environment for systems engineering. Native
 Studio presents a canonical KerML/SysML model through System, Graph and
 Requirements views, with semantic inspection, candidate review and durable design
-history. Its [alpha qualification](verification/native-studio-alpha/README.md) is
-in progress; successful builds and fixture screenshots are not product acceptance.
+history. The real Agentique journey now includes validated candidate creation,
+durable commit and a separate successful restart. Overall alpha quality remains
+unaccepted; see the [product judgment and qualification](verification/native-studio-alpha/FINAL.md).
 
 The operational generation-1 product is a Rust modelling and simulation Engine
 with a persistent local workspace, browser Console and tool-equipped Assistant.

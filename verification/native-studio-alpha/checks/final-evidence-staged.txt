@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "C:\Users\phili\github\agentique-systems\agentique\verification\scripts\native_alpha_evidence.py", line 77, in <module>
+    raise SystemExit(main())
+                     ^^^^^^
+  File "C:\Users\phili\github\agentique-systems\agentique\verification\scripts\native_alpha_evidence.py", line 45, in main
+    name, expected = record.get("output"), record.get("output_sha256")
+                     ^^^^^^^^^^
+AttributeError: 'list' object has no attribute 'get'

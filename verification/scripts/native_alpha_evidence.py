@@ -31,7 +31,12 @@ def main():
     if args.git_index:
         receipts = [ROOT / path for path in subprocess.check_output([
             "git", "ls-files", "--", "verification/native-studio-alpha/checks/*.json"
-        ], cwd=ROOT, text=True).splitlines()]
+        ], cwd=ROOT, text=True).splitlines()
+            # Git's pathspec wildcard also matches nested CI artifact records.
+            # Use the same direct-child receipt population as the filesystem
+            # glob below; nested artifacts have their own acquisition manifests.
+            if pathlib.PurePosixPath(path).parent == pathlib.PurePosixPath(
+                "verification/native-studio-alpha/checks")]
     else:
         receipts = sorted((DIRECTORY / "checks").glob("*.json"))
     for receipt in receipts:

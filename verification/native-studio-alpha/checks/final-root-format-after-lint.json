@@ -1,0 +1,22 @@
+{
+  "command": [
+    "cargo",
+    "fmt",
+    "--all",
+    "--",
+    "--check"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "ee1ddabaa0d083451113a9430e813f7b15173ed3",
+  "tracked_changes_at_start": [
+    " M README.md",
+    " M verification/native-studio-alpha/GALLERY.md",
+    " M verification/native-studio-alpha/README.md"
+  ],
+  "started_utc": "2026-09-26T05:58:40.699012+00:00",
+  "elapsed_seconds": 3.297,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/final-root-format-after-lint.txt",
+  "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "build_environment": {}
+}

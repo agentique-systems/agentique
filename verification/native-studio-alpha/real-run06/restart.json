@@ -1,0 +1,808 @@
+{
+  "format": "agentique-native-real-acceptance/1",
+  "scenario": "real-restart",
+  "scope": "Actual native input, authenticated runtime, real models/agentique and ordinary in-process service workers. First process alone does not establish durable restart or overall alpha acceptance.",
+  "database": "C:/Users/phili/github/agentique-systems/agentique/verification/generated/native-studio-alpha/real-run04/agentique.sqlite",
+  "root": ".",
+  "outcome": "passed",
+  "passed": true,
+  "restart_verified": true,
+  "previous_report_digest": "81d98cfa45e73d059ec3fa6b318d5d6422a7fd9ea7c82f316078780e9892f7ad",
+  "resumed_baseline": false,
+  "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+  "branch": "c51074f7-a379-4007-b3f6-46cbcb939e20",
+  "baseline": {
+    "format_version": 1,
+    "revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+    "parent_revision_id": "8d7fa8e8-3834-4048-b3bd-e85d1d675f16",
+    "project_id": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+    "metadata": {
+      "created": "2026-09-25T21:00:50.662029400+00:00",
+      "name": null,
+      "description": null,
+      "alias": []
+    },
+    "documents": [
+      {
+        "document_id": "d038fb89-2c63-4c9b-895c-42685cf7561f",
+        "path": "AgentFabric.sysml",
+        "language": "SysMl",
+        "source_revision_id": "6d50a277-3244-42d4-a4a2-c53f85399821",
+        "content_digest": "fb19fdb031aa524d9957f3a1498818bd66106c718d51274328bd47f381921617"
+      },
+      {
+        "document_id": "b10fa5f1-0871-4e77-a2de-f5792a66d5ff",
+        "path": "Agentique.sysml",
+        "language": "SysMl",
+        "source_revision_id": "26163378-bb2f-4498-99a4-c891f546aa9b",
+        "content_digest": "17cc930b105b74d7001a70ab9cfddf3a2c65c906a57dcc2e1f341140b3636960"
+      },
+      {
+        "document_id": "b2cfa3ce-2fbf-49a8-9176-1617a9fbec23",
+        "path": "Contracts.sysml",
+        "language": "SysMl",
+        "source_revision_id": "1f2ac833-3d04-48c0-936f-05465bee3449",
+        "content_digest": "4235d37c880ca5d43bb11b482d9414b4270a78ff6ee7287d3538961bcc94bc2a"
+      },
+      {
+        "document_id": "a98fe9db-76be-452c-b681-cea61ae96d88",
+        "path": "ExecutionRuntime.sysml",
+        "language": "SysMl",
+        "source_revision_id": "cccec7f2-4d9a-4248-9454-13d73039fdcb",
+        "content_digest": "7f753fe89a4158918481a52134df9df9218167433fe3869d65ae22ccf6d90691"
+      },
+      {
+        "document_id": "07134d44-11f1-4a2c-81da-183858f94a97",
+        "path": "LanguageEngine.sysml",
+        "language": "SysMl",
+        "source_revision_id": "7146a5ce-ec19-44c0-8c69-1dc1218c4553",
+        "content_digest": "3fbdf2caa9a6ee69c8807f513af0d1e822b053d9a86ff947782ff65f88536f39"
+      },
+      {
+        "document_id": "e2c0646f-23b0-4f71-9165-641d24c66dbf",
+        "path": "ModelingPlatform.sysml",
+        "language": "SysMl",
+        "source_revision_id": "de62e5af-ef81-4a9c-b429-8a30dec23f64",
+        "content_digest": "12c198141d892e606f9cd2b3a419863cc02f994f1b31236af0b112faf5d31b79"
+      }
+    ],
+    "accepted_publications": {
+      "kerml": "815573353973607bc62a25195ed4461645182027407f8476be521ffc99174f12",
+      "sysml": "25aeddb099be16462b553d6debcad97f43bf22e89ce8a9bbb53cf72eb7d193fa"
+    },
+    "checkpoint_digest": "2ef15715a476375cd40fd64c7d964b3bda9c05d6a7a39b0cafed80d1dcb0d2af",
+    "validation": {
+      "Validated": {
+        "acceptance_contract": "agentique-modeling-workspace-phase1/1",
+        "source_binding": "ba2e6f420abcb2ef11c010a8edcf46bd4e2d66b5a96e231d8b3bb267d73d710a",
+        "semantic_digest": "ddbc45e346ef84f570e8109316d6eb7ff140946dde8c2de62eeb9fef170f3ef4",
+        "semantic_context": "4546f84eb050ceb3aca37ea3b9e2b0fc57a9aa58ffb45c2f02ffa38ac1a4bcef",
+        "closure_digest": "d85e4bb3ae067c827de1689b4ddcbc053444913c35797bd90e4e01fbbdd78a19"
+      }
+    },
+    "semantic_cache": {
+      "format": "agq-project-semantic-cache/2",
+      "content_digest": "70d4d526e2d6036df2236f64041b27eb310dec8dd58a42f41858785817931e0e",
+      "source_binding": "ba2e6f420abcb2ef11c010a8edcf46bd4e2d66b5a96e231d8b3bb267d73d710a",
+      "semantic_context": "4546f84eb050ceb3aca37ea3b9e2b0fc57a9aa58ffb45c2f02ffa38ac1a4bcef",
+      "closure_digest": "d85e4bb3ae067c827de1689b4ddcbc053444913c35797bd90e4e01fbbdd78a19"
+    }
+  },
+  "committed": {
+    "format_version": 1,
+    "revision_id": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+    "parent_revision_id": "62af4537-f2c9-4bf1-90d6-e0862d6b4141",
+    "project_id": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+    "metadata": {
+      "created": "2026-09-25T22:49:29.281935800+00:00",
+      "name": "Add alphaStudioObserver to ModelingPlatform",
+      "description": "{\"added_part_syntax_node\":\"574a2cf9-7a6d-5a7a-8dbd-b1212dbc0a1e\",\"after_arena_sha256\":\"80c3c35d407f39addcbfc50167bfe4cf36ed779440314b543c0742a9fbe097d4\",\"after_source_revision\":\"e013d4a6-7ad3-49a2-b66d-b0e1297ef888\",\"after_source_sha256\":\"d2b494a3fb19ea142827681dee256788433d65e9d765ac1955f118c963845afd\",\"base_revision\":\"62af4537-f2c9-4bf1-90d6-e0862d6b4141\",\"before_arena_sha256\":\"b6a7fd28d1a518f1f4275b1727d972fe79cdbe4f1a2685a17fc07e3653f6ed5b\",\"before_source_revision\":\"de62e5af-ef81-4a9c-b429-8a30dec23f64\",\"before_source_sha256\":\"12c198141d892e606f9cd2b3a419863cc02f994f1b31236af0b112faf5d31b79\",\"document\":\"e2c0646f-23b0-4f71-9165-641d24c66dbf\",\"edit_range\":[3181,3181],\"mode\":\"full-source-reconstruction\",\"owner\":\"6bf68ca1-ecfa-5883-9608-747f1824c0e3\",\"policy\":\"agentique-source-identity/part-insertion/1\",\"previous_reference_targets_preserved\":true,\"replacement_sha256\":\"251fd3e5884aa754cf401f2746fc3f59746310ba442c765b1abc75606244a30a\",\"retained_syntax_nodes\":1114,\"retired_identity_reservations_preserved\":true}",
+      "alias": [
+        "agentique-source-identity/part-insertion/1"
+      ]
+    },
+    "documents": [
+      {
+        "document_id": "d038fb89-2c63-4c9b-895c-42685cf7561f",
+        "path": "AgentFabric.sysml",
+        "language": "SysMl",
+        "source_revision_id": "6d50a277-3244-42d4-a4a2-c53f85399821",
+        "content_digest": "fb19fdb031aa524d9957f3a1498818bd66106c718d51274328bd47f381921617"
+      },
+      {
+        "document_id": "b10fa5f1-0871-4e77-a2de-f5792a66d5ff",
+        "path": "Agentique.sysml",
+        "language": "SysMl",
+        "source_revision_id": "26163378-bb2f-4498-99a4-c891f546aa9b",
+        "content_digest": "17cc930b105b74d7001a70ab9cfddf3a2c65c906a57dcc2e1f341140b3636960"
+      },
+      {
+        "document_id": "b2cfa3ce-2fbf-49a8-9176-1617a9fbec23",
+        "path": "Contracts.sysml",
+        "language": "SysMl",
+        "source_revision_id": "1f2ac833-3d04-48c0-936f-05465bee3449",
+        "content_digest": "4235d37c880ca5d43bb11b482d9414b4270a78ff6ee7287d3538961bcc94bc2a"
+      },
+      {
+        "document_id": "a98fe9db-76be-452c-b681-cea61ae96d88",
+        "path": "ExecutionRuntime.sysml",
+        "language": "SysMl",
+        "source_revision_id": "cccec7f2-4d9a-4248-9454-13d73039fdcb",
+        "content_digest": "7f753fe89a4158918481a52134df9df9218167433fe3869d65ae22ccf6d90691"
+      },
+      {
+        "document_id": "07134d44-11f1-4a2c-81da-183858f94a97",
+        "path": "LanguageEngine.sysml",
+        "language": "SysMl",
+        "source_revision_id": "7146a5ce-ec19-44c0-8c69-1dc1218c4553",
+        "content_digest": "3fbdf2caa9a6ee69c8807f513af0d1e822b053d9a86ff947782ff65f88536f39"
+      },
+      {
+        "document_id": "e2c0646f-23b0-4f71-9165-641d24c66dbf",
+        "path": "ModelingPlatform.sysml",
+        "language": "SysMl",
+        "source_revision_id": "e013d4a6-7ad3-49a2-b66d-b0e1297ef888",
+        "content_digest": "d2b494a3fb19ea142827681dee256788433d65e9d765ac1955f118c963845afd"
+      }
+    ],
+    "accepted_publications": {
+      "kerml": "815573353973607bc62a25195ed4461645182027407f8476be521ffc99174f12",
+      "sysml": "25aeddb099be16462b553d6debcad97f43bf22e89ce8a9bbb53cf72eb7d193fa"
+    },
+    "checkpoint_digest": "71ab50a1d3fcd55ea41435a0794940ea7533614685561aded28b7ef76b14cabc",
+    "validation": {
+      "Validated": {
+        "acceptance_contract": "agentique-modeling-workspace-phase1/1",
+        "source_binding": "eafbb841193333f3ca62bb9249cc32117d926709b6980f94ce98d6fc89662782",
+        "semantic_digest": "e440b195851cb7d93ddb84ea7dc3dff6e2488e5d524220e57c9dc7de98d77bbb",
+        "semantic_context": "4546f84eb050ceb3aca37ea3b9e2b0fc57a9aa58ffb45c2f02ffa38ac1a4bcef",
+        "closure_digest": "cce51cc831b0f20abfee3ade74275bf829ae8c553753d72c309725ea0ac7e460"
+      }
+    },
+    "semantic_cache": {
+      "format": "agq-project-semantic-cache/2",
+      "content_digest": "d46fb3461f001b1c24e547fcb300a34f17845277e4270535a959256b286a08bb",
+      "source_binding": "eafbb841193333f3ca62bb9249cc32117d926709b6980f94ce98d6fc89662782",
+      "semantic_context": "4546f84eb050ceb3aca37ea3b9e2b0fc57a9aa58ffb45c2f02ffa38ac1a4bcef",
+      "closure_digest": "cce51cc831b0f20abfee3ade74275bf829ae8c553753d72c309725ea0ac7e460"
+    }
+  },
+  "added_element": "3670456b-6e5f-59ba-a083-9ac253de64a4",
+  "added_owner": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+  "added_name": "alphaStudioObserver",
+  "assertions": [
+    {
+      "name": "restart opens the same durable real project",
+      "passed": true,
+      "elapsed_ms": 5949,
+      "since_start_ms": 181577,
+      "before": {
+        "frame": 17026,
+        "binding": null,
+        "branch": null,
+        "scene_revision": "00000000-0000-0000-0000-000000000000",
+        "selection_revision": "00000000-0000-0000-0000-000000000000",
+        "selected": [],
+        "focus": null,
+        "world": "System",
+        "comparison": "Current",
+        "candidate_revision": null,
+        "candidate_phase": null,
+        "producer_completeness": "Unavailable",
+        "projection_nodes": 0,
+        "projection_edges": 0,
+        "scene_nodes": 0,
+        "scene_edges": 0,
+        "camera": [
+          0.0,
+          0.0,
+          1.0
+        ],
+        "pending_requests": 0,
+        "mutation_pending": false,
+        "inspector_revision": null,
+        "inspector_element": null,
+        "explanation_revision": null,
+        "explanation_subject": null,
+        "explanation_origin": null,
+        "explanation_rule": null,
+        "explanation_evidence": null,
+        "agent_view": false,
+        "status": "Workspace prepared"
+      },
+      "after": {
+        "frame": 17558,
+        "binding": {
+          "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+          "revision": "9539bfed-f725-43d9-b5f8-8254040e7d42"
+        },
+        "branch": "c51074f7-a379-4007-b3f6-46cbcb939e20",
+        "scene_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "selection_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "selected": [
+          "Container(ElementId(121844116890947129170242734375800244273))"
+        ],
+        "focus": null,
+        "world": "System",
+        "comparison": "Current",
+        "candidate_revision": null,
+        "candidate_phase": null,
+        "producer_completeness": "Complete",
+        "projection_nodes": 7,
+        "projection_edges": 6,
+        "scene_nodes": 7,
+        "scene_edges": 3,
+        "camera": [
+          422.0,
+          272.0,
+          1.1895734
+        ],
+        "pending_requests": 0,
+        "mutation_pending": false,
+        "inspector_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "inspector_element": "5baa52c5-8b0c-5a2b-9748-4a196e618831",
+        "explanation_revision": null,
+        "explanation_subject": null,
+        "explanation_origin": null,
+        "explanation_rule": null,
+        "explanation_evidence": null,
+        "agent_view": false,
+        "status": "View ready"
+      },
+      "inputs": [
+        "PointerMoved([800.0 418.0])",
+        "PointerButton { pos: [800.0 418.0], button: Primary, pressed: true, modifiers: Modifiers::NONE }",
+        "PointerMoved([800.0 418.0])",
+        "PointerButton { pos: [800.0 418.0], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+      ]
+    },
+    {
+      "name": "restart selects the committed part's actual ModelingPlatform owner",
+      "passed": true,
+      "elapsed_ms": 3422,
+      "since_start_ms": 185112,
+      "before": {
+        "frame": 17562,
+        "binding": {
+          "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+          "revision": "9539bfed-f725-43d9-b5f8-8254040e7d42"
+        },
+        "branch": "c51074f7-a379-4007-b3f6-46cbcb939e20",
+        "scene_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "selection_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "selected": [
+          "Container(ElementId(121844116890947129170242734375800244273))"
+        ],
+        "focus": null,
+        "world": "System",
+        "comparison": "Current",
+        "candidate_revision": null,
+        "candidate_phase": null,
+        "producer_completeness": "Complete",
+        "projection_nodes": 7,
+        "projection_edges": 6,
+        "scene_nodes": 7,
+        "scene_edges": 3,
+        "camera": [
+          422.0,
+          272.0,
+          1.1895734
+        ],
+        "pending_requests": 0,
+        "mutation_pending": false,
+        "inspector_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "inspector_element": "5baa52c5-8b0c-5a2b-9748-4a196e618831",
+        "explanation_revision": null,
+        "explanation_subject": null,
+        "explanation_origin": null,
+        "explanation_rule": null,
+        "explanation_evidence": null,
+        "agent_view": false,
+        "status": "View ready"
+      },
+      "after": {
+        "frame": 17869,
+        "binding": {
+          "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+          "revision": "9539bfed-f725-43d9-b5f8-8254040e7d42"
+        },
+        "branch": "c51074f7-a379-4007-b3f6-46cbcb939e20",
+        "scene_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "selection_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "selected": [
+          "Node(ElementId(143507552942605353796069641414913605859))"
+        ],
+        "focus": null,
+        "world": "System",
+        "comparison": "Current",
+        "candidate_revision": null,
+        "candidate_phase": null,
+        "producer_completeness": "Complete",
+        "projection_nodes": 7,
+        "projection_edges": 6,
+        "scene_nodes": 7,
+        "scene_edges": 3,
+        "camera": [
+          422.0,
+          272.0,
+          1.1895734
+        ],
+        "pending_requests": 0,
+        "mutation_pending": false,
+        "inspector_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "inspector_element": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "explanation_revision": null,
+        "explanation_subject": null,
+        "explanation_origin": null,
+        "explanation_rule": null,
+        "explanation_evidence": null,
+        "agent_view": false,
+        "status": "View ready"
+      },
+      "inputs": [
+        "PointerMoved([119.0 151.5])",
+        "PointerButton { pos: [119.0 151.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }",
+        "PointerMoved([119.0 151.5])",
+        "PointerButton { pos: [119.0 151.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }",
+        "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+        "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+        "Text(\"ModelingPlatform\")",
+        "PointerMoved([129.3 248.5])",
+        "PointerButton { pos: [129.3 248.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }",
+        "PointerMoved([129.3 248.5])",
+        "PointerButton { pos: [129.3 248.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+      ]
+    },
+    {
+      "name": "restart enters ModelingPlatform through native keyboard input",
+      "passed": true,
+      "elapsed_ms": 3765,
+      "since_start_ms": 188890,
+      "before": {
+        "frame": 17870,
+        "binding": {
+          "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+          "revision": "9539bfed-f725-43d9-b5f8-8254040e7d42"
+        },
+        "branch": "c51074f7-a379-4007-b3f6-46cbcb939e20",
+        "scene_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "selection_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "selected": [
+          "Node(ElementId(143507552942605353796069641414913605859))"
+        ],
+        "focus": null,
+        "world": "System",
+        "comparison": "Current",
+        "candidate_revision": null,
+        "candidate_phase": null,
+        "producer_completeness": "Complete",
+        "projection_nodes": 7,
+        "projection_edges": 6,
+        "scene_nodes": 7,
+        "scene_edges": 3,
+        "camera": [
+          422.0,
+          272.0,
+          1.1895734
+        ],
+        "pending_requests": 0,
+        "mutation_pending": false,
+        "inspector_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "inspector_element": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "explanation_revision": null,
+        "explanation_subject": null,
+        "explanation_origin": null,
+        "explanation_rule": null,
+        "explanation_evidence": null,
+        "agent_view": false,
+        "status": "View ready"
+      },
+      "after": {
+        "frame": 18204,
+        "binding": {
+          "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+          "revision": "9539bfed-f725-43d9-b5f8-8254040e7d42"
+        },
+        "branch": "c51074f7-a379-4007-b3f6-46cbcb939e20",
+        "scene_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "selection_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "selected": [
+          "Node(ElementId(143507552942605353796069641414913605859))"
+        ],
+        "focus": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "world": "System",
+        "comparison": "Current",
+        "candidate_revision": null,
+        "candidate_phase": null,
+        "producer_completeness": "Complete",
+        "projection_nodes": 21,
+        "projection_edges": 21,
+        "scene_nodes": 19,
+        "scene_edges": 9,
+        "camera": [
+          681.0,
+          346.0,
+          0.7020979
+        ],
+        "pending_requests": 0,
+        "mutation_pending": false,
+        "inspector_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "inspector_element": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "explanation_revision": null,
+        "explanation_subject": null,
+        "explanation_origin": null,
+        "explanation_rule": null,
+        "explanation_evidence": null,
+        "agent_view": false,
+        "status": "View ready"
+      },
+      "inputs": [
+        "Key { key: F, physical_key: Some(F), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+        "Key { key: F, physical_key: Some(F), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+      ]
+    },
+    {
+      "name": "restart inspects the same committed canonical element",
+      "passed": true,
+      "elapsed_ms": 3324,
+      "since_start_ms": 192280,
+      "before": {
+        "frame": 18208,
+        "binding": {
+          "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+          "revision": "9539bfed-f725-43d9-b5f8-8254040e7d42"
+        },
+        "branch": "c51074f7-a379-4007-b3f6-46cbcb939e20",
+        "scene_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "selection_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "selected": [
+          "Node(ElementId(143507552942605353796069641414913605859))"
+        ],
+        "focus": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "world": "System",
+        "comparison": "Current",
+        "candidate_revision": null,
+        "candidate_phase": null,
+        "producer_completeness": "Complete",
+        "projection_nodes": 21,
+        "projection_edges": 21,
+        "scene_nodes": 19,
+        "scene_edges": 9,
+        "camera": [
+          681.0,
+          346.0,
+          0.7020979
+        ],
+        "pending_requests": 0,
+        "mutation_pending": false,
+        "inspector_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "inspector_element": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "explanation_revision": null,
+        "explanation_subject": null,
+        "explanation_origin": null,
+        "explanation_rule": null,
+        "explanation_evidence": null,
+        "agent_view": false,
+        "status": "View ready"
+      },
+      "after": {
+        "frame": 18505,
+        "binding": {
+          "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+          "revision": "9539bfed-f725-43d9-b5f8-8254040e7d42"
+        },
+        "branch": "c51074f7-a379-4007-b3f6-46cbcb939e20",
+        "scene_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "selection_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "selected": [
+          "Node(ElementId(72361257018376021589233350580715283620))"
+        ],
+        "focus": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "world": "System",
+        "comparison": "Current",
+        "candidate_revision": null,
+        "candidate_phase": null,
+        "producer_completeness": "Complete",
+        "projection_nodes": 21,
+        "projection_edges": 21,
+        "scene_nodes": 19,
+        "scene_edges": 9,
+        "camera": [
+          681.0,
+          346.0,
+          0.7020979
+        ],
+        "pending_requests": 0,
+        "mutation_pending": false,
+        "inspector_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "inspector_element": "3670456b-6e5f-59ba-a083-9ac253de64a4",
+        "explanation_revision": null,
+        "explanation_subject": null,
+        "explanation_origin": null,
+        "explanation_rule": null,
+        "explanation_evidence": null,
+        "agent_view": false,
+        "status": "View ready"
+      },
+      "inputs": [
+        "PointerMoved([119.0 151.5])",
+        "PointerButton { pos: [119.0 151.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }",
+        "PointerMoved([119.0 151.5])",
+        "PointerButton { pos: [119.0 151.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }",
+        "Key { key: A, physical_key: Some(A), pressed: true, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+        "Key { key: A, physical_key: Some(A), pressed: false, repeat: false, modifiers: Modifiers { ctrl: true, command: true } }",
+        "Text(\"alphaStudioObserver\")",
+        "PointerMoved([133.2 248.5])",
+        "PointerButton { pos: [133.2 248.5], button: Primary, pressed: true, modifiers: Modifiers::NONE }",
+        "PointerMoved([133.2 248.5])",
+        "PointerButton { pos: [133.2 248.5], button: Primary, pressed: false, modifiers: Modifiers::NONE }"
+      ]
+    },
+    {
+      "name": "restart confirms durable revision history",
+      "passed": true,
+      "elapsed_ms": 533,
+      "since_start_ms": 192878,
+      "before": {
+        "frame": 18509,
+        "binding": {
+          "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+          "revision": "9539bfed-f725-43d9-b5f8-8254040e7d42"
+        },
+        "branch": "c51074f7-a379-4007-b3f6-46cbcb939e20",
+        "scene_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "selection_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "selected": [
+          "Node(ElementId(72361257018376021589233350580715283620))"
+        ],
+        "focus": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
+        "world": "System",
+        "comparison": "Current",
+        "candidate_revision": null,
+        "candidate_phase": null,
+        "producer_completeness": "Complete",
+        "projection_nodes": 21,
+        "projection_edges": 21,
+        "scene_nodes": 19,
+        "scene_edges": 9,
+        "camera": [
+          681.0,
+          346.0,
+          0.7020979
+        ],
+        "pending_requests": 0,
+        "mutation_pending": false,
+        "inspector_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "inspector_element": "3670456b-6e5f-59ba-a083-9ac253de64a4",
+        "explanation_revision": null,
+        "explanation_subject": null,
+        "explanation_origin": null,
+        "explanation_rule": null,
+        "explanation_evidence": null,
+        "agent_view": false,
+        "status": "View ready"
+      },
+      "after": {
+        "frame": 18557,
+        "binding": {
+          "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+          "revision": "9539bfed-f725-43d9-b5f8-8254040e7d42"
+        },
+        "branch": "c51074f7-a379-4007-b3f6-46cbcb939e20",
+        "scene_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "selection_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "selected": [
+          "Node(ElementId(72361257018376021589233350580715283620))"
+        ],
+        "focus": null,
+        "world": "History",
+        "comparison": "Current",
+        "candidate_revision": null,
+        "candidate_phase": null,
+        "producer_completeness": "Complete",
+        "projection_nodes": 21,
+        "projection_edges": 21,
+        "scene_nodes": 19,
+        "scene_edges": 9,
+        "camera": [
+          681.0,
+          346.0,
+          0.7020979
+        ],
+        "pending_requests": 0,
+        "mutation_pending": false,
+        "inspector_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "inspector_element": "3670456b-6e5f-59ba-a083-9ac253de64a4",
+        "explanation_revision": null,
+        "explanation_subject": null,
+        "explanation_origin": null,
+        "explanation_rule": null,
+        "explanation_evidence": null,
+        "agent_view": false,
+        "status": "Design history · selected revision"
+      },
+      "inputs": [
+        "Key { key: Num4, physical_key: Some(Num4), pressed: true, repeat: false, modifiers: Modifiers::NONE }",
+        "Key { key: Num4, physical_key: Some(Num4), pressed: false, repeat: false, modifiers: Modifiers::NONE }"
+      ]
+    }
+  ],
+  "gallery": [
+    "verification/native-studio-alpha/real-run06/restart-gallery\\10-restarted-system-world.png",
+    "verification/native-studio-alpha/real-run06/restart-gallery\\10a-restarted-part-owner.png",
+    "verification/native-studio-alpha/real-run06/restart-gallery\\11-restarted-committed-element.png",
+    "verification/native-studio-alpha/real-run06/restart-gallery\\12-restarted-history.png"
+  ],
+  "failure": null,
+  "elapsed_ms": 192955,
+  "background_frames": 0,
+  "background_pan_observed": false,
+  "background_current_inspection": null,
+  "preparation_responsiveness": {
+    "elapsed_ms": null,
+    "maximum_input_hook_gap_ms": 0,
+    "observed_input_hooks": 0,
+    "assessment": null
+  },
+  "engineering_evidence": {
+    "repository_interfaces": null,
+    "inherited_port": null,
+    "connected_port": null,
+    "requirement_subject_path": []
+  },
+  "metrics": {
+    "adapter": "AdapterInfo { name: \"NVIDIA GeForce RTX 3060 Ti\", vendor: 4318, device: 9353, device_type: DiscreteGpu, driver: \"NVIDIA\", driver_info: \"616.92\", backend: Vulkan }",
+    "fixture": null,
+    "frame_count": 18562,
+    "frame_interval_median_ms": 11.0111,
+    "frame_interval_p95_ms": 12.0061,
+    "frame_intervals_ms": {
+      "last": 12.9922,
+      "median": 11.0111,
+      "p95": 12.0061,
+      "total_samples": 18501,
+      "window_samples": 240
+    },
+    "gpu_instances": 93,
+    "gpu_timestamp_errors": 1,
+    "gpu_timestamp_ms": {
+      "last": 0.082944,
+      "median": 0.082944,
+      "p95": 0.084992,
+      "total_samples": 1231,
+      "window_samples": 240
+    },
+    "gpu_timestamp_scope": "Scene GPU pass only; excludes text, chrome, upload and presentation",
+    "gpu_upload_count": 8,
+    "gpu_upload_cpu_ms": 0.0049,
+    "gpu_uploaded_bytes": 7440,
+    "handled_input_to_next_ui_update_ms": {
+      "pan": {
+        "last": null,
+        "median": null,
+        "p95": null,
+        "total_samples": 0,
+        "window_samples": 0
+      },
+      "selection": {
+        "last": null,
+        "median": null,
+        "p95": null,
+        "total_samples": 0,
+        "window_samples": 0
+      },
+      "zoom": {
+        "last": null,
+        "median": null,
+        "p95": null,
+        "total_samples": 0,
+        "window_samples": 0
+      }
+    },
+    "hit_test_us": {
+      "last": 0.7,
+      "median": 0.7999999999999999,
+      "p95": 1.3,
+      "total_samples": 286,
+      "window_samples": 240
+    },
+    "input_pipeline": {
+      "boundary": "eframe raw input hook -> UI shape construction complete -> following update; excludes OS delivery and GPU presentation",
+      "changed_batch_cpu_ms": {
+        "last": 0.0065,
+        "median": 0.0060999999999999995,
+        "p95": 0.3373,
+        "total_samples": 8,
+        "window_samples": 8
+      },
+      "frame_submission_ms": null,
+      "labels_accessibility_cpu_ms": {
+        "last": 0.0192,
+        "median": 0.0211,
+        "p95": 0.025,
+        "total_samples": 1234,
+        "window_samples": 240
+      },
+      "presentation_ms": null,
+      "raw_input_to_next_update_ms": {
+        "last": 12.0457,
+        "median": 11.978100000000001,
+        "p95": 14.069999999999999,
+        "total_samples": 16,
+        "window_samples": 16
+      },
+      "raw_input_to_ui_complete_ms": {
+        "last": 0.5971000000000001,
+        "median": 0.32245,
+        "p95": 1.5492,
+        "total_samples": 16,
+        "window_samples": 16
+      },
+      "ui_cpu_ms": {
+        "last": 0.2616,
+        "median": 0.1866,
+        "p95": 0.2585,
+        "total_samples": 18562,
+        "window_samples": 240
+      },
+      "visibility_lookup_cpu_ms": {
+        "last": 0.0073,
+        "median": 0.009099999999999999,
+        "p95": 0.011399999999999999,
+        "total_samples": 1234,
+        "window_samples": 240
+      }
+    },
+    "layout_included_in_scene_build": true,
+    "note": "Native wgpu frames with vsync. CPU update intervals retain the latest 240 samples after 60 warmup intervals. Input spans start inside the viewport gesture handler and end at the next UI update; they exclude OS input delivery and do not measure presentation. GPU upload is CPU submission time for the last upload. Null means unmeasured.",
+    "physical_input_to_photon_ms": null,
+    "scene_background_pending": false,
+    "scene_build_ms": 0.6679,
+    "scene_draw_calls": 3,
+    "scene_index_lookup_outliner_ms": 0.0257,
+    "scene_layout_routing_diff_ms": 0.6419,
+    "total_edges": 9,
+    "total_nodes": 19,
+    "visible_nodes": 19,
+    "warmup_frame_intervals_discarded": 60
+  },
+  "last_state": {
+    "frame": 18562,
+    "binding": {
+      "project": "07d1f9bd-8f5b-4811-a9ab-7dd6408f91d9",
+      "revision": "9539bfed-f725-43d9-b5f8-8254040e7d42"
+    },
+    "branch": "c51074f7-a379-4007-b3f6-46cbcb939e20",
+    "scene_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+    "selection_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+    "selected": [
+      "Node(ElementId(72361257018376021589233350580715283620))"
+    ],
+    "focus": null,
+    "world": "History",
+    "comparison": "Current",
+    "candidate_revision": null,
+    "candidate_phase": null,
+    "producer_completeness": "Complete",
+    "projection_nodes": 21,
+    "projection_edges": 21,
+    "scene_nodes": 19,
+    "scene_edges": 9,
+    "camera": [
+      681.0,
+      346.0,
+      0.7020979
+    ],
+    "pending_requests": 0,
+    "mutation_pending": false,
+    "inspector_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+    "inspector_element": "3670456b-6e5f-59ba-a083-9ac253de64a4",
+    "explanation_revision": null,
+    "explanation_subject": null,
+    "explanation_origin": null,
+    "explanation_rule": null,
+    "explanation_evidence": null,
+    "agent_view": false,
+    "status": "Design history · selected revision"
+  }
+}

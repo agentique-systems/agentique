@@ -1,0 +1,33 @@
+{
+  "tool": "sysml-validate",
+  "version": "0.43.1",
+  "files": [
+    "tests/fixtures/Controller.sysml",
+    "tests/fixtures/Parallel.sysml",
+    "tests/fixtures/Types.kerml"
+  ],
+  "counts": {
+    "error": 1,
+    "warning": 0,
+    "info": 0,
+    "hint": 1
+  },
+  "diagnostics": [
+    {
+      "file": "tests/fixtures/Controller.sysml",
+      "severity": "error",
+      "code": "RES001",
+      "message": "Feature path segment 'r' does not exist on 'the current scope'.",
+      "range": {
+        "start": {
+          "line": 20,
+          "character": 72
+        },
+        "end": {
+          "line": 20,
+          "character": 73
+        }
+      }
+    }
+  ]
+}

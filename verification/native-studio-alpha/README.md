@@ -1,19 +1,16 @@
-# Native Studio alpha mission — working evidence index
+# Native Studio alpha mission — evidence index
 
-This mission is still in progress. The current evidence does not establish overall
-alpha acceptance. The native fixture journeys work, five independent product review
-loops have resulted in changes, and the accepted KerML v9 / Systems v3 runtime has
-been rematerialized, authenticated, packaged and installed through ordinary
-facades. Real native runs reached a durable Validated Agentique revision and
-captured System, focused subsystem, ports, Graph, Requirements, Explain, parent
-diff and agent dependency views. Iteration five visibly corrects port ownership
-and Explain clipping and completes real candidate preparation while ordinary
-input and current-revision inspection remain active. Its premature new-part
-selection assertion failed: the actual application correctly preserved the
-operator's previous selection. The corrected driver retains exact selection
-checks after the operator explicitly selects the new part. Candidate review,
-validation, commit and separate restart still need a complete passing journey.
-No fixture screenshot is presented as real model acceptance.
+The [final product judgment](FINAL.md) distinguishes a completed real-model
+journey from overall alpha quality. Accepted KerML v9 / Systems v3 runtime assets
+were rematerialized, authenticated, packaged and installed through ordinary
+facades. [Real run06](real-run06/journey.json) passed all 33 native assertions,
+including candidate review, validation, commit and History. A [separate process](real-run06/restart.json)
+reauthenticated the runtime and confirmed the same durable revision, canonical
+part and owner. Thirteen real first-process screenshots and four restart
+screenshots supplement five formal fixture review loops. Dense History/Diff,
+Requirements presentation, semantic latency and remaining workflow/release
+qualification keep overall alpha quality unaccepted. Original failed attempts
+remain retained; fixtures never substitute for real semantic acceptance.
 
 ## Product evidence
 
@@ -59,6 +56,9 @@ No fixture screenshot is presented as real model acceptance.
   actual images, the closed visual defects, remaining History/Graph weaknesses,
   and the failed driver assumption. Its real preparation observed 140.216 seconds
   and a maximum native input-hook gap of 13 ms; this is not photon latency.
+- [Completed iteration-six review](reviews/real-run06-editor-interaction.md)
+  verifies the improved real gallery, 33 passing first-process assertions and
+  five separate restart assertions, including the exact committed part and owner.
 - [Runtime distribution](../../docs/runtime-publication-distribution.md) describes
   content-addressed bundles and offline installation. A workflow being present
   does not mean a release asset has been published.
@@ -76,6 +76,9 @@ No fixture screenshot is presented as real model acceptance.
   The [shared-mount run](performance/create-part-shared-mount.json) passed that
   comparison and sixteen malformed-input refusals, while retaining full local
   reconstruction; it does not establish incremental semantic speedup.
+- [Combined mount/audit result](reviews/create-part-mount-audit-results-independent.md)
+  verifies the later exact cold reconstruction, and [final measurements](performance/final-measurements-closeout.md)
+  retain real UI stages, successful restart and both conflicting 10k outcomes.
 - [Adversarial layout evidence](product/README.md) covers hierarchy, cycles,
   ports, parallel edges, long names, overlaps and unchanged-node displacement.
 - [Windows accessibility and release qualification](release-qualification.md)

@@ -1,0 +1,20 @@
+{
+  "command": [
+    "npm",
+    "run",
+    "standards:check"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "ee1ddabaa0d083451113a9430e813f7b15173ed3",
+  "tracked_changes_at_start": [
+    " M README.md",
+    " M verification/native-studio-alpha/GALLERY.md",
+    " M verification/native-studio-alpha/README.md"
+  ],
+  "started_utc": "2026-09-26T06:04:47.461729+00:00",
+  "elapsed_seconds": 0.734,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/final-standards-after-lint.txt",
+  "output_sha256": "49b2406b1a88ff284b8dc545c9b36d09cd8ac47def6eb9e08b5e417cb3f57c99",
+  "build_environment": {}
+}

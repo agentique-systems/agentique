@@ -1,0 +1,27 @@
+{
+  "command": [
+    "python",
+    "verification/scripts/measure-phase2-frontend.py",
+    "verification/native-studio-alpha/performance/quiet-final/10k-repeat-process.json",
+    "target/native-alpha/release/agq-studio-native.exe",
+    "--root",
+    ".",
+    "--fixture",
+    "stress10000",
+    "--no-restore",
+    "--scenario",
+    "stress",
+    "--gpu-timestamps",
+    "--scenario-report",
+    "verification/native-studio-alpha/performance/quiet-final/10k-repeat.json"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "4241d7e9e524e5b858aa379e81b20bcb6f2d6a96",
+  "tracked_changes_at_start": [],
+  "started_utc": "2026-09-26T05:50:19.190220+00:00",
+  "elapsed_seconds": 4.032,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/final-native-stress-10k-repeat.txt",
+  "output_sha256": "c79a0f977756f7a17ac146ded93ecef0108726756d8936461fc7dc3ccbca8620",
+  "build_environment": {}
+}

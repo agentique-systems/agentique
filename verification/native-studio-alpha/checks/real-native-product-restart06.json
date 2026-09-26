@@ -1,0 +1,33 @@
+{
+  "command": [
+    "python",
+    "verification/scripts/measure-phase2-frontend.py",
+    "verification/native-studio-alpha/real-run06/restart-process.json",
+    "target/native-alpha/release/agq-studio-native.exe",
+    "--root",
+    ".",
+    "--runtime-dir",
+    "C:/Users/phili/.agentique",
+    "--database",
+    "C:/Users/phili/github/agentique-systems/agentique/verification/generated/native-studio-alpha/real-run04/agentique.sqlite",
+    "--no-restore",
+    "--gpu-timestamps",
+    "--scenario",
+    "real-restart",
+    "--restart-report",
+    "verification/native-studio-alpha/real-run06/journey.json",
+    "--scenario-report",
+    "verification/native-studio-alpha/real-run06/restart.json",
+    "--gallery",
+    "verification/native-studio-alpha/real-run06/restart-gallery"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "c9bbc66c4739a6d9d46c6396db26eebc7266c5a9",
+  "tracked_changes_at_start": [],
+  "started_utc": "2026-09-26T05:45:33.782021+00:00",
+  "elapsed_seconds": 194.875,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/real-native-product-restart06.txt",
+  "output_sha256": "96b545f5675a7607da7d0082f63ff544396b39671a696c551f7a392494f433f0",
+  "build_environment": {}
+}

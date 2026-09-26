@@ -1,0 +1,22 @@
+{
+  "source_commit_at_start": "4241d7e9e524e5b858aa379e81b20bcb6f2d6a96",
+  "executable_sha256": "c6a8013dbf7db7103153ca287758390f58e6f1db72e6a57405b2a87c6b5fc57b",
+  "command": [
+    "target/native-alpha/release/agq-studio-native.exe",
+    "--root",
+    ".",
+    "--fixture",
+    "stress1000",
+    "--no-restore",
+    "--scenario",
+    "stress",
+    "--gpu-timestamps",
+    "--scenario-report",
+    "verification/native-studio-alpha/performance/quiet-final/1k.json"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 3.665743799880147,
+  "maximum_process_peak_working_set_bytes": 363847680,
+  "sampled_process_tree_peak_resident_bytes": 363061248,
+  "sample_interval_seconds": 0.25
+}

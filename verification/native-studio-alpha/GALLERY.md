@@ -1,9 +1,34 @@
 # Native Studio product gallery
 
-**Real authenticated model captures are available; the complete real candidate
-and restart journey is still under qualification.** These are actual native
+**The real candidate, validation, commit and separate restart journey passed.** These are actual native
 window captures, not image mockups or HTTP scenes. Adjacent JSON files identify
 the data source, exact revision, selected canonical identities and image digest.
+
+## Real Agentique, completed iteration six
+
+The [native journey](real-run06/journey.json) and [separate restart](real-run06/restart.json)
+use accepted KerML v9 / Systems v3, the durable repository, ModelingService and
+ordinary ViewProjection. The [independent visual review](reviews/real-run06-editor-interaction.md)
+still rates Requirements and History/Diff as Foundation quality. See the
+[final judgment](FINAL.md); this gallery is evidence of the demonstrated scope.
+
+| Surface | Real native capture |
+| --- | --- |
+| System World | [01-system-world.png](real-run06/gallery/01-system-world.png) |
+| ModelingPlatform | [02-focused-subsystem.png](real-run06/gallery/02-focused-subsystem.png) |
+| Graph World | [03-graph-world.png](real-run06/gallery/03-graph-world.png) |
+| Requirements World | [04-requirements-world.png](real-run06/gallery/04-requirements-world.png) |
+| Explain | [05-explain.png](real-run06/gallery/05-explain.png) |
+| History and difference | [06-history-diff.png](real-run06/gallery/06-history-diff.png) |
+| Agent dependency view | [07-agent-view.png](real-run06/gallery/07-agent-view.png) |
+| Working candidate | [08-candidate.png](real-run06/gallery/08-candidate.png) |
+| Candidate difference | [09-candidate-diff.png](real-run06/gallery/09-candidate-diff.png) |
+| Committed History | [10-committed-history.png](real-run06/gallery/10-committed-history.png) |
+
+Port and focused repository captures remain alongside these images. Every image
+has its own revision/identity sidecar; the candidate is explicitly uncommitted
+in images 08/09 and durable only after the actual commit. The executable SHA256
+is retained in the [process receipt](real-run06/process.json).
 
 ## Real Agentique, iteration three
 

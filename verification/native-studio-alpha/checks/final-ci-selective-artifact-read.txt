@@ -1,0 +1,48 @@
+{
+  "transferred_bytes": 590087,
+  "extracted": [
+    {
+      "member": "verification/generated/logs/rust-clippy.txt",
+      "local_name": "rust-clippy.txt",
+      "bytes": 9603,
+      "sha256": "6cdce2b9d1bac92b39e83d3170a05b7d6ecad1d09a359ad012b09edaec451a10",
+      "zip_crc32": "fe232574"
+    },
+    {
+      "member": "verification/generated/logs/engineering-tests.txt",
+      "local_name": "engineering-tests.txt",
+      "bytes": 5466,
+      "sha256": "940a35a91dcead8e423c639c744f9e57bebf76e10471e1dbd1a80ce506920395",
+      "zip_crc32": "4fa3432a"
+    },
+    {
+      "member": "verification/generated/logs/independent-fixtures.txt",
+      "local_name": "independent-fixtures.txt",
+      "bytes": 79,
+      "sha256": "f95a8a36082010cd3b3e5bd29a7f2340c5168adaea35a4a1257cc8fa9a029714",
+      "zip_crc32": "61b425b8"
+    },
+    {
+      "member": "verification/generated/logs/standards.txt",
+      "local_name": "standards.txt",
+      "bytes": 9350,
+      "sha256": "cf3d39ea3e2d3528db0ba76aebc684c6bbbea34287968613f74bb82e41050ef2",
+      "zip_crc32": "be0f8fa7"
+    },
+    {
+      "member": "verification/independent-fixtures.json",
+      "local_name": "independent-fixtures.json",
+      "bytes": 661,
+      "sha256": "99a52db50c41a7911047b8a5a824943f3dd9bbab8cfb4dae8da1d4c974660df5",
+      "zip_crc32": "46d2df83"
+    },
+    {
+      "member": "verification/results.json",
+      "local_name": "results.json",
+      "bytes": 88752,
+      "sha256": "c70442080622d3b2ec6be6ed389fc4bcd471684d75dced671891548fb303a620",
+      "zip_crc32": "614bc517"
+    }
+  ],
+  "completed_at": "2026-09-26T06:10:15.753739+00:00"
+}
