@@ -1,0 +1,58 @@
+[
+  {
+    "command": "gh api repos/agentique-systems/agentique --jq '{permissions: .permissions, private: .private, default_branch: .default_branch}'",
+    "chunk_id": "7cd698",
+    "wall_time_seconds": 0.739639,
+    "exit_code": 0,
+    "original_token_count": 32,
+    "output": "{\"default_branch\":\"main\",\"permissions\":{\"admin\":true,\"maintain\":true,\"pull\":true,\"push\":true,\"triage\":true},\"private\":false}\n"
+  },
+  {
+    "command": "gh release view runtime-kerml-v9-sysml-v3-bundle1 --repo agentique-systems/agentique --json tagName,name,isDraft,isPrerelease,targetCommitish,url,assets",
+    "chunk_id": "fcf11a",
+    "wall_time_seconds": 1.0651646,
+    "exit_code": 0,
+    "original_token_count": 620,
+    "output": "{\"assets\":[{\"apiUrl\":\"https://api.github.com/repos/agentique-systems/agentique/releases/assets/588986549\",\"contentType\":\"application/octet-stream\",\"createdAt\":\"2026-09-25T18:36:23Z\",\"digest\":\"sha256:37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026\",\"downloadCount\":1,\"id\":\"RA_kwDOUd0Z5c4jGzi1\",\"label\":\"\",\"name\":\"accepted-runtime.agq-runtime\",\"size\":610190454,\"state\":\"uploaded\",\"updatedAt\":\"2026-09-25T18:36:48Z\",\"url\":\"https://github.com/agentique-systems/agentique/releases/download/untagged-05ba0adcc0765264ca72/accepted-runtime.agq-runtime\"},{\"apiUrl\":\"https://api.github.com/repos/agentique-systems/agentique/releases/assets/588986550\",\"contentType\":\"application/octet-stream\",\"createdAt\":\"2026-09-25T18:36:23Z\",\"digest\":\"sha256:2449cbfc5920be8d334acffbcd6ffd1e46ddda6a0d990b1c3873c4693acdef66\",\"downloadCount\":1,\"id\":\"RA_kwDOUd0Z5c4jGzi2\",\"label\":\"\",\"name\":\"accepted-runtime.agq-runtime.sha256\",\"size\":95,\"state\":\"uploaded\",\"updatedAt\":\"2026-09-25T18:36:23Z\",\"url\":\"https://github.com/agentique-systems/agentique/releases/download/untagged-05ba0adcc0765264ca72/accepted-runtime.agq-runtime.sha256\"},{\"apiUrl\":\"https://api.github.com/repos/agentique-systems/agentique/releases/assets/588986553\",\"contentType\":\"application/json\",\"createdAt\":\"2026-09-25T18:36:23Z\",\"digest\":\"sha256:403ea690ebcb444510f55e9e60ddea3406dc3707528221d5245e50671bc3b260\",\"downloadCount\":1,\"id\":\"RA_kwDOUd0Z5c4jGzi5\",\"label\":\"\",\"name\":\"runtime-manifest.json\",\"size\":1609,\"state\":\"uploaded\",\"updatedAt\":\"2026-09-25T18:36:23Z\",\"url\":\"https://github.com/agentique-systems/agentique/releases/download/untagged-05ba0adcc0765264ca72/runtime-manifest.json\"},{\"apiUrl\":\"https://api.github.com/repos/agentique-systems/agentique/releases/assets/588986557\",\"contentType\":\"application/json\",\"createdAt\":\"2026-09-25T18:36:23Z\",\"digest\":\"sha256:824402d7b513f8b5d2b8bbe9c91e066a7cca2047b6a84791ce020259f47dd718\",\"downloadCount\":1,\"id\":\"RA_kwDOUd0Z5c4jGzi9\",\"label\":\"\",\"name\":\"runtime-verification.json\",\"size\":5856,\"state\":\"uploaded\",\"updatedAt\":\"2026-09-25T18:36:23Z\",\"url\":\"https://github.com/agentique-systems/agentique/releases/download/untagged-05ba0adcc0765264ca72/runtime-verification.json\"}],\"isDraft\":true,\"isPrerelease\":false,\"name\":\"Agentique accepted runtime: KerML v9 / SysML v3\",\"tagName\":\"runtime-kerml-v9-sysml-v3-bundle1\",\"targetCommitish\":\"c00de91f348bc59934c721fd75b17cbd09217163\",\"url\":\"https://github.com/agentique-systems/agentique/releases/tag/untagged-05ba0adcc0765264ca72\"}\n"
+  },
+  {
+    "command": "gh run view 36227282323 --repo agentique-systems/agentique --json headSha,url,jobs --jq '{headSha, url, jobs: [.jobs[] | {name, conclusion, url}]}'",
+    "chunk_id": "8bee61",
+    "wall_time_seconds": 1.2799849,
+    "exit_code": 0,
+    "original_token_count": 107,
+    "output": "{\"headSha\":\"98c881f0bbac2c55e2777664633a50cb67ab7bf0\",\"jobs\":[{\"conclusion\":\"success\",\"name\":\"native-studio\",\"url\":\"https://github.com/agentique-systems/agentique/actions/runs/36227282323/job/108363601315\"},{\"conclusion\":\"failure\",\"name\":\"checks\",\"url\":\"https://github.com/agentique-systems/agentique/actions/runs/36227282323/job/108363601351\"}],\"url\":\"https://github.com/agentique-systems/agentique/actions/runs/36227282323\"}\n"
+  },
+  {
+    "command": "gh run list --repo agentique-systems/agentique --workflow runtime-asset.yml --limit 5 --json databaseId,headSha,status,conclusion,headBranch",
+    "chunk_id": "0897d7",
+    "wall_time_seconds": 0.9257782,
+    "exit_code": 0,
+    "original_token_count": 1,
+    "output": "[]\n"
+  },
+  {
+    "command": "python verification/scripts/test_runtime_distribution.py",
+    "chunk_id": "064c9b",
+    "wall_time_seconds": 0.5847949,
+    "exit_code": 0,
+    "original_token_count": 27,
+    "output": "...\r\n----------------------------------------------------------------------\r\nRan 3 tests in 0.050s\r\n\r\nOK\r\n"
+  },
+  {
+    "command": "python tools/verify-runtime-distribution.py --help",
+    "chunk_id": "d96daf",
+    "wall_time_seconds": 0.462985,
+    "exit_code": 0,
+    "original_token_count": 246,
+    "output": "usage: verify-runtime-distribution.py [-h] [--root ROOT] --publications\r\n                                      PUBLICATIONS --bundle BUNDLE --sha256\r\n                                      SHA256 --install-dir INSTALL_DIR\r\n                                      --evidence-dir EVIDENCE_DIR\r\n\r\nAuthenticate one exact package and exercise installation in a fresh isolated\r\nstore. This invokes the ordinary runtime CLI; it cannot issue publication\r\nacceptance or publish a GitHub release. Caches never enter the evidence\r\ndirectory.\r\n\r\noptions:\r\n  -h, --help            show this help message and exit\r\n  --root ROOT\r\n  --publications PUBLICATIONS\r\n                        Built agq-publications executable\r\n  --bundle BUNDLE\r\n  --sha256 SHA256       Independently recorded package SHA-256\r\n  --install-dir INSTALL_DIR\r\n                        New directory; never the normal operator store\r\n  --evidence-dir EVIDENCE_DIR\r\n                        New directory for outputs and exit codes\r\n"
+  },
+  {
+    "command": "git diff --check",
+    "chunk_id": "dd5804",
+    "wall_time_seconds": 0.327419,
+    "exit_code": 0,
+    "original_token_count": 0,
+    "output": ""
+  }
+]

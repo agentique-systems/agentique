@@ -61,9 +61,23 @@ The notes must contain the package SHA-256, bundle identity, source commit and
 both accepted publication identities, and link the install instructions. Review
 the uploaded draft asset and independently verify its downloaded bytes before
 publishing the release. The manual `runtime-asset.yml` workflow performs this
-independent download/hash/facade check for an existing draft tag and recorded
-SHA-256, retaining its manifest and actual authentication output. It never
-publishes the draft. Publishing is a release operation, never a build step.
+independent download/hash/facade check for an existing draft or published tag and
+recorded SHA-256. It then installs into a fresh isolated store and compares both
+installed caches to the authenticated manifest. Each actual command, exit code,
+stdout/stderr digest and elapsed time is retained by
+`tools/verify-runtime-distribution.py`. It never publishes a release. Publishing
+is a release operation, never a build step.
+
+For the existing bundle, dispatch qualification on the reviewed application branch:
+
+```powershell
+gh workflow run runtime-asset.yml --repo agentique-systems/agentique --ref platform/native-studio-alpha-acceptance -f draft_tag=runtime-kerml-v9-sysml-v3-bundle1 -f transport_sha256=37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026
+```
+
+The existing tag and asset need no recreation. Once the release maintainer has a
+successful current facade/install record, publication can make these same bytes
+public. Record the workflow run URL and authentication source commit in release
+notes; older timing evidence does not qualify a changed application build.
 
 ## Install the released bytes
 
@@ -73,9 +87,30 @@ Once that release exists, an engineer can obtain the exact named package:
 cargo fetch --locked
 cargo fetch --locked --manifest-path crates/studio-native/Cargo.toml
 gh release download runtime-kerml-v9-sysml-v3-bundle1 --repo agentique-systems/agentique --pattern accepted-runtime.agq-runtime --dir .runtime-download
+$runtimePackageSha = (Get-FileHash -Algorithm SHA256 -LiteralPath .runtime-download/accepted-runtime.agq-runtime).Hash.ToLowerInvariant()
+if ($runtimePackageSha -ne "37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026") { throw "Runtime package transport mismatch" }
 cargo run --release --config profile.release.lto=false --locked --offline -p agq-runtime-publications --bin agq-publications -- install --bundle .runtime-download/accepted-runtime.agq-runtime
 cargo run --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target
 ```
+
+Use a new download directory. While the release is still a draft, downloading
+requires repository push access; ordinary users cannot install from that draft
+URL. Release metadata determines whether it has been published. On Linux/macOS,
+compare `shasum -a 256` output against the same hash, then run the identical Cargo
+installation command. Installation authenticates both facades; a matching outer
+hash alone is not an installation pass.
+
+To reproduce the full release qualification locally without touching the normal
+operator store, build the CLI and provide unused installation/evidence directories:
+
+```powershell
+cargo build --release --config profile.release.lto=false --locked --offline -p agq-runtime-publications --bin agq-publications
+python tools/verify-runtime-distribution.py --publications target/release/agq-publications.exe --bundle .runtime-download/accepted-runtime.agq-runtime --sha256 37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026 --install-dir verification/generated/runtime-qualification-store --evidence-dir verification/generated/runtime-qualification
+```
+
+On Linux/macOS omit `.exe`. The helper fails if either directory already exists;
+it never overwrites an installed runtime. It leaves the isolated store available
+for diagnosis and writes only logs/metadata to evidence, not runtime cache bytes.
 
 For offline installation, copy the same package from removable or local storage
 and use the same install command. A bundle directory works as well. Installation
