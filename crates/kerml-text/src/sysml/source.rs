@@ -1,5 +1,6 @@
 //! Authored language integration over the two accepted, immutable publications.
 use super::*;
+use crate::{CompilationControl, CompilationStage};
 use agq_kerml_semantics::{
     ProducerClosedDependency, ProducerClosureCertificate, ProducerFamily, ProducerRegistry,
     PublicationCounters, PublicationOverlayError, PublicationStage, SemanticContext,
@@ -190,7 +191,9 @@ pub(crate) fn prepare_accepted_source(
     history: Option<&agq_kernel::DeclaredConstructionHistory>,
     cache: Option<&std::cell::RefCell<construction::LoweringCache>>,
     timings: Option<&std::cell::RefCell<crate::CompilationTimings>>,
+    control: &CompilationControl,
 ) -> Result<PreparedSource, LibraryLoadError> {
+    control.check()?;
     let base = dependency.mounted.project_snapshot();
     let profile = dependency.publication.accepted_kerml().profile();
     let registry = dependency.registry();
@@ -198,6 +201,7 @@ pub(crate) fn prepare_accepted_source(
     let mut reopened_evaluations = 0;
     let mut status = None;
     let construct = |resolved: &BTreeMap<(ElementId, agq_kernel::PropertyId), ElementId>| {
+        control.enter(CompilationStage::DeclaredModel)?;
         let started = Instant::now();
         let mut cache = cache.map(std::cell::RefCell::borrow_mut);
         let draft = construction::construct_on_cached(
@@ -208,6 +212,7 @@ pub(crate) fn prepare_accepted_source(
             Some((root, origin.clone())),
             cache.as_deref_mut(),
         )?;
+        control.check()?;
         let draft = if let Some(history) = history {
             draft.reconcile_declared(history)?.1
         } else {
@@ -221,6 +226,7 @@ pub(crate) fn prepare_accepted_source(
     let mut draft = library::refinement::refine(
         &construct,
         |draft| {
+            control.enter(CompilationStage::Resolving)?;
             Ok(
                 KerMlQueries::new(dependency.candidate_context_with_pending(draft, root, pending)?)
                     .status_queries(),
@@ -258,11 +264,15 @@ pub(crate) fn prepare_accepted_source(
                 endpoints,
                 |resolved| {
                     let mut draft = construct(resolved)?;
+                    control.enter(CompilationStage::SemanticClosure)?;
                     let started = Instant::now();
                     let mut seed = checkpoint.take();
                     let closed = agq_kerml_semantics::close_construction_structure_with_extension(
                         draft.candidate_shared(),
-                        Default::default(),
+                        agq_kerml_semantics::PublicationClosureOptions {
+                            cancellation: control.cancellation(),
+                            ..Default::default()
+                        },
                         |overlay| {
                             let context = dependency
                                 .mounted
@@ -291,6 +301,7 @@ pub(crate) fn prepare_accepted_source(
                         |_| {},
                     )
                     .map_err(LibraryLoadError::ProducerClosure)?;
+                    control.check()?;
                     if let Some(cache) = cache {
                         cache.borrow_mut().preparatory_producer_subjects_evaluated +=
                             closed.counters.subjects_evaluated;
@@ -325,6 +336,7 @@ pub(crate) fn prepare_accepted_source(
                     Ok(draft)
                 },
                 |draft| {
+                    control.enter(CompilationStage::Resolving)?;
                     Ok(KerMlQueries::new(
                         dependency.candidate_context_with_pending(draft, root, pending)?,
                     )
@@ -338,6 +350,7 @@ pub(crate) fn prepare_accepted_source(
             }
         }
     }
+    control.check()?;
     Ok(PreparedSource {
         draft,
         status,
@@ -372,6 +385,7 @@ pub(crate) fn lower_accepted_source(
     origin: DeclaredOrigin,
     dependency: Arc<AcceptedSourceDependency>,
 ) -> Result<SourceModel, LibraryLoadError> {
+    let control = CompilationControl::default();
     let prepared = prepare_accepted_source(
         inputs,
         root,
@@ -381,9 +395,10 @@ pub(crate) fn lower_accepted_source(
         None,
         None,
         None,
+        &control,
     )?;
     finish_accepted_source(
-        inputs, prepared, previous, root, dependency, None, None, None,
+        inputs, prepared, previous, root, dependency, None, None, None, &control,
     )
 }
 
@@ -397,7 +412,9 @@ pub(crate) fn finish_accepted_source(
     desired: Option<Snapshot>,
     semantic_cache: Option<&crate::SourceSemanticCache>,
     timings: Option<&std::cell::RefCell<crate::CompilationTimings>>,
+    control: &CompilationControl,
 ) -> Result<SourceModel, LibraryLoadError> {
+    control.enter(CompilationStage::SemanticClosure)?;
     let closure_started = Instant::now();
     let PreparedSource {
         draft,
@@ -420,6 +437,7 @@ pub(crate) fn finish_accepted_source(
     // whose actual semantic reads survive the checked delta. Prior revisions are
     // immutable; no producer result is copied into declared source records.
     let checkpoint_started = Instant::now();
+    control.check()?;
     let mut seed = if let Some(certificate) = draft.producer_closure() {
         let context = dependency.candidate_context(&draft, root)?;
         Some(
@@ -440,6 +458,7 @@ pub(crate) fn finish_accepted_source(
     if let Some(timings) = timings {
         timings.borrow_mut().closure_checkpoint_micros += crate::elapsed_micros(checkpoint_started);
     }
+    control.check()?;
     // The final audit needs only source metadata. Release construction indexes,
     // any partial overlay and the temporary mount before strict closure starts.
     // The checkpoint retains semantic fingerprints, not the previous graph.
@@ -450,7 +469,10 @@ pub(crate) fn finish_accepted_source(
         let overlay = cache.restore_frontier(snapshot.clone(), &dependency, root)?;
         agq_kerml_semantics::close_result_structure_on_overlay_with_extension(
             overlay,
-            Default::default(),
+            agq_kerml_semantics::PublicationClosureOptions {
+                cancellation: control.cancellation(),
+                ..Default::default()
+            },
             |overlay| {
                 let context = dependency
                     .mounted
@@ -485,7 +507,10 @@ pub(crate) fn finish_accepted_source(
     } else {
         agq_kerml_semantics::close_result_structure_with_extension(
             &snapshot,
-            Default::default(),
+            agq_kerml_semantics::PublicationClosureOptions {
+                cancellation: control.cancellation(),
+                ..Default::default()
+            },
             |overlay| {
                 let context = dependency
                     .mounted
@@ -515,6 +540,7 @@ pub(crate) fn finish_accepted_source(
         )
     }
     .map_err(LibraryLoadError::ProducerClosure)?;
+    control.check()?;
     let effective = EffectiveSourceModel {
         dependency: dependency.clone(),
         overlay: closed.overlay,
@@ -532,6 +558,7 @@ pub(crate) fn finish_accepted_source(
         timings.borrow_mut().final_closure_micros += crate::elapsed_micros(closure_started);
     }
     let references_started = Instant::now();
+    control.enter(CompilationStage::Resolving)?;
     let queries = KerMlQueries::new(effective.context(root));
     if let Some(cache) = semantic_cache {
         cache.verify_closed(queries.context(), effective.certificate.as_deref())?;
@@ -542,6 +569,7 @@ pub(crate) fn finish_accepted_source(
     if let Some(timings) = timings {
         timings.borrow_mut().final_references_micros += crate::elapsed_micros(references_started);
     }
+    control.check()?;
     Ok(SourceModel {
         snapshot,
         root,

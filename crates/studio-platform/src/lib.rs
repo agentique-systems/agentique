@@ -12,6 +12,7 @@ mod reader;
 mod seed;
 
 pub use agq_kerml_text::SourceLanguage;
+pub use agq_kerml_text::{CompilationControl, CompilationStage};
 pub use bootstrap::*;
 pub use candidates::*;
 pub use reader::StudioRevisionReader;
@@ -75,6 +76,13 @@ pub enum PlatformError {
     Runtime(#[from] agq_runtime_publications::RuntimeError),
     #[error("Studio platform: {0}")]
     Invalid(String),
+}
+impl PlatformError {
+    /// Typed operator interruption, distinct from semantic/authentication failure.
+    pub fn is_cancelled(&self) -> bool {
+        matches!(self, Self::Service(error) if error.is_cancelled())
+            || matches!(self, Self::Agent(error) if error.is_cancelled())
+    }
 }
 
 pub type Result<T> = std::result::Result<T, PlatformError>;

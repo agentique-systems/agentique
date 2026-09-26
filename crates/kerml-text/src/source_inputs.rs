@@ -5,6 +5,7 @@ use crate::sysml::{
     AcceptedSourceDependency, AuthoredProducerStatus, CanonicalSysmlSystemsLibrary,
     SystemsPublicationAudit, SystemsPublicationFinding,
 };
+use crate::{CompilationControl, CompilationStage};
 use agq_kerml_semantics::{Completeness, ProducerClosureCertificate};
 use agq_kernel::provenance::{DeclaredOrigin, FactKey, SourceOrigin};
 use agq_kernel::{ConstructionView, DeclaredConstructionHistory, DeclaredIdentitySet, ModelView};
@@ -105,7 +106,7 @@ impl SourceInputs {
         self: &Arc<Self>,
         previous: Option<&SourceCompilation>,
     ) -> Result<SourceCompilation, LibraryLoadError> {
-        self.compile_with_history(previous, None, true, None)
+        self.compile_with_history(previous, None, true, None, &CompilationControl::default())
     }
     fn compile_with_history(
         self: &Arc<Self>,
@@ -113,7 +114,9 @@ impl SourceInputs {
         restored: Option<(DeclaredConstructionHistory, LibrarySourceMap)>,
         incremental: bool,
         semantic_cache: Option<&SourceSemanticCache>,
+        control: &CompilationControl,
     ) -> Result<SourceCompilation, LibraryLoadError> {
+        control.check()?;
         let compilation_started = Instant::now();
         let timings = std::cell::RefCell::new(CompilationTimings::default());
         if previous.is_some_and(|previous| {
@@ -173,6 +176,7 @@ impl SourceInputs {
         timings.borrow_mut().identity_preparation_micros = elapsed_micros(compilation_started);
         let preparation_started = Instant::now();
         let (prepared, pending) = loop {
+            control.check()?;
             let inputs = self.lowering_inputs(&omitted);
             let pending = if omitted.is_empty() {
                 BTreeSet::new()
@@ -190,6 +194,7 @@ impl SourceInputs {
                 Some(&history),
                 Some(&cache),
                 Some(&timings),
+                control,
             ) {
                 Ok(prepared) => break (prepared, pending),
                 Err(LibraryLoadError::UnsupportedSource { origin, construct }) => {
@@ -218,7 +223,9 @@ impl SourceInputs {
         let frontier = if pending.is_empty() && prepared.draft.candidate().obligations().is_empty()
         {
             let validation_started = Instant::now();
+            control.enter(CompilationStage::DeclaredModel)?;
             let snapshot = prepared.draft.candidate().clone().revalidate_declared()?;
+            control.check()?;
             timings.borrow_mut().strict_kernel_validation_micros =
                 elapsed_micros(validation_started);
             let previous = previous.and_then(|previous| match &previous.frontier {
@@ -234,6 +241,7 @@ impl SourceInputs {
                 Some(snapshot),
                 semantic_cache,
                 Some(&timings),
+                control,
             )?;
             diagnostics.extend(
                 model
@@ -307,7 +315,9 @@ impl SourceInputs {
         // have no direct source-map entry. The accepted dependency is borrowed,
         // never reevaluated as an authored population.
         let audit_started = Instant::now();
-        let (audit, capabilities, audit_reused) = effective_audit::run(&result, previous)?;
+        control.enter(CompilationStage::EffectiveValidation)?;
+        let (audit, capabilities, audit_reused) = effective_audit::run(&result, previous, control)?;
+        control.check()?;
         timings.borrow_mut().effective_audit_reuse_setup_micros = audit.reuse_setup_micros;
         result.diagnostics.extend(capabilities);
         result.effective_audit = Some(audit);
@@ -344,6 +354,7 @@ impl SourceInputs {
         timings.borrow_mut().edit_frontier_micros = elapsed_micros(delta_started);
         timings.borrow_mut().total_compile_micros = elapsed_micros(compilation_started);
         result.timings = timings.into_inner();
+        control.check()?;
         Ok(result)
     }
     fn lowering_inputs(&self, omitted: &BTreeSet<DocumentId>) -> Vec<SourceInput<'_>> {
@@ -770,6 +781,7 @@ impl SourceCompilation {
             Some((self.history.clone(), self.identities.clone())),
             false,
             None,
+            &CompilationControl::default(),
         )?;
         // The oracle deliberately retains the same parsed source identity inputs.
         rebuilt.work.documents_reparsed = 0;

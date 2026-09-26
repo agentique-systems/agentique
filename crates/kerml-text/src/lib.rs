@@ -1,6 +1,8 @@
 //! Source-to-kernel orchestration. The canonical model has no parser dependency.
 #![forbid(unsafe_code)]
+mod compilation_control;
 pub mod library;
+pub use compilation_control::{CompilationControl, CompilationStage};
 mod lowering;
 mod project;
 mod runtime_restore_trace;

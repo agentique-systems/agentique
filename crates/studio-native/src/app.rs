@@ -50,7 +50,26 @@ pub struct PendingPreparation {
     pub request: u64,
     pub started: Instant,
     pub cancelled: bool,
+    pub cancel_requested_at: Option<Instant>,
+    pub control: agq_studio_platform::CompilationControl,
     pub intent: String,
+}
+impl PendingPreparation {
+    pub fn cancel(&mut self) {
+        self.cancelled = true;
+        self.cancel_requested_at.get_or_insert_with(Instant::now);
+        self.control.cancel();
+    }
+}
+
+#[derive(Clone, Debug, serde::Serialize)]
+pub struct PreparationCancellationReceipt {
+    pub request: u64,
+    pub epoch: u64,
+    pub binding: Option<RevisionBinding>,
+    pub preparation_elapsed_ms: u128,
+    pub request_to_ack_ms: Option<u128>,
+    pub last_stage: Option<String>,
 }
 
 /// Disposable display state only. Restoring this must never restore a lifecycle
@@ -166,6 +185,7 @@ pub struct StudioApp {
     pub new_part_name: String,
     pub candidate: Option<Candidate>,
     pub preparation: Option<PendingPreparation>,
+    pub last_preparation_cancellation: Option<PreparationCancellationReceipt>,
     pub comparison: ComparisonMode,
     pub compare_before: Option<ViewProjection>,
     pub dependencies: Option<BTreeSet<ElementId>>,
@@ -322,6 +342,7 @@ impl StudioApp {
             new_part_name: "newPart".into(),
             candidate: None,
             preparation: None,
+            last_preparation_cancellation: None,
             comparison: ComparisonMode::Current,
             compare_before: None,
             dependencies: None,

@@ -19,7 +19,9 @@ pub(super) fn reconstruct(
     before: &WorkingProjectRevision,
     parsed: &production::Document,
     identities: Vec<production::NodeIdentity>,
+    control: &CompilationControl,
 ) -> Result<(Arc<WorkingProjectRevision>, ProjectRevisionCheckpoint), ServiceError> {
+    control.check()?;
     let mut checkpoint = before.checkpoint();
     checkpoint.project_revision_id = ProjectRevisionId::new();
     checkpoint.parent_revision_id = Some(before.revision());
@@ -38,8 +40,15 @@ pub(super) fn reconstruct(
         .collect();
     sources.insert(parsed.document(), parsed.source().into());
     let working = checkpoint
-        .restore_sharing_dependency(before, &sources)
-        .map_err(|error| invalid(&format!("ordinary reconstruction failed: {error}")))?;
+        .restore_sharing_dependency_controlled(before, &sources, control)
+        .map_err(|error| {
+            if error.is_cancelled() {
+                ServiceError::Cancelled(agq_kerml_semantics::Cancelled)
+            } else {
+                invalid(&format!("ordinary reconstruction failed: {error}"))
+            }
+        })?;
+    control.check()?;
     Ok((working, checkpoint))
 }
 

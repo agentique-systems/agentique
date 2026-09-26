@@ -1160,13 +1160,22 @@ impl StudioApp {
                 selection: vec![owner],
             };
             let view = self.definition();
-            let request =
-                self.enqueue_mutation(crate::bridge::nested_part(context, owner, name, view));
+            let control = agq_studio_platform::CompilationControl::new();
+            self.last_preparation_cancellation = None;
+            let request = self.enqueue_mutation(crate::bridge::nested_part(
+                context,
+                owner,
+                name,
+                view,
+                control.clone(),
+            ));
             if request != 0 {
                 self.preparation = Some(crate::app::PendingPreparation {
                     request,
                     started: std::time::Instant::now(),
                     cancelled: false,
+                    control,
+                    cancel_requested_at: None,
                     intent,
                 });
                 self.status = "Constructing a Working candidate in the background".into();

@@ -512,6 +512,8 @@ fn cancelled_preparation_keeps_current_read_live_until_and_after_cancel_acknowle
         request: work,
         started: Instant::now(),
         cancelled: true,
+        control: Default::default(),
+        cancel_requested_at: None,
         intent: "Cancelled unit-only preparation".into(),
     });
     let desired = graph(&app, 4, GraphScope::DependencyNeighborhood);
