@@ -1,0 +1,13 @@
+
+> agentique@0.1.0 build
+> vite build --config console/vite.config.ts
+
+vite v6.4.3 building for production...
+transforming...
+✓ 35 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.45 kB │ gzip:  0.29 kB
+dist/assets/index-BGuCrw3T.css   39.19 kB │ gzip:  8.54 kB
+dist/assets/index-C6magJpf.js   294.26 kB │ gzip: 89.82 kB
+✓ built in 1.22s

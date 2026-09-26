@@ -1,0 +1,22 @@
+Diff in \\?\C:\Users\phili\github\agentique-systems\agentique\crates\sysml-semantics\src\tests.rs:352:
+     assert_eq!(queries.context(), &context);
+     // Include every composed evidence/status field, even fields which have no
+     // public PartialEq implementation. No identity normalization is performed.
+-    assert_eq!(format!("{:?}", queries.current_effective_usages(id(4))), format!("{inherited:?}"));
+-    assert_eq!(format!("{:?}", queries.effective_usages(id(4))), format!("{unclosed:?}"));
+-    assert_eq!(format!("{:?}", queries.current_part_definitions(id(999))), format!("{absent:?}"));
++    assert_eq!(
++        format!("{:?}", queries.current_effective_usages(id(4))),
++        format!("{inherited:?}")
++    );
++    assert_eq!(
++        format!("{:?}", queries.effective_usages(id(4))),
++        format!("{unclosed:?}")
++    );
++    assert_eq!(
++        format!("{:?}", queries.current_part_definitions(id(999))),
++        format!("{absent:?}")
++    );
+ }
+ 
+ #[test]

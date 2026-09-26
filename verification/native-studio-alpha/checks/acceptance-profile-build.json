@@ -1,0 +1,33 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--offline",
+    "--release",
+    "-p",
+    "agq-studio-platform",
+    "--example",
+    "profile_open",
+    "--example",
+    "source_recovery",
+    "-p",
+    "agq-modeling-agent",
+    "--test",
+    "create_part_performance"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "58a160ccb7879001d038c7e3fe64de6e141b916d",
+  "tracked_changes_at_start": [],
+  "started_utc": "2026-09-26T08:15:53.567909+00:00",
+  "elapsed_seconds": 0.219,
+  "exit_code": 101,
+  "output": "verification/native-studio-alpha/checks/acceptance-profile-build.txt",
+  "output_sha256": "9045d8eb55559d65262302441fd719969024b361c41c1f485043d7b2d9ae508c",
+  "build_environment": {
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_BUILD_JOBS": "2"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "fmt",
+    "--all",
+    "--",
+    "--check"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "cbca2fa2cd64341a5131eae49280b6fc46ef6d98",
+  "tracked_changes_at_start": [],
+  "started_utc": "2026-09-26T08:17:08.626217+00:00",
+  "elapsed_seconds": 3.735,
+  "exit_code": 1,
+  "output": "verification/native-studio-alpha/checks/acceptance-fmt.txt",
+  "output_sha256": "1225d7252065c7c35df4e81819cb7543d186199f3e45fcbf8c351e1fb5bc4a71",
+  "build_environment": {}
+}

@@ -1,0 +1,37 @@
+    Checking agq-kerml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-semantics)
+    Checking agq-sysml-semantics v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\sysml-semantics)
+    Checking agq-kerml-text v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\kerml-text)
+    Checking agq-modeling-workspace v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-workspace)
+    Checking agq-runtime-publications v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\runtime-publications)
+    Checking agq-modeling-repository v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-repository)
+    Checking agq-modeling-view v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-view)
+    Checking agq-modeling-service v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-service)
+    Checking agq-modeling-sqlite v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\adapters\modeling-sqlite)
+    Checking agq-modeling-agent v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\modeling-agent)
+    Checking agq-studio-scene v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-scene)
+    Checking agq-studio-platform v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-platform)
+    Checking agq-studio-native v0.1.0 (C:\Users\phili\github\agentique-systems\agentique\crates\studio-native)
+error[E0615]: attempted to take value of method `id` on type `SceneNode`
+    --> src\actions.rs:1375:59
+     |
+1375 |         let target = SceneTarget::Node(app.scene.nodes[0].id);
+     |                                                           ^^ method, not a field
+     |
+help: use parentheses to call the method
+     |
+1375 |         let target = SceneTarget::Node(app.scene.nodes[0].id());
+     |                                                             ++
+
+error[E0615]: attempted to take value of method `id` on type `&SceneNode`
+   --> src\zoom_input\tests.rs:189:23
+    |
+189 |             Some(node.id)
+    |                       ^^ method, not a field
+    |
+help: use parentheses to call the method
+    |
+189 |             Some(node.id())
+    |                         ++
+
+For more information about this error, try `rustc --explain E0615`.
+error: could not compile `agq-studio-native` (bin "agq-studio-native" test) due to 2 previous errors
