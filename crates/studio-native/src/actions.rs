@@ -433,6 +433,12 @@ impl StudioApp {
             return false;
         }
         // Model revisions are immutable, but may require a worker restoration.
+        if self.candidate.is_none() {
+            // Presentation visits name a durable revision. A historical Diff
+            // must not silently turn its restored Current view into a new pair.
+            self.comparison = ComparisonMode::Current;
+            self.compare_before = None;
+        }
         self.restore_world_filters(location.world);
         self.world = location.world;
         self.focus = location.focus;
