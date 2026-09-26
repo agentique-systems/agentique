@@ -416,11 +416,64 @@ pub(crate) fn finish_accepted_source(
             desired
         }
     };
+    // Isolated verification experiment only. An ordinary build cannot enable
+    // retained semantic state through an environment variable.
+    let retained_frontier = {
+        #[cfg(feature = "verification")]
+        {
+            if std::env::var("AGENTIQUE_RETAIN_DERIVED_FRONTIER").as_deref() == Ok("1")
+                && semantic_cache.is_none()
+                && draft.producer_closure().is_none()
+            {
+                if let Some(effective) = previous.and_then(|parent| parent.effective.as_ref()) {
+                    let started = Instant::now();
+                    let frontier = agq_kerml_semantics::verification_retain_semantic_frontier(
+                        &effective.overlay,
+                        &effective.context(root),
+                        snapshot.clone(),
+                        &registry,
+                        |overlay| dependency.mounted.project_overlay_context(overlay, &[root]),
+                    )
+                    .map_err(LibraryLoadError::ProducerClosure)?;
+                    eprintln!(
+                        "SOURCE_RETAINED_FRONTIER_EXPERIMENT {}",
+                        serde_json::json!({
+                            "format": "agentique-retained-derived-frontier/1",
+                            "elapsed_micros": crate::elapsed_micros(started),
+                            "original_facts": frontier.original_facts,
+                            "retained_facts": frontier.retained_facts,
+                            "retracted_facts": frontier.original_facts - frontier.retained_facts,
+                            "retraction_rounds": frontier.retraction_rounds,
+                            "retained_evaluations": frontier.retained_evaluations,
+                            "reopened_evaluations": frontier.reopened_evaluations,
+                        })
+                    );
+                    retained_evaluations += frontier.retained_evaluations;
+                    reopened_evaluations += frontier.reopened_evaluations;
+                    Some((frontier.overlay, frontier.certificate))
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        }
+        #[cfg(not(feature = "verification"))]
+        {
+            None::<(DerivedOverlay, Arc<ProducerClosureCertificate>)>
+        }
+    };
+    let (retained_overlay, mut retained_certificate) = match retained_frontier {
+        Some((overlay, certificate)) => (Some(overlay), Some(certificate)),
+        None => (None, None),
+    };
     // Final strict reconstruction changes graph identity. Retain only evaluations
     // whose actual semantic reads survive the checked delta. Prior revisions are
     // immutable; no producer result is copied into declared source records.
     let checkpoint_started = Instant::now();
-    let mut seed = if let Some(certificate) = draft.producer_closure() {
+    let mut seed = if retained_certificate.is_some() {
+        None
+    } else if let Some(certificate) = draft.producer_closure() {
         let context = dependency.candidate_context(&draft, root)?;
         Some(
             certificate
@@ -446,8 +499,12 @@ pub(crate) fn finish_accepted_source(
     let pending_references = draft.references().to_vec();
     let source_map = draft.source_map().clone();
     drop(draft);
-    let closed = if let Some(cache) = semantic_cache {
-        let overlay = cache.restore_frontier(snapshot.clone(), &dependency, root)?;
+    let initial_overlay = if let Some(cache) = semantic_cache {
+        Some(cache.restore_frontier(snapshot.clone(), &dependency, root)?)
+    } else {
+        retained_overlay
+    };
+    let closed = if let Some(overlay) = initial_overlay {
         agq_kerml_semantics::close_result_structure_on_overlay_with_extension(
             overlay,
             Default::default(),
@@ -460,7 +517,14 @@ pub(crate) fn finish_accepted_source(
                 // source-derived checkpoint constructed above, after checking
                 // its actual reads against this exact restored frontier. The
                 // scheduler still evaluates every reopened population.
-                if let Some(previous) = seed.take() {
+                if let Some(certificate) = retained_certificate.take() {
+                    // Only the checked experimental retraction fixed point
+                    // supplies this exact graph-bound certificate. Cache bytes
+                    // cannot enter this branch or assert producer acceptance.
+                    context
+                        .with_producer_closure(certificate)
+                        .map_err(PublicationOverlayError::Context)
+                } else if let Some(previous) = seed.take() {
                     let rebound_started = Instant::now();
                     let rebound = previous
                         .rebind(&context, &registry)

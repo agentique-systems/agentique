@@ -12,6 +12,13 @@ use std::sync::Arc;
 mod rebind;
 pub(crate) use rebind::audit_subject_signatures;
 pub use rebind::{ProducerClosureCheckpoint, ReboundClosure};
+#[cfg(feature = "verification")]
+#[path = "retained_frontier.rs"]
+mod retained_frontier;
+#[cfg(feature = "verification")]
+pub use retained_frontier::{
+    VerificationRetainedSemanticFrontier, verification_retain_semantic_frontier,
+};
 
 #[path = "component_closure_audit.rs"]
 mod component_audit;

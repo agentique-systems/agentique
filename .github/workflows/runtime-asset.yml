@@ -26,6 +26,11 @@ on:
         required: false
         type: string
         default: bd72aee4e1bf2aa2b894dc0201bcef111ddf337b
+      experiment_retained_frontier:
+        description: Run verification-only retained frontier tests and same-build command/cold oracle, without baseline or native/helper builds
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -41,6 +46,7 @@ jobs:
     with:
       run_oracle: ${{ inputs.run_oracle }}
       baseline_ref: ${{ inputs.baseline_ref }}
+      experiment_retained_frontier: ${{ inputs.experiment_retained_frontier }}
   authenticate:
     if: ${{ !inputs.native_acceptance }}
     runs-on: ubuntu-24.04

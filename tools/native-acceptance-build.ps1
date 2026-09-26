@@ -56,6 +56,8 @@ if ($Phase -eq 'oracle') {
         runtime_sha256 = $env:RUNTIME_SHA256
         source_root = $checkout
         oracle_harness_sha256 = $build.source_files.'crates/modeling-agent/tests/create_part_performance.rs'
+        retained_frontier_experiment = $env:AGENTIQUE_RETAIN_DERIVED_FRONTIER
+        audit_reuse_trace = $env:AGENTIQUE_AUDIT_REUSE_TRACE
         scope = 'Repository self-model only; no operator database uploaded'
         outcome = 'pending'
     }

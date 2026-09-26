@@ -15,8 +15,12 @@ mod archive_restore;
 mod construction;
 pub use construction::{ConstructionDerivationBuilder, ConstructionOverlay};
 mod proof_graph;
+#[cfg(feature = "verification")]
+mod retained_frontier;
 mod search_sets;
 use proof_graph::cyclic_explanations;
+#[cfg(feature = "verification")]
+pub use retained_frontier::VerificationRetainedFrontier;
 pub use search_sets::{StructuralSearchPool, StructuralSearchPoolStatistics};
 
 /// Validated, immutable derived results and a merged read-only semantic view.
