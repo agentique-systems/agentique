@@ -1841,10 +1841,13 @@ impl ProducerClosureCertificate {
     /// the certificate to the exact semantic context and independently required
     /// producer registry before treating this coverage as an acceptance gate.
     pub fn is_fully_closed(&self, model: &ModelView) -> bool {
+        let required = SemanticClosureRequirement::ALL
+            .into_iter()
+            .fold(0_u8, |mask, requirement| mask | requirement.bit());
         model.elements().all(|record| {
-            SemanticClosureRequirement::ALL
-                .into_iter()
-                .all(|requirement| self.is_closed(record.id(), requirement))
+            self.subjects
+                .binary_search(&record.id())
+                .is_ok_and(|index| self.closed[index] & required == required)
         })
     }
     pub fn evaluation(
