@@ -83,7 +83,7 @@ fn allowed(revision: &ProjectRevision, local: &BTreeSet<ElementId>) -> BTreeSet<
         .copied()
         .filter(|id| {
             *id != revision.root()
-                && !(is(model, *id, c::RELATIONSHIP) && !is(model, *id, c::FEATURE))
+                && (!is(model, *id, c::RELATIONSHIP) || is(model, *id, c::FEATURE))
                 && has_declared_name(model, *id)
         })
         .collect()
