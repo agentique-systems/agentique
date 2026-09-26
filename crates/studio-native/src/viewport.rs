@@ -65,6 +65,18 @@ impl StudioApp {
         {
             let started = Instant::now();
             hovered = self.spatial.hit_test(point, 6.0 / self.camera.zoom);
+            if self.comparison == crate::app::ComparisonMode::Diff
+                && let Some(SceneTarget::Edge(id)) = &hovered
+                && !self
+                    .selection
+                    .targets
+                    .contains(&SceneTarget::Edge(id.clone()))
+                && self.lookup.edge(&self.scene, id).is_some_and(|edge| {
+                    !crate::history::diff_mode(ui.ctx()).includes_edge(edge.semantic.family)
+                })
+            {
+                hovered = None;
+            }
             // A hidden feature port is represented by its owning node at low LOD.
             if self.lod.level() < LodLevel::Features
                 && let Some(SceneTarget::Port(id)) = hovered.as_ref()
@@ -172,6 +184,12 @@ impl StudioApp {
             self.camera.visible_rect().inflate(20.0 / self.camera.zoom),
         );
         let mut hasher = DefaultHasher::new();
+        let diff_mode = if self.comparison == crate::app::ComparisonMode::Diff {
+            crate::history::diff_mode(ui.ctx())
+        } else {
+            crate::history::DiffMode::All
+        };
+        diff_mode.hash(&mut hasher);
         self.generation.hash(&mut hasher);
         self.theme.dark.hash(&mut hasher);
         self.theme.contrast.hash(&mut hasher);
@@ -196,7 +214,7 @@ impl StudioApp {
             .collect();
         if self.batch_key != Some(key) {
             let started = Instant::now();
-            self.batch = Arc::new(self.make_batch(key, &objects, &selected_edges));
+            self.batch = Arc::new(self.make_batch(key, &objects, &selected_edges, diff_mode));
             self.batch_key = Some(key);
             self.timing.batch(started.elapsed());
         }
@@ -218,6 +236,7 @@ impl StudioApp {
             },
         ));
         self.timing.visible_nodes = 0;
+        self.requirement_lane_labels(&painter, rect);
         let labels_started = Instant::now();
         self.timing.total_nodes = self.scene.nodes.len();
         let mut keyboard_selection = None;
@@ -440,6 +459,11 @@ impl StudioApp {
         }
         let mut label_edges = Vec::new();
         for edge in &objects.edges {
+            if !diff_mode.includes_edge(edge.semantic.family)
+                && !selected_edges.contains(edge.semantic.id.as_str())
+            {
+                continue;
+            }
             let incident = self
                 .selection
                 .contains(self.lookup.endpoint_owner(edge.semantic.source))
@@ -860,6 +884,7 @@ impl StudioApp {
         key: u64,
         objects: &VisibleScene<'_>,
         selected_edges: &BTreeSet<&str>,
+        diff_mode: crate::history::DiffMode,
     ) -> Batch {
         let mut batch = Batch {
             key,
@@ -934,6 +959,11 @@ impl StudioApp {
             }
         }
         for edge in &objects.edges {
+            if !diff_mode.includes_edge(edge.semantic.family)
+                && !selected_edges.contains(edge.semantic.id.as_str())
+            {
+                continue;
+            }
             // Ownership is already explicit spatially; graph mode exposes its actual edges.
             if self.world == crate::navigation::World::System
                 && edge.semantic.family == RelationshipFamily::Ownership
@@ -970,6 +1000,15 @@ impl StudioApp {
                 color = theme.green;
             } else if edge.diff == DiffMark::Removed {
                 color = theme.amber.gamma_multiply(0.6);
+            }
+            // Change coloring must respect the same explicit-selection priority
+            // as ordinary edges, otherwise every added relation shouts at once.
+            if self.comparison == crate::app::ComparisonMode::Diff
+                && !self.selection.targets.is_empty()
+                && !selected
+                && !incident
+            {
+                color = color.gamma_multiply(0.35);
             }
             if self.dependencies.as_ref().is_some_and(|ids| {
                 !ids.contains(&edge.semantic.source) || !ids.contains(&edge.semantic.target)
@@ -1094,10 +1133,13 @@ fn context_commands(target: Option<&SceneTarget>) -> &'static [CommandId] {
     use CommandId::*;
     match target {
         None => &[Fit, Home, System, Graph, Requirements],
-        Some(SceneTarget::Port(_)) => &[Focus, Explain, Source, Dependencies],
+        Some(SceneTarget::Port(_)) => {
+            &[Focus, Explain, Source, Dependencies, SelectionRequirements]
+        }
         Some(SceneTarget::Edge(_)) => &[Focus, Explain, Source],
         Some(SceneTarget::Node(_) | SceneTarget::Container(_)) => &[
             Focus,
+            SelectionRequirements,
             Dependencies,
             Explain,
             Source,

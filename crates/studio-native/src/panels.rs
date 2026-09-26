@@ -375,47 +375,90 @@ impl StudioApp {
                                 );
                             }
                             if self.comparison == ComparisonMode::Diff {
-                                let before = self.candidate.as_ref().map(|c| c.before.revision_id)
-                                    .or_else(|| self.compare_before.as_ref().map(|p| p.revision_id));
+                                let before = self
+                                    .candidate
+                                    .as_ref()
+                                    .map(|c| c.before.revision_id)
+                                    .or_else(|| {
+                                        self.compare_before.as_ref().map(|p| p.revision_id)
+                                    });
                                 if let Some(before) = before {
-                                    ui.label(muted(format!("{} → {}", short_revision(before), short_revision(self.scene.revision_id)), theme).small());
+                                    ui.label(
+                                        muted(
+                                            format!(
+                                                "{} → {}",
+                                                short_revision(before),
+                                                short_revision(self.scene.revision_id)
+                                            ),
+                                            theme,
+                                        )
+                                        .small(),
+                                    );
                                 }
-                                let count = |mark| self.scene.nodes.iter().filter(|n| n.diff == mark).count();
+                                let count = |mark| {
+                                    self.scene.nodes.iter().filter(|n| n.diff == mark).count()
+                                };
                                 ui.label(
-                                    RichText::new(format!("+ {} added   − {} removed   ~ {} changed", count(agq_studio_scene::DiffMark::Added), count(agq_studio_scene::DiffMark::Removed), count(agq_studio_scene::DiffMark::Changed)))
-                                        .size(11.0)
-                                        .color(theme.green),
+                                    RichText::new(format!(
+                                        "+ {} added   − {} removed   ~ {} changed",
+                                        count(agq_studio_scene::DiffMark::Added),
+                                        count(agq_studio_scene::DiffMark::Removed),
+                                        count(agq_studio_scene::DiffMark::Changed)
+                                    ))
+                                    .size(11.0)
+                                    .color(theme.green),
                                 );
-                                if ui.small_button("Focus changes").clicked() { self.execute(CommandId::FocusChanges, ctx); }
+                                if ui.small_button("Focus changes").clicked() {
+                                    self.execute(CommandId::FocusChanges, ctx);
+                                }
                             }
                         });
                         if self.comparison == ComparisonMode::Diff {
                             self.diff_review_panel(ui);
                         }
                         if self.world == World::System && self.focus.is_some() {
-                            let visible: std::collections::BTreeSet<_> = self.scene.nodes.iter()
-                                .flat_map(|node| std::iter::once(node.id()).chain(node.semantic.features.iter().map(|feature| feature.id)))
+                            let visible: std::collections::BTreeSet<_> = self
+                                .scene
+                                .nodes
+                                .iter()
+                                .flat_map(|node| {
+                                    std::iter::once(node.id()).chain(
+                                        node.semantic.features.iter().map(|feature| feature.id),
+                                    )
+                                })
                                 .collect();
-                            let external = self.active_projection().edges.iter().filter(|edge|
-                                edge.family == agq_modeling_view::RelationshipFamily::Connection
-                                && (visible.contains(&edge.source) != visible.contains(&edge.target))).count();
+                            let external = self
+                                .active_projection()
+                                .edges
+                                .iter()
+                                .filter(|edge| {
+                                    edge.family == agq_modeling_view::RelationshipFamily::Connection
+                                        && (visible.contains(&edge.source)
+                                            != visible.contains(&edge.target))
+                                })
+                                .count();
                             if external > 0 {
                                 ui.horizontal_wrapped(|ui| {
-                                    ui.label(muted(format!("{external} connections continue outside this focus"), theme).small());
+                                    ui.label(
+                                        muted(
+                                            format!(
+                                                "{external} connections continue outside this focus"
+                                            ),
+                                            theme,
+                                        )
+                                        .small(),
+                                    );
                                     if ui.small_button("Explore connection context").clicked() {
-                                        if let Some(focus) = self.focus { self.select(SceneTarget::Node(focus), false); }
+                                        if let Some(focus) = self.focus {
+                                            self.select(SceneTarget::Node(focus), false);
+                                        }
                                         self.switch_world(World::Graph);
                                     }
                                 });
                             }
                         }
                         if self.world == World::Requirements {
-                            let requirements: Vec<_> = self.active_projection().nodes.iter()
-                                .filter(|node| NodeCategory::from_semantic_kind(&node.semantic_kind) == NodeCategory::Requirement)
-                                .map(|node| node.id).collect();
-                            let linked = requirements.iter().filter(|id| self.active_projection().edges.iter().any(|edge|
-                                (edge.source == **id || edge.target == **id) && matches!(edge.family, agq_modeling_view::RelationshipFamily::Requirement | agq_modeling_view::RelationshipFamily::Verification))).count();
-                            ui.label(muted(format!("{} requirements · {} linked in this view · relationship presence does not assert verification success", requirements.len(), linked), theme).small());
+                            self.requirements_summary(ui);
                         }
                         if self.world == World::Graph {
                             ui.add_enabled_ui(!self.bridge.mutation_pending(), |ui| {
@@ -424,7 +467,10 @@ impl StudioApp {
                                     ui.horizontal_wrapped(|ui| {
                                         ui.menu_button("Graph filters", |ui| {
                                             ui.set_max_width(560.0);
-                                            ui.label(muted("Filters apply to both revisions.", theme).small());
+                                            ui.label(
+                                                muted("Filters apply to both revisions.", theme)
+                                                    .small(),
+                                            );
                                             self.graph_family_controls(ui);
                                             self.graph_standard_control(ui);
                                         });
@@ -436,29 +482,33 @@ impl StudioApp {
                                     });
                                 } else {
                                     self.graph_family_controls(ui);
-                                ui.horizontal_wrapped(|ui| {
-                                    for (label, command) in [
-                                        ("Incoming", CommandId::ExpandIncoming),
-                                        ("Outgoing", CommandId::ExpandOutgoing),
-                                        ("Next hop", CommandId::ExpandBoth),
-                                        ("One hop", CommandId::CollapseNeighborhood),
-                                    ] {
-                                        let reason =
-                                            commands::unavailable(command, &self.context());
-                                        if ui
-                                            .add_enabled(reason.is_none(), egui::Button::new(label))
-                                            .clicked()
-                                        {
-                                            self.execute(command, ctx);
+                                    ui.horizontal_wrapped(|ui| {
+                                        for (label, command) in [
+                                            ("Incoming", CommandId::ExpandIncoming),
+                                            ("Outgoing", CommandId::ExpandOutgoing),
+                                            ("Next hop", CommandId::ExpandBoth),
+                                            ("One hop", CommandId::CollapseNeighborhood),
+                                        ] {
+                                            let reason =
+                                                commands::unavailable(command, &self.context());
+                                            if ui
+                                                .add_enabled(
+                                                    reason.is_none(),
+                                                    egui::Button::new(label),
+                                                )
+                                                .clicked()
+                                            {
+                                                self.execute(command, ctx);
+                                            }
                                         }
-                                    }
-                                    if self.comparison != ComparisonMode::Diff && self.expanded.is_some()
-                                        && ui.button("Show loaded view").clicked()
-                                    {
-                                        self.expanded = None;
-                                        self.rebuild();
-                                    }
-                                });
+                                        if self.comparison != ComparisonMode::Diff
+                                            && self.expanded.is_some()
+                                            && ui.button("Show loaded view").clicked()
+                                        {
+                                            self.expanded = None;
+                                            self.rebuild();
+                                        }
+                                    });
                                     self.graph_standard_control(ui);
                                 }
                             });
@@ -798,9 +848,9 @@ impl StudioApp {
         ui.horizontal(|ui| {
             ui.add_space(28.0);
             ui.vertical(|ui| {
-                ui.heading("Immutable design history");
+                ui.heading("Design history");
                 ui.label(muted(
-                    "Select a revision to change the entire workspace context.",
+                    "Explore a revision, compare its design changes, then return to the branch head.",
                     theme,
                 ));
             });
@@ -812,10 +862,7 @@ impl StudioApp {
                 .map(|r| {
                     (
                         r.revision_id,
-                        r.metadata
-                            .name
-                            .clone()
-                            .unwrap_or_else(|| "Design revision".into()),
+                        revision_title(r, &history.revisions),
                         format!("{:?}", r.validation)
                             .split('(')
                             .next()
@@ -829,6 +876,8 @@ impl StudioApp {
                             .map(|b| b.name.as_str())
                             .collect::<Vec<_>>()
                             .join(" · "),
+                        r.metadata.created.clone(),
+                        r.metadata.description.clone().unwrap_or_default(),
                     )
                 })
                 .collect()
@@ -841,6 +890,8 @@ impl StudioApp {
                     "Visual fixture".into(),
                     None,
                     "main".into(),
+                    String::new(),
+                    "Authored architecture before candidate coordination".into(),
                 ),
                 (
                     after.revision_id,
@@ -848,15 +899,89 @@ impl StudioApp {
                     "Visual fixture".into(),
                     Some(before.revision_id),
                     "architecture-experiment".into(),
+                    String::new(),
+                    "Add CandidateCoordinator within ModelingPlatform".into(),
                 ),
             ]
         };
+        ui.add_space(12.0);
+        ui.horizontal_wrapped(|ui| {
+            ui.add_space(28.0);
+            let base_key = ui
+                .id()
+                .with(("history-comparison-base", self.binding.map(|b| b.project)));
+            let mut base = ui
+                .ctx()
+                .data(|data| data.get_temp::<agq_modeling_workspace::ProjectRevisionId>(base_key))
+                .or_else(|| {
+                    revisions
+                        .iter()
+                        .find(|r| r.0 == self.projection.revision_id)
+                        .and_then(|r| r.3)
+                })
+                .or_else(|| revisions.first().map(|r| r.0));
+            egui::ComboBox::from_id_salt(base_key)
+                .width(230.0)
+                .selected_text(
+                    base.and_then(|id| revisions.iter().find(|r| r.0 == id))
+                        .map_or("Choose comparison base", |r| r.1.as_str()),
+                )
+                .show_ui(ui, |ui| {
+                    for revision in &revisions {
+                        ui.selectable_value(
+                            &mut base,
+                            Some(revision.0),
+                            format!("{} · {}", revision.1, short_revision(revision.0)),
+                        );
+                    }
+                });
+            if let Some(base) = base {
+                ui.ctx().data_mut(|data| data.insert_temp(base_key, base));
+                if ui
+                    .add_enabled(
+                        base != self.projection.revision_id
+                            && self.binding.is_some()
+                            && self.candidate.is_none(),
+                        egui::Button::new("Compare with selected revision"),
+                    )
+                    .clicked()
+                {
+                    self.compare_selected_revision(base);
+                }
+            }
+            if ui.button("Compare parent").clicked() {
+                self.switch_world(World::System);
+                self.execute(CommandId::Compare, ui.ctx());
+            }
+            let head = self
+                .history
+                .as_ref()
+                .and_then(|history| {
+                    history
+                        .branches
+                        .iter()
+                        .find(|branch| branch.id == history.project.default_branch)
+                })
+                .map(|branch| (branch.head, branch.name.clone()));
+            if let Some((head, branch)) = head {
+                if ui
+                    .add_enabled(
+                        head != self.projection.revision_id,
+                        egui::Button::new(format!("Return to {branch} head")),
+                    )
+                    .clicked()
+                {
+                    self.select_revision(head);
+                }
+            }
+        });
         egui::ScrollArea::vertical().show(ui, |ui| {
             ui.add_space(20.0);
-            for (index, (revision, name, status, parent, branches)) in revisions.iter().enumerate()
+            for (index, (revision, name, status, parent, branches, created, description)) in
+                revisions.iter().enumerate()
             {
                 let (rect, response) = ui.allocate_exact_size(
-                    Vec2::new(ui.available_width(), 110.0),
+                    Vec2::new(ui.available_width(), 132.0),
                     egui::Sense::click(),
                 );
                 crate::automation::record(
@@ -883,7 +1008,7 @@ impl StudioApp {
                             dot + Vec2::new(
                                 0.0,
                                 (parent_index as f32 - index as f32)
-                                    * (110.0 + ui.spacing().item_spacing.y),
+                                    * (132.0 + ui.spacing().item_spacing.y),
                             ),
                         ],
                         Stroke::new(2.0, theme.border),
@@ -941,19 +1066,93 @@ impl StudioApp {
                     FontId::proportional(12.0),
                     theme.muted,
                 );
+                let detail = if description.is_empty() {
+                    created.clone()
+                } else if created.is_empty() {
+                    description.clone()
+                } else {
+                    format!("{created} · {description}")
+                };
+                let mut detail_job = egui::text::LayoutJob::simple_singleline(
+                    detail,
+                    FontId::proportional(11.0),
+                    theme.muted,
+                );
+                detail_job.wrap.max_width = (card.width() - 40.0).max(1.0);
+                detail_job.wrap.max_rows = 1;
+                detail_job.wrap.break_anywhere = true;
+                ui.painter().galley(
+                    card.min + Vec2::new(20.0, 76.0),
+                    ui.painter().layout_job(detail_job),
+                    theme.muted,
+                );
                 if response.clicked() {
                     self.select_revision(*revision);
                 }
-                response.on_hover_text(name);
+                response.on_hover_text(format!(
+                    "{name}\n{description}\nCreated {created}\nRevision {revision}"
+                ));
             }
         });
-        ui.horizontal(|ui| {
-            ui.add_space(78.0);
-            if ui.button("Compare with parent").clicked() {
-                self.switch_world(World::System);
-                self.execute(CommandId::Compare, ui.ctx());
-            }
-        });
+    }
+}
+
+/// Use recorded edit intent where available. Generic imports fall back to exact
+/// source differences, explicitly named as source changes rather than invented
+/// semantic summaries. No semantic revision reconstruction is needed for cards.
+fn revision_title(
+    revision: &agq_modeling_repository::RevisionManifest,
+    revisions: &[agq_modeling_repository::RevisionManifest],
+) -> String {
+    if let Some(name) = revision
+        .metadata
+        .name
+        .as_ref()
+        .filter(|name| !name.trim().is_empty())
+    {
+        return name.clone();
+    }
+    let parent = revision
+        .parent_revision_id
+        .and_then(|id| revisions.iter().find(|r| r.revision_id == id));
+    let changed: Vec<_> = revision
+        .documents
+        .iter()
+        .filter(|document| {
+            !parent.is_some_and(|parent| {
+                parent.documents.iter().any(|old| {
+                    old.path == document.path && old.content_digest == document.content_digest
+                })
+            })
+        })
+        .map(|document| document.path.as_str())
+        .collect();
+    if changed.is_empty() {
+        if revision.documents.is_empty() {
+            "Empty working project".into()
+        } else {
+            "Design checkpoint".into()
+        }
+    } else if changed.len() == 1 {
+        format!(
+            "{} {}",
+            if parent.is_some() {
+                "Updated source"
+            } else {
+                "Imported"
+            },
+            changed[0]
+        )
+    } else {
+        format!(
+            "{} {} source documents",
+            if parent.is_some() {
+                "Updated"
+            } else {
+                "Imported"
+            },
+            changed.len()
+        )
     }
 }
 pub fn category_icon(category: NodeCategory) -> &'static str {

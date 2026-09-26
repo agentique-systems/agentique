@@ -516,7 +516,21 @@ fn requirement_neighborhood(
     allowed: &BTreeSet<ElementId>,
     edges: &[ViewEdge],
 ) -> BTreeSet<ElementId> {
-    let mut selected = neighborhood(seeds, allowed, edges, 1);
+    // An obligation's owning package is provenance, not an engineering subject.
+    // Keep direct owned detail and modeled requirement/verification links, but
+    // do not pull in a package (and its siblings) through incoming ownership.
+    let mut selected = seeds.clone();
+    for edge in edges {
+        if seeds.contains(&edge.source) && allowed.contains(&edge.target) {
+            selected.insert(edge.target);
+        }
+        if seeds.contains(&edge.target)
+            && edge.family != RelationshipFamily::Ownership
+            && allowed.contains(&edge.source)
+        {
+            selected.insert(edge.source);
+        }
+    }
     let subjects: BTreeSet<_> = edges
         .iter()
         .filter(|edge| {
@@ -992,10 +1006,12 @@ pub(crate) mod tests {
                 (3, sc::PART_DEFINITION),
                 (4, sc::PART_USAGE),
                 (5, sc::PART_DEFINITION),
+                (6, c::PACKAGE),
                 (11, sc::SUBJECT_MEMBERSHIP),
                 (12, c::FEATURE_TYPING),
                 (13, c::FEATURE_MEMBERSHIP),
                 (14, c::FEATURE_TYPING),
+                (15, c::OWNING_MEMBERSHIP),
             ],
             &[
                 (1, p::ELEMENT_OWNED_RELATIONSHIP, references(&[11])),
@@ -1008,6 +1024,8 @@ pub(crate) mod tests {
                 (4, p::ELEMENT_OWNED_RELATIONSHIP, references(&[14])),
                 (14, p::SPECIALIZATION_SPECIFIC, references(&[4])),
                 (14, p::SPECIALIZATION_GENERAL, references(&[5])),
+                (6, p::ELEMENT_OWNED_RELATIONSHIP, references(&[15])),
+                (15, p::RELATIONSHIP_OWNED_RELATED_ELEMENT, references(&[1])),
             ],
         );
         let id = ElementId::from_u128;

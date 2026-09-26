@@ -23,7 +23,7 @@ impl StudioApp {
         };
         let response = ui.add_enabled(
             target.is_some(),
-            egui::Button::new(&feature.name).frame(false),
+            egui::Button::new(&feature.name).frame(false).wrap(),
         );
         crate::real_targets::record(
             ui.ctx(),
@@ -32,7 +32,8 @@ impl StudioApp {
         );
         let clicked = response
             .on_hover_text(format!(
-                "{}\n{}",
+                "{}\n{}\n{}",
+                feature.name,
                 kind_label(&feature.semantic_kind),
                 feature.id
             ))
@@ -135,7 +136,7 @@ impl StudioApp {
                     .iter()
                     .any(|item| item.semantic.id == edge.id);
                 let response = ui
-                    .add_enabled(visible, egui::Button::new(label).frame(false))
+                    .add_enabled(visible, egui::Button::new(label).frame(false).wrap())
                     .on_hover_text(format!("{:?} · {:?}", edge.family, edge.origin));
                 crate::real_targets::record(
                     ui.ctx(),
@@ -354,9 +355,15 @@ impl StudioApp {
         let element = self.selected_element();
         let node = element.and_then(|id| self.scene.node(id)).cloned();
         if let Some(inspector) = self.inspector.clone() {
-            ui.label(RichText::new(&inspector.element.name).size(TITLE).strong());
+            inspector_name(ui, &inspector.element.name);
             ui.label(muted(kind_label(&inspector.element.semantic_kind), theme));
             ui.label(muted(origin_label(inspector.element.origin), theme).small());
+            if ui
+                .small_button("Show requirements affecting this")
+                .clicked()
+            {
+                self.execute(CommandId::SelectionRequirements, ui.ctx());
+            }
             if let Some(owner) = &inspector.owner {
                 theme.section(ui, "WITHIN");
                 self.feature_link(ui, owner);
@@ -490,7 +497,7 @@ impl StudioApp {
                 }
             });
         } else if let Some(node) = node {
-            ui.label(RichText::new(&node.semantic.name).size(TITLE).strong());
+            inspector_name(ui, &node.semantic.name);
             ui.label(muted(kind_label(&node.semantic.semantic_kind), theme));
             ui.add_space(9.0);
             ui.label(
@@ -720,8 +727,19 @@ fn section_features<'a>(
 fn value(ui: &mut egui::Ui, key: &str, value: &str, theme: crate::theme::Theme) {
     ui.horizontal_wrapped(|ui| {
         ui.label(muted(key, theme));
-        ui.label(value);
+        ui.add(egui::Label::new(value).wrap()).on_hover_text(value);
     });
+}
+
+fn inspector_name(ui: &mut egui::Ui, name: &str) {
+    ui.add(egui::Label::new(RichText::new(name).size(TITLE).strong()).wrap())
+        .on_hover_text(name)
+        .context_menu(|ui| {
+            if ui.button("Copy full name").clicked() {
+                ui.ctx().copy_text(name.to_owned());
+                ui.close();
+            }
+        });
 }
 
 fn origin_label(origin: ViewOrigin) -> &'static str {

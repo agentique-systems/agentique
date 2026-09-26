@@ -11,6 +11,7 @@ mod graph_layout;
 mod layout;
 mod lookup;
 mod neighborhood;
+mod requirements;
 mod routing;
 mod spatial;
 use agq_kernel::ElementId;
@@ -22,6 +23,7 @@ pub use graph_layout::*;
 pub use layout::*;
 pub use lookup::*;
 pub use neighborhood::*;
+pub use requirements::*;
 pub use routing::*;
 pub use spatial::*;
 use std::collections::{BTreeMap, BTreeSet};
@@ -237,7 +239,14 @@ impl SemanticScene {
         options: &SceneOptions,
         previous: Option<&LayoutMemory>,
     ) -> Result<Self, SceneError> {
-        if options.hierarchy {
+        if projection.view.kind == agq_modeling_view::ViewKind::Requirements {
+            Self::with_layout(
+                projection,
+                options,
+                previous,
+                &RequirementsLayout::new(projection),
+            )
+        } else if options.hierarchy {
             Self::with_layout(projection, options, previous, &HierarchyLayout::default())
         } else {
             Self::with_layout(projection, options, previous, &GraphLayout::default())

@@ -2,12 +2,66 @@
 //! canonical projections, scene coordinates, ghosts and lifecycle stay intact.
 use crate::app::{ComparisonMode, StudioApp, muted};
 use agq_kernel::ElementId;
-use agq_modeling_view::{ViewDefinition, ViewNode, ViewOrigin, ViewProjection};
+use agq_modeling_view::{RelationshipFamily, ViewDefinition, ViewNode, ViewOrigin, ViewProjection};
 use agq_modeling_workspace::ProjectRevisionId;
 use agq_studio_scene::{Camera2D, DiffMark, Rect, SceneLookup, SceneTarget, SemanticScene};
 use eframe::egui::{self, RichText};
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub(crate) enum DiffMode {
+    #[default]
+    Structure,
+    Relationships,
+    Requirements,
+    All,
+}
+impl DiffMode {
+    pub fn label(self) -> &'static str {
+        match self {
+            Self::Structure => "Structure",
+            Self::Relationships => "Relationships",
+            Self::Requirements => "Requirements",
+            Self::All => "All",
+        }
+    }
+    pub fn includes_edge(self, family: RelationshipFamily) -> bool {
+        match self {
+            Self::Structure => matches!(
+                family,
+                RelationshipFamily::Ownership | RelationshipFamily::Typing
+            ),
+            Self::Relationships | Self::All => true,
+            Self::Requirements => matches!(
+                family,
+                RelationshipFamily::Requirement | RelationshipFamily::Verification
+            ),
+        }
+    }
+    fn includes_change(self, change: &Change) -> bool {
+        match self {
+            Self::Structure => !change.relationship,
+            Self::Relationships => change.relationship,
+            Self::Requirements => change.requirement,
+            Self::All => true,
+        }
+    }
+}
+pub(crate) fn diff_mode(ctx: &egui::Context) -> DiffMode {
+    ctx.data(|data| data.get_temp::<DiffMode>(egui::Id::new("semantic-diff-mode")))
+        .unwrap_or_default()
+}
+fn requirement_kind(kind: &str) -> bool {
+    matches!(
+        kind,
+        "RequirementDefinition"
+            | "RequirementUsage"
+            | "SatisfyRequirementUsage"
+            | "VerificationCaseDefinition"
+            | "VerificationCaseUsage"
+    )
+}
 
 #[derive(Clone)]
 struct Change {
@@ -19,12 +73,51 @@ struct Change {
     canonical_id: Option<ElementId>,
     target: Option<SceneTarget>,
     relationship: bool,
+    requirement: bool,
 }
 
+#[derive(Clone)]
 struct ChangeGroup {
     owner: Option<ElementId>,
     name: String,
     changes: Vec<Change>,
+}
+
+fn filtered_review(review: &ChangeReview, mode: DiffMode) -> ChangeReview {
+    let groups: Vec<_> = review
+        .groups
+        .iter()
+        .filter_map(|group| {
+            let changes: Vec<_> = group
+                .changes
+                .iter()
+                .filter(|change| mode.includes_change(change))
+                .cloned()
+                .collect();
+            (!changes.is_empty()).then(|| ChangeGroup {
+                owner: group.owner,
+                name: group.name.clone(),
+                changes,
+            })
+        })
+        .collect();
+    let objects = groups
+        .iter()
+        .flat_map(|g| &g.changes)
+        .filter(|c| !c.relationship)
+        .count();
+    let relationships = groups
+        .iter()
+        .flat_map(|g| &g.changes)
+        .filter(|c| c.relationship)
+        .count();
+    ChangeReview {
+        before: review.before,
+        after: review.after,
+        groups,
+        objects,
+        relationships,
+    }
 }
 
 struct ChangeReview {
@@ -48,6 +141,13 @@ struct ReviewScope {
 #[derive(Clone)]
 struct CachedReview {
     scope: ReviewScope,
+    review: Arc<ChangeReview>,
+}
+
+#[derive(Clone)]
+struct CachedFilteredReview {
+    complete: Arc<ChangeReview>,
+    mode: DiffMode,
     review: Arc<ChangeReview>,
 }
 
@@ -228,6 +328,7 @@ fn change_review(
                 canonical_id: Some(id),
                 target,
                 relationship: false,
+                requirement: requirement_kind(&node.semantic_kind),
             },
         );
         objects += 1;
@@ -292,6 +393,10 @@ fn change_review(
                 target: (target_revision(scene, &lookup, &target_key) == Some(edge.revision_id))
                     .then_some(target_key),
                 relationship: true,
+                requirement: matches!(
+                    edge.family,
+                    RelationshipFamily::Requirement | RelationshipFamily::Verification
+                ),
             },
         );
         relationships += 1;
@@ -458,7 +563,7 @@ fn focus_group(
             let proposed = bounds.union(*anchor);
             let mut fitted = camera;
             fitted.fit(proposed, 72.0);
-            if fitted.zoom >= 0.42 {
+            if fitted.zoom >= 0.68 {
                 bounds = proposed;
                 included = true;
             }
@@ -468,7 +573,7 @@ fn focus_group(
     if let Some(owner) = owner {
         let mut fitted = camera;
         fitted.fit(bounds.union(owner), 72.0);
-        if fitted.zoom >= 0.42 {
+        if fitted.zoom >= 0.68 {
             bounds = bounds.union(owner);
         }
     }
@@ -487,6 +592,49 @@ fn focus_group(
 }
 
 impl StudioApp {
+    pub(crate) fn compare_selected_revision(&mut self, before: ProjectRevisionId) {
+        if let Some(reason) =
+            crate::commands::unavailable(crate::commands::CommandId::Compare, &self.context())
+        {
+            self.status = reason.into();
+            return;
+        }
+        if self.bridge.mutation_pending() {
+            self.status = "Wait for the model operation before comparing revisions".into();
+            return;
+        }
+        let Some(binding) = self.binding else {
+            return;
+        };
+        if before == binding.revision
+            || !self.history.as_ref().is_some_and(|history| {
+                history.project.id == binding.project
+                    && history
+                        .revisions
+                        .iter()
+                        .any(|revision| revision.revision_id == before)
+            })
+        {
+            self.status = "Choose a different revision from this project's history".into();
+            return;
+        }
+        self.remember_location();
+        self.cancel_revision_navigation();
+        self.restore_world_filters(crate::navigation::World::Graph);
+        self.world = crate::navigation::World::Graph;
+        self.focus = None;
+        self.expanded = None;
+        let definition = self.definition();
+        let requested = definition.clone();
+        self.scene_request = self.enqueue(Box::new(move |platform| {
+            platform
+                .compare(binding.project, before, binding.revision, &definition)
+                .map(crate::bridge::Output::Comparison)
+        }));
+        self.requested_definition =
+            (self.scene_request != 0).then_some((self.scene_request, requested));
+    }
+
     fn change_pair(&self) -> Option<(&ViewProjection, &ViewProjection)> {
         if self.comparison != ComparisonMode::Diff {
             return None;
@@ -600,8 +748,50 @@ impl StudioApp {
     }
 
     pub fn diff_review_panel(&mut self, ui: &mut egui::Ui) {
-        let Some(review) = self.cached_change_review(ui) else {
+        let Some(complete) = self.cached_change_review(ui) else {
             return;
+        };
+        let mut mode = diff_mode(ui.ctx());
+        ui.horizontal_wrapped(|ui| {
+            ui.label(muted("Review", self.theme).small());
+            for choice in [
+                DiffMode::Structure,
+                DiffMode::Relationships,
+                DiffMode::Requirements,
+                DiffMode::All,
+            ] {
+                if ui
+                    .selectable_value(&mut mode, choice, choice.label())
+                    .changed()
+                {
+                    ui.ctx().data_mut(|data| {
+                        data.insert_temp(egui::Id::new("semantic-diff-mode"), mode)
+                    });
+                    self.batch_key = None;
+                }
+            }
+        });
+        let filtered_key = ui.id().with("filtered-change-review-cache");
+        let cached = ui
+            .ctx()
+            .data(|data| data.get_temp::<CachedFilteredReview>(filtered_key));
+        let review = if let Some(cached) =
+            cached.filter(|cached| cached.mode == mode && Arc::ptr_eq(&cached.complete, &complete))
+        {
+            cached.review
+        } else {
+            let review = Arc::new(filtered_review(&complete, mode));
+            ui.ctx().data_mut(|data| {
+                data.insert_temp(
+                    filtered_key,
+                    CachedFilteredReview {
+                        complete: complete.clone(),
+                        mode,
+                        review: review.clone(),
+                    },
+                )
+            });
+            review
         };
         let theme = self.theme;
         egui::Frame::new()
@@ -610,7 +800,7 @@ impl StudioApp {
             .corner_radius(6.0)
             .show(ui, |ui| {
                 if review.groups.is_empty() {
-                    ui.label("No projected changes in this comparison.");
+                    ui.label(format!("No {} changes in this view. {} total projected changes remain available under All.", mode.label().to_lowercase(), complete.objects + complete.relationships));
                     return;
                 }
                 let key = ui.id().with((
@@ -629,13 +819,13 @@ impl StudioApp {
                 ui.horizontal_wrapped(|ui| {
                     ui.strong("Design changes");
                     ui.label(muted(
-                        format!("{} objects · {} relationships · {} owner groups", review.objects, review.relationships, review.groups.len()),
+                        format!("{} owner groups · {} changes shown / {} total", review.groups.len(), review.objects + review.relationships, complete.objects + complete.relationships),
                         theme,
                     ).small());
-                    ui.menu_button(format!("Browse all {} changes", review.objects + review.relationships), |ui| {
+                    ui.menu_button(format!("Browse {} changes", review.objects + review.relationships), |ui| {
                         ui.set_min_width(400.0);
                         ui.set_max_width(620.0);
-                        ui.strong("Complete changes in this view");
+                        ui.strong(format!("{} changes in this view", mode.label()));
                         ui.label(muted(format!("{} → {}", review.before, review.after), theme).small());
                         ui.label(muted("Selecting a change frames its local context. All positions and removed objects are retained.", theme).small());
                         let height = (ui.ctx().content_rect().height() * 0.55).min(420.0);
@@ -675,7 +865,7 @@ impl StudioApp {
                             }
                         });
                     let group = &review.groups[index];
-                    if ui.small_button("Focus group").clicked() {
+                    if ui.small_button("Focus changed owner").clicked() {
                         // Explicit group focus gives the owner priority even
                         // when the previously selected change is far away.
                         self.frame_change_group(group, None);
@@ -689,6 +879,24 @@ impl StudioApp {
                     inspect.on_hover_text("Inspect the canonical owner in its displayed revision. Owners outside this scene remain in the complete change list.");
                     let objects = group.changes.iter().filter(|change| !change.relationship).count();
                     ui.label(muted(format!("{} objects · {} relationships", objects, group.changes.len() - objects), theme).small());
+                    for (label, forward) in [("Previous change", false), ("Next change", true)] {
+                        if ui.small_button(label).clicked() {
+                            let changes: Vec<_> = review.groups.iter().enumerate().flat_map(|(group, entry)| entry.changes.iter().filter(|change| change.target.is_some()).map(move |change| (group, change))).collect();
+                            if !changes.is_empty() {
+                                let current = changes.iter().position(|(_, change)| same_target(change.target.as_ref(), self.selection.primary.as_ref()));
+                                let next = match (current, forward) {
+                                    (Some(i), true) => (i + 1) % changes.len(),
+                                    (Some(i), false) => (i + changes.len() - 1) % changes.len(),
+                                    (None, true) => 0,
+                                    (None, false) => changes.len() - 1,
+                                };
+                                let (group, change) = changes[next];
+                                index = group;
+                                self.select(change.target.clone().expect("visible change"), false);
+                                self.frame_change_group(&review.groups[index], change.target.as_ref());
+                            }
+                        }
+                    }
                 });
                 if owner_changed && index != previous {
                     // Select the real owner where it is present; a group never
@@ -777,6 +985,39 @@ mod tests {
             edge.revision_id = after.revision_id;
         }
         after
+    }
+
+    #[test]
+    fn review_modes_partition_structural_and_relationship_changes_without_changing_pair() {
+        let (before, after) = pair();
+        let scene = scene(&before, &after);
+        let complete = change_review(&before, &after, &scene).unwrap();
+        let structure = filtered_review(&complete, DiffMode::Structure);
+        let relationships = filtered_review(&complete, DiffMode::Relationships);
+        assert!(structure.objects > 0);
+        assert_eq!(structure.relationships, 0);
+        assert_eq!(relationships.objects, 0);
+        assert_eq!(structure.objects, complete.objects);
+        assert_eq!(relationships.relationships, complete.relationships);
+        for mode in [
+            DiffMode::Structure,
+            DiffMode::Relationships,
+            DiffMode::Requirements,
+            DiffMode::All,
+        ] {
+            let review = filtered_review(&complete, mode);
+            assert_eq!(
+                (review.before, review.after),
+                (before.revision_id, after.revision_id)
+            );
+            assert!(review.groups.iter().all(|group| !group.changes.is_empty()));
+            for change in review.groups.iter().flat_map(|group| &group.changes) {
+                assert!(mode.includes_change(change));
+                if let Some(target) = &change.target {
+                    assert_eq!(scene.target_revision(target), Some(change.revision));
+                }
+            }
+        }
     }
 
     #[test]

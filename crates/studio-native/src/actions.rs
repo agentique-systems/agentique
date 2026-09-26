@@ -719,6 +719,7 @@ impl StudioApp {
                 | System
                 | Graph
                 | Requirements
+                | SelectionRequirements
                 | History
                 | DismissAgent
         ) {
@@ -786,6 +787,7 @@ impl StudioApp {
             System => self.switch_world(World::System),
             Graph => self.switch_world(World::Graph),
             Requirements => self.switch_world(World::Requirements),
+            SelectionRequirements => self.show_requirements_selection(),
             History => self.switch_world(World::History),
             Home => {
                 self.focus = None;
