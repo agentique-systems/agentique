@@ -757,7 +757,8 @@ fn agentique_durable_self_model_two_branches() {
         .get_branch(project.id, project.default_branch)
         .unwrap()
         .head;
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../models/agentique");
+    let root =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../kerml-text/tests/fixtures/platform-model");
     let changes = [
         "Contracts.sysml",
         "LanguageEngine.sysml",

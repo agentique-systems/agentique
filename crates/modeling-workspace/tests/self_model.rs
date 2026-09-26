@@ -9,7 +9,8 @@ use support::*;
 #[ignore = "requires accepted publication caches; never rebuilds standards"]
 fn self_model_revision_edit_preserves_architecture_and_old_queries() {
     let mut workspace = open();
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../models/agentique");
+    let root =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("../kerml-text/tests/fixtures/platform-model");
     let mut documents = std::fs::read_dir(root)
         .unwrap()
         .map(|entry| entry.unwrap().path())
