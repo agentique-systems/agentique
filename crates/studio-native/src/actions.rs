@@ -261,6 +261,14 @@ impl StudioApp {
         }
         self.record_location();
     }
+    pub fn return_to_revision(&mut self, revision: ProjectRevisionId) {
+        self.remember_location();
+        if let Some(location) = self.navigation.latest_for_revision(revision) {
+            self.restore_location(location);
+        } else {
+            self.select_revision(revision);
+        }
+    }
     pub fn definition(&self) -> ViewDefinition {
         let mut view = match self.world {
             World::System => ViewDefinition {

@@ -38,6 +38,13 @@ pub struct Navigation {
     cursor: usize,
 }
 impl Navigation {
+    pub fn latest_for_revision(&self, revision: ProjectRevisionId) -> Option<Location> {
+        self.entries
+            .iter()
+            .rev()
+            .find(|entry| entry.revision == revision && entry.world != World::History)
+            .cloned()
+    }
     /// Layouts referenced by Back/Forward must retain the coordinate system
     /// their cameras use. Navigation itself is bounded to 128 entries.
     pub fn retained_views(&self) -> std::collections::BTreeSet<(World, Option<ElementId>)> {

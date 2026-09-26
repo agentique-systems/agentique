@@ -19,3 +19,19 @@ Commands already executed in this worktree:
 | `git diff --check` | empty after formatting | 0 |
 
 Compilation and test execution are coordinated on the integration checkout to reuse existing build artifacts; this machine had about 1.1 GiB free during implementation. No passing tests or benchmark improvements are claimed by this record.
+
+## Real soak and Rename gate
+
+`--scenario real-restart --soak-seconds 600` first executes the existing separate-process restoration gate, then repeats real navigation, camera, Inspector, derived Explain, requirements, agent, history and parent-diff input until at least ten minutes of soak cycles have completed. Each cycle cancels a Rename during preparation after observing a current Graph projection complete while mutation remains pending, then constructs another identity-preserving Rename, validates and cancels it. All editing uses normal widgets; the driver never invokes a platform mutation directly. The durable committed head and persisted part identity must remain unchanged. The first cycle retains requirements, dense diff and Rename captures.
+
+The external `run_real_soak.py` runner records native stdout/stderr, exact command, executable SHA-256, exit code, and process/tree memory at 250 ms intervals. It identifies the first report-observed soak sample separately from cold startup and retains start/end/peak RSS. Example (use fresh output paths):
+
+```powershell
+python verification/native-studio-acceptance/run_real_soak.py --native target/native-alpha/release/agq-studio-native.exe --root . --runtime-dir C:/Users/phili/.agentique --database <absolute-accepted-database> --restart-report <successful-real-journey.json> --output <fresh-soak-directory> --seconds 600 --timeout 3600
+```
+
+Additional commands executed: `python verification/native-studio-acceptance/run_real_soak.py --help` printed its argument list, exit 0; `python -m py_compile verification/native-studio-acceptance/run_real_soak.py` produced no output, exit 0. These are script checks, not a completed soak. The native soak requires integrated compilation and an accepted real first-process journey.
+
+## Independent retained-context review
+
+Reviewed root commit `e1163c7332b91ce55ef3623c509ad79584178583` for authentication, lifetime, concurrency and cache invalidation. No blocker found: retained KerML context copies all checked context fields and owns immutable Arc/COW graph/index storage; borrowed evaluator lifetimes remain tied to that owner. Retained SysML also binds composed identity and standard bindings. `SourceCompilation` initializes after its final graph frontier and has no mutation API that invalidates its OnceLocks; attaching the effective audit afterward does not alter the graph. Fresh constructors do not recurse into these locks. Each read still constructs independent bounded evaluator caches. Actual naming extension is stateless. This review does not substitute for cold/incremental oracle equivalence or concurrent first-use tests.

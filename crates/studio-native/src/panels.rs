@@ -175,7 +175,9 @@ impl StudioApp {
                             });
                             ui.label(muted(format!("Elapsed {:.1} s · current revision remains available", preparation.started.elapsed().as_secs_f32()), theme).small());
                         });
-                        if ui.add_enabled(!preparation.cancelled, egui::Button::new("Cancel preparation")).clicked() {
+                        let cancel = ui.add_enabled(!preparation.cancelled, egui::Button::new("Cancel preparation"));
+                        crate::automation::record(ui.ctx(), crate::automation::Target::CancelPreparation, cancel.rect);
+                        if cancel.clicked() {
                             preparation.cancelled = true;
                         }
                     });

@@ -88,6 +88,9 @@ pub struct Args {
     /// Real acceptance wall-time deadline including runtime restore and semantic work.
     #[arg(long, default_value_t = 14400)]
     scenario_timeout_seconds: u64,
+    /// After real restart verification, repeat operator navigation/edit/cancel cycles for this many seconds (minimum 600).
+    #[arg(long, default_value_t = 0)]
+    soak_seconds: u64,
 }
 
 fn main() -> eframe::Result {

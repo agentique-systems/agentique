@@ -26,6 +26,8 @@ use std::{collections::BTreeMap, path::Path, time::Instant};
 
 const FORMAT: &str = "agentique-native-real-acceptance/1";
 const PART_NAME: &str = "alphaStudioObserver";
+#[path = "soak_automation.rs"]
+mod soak;
 // Coarse non-freeze qualification, separate from the 60 Hz interaction target.
 const LONG_PREPARATION_MS: u128 = 1_000;
 const MAX_PREPARATION_INPUT_GAP_MS: u128 = 250;
@@ -33,6 +35,11 @@ const MAX_PREPARATION_INPUT_GAP_MS: u128 = 250;
 /// Run before StudioApp starts a worker: real acceptance may write only to an
 /// explicitly selected fresh database. Restart reads that same isolated database.
 pub fn validate_launch(args: &Args) -> Result<(), String> {
+    if args.soak_seconds != 0
+        && (args.soak_seconds < 600 || args.scenario.as_deref() != Some("real-restart"))
+    {
+        return Err("--soak-seconds requires --scenario real-restart and at least 600 seconds of real interaction".into());
+    }
     if args.resume_report.is_some() && args.scenario.as_deref() != Some("real") {
         return Err("--resume-report is only valid with --scenario real".into());
     }
@@ -362,6 +369,8 @@ struct Report {
     engineering_evidence: EngineeringEvidence,
     metrics: serde_json::Value,
     last_state: State,
+    #[serde(default)]
+    soak: soak::Evidence,
 }
 
 /// Exact responses observed through ordinary Inspector and World interactions.
@@ -778,6 +787,7 @@ fn assert_port_inspector<'a>(
 
 #[derive(Clone, Debug)]
 enum Action {
+    Soak(soak::Action),
     OpenProject,
     Select(Named),
     InspectFeature(&'static str),
@@ -792,6 +802,7 @@ enum Action {
 impl Action {
     fn frames(&self) -> u64 {
         match self {
+            Self::Soak(action) => action.frames(),
             Self::Select(_) | Self::Palette(_) => 12,
             Self::Prepare => 7,
             Self::Key(_) => 1,
@@ -802,6 +813,7 @@ impl Action {
 
 #[derive(Clone, Debug)]
 enum Check {
+    Soak(soak::Check),
     Baseline,
     Selected(Named),
     FocusedPlatform,
@@ -1155,6 +1167,7 @@ fn assert_explicit_part_in_review_scene(
 
 #[derive(Clone)]
 struct Runner {
+    soak: soak::State,
     report: Report,
     steps: Vec<Step>,
     index: usize,
@@ -1191,6 +1204,7 @@ impl Runner {
         let previous_report_digest = prior.as_ref().map(|(_, digest)| *digest);
         let previous = prior.map(|(report, _)| report);
         Ok(Self {
+            soak: soak::State::default(),
             report: Report {
                 format: FORMAT.into(), scenario: app.args.scenario.clone().unwrap(),
                 scope: "Actual native input, authenticated runtime, real models/agentique and ordinary in-process service workers. First process alone does not establish durable restart or overall alpha acceptance.".into(),
@@ -1209,7 +1223,7 @@ impl Runner {
                 background_current_inspection: None,
                 preparation_responsiveness: PreparationResponsiveness::default(),
                 engineering_evidence: EngineeringEvidence::default(),
-                metrics: serde_json::Value::Null, last_state: State::of(app),
+                metrics: serde_json::Value::Null, last_state: State::of(app), soak: Default::default(),
             },
             steps: steps(restart), index: 0, age: 0, started: Instant::now(), step_started: Instant::now(),
             before: None, point: None, events: vec![], capture: None, dirty: true, last_write: Instant::now(),
@@ -1229,6 +1243,9 @@ impl Runner {
         ctx: &egui::Context,
         input: &mut egui::RawInput,
     ) -> Result<ScenarioStatus, String> {
+        if let Some(started) = self.soak.started {
+            self.report.soak.elapsed_ms = started.elapsed().as_millis();
+        }
         if app.fixture.is_some() || app.args.fixture.is_some() {
             return Err("Real runner refuses every fixture and fixture service fallback".into());
         }
@@ -1260,7 +1277,9 @@ impl Runner {
             return Ok(ScenarioStatus::Running);
         }
         if self.index == self.steps.len() {
-            return Ok(ScenarioStatus::Complete);
+            if !soak::next_cycle(self, app)? {
+                return Ok(ScenarioStatus::Complete);
+            }
         }
         let step = self.steps[self.index].clone();
         if self.before.is_none() {
@@ -1298,6 +1317,9 @@ impl Runner {
         }
         if matches!(step.action, Action::Prepare) && app.bridge.mutation_pending() {
             self.background_input(app, ctx, input)?;
+        }
+        if let Action::Soak(action) = &step.action {
+            soak::background(self, action, app, ctx, input)?;
         }
         self.age += 1;
         if self.age < LEAD + step.action.frames() + 18 || !idle(app) {
@@ -1420,6 +1442,7 @@ impl Runner {
         input: &mut egui::RawInput,
     ) -> Result<(), String> {
         match action {
+            Action::Soak(action) => soak::inject(self, action, frame, app, ctx, input)?,
             Action::OpenProject => {
                 let project = app
                     .projects
@@ -1739,6 +1762,7 @@ impl Runner {
     fn check(&mut self, check: &Check, app: &StudioApp, ctx: &egui::Context) -> Result<(), String> {
         let require = |ok: bool, reason: &str| if ok { Ok(()) } else { Err(reason.to_string()) };
         match check {
+            Check::Soak(check) => soak::check(self, check, app),
             Check::Baseline => {
                 let manifest = current_manifest(app)?;
                 assert_validated(manifest)?;
@@ -2561,6 +2585,24 @@ mod background_pan_tests;
 mod tests {
     use super::*;
     use clap::Parser;
+
+    #[test]
+    fn soak_requires_real_restart_and_at_least_ten_minutes() {
+        for arguments in [
+            [
+                "studio",
+                "--scenario",
+                "real-restart",
+                "--soak-seconds",
+                "599",
+            ],
+            ["studio", "--scenario", "real", "--soak-seconds", "600"],
+            ["studio", "--scenario", "stress", "--soak-seconds", "600"],
+        ] {
+            let args = Args::parse_from(arguments);
+            assert!(validate_launch(&args).unwrap_err().contains("at least 600"));
+        }
+    }
 
     #[test]
     fn requirement_architecture_acceptance_requires_both_canonical_hops() {
