@@ -1276,10 +1276,8 @@ impl Runner {
             self.receive_capture(app, input)?;
             return Ok(ScenarioStatus::Running);
         }
-        if self.index == self.steps.len() {
-            if !soak::next_cycle(self, app)? {
-                return Ok(ScenarioStatus::Complete);
-            }
+        if self.index == self.steps.len() && !soak::next_cycle(self, app)? {
+            return Ok(ScenarioStatus::Complete);
         }
         let step = self.steps[self.index].clone();
         if self.before.is_none() {
