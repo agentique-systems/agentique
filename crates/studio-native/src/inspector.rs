@@ -25,11 +25,6 @@ impl StudioApp {
             target.is_some(),
             egui::Button::new(&feature.name).frame(false).wrap(),
         );
-        crate::real_targets::record(
-            ui.ctx(),
-            crate::real_targets::Target::InspectorElement(feature.id),
-            response.rect,
-        );
         let clicked = response
             .on_hover_text(format!(
                 "{}\n{}\n{}",
@@ -138,11 +133,6 @@ impl StudioApp {
                 let response = ui
                     .add_enabled(visible, egui::Button::new(label).frame(false).wrap())
                     .on_hover_text(format!("{:?} · {:?}", edge.family, edge.origin));
-                crate::real_targets::record(
-                    ui.ctx(),
-                    crate::real_targets::Target::InspectorRelationship(edge.id.clone()),
-                    response.rect,
-                );
                 if response.clicked() {
                     self.select(SceneTarget::Edge(edge.id.clone()), false);
                 }

@@ -1,54 +1,56 @@
-//! Opt-in native input smoke scenario. Every interaction enters egui RawInput;
-//! assertions observe the resulting application state on subsequent real frames.
-//! This module refuses live model bindings and cannot authorize a service write.
+//! Opt-in native input journeys over visual fixtures. Every interaction enters
+//! egui RawInput; assertions observe the resulting application state on
+//! subsequent real frames. Refuses live model bindings and cannot authorize a
+//! service write. Compiled only with `--features automation`.
 use crate::{
     app::{ComparisonMode, StudioApp},
     commands::{self, CommandId},
     navigation::World,
+    targets::{Target, target},
 };
 use agq_kernel::ElementId;
 use agq_modeling_view::ViewOrigin;
 use agq_modeling_workspace::ProjectRevisionId;
 use agq_studio_scene::{DiffMark, Point, SceneTarget, fixtures};
-use eframe::egui::{self, Event, Key, Modifiers, PointerButton, Pos2, Rect, Vec2};
+use eframe::egui::{self, Event, Key, Modifiers, PointerButton, Pos2, Vec2};
 use serde::Serialize;
 use std::path::Path;
 
-/// UI geometry recorded by ordinary widget construction, not alternate handlers.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub enum Target {
-    Viewport,
-    PaletteInput,
-    CandidateName,
-    CandidatePrepare,
-    CancelPreparation,
-    ExplainWindow,
-    HistoryRevision(ProjectRevisionId),
-}
-pub fn record(ctx: &egui::Context, target: Target, rect: Rect) {
-    ctx.data_mut(|data| {
-        data.insert_temp(egui::Id::new(("native-interaction-target", target)), rect)
-    });
-}
-pub(crate) fn target(ctx: &egui::Context, key: Target) -> Result<Rect, String> {
-    ctx.data(|data| data.get_temp::<Rect>(egui::Id::new(("native-interaction-target", key))))
-        .filter(|rect| rect.is_finite() && rect.is_positive())
-        .ok_or_else(|| format!("UI geometry for {key:?} has not been recorded"))
-}
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ScenarioStatus {
     Running,
     Complete,
 }
 
-/// Call only from `eframe::App::raw_input_hook`. A returned error must cause a
-/// nonzero process exit. The report is written as failed before returning it.
-pub fn drive(
+/// Call from `eframe::App::raw_input_hook`. Closes the window when the
+/// scenario completes and exits with status 2 when it fails.
+pub fn raw_input(app: &StudioApp, ctx: &egui::Context, input: &mut egui::RawInput) {
+    let Some(scenario) = &app.args.scenario else {
+        return;
+    };
+    let report = app.args.scenario_report.as_deref();
+    let outcome = if scenario == "stress" {
+        crate::stress_automation::drive(app, ctx, input, report)
+    } else {
+        drive(app, ctx, input, scenario, report)
+    };
+    match outcome {
+        Ok(ScenarioStatus::Running) => {}
+        Ok(ScenarioStatus::Complete) => ctx.send_viewport_cmd(egui::ViewportCommand::Close),
+        Err(error) => {
+            eprintln!("Native interaction FAILED: {error}");
+            std::process::exit(2);
+        }
+    }
+}
+
+/// A requested report is written as failed before an error is returned.
+fn drive(
     app: &StudioApp,
     ctx: &egui::Context,
     input: &mut egui::RawInput,
     scenario: &str,
-    report_path: &Path,
+    report_path: Option<&Path>,
 ) -> Result<ScenarioStatus, String> {
     let id = egui::Id::new("agentique-native-input-scenario");
     let mut runner = ctx
@@ -65,7 +67,9 @@ pub fn drive(
     }
     runner.report.passed = matches!(result, Ok(ScenarioStatus::Complete));
     // Intermediate evidence always says running/failed, never a premature pass.
-    if runner.report_dirty || !matches!(result, Ok(ScenarioStatus::Running)) {
+    if let Some(report_path) = report_path
+        && (runner.report_dirty || !matches!(result, Ok(ScenarioStatus::Running)))
+    {
         if let Some(parent) = report_path.parent().filter(|p| !p.as_os_str().is_empty()) {
             std::fs::create_dir_all(parent)
                 .map_err(|e| format!("Cannot create scenario report directory: {e}"))?;
@@ -686,7 +690,7 @@ struct Runner {
     events: Vec<InputEvidence>,
     report_dirty: bool,
     time_origin: Option<f64>,
-    pending_capture: Option<(&'static str, Snapshot, u64)>,
+    pending_capture: Option<(&'static str, u64)>,
 }
 impl Runner {
     fn new(scenario: &str) -> Self {
@@ -750,7 +754,7 @@ impl Runner {
         let origin = *self.time_origin.get_or_insert(input.time.unwrap_or(0.0));
         input.time = Some(origin + self.total_frames as f64 / 60.0);
         input.predicted_dt = 1.0 / 60.0;
-        if let Some((name, snapshot, waiting)) = &mut self.pending_capture {
+        if let Some((name, waiting)) = &mut self.pending_capture {
             *waiting += 1;
             if let Some(image) = input.events.iter().find_map(|event| match event {
                 Event::Screenshot { image, .. } => Some(image.clone()),
@@ -768,23 +772,6 @@ impl Runner {
                     image::ColorType::Rgba8,
                 )
                 .map_err(|error| format!("Cannot save gallery screenshot: {error}"))?;
-                let evidence = serde_json::json!({
-                    "format": "agentique-native-gallery/1",
-                    "semantic_data": format!("explicit {} visual fixture, not real-model acceptance", app.fixture.as_deref().unwrap_or("unavailable")),
-                    "fixture": app.fixture,
-                    "checkpoint": name,
-                    "state": snapshot,
-                    "image_size": image.size,
-                    "image_sha256": agq_modeling_repository::ContentDigest::of(
-                        &std::fs::read(&path).map_err(|e| e.to_string())?
-                    ),
-                    "adapter": app.adapter,
-                });
-                std::fs::write(
-                    path.with_extension("json"),
-                    serde_json::to_vec_pretty(&evidence).map_err(|e| e.to_string())?,
-                )
-                .map_err(|e| e.to_string())?;
                 self.report.gallery.push(path.display().to_string());
                 self.report_dirty = true;
                 self.pending_capture = None;
@@ -830,7 +817,7 @@ impl Runner {
                 if app.args.gallery.is_some()
                     && let Some(name) = gallery_checkpoint(step.name)
                 {
-                    self.pending_capture = Some((name, Snapshot::of(app), 0));
+                    self.pending_capture = Some((name, 0));
                     ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(
                         egui::UserData::default(),
                     ));
@@ -889,7 +876,7 @@ fn gallery_checkpoint(step: &str) -> Option<&'static str> {
     }
 }
 
-pub(crate) fn key(input: &mut egui::RawInput, key: Key, mut modifiers: Modifiers) {
+fn key(input: &mut egui::RawInput, key: Key, mut modifiers: Modifiers) {
     // Match the actual native platform modifier as well as egui's logical
     // command bit; text widgets may inspect Ctrl/mac_cmd directly.
     if modifiers.command {
@@ -907,12 +894,7 @@ pub(crate) fn key(input: &mut egui::RawInput, key: Key, mut modifiers: Modifiers
         });
     }
 }
-pub(crate) fn click(
-    input: &mut egui::RawInput,
-    position: Pos2,
-    pressed: bool,
-    modifiers: Modifiers,
-) {
+fn click(input: &mut egui::RawInput, position: Pos2, pressed: bool, modifiers: Modifiers) {
     input.modifiers = modifiers;
     input.events.push(Event::PointerMoved(position));
     input.events.push(Event::PointerButton {

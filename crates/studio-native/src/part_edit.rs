@@ -192,7 +192,7 @@ impl StudioApp {
                 }
                 let submit = response.lost_focus()
                     && ui.input(|input| input.key_pressed(egui::Key::Enter));
-                crate::automation::record(ctx, crate::automation::Target::CandidateName, response.rect);
+                crate::targets::record(ctx, crate::targets::Target::CandidateName, response.rect);
                 ui.add_space(16.0);
                 ui.label(muted(if let Some(reason) = unavailable {
                     reason
@@ -203,7 +203,7 @@ impl StudioApp {
                 }, self.theme));
                 ui.add_space(16.0);
                 let prepare = ui.add_enabled(ready, egui::Button::new("Prepare candidate"));
-                crate::automation::record(ctx, crate::automation::Target::CandidatePrepare, prepare.rect);
+                crate::targets::record(ctx, crate::targets::Target::CandidatePrepare, prepare.rect);
                 if ready && (prepare.clicked() || submit) {
                     if rename { self.prepare_rename(); } else { self.prepare_part(); }
                 }

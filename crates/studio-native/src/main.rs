@@ -3,6 +3,7 @@
 mod actions;
 mod agents;
 mod app;
+#[cfg(feature = "automation")]
 mod automation;
 mod bridge;
 mod commands;
@@ -16,11 +17,8 @@ mod palette_ui;
 mod panels;
 mod part_edit;
 mod presentation;
-mod presentation_automation;
 mod project_dialog;
 mod read_lane;
-mod real_automation;
-mod real_targets;
 mod relationship_labels;
 mod requirements;
 mod revision_reads;
@@ -28,8 +26,10 @@ mod saved_views;
 mod scene_build;
 mod selection;
 mod session;
+#[cfg(feature = "automation")]
 mod stress_automation;
 mod surface_recovery;
+mod targets;
 mod theme;
 mod timing;
 mod updates;
@@ -68,41 +68,34 @@ pub struct Args {
     light: bool,
     #[arg(long)]
     no_restore: bool,
-    /// Exercise native input routing over explicit fixtures or the accepted real model.
-    #[arg(long, value_parser = ["vertical", "keyboard", "stress", "real", "real-restart", "presentation", "presentation-restart"])]
+    /// Drive native input through a scripted fixture journey or the camera benchmark.
+    #[cfg(feature = "automation")]
+    #[arg(long, value_parser = ["vertical", "keyboard", "stress"])]
     scenario: Option<String>,
-    #[arg(
-        long,
-        default_value = "verification/generated/native-studio/interaction-report.json"
-    )]
-    scenario_report: PathBuf,
-    /// Retain native screenshots and revision-qualified state at journey checkpoints.
+    /// Write the scenario report (JSON) to this path.
+    #[cfg(feature = "automation")]
+    #[arg(long, requires = "scenario")]
+    scenario_report: Option<PathBuf>,
+    /// Save native screenshots at journey checkpoints into this directory.
+    #[cfg(feature = "automation")]
     #[arg(long, requires = "scenario", conflicts_with = "screenshot")]
     gallery: Option<PathBuf>,
-    /// Prior journey report for a separate real or presentation restart check.
-    #[arg(long, requires = "scenario")]
-    restart_report: Option<PathBuf>,
-    /// Repeat the full real journey from an untouched baseline in a failed report.
-    #[arg(long, requires = "scenario", conflicts_with = "restart_report")]
-    resume_report: Option<PathBuf>,
-    /// Real acceptance wall-time deadline including runtime restore and semantic work.
-    #[arg(long, default_value_t = 14400)]
-    scenario_timeout_seconds: u64,
-    /// After real restart verification, repeat operator navigation/edit/cancel cycles for this many seconds (minimum 600).
-    #[arg(long, default_value_t = 0)]
-    soak_seconds: u64,
+}
+
+impl Args {
+    /// Whether a scripted scenario drives this process's input.
+    #[cfg(feature = "automation")]
+    fn scenario_running(&self) -> bool {
+        self.scenario.is_some()
+    }
+    #[cfg(not(feature = "automation"))]
+    fn scenario_running(&self) -> bool {
+        false
+    }
 }
 
 fn main() -> eframe::Result {
     let args = Args::parse();
-    if let Err(error) = presentation_automation::validate_launch(&args) {
-        eprintln!("Native presentation qualification launch refused: {error}");
-        std::process::exit(2);
-    }
-    if let Err(error) = real_automation::validate_launch(&args) {
-        eprintln!("Native real acceptance launch refused: {error}");
-        std::process::exit(2);
-    }
     let mut wgpu_setup = egui_wgpu::WgpuSetupCreateNew::default();
     if args.gpu_timestamps {
         let original = wgpu_setup.device_descriptor.clone();

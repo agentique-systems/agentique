@@ -88,12 +88,12 @@ from the public release, or use the CLI:
 
 ```powershell
 cargo fetch --locked
-cargo fetch --locked --manifest-path crates/studio-native/Cargo.toml
+cargo fetch --locked
 gh release download runtime-kerml-v9-sysml-v3-bundle1 --repo agentique-systems/agentique --pattern accepted-runtime.agq-runtime --dir .runtime-download
 $runtimePackageSha = (Get-FileHash -Algorithm SHA256 -LiteralPath .runtime-download/accepted-runtime.agq-runtime).Hash.ToLowerInvariant()
 if ($runtimePackageSha -ne "37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026") { throw "Runtime package transport mismatch" }
 cargo run --release --config profile.release.lto=false --locked --offline -p agq-runtime-publications --bin agq-publications -- install --bundle .runtime-download/accepted-runtime.agq-runtime
-cargo run --release --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target
+cargo run --release --locked --offline -p agq-studio-native
 ```
 
 Use a new download directory. The direct public asset link does not require

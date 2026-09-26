@@ -14,7 +14,6 @@ impl StudioApp {
     /// Invoke once from the toolbar. Disk IO occurs when the menu opens or after
     /// an explicit save/rename/update, never in the ordinary viewport frame.
     pub fn local_views_menu(&mut self, ui: &mut eframe::egui::Ui) {
-        use crate::presentation_automation::{Target, record};
         use eframe::egui::{self, RichText};
         let memory = egui::Id::new("local-view-editor");
         let mut editor = ui
@@ -23,7 +22,7 @@ impl StudioApp {
             .unwrap_or_default();
         // This menu contains an editor and multi-step bookmark operations.
         // egui's default menu closes on every click, including inside TextEdit.
-        let (menu, _) = egui::containers::menu::MenuButton::new("Local views")
+        egui::containers::menu::MenuButton::new("Local views")
             .config(egui::containers::menu::MenuConfig::new()
                 .close_behavior(egui::PopupCloseBehavior::CloseOnClickOutside))
             .ui(ui, |ui| {
@@ -47,14 +46,12 @@ impl StudioApp {
             for view in editor.views.clone() {
                 ui.horizontal(|ui| {
                     let selected = ui.selectable_label(editor.selected == Some(view.id), &view.name);
-                    record(ui.ctx(), Target::Select(view.id), selected.rect);
                     if selected.clicked() {
                         editor.selected = Some(view.id);
                         editor.name = view.name.clone();
                     }
                     ui.label(crate::app::muted(crate::app::short_revision(view.binding.revision), self.theme).small());
                     let open = ui.small_button("Open");
-                    record(ui.ctx(), Target::Open(view.id), open.rect);
                     if open.clicked() {
                         match self.open_local_view(view.id) {
                             Ok(()) => { editor.error = None; ui.close(); }
@@ -65,14 +62,12 @@ impl StudioApp {
             }
             ui.separator();
             let name_label = ui.label("View name");
-            let name = ui.add(egui::TextEdit::singleline(&mut editor.name).hint_text("e.g. Repository interfaces").desired_width(f32::INFINITY)).labelled_by(name_label.id);
-            record(ui.ctx(), Target::Name, name.rect);
+            ui.add(egui::TextEdit::singleline(&mut editor.name).hint_text("e.g. Repository interfaces").desired_width(f32::INFINITY)).labelled_by(name_label.id);
             let can_capture = self.bookmark_snapshot().is_ok();
             let has_name = !editor.name.trim().is_empty();
             let mut refresh = false;
             ui.horizontal_wrapped(|ui| {
                 let save = ui.add_enabled(can_capture && has_name, egui::Button::new("Save current as new"));
-                record(ui.ctx(), Target::Save, save.rect);
                 if save.clicked() {
                     match self.save_local_view(&editor.name) {
                         Ok(id) => { editor.selected = Some(id); editor.error = None; refresh = true; self.status = "Local view saved; model unchanged".into(); }
@@ -80,7 +75,6 @@ impl StudioApp {
                     }
                 }
                 let rename = ui.add_enabled(editor.selected.is_some() && has_name, egui::Button::new("Rename selected"));
-                record(ui.ctx(), Target::Rename, rename.rect);
                 if rename.clicked()
                     && let Some(id) = editor.selected {
                     match self.rename_local_view(id, &editor.name) {
@@ -90,7 +84,6 @@ impl StudioApp {
                 }
             });
             let update = ui.add_enabled(can_capture && editor.selected.is_some(), egui::Button::new("Update selected from current revision")).on_hover_text("Replace the selected bookmark's revision, camera, filters and layout with the current presentation");
-            record(ui.ctx(), Target::Update, update.rect);
             if update.clicked()
                 && let Some(id) = editor.selected {
                 match self.update_local_view(id) {
@@ -109,7 +102,6 @@ impl StudioApp {
             }
             if let Some(error) = &editor.error { ui.label(RichText::new(error).color(self.theme.amber)); }
         });
-        record(ui.ctx(), Target::Menu, menu.rect);
         ui.ctx().data_mut(|data| data.insert_temp(memory, editor));
     }
 
@@ -422,12 +414,6 @@ struct ViewEditor {
     name: String,
     views: Vec<SavedView>,
     error: Option<String>,
-}
-
-/// Read-only observation of the ordinary editor, used by native input assertions.
-pub(crate) fn local_view_name(ctx: &eframe::egui::Context) -> Option<String> {
-    ctx.data(|data| data.get_temp::<ViewEditor>(eframe::egui::Id::new("local-view-editor")))
-        .map(|editor| editor.name)
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

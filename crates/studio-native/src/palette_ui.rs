@@ -53,7 +53,7 @@ impl StudioApp {
                     input.request_focus();
                     self.palette_focus = false;
                 }
-                crate::automation::record(ctx, crate::automation::Target::PaletteInput, input.rect);
+                crate::targets::record(ctx, crate::targets::Target::PaletteInput, input.rect);
                 let context = self.context();
                 let mut rows: Vec<_> = commands::search(&self.palette_query)
                     .map(|command| {
