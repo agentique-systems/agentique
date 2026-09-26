@@ -137,6 +137,7 @@ fn assert_answer_delivery(
     ];
     let mut old_report = SystemsPublicationAudit::default();
     audit_typed_answer(
+        &mut None,
         &mut old_report,
         &families,
         subject,
@@ -182,6 +183,7 @@ fn assert_answer_delivery(
                 observed_diagnostic = capability(compilation, subject, answer.clone());
             }
         },
+        &mut None,
     );
     assert_eq!(Some(old_exact), observed_exact);
     assert_eq!(
