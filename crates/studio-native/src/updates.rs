@@ -81,15 +81,18 @@ impl StudioApp {
             {
                 let preparation = self.preparation.take().expect("matching preparation");
                 if matches!(reply.result, Ok(Output::PreparationCancelled)) {
+                    let acknowledged = std::time::Instant::now();
                     self.last_preparation_cancellation =
                         Some(crate::app::PreparationCancellationReceipt {
                             request: reply.request,
                             epoch: reply.epoch,
                             binding: reply.context.as_ref().and_then(|context| context.binding),
-                            preparation_elapsed_ms: preparation.started.elapsed().as_millis(),
+                            preparation_elapsed_ms: acknowledged
+                                .duration_since(preparation.started)
+                                .as_millis(),
                             request_to_ack_ms: preparation
                                 .cancel_requested_at
-                                .map(|at| at.elapsed().as_millis()),
+                                .map(|at| acknowledged.duration_since(at).as_millis()),
                             last_stage: preparation
                                 .control
                                 .stage()

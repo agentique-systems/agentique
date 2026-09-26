@@ -41,15 +41,17 @@ pub(super) fn reconstruct(
     sources.insert(parsed.document(), parsed.source().into());
     let working = checkpoint
         .restore_sharing_dependency_controlled(before, &sources, control)
-        .map_err(|error| {
-            if error.is_cancelled() {
-                ServiceError::Cancelled(agq_kerml_semantics::Cancelled)
-            } else {
-                invalid(&format!("ordinary reconstruction failed: {error}"))
-            }
-        })?;
+        .map_err(restoration_error)?;
     control.check()?;
     Ok((working, checkpoint))
+}
+
+fn restoration_error(error: agq_modeling_workspace::CheckpointError) -> ServiceError {
+    if error.is_cancelled() {
+        ServiceError::Cancelled(agq_kerml_semantics::Cancelled)
+    } else {
+        invalid(&format!("ordinary reconstruction failed: {error}"))
+    }
 }
 
 pub(super) fn mapped_range(range: ByteRange, edit: &TextEdit) -> Result<ByteRange, ServiceError> {
@@ -256,4 +258,40 @@ pub(super) fn verify_existing(
         return Err(invalid("a retired canonical identity was resurrected"));
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod cancellation_tests {
+    use super::*;
+    use agq_kerml_semantics::{Cancelled, PublicationOverlayError};
+    use agq_kerml_text::{SourceCheckpointError, library::LibraryLoadError};
+    use agq_modeling_workspace::CheckpointError;
+
+    #[test]
+    fn source_and_producer_cancellation_survive_checkpoint_service_translation() {
+        for source in [
+            SourceCheckpointError::Cancelled(Cancelled),
+            SourceCheckpointError::Build(LibraryLoadError::Cancelled(Cancelled)),
+            SourceCheckpointError::Build(LibraryLoadError::ProducerClosure(
+                PublicationOverlayError::Cancelled(Cancelled),
+            )),
+        ] {
+            let error = restoration_error(CheckpointError::Source(source));
+            assert!(matches!(error, ServiceError::Cancelled(_)));
+        }
+        for error in [
+            CheckpointError::Predecessor,
+            CheckpointError::Source(SourceCheckpointError::Mismatch("source content digest")),
+            CheckpointError::Source(SourceCheckpointError::Build(
+                LibraryLoadError::Interpretation("operation cancelled".into()),
+            )),
+        ] {
+            let error = restoration_error(error);
+            assert!(
+                !error.is_cancelled(),
+                "errors cannot become cancellation through their text"
+            );
+            assert!(error.to_string().contains("ordinary reconstruction failed"));
+        }
+    }
 }

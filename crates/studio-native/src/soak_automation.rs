@@ -13,6 +13,10 @@ pub(super) struct Evidence {
     pub maximum_zoom_anchor_error_world: f32,
     pub binding_observations: usize,
     pub graph_reads_completed_during_preparation: usize,
+    #[serde(default)]
+    pub cooperative_cancellations: Vec<crate::app::PreparationCancellationReceipt>,
+    #[serde(default)]
+    pub post_cancellation_admissions: usize,
 }
 
 #[derive(Clone, Default)]
@@ -26,6 +30,9 @@ pub(super) struct State {
     cancellation_requested: bool,
     cancel_press: Option<u64>,
     background_graph: bool,
+    preparation_scope: Option<(u64, u64, RevisionBinding)>,
+    cancelled_request: Option<u64>,
+    replacement_request: Option<u64>,
 }
 
 #[derive(Clone, Debug)]
@@ -335,13 +342,18 @@ pub(super) fn inject(
                 _ => {}
             }
         }
-        Action::PrepareRename { .. } => match frame {
+        Action::PrepareRename { cancel } => match frame {
             0 | 1 => {
                 if frame == 0 {
                     runner.soak.preparing_frames = 0;
                     runner.soak.cancellation_requested = false;
                     runner.soak.cancel_press = None;
                     runner.soak.background_graph = false;
+                    runner.soak.preparation_scope = None;
+                    runner.soak.replacement_request = None;
+                    if *cancel {
+                        runner.soak.cancelled_request = None;
+                    }
                 }
                 click(
                     input,
@@ -374,7 +386,39 @@ pub(super) fn background(
     ctx: &egui::Context,
     input: &mut egui::RawInput,
 ) -> Result<(), String> {
-    if !matches!(action, Action::PrepareRename { cancel: true }) || app.preparation.is_none() {
+    let Action::PrepareRename { cancel } = action else {
+        return Ok(());
+    };
+    if let Some(preparation) = &app.preparation {
+        runner.soak.preparation_scope = Some((
+            preparation.request,
+            app.bridge.epoch(),
+            app.binding
+                .ok_or("Preparing edit lost its current revision")?,
+        ));
+        if !cancel
+            && runner.soak.replacement_request.is_none()
+            && runner
+                .soak
+                .cancelled_request
+                .is_some_and(|old| old != preparation.request)
+            && preparation.control.stage().is_some()
+        {
+            runner.soak.replacement_request = Some(preparation.request);
+            runner.report.soak.post_cancellation_admissions += 1;
+        }
+    }
+    if !cancel {
+        return Ok(());
+    }
+    if app.preparation.is_none() {
+        // A cooperative stop may acknowledge before the next raw-input hook.
+        // Its receipt contains the actual UI cancellation request timestamp.
+        if let Some(receipt) = &app.last_preparation_cancellation
+            && require_cancellation_receipt(runner.soak.preparation_scope, receipt).is_ok()
+        {
+            runner.soak.cancellation_requested = true;
+        }
         return Ok(());
     }
     require_head(runner, app)?;
@@ -430,6 +474,39 @@ pub(super) fn background(
             .iter()
             .map(|event| format!("Background soak input: {event:?}")),
     );
+    Ok(())
+}
+
+fn require_cancellation_receipt(
+    scope: Option<(u64, u64, RevisionBinding)>,
+    receipt: &crate::app::PreparationCancellationReceipt,
+) -> Result<(), String> {
+    let Some((request, epoch, binding)) = scope else {
+        return Err("No in-flight preparation was observed".into());
+    };
+    if receipt.request != request
+        || receipt.epoch != epoch
+        || receipt.binding != Some(binding)
+        || receipt.request_to_ack_ms.is_none()
+        || receipt
+            .request_to_ack_ms
+            .is_some_and(|ms| ms > receipt.preparation_elapsed_ms)
+        || !matches!(
+            receipt.last_stage.as_deref(),
+            Some(
+                "Parsing"
+                    | "DeclaredModel"
+                    | "Resolving"
+                    | "SemanticClosure"
+                    | "EffectiveValidation"
+                    | "PreparingReview"
+            )
+        )
+    {
+        return Err(
+            "Cancellation lacks the exact in-flight request/revision/stage acknowledgement".into(),
+        );
+    }
     Ok(())
 }
 
@@ -534,9 +611,20 @@ pub(super) fn check(runner: &mut Runner, check: &Check, app: &StudioApp) -> Resu
                 runner.soak.cancellation_requested
                     && app.preparation.is_none()
                     && app.candidate.is_none()
+                    && !app.bridge.mutation_pending()
                     && app.comparison == ComparisonMode::Current,
-                "In-flight cancellation did not discard candidate while preserving current",
+                "In-flight cancellation did not stop while preserving current",
             )?;
+            let receipt = app.last_preparation_cancellation.as_ref().ok_or(
+                "No typed cooperative cancellation acknowledgement; a late discard does not pass",
+            )?;
+            require_cancellation_receipt(runner.soak.preparation_scope, receipt)?;
+            runner.soak.cancelled_request = Some(receipt.request);
+            runner
+                .report
+                .soak
+                .cooperative_cancellations
+                .push(receipt.clone());
             runner.report.soak.cancelled_preparations += 1;
             Ok(())
         }
@@ -571,8 +659,9 @@ pub(super) fn check(runner: &mut Runner, check: &Check, app: &StudioApp) -> Resu
                 runner.report.soak.validated_renames += 1;
             } else {
                 require(
-                    candidate.phase == Some(CandidatePhase::Working),
-                    "Rename is not Working",
+                    candidate.phase == Some(CandidatePhase::Working)
+                        && runner.soak.replacement_request.is_some(),
+                    "Rename is not a new Working preparation admitted after cancellation acknowledgement",
                 )?;
             }
             Ok(())
@@ -595,6 +684,42 @@ pub(super) fn check(runner: &mut Runner, check: &Check, app: &StudioApp) -> Resu
 mod tests {
     use super::*;
     use clap::Parser;
+
+    #[test]
+    fn cooperative_cancel_gate_requires_exact_request_revision_actual_stage_and_ack() {
+        let binding = RevisionBinding {
+            project: ProjectId::new(),
+            revision: ProjectRevisionId::new(),
+        };
+        let scope = Some((31, 4, binding));
+        let receipt = crate::app::PreparationCancellationReceipt {
+            request: 31,
+            epoch: 4,
+            binding: Some(binding),
+            preparation_elapsed_ms: 2000,
+            request_to_ack_ms: Some(0),
+            last_stage: Some("SemanticClosure".into()),
+        };
+        assert!(require_cancellation_receipt(scope, &receipt).is_ok());
+        assert!(require_cancellation_receipt(None, &receipt).is_err());
+        for change in 0..7 {
+            let mut wrong = receipt.clone();
+            match change {
+                0 => wrong.request += 1,
+                1 => wrong.epoch += 1,
+                2 => wrong.binding.as_mut().unwrap().revision = ProjectRevisionId::new(),
+                3 => wrong.request_to_ack_ms = None,
+                4 => wrong.last_stage = None,
+                5 => wrong.last_stage = Some("Queued".into()),
+                6 => wrong.request_to_ack_ms = Some(2001),
+                _ => unreachable!(),
+            }
+            assert!(
+                require_cancellation_receipt(scope, &wrong).is_err(),
+                "accepted corruption {change}"
+            );
+        }
+    }
 
     #[test]
     fn repeated_terminal_frames_cannot_complete_the_same_soak_cycle_twice() {

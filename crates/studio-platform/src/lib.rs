@@ -312,6 +312,32 @@ mod tests {
     use super::*;
 
     #[test]
+    fn cancellation_stays_typed_through_agent_and_platform_without_matching_error_text() {
+        let control = CompilationControl::new();
+        control.cancel();
+        let stopped = control.check().unwrap_err();
+        let service = agq_modeling_service::ServiceError::from(stopped);
+        let agent = agq_modeling_agent::AgentError::from(service);
+        assert!(agent.is_cancelled());
+        assert!(PlatformError::from(agent).is_cancelled());
+        assert!(
+            PlatformError::from(agq_modeling_service::ServiceError::from(stopped)).is_cancelled()
+        );
+        assert!(
+            !PlatformError::from(agq_modeling_agent::AgentError::Invalid(
+                "operation cancelled".into(),
+            ))
+            .is_cancelled()
+        );
+        assert!(
+            !PlatformError::from(agq_modeling_service::ServiceError::Invalid(
+                "operation cancelled".into(),
+            ))
+            .is_cancelled()
+        );
+    }
+
+    #[test]
     fn platform_and_results_can_cross_the_native_worker_boundary() {
         fn send<T: Send>() {}
         send::<StudioPlatform>();

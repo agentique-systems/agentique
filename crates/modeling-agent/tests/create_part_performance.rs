@@ -151,14 +151,36 @@ fn assert_restore_rejections(
 #[test]
 #[ignore = "requires exact accepted runtime caches; never acquires or rebuilds standards"]
 fn create_part_command_matches_full_self_model_reconstruction() {
+    // This file remains portable to the baseline checkout, which has only the
+    // ordinary command API. The current-only controlled entry imports this
+    // module; preserve the correct child test path in either test executable.
+    let test_name = "create_part_command_matches_full_self_model_reconstruction";
+    let entry = module_path!().split_once("::").map_or_else(
+        || test_name.to_owned(),
+        |(_, module)| format!("{module}::{test_name}"),
+    );
+    run_with_command(agq_modeling_agent::propose, &entry, "default-disabled");
+}
+
+pub type OracleCommand =
+    fn(
+        &ModelingService,
+        &AgentPolicy,
+        AgentContext,
+        ModelCommand,
+    ) -> Result<agq_modeling_agent::AgentCandidate, agq_modeling_agent::AgentError>;
+
+/// The same independent process oracle can qualify another command entry point.
+/// This changes no observation, normalization, invalid-input or equivalence gate.
+pub fn run_with_command(command: OracleCommand, test_entry: &str, control_mode: &str) {
     match std::env::var("AGENTIQUE_CREATE_PART_ORACLE_STAGE").as_deref() {
-        Ok("command") => command_child(&oracle_directory()),
+        Ok("command") => command_child(&oracle_directory(), command, control_mode),
         Ok("cold") => cold_child(&oracle_directory()),
-        _ => orchestrate(),
+        _ => orchestrate(test_entry, control_mode),
     }
 }
 
-fn command_child(output: &Path) {
+fn command_child(output: &Path, propose: OracleCommand, control_mode: &str) {
     let root = oracle_source_root();
     // Open both before expensive restoration: unavailable input fails immediately.
     let kerml_file = File::open(
@@ -229,7 +251,7 @@ fn command_child(output: &Path) {
     );
     let ancestor = named(base.revision(), &["PlatformArchitecture"]);
     let started = Instant::now();
-    let mut candidate = agq_modeling_agent::propose(
+    let mut candidate = propose(
         &service,
         &AgentPolicy::operator(),
         AgentContext {
@@ -319,6 +341,7 @@ fn command_child(output: &Path) {
         "command-metrics",
         &serde_json::json!({
             "runtime_restore_ms": runtime_restore_ms,
+            "command_control_mode": control_mode,
             "command_prepare_ms": command_prepare_ms,
             "command_compile_ms": command_full.compilation_timings().total_compile_micros as f64 / 1000.0,
             "validation_ms": validation_ms,
@@ -566,7 +589,7 @@ fn cold_child(output: &Path) {
     );
 }
 
-fn orchestrate() {
+fn orchestrate(test_entry: &str, control_mode: &str) {
     let source_root = oracle_source_root();
     let temporary;
     let directory = if let Some(directory) = std::env::var_os("AGENTIQUE_CREATE_PART_ORACLE_OUTPUT")
@@ -582,7 +605,7 @@ fn orchestrate() {
         let status = std::process::Command::new(std::env::current_exe().unwrap())
             .env("AGENTIQUE_SOURCE_ROOT", &source_root)
             .args([
-                "create_part_command_matches_full_self_model_reconstruction",
+                test_entry,
                 "--exact",
                 "--ignored",
                 "--nocapture",
@@ -609,6 +632,7 @@ fn orchestrate() {
     }
     let mut measured: serde_json::Value = read_json(&directory, "command-metrics");
     let cold: serde_json::Value = read_json(&directory, "cold-metrics");
+    assert_eq!(measured["command_control_mode"], control_mode);
     assert_eq!(measured["validated"], true);
     assert_eq!(cold["validated"], true);
     measured
