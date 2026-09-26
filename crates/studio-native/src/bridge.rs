@@ -36,6 +36,8 @@ pub enum Output {
     CandidateLifecycle(CandidateProjection),
     Committed(CommitReceipt),
     Cancelled,
+    /// Cooperative source interruption; no candidate was retained or published.
+    PreparationCancelled,
 }
 
 /// A worker response can update only the project/candidate context that requested it.
@@ -336,6 +338,7 @@ pub fn nested_part(
     owner: agq_kernel::ElementId,
     name: String,
     view: agq_modeling_view::ViewDefinition,
+    control: agq_studio_platform::CompilationControl,
 ) -> Work {
     propose(
         context,
@@ -345,6 +348,7 @@ pub fn nested_part(
             definition: None,
         },
         view,
+        control,
     )
 }
 
@@ -352,12 +356,14 @@ pub fn propose(
     context: AgentContext,
     command: ModelCommand,
     view: agq_modeling_view::ViewDefinition,
+    control: agq_studio_platform::CompilationControl,
 ) -> Work {
-    Box::new(move |platform| {
-        platform
-            .propose(context, command, &view)
-            .map(Output::Candidate)
-    })
+    Box::new(
+        move |platform| match platform.propose_controlled(context, command, &view, &control) {
+            Err(error) if error.is_cancelled() => Ok(Output::PreparationCancelled),
+            result => result.map(Output::Candidate),
+        },
+    )
 }
 
 /// Compare a candidate and its base through the same lens; world changes cannot

@@ -20,7 +20,9 @@ pub(super) struct AuditReuse {
 pub(super) fn run(
     result: &SourceCompilation,
     previous: Option<&SourceCompilation>,
+    control: &CompilationControl,
 ) -> Result<(SourceEffectiveAudit, Vec<SourceDiagnostic>, usize), LibraryLoadError> {
+    control.check()?;
     #[cfg(feature = "verification")]
     let mut trace = (std::env::var("AGENTIQUE_AUDIT_REUSE_TRACE").as_deref() == Ok("1"))
         .then(AuditReuseTrace::default);
@@ -45,6 +47,7 @@ pub(super) fn run(
         .collect();
     subjects.sort_unstable();
     let reuse_started = Instant::now();
+    control.check()?;
     let closed = ClosedAuditContext::new(bound.kerml());
     #[cfg(feature = "verification")]
     let prior_trace_reason = trace.as_ref().map(|_| {
@@ -83,8 +86,10 @@ pub(super) fn run(
     let mut report = SystemsPublicationAudit::default();
     let mut capabilities = Vec::new();
     for batch in subjects.chunks(32) {
+        control.check()?;
         let q = bound.fork();
         for &subject in batch {
+            control.check()?;
             #[cfg(feature = "verification")]
             if let Some(trace) = trace.as_mut() {
                 let entry = previous.and_then(|previous| previous.subjects.get(&subject));
@@ -200,6 +205,7 @@ pub(super) fn run(
             })
         );
     }
+    control.check()?;
     Ok((
         SourceEffectiveAudit {
             context,

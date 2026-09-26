@@ -1344,6 +1344,97 @@ fn close(
     )
     .unwrap()
 }
+
+#[test]
+fn cancellation_after_a_producer_batch_returns_no_partial_closure_and_retry_is_exact() {
+    let (snapshot, bindings) = variable_fixture();
+    let elements: Vec<_> = snapshot.model().elements().cloned().collect();
+    let occurrences: Vec<_> = snapshot
+        .model()
+        .association_occurrences()
+        .cloned()
+        .collect();
+    let cancellation = CancellationToken::default();
+    let mut batches = 0;
+    let result = close_result_structure(
+        &snapshot,
+        PublicationClosureOptions {
+            batch_size: 1,
+            cancellation: Some(cancellation.clone()),
+            ..Default::default()
+        },
+        |overlay| {
+            let mut context = SemanticContext::for_overlay(
+                overlay,
+                SemanticOptions {
+                    baseline_profile: agq_kerml::BaselineProfile::OPERATIONAL_V8,
+                    ..Default::default()
+                },
+                BTreeSet::new(),
+            )
+            .map_err(PublicationOverlayError::Context)?;
+            context.id.standard_bindings = Some(bindings.clone());
+            Ok(context)
+        },
+        |_, _, _, _| {
+            batches += 1;
+            cancellation.request();
+        },
+        |_| {},
+    );
+    assert!(matches!(result, Err(PublicationOverlayError::Cancelled(_))));
+    assert_eq!(
+        batches, 1,
+        "no later producer batch may run after the request"
+    );
+    assert_eq!(
+        snapshot.model().elements().cloned().collect::<Vec<_>>(),
+        elements
+    );
+    assert_eq!(
+        snapshot
+            .model()
+            .association_occurrences()
+            .cloned()
+            .collect::<Vec<_>>(),
+        occurrences
+    );
+
+    // A new operation has a fresh token. Cancellation cannot poison the parent
+    // or change the completed graph, proof, queries or closure certificate.
+    let expected = close(
+        &snapshot,
+        Some(&bindings),
+        PublicationClosureOptions::default(),
+    );
+    let actual = close(
+        &snapshot,
+        Some(&bindings),
+        PublicationClosureOptions {
+            cancellation: Some(CancellationToken::default()),
+            ..Default::default()
+        },
+    );
+    compare(&expected, &actual, Some(&bindings));
+}
+
+#[test]
+fn pre_cancelled_closure_never_constructs_a_query_context() {
+    let (snapshot, _) = variable_fixture();
+    let cancellation = CancellationToken::default();
+    cancellation.request();
+    let result = close_result_structure(
+        &snapshot,
+        PublicationClosureOptions {
+            cancellation: Some(cancellation),
+            ..Default::default()
+        },
+        |_| panic!("cancelled operation must not start query construction"),
+        |_, _, _, _| panic!("cancelled operation must not evaluate producers"),
+        |_| panic!("cancelled operation must not publish progress"),
+    );
+    assert!(matches!(result, Err(PublicationOverlayError::Cancelled(_))));
+}
 fn compare(
     expected: &PublicationClosure,
     actual: &PublicationClosure,

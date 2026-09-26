@@ -131,6 +131,8 @@ impl StudioApp {
                     request,
                     started: std::time::Instant::now(),
                     cancelled: false,
+                    control: Default::default(),
+                    cancel_requested_at: None,
                     intent,
                 });
                 self.project_dialog.import_open = false;

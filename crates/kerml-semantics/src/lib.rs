@@ -3,6 +3,8 @@
 #![forbid(unsafe_code)]
 
 mod bindings;
+mod cancellation;
+pub use cancellation::{CancellationToken, Cancelled};
 mod closed_query_audit;
 mod connector_structure;
 mod context;

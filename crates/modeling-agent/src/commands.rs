@@ -5,7 +5,8 @@ use agq_kerml_text::ProjectChange;
 use agq_kernel::{ElementId, provenance::ByteRange};
 use agq_modeling_repository::{CommitReceipt, OperationId};
 use agq_modeling_service::{
-    ApplyDocumentChanges, ModelingService, PreparedChanges, RevisionSelector,
+    ApplyDocumentChanges, CompilationControl, ModelingService, PreparedChanges, RevisionSelector,
+    ServiceError,
 };
 use serde::{Deserialize, Serialize};
 
@@ -99,8 +100,27 @@ pub fn propose(
     context: AgentContext,
     command: ModelCommand,
 ) -> Result<AgentCandidate, AgentError> {
+    propose_controlled(
+        service,
+        policy,
+        context,
+        command,
+        &CompilationControl::default(),
+    )
+}
+
+/// Prepare reviewed visual Part edits with explicit cancellation. Source import
+/// remains on its ordinary path; it supports only the outer cancellation fence.
+pub fn propose_controlled(
+    service: &ModelingService,
+    policy: &AgentPolicy,
+    context: AgentContext,
+    command: ModelCommand,
+    control: &CompilationControl,
+) -> Result<AgentCandidate, AgentError> {
     policy.require(Authority::Read)?;
     policy.require(Authority::Propose)?;
+    control.check().map_err(ServiceError::from)?;
     if let ModelCommand::AddSourceDocument {
         path,
         source,
@@ -141,6 +161,7 @@ pub fn propose(
             before: String::new(),
             after: source.clone(),
         };
+        control.check().map_err(ServiceError::from)?;
         return Ok(AgentCandidate {
             context,
             actor: policy.actor.clone(),
@@ -165,15 +186,18 @@ pub fn propose(
             .ok_or_else(|| {
                 AgentError::Invalid("standard-library and generated records are read-only".into())
             })?;
-        let prepared = service.prepare_part_rename(agq_modeling_service::RenamePart {
-            operation_id: OperationId::new(),
-            project: context.project,
-            branch: context.branch,
-            expected_head: context.revision,
-            element: *element,
-            name: name.clone(),
-            validate: false,
-        })?;
+        let prepared = service.prepare_part_rename_controlled(
+            agq_modeling_service::RenamePart {
+                operation_id: OperationId::new(),
+                project: context.project,
+                branch: context.branch,
+                expected_head: context.revision,
+                element: *element,
+                name: name.clone(),
+                validate: false,
+            },
+            control,
+        )?;
         let after = prepared
             .revision()
             .document(origin.document)
@@ -185,6 +209,7 @@ pub fn propose(
             before: document.source().into(),
             after: after.source().into(),
         };
+        control.check().map_err(ServiceError::from)?;
         return Ok(AgentCandidate {
             context,
             actor: policy.actor.clone(),
@@ -271,7 +296,7 @@ pub fn propose(
         before,
         after,
     };
-    let prepared = service.prepare_part_insertion(
+    let prepared = service.prepare_part_insertion_controlled(
         ApplyDocumentChanges {
             operation_id: OperationId::new(),
             project: context.project,
@@ -284,6 +309,7 @@ pub fn propose(
             validate: false,
         },
         *owner,
+        control,
     )?;
     if let Some(definition) = definition {
         let candidate = prepared.revision();
@@ -318,6 +344,7 @@ pub fn propose(
         };
         verify_selected_definition(model, *usage, *definition)?;
     }
+    control.check().map_err(ServiceError::from)?;
     Ok(AgentCandidate {
         context,
         actor: policy.actor.clone(),

@@ -11,6 +11,7 @@ mod profile;
 mod source_identity;
 pub use part_rename::RenamePart;
 mod query;
+pub use agq_kerml_text::{CompilationControl, CompilationStage};
 use agq_kerml_text::{ProjectChange, sysml::CanonicalSysmlSystemsLibrary};
 pub use agq_modeling_repository as repository;
 use agq_modeling_repository::*;
@@ -35,6 +36,9 @@ pub enum RevisionSelector {
 /// Errors retain durability conflicts, reconstruction failures and validation findings.
 #[derive(Debug, thiserror::Error)]
 pub enum ServiceError {
+    /// Unpublished work was interrupted; no candidate or durable commit exists.
+    #[error(transparent)]
+    Cancelled(#[from] agq_kerml_semantics::Cancelled),
     /// Repository failure, including explicit CAS conflict and unknown acknowledgement.
     #[error(transparent)]
     Repository(#[from] RepositoryError),
@@ -50,6 +54,12 @@ pub enum ServiceError {
     /// Representation encoding failed.
     #[error(transparent)]
     Encoding(#[from] serde_json::Error),
+}
+impl ServiceError {
+    /// Distinguish operator cancellation from failed semantics or authentication.
+    pub fn is_cancelled(&self) -> bool {
+        matches!(self, Self::Cancelled(_))
+    }
 }
 impl From<agq_modeling_workspace::WorkspaceError> for ServiceError {
     fn from(error: agq_modeling_workspace::WorkspaceError) -> Self {

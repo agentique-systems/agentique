@@ -80,6 +80,25 @@ impl StudioApp {
                     .is_some_and(|p| p.request == reply.request)
             {
                 let preparation = self.preparation.take().expect("matching preparation");
+                if matches!(reply.result, Ok(Output::PreparationCancelled)) {
+                    self.last_preparation_cancellation =
+                        Some(crate::app::PreparationCancellationReceipt {
+                            request: reply.request,
+                            epoch: reply.epoch,
+                            binding: reply.context.as_ref().and_then(|context| context.binding),
+                            preparation_elapsed_ms: preparation.started.elapsed().as_millis(),
+                            request_to_ack_ms: preparation
+                                .cancel_requested_at
+                                .map(|at| at.elapsed().as_millis()),
+                            last_stage: preparation
+                                .control
+                                .stage()
+                                .map(|stage| format!("{stage:?}")),
+                        });
+                    self.status =
+                        "Candidate preparation cancelled; current revision retained".into();
+                    continue;
+                }
                 if preparation.cancelled {
                     if let Err(error) = &reply.result {
                         self.status = format!(
@@ -802,6 +821,7 @@ impl StudioApp {
             "gpu_timestamp_ms": stats.as_ref().map(|s| s.timestamp_ms.summary()),
             "gpu_timestamp_scope": stats.as_ref().map(|s| s.timestamp_status),
             "gpu_timestamp_errors": stats.as_ref().map(|s| s.timestamp_errors),
+            "last_preparation_cancellation": self.last_preparation_cancellation,
             "gpu_timestamp_diagnostics": stats.as_ref().map(|s| &s.timestamp_diagnostics),
             "gpu_timestamp_diagnostics_contract": "Zero-duration samples are retained in gpu_timestamp_ms. gpu_timestamp_errors sums non-monotonic samples, map errors, poll errors and surface invalidations; it is not a device-loss count. Diagnostics categories are cumulative for this process; historical reports without categories cannot identify their aggregate causes.",
             "physical_input_to_photon_ms": null,
@@ -1314,6 +1334,69 @@ mod tests {
     }
 
     #[test]
+    fn cooperative_cancellation_ack_releases_mutation_without_changing_the_current_world() {
+        let mut app = application();
+        let current = app.projection.clone();
+        let camera = app.camera;
+        let selection = app.selection.clone();
+        let binding = app.binding;
+        let context = app.work_context();
+        // Register a real mutation request; the fixture worker has no platform.
+        // This test injects its terminal DTO to exercise the same receive path.
+        let request = app
+            .bridge
+            .work(
+                Box::new(|_| unreachable!("fixture has no runtime")),
+                context.clone(),
+                true,
+            )
+            .unwrap();
+        let control = agq_studio_platform::CompilationControl::new();
+        control
+            .enter(agq_studio_platform::CompilationStage::SemanticClosure)
+            .unwrap();
+        let mut preparation = crate::app::PendingPreparation {
+            request,
+            started: std::time::Instant::now(),
+            cancelled: false,
+            control: control.clone(),
+            cancel_requested_at: None,
+            intent: "Cancelled nested part".into(),
+        };
+        preparation.cancel();
+        assert!(control.check().is_err());
+        app.preparation = Some(preparation);
+        assert!(app.bridge.mutation_pending());
+        app.receive_replies([reply(
+            request,
+            context,
+            true,
+            Ok(Output::PreparationCancelled),
+        )]);
+        assert!(app.preparation.is_none());
+        assert!(app.candidate.is_none());
+        assert!(!app.bridge.mutation_pending());
+        assert_eq!(app.comparison, ComparisonMode::Current);
+        assert_eq!(app.binding, binding);
+        assert_eq!(app.projection, current);
+        assert_eq!(app.scene.revision_id, current.revision_id);
+        assert_eq!(app.camera, camera);
+        assert_eq!(app.selection, selection);
+        let receipt = app.last_preparation_cancellation.as_ref().unwrap();
+        assert_eq!(receipt.request, request);
+        assert_eq!(receipt.binding, binding);
+        assert_eq!(receipt.last_stage.as_deref(), Some("SemanticClosure"));
+        assert!(receipt.request_to_ack_ms.is_some());
+        assert!(app.status.contains("preparation cancelled"));
+        // Completion releases the existing serialized lane for another task.
+        assert!(
+            app.bridge
+                .work(Box::new(|_| unreachable!()), app.work_context(), true)
+                .is_ok()
+        );
+    }
+
+    #[test]
     fn cancelled_preparation_completion_never_replaces_current_revision_or_scene() {
         let mut app = application();
         let current = app.projection.clone();
@@ -1325,6 +1408,8 @@ mod tests {
             request: 1200,
             started: std::time::Instant::now(),
             cancelled: true,
+            control: Default::default(),
+            cancel_requested_at: None,
             intent: "Cancelled nested part".into(),
         });
         let context = app.work_context();
@@ -1353,6 +1438,8 @@ mod tests {
             request: 1200,
             started: std::time::Instant::now(),
             cancelled: true,
+            control: Default::default(),
+            cancel_requested_at: None,
             intent: "Cancelled nested part".into(),
         });
         let context = app.work_context();

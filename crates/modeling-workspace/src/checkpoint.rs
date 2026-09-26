@@ -1,5 +1,6 @@
 //! Source-backed revision checkpoints; repository receipts remain an outer concern.
 use super::*;
+use agq_kerml_text::CompilationControl;
 use agq_kerml_text::{SourceCheckpointError, SourceIdentityCheckpoint, SourceSemanticCache};
 use serde::{Deserialize, Serialize};
 
@@ -60,6 +61,12 @@ pub enum CheckpointError {
     #[error(transparent)]
     Source(#[from] SourceCheckpointError),
 }
+impl CheckpointError {
+    /// Operational interruption never implies a malformed or accepted revision.
+    pub fn is_cancelled(&self) -> bool {
+        matches!(self, Self::Source(error) if error.is_cancelled())
+    }
+}
 
 impl ValidatedProjectRevision {
     /// Export local semantic cache bytes only after actual platform validation.
@@ -115,6 +122,21 @@ impl ProjectRevisionCheckpoint {
         predecessor: &WorkingProjectRevision,
         sources: &BTreeMap<DocumentId, String>,
     ) -> Result<Arc<WorkingProjectRevision>, CheckpointError> {
+        self.restore_sharing_dependency_controlled(
+            predecessor,
+            sources,
+            &CompilationControl::default(),
+        )
+    }
+
+    /// Restore an unpublished child with explicit operational cancellation.
+    /// The ordinary source-history and exact predecessor requirements still apply.
+    pub fn restore_sharing_dependency_controlled(
+        &self,
+        predecessor: &WorkingProjectRevision,
+        sources: &BTreeMap<DocumentId, String>,
+        control: &CompilationControl,
+    ) -> Result<Arc<WorkingProjectRevision>, CheckpointError> {
         if self.format_version != 1 {
             return Err(CheckpointError::Version(self.format_version));
         }
@@ -127,9 +149,11 @@ impl ProjectRevisionCheckpoint {
             revision: ProjectRevision {
                 revision: self.project_revision_id,
                 parent: self.parent_revision_id,
-                compilation: self
-                    .source
-                    .restore_sharing_dependency(&predecessor.compilation, sources)?,
+                compilation: self.source.restore_sharing_dependency_controlled(
+                    &predecessor.compilation,
+                    sources,
+                    control,
+                )?,
             },
         }))
     }

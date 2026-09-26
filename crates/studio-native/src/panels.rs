@@ -169,16 +169,32 @@ impl StudioApp {
                             ui.strong(if preparation.cancelled { "CANCELLATION REQUESTED" } else { "PREPARING WORKING CANDIDATE" });
                             ui.label(&preparation.intent);
                             ui.label(if preparation.cancelled {
-                                "Current reconstruction will finish safely; its result will be discarded."
+                                if preparation.control.stage().is_some() {
+                                    "Stopping at the next safe semantic boundary; current revision remains available."
+                                } else {
+                                    "Current reconstruction will finish safely; its result will be discarded."
+                                }
                             } else {
-                                "Source edit and semantic reconstruction running · validation has not started"
+                                "Current revision remains available. Review and validate the Working candidate before commit."
                             });
+                            if let Some(stage) = preparation.control.stage() {
+                                use agq_studio_platform::CompilationStage::*;
+                                ui.label(match stage {
+                                    Queued => "Queued",
+                                    Parsing => "Parsing source",
+                                    DeclaredModel => "Declared model",
+                                    Resolving => "Resolving references",
+                                    SemanticClosure => "Semantic closure",
+                                    EffectiveValidation => "Effective validation · candidate remains Working",
+                                    PreparingReview => "Preparing candidate review",
+                                });
+                            }
                             ui.label(muted(format!("Elapsed {:.1} s · current revision remains available", preparation.started.elapsed().as_secs_f32()), theme).small());
                         });
                         let cancel = ui.add_enabled(!preparation.cancelled, egui::Button::new("Cancel preparation"));
                         crate::automation::record(ui.ctx(), crate::automation::Target::CancelPreparation, cancel.rect);
                         if cancel.clicked() {
-                            preparation.cancelled = true;
+                            preparation.cancel();
                         }
                     });
                 });
