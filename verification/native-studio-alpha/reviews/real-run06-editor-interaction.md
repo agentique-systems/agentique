@@ -32,8 +32,8 @@ validated and committed. The canonical added part is
 `62af4537-f2c9-4bf1-90d6-e0862d6b4141`.
 
 The first-process outcome remains `journey_passed_restart_pending`. Separate
-restart was running during this review; no restart-success claim is inferred
-from the committed screenshot or manifest.
+restart was running during the initial review. The independently checked
+completion is recorded in the addendum below, not inferred from a screenshot.
 
 ## Iteration findings
 
@@ -141,3 +141,39 @@ actual native validation/commit justify this bounded freshness bookkeeping.
 It grants no new publication authority or broader conformance. The composed
 Studio model, version-2 journey and held navigation fixes remain unqualified
 and are excluded from this review's product claims.
+
+## Separate-process restart addendum
+
+The independent restart now passed all **five assertions**, with outcome
+`passed`, `restart_verified: true`, native exit 0, report elapsed 192.955 seconds
+and measured process wall time 194.745 seconds. Its report SHA-256 is
+`18e3054ddc3a8e1f5854e67397eeae26dac8260f4009fdd3282ff7f144972a35`.
+The referenced first-report digest exactly matches the retained run06 report:
+`81d98cfa45e73d059ec3fa6b318d5d6422a7fd9ea7c82f316078780e9892f7ad`.
+
+The actual executable was rehashed and equals both process receipts:
+`c6a8013dbf7db7103153ca287758390f58e6f1db72e6a57405b2a87c6b5fc57b`.
+The restarted committed manifest equals the first process's full manifest,
+including revision `9539bfed-f725-43d9-b5f8-8254040e7d42`; project and branch
+also match. Ordinary selection/focus exposes the same authored
+`alphaStudioObserver`, canonical ID `3670456b-6e5f-59ba-a083-9ac253de64a4`,
+under exact owner `6bf68ca1-ecfa-5883-9608-747f1824c0e3`. The five assertions
+cover durable project opening, owner selection, owner focus, exact part
+inspection and durable History.
+
+All four restart captures were viewed and their PNG/sidecar digests verified:
+[System](../real-run06/restart-gallery/10-restarted-system-world.png),
+[owner](../real-run06/restart-gallery/10a-restarted-part-owner.png),
+[committed part](../real-run06/restart-gallery/11-restarted-committed-element.png),
+and [History](../real-run06/restart-gallery/12-restarted-history.png).
+Every scene is bound to the committed revision and explicitly records real
+authenticated semantic data without a fixture. Exact hashes extend the existing
+evidence manifest. This completes the real-model journey through durable restart.
+
+Overall judgment remains **AGENTIQUE NATIVE STUDIO ALPHA NOT YET ACCEPTED**.
+The successful real gate does not resolve Requirements/Diff quality, first-view
+latency, new-project workflow limits or intermittent stress acceptance. The
+parent reports that the first quiet 10k run failed its zoom-anchor gate and a
+repeat passed; both are retained while the performance reviewer diagnoses the
+difference. This addendum makes no independent diagnosis of that stress result.
+No further feature work or runtime consumer was started by this reviewer.

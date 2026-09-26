@@ -11,7 +11,53 @@
   "committed_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
   "added_element": "3670456b-6e5f-59ba-a083-9ac253de64a4",
   "added_owner": "6bf68ca1-ecfa-5883-9608-747f1824c0e3",
-  "restart": "separate in-progress report excluded from these immutable digests",
+  "restart": {
+    "report_sha256": "18e3054ddc3a8e1f5854e67397eeae26dac8260f4009fdd3282ff7f144972a35",
+    "previous_report_digest": "81d98cfa45e73d059ec3fa6b318d5d6422a7fd9ea7c82f316078780e9892f7ad",
+    "process_receipt_sha256": "61f421d2f6bf29adedd1ce574d83b0765af43f3b3748d47efd3aee20d1bb58ac",
+    "executable_sha256": "c6a8013dbf7db7103153ca287758390f58e6f1db72e6a57405b2a87c6b5fc57b",
+    "exit_code": 0,
+    "wall_seconds": 194.74515780014917,
+    "report_elapsed_ms": 192955,
+    "outcome": "passed",
+    "restart_verified": true,
+    "committed_manifest_matches_first_exactly": true,
+    "assertions_passed": 5,
+    "images": [
+      {
+        "name": "10-restarted-system-world",
+        "png": "verification/native-studio-alpha/real-run06/restart-gallery/10-restarted-system-world.png",
+        "png_sha256": "7edb7af5c540789bf46d0a2916b93f6789431043d181c0c017f70082c504a658",
+        "sidecar_sha256": "0967311a8522622e17fd56ad423bf60e4828de2c6e4cf3a86aa45bf8aa3c2842",
+        "scene_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "inspector_element": "5baa52c5-8b0c-5a2b-9748-4a196e618831"
+      },
+      {
+        "name": "10a-restarted-part-owner",
+        "png": "verification/native-studio-alpha/real-run06/restart-gallery/10a-restarted-part-owner.png",
+        "png_sha256": "73779994b72aaea1ea1e77ea6a0e204bb33f56a29c5d6301c0d78eb56b173cbe",
+        "sidecar_sha256": "a84299ef1e5a7fa49bbe0e648cc22f628110954851216f7a8172ba0de8286b20",
+        "scene_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "inspector_element": "6bf68ca1-ecfa-5883-9608-747f1824c0e3"
+      },
+      {
+        "name": "11-restarted-committed-element",
+        "png": "verification/native-studio-alpha/real-run06/restart-gallery/11-restarted-committed-element.png",
+        "png_sha256": "a64ba8ff8446b09ccb7a431010b3dc16bb48a23282161f668938a9f36a3e527d",
+        "sidecar_sha256": "17612c8307c1e9be61719344482f6d8a3e4b8df546edc20b6526b7f782afa695",
+        "scene_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "inspector_element": "3670456b-6e5f-59ba-a083-9ac253de64a4"
+      },
+      {
+        "name": "12-restarted-history",
+        "png": "verification/native-studio-alpha/real-run06/restart-gallery/12-restarted-history.png",
+        "png_sha256": "5a73008e7af754cae4cfe3e3072554569abf71d028fda0d6f1ee5e476d569e11",
+        "sidecar_sha256": "c2e9698bc8a917d724aae74aa6b3936b5a456935f5e05258910ac6240be5f9e7",
+        "scene_revision": "9539bfed-f725-43d9-b5f8-8254040e7d42",
+        "inspector_element": "3670456b-6e5f-59ba-a083-9ac253de64a4"
+      }
+    ]
+  },
   "images": [
     {
       "name": "01-system-world",
