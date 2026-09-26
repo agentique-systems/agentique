@@ -470,12 +470,19 @@ fn dependency_digest(
         hash.update(identity);
         return Ok(hash.finalize().into());
     }
+    dependency.dependency_archive_digest(matches!(format, ArchiveFormat::DependentEvidence))
+}
+
+pub(crate) fn uncached_dependency_digest(
+    dependency: &DerivedOverlay,
+    include_contributions: bool,
+) -> Result<[u8; 32], ArchiveError> {
     let mut writer = ArchiveDigest(Sha256::new());
-    if matches!(format, ArchiveFormat::DependentEvidence) {
+    if include_contributions {
         writer.write_all(b"agq-kernel-dependent-evidence-dependency/1\0")?;
     }
     write_overlay(dependency, &mut writer)?;
-    if matches!(format, ArchiveFormat::DependentEvidence) {
+    if include_contributions {
         for (key, contribution) in dependency.model().ordered_reference_contributions() {
             serde_json::to_writer(
                 &mut writer,
