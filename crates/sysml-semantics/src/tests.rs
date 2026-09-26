@@ -352,9 +352,18 @@ fn retained_sysml_context_preserves_answers_and_outlives_original_snapshot() {
     assert_eq!(queries.context(), &context);
     // Include every composed evidence/status field, even fields which have no
     // public PartialEq implementation. No identity normalization is performed.
-    assert_eq!(format!("{:?}", queries.current_effective_usages(id(4))), format!("{inherited:?}"));
-    assert_eq!(format!("{:?}", queries.effective_usages(id(4))), format!("{unclosed:?}"));
-    assert_eq!(format!("{:?}", queries.current_part_definitions(id(999))), format!("{absent:?}"));
+    assert_eq!(
+        format!("{:?}", queries.current_effective_usages(id(4))),
+        format!("{inherited:?}")
+    );
+    assert_eq!(
+        format!("{:?}", queries.effective_usages(id(4))),
+        format!("{unclosed:?}")
+    );
+    assert_eq!(
+        format!("{:?}", queries.current_part_definitions(id(999))),
+        format!("{absent:?}")
+    );
 }
 
 #[test]
