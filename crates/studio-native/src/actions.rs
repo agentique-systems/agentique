@@ -336,6 +336,22 @@ impl StudioApp {
                 candidate,
                 element,
             );
+            if self.show_explain {
+                self.explanation_request = self.request_panel_read(
+                    crate::read_lane::PanelRead::Explain,
+                    binding,
+                    candidate,
+                    element,
+                );
+            }
+            if self.show_source {
+                self.source_request = self.request_panel_read(
+                    crate::read_lane::PanelRead::Source,
+                    binding,
+                    candidate,
+                    element,
+                );
+            }
         }
     }
     pub fn selected_context(

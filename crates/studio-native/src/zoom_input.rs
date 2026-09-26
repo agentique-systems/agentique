@@ -24,6 +24,18 @@ pub fn apply(ui: &egui::Ui, response: &egui::Response, camera: &mut Camera2D) ->
     state.frame = Some(frame);
     let mut changed = false;
     let events = ui.input(|input| input.events.clone());
+    if state.pointer.is_none()
+        && !events.iter().any(|event| {
+            matches!(
+                event,
+                Event::PointerMoved(_) | Event::PointerButton { .. } | Event::PointerGone
+            )
+        })
+    {
+        // A new canvas can appear under a stationary pointer. Its toolkit
+        // position is safe only when this batch contains no later pointer move.
+        state.pointer = ui.input(|input| input.pointer.latest_pos());
+    }
     let line_speed = ui
         .ctx()
         .options(|options| options.input_options.line_scroll_speed);
