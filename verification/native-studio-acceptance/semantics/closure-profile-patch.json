@@ -1,0 +1,63 @@
+{
+  "source_commit": "69287bdb9e0ad838d6355d981bf5b9ce7131edac",
+  "paths": [
+    "crates/kerml-semantics/src/producer_worklist/metrics.rs",
+    "crates/kerml-semantics/src/producer_worklist.rs",
+    "crates/kerml-text/src/source_semantic_cache.rs",
+    "crates/kerml-text/src/sysml/source.rs"
+  ],
+  "files": {
+    "crates/kerml-semantics/src/producer_worklist/metrics.rs": {
+      "before_sha256": "799c2c6133a472927dfa8d6cbda7112535199bc409c5517ef889bce0fdf2efd7",
+      "after_sha256": "4da7cf68ee2228995a70809d83ffa39d4db08d4b3308202f0d0dc1b5d47e2112"
+    },
+    "crates/kerml-semantics/src/producer_worklist.rs": {
+      "before_sha256": "8e5920231c0aab98d95a73c24464032b484d7f68ed7a0293be78dd239ea158ca",
+      "after_sha256": "d0809eccd8ef42d3bff3a3bd66481c93a70a96659746227bf4c0cfae4d396012"
+    },
+    "crates/kerml-text/src/source_semantic_cache.rs": {
+      "before_sha256": "447841ee5d0db7a73dee0f25984f36b789800da7fcb0c70e00eb67f6f6259ea2",
+      "after_sha256": "58f582474e19f36339f3eb95ff4d0b3f5e54181b961c0525c6db1d2c4de15ee8"
+    },
+    "crates/kerml-text/src/sysml/source.rs": {
+      "before_sha256": "902bcd4985dae27b30dab816f8b84b127115764a35cfee8ff8ee1ea193370af4",
+      "after_sha256": "ca3f9af1f7c213ac98573bebc089eabcc62ac301e87eecf620518eb66a8ad3ea"
+    }
+  },
+  "patch_sha256": "524ca97373a20b0ed25c9c05a1b31fc9e9119e5be6a57e72c57e7d91ddccf589",
+  "validation": {
+    "rustfmt": {
+      "command": [
+        "rustfmt",
+        "--check",
+        "--edition",
+        "2024",
+        "--config",
+        "skip_children=true",
+        "verification\\generated\\native-studio-acceptance\\closure-profile-draft\\after\\crates\\kerml-semantics\\src\\producer_worklist\\metrics.rs",
+        "verification\\generated\\native-studio-acceptance\\closure-profile-draft\\after\\crates\\kerml-semantics\\src\\producer_worklist.rs",
+        "verification\\generated\\native-studio-acceptance\\closure-profile-draft\\after\\crates\\kerml-text\\src\\source_semantic_cache.rs",
+        "verification\\generated\\native-studio-acceptance\\closure-profile-draft\\after\\crates\\kerml-text\\src\\sysml\\source.rs"
+      ],
+      "elapsed_seconds": 0.109,
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "compiled": false,
+    "production_sources_unchanged": true,
+    "git_apply_check": {
+      "command": [
+        "git",
+        "apply",
+        "--check",
+        "verification\\native-studio-acceptance\\semantics\\closure-profile.patch"
+      ],
+      "elapsed_seconds": 0.031,
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  },
+  "file_hash_encoding": "UTF-8 text with universal newlines normalized to LF"
+}

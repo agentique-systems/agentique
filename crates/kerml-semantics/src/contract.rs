@@ -328,6 +328,9 @@ pub struct QueryResult<T> {
     // Internal producer evaluation retains canonical dependencies and bounded
     // searches; public query evaluators always retain the full explanation view.
     pub(crate) producer_evidence: bool,
+    // Sticky proof provenance, independent of the receiver's expansion mode.
+    // Expanding searches cannot recover positive proof omitted by compact inputs.
+    pub(crate) contains_compact_evidence: bool,
     // A positive fact may cite only its original declared contribution. Keep
     // current derived-origin expansion separate so a later broad read is never
     // suppressed by that narrower proof. Includes direct current roots even
@@ -363,6 +366,7 @@ pub struct QueryResult<T> {
 impl<T> QueryResult<T> {
     /// Combine evidence from queries over the exact same immutable context.
     /// This retains compact producer search sets as well as public proof data.
+    /// Compact proof inputs remain marked without changing receiver expansion.
     /// A mismatched context is rejected without modifying either result.
     pub fn merge_evidence<U>(
         &mut self,
@@ -381,6 +385,7 @@ impl<T> QueryResult<T> {
         QueryResult {
             value: transform(self.value),
             producer_evidence: self.producer_evidence,
+            contains_compact_evidence: self.contains_compact_evidence,
             producer_expanded_facts: self.producer_expanded_facts,
             shared_search_dependencies: self.shared_search_dependencies,
             context: self.context,
@@ -397,6 +402,7 @@ impl<T> QueryResult<T> {
     pub(crate) fn new(context: &SemanticContextId, value: T) -> Self {
         Self {
             producer_evidence: false,
+            contains_compact_evidence: false,
             producer_expanded_facts: BTreeSet::new(),
             shared_search_dependencies: SharedSearchDependencies::default(),
             context: context.clone(),
@@ -413,6 +419,8 @@ impl<T> QueryResult<T> {
     }
     pub(crate) fn merge<U>(&mut self, other: QueryResult<U>) {
         debug_assert_eq!(self.context, other.context);
+        self.contains_compact_evidence |=
+            other.contains_compact_evidence || other.producer_evidence;
         self.completeness = self.completeness.max(other.completeness);
         self.diagnostics.extend(other.diagnostics);
         self.positive_dependencies
@@ -530,6 +538,7 @@ impl std::error::Error for QueryEvidenceContextMismatch {}
 impl<T: PartialEq> PartialEq for QueryResult<T> {
     fn eq(&self, other: &Self) -> bool {
         self.producer_evidence == other.producer_evidence
+            && self.contains_compact_evidence == other.contains_compact_evidence
             && self.context == other.context
             && self.value == other.value
             && self.completeness == other.completeness
@@ -610,3 +619,7 @@ pub(crate) fn claim(query: QueryKind, subject: ElementId, value: ElementId) -> E
         value,
     })
 }
+
+#[cfg(test)]
+#[path = "../tests/unit/query_evidence_mode.rs"]
+mod evidence_mode_tests;

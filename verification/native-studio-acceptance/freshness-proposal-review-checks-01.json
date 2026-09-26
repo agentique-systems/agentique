@@ -1,0 +1,27 @@
+{
+  "format": "agentique-alpha-freshness-review-checks/1",
+  "scope": "Read-only apply compatibility and whitespace; proposal not applied.",
+  "commands": [
+    {
+      "command": [
+        "git",
+        "apply",
+        "--check",
+        "verification/native-studio-acceptance/freshness-proposal-01/proposal.patch"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "warning: in the working copy of 'crates/studio-native/src/soak_automation.rs', CRLF will be replaced by LF the next time Git touches it\n"
+    }
+  ]
+}

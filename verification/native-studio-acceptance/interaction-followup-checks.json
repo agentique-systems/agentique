@@ -1,0 +1,29 @@
+{
+  "format": "agentique-verification-commands/1",
+  "recorded_utc": "2026-09-26T10:07:09.990493+00:00",
+  "commands": [
+    {
+      "command": "rustfmt --edition 2024 crates/studio-native/src/actions.rs crates/studio-native/src/real_automation.rs",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "command": "rustfmt --edition 2024 crates/studio-native/src/gpu_timing.rs crates/studio-native/src/gpu.rs crates/studio-native/src/updates.rs",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "command": "rustfmt --edition 2024 crates/studio-native/src/updates.rs",
+      "exit_code": 0,
+      "output": ""
+    },
+    {
+      "command": "git diff --check",
+      "exit_code": 0,
+      "output": ""
+    }
+  ],
+  "test_status": "Not executed here: integration lead runs actual native soak; coordinated integrated tests follow.",
+  "no_semantic_cancellation_speedup_claimed": true,
+  "no_hardware_device_loss_qualification_claimed": true
+}

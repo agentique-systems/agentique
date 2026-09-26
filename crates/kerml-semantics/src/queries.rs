@@ -200,6 +200,7 @@ impl<'m> KerMlQueries<'m> {
     pub(crate) fn result<T>(&self, value: T) -> QueryResult<T> {
         let mut result = QueryResult::new(self.context(), value);
         result.producer_evidence = self.producer_evidence;
+        result.contains_compact_evidence = self.producer_evidence;
         result
     }
 

@@ -1,0 +1,33 @@
+{
+  "format": "agentique-graph-readability-source-checks/1",
+  "source_commit": "fea3339dbf0e84d408cb7d47c802a7b047826f1f",
+  "scope": "Unstaged nearest-edge and exact requirement-category presentation changes; no Cargo compilation or native recapture claimed",
+  "checks": [
+    {
+      "command": [
+        "rustfmt",
+        "--edition",
+        "2024",
+        "--check",
+        "crates/studio-scene/src/spatial.rs",
+        "crates/studio-scene/src/lib.rs",
+        "crates/studio-scene/tests/scene_contract.rs",
+        "crates/studio-native/src/panels.rs",
+        "crates/studio-native/src/inspector.rs"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ]
+}

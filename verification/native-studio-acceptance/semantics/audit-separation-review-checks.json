@@ -1,0 +1,44 @@
+{
+  "format": "agentique-audit-separation-review/2",
+  "reviewer": "Codex /root/worlds",
+  "source_files": {
+    "crates/kerml-semantics/src/contract.rs": "1dbb02048d45be38a5979008188690cc9a4bd6d7a77f1476c48221a53e96f3dd",
+    "crates/kerml-semantics/src/queries.rs": "1cb5bb48ba452f81e43d77b861963507767e8dd184cad5b199067c19202f5159",
+    "crates/kerml-semantics/tests/unit/query_evidence_mode.rs": "19f0a20d5a99d161839eae49c0e7a3aebd1e25189786db95794ff8039b61a32e",
+    "crates/kerml-semantics/src/closed_query_audit.rs": "03edd7676302f32532bd96c12102c8a0eebc3aec96c1f08bf36afbd3cd31163f",
+    "crates/kerml-semantics/src/producer_closure_rebind.rs": "43505029940ec7c988ff6a3d92c0d62b4bef052b2a5abb2677f7c095a1ea3396",
+    "crates/kerml-semantics/tests/unit/closed_query_audit.rs": "ae81a7634a1a2685bc5041b67831b3810487e7edc3323e154b9a54d5ff6acac6"
+  },
+  "commands": [
+    {
+      "command": [
+        "rustfmt",
+        "--edition",
+        "2024",
+        "--check",
+        "crates/kerml-semantics/src/contract.rs",
+        "crates/kerml-semantics/src/queries.rs",
+        "crates/kerml-semantics/tests/unit/query_evidence_mode.rs"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "--check",
+        "--",
+        "crates/kerml-semantics/src/contract.rs",
+        "crates/kerml-semantics/src/queries.rs",
+        "crates/kerml-semantics/tests/unit/query_evidence_mode.rs"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "semantic_execution_performed": false,
+  "finding": "Mixed compact proof provenance now has a separate sticky marker, preserving receiver producer evaluation/search expansion mode. Prior mode-OR correction failed the existing shared-search unit test; root owns corrected full-suite execution."
+}

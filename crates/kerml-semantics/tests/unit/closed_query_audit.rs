@@ -364,3 +364,295 @@ fn closed_audit_failed_subject_cannot_be_reused_after_later_successful_answers()
         "a later successful query cannot erase an earlier failed audit check"
     );
 }
+
+fn closed_overlay(overlay: &agq_kernel::derived::DerivedOverlay) -> KerMlQueries<'_> {
+    let registry = ProducerRegistry::new([]).unwrap();
+    let context = SemanticContext::for_overlay(overlay, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let certificate = ProducerClosureCertificate::initial(&context, &registry).unwrap();
+    assert!(certificate.is_fully_closed(overlay.model()));
+    KerMlQueries::new(
+        context
+            .with_producer_closure(Arc::new(certificate))
+            .unwrap(),
+    )
+}
+
+#[test]
+fn closed_audit_ignores_unread_outputs_but_rejects_changed_read_output_evidence() {
+    use agq_kernel::derived::{DerivationBuilder, StructuralSearch};
+    let mut fixture = Fixture::new();
+    fixture.create(1, c::TYPE);
+    fixture.create(2, c::TYPE);
+    let snapshot = fixture.finish();
+    let key = DerivationKey {
+        rule: RuleId::from_u128(44101),
+        subject: id(1),
+        output: OutputKey::from_u128(1),
+    };
+    let output = FactKey::Element(key.element_id());
+    let derive = |name: Option<&str>, extra_proof: bool, search: u128| {
+        let mut builder = DerivationBuilder::new(snapshot.clone());
+        if let Some(name) = name {
+            let mut slots: Vec<_> = snapshot
+                .model()
+                .element(id(2))
+                .unwrap()
+                .slots()
+                .filter(|(property, _)| *property != p::ELEMENT_DECLARED_NAME)
+                .map(|(property, slot)| (property, slot.value().clone()))
+                .collect();
+            slots.push((
+                p::ELEMENT_DECLARED_NAME,
+                SlotValue::Scalar(Value::String(name.into())),
+            ));
+            let mut proof = BTreeSet::from([Dependency::Declared(FactKey::Element(id(1)))]);
+            if extra_proof {
+                proof.insert(Dependency::Declared(FactKey::Element(id(2))));
+            }
+            builder.element(key, c::TYPE, slots, proof);
+            builder.searches_shared(
+                output,
+                Arc::new(BTreeSet::from([StructuralSearch::ElementIdentity(id(
+                    search,
+                ))])),
+            );
+        }
+        builder.build().unwrap()
+    };
+    let old = derive(Some("old output"), false, 99);
+    let old_queries = closed_overlay(&old);
+    let collector = ClosedAuditContext::new(&old_queries).unwrap();
+    let anchor_answer = old_queries.canonical_fact_evidence(FactKey::Element(id(1)));
+    let output_answer = old_queries.canonical_fact_evidence(output);
+    assert_eq!(anchor_answer.completeness, Completeness::Complete);
+    assert_eq!(output_answer.completeness, Completeness::Complete);
+    assert!(
+        output_answer
+            .canonical_dependencies
+            .contains(&Dependency::Derived(output))
+    );
+    let mut anchor_reads = ClosedAuditReads::default();
+    collector.observe(&mut anchor_reads, &anchor_answer);
+    let mut output_reads = ClosedAuditReads::default();
+    collector.observe(&mut output_reads, &output_answer);
+    let previous = collector.into_snapshot();
+    for (name, extra_proof, search, change) in [
+        (None, false, 99, "lost output"),
+        (Some("new output"), false, 99, "changed output value"),
+        (Some("old output"), true, 99, "changed output proof"),
+        (Some("old output"), false, 100, "changed output search"),
+    ] {
+        let next = derive(name, extra_proof, search);
+        let queries = closed_overlay(&next);
+        let collector = ClosedAuditContext::new(&queries).unwrap();
+        let delta = collector.delta(&previous).unwrap();
+        assert!(
+            collector.preserves(&anchor_reads, &delta),
+            "{change} cannot invalidate a read of an unchanged proof input alone"
+        );
+        assert!(
+            !collector.preserves(&output_reads, &delta),
+            "{change} must invalidate a query that actually read the output"
+        );
+        let actual = queries.canonical_fact_evidence(FactKey::Element(id(1)));
+        let mut expected = anchor_answer.clone();
+        expected.context = actual.context.clone();
+        assert_eq!(actual, expected, "{change}: anchor evidence stays exact");
+    }
+    // In the reverse direction, a newly produced detached consumer of this
+    // input also must not invalidate the input's unrelated successful audit.
+    let empty = derive(None, false, 99);
+    let queries = closed_overlay(&empty);
+    let collector = ClosedAuditContext::new(&queries).unwrap();
+    let mut reads = ClosedAuditReads::default();
+    collector.observe(
+        &mut reads,
+        &queries.canonical_fact_evidence(FactKey::Element(id(1))),
+    );
+    let previous = collector.into_snapshot();
+    let collector = ClosedAuditContext::new(&old_queries).unwrap();
+    assert!(collector.preserves(&reads, &collector.delta(&previous).unwrap()));
+}
+
+#[test]
+fn closed_audit_tracks_transitive_positive_inputs_beneath_equal_derived_roots() {
+    use agq_kernel::derived::DerivationBuilder;
+    let mut fixture = Fixture::new();
+    fixture.create(1, c::TYPE);
+    fixture.create(2, c::TYPE);
+    fixture.value(1, p::ELEMENT_DECLARED_NAME, Value::String("before".into()));
+    let before = fixture.finish();
+    let mut fixture = Fixture {
+        changes: before.change_set(),
+        base: before.clone(),
+        owned: BTreeMap::new(),
+    };
+    fixture.value(1, p::ELEMENT_DECLARED_NAME, Value::String("after".into()));
+    let after = fixture.finish();
+    let slots: Vec<_> = before
+        .model()
+        .element(id(2))
+        .unwrap()
+        .slots()
+        .map(|(property, slot)| (property, slot.value().clone()))
+        .collect();
+    let inner = DerivationKey {
+        rule: RuleId::from_u128(44102),
+        subject: id(1),
+        output: OutputKey::from_u128(1),
+    };
+    let outer = DerivationKey {
+        output: OutputKey::from_u128(2),
+        ..inner
+    };
+    let root = FactKey::Element(outer.element_id());
+    let derive = |snapshot: Snapshot| {
+        let mut builder = DerivationBuilder::new(snapshot);
+        builder.element(
+            inner,
+            c::TYPE,
+            slots.clone(),
+            BTreeSet::from([Dependency::Declared(FactKey::Element(id(1)))]),
+        );
+        builder.element(
+            outer,
+            c::TYPE,
+            slots.clone(),
+            BTreeSet::from([Dependency::Derived(FactKey::Element(inner.element_id()))]),
+        );
+        builder.build().unwrap()
+    };
+    let old = derive(before);
+    let next = derive(after);
+    assert_eq!(
+        old.model().element(outer.element_id()),
+        next.model().element(outer.element_id()),
+        "the immediate derived root and its provenance IDs are exactly equal"
+    );
+    let old_queries = closed_overlay(&old);
+    let answer = old_queries.canonical_fact_evidence(root);
+    assert_eq!(answer.completeness, Completeness::Complete);
+    assert_eq!(
+        answer.canonical_dependencies,
+        BTreeSet::from([Dependency::Derived(root)])
+    );
+    assert!(
+        answer
+            .positive_dependencies
+            .contains(&FactKey::Element(id(1)))
+    );
+    let collector = ClosedAuditContext::new(&old_queries).unwrap();
+    let mut reads = ClosedAuditReads::default();
+    collector.observe(&mut reads, &answer);
+    let previous = collector.into_snapshot();
+    let queries = closed_overlay(&next);
+    let collector = ClosedAuditContext::new(&queries).unwrap();
+    assert!(
+        !collector.preserves(&reads, &collector.delta(&previous).unwrap()),
+        "the transitive positive input changed even though the root is equal"
+    );
+    let producer = KerMlQueries::for_production(old_queries.context.fork());
+    let mut mixed = old_queries.canonical_fact_evidence(FactKey::Element(id(2)));
+    mixed
+        .merge_evidence(producer.canonical_fact_evidence(root))
+        .unwrap();
+    assert!(
+        !mixed.producer_evidence,
+        "ordinary materialization mode remains unchanged"
+    );
+    assert!(
+        mixed.contains_compact_evidence,
+        "compact evidence taint must survive public merge"
+    );
+    assert!(
+        !mixed
+            .positive_dependencies
+            .contains(&FactKey::Element(id(1)))
+    );
+    let old_collector = ClosedAuditContext::new(&old_queries).unwrap();
+    let mut mixed_reads = ClosedAuditReads::default();
+    old_collector.observe(&mut mixed_reads, &mixed);
+    assert!(
+        !collector.preserves(&mixed_reads, &collector.delta(&previous).unwrap()),
+        "an ordinary wrapper cannot authenticate a compact proof missing a changed transitive input"
+    );
+}
+
+#[test]
+fn closed_audit_refuses_compact_producer_proofs_without_full_positive_expansion() {
+    let snapshot = fixture();
+    let ordinary = closed(&snapshot);
+    let producer = KerMlQueries::for_production(ordinary.context.fork());
+    let answer = producer.canonical_fact_evidence(FactKey::Element(id(1)));
+    assert_eq!(answer.completeness, Completeness::Complete);
+    assert!(answer.producer_evidence);
+    let collector = ClosedAuditContext::new(&ordinary).unwrap();
+    let mut reads = ClosedAuditReads::default();
+    collector.observe(&mut reads, &answer);
+    let previous = collector.into_snapshot();
+    let collector = ClosedAuditContext::new(&ordinary).unwrap();
+    assert!(
+        !collector.preserves(&reads, &collector.delta(&previous).unwrap()),
+        "producer-mode proof edges cannot establish all positive audit reads"
+    );
+}
+
+#[cfg(feature = "verification")]
+#[test]
+fn closed_audit_verification_trace_matches_rejections_and_caps_samples() {
+    let snapshot = fixture();
+    let q = closed(&snapshot);
+    let previous = ClosedAuditContext::new(&q).unwrap().into_snapshot();
+    let collector = ClosedAuditContext::new(&q).unwrap();
+    let mut delta = collector.delta(&previous).unwrap();
+    let mut reads = ClosedAuditReads::default();
+    reads.subject(id(1));
+    let trace = |reads: &ClosedAuditReads, delta: &ClosedAuditDelta| {
+        let diagnostic = collector.verification_reuse_trace(&previous, Some(reads), Some(delta));
+        assert_eq!(
+            diagnostic["reason"] == "preserved",
+            collector.preserves(reads, delta)
+        );
+        diagnostic
+    };
+    assert_eq!(trace(&reads, &delta)["reason"], "preserved");
+    delta.affected.insert(id(1));
+    assert_eq!(trace(&reads, &delta)["reason"], "bounded_read_changed");
+    reads.global = true;
+    assert_eq!(trace(&reads, &delta)["reason"], "global_search_changed");
+    reads.invalid = true;
+    assert_eq!(trace(&reads, &delta)["reason"], "invalid_receipt");
+    reads.invalid = false;
+    reads.global = false;
+    for n in 1000..1100 {
+        reads.subject(id(n));
+        delta.affected.insert(id(n));
+    }
+    let diagnostic = trace(&reads, &delta);
+    assert_eq!(diagnostic["changed_reads"], 101);
+    assert_eq!(
+        diagnostic["changed_read_sample"].as_array().unwrap().len(),
+        8
+    );
+    assert_eq!(
+        collector.verification_reuse_trace(&previous, None, Some(&delta))["reason"],
+        "no_successful_prior_subject"
+    );
+    let mut wrong_mount = previous.clone();
+    wrong_mount.dependency = Some(std::sync::Weak::new());
+    assert!(collector.delta(&wrong_mount).is_none());
+    assert_eq!(
+        collector.verification_reuse_trace(&wrong_mount, Some(&reads), None)["reason"],
+        "dependency_mount_mismatch"
+    );
+    let mut wrong_contract = previous;
+    wrong_contract.context.options.exclude_implied = true;
+    assert!(collector.delta(&wrong_contract).is_none());
+    assert_eq!(
+        collector.verification_reuse_trace(&wrong_contract, Some(&reads), None)["reason"],
+        "kerml_static_contract_mismatch"
+    );
+}

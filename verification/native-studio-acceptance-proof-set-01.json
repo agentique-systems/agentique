@@ -1,0 +1,45 @@
+{
+  "format": "agentique-alpha-freshness-proof-set/1",
+  "reviewer": "Codex /root/worlds, independent of integration and semantic implementation",
+  "review_note": "Current oracle CI https://github.com/agentique-systems/agentique/actions/runs/36231357374/job/108375005393 succeeded on source a6e1f41d2b549a8be10a79dfa3ec786c090b65b3; actual executable/harness/raw log hashes and both complete 697419-entry observation maps independently checked. Original observations/result.json is bound here, and independently compared with its unique logged JSON. Runtime qualification run36231482800 independently passed ordinary verify/install/status for the unchanged accepted bundle. Local archive14 and closed-audit8 gates passed (exact receipts retained). Prior strict-audit parity02 gate is historical source1b5075dc, not qualification of newer source; current command/cold strict-audit and full applicable query maps compare exactly. Review patch only: no Alpha or performance qualification; current command219531ms is slower than baseline161497ms/cold163268ms. Apply only after integration lead reviews all applicable semantic gates and confirms no further production source changes.",
+  "oracle": {
+    "build": {
+      "path": "generated/native-studio-acceptance/ci-oracle-01/current/build.json",
+      "sha256": "8498b2dd66a9da2114aa4aca0d7c38742903edbb4716c45cd482eb3894ed8d4f"
+    },
+    "invocation": {
+      "path": "generated/native-studio-acceptance/ci-oracle-01/current/oracle/invocation.json",
+      "sha256": "dbdc43dcdd9afffc96e2b3b8062df20f46ac5a6d3fd06fef578849fbcfa157d9"
+    },
+    "result": {
+      "path": "generated/native-studio-acceptance/ci-oracle-01/current/oracle/observations/result.json",
+      "sha256": "f984ccc1f5a7e483776c44b08b1e5767231f917e163ba6779724715fe2935ae1"
+    },
+    "command_metrics": {
+      "path": "generated/native-studio-acceptance/ci-oracle-01/current/oracle/observations/command-metrics.json",
+      "sha256": "c81c4d04623072c9c3df2cd967efac850c22eb8a326ffd9cb622ec312f05169f"
+    },
+    "cold_metrics": {
+      "path": "generated/native-studio-acceptance/ci-oracle-01/current/oracle/observations/cold-metrics.json",
+      "sha256": "e707c275cb9856d007b51fb09c37047cec1fa9874c32b5cb7184185a484bab3b"
+    },
+    "command_observations": {
+      "path": "generated/native-studio-acceptance/ci-oracle-01/current/oracle/observations/command-observations.json",
+      "sha256": "0beea518acd35a012856c938f0e34ee90ba07b098b0e274d4d6d4d725e6f508a"
+    },
+    "cold_observations": {
+      "path": "generated/native-studio-acceptance/ci-oracle-01/current/oracle/observations/cold-observations.json",
+      "sha256": "0beea518acd35a012856c938f0e34ee90ba07b098b0e274d4d6d4d725e6f508a"
+    }
+  },
+  "runtime": {
+    "transport": {
+      "path": "native-studio-acceptance/runtime-qualification-01/transport.json",
+      "sha256": "606a244f9cf9f7eb60fd2bbf2de7ddc4776c30a024f375746708bb18ead90abb"
+    },
+    "qualification": {
+      "path": "native-studio-acceptance/runtime-qualification-01/lifecycle/qualification.json",
+      "sha256": "15a6d2e9b106b2eeef3efd4b6caebda2650a4d5411e913442b78d9c9c10f4e96"
+    }
+  }
+}

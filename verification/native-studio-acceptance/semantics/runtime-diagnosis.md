@@ -60,3 +60,22 @@ in `../../native-studio-alpha/checks/acceptance-kernel-archive-tests.*`,
 `acceptance-closed-audit-tests.*`, `acceptance-immutable-family-tests.*` and
 `acceptance-immutable-rebind-tests.*`. Real before/after timing remains pending.
 This document claims no measured runtime speedup yet.
+
+## Measured single-pass graph input opportunity
+
+`read-profile-02/measurement.log` separates current graph restoration costs:
+
+| Phase | KerML | SysML |
+| --- | ---: | ---: |
+| Input graph hash/read/decompression | 4.255 s | 1.371 s |
+| Graph decode and kernel/dependency validation | 19.222 s | 17.629 s |
+| Decoded graph canonical re-encoding/authentication | 7.353 s | 3.726 s |
+| Semantic context setup | 2.255 s | 2.865 s initial + 2.878 s bound |
+
+The checked-in receipts pin 2,176,394,780 graph bytes for KerML and 748,560,767 for Systems, totaling 2,924,955,547 uncompressed bytes. `library/publication_cache.rs` and `sysml/publication_restore.rs` currently decompress and hash that material, reopen the graph entry, then decompress it again for the kernel archive reader. A digesting reader around the actual decoder input could remove the duplicate read/decompression. The 5.626 s input-authentication phase is an upper bound on the removable work, not a prediction: SHA-256 still needs to run during decoding. The much larger 36.851 s decoding/validation and 11.079 s re-encoding costs remain.
+
+A bounded patch could stay inside the text crate: one private counting/digesting `Read` adapter plus the two restoration call sites. It must check ZIP entry size against the independently trusted receipt, use a checked `expected + 1` read bound, retain actual byte count and observed EOF, reject short/excess input and I/O/CRC failures, and verify the exact raw input digest before creating any accepted publication facade. `Read` on an empty buffer must not masquerade as EOF. The kernel reader already rejects trailing content after its End record using `fill_buf`; successful decoding therefore must have observed actual EOF, not merely stopped at a syntactically complete prefix. The helper should not drain unparsed trailing content and silently accept it.
+
+The decoded graph re-encoding, dependency authentication, source/facade checks, context binding and closure receipt checks must remain untouched. They authenticate the actual reconstructed immutable graph and protect the direct accepted-restore API from caller-supplied digest claims, parser normalization or a changed seekable input. Combining stream authentication with parsing moves graph-record allocation before the final digest decision; it does not grant semantic authority before that decision. Trusted total-byte limits and the kernel's 64 MiB per-entry line bound remain necessary. No production change was made for this review.
+
+Required regressions for such a patch: valid identical roundtrip under short/irregular reads, wrong digest, short and excess streams, zero-length read calls, missing EOF, trailing JSON/whitespace, corruption/CRC error, changed seekable input, and unknown/duplicate graph fields still failing the unchanged receipt/recanonicalization boundary. The real authenticated runtime profile and exact independent command/cold oracle must quantify any actual gain after integration.

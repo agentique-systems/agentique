@@ -1,0 +1,52 @@
+{
+  "source_commit": "4e82e36b284aafb37e9488299131658fa866864f",
+  "paths": [
+    "crates/kerml-text/src/source_inputs.rs",
+    "crates/kerml-text/src/source_read_context_tests.rs"
+  ],
+  "files": {
+    "crates/kerml-text/src/source_inputs.rs": {
+      "before_sha256": "b8a18d86da7537dfaba922059c0ba27ddd38edb4cd49f14e8bf1ecad0768dd69",
+      "after_sha256": "db8c9bf0196ff2257c439d2a5fafd34ee0c6b524c9ff15012428401ea28f17e6"
+    },
+    "crates/kerml-text/src/source_read_context_tests.rs": {
+      "before_sha256": null,
+      "after_sha256": "7527830bad4411d22590e9a09b238a0e3426b748df6ec7d23981a60843a1be63"
+    }
+  },
+  "patch_sha256": "44b0c0bdd6bedab582a8b8e9337821ce24b9cb37814a89b4f37ce2fc4be1a136",
+  "file_hash_encoding": "UTF-8 text with universal newlines normalized to LF",
+  "validation": {
+    "compiled": false,
+    "tests_executed": false,
+    "production_sources_unchanged": true,
+    "rustfmt": {
+      "command": [
+        "rustfmt",
+        "--check",
+        "--edition",
+        "2024",
+        "--config",
+        "skip_children=true",
+        "verification\\generated\\native-studio-acceptance\\source-context-draft\\after\\crates\\kerml-text\\src\\source_inputs.rs",
+        "verification\\generated\\native-studio-acceptance\\source-context-draft\\after\\crates\\kerml-text\\src\\source_read_context_tests.rs"
+      ],
+      "elapsed_seconds": 0.109,
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    "git_apply_check": {
+      "command": [
+        "git",
+        "apply",
+        "--check",
+        "verification\\native-studio-acceptance\\semantics\\source-context-reuse.patch"
+      ],
+      "elapsed_seconds": 0.031,
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    }
+  }
+}

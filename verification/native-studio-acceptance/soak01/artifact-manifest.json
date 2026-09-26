@@ -1,0 +1,83 @@
+{
+  "format": "agentique-native-soak-evidence/1",
+  "outcome": "rejected",
+  "reason": "Driver terminal frame double-counts completed cycles; external gate rejects3claimedcycles against2observedcycles. Original report preserved.",
+  "files": {
+    "gallery/10-restarted-system-world.json": {
+      "bytes": 27620,
+      "sha256": "07524440917f4f2087f6a32898368241340643b9a31a937b96fec588347f3bbd"
+    },
+    "gallery/10-restarted-system-world.png": {
+      "bytes": 348619,
+      "sha256": "b73ee867e639066c38abb7512eecdde90508cf8dbe0a00ac5428dd82740a1b9c"
+    },
+    "gallery/10a-restarted-part-owner.json": {
+      "bytes": 48981,
+      "sha256": "ab36208184f7d1ebab85cacba5095bf1eede3e3ab85dd8a233116c2ee0088d8e"
+    },
+    "gallery/10a-restarted-part-owner.png": {
+      "bytes": 385090,
+      "sha256": "836acc06f77dbe0594ff8a571ad7102197168d9e5b95cb9fef5d12c82dbcefbc"
+    },
+    "gallery/11-restarted-committed-element.json": {
+      "bytes": 49005,
+      "sha256": "cf533cda74cc75e2a73ee46207fc136cfa941d89f45d98a4053e39e902d993c0"
+    },
+    "gallery/11-restarted-committed-element.png": {
+      "bytes": 335560,
+      "sha256": "d891ce7787aef6273c321561cd81de7a67e7fa143951f51bf76fb69ce775853e"
+    },
+    "gallery/12-restarted-history.json": {
+      "bytes": 48988,
+      "sha256": "ef31025c134e3a0f2a35cf5f8354a02101930d5825c34d9e197525aebed54de1"
+    },
+    "gallery/12-restarted-history.png": {
+      "bytes": 442040,
+      "sha256": "007629602e136271eeefba3078418bb66105bdf2c07ecc626a258652ed34d686"
+    },
+    "gallery/13-soak-requirements.json": {
+      "bytes": 58789,
+      "sha256": "013911be2fe5d4580c8bc76bf6c64d2a29b411ecb031c94f68f42e6140372b95"
+    },
+    "gallery/13-soak-requirements.png": {
+      "bytes": 371820,
+      "sha256": "9ef9f25227419c94b01c3d40b4e62900ccd69f9182bddbc621aefce24ccf1fe6"
+    },
+    "gallery/14-soak-dense-parent-diff.json": {
+      "bytes": 289821,
+      "sha256": "99e94f6ff0be7e6cdf653ef1bdf6a8f4951512d33eb1c567bba633c82c99db58"
+    },
+    "gallery/14-soak-dense-parent-diff.png": {
+      "bytes": 431143,
+      "sha256": "7d127472302793604cf30a7707d36fcb4be0eb1b9a3c7939e8d260351191dc46"
+    },
+    "gallery/15-soak-rename-candidate.json": {
+      "bytes": 86666,
+      "sha256": "eed09928f4e62354886896bf44245b6ba9521138fa54cd5e071474390c4f1e91"
+    },
+    "gallery/15-soak-rename-candidate.png": {
+      "bytes": 389441,
+      "sha256": "099079d6734747484b7dfc23300ab67f5ae7a75efb2e77a03faa07916b84c98a"
+    },
+    "journey.json": {
+      "bytes": 329436,
+      "sha256": "63dc03aa764737c61f340adcc024123d574a11dd1dcb45b4529d0e5a4f818a93"
+    },
+    "memory.jsonl": {
+      "bytes": 702648,
+      "sha256": "9fc5dd4c694dd618739a38f889f6a7f2c1ddf3eccac8ab02c0c40b274b0b02c0"
+    },
+    "process.json": {
+      "bytes": 3551,
+      "sha256": "43a39b18db0f776691796ca67fa57dc7cc865af325fbee5b1f7e1d10ecf1d241"
+    },
+    "stderr.log": {
+      "bytes": 114871,
+      "sha256": "4683202e0e68d751f60ec789ea9d8a3416c1566cf44259ecb8cb98b3fb86d826"
+    },
+    "stdout.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

@@ -5,6 +5,7 @@ use agq_kernel::{
     provenance::{Dependency, FactKey, Origin},
     value::Value,
 };
+use std::sync::Weak;
 
 /// Outcome of transporting producer evaluations to a reconstructed semantic graph.
 #[derive(Clone, Debug)]
@@ -62,6 +63,37 @@ impl ProducerClosureCertificate {
             certificate: self.clone(),
             context: old.id().clone(),
             signatures: subject_signatures(old.model),
+            shared_dependency: None,
+        })
+    }
+
+    /// Capture a reconstruction frontier sharing this exact immutable closed
+    /// dependency. Physically shared dependency facts need not be rehashed;
+    /// every local record, incoming carrier and proof/search delta still does.
+    ///
+    /// The resulting checkpoint rejects a different dependency mount, even one
+    /// with equal semantic identities. Use [`Self::checkpoint`] when transport
+    /// between independently restored mounts is required. Without a closed
+    /// dependency this falls back to the full fingerprint representation.
+    pub fn checkpoint_sharing_dependency(
+        &self,
+        old: &SemanticContext<'_>,
+    ) -> Result<ProducerClosureCheckpoint, ContextError> {
+        let Some(dependency) = old.closed_dependency.as_ref() else {
+            return self.checkpoint(old);
+        };
+        if !self.compatible_context(old.id()) {
+            return Err(ContextError::ProducerClosureMismatch);
+        }
+        Ok(ProducerClosureCheckpoint {
+            certificate: self.clone(),
+            context: old.id().clone(),
+            signatures: subject_signatures_with_dependency(
+                old.model,
+                Some(dependency.overlay().model()),
+                true,
+            ),
+            shared_dependency: Some(Arc::downgrade(dependency)),
         })
     }
 
@@ -121,6 +153,7 @@ pub struct ProducerClosureCheckpoint {
     certificate: ProducerClosureCertificate,
     context: SemanticContextId,
     signatures: BTreeMap<ElementId, [u8; 32]>,
+    shared_dependency: Option<Weak<crate::ProducerClosedDependency>>,
 }
 impl ProducerClosureCheckpoint {
     pub fn rebind(
@@ -157,7 +190,18 @@ impl ProducerClosureCheckpoint {
         if !QueryReadSet::context_compatible(&self.context, &current) {
             return Err(ContextError::ProducerClosureMismatch);
         }
-        let signatures = subject_signatures(new.model);
+        let shared_dependency = match &self.shared_dependency {
+            Some(previous) => {
+                let current = new
+                    .closed_dependency
+                    .as_ref()
+                    .filter(|current| Weak::ptr_eq(previous, &Arc::downgrade(current)))
+                    .ok_or(ContextError::ProducerClosureMismatch)?;
+                Some(current.overlay().model())
+            }
+            None => None,
+        };
+        let signatures = subject_signatures_with_dependency(new.model, shared_dependency, true);
         let mut affected: BTreeSet<_> = self
             .signatures
             .keys()
@@ -259,22 +303,27 @@ impl ProducerClosureCheckpoint {
 }
 
 fn subject_signatures(model: &ModelView) -> BTreeMap<ElementId, [u8; 32]> {
-    subject_signatures_with_dependency(model, None)
+    subject_signatures_with_dependency(model, None, true)
 }
 
 /// Audit-only signatures factor out physically identical accepted dependency
 /// material. The enclosing audit context binds that exact publication identity.
 /// Every local incoming carrier and proof/search delta still participates.
+/// Unlike producer evaluations, a query outcome does not promise to recreate
+/// outputs it never read. Audit collectors must retain both canonical roots and
+/// expanded positive proof dependencies; changing an unread output must not make
+/// its unchanged supporting input appear to have changed.
 pub(crate) fn audit_subject_signatures(
     model: &ModelView,
     dependency: Option<&ModelView>,
 ) -> BTreeMap<ElementId, [u8; 32]> {
-    subject_signatures_with_dependency(model, dependency)
+    subject_signatures_with_dependency(model, dependency, false)
 }
 
 fn subject_signatures_with_dependency(
     model: &ModelView,
     dependency: Option<&ModelView>,
+    include_output_support: bool,
 ) -> BTreeMap<ElementId, [u8; 32]> {
     let shared_record = |record: &agq_kernel::ElementRecord| {
         dependency
@@ -318,14 +367,18 @@ fn subject_signatures_with_dependency(
         if shared_record(record) {
             continue;
         }
-        output_support(&mut hashes, model, record.origin(), records[&record.id()]);
+        if include_output_support {
+            output_support(&mut hashes, model, record.origin(), records[&record.id()]);
+        }
         for (property, slot) in record.slots() {
-            output_support(
-                &mut hashes,
-                model,
-                slot.origin(),
-                hash_debug(&(record.id(), property, slot)),
-            );
+            if include_output_support {
+                output_support(
+                    &mut hashes,
+                    model,
+                    slot.origin(),
+                    hash_debug(&(record.id(), property, slot)),
+                );
+            }
             for (index, value) in slot.value().values().enumerate() {
                 if let Value::Reference(target) = value
                     && let Some(hash) = hashes.get_mut(target)
@@ -345,7 +398,9 @@ fn subject_signatures_with_dependency(
             continue;
         }
         let digest = hash_debug(occurrence);
-        output_support(&mut hashes, model, occurrence.origin(), digest);
+        if include_output_support {
+            output_support(&mut hashes, model, occurrence.origin(), digest);
+        }
         for target in occurrence.ends().values() {
             if let Some(hash) = hashes.get_mut(target) {
                 hash.update(digest);
@@ -406,12 +461,14 @@ fn subject_signatures_with_dependency(
         {
             continue;
         }
-        output_support(
-            &mut hashes,
-            model,
-            value.origin(),
-            hash_debug(&(id, property, value)),
-        );
+        if include_output_support {
+            output_support(
+                &mut hashes,
+                model,
+                value.origin(),
+                hash_debug(&(id, property, value)),
+            );
+        }
         if let Some(hash) = hashes.get_mut(&id) {
             hash.update(hash_debug(&(property, value)));
         }

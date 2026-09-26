@@ -1,0 +1,124 @@
+--- a/crates/kerml-semantics/src/producer_worklist.rs
++++ b/crates/kerml-semantics/src/producer_worklist.rs
+@@ -891,8 +891,12 @@
+         if certificate.is_none() && !unregistered_extension {
+             let started = Instant::now();
+             certificate = Some(std::sync::Arc::new(
+-                ProducerClosureCertificate::initial(&current_context, registry)
+-                    .map_err(PublicationOverlayError::Context)?,
++                if options.strategy == PublicationClosureStrategy::ReferenceFullScan {
++                    ProducerClosureCertificate::initial(&current_context, registry)
++                } else {
++                    certificate_builder.initial(&current_context, registry)
++                }
++                .map_err(PublicationOverlayError::Context)?,
+             ));
+             counters.certificate_build_micros += started.elapsed().as_micros();
+         }
+--- a/crates/kerml-semantics/src/producer_closure_incremental.rs
++++ b/crates/kerml-semantics/src/producer_closure_incremental.rs
+@@ -14,6 +14,26 @@
+     model: Option<[u8; 32]>,
+ }
+ impl ClosureCertificateBuilder {
++    /// Same initial pending proof as the uncached oracle, retaining only the
++    /// graph-local topology for the scheduler's next certificate. No prior
++    /// producer evaluation is treated as completed by this entry point.
++    pub(crate) fn initial(
++        &mut self,
++        context: &crate::SemanticContext<'_>,
++        registry: &ProducerRegistry,
++    ) -> Result<ProducerClosureCertificate, crate::ContextError> {
++        if context.id().producer_registry_digest != Some(registry.digest()) {
++            return Err(crate::ContextError::ProducerRegistryIdentityMismatch);
++        }
++        Ok(self.issue(
++            context.model(),
++            context.id(),
++            registry,
++            &ProducerEvaluationTable::default(),
++            &BTreeSet::new(),
++            |id| context.dependency_closure_source(id),
++        ))
++    }
+     /// `affected` comes from the validated scheduler plan: changed subjects and
+     /// both relationship endpoints, including vanished construction obligations.
+     /// This is deliberately not a public caller-supplied invalidation boundary.
+--- a/crates/kerml-semantics/tests/unit/producer_closure_incremental.rs
++++ b/crates/kerml-semantics/tests/unit/producer_closure_incremental.rs
+@@ -83,6 +83,75 @@
+     compare(&mut builder, &snapshot, &registry, &table, &[]);
+     assert_eq!(topology, builder.cache.topology_rebuilt);
+     assert_eq!(scopes + 1, builder.cache.scopes_rebuilt);
++}
++
++#[test]
++fn initial_certificate_reuses_topology_without_reusing_pending_or_completed_proofs() {
++    let snapshot = fixture(&[(1, c::FEATURE), (2, c::FEATURE), (3, c::TYPE)]);
++    let registry = registry(ProducerEffect::Typing);
++    let context = context(&snapshot, &registry);
++    let mut builder = ClosureCertificateBuilder::default();
++    let initial = builder.initial(&context, &registry).unwrap();
++    initial.assert_exact(&ProducerClosureCertificate::initial(&context, &registry).unwrap());
++    assert!(!initial.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
++    let built = builder.cache.topology_rebuilt;
++    assert_eq!(built, snapshot.model().len());
++    let row = builder.cache.topology[&id(1)].clone();
++
++    let mut complete = table(&snapshot, &registry);
++    for subject in [id(1), id(2)] {
++        complete
++            .record(&[(subject, FAMILY, Completeness::Complete)], &registry)
++            .unwrap();
++        complete.record_reads(
++            &[(
++                subject,
++                FAMILY,
++                vec![ProducerRead::Identity(subject)].into(),
++            )],
++            &registry,
++        );
++    }
++    let finished = compare(&mut builder, &snapshot, &registry, &complete, &[]);
++    assert!(finished.is_fully_closed(snapshot.model()));
++    assert_eq!(built, builder.cache.topology_rebuilt);
++    assert!(Arc::ptr_eq(&row, &builder.cache.topology[&id(1)]));
++
++    // Reinitializing cannot carry the preceding completed evaluations forward.
++    let reset = builder.initial(&context, &registry).unwrap();
++    reset.assert_exact(&initial);
++    assert!(!reset.is_closed(id(1), SemanticClosureRequirement::EffectiveTyping));
++    assert_eq!(built, builder.cache.topology_rebuilt);
++}
++
++#[test]
++fn initial_certificate_rejects_foreign_registry_and_rebuilds_changed_graph_or_provider() {
++    let snapshot = fixture(&[(1, c::FEATURE), (2, c::TYPE)]);
++    let registry = registry(ProducerEffect::Typing);
++    let initial_context = context(&snapshot, &registry);
++    let mut builder = ClosureCertificateBuilder::default();
++    let initial = builder.initial(&initial_context, &registry).unwrap();
++    let prior_row = builder.cache.topology[&id(1)].clone();
++    let foreign = ProducerRegistry::new([]).unwrap();
++    assert_eq!(
++        builder.initial(&initial_context, &foreign).unwrap_err(),
++        crate::ContextError::ProducerRegistryIdentityMismatch
++    );
++    assert!(Arc::ptr_eq(&prior_row, &builder.cache.topology[&id(1)]));
++
++    let mut pending = initial_context.fork();
++    pending.id.pending_namespace_scopes.insert(id(2));
++    let blocked = builder.initial(&pending, &registry).unwrap();
++    blocked.assert_exact(&ProducerClosureCertificate::initial(&pending, &registry).unwrap());
++    assert_ne!(blocked.digest(), initial.digest());
++    assert!(!Arc::ptr_eq(&prior_row, &builder.cache.topology[&id(1)]));
++
++    let revised = fixture(&[(1, c::TYPE), (2, c::TYPE)]);
++    let revised_context = context(&revised, &registry);
++    let revised_initial = builder.initial(&revised_context, &registry).unwrap();
++    revised_initial
++        .assert_exact(&ProducerClosureCertificate::initial(&revised_context, &registry).unwrap());
++    assert!(revised_initial.is_fully_closed(revised.model()));
+ }
+ 
+ #[test]

@@ -1,0 +1,85 @@
+{
+  "command": [
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\native-alpha\\release\\agq-studio-native.exe",
+    "--root",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+    "--runtime-dir",
+    "C:\\Users\\phili\\.agentique",
+    "--database",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\native-studio-acceptance\\real-run02\\agentique.sqlite",
+    "--no-restore",
+    "--scenario",
+    "real-restart",
+    "--restart-report",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\native-studio-acceptance\\real-run02\\journey.json",
+    "--scenario-report",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\native-studio-acceptance\\soak01\\journey.json",
+    "--gallery",
+    "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\native-studio-acceptance\\soak01\\gallery",
+    "--soak-seconds",
+    "600",
+    "--scenario-timeout-seconds",
+    "3600"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit": "4e82e36b284aafb37e9488299131658fa866864f",
+  "executable_sha256": "fb2fedafc3d2e1574f526d1763cc99521cce64b4e7ad058e29665d616004e30e",
+  "exit_code": 0,
+  "timed_out": false,
+  "acceptance_exit_code": 2,
+  "passed": false,
+  "journey_assessment": {
+    "passed": false,
+    "errors": [
+      "Native soak lacks navigation_restorations for every completed cycle",
+      "Native soak lacks cancelled_preparations for every completed cycle",
+      "Native soak lacks validated_renames for every completed cycle",
+      "Native soak lacks graph_reads_completed_during_preparation for every completed cycle"
+    ],
+    "report_sha256": "63dc03aa764737c61f340adcc024123d574a11dd1dcb45b4529d0e5a4f818a93",
+    "format": "agentique-native-real-acceptance/1",
+    "scenario": "real-restart",
+    "outcome": "passed",
+    "native_report_passed": true,
+    "restart_verified": true,
+    "failure": null,
+    "soak": {
+      "elapsed_ms": 843528,
+      "completed_cycles": 3,
+      "navigation_restorations": 2,
+      "cancelled_preparations": 2,
+      "validated_renames": 2,
+      "maximum_zoom_anchor_error_world": 0.0,
+      "binding_observations": 58222,
+      "graph_reads_completed_during_preparation": 2
+    }
+  },
+  "memory_sample_count": 3867,
+  "wall_seconds": 998.563000000082,
+  "sample_interval_seconds": 0.25,
+  "memory_start": {
+    "elapsed_seconds": 0.0,
+    "process_rss_bytes": 1552384,
+    "tree_rss_bytes": 1552384,
+    "tree_private_bytes": 495616,
+    "process_peak_working_set_bytes": 1556480
+  },
+  "memory_soak_start": {
+    "elapsed_seconds": 156.90600000019185,
+    "process_rss_bytes": 5796003840,
+    "tree_rss_bytes": 5796003840,
+    "tree_private_bytes": 5965467648,
+    "process_peak_working_set_bytes": 5863223296
+  },
+  "memory_end": {
+    "elapsed_seconds": 998.2970000000205,
+    "process_rss_bytes": 1281064960,
+    "tree_rss_bytes": 1281064960,
+    "tree_private_bytes": 1293873152,
+    "process_peak_working_set_bytes": 6900985856
+  },
+  "sampled_tree_peak_rss_bytes": 6883700736,
+  "sampled_tree_peak_private_bytes": 7533113344,
+  "process_peak_working_set_bytes": 6900985856,
+  "scope": "RSS observations include native runtime/renderer/semantic memory; first sample includes process startup. Soak start is the first report-observed interaction-cycle sample. Samples cannot alone establish allocation leaks."
+}

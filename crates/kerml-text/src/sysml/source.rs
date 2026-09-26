@@ -422,12 +422,16 @@ pub(crate) fn finish_accepted_source(
     let checkpoint_started = Instant::now();
     let mut seed = if let Some(certificate) = draft.producer_closure() {
         let context = dependency.candidate_context(&draft, root)?;
-        Some(certificate.checkpoint(&context).map_err(interpretation)?)
+        Some(
+            certificate
+                .checkpoint_sharing_dependency(&context)
+                .map_err(interpretation)?,
+        )
     } else if let Some(effective) = previous.and_then(|previous| previous.effective.as_ref()) {
         effective
             .certificate
             .as_ref()
-            .map(|certificate| certificate.checkpoint(&effective.context(root)))
+            .map(|certificate| certificate.checkpoint_sharing_dependency(&effective.context(root)))
             .transpose()
             .map_err(interpretation)?
     } else {

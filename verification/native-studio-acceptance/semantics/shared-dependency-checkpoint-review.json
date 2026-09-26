@@ -1,0 +1,24 @@
+{
+  "format": "agentique-semantic-source-review/1",
+  "reviewer": "Codex /root/worlds",
+  "source_head": "fea3339dbf0e84d408cb7d47c802a7b047826f1f",
+  "command": [
+    "git",
+    "diff",
+    "--",
+    "crates/kerml-semantics/src/producer_closure_rebind.rs",
+    "crates/kerml-text/src/sysml/source.rs",
+    "crates/kerml-semantics/tests/unit/producer_closure.rs"
+  ],
+  "exit_code": 0,
+  "diff_sha256": "16cd33a63401028c5695e74653737bfec6a81af9835743356e1e713ba62a068c",
+  "source_files": {
+    "crates/kerml-semantics/src/producer_closure_rebind.rs": "095fa3623d3adcbde8740b992361e6af59d0f4ee4d5ba52644895ebccfd34e61",
+    "crates/kerml-text/src/sysml/source.rs": "f5cbd20f54a891bbfd0a9145d9a1a89f96783727dd5ccc62f7267e6df58fa1d2",
+    "crates/kerml-semantics/tests/unit/producer_closure.rs": "aebd23da9989c23f013b752f2fa558a721da34f27f67255272a8a8d2c3ff6f78"
+  },
+  "normalization": "source_files normalize CRLF to LF; git diff hash uses actual stdout bytes",
+  "result": "No correctness blocker found by source review; factored local-output and newly-applicable-writer regression coverage recommended. Exact CI equivalence remains required.",
+  "production_changed": false,
+  "semantic_execution_performed": false
+}

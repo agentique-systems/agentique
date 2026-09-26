@@ -21,6 +21,9 @@ pub(super) fn run(
     result: &SourceCompilation,
     previous: Option<&SourceCompilation>,
 ) -> Result<(SourceEffectiveAudit, Vec<SourceDiagnostic>, usize), LibraryLoadError> {
+    #[cfg(feature = "verification")]
+    let mut trace = (std::env::var("AGENTIQUE_AUDIT_REUSE_TRACE").as_deref() == Ok("1"))
+        .then(AuditReuseTrace::default);
     let bound = result
         .sysml_queries()
         .map_err(|error| LibraryLoadError::Interpretation(format!("{error:?}")))?;
@@ -43,6 +46,24 @@ pub(super) fn run(
     subjects.sort_unstable();
     let reuse_started = Instant::now();
     let closed = ClosedAuditContext::new(bound.kerml());
+    #[cfg(feature = "verification")]
+    let prior_trace_reason = trace.as_ref().map(|_| {
+        let Some(previous) = previous else {
+            return "no_parent_compilation";
+        };
+        let Some(audit) = previous.effective_audit.as_ref() else {
+            return "no_parent_effective_audit";
+        };
+        let mut current = context.clone();
+        current.kerml = audit.context.kerml.clone();
+        if current != audit.context {
+            "sysml_static_contract_mismatch"
+        } else if audit.reuse.is_none() {
+            "no_parent_reuse_receipt"
+        } else {
+            "prior_receipt_available"
+        }
+    });
     let previous = previous
         .and_then(|previous| previous.effective_audit.as_ref())
         .filter(|previous| {
@@ -64,6 +85,24 @@ pub(super) fn run(
     for batch in subjects.chunks(32) {
         let q = bound.fork();
         for &subject in batch {
+            #[cfg(feature = "verification")]
+            if let Some(trace) = trace.as_mut() {
+                let entry = previous.and_then(|previous| previous.subjects.get(&subject));
+                let diagnostic = match (closed.as_ref(), previous) {
+                    (None, _) => serde_json::json!({"reason": "current_context_not_closed"}),
+                    (_, None) => serde_json::json!({"reason": prior_trace_reason}),
+                    (Some(closed), Some(previous)) => closed.verification_reuse_trace(
+                        &previous.snapshot,
+                        entry.map(|entry| &entry.reads),
+                        delta.as_ref(),
+                    ),
+                };
+                trace.record(
+                    subject,
+                    entry.map_or(0, |entry| entry.checked.values().sum()),
+                    diagnostic,
+                );
+            }
             if let Some(entry) = previous.and_then(|previous| previous.subjects.get(&subject))
                 && let Some((closed, delta)) = closed.as_ref().zip(delta.as_ref())
                 && let Some(reads) = closed.transport(&entry.reads, delta)
@@ -141,6 +180,26 @@ pub(super) fn run(
         snapshot: closed.into_snapshot(),
         subjects: retained,
     });
+    #[cfg(feature = "verification")]
+    if let Some(trace) = trace {
+        use std::io::Write;
+        let _ = writeln!(
+            std::io::stderr().lock(),
+            "SOURCE_AUDIT_REUSE_TRACE {}",
+            serde_json::json!({
+                "format": "agentique-audit-reuse-trace/1",
+                "context": format!("{context:?}"),
+                "subjects": subjects.len(),
+                "reused_subjects": reused,
+                "reused_checks": reused_checks,
+                "first_rejection_counts": trace.counts,
+                "prior_checked_subject_samples": trace.samples,
+                "subject_sample_limit": 16,
+                "changed_read_sample_limit": 8,
+                "contract": "Diagnostic only; first-rejection counts are exhaustive, samples are bounded. Existing reuse predicates are unchanged.",
+            })
+        );
+    }
     Ok((
         SourceEffectiveAudit {
             context,
@@ -153,4 +212,50 @@ pub(super) fn run(
         capabilities,
         reused,
     ))
+}
+
+#[cfg(feature = "verification")]
+#[derive(Default)]
+struct AuditReuseTrace {
+    counts: BTreeMap<String, usize>,
+    samples: Vec<serde_json::Value>,
+}
+#[cfg(feature = "verification")]
+impl AuditReuseTrace {
+    fn record(&mut self, subject: ElementId, checks: usize, diagnostic: serde_json::Value) {
+        let reason = diagnostic["reason"].as_str().expect("trace has a reason");
+        *self.counts.entry(reason.to_owned()).or_default() += 1;
+        if reason != "preserved" && checks > 0 && self.samples.len() < 16 {
+            self.samples.push(serde_json::json!({
+                "subject": subject.to_string(), "prior_checks": checks, "diagnostic": diagnostic,
+            }));
+        }
+    }
+}
+
+#[cfg(all(test, feature = "verification"))]
+#[test]
+fn reuse_trace_counts_all_subjects_but_bounds_failed_checked_samples() {
+    let mut trace = AuditReuseTrace::default();
+    for n in 0..100 {
+        trace.record(
+            ElementId::from_u128(n),
+            2,
+            serde_json::json!({"reason": "bounded_read_changed"}),
+        );
+    }
+    trace.record(
+        ElementId::from_u128(101),
+        0,
+        serde_json::json!({"reason": "no_successful_prior_subject"}),
+    );
+    trace.record(
+        ElementId::from_u128(102),
+        2,
+        serde_json::json!({"reason": "preserved"}),
+    );
+    assert_eq!(trace.counts["bounded_read_changed"], 100);
+    assert_eq!(trace.counts["no_successful_prior_subject"], 1);
+    assert_eq!(trace.counts["preserved"], 1);
+    assert_eq!(trace.samples.len(), 16);
 }

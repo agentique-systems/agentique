@@ -31,6 +31,9 @@ wall-clock performance result.
   report is preserved. A corrected driver must complete a fresh full soak.
 - [Published runtime qualification](runtime-qualification-01/README.md): exact
   pinned runtime bundle authenticated, installed and publicly downloadable.
+- [Generic project lifecycle](ci-helpers-02/README.md): the real-runtime integration
+  gate passed creation, exact source import, rejection, cancellation, validation,
+  commit and failed repository-switch recovery.
 - [Independent-validator CI diagnosis](ci-independent-fixtures-023423-diagnosis.md):
   the pre-existing Gen1 named-payload disagreement remains a nonzero release
   obligation; it was not hidden to make this mission green.

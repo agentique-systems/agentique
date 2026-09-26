@@ -3965,6 +3965,249 @@ fn immutable_family_shortcut_preserves_full_certificate_with_cross_subject_block
 }
 
 #[test]
+fn shared_dependency_checkpoint_matches_full_transport_and_rejects_equal_foreign_mounts() {
+    use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
+    let mut writer = ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Subtypes(vec![c::FEATURE]),
+    );
+    writer.scope = ProducerEffectScope::Subject;
+    let registry = ProducerRegistry::new([writer]).unwrap();
+    let overlay = Arc::new(
+        agq_kernel::derived::DerivationBuilder::new(fixture())
+            .build()
+            .unwrap(),
+    );
+    let context = SemanticContext::for_overlay(&overlay, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let mut table = ProducerEvaluationTable::default();
+    table.pending(id(1), overlay.model(), &registry);
+    table
+        .record(&[(id(1), TYPE, Completeness::Complete)], &registry)
+        .unwrap();
+    let certificate =
+        ProducerClosureCertificate::issue(overlay.model(), context.id(), &registry, &table, |_| {
+            None
+        });
+    assert!(certificate.is_fully_closed(overlay.model()));
+    let context = context
+        .with_producer_closure(Arc::new(certificate))
+        .unwrap();
+    let mount = ProducerClosedDependency::new(overlay.clone(), &context, &registry).unwrap();
+    let separate = ProducerClosedDependency::new(overlay.clone(), &context, &registry).unwrap();
+    assert!(!Arc::ptr_eq(&mount, &separate));
+    assert_eq!(mount.context(), separate.context());
+
+    let base = mount.project_snapshot();
+    let mut f = Fixture {
+        changes: base.change_set(),
+        base,
+        owned: BTreeMap::new(),
+    };
+    f.create(10, c::FEATURE);
+    let before = f.finish();
+    let old = mount
+        .project_context(&before, &[], BTreeSet::new(), BTreeSet::new())
+        .unwrap();
+    let mut table = ProducerEvaluationTable::default();
+    table.pending(id(10), before.model(), &registry);
+    table
+        .record(&[(id(10), TYPE, Completeness::Complete)], &registry)
+        .unwrap();
+    // A local producer consulted an empty incoming relationship population on
+    // the immutable dependency. A new local carrier must invalidate that read.
+    table.record_reads(
+        &[(
+            id(10),
+            TYPE,
+            vec![ProducerRead::Source(
+                id(2),
+                c::FEATURE_TYPING,
+                p::FEATURE_TYPING_TYPE,
+            )]
+            .into(),
+        )],
+        &registry,
+    );
+    let certificate =
+        ProducerClosureCertificate::issue(before.model(), old.id(), &registry, &table, |subject| {
+            old.dependency_closure_source(subject)
+        });
+    let full = certificate.checkpoint(&old).unwrap();
+    let factored = certificate.checkpoint_sharing_dependency(&old).unwrap();
+    for incoming_change in [false, true] {
+        let mut f = Fixture {
+            changes: before.change_set(),
+            base: before.clone(),
+            owned: BTreeMap::new(),
+        };
+        if incoming_change {
+            f.create(11, c::FEATURE_TYPING);
+            f.value(
+                11,
+                p::FEATURE_TYPING_TYPED_FEATURE,
+                Value::Reference(id(10)),
+            );
+            f.value(11, p::FEATURE_TYPING_TYPE, Value::Reference(id(2)));
+        } else {
+            f.create(11, c::CLASSIFIER);
+        }
+        let after = f.finish();
+        let next = mount
+            .project_context(&after, &[], BTreeSet::new(), BTreeSet::new())
+            .unwrap();
+        let actual = factored.rebind(&next, &registry).unwrap();
+        let oracle = full.rebind(&next, &registry).unwrap();
+        actual.certificate.assert_exact(&oracle.certificate);
+        assert_eq!(actual.affected_subjects, oracle.affected_subjects);
+        assert_eq!(actual.retained_evaluations, oracle.retained_evaluations);
+        assert_eq!(actual.reopened_evaluations, oracle.reopened_evaluations);
+        assert_eq!(actual.reopened_evaluations, usize::from(incoming_change));
+        assert_eq!(actual.retained_evaluations, usize::from(!incoming_change));
+        if incoming_change {
+            assert!(actual.affected_subjects.contains(&id(2)));
+        }
+        // Same overlay and publication digests are insufficient for factoring:
+        // the optimization is bound to the actual closed dependency capability.
+        let foreign = separate
+            .project_context(&after, &[], BTreeSet::new(), BTreeSet::new())
+            .unwrap();
+        assert!(factored.rebind(&foreign, &registry).is_err());
+        assert!(full.rebind(&foreign, &registry).is_ok());
+    }
+}
+
+#[test]
+fn shared_dependency_checkpoint_preserves_output_support_and_new_writer_obligations() {
+    use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
+    let mut writer = ProducerDescriptor::new(
+        TYPE,
+        [ProducerEffect::Typing],
+        ProducerApplicability::Subtypes(vec![c::FEATURE]),
+    );
+    writer.scope = ProducerEffectScope::Model;
+    let registry = ProducerRegistry::new([writer]).unwrap();
+    let dependency = Arc::new(
+        agq_kernel::derived::DerivationBuilder::new(fixture())
+            .build()
+            .unwrap(),
+    );
+    let context = SemanticContext::for_overlay(&dependency, Default::default(), BTreeSet::new())
+        .unwrap()
+        .with_producer_registry_digest(registry.digest())
+        .unwrap();
+    let mut table = ProducerEvaluationTable::default();
+    table.pending(id(1), dependency.model(), &registry);
+    table
+        .record(&[(id(1), TYPE, Completeness::Complete)], &registry)
+        .unwrap();
+    let certificate = ProducerClosureCertificate::issue(
+        dependency.model(),
+        context.id(),
+        &registry,
+        &table,
+        |_| None,
+    );
+    assert!(certificate.is_fully_closed(dependency.model()));
+    let context = context
+        .with_producer_closure(Arc::new(certificate))
+        .unwrap();
+    let mount = ProducerClosedDependency::new(dependency.clone(), &context, &registry).unwrap();
+    let base = mount.project_snapshot();
+    let mut f = Fixture {
+        changes: base.change_set(),
+        base,
+        owned: BTreeMap::new(),
+    };
+    f.create(10, c::FEATURE);
+    let before = f.finish();
+    let output = DerivationKey {
+        rule: RuleId::from_u128(99193),
+        subject: id(10),
+        output: OutputKey::from_u128(99194),
+    };
+    let overlay = |snapshot: Snapshot, present: bool| {
+        let mut builder = agq_kernel::derived::DerivationBuilder::new(snapshot.clone());
+        if present {
+            builder.element(
+                output,
+                c::CLASSIFIER,
+                snapshot
+                    .model()
+                    .element(id(2))
+                    .unwrap()
+                    .slots()
+                    .map(|(property, slot)| (property, slot.value().clone())),
+                BTreeSet::new(),
+            );
+        }
+        builder.build().unwrap()
+    };
+    let previous = overlay(before.clone(), true);
+    let old = mount.project_overlay_context(&previous, &[]).unwrap();
+    let mut table = ProducerEvaluationTable::default();
+    table.pending(id(10), previous.model(), &registry);
+    table
+        .record(&[(id(10), TYPE, Completeness::Complete)], &registry)
+        .unwrap();
+    table.record_reads(
+        &[(id(10), TYPE, vec![ProducerRead::Structural(id(10))].into())],
+        &registry,
+    );
+    let certificate = ProducerClosureCertificate::issue(
+        previous.model(),
+        old.id(),
+        &registry,
+        &table,
+        |subject| old.dependency_closure_source(subject),
+    );
+    let requirement = SemanticClosureRequirement::EffectiveTyping;
+    assert!(certificate.is_closed(id(10), requirement));
+    let full = certificate.checkpoint(&old).unwrap();
+    let factored = certificate.checkpoint_sharing_dependency(&old).unwrap();
+    for add_writer in [false, true] {
+        let mut f = Fixture {
+            changes: before.change_set(),
+            base: before.clone(),
+            owned: BTreeMap::new(),
+        };
+        if add_writer {
+            f.create(11, c::FEATURE);
+        }
+        // Removing a detached output must reopen its original producer. Adding
+        // a different writer keeps that output and original inputs identical,
+        // but must reopen the requirement through the new possible writer.
+        let after = overlay(f.finish(), add_writer);
+        assert_eq!(
+            previous.model().element(id(10)),
+            after.model().element(id(10))
+        );
+        let next = mount.project_overlay_context(&after, &[]).unwrap();
+        let actual = factored.rebind(&next, &registry).unwrap();
+        let oracle = full.rebind(&next, &registry).unwrap();
+        actual.certificate.assert_exact(&oracle.certificate);
+        assert_eq!(actual.affected_subjects, oracle.affected_subjects);
+        assert_eq!(actual.retained_evaluations, oracle.retained_evaluations);
+        assert_eq!(actual.reopened_evaluations, oracle.reopened_evaluations);
+        assert!(!actual.certificate.is_closed(id(10), requirement));
+        if add_writer {
+            assert!(actual.affected_subjects.contains(&id(11)));
+            assert!(!actual.affected_subjects.contains(&id(10)));
+            assert_eq!(actual.retained_evaluations, 1);
+            assert_eq!(actual.reopened_evaluations, 0);
+        } else {
+            assert!(actual.affected_subjects.contains(&id(10)));
+            assert!(actual.affected_subjects.contains(&output.element_id()));
+            assert_eq!(actual.retained_evaluations, 0);
+            assert_eq!(actual.reopened_evaluations, 1);
+        }
+    }
+}
+
+#[test]
 fn immutable_rebind_shortcut_preserves_evaluations_reads_and_negative_search_reopening() {
     use crate::producer_closure::{ProducerEvaluationTable, ProducerRead};
     let dependency = Arc::new(

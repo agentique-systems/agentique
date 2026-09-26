@@ -85,6 +85,7 @@ jobs:
       RUNTIME_TAG: runtime-kerml-v9-sysml-v3-bundle1
       RUNTIME_SHA256: 37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026
       BASELINE_REF: ${{ inputs.baseline_ref }}
+      AGENTIQUE_AUDIT_REUSE_TRACE: '1'
     defaults:
       run:
         shell: pwsh
