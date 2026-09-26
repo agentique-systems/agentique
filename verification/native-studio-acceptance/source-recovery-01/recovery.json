@@ -1,0 +1,47 @@
+{
+  "source_commit": "82a09ed73fe5daedf4762b6690842de5b7991979",
+  "executable_sha256": "f53045eb7d4f1a1ef3600c10bfb184e14bae710ad7c92011e049c3472a70afdf",
+  "commands": [
+    {
+      "command": [
+        "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\release\\examples\\source_recovery.exe",
+        "create",
+        "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+        "C:\\Users\\phili\\.agentique",
+        "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\native-studio-acceptance\\source-recovery-01\\recovery.sqlite",
+        "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\native-studio-acceptance\\source-recovery-01\\expected.json"
+      ],
+      "elapsed_seconds": 300.93699999991804,
+      "exit_code": 0,
+      "peak_working_set_bytes": 5077544960,
+      "log": "create.log",
+      "log_sha256": "4f396f93c1b08701fdf14b9e7ea905b4d8f3c551e29bf6a1deca21732015b727"
+    },
+    {
+      "command": [
+        "C:\\Users\\phili\\github\\agentique-systems\\agentique\\target\\release\\examples\\source_recovery.exe",
+        "restore",
+        "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+        "C:\\Users\\phili\\.agentique",
+        "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\native-studio-acceptance\\source-recovery-01\\recovery.sqlite",
+        "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\native-studio-acceptance\\source-recovery-01\\expected.json"
+      ],
+      "elapsed_seconds": 193.60899999993853,
+      "exit_code": 0,
+      "peak_working_set_bytes": 4991426560,
+      "log": "restore.log",
+      "log_sha256": "6e0375d6e845d15a945ed08369135c40c6491ad85286bb15b3d91b078f3ed679"
+    }
+  ],
+  "outcome": "passed",
+  "cache_removal": {
+    "database": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\native-studio-acceptance\\source-recovery-01\\recovery.sqlite",
+    "removed_blob_digests": [
+      "b21af7cbe668806905e2a8f2eeff38d8e0caa5191ab73929d6cce87873922985",
+      "bdb2869ff527f2a667c40ba8b5b0cb5d6b49c0fb5810da7103f29958a53ac568"
+    ],
+    "mandatory_blobs_retained": 5,
+    "authoritative_tables_and_blobs_unchanged": true
+  },
+  "executable_unchanged": true
+}

@@ -1,0 +1,15 @@
+LocatingPackage
+AuthenticatingKerml
+AuthenticatingSysml
+Ready
+{"contract":"Wall time within one service call; nested operation totals overlap their containing phase. Excludes native layout, upload, and display.","elapsed_ms":0.0535,"format":"agentique-revision-read-profile/1","operation":"resolve_revision","phase":"immutable_memory_lookup"}
+{"contract":"Wall time within one service call; nested operation totals overlap their containing phase. Excludes native layout, upload, and display.","elapsed_ms":1.2394999999999998,"format":"agentique-revision-read-profile/1","operation":"resolve_revision","phase":"total"}
+{"contract":"Wall time within one service call; nested operation totals overlap their containing phase. Excludes native layout, upload, and display.","elapsed_ms":0.0218,"format":"agentique-revision-read-profile/1","operation":"resolve_revision","phase":"immutable_memory_lookup"}
+{"contract":"Wall time within one service call; nested operation totals overlap their containing phase. Excludes native layout, upload, and display.","elapsed_ms":0.2514,"format":"agentique-revision-read-profile/1","operation":"resolve_revision","phase":"total"}
+{"contract":"Wall time within one service call; nested operation totals overlap their containing phase. Excludes native layout, upload, and display.","elapsed_ms":0.0732,"format":"agentique-revision-read-profile/1","operation":"resolve_revision","phase":"immutable_memory_lookup"}
+{"contract":"Wall time within one service call; nested operation totals overlap their containing phase. Excludes native layout, upload, and display.","elapsed_ms":0.19560000000000002,"format":"agentique-revision-read-profile/1","operation":"resolve_revision","phase":"total"}
+{"contract":"Wall time within one service call; nested operation totals overlap their containing phase. Excludes native layout, upload, and display.","elapsed_ms":0.0599,"format":"agentique-revision-read-profile/1","operation":"resolve_revision","phase":"immutable_memory_lookup"}
+{"contract":"Wall time within one service call; nested operation totals overlap their containing phase. Excludes native layout, upload, and display.","elapsed_ms":0.1965,"format":"agentique-revision-read-profile/1","operation":"resolve_revision","phase":"total"}
+{"contract":"Wall time within one service call; nested operation totals overlap their containing phase. Excludes native layout, upload, and display.","elapsed_ms":0.08349999999999999,"format":"agentique-revision-read-profile/1","operation":"resolve_revision","phase":"immutable_memory_lookup"}
+{"contract":"Wall time within one service call; nested operation totals overlap their containing phase. Excludes native layout, upload, and display.","elapsed_ms":0.2111,"format":"agentique-revision-read-profile/1","operation":"resolve_revision","phase":"total"}
+{"phase":"created_and_committed","revisions":2,"source_only_recovery":"pending separate process"}
