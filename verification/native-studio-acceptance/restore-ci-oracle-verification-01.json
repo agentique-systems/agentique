@@ -1,0 +1,19 @@
+{
+  "command": [
+    "C:\\Users\\phili\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+    "verification\\native-studio-acceptance\\restore_ci_oracle.py",
+    "--retained",
+    "verification\\native-studio-acceptance\\ci-oracle-01",
+    "--output",
+    "verification/generated/native-studio-acceptance/ci-oracle-restored-01",
+    "--manifest-sha256",
+    "8ff048aae7b77ad84b2bb0d88efa46a7a8138959990f85f8a20770f2b7c4a5e8",
+    "--verify-only"
+  ],
+  "exit_code": 0,
+  "elapsed_seconds": 1.2336159001570195,
+  "manifest_sha256": "8ff048aae7b77ad84b2bb0d88efa46a7a8138959990f85f8a20770f2b7c4a5e8",
+  "stdout": "{\"format\": \"agentique-oracle-evidence-restore/1\", \"manifest_sha256\": \"8ff048aae7b77ad84b2bb0d88efa46a7a8138959990f85f8a20770f2b7c4a5e8\", \"files\": 62, \"original_bytes\": 426162725, \"executables_restored\": false, \"verify_only\": true, \"qualification\": \"Evidence bytes only; no new semantic, runtime, performance or Alpha qualification\"}\n",
+  "stderr": "",
+  "no_artifact_extraction": true
+}

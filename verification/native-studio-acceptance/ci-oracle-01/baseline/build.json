@@ -1,0 +1,189 @@
+{
+  "format": "agentique-native-acceptance-build/1",
+  "component": "oracle",
+  "outcome": "passed",
+  "started_utc": "2026-09-26T08:59:05.3306166Z",
+  "source_commit": "bd72aee4e1bf2aa2b894dc0201bcef111ddf337b",
+  "source_checkout": "D:\\a\\agentique\\agentique\\baseline-source",
+  "build_driver_sha256": "56190a6c6c7492ec3c34f6c21cbdff89e2dc0bcf97b9a2fca5614d906eb0f9a7",
+  "toolchain": "1.92.0",
+  "target": "x86_64-pc-windows-msvc",
+  "release_profile": "checked-in default release profile; thin LTO; no release overrides",
+  "environment": {
+    "CARGO_BUILD_JOBS": "2",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0"
+  },
+  "source_files": {
+    "Cargo.lock": "41113bc2e13973d6f4d97edfbfc4034fd0da66a80700fea0d589b1a365b02d88",
+    "Cargo.toml": "95f1eddc388d34b26744162cdf73fb0fa8b14e23956eda454d100e60aed62598",
+    "crates/studio-native/Cargo.lock": "0d7eed8a0036ee7b35d19652ff24fea58bae6e5597c73eb09270ca78e63514c1",
+    "crates/studio-native/Cargo.toml": "d4116b143c679f63dcd5252656a897d876f39e61b8bd7be3241300cac624d034",
+    "rust-toolchain.toml": "467fec76153022a4e5a673e43ab3ea02c57c7de4d5509045867430befee8107b",
+    "crates/modeling-agent/tests/create_part_performance.rs": "7fdde70821f09f347df3051b3b1643fdbdbe1a6c13789d73edde786e17b6814f"
+  },
+  "commands": [
+    {
+      "command": [
+        "git",
+        "rev-parse",
+        "HEAD"
+      ],
+      "cwd": "D:\\a\\agentique\\agentique\\baseline-source",
+      "started_utc": "2026-09-26T08:59:05.4213213Z",
+      "elapsed_seconds": 0.0393613,
+      "exit_code": 0,
+      "output": "logs/01-source-commit.log",
+      "output_sha256": "37d163a2a1fdfcfddd9339373f82993f606c7690ac8d83baf6cda3a8744520f4"
+    },
+    {
+      "command": [
+        "git",
+        "status",
+        "--porcelain",
+        "--untracked-files=no"
+      ],
+      "cwd": "D:\\a\\agentique\\agentique\\baseline-source",
+      "started_utc": "2026-09-26T08:59:05.4898501Z",
+      "elapsed_seconds": 0.3308311,
+      "exit_code": 0,
+      "output": "logs/02-tracked-status.log",
+      "output_sha256": "bb34c8ac504593d665bc373128fabcc543749360e7d1072a9a5302fa0fa15949"
+    },
+    {
+      "command": [
+        "git",
+        "diff",
+        "HEAD",
+        "--",
+        "crates/modeling-agent/tests/create_part_performance.rs"
+      ],
+      "cwd": "D:\\a\\agentique\\agentique\\baseline-source",
+      "started_utc": "2026-09-26T08:59:05.8360659Z",
+      "elapsed_seconds": 0.1058957,
+      "exit_code": 0,
+      "output": "logs/03-portable-oracle-test-overlay.log",
+      "output_sha256": "f48c996d47f328ba5feb72fab07c053e5f307ca9266ccea1492e199cb343f8c8"
+    },
+    {
+      "command": [
+        "rustup",
+        "toolchain",
+        "install",
+        "1.92.0",
+        "--profile",
+        "minimal"
+      ],
+      "cwd": "D:\\a\\agentique\\agentique\\baseline-source",
+      "started_utc": "2026-09-26T08:59:05.9626514Z",
+      "elapsed_seconds": 8.820566,
+      "exit_code": 0,
+      "output": "logs/04-install-pinned-toolchain.log",
+      "output_sha256": "9d90ac9e9245aaab25f87e637a4ce88ab4ccc2f2d4747a40c79b71f68bd09801"
+    },
+    {
+      "command": [
+        "rustc",
+        "+1.92.0",
+        "-Vv"
+      ],
+      "cwd": "D:\\a\\agentique\\agentique\\baseline-source",
+      "started_utc": "2026-09-26T08:59:14.7861646Z",
+      "elapsed_seconds": 0.0520076,
+      "exit_code": 0,
+      "output": "logs/05-rustc-version.log",
+      "output_sha256": "a648c9943f6d13872c43bfcef380550091c9f56d79bcb61de0241c3dc990dcbd"
+    },
+    {
+      "command": [
+        "cargo",
+        "+1.92.0",
+        "-Vv"
+      ],
+      "cwd": "D:\\a\\agentique\\agentique\\baseline-source",
+      "started_utc": "2026-09-26T08:59:14.8415633Z",
+      "elapsed_seconds": 0.5552436,
+      "exit_code": 0,
+      "output": "logs/06-cargo-version.log",
+      "output_sha256": "a4e861db19f0422a59c24ace4d840685e48d90f8123089bf79faba6eef7143d7"
+    },
+    {
+      "command": [
+        "cargo",
+        "+1.92.0",
+        "fetch",
+        "--locked",
+        "--manifest-path",
+        "Cargo.toml"
+      ],
+      "cwd": "D:\\a\\agentique\\agentique\\baseline-source",
+      "started_utc": "2026-09-26T08:59:15.3991436Z",
+      "elapsed_seconds": 16.4410817,
+      "exit_code": 0,
+      "output": "logs/07-fetch-locked.log",
+      "output_sha256": "cc71dfa717dccee899bf192c896ad66beb2c7a0acc3f9a88f2b313419cc12ebe"
+    },
+    {
+      "command": [
+        "cargo",
+        "+1.92.0",
+        "build",
+        "--release",
+        "--locked",
+        "--offline",
+        "--manifest-path",
+        "Cargo.toml",
+        "--target-dir",
+        "D:\\a\\agentique\\agentique\\baseline-source\\target\\native-acceptance-oracle",
+        "--message-format=json-render-diagnostics",
+        "-p",
+        "agq-modeling-agent",
+        "--features",
+        "agq-modeling-agent/verification",
+        "--test",
+        "create_part_performance"
+      ],
+      "cwd": "D:\\a\\agentique\\agentique\\baseline-source",
+      "started_utc": "2026-09-26T08:59:31.8443528Z",
+      "elapsed_seconds": 517.3614716,
+      "exit_code": 0,
+      "output": "logs/08-release-build.log",
+      "output_sha256": "21e29c7acb6785430953e3a8252d215fab2774bd6b6252c20c073628c407dbcd"
+    },
+    {
+      "command": [
+        "git",
+        "status",
+        "--porcelain",
+        "--untracked-files=no"
+      ],
+      "cwd": "D:\\a\\agentique\\agentique\\baseline-source",
+      "started_utc": "2026-09-26T09:08:09.2934412Z",
+      "elapsed_seconds": 0.0462128,
+      "exit_code": 0,
+      "output": "logs/09-final-tracked-status.log",
+      "output_sha256": "bb34c8ac504593d665bc373128fabcc543749360e7d1072a9a5302fa0fa15949"
+    }
+  ],
+  "binaries": [
+    {
+      "path": "bin/create_part_performance.exe",
+      "build_output": "D:\\a\\agentique\\agentique\\baseline-source\\target\\native-acceptance-oracle\\release\\deps\\create_part_performance-38b4bde8714c589f.exe",
+      "bytes": 24020480,
+      "sha256": "6d288b267698ff612f02693a05b74e97272aa1138e00cc06c3bff95b4d5f4f02"
+    }
+  ],
+  "ci": {
+    "repository": "agentique-systems/agentique",
+    "workflow_commit": "a6e1f41d2b549a8be10a79dfa3ec786c090b65b3",
+    "run_id": "36231357374",
+    "run_attempt": "1",
+    "runner_os": "Windows",
+    "image_os": "win22",
+    "image_version": "20260920.314.1"
+  },
+  "contract": "Build artifacts only. Run against the exact source commit and separately authenticated runtime; no semantic or interactive qualification is implied.",
+  "elapsed_seconds": 544.0072533,
+  "oracle_test_overlay_sha256": "7fdde70821f09f347df3051b3b1643fdbdbe1a6c13789d73edde786e17b6814f"
+}

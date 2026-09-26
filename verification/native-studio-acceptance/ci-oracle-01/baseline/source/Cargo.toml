@@ -1,0 +1,39 @@
+[workspace]
+members = ["crates/studio-scene", "crates/studio-platform", "crates/runtime-publications", "crates/modeling-view", "crates/modeling-agent", "crates/studio", "adapters/modeling-api", "adapters/modeling-http", "adapters/modeling-sqlite", "crates/modeling-repository", "crates/modeling-service", "crates/modeling-workspace", "crates/standard-libraries", "crates/kernel", "crates/kerml", "crates/sysml", "crates/kerml-semantics", "crates/sysml-semantics", "crates/kerml-syntax", "crates/kerml-text", "crates/model", "crates/syntax", "crates/semantics", "crates/workspace", "crates/simulation", "crates/application", "adapters/storage", "adapters/assistant", "crates/server", "crates/cli", "tools/metamodel-gen"]
+exclude = ["crates/studio-native"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+
+[workspace.dependencies]
+agq-model = { path = "crates/model" }
+agq-syntax = { path = "crates/syntax" }
+agq-semantics = { path = "crates/semantics" }
+agq-kerml-semantics = { path = "crates/kerml-semantics" }
+agq-sysml-semantics = { path = "crates/sysml-semantics" }
+agq-workspace = { path = "crates/workspace" }
+agq-simulation = { path = "crates/simulation" }
+agq-application = { path = "crates/application" }
+agq-storage = { path = "adapters/storage" }
+agq-assistant = { path = "adapters/assistant" }
+serde = { version = "1.0.228", features = ["derive", "rc"] }
+serde_json = "1.0.145"
+sha2 = "0.10.9"
+uuid = { version = "1.18.1", features = ["v4", "v5", "serde"] }
+thiserror = "2.0.17"
+num-bigint = { version = "0.4.6", features = ["serde"] }
+zip = { version = "2.4.2", default-features = false, features = ["deflate"] }
+rusqlite = { version = "0.37.0", features = ["bundled"] }
+tokio = { version = "1.48.0", features = ["full"] }
+axum = "0.8.6"
+tower-http = { version = "0.6.6", features = ["fs", "limit"] }
+reqwest = { version = "0.12.24", default-features = false, features = ["json", "rustls-tls"] }
+clap = { version = "4.5.50", features = ["derive"] }
+tempfile = "3.23.0"
+chrono = { version = "0.4.42", default-features = false, features = ["clock", "serde"] }
+
+[profile.release]
+lto = "thin"

@@ -1,0 +1,42 @@
+{
+  "command": [
+    "verification/generated/native-studio-acceptance/ci-helpers-02/bin/project_creation.exe",
+    "--ignored",
+    "--exact",
+    "operator_project_import_retains_durable_boundaries_on_rejection_cancel_and_commit",
+    "--nocapture"
+  ],
+  "cwd": "C:\\Users\\phili\\github\\agentique-systems\\agentique",
+  "source_commit_at_start": "fea3339dbf0e84d408cb7d47c802a7b047826f1f",
+  "tracked_changes_at_start": [
+    " M README.md",
+    " M crates/kerml-semantics/src/closed_query_audit.rs",
+    " M crates/kerml-semantics/src/producer_closure_rebind.rs",
+    " M crates/kerml-semantics/tests/unit/closed_query_audit.rs",
+    " M crates/kerml-semantics/tests/unit/producer_closure.rs",
+    " M crates/kerml-text/src/sysml/source.rs",
+    " M crates/studio-native/src/gpu.rs",
+    " M crates/studio-native/src/gpu_timing.rs",
+    " M crates/studio-native/src/inspector.rs",
+    " M crates/studio-native/src/panels.rs",
+    " M crates/studio-native/src/soak_automation.rs",
+    " M crates/studio-native/src/updates.rs",
+    " M crates/studio-scene/src/lib.rs",
+    " M crates/studio-scene/src/spatial.rs",
+    " M crates/studio-scene/tests/scene_contract.rs",
+    " M docs/native-studio.md",
+    " M docs/runtime-publication-distribution.md"
+  ],
+  "started_utc": "2026-09-26T10:27:28.797438+00:00",
+  "elapsed_seconds": 324.297,
+  "exit_code": 0,
+  "output": "verification/native-studio-alpha/checks/acceptance-project-creation-01.txt",
+  "output_sha256": "a66ba11162bee791ebeffab58f523a4cdbac48c5d645c140e0391b4acb45b7c4",
+  "build_environment": {},
+  "executable": {
+    "path": "C:\\Users\\phili\\github\\agentique-systems\\agentique\\verification\\generated\\native-studio-acceptance\\ci-helpers-02\\bin\\project_creation.exe",
+    "sha256_before": "6b5b4296e6e6e3a6f33e99b732c58d83f10a4ae6e4c498b4f5b8a3ebc2fb9be9",
+    "sha256_after": "6b5b4296e6e6e3a6f33e99b732c58d83f10a4ae6e4c498b4f5b8a3ebc2fb9be9",
+    "unchanged_during_run": true
+  }
+}

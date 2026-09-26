@@ -1,0 +1,26 @@
+{
+  "command": [
+    "python",
+    "D:\\a\\_temp\\native-acceptance-oracle\\current\\oracle\\run_record.py",
+    "--cwd",
+    "D:\\a\\agentique\\agentique",
+    "--name",
+    "windows-create-part-oracle",
+    "--",
+    "D:\\a\\_temp\\native-acceptance-oracle\\current\\bin\\create_part_performance.exe",
+    "create_part_command_matches_full_self_model_reconstruction",
+    "--exact",
+    "--ignored",
+    "--nocapture",
+    "--test-threads=1"
+  ],
+  "source_commit": "a6e1f41d2b549a8be10a79dfa3ec786c090b65b3",
+  "executable_sha256": "6c0ffa4cf472c2067491fe329691c10fa6993b855cc444d503ea191d9f8bca0c",
+  "observer_sha256": "261305ca64df8e21b40c579f7bd287724362d456b788270f4d45c43c7508f2d2",
+  "runtime_sha256": "37edf34cc0220ecdded8e0162f3fc1955ee2f3849e6dccf7ba373833ade3b026",
+  "source_root": "D:\\a\\agentique\\agentique",
+  "oracle_harness_sha256": "7fdde70821f09f347df3051b3b1643fdbdbe1a6c13789d73edde786e17b6814f",
+  "scope": "Repository self-model only; no operator database uploaded",
+  "outcome": "passed",
+  "exit_code": 0
+}

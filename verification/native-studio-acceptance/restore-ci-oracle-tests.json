@@ -1,0 +1,16 @@
+{
+  "command": [
+    "C:\\Users\\phili\\AppData\\Local\\Microsoft\\WindowsApps\\PythonSoftwareFoundation.Python.3.12_qbz5n2kfra8p0\\python.exe",
+    "-m",
+    "unittest",
+    "discover",
+    "-s",
+    "verification/native-studio-acceptance",
+    "-p",
+    "test_restore_ci_oracle.py",
+    "-v"
+  ],
+  "exit_code": 0,
+  "stdout": "",
+  "stderr": "test_exact_bytes_and_fresh_only (test_restore_ci_oracle.RestoreEvidence.test_exact_bytes_and_fresh_only) ... ok\ntest_manifest_hash_duplicate_keys_and_compression_contract (test_restore_ci_oracle.RestoreEvidence.test_manifest_hash_duplicate_keys_and_compression_contract) ... ok\ntest_output_must_be_ignored_generated_and_absent (test_restore_ci_oracle.RestoreEvidence.test_output_must_be_ignored_generated_and_absent) ... ok\ntest_paths_executables_and_windows_aliases_rejected (test_restore_ci_oracle.RestoreEvidence.test_paths_executables_and_windows_aliases_rejected) ... ok\ntest_stored_tampering_and_expansion_mismatch_fail_before_write (test_restore_ci_oracle.RestoreEvidence.test_stored_tampering_and_expansion_mismatch_fail_before_write) ... ok\ntest_verify_only_creates_nothing (test_restore_ci_oracle.RestoreEvidence.test_verify_only_creates_nothing) ... ok\n\n----------------------------------------------------------------------\nRan 6 tests in 0.619s\n\nOK\n"
+}

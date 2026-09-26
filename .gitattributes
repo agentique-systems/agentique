@@ -32,6 +32,9 @@ verification/native-studio-acceptance/**/*.json -text whitespace=blank-at-eol,bl
 verification/native-studio-acceptance/**/*.jsonl -text -whitespace
 verification/native-studio-acceptance/**/*.txt -text -whitespace
 verification/native-studio-acceptance/**/*.log -text -whitespace
+# Retained CI manifests bind every original byte, including copied source files.
+verification/native-studio-acceptance/ci-oracle-01/** -text -whitespace
+verification/native-studio-acceptance/ci-helpers-02/** -text -whitespace
 standards/kerml-1.0-operational-formal-target-errata-v5.json -text
 # Manifest hashes identify reviewed bytes, including line endings.
 standards/kerml-1.0-operational-errata*.json -text

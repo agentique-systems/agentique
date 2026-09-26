@@ -1,0 +1,442 @@
+{
+  "format": "agentique-retained-ci-oracle/1",
+  "run_url": "https://github.com/agentique-systems/agentique/actions/runs/36231357374",
+  "artifact": "native-acceptance-windows-oracle-a6e1f41d2b549a8be10a79dfa3ec786c090b65b3-1",
+  "scope": "Original artifact metadata, source pins and complete observation maps; executables retained in CI artifact and excluded from Git. Four large JSON maps use lossless gzip. No measurements rewritten.",
+  "files": {
+    "baseline/build.json": {
+      "path": "baseline/build.json",
+      "original_bytes": 6804,
+      "original_sha256": "ab2d7ed3c61ac5617e16254b234cc3d066884a937af693570641309a8e8d9cf3",
+      "stored_sha256": "ab2d7ed3c61ac5617e16254b234cc3d066884a937af693570641309a8e8d9cf3",
+      "compression": null
+    },
+    "baseline/logs/01-source-commit.log": {
+      "path": "baseline/logs/01-source-commit.log",
+      "original_bytes": 42,
+      "original_sha256": "37d163a2a1fdfcfddd9339373f82993f606c7690ac8d83baf6cda3a8744520f4",
+      "stored_sha256": "37d163a2a1fdfcfddd9339373f82993f606c7690ac8d83baf6cda3a8744520f4",
+      "compression": null
+    },
+    "baseline/logs/02-tracked-status.log": {
+      "path": "baseline/logs/02-tracked-status.log",
+      "original_bytes": 59,
+      "original_sha256": "bb34c8ac504593d665bc373128fabcc543749360e7d1072a9a5302fa0fa15949",
+      "stored_sha256": "bb34c8ac504593d665bc373128fabcc543749360e7d1072a9a5302fa0fa15949",
+      "compression": null
+    },
+    "baseline/logs/03-portable-oracle-test-overlay.log": {
+      "path": "baseline/logs/03-portable-oracle-test-overlay.log",
+      "original_bytes": 4174,
+      "original_sha256": "f48c996d47f328ba5feb72fab07c053e5f307ca9266ccea1492e199cb343f8c8",
+      "stored_sha256": "f48c996d47f328ba5feb72fab07c053e5f307ca9266ccea1492e199cb343f8c8",
+      "compression": null
+    },
+    "baseline/logs/04-install-pinned-toolchain.log": {
+      "path": "baseline/logs/04-install-pinned-toolchain.log",
+      "original_bytes": 259,
+      "original_sha256": "9d90ac9e9245aaab25f87e637a4ce88ab4ccc2f2d4747a40c79b71f68bd09801",
+      "stored_sha256": "9d90ac9e9245aaab25f87e637a4ce88ab4ccc2f2d4747a40c79b71f68bd09801",
+      "compression": null
+    },
+    "baseline/logs/05-rustc-version.log": {
+      "path": "baseline/logs/05-rustc-version.log",
+      "original_bytes": 201,
+      "original_sha256": "a648c9943f6d13872c43bfcef380550091c9f56d79bcb61de0241c3dc990dcbd",
+      "stored_sha256": "a648c9943f6d13872c43bfcef380550091c9f56d79bcb61de0241c3dc990dcbd",
+      "compression": null
+    },
+    "baseline/logs/06-cargo-version.log": {
+      "path": "baseline/logs/06-cargo-version.log",
+      "original_bytes": 336,
+      "original_sha256": "a4e861db19f0422a59c24ace4d840685e48d90f8123089bf79faba6eef7143d7",
+      "stored_sha256": "a4e861db19f0422a59c24ace4d840685e48d90f8123089bf79faba6eef7143d7",
+      "compression": null
+    },
+    "baseline/logs/07-fetch-locked.log": {
+      "path": "baseline/logs/07-fetch-locked.log",
+      "original_bytes": 7156,
+      "original_sha256": "cc71dfa717dccee899bf192c896ad66beb2c7a0acc3f9a88f2b313419cc12ebe",
+      "stored_sha256": "cc71dfa717dccee899bf192c896ad66beb2c7a0acc3f9a88f2b313419cc12ebe",
+      "compression": null
+    },
+    "baseline/logs/08-release-build.log": {
+      "path": "baseline/logs/08-release-build.log",
+      "original_bytes": 93901,
+      "original_sha256": "21e29c7acb6785430953e3a8252d215fab2774bd6b6252c20c073628c407dbcd",
+      "stored_sha256": "21e29c7acb6785430953e3a8252d215fab2774bd6b6252c20c073628c407dbcd",
+      "compression": null
+    },
+    "baseline/logs/09-final-tracked-status.log": {
+      "path": "baseline/logs/09-final-tracked-status.log",
+      "original_bytes": 59,
+      "original_sha256": "bb34c8ac504593d665bc373128fabcc543749360e7d1072a9a5302fa0fa15949",
+      "stored_sha256": "bb34c8ac504593d665bc373128fabcc543749360e7d1072a9a5302fa0fa15949",
+      "compression": null
+    },
+    "baseline/logs/oracle-observer.log": {
+      "path": "baseline/logs/oracle-observer.log",
+      "original_bytes": 126376,
+      "original_sha256": "357e158106d74f91c1a7d5a92449369b27e7ef987e4dd3ca4a15a5ca476aa1ed",
+      "stored_sha256": "357e158106d74f91c1a7d5a92449369b27e7ef987e4dd3ca4a15a5ca476aa1ed",
+      "compression": null
+    },
+    "baseline/oracle/invocation.json": {
+      "path": "baseline/oracle/invocation.json",
+      "original_bytes": 1099,
+      "original_sha256": "8e1b6dc4a8d34b3627523952ec71a89d1d8a5265ef0263a4e30fbbb972eac4fb",
+      "stored_sha256": "8e1b6dc4a8d34b3627523952ec71a89d1d8a5265ef0263a4e30fbbb972eac4fb",
+      "compression": null
+    },
+    "baseline/oracle/observations/checkpoint.json": {
+      "path": "baseline/oracle/observations/checkpoint.json",
+      "original_bytes": 464865,
+      "original_sha256": "c7b1ccf26356a874b3af57a50e4e03374ab15872f03302c6e7f3cd8cf75bc227",
+      "stored_sha256": "c7b1ccf26356a874b3af57a50e4e03374ab15872f03302c6e7f3cd8cf75bc227",
+      "compression": null
+    },
+    "baseline/oracle/observations/cold-metrics.json": {
+      "path": "baseline/oracle/observations/cold-metrics.json",
+      "original_bytes": 1942,
+      "original_sha256": "cdc024b0f99f831a8497059312f328f96f9fcd029d2308f2f1bcf241c56cb7d9",
+      "stored_sha256": "cdc024b0f99f831a8497059312f328f96f9fcd029d2308f2f1bcf241c56cb7d9",
+      "compression": null
+    },
+    "baseline/oracle/observations/cold-observations.json": {
+      "path": "baseline/oracle/observations/cold-observations.json.gz",
+      "original_bytes": 105985805,
+      "original_sha256": "4ed3d78d7655f770663503ac608df5be1f9acdd0b91ec86851fb1a5ea1bd7b99",
+      "stored_sha256": "ad249e5e0fc24a0de23f3d94f3a2fd6d24eec4295f1df6be0a25555bcf89faea",
+      "compression": "gzip"
+    },
+    "baseline/oracle/observations/command-metrics.json": {
+      "path": "baseline/oracle/observations/command-metrics.json",
+      "original_bytes": 2098,
+      "original_sha256": "873e941f3d3e73a76cfbae175ecdbb5a4cc032b52f20b400b46670a06127d799",
+      "stored_sha256": "873e941f3d3e73a76cfbae175ecdbb5a4cc032b52f20b400b46670a06127d799",
+      "compression": null
+    },
+    "baseline/oracle/observations/command-observations.json": {
+      "path": "baseline/oracle/observations/command-observations.json.gz",
+      "original_bytes": 105985805,
+      "original_sha256": "4ed3d78d7655f770663503ac608df5be1f9acdd0b91ec86851fb1a5ea1bd7b99",
+      "stored_sha256": "75ff70436eedda87ee1a07e226c7d8f4385b6c9023504ab06fd8f5b962dc6e0b",
+      "compression": "gzip"
+    },
+    "baseline/oracle/observations/result.json": {
+      "path": "baseline/oracle/observations/result.json",
+      "original_bytes": 4573,
+      "original_sha256": "780b6f2f0208f5f19923cb453278041ee00b0512a77801b6ceb8b5848e9f3bf5",
+      "stored_sha256": "780b6f2f0208f5f19923cb453278041ee00b0512a77801b6ceb8b5848e9f3bf5",
+      "compression": null
+    },
+    "baseline/oracle/observations/sources.json": {
+      "path": "baseline/oracle/observations/sources.json",
+      "original_bytes": 6926,
+      "original_sha256": "52ed743cc2585796893fa152105a9cc2b106521b0bafd11970e7e6621577bd3a",
+      "stored_sha256": "52ed743cc2585796893fa152105a9cc2b106521b0bafd11970e7e6621577bd3a",
+      "compression": null
+    },
+    "baseline/oracle/run_record.py": {
+      "path": "baseline/oracle/run_record.py",
+      "original_bytes": 3622,
+      "original_sha256": "261305ca64df8e21b40c579f7bd287724362d456b788270f4d45c43c7508f2d2",
+      "stored_sha256": "261305ca64df8e21b40c579f7bd287724362d456b788270f4d45c43c7508f2d2",
+      "compression": null
+    },
+    "baseline/oracle/windows-create-part-oracle.json": {
+      "path": "baseline/oracle/windows-create-part-oracle.json",
+      "original_bytes": 175493,
+      "original_sha256": "f98473c6ec961d43cd105498109a038c59581d3304ffdbfd13ef1774b7ae15c9",
+      "stored_sha256": "f98473c6ec961d43cd105498109a038c59581d3304ffdbfd13ef1774b7ae15c9",
+      "compression": null
+    },
+    "baseline/oracle/windows-create-part-oracle.log": {
+      "path": "baseline/oracle/windows-create-part-oracle.log",
+      "original_bytes": 9934,
+      "original_sha256": "62ad6496bbfae68cd14934fb2eaa9845270ab964cd92aad3efed52b2621bb0b0",
+      "stored_sha256": "62ad6496bbfae68cd14934fb2eaa9845270ab964cd92aad3efed52b2621bb0b0",
+      "compression": null
+    },
+    "baseline/SHA256SUMS": {
+      "path": "baseline/SHA256SUMS",
+      "original_bytes": 99,
+      "original_sha256": "1201b2253c360ae0bc289bce956f2518eb9eb806ada1f2a1b1828b9e78b9ef34",
+      "stored_sha256": "1201b2253c360ae0bc289bce956f2518eb9eb806ada1f2a1b1828b9e78b9ef34",
+      "compression": null
+    },
+    "baseline/source/Cargo.lock": {
+      "path": "baseline/source/Cargo.lock",
+      "original_bytes": 58510,
+      "original_sha256": "41113bc2e13973d6f4d97edfbfc4034fd0da66a80700fea0d589b1a365b02d88",
+      "stored_sha256": "41113bc2e13973d6f4d97edfbfc4034fd0da66a80700fea0d589b1a365b02d88",
+      "compression": null
+    },
+    "baseline/source/Cargo.toml": {
+      "path": "baseline/source/Cargo.toml",
+      "original_bytes": 2148,
+      "original_sha256": "95f1eddc388d34b26744162cdf73fb0fa8b14e23956eda454d100e60aed62598",
+      "stored_sha256": "95f1eddc388d34b26744162cdf73fb0fa8b14e23956eda454d100e60aed62598",
+      "compression": null
+    },
+    "baseline/source/native-Cargo.lock": {
+      "path": "baseline/source/native-Cargo.lock",
+      "original_bytes": 114351,
+      "original_sha256": "0d7eed8a0036ee7b35d19652ff24fea58bae6e5597c73eb09270ca78e63514c1",
+      "stored_sha256": "0d7eed8a0036ee7b35d19652ff24fea58bae6e5597c73eb09270ca78e63514c1",
+      "compression": null
+    },
+    "baseline/source/native-Cargo.toml": {
+      "path": "baseline/source/native-Cargo.toml",
+      "original_bytes": 1165,
+      "original_sha256": "d4116b143c679f63dcd5252656a897d876f39e61b8bd7be3241300cac624d034",
+      "stored_sha256": "d4116b143c679f63dcd5252656a897d876f39e61b8bd7be3241300cac624d034",
+      "compression": null
+    },
+    "baseline/source/oracle-test.rs": {
+      "path": "baseline/source/oracle-test.rs",
+      "original_bytes": 25626,
+      "original_sha256": "7fdde70821f09f347df3051b3b1643fdbdbe1a6c13789d73edde786e17b6814f",
+      "stored_sha256": "7fdde70821f09f347df3051b3b1643fdbdbe1a6c13789d73edde786e17b6814f",
+      "compression": null
+    },
+    "baseline/source/rust-toolchain.toml": {
+      "path": "baseline/source/rust-toolchain.toml",
+      "original_bytes": 103,
+      "original_sha256": "467fec76153022a4e5a673e43ab3ea02c57c7de4d5509045867430befee8107b",
+      "stored_sha256": "467fec76153022a4e5a673e43ab3ea02c57c7de4d5509045867430befee8107b",
+      "compression": null
+    },
+    "current/build.json": {
+      "path": "current/build.json",
+      "original_bytes": 6011,
+      "original_sha256": "8498b2dd66a9da2114aa4aca0d7c38742903edbb4716c45cd482eb3894ed8d4f",
+      "stored_sha256": "8498b2dd66a9da2114aa4aca0d7c38742903edbb4716c45cd482eb3894ed8d4f",
+      "compression": null
+    },
+    "current/logs/01-source-commit.log": {
+      "path": "current/logs/01-source-commit.log",
+      "original_bytes": 42,
+      "original_sha256": "21b30bf53ca644f99c87c51b65f600610aa99e853b439639a937b490f0af5133",
+      "stored_sha256": "21b30bf53ca644f99c87c51b65f600610aa99e853b439639a937b490f0af5133",
+      "compression": null
+    },
+    "current/logs/02-tracked-status.log": {
+      "path": "current/logs/02-tracked-status.log",
+      "original_bytes": 0,
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compression": null
+    },
+    "current/logs/03-install-pinned-toolchain.log": {
+      "path": "current/logs/03-install-pinned-toolchain.log",
+      "original_bytes": 150,
+      "original_sha256": "bc69d38e67ea7bbd16f64370b20ae283cec6c3a5c5cdc4408678a51bc303f06d",
+      "stored_sha256": "bc69d38e67ea7bbd16f64370b20ae283cec6c3a5c5cdc4408678a51bc303f06d",
+      "compression": null
+    },
+    "current/logs/04-rustc-version.log": {
+      "path": "current/logs/04-rustc-version.log",
+      "original_bytes": 201,
+      "original_sha256": "a648c9943f6d13872c43bfcef380550091c9f56d79bcb61de0241c3dc990dcbd",
+      "stored_sha256": "a648c9943f6d13872c43bfcef380550091c9f56d79bcb61de0241c3dc990dcbd",
+      "compression": null
+    },
+    "current/logs/05-cargo-version.log": {
+      "path": "current/logs/05-cargo-version.log",
+      "original_bytes": 336,
+      "original_sha256": "a4e861db19f0422a59c24ace4d840685e48d90f8123089bf79faba6eef7143d7",
+      "stored_sha256": "a4e861db19f0422a59c24ace4d840685e48d90f8123089bf79faba6eef7143d7",
+      "compression": null
+    },
+    "current/logs/06-fetch-locked.log": {
+      "path": "current/logs/06-fetch-locked.log",
+      "original_bytes": 0,
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compression": null
+    },
+    "current/logs/07-release-build.log": {
+      "path": "current/logs/07-release-build.log",
+      "original_bytes": 89510,
+      "original_sha256": "a2a393adf527096a165ac015a7bd58e3d8c9277ad73c78aceb2f14fe4558ddc4",
+      "stored_sha256": "a2a393adf527096a165ac015a7bd58e3d8c9277ad73c78aceb2f14fe4558ddc4",
+      "compression": null
+    },
+    "current/logs/08-final-tracked-status.log": {
+      "path": "current/logs/08-final-tracked-status.log",
+      "original_bytes": 0,
+      "original_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stored_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compression": null
+    },
+    "current/logs/oracle-observer.log": {
+      "path": "current/logs/oracle-observer.log",
+      "original_bytes": 129583,
+      "original_sha256": "0186bec2f9413be013f026e5ddbecc1896fb9c4ad72beb00ea4fd646e6d4b2e9",
+      "stored_sha256": "0186bec2f9413be013f026e5ddbecc1896fb9c4ad72beb00ea4fd646e6d4b2e9",
+      "compression": null
+    },
+    "current/oracle/invocation.json": {
+      "path": "current/oracle/invocation.json",
+      "original_bytes": 1063,
+      "original_sha256": "dbdc43dcdd9afffc96e2b3b8062df20f46ac5a6d3fd06fef578849fbcfa157d9",
+      "stored_sha256": "dbdc43dcdd9afffc96e2b3b8062df20f46ac5a6d3fd06fef578849fbcfa157d9",
+      "compression": null
+    },
+    "current/oracle/observations/checkpoint.json": {
+      "path": "current/oracle/observations/checkpoint.json",
+      "original_bytes": 464865,
+      "original_sha256": "740da901d19d316112b5e87d041f2605e990b1669a589aa000a9a5148c30c3a0",
+      "stored_sha256": "740da901d19d316112b5e87d041f2605e990b1669a589aa000a9a5148c30c3a0",
+      "compression": null
+    },
+    "current/oracle/observations/cold-metrics.json": {
+      "path": "current/oracle/observations/cold-metrics.json",
+      "original_bytes": 2113,
+      "original_sha256": "e707c275cb9856d007b51fb09c37047cec1fa9874c32b5cb7184185a484bab3b",
+      "stored_sha256": "e707c275cb9856d007b51fb09c37047cec1fa9874c32b5cb7184185a484bab3b",
+      "compression": null
+    },
+    "current/oracle/observations/cold-observations.json": {
+      "path": "current/oracle/observations/cold-observations.json.gz",
+      "original_bytes": 105985804,
+      "original_sha256": "0beea518acd35a012856c938f0e34ee90ba07b098b0e274d4d6d4d725e6f508a",
+      "stored_sha256": "729ec4496eae89b6db25a20a096f93e1248001718a99843e9a10643cb64dc368",
+      "compression": "gzip"
+    },
+    "current/oracle/observations/command-metrics.json": {
+      "path": "current/oracle/observations/command-metrics.json",
+      "original_bytes": 2283,
+      "original_sha256": "c81c4d04623072c9c3df2cd967efac850c22eb8a326ffd9cb622ec312f05169f",
+      "stored_sha256": "c81c4d04623072c9c3df2cd967efac850c22eb8a326ffd9cb622ec312f05169f",
+      "compression": null
+    },
+    "current/oracle/observations/command-observations.json": {
+      "path": "current/oracle/observations/command-observations.json.gz",
+      "original_bytes": 105985804,
+      "original_sha256": "0beea518acd35a012856c938f0e34ee90ba07b098b0e274d4d6d4d725e6f508a",
+      "stored_sha256": "9e18bbe43c68d6d13f53a72198cf7700d1550db8c7138e97ef8c3550dbe7b47d",
+      "compression": "gzip"
+    },
+    "current/oracle/observations/result.json": {
+      "path": "current/oracle/observations/result.json",
+      "original_bytes": 4929,
+      "original_sha256": "f984ccc1f5a7e483776c44b08b1e5767231f917e163ba6779724715fe2935ae1",
+      "stored_sha256": "f984ccc1f5a7e483776c44b08b1e5767231f917e163ba6779724715fe2935ae1",
+      "compression": null
+    },
+    "current/oracle/observations/sources.json": {
+      "path": "current/oracle/observations/sources.json",
+      "original_bytes": 6926,
+      "original_sha256": "1e65f97ba88ea825250adc834de28fa192a58b761904b275f0268492d93315b5",
+      "stored_sha256": "1e65f97ba88ea825250adc834de28fa192a58b761904b275f0268492d93315b5",
+      "compression": null
+    },
+    "current/oracle/run_record.py": {
+      "path": "current/oracle/run_record.py",
+      "original_bytes": 3622,
+      "original_sha256": "261305ca64df8e21b40c579f7bd287724362d456b788270f4d45c43c7508f2d2",
+      "stored_sha256": "261305ca64df8e21b40c579f7bd287724362d456b788270f4d45c43c7508f2d2",
+      "compression": null
+    },
+    "current/oracle/windows-create-part-oracle.json": {
+      "path": "current/oracle/windows-create-part-oracle.json",
+      "original_bytes": 179954,
+      "original_sha256": "5e83fd6c06a55c59e54c895eeb5c1b67f113cab0df12e75e7af8ead3db6d1424",
+      "stored_sha256": "5e83fd6c06a55c59e54c895eeb5c1b67f113cab0df12e75e7af8ead3db6d1424",
+      "compression": null
+    },
+    "current/oracle/windows-create-part-oracle.log": {
+      "path": "current/oracle/windows-create-part-oracle.log",
+      "original_bytes": 10598,
+      "original_sha256": "31a55f1771966bc6bba0668d09fde381b621e406986638fc79b982eb108c1dc4",
+      "stored_sha256": "31a55f1771966bc6bba0668d09fde381b621e406986638fc79b982eb108c1dc4",
+      "compression": null
+    },
+    "current/SHA256SUMS": {
+      "path": "current/SHA256SUMS",
+      "original_bytes": 99,
+      "original_sha256": "66afa84a150fc11e9743dbde4abef99c638ce29f1403b69ad1328b4e48d0ff8f",
+      "stored_sha256": "66afa84a150fc11e9743dbde4abef99c638ce29f1403b69ad1328b4e48d0ff8f",
+      "compression": null
+    },
+    "current/source/Cargo.lock": {
+      "path": "current/source/Cargo.lock",
+      "original_bytes": 58510,
+      "original_sha256": "41113bc2e13973d6f4d97edfbfc4034fd0da66a80700fea0d589b1a365b02d88",
+      "stored_sha256": "41113bc2e13973d6f4d97edfbfc4034fd0da66a80700fea0d589b1a365b02d88",
+      "compression": null
+    },
+    "current/source/Cargo.toml": {
+      "path": "current/source/Cargo.toml",
+      "original_bytes": 2148,
+      "original_sha256": "95f1eddc388d34b26744162cdf73fb0fa8b14e23956eda454d100e60aed62598",
+      "stored_sha256": "95f1eddc388d34b26744162cdf73fb0fa8b14e23956eda454d100e60aed62598",
+      "compression": null
+    },
+    "current/source/native-Cargo.lock": {
+      "path": "current/source/native-Cargo.lock",
+      "original_bytes": 114351,
+      "original_sha256": "0d7eed8a0036ee7b35d19652ff24fea58bae6e5597c73eb09270ca78e63514c1",
+      "stored_sha256": "0d7eed8a0036ee7b35d19652ff24fea58bae6e5597c73eb09270ca78e63514c1",
+      "compression": null
+    },
+    "current/source/native-Cargo.toml": {
+      "path": "current/source/native-Cargo.toml",
+      "original_bytes": 1165,
+      "original_sha256": "d4116b143c679f63dcd5252656a897d876f39e61b8bd7be3241300cac624d034",
+      "stored_sha256": "d4116b143c679f63dcd5252656a897d876f39e61b8bd7be3241300cac624d034",
+      "compression": null
+    },
+    "current/source/oracle-test.rs": {
+      "path": "current/source/oracle-test.rs",
+      "original_bytes": 25626,
+      "original_sha256": "7fdde70821f09f347df3051b3b1643fdbdbe1a6c13789d73edde786e17b6814f",
+      "stored_sha256": "7fdde70821f09f347df3051b3b1643fdbdbe1a6c13789d73edde786e17b6814f",
+      "compression": null
+    },
+    "current/source/rust-toolchain.toml": {
+      "path": "current/source/rust-toolchain.toml",
+      "original_bytes": 103,
+      "original_sha256": "467fec76153022a4e5a673e43ab3ea02c57c7de4d5509045867430befee8107b",
+      "stored_sha256": "467fec76153022a4e5a673e43ab3ea02c57c7de4d5509045867430befee8107b",
+      "compression": null
+    },
+    "gates.json": {
+      "path": "gates.json",
+      "original_bytes": 605,
+      "original_sha256": "b829458fb1339099278d02a7721f0047b4a49c961a1fe8fcce35832f58c00f3b",
+      "stored_sha256": "b829458fb1339099278d02a7721f0047b4a49c961a1fe8fcce35832f58c00f3b",
+      "compression": null
+    },
+    "logs/oracle-observer-install.log": {
+      "path": "logs/oracle-observer-install.log",
+      "original_bytes": 230,
+      "original_sha256": "a83f1dac9699b86d529cbfb4561d6e10266c652ac9b056fc7fc26fa66341f191",
+      "stored_sha256": "a83f1dac9699b86d529cbfb4561d6e10266c652ac9b056fc7fc26fa66341f191",
+      "compression": null
+    },
+    "runtime/runtime-manifest.json": {
+      "path": "runtime/runtime-manifest.json",
+      "original_bytes": 1609,
+      "original_sha256": "403ea690ebcb444510f55e9e60ddea3406dc3707528221d5245e50671bc3b260",
+      "stored_sha256": "403ea690ebcb444510f55e9e60ddea3406dc3707528221d5245e50671bc3b260",
+      "compression": null
+    },
+    "runtime/runtime-release.json": {
+      "path": "runtime/runtime-release.json",
+      "original_bytes": 125,
+      "original_sha256": "ec0fb0d770cef96667ce82d20099f69716b9c28a5ddc4cfeca494d8fffec91b8",
+      "stored_sha256": "ec0fb0d770cef96667ce82d20099f69716b9c28a5ddc4cfeca494d8fffec91b8",
+      "compression": null
+    },
+    "runtime/runtime-transport.json": {
+      "path": "runtime/runtime-transport.json",
+      "original_bytes": 829,
+      "original_sha256": "99ff7c9c24b1504af38cf3f8297b51195b356480f5ed3f86cc335f91642653b6",
+      "stored_sha256": "99ff7c9c24b1504af38cf3f8297b51195b356480f5ed3f86cc335f91642653b6",
+      "compression": null
+    }
+  }
+}

@@ -1,0 +1,103 @@
+{
+  "format": "agentique-retained-ci-build/1",
+  "run": 36234518201,
+  "source_commit": "fea3339dbf0e84d408cb7d47c802a7b047826f1f",
+  "retained_utc": "2026-09-26T10:28:27.199551+00:00",
+  "binaries_verified_against_build_manifest": [
+    {
+      "path": "bin/profile_open.exe",
+      "build_output": "D:\\a\\agentique\\agentique\\target\\native-acceptance-helpers\\release\\examples\\profile_open.exe",
+      "bytes": 23343616,
+      "sha256": "cb5275fcccb22a430341b138347d4aed48b1822edba82b164a94772bdda2b73f"
+    },
+    {
+      "path": "bin/source_recovery.exe",
+      "build_output": "D:\\a\\agentique\\agentique\\target\\native-acceptance-helpers\\release\\examples\\source_recovery.exe",
+      "bytes": 23580160,
+      "sha256": "5f023f07d4b9ae1e1c24741802dd30238531d9e459ff7fe4f8d97b816faf168a"
+    },
+    {
+      "path": "bin/project_creation.exe",
+      "build_output": "D:\\a\\agentique\\agentique\\target\\native-acceptance-helpers\\release\\deps\\project_creation-0d91c20f48663a43.exe",
+      "bytes": 24023040,
+      "sha256": "6b5b4296e6e6e3a6f33e99b732c58d83f10a4ae6e4c498b4f5b8a3ebc2fb9be9"
+    }
+  ],
+  "files": [
+    {
+      "path": "build.json",
+      "bytes": 6483,
+      "sha256": "7d105e87513e80c4735fc4ac099b185e5a32a321a06eceecf3ad3f92c91047ef"
+    },
+    {
+      "path": "logs/01-source-commit.log",
+      "bytes": 42,
+      "sha256": "5ecee28c32156c63ef1c26285e3dc387b95a9d17c0d657c93f6fc724ae9ef3b4"
+    },
+    {
+      "path": "logs/02-tracked-status.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "logs/03-install-pinned-toolchain.log",
+      "bytes": 259,
+      "sha256": "9d90ac9e9245aaab25f87e637a4ce88ab4ccc2f2d4747a40c79b71f68bd09801"
+    },
+    {
+      "path": "logs/04-rustc-version.log",
+      "bytes": 201,
+      "sha256": "a648c9943f6d13872c43bfcef380550091c9f56d79bcb61de0241c3dc990dcbd"
+    },
+    {
+      "path": "logs/05-cargo-version.log",
+      "bytes": 336,
+      "sha256": "a4e861db19f0422a59c24ace4d840685e48d90f8123089bf79faba6eef7143d7"
+    },
+    {
+      "path": "logs/06-fetch-locked.log",
+      "bytes": 7156,
+      "sha256": "7968c9dd246c4c02bcdc5d2004f5492160673b842f40cebefd8c3d534a4a35e6"
+    },
+    {
+      "path": "logs/07-release-build.log",
+      "bytes": 107755,
+      "sha256": "fa3380d59905ec885b11ec091595b6100d37bef781ac403bef939edf76d58feb"
+    },
+    {
+      "path": "logs/08-final-tracked-status.log",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "SHA256SUMS",
+      "bytes": 271,
+      "sha256": "8494293d5175bb62ec775d0ec009d360709a611718441897a0b2d9fa63e2539e"
+    },
+    {
+      "path": "source/Cargo.lock",
+      "bytes": 58510,
+      "sha256": "41113bc2e13973d6f4d97edfbfc4034fd0da66a80700fea0d589b1a365b02d88"
+    },
+    {
+      "path": "source/Cargo.toml",
+      "bytes": 2148,
+      "sha256": "95f1eddc388d34b26744162cdf73fb0fa8b14e23956eda454d100e60aed62598"
+    },
+    {
+      "path": "source/native-Cargo.lock",
+      "bytes": 114351,
+      "sha256": "0d7eed8a0036ee7b35d19652ff24fea58bae6e5597c73eb09270ca78e63514c1"
+    },
+    {
+      "path": "source/native-Cargo.toml",
+      "bytes": 1165,
+      "sha256": "d4116b143c679f63dcd5252656a897d876f39e61b8bd7be3241300cac624d034"
+    },
+    {
+      "path": "source/rust-toolchain.toml",
+      "bytes": 103,
+      "sha256": "467fec76153022a4e5a673e43ab3ea02c57c7de4d5509045867430befee8107b"
+    }
+  ]
+}

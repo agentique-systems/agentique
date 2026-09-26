@@ -1,0 +1,101 @@
+diff --git a/crates/modeling-agent/tests/create_part_performance.rs b/crates/modeling-agent/tests/create_part_performance.rs
+index f91fbc6..995d72d 100644
+--- a/crates/modeling-agent/tests/create_part_performance.rs
++++ b/crates/modeling-agent/tests/create_part_performance.rs
+@@ -10,7 +10,61 @@ use agq_modeling_agent::{AgentContext, AgentPolicy, ModelCommand};
+ use agq_modeling_repository::{ContentDigest, OperationId};
+ use agq_modeling_service::{ApplyDocumentChanges, ModelingService, RevisionSelector};
+ use agq_modeling_workspace::{ProjectRevisionCheckpoint, WorkingProjectRevision};
+-use std::{collections::BTreeMap, fs::File, path::Path, sync::Arc, time::Instant};
++use std::{
++    collections::BTreeMap,
++    fs::File,
++    path::{Path, PathBuf},
++    sync::Arc,
++    time::Instant,
++};
++
++fn oracle_source_root() -> PathBuf {
++    let supplied = std::env::var_os("AGENTIQUE_SOURCE_ROOT");
++    let selected = supplied.as_ref().map_or_else(
++        || Path::new(env!("CARGO_MANIFEST_DIR")).join("../.."),
++        PathBuf::from,
++    );
++    let root = selected.canonicalize().unwrap_or_else(|error| {
++        panic!(
++            "oracle source root {} is unavailable: {error}; set AGENTIQUE_SOURCE_ROOT to the Agentique checkout",
++            selected.display()
++        )
++    });
++    for relative in [
++        "Cargo.toml",
++        "standards/normative/sysml-2.0/library-set.json",
++    ] {
++        assert!(
++            root.join(relative).is_file(),
++            "oracle source root {} is missing {relative}",
++            root.display()
++        );
++    }
++    let models = root.join("models/agentique");
++    assert!(
++        std::fs::read_dir(&models).is_ok_and(|entries| entries.filter_map(Result::ok).any(
++            |entry| {
++                let path = entry.path();
++                path.is_file()
++                    && path
++                        .extension()
++                        .is_some_and(|extension| extension == "sysml")
++            }
++        )),
++        "oracle source root {} has no models/agentique/*.sysml inputs",
++        root.display()
++    );
++    eprintln!(
++        "oracle source root ({}): {}",
++        if supplied.is_some() {
++            "AGENTIQUE_SOURCE_ROOT"
++        } else {
++            "compiled default"
++        },
++        root.display()
++    );
++    root
++}
+ 
+ fn named(revision: &WorkingProjectRevision, segments: &[&str]) -> ElementId {
+     let answer = revision.kerml_queries().unwrap().lookup_path(
+@@ -105,7 +159,7 @@ fn create_part_command_matches_full_self_model_reconstruction() {
+ }
+ 
+ fn command_child(output: &Path) {
+-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
++    let root = oracle_source_root();
+     // Open both before expensive restoration: unavailable input fails immediately.
+     let kerml_file = File::open(
+         std::env::var_os("AGENTIQUE_KERML_CACHE").expect("accepted KerML cache required"),
+@@ -464,7 +518,7 @@ fn write_observations(output: &Path, label: &str, revision: &WorkingProjectRevis
+ }
+ 
+ fn cold_child(output: &Path) {
+-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
++    let root = oracle_source_root();
+     let kerml_file = File::open(std::env::var_os("AGENTIQUE_KERML_CACHE").unwrap()).unwrap();
+     let systems_file = File::open(std::env::var_os("AGENTIQUE_SYSTEMS_CACHE").unwrap()).unwrap();
+     let libraries = agq_standard_libraries::VerifiedLibrarySet::load_from_directory(&root).unwrap();
+@@ -513,6 +567,7 @@ fn cold_child(output: &Path) {
+ }
+ 
+ fn orchestrate() {
++    let source_root = oracle_source_root();
+     let temporary;
+     let directory = if let Some(directory) = std::env::var_os("AGENTIQUE_CREATE_PART_ORACLE_OUTPUT")
+     {
+@@ -525,6 +580,7 @@ fn orchestrate() {
+     };
+     for stage in ["command", "cold"] {
+         let status = std::process::Command::new(std::env::current_exe().unwrap())
++            .env("AGENTIQUE_SOURCE_ROOT", &source_root)
+             .args([
+                 "create_part_command_matches_full_self_model_reconstruction",
+                 "--exact",
