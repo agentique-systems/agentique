@@ -751,6 +751,18 @@ impl StudioApp {
     }
 
     pub fn diff_review_panel(&mut self, ui: &mut egui::Ui) {
+        // This is a compact canvas toolbar. Keep its three rows readable without
+        // inheriting the larger form-button padding used by the side panels.
+        ui.scope(|ui| {
+            let spacing = &mut ui.style_mut().spacing;
+            spacing.item_spacing = egui::vec2(6.0, 4.0);
+            spacing.button_padding = egui::vec2(8.0, 4.0);
+            spacing.interact_size.y = 24.0;
+            self.diff_review_contents(ui);
+        });
+    }
+
+    fn diff_review_contents(&mut self, ui: &mut egui::Ui) {
         let Some(complete) = self.cached_change_review(ui) else {
             return;
         };
