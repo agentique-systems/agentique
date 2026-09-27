@@ -901,6 +901,7 @@ impl StudioApp {
             "fixture": self.fixture,
             "adapter": self.adapter,
             "frame_count": self.frame_number,
+            "start_to_first_update_ms": self.timing.start_to_first_update_ms,
             "frame_interval_median_ms": frames.median,
             "frame_interval_p95_ms": frames.p95,
             "scene_build_ms": self.timing.scene_ms,

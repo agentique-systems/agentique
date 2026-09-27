@@ -30,3 +30,7 @@ jobs:
       - run: cargo clippy --locked --workspace --all-targets -- -D warnings
       - run: cargo clippy --locked -p agq-studio-native --features automation --all-targets -- -D warnings
       - run: cargo test --locked --workspace
+      - name: CPU-side budgets (release builds; ROADMAP §3.3, R-27)
+        run: |
+          cargo test --locked --release -p agq-system-state --test performance
+          cargo test --locked --release -p agq-studio-scene --test budgets
