@@ -321,8 +321,9 @@ pub fn chat_fixture() -> (Vec<Entry>, Vec<ToolResult>) {
             reply.push_str("```rust\nfn shorten(url: &str) -> String {\n    let code = hash(url);\n    store(code, url);\n    code\n}\n```\n");
         }
         let id = format!("bench-{turn}");
-        entries.push(Entry::Assistant {
-            content: vec![
+        entries.push(Entry::reply(
+            None,
+            &[
                 json!({ "type": "text", "text": reply }),
                 json!({
                     "type": "tool_use",
@@ -331,7 +332,7 @@ pub fn chat_fixture() -> (Vec<Entry>, Vec<ToolResult>) {
                     "input": { "description": format!("Change part {turn}"), "operations": [] },
                 }),
             ],
-        });
+        ));
         results.push(ToolResult {
             tool_use_id: id,
             content: "Changed.".into(),
@@ -449,9 +450,12 @@ impl ChatRunner {
                 .iter()
                 .map(|entry| match entry {
                     Entry::Operator { text } => text.split_whitespace().count(),
-                    Entry::Assistant { content } => content
+                    Entry::Assistant { parts, .. } => parts
                         .iter()
-                        .filter_map(|block| block["text"].as_str())
+                        .filter_map(|part| match part {
+                            agq_providers::AssistantPart::Text { text } => Some(text),
+                            _ => None,
+                        })
                         .map(|text| text.split_whitespace().count())
                         .sum(),
                     _ => 0,

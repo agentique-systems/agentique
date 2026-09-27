@@ -1,6 +1,7 @@
 use agq_assistant::tools::{self, APPLY_CHANGES, ASK_OPERATOR, FIND_ELEMENTS, READ_MODEL};
 use agq_assistant::{Conversation, Entry, Prepared, ToolResult};
 use agq_language::{Source, parse, print};
+use agq_providers::{AssistantPart, ModelRef, Provider, Reasoning, ReasoningPart};
 use agq_system_state::{Actor, Change, Operation, Rejection, SystemState};
 use serde_json::json;
 use std::collections::BTreeSet;
@@ -222,15 +223,15 @@ fn reading_and_finding_and_asking() {
 #[test]
 fn a_stopped_reply_still_forms_a_valid_exchange() {
     let conversation = Conversation {
+        transcript: 0,
         entries: vec![
             Entry::Operator {
                 text: "Build it".into(),
             },
-            Entry::Assistant {
-                content: vec![
-                    json!({ "type": "tool_use", "id": "t1", "name": "read_model", "input": {} }),
-                ],
-            },
+            Entry::reply(
+                None,
+                &[json!({ "type": "tool_use", "id": "t1", "name": "read_model", "input": {} })],
+            ),
             Entry::Notice {
                 text: "Stopped.".into(),
             },
@@ -248,12 +249,12 @@ fn a_stopped_reply_still_forms_a_valid_exchange() {
     assert_eq!(messages[2]["content"][1]["text"], "Carry on");
 
     let answered = Conversation {
+        transcript: 0,
         entries: vec![
-            Entry::Assistant {
-                content: vec![
-                    json!({ "type": "tool_use", "id": "t2", "name": "get_problems", "input": {} }),
-                ],
-            },
+            Entry::reply(
+                None,
+                &[json!({ "type": "tool_use", "id": "t2", "name": "get_problems", "input": {} })],
+            ),
             Entry::ToolResults {
                 results: vec![ToolResult {
                     tool_use_id: "t2".into(),
@@ -272,10 +273,27 @@ fn a_conversation_survives_saving() {
     let folder = std::env::temp_dir().join(format!("agq-conversation-{}", std::process::id()));
     std::fs::create_dir_all(&folder).unwrap();
     let path = folder.join("conversation.json");
+    let deepseek = ModelRef::new(Provider::DeepSeek, "deepseek-flash");
     let conversation = Conversation {
+        transcript: 0,
         entries: vec![
             Entry::Operator {
                 text: "Hello".into(),
+            },
+            Entry::Assistant {
+                model: Some(deepseek),
+                parts: vec![
+                    AssistantPart::Reasoning(Reasoning {
+                        id: None,
+                        parts: vec![ReasoningPart::Text {
+                            text: "Greet back.".into(),
+                            signature: None,
+                        }],
+                    }),
+                    AssistantPart::Text {
+                        text: "Hello.".into(),
+                    },
+                ],
             },
             Entry::Notice {
                 text: "No API key".into(),
@@ -283,12 +301,128 @@ fn a_conversation_survives_saving() {
         ],
     };
     conversation.save(&path).unwrap();
+    let text = std::fs::read_to_string(&path).unwrap();
+    assert!(text.contains("\"format\":2"), "{text}");
     assert_eq!(Conversation::load(&path).unwrap(), conversation);
     assert_eq!(
         Conversation::load(&folder.join("missing.json")).unwrap(),
         Conversation::default()
     );
     std::fs::remove_dir_all(folder).unwrap();
+}
+
+#[test]
+fn reasoning_goes_back_only_to_the_model_that_wrote_it() {
+    let deepseek = ModelRef::new(Provider::DeepSeek, "deepseek-flash");
+    let other = ModelRef::new(Provider::OpenAi, "gpt-5");
+    let conversation = Conversation {
+        transcript: 0,
+        entries: vec![
+            Entry::Operator { text: "Hi".into() },
+            Entry::Assistant {
+                model: Some(deepseek.clone()),
+                parts: vec![
+                    AssistantPart::Reasoning(Reasoning {
+                        id: None,
+                        parts: vec![ReasoningPart::Text {
+                            text: "Think.".into(),
+                            signature: None,
+                        }],
+                    }),
+                    AssistantPart::Text {
+                        text: "Hello.".into(),
+                    },
+                ],
+            },
+            Entry::Operator {
+                text: "Again".into(),
+            },
+        ],
+    };
+    let same = conversation.messages_for(Some(&deepseek));
+    assert_eq!(same[1]["content"][0]["type"], "reasoning");
+    assert_eq!(same[1]["content"][0]["provider"], "deepseek");
+    let changed = conversation.messages_for(Some(&other));
+    assert_eq!(changed[1]["content"].as_array().unwrap().len(), 1);
+    assert_eq!(changed[1]["content"][0]["type"], "text");
+}
+
+#[test]
+fn a_format_1_file_is_a_read_only_transcript() {
+    let format_1 = json!({
+        "entries": [
+            { "type": "operator", "text": "Build it" },
+            { "type": "assistant", "content": [
+                { "type": "thinking", "thinking": "Plan.", "signature": "sig" },
+                { "type": "text", "text": "Done." }
+            ] },
+            { "type": "notice", "text": "Stopped." }
+        ]
+    });
+    let conversation = Conversation::parse(&format_1.to_string()).unwrap();
+    // Shown: the three entries and a notice that the Assistant starts afresh.
+    assert_eq!(conversation.entries.len(), 4);
+    assert_eq!(conversation.transcript, 4);
+    assert!(matches!(
+        &conversation.entries[1],
+        Entry::Assistant { model: None, parts } if parts.len() == 2
+    ));
+    // Never sent to a model.
+    assert!(conversation.api_messages().is_empty());
+    // Saved again as format 2, it stays a transcript.
+    let again = Conversation::parse(&conversation.to_text()).unwrap();
+    assert_eq!(again, conversation);
+}
+
+#[test]
+fn an_unknown_entry_is_kept_shown_and_never_sent_and_an_unknown_format_refused() {
+    let text = json!({
+        "format": 2,
+        "entries": [
+            { "type": "operator", "text": "Plan it" },
+            { "type": "plan", "steps": ["one", "two"] }
+        ]
+    })
+    .to_string();
+    let conversation = Conversation::parse(&text).unwrap();
+    assert!(matches!(&conversation.entries[1], Entry::Other(value) if value["type"] == "plan"));
+    assert_eq!(conversation.api_messages().len(), 1);
+    let again: serde_json::Value = serde_json::from_str(&conversation.to_text()).unwrap();
+    assert_eq!(again["entries"][1]["steps"][1], "two");
+    assert!(matches!(
+        Conversation::parse(&json!({ "format": 3, "entries": [] }).to_string()),
+        Err(agq_assistant::conversation::ParseError::LaterFormat(_))
+    ));
+    assert!(Conversation::parse(&json!({ "format": "2", "entries": [] }).to_string()).is_err());
+}
+
+#[test]
+fn results_of_a_reply_this_version_cannot_read_are_left_out() {
+    let text = json!({
+        "format": 2,
+        "entries": [
+            { "type": "operator", "text": "Build it" },
+            { "type": "assistant", "parts": [{ "type": "hologram", "id": "x" }] },
+            { "type": "tool_results", "results": [
+                { "tool_use_id": "t9", "content": "done", "is_error": false, "change": null }
+            ] },
+            { "type": "operator", "text": "Carry on" }
+        ]
+    })
+    .to_string();
+    let conversation = Conversation::parse(&text).unwrap();
+    assert!(matches!(conversation.entries[1], Entry::Other(_)));
+    let messages = conversation.api_messages();
+    // Only the Operator's two messages, as one user message: no result
+    // without its call.
+    assert_eq!(messages.len(), 1, "{messages:#?}");
+    assert!(
+        messages[0]["content"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|block| block["type"] == "text")
+    );
 }
 
 #[test]

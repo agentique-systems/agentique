@@ -78,7 +78,8 @@ pub fn run(
             add(conversation, on_event, notice(STOPPED));
             return;
         }
-        let messages = conversation.api_messages();
+        let author = model.model();
+        let messages = conversation.messages_for(author.as_ref());
         if messages
             .last()
             .is_none_or(|message| message["role"] != "user")
@@ -125,13 +126,7 @@ pub fn run(
                 // Text already shown stays in the conversation.
                 if !partial.trim().is_empty() {
                     let text = json!({ "type": "text", "text": partial.trim_end() });
-                    add(
-                        conversation,
-                        on_event,
-                        Entry::Assistant {
-                            content: vec![text],
-                        },
-                    );
+                    add(conversation, on_event, Entry::reply(author, &[text]));
                 }
                 let text = match error {
                     ModelError::Stopped => STOPPED.to_string(),
@@ -168,13 +163,7 @@ pub fn run(
         );
         // The API does not accept an empty assistant message back.
         if !reply.content.is_empty() {
-            add(
-                conversation,
-                on_event,
-                Entry::Assistant {
-                    content: reply.content,
-                },
-            );
+            add(conversation, on_event, Entry::reply(author, &reply.content));
         }
         if reply.stop_reason != "tool_use" || calls.is_empty() {
             // Tool calls in a reply that ended otherwise may be incomplete.

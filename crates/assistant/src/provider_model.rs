@@ -2,12 +2,14 @@
 //! rig): every provider but the hand-written Claude client, which W5.7
 //! retires.
 //!
-//! The conversation is still stored as Claude API content blocks (format 1;
-//! format 2 is W5.7). This module translates both ways: `text` and
-//! `tool_use` blocks map directly; a provider's reasoning is stored as a
-//! `reasoning` block that names its provider and is sent back only to that
-//! provider, since providers tie reasoning to their own models (DeepSeek
-//! refuses a tool conversation without it).
+//! The turn sees a reply as Claude API content blocks (conversation format 2
+//! stores neutral parts; `conversation::blocks_from_parts` converts). This
+//! module translates both ways: `text` and `tool_use` blocks map directly;
+//! Anthropic's reasoning comes as `thinking` and `redacted_thinking` blocks,
+//! another provider's as a `reasoning` block that names its provider, and
+//! either is sent back only to the model that wrote it, since providers tie
+//! reasoning to their own models (DeepSeek refuses a tool conversation
+//! without it).
 
 use crate::model::{Model, ModelError, Reply, Request, StreamEvent, Usage};
 use agq_providers::{
@@ -69,6 +71,10 @@ impl ProviderModel {
 }
 
 impl Model for ProviderModel {
+    fn model(&self) -> Option<ModelRef> {
+        Some(self.model.clone())
+    }
+
     fn send(
         &mut self,
         request: &Request,
@@ -235,8 +241,13 @@ fn assistant_part(block: &Value, model: &ModelRef) -> Option<AssistantPart> {
                 .ok()
                 .map(AssistantPart::Reasoning)
         }
-        // Claude's own `thinking` blocks go back only through the Claude
-        // client (until W5.7).
+        // Anthropic's reasoning, as the conversation gives it back to its
+        // own model only.
+        "thinking" | "redacted_thinking"
+            if model.provider == agq_providers::Provider::Anthropic =>
+        {
+            crate::conversation::parts_from_blocks(std::slice::from_ref(block)).pop()
+        }
         _ => None,
     }
 }
@@ -295,5 +306,48 @@ mod tests {
         assert!(
             matches!(&messages(&stored, &other)[1], Message::Assistant(parts) if parts.len() == 1)
         );
+    }
+
+    #[test]
+    fn anthropic_reasoning_goes_back_to_anthropic_with_its_signatures() {
+        use crate::conversation::{Conversation, Entry};
+        let claude = ModelRef::new(Provider::Anthropic, "claude-sonnet-5");
+        let blocks = [
+            json!({ "type": "thinking", "thinking": "Read first.", "signature": "sig-1" }),
+            json!({ "type": "redacted_thinking", "data": "opaque" }),
+            json!({ "type": "tool_use", "id": "t1", "name": "read_model", "input": {} }),
+        ];
+        let conversation = Conversation {
+            transcript: 0,
+            entries: vec![
+                Entry::Operator {
+                    text: "Build it".into(),
+                },
+                Entry::reply(Some(claude.clone()), &blocks),
+            ],
+        };
+        // The stored reply goes back as the blocks Anthropic returned.
+        let stored = conversation.messages_for(Some(&claude));
+        assert_eq!(stored[1]["content"].as_array().unwrap().as_slice(), &blocks);
+        // And the provider layer keeps both reasoning parts, signature included.
+        let converted = messages(&stored, &claude);
+        let Message::Assistant(parts) = &converted[1] else {
+            panic!("{converted:?}")
+        };
+        assert_eq!(parts.len(), 3, "{parts:?}");
+        assert!(matches!(
+            &parts[0],
+            AssistantPart::Reasoning(Reasoning { parts, .. })
+                if matches!(&parts[0], ReasoningPart::Text { signature: Some(s), .. } if s == "sig-1")
+        ));
+        assert!(matches!(
+            &parts[1],
+            AssistantPart::Reasoning(Reasoning { parts, .. })
+                if matches!(&parts[0], ReasoningPart::Redacted { data } if data == "opaque")
+        ));
+        // Another model gets none of it.
+        let deepseek = ModelRef::new(Provider::DeepSeek, "deepseek-flash");
+        let other = conversation.messages_for(Some(&deepseek));
+        assert_eq!(other[1]["content"].as_array().unwrap().len(), 1);
     }
 }

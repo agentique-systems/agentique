@@ -17,7 +17,7 @@
 use crate::{app::StudioApp, edit::Outcome};
 use agq_assistant::{
     BackgroundEvent, BackgroundTurn, Conversation, Entry, Model, ModelChoice, Prepared,
-    StreamEvent, ToolCall, ToolResult, TurnEvent, Usage, conversation::tool_use_ids, tools,
+    StreamEvent, ToolCall, ToolResult, TurnEvent, Usage, tools,
 };
 use agq_language::ElementId;
 use agq_studio_scene::SceneTarget;
@@ -203,15 +203,52 @@ impl ConversationPanel {
         })
     }
 
+    /// The Operator's last message after the read-only transcript: the one
+    /// that can be edited and sent again.
+    pub fn last_operator(&self) -> Option<usize> {
+        let transcript = self.conversation.transcript;
+        self.conversation
+            .entries
+            .iter()
+            .rposition(|entry| matches!(entry, Entry::Operator { .. }))
+            .filter(|index| *index >= transcript)
+    }
+
     /// Whether the last turn failed and can be sent again.
     pub fn can_retry(&self) -> bool {
         self.turn.is_none() && self.last_turn.as_ref().is_some_and(|turn| turn.failed)
     }
 }
 
-/// Where a project's conversation is kept: `conversations/` next to the
-/// session file, named after the project folder with a hash of its path.
+/// Where a project's conversation is kept (R-43): the project's own folder
+/// under `projects/` next to the session file (`%APPDATA%\Agentique`),
+/// named after the project folder with a hash of its path.
 pub fn conversation_path(session: &Path, folder: &Path) -> PathBuf {
+    project_data(session, folder).join("conversation.json")
+}
+
+/// Where Stages 3 and 4 kept it: `conversations/<name>-<hash>.json`. Read
+/// once when the new place is empty, then left as it is.
+fn earlier_conversation_path(session: &Path, folder: &Path) -> PathBuf {
+    let data = project_data(session, folder);
+    let name = data.file_name().unwrap_or_default().to_string_lossy();
+    let directory = session.parent().unwrap_or(Path::new("."));
+    directory.join("conversations").join(format!("{name}.json"))
+}
+
+/// `conversation.unreadable.json`, or with a number when that exists.
+fn unused_name(path: &Path) -> PathBuf {
+    (1..)
+        .map(|n| match n {
+            1 => path.with_extension("unreadable.json"),
+            n => path.with_extension(format!("unreadable-{n}.json")),
+        })
+        .find(|name| !name.exists())
+        .expect("some name is free")
+}
+
+/// The app's data for the project in `folder`.
+fn project_data(session: &Path, folder: &Path) -> PathBuf {
     let folder = std::fs::canonicalize(folder).unwrap_or_else(|_| folder.to_path_buf());
     // FNV-1a: stable across runs and Rust versions.
     let hash = folder
@@ -229,8 +266,8 @@ pub fn conversation_path(session: &Path, folder: &Path) -> PathBuf {
         .collect();
     let directory = session.parent().unwrap_or(Path::new("."));
     directory
-        .join("conversations")
-        .join(format!("{name}-{hash:016x}.json"))
+        .join("projects")
+        .join(format!("{name}-{hash:016x}"))
 }
 
 impl StudioApp {
@@ -239,15 +276,40 @@ impl StudioApp {
     pub fn load_conversation(&mut self, folder: &Path) {
         self.close_conversation();
         let path = conversation_path(&self.session_path, folder);
+        let earlier = earlier_conversation_path(&self.session_path, folder);
+        // A conversation kept by Stages 3 and 4 is read (format 1, as a
+        // read-only transcript) until the new place has one.
+        let read = if !path.exists() && earlier.exists() {
+            &earlier
+        } else {
+            &path
+        };
+        let read = read.clone();
         let panel = &mut self.conversation;
-        panel.conversation = match Conversation::load(&path) {
+        panel.path = Some(path.clone());
+        panel.conversation = match Conversation::load(&read) {
             Ok(conversation) => conversation,
+            // A later version's file is left as it is, and this session
+            // saves nothing over it (§5.5).
+            Err(error) if error.kind() == std::io::ErrorKind::Unsupported => {
+                panel.path = None;
+                panel.read_error = Some(format!(
+                    "The saved conversation is from a later version of Agentique ({error}); it is left as it is at {}, and this conversation is not saved.",
+                    read.display()
+                ));
+                Conversation::default()
+            }
             Err(error) => {
-                // Keep the unreadable file; the new conversation saves beside it.
-                let kept = path.with_extension("unreadable.json");
-                let place = match std::fs::rename(&path, &kept) {
-                    Ok(()) => format!("It was kept as {}.", kept.display()),
-                    Err(_) => format!("It is at {}.", path.display()),
+                // Keep the unreadable file under a name nothing overwrites;
+                // a Stage 4 file stays where it is.
+                let place = if read == path {
+                    let kept = unused_name(&path);
+                    match std::fs::rename(&path, &kept) {
+                        Ok(()) => format!("It was kept as {}.", kept.display()),
+                        Err(_) => format!("It is at {}.", path.display()),
+                    }
+                } else {
+                    format!("It is at {}.", read.display())
                 };
                 panel.read_error = Some(format!(
                     "The saved conversation could not be read ({error}); a new one was started. {place}"
@@ -255,7 +317,6 @@ impl StudioApp {
                 Conversation::default()
             }
         };
-        panel.path = Some(path);
         panel.index_results();
     }
 
@@ -647,11 +708,15 @@ impl StudioApp {
             return;
         }
         self.conversation.view.selection = None;
-        let entries = &mut self.conversation.conversation.entries;
-        while matches!(entries.last(), Some(Entry::Notice { .. })) {
+        let conversation = &mut self.conversation.conversation;
+        // A read-only transcript is never removed.
+        let floor = conversation.transcript;
+        let entries = &mut conversation.entries;
+        while entries.len() > floor && matches!(entries.last(), Some(Entry::Notice { .. })) {
             entries.pop();
         }
-        if matches!(entries.last(), Some(Entry::Assistant { content }) if tool_use_ids(content).is_empty())
+        if entries.len() > floor
+            && matches!(entries.last(), Some(Entry::Assistant { parts, .. }) if !has_tool_calls(parts))
         {
             entries.pop();
         }
@@ -673,12 +738,7 @@ impl StudioApp {
         if panel.running() {
             return;
         }
-        let Some(index) = panel
-            .conversation
-            .entries
-            .iter()
-            .rposition(|entry| matches!(entry, Entry::Operator { .. }))
-        else {
+        let Some(index) = panel.last_operator() else {
             return;
         };
         let Entry::Operator { text } = &panel.conversation.entries[index] else {
@@ -834,3 +894,10 @@ pub fn scripted(replies: Vec<agq_assistant::Reply>) -> ModelSource {
 
 #[cfg(test)]
 mod tests;
+
+/// Whether a reply asked for tool calls.
+fn has_tool_calls(parts: &[agq_providers::AssistantPart]) -> bool {
+    parts
+        .iter()
+        .any(|part| matches!(part, agq_providers::AssistantPart::ToolCall { .. }))
+}
