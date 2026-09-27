@@ -338,6 +338,7 @@ impl StudioApp {
         let Some(project) = self.project.as_mut() else {
             return Outcome::NoProject;
         };
+        self.timing.edit_started();
         let revision = project.state().revision();
         match project.apply(change.clone()) {
             Ok(event) => {
@@ -1131,6 +1132,106 @@ pub(crate) mod app_tests {
                 modifiers: egui::Modifiers::NONE,
             })
             .collect()
+    }
+
+    /// About twelve elements per component (as System State's performance
+    /// test): part defs with ports, an attribute and an inner part, used and
+    /// connected in one system.
+    fn large_model(components: usize) -> String {
+        use std::fmt::Write;
+        let mut text = String::from(
+            "package P {
+    item def Message;
+    port def Link { in item payload : Message; }
+",
+        );
+        for i in 0..components {
+            let _ = writeln!(
+                text,
+                "    part def Component{i} {{
+        doc /* Component {i}. */
+        port input : Link;
+        port output : ~Link;
+        attribute size : ScalarValues::Integer = {i};
+        part inner{i} : Inner{i};
+    }}
+    part def Inner{i} {{ port a : Link; port b : ~Link; attribute weight : ScalarValues::Real = 1.5; }}"
+            );
+        }
+        text.push_str(
+            "    part def System {
+",
+        );
+        for i in 0..components {
+            let _ = writeln!(text, "        part c{i} : Component{i};");
+        }
+        for i in 0..components - 1 {
+            let _ = writeln!(
+                text,
+                "        connection link{i} connect c{i}.output to c{}.input;",
+                i + 1
+            );
+        }
+        text.push_str(
+            "    }
+}
+",
+        );
+        text
+    }
+
+    /// Edit to Surface at 10k elements (§3.3, C-33, S5.1): a change applied
+    /// through the Studio's one path, until the frame that shows it is built
+    /// (CPU side; presenting it adds one display frame).
+    #[test]
+    #[cfg_attr(debug_assertions, ignore = "budgets are measured in release builds")]
+    fn an_edit_on_ten_thousand_elements_reaches_the_surface() {
+        let (mut app, context, folder) = studio("edit-10k");
+        let project = folder.0.join("P");
+        std::fs::write(project.join("model").join("P.sysml"), large_model(850)).unwrap();
+        app.open_project(&project);
+        let elements = app.project.as_ref().unwrap().state().tree().len();
+        assert!(elements >= 10_000, "{elements} elements");
+        frame(&mut app, &context, vec![]);
+        frame(&mut app, &context, vec![]);
+        let system = app
+            .project
+            .as_ref()
+            .unwrap()
+            .state()
+            .tree()
+            .find("P::System")
+            .unwrap();
+        let mut times = Vec::new();
+        // Apply, save and rebuild the scene, before the frame.
+        let mut applied = Vec::new();
+        for round in 0..5 {
+            let started = std::time::Instant::now();
+            app.create(
+                CreateKind::Part,
+                false,
+                &format!("added{round}"),
+                Parent::Element(system),
+            );
+            applied.push(started.elapsed());
+            frame(&mut app, &context, vec![]);
+            times.push(started.elapsed());
+        }
+        applied.sort();
+        times.sort();
+        let median = times[times.len() / 2];
+        println!(
+            "edit to Surface at {elements} elements: median {median:?}, best {:?}; apply, save and scene median {:?}; last scene {:.1} ms (layout and routing {:.1} ms, index {:.1} ms); edges routed {} of {}",
+            times[0],
+            applied[applied.len() / 2],
+            app.timing.scene_ms,
+            app.timing.layout_ms,
+            app.timing.index_ms,
+            app.scene.routing().routed,
+            app.scene.routing().routed + app.scene.routing().kept,
+        );
+        // Target 100 ms (C-33); the ceiling is about twice that.
+        assert!(median < std::time::Duration::from_millis(200), "{median:?}");
     }
 
     fn part(app: &mut StudioApp, name: &str) -> ElementId {

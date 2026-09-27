@@ -498,7 +498,9 @@ impl StudioApp {
                 &options,
                 memory,
             ),
-            None => Scene::build(&shown, &options, memory),
+            // An edit lays out the cards again and routes only the edges it
+            // touches (S5.1, R-28).
+            None => self.scene.update(&shown, &options, memory),
         };
         let scene = match built {
             Ok(scene) => scene,
@@ -995,6 +997,9 @@ impl StudioApp {
             "scene_build_ms": self.timing.scene_ms,
             "layout_ms": self.timing.layout_ms,
             "index_ms": self.timing.index_ms,
+            "edit_to_frame_ms": self.timing.edits(),
+            "edges_routed": self.scene.routing().routed,
+            "edges_kept": self.scene.routing().kept,
             "warmup_frame_intervals_discarded": self.timing.discarded_frame_intervals(),
             "input_pipeline": self.timing.latency_report(),
             "hit_test_us": self.timing.hit_summary(),
