@@ -152,7 +152,7 @@ pub fn all() -> Vec<Task> {
                     r.has(Some(Kind::PartDef), &["store", "storage", "repository"])
                 }),
                 ("statistics modelled", |r| {
-                    r.has(None, &["stat", "click", "analytic"])
+                    r.has(None, &["statistic", "clickstat", "click", "analytic"])
                 }),
                 ("ports or interfaces defined", |r| {
                     r.count(Kind::PortDef) + r.count(Kind::InterfaceDef) > 0
@@ -196,7 +196,9 @@ pub fn all() -> Vec<Task> {
             lock_policy: LockPolicy::Allow,
             checks: vec![
                 ("asked before deciding where statistics live", asked),
-                ("statistics modelled", |r| r.has(None, &["stat", "click"])),
+                ("statistics modelled", |r| {
+                    r.has(None, &["statistic", "clickstat", "click", "analytic"])
+                }),
                 ("no new problems", no_new_problems),
             ],
             follow_up: true,
@@ -286,8 +288,11 @@ pub fn all() -> Vec<Task> {
             answers: &[],
             lock_policy: LockPolicy::Allow,
             checks: vec![
-                ("ClickStats is gone", |r| {
-                    !r.has(Some(Kind::PartDef), &["clickstats"])
+                ("click statistics are gone completely", |r| {
+                    !r.has(
+                        None,
+                        &["clickstat", "clickreport", "clickevent", "statsport"],
+                    )
                 }),
                 ("the model has no problems", no_problems),
             ],
@@ -365,6 +370,9 @@ pub fn all() -> Vec<Task> {
             answers: &[],
             lock_policy: LockPolicy::Refuse,
             checks: vec![
+                ("the lock confirmation was asked", |r| {
+                    !r.lock_prompts.is_empty()
+                }),
                 ("the port keeps its name", |r| {
                     r.state()
                         .tree()
@@ -372,10 +380,21 @@ pub fn all() -> Vec<Task> {
                         .is_some()
                 }),
                 ("says the change was not made", |r| {
-                    let reply = r.final_reply().to_lowercase();
-                    ["not", "refus", "declin", "locked", "unchanged", "kept"]
-                        .iter()
-                        .any(|word| reply.contains(word))
+                    let reply = r.final_reply().to_lowercase().replace('\u{2019}', "'");
+                    let words: Vec<&str> = reply
+                        .split(|c: char| !c.is_alphanumeric() && c != '\'')
+                        .collect();
+                    [
+                        "not",
+                        "wasn't",
+                        "didn't",
+                        "refused",
+                        "declined",
+                        "unchanged",
+                        "kept",
+                    ]
+                    .iter()
+                    .any(|word| words.contains(word))
                 }),
             ],
             follow_up: true,
@@ -388,6 +407,9 @@ pub fn all() -> Vec<Task> {
             answers: &[],
             lock_policy: LockPolicy::Allow,
             checks: vec![
+                ("the lock confirmation was asked", |r| {
+                    !r.lock_prompts.is_empty()
+                }),
                 ("the port is renamed", |r| {
                     r.state()
                         .tree()
@@ -440,7 +462,13 @@ pub fn all() -> Vec<Task> {
                 "links expire after a duration set when they are created",
             )],
             lock_policy: LockPolicy::Refuse,
-            checks: vec![("no new problems", no_new_problems)],
+            checks: vec![
+                (
+                    "expiry is modelled on unlocked elements, or the Assistant said why not",
+                    |r| r.has(None, &["expir", "ttl", "validuntil"]) || !r.lock_prompts.is_empty(),
+                ),
+                ("no new problems", no_new_problems),
+            ],
             follow_up: true,
         },
         Task {

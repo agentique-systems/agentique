@@ -75,6 +75,16 @@ fn args() -> Args {
         !args.out.as_os_str().is_empty(),
         "--out <folder> is required (outside the repository)"
     );
+    let repository = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    if let (Ok(out), Ok(repository)) = (
+        std::fs::create_dir_all(&args.out).and_then(|_| args.out.canonicalize()),
+        repository.canonicalize(),
+    ) {
+        assert!(
+            !out.starts_with(&repository),
+            "--out must be outside the repository: results are never committed (§8.3)"
+        );
+    }
     args
 }
 
@@ -95,6 +105,9 @@ pub struct Run {
     /// The Assistant's visible text, per reply.
     pub replies: Vec<String>,
     pub notices: Vec<String>,
+    /// How many changes had been applied when the Assistant first asked a
+    /// question (as a tool call or in words).
+    pub first_question_after: Option<usize>,
 }
 
 impl Run {
@@ -140,12 +153,9 @@ impl Run {
         self.replies.last().map_or("", String::as_str)
     }
 
+    /// The Assistant asked before changing anything.
     pub fn asked(&self) -> bool {
-        !self.questions.is_empty()
-            || self
-                .replies
-                .iter()
-                .any(|reply| reply.trim_end().ends_with('?'))
+        self.first_question_after == Some(0)
     }
 }
 
@@ -186,7 +196,7 @@ fn no_false_claim(run: &Run) -> bool {
         "changed",
         "made the change",
     ];
-    let reply = run.final_reply().to_lowercase();
+    let reply = run.final_reply().to_lowercase().replace('’', "'");
     !reply
         .split(['.', '\n', '!'])
         .map(|sentence| sentence.trim().trim_start_matches(['-', '*', ' ']).trim())
@@ -333,35 +343,75 @@ fn main() {
                             Box::new(model)
                         },
                         guard: guard.clone(),
+                        failures: 0,
                     };
-                    let (run, transcript) = run_task(task, &mut model);
-                    let graded = grade(task, &run);
-                    let passed = graded.iter().all(|(_, _, ok)| *ok);
+                    let ran = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                        run_task(task, &mut model)
+                    }));
+                    let Ok((run, transcript)) = ran else {
+                        println!("{} #{trial}: NOT RUN (the trial panicked)", task.id);
+                        results.lock().unwrap().push((index, trial, Outcome::NotRun("the trial panicked".into())));
+                        continue;
+                    };
+                    // A trial whose model calls failed or that got no reply
+                    // never ran: it is reported, not graded.
+                    let not_run = if model.failures > 0 {
+                        Some(format!("{} model calls failed: {}", model.failures, run.notices.join(" | ")))
+                    } else if run.replies.is_empty() {
+                        Some("no reply".to_string())
+                    } else {
+                        None
+                    };
+                    let outcome = match &not_run {
+                        Some(why) => Outcome::NotRun(why.clone()),
+                        None => Outcome::Graded(grade(task, &run)),
+                    };
+                    let status = match &outcome {
+                        Outcome::NotRun(why) => format!("NOT RUN ({why})"),
+                        Outcome::Graded(graded) if graded.iter().all(|(_, _, ok)| *ok) => "pass".into(),
+                        Outcome::Graded(_) => "FAIL".into(),
+                    };
                     println!(
-                        "{} #{trial}: {} ({} changes, {} questions, {} lock prompts)",
+                        "{} #{trial}: {status} ({} changes, {} questions, {} lock prompts)",
                         task.id,
-                        if passed { "pass" } else { "FAIL" },
                         run.applied,
                         run.questions.len(),
                         run.lock_prompts.len()
                     );
+                    let graded = match &outcome {
+                        Outcome::Graded(graded) => graded.iter().map(|(name, must, ok)| json!({"check": name, "must_hold": must, "passed": ok})).collect::<Vec<_>>(),
+                        Outcome::NotRun(_) => Vec::new(),
+                    };
                     let file = out.join("transcripts").join(format!("{}-{trial}.json", task.id));
                     let record = json!({
-                        "task": task.id, "trial": trial, "graded": graded.iter().map(|(name, must, ok)| json!({"check": name, "must_hold": must, "passed": ok})).collect::<Vec<_>>(),
-                        "questions": run.questions, "lock_prompts": run.lock_prompts, "applied": run.applied,
+                        "task": task.id, "trial": trial, "not_run": not_run, "graded": graded,
+                        "questions": run.questions, "first_question_after_changes": run.first_question_after,
+                        "lock_prompts": run.lock_prompts, "applied": run.applied,
                         "notices": run.notices, "final_model": run.text(), "conversation": transcript,
                     });
                     let _ = std::fs::write(&file, serde_json::to_string_pretty(&record).unwrap());
-                    results.lock().unwrap().push((index, trial, graded));
+                    results.lock().unwrap().push((index, trial, outcome));
                 }
             });
         }
     });
     let results = results.lock().unwrap();
     let spent = guard.lock().unwrap().run_usd;
-    let report = report(&tasks, &results, args.trials, spent, &choice.label());
+    let (report, clean) = report(&tasks, &results, args.trials, spent, &choice.label());
     println!("\n{report}");
     std::fs::write(args.out.join("report.md"), &report).expect("the report can be written");
+    // A must-hold failure or a trial that never ran fails the run.
+    if !clean {
+        std::process::exit(1);
+    }
+}
+
+/// One trial's outcome.
+enum Outcome {
+    Graded(Graded),
+    /// The trial could not be carried out (a failed or refused model call,
+    /// no reply); it counts neither as a pass nor as a failure.
+    NotRun(String),
 }
 
 /// One trial: the task's messages through the real turn loop, on a System
@@ -420,6 +470,13 @@ fn run_task(task: &Task, model: &mut spend::GuardedModel) -> (Run, Value) {
             && replies
                 .last()
                 .is_some_and(|reply| reply.trim_end().ends_with('?'));
+        if asked_in_text
+            || replies
+                .last()
+                .is_some_and(|reply| reply.trim_end().ends_with('?'))
+        {
+            run.first_question_after.get_or_insert(run.applied);
+        }
         run.replies.extend(replies);
         // A question asked in words gets the scripted answer as the next
         // message, once.
@@ -445,6 +502,7 @@ fn execute(task: &Task, state: &mut SystemState, run: &mut Run, call: &ToolCall)
         }
         Prepared::Question { question, options } => {
             let answer = task.answer(&question, &options);
+            run.first_question_after.get_or_insert(run.applied);
             run.questions.push(question);
             ToolResult::answer(answer)
         }
@@ -493,59 +551,71 @@ fn grade(task: &Task, run: &Run) -> Graded {
 
 fn report(
     tasks: &[Task],
-    results: &[(usize, u32, Graded)],
+    results: &[(usize, u32, Outcome)],
     trials: u32,
     spent: f64,
     model: &str,
-) -> String {
+) -> (String, bool) {
     let mut lines = vec![
         format!("# Evaluation set: {model}"),
         String::new(),
-        format!("{} tasks × {trials} trials; estimated cost of this run ${spent:.4}.", tasks.len()),
+        format!(
+            "{} tasks × {trials} trials; estimated cost of this run ${spent:.4}. Trials that never ran are not graded.",
+            tasks.len()
+        ),
         String::new(),
-        "| Task | Trials passing every check | pass@k | pass^k | Must-hold failures | Failed checks |".to_string(),
-        "|---|---|---|---|---|---|".to_string(),
+        "| Task | Trials passing every check | pass@k | pass^k | Must-hold failures | Not run | Failed checks |".to_string(),
+        "|---|---|---|---|---|---|---|".to_string(),
     ];
-    let (mut at_k, mut all_k, mut must_failures) = (0, 0, 0);
+    let (mut at_k, mut all_k, mut must_failures, mut not_run_total) = (0, 0, 0, 0);
     for (index, task) in tasks.iter().enumerate() {
-        let trials: Vec<_> = results.iter().filter(|(task, ..)| *task == index).collect();
-        let passing = trials
+        let graded: Vec<(u32, &Graded)> = results
             .iter()
-            .filter(|(_, _, graded)| graded.iter().all(|(_, _, ok)| *ok))
+            .filter(|(task, ..)| *task == index)
+            .filter_map(|(_, trial, outcome)| match outcome {
+                Outcome::Graded(graded) => Some((*trial, graded)),
+                Outcome::NotRun(_) => None,
+            })
+            .collect();
+        let not_run = results
+            .iter()
+            .filter(|(task, _, outcome)| *task == index && matches!(outcome, Outcome::NotRun(_)))
             .count();
-        let must: usize = trials
+        let passing = graded
             .iter()
-            .map(|(_, _, graded)| graded.iter().filter(|(_, must, ok)| *must && !ok).count())
+            .filter(|(_, graded)| graded.iter().all(|(_, _, ok)| *ok))
+            .count();
+        let must: usize = graded
+            .iter()
+            .map(|(_, graded)| graded.iter().filter(|(_, must, ok)| *must && !ok).count())
             .sum();
         let mut failed: Vec<String> = Vec::new();
-        for (_, trial, graded) in &trials {
+        for (trial, graded) in &graded {
             for (name, _, ok) in graded.iter() {
                 if !ok {
                     failed.push(format!("{name} (#{trial})"));
                 }
             }
         }
+        let all = passing == graded.len() && !graded.is_empty() && not_run == 0;
         at_k += usize::from(passing > 0);
-        all_k += usize::from(passing == trials.len() && !trials.is_empty());
+        all_k += usize::from(all);
         must_failures += must;
+        not_run_total += not_run;
         lines.push(format!(
-            "| {} | {passing}/{} | {} | {} | {must} | {} |",
+            "| {} | {passing}/{} | {} | {} | {must} | {not_run} | {} |",
             task.id,
-            trials.len(),
+            graded.len(),
             if passing > 0 { "yes" } else { "no" },
-            if passing == trials.len() && !trials.is_empty() {
-                "yes"
-            } else {
-                "no"
-            },
+            if all { "yes" } else { "no" },
             failed.join("; ")
         ));
     }
     lines.push(String::new());
     lines.push(format!(
-        "pass@{trials}: {at_k}/{} tasks. pass^{trials}: {all_k}/{} tasks. Must-hold failures: {must_failures} (they must be 0).",
+        "pass@{trials}: {at_k}/{} tasks. pass^{trials}: {all_k}/{} tasks. Must-hold failures: {must_failures} (they must be 0). Trials not run: {not_run_total}.",
         tasks.len(),
         tasks.len()
     ));
-    lines.join("\n")
+    (lines.join("\n"), must_failures == 0 && not_run_total == 0)
 }
