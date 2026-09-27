@@ -17,6 +17,10 @@ jobs:
         with:
           persist-credentials: false
       - run: rustup show
+      - name: Crate dependencies follow the architecture model
+        run: |
+          python3 -m unittest discover -s tools -p test_check_architecture.py
+          python3 tools/check_architecture.py
       - name: Native windowing libraries
         run: |
           sudo apt-get update
