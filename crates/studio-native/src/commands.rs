@@ -8,6 +8,9 @@ pub enum CommandId {
     Graph,
     Requirements,
     Fit,
+    ZoomToSelection,
+    GoToElement,
+    ShortcutHelp,
     Focus,
     LeaveFocus,
     Collapse,
@@ -183,9 +186,31 @@ pub const COMMANDS: &[Command] = &[
     Command {
         id: CommandId::Fit,
         label: "Fit to view",
-        shortcut: "Home",
-        description: "Show the whole model",
-        key: Some((NONE, Key::Home)),
+        shortcut: "Shift+1",
+        description: "Show the whole model (also Home)",
+        // By its place on the keyboard: Shift+1 types "!" (`keyboard`).
+        key: None,
+    },
+    Command {
+        id: CommandId::ZoomToSelection,
+        label: "Zoom to selection",
+        shortcut: "Shift+2",
+        description: "Move the camera to the selected element",
+        key: None,
+    },
+    Command {
+        id: CommandId::GoToElement,
+        label: "Go to element",
+        shortcut: "Ctrl+P",
+        description: "Find an element by name and show it",
+        key: Some((COMMAND, Key::P)),
+    },
+    Command {
+        id: CommandId::ShortcutHelp,
+        label: "Keyboard shortcuts",
+        shortcut: "?",
+        description: "Every command and its shortcut, in Settings",
+        key: Some((NONE, Key::Questionmark)),
     },
     Command {
         id: CommandId::Focus,
@@ -345,6 +370,7 @@ pub fn unavailable(id: CommandId, context: &CommandContext) -> Option<&'static s
         {
             Some("Open or create a project to edit")
         }
+        ZoomToSelection if !context.selected => Some("Select an element first"),
         CreatePort | CreateAttribute if !context.container => {
             Some("Select the part or definition to add it to")
         }
