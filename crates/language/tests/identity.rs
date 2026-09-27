@@ -326,4 +326,22 @@ fn the_public_api_does_not_panic_on_odd_input() {
         ]
     );
     print(&tree);
+
+#[test]
+fn reserved_ids_are_never_handed_out() {
+    let mut tree = load(PROBE);
+    // Ids up to 699 were used before, by elements that are gone.
+    tree.reserve_ids(ElementId::from_raw(700));
+    let fresh = tree.rekey(&HashMap::new()).unwrap();
+    assert!(fresh.iter().all(|id| id.raw() >= 700));
+    let next = tree.next_id();
+    let p = tree.find("P").unwrap();
+    let added = tree
+        .add(Parent::Element(p), Element::new(ElementKind::Comment))
+        .unwrap();
+    assert_eq!(added, next);
+    assert!(tree.next_id() > next);
+    // Reserving never lowers the next id.
+    tree.reserve_ids(ElementId::from_raw(1));
+    assert!(tree.next_id() > added);
 }
