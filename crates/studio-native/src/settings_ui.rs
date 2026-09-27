@@ -8,6 +8,7 @@
 
 use crate::commands::COMMANDS;
 use crate::settings::{self, Allowed, Settings};
+use crate::targets::{Target, record};
 use crate::theme::{self, Theme};
 use agq_providers::{KeyCheck, KeyStatus, ModelInfo, Provider, Providers, keys};
 use eframe::egui::{self, RichText, Stroke};
@@ -283,19 +284,24 @@ impl SettingsView {
                         .hint_text("Search settings")
                         .desired_width(f32::INFINITY),
                 );
+                record(&ctx, Target::Field("Search settings"), search.rect);
                 if std::mem::take(&mut self.focus_search) {
                     search.request_focus();
                 }
                 ui.add_space(theme::SPACE);
                 for (section, name) in SECTIONS {
                     let selected = self.section == section && self.search.is_empty();
-                    if ui.selectable_label(selected, name).clicked() {
+                    let button = ui.selectable_label(selected, name);
+                    record(&ctx, Target::Button(name), button.rect);
+                    if button.clicked() {
                         self.section = section;
                         self.search.clear();
                     }
                 }
                 ui.add_space(theme::SPACE_L);
-                if ui.button("Close").on_hover_text("Esc").clicked() {
+                let close = ui.button("Close").on_hover_text("Esc");
+                record(&ctx, Target::Button("Close settings"), close.rect);
+                if close.clicked() {
                     self.close();
                 }
             });
@@ -440,7 +446,7 @@ impl SettingsView {
                             !busy,
                             egui::TextEdit::singleline(&mut state.input)
                                 .password(true)
-                                .hint_text(format!("Paste a {} key", provider.name()))
+                                .hint_text(format!("Paste the {} key", provider.name()))
                                 .desired_width(280.0),
                         );
                         if field.changed() {

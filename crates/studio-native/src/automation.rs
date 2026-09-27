@@ -26,6 +26,12 @@
 //! save half way; that (the old or the new state, never a mix) is covered by
 //! `agq-history`'s crash tests.
 //!
+//! - `e-settings --project <new folder>`: Scenario E without keys or the
+//!   network: Ctrl+, opens Settings in place of the Surface, each section is
+//!   shown, search finds the key rows by a synonym ("token"), Escape closes
+//!   Settings. Keys are never pasted, tested or saved here: the journey runs
+//!   against the Operator's own Credential Manager.
+//!
 //! Screenshots go only to the `--gallery` directory given on the command line.
 use crate::{
     app::StudioApp,
@@ -144,6 +150,11 @@ enum Check {
     Missing(&'static str),
     /// The Assistant stopped after the Operator pressed Stop.
     Stopped,
+    /// Settings are open at this section (by its name), with no search.
+    SettingsSection(&'static str),
+    /// Settings are open, searching for this.
+    SettingsSearch(&'static str),
+    SettingsClosed,
 }
 
 #[derive(Clone, Debug)]
@@ -214,6 +225,77 @@ fn new_project(folder: &Path) -> Vec<Step> {
             Check::ProjectOpen,
         ),
     ]
+}
+
+/// Scenario E's Settings, without keys or the network.
+fn settings(folder: &Path) -> Vec<Step> {
+    let mut steps = new_project(folder);
+    steps.extend([
+        Step {
+            screenshot: Some("01-providers"),
+            ..step(
+                "Ctrl+, opens Settings at Providers",
+                Action::Key(Key::Comma, Modifiers::COMMAND),
+                Check::SettingsSection("Providers"),
+            )
+        },
+        Step {
+            screenshot: Some("02-search-token"),
+            ..step(
+                "search finds the keys by a synonym",
+                Action::Fill(Target::Field("Search settings"), "token".into()),
+                Check::SettingsSearch("token"),
+            )
+        },
+        Step {
+            screenshot: Some("03-assistant"),
+            ..step(
+                "the Assistant section",
+                Action::Click(Target::Button("Assistant")),
+                Check::SettingsSection("Assistant"),
+            )
+        },
+        Step {
+            screenshot: Some("04-appearance"),
+            ..step(
+                "the Appearance section",
+                Action::Click(Target::Button("Appearance")),
+                Check::SettingsSection("Appearance"),
+            )
+        },
+        Step {
+            screenshot: Some("05-keyboard"),
+            ..step(
+                "the Keyboard section",
+                Action::Click(Target::Button("Keyboard")),
+                Check::SettingsSection("Keyboard"),
+            )
+        },
+        Step {
+            screenshot: Some("06-about"),
+            ..step(
+                "the About section",
+                Action::Click(Target::Button("About")),
+                Check::SettingsSection("About"),
+            )
+        },
+        step(
+            "Escape closes Settings",
+            Action::Key(Key::Escape, Modifiers::NONE),
+            Check::SettingsClosed,
+        ),
+        step(
+            "Ctrl+, opens them again",
+            Action::Key(Key::Comma, Modifiers::COMMAND),
+            Check::SettingsSection("Providers"),
+        ),
+        step(
+            "Close",
+            Action::Click(Target::Button("Close settings")),
+            Check::SettingsClosed,
+        ),
+    ]);
+    steps
 }
 
 fn build_by_hand() -> Vec<Step> {
@@ -830,6 +912,7 @@ fn drive(
                     "a-build" => build(&folder),
                     "a-crash" => crash(),
                     "a-assistant" => assistant(&folder),
+                    "e-settings" => settings(&folder),
                     _ => reopen(),
                 },
                 index: 0,
@@ -1295,6 +1378,24 @@ fn check(check: &Check, app: &StudioApp) -> Result<(), String> {
         Check::Missing(path) => {
             if tree(app)?.find(path).is_some() {
                 return Err(format!("{path} still exists"));
+            }
+        }
+        Check::SettingsSection(name) => {
+            if !app.settings.open {
+                return fail("Settings are not open");
+            }
+            if format!("{:?}", app.settings.section) != *name || !app.settings.search.is_empty() {
+                return fail(&format!("Settings do not show {name}"));
+            }
+        }
+        Check::SettingsSearch(query) => {
+            if !app.settings.open || app.settings.search != *query {
+                return fail(&format!("Settings are not searching for {query}"));
+            }
+        }
+        Check::SettingsClosed => {
+            if app.settings.open {
+                return fail("Settings are still open");
             }
         }
         Check::Stopped => {
