@@ -59,6 +59,15 @@ async fn call(
             ),
         });
     };
+    if !capabilities(&request.model).tools {
+        return Err(Error {
+            kind: ErrorKind::Rejected,
+            message: format!(
+                "{} answers typed questions and cannot hold a conversation, so it is not a model for the Assistant.",
+                provider.name()
+            ),
+        });
+    }
     let rig_request = rig_request(request)?;
     let model = request.model.model.clone();
     let setup = |error: rig_core::http_client::Error| Error {
@@ -100,6 +109,7 @@ async fn call(
         }
         Provider::OpenAi => stream_with!(openai::Client),
         Provider::OpenRouter => stream_with!(openrouter::Client),
+        Provider::TypeSafe => unreachable!("refused above: no tools"),
     }
 }
 
@@ -198,6 +208,7 @@ fn additional_params(request: &ChatRequest) -> Option<Value> {
             None => json!({ "reasoning": { "summary": "auto" } }),
         }),
         Provider::OpenRouter => effort.map(|effort| json!({ "reasoning": { "effort": effort } })),
+        Provider::TypeSafe => None,
     }
 }
 
@@ -506,7 +517,7 @@ fn part(content: &AssistantContent) -> Option<AssistantPart> {
 fn usage(provider: Provider, usage: rig_core::completion::Usage) -> Usage {
     let cached = usage.cached_input_tokens;
     let input = match provider {
-        Provider::Anthropic => usage.input_tokens,
+        Provider::Anthropic | Provider::TypeSafe => usage.input_tokens,
         Provider::OpenAi | Provider::DeepSeek => usage.input_tokens.saturating_sub(cached),
         // OpenRouter's prompt count includes cache reads and writes.
         Provider::OpenRouter => usage

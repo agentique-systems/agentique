@@ -9,6 +9,8 @@
 //! and can be cancelled; the async runtime stays inside this crate.
 //!
 //! - [`Providers::chat`] streams one model call (the Assistant's turns).
+//! - [`Providers::decide`] asks TypeSafe AI's Jev typed questions (fast
+//!   agents, C-35), through a thin client until rig releases one (C-34).
 //! - [`capabilities`] is the capability table (§4.8): code outside this crate
 //!   asks it, never a provider's name (§8.7).
 //! - [`key_status`] says where a provider's key comes from.
@@ -17,6 +19,7 @@
 mod capabilities;
 mod chat;
 mod fallback;
+pub mod jev;
 mod runtime;
 
 pub use capabilities::{Capabilities, Price, PromptCache, ReasoningText, capabilities, price};
@@ -38,14 +41,19 @@ pub enum Provider {
     OpenRouter,
     #[serde(rename = "deepseek")]
     DeepSeek,
+    /// TypeSafe AI: Jev's typed decisions for fast agents, never the
+    /// Assistant's model (C-35).
+    #[serde(rename = "typesafe")]
+    TypeSafe,
 }
 
 impl Provider {
-    pub const ALL: [Provider; 4] = [
+    pub const ALL: [Provider; 5] = [
         Provider::Anthropic,
         Provider::OpenAi,
         Provider::OpenRouter,
         Provider::DeepSeek,
+        Provider::TypeSafe,
     ];
 
     /// The stable id used in settings and conversations: `anthropic`,
@@ -56,6 +64,7 @@ impl Provider {
             Provider::OpenAi => "openai",
             Provider::OpenRouter => "openrouter",
             Provider::DeepSeek => "deepseek",
+            Provider::TypeSafe => "typesafe",
         }
     }
 
@@ -72,6 +81,7 @@ impl Provider {
             Provider::OpenAi => "OpenAI",
             Provider::OpenRouter => "OpenRouter",
             Provider::DeepSeek => "DeepSeek",
+            Provider::TypeSafe => "TypeSafe AI",
         }
     }
 
@@ -83,6 +93,7 @@ impl Provider {
             Provider::OpenAi => "OPENAI_API_KEY",
             Provider::OpenRouter => "OPENROUTER_API_KEY",
             Provider::DeepSeek => "DEEPSEEK_API_KEY",
+            Provider::TypeSafe => "TYPESAFE_API_KEY",
         }
     }
 
@@ -93,6 +104,7 @@ impl Provider {
             Provider::OpenAi => "gpt-6-astra",
             Provider::OpenRouter => "anthropic/claude-opus-5",
             Provider::DeepSeek => "deepseek-flash",
+            Provider::TypeSafe => jev::DEFAULT_MODEL,
         }
     }
 }
@@ -465,6 +477,16 @@ impl Providers {
                 environment_key(provider)
             }
         })
+    }
+
+    /// Asks Jev typed questions about a state and waits for the answers
+    /// (fast agents, C-35). Blocking; retries rate limits and overload twice.
+    pub fn decide(&self, request: &jev::DecisionRequest) -> Result<jev::DecisionReply, Error> {
+        jev::decide(
+            request,
+            self.key(Provider::TypeSafe),
+            self.endpoints.get(&Provider::TypeSafe).cloned(),
+        )
     }
 
     /// Starts one streamed model call on the background runtime.

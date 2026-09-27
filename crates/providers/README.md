@@ -30,11 +30,18 @@ call.cancel(); // stops at once; the call ends with Finished(Err(Cancelled))
 - **Messages** are provider-neutral (R-23): text, reasoning (kept to be sent
   back unchanged; DeepSeek refuses a history without it), tool calls and tool
   results.
+- **Jev** (`Providers::decide`, module `jev`): TypeSafe AI's typed decisions
+  for fast agents (C-35) through a thin client until rig releases
+  `rig-typesafeai` (C-34): yes or no, a choice among 2–255 options or a score
+  on 2–10 levels about a state, with probabilities and a confidence; pinned
+  to `jev-1.13.0`; limits checked before sending; 429 and 529 retried twice;
+  never the Assistant's model (it has no tools). `cargo run -p agq-providers
+  --example jev` makes one live decision under a spend log and stop.
 - **Capabilities** (`capabilities(&model)`) and **prices** (`price(&model)`, a
   dated table, an estimate) are data. Code outside this crate asks them, never a
   provider's name (§8.7).
-- **Keys** come from `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `OPENROUTER_API_KEY`
-  or `DEEPSEEK_API_KEY` (the Credential Manager arrives with Settings, W5.8), or
+- **Keys** come from `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `OPENROUTER_API_KEY`,
+  `DEEPSEEK_API_KEY` or `TYPESAFE_API_KEY` (the Credential Manager arrives with Settings, W5.8), or
   from `with_key` (tests, and testing a key before saving it). A key leaves this
   crate only in the request to its own provider.
 - **Errors** are written for the Operator: a missing or refused key names its

@@ -97,6 +97,20 @@ pub fn capabilities(model: &ModelRef) -> Capabilities {
             context_window: None,
             max_output_tokens: None,
         },
+        // Typed decisions only: no conversation and no tools, so never the
+        // Assistant's model (§4.8, Jev column).
+        Provider::TypeSafe => Capabilities {
+            tools: false,
+            tool_input_streaming: false,
+            efforts: &[],
+            default_effort: None,
+            reasoning_text: ReasoningText::None,
+            prompt_cache: PromptCache::None,
+            cache_counts: false,
+            refusal_fallbacks: false,
+            context_window: Some(64_000),
+            max_output_tokens: None,
+        },
         Provider::DeepSeek => Capabilities {
             tools: true,
             tool_input_streaming: true,
@@ -147,6 +161,8 @@ pub fn price(model: &ModelRef) -> Option<Price> {
         // DeepSeek's pricing page (ROADMAP [105], read 2026-09-27): the
         // peak-hour price, so the estimate is never low; off-peak costs half.
         (Provider::DeepSeek, "deepseek-flash") => price(0.30, 0.30, 0.006, 1.20),
+        // TypeSafe AI's model page (ROADMAP [98]): input only, output free.
+        (Provider::TypeSafe, model) if model.starts_with("jev") => price(0.042, 0.0, 0.0, 0.0),
         _ => None,
     }
 }
