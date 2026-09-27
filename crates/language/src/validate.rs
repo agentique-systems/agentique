@@ -219,6 +219,9 @@ impl Checker<'_> {
         if kind == ElementKind::InterfaceDef {
             self.check_interface_def_ends(id);
         }
+        if kind == ElementKind::PartDef {
+            self.check_composition(id);
+        }
         self.check_subjects(id);
     }
 
@@ -500,6 +503,36 @@ impl Checker<'_> {
                 );
                 self.report(id, "incompatible-ends", message);
             }
+        }
+    }
+
+    /// A part def must not contain itself through required parts (lower bound
+    /// of at least 1; a part without a multiplicity is required).
+    fn check_composition(&mut self, id: ElementId) {
+        let mut seen = vec![id];
+        let mut i = 0;
+        while i < seen.len() {
+            for feature in self.model.features(seen[i]) {
+                let element = self.model.get(feature);
+                let required = element.multiplicity.is_none_or(|m| m.lower > 0);
+                if element.kind != ElementKind::Part || !required {
+                    continue;
+                }
+                for (ty, _) in self.model.types_of(feature) {
+                    if ty == id {
+                        let message = format!(
+                            "it contains itself through the required part `{}`; give that part a lower bound of 0",
+                            self.model.describe(feature)
+                        );
+                        self.report(id, "composition-cycle", message);
+                        return;
+                    }
+                    if !seen.contains(&ty) {
+                        seen.push(ty);
+                    }
+                }
+            }
+            i += 1;
         }
     }
 

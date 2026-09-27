@@ -72,6 +72,7 @@ Diagnostic codes reported by `validate`:
 | `wrong-type` | A usage's type is not the right kind of definition (a part by a part def, a port by a port def, ...); `~` on a non-port |
 | `wrong-kind` | Specialisation, subsetting, redefinition, satisfy or connection end names the wrong kind of element |
 | `specialization-cycle` | A definition specialises itself |
+| `composition-cycle` | A part def contains itself through parts with a lower bound of at least 1 |
 | `redefines-unknown` | `:>> x` does not name a feature inherited by the owner |
 | `incompatible-ends` | Connected features do not fit the definition's ends, or two ports do not mirror each other |
 | `misplaced-end`, `misplaced-subject`, `duplicate-subject` | `end` outside connection/interface defs; subject outside a requirement; more than one subject |

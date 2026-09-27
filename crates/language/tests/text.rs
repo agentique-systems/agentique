@@ -79,7 +79,7 @@ fn unsupported_constructs_are_reported_and_kept_verbatim() {
 
 #[test]
 fn a_syntax_error_is_contained_to_its_member() {
-    let tree = load("package P { part def A { part x : ; part y : A; } part def B; }");
+    let tree = load("package P { part def A { part x : ; part y : B; } part def B; }");
     assert_eq!(
         codes(&tree),
         [("P::A::(syntax error)".to_string(), "syntax")]

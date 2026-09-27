@@ -73,9 +73,9 @@ The check command on Windows 10 (single runs):
 
 | | debug | release |
 |---|---|---|
-| URL shortener, 115 lines: parse | 0.38 ms | 0.15 ms |
-| validate | 1.15 ms | 0.24 ms |
-| rename a part + re-validate | 1.0 ms | 0.23 ms |
-| 20 renamed copies, 2,300 lines: parse | 6.4 ms | 1.9 ms |
-| validate | 20.8 ms | 3.1 ms |
-| rename a part + re-validate | 20.4 ms | 2.8 ms |
+| URL shortener, 115 lines: parse | 0.39 ms | 0.16 ms |
+| validate | 1.4 ms | 0.23 ms |
+| rename a part + re-validate | 1.1 ms | 0.20 ms |
+| 20 renamed copies, 2,300 lines: parse | 6.3 ms | 1.8 ms |
+| validate | 22 ms | 3.2 ms |
+| rename a part + re-validate | 22 ms | 3.5 ms |

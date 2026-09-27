@@ -237,3 +237,19 @@ fn interfaces_connect_ports_and_ends_belong_in_connection_defs() {
         &[("P::S::i", "wrong-kind"), ("P::E::x", "misplaced-end")],
     );
 }
+
+#[test]
+fn a_part_def_cannot_require_itself() {
+    expect(
+        "package P {
+             part def Node { part next : Node[0..1]; }
+             part def Wheel { part hub : Hub; }
+             part def Hub { part wheel : Wheel; }
+             part def Tree { part children : Tree[*]; }
+         }",
+        &[
+            ("P::Wheel", "composition-cycle"),
+            ("P::Hub", "composition-cycle"),
+        ],
+    );
+}
