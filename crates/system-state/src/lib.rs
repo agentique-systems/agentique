@@ -3,16 +3,20 @@
 //! The Surface and the Assistant change the model through the same typed
 //! [`Operation`]s, grouped into one atomic [`Change`] (§3.2). A change either
 //! applies completely or is rejected with a [`Rejection`] and leaves the state
-//! as it was:
+//! (model and locks) as it was:
 //!
 //! - it was prepared against an older revision ([`Rejection::Stale`]);
 //! - it touches a locked element the Operator has not confirmed
 //!   ([`Rejection::Locked`]);
-//! - an operation cannot be carried out, such as renaming an element that
-//!   does not exist ([`Rejection::Invalid`]).
+//! - an operation cannot be carried out ([`Rejection::Invalid`]): the element
+//!   does not exist, the element cannot have the property (a part def has no
+//!   type), or the result could not be saved as SysML text and read back the
+//!   same (an empty name, a name with a line break, a string value with an
+//!   unescaped quote, a connection with three ends).
 //!
 //! A change that is well formed but makes the model invalid (a type that does
-//! not exist, ports that do not fit) is applied; the problems are reported as
+//! not exist, ports that do not fit, a part inside an attribute, a duplicate
+//! name) is applied; the problems are reported as
 //! [`diagnostics`](SystemState::diagnostics) at the elements concerned, and the
 //! change can be fixed or undone (R-18).
 //!
@@ -32,7 +36,7 @@ use agq_language::{
     Diagnostic, Direction, Element, ElementId, ElementKind, Literal, Multiplicity, Parent,
     QualifiedName, Reference, Step, Tree, TreeError, Visibility, link, printed_reference, validate,
 };
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
 
 /// Who made a change.
@@ -48,7 +52,8 @@ pub enum Actor {
 pub enum Operation {
     /// Adds `element` as the last member of `parent`. Its id, owner and
     /// children are assigned by the tree; the new id is in
-    /// [`ChangeEvent::created`] in operation order.
+    /// [`ChangeEvent::created`] in operation order. Packages and definitions
+    /// need a name; unsupported text and syntax errors cannot be created.
     Create {
         parent: Parent,
         element: Box<Element>,
@@ -56,17 +61,23 @@ pub enum Operation {
     /// Removes an element and everything it owns. References to it keep the
     /// name they are saved with (its current name) and are linked again by
     /// that name, as when the saved text is read back; if nothing has the
-    /// name they are reported as problems until they are changed.
+    /// name they are reported as problems until they are changed. Deleting an
+    /// element that an earlier operation of the same change removed does
+    /// nothing.
     Delete { element: ElementId },
-    /// Gives an element a new name. References to it stay bound to it.
+    /// Gives an element a new name. References to it stay bound to it. A name
+    /// that is already taken is applied and reported as a duplicate.
     Rename { element: ElementId, name: String },
-    /// Makes `parent` the owner of an element (as its last member). The
-    /// element keeps its identity and references to it stay bound.
+    /// Makes `parent` the owner of an element (as its last member), within a
+    /// document or into another one. The element keeps its identity and
+    /// references to it stay bound.
     Move { element: ElementId, parent: Parent },
     /// Adds a connection or interface usage (`kind` is
     /// [`ElementKind::Connection`] or [`ElementKind::Interface`]) owned by
     /// `parent`, from one feature to another, optionally typed by a connection
-    /// or interface definition.
+    /// or interface definition. The ends are feature chains (`store.orders`)
+    /// resolved from `parent`; ends that do not exist or do not fit are
+    /// reported as problems at the new connection.
     Connect {
         parent: ElementId,
         kind: ElementKind,
@@ -88,12 +99,14 @@ pub enum Operation {
 }
 
 /// A property that [`Operation::Set`] can change. `None` or an empty list
-/// clears it.
+/// clears it. Setting a property the element's kind does not have is
+/// rejected; see [`Property::applies_to`].
 #[derive(Clone, Debug, PartialEq)]
 pub enum Property {
     /// `: T`, the types of a usage.
     TypedBy(Vec<Reference>),
-    /// `: ~P`, a port typed by the conjugate of its port definition.
+    /// `: ~P`, a port typed by the conjugate of its port definition. A
+    /// conjugated usage has exactly one type.
     Conjugated(bool),
     /// `:>`, specialisation of a definition or subsetting of a usage.
     Specializes(Vec<Reference>),
@@ -101,11 +114,12 @@ pub enum Property {
     Redefines(Vec<Reference>),
     Multiplicity(Option<Multiplicity>),
     Direction(Option<Direction>),
-    /// `= value`
+    /// `= value`. Numbers are written as in SysML text (`-3`, `1.5e3`), and
+    /// a string's quotes and backslashes inside it are escaped (`\"`, `\\`).
     Value(Option<Literal>),
     Abstract(bool),
     Visibility(Visibility),
-    /// The two ends of a connection or interface usage.
+    /// The two ends of a connection or interface usage (or none).
     Ends(Vec<Reference>),
     /// The requirement a `satisfy` names, or an import's imported name.
     Target(Option<Reference>),
@@ -113,6 +127,51 @@ pub enum Property {
     By(Option<Reference>),
     /// The element's documentation comment.
     Doc(Option<String>),
+}
+
+impl Property {
+    /// Whether elements of `kind` have this property: whether it can be
+    /// written for them in SysML text.
+    pub fn applies_to(&self, kind: ElementKind) -> bool {
+        use ElementKind::*;
+        let has_body = kind == Package || kind.is_definition() || kind.is_usage();
+        match self {
+            Property::Doc(_) => has_body || kind == Satisfy,
+            Property::Visibility(_) => has_body || matches!(kind, Import | Satisfy),
+            Property::Specializes(_) | Property::Abstract(_) => {
+                kind.is_definition() || kind.is_usage()
+            }
+            // `connection c = 1 connect a to b` cannot be read back.
+            Property::Value(_) => kind.is_usage() && !matches!(kind, Connection | Interface),
+            Property::TypedBy(_)
+            | Property::Conjugated(_)
+            | Property::Redefines(_)
+            | Property::Multiplicity(_)
+            | Property::Direction(_) => kind.is_usage(),
+            Property::Ends(_) => matches!(kind, Connection | Interface),
+            Property::Target(_) => matches!(kind, Import | Satisfy),
+            Property::By(_) => kind == Satisfy,
+        }
+    }
+
+    /// The property's name in messages.
+    fn label(&self) -> &'static str {
+        match self {
+            Property::TypedBy(_) => "type (`:`)",
+            Property::Conjugated(_) => "conjugated type (`~`)",
+            Property::Specializes(_) => "specialisation or subsetting (`:>`)",
+            Property::Redefines(_) => "redefinition (`:>>`)",
+            Property::Multiplicity(_) => "multiplicity",
+            Property::Direction(_) => "direction",
+            Property::Value(_) => "value (`=`)",
+            Property::Abstract(_) => "`abstract`",
+            Property::Visibility(_) => "visibility",
+            Property::Ends(_) => "connection end",
+            Property::Target(_) => "target",
+            Property::By(_) => "`by` feature",
+            Property::Doc(_) => "doc comment",
+        }
+    }
 }
 
 /// A group of operations applied together: one undo step.
@@ -140,9 +199,17 @@ impl Change {
             confirmed: Vec::new(),
         }
     }
+
+    /// The same change, prepared against `revision`: it is rejected as
+    /// [`Rejection::Stale`] if the model has changed since.
+    pub fn with_base(mut self, revision: u64) -> Self {
+        self.base = Some(revision);
+        self
+    }
 }
 
 /// Why a change was not applied. The state is unchanged.
+/// [`SystemState::explain`] describes it with the elements' names.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Rejection {
     /// The change was prepared against an older revision.
@@ -150,7 +217,8 @@ pub enum Rejection {
     /// The change touches these locked elements (the elements that carry the
     /// lock) without the Operator's confirmation.
     Locked { elements: Vec<ElementId> },
-    /// Operation number `operation` (from 0) cannot be carried out.
+    /// Operation number `operation` (from 0) cannot be carried out; `reason`
+    /// says why in plain language, naming elements by qualified name.
     Invalid { operation: usize, reason: String },
 }
 
@@ -159,7 +227,7 @@ impl fmt::Display for Rejection {
         match self {
             Rejection::Stale { base, current } => write!(
                 f,
-                "the change was prepared against revision {base}, but the model is at revision {current}"
+                "the model changed while this change was prepared (revision {base}, now {current}); prepare it again"
             ),
             Rejection::Locked { elements } => write!(
                 f,
@@ -167,7 +235,7 @@ impl fmt::Display for Rejection {
                 elements.len()
             ),
             Rejection::Invalid { operation, reason } => {
-                write!(f, "operation {} cannot be applied: {reason}", operation + 1)
+                write!(f, "{reason} (operation {})", operation + 1)
             }
         }
     }
@@ -192,9 +260,11 @@ pub struct ChangeEvent {
     pub kind: EventKind,
     pub actor: Actor,
     pub description: String,
-    /// New elements, in creation order.
+    /// New elements: for an applied change, those its operations created in
+    /// operation order, then any others (such as a doc comment set as a
+    /// property); otherwise in document order.
     pub created: Vec<ElementId>,
-    /// Elements whose properties, owner, members or lock changed.
+    /// Elements whose properties, owner, members, document or lock changed.
     pub updated: Vec<ElementId>,
     pub deleted: Vec<ElementId>,
 }
@@ -205,6 +275,8 @@ struct Snapshot {
     locks: BTreeSet<ElementId>,
     actor: Actor,
     description: String,
+    /// On the undo stack: the revision the change was applied or redone at.
+    revision: u64,
 }
 
 /// The live model of one project.
@@ -288,6 +360,25 @@ impl SystemState {
         self.redo.last().map(|step| step.description.as_str())
     }
 
+    /// A rejection in plain language for the Operator, naming locked
+    /// elements by qualified name.
+    pub fn explain(&self, rejection: &Rejection) -> String {
+        let Rejection::Locked { elements } = rejection else {
+            return rejection.to_string();
+        };
+        let names: Vec<String> = elements
+            .iter()
+            .map(|id| format!("`{}`", self.tree.qualified_name(*id)))
+            .collect();
+        match names.as_slice() {
+            [one] => format!("{one} is locked; changing it needs the Operator's confirmation"),
+            _ => format!(
+                "{} are locked; changing them needs the Operator's confirmation",
+                names.join(", ")
+            ),
+        }
+    }
+
     /// Applies a change atomically. See the crate documentation for when a
     /// change is rejected.
     pub fn apply(&mut self, change: Change) -> Result<ChangeEvent, Rejection> {
@@ -303,12 +394,16 @@ impl SystemState {
         if !locked.is_empty() {
             return Err(Rejection::Locked { elements: locked });
         }
-        let mut tree = self.tree.clone();
-        let mut locks = self.locks.clone();
+        let mut edit = Edit {
+            before: &self.tree,
+            tree: self.tree.clone(),
+            locks: self.locks.clone(),
+            removed: BTreeSet::new(),
+            written: BTreeMap::new(),
+        };
         let mut created = Vec::new();
         for (index, operation) in change.operations.iter().enumerate() {
-            let result = apply_operation(&mut tree, &mut locks, operation);
-            match result {
+            match edit.apply(index, operation) {
                 Ok(Some(id)) => created.push(id),
                 Ok(None) => {}
                 Err(reason) => {
@@ -319,17 +414,35 @@ impl SystemState {
                 }
             }
         }
+        edit.check_written()
+            .map_err(|(operation, reason)| Rejection::Invalid { operation, reason })?;
+        let Edit {
+            mut tree,
+            mut locks,
+            ..
+        } = edit;
         locks.retain(|id| tree.contains(*id));
         link(&mut tree);
-        let before = Snapshot {
+        let mut before = Snapshot {
             tree: std::mem::replace(&mut self.tree, tree),
             locks: std::mem::replace(&mut self.locks, locks),
             actor: change.actor,
             description: change.description,
+            revision: 0,
         };
         let mut event = self.finish(&before, EventKind::Applied);
-        // Keep creation order for callers that need the new ids.
-        event.created = created;
+        // Operation order first, for callers that need the new ids.
+        let mut ordered: Vec<ElementId> = created
+            .into_iter()
+            .filter(|id| self.tree.contains(*id))
+            .collect();
+        for id in event.created {
+            if !ordered.contains(&id) {
+                ordered.push(id);
+            }
+        }
+        event.created = ordered;
+        before.revision = self.revision;
         self.undo.push(before);
         self.redo.clear();
         Ok(event)
@@ -338,7 +451,7 @@ impl SystemState {
     /// Reverts the most recent applied change.
     pub fn undo(&mut self) -> Option<ChangeEvent> {
         let previous = self.undo.pop()?;
-        let current = self.swap(previous.clone());
+        let current = self.swap(previous);
         let event = self.finish(&current, EventKind::Undone);
         self.redo.push(current);
         Some(event)
@@ -347,10 +460,27 @@ impl SystemState {
     /// Reapplies the most recently undone change.
     pub fn redo(&mut self) -> Option<ChangeEvent> {
         let next = self.redo.pop()?;
-        let current = self.swap(next.clone());
+        let mut current = self.swap(next);
         let event = self.finish(&current, EventKind::Redone);
+        current.revision = self.revision;
         self.undo.push(current);
         Some(event)
+    }
+
+    /// Undoes, most recent first, every change applied or redone after
+    /// `revision`, whoever made it: for example all the Assistant's work
+    /// since it started (R-12). Each is one undo step and can be redone.
+    /// Returns the events in order.
+    pub fn undo_since(&mut self, revision: u64) -> Vec<ChangeEvent> {
+        let mut events = Vec::new();
+        while self
+            .undo
+            .last()
+            .is_some_and(|step| step.revision > revision)
+        {
+            events.extend(self.undo());
+        }
+        events
     }
 
     /// Replaces the whole model, for example when a project is opened or a
@@ -367,6 +497,7 @@ impl SystemState {
             locks: std::mem::replace(&mut self.locks, locks),
             actor: Actor::Operator,
             description: description.to_string(),
+            revision: 0,
         };
         self.undo.clear();
         self.redo.clear();
@@ -384,6 +515,7 @@ impl SystemState {
             locks: std::mem::replace(&mut self.locks, snapshot.locks),
             actor: snapshot.actor,
             description: snapshot.description,
+            revision: snapshot.revision,
         }
     }
 
@@ -467,84 +599,385 @@ fn touched(tree: &Tree, operation: &Operation, actor: Actor) -> Vec<(ElementId, 
     }
 }
 
-/// Carries out one operation; returns the id of a new element.
-fn apply_operation(
-    tree: &mut Tree,
-    locks: &mut BTreeSet<ElementId>,
-    operation: &Operation,
-) -> Result<Option<ElementId>, String> {
-    match operation {
-        Operation::Create { parent, element } => {
-            check_parent(tree, *parent)?;
-            if let Some(name) = &element.name {
+/// A change being carried out on copies of the model and locks.
+struct Edit<'a> {
+    /// The model before the change, to name elements removed by it.
+    before: &'a Tree,
+    tree: Tree,
+    locks: BTreeSet<ElementId>,
+    /// Elements removed by earlier operations of the change.
+    removed: BTreeSet<ElementId>,
+    /// Elements created or given properties, with the last operation that
+    /// did so: checked as a whole once all operations are done.
+    written: BTreeMap<ElementId, usize>,
+}
+
+impl Edit<'_> {
+    /// Carries out one operation; returns the id of a new element.
+    fn apply(&mut self, index: usize, operation: &Operation) -> Result<Option<ElementId>, String> {
+        match operation {
+            Operation::Create { parent, element } => {
+                self.check_parent(*parent)?;
+                check_new(element)?;
+                let mut element = (**element).clone();
+                element.location = None;
+                let id = self.tree.add(*parent, element).map_err(describe)?;
+                self.written.insert(id, index);
+                Ok(Some(id))
+            }
+            Operation::Delete { element } => {
+                if self.removed.contains(element) {
+                    return Ok(None);
+                }
+                self.existing(*element)?;
+                let removed = delete(&mut self.tree, &mut self.locks, *element);
+                self.removed.extend(removed);
+                Ok(None)
+            }
+            Operation::Rename { element, name } => {
+                let kind = self.existing(*element)?.kind;
+                if !kind.is_namespace() {
+                    return Err(format!(
+                        "{} is {}, which has no name",
+                        self.name(*element),
+                        a(kind)
+                    ));
+                }
                 check_name(name)?;
+                self.tree.get_mut(*element).expect("checked above").name = Some(name.clone());
+                Ok(None)
             }
-            tree.add(*parent, (**element).clone())
-                .map(Some)
-                .map_err(describe)
-        }
-        Operation::Delete { element } => {
-            existing(tree, *element)?;
-            delete(tree, locks, *element);
-            Ok(None)
-        }
-        Operation::Rename { element, name } => {
-            check_name(name)?;
-            let target = existing_mut(tree, *element)?;
-            if !target.kind.is_namespace() {
-                return Err(format!("a {} has no name", target.kind.keyword()));
+            Operation::Move { element, parent } => {
+                self.existing(*element)?;
+                self.check_parent(*parent)?;
+                if let Parent::Element(target) = parent
+                    && self.tree.descendants(*element).contains(target)
+                {
+                    return Err(format!(
+                        "{} cannot be moved into itself or into {}, which it owns",
+                        self.name(*element),
+                        self.name(*target)
+                    ));
+                }
+                self.tree
+                    .move_to(*element, *parent, usize::MAX)
+                    .map_err(describe)?;
+                Ok(None)
             }
-            target.name = Some(name.clone());
-            Ok(None)
-        }
-        Operation::Move { element, parent } => {
-            existing(tree, *element)?;
-            check_parent(tree, *parent)?;
-            tree.move_to(*element, *parent, usize::MAX)
-                .map(|()| None)
-                .map_err(describe)
-        }
-        Operation::Connect {
-            parent,
-            kind,
-            name,
-            definition,
-            from,
-            to,
-        } => {
-            if !matches!(kind, ElementKind::Connection | ElementKind::Interface) {
-                return Err(format!(
-                    "a connection must be a connection or an interface, not a {}",
-                    kind.keyword()
-                ));
+            Operation::Connect {
+                parent,
+                kind,
+                name,
+                definition,
+                from,
+                to,
+            } => {
+                if !matches!(kind, ElementKind::Connection | ElementKind::Interface) {
+                    return Err(format!(
+                        "a connection is a connection or an interface, not {}",
+                        a(*kind)
+                    ));
+                }
+                self.check_parent(Parent::Element(*parent))?;
+                let mut element = Element::new(*kind);
+                element.name = name.clone();
+                element.typed_by = definition.iter().cloned().collect();
+                element.ends = vec![from.clone(), to.clone()];
+                check_new(&element)?;
+                let id = self
+                    .tree
+                    .add(Parent::Element(*parent), element)
+                    .map_err(describe)?;
+                self.written.insert(id, index);
+                Ok(Some(id))
             }
-            if let Some(name) = name {
-                check_name(name)?;
+            Operation::Set { element, property } => {
+                let kind = self.existing(*element)?.kind;
+                check_property(kind, property)
+                    .map_err(|reason| format!("{}: {reason}", self.name(*element)))?;
+                set_property(&mut self.tree, *element, property)?;
+                self.written.insert(*element, index);
+                Ok(None)
             }
-            check_parent(tree, Parent::Element(*parent))?;
-            let mut element = Element::new(*kind);
-            element.name = name.clone();
-            element.typed_by = definition.iter().cloned().collect();
-            element.ends = vec![from.clone(), to.clone()];
-            tree.add(Parent::Element(*parent), element)
-                .map(Some)
-                .map_err(describe)
-        }
-        Operation::Set { element, property } => {
-            set_property(tree, *element, property)?;
-            Ok(None)
-        }
-        Operation::Lock { element } => {
-            existing(tree, *element)?;
-            locks.insert(*element);
-            Ok(None)
-        }
-        Operation::Unlock { element } => {
-            existing(tree, *element)?;
-            if !locks.remove(element) {
-                return Err(format!("{} is not locked", tree.qualified_name(*element)));
+            Operation::Lock { element } => {
+                self.existing(*element)?;
+                self.locks.insert(*element);
+                Ok(None)
             }
-            Ok(None)
+            Operation::Unlock { element } => {
+                self.existing(*element)?;
+                if self.locks.remove(element) {
+                    return Ok(None);
+                }
+                let mut owner = self.tree[*element].owner();
+                while let Some(id) = owner {
+                    if self.locks.contains(&id) {
+                        return Err(format!(
+                            "{} has no lock of its own; it is covered by the lock on {}",
+                            self.name(*element),
+                            self.name(id)
+                        ));
+                    }
+                    owner = self.tree[id].owner();
+                }
+                Err(format!("{} is not locked", self.name(*element)))
+            }
+        }
+    }
+
+    /// Rules that hold for a whole element, checked once every operation of
+    /// the change is done so that the order of `Set`s does not matter.
+    fn check_written(&self) -> Result<(), (usize, String)> {
+        let mut written: Vec<(usize, ElementId)> = self
+            .written
+            .iter()
+            .map(|(id, index)| (*index, *id))
+            .collect();
+        written.sort();
+        for (index, id) in written {
+            let Some(e) = self.tree.get(id) else {
+                continue;
+            };
+            if e.conjugated && e.typed_by.len() != 1 {
+                let reason = format!(
+                    "{} is conjugated (`~`), so it needs exactly one type",
+                    self.name(id)
+                );
+                return Err((index, reason));
+            }
+            let declared = e.name.is_some()
+                || !e.typed_by.is_empty()
+                || !e.specializes.is_empty()
+                || !e.redefines.is_empty();
+            if e.kind == ElementKind::Reference && !declared {
+                let reason = format!(
+                    "{}: a usage without a kind keyword needs a name, a type, a subsetting or a redefinition",
+                    self.name(id)
+                );
+                return Err((index, reason));
+            }
+        }
+        Ok(())
+    }
+
+    /// The element, or why it cannot be changed.
+    fn existing(&self, id: ElementId) -> Result<&Element, String> {
+        self.tree.get(id).ok_or_else(|| {
+            if self.before.contains(id) {
+                format!(
+                    "`{}` was removed by an earlier operation of this change",
+                    self.before.qualified_name(id)
+                )
+            } else {
+                format!("element {id} does not exist")
+            }
+        })
+    }
+
+    /// A parent is a document or an element that can own members.
+    fn check_parent(&self, parent: Parent) -> Result<(), String> {
+        match parent {
+            Parent::Document(index) if index < self.tree.documents().len() => Ok(()),
+            Parent::Document(index) => Err(format!("document {index} does not exist")),
+            Parent::Element(id) => {
+                let kind = self.existing(id)?.kind;
+                if kind.is_namespace() {
+                    Ok(())
+                } else {
+                    Err(format!(
+                        "{} is {} and cannot own elements",
+                        self.name(id),
+                        a(kind)
+                    ))
+                }
+            }
+        }
+    }
+
+    /// An element's qualified name in backticks, for messages.
+    fn name(&self, id: ElementId) -> String {
+        format!("`{}`", self.tree.qualified_name(id))
+    }
+}
+
+/// Checks a new element: a kind that can be created, a name where one is
+/// needed, and only properties its kind has, each well formed.
+fn check_new(element: &Element) -> Result<(), String> {
+    use ElementKind::*;
+    let kind = element.kind;
+    if matches!(kind, Unsupported | SyntaxError) {
+        return Err(format!(
+            "{} cannot be created; only elements of the supported SysML subset can",
+            a(kind)
+        ));
+    }
+    match &element.name {
+        Some(name) => check_name(name)?,
+        None if kind == Package || kind.is_definition() => {
+            return Err(format!("{} needs a name", a(kind)));
+        }
+        None => {}
+    }
+    for property in carried(element) {
+        check_property(kind, &property)?;
+    }
+    if element.is_end && (!kind.is_usage() || kind == Reference) {
+        return Err(format!("{} cannot be an `end` feature", a(kind)));
+    }
+    if element.wildcard && kind != Import {
+        return Err(format!("{} cannot import all members (`::*`)", a(kind)));
+    }
+    if element.text.is_some() && !matches!(kind, Doc | Comment) {
+        return Err(format!("{} has no comment text", a(kind)));
+    }
+    if element.note.is_some() {
+        return Err("only unsupported text and syntax errors have a note".into());
+    }
+    Ok(())
+}
+
+/// The properties a new element carries, as `Set` would write them.
+fn carried(e: &Element) -> Vec<Property> {
+    let needs_target = matches!(e.kind, ElementKind::Import | ElementKind::Satisfy);
+    [
+        (
+            !e.typed_by.is_empty(),
+            Property::TypedBy(e.typed_by.clone()),
+        ),
+        (e.conjugated, Property::Conjugated(true)),
+        (
+            !e.specializes.is_empty(),
+            Property::Specializes(e.specializes.clone()),
+        ),
+        (
+            !e.redefines.is_empty(),
+            Property::Redefines(e.redefines.clone()),
+        ),
+        (
+            e.multiplicity.is_some(),
+            Property::Multiplicity(e.multiplicity),
+        ),
+        (e.direction.is_some(), Property::Direction(e.direction)),
+        (e.value.is_some(), Property::Value(e.value.clone())),
+        (e.is_abstract, Property::Abstract(true)),
+        (
+            e.visibility != Visibility::Public,
+            Property::Visibility(e.visibility),
+        ),
+        (!e.ends.is_empty(), Property::Ends(e.ends.clone())),
+        (
+            e.target.is_some() || needs_target,
+            Property::Target(e.target.clone()),
+        ),
+        (e.by.is_some(), Property::By(e.by.clone())),
+    ]
+    .into_iter()
+    .filter_map(|(present, property)| present.then_some(property))
+    .collect()
+}
+
+/// Checks that elements of `kind` have the property and that its value can
+/// be written as SysML text.
+fn check_property(kind: ElementKind, property: &Property) -> Result<(), String> {
+    let label = property.label();
+    if !property.applies_to(kind) {
+        return Err(format!("{} has no {label}", a(kind)));
+    }
+    let names = |references: &[Reference]| {
+        references
+            .iter()
+            .try_for_each(|r| check_reference(label, r, false))
+    };
+    match property {
+        Property::TypedBy(references)
+        | Property::Specializes(references)
+        | Property::Redefines(references) => names(references),
+        Property::Ends(ends) if !matches!(ends.len(), 0 | 2) => Err(format!(
+            "{} has two ends (or none), not {}",
+            a(kind),
+            ends.len()
+        )),
+        Property::Ends(ends) => ends
+            .iter()
+            .try_for_each(|r| check_reference(label, r, true)),
+        Property::Target(None) if kind == ElementKind::Import => {
+            Err("an import needs the name it imports".into())
+        }
+        Property::Target(None) => Err("a satisfy needs the requirement it satisfies".into()),
+        Property::Target(Some(reference)) => check_reference(label, reference, false),
+        Property::By(Some(reference)) => check_reference(label, reference, true),
+        Property::Value(Some(literal)) => check_literal(literal),
+        _ => Ok(()),
+    }
+}
+
+/// A reference names an element; only connection ends and `by` features
+/// may be feature chains (`a.b`).
+fn check_reference(label: &str, reference: &Reference, chain: bool) -> Result<(), String> {
+    let named = !reference.steps.is_empty()
+        && reference.steps.iter().all(|step| {
+            !step.name.segments.is_empty()
+                && step.name.segments.iter().all(|s| check_name(s).is_ok())
+        });
+    if !named {
+        return Err(format!("the {label} needs a name without line breaks"));
+    }
+    if !chain && reference.steps.len() > 1 {
+        return Err(format!(
+            "the {label} names an element, not a feature chain like `{reference}`"
+        ));
+    }
+    Ok(())
+}
+
+/// A literal is written back exactly as SysML text reads it.
+fn check_literal(literal: &Literal) -> Result<(), String> {
+    let digits = |text: &str| !text.is_empty() && text.bytes().all(|b| b.is_ascii_digit());
+    let unsigned = |text: &str| text.strip_prefix('-').unwrap_or(text).to_string();
+    match literal {
+        Literal::Boolean(_) => Ok(()),
+        Literal::Integer(text) if digits(&unsigned(text)) => Ok(()),
+        Literal::Integer(text) => Err(format!("`{text}` is not a whole number")),
+        Literal::Real(text) => {
+            let number = unsigned(text);
+            let (mantissa, exponent) = match number.split_once(['e', 'E']) {
+                Some((mantissa, exponent)) => (mantissa, Some(exponent)),
+                None => (number.as_str(), None),
+            };
+            let (whole, fraction) = match mantissa.split_once('.') {
+                Some((whole, fraction)) => (whole, Some(fraction)),
+                None => (mantissa, None),
+            };
+            let valid = digits(whole)
+                && fraction.is_none_or(digits)
+                && exponent.is_none_or(|e| digits(e.strip_prefix(['+', '-']).unwrap_or(e)))
+                && (fraction.is_some() || exponent.is_some());
+            if valid {
+                Ok(())
+            } else {
+                Err(format!(
+                    "`{text}` is not a real number such as `1.5` or `2e3`"
+                ))
+            }
+        }
+        Literal::String(text) => {
+            let mut chars = text.chars();
+            while let Some(c) = chars.next() {
+                match c {
+                    '\\' if chars.next().is_none() => {
+                        return Err("a string value cannot end with a single `\\`".into());
+                    }
+                    '\\' => {}
+                    '"' => {
+                        return Err("a quote inside a string value must be written `\\\"`".into());
+                    }
+                    c if c.is_control() => {
+                        return Err("a string value cannot contain line breaks or other control characters; write `\\n` for a line break".into());
+                    }
+                    _ => {}
+                }
+            }
+            Ok(())
         }
     }
 }
@@ -553,7 +986,7 @@ fn set_property(tree: &mut Tree, element: ElementId, property: &Property) -> Res
     if let Property::Doc(text) = property {
         return set_doc(tree, element, text.as_deref());
     }
-    let target = existing_mut(tree, element)?;
+    let target = tree.get_mut(element).expect("checked by the caller");
     match property.clone() {
         Property::TypedBy(value) => target.typed_by = value,
         Property::Conjugated(value) => target.conjugated = value,
@@ -574,8 +1007,7 @@ fn set_property(tree: &mut Tree, element: ElementId, property: &Property) -> Res
 
 /// Sets, replaces or removes the element's first `doc` comment.
 fn set_doc(tree: &mut Tree, element: ElementId, text: Option<&str>) -> Result<(), String> {
-    let owner = existing(tree, element)?;
-    let doc = owner
+    let doc = tree[element]
         .children()
         .iter()
         .copied()
@@ -598,48 +1030,33 @@ fn set_doc(tree: &mut Tree, element: ElementId, text: Option<&str>) -> Result<()
     Ok(())
 }
 
-fn existing(tree: &Tree, element: ElementId) -> Result<&Element, String> {
-    tree.get(element)
-        .ok_or_else(|| format!("element #{} does not exist", element.raw()))
-}
-
-fn existing_mut(tree: &mut Tree, element: ElementId) -> Result<&mut Element, String> {
-    tree.get_mut(element)
-        .ok_or_else(|| format!("element #{} does not exist", element.raw()))
-}
-
-/// A parent must be a document or an element that can own members.
-fn check_parent(tree: &Tree, parent: Parent) -> Result<(), String> {
-    match parent {
-        Parent::Document(index) if index < tree.documents().len() => Ok(()),
-        Parent::Document(index) => Err(format!("document {index} does not exist")),
-        Parent::Element(id) => {
-            let owner = existing(tree, id)?;
-            if owner.kind.is_namespace() {
-                Ok(())
-            } else {
-                Err(format!(
-                    "{} is a {} and cannot own elements",
-                    tree.qualified_name(id),
-                    owner.kind.keyword()
-                ))
-            }
-        }
-    }
-}
-
+/// A name is not empty and has no line breaks or other control characters,
+/// which could not be saved and read back.
 fn check_name(name: &str) -> Result<(), String> {
     if name.trim().is_empty() {
         Err("a name cannot be empty".to_string())
+    } else if name.chars().any(char::is_control) {
+        Err("a name cannot contain line breaks, tabs or other control characters".to_string())
     } else {
         Ok(())
     }
 }
 
+/// `a part`, `an item def`: a kind with its article, for messages.
+fn a(kind: ElementKind) -> String {
+    let keyword = kind.keyword();
+    let article = if keyword.starts_with(['a', 'e', 'i', 'o', 'u']) {
+        "an"
+    } else {
+        "a"
+    };
+    format!("{article} {keyword}")
+}
+
 fn describe(error: TreeError) -> String {
     match error {
         TreeError::NoSuchElement(id) | TreeError::BadId(id) => {
-            format!("element #{} does not exist", id.raw())
+            format!("element {id} does not exist")
         }
         TreeError::NoSuchDocument(index) => format!("document {index} does not exist"),
         TreeError::IntoItself => "an element cannot be moved into itself".to_string(),
@@ -651,7 +1068,8 @@ fn describe(error: TreeError) -> String {
 pub struct Comparison {
     /// In `after` only, in document order.
     pub created: Vec<ElementId>,
-    /// In both, with different properties, owner or members.
+    /// In both, with different properties, owner, members or (for top-level
+    /// elements) document: renamed and moved elements are updated.
     pub updated: Vec<ElementId>,
     /// In `before` only, in document order.
     pub deleted: Vec<ElementId>,
@@ -666,9 +1084,16 @@ pub struct Comparison {
 pub fn compare(before: &Tree, after: &Tree) -> Comparison {
     let mut comparison = Comparison::default();
     for id in after.walk() {
+        let new = &after[id];
         match before.get(id) {
             None => comparison.created.push(id),
-            Some(old) if !same(old, &after[id]) => comparison.updated.push(id),
+            Some(old)
+                if !same(old, new)
+                    || (new.owner().is_none()
+                        && before.document_of(id) != after.document_of(id)) =>
+            {
+                comparison.updated.push(id)
+            }
             Some(_) => {}
         }
     }
@@ -699,11 +1124,11 @@ fn meaning(element: &Element) -> Element {
     element
 }
 
-/// Removes an element and everything it owns. References to them are
-/// unlinked and keep the names they are saved with at this moment (the
-/// targets' current names), so linking binds them again by those names,
-/// exactly as reading the saved text back does.
-fn delete(tree: &mut Tree, locks: &mut BTreeSet<ElementId>, element: ElementId) {
+/// Removes an element and everything it owns; returns the removed ids.
+/// References to them are unlinked and keep the names they are saved with
+/// at this moment (the targets' current names), so linking binds them again
+/// by those names, exactly as reading the saved text back does.
+fn delete(tree: &mut Tree, locks: &mut BTreeSet<ElementId>, element: ElementId) -> Vec<ElementId> {
     let removed: BTreeSet<ElementId> = tree.descendants(element).into_iter().collect();
     let mut written = Vec::new();
     for holder in tree.walk() {
@@ -718,8 +1143,9 @@ fn delete(tree: &mut Tree, locks: &mut BTreeSet<ElementId>, element: ElementId) 
             }
         }
     }
-    for id in tree.remove(element) {
-        locks.remove(&id);
+    let removed = tree.remove(element);
+    for id in &removed {
+        locks.remove(id);
     }
     for (holder, index, mut reference) in written {
         reference
@@ -731,6 +1157,7 @@ fn delete(tree: &mut Tree, locks: &mut BTreeSet<ElementId>, element: ElementId) 
             .nth(index)
             .expect("the order of Element::references") = reference;
     }
+    removed
 }
 
 fn references_mut(element: &mut Element) -> impl Iterator<Item = &mut Reference> {

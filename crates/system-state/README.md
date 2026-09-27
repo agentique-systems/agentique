@@ -18,14 +18,25 @@ state.undo();
   unlock. Elements are named by identity; references stay bound through rename
   and move.
 - **Atomic changes**: a `Change` applies completely or is rejected
-  (`Stale`, `Locked`, `Invalid`) and leaves the state unchanged. A well-formed
-  change that makes the model invalid is applied, and its problems are in
-  `diagnostics()` at the elements concerned (R-18).
+  (`Stale`, `Locked`, `Invalid`) and leaves the model and locks unchanged.
+  `Invalid` covers what cannot be done or could not be saved as SysML text and
+  read back the same: an unknown element, a property the kind does not have
+  (`Property::applies_to`), an empty name or one with a line break, a
+  malformed value, a connection with three ends. A well-formed change that
+  makes the model invalid (a missing type, ends that do not fit, a duplicate
+  name) is applied, and its problems are in `diagnostics()` at the elements
+  concerned (R-18). `SystemState::explain` describes a rejection by name.
 - **Locks** (R-11): a lock covers the element and everything it owns. Touching
   a covered element needs the lock in `Change::confirmed`. The Assistant cannot
   remove a lock without confirmation.
-- **Undo and redo**: one step per change.
+- **Undo and redo**: one step per change. `undo_since(revision)` undoes
+  every change made after a revision, such as the Assistant's work (R-12).
+- **Stale changes**: `Change::with_base(revision)` rejects the change if the
+  model moved on after it was prepared.
 - **Change events**: every apply, undo, redo and load returns a `ChangeEvent`.
+
+One edit on a 2,000-element model (apply, relink, validate, event) takes
+about 47 ms in a debug build and 8 ms in release (`tests/performance.rs`).
 
 ## Projects
 
