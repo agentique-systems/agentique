@@ -55,8 +55,15 @@ package AgentiqueArchitecture {
 
     part def History {
         doc /* Saves and loads projects as SysML text in git, with checkpoints, branches
-             * and diffs. The persistence format is locked core (R-16). Until Stage 2
-             * replaces it with git, History is the SQLite revision store below. */
+             * and diffs. The persistence format is locked core (R-16). Stores text and
+             * needs no language types. */
+        part 'agq-history' : Crate {
+            doc /* The model folder of a project: atomic saves of the text files and the
+                 * identity and lock file, commits, branches and reading any version,
+                 * through an embedded git (R-6). */
+        }
+        // The SQLite revision store below serves only the current Studio until Stage 2
+        // moves it onto agq-history.
         part 'agq-modeling-repository' : Crate;
         part 'agq-modeling-sqlite' : Crate;
     }

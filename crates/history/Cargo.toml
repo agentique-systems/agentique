@@ -1,0 +1,15 @@
+[package]
+name = "agq-history"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "History: a project's model folder as text files, with checkpoints and branches in git"
+
+[dependencies]
+git2 = { version = "0.21.0", default-features = false, features = ["vendored-libgit2"] }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
