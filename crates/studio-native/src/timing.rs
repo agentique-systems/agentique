@@ -97,6 +97,10 @@ pub struct FrameTiming {
     visibility: Samples,
     batches: Samples,
     labels: Samples,
+    /// A change applied to the model, until the frame that shows it is
+    /// built (edit to Surface, §3.3; CPU side, without presenting).
+    pending_edit: Option<Instant>,
+    edits: Samples,
     received_input: Option<Instant>,
     previous_input: Option<Instant>,
     update_started: Option<Instant>,
@@ -109,6 +113,14 @@ impl FrameTiming {
     }
     pub fn batch(&mut self, duration: Duration) {
         self.batches.push(duration.as_secs_f64() * 1000.0);
+    }
+    /// A change is being applied; the frame that shows it ends the timing.
+    pub fn edit_started(&mut self) {
+        self.pending_edit.get_or_insert_with(Instant::now);
+    }
+    /// The last edit to Surface times, in milliseconds.
+    pub fn edits(&self) -> SampleSummary {
+        self.edits.summary()
     }
     pub fn labels(&mut self, duration: Duration) {
         self.labels.push(duration.as_secs_f64() * 1000.0);
@@ -142,6 +154,10 @@ impl FrameTiming {
         }
         if let Some(started) = self.update_started.take() {
             self.ui_cpu
+                .push(now.duration_since(started).as_secs_f64() * 1000.0);
+        }
+        if let Some(started) = self.pending_edit.take() {
+            self.edits
                 .push(now.duration_since(started).as_secs_f64() * 1000.0);
         }
         if let Some(received) = self.received_input.take() {
