@@ -22,6 +22,7 @@ pub mod conversation;
 pub mod model;
 pub mod provider_model;
 pub mod skills;
+pub mod sysml_text;
 pub mod tools;
 pub mod turn;
 

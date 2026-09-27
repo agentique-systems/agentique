@@ -587,6 +587,8 @@ fn markdown_message(
 /// The model's thinking for one step, collapsed to its first line (R-31).
 /// Nothing is shown for thinking without readable text.
 fn thinking_row(ui: &mut egui::Ui, theme: Theme, id: egui::Id, text: &str, live: bool) {
+    // Reasoning may quote the model's text; the Operator never sees SysML (C-4).
+    let text = agq_assistant::sysml_text::without_sysml(text);
     let text = text.trim();
     let Some(first) = text.lines().map(str::trim).find(|line| !line.is_empty()) else {
         return;
