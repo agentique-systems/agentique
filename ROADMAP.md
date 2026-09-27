@@ -854,7 +854,7 @@ TypeSafe AI's [98]. "Not verified" means no source or test was found.
 | Prompt caching control | yes (manual and automatic, time-to-live) | partial (automatic, cache key; no breakpoints, issue #2170 [5]) | partial (system prompt only) | automatic only, no control [105] | not applicable |
 | Usage including cache counts | yes | yes | yes | yes (`prompt_cache_hit_tokens`, `prompt_cache_miss_tokens`; reasoning tokens separately) [2][105] | input and output tokens only; output is free [98] |
 | Image input | yes | yes | yes | the model list offers it, but rig's path passes image parts through for DeepSeek to refuse [2]; not used | no |
-| Server-side refusal fallbacks | no (see §4.7) | not applicable | not verified | not applicable | not applicable |
+| Server-side refusal fallbacks | no in rig (see §4.7); on `claude-opus-5` through the thin adapter in `agq-providers` (Q-18) | not applicable | not verified | not applicable | not applicable |
 | Server-side compaction | not carried through rig (unknown blocks end the stream [2]) | not verified | not applicable | not applicable | not applicable |
 | Model list | provider endpoint `GET /v1/models` [16]; not provided by rig (not verified) | not verified | public model list endpoint [100] | `GET /models`, with rig's model lister [2][105] | `GET /v1/models`; pinned versions such as `jev-1.13.0` are accepted though not listed [98] |
 

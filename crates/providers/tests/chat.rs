@@ -30,8 +30,8 @@ fn ok(body: String) -> Answer {
 }
 
 /// Serves the answers in order, one per connection; reports each request's
-/// path and JSON body.
-fn serve(answers: Vec<Answer>) -> (String, Receiver<(String, Value)>) {
+/// path, header lines (lowercase) and JSON body.
+fn serve(answers: Vec<Answer>) -> (String, Receiver<(String, String, Value)>) {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let url = format!("http://{}", listener.local_addr().unwrap());
     let (sender, requests) = mpsc::channel();
@@ -49,12 +49,14 @@ fn serve(answers: Vec<Answer>) -> (String, Receiver<(String, Value)>) {
                 .unwrap_or_default()
                 .to_string();
             let mut length = 0;
+            let mut headers = String::new();
             loop {
                 let mut header = String::new();
                 reader.read_line(&mut header).unwrap();
                 if header.trim().is_empty() {
                     break;
                 }
+                headers.push_str(&header.to_lowercase());
                 if let Some((name, value)) = header.split_once(':')
                     && name.eq_ignore_ascii_case("content-length")
                 {
@@ -63,7 +65,8 @@ fn serve(answers: Vec<Answer>) -> (String, Receiver<(String, Value)>) {
             }
             let mut body = vec![0; length];
             reader.read_exact(&mut body).unwrap();
-            let _ = sender.send((path, serde_json::from_slice(&body).unwrap_or(Value::Null)));
+            let body = serde_json::from_slice(&body).unwrap_or(Value::Null);
+            let _ = sender.send((path, headers, body));
             let mut stream = stream;
             let head = format!(
                 "HTTP/1.1 {}\r\n{}Content-Length: {}\r\nConnection: close\r\n\r\n",
@@ -192,7 +195,7 @@ fn deepseek_streams_reasoning_and_text() {
     );
     assert!(events.contains(&Event::Usage(reply.usage)));
 
-    let (path, body) = requests.recv().unwrap();
+    let (path, _, body) = requests.recv().unwrap();
     assert_eq!(path, "/chat/completions");
     assert_eq!(body["model"], "deepseek-flash");
     assert_eq!(body["reasoning_effort"], "high");
@@ -289,7 +292,7 @@ fn deepseek_streams_a_tool_call_and_sends_the_exchange_back() {
             text: "Found it.".into()
         }]
     );
-    let (_, body) = requests.recv().unwrap();
+    let (_, _, body) = requests.recv().unwrap();
     let messages = body["messages"].as_array().unwrap();
     let assistant = messages.iter().find(|m| m["role"] == "assistant").unwrap();
     assert_eq!(assistant["reasoning_content"], "Look it up.");
@@ -474,12 +477,161 @@ fn anthropic_streams_summaries_text_and_a_tool_call() {
     assert_eq!(reply.usage.cache_read_tokens, 3000);
     assert_eq!(reply.usage.cache_write_tokens, 100);
     assert_eq!(reply.usage.input_tokens, 25);
-    let (path, body) = requests.recv().unwrap();
+    let (path, headers, body) = requests.recv().unwrap();
     assert!(path.ends_with("/v1/messages"), "{path}");
     assert_eq!(body["thinking"]["display"], "summarized");
     assert_eq!(body["output_config"]["effort"], "high");
-    assert!(body.get("fallbacks").is_none());
     assert_eq!(body["max_tokens"], 4096);
+    // Server-side refusal fallbacks on the default model (C-27, Q-18).
+    assert_eq!(body["fallbacks"], "default");
+    assert!(
+        headers.contains("anthropic-beta: server-side-fallback-2026-07-01"),
+        "{headers}"
+    );
+}
+
+/// A declined reply continued by the fallback model: the declined model's
+/// thinking and tool calls before the switch (one complete, one cut off) are
+/// dropped, its text stays (C-27, Q-18).
+#[test]
+fn after_a_fallback_only_the_declined_models_text_is_kept() {
+    let start = |index: u64, block: Value| json!({ "type": "content_block_start", "index": index, "content_block": block });
+    let delta = |index: u64, delta: Value| json!({ "type": "content_block_delta", "index": index, "delta": delta });
+    let stop = |index: u64| json!({ "type": "content_block_stop", "index": index });
+    let (url, _requests) = serve(vec![ok(sse(&[
+        json!({ "type": "message_start", "message": { "id": "msg_1", "type": "message", "role": "assistant", "content": [], "model": "claude-opus-5",
+                "usage": { "input_tokens": 25, "output_tokens": 1 } } }),
+        // The declined model: thinking, text and two tool calls, the second
+        // cut off by the refusal.
+        start(
+            0,
+            json!({ "type": "thinking", "thinking": "", "signature": "" }),
+        ),
+        delta(
+            0,
+            json!({ "type": "thinking_delta", "thinking": "Declined thought." }),
+        ),
+        delta(
+            0,
+            json!({ "type": "signature_delta", "signature": "sig-declined" }),
+        ),
+        stop(0),
+        start(1, json!({ "type": "text", "text": "" })),
+        delta(1, json!({ "type": "text_delta", "text": "I will " })),
+        stop(1),
+        start(
+            2,
+            json!({ "type": "tool_use", "id": "toolu_1", "name": "find_elements", "input": {} }),
+        ),
+        delta(
+            2,
+            json!({ "type": "input_json_delta", "partial_json": "{\"name\": \"Store\"}" }),
+        ),
+        stop(2),
+        start(
+            3,
+            json!({ "type": "tool_use", "id": "toolu_2", "name": "find_elements", "input": {} }),
+        ),
+        delta(
+            3,
+            json!({ "type": "input_json_delta", "partial_json": "{\"na" }),
+        ),
+        stop(3),
+        // The switch.
+        start(
+            4,
+            json!({ "type": "fallback", "from": { "model": "claude-opus-5" }, "to": { "model": "claude-opus-4-8" } }),
+        ),
+        stop(4),
+        // The fallback model: thinking, text and a tool call.
+        start(
+            5,
+            json!({ "type": "thinking", "thinking": "", "signature": "" }),
+        ),
+        delta(
+            5,
+            json!({ "type": "thinking_delta", "thinking": "Continue." }),
+        ),
+        delta(
+            5,
+            json!({ "type": "signature_delta", "signature": "sig-fallback" }),
+        ),
+        stop(5),
+        start(6, json!({ "type": "text", "text": "" })),
+        delta(
+            6,
+            json!({ "type": "text_delta", "text": "read the model." }),
+        ),
+        stop(6),
+        start(
+            7,
+            json!({ "type": "tool_use", "id": "toolu_3", "name": "find_elements", "input": {} }),
+        ),
+        delta(
+            7,
+            json!({ "type": "input_json_delta", "partial_json": "{\"name\": \"Link\"}" }),
+        ),
+        stop(7),
+        json!({ "type": "message_delta", "delta": { "stop_reason": "tool_use", "stop_sequence": null },
+                "usage": { "input_tokens": 25, "output_tokens": 90 } }),
+        json!({ "type": "message_stop" }),
+    ]))]);
+    let providers = Providers::new()
+        .with_key(Provider::Anthropic, "test-key")
+        .with_endpoint(Provider::Anthropic, url);
+    let (_, reply) = finish_call(providers.chat(request(Provider::Anthropic, "claude-opus-5")));
+    let reply = reply.unwrap();
+    assert_eq!(reply.stop, StopReason::ToolUse);
+    assert_eq!(
+        reply.content,
+        [
+            AssistantPart::Text {
+                text: "I will ".into()
+            },
+            AssistantPart::Reasoning(agq_providers::Reasoning {
+                id: None,
+                parts: vec![ReasoningPart::Text {
+                    text: "Continue.".into(),
+                    signature: Some("sig-fallback".into())
+                }],
+            }),
+            AssistantPart::Text {
+                text: "read the model.".into()
+            },
+            AssistantPart::ToolCall {
+                id: "toolu_3".into(),
+                name: "find_elements".into(),
+                input: json!({ "name": "Link" }),
+            },
+        ]
+    );
+}
+
+#[test]
+fn other_anthropic_models_are_sent_without_fallbacks() {
+    let (url, requests) = serve(vec![ok(sse(&[
+        json!({ "type": "message_start", "message": { "id": "msg_1", "type": "message", "role": "assistant", "content": [], "model": "claude-opus-5-5",
+                "usage": { "input_tokens": 25, "output_tokens": 1 } } }),
+        json!({ "type": "content_block_start", "index": 0, "content_block": { "type": "text", "text": "" } }),
+        json!({ "type": "content_block_delta", "index": 0, "delta": { "type": "text_delta", "text": "Hello" } }),
+        json!({ "type": "content_block_stop", "index": 0 }),
+        json!({ "type": "message_delta", "delta": { "stop_reason": "end_turn", "stop_sequence": null },
+                "usage": { "input_tokens": 25, "output_tokens": 2 } }),
+        json!({ "type": "message_stop" }),
+    ]))]);
+    let providers = Providers::new()
+        .with_key(Provider::Anthropic, "test-key")
+        .with_endpoint(Provider::Anthropic, url);
+    let (_, reply) = finish_call(providers.chat(request(Provider::Anthropic, "claude-opus-5-5")));
+    assert_eq!(
+        reply.unwrap().content,
+        [AssistantPart::Text {
+            text: "Hello".into()
+        }]
+    );
+    let (_, headers, body) = requests.recv().unwrap();
+    assert!(body.get("fallbacks").is_none());
+    assert!(!headers.contains("anthropic-beta"), "{headers}");
 }
 
 #[test]
@@ -555,7 +707,7 @@ fn openrouter_streams_reasoning_and_a_tool_call() {
     }));
     assert_eq!(reply.usage.input_tokens, 400);
     assert_eq!(reply.usage.cache_read_tokens, 100);
-    let (path, body) = requests.recv().unwrap();
+    let (path, _, body) = requests.recv().unwrap();
     assert!(path.ends_with("/chat/completions"), "{path}");
     assert_eq!(body["reasoning"]["effort"], "high");
 }
@@ -588,7 +740,7 @@ fn openai_streams_a_tool_call_through_the_responses_api() {
     }));
     assert_eq!(reply.usage.input_tokens, 100);
     assert_eq!(reply.usage.cache_read_tokens, 200);
-    let (path, body) = requests.recv().unwrap();
+    let (path, _, body) = requests.recv().unwrap();
     assert!(path.ends_with("/responses"), "{path}");
     assert_eq!(body["reasoning"]["effort"], "high");
 }

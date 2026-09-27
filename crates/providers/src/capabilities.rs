@@ -67,9 +67,9 @@ pub fn capabilities(model: &ModelRef) -> Capabilities {
             // yet (W5.7).
             prompt_cache: PromptCache::Automatic,
             cache_counts: true,
-            // C-27 wants them on the default model; through rig they wait for
-            // the Q-18 adapter, so a refusal ends the turn (§4.8).
-            refusal_fallbacks: false,
+            // On the default model (C-27), through the Q-18 adapter; the
+            // Assistant's hand-written client asks for them on it alone too.
+            refusal_fallbacks: model.model == "claude-opus-5",
             context_window: None,
             max_output_tokens: None,
         },
