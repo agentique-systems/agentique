@@ -453,9 +453,9 @@ impl SystemState {
     }
 
     /// Undoes, most recent first, every change applied or redone after
-    /// `revision`, whoever made it: for example all the Assistant's work
-    /// since it started (R-12). Each is one undo step and can be redone.
-    /// Returns the events in order.
+    /// `revision`, whoever made it: the Assistant's work since it started
+    /// (R-12), but also any change or redo the Operator made in between.
+    /// Each is one undo step and can be redone. Returns the events in order.
     pub fn undo_since(&mut self, revision: u64) -> Vec<ChangeEvent> {
         let mut events = Vec::new();
         while self

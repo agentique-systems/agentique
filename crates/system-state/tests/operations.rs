@@ -1214,3 +1214,33 @@ fn a_printed_and_reread_model_compares_equal() {
     let reread = parse(&[Source::new("shop.sysml", text)]);
     assert_eq!(compare(state.tree(), &reread), Comparison::default());
 }
+
+#[test]
+fn ids_of_undone_elements_are_never_handed_out_again() {
+    let mut state = state();
+    let shop = id(&state, "Shop");
+    let create = |name: &str| {
+        operator(
+            "Create",
+            vec![Operation::Create {
+                parent: Parent::Element(shop),
+                element: Box::new(Element::named(ElementKind::PartDef, name)),
+            }],
+        )
+    };
+    let first = state.apply(create("First")).unwrap().created[0];
+    let before_undo = state.tree().clone();
+    state.undo().unwrap();
+    let second = state.apply(create("Second")).unwrap().created[0];
+    assert_ne!(first, second);
+    // Between the two versions, First was deleted and Second created.
+    let comparison = compare(&before_undo, state.tree());
+    assert_eq!(comparison.deleted, vec![first]);
+    assert_eq!(comparison.created, vec![second]);
+
+    // Redo keeps the id it had; new ids stay above it.
+    state.undo().unwrap();
+    assert_eq!(state.redo().unwrap().created, vec![second]);
+    let third = state.apply(create("Third")).unwrap().created[0];
+    assert!(third.raw() > second.raw() && third != first);
+}
