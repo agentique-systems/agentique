@@ -17,29 +17,14 @@ jobs:
         with:
           persist-credentials: false
       - run: rustup show
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2, verified 2026-09-26
-      - run: cargo fmt --all -- --check
-      - run: cargo clippy --locked --workspace --all-targets -- -D warnings
-      - run: cargo test --locked --workspace
-      - name: Generated descriptors match the pinned metamodel
-        run: cargo run --locked -p agq-metamodel-gen -- --check
-
-  # Native Studio keeps its own lockfile until it joins the root workspace.
-  studio-native:
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4, verified 2026-09-16
-        with:
-          persist-credentials: false
-      - run: rustup show
       - name: Native windowing libraries
         run: |
           sudo apt-get update
           sudo apt-get install --yes --no-install-recommends pkg-config libx11-dev libx11-xcb-dev libxcb1-dev libxkbcommon-dev libwayland-dev libegl1-mesa-dev
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2, verified 2026-09-26
-        with:
-          workspaces: '. -> target'
-          key: studio-native
-      - run: cargo fmt --manifest-path crates/studio-native/Cargo.toml -- --check
-      - run: cargo clippy --locked --manifest-path crates/studio-native/Cargo.toml --target-dir target --all-targets -- -D warnings
-      - run: cargo test --locked --manifest-path crates/studio-native/Cargo.toml --target-dir target
+      - run: cargo fmt --all -- --check
+      - run: cargo clippy --locked --workspace --all-targets -- -D warnings
+      - run: cargo clippy --locked -p agq-studio-native --features automation --all-targets -- -D warnings
+      - run: cargo test --locked --workspace
+      - name: Generated descriptors match the pinned metamodel
+        run: cargo run --locked -p agq-metamodel-gen -- --check

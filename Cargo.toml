@@ -17,9 +17,9 @@ members = [
     "adapters/modeling-sqlite",
     "crates/studio-platform",
     "crates/studio-scene",
+    "crates/studio-native",
     "tools/metamodel-gen",
 ]
-exclude = ["crates/studio-native"]
 resolver = "2"
 
 [workspace.package]

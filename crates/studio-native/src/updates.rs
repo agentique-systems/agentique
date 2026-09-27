@@ -879,7 +879,7 @@ impl StudioApp {
             .is_some_and(|frames| self.frame_number >= frames)
             || (self.args.frames.is_none() && self.args.screenshot.is_some() && self.capture_done);
         if finished
-            && self.args.scenario.is_none()
+            && !self.args.scenario_running()
             && (self.args.screenshot.is_none() || self.capture_done)
         {
             // Close is asynchronous; subsequent updates must not overwrite the

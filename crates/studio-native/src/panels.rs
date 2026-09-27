@@ -192,7 +192,7 @@ impl StudioApp {
                             ui.label(muted(format!("Elapsed {:.1} s · current revision remains available", preparation.started.elapsed().as_secs_f32()), theme).small());
                         });
                         let cancel = ui.add_enabled(!preparation.cancelled, egui::Button::new("Cancel preparation"));
-                        crate::automation::record(ui.ctx(), crate::automation::Target::CancelPreparation, cancel.rect);
+                        crate::targets::record(ui.ctx(), crate::targets::Target::CancelPreparation, cancel.rect);
                         if cancel.clicked() {
                             preparation.cancel();
                         }
@@ -280,21 +280,6 @@ impl StudioApp {
                                     self.comparison == mode,
                                     format!("{mode:?}"),
                                 ),
-                            );
-                            crate::real_targets::record(
-                                ctx,
-                                match mode {
-                                    ComparisonMode::Current => {
-                                        crate::real_targets::Target::ComparisonCurrent
-                                    }
-                                    ComparisonMode::Candidate => {
-                                        crate::real_targets::Target::ComparisonCandidate
-                                    }
-                                    ComparisonMode::Diff => {
-                                        crate::real_targets::Target::ComparisonDiff
-                                    }
-                                },
-                                response.rect,
                             );
                             if response.clicked() {
                                 self.change_comparison(mode);
@@ -582,11 +567,6 @@ impl StudioApp {
     fn graph_standard_control(&mut self, ui: &mut egui::Ui) {
         let mut include = self.include_standard;
         let standards = ui.checkbox(&mut include, "Expand adjacent standard dependencies");
-        crate::real_targets::record(
-            ui.ctx(),
-            crate::real_targets::Target::Standards,
-            standards.rect,
-        );
         if standards.changed() {
             self.include_standard = include;
             self.request_projection();
@@ -603,18 +583,12 @@ impl StudioApp {
         );
         ui.add_space(14.0);
         let search_label = ui.label(muted("Find an element", theme).small());
-        let search_input = ui
-            .add(
-                egui::TextEdit::singleline(&mut self.search)
-                    .hint_text("Find an element…")
-                    .desired_width(f32::INFINITY),
-            )
-            .labelled_by(search_label.id);
-        crate::real_targets::record(
-            ui.ctx(),
-            crate::real_targets::Target::ExplorerSearch,
-            search_input.rect,
-        );
+        ui.add(
+            egui::TextEdit::singleline(&mut self.search)
+                .hint_text("Find an element…")
+                .desired_width(f32::INFINITY),
+        )
+        .labelled_by(search_label.id);
         ui.add_space(14.0);
         ui.horizontal(|ui| {
             ui.label(
@@ -677,11 +651,6 @@ impl StudioApp {
                                     .truncate(),
                             )
                             .on_hover_text(name);
-                        crate::real_targets::record(
-                            ui.ctx(),
-                            crate::real_targets::Target::ExplorerElement(*id),
-                            response.rect,
-                        );
                         let target = if *container {
                             SceneTarget::Container(*id)
                         } else {
@@ -770,7 +739,6 @@ impl StudioApp {
                             ui.add_space(18.0);
                             for project in self.projects.clone() {
                                 let project_button = ui.add_sized([500.0, 42.0], egui::Button::new(&project.name));
-                                crate::real_targets::record(ctx, crate::real_targets::Target::Project(project.id), project_button.rect);
                                 if project_button.clicked() {
                                     self.open_project(project.id);
                                 }
@@ -850,9 +818,9 @@ impl StudioApp {
                 .default_size([750.0, 440.0])
                 .show(ctx, |ui| self.explain_content(ui))
             {
-                crate::automation::record(
+                crate::targets::record(
                     ctx,
-                    crate::automation::Target::ExplainWindow,
+                    crate::targets::Target::ExplainWindow,
                     window.response.rect,
                 );
             }
@@ -1021,11 +989,6 @@ impl StudioApp {
                     head != self.projection.revision_id,
                     egui::Button::new(format!("Return to {branch} head")),
                 );
-                crate::real_targets::record(
-                    ui.ctx(),
-                    crate::real_targets::Target::HistoryReturnHead,
-                    response.rect,
-                );
                 if response.clicked() {
                     self.return_to_revision(head);
                 }
@@ -1040,14 +1003,9 @@ impl StudioApp {
                     Vec2::new(ui.available_width(), 132.0),
                     egui::Sense::click(),
                 );
-                crate::automation::record(
+                crate::targets::record(
                     ui.ctx(),
-                    crate::automation::Target::HistoryRevision(*revision),
-                    rect,
-                );
-                crate::real_targets::record(
-                    ui.ctx(),
-                    crate::real_targets::Target::HistoryRevision(*revision),
+                    crate::targets::Target::HistoryRevision(*revision),
                     rect,
                 );
                 let selected = *revision == self.projection.revision_id;

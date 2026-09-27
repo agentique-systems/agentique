@@ -31,8 +31,8 @@ Install the pinned Rust toolchain (via rustup) and a native C/C++ build toolchai
 (Visual Studio C++ Build Tools on Windows). Run these commands from this repository:
 
 ```sh
-cargo fetch --locked --manifest-path crates/studio-native/Cargo.toml
-cargo run --release --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target
+cargo fetch --locked
+cargo run --release --locked --offline -p agq-studio-native
 ```
 
 Studio opens its setup screen when no accepted semantic runtime is installed.
@@ -50,7 +50,7 @@ To explore the native interface without the runtime, explicitly open the labeled
 architecture fixture:
 
 ```sh
-cargo run --release --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target -- --fixture architecture --no-restore
+cargo run --release --locked --offline -p agq-studio-native -- --fixture architecture --no-restore
 ```
 
 The fixture supports navigation and illustrative candidate review; it cannot
