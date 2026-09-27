@@ -43,6 +43,10 @@ enum Access {
 /// stay unlinked (and are reported by [`crate::validate`]); the next call
 /// tries them again.
 pub fn link(tree: &mut Tree) {
+    // Usually everything is linked already; then there is no model to build.
+    if tree.references().iter().all(|(_, _, r)| r.is_linked()) {
+        return;
+    }
     let updates: Vec<(ElementId, usize, Vec<ElementId>)> = {
         let model = Model::new(tree, library());
         let mut updates = Vec::new();
@@ -78,6 +82,9 @@ pub(crate) struct Model<'a> {
     index: HashMap<Option<ElementId>, HashMap<&'a str, Vec<ElementId>>>,
     /// The document of each authored top-level element.
     root_document: HashMap<ElementId, usize>,
+    /// Owners (`None` = top level) of at least one import. Most namespaces
+    /// import nothing, and lookups skip them without reading their members.
+    importers: HashSet<Option<ElementId>>,
     generals: RefCell<HashMap<ElementId, Rc<[ElementId]>>>,
     redefined: RefCell<HashMap<ElementId, Rc<[ElementId]>>>,
     redefined_here: RefCell<HashMap<ElementId, Rc<HashSet<ElementId>>>>,
@@ -93,8 +100,12 @@ impl<'a> Model<'a> {
     pub fn new(tree: &'a Tree, library: &'a Tree) -> Self {
         let mut index: HashMap<Option<ElementId>, HashMap<&'a str, Vec<ElementId>>> =
             HashMap::new();
+        let mut importers = HashSet::new();
         for source in [tree, library] {
             for id in source.walk() {
+                if source[id].kind == ElementKind::Import {
+                    importers.insert(source[id].owner());
+                }
                 if let Some(name) = source.effective_name(id) {
                     index
                         .entry(source[id].owner())
@@ -116,6 +127,7 @@ impl<'a> Model<'a> {
             library,
             index,
             root_document,
+            importers,
             generals: RefCell::default(),
             redefined: RefCell::default(),
             redefined_here: RefCell::default(),
@@ -527,10 +539,22 @@ impl<'a> Model<'a> {
         name: &str,
         access: Access,
     ) -> Vec<ElementId> {
+        // The members of one namespace or document share an owner.
+        let imports = |members: &[ElementId]| {
+            members
+                .first()
+                .is_some_and(|m| self.importers.contains(&self.get(*m).owner()))
+        };
+        if !imports(members) {
+            return Vec::new();
+        }
         let mut found = Vec::new();
         let mut searched: HashSet<ElementId> = origin.into_iter().collect();
         let mut queue = VecDeque::from([(members, access)]);
         while let Some((members, access)) = queue.pop_front() {
+            if !imports(members) {
+                continue;
+            }
             for &import in members {
                 let element = self.get(import);
                 if element.kind != ElementKind::Import
