@@ -50,9 +50,19 @@ package AgentiqueArchitecture {
     }
 
     part def Assistant {
-        doc /* The Claude API client: tool-use loop, skills, and tools that call System
-             * State operations. An Orchestrator comes later. */
+        doc /* The AI agent the Operator works with: the turn loop, the tools that call
+             * System State operations, the skills and the conversation. It talks to
+             * models through Providers. Temporary: agq-assistant uses reqwest directly
+             * for its hand-written Claude client until W5.7 moves it onto Providers.
+             * An Orchestrator comes later. */
         part 'agq-assistant' : Crate;
+    }
+
+    part def Providers {
+        doc /* Talks to model providers through rig (and a thin Jev client, C-34);
+             * keys in the OS credential store; model lists, capabilities, usage. The
+             * only part that uses rig, tokio, reqwest or the credential-store crates
+             * (R-21, R-41). No crate yet. */
     }
 
     part def Simulation {
@@ -72,6 +82,7 @@ package AgentiqueArchitecture {
         part history : History;
         part studio : Studio;
         part assistant : Assistant;
+        part providers : Providers;
         part simulation : Simulation;
         part implementationLinks : ImplementationLinks;
     }
@@ -87,9 +98,15 @@ package AgentiqueArchitecture {
     dependency from Studio to LanguageCore {
         doc /* Element identities and model types shown on the Surface. */
     }
+    dependency from Studio to Providers {
+        doc /* Settings tests keys and lists models. */
+    }
     dependency from Assistant to SystemState;
     dependency from Assistant to LanguageCore {
         doc /* Element identities and model types in tool calls. */
+    }
+    dependency from Assistant to Providers {
+        doc /* Model calls: requests, streamed replies, usage. */
     }
     dependency from SystemState to LanguageCore;
     dependency from SystemState to History;

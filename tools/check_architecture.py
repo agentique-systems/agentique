@@ -22,6 +22,18 @@ DENIED_LIBRARIES = {
     "eframe", "egui", "egui-wgpu", "wgpu", "winit", "slint",
     "reqwest", "hyper", "axum", "tokio", "tower-http", "ureq",
 }
+PROVIDERS = "Providers"
+# rig (every `rig-*` crate), the async runtime, HTTP and the credential store: only
+# Providers may use them, so provider churn and network access stay in one part
+# (R-21, R-41, ROADMAP §8.7).
+PROVIDER_LIBRARIES = {
+    "rig", "tokio", "reqwest", "keyring", "keyring-core", "windows-native-keyring-store",
+}
+# Temporary uses of those libraries outside Providers, each until the work item that
+# removes it; the model's doc of the part says so too.
+TEMPORARY_LIBRARY_USES = {
+    ("agq-assistant", "reqwest"): "W5.7",  # the hand-written Claude client
+}
 
 # Whitespace, comments and `doc /* ... */` are skipped; names, words and punctuation kept.
 TOKEN = re.compile(r"(\s+|//[^\n]*|/\*.*?\*/|doc\s*/\*.*?\*/)|('[^']*'|\w+|[{};:.~])|(.)", re.S)
@@ -132,7 +144,18 @@ def check(parts, dependencies, crates):
                     f"but the model has no dependency from {part} to {part_of[used]}")
             elif part in CORE_PARTS and used in DENIED_LIBRARIES:
                 problems.append(f"{crate} ({part}) depends on {used}, a UI or network library")
+            elif (provider_library(used) and part != PROVIDERS
+                  and (crate, used) not in TEMPORARY_LIBRARY_USES):
+                problems.append(f"{crate} ({part}) depends on {used}, which only {PROVIDERS} may use")
+    for (crate, used), until in sorted(TEMPORARY_LIBRARY_USES.items()):
+        if crate in crates and used not in crates[crate]:
+            problems.append(f"the temporary use of {used} by {crate} (until {until}) is gone: "
+                            "remove it from TEMPORARY_LIBRARY_USES")
     return problems
+
+
+def provider_library(name):
+    return name in PROVIDER_LIBRARIES or name.startswith("rig-")
 
 
 def crates_from_metadata(metadata):

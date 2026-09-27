@@ -16,8 +16,10 @@ package Example {
     part def SystemState { part 'state' : Crate; }
     part def History { part 'store' : Crate { doc /* A crate with a note. */ } }
     part def Studio { part 'ui' : Crate; }
+    part def Providers { part 'net' : Crate; }
     part def Product { part studio : Studio; }
     dependency from Studio to SystemState;
+    dependency from Studio to Providers;
     dependency from SystemState to LanguageCore { doc /* Allowed. */ }
     dependency from SystemState to History;
 }
@@ -25,9 +27,12 @@ package Example {
 
 
 def problems(model=MODEL, **changes):
-    crates = {"core": [], "state": ["core", "serde"], "store": [], "ui": ["eframe", "state"]}
+    crates = {"core": [], "state": ["core", "serde"], "store": [], "ui": ["eframe", "state", "net"],
+              "net": ["rig-core", "tokio", "reqwest", "keyring"]}
     crates.update(changes)
-    return check(*parse_model({"Example.sysml": model}), crates)
+    found = check(*parse_model({"Example.sysml": model}), crates)
+    # The real temporary exception is not part of these examples.
+    return [problem for problem in found if "TEMPORARY_LIBRARY_USES" not in problem]
 
 
 class CheckTest(unittest.TestCase):
@@ -49,7 +54,7 @@ class CheckTest(unittest.TestCase):
         self.assertEqual(problems(extra=[]), ["extra is not mapped to any part"])
 
     def test_missing_crate_fails(self):
-        crates = {"core": [], "state": [], "store": []}
+        crates = {"core": [], "state": [], "store": [], "net": []}
         self.assertEqual(check(*parse_model({"Example.sysml": MODEL}), crates),
                          ["ui is mapped to Studio but is not a workspace crate"])
 
@@ -57,6 +62,32 @@ class CheckTest(unittest.TestCase):
         self.assertEqual(problems(core=["tokio"], store=["reqwest"]), [
             "core (LanguageCore) depends on tokio, a UI or network library",
             "store (History) depends on reqwest, a UI or network library"])
+
+    def test_provider_libraries_outside_providers_fail(self):
+        # rig, tokio, reqwest and the credential store belong to Providers (R-41).
+        self.assertEqual(problems(ui=["state", "tokio", "keyring-core", "rig-typesafeai"]), [
+            "ui (Studio) depends on tokio, which only Providers may use",
+            "ui (Studio) depends on keyring-core, which only Providers may use",
+            "ui (Studio) depends on rig-typesafeai, which only Providers may use"])
+
+    def test_temporary_library_use_is_allowed(self):
+        model = MODEL.replace("part def Studio { part 'ui' : Crate; }",
+                              "part def Studio { part 'ui' : Crate; }\n"
+                              "    part def Assistant { part 'agq-assistant' : Crate; }")
+        self.assertEqual(problems(model, **{"agq-assistant": ["reqwest"]}), [])
+        self.assertEqual(problems(model, **{"agq-assistant": ["rig-core"]}), [
+            "agq-assistant (Assistant) depends on rig-core, which only Providers may use"])
+
+    def test_an_unused_temporary_use_is_reported(self):
+        # Once the Assistant no longer uses reqwest, the exception must go too.
+        model = MODEL.replace("part def Studio { part 'ui' : Crate; }",
+                              "part def Studio { part 'ui' : Crate; }\n"
+                              "    part def Assistant { part 'agq-assistant' : Crate; }")
+        crates = {"core": [], "state": ["core"], "store": [], "ui": ["state"], "net": [],
+                  "agq-assistant": []}
+        self.assertEqual(check(*parse_model({"Example.sysml": model}), crates), [
+            "the temporary use of reqwest by agq-assistant (until W5.7) is gone: "
+            "remove it from TEMPORARY_LIBRARY_USES"])
 
     def test_language_core_depends_on_nothing(self):
         model = MODEL.rstrip()[:-1] + "    dependency from LanguageCore to History;\n}\n"
