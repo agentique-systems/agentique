@@ -2,10 +2,10 @@
 """Check the Cargo crate graph against the SysML architecture model (REALIGNMENT R-15).
 
 models/agentique/*.sysml maps every workspace crate to a part definition
-(`part 'agq-kernel' : Crate;` inside `part def LanguageCore`) and states the allowed
-dependencies between parts (`dependency from Studio to SystemState;`). A crate may use
-crates of its own part and of every part reachable through those dependencies.
-Normal and build dependencies count; dev-dependencies are ignored.
+(`part 'agq-kernel' : Crate;` inside `part def LanguageCore`) and lists every allowed
+dependency between parts (`dependency from Studio to SystemState;`). A crate may use
+crates of its own part and of the parts its part depends on directly. Normal and build
+dependencies count; dev-dependencies are ignored.
 """
 
 import json
@@ -16,15 +16,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 MODEL_DIR = ROOT / "models" / "agentique"
-# agq-studio-native keeps its own Cargo workspace until it joins the root one.
-MANIFESTS = [ROOT / "Cargo.toml", ROOT / "crates" / "studio-native" / "Cargo.toml"]
-CORE_PARTS = ("LanguageCore", "SystemState")
-DENIED_LIBRARIES = {  # UI, network and AI libraries kept out of the core parts
-    "eframe", "egui", "egui-wgpu", "wgpu", "winit",
+LANGUAGE_CORE = "LanguageCore"  # depends on no other part
+CORE_PARTS = ("LanguageCore", "SystemState", "History")  # no UI or network libraries
+DENIED_LIBRARIES = {
+    "eframe", "egui", "egui-wgpu", "wgpu", "winit", "slint",
     "reqwest", "hyper", "axum", "tokio", "tower-http", "ureq",
 }
-DEFINITIONS = {"item", "port", "interface", "attribute"}  # allowed; the check skips them
-USAGES = {"part", "port", "connect"}  # allowed inside a part def
 
 # Whitespace, comments and `doc /* ... */` are skipped; names, words and punctuation kept.
 TOKEN = re.compile(r"(\s+|//[^\n]*|/\*.*?\*/|doc\s*/\*.*?\*/)|('[^']*'|\w+|[{};:.~])|(.)", re.S)
@@ -39,10 +36,10 @@ def tokenize(text, source):
     for match in TOKEN.finditer(text):
         _, token, bad = match.groups()
         if token or bad:
-            where = f"{source}:{text.count(chr(10), 0, match.start()) + 1}"
+            line = text.count("\n", 0, match.start()) + 1
             if bad:
-                raise ModelError(f"{where}: unexpected {bad!r}")
-            tokens.append((token, where))
+                raise ModelError(f"{source}:{line}: unexpected {bad!r}")
+            tokens.append((token, f"{source}:{line}"))
     return tokens
 
 
@@ -73,14 +70,14 @@ def read_block(tokens, pos=0, nested=False):
 
 
 def crates_in(body):
-    """Crates named by `part 'name' : Crate;` anywhere inside a part def."""
+    """Crates named by `part 'name' : Crate;` inside a part def. Other typed part
+    usages (`part studio : Studio;`) describe composition and map no crate."""
     crates = []
     for words, inner, where in body:
-        if words[0] not in USAGES or "def" in words:
+        if words[0] != "part" or len(words) != 4 or words[2] != ":" or inner:
             raise ModelError(f"{where}: unsupported in a part def: {' '.join(words)}")
-        if words[0] == "part" and words[2:] == [":", "Crate"]:
+        if words[3] == "Crate":
             crates.append(words[1].strip("'"))
-        crates += crates_in(inner or [])
     return crates
 
 
@@ -99,8 +96,6 @@ def parse_model(texts):
                     parts[words[2]] = crates_in(inner or [])
                 elif words[0] == "dependency" and len(words) == 5 and words[1::2] == ["from", "to"] and not inner:
                     dependencies.append((words[2], words[4]))
-                elif words[0] in DEFINITIONS and words[1:2] == ["def"]:
-                    pass
                 else:
                     raise ModelError(f"{where}: unsupported in a package: {' '.join(words)}")
     for client, supplier in dependencies:
@@ -108,18 +103,6 @@ def parse_model(texts):
             if name not in parts:
                 raise ModelError(f"dependency from {client} to {supplier}: no part def {name}")
     return parts, dependencies
-
-
-def reachable(part, dependencies):
-    """The part itself and every part it reaches through dependencies."""
-    found, todo = {part}, [part]
-    while todo:
-        current = todo.pop()
-        for client, supplier in dependencies:
-            if client == current and supplier not in found:
-                found.add(supplier)
-                todo.append(supplier)
-    return found
 
 
 def check(parts, dependencies, crates):
@@ -134,35 +117,36 @@ def check(parts, dependencies, crates):
             if crate not in crates:
                 problems.append(f"{crate} is mapped to {part} but is not a workspace crate")
     problems += [f"the model has no part def {part}" for part in CORE_PARTS if part not in parts]
+    problems += [f"{LANGUAGE_CORE} must not depend on {supplier}"
+                 for client, supplier in dependencies if client == LANGUAGE_CORE]
     for crate, uses in sorted(crates.items()):
         part = part_of.get(crate)
         if part is None:
             problems.append(f"{crate} is not mapped to any part")
             continue
-        allowed = reachable(part, dependencies)
+        allowed = {part} | {supplier for client, supplier in dependencies if client == part}
         for used in uses:
             if used in part_of and part_of[used] not in allowed:
                 problems.append(
                     f"{crate} ({part}) depends on {used} ({part_of[used]}), "
-                    f"but the model has no dependency path from {part} to {part_of[used]}")
+                    f"but the model has no dependency from {part} to {part_of[used]}")
             elif part in CORE_PARTS and used in DENIED_LIBRARIES:
-                problems.append(f"{crate} ({part}) depends on {used}, a UI, network or AI library")
+                problems.append(f"{crate} ({part}) depends on {used}, a UI or network library")
     return problems
 
 
+def crates_from_metadata(metadata):
+    """Map each package of `cargo metadata --no-deps` to its normal and build
+    dependencies (a dependency's `kind` is null for normal, else "build" or "dev")."""
+    return {package["name"]: sorted({dep["name"] for dep in package["dependencies"] if dep["kind"] != "dev"})
+            for package in metadata["packages"]}
+
+
 def cargo_crates():
-    """Map each workspace crate to its normal and build dependencies."""
-    crates = {}
-    for manifest in MANIFESTS:
-        if not manifest.exists():
-            continue
-        command = ["cargo", "metadata", "--format-version", "1", "--no-deps", "--manifest-path", str(manifest)]
-        metadata = json.loads(subprocess.run(command, check=True, stdout=subprocess.PIPE, encoding="utf-8").stdout)
-        members = set(metadata["workspace_members"])
-        for package in metadata["packages"]:
-            if package["id"] in members:
-                crates[package["name"]] = sorted({dep["name"] for dep in package["dependencies"] if dep["kind"] != "dev"})
-    return crates
+    command = ["cargo", "metadata", "--format-version", "1", "--no-deps",
+               "--manifest-path", str(ROOT / "Cargo.toml")]
+    output = subprocess.run(command, check=True, stdout=subprocess.PIPE, encoding="utf-8").stdout
+    return crates_from_metadata(json.loads(output))
 
 
 def main():
