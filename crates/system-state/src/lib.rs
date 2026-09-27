@@ -23,7 +23,7 @@
 
 use agq_language::{
     Diagnostic, Direction, Element, ElementId, ElementKind, Literal, Multiplicity, Parent,
-    Reference, Tree, TreeError, Visibility, link, validate,
+    QualifiedName, Reference, Tree, TreeError, Visibility, link, validate,
 };
 use std::collections::BTreeSet;
 use std::fmt;
@@ -649,12 +649,16 @@ pub struct Comparison {
 
 /// Compares two versions of a model by element identity: the basis of change
 /// events and of the "what changed" view between checkpoints.
+///
+/// Where an element was read from does not count, nor the name a linked
+/// reference was written with: the target is what the reference means, and
+/// printing names it by its current name.
 pub fn compare(before: &Tree, after: &Tree) -> Comparison {
     let mut comparison = Comparison::default();
     for id in after.walk() {
         match before.get(id) {
             None => comparison.created.push(id),
-            Some(old) if Some(old) != after.get(id) => comparison.updated.push(id),
+            Some(old) if !same(old, &after[id]) => comparison.updated.push(id),
             Some(_) => {}
         }
     }
@@ -664,4 +668,31 @@ pub fn compare(before: &Tree, after: &Tree) -> Comparison {
         .filter(|id| !after.contains(*id))
         .collect();
     comparison
+}
+
+fn same(a: &Element, b: &Element) -> bool {
+    a == b || meaning(a) == meaning(b)
+}
+
+/// An element without its source location and without the written names of
+/// linked reference steps.
+fn meaning(element: &Element) -> Element {
+    let mut element = element.clone();
+    element.location = None;
+    let references = element
+        .typed_by
+        .iter_mut()
+        .chain(&mut element.specializes)
+        .chain(&mut element.redefines)
+        .chain(&mut element.ends)
+        .chain(&mut element.target)
+        .chain(&mut element.by);
+    for reference in references {
+        for step in &mut reference.steps {
+            if step.target.is_some() {
+                step.name = QualifiedName::default();
+            }
+        }
+    }
+    element
 }

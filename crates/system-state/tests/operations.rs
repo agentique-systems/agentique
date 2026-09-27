@@ -1,5 +1,7 @@
 use agq_language::{Element, ElementId, ElementKind, Parent, Reference, Source, parse, print};
-use agq_system_state::{Actor, Change, EventKind, Operation, Property, Rejection, SystemState};
+use agq_system_state::{
+    Actor, Change, Comparison, EventKind, Operation, Property, Rejection, SystemState, compare,
+};
 use std::collections::BTreeSet;
 
 const MODEL: &str = "package Shop {
@@ -284,4 +286,24 @@ fn doc_comments_are_a_property() {
     assert!(print(state.tree())[0].text.contains("Keeps the orders."));
     state.apply(set(None)).unwrap();
     assert!(!print(state.tree())[0].text.contains("doc"));
+}
+
+#[test]
+fn a_printed_and_reread_model_compares_equal() {
+    let mut state = state();
+    let store = id(&state, "Shop::Store");
+    state
+        .apply(operator(
+            "Rename Store",
+            vec![Operation::Rename {
+                element: store,
+                name: "Warehouse".into(),
+            }],
+        ))
+        .unwrap();
+    // Reread from text, every element has a new location, and `store : Store`
+    // is now written `store : Warehouse`; neither is a change.
+    let text = format!("\n\n{}", print(state.tree())[0].text);
+    let reread = parse(&[Source::new("shop.sysml", text)]);
+    assert_eq!(compare(state.tree(), &reread), Comparison::default());
 }
