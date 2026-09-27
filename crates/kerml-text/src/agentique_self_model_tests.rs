@@ -6,23 +6,23 @@ use std::collections::BTreeMap;
 pub(super) const DOCUMENTS: [(&str, &str); 5] = [
     (
         "Contracts.sysml",
-        include_str!("../../../models/agentique/Contracts.sysml"),
+        include_str!("../tests/fixtures/platform-model/Contracts.sysml"),
     ),
     (
         "LanguageEngine.sysml",
-        include_str!("../../../models/agentique/LanguageEngine.sysml"),
+        include_str!("../tests/fixtures/platform-model/LanguageEngine.sysml"),
     ),
     (
         "ModelingPlatform.sysml",
-        include_str!("../../../models/agentique/ModelingPlatform.sysml"),
+        include_str!("../tests/fixtures/platform-model/ModelingPlatform.sysml"),
     ),
     (
         "ExecutionRuntime.sysml",
-        include_str!("../../../models/agentique/ExecutionRuntime.sysml"),
+        include_str!("../tests/fixtures/platform-model/ExecutionRuntime.sysml"),
     ),
     (
         "Agentique.sysml",
-        include_str!("../../../models/agentique/Agentique.sysml"),
+        include_str!("../tests/fixtures/platform-model/Agentique.sysml"),
     ),
 ];
 
@@ -304,47 +304,6 @@ fn agentique_rich_platform_preserves_inheritance_redefinition_connections_and_id
             .collect(),
         "the same syntax identities reproduce the same canonical identities"
     );
-}
-
-#[test]
-fn agentique_implementation_traceability_is_separate_and_resolves_existing_paths() {
-    let manifest: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../models/agentique/implementation-map.json"
-    ))
-    .unwrap();
-    let snapshot = lower_documents(&syntax_documents())
-        .strict_snapshot()
-        .unwrap();
-    let query = q(&snapshot);
-    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let named_elements: BTreeMap<_, _> = snapshot
-        .model()
-        .elements()
-        .filter_map(|record| {
-            let own = names(snapshot.model(), [record.id()]).into_iter().next()?;
-            let parent = query.owner(record.id()).value?;
-            let parent_name = names(snapshot.model(), [parent]).into_iter().next()?;
-            Some((format!("{parent_name}::{own}"), record.id()))
-        })
-        .collect();
-    for (path, entry) in manifest["elements"].as_object().unwrap() {
-        assert!(
-            named_elements.contains_key(path),
-            "missing architecture element {path}"
-        );
-        let paths = entry["paths"].as_array().unwrap();
-        if entry["status"] == "planned-gen2" {
-            assert!(paths.is_empty());
-        }
-        for implementation in paths {
-            let implementation = implementation.as_str().unwrap();
-            assert!(!implementation.contains(".."));
-            assert!(
-                root.join(implementation).exists(),
-                "missing implementation {implementation}"
-            );
-        }
-    }
 }
 
 #[test]

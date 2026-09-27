@@ -1403,7 +1403,7 @@ impl Runner {
             soak: soak::State::default(),
             report: Report {
                 format: FORMAT.into(), scenario: app.args.scenario.clone().unwrap(),
-                scope: "Actual native input, authenticated runtime, real models/agentique and ordinary in-process service workers. First process alone does not establish durable restart or overall alpha acceptance.".into(),
+                scope: "Actual native input, authenticated runtime, real platform model fixture and ordinary in-process service workers. First process alone does not establish durable restart or overall alpha acceptance.".into(),
                 database: app.config.database.display().to_string(), root: app.config.root.display().to_string(),
                 outcome: "running".into(), passed: false, restart_verified: false,
                 previous_report_digest,
@@ -1599,7 +1599,7 @@ impl Runner {
             )
             .map_err(|e| e.to_string())?;
             let evidence = serde_json::json!({
-                "format": "agentique-native-real-gallery/1", "semantic_data": "real authenticated models/agentique",
+                "format": "agentique-native-real-gallery/1", "semantic_data": "real authenticated platform model fixture",
                 "fixture": null, "checkpoint": capture.name, "state": capture.state,
                 "baseline": self.report.baseline, "committed": self.report.committed,
                 "engineering_evidence": self.report.engineering_evidence,
@@ -2719,7 +2719,8 @@ fn assert_self_model_sources(app: &StudioApp, manifest: &RevisionManifest) -> Re
 }
 
 fn assert_source_manifest(root: &Path, manifest: &RevisionManifest) -> Result<(), String> {
-    let entries = std::fs::read_dir(root.join("models/agentique")).map_err(|e| e.to_string())?;
+    let entries = std::fs::read_dir(root.join("crates/kerml-text/tests/fixtures/platform-model"))
+        .map_err(|e| e.to_string())?;
     let mut expected = BTreeMap::new();
     for entry in entries {
         let path = entry.map_err(|e| e.to_string())?.path();
@@ -2740,7 +2741,7 @@ fn assert_source_manifest(root: &Path, manifest: &RevisionManifest) -> Result<()
         .collect();
     if expected.is_empty() || actual.len() != manifest.documents.len() || actual != expected {
         return Err(
-            "Repository source identities do not exactly match current models/agentique/*.sysml"
+            "Repository source identities do not exactly match current crates/kerml-text/tests/fixtures/platform-model/*.sysml"
                 .into(),
         );
     }
@@ -3278,7 +3279,9 @@ mod tests {
     fn resume_fixture() -> (Args, Report) {
         let mut args = isolated_args();
         args.root = args.database.as_ref().unwrap().with_extension("root");
-        let sources = args.root.join("models/agentique");
+        let sources = args
+            .root
+            .join("crates/kerml-text/tests/fixtures/platform-model");
         std::fs::create_dir_all(&sources).unwrap();
         let source = "part def ResumeTest;\n";
         std::fs::write(sources.join("ResumeTest.sysml"), source).unwrap();
@@ -3423,7 +3426,9 @@ mod tests {
                 .contains("exact existing absolute database")
         );
         args.database = database;
-        let sources = args.root.join("models/agentique");
+        let sources = args
+            .root
+            .join("crates/kerml-text/tests/fixtures/platform-model");
         std::fs::write(sources.join("Added.sysml"), "part def Extra;").unwrap();
         assert!(
             read_resume(&args)

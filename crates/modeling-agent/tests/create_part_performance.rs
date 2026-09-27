@@ -40,7 +40,7 @@ fn oracle_source_root() -> PathBuf {
             root.display()
         );
     }
-    let models = root.join("models/agentique");
+    let models = root.join("crates/kerml-text/tests/fixtures/platform-model");
     assert!(
         std::fs::read_dir(&models).is_ok_and(|entries| entries.filter_map(Result::ok).any(
             |entry| {
@@ -51,7 +51,7 @@ fn oracle_source_root() -> PathBuf {
                         .is_some_and(|extension| extension == "sysml")
             }
         )),
-        "oracle source root {} has no models/agentique/*.sysml inputs",
+        "oracle source root {} has no crates/kerml-text/tests/fixtures/platform-model/*.sysml inputs",
         root.display()
     );
     eprintln!(
@@ -214,11 +214,12 @@ fn command_child(output: &Path, propose: OracleCommand, control_mode: &str) {
         .get_branch(project.id, project.default_branch)
         .unwrap()
         .head;
-    let mut documents: Vec<_> = std::fs::read_dir(root.join("models/agentique"))
-        .unwrap()
-        .map(|entry| entry.unwrap().path())
-        .filter(|path| path.extension().is_some_and(|ext| ext == "sysml"))
-        .collect();
+    let mut documents: Vec<_> =
+        std::fs::read_dir(root.join("crates/kerml-text/tests/fixtures/platform-model"))
+            .unwrap()
+            .map(|entry| entry.unwrap().path())
+            .filter(|path| path.extension().is_some_and(|ext| ext == "sysml"))
+            .collect();
     documents.sort();
     let seed = service
         .apply_document_changes(ApplyDocumentChanges {

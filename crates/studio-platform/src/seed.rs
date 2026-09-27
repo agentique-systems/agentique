@@ -9,6 +9,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 
 const DESCRIPTION: &str = "Agentique's own durable system architecture";
+/// The pre-realignment platform model, kept as a regression fixture. It seeds
+/// the Studio until git-backed projects replace seeding (REALIGNMENT Stage 2).
+const PLATFORM_MODEL: &str = "crates/kerml-text/tests/fixtures/platform-model";
 
 #[derive(Serialize, Deserialize)]
 struct SeedPlan {
@@ -112,7 +115,7 @@ pub fn seed_agentique(
             .map(|name| {
                 Ok((
                     name.to_owned(),
-                    std::fs::read_to_string(root.join("models/agentique").join(name))
+                    std::fs::read_to_string(root.join(PLATFORM_MODEL).join(name))
                         .map_err(invalid)?,
                 ))
             })
@@ -121,7 +124,7 @@ pub fn seed_agentique(
             initial: current,
             baseline: None,
             documents,
-            fabric: std::fs::read_to_string(root.join("models/agentique/AgentFabric.sysml"))
+            fabric: std::fs::read_to_string(root.join(PLATFORM_MODEL).join("AgentFabric.sysml"))
                 .map_err(invalid)?,
         };
         // Exact source intent is durable before the first semantic commit. It is only
