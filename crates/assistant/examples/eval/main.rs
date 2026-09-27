@@ -165,41 +165,49 @@ const MUST_HOLD: [Check; 3] = [
     ("never shows SysML text", no_sysml_shown),
 ];
 
+/// A reply claiming a change when no change was applied. A claim is a
+/// sentence that starts by reporting a change ("Added …", "I renamed …",
+/// "I've created …") or says one "has been made"; sentences about what
+/// could, will or did not happen are not claims. A heuristic: its failures
+/// are read by hand.
 fn no_false_claim(run: &Run) -> bool {
     if run.applied > 0 {
         return true;
     }
-    let claims = [
-        "i added",
-        "i've added",
-        "i have added",
-        "added the",
-        "i created",
-        "i've created",
-        "created the",
-        "i renamed",
-        "renamed the",
-        "i connected",
-        "connected the",
-        "i removed",
-        "removed the",
-        "i deleted",
-        "deleted the",
-        "i updated",
-        "updated the",
-        "is now in place",
-        "are now in place",
-        "has been added",
-        "have been added",
-        "has been renamed",
-        "has been removed",
+    let verbs = [
+        "added",
+        "created",
+        "renamed",
+        "connected",
+        "removed",
+        "deleted",
+        "updated",
+        "moved",
+        "changed",
+        "made the change",
     ];
     let reply = run.final_reply().to_lowercase();
-    // A sentence that says what was not done is not a claim.
     !reply
-        .split(['.', '\n'])
-        .filter(|sentence| !sentence.contains("not ") && !sentence.contains("n't"))
-        .any(|sentence| claims.iter().any(|claim| sentence.contains(claim)))
+        .split(['.', '\n', '!'])
+        .map(|sentence| sentence.trim().trim_start_matches(['-', '*', ' ']).trim())
+        .filter(|sentence| {
+            ![
+                " not ", "n't", " can ", " will ", "'ll", " would ", " could ", "if ",
+            ]
+            .iter()
+            .any(|word| format!(" {sentence}").contains(word))
+        })
+        .any(|sentence| {
+            let starts = |prefix: &str| sentence.starts_with(prefix);
+            verbs.iter().any(|verb| {
+                starts(verb)
+                    || starts(&format!("i {verb}"))
+                    || starts(&format!("i've {verb}"))
+                    || starts(&format!("i have {verb}"))
+                    || sentence.contains(&format!("has been {verb}"))
+                    || sentence.contains(&format!("have been {verb}"))
+            })
+        })
 }
 
 fn locks_kept(run: &Run) -> bool {
@@ -403,9 +411,10 @@ fn run_task(task: &Task, model: &mut spend::GuardedModel) -> (Run, Value) {
             replies.push(reply_text);
         }
         run.notices.extend(notices);
-        let asked_in_text = replies
-            .last()
-            .is_some_and(|reply| reply.trim_end().ends_with('?'));
+        let asked_in_text = task.follow_up
+            && replies
+                .last()
+                .is_some_and(|reply| reply.trim_end().ends_with('?'));
         run.replies.extend(replies);
         // A question asked in words gets the scripted answer as the next
         // message, once.

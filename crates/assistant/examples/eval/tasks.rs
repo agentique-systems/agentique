@@ -26,6 +26,9 @@ pub struct Task {
     pub answers: &'static [(&'static str, &'static str)],
     pub lock_policy: LockPolicy,
     pub checks: Vec<Check>,
+    /// A question asked in words gets the scripted answer as the next
+    /// message; off for tasks that ask only for an answer.
+    pub follow_up: bool,
 }
 
 impl Task {
@@ -156,6 +159,7 @@ pub fn all() -> Vec<Task> {
                 }),
                 ("the model has no problems", no_problems),
             ],
+            follow_up: true,
         },
         Task {
             id: "a2-build-with-requirements",
@@ -178,6 +182,7 @@ pub fn all() -> Vec<Task> {
                 }),
                 ("the model has no problems", no_problems),
             ],
+            follow_up: true,
         },
         Task {
             id: "a2-ask-statistics",
@@ -194,6 +199,7 @@ pub fn all() -> Vec<Task> {
                 ("statistics modelled", |r| r.has(None, &["stat", "click"])),
                 ("no new problems", no_new_problems),
             ],
+            follow_up: true,
         },
         Task {
             id: "a2-ask-authentication",
@@ -214,6 +220,7 @@ pub fn all() -> Vec<Task> {
                 }),
                 ("no new problems", no_new_problems),
             ],
+            follow_up: true,
         },
         // A3: adjusting in words.
         Task {
@@ -229,6 +236,7 @@ pub fn all() -> Vec<Task> {
                 }),
                 ("the model has no problems", no_problems),
             ],
+            follow_up: true,
         },
         Task {
             id: "a3-rename",
@@ -250,6 +258,7 @@ pub fn all() -> Vec<Task> {
                 }),
                 ("no new problems", no_new_problems),
             ],
+            follow_up: true,
         },
         Task {
             id: "a3-attribute",
@@ -267,6 +276,7 @@ pub fn all() -> Vec<Task> {
                 }),
                 ("no new problems", no_new_problems),
             ],
+            follow_up: true,
         },
         Task {
             id: "a3-delete",
@@ -281,6 +291,7 @@ pub fn all() -> Vec<Task> {
                 }),
                 ("the model has no problems", no_problems),
             ],
+            follow_up: true,
         },
         Task {
             id: "a3-fix-problems",
@@ -290,6 +301,7 @@ pub fn all() -> Vec<Task> {
             answers: &[],
             lock_policy: LockPolicy::Allow,
             checks: vec![("the model has no problems", no_problems)],
+            follow_up: true,
         },
         Task {
             id: "a3-multiplicity",
@@ -306,6 +318,7 @@ pub fn all() -> Vec<Task> {
                 }),
                 ("no new problems", no_new_problems),
             ],
+            follow_up: true,
         },
         Task {
             id: "a3-doc-only",
@@ -320,6 +333,7 @@ pub fn all() -> Vec<Task> {
                 }),
                 ("nothing else changed (one change)", |r| r.applied == 1),
             ],
+            follow_up: true,
         },
         // Answers without changes.
         Task {
@@ -330,6 +344,7 @@ pub fn all() -> Vec<Task> {
             answers: &[],
             lock_policy: LockPolicy::Allow,
             checks: vec![("nothing changed", unchanged)],
+            follow_up: false,
         },
         Task {
             id: "a3-show-architecture",
@@ -339,6 +354,7 @@ pub fn all() -> Vec<Task> {
             answers: &[],
             lock_policy: LockPolicy::Allow,
             checks: vec![("nothing changed", unchanged)],
+            follow_up: false,
         },
         // A4: locks.
         Task {
@@ -362,6 +378,7 @@ pub fn all() -> Vec<Task> {
                         .any(|word| reply.contains(word))
                 }),
             ],
+            follow_up: true,
         },
         Task {
             id: "a4-lock-allowed",
@@ -379,6 +396,7 @@ pub fn all() -> Vec<Task> {
                 }),
                 ("no new problems", no_new_problems),
             ],
+            follow_up: true,
         },
         Task {
             id: "a4-work-around-a-lock",
@@ -391,6 +409,7 @@ pub fn all() -> Vec<Task> {
                 ("a cache is modelled", |r| r.has(None, &["cache"])),
                 ("no new problems", no_new_problems),
             ],
+            follow_up: true,
         },
         // A8: a loosely worded new idea.
         Task {
@@ -409,6 +428,7 @@ pub fn all() -> Vec<Task> {
                 }),
                 ("no new problems", no_new_problems),
             ],
+            follow_up: true,
         },
         Task {
             id: "a8-expiring-links-locked-store",
@@ -421,6 +441,7 @@ pub fn all() -> Vec<Task> {
             )],
             lock_policy: LockPolicy::Refuse,
             checks: vec![("no new problems", no_new_problems)],
+            follow_up: true,
         },
         Task {
             id: "a8-vague-robustness",
@@ -432,6 +453,7 @@ pub fn all() -> Vec<Task> {
             checks: vec![("asked what robust means before changing much", |r| {
                 r.asked() || r.applied <= 1
             })],
+            follow_up: true,
         },
         Task {
             id: "a8-rate-limiting",
@@ -450,6 +472,7 @@ pub fn all() -> Vec<Task> {
                 }),
                 ("no new problems", no_new_problems),
             ],
+            follow_up: true,
         },
         // Simplicity and names (C-10).
         Task {
@@ -465,6 +488,7 @@ pub fn all() -> Vec<Task> {
                 }),
                 ("no new problems", no_new_problems),
             ],
+            follow_up: true,
         },
         Task {
             id: "a3-general-not-duplicated",
@@ -494,6 +518,7 @@ pub fn all() -> Vec<Task> {
                 }),
                 ("no new problems", no_new_problems),
             ],
+            follow_up: true,
         },
         Task {
             id: "a3-two-steps",
@@ -510,6 +535,7 @@ pub fn all() -> Vec<Task> {
                 ("changes applied", changed),
                 ("no new problems", no_new_problems),
             ],
+            follow_up: true,
         },
         Task {
             id: "a1-empty-question",
@@ -519,6 +545,7 @@ pub fn all() -> Vec<Task> {
             answers: &[],
             lock_policy: LockPolicy::Allow,
             checks: vec![("nothing changed", unchanged)],
+            follow_up: false,
         },
     ]
 }
