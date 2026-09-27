@@ -88,9 +88,10 @@ fn ask<T>(command: impl FnOnce(Sender<Result<T, KeyError>>) -> Command) -> Resul
     })
 }
 
-/// The stored key for `provider`, if any.
-pub(crate) fn stored(provider: Provider) -> Option<String> {
-    ask(|reply| Command::Get(provider, reply)).ok().flatten()
+/// The stored key for `provider`, if any; an error when the store cannot be
+/// read (R-25 point 5: say so, never guess).
+pub(crate) fn stored(provider: Provider) -> Result<Option<String>, KeyError> {
+    ask(|reply| Command::Get(provider, reply))
 }
 
 /// Stores `key` for `provider` in the Windows Credential Manager.
@@ -99,8 +100,9 @@ pub fn store(provider: Provider, key: &str) -> Result<(), KeyError> {
     if key.is_empty() {
         return Err(KeyError("The key is empty.".into()));
     }
-    // CREDENTIALW holds at most 2,560 bytes of secret [47].
-    if key.len() > 2_560 {
+    // CREDENTIALW holds at most 2,560 bytes of secret [47]; the store
+    // writes UTF-16.
+    if key.encode_utf16().count() * 2 > 2_560 {
         return Err(KeyError(
             "The key is longer than the Credential Manager holds (2,560 bytes).".into(),
         ));
@@ -115,9 +117,12 @@ pub fn remove(provider: Provider) -> Result<(), KeyError> {
 }
 
 /// What Settings shows instead of a key: its fixed prefix and last four
-/// characters (`sk-ant-…a1B2`, R-25).
+/// characters (`sk-ant-…a1B2`, R-25); a short key shows nothing of itself.
 pub fn hint(key: &str) -> String {
     let key = key.trim();
+    if key.chars().count() < 16 {
+        return "…".to_string();
+    }
     let prefix: String = key
         .split_inclusive('-')
         .take_while(|part| part.ends_with('-') && part.len() <= 5)
@@ -146,12 +151,6 @@ fn open_store() -> Result<(), KeyError> {
 
 #[cfg(not(windows))]
 fn open_store() -> Result<(), KeyError> {
-    if cfg!(test) {
-        keyring_core::set_default_store(
-            keyring_core::mock::Store::new().map_err(|error| KeyError(error.to_string()))?,
-        );
-        return Ok(());
-    }
     Err(KeyError(
         "Keys are stored in the Windows Credential Manager, which this system does not have. Set the key's environment variable instead.".into(),
     ))
@@ -205,8 +204,10 @@ mod tests {
     #[test]
     fn a_hint_shows_the_prefix_and_the_last_four_characters() {
         assert_eq!(hint("sk-ant-api03-abcdefa1B2"), "sk-ant-…a1B2");
-        assert_eq!(hint("sk-0123456789"), "sk-…6789");
-        assert_eq!(hint("plainkey1234"), "…1234");
+        assert_eq!(hint("sk-0123456789abcdef"), "sk-…cdef");
+        assert_eq!(hint("plainkey12345678"), "…5678");
+        // Short keys give nothing away.
+        assert_eq!(hint("sk-abc"), "…");
     }
 
     #[test]

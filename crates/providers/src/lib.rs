@@ -143,6 +143,8 @@ pub enum KeyStatus {
     },
     /// Stored in the Windows Credential Manager.
     Stored,
+    /// The credential store could not be read; the message says why.
+    Unavailable(String),
 }
 
 /// Where the key for `provider` comes from. The key itself never leaves this
@@ -152,10 +154,12 @@ pub fn key_status(provider: Provider) -> KeyStatus {
         KeyStatus::FromEnvironment {
             variable: provider.key_variable(),
         }
-    } else if keys::stored(provider).is_some() {
-        KeyStatus::Stored
     } else {
-        KeyStatus::Missing
+        match keys::stored(provider) {
+            Ok(Some(_)) => KeyStatus::Stored,
+            Ok(None) => KeyStatus::Missing,
+            Err(error) => KeyStatus::Unavailable(error.0),
+        }
     }
 }
 
@@ -448,10 +452,20 @@ impl Drop for ChatHandle {
 /// The entry point: makes model calls with keys from the environment, or
 /// with explicit keys and endpoints (for testing a key before saving it, and
 /// for tests against a local server).
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default)]
 pub struct Providers {
     keys: BTreeMap<Provider, String>,
     endpoints: BTreeMap<Provider, String>,
+}
+
+/// Never shows a key.
+impl std::fmt::Debug for Providers {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Providers")
+            .field("keys_for", &self.keys.keys().collect::<Vec<_>>())
+            .field("endpoints", &self.endpoints)
+            .finish()
+    }
 }
 
 impl Providers {
@@ -485,13 +499,14 @@ impl Providers {
             if self.endpoints.contains_key(&provider) {
                 None
             } else {
-                environment_key(provider).or_else(|| keys::stored(provider))
+                environment_key(provider).or_else(|| keys::stored(provider).ok().flatten())
             }
         })
     }
 
     /// Tests `key` (or, without one, the configured key) against an endpoint
     /// that needs it and runs no model, so it costs nothing (R-25).
+    /// Blocking, for up to ten seconds: call it off the UI thread.
     pub fn check_key(&self, provider: Provider, key: Option<&str>) -> KeyCheck {
         let key = key
             .map(|key| key.trim().to_string())
@@ -505,6 +520,7 @@ impl Providers {
     }
 
     /// The provider's models, with their capabilities and list prices.
+    /// Blocking, for up to ten seconds: call it off the UI thread.
     pub fn list_models(&self, provider: Provider) -> Result<Vec<ModelInfo>, Error> {
         models::list(
             provider,

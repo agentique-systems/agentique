@@ -72,7 +72,9 @@ fn check_path(provider: Provider) -> &'static str {
 
 fn models_path(provider: Provider) -> &'static str {
     match provider {
-        Provider::Anthropic | Provider::OpenAi | Provider::TypeSafe => "/v1/models",
+        // Anthropic pages its list, 20 models by default.
+        Provider::Anthropic => "/v1/models?limit=1000",
+        Provider::OpenAi | Provider::TypeSafe => "/v1/models",
         Provider::OpenRouter => "/api/v1/models",
         Provider::DeepSeek => "/models",
     }
@@ -87,6 +89,8 @@ fn get(provider: Provider, url: String, key: String) -> Result<(u16, String), St
                 .get(&url)
                 .header("x-api-key", &key)
                 .header("anthropic-version", "2023-06-01"),
+            // OpenRouter's model list is public: no key, no header.
+            _ if key.is_empty() => client.get(&url),
             _ => client.get(&url).bearer_auth(&key),
         };
         let response = request
@@ -110,6 +114,12 @@ pub(crate) fn check(provider: Provider, key: Option<String>, endpoint: Option<&s
     };
     let url = format!("{}{}", base(provider, endpoint), check_path(provider));
     match get(provider, url, key) {
+        // DeepSeek answers its balance even when there is none to spend.
+        Ok((200..=299, body))
+            if provider == Provider::DeepSeek && body.contains("\"is_available\":false") =>
+        {
+            KeyCheck::NoAccess
+        }
         Ok((200..=299, _)) => KeyCheck::Works,
         Ok((401, _)) => KeyCheck::Refused,
         // TypeSafe AI answers 403 when the key is missing or not accepted.
