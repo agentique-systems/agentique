@@ -610,6 +610,19 @@ impl Tree {
         }
     }
 
+    /// The id the next new element gets. Store it with the stored ids and
+    /// give it to [`Tree::reserve_ids`] on load, so that the id of a removed
+    /// element is never handed out again.
+    pub fn next_id(&self) -> ElementId {
+        ElementId(self.next_id)
+    }
+
+    /// New elements get ids from `next` up (the next id never goes down).
+    /// Call it before [`Tree::rekey`] so that fresh ids are above `next` too.
+    pub fn reserve_ids(&mut self, next: ElementId) {
+        self.next_id = self.next_id.max(next.0);
+    }
+
     /// Replaces parsed ids with stored ones (`ids` maps parsed id to stored
     /// id). Elements not in the map get fresh ids, returned in document
     /// order. Future ids start above every id in use, so none is reused.

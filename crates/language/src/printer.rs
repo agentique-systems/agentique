@@ -38,6 +38,20 @@ pub fn print_element(tree: &Tree, id: ElementId) -> Option<String> {
     Some(out)
 }
 
+/// A reference held by `holder` as [`print`] writes it: each step named as
+/// printed, targets kept. Use it to keep the written names current, for
+/// example before the targets are removed.
+pub fn printed_reference(
+    tree: &Tree,
+    holder: ElementId,
+    role: Role,
+    reference: &Reference,
+) -> Reference {
+    Model::new(tree, library())
+        .printed(holder, role, reference)
+        .0
+}
+
 struct Printer<'a> {
     model: Model<'a>,
 }

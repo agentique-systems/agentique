@@ -19,11 +19,18 @@
 //! A lock on an element covers it and everything it owns (R-11). Every applied
 //! change, undo and redo returns a [`ChangeEvent`] naming the elements that
 //! were created, updated or deleted, so views can update only what changed.
+//!
+//! A [`Project`] keeps a System State saved in a project folder, with
+//! checkpoints and branches in git (R-6).
 #![forbid(unsafe_code)]
+
+mod project;
+
+pub use project::{ApplyError, Checkpoint, HistoryError, Project, ProjectError};
 
 use agq_language::{
     Diagnostic, Direction, Element, ElementId, ElementKind, Literal, Multiplicity, Parent,
-    Reference, Tree, TreeError, Visibility, link, validate,
+    QualifiedName, Reference, Step, Tree, TreeError, Visibility, link, printed_reference, validate,
 };
 use std::collections::BTreeSet;
 use std::fmt;
@@ -46,8 +53,10 @@ pub enum Operation {
         parent: Parent,
         element: Box<Element>,
     },
-    /// Removes an element and everything it owns. References to it remain and
-    /// are reported as problems until they are changed.
+    /// Removes an element and everything it owns. References to it keep the
+    /// name they are saved with (its current name) and are linked again by
+    /// that name, as when the saved text is read back; if nothing has the
+    /// name they are reported as problems until they are changed.
     Delete { element: ElementId },
     /// Gives an element a new name. References to it stay bound to it.
     Rename { element: ElementId, name: String },
@@ -367,8 +376,11 @@ impl SystemState {
     /// Installs `snapshot` as the current state and returns the state it
     /// replaced, labelled with the snapshot's actor and description.
     fn swap(&mut self, snapshot: Snapshot) -> Snapshot {
+        let mut tree = snapshot.tree;
+        // Ids handed out before the undo are not handed out again.
+        tree.reserve_ids(self.tree.next_id());
         Snapshot {
-            tree: std::mem::replace(&mut self.tree, snapshot.tree),
+            tree: std::mem::replace(&mut self.tree, tree),
             locks: std::mem::replace(&mut self.locks, snapshot.locks),
             actor: snapshot.actor,
             description: snapshot.description,
@@ -473,9 +485,7 @@ fn apply_operation(
         }
         Operation::Delete { element } => {
             existing(tree, *element)?;
-            for id in tree.remove(*element) {
-                locks.remove(&id);
-            }
+            delete(tree, locks, *element);
             Ok(None)
         }
         Operation::Rename { element, name } => {
@@ -649,12 +659,16 @@ pub struct Comparison {
 
 /// Compares two versions of a model by element identity: the basis of change
 /// events and of the "what changed" view between checkpoints.
+///
+/// It compares what elements mean, so a model and the same model saved and
+/// read back compare equal: where an element was read from does not count,
+/// and a linked reference is its target, whatever name it was written with.
 pub fn compare(before: &Tree, after: &Tree) -> Comparison {
     let mut comparison = Comparison::default();
     for id in after.walk() {
         match before.get(id) {
             None => comparison.created.push(id),
-            Some(old) if Some(old) != after.get(id) => comparison.updated.push(id),
+            Some(old) if !same(old, &after[id]) => comparison.updated.push(id),
             Some(_) => {}
         }
     }
@@ -664,4 +678,68 @@ pub fn compare(before: &Tree, after: &Tree) -> Comparison {
         .filter(|id| !after.contains(*id))
         .collect();
     comparison
+}
+
+fn same(a: &Element, b: &Element) -> bool {
+    a == b || meaning(a) == meaning(b)
+}
+
+/// An element without its source location and without the written names of
+/// linked reference steps.
+fn meaning(element: &Element) -> Element {
+    let mut element = element.clone();
+    element.location = None;
+    for reference in references_mut(&mut element) {
+        for step in &mut reference.steps {
+            if step.target.is_some() {
+                step.name = QualifiedName::default();
+            }
+        }
+    }
+    element
+}
+
+/// Removes an element and everything it owns. References to them are
+/// unlinked and keep the names they are saved with at this moment (the
+/// targets' current names), so linking binds them again by those names,
+/// exactly as reading the saved text back does.
+fn delete(tree: &mut Tree, locks: &mut BTreeSet<ElementId>, element: ElementId) {
+    let removed: BTreeSet<ElementId> = tree.descendants(element).into_iter().collect();
+    let mut written = Vec::new();
+    for holder in tree.walk() {
+        if removed.contains(&holder) {
+            continue;
+        }
+        for (index, (role, reference)) in tree[holder].references().into_iter().enumerate() {
+            let points_at_removed = |step: &Step| step.target.is_some_and(|t| removed.contains(&t));
+            if reference.steps.iter().any(points_at_removed) {
+                let printed = printed_reference(tree, holder, role, reference);
+                written.push((holder, index, printed));
+            }
+        }
+    }
+    for id in tree.remove(element) {
+        locks.remove(&id);
+    }
+    for (holder, index, mut reference) in written {
+        reference
+            .steps
+            .iter_mut()
+            .for_each(|step| step.target = None);
+        let holder = tree.get_mut(holder).expect("a holder is not removed");
+        *references_mut(holder)
+            .nth(index)
+            .expect("the order of Element::references") = reference;
+    }
+}
+
+fn references_mut(element: &mut Element) -> impl Iterator<Item = &mut Reference> {
+    element
+        .typed_by
+        .iter_mut()
+        .chain(&mut element.specializes)
+        .chain(&mut element.redefines)
+        .chain(&mut element.ends)
+        .chain(&mut element.target)
+        .chain(&mut element.by)
 }

@@ -2,6 +2,7 @@
 members = [
     "crates/language",
     "crates/system-state",
+    "crates/history",
     "crates/kernel",
     "crates/kerml",
     "crates/sysml",

@@ -38,7 +38,7 @@ mod validate;
 
 pub use library::{LIBRARY_TEXT, library};
 pub use parser::{Source, parse};
-pub use printer::{print, print_element};
+pub use printer::{print, print_element, printed_reference};
 pub use resolve::link;
 pub use tree::{
     Direction, Document, Element, ElementId, ElementKind, Literal, Location, Multiplicity, Parent,
