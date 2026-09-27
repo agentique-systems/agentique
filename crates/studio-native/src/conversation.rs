@@ -274,6 +274,8 @@ impl StudioApp {
         panel.turn = None;
         panel.live.clear();
         panel.thinking = false;
+        // The selection names messages by position; the live ones are gone.
+        panel.view.selection = None;
     }
 
     fn save_conversation(&mut self) {
@@ -310,6 +312,7 @@ impl StudioApp {
         }
         if let Some((index, draft)) = panel.editing.take() {
             panel.conversation.entries.truncate(index);
+            panel.view.selection = None;
             panel.index_results();
             panel.input = draft;
         } else {
@@ -632,6 +635,7 @@ impl StudioApp {
         if !self.conversation.can_retry() {
             return;
         }
+        self.conversation.view.selection = None;
         let entries = &mut self.conversation.conversation.entries;
         while matches!(entries.last(), Some(Entry::Notice { .. })) {
             entries.pop();

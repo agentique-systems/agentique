@@ -111,7 +111,7 @@ impl StudioApp {
         });
         let theme = Theme::new(session.dark && !args.light, session.high_contrast);
         theme.install(&cc.egui_ctx);
-        if let Some(scale) = args.ui_scale {
+        if let Some(scale) = args.ui_scale.filter(|scale| scale.is_finite()) {
             cc.egui_ctx.set_zoom_factor(scale.clamp(0.5, 3.0));
         }
         // Scripted journeys run without animation so positions are final.

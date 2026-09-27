@@ -556,8 +556,9 @@ fn text_block(
     job.wrap.max_width = (width - block.indent).max(40.0);
     let galley = ui.painter().layout_job(job);
     let (rect, _) = ui.allocate_exact_size(Vec2::new(width, galley.size().y), Sense::hover());
-    // Links are clicked; the text is selected by dragging.
-    let response = ui.interact(rect, id, Sense::click_and_drag());
+    // Links are clicked; the text is selected by dragging. Text is not a Tab
+    // stop (`click_and_drag` would make every paragraph one).
+    let response = ui.interact(rect, id, Sense::CLICK | Sense::DRAG);
     if response.hovered() {
         ui.ctx().set_cursor_icon(egui::CursorIcon::Text);
     }
@@ -708,7 +709,7 @@ fn code_block(
     let text = ui.interact(
         egui::Rect::from_min_size(origin, galley.size()),
         id,
-        Sense::click_and_drag(),
+        Sense::CLICK | Sense::DRAG,
     );
     if text.hovered() {
         ui.ctx().set_cursor_icon(egui::CursorIcon::Text);

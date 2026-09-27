@@ -539,7 +539,7 @@ fn select_text(ui: &mut egui::Ui, view: &mut ViewCache) {
     }
     let copy = ui.input(|i| i.events.iter().any(|e| matches!(e, egui::Event::Copy)));
     if copy
-        && !ui.egui_wants_keyboard_input()
+        && !ui.ctx().text_edit_focused()
         && let Some(selection) = view.selection.filter(|s| !s.is_empty())
     {
         let messages = view
