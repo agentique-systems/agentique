@@ -793,6 +793,33 @@ The generation-1 release obligations (`standards/coverage.json`,
 `verification/traceability.json`) and the `AGENTS.md` rules that preserve them
 are **withdrawn**. Generation 1 will not be released.
 
+### 6.6 Decisions carried forward from the retired records (Stage 0)
+
+The retired `docs/` and `docs/adr/` (at `archive/pre-realignment`) held these
+still-valid decisions. They apply from Stage 1 on.
+
+| ID | Decision | Origin |
+|---|---|---|
+| D-1 | Relationships are elements with their own identity. Inheritance is a lookup over the graph; inherited features are never copied into the specialising type | ADR-0001, 0005, 0026 |
+| D-2 | Authored and implied facts stay separate. Implied relationships (implicit specialisation, implied redefinition) are derived, never written into the SysML text and never treated as authored | ADR-0001, 0026 |
+| D-3 | Identity: retired identities are never reused; deleting and recreating gives a new element; identity is never re-matched by name. Library elements get identities derived from the pinned library bytes, so the identity file covers authored elements only | ADR-0006, 0012 |
+| D-4 | An unresolved or wrongly typed reference never becomes a relationship. It stays a reported error at its source location; no placeholder targets | ADR-0006 |
+| D-5 | Ambiguity is an error. It is never settled by identity, hash or traversal order, or "first import wins" | retired profile docs |
+| D-6 | Caches are disposable. The durable truth is the SysML text plus the identity file; any cache is rebuilt from them | ADR-0028 |
+| D-7 | Model and presentation are separate. Layout, camera, selection and views are presentation; removing an element from a view never deletes it; presentation undo never touches model history; diffs compare element identities | ADR-0029, 0030 |
+| D-8 | The standard libraries are the pinned 2026-04 corrective release, not the original 2.0 downloads | standards-discrepancies |
+
+Candidate deviations from KerML/SysML found in the retired errata rulings are
+input to the Stage 1 deviations list (R-9), not decisions by themselves.
+
+### 6.7 Decision log
+
+| Date | Change | Why |
+|---|---|---|
+| 2026-09-27 | R-14 refined: Studio may depend on Assistant (the Conversation lives in the Studio and drives the Assistant). Recorded in `models/agentique/` | The Stage 0 dependency check (R-15) found the Studio already uses the Assistant crate; the dependency is inherent, not accidental |
+| 2026-09-27 | R-15 implemented with the standard SysML `dependency` relationship between part definitions (§3.6 says "connections"). Every allowed dependency is listed; they are not transitive. Crates are mapped as `part 'crate' : Crate;` inside each part definition. Temporary dependencies are marked in the model with the stage that removes them. Checked by `tools/check_architecture.py` in CI | `dependency` is the standard KerML/SysML concept for "requires"; connections describe runtime interaction. Explicit edges keep shortcuts around SystemState visible instead of hiding them behind transitivity |
+| 2026-09-27 | Studio → LanguageCore and Assistant → LanguageCore allowed explicitly (element identities and model types) | Both already use language identities and types; stating it keeps the rule honest |
+
 ---
 
 ## 7. Rules against future drift
