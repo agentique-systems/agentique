@@ -640,6 +640,12 @@ fn claude_messages(messages: &[Value]) -> Vec<Value> {
             }
             message
         })
+        // A reply of reasoning only leaves nothing the API accepts.
+        .filter(|message| {
+            message["content"]
+                .as_array()
+                .is_none_or(|blocks| !blocks.is_empty())
+        })
         .collect()
 }
 

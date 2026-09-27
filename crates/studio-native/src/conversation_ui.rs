@@ -429,7 +429,9 @@ fn messages(
                     ui.add(egui::Spinner::new().size(12.0).color(theme.muted));
                     let text = if let Some(waiting) = waiting {
                         waiting
-                    } else if panel.thinking {
+                    } else if panel.thinking
+                        && !matches!(panel.live.last(), Some(Live::Thinking(text)) if !text.trim().is_empty())
+                    {
                         "Thinking…"
                     } else {
                         "Working…"

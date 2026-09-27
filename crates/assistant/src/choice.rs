@@ -26,6 +26,10 @@ pub struct ModelChoice {
     pub model: ModelRef,
     /// The effort sent, if the model offers efforts.
     pub effort: Option<String>,
+    /// The provider was named (AGENTIQUE_PROVIDER), not picked by its key.
+    pub named: bool,
+    /// Something about the configuration the Operator should fix.
+    pub problem: Option<String>,
 }
 
 impl ModelChoice {
@@ -36,19 +40,29 @@ impl ModelChoice {
                 .map(|value| value.trim().to_string())
                 .filter(|value| !value.is_empty())
         };
-        let provider = var("AGENTIQUE_PROVIDER")
-            .and_then(|id| Provider::from_id(&id))
+        let chosen = var("AGENTIQUE_PROVIDER");
+        let named = chosen.as_deref().and_then(Provider::from_id);
+        let provider = named
             .or_else(|| {
                 PREFERENCE
                     .into_iter()
                     .find(|provider| key_status(*provider) != agq_providers::KeyStatus::Missing)
             })
             .unwrap_or(Provider::Anthropic);
-        let model = ModelRef::new(
-            provider,
-            var("AGENTIQUE_MODEL").unwrap_or_else(|| provider.default_model().to_string()),
-        );
-        ModelChoice::new(model, var("AGENTIQUE_EFFORT"))
+        // AGENTIQUE_MODEL names a model of the chosen provider: it applies
+        // when the provider is named too, or to Anthropic as in Stage 3, so a
+        // Claude model id left in the environment never goes to DeepSeek.
+        let model = var("AGENTIQUE_MODEL")
+            .filter(|_| named.is_some() || provider == Provider::Anthropic)
+            .unwrap_or_else(|| provider.default_model().to_string());
+        let mut choice = ModelChoice::new(ModelRef::new(provider, model), var("AGENTIQUE_EFFORT"));
+        choice.named = chosen.is_some();
+        if let Some(id) = chosen.filter(|_| named.is_none()) {
+            choice.problem = Some(format!(
+                "AGENTIQUE_PROVIDER is `{id}`, which is not a provider Agentique knows (anthropic, deepseek, openai, openrouter)."
+            ));
+        }
+        choice
     }
 
     /// `effort` is kept only if the model offers it; otherwise the model's
@@ -58,7 +72,12 @@ impl ModelChoice {
         let effort = effort
             .filter(|effort| offered.efforts.contains(&effort.as_str()))
             .or(offered.default_effort.map(str::to_string));
-        ModelChoice { model, effort }
+        ModelChoice {
+            model,
+            effort,
+            named: false,
+            problem: None,
+        }
     }
 
     /// Shown discreetly in the Conversation: `deepseek-flash · high`.
@@ -75,18 +94,34 @@ impl ModelChoice {
 
     /// What the Operator reads when no key is set.
     pub fn missing_key_message(&self) -> String {
+        let problem = self
+            .problem
+            .as_ref()
+            .map(|problem| format!("{problem} "))
+            .unwrap_or_default();
+        let variable = self.model.provider.key_variable();
+        let alternatives = if self.named {
+            String::new()
+        } else {
+            let others: Vec<&str> = PREFERENCE
+                .iter()
+                .map(|provider| provider.key_variable())
+                .filter(|other| *other != variable)
+                .collect();
+            format!(" (or another provider's key: {})", others.join(", "))
+        };
         format!(
-            "No {} key is set. Set {} (or another provider's key, such as DEEPSEEK_API_KEY) and restart Agentique to work with the Assistant. Everything else works as usual.",
-            self.model.provider.name(),
-            self.model.provider.key_variable()
+            "{problem}No {} key is set. Set {variable}{alternatives} and restart Agentique to work with the Assistant. Everything else works as usual.",
+            self.model.provider.name()
         )
     }
 
     /// A model for one turn.
     pub fn start(&self) -> Box<dyn Model + Send> {
-        // The hand-written Claude client stays Anthropic's path until W5.7
-        // moves it onto rig; it is the path tested against the Claude API's
-        // stand-in (§7.6).
+        // A temporary exception to §8.7 rule 2 (code outside agq-providers
+        // names no provider): the hand-written Claude client stays
+        // Anthropic's path until W5.7 moves it onto rig; it is the path
+        // tested against the Claude API's stand-in (§7.6).
         if self.model.provider == Provider::Anthropic {
             let mut claude = ClaudeModel::from_env();
             claude.model = self.model.model.clone();

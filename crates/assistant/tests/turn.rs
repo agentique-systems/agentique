@@ -933,3 +933,66 @@ fn the_skills_explain_every_tool() {
         assert!(prompt.contains(topic), "{topic}");
     }
 }
+
+/// A model that starts its tool call under a stream id and learns the
+/// provider's id afterwards, as calls through the provider layer do.
+struct Renaming {
+    replies: Vec<Reply>,
+}
+
+impl Model for Renaming {
+    fn send(
+        &mut self,
+        _: &Request,
+        on_event: &mut dyn FnMut(StreamEvent),
+        _: &AtomicBool,
+    ) -> Result<Reply, ModelError> {
+        let reply = self.replies.remove(0);
+        if reply.stop_reason == "tool_use" {
+            on_event(StreamEvent::ToolCallStarted {
+                id: "stream-1".into(),
+                name: tools::FIND_ELEMENTS.into(),
+            });
+            on_event(StreamEvent::ToolInput {
+                id: "stream-1".into(),
+                json: "{}".into(),
+            });
+            on_event(StreamEvent::ToolCallId {
+                stream_id: "stream-1".into(),
+                id: "call_1".into(),
+            });
+        }
+        Ok(reply)
+    }
+}
+
+#[test]
+fn a_call_started_under_a_stream_id_finishes_under_the_providers_id() {
+    let mut studio = Studio::new(model_of("package UrlShortener;"));
+    let mut model = Renaming {
+        replies: vec![
+            Reply {
+                content: vec![
+                    json!({ "type": "tool_use", "id": "call_1", "name": "find_elements", "input": {} }),
+                ],
+                stop_reason: "tool_use".into(),
+            },
+            Reply {
+                content: vec![json!({ "type": "text", "text": "Done." })],
+                stop_reason: "end_turn".into(),
+            },
+        ],
+    };
+    let run = run(&mut model, &mut studio, asked("Find everything."));
+    let finished: Vec<&str> = run
+        .events
+        .iter()
+        .filter_map(|event| match event {
+            TurnEvent::ToolFinished(result) => Some(result.tool_use_id.as_str()),
+            _ => None,
+        })
+        .collect();
+    // One card, finished under the provider's id; nothing discarded.
+    assert_eq!(finished, ["call_1"]);
+    assert!(!results(&run.conversation.entries[2])[0].is_error);
+}

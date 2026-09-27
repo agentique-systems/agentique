@@ -163,7 +163,7 @@ pub fn run(
             .collect();
         discard(
             &dropped,
-            "the reply was continued by another model",
+            "the call was not part of the finished reply",
             on_event,
         );
         // The API does not accept an empty assistant message back.

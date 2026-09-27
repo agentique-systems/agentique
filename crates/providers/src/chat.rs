@@ -97,10 +97,17 @@ fn rig_request(request: &ChatRequest) -> Result<CompletionRequest, Error> {
             Message::User(parts) => rig::Message::User {
                 content: parts.iter().map(user_content).collect(),
             },
-            Message::Assistant(parts) => rig::Message::Assistant {
-                id: None,
-                content: parts.iter().map(assistant_content).collect(),
-            },
+            Message::Assistant(parts) => {
+                let mut content: Vec<AssistantContent> =
+                    parts.iter().map(assistant_content).collect();
+                if needs_reasoning(request, parts) {
+                    content.insert(
+                        0,
+                        AssistantContent::Reasoning(rig::Reasoning::new(NO_REASONING)),
+                    );
+                }
+                rig::Message::Assistant { id: None, content }
+            }
         });
     }
     let tools = request
@@ -125,6 +132,20 @@ fn rig_request(request: &ChatRequest) -> Result<CompletionRequest, Error> {
         output_schema: None,
         record_telemetry_content: false,
     })
+}
+
+/// Stands in for reasoning an earlier assistant turn does not have (a stopped
+/// reply, a turn another model wrote).
+const NO_REASONING: &str = "(no reasoning was recorded for this turn)";
+
+/// DeepSeek refuses a request with tools when an earlier assistant turn has
+/// no `reasoning_content` (§4.8), so every such turn gets a stand-in.
+fn needs_reasoning(request: &ChatRequest, parts: &[AssistantPart]) -> bool {
+    request.model.provider == Provider::DeepSeek
+        && !request.tools.is_empty()
+        && !parts.iter().any(|part| {
+            matches!(part, AssistantPart::Reasoning(reasoning) if !reasoning.text().trim().is_empty())
+        })
 }
 
 /// Reasoning and effort settings, per provider (§4.7, §4.8).
@@ -652,6 +673,36 @@ mod tests {
         assert_eq!(params["output_config"]["effort"], "high");
         // No server-side fallbacks through rig until the Q-18 adapter.
         assert!(params.get("fallbacks").is_none());
+    }
+
+    #[test]
+    fn deepseek_turns_without_reasoning_get_a_stand_in() {
+        let mut request = request(Provider::DeepSeek, "deepseek-flash", None);
+        request.messages = vec![
+            Message::User(vec![UserPart::Text { text: "hi".into() }]),
+            // A stopped reply: text only.
+            Message::Assistant(vec![AssistantPart::Text {
+                text: "Partly".into(),
+            }]),
+            Message::User(vec![UserPart::Text {
+                text: "go on".into(),
+            }]),
+        ];
+        let converted = rig_request(&request).unwrap();
+        let rig::Message::Assistant { content, .. } = &converted.chat_history[2] else {
+            panic!("an assistant message");
+        };
+        assert!(
+            matches!(&content[0], AssistantContent::Reasoning(r) if r.display_text() == NO_REASONING)
+        );
+        // Other providers are sent the turn as it was.
+        let mut other = request.clone();
+        other.model = ModelRef::new(Provider::OpenRouter, "deepseek/deepseek-flash");
+        let converted = rig_request(&other).unwrap();
+        let rig::Message::Assistant { content, .. } = &converted.chat_history[2] else {
+            panic!("an assistant message");
+        };
+        assert_eq!(content.len(), 1);
     }
 
     #[test]

@@ -3,10 +3,13 @@
 //!
 //! Every model call appends one JSON line to the log named by
 //! `AGENTIQUE_SPEND_LOG` (time, purpose, provider, model, tokens, estimated
-//! cost). A run refuses to start when the provider's logged total plus the
-//! run's worst case would pass `AGENTIQUE_SPEND_STOP_USD`, and refuses every
-//! call after its own maximum or once the logged total reaches the stop.
-//! Keep the log outside the repository: it is evidence, never committed.
+//! cost, outcome); a call that fails or is stopped before reporting its
+//! usage is logged at its worst case. A run refuses to start when the
+//! provider's logged total plus the run's worst case would pass
+//! `AGENTIQUE_SPEND_STOP_USD`, and each call is refused once its own worst
+//! case would pass the stop or the run's maximum of calls is reached. Models
+//! without a known price are refused. Keep the log outside the repository:
+//! it is evidence, never committed.
 
 use agq_assistant::{Model, ModelError, Reply, Request, StreamEvent};
 use agq_providers::{ModelRef, price};
@@ -16,8 +19,9 @@ use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex};
 
-/// Tokens assumed per call for the worst case: full-price input.
-const WORST_INPUT_TOKENS: f64 = 60_000.0;
+/// Tokens assumed for a call's input when estimating a run's worst case
+/// before it starts; each call is checked against its real request size.
+const ASSUMED_INPUT_TOKENS: u64 = 60_000;
 
 pub struct SpendGuard {
     log: PathBuf,
@@ -25,6 +29,7 @@ pub struct SpendGuard {
     purpose: String,
     model: ModelRef,
     max_calls: u32,
+    max_output_tokens: u64,
     calls: u32,
     /// This run's estimated cost so far.
     pub run_usd: f64,
@@ -40,18 +45,34 @@ impl SpendGuard {
     ) -> Result<Arc<Mutex<SpendGuard>>, String> {
         let log = std::env::var("AGENTIQUE_SPEND_LOG")
             .map(PathBuf::from)
-            .map_err(|_| "Set AGENTIQUE_SPEND_LOG (a JSON-lines file outside the repository) before a live run.".to_string())?;
+            .map_err(|_| {
+                "Set AGENTIQUE_SPEND_LOG (a JSON-lines file outside the repository) before a live run."
+                    .to_string()
+            })?;
         let stop_usd: f64 = std::env::var("AGENTIQUE_SPEND_STOP_USD")
             .ok()
             .and_then(|value| value.trim().parse().ok())
             .ok_or(
                 "Set AGENTIQUE_SPEND_STOP_USD (the hard stop in US dollars) before a live run.",
             )?;
-        // Unknown prices use a conservative stand-in: $1 in, $4 out per million.
-        let (input, output) = price(model).map_or((1.0, 4.0), |price| (price.input, price.output));
-        let worst_call = (WORST_INPUT_TOKENS * input + max_output_tokens as f64 * output) / 1e6;
-        let worst = worst_call * f64::from(max_calls);
-        let logged = logged_usd(&log, model.provider.id());
+        if price(model).is_none() {
+            return Err(format!(
+                "Refused: `{}` has no known price, so its cost cannot be bounded.",
+                model.model
+            ));
+        }
+        let guard = SpendGuard {
+            log,
+            stop_usd,
+            purpose: purpose.to_string(),
+            model: model.clone(),
+            max_calls,
+            max_output_tokens,
+            calls: 0,
+            run_usd: 0.0,
+        };
+        let worst = guard.worst_call(ASSUMED_INPUT_TOKENS) * f64::from(max_calls);
+        let logged = guard.logged();
         if logged + worst > stop_usd {
             return Err(format!(
                 "Refused: {} spend logged so far is ${logged:.4}; this run's worst case is ${worst:.4} ({max_calls} calls); together they pass the stop of ${stop_usd:.2}.",
@@ -62,57 +83,68 @@ impl SpendGuard {
             "[spend] {} logged ${logged:.4}; this run at most {max_calls} calls, worst case ${worst:.4}; stop ${stop_usd:.2}.",
             model.provider.name()
         );
-        Ok(Arc::new(Mutex::new(SpendGuard {
-            log,
-            stop_usd,
-            purpose: purpose.to_string(),
-            model: model.clone(),
-            max_calls,
-            calls: 0,
-            run_usd: 0.0,
-        })))
+        Ok(Arc::new(Mutex::new(guard)))
     }
 
-    fn allow(&mut self) -> Result<(), String> {
+    /// The most one call can cost: all input at the dearer of the input and
+    /// cache-write prices, and the whole output limit.
+    fn worst_call(&self, input_tokens: u64) -> f64 {
+        let price = price(&self.model).expect("checked at start");
+        (input_tokens as f64 * price.input.max(price.cache_write)
+            + self.max_output_tokens as f64 * price.output)
+            / 1e6
+    }
+
+    fn logged(&self) -> f64 {
+        logged_usd(&self.log, self.model.provider.id())
+    }
+
+    /// Admits one call of about `input_tokens`, or says why not.
+    fn allow(&mut self, input_tokens: u64) -> Result<f64, String> {
         if self.calls >= self.max_calls {
             return Err(format!(
                 "the run's maximum of {} model calls was reached",
                 self.max_calls
             ));
         }
-        let logged = logged_usd(&self.log, self.model.provider.id());
-        if logged >= self.stop_usd {
-            return Err(format!("the logged spend (${logged:.4}) reached the stop"));
+        let worst = self.worst_call(input_tokens);
+        let logged = self.logged();
+        if logged + worst > self.stop_usd {
+            return Err(format!(
+                "the logged spend (${logged:.4}) plus this call's worst case (${worst:.4}) would pass the stop"
+            ));
         }
         self.calls += 1;
-        Ok(())
+        Ok(worst)
     }
 
-    fn record(&mut self, usage: &agq_assistant::Usage) {
-        let neutral = agq_providers::Usage {
-            input_tokens: usage.input_tokens,
-            cache_write_tokens: usage.cache_creation_input_tokens,
-            cache_read_tokens: usage.cache_read_input_tokens,
-            output_tokens: usage.output_tokens,
-            reasoning_tokens: 0,
+    fn record(&mut self, usage: Option<&agq_assistant::Usage>, outcome: &str, worst: f64) {
+        let (cost, tokens) = match usage {
+            Some(usage) => {
+                let neutral = agq_providers::Usage {
+                    input_tokens: usage.input_tokens,
+                    cache_write_tokens: usage.cache_creation_input_tokens,
+                    cache_read_tokens: usage.cache_read_input_tokens,
+                    output_tokens: usage.output_tokens,
+                    reasoning_tokens: 0,
+                };
+                let cost = neutral.cost_usd(&self.model).unwrap_or(worst);
+                (cost, Some(*usage))
+            }
+            // Nothing reported: count the worst case, never nothing.
+            None => (worst, None),
         };
-        let cost = neutral.cost_usd(&self.model).unwrap_or_else(|| {
-            ((usage.input_tokens
-                + usage.cache_creation_input_tokens
-                + usage.cache_read_input_tokens) as f64
-                + usage.output_tokens as f64 * 4.0)
-                / 1e6
-        });
         self.run_usd += cost;
         let line = json!({
             "time": timestamp(),
             "purpose": self.purpose,
             "provider": self.model.provider.id(),
             "model": self.model.model,
-            "input_tokens": usage.input_tokens,
-            "cached_input_tokens": usage.cache_read_input_tokens,
-            "cache_write_tokens": usage.cache_creation_input_tokens,
-            "output_tokens": usage.output_tokens,
+            "outcome": outcome,
+            "input_tokens": tokens.map(|t| t.input_tokens),
+            "cached_input_tokens": tokens.map(|t| t.cache_read_input_tokens),
+            "cache_write_tokens": tokens.map(|t| t.cache_creation_input_tokens),
+            "output_tokens": tokens.map(|t| t.output_tokens),
             "cost_usd": cost,
         });
         if let Ok(mut file) = std::fs::OpenOptions::new()
@@ -157,21 +189,41 @@ impl Model for GuardedModel {
         on_event: &mut dyn FnMut(StreamEvent),
         stop: &AtomicBool,
     ) -> Result<Reply, ModelError> {
-        self.guard
+        // About four characters per token, for the request as sent.
+        let size = request.system.len()
+            + request.tools.to_string().len()
+            + request
+                .messages
+                .iter()
+                .map(|message| message.to_string().len())
+                .sum::<usize>();
+        let worst = self
+            .guard
             .lock()
             .unwrap()
-            .allow()
+            .allow((size / 4) as u64 + 1)
             .map_err(|why| ModelError::Failed(format!("Spend guard: {why}.")))?;
         let guard = self.guard.clone();
-        self.inner.send(
+        let mut reported = false;
+        let result = self.inner.send(
             request,
             &mut |event| {
                 if let StreamEvent::Usage(usage) = &event {
-                    guard.lock().unwrap().record(usage);
+                    reported = true;
+                    guard.lock().unwrap().record(Some(usage), "complete", worst);
                 }
                 on_event(event);
             },
             stop,
-        )
+        );
+        if !reported {
+            let outcome = match &result {
+                Ok(_) => "complete without usage",
+                Err(ModelError::Stopped) => "stopped",
+                Err(_) => "failed",
+            };
+            self.guard.lock().unwrap().record(None, outcome, worst);
+        }
+        result
     }
 }

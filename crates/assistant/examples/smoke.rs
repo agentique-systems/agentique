@@ -39,7 +39,12 @@ fn main() {
             .to_string()
     });
     let max_calls = args.next().and_then(|n| n.parse().ok()).unwrap_or(12);
-    let guard = match spend::SpendGuard::start("smoke", &choice.model, max_calls, 64_000) {
+    let guard = match spend::SpendGuard::start(
+        "smoke",
+        &choice.model,
+        max_calls,
+        agq_assistant::provider_model::MAX_OUTPUT_TOKENS,
+    ) {
         Ok(guard) => guard,
         Err(why) => {
             println!("{why}");

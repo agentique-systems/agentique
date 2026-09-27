@@ -12,7 +12,7 @@
 use crate::model::{Model, ModelError, Reply, Request, StreamEvent, Usage};
 use agq_providers::{
     AssistantPart, ChatRequest, ErrorKind, Event, Message, ModelRef, Providers, Reasoning,
-    ReasoningPart, StopReason, Tool, UserPart,
+    StopReason, Tool, UserPart,
 };
 use serde_json::{Value, json};
 use std::collections::HashMap;
@@ -108,10 +108,13 @@ impl Model for ProviderModel {
                 })),
                 Event::Finished(Ok(reply)) => return Ok(self.reply(reply)),
                 Event::Finished(Err(error)) => {
-                    return Err(match error.kind {
-                        ErrorKind::Cancelled => ModelError::Stopped,
-                        _ => ModelError::Failed(error.message),
-                    });
+                    return Err(
+                        if error.kind == ErrorKind::Cancelled && stop.load(Ordering::SeqCst) {
+                            ModelError::Stopped
+                        } else {
+                            ModelError::Failed(error.message)
+                        },
+                    );
                 }
             }
         }
@@ -232,17 +235,8 @@ fn assistant_part(block: &Value, model: &ModelRef) -> Option<AssistantPart> {
                 .ok()
                 .map(AssistantPart::Reasoning)
         }
-        // Claude's own thinking blocks, for a conversation continued on
-        // Anthropic through rig.
-        "thinking" if model.provider == agq_providers::Provider::Anthropic => {
-            Some(AssistantPart::Reasoning(Reasoning {
-                id: None,
-                parts: vec![ReasoningPart::Text {
-                    text: text("thinking"),
-                    signature: Some(text("signature")).filter(|s| !s.is_empty()),
-                }],
-            }))
-        }
+        // Claude's own `thinking` blocks go back only through the Claude
+        // client (until W5.7).
         _ => None,
     }
 }
@@ -250,7 +244,7 @@ fn assistant_part(block: &Value, model: &ModelRef) -> Option<AssistantPart> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use agq_providers::Provider;
+    use agq_providers::{Provider, ReasoningPart};
 
     #[test]
     fn stored_blocks_become_neutral_messages_with_reasoning_for_its_own_model() {
