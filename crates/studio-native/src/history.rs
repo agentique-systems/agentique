@@ -335,7 +335,7 @@ impl StudioApp {
         for name in &comparison.deleted {
             ui.label(
                 RichText::new(format!("−  {name}"))
-                    .color(theme.muted)
+                    .color(theme.error)
                     .strikethrough(),
             );
         }

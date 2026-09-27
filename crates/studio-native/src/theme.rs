@@ -1,8 +1,6 @@
 //! Design tokens for the Studio: palettes, type scale, spacing, radii, strokes,
 //! depth and motion. The Studio's chrome, Surface and labels take their colours
-//! and sizes from here. Items marked "adopted in the Studio integration" are not
-//! called yet: `viewport.rs`, `panels.rs` and `inspector.rs` still hard-code
-//! their own values until the Stage 2 Studio rebuild switches them over.
+//! and sizes from here. Items still marked `allow(dead_code)` are not used yet.
 //!
 //! The file depends on `egui` only, so prototypes can include it unchanged.
 use eframe::egui::{
@@ -13,7 +11,6 @@ use std::sync::Arc;
 
 // Type scale, in points. Weights come from font families; see `medium`, `semibold`.
 /// Welcome and empty-state headlines.
-#[allow(dead_code, reason = "adopted in the Studio integration")]
 pub const DISPLAY: f32 = 28.0;
 /// Panel titles and the selected element's name.
 pub const TITLE: f32 = 20.0;
@@ -36,7 +33,6 @@ pub const SPACE_L: f32 = 12.0;
 pub const SPACE_XL: f32 = 16.0;
 pub const PANEL_WIDTH: f32 = 274.0;
 /// Text inside inputs (`TextEdit::margin`), so fields match button height.
-#[allow(dead_code, reason = "adopted in the Studio integration")]
 pub const INPUT_MARGIN: Margin = Margin::symmetric(8, 5);
 
 // Corner radii, in points.
@@ -52,7 +48,6 @@ pub const RADIUS_XL: f32 = 14.0;
 // Stroke widths, in points.
 pub const HAIRLINE: f32 = 1.0;
 /// Selected cards and the active control.
-#[allow(dead_code, reason = "adopted in the Studio integration")]
 pub const STROKE_SELECTED: f32 = 2.0;
 /// Keyboard focus rings.
 #[allow(dead_code, reason = "adopted in the Studio integration")]
@@ -61,25 +56,18 @@ pub const FOCUS_RING: f32 = 2.0;
 // Surface shapes and lines, in world units at zoom 1. The shape carries the
 // category: rounded cards for parts, near-square requirements, pill-like behaviour.
 /// Part and interface cards.
-#[allow(dead_code, reason = "adopted in the Studio integration")]
 pub const CARD_RADIUS: f32 = 10.0;
 /// Containers (parts that show their children).
-#[allow(dead_code, reason = "adopted in the Studio integration")]
 pub const CONTAINER_RADIUS: f32 = 14.0;
 /// Requirement cards.
-#[allow(dead_code, reason = "adopted in the Studio integration")]
 pub const REQUIREMENT_RADIUS: f32 = 3.0;
 /// Actions and states.
 #[allow(dead_code, reason = "adopted in the Studio integration")]
 pub const BEHAVIOUR_RADIUS: f32 = 22.0;
-#[allow(dead_code, reason = "adopted in the Studio integration")]
 pub const EDGE_WIDTH: f32 = 1.25;
 /// Connections touching the selection.
-#[allow(dead_code, reason = "adopted in the Studio integration")]
 pub const EDGE_WIDTH_INCIDENT: f32 = 1.75;
-#[allow(dead_code, reason = "adopted in the Studio integration")]
 pub const EDGE_WIDTH_SELECTED: f32 = 2.5;
-#[allow(dead_code, reason = "adopted in the Studio integration")]
 pub const PORT_SIZE: f32 = 9.0;
 /// Card shadow: vertical offset and blur radius.
 pub const SHADOW_OFFSET: f32 = 3.0;
@@ -94,7 +82,6 @@ pub const GLOW_WIDTH: f32 = 14.0;
 // Motion, in seconds.
 /// egui's `animation_time` for hover and press transitions. The app applies
 /// it, or zero under reduced motion; `Theme::install` leaves it alone.
-#[allow(dead_code, reason = "adopted in the Studio integration")]
 pub const HOVER_SECONDS: f32 = 0.10;
 /// How long a changed element stays highlighted.
 pub const CHANGED_SECONDS: f32 = 1.5;
@@ -238,7 +225,6 @@ pub struct Theme {
     /// Interaction colour: links, selection, primary actions, the part category.
     pub accent: Color32,
     /// Text and icons drawn on an `accent` fill (primary buttons).
-    #[allow(dead_code, reason = "adopted in the Studio integration")]
     pub on_accent: Color32,
     /// Fill behind selected rows and selected text (translucent accent).
     pub selection: Color32,
@@ -253,12 +239,10 @@ pub struct Theme {
     /// The behaviour category: actions, states, agents.
     pub violet: Color32,
     /// Highlight for elements that just changed, typically by the Assistant.
-    #[allow(dead_code, reason = "adopted in the Studio integration")]
     pub changed: Color32,
     /// The lock mark on protected elements.
     pub lock: Color32,
     /// Connection lines at rest: opaque, so overlapping segments do not darken.
-    #[allow(dead_code, reason = "adopted in the Studio integration")]
     pub edge: Color32,
     /// Window and popover shadows.
     pub shadow: Color32,
@@ -451,7 +435,6 @@ impl Theme {
 
     /// Draw the lock mark, a padlock on a small badge, centred at `center` and
     /// `size` points tall. Readable from 12 points upward.
-    #[allow(dead_code, reason = "adopted in the Studio integration")]
     pub fn lock_mark(self, painter: &Painter, center: Pos2, size: f32) {
         let badge = Rect::from_center_size(center, Vec2::splat(size));
         painter.rect(

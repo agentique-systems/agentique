@@ -689,7 +689,7 @@ impl StudioApp {
                     Parent::Document(_) => "the top level".into(),
                 };
                 let mut create = false;
-                modal(ctx, "Create", |ui| {
+                modal(ctx, theme, "Create", |ui| {
                     ui.label(crate::app::muted(format!("Inside {owner}"), theme));
                     if kind.can_be_usage() {
                         ui.horizontal(|ui| {
@@ -707,6 +707,7 @@ impl StudioApp {
                     }
                     let field = ui.add(
                         egui::TextEdit::singleline(name)
+                            .margin(crate::theme::INPUT_MARGIN)
                             .hint_text("Name (Enter for a default)")
                             .desired_width(f32::INFINITY),
                     );
@@ -716,7 +717,7 @@ impl StudioApp {
                     }
                     let enter = field.lost_focus() && ui.input(|i| i.key_pressed(Key::Enter));
                     ui.horizontal(|ui| {
-                        let button = ui.button("Create");
+                        let button = ui.add(primary_button(theme, "Create"));
                         record(ui.ctx(), Target::Button("Create"), button.rect);
                         create = button.clicked() || enter;
                         if ui.button("Cancel").clicked() {
@@ -742,6 +743,7 @@ impl StudioApp {
                         egui::Frame::popup(ui.style()).show(ui, |ui| {
                             let field = ui.add(
                                 egui::TextEdit::singleline(name)
+                                    .margin(crate::theme::INPUT_MARGIN)
                                     .desired_width(at.width().max(180.0)),
                             );
                             record(ui.ctx(), Target::Field("Rename"), field.rect);
@@ -763,13 +765,14 @@ impl StudioApp {
             }
             Dialog::Checkpoint { message } => {
                 let mut record_it = false;
-                modal(ctx, "Checkpoint", |ui| {
+                modal(ctx, theme, "Checkpoint", |ui| {
                     ui.label(crate::app::muted(
                         "Record the current model in the history",
                         theme,
                     ));
                     let field = ui.add(
                         egui::TextEdit::singleline(message)
+                            .margin(crate::theme::INPUT_MARGIN)
                             .hint_text("What changed?")
                             .desired_width(f32::INFINITY),
                     );
@@ -779,7 +782,8 @@ impl StudioApp {
                     }
                     let enter = field.lost_focus() && ui.input(|i| i.key_pressed(Key::Enter));
                     ui.horizontal(|ui| {
-                        record_it = ui.button("Record checkpoint").clicked() || enter;
+                        record_it =
+                            ui.add(primary_button(theme, "Record checkpoint")).clicked() || enter;
                         if ui.button("Cancel").clicked() {
                             keep = false;
                         }
@@ -795,9 +799,10 @@ impl StudioApp {
                 let element = *element;
                 let mut chosen = None;
                 let options = self.owner_options(element);
-                modal(ctx, "Move to…", |ui| {
+                modal(ctx, theme, "Move to…", |ui| {
                     let field = ui.add(
                         egui::TextEdit::singleline(query)
+                            .margin(crate::theme::INPUT_MARGIN)
                             .hint_text("Find the new owner")
                             .desired_width(f32::INFINITY),
                     );
@@ -843,11 +848,11 @@ impl StudioApp {
                 } else {
                     "Locked"
                 };
-                modal(ctx, title, |ui| {
+                modal(ctx, theme, title, |ui| {
                     ui.label(question.as_str());
                     ui.label(crate::app::muted(&change.description, theme));
                     ui.horizontal(|ui| {
-                        let button = ui.button("Change it");
+                        let button = ui.add(primary_button(theme, "Change it"));
                         record(ui.ctx(), Target::Button("Change it"), button.rect);
                         confirmed = button.clicked()
                             || ui.input_mut(|i| i.consume_key(Modifiers::NONE, Key::Enter));
@@ -925,13 +930,42 @@ impl StudioApp {
 }
 
 /// A centred dialog window.
-pub fn modal(ctx: &egui::Context, title: &str, add: impl FnOnce(&mut egui::Ui)) {
-    egui::Window::new(title)
-        .collapsible(false)
-        .resizable(false)
-        .anchor(egui::Align2::CENTER_TOP, [0.0, 160.0])
-        .fixed_size([440.0, 0.0])
-        .show(ctx, add);
+pub fn modal(
+    ctx: &egui::Context,
+    theme: crate::theme::Theme,
+    title: &str,
+    add: impl FnOnce(&mut egui::Ui),
+) {
+    use crate::theme::{self as tokens};
+    let frame = egui::Frame::new()
+        .fill(theme.elevated)
+        .stroke(egui::Stroke::new(tokens::HAIRLINE, theme.border))
+        .corner_radius(tokens::RADIUS_XL)
+        .inner_margin(egui::Margin::same(tokens::SPACE_XL as i8))
+        .shadow(ctx.style().visuals.window_shadow);
+    egui::Modal::new(egui::Id::new(("studio-dialog", title)))
+        .frame(frame)
+        .backdrop_color(egui::Color32::from_black_alpha(if theme.dark {
+            150
+        } else {
+            80
+        }))
+        .show(ctx, |ui| {
+            ui.set_width(420.0);
+            ui.label(
+                egui::RichText::new(title)
+                    .font(tokens::semibold(tokens::HEADING))
+                    .color(theme.text),
+            );
+            ui.add_space(tokens::SPACE);
+            add(ui);
+        });
+}
+
+/// The dialog's main action: filled with the accent colour.
+pub fn primary_button(theme: crate::theme::Theme, label: &str) -> egui::Button<'static> {
+    egui::Button::new(egui::RichText::new(label.to_string()).color(theme.on_accent))
+        .fill(theme.accent)
 }
 
 /// A rejection in plain words.

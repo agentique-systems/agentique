@@ -21,7 +21,7 @@ impl StudioApp {
             )
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
-                    ui.label(RichText::new("Agentique").strong().size(15.0));
+                    ui.label(RichText::new("Agentique").font(theme::semibold(theme::HEADING)));
                     ui.add_space(6.0);
                     let title = match (&self.project, &self.fixture) {
                         (Some(project), _) => project.folder().file_name().map_or_else(
@@ -91,6 +91,13 @@ impl StudioApp {
             )
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
+                    if self.fixture.is_some() {
+                        ui.label(
+                            RichText::new("EXAMPLE · READ-ONLY")
+                                .font(theme::semibold(theme::CAPTION))
+                                .color(theme.muted),
+                        );
+                    }
                     ui.label(crate::app::muted(&self.status, theme).small());
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         if let Some(project) = &self.project {
@@ -125,6 +132,13 @@ impl StudioApp {
                         ui.label(
                             crate::app::muted(
                                 format!("{} elements on the Surface", self.scene.nodes.len()),
+                                theme,
+                            )
+                            .small(),
+                        );
+                        ui.label(
+                            crate::app::muted(
+                                "Drag to pan · Wheel to zoom · Ctrl+K for commands",
                                 theme,
                             )
                             .small(),
@@ -245,7 +259,7 @@ impl StudioApp {
         let theme = self.theme;
         ui.vertical_centered(|ui| {
             ui.add_space(ui.available_height() * 0.22);
-            ui.label(RichText::new("Agentique").size(theme::TITLE * 1.5).strong());
+            ui.label(RichText::new("Agentique").font(theme::semibold(theme::DISPLAY)));
             ui.label(crate::app::muted(
                 "Build and change a system's architecture on the Surface.",
                 theme,

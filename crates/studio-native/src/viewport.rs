@@ -5,10 +5,11 @@
 //! Alt+drag a card onto a container to move it into that container, drag
 //! from a port to a port to connect them, double-click to rename.
 use crate::{
-    app::{HIGHLIGHT, StudioApp},
+    app::StudioApp,
     commands::{self, CommandId},
     gpu::{Batch, Quad, SceneCallback},
     navigation::SurfaceView,
+    theme::{self, Theme},
 };
 use agq_language::Parent;
 use agq_studio_scene::{
@@ -58,15 +59,9 @@ impl StudioApp {
         )
     }
 
-    /// How strongly an element is highlighted as recently changed (1 to 0).
-    fn highlight(&self, id: ElementId) -> f32 {
-        self.highlights.get(&id).map_or(0.0, |started| {
-            if self.reduced_motion {
-                1.0
-            } else {
-                1.0 - started.elapsed().as_secs_f32() / HIGHLIGHT.as_secs_f32()
-            }
-        })
+    /// Whether an element changed a moment ago and is highlighted.
+    fn highlighted(&self, id: ElementId) -> bool {
+        self.highlights.contains_key(&id)
     }
 
     fn port_visible(&self, card: ElementId, port: ElementId) -> bool {
@@ -169,9 +164,9 @@ impl StudioApp {
         (self.lod.level() as u8).hash(&mut hasher);
         objects.hash(&mut hasher);
         self.selection.targets.hash(&mut hasher);
-        for id in self.highlights.keys() {
+        for (id, started) in &self.highlights {
             id.hash(&mut hasher);
-            ((self.highlight(*id) * 30.0) as i32).hash(&mut hasher);
+            started.to_bits().hash(&mut hasher);
         }
         let key = hasher.finish();
         self.timing.visibility(visibility.elapsed());
@@ -212,34 +207,26 @@ impl StudioApp {
         {
             response.clone().on_hover_text(text);
         }
-        if self.fixture.is_some() {
-            painter.text(
-                rect.left_bottom() + Vec2::new(20.0, -18.0),
-                Align2::LEFT_BOTTOM,
-                "EXAMPLE · READ-ONLY",
-                FontId::proportional(10.0),
-                theme.muted.gamma_multiply(0.8),
-            );
-        }
         if let Some(comparison) = &self.comparison {
-            painter.text(
-                rect.center_top() + Vec2::new(0.0, 16.0),
-                Align2::CENTER_TOP,
-                format!(
-                    "What changed · {} → {}   ·   + new   ~ changed   − deleted",
-                    comparison.before_label, comparison.after_label
-                ),
-                FontId::proportional(12.0),
-                theme.text,
+            // A tag above the Surface's content, like a raised label.
+            let text = format!(
+                "What changed · {} → {}   ·   + new   ~ changed   − deleted",
+                comparison.before_label, comparison.after_label
             );
+            let galley = painter.layout_no_wrap(text, theme::medium(theme::LABEL), theme.text);
+            let tag = egui::Rect::from_center_size(
+                rect.center_top() + Vec2::new(0.0, theme::SPACE_XL + galley.size().y * 0.5),
+                galley.size() + Vec2::new(2.0 * theme::SPACE_L, 2.0 * theme::SPACE_S + 2.0),
+            );
+            painter.rect(
+                tag,
+                theme::RADIUS,
+                theme.elevated,
+                Stroke::new(theme::HAIRLINE, theme.border_strong),
+                egui::StrokeKind::Inside,
+            );
+            painter.galley(tag.center() - galley.size() * 0.5, galley, theme.text);
         }
-        painter.text(
-            rect.right_bottom() + Vec2::new(-20.0, -18.0),
-            Align2::RIGHT_BOTTOM,
-            "Drag to pan · Wheel to zoom · Ctrl+K for commands",
-            FontId::proportional(11.0),
-            theme.muted,
-        );
         if self.scene.nodes.is_empty() {
             painter.text(
                 rect.center(),
@@ -249,7 +236,7 @@ impl StudioApp {
                 } else {
                     "Nothing to show in this view"
                 },
-                FontId::proportional(18.0),
+                theme::regular(theme::HEADING),
                 theme.muted,
             );
         }
@@ -579,7 +566,7 @@ impl StudioApp {
                         egui::pos2(right, middle),
                         Align2::RIGHT_CENTER,
                         badge,
-                        FontId::proportional(caption),
+                        theme::semibold(caption),
                         color,
                     );
                     right = placed.left() - caption * 0.6;
@@ -591,37 +578,34 @@ impl StudioApp {
                         center,
                         Align2::CENTER_CENTER,
                         "!",
-                        FontId::proportional(caption),
+                        theme::semibold(caption),
                         theme.canvas,
                     );
                     let count = painter.text(
                         egui::pos2(center.x - caption * 0.9, middle),
                         Align2::RIGHT_CENTER,
                         node.semantic.problems.to_string(),
-                        FontId::proportional(caption),
+                        theme::medium(caption),
                         theme.amber,
                     );
                     right = count.left() - caption * 0.6;
                 }
                 if node.semantic.lock.locked() {
-                    let color = if node.semantic.lock == LockMark::Own {
-                        theme.amber
-                    } else {
-                        theme.amber.gamma_multiply(0.5)
-                    };
+                    let size = (caption * 1.3).max(12.0);
                     lock_mark(
                         painter,
-                        egui::pos2(right - caption * 0.5, middle),
-                        caption * 1.1,
-                        color,
+                        egui::pos2(right - size * 0.5, middle),
+                        size,
+                        node.semantic.lock,
+                        theme,
                     );
-                    right -= caption * 1.6;
+                    right -= size + theme::SPACE_S;
                 }
                 bounded_label(
                     painter,
                     egui::pos2(bounds.left() + pad, y),
                     &node.semantic.keyword.to_uppercase(),
-                    caption,
+                    theme::semibold(caption),
                     category_color(node.category, theme),
                     (right - bounds.left() - 2.0 * pad).max(10.0),
                     1,
@@ -650,7 +634,7 @@ impl StudioApp {
                 painter,
                 egui::pos2(bounds.left() + pad, y),
                 &label,
-                name_size,
+                theme::medium(name_size),
                 text,
                 width,
                 rows,
@@ -669,7 +653,7 @@ impl StudioApp {
                     painter,
                     egui::pos2(bounds.left() + pad, y),
                     &node.semantic.detail,
-                    small,
+                    theme::regular(small),
                     theme.muted,
                     width,
                     1,
@@ -711,22 +695,18 @@ impl StudioApp {
                         painter,
                         egui::pos2(bounds.left() + pad, top),
                         &text,
-                        size,
+                        theme::regular(size),
                         color,
                         (width - lock_room).max(10.0),
                         1,
                     );
                     if feature.lock.locked() && !last {
-                        let color = if feature.lock == LockMark::Own {
-                            theme.amber
-                        } else {
-                            theme.amber.gamma_multiply(0.5)
-                        };
                         lock_mark(
                             painter,
-                            egui::pos2(bounds.right() - pad - size * 0.5, top + size * 0.6),
-                            size,
-                            color,
+                            egui::pos2(bounds.right() - pad - 6.0, top + size * 0.6),
+                            12.0,
+                            feature.lock,
+                            theme,
                         );
                     }
                 }
@@ -803,34 +783,26 @@ impl StudioApp {
             if !shown || (!explicit && automatic >= 10) {
                 continue;
             }
-            let color = if edge.semantic.problems > 0 {
-                theme.amber
-            } else {
-                theme.accent
-            };
-            let mut job = egui::text::LayoutJob::simple_singleline(
+            let galley = crate::relationship_labels::layout(
+                painter,
                 edge.semantic.label.clone(),
-                FontId::proportional(12.0),
-                color,
+                (rect.width() * 0.3).clamp(80.0, 280.0),
             );
-            job.wrap.max_width = (rect.width() * 0.3).clamp(80.0, 280.0);
-            job.wrap.max_rows = 1;
-            job.wrap.break_anywhere = true;
-            job.wrap.overflow_character = Some('…');
-            let galley = painter.layout_job(job);
             let route: Vec<_> = edge
                 .points
                 .iter()
                 .map(|p| self.to_screen(rect, *p))
                 .collect();
             let lock_room = if edge.semantic.lock.locked() {
-                16.0
+                12.0 + theme::SPACE_S
             } else {
                 0.0
             };
             let Some(placement) = crate::relationship_labels::place(
                 &route,
-                galley.size() + Vec2::new(16.0 + lock_room, 8.0),
+                galley.size()
+                    + 2.0 * crate::relationship_labels::PADDING
+                    + Vec2::new(lock_room, 0.0),
                 rect,
                 &obstacles,
                 &placed,
@@ -840,30 +812,14 @@ impl StudioApp {
                 continue;
             };
             let label = placement.bounds;
-            let leader = egui::pos2(
-                placement.anchor.x.clamp(label.left(), label.right()),
-                placement.anchor.y.clamp(label.top(), label.bottom()),
-            );
-            painter.line_segment([placement.anchor, leader], Stroke::new(1.0, theme.muted));
-            painter.rect(
-                label,
-                5.0,
-                theme.canvas,
-                Stroke::new(1.0, theme.border),
-                egui::StrokeKind::Inside,
-            );
-            painter.galley(label.min + Vec2::new(8.0, 4.0), galley, color);
+            crate::relationship_labels::paint(painter, &placement, galley, explicit, theme);
             if edge.semantic.lock.locked() {
-                let color = if edge.semantic.lock == LockMark::Own {
-                    theme.amber
-                } else {
-                    theme.amber.gamma_multiply(0.6)
-                };
                 lock_mark(
                     painter,
-                    egui::pos2(label.right() - 10.0, label.center().y),
-                    10.0,
-                    color,
+                    egui::pos2(label.right() - theme::SPACE_S - 6.0, label.center().y),
+                    12.0,
+                    edge.semantic.lock,
+                    theme,
                 );
             }
             placed.push(label);
@@ -895,7 +851,7 @@ impl StudioApp {
             let color = if selected { theme.accent } else { theme.muted };
             let mut job = egui::text::LayoutJob::simple_singleline(
                 port.name.clone(),
-                FontId::proportional(12.0),
+                theme::medium(theme::LABEL),
                 color,
             );
             job.wrap.max_width = (owner_width * 0.44).max(40.0);
@@ -917,12 +873,13 @@ impl StudioApp {
                 } else {
                     label.left() - 8.0
                 };
-                let color = if port.lock == LockMark::Own {
-                    theme.amber
-                } else {
-                    theme.amber.gamma_multiply(0.5)
-                };
-                lock_mark(painter, egui::pos2(x, label.center().y), 10.0, color);
+                lock_mark(
+                    painter,
+                    egui::pos2(x, label.center().y),
+                    12.0,
+                    port.lock,
+                    theme,
+                );
             }
         }
     }
@@ -935,7 +892,6 @@ impl StudioApp {
         let theme = self.theme;
         for node in &objects.nodes {
             let selected = self.selection.contains(node.id());
-            let glow = self.highlight(node.id());
             let mut border = if selected { theme.accent } else { theme.border };
             match node.diff {
                 DiffMark::Added => border = theme.green,
@@ -943,7 +899,7 @@ impl StudioApp {
                 _ => {}
             }
             if node.semantic.lock == LockMark::Own && !selected {
-                border = theme.amber.gamma_multiply(0.8);
+                border = theme.border_strong;
             }
             let mut fill = if node.is_container {
                 theme.containment(node.depth)
@@ -952,7 +908,7 @@ impl StudioApp {
             };
             if node.diff == DiffMark::Removed {
                 fill = theme.canvas;
-                border = theme.muted.gamma_multiply(0.6);
+                border = theme.error;
             }
             let r = [
                 node.bounds.min.x,
@@ -961,42 +917,37 @@ impl StudioApp {
                 node.bounds.height(),
             ];
             let radius = match node.category {
-                NodeCategory::Requirement => 3.0,
-                NodeCategory::Package => 4.0,
-                _ => 9.0,
+                NodeCategory::Requirement => theme::REQUIREMENT_RADIUS,
+                _ if node.is_container => theme::CONTAINER_RADIUS,
+                _ => theme::CARD_RADIUS,
             };
             let width = if selected || node.diff != DiffMark::Unchanged {
-                2.0
+                theme::STROKE_SELECTED
             } else {
-                1.0
+                theme::HAIRLINE
             };
             let mut quad = Quad::rect(r, fill, border, radius, width);
             if node.diff == DiffMark::Removed {
                 quad.detail = [10.0, 6.0, 0.0, 0.0];
             }
-            let halo = |color: Color32, spread: f32| {
-                Quad::rect(
-                    [
-                        r[0] - spread,
-                        r[1] - spread,
-                        r[2] + 2.0 * spread,
-                        r[3] + 2.0 * spread,
-                    ],
-                    Color32::TRANSPARENT,
-                    color,
-                    radius + spread,
-                    3.0,
-                )
-            };
+            // A just-changed card glows; the fade runs on the GPU. Under
+            // reduced motion it gets a steady halo until the highlight ends.
+            if let Some(started) = self.highlights.get(&node.id()) {
+                batch.overlays.push(if self.reduced_motion {
+                    Quad::halo(r, radius, theme.changed)
+                } else {
+                    Quad::changed(r, radius, theme.changed, *started)
+                });
+            }
             let list = if node.is_container {
                 &mut batch.containers
             } else {
                 &mut batch.nodes
             };
-            if glow > 0.0 {
-                list.push(halo(theme.green.gamma_multiply(glow), 6.0));
-            } else if selected || node.diff == DiffMark::Added {
-                list.push(halo(border.gamma_multiply(0.25), 4.0));
+            if selected {
+                list.push(Quad::halo(r, radius, theme.accent));
+            } else if node.diff == DiffMark::Added {
+                list.push(Quad::halo(r, radius, theme.green));
             }
             list.push(quad);
             // A separator under the title makes the card easy to read.
@@ -1042,13 +993,11 @@ impl StudioApp {
                     .target
                     .port
                     .is_some_and(|p| self.selection.contains(p));
-            let glow = edge.semantic.element.map_or(0.0, |e| self.highlight(e));
+            let glow = edge.semantic.element.is_some_and(|e| self.highlighted(e));
             let mut color = match edge.semantic.kind {
                 EdgeKind::Satisfy => theme.amber.gamma_multiply(0.8),
                 EdgeKind::Typing | EdgeKind::Specialization => theme.muted.gamma_multiply(0.55),
-                _ => theme
-                    .muted
-                    .gamma_multiply(if theme.contrast { 0.95 } else { 0.7 }),
+                _ => theme.edge,
             };
             if selected || incident {
                 color = theme.accent;
@@ -1059,18 +1008,18 @@ impl StudioApp {
             match edge.diff {
                 DiffMark::Added => color = theme.green,
                 DiffMark::Changed => color = theme.violet,
-                DiffMark::Removed => color = theme.muted.gamma_multiply(0.6),
+                DiffMark::Removed => color = theme.error,
                 DiffMark::Unchanged => {}
             }
-            if glow > 0.0 {
-                color = theme.green;
+            if glow {
+                color = theme.changed;
             }
             let width = if selected {
-                2.8
-            } else if incident || glow > 0.0 {
-                2.0
+                theme::EDGE_WIDTH_SELECTED
+            } else if incident || glow {
+                theme::EDGE_WIDTH_INCIDENT
             } else {
-                1.3
+                theme::EDGE_WIDTH
             };
             let dashed = matches!(
                 edge.semantic.kind,
@@ -1120,16 +1069,21 @@ impl StudioApp {
                 .selection
                 .targets
                 .contains(&SceneTarget::Port(port.owner, port.id));
-            let glow = self.highlight(port.id);
-            let size = if selected { 13.0 } else { 10.0 };
+            let glow = self.highlighted(port.id);
+            let size = if selected {
+                theme::PORT_SIZE + 3.0
+            } else {
+                theme::PORT_SIZE
+            };
             let border = if selected {
                 theme.accent
-            } else if glow > 0.0 {
-                theme.green
+            } else if glow {
+                theme.changed
             } else {
                 match port.diff {
                     DiffMark::Added => theme.green,
                     DiffMark::Changed => theme.violet,
+                    DiffMark::Removed => theme.error,
                     _ => theme.muted,
                 }
             };
@@ -1142,8 +1096,12 @@ impl StudioApp {
                 ],
                 theme.canvas,
                 border,
-                2.5,
-                if selected || glow > 0.0 { 2.5 } else { 1.5 },
+                theme::RADIUS_S * 0.6,
+                if selected || glow {
+                    theme::STROKE_SELECTED
+                } else {
+                    1.5
+                },
             ));
             if connected.contains(&port.id) {
                 batch.overlays.push(Quad::rect(
@@ -1235,25 +1193,17 @@ fn category_color(category: NodeCategory, theme: crate::theme::Theme) -> Color32
     }
 }
 
-/// A padlock: a body and a shackle.
-fn lock_mark(painter: &egui::Painter, center: egui::Pos2, size: f32, color: Color32) {
-    let body = egui::Rect::from_center_size(
-        center + Vec2::new(0.0, size * 0.2),
-        Vec2::new(size * 0.9, size * 0.6),
-    );
-    painter.rect_filled(body, size * 0.12, color);
-    let radius = size * 0.28;
-    let top = body.top();
-    let points: Vec<egui::Pos2> = (0..=12)
-        .map(|i| {
-            let angle = std::f32::consts::PI * (1.0 + i as f32 / 12.0);
-            egui::pos2(
-                center.x + radius * angle.cos(),
-                top - size * 0.05 + radius * angle.sin(),
-            )
-        })
-        .collect();
-    painter.add(egui::Shape::line(points, Stroke::new(size * 0.12, color)));
+/// The lock mark: full for an element that carries the lock, faint for one
+/// covered by an owner's lock.
+fn lock_mark(painter: &egui::Painter, center: egui::Pos2, size: f32, lock: LockMark, theme: Theme) {
+    let size = size.max(12.0);
+    if lock == LockMark::Own {
+        theme.lock_mark(painter, center, size);
+    } else {
+        let mut faint = painter.clone();
+        faint.set_opacity(0.45);
+        theme.lock_mark(&faint, center, size);
+    }
 }
 
 /// Text within a width, on at most `rows` lines; returns where it was drawn.
@@ -1261,13 +1211,12 @@ fn bounded_label(
     painter: &egui::Painter,
     position: egui::Pos2,
     text: &str,
-    size: f32,
+    font: FontId,
     color: Color32,
     width: f32,
     rows: usize,
 ) -> egui::Rect {
-    let mut job =
-        egui::text::LayoutJob::simple_singleline(text.into(), FontId::proportional(size), color);
+    let mut job = egui::text::LayoutJob::simple_singleline(text.into(), font, color);
     job.wrap.max_width = width;
     job.wrap.max_rows = rows;
     job.wrap.break_anywhere = true;

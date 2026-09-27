@@ -73,7 +73,7 @@ pub fn type_options(tree: &Tree) -> Vec<(ElementKind, String, Reference)> {
 pub fn inspector_name(ui: &mut egui::Ui, name: &str) -> egui::Response {
     let mut title = egui::text::LayoutJob::simple_singleline(
         name.to_owned(),
-        egui::FontId::proportional(16.0),
+        crate::theme::semibold(crate::theme::TITLE),
         ui.visuals().strong_text_color(),
     );
     title.wrap.max_width = ui.available_width();
@@ -146,7 +146,9 @@ fn text_field(
         .unwrap_or_else(|| current.to_string());
     let response = ui.add_enabled(
         enabled,
-        egui::TextEdit::singleline(&mut buffer).desired_width(f32::INFINITY),
+        egui::TextEdit::singleline(&mut buffer)
+            .margin(crate::theme::INPUT_MARGIN)
+            .desired_width(f32::INFINITY),
     );
     let escaped = ui.input(|i| i.key_pressed(Key::Escape));
     let committed =
@@ -182,9 +184,8 @@ impl StudioApp {
         let mut member = None;
         ui.label(
             RichText::new(e.kind.keyword().to_uppercase())
-                .size(crate::theme::CAPTION)
-                .color(theme.accent)
-                .strong(),
+                .font(crate::theme::semibold(crate::theme::CAPTION))
+                .color(theme.accent),
         );
         inspector_name(ui, &crate::edit::display_path(tree, element));
         if let Some(definition) = self.shared_definition() {
@@ -320,6 +321,7 @@ impl StudioApp {
             let response = ui.add_enabled(
                 editable,
                 egui::TextEdit::multiline(&mut buffer)
+                    .margin(crate::theme::INPUT_MARGIN)
                     .desired_rows(3)
                     .desired_width(f32::INFINITY),
             );
@@ -507,6 +509,7 @@ fn type_picker(
     let response = ui.add_enabled(
         editable,
         egui::TextEdit::singleline(&mut buffer)
+            .margin(crate::theme::INPUT_MARGIN)
             .hint_text("Type to find a definition")
             .desired_width(f32::INFINITY),
     );
@@ -601,6 +604,7 @@ mod name_tests {
     #[test]
     fn very_long_names_stay_within_the_panel_and_three_lines() {
         let ctx = egui::Context::default();
+        crate::theme::install_fonts(&ctx);
         let name = format!(
             "Architecture::{}::NestedPart",
             "VeryLongNamespaceWithoutWordBreaks".repeat(30)
@@ -614,7 +618,7 @@ mod name_tests {
                     .show(ctx, |ui| {
                         let response = inspector_name(ui, &name);
                         assert!(response.rect.width() <= width + 1.0);
-                        assert!(response.rect.height() <= 16.0 * 4.0);
+                        assert!(response.rect.height() <= crate::theme::TITLE * 4.0);
                     });
             });
         }

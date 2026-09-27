@@ -23,9 +23,6 @@ use std::{
     time::{Duration, Instant},
 };
 
-/// How long a changed element stays highlighted on the Surface.
-pub const HIGHLIGHT: Duration = Duration::from_millis(1800);
-
 /// Definitions a type can be chosen from: kind, name and reference.
 pub type TypeOptions = Vec<(agq_language::ElementKind, String, agq_language::Reference)>;
 
@@ -64,7 +61,8 @@ pub struct StudioApp {
     pub inspected: Option<(Option<SceneTarget>, ElementId)>,
     pub canvas_clicks: CanvasClicks,
     /// Recently created or changed elements, highlighted where they are.
-    pub highlights: BTreeMap<ElementId, Instant>,
+    /// Start of each highlight on `gpu::clock()`; the fade runs on the GPU.
+    pub highlights: BTreeMap<ElementId, f32>,
     /// A "what changed" comparison shown on the Surface.
     pub comparison: Option<crate::history::Comparison>,
     pub gesture: Option<crate::viewport::Gesture>,
@@ -99,7 +97,6 @@ pub struct StudioApp {
 
 impl StudioApp {
     pub fn new(cc: &eframe::CreationContext<'_>, args: Args) -> Self {
-        install_fonts(&cc.egui_ctx);
         let session_path = args.session.clone().unwrap_or_else(Session::default_path);
         let session = Session::load(&session_path).unwrap_or(Session {
             version: Session::VERSION,
@@ -111,7 +108,11 @@ impl StudioApp {
         // Scripted journeys run without animation so positions are final.
         let reduced_motion = session.reduced_motion || args.scenario_running();
         cc.egui_ctx.style_mut(|style| {
-            style.animation_time = if reduced_motion { 0.0 } else { 0.12 };
+            style.animation_time = if reduced_motion {
+                0.0
+            } else {
+                crate::theme::HOVER_SECONDS
+            };
         });
         let adapter = cc
             .wgpu_render_state
@@ -483,7 +484,7 @@ impl StudioApp {
     /// was created or changed where it is.
     pub fn changed(&mut self, event: &ChangeEvent) {
         self.refresh();
-        let now = Instant::now();
+        let now = crate::gpu::clock();
         let tree = self.project.as_ref().map(|p| p.state().tree());
         // An owner changes when a member is added or removed; highlight the
         // member, not the whole owner.
@@ -550,7 +551,25 @@ impl StudioApp {
     pub fn frame_all(&mut self) {
         let mut target = self.camera;
         let bounds = if self.view == SurfaceView::Architecture && self.comparison.is_none() {
-            self.scene.structure_bounds()
+            // The structure, with the title of the package around it.
+            let mut structure = self.scene.structure_bounds();
+            if let Some(top) = self
+                .scene
+                .nodes
+                .iter()
+                .filter(|n| n.category == agq_studio_scene::NodeCategory::Package)
+                .filter(|n| n.bounds.contains_rect(structure))
+                .map(|n| n.bounds.min.y)
+                .reduce(f32::max)
+            {
+                structure = agq_studio_scene::Rect::new(
+                    structure.min.x,
+                    top,
+                    structure.width(),
+                    structure.max.y - top,
+                );
+            }
+            structure
         } else {
             self.scene.bounds()
         };
@@ -606,11 +625,16 @@ impl StudioApp {
                 ctx.request_repaint();
             }
         }
-        let now = Instant::now();
+        // Highlights fade on the GPU; the app only repaints while one lasts
+        // and rebuilds the batch when one ends.
+        let now = crate::gpu::clock();
+        let before = self.highlights.len();
         self.highlights
-            .retain(|_, started| now.duration_since(*started) < HIGHLIGHT);
-        if !self.highlights.is_empty() {
+            .retain(|_, started| now - *started < crate::theme::CHANGED_SECONDS);
+        if self.highlights.len() != before {
             self.batch_key = None;
+        }
+        if !self.highlights.is_empty() {
             ctx.request_repaint();
         }
     }
@@ -690,7 +714,11 @@ impl StudioApp {
             ReducedMotion => {
                 self.reduced_motion = !self.reduced_motion;
                 ctx.style_mut(|style| {
-                    style.animation_time = if self.reduced_motion { 0.0 } else { 0.12 };
+                    style.animation_time = if self.reduced_motion {
+                        0.0
+                    } else {
+                        crate::theme::HOVER_SECONDS
+                    };
                 });
             }
             CreatePart | CreatePort | CreateItem | CreateAttribute | CreateInterface
@@ -913,60 +941,6 @@ impl eframe::App for StudioApp {
     fn clear_color(&self, _visuals: &egui::Visuals) -> [f32; 4] {
         self.theme.canvas.to_normalized_gamma_f32()
     }
-}
-
-fn install_fonts(ctx: &egui::Context) {
-    let mut fonts = egui::FontDefinitions::default();
-    // Platform fonts are read locally, never redistributed. Built-in fonts remain fallback.
-    for path in [
-        "C:/Windows/Fonts/segoeui.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "/System/Library/Fonts/Supplemental/Arial.ttf",
-    ] {
-        if let Ok(bytes) = std::fs::read(path) {
-            fonts.font_data.insert(
-                "studio-ui".into(),
-                Arc::new(egui::FontData::from_owned(bytes)),
-            );
-            fonts
-                .families
-                .entry(egui::FontFamily::Proportional)
-                .or_default()
-                .insert(0, "studio-ui".into());
-            break;
-        }
-    }
-    for (name, paths) in [
-        (
-            "studio-symbols",
-            vec![
-                "C:/Windows/Fonts/seguisym.ttf",
-                "/usr/share/fonts/truetype/noto/NotoSansSymbols-Regular.ttf",
-            ],
-        ),
-        (
-            "studio-cjk",
-            vec![
-                "C:/Windows/Fonts/msyh.ttc",
-                "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-            ],
-        ),
-    ] {
-        for path in paths {
-            if let Ok(bytes) = std::fs::read(path) {
-                fonts
-                    .font_data
-                    .insert(name.into(), Arc::new(egui::FontData::from_owned(bytes)));
-                fonts
-                    .families
-                    .entry(egui::FontFamily::Proportional)
-                    .or_default()
-                    .push(name.into());
-                break;
-            }
-        }
-    }
-    ctx.set_fonts(fonts);
 }
 
 pub fn muted(text: impl Into<String>, theme: Theme) -> egui::RichText {
