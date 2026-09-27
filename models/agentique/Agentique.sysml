@@ -19,22 +19,6 @@ package AgentiqueArchitecture {
             doc /* The language core: the SysML subset as an element tree with parse,
                  * print and validate (Stage 1, R-3 rebuild). */
         }
-        // The pre-realignment engine below serves only the current Studio. Stage 2
-        // moves the Studio onto the System State and retires these crates.
-        part 'agq-kernel' : Crate;
-        part 'agq-kerml' : Crate;
-        part 'agq-sysml' : Crate;
-        part 'agq-kerml-syntax' : Crate;
-        part 'agq-kerml-text' : Crate;
-        part 'agq-kerml-semantics' : Crate;
-        part 'agq-sysml-semantics' : Crate;
-        part 'agq-standard-libraries' : Crate;
-        part 'agq-runtime-publications' : Crate {
-            doc /* Loads the precomputed standard library bundle. */
-        }
-        part 'agq-metamodel-gen' : Crate {
-            doc /* Generates the KerML/SysML metamodel descriptors. */
-        }
     }
 
     part def SystemState {
@@ -44,13 +28,6 @@ package AgentiqueArchitecture {
              * changes of these operations: create, delete, rename, move, connect,
              * set property, lock and unlock. */
         part 'agq-system-state' : Crate;
-        // The pre-realignment modelling service below serves only the current
-        // Studio until Stage 2 moves it onto agq-system-state.
-        part 'agq-modeling-workspace' : Crate;
-        part 'agq-modeling-service' : Crate;
-        part 'agq-modeling-view' : Crate {
-            doc /* Queries for views. */
-        }
     }
 
     part def History {
@@ -62,10 +39,6 @@ package AgentiqueArchitecture {
                  * identity and lock file, commits, branches and reading any version,
                  * through an embedded git (R-6). */
         }
-        // The SQLite revision store below serves only the current Studio until Stage 2
-        // moves it onto agq-history.
-        part 'agq-modeling-repository' : Crate;
-        part 'agq-modeling-sqlite' : Crate;
     }
 
     part def Studio {
@@ -78,8 +51,8 @@ package AgentiqueArchitecture {
 
     part def Assistant {
         doc /* The Claude API client: tool-use loop, skills, and tools that call System
-             * State operations. An Orchestrator comes later. */
-        part 'agq-modeling-agent' : Crate;
+             * State operations. An Orchestrator comes later. Its crate arrives in
+             * Stage 3. */
     }
 
     part def Simulation {
@@ -122,18 +95,4 @@ package AgentiqueArchitecture {
     dependency from SystemState to History;
     dependency from Simulation to LanguageCore;
     dependency from ImplementationLinks to SystemState;
-
-    // Temporary dependencies of code that Stage 2 replaces with git-backed History.
-
-    dependency from Assistant to History {
-        doc /* Temporary: agq-modeling-agent reads revisions from agq-modeling-repository. */
-    }
-    dependency from History to SystemState {
-        doc /* Temporary: agq-modeling-repository stores agq-modeling-workspace
-             * revision and project types. */
-    }
-    dependency from History to LanguageCore {
-        doc /* Temporary: agq-modeling-repository uses agq-kernel and agq-kerml-text
-             * directly. Git-backed History stores text and needs no language types. */
-    }
 }

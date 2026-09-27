@@ -36,8 +36,8 @@ Everything retired by the realignment is preserved at the git tag
 ## Build and run
 
 Requirements: Windows 10 or later (Linux builds in CI), the Rust toolchain
-pinned in `rust-toolchain.toml`, and a C/C++ build toolchain for the bundled
-SQLite.
+pinned in `rust-toolchain.toml`, and a C/C++ build toolchain for the embedded
+git library (libgit2). No git install, runtime bundle or network is needed.
 
 Run the Studio:
 
@@ -45,11 +45,10 @@ Run the Studio:
 cargo run --release -p agq-studio-native
 ```
 
-Until Stage 2 moves the Studio onto the new System State, it still uses the
-pre-realignment language engine, which needs the precomputed standard library
-bundle installed under `~/.agentique` (the Studio's setup screen installs it
-from a `.agq-runtime` file). To look at the interface without it, open the
-labelled visual fixture:
+The Studio opens a start screen: create a new project (a folder; its model is
+kept in `model/` inside it, in git) or open an existing one. Try the Scenario A
+model by opening a project and building the URL shortener by hand, or look at
+the labelled visual fixture:
 
 ```text
 cargo run --release -p agq-studio-native -- --fixture architecture --no-restore
@@ -76,9 +75,13 @@ pull request.
 | `AGENTS.md` | Short working rules for AI agents |
 | `docs/stages.md` | Progress record, one section per stage |
 | `models/agentique/` | Agentique's own architecture in SysML, checked against the crates |
-| `crates/` | The Rust crates; each part of the architecture maps to crates there |
-| `adapters/modeling-sqlite/` | The SQLite revision store, replaced by git in Stage 2 |
-| `standards/` | Pinned KerML 1.0 / SysML 2.0 artifacts, libraries, grammar and generated descriptors (never edited by hand) |
-| `tools/` | Metamodel and grammar generators, standards pinning tools, the architecture check |
+| `crates/language` | The language core: the SysML subset as an element tree (parse, print, validate) |
+| `crates/system-state` | The System State: typed operations, locks, undo, change events; `Project` ties it to History |
+| `crates/history` | The model folder in git: crash-safe saves, checkpoints, branches |
+| `crates/studio-native`, `crates/studio-scene` | The Studio application and its Surface layout and rendering |
+| `models/url-shortener/` | The Scenario A architecture, used by tests and the language check |
+| `docs/` | `stages.md` (progress), `subset.md` (supported SysML), `deviations.md` (departures from the standard) |
+| `standards/` | Pinned KerML 1.0 / SysML 2.0 artifacts, libraries and grammar, kept as the reference (never edited) |
+| `tools/` | The architecture check and the (rarely run) standards pinning tools |
 | `KerML.pdf`, `SysML.pdf`, `SysAPI.pdf` | The pinned OMG specifications |
 | `Agentique-Specification-v0.1.html` | The original specification, kept as history |

@@ -6,7 +6,7 @@ the architecture changes, update the model first, in the same change.
 
 - Each major part is a `part def` with a one- or two-sentence `doc`. The crates
   that implement it are part usages typed by `Crate` and named after the Cargo
-  package, for example `part 'agq-kernel' : Crate;`.
+  package, for example `part 'agq-language' : Crate;`.
 - Allowed dependencies between parts use the standard SysML `dependency`
   relationship, from client to supplier: `dependency from Studio to SystemState;`.
   `dependency` is the standard concept for "requires"; REALIGNMENT §3.6 calls
