@@ -1,12 +1,10 @@
 //! Design tokens for the Studio: palettes, type scale, spacing, radii, strokes,
-//! depth and motion. Chrome, the Surface renderer and labels read these values;
-//! nothing else defines a colour or a size of its own.
+//! depth and motion. The Studio's chrome, Surface and labels take their colours
+//! and sizes from here. Items marked "adopted in the Studio integration" are not
+//! called yet: `viewport.rs`, `panels.rs` and `inspector.rs` still hard-code
+//! their own values until the Stage 2 Studio rebuild switches them over.
 //!
 //! The file depends on `egui` only, so prototypes can include it unchanged.
-#![allow(
-    dead_code,
-    reason = "a complete token set; call sites adopt tokens as the Studio is rebuilt"
-)]
 use eframe::egui::{
     self, Color32, CornerRadius, FontData, FontDefinitions, FontFamily, FontId, Margin, Painter,
     Pos2, Rect, RichText, Shadow, Stroke, Vec2,
@@ -15,6 +13,7 @@ use std::sync::Arc;
 
 // Type scale, in points. Weights come from font families; see `medium`, `semibold`.
 /// Welcome and empty-state headlines.
+#[allow(dead_code, reason = "adopted in the Studio integration")]
 pub const DISPLAY: f32 = 28.0;
 /// Panel titles and the selected element's name.
 pub const TITLE: f32 = 20.0;
@@ -35,9 +34,9 @@ pub const SPACE_S: f32 = 4.0;
 pub const SPACE: f32 = 8.0;
 pub const SPACE_L: f32 = 12.0;
 pub const SPACE_XL: f32 = 16.0;
-pub const SPACE_XXL: f32 = 24.0;
 pub const PANEL_WIDTH: f32 = 274.0;
 /// Text inside inputs (`TextEdit::margin`), so fields match button height.
+#[allow(dead_code, reason = "adopted in the Studio integration")]
 pub const INPUT_MARGIN: Margin = Margin::symmetric(8, 5);
 
 // Corner radii, in points.
@@ -53,19 +52,34 @@ pub const RADIUS_XL: f32 = 14.0;
 // Stroke widths, in points.
 pub const HAIRLINE: f32 = 1.0;
 /// Selected cards and the active control.
+#[allow(dead_code, reason = "adopted in the Studio integration")]
 pub const STROKE_SELECTED: f32 = 2.0;
 /// Keyboard focus rings.
+#[allow(dead_code, reason = "adopted in the Studio integration")]
 pub const FOCUS_RING: f32 = 2.0;
 
-// The Surface, in world units at zoom 1 unless stated.
+// Surface shapes and lines, in world units at zoom 1. The shape carries the
+// category: rounded cards for parts, near-square requirements, pill-like behaviour.
 /// Part and interface cards.
+#[allow(dead_code, reason = "adopted in the Studio integration")]
 pub const CARD_RADIUS: f32 = 10.0;
 /// Containers (parts that show their children).
+#[allow(dead_code, reason = "adopted in the Studio integration")]
 pub const CONTAINER_RADIUS: f32 = 14.0;
+/// Requirement cards.
+#[allow(dead_code, reason = "adopted in the Studio integration")]
+pub const REQUIREMENT_RADIUS: f32 = 3.0;
+/// Actions and states.
+#[allow(dead_code, reason = "adopted in the Studio integration")]
+pub const BEHAVIOUR_RADIUS: f32 = 22.0;
+#[allow(dead_code, reason = "adopted in the Studio integration")]
 pub const EDGE_WIDTH: f32 = 1.25;
 /// Connections touching the selection.
+#[allow(dead_code, reason = "adopted in the Studio integration")]
 pub const EDGE_WIDTH_INCIDENT: f32 = 1.75;
+#[allow(dead_code, reason = "adopted in the Studio integration")]
 pub const EDGE_WIDTH_SELECTED: f32 = 2.5;
+#[allow(dead_code, reason = "adopted in the Studio integration")]
 pub const PORT_SIZE: f32 = 9.0;
 /// Card shadow: vertical offset and blur radius.
 pub const SHADOW_OFFSET: f32 = 3.0;
@@ -76,28 +90,21 @@ pub const SHADOW_OPACITY_DARK: f32 = 0.55;
 pub const SHADOW_OPACITY_LIGHT: f32 = 0.11;
 /// Width of the soft glow around selected and changed elements, in screen points.
 pub const GLOW_WIDTH: f32 = 14.0;
-/// Screen size below which Surface text is not drawn; levels of detail
-/// replace it instead of shrinking it into illegibility.
-pub const MIN_SURFACE_TEXT: f32 = 9.0;
 
 // Motion, in seconds.
-/// Hover and press transitions of controls.
+/// egui's `animation_time` for hover and press transitions. The app applies
+/// it, or zero under reduced motion; `Theme::install` leaves it alone.
+#[allow(dead_code, reason = "adopted in the Studio integration")]
 pub const HOVER_SECONDS: f32 = 0.10;
-/// Panels, popovers and camera moves.
-pub const TRANSITION_SECONDS: f32 = 0.18;
 /// How long a changed element stays highlighted.
 pub const CHANGED_SECONDS: f32 = 1.5;
 /// How long the highlight takes to reach full strength.
 pub const CHANGED_RISE_SECONDS: f32 = 0.12;
 
-/// Ease-out cubic for `t` in `0..=1`: quick start, gentle arrival.
-pub fn ease_out(t: f32) -> f32 {
-    1.0 - (1.0 - t.clamp(0.0, 1.0)).powi(3)
-}
-
 /// Strength (`0..=1`) of the changed highlight `age` seconds after the change.
 /// Zero once the highlight has finished, so callers can stop repainting.
 /// `scene.wgsl` mirrors this curve for highlights drawn on the Surface.
+#[allow(dead_code, reason = "adopted in the Studio integration")]
 pub fn changed_intensity(age: f32) -> f32 {
     if !(0.0..CHANGED_SECONDS).contains(&age) {
         return 0.0;
@@ -230,7 +237,8 @@ pub struct Theme {
     pub muted: Color32,
     /// Interaction colour: links, selection, primary actions, the part category.
     pub accent: Color32,
-    /// Text and icons drawn on an `accent` fill.
+    /// Text and icons drawn on an `accent` fill (primary buttons).
+    #[allow(dead_code, reason = "adopted in the Studio integration")]
     pub on_accent: Color32,
     /// Fill behind selected rows and selected text (translucent accent).
     pub selection: Color32,
@@ -245,10 +253,12 @@ pub struct Theme {
     /// The behaviour category: actions, states, agents.
     pub violet: Color32,
     /// Highlight for elements that just changed, typically by the Assistant.
+    #[allow(dead_code, reason = "adopted in the Studio integration")]
     pub changed: Color32,
     /// The lock mark on protected elements.
     pub lock: Color32,
     /// Connection lines at rest: opaque, so overlapping segments do not darken.
+    #[allow(dead_code, reason = "adopted in the Studio integration")]
     pub edge: Color32,
     /// Window and popover shadows.
     pub shadow: Color32,
@@ -270,7 +280,7 @@ impl Theme {
                 border_strong: pick(rgb(62, 66, 77), rgb(156, 164, 182)),
                 text: rgb(233, 235, 239),
                 text_secondary: pick(rgb(178, 183, 194), rgb(216, 220, 228)),
-                muted: pick(rgb(138, 144, 158), rgb(192, 197, 208)),
+                muted: pick(rgb(146, 152, 166), rgb(192, 197, 208)),
                 accent: rgb(112, 156, 255),
                 on_accent: rgb(10, 14, 26),
                 selection: Color32::from_rgba_unmultiplied(112, 156, 255, 52),
@@ -300,7 +310,7 @@ impl Theme {
                 accent: rgb(37, 99, 235),
                 on_accent: rgb(255, 255, 255),
                 selection: Color32::from_rgba_unmultiplied(37, 99, 235, 34),
-                focus: rgb(37, 99, 235),
+                focus: rgb(29, 78, 216),
                 green: rgb(21, 128, 80),
                 amber: rgb(163, 98, 8),
                 error: rgb(200, 44, 44),
@@ -328,7 +338,6 @@ impl Theme {
         });
         let mut style = (*ctx.style()).clone();
         style.visuals = self.visuals();
-        style.animation_time = HOVER_SECONDS;
         let spacing = &mut style.spacing;
         spacing.item_spacing = egui::vec2(SPACE, 6.0);
         spacing.button_padding = egui::vec2(10.0, 5.0);
@@ -440,14 +449,9 @@ impl Theme {
         }
     }
 
-    /// Colour of the changed highlight at `intensity` (see `changed_intensity`),
-    /// for chrome such as outliner rows; the Surface animates it on the GPU.
-    pub fn changed_glow(self, intensity: f32) -> Color32 {
-        self.changed.gamma_multiply(intensity.clamp(0.0, 1.0))
-    }
-
     /// Draw the lock mark, a padlock on a small badge, centred at `center` and
     /// `size` points tall. Readable from 12 points upward.
+    #[allow(dead_code, reason = "adopted in the Studio integration")]
     pub fn lock_mark(self, painter: &Painter, center: Pos2, size: f32) {
         let badge = Rect::from_center_size(center, Vec2::splat(size));
         painter.rect(
@@ -506,22 +510,45 @@ mod tests {
         (a.max(b) + 0.05) / (a.min(b) + 0.05)
     }
 
+    /// `over` composited onto an opaque `under`, as egui blends (gamma space).
+    fn composite(over: Color32, under: Color32) -> Color32 {
+        let keep = 1.0 - over.a() as f32 / 255.0;
+        let channel = |o: u8, u: u8| (o as f32 + u as f32 * keep).round() as u8;
+        Color32::from_rgb(
+            channel(over.r(), under.r()),
+            channel(over.g(), under.g()),
+            channel(over.b(), under.b()),
+        )
+    }
+
     #[test]
     fn text_meets_wcag_aa_on_every_background_in_both_themes() {
         for dark in [true, false] {
             for high in [false, true] {
                 let theme = Theme::new(dark, high);
+                let context = format!("dark {dark}, high contrast {high}");
                 for background in [theme.canvas, theme.surface, theme.elevated] {
-                    let context = format!("dark {dark}, high contrast {high}");
+                    assert!(contrast(theme.accent, background) >= 4.5, "{context}");
+                }
+                // Hovered rows keep their text colours.
+                let rows = [theme.canvas, theme.surface, theme.elevated, theme.hover];
+                for background in rows {
                     assert!(contrast(theme.text, background) >= 7.0, "{context}");
                     assert!(
                         contrast(theme.text_secondary, background) >= 4.5,
                         "{context}"
                     );
                     assert!(contrast(theme.muted, background) >= 4.5, "{context}");
-                    assert!(contrast(theme.accent, background) >= 4.5, "{context}");
                 }
-                assert!(contrast(theme.on_accent, theme.accent) >= 4.5);
+                // Selected rows: egui draws their text in `focus`; secondary
+                // lines use `text_secondary` (never `muted`).
+                for under in [theme.surface, theme.elevated] {
+                    let selected = composite(theme.selection, under);
+                    assert!(contrast(theme.text, selected) >= 7.0, "{context}");
+                    assert!(contrast(theme.focus, selected) >= 4.5, "{context}");
+                    assert!(contrast(theme.text_secondary, selected) >= 4.5, "{context}");
+                }
+                assert!(contrast(theme.on_accent, theme.accent) >= 4.5, "{context}");
             }
         }
     }
@@ -532,6 +559,5 @@ mod tests {
         assert!(changed_intensity(CHANGED_RISE_SECONDS) > 0.99);
         assert!(changed_intensity(0.75) < changed_intensity(0.3));
         assert_eq!(changed_intensity(CHANGED_SECONDS), 0.0);
-        assert_eq!(ease_out(1.0), 1.0);
     }
 }

@@ -74,8 +74,9 @@ fn glow(q: VertexOutput, distance: f32) -> vec4<f32> {
 
 @fragment fn fragment(q: VertexOutput) -> @location(0) vec4<f32> {
     let distance = rounded_rect(q.local, q.size, q.style.x);
-    if (q.detail.z != PLAIN) { return glow(q, distance); }
+    // Derivatives before any instance-dependent branch (uniform control flow).
     let aa = max(fwidth(distance), 0.001);
+    if (q.detail.z != PLAIN) { return glow(q, distance); }
     let cover = 1. - smoothstep(-aa * 0.5, aa * 0.5, distance);
     let inside = 1. - smoothstep(-aa * 0.5, aa * 0.5, distance + q.style.y);
     let color = mix(q.border, q.fill, inside);

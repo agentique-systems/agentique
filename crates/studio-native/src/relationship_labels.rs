@@ -9,18 +9,19 @@ use std::{collections::HashMap, sync::Arc};
 #[allow(dead_code, reason = "the Surface adopts it with `paint`")]
 pub(crate) const PADDING: Vec2 = Vec2::new(8.0, 4.0);
 
-/// Lay out a relationship label: at most two rows within `max_width`, never
-/// shrunk below `theme::LABEL`, elided rather than clipped.
+/// Lay out a relationship label: at most two rows within `max_width`, broken
+/// at spaces, never shrunk below `theme::LABEL`, elided rather than clipped.
+/// The colour is left to `paint`.
 #[allow(dead_code, reason = "the Surface adopts it with `paint`")]
-pub(crate) fn layout(painter: &Painter, text: String, max_width: f32, theme: Theme) -> Arc<Galley> {
+pub(crate) fn layout(painter: &Painter, text: String, max_width: f32) -> Arc<Galley> {
     let mut job = egui::text::LayoutJob::simple_singleline(
         text,
         theme::medium(theme::LABEL),
-        theme.text_secondary,
+        egui::Color32::PLACEHOLDER,
     );
     job.wrap.max_width = max_width;
     job.wrap.max_rows = 2;
-    job.wrap.break_anywhere = true;
+    job.wrap.break_anywhere = false;
     job.wrap.overflow_character = Some('…');
     painter.layout_job(job)
 }

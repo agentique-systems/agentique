@@ -253,7 +253,9 @@ fn palette_row(ui: &mut egui::Ui, theme: Theme, row: &Row, current: bool) -> egu
     } else if enabled && response.hovered() {
         painter.rect_filled(rect, theme::RADIUS, theme.hover);
     }
-    let (title, detail) = if enabled {
+    let (title, detail) = if enabled && current {
+        (theme.text, theme.text_secondary)
+    } else if enabled {
         (theme.text, theme.muted)
     } else {
         let faded = theme.muted.gamma_multiply(0.8);
