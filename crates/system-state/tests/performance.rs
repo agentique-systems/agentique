@@ -133,8 +133,8 @@ fn a_single_edit_on_ten_thousand_elements() {
         ));
     }
     println!("{} elements: rename {rename:?}", state.tree().len());
-    // About 49 ms on the reference machine: half the 10k budget before the
-    // Surface draws anything (W5.5 decides the split). The ceiling guards
-    // against regressions with room for a slower CI machine.
-    assert!(rename < Duration::from_millis(150), "{rename:?}");
+    // About 49 ms on the reference machine: half of the 10k edit budget
+    // before the Surface draws anything (W5.5 decides the split). The ceiling
+    // is the whole budget.
+    assert!(rename < Duration::from_millis(100), "{rename:?}");
 }

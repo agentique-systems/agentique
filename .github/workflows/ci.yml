@@ -32,5 +32,5 @@ jobs:
       - run: cargo test --locked --workspace
       - name: CPU-side budgets (release builds; ROADMAP §3.3, R-27)
         run: |
-          cargo test --locked --release -p agq-system-state --test performance
-          cargo test --locked --release -p agq-studio-scene --test budgets
+          cargo test --locked --release -p agq-system-state --test performance -- --nocapture --test-threads=1
+          cargo test --locked --release -p agq-studio-scene --test budgets -- --nocapture --test-threads=1

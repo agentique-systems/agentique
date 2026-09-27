@@ -5,7 +5,8 @@
 
 use serde_json::{Value, json};
 
-/// Models this large use the 10k targets.
+/// §3.3 gives targets at 1k and 10k elements; models from 5,000 elements
+/// up are held to the 10k targets, smaller ones to the 1k targets.
 const LARGE: usize = 5_000;
 
 /// Frame interval p95 during pan and zoom, in milliseconds (C-33).
@@ -18,17 +19,19 @@ pub fn input_p95_ms(elements: usize) -> f64 {
     if elements >= LARGE { 16.7 } else { 8.3 }
 }
 
-/// Process start to the end of the first update, warm start, in
-/// milliseconds (the first interactive frame follows it).
+/// Process start (taken first thing in `main`, after the process and its
+/// libraries loaded) to the end of the first update on the start screen,
+/// warm start, in milliseconds; the first interactive frame follows it.
 pub const START_TO_FIRST_UPDATE_MS: f64 = 400.0;
 
-/// One budget's line in a report: `met` is `null` when it was not measured.
+/// One budget's line in a report. A budget the run should have measured
+/// but did not is a miss, never a pass.
 pub fn result(budget: &str, target_ms: f64, measured_ms: Option<f64>) -> Value {
     json!({
         "budget": budget,
         "target_ms": target_ms,
         "measured_ms": measured_ms,
-        "met": measured_ms.map(|measured| measured <= target_ms),
+        "met": measured_ms.is_some_and(|measured| measured <= target_ms),
     })
 }
 
@@ -61,7 +64,13 @@ mod tests {
             result("zoom frame p95", 8.3, Some(9.0)),
             result("start", START_TO_FIRST_UPDATE_MS, None),
         ];
-        assert_eq!(missed(&results), ["zoom frame p95 (9.00 ms > 8.3 ms)"]);
-        assert_eq!(results[2]["met"], Value::Null);
+        // Not measured is a miss.
+        assert_eq!(
+            missed(&results),
+            [
+                "zoom frame p95 (9.00 ms > 8.3 ms)",
+                "start (0.00 ms > 400.0 ms)"
+            ]
+        );
     }
 }
