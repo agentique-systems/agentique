@@ -39,7 +39,13 @@ package AgentiqueArchitecture {
 
     part def SystemState {
         doc /* The live state of one project: typed change operations, locks, undo,
-             * change events and queries for views. Its operations are locked core (R-16). */
+             * change events and queries for views. Its operations are locked core (R-16).
+             * The Studio and the Assistant change the model only through atomic
+             * changes of these operations: create, delete, rename, move, connect,
+             * set property, lock and unlock. */
+        part 'agq-system-state' : Crate;
+        // The pre-realignment modelling service below serves only the current
+        // Studio until Stage 2 moves it onto agq-system-state.
         part 'agq-modeling-workspace' : Crate;
         part 'agq-modeling-service' : Crate;
         part 'agq-modeling-view' : Crate {
