@@ -1,5 +1,4 @@
-use crate::{Point, Rect, SceneTarget, SemanticScene, VisibleScene, segment_distance};
-use agq_modeling_workspace::ProjectRevisionId;
+use crate::{Point, Rect, Scene, SceneTarget, VisibleScene, segment_distance};
 use std::collections::{BTreeMap, BTreeSet};
 
 /// Uniform world grid with an overflow lane for long edges/large containers.
@@ -86,16 +85,16 @@ struct IndexedTarget {
 }
 /// Disposable bounds index for one scene generation.
 ///
-/// Rebuild after layout, projection replacement or applying a diff. Each routed
+/// Rebuild after every layout. Each routed
 /// segment refers to one shared identity slot, rather than owning an edge name.
 #[derive(Clone, Debug)]
 pub struct SpatialIndex {
-    revision_id: ProjectRevisionId,
+    generation: u64,
     index: RectIndex<HitItem>,
     targets: Vec<IndexedTarget>,
 }
 impl SpatialIndex {
-    pub fn build(scene: &SemanticScene) -> Self {
+    pub fn build(scene: &Scene) -> Self {
         let mut index = RectIndex::new(256.0);
         let mut targets =
             Vec::with_capacity(scene.nodes.len() + scene.ports.len() + scene.edges.len());
@@ -123,7 +122,7 @@ impl SpatialIndex {
         for (scene_index, p) in scene.ports.iter().enumerate() {
             let target = targets.len();
             targets.push(IndexedTarget {
-                identity: SceneTarget::Port(p.id),
+                identity: SceneTarget::Port(p.owner, p.id),
                 scene_index,
             });
             let bounds = Rect::new(p.position.x - 7.0, p.position.y - 7.0, 14.0, 14.0);
@@ -157,7 +156,7 @@ impl SpatialIndex {
             }
         }
         Self {
-            revision_id: scene.revision_id,
+            generation: scene.generation,
             index,
             targets,
         }
@@ -233,10 +232,10 @@ impl SpatialIndex {
     /// changes: rebuild this index for every new scene generation.
     pub fn visible_scene<'scene>(
         &self,
-        scene: &'scene SemanticScene,
+        scene: &'scene Scene,
         bounds: Rect,
     ) -> VisibleScene<'scene> {
-        if scene.revision_id != self.revision_id {
+        if scene.generation != self.generation {
             return VisibleScene::default();
         }
         let mut visible = VisibleScene::default();
@@ -260,11 +259,11 @@ impl SpatialIndex {
                         visible.nodes.push(node);
                     }
                 }
-                SceneTarget::Port(id) => {
+                SceneTarget::Port(owner, id) => {
                     if let Some(port) = scene
                         .ports
                         .get(target.scene_index)
-                        .filter(|port| port.id == *id)
+                        .filter(|port| port.id == *id && port.owner == *owner)
                     {
                         visible.ports.push(port);
                     }

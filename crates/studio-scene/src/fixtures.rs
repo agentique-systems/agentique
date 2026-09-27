@@ -1,447 +1,233 @@
-//! Deterministic VISUAL FIXTURES using the actual public projection DTO.
+//! Scene inputs for tests, benchmarks and the Studio's `--fixture` option.
 //!
-//! These records are not reconstructed semantics, accepted publications or
-//! repository revisions. They test scene/interaction quality only. IDs live in
-//! a reserved fixture namespace and all metadata states their limited authority.
-use agq_kernel::{ElementId, RuleId};
-use agq_modeling_view::*;
-use agq_modeling_workspace::ProjectRevisionId;
-use std::collections::BTreeMap;
+//! The architecture fixture is the Scenario A model (the URL shortener) parsed
+//! with the language core. The others stress the Surface: many ports, long
+//! names, deep nesting and large generated graphs.
+use crate::{
+    EdgeKind, InputEdge, InputEnd, InputNode, InputPort, LockMark, NodeCategory, PortDirection,
+    SceneInput,
+};
+use agq_language::{
+    Element, ElementId, ElementKind, Parent, Reference, Source, Tree, link, parse, validate,
+};
+use std::collections::{BTreeMap, BTreeSet};
 
-pub const FIXTURE_REVISION: u128 = 0xfa170000000000000000000000000001;
-pub fn id(value: u128) -> ElementId {
-    ElementId::from_u128(0xfa170000000000000000000000000000 | value)
+/// The Scenario A model, `models/url-shortener/UrlShortener.sysml`.
+pub const URL_SHORTENER: &str = include_str!("../../../models/url-shortener/UrlShortener.sysml");
+
+/// An element id for hand-made inputs.
+pub fn id(value: u64) -> ElementId {
+    ElementId::from_raw(value)
 }
-pub fn revision() -> ProjectRevisionId {
-    ProjectRevisionId::from_u128(FIXTURE_REVISION)
+
+/// Parses SysML text as one document.
+pub fn tree(text: &str) -> Tree {
+    parse(&[Source::new("fixture.sysml", text)])
 }
-fn node(value: u128, name: &str, kind: &str, owner: Option<u128>) -> ViewNode {
-    ViewNode {
+
+/// The scene input for a tree, with its problems and no locks.
+pub fn input(tree: &Tree) -> SceneInput {
+    let mut problems = BTreeMap::new();
+    for diagnostic in validate(tree) {
+        *problems.entry(diagnostic.element).or_insert(0) += 1;
+    }
+    SceneInput::from_tree(tree, &BTreeSet::new(), &problems, 1)
+}
+
+/// A hand-made card.
+pub fn node(value: u64, name: &str, kind: NodeCategory, owner: Option<u64>) -> InputNode {
+    InputNode {
         id: id(value),
-        revision_id: revision(),
-        semantic_kind: kind.into(),
+        kind,
+        keyword: match kind {
+            NodeCategory::Package => "package",
+            NodeCategory::Definition => "part def",
+            NodeCategory::Requirement => "requirement",
+            NodeCategory::Item => "item",
+            NodeCategory::Attribute => "attribute",
+            _ => "part",
+        },
         name: name.into(),
-        qualified_name: Some(format!("VisualFixture::{name}")),
+        detail: String::new(),
         owner: owner.map(id),
-        origin: ViewOrigin::Authored,
-        source_available: false,
-        features: vec![],
-        counts: FeatureCounts::default(),
-        badges: vec![],
+        ports: Vec::new(),
+        features: Vec::new(),
+        lock: LockMark::None,
+        problems: 0,
     }
 }
-fn edge(
-    value: u128,
-    source: u128,
-    target: u128,
-    family: RelationshipFamily,
-    label: &str,
-) -> ViewEdge {
-    ViewEdge {
-        id: format!("fixture-edge-{value:08}"),
-        relationship_id: Some(id(1_000_000 + value)),
-        revision_id: revision(),
-        family,
-        semantic_kind: match family {
-            RelationshipFamily::Connection => "ConnectionUsage",
-            RelationshipFamily::Typing => "FeatureTyping",
-            RelationshipFamily::Ownership => "OwningMembership",
-            RelationshipFamily::Requirement => "SatisfyRequirementUsage",
-            RelationshipFamily::Verification => "RequirementVerificationMembership",
-            _ => "Specialization",
+
+/// A hand-made port for [`node`].
+pub fn port(value: u64, name: &str) -> InputPort {
+    InputPort {
+        id: id(value),
+        name: name.into(),
+        direction: PortDirection::Unspecified,
+        lock: LockMark::None,
+        defined_in: None,
+    }
+}
+
+/// A hand-made edge between two ends (see [`at`] and [`card`]).
+pub fn edge(name: &str, kind: EdgeKind, source: InputEnd, target: InputEnd) -> InputEdge {
+    InputEdge {
+        id: name.into(),
+        element: None,
+        kind,
+        source,
+        target,
+        directed: !matches!(kind, EdgeKind::Connection | EdgeKind::Interface),
+        label: name.into(),
+        problems: 0,
+        lock: LockMark::None,
+    }
+}
+
+/// The end at port `port` on card `node`.
+pub fn at(node: u64, port: u64) -> InputEnd {
+    InputEnd {
+        node: id(node),
+        port: Some(id(port)),
+    }
+}
+
+/// The end at card `node`.
+pub fn card(node: u64) -> InputEnd {
+    InputEnd::node(id(node))
+}
+
+/// The URL shortener.
+pub fn architecture() -> SceneInput {
+    input(&tree(URL_SHORTENER))
+}
+
+/// A system whose parts have many ports, densely connected.
+pub fn dense_ports() -> SceneInput {
+    let mut text = String::from("package DensePorts {\n    port def Signal;\n");
+    for part in 0..6 {
+        text.push_str(&format!("    part def Unit{part} {{\n"));
+        for port in 0..8 {
+            text.push_str(&format!("        port p{port} : Signal;\n"));
         }
-        .into(),
-        source: id(source),
-        target: id(target),
-        origin: ViewOrigin::Authored,
-        rule_id: None,
-        label: label.into(),
-        directed: family != RelationshipFamily::Connection,
-        order: 0,
+        text.push_str("    }\n");
     }
-}
-fn projection(
-    name: &str,
-    kind: ViewKind,
-    nodes: Vec<ViewNode>,
-    edges: Vec<ViewEdge>,
-) -> ViewProjection {
-    let mut grouped: BTreeMap<ElementId, Vec<ElementId>> = BTreeMap::new();
-    for n in &nodes {
-        if let Some(owner) = n.owner {
-            grouped.entry(owner).or_default().push(n.id);
-        }
+    text.push_str("    part def System {\n");
+    for part in 0..6 {
+        text.push_str(&format!("        part unit{part} : Unit{part};\n"));
     }
-    let groups = grouped
-        .into_iter()
-        .map(|(element_id, children)| ViewGroup {
-            element_id,
-            children,
-        })
-        .collect();
-    let count = nodes.len();
-    ViewProjection {
-        revision_id: revision(),
-        view: ViewDefinition {
-            name: name.into(),
-            kind,
-            relationship_families: RelationshipFamily::all(),
-            ..ViewDefinition::default()
-        },
-        nodes,
-        edges,
-        groups,
-        metadata: ViewMetadata {
-            suggested_focus: None,
-            scope: "VISUAL FIXTURE — no language or real-model semantic acceptance".into(),
-            producer_completeness: "Fixture: not evaluated".into(),
-            local_element_count: count,
-            omitted_standard_endpoints: 0,
-            warnings: vec![],
-        },
-    }
-}
-/// Screenshot reference: three coherent subsystem containers, nine components,
-/// stable semantic ports and an explicitly derived relationship.
-pub fn architecture() -> ViewProjection {
-    let mut nodes = vec![
-        node(1, "NativeStudio", "PartDefinition", None),
-        node(2, "ModelingPlatform", "PartDefinition", None),
-        node(3, "AgentFabric", "PartDefinition", None),
-        node(11, "SystemWorld", "PartUsage", Some(1)),
-        node(12, "GraphWorld", "PartUsage", Some(1)),
-        node(13, "Inspector", "PartUsage", Some(1)),
-        node(21, "ModelRepository", "PartUsage", Some(2)),
-        node(22, "ModelingService", "PartUsage", Some(2)),
-        node(23, "ProjectWorkspace", "PartUsage", Some(2)),
-        node(31, "DecisionAgent", "PartUsage", Some(3)),
-        node(32, "ProposalEngine", "PartUsage", Some(3)),
-        node(33, "ModelingAPI", "InterfaceUsage", Some(3)),
-    ];
-    for n in &mut nodes {
-        if n.owner.is_some() {
-            let value = n.id.as_u128() & 0xffff;
-            n.features = vec![
-                FeatureSummary {
-                    id: id(value * 100 + 1),
-                    name: "request".into(),
-                    semantic_kind: "PortUsage".into(),
-                },
-                FeatureSummary {
-                    id: id(value * 100 + 2),
-                    name: "result".into(),
-                    semantic_kind: "PortUsage".into(),
-                },
-            ];
-            n.counts.ports = 2;
-        } else {
-            n.counts.parts = 3;
-        }
-    }
-    let pairs = [
-        (1102, 2101),
-        (1202, 2201),
-        (1302, 2301),
-        (2102, 3101),
-        (2202, 3201),
-        (2302, 3301),
-    ];
-    let mut edges: Vec<_> = pairs
-        .into_iter()
-        .enumerate()
-        .map(|(i, (a, b))| edge(i as u128, a, b, RelationshipFamily::Connection, "contract"))
-        .collect();
-    edges.push(edge(
-        10,
-        21,
-        23,
-        RelationshipFamily::Reference,
-        "durable checkpoint",
-    ));
-    edges.push(edge(
-        11,
-        22,
-        21,
-        RelationshipFamily::Reference,
-        "revision-bound service",
-    ));
-    edges.push(edge(
-        12,
-        31,
-        32,
-        RelationshipFamily::Reference,
-        "candidate proposal",
-    ));
-    edges.push(edge(13, 12, 11, RelationshipFamily::Typing, "shared scene"));
-    if let Some(derived) = edges.last_mut() {
-        derived.origin = ViewOrigin::Derived;
-        derived.rule_id = Some(RuleId::from_u128(73));
-    }
-    projection(
-        "Agentique-like architecture · visual fixture",
-        ViewKind::Architecture,
-        nodes,
-        edges,
-    )
-}
-pub fn dense_ports() -> ViewProjection {
-    let mut view = architecture();
-    view.view.name = "Dense semantic ports · visual fixture".into();
-    let mut next = 100;
-    for a in [11, 12, 13, 21, 22, 23, 31, 32, 33] {
-        for b in [11, 12, 13, 21, 22, 23, 31, 32, 33] {
-            if a != b && ((a + b) % 3 == 0) {
-                view.edges.push(edge(
-                    next,
-                    a * 100 + 2,
-                    b * 100 + 1,
-                    RelationshipFamily::Connection,
-                    "signal",
-                ));
-                next += 1;
+    for a in 0..6 {
+        for b in 0..6 {
+            if a != b && (a + b) % 3 == 0 {
+                text.push_str(&format!("        connect unit{a}.p{b} to unit{b}.p{a};\n"));
             }
         }
     }
-    view
-}
-/// Adversarial presentation fixtures; none claim language-semantic acceptance.
-pub fn adversarial() -> Vec<(&'static str, ViewProjection)> {
-    let mut wide = architecture();
-    for index in 0..32 {
-        wide.nodes.push(node(
-            10_000 + index,
-            &format!("Branch_{index:02}"),
-            "PartUsage",
-            Some(2),
-        ));
-    }
-    let mut deep = projection(
-        "Deep hierarchy · VISUAL FIXTURE",
-        ViewKind::Architecture,
-        (1..=64)
-            .map(|index| {
-                node(
-                    index,
-                    &format!("Level_{index:02}"),
-                    "PartUsage",
-                    (index > 1).then_some(index - 1),
-                )
-            })
-            .collect(),
-        vec![],
-    );
-    deep.nodes[0].semantic_kind = "PartDefinition".into();
-    let mut ports = architecture();
-    for node in ports.nodes.iter_mut().filter(|node| node.owner.is_some()) {
-        let base = (node.id.as_u128() & 0xffff) * 1000;
-        node.features.extend((0..22).map(|index| FeatureSummary {
-            id: id(base + index),
-            name: format!("thermalPressure_{index:02}_μPa"),
-            semantic_kind: "PortUsage".into(),
-        }));
-        node.counts.ports = 24;
-    }
-    let mut parallel = architecture();
-    for index in 0..12 {
-        let mut edge = parallel.edges[0].clone();
-        edge.id = format!("parallel-{index}");
-        parallel.edges.push(edge);
-    }
-    let mut names = architecture();
-    for node in &mut names.nodes {
-        node.name = format!(
-            "{}::ThermalProtection_ΔT_μPa_長い工学名_InterfaceRequirement",
-            node.name
-        );
-    }
-    vec![
-        ("wide-fan-out", wide),
-        ("deep-hierarchy", deep),
-        ("many-ports", ports),
-        ("dense-cross-links", dense_ports()),
-        ("parallel-edges", parallel),
-        ("long-unicode-names", names),
-        ("mixed-requirements", requirements()),
-        ("candidate-growth", revision_diff().1),
-        ("cycles", stress(80, 160)),
-    ]
-}
-pub fn requirements() -> ViewProjection {
-    let nodes = vec![
-        node(
-            101,
-            "Durable engineering history",
-            "RequirementDefinition",
-            None,
-        ),
-        node(
-            102,
-            "Revision-bound agent edits",
-            "RequirementDefinition",
-            None,
-        ),
-        node(
-            103,
-            "Responsive spatial navigation",
-            "RequirementDefinition",
-            None,
-        ),
-        node(21, "ModelRepository", "PartUsage", None),
-        node(22, "ModelingService", "PartUsage", None),
-        node(11, "SystemWorld", "PartUsage", None),
-        node(111, "Crash recovery acceptance", "ActionUsage", None),
-        node(112, "Candidate CAS acceptance", "ActionUsage", None),
-        node(113, "Viewport frame budget", "ActionUsage", None),
-    ];
-    let edges = vec![
-        edge(1, 21, 101, RelationshipFamily::Requirement, "satisfies"),
-        edge(2, 22, 102, RelationshipFamily::Requirement, "satisfies"),
-        edge(3, 11, 103, RelationshipFamily::Requirement, "satisfies"),
-        edge(4, 111, 101, RelationshipFamily::Verification, "verifies"),
-        edge(5, 112, 102, RelationshipFamily::Verification, "verifies"),
-        edge(6, 113, 103, RelationshipFamily::Verification, "verifies"),
-    ];
-    projection(
-        "Requirement knowledge graph · visual fixture",
-        ViewKind::Requirements,
-        nodes,
-        edges,
-    )
-}
-/// Local/ring plus column-neighbor topology with exact requested counts.
-pub fn stress(node_count: usize, edge_count: usize) -> ViewProjection {
-    let nodes = (0..node_count)
-        .map(|i| {
-            node(
-                i as u128 + 1,
-                &format!("Subsystem_{i:05}"),
-                "PartUsage",
-                None,
-            )
-        })
-        .collect();
-    let width = (node_count as f32).sqrt().ceil() as usize;
-    let edges = if node_count == 0 {
-        vec![]
-    } else {
-        (0..edge_count)
-            .map(|i| {
-                let source = i % node_count;
-                let offset = if i < node_count { 1 } else { width.max(1) };
-                edge(
-                    i as u128,
-                    source as u128 + 1,
-                    ((source + offset) % node_count) as u128 + 1,
-                    RelationshipFamily::Connection,
-                    "channel",
-                )
-            })
-            .collect()
-    };
-    projection(
-        &format!("{node_count} nodes / {edge_count} edges · VISUAL FIXTURE"),
-        ViewKind::SemanticGraph,
-        nodes,
-        edges,
-    )
-}
-/// A comparison fixture, never a candidate or a durable repository commit.
-pub fn revision_diff() -> (ViewProjection, ViewProjection) {
-    let before = architecture();
-    let mut after = before.clone();
-    after.revision_id = ProjectRevisionId::from_u128(FIXTURE_REVISION + 1);
-    for n in &mut after.nodes {
-        n.revision_id = after.revision_id;
-        if n.id == id(22) {
-            n.name = "RevisionModelingService".into();
-        }
-    }
-    for e in &mut after.edges {
-        e.revision_id = after.revision_id;
-    }
-    let mut added = node(24, "CandidateCoordinator", "PartUsage", Some(2));
-    added.revision_id = after.revision_id;
-    after.nodes.push(added);
-    after.nodes.retain(|n| n.id != id(13));
-    after
-        .edges
-        .retain(|e| e.source != id(1302) && e.target != id(1301));
-    let mut children: BTreeMap<ElementId, Vec<ElementId>> = BTreeMap::new();
-    for node in &after.nodes {
-        if let Some(owner) = node.owner {
-            children.entry(owner).or_default().push(node.id);
-        }
-    }
-    // The fixture's group summaries must describe its edited projection. These
-    // are fixture records only, not a semantic reconstruction or validation.
-    for node in &mut after.nodes {
-        if let Some(children) = children.get(&node.id) {
-            node.counts.parts = children.len();
-        }
-    }
-    after.groups = children
-        .into_iter()
-        .map(|(element_id, children)| ViewGroup {
-            element_id,
-            children,
-        })
-        .collect();
-    after.metadata.local_element_count = after.nodes.len();
-    after.view.name = "Revision comparison · visual fixture".into();
-    (before, after)
+    text.push_str("    }\n}\n");
+    input(&tree(&text))
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn comparison_fixture_updates_owned_group_summaries() {
-        let (before, after) = revision_diff();
-        assert_eq!(
-            before
-                .nodes
-                .iter()
-                .find(|n| n.id == id(1))
-                .unwrap()
-                .counts
-                .parts,
-            3
-        );
-        assert_eq!(
-            after
-                .nodes
-                .iter()
-                .find(|n| n.id == id(1))
-                .unwrap()
-                .counts
-                .parts,
-            2
-        );
-        assert_eq!(
-            after
-                .nodes
-                .iter()
-                .find(|n| n.id == id(2))
-                .unwrap()
-                .counts
-                .parts,
-            4
-        );
-        assert!(
-            !after
-                .groups
-                .iter()
-                .flat_map(|g| &g.children)
-                .any(|child| *child == id(13))
-        );
-        assert!(
-            after
-                .groups
-                .iter()
-                .find(|g| g.element_id == id(2))
-                .unwrap()
-                .children
-                .contains(&id(24))
-        );
+/// Long names in several scripts, to check that labels never clip illegibly.
+pub fn typography() -> SceneInput {
+    let text = "package 'Thermal protection ΔT (μPa) 長い工学名' {
+    part def 'Überdruck-Schutzeinrichtung mit sehr langem Namen' {
+        port 'eingehende Messwerte für Temperatur und Druck';
+        port '出力ポート_長い名前_ThermalPressure';
     }
+    part def 'Répartiteur de charge thermique' {
+        port 'entrée';
+    }
+    part def 'System with a deliberately long and descriptive name' {
+        part 'protection unit' : 'Überdruck-Schutzeinrichtung mit sehr langem Namen';
+        part 'load distributor' : 'Répartiteur de charge thermique';
+        connect 'protection unit'.'出力ポート_長い名前_ThermalPressure' to 'load distributor'.'entrée';
+    }
+    requirement def 'The protection unit shall limit the pressure to the configured maximum at all times';
+}
+";
+    input(&tree(text))
+}
+
+/// A generated graph of `nodes` parts in containers and `edges` connections.
+pub fn stress(nodes: usize, edges: usize) -> SceneInput {
+    let containers = (nodes / 50).max(1);
+    let mut input = SceneInput {
+        generation: 1,
+        ..Default::default()
+    };
+    for c in 0..containers {
+        input.nodes.push(node(
+            c as u64 + 1,
+            &format!("Subsystem{c:03}"),
+            NodeCategory::Definition,
+            None,
+        ));
+    }
+    let base = containers as u64 + 1;
+    for n in 0..nodes {
+        let mut part = node(
+            base + n as u64,
+            &format!("Component{n:05}"),
+            NodeCategory::Part,
+            Some((n % containers) as u64 + 1),
+        );
+        part.ports = vec![
+            port(1_000_000 + 2 * n as u64, "in"),
+            port(1_000_001 + 2 * n as u64, "out"),
+        ];
+        input.nodes.push(part);
+    }
+    let mut seed = 0x5eed_u64;
+    for e in 0..edges {
+        seed = seed
+            .wrapping_mul(6364136223846793005)
+            .wrapping_add(1442695040888963407);
+        let a = (seed >> 33) as usize % nodes;
+        let b = (e * 7 + 3) % nodes;
+        input.edges.push(edge(
+            &format!("e{e:06}"),
+            EdgeKind::Connection,
+            at(base + a as u64, 1_000_001 + 2 * a as u64),
+            at(base + b as u64, 1_000_000 + 2 * b as u64),
+        ));
+    }
+    input
+}
+
+/// The URL shortener before and after an edit made on the same tree, so
+/// identities are kept: a part and its two connections removed, a part
+/// added and a part renamed.
+pub fn change_trees() -> (Tree, Tree) {
+    let before = tree(URL_SHORTENER);
+    let mut tree = before.clone();
+    let service = tree
+        .find("UrlShortener::UrlShortenerService")
+        .expect("the service exists");
+    for path in ["clickStats", "clickReporting", "statsQuery"] {
+        if let Some(id) = tree.find(&format!("UrlShortener::UrlShortenerService::{path}")) {
+            tree.remove(id);
+        }
+    }
+    if let Some(store) = tree.find("UrlShortener::UrlShortenerService::store")
+        && let Some(element) = tree.get_mut(store)
+    {
+        element.name = Some("links".into());
+    }
+    let link_store = tree
+        .find("UrlShortener::LinkStore")
+        .expect("LinkStore exists");
+    let mut cache = Element::named(ElementKind::Part, "cache");
+    cache.typed_by = vec![Reference::to(link_store, "LinkStore")];
+    tree.add(Parent::Element(service), cache)
+        .expect("the service can own parts");
+    link(&mut tree);
+    (before, tree)
+}
+
+/// [`change_trees`] as scene inputs; the second input's generation is higher.
+pub fn change() -> (SceneInput, SceneInput) {
+    let (before, after) = change_trees();
+    let before = input(&before);
+    let mut after = input(&after);
+    after.generation = before.generation + 1;
+    (before, after)
 }

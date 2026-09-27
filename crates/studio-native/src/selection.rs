@@ -1,11 +1,10 @@
-//! Shared revision-scoped selection for the scene, outliner and inspector.
-use agq_kernel::ElementId;
-use agq_modeling_workspace::ProjectRevisionId;
-use agq_studio_scene::{SceneTarget, SemanticScene};
+//! What the Operator has selected, by identity. Survives edits while the
+//! selected elements exist.
+use agq_studio_scene::{ElementId, Scene, SceneTarget};
 use std::collections::BTreeSet;
 
-/// The canvas is one toolkit widget. Toolkit-wide click counts alone cannot
-/// distinguish two rapid clicks on different semantic objects.
+/// The Surface is one widget; egui's click counting cannot tell two quick
+/// clicks on different elements apart, so double clicks are checked here.
 #[derive(Default)]
 pub struct CanvasClicks {
     last: Option<(u64, SceneTarget, [f32; 2], f64)>,
@@ -33,21 +32,13 @@ impl CanvasClicks {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct Selection {
-    pub revision: ProjectRevisionId,
     pub targets: BTreeSet<SceneTarget>,
     pub primary: Option<SceneTarget>,
 }
 
 impl Selection {
-    pub fn new(revision: ProjectRevisionId) -> Self {
-        Self {
-            revision,
-            targets: BTreeSet::new(),
-            primary: None,
-        }
-    }
     pub fn select(&mut self, target: SceneTarget, extend: bool) {
         if !extend {
             self.targets.clear();
@@ -64,11 +55,9 @@ impl Selection {
         self.targets.clear();
         self.primary = None;
     }
-    pub fn element(&self, scene: &SemanticScene) -> Option<ElementId> {
-        if self.revision != scene.revision_id {
-            return None;
-        }
-        scene.target_bounds(self.primary.as_ref()?)?;
+    /// The model element of the primary selection: a card, a port, or the
+    /// element an edge stands for.
+    pub fn element(&self, scene: &Scene) -> Option<ElementId> {
         match self.primary.as_ref()? {
             SceneTarget::Edge(id) => {
                 scene
@@ -76,19 +65,35 @@ impl Selection {
                     .iter()
                     .find(|e| e.semantic.id == *id)?
                     .semantic
-                    .relationship_id
+                    .element
             }
             other => other.element_id(),
         }
+    }
+    /// The model elements of every selected target.
+    pub fn elements(&self, scene: &Scene) -> Vec<ElementId> {
+        self.targets
+            .iter()
+            .filter_map(|target| match target {
+                SceneTarget::Edge(id) => {
+                    scene
+                        .edges
+                        .iter()
+                        .find(|e| e.semantic.id == *id)?
+                        .semantic
+                        .element
+                }
+                other => other.element_id(),
+            })
+            .collect()
     }
     pub fn contains(&self, id: ElementId) -> bool {
         self.targets
             .iter()
             .any(|target| target.element_id() == Some(id))
     }
-    /// Surviving identities retain selection, removed identities cannot bind stale inspection.
-    pub fn reconcile(&mut self, scene: &SemanticScene) {
-        self.revision = scene.revision_id;
+    /// Keeps the targets that still exist in the new scene.
+    pub fn reconcile(&mut self, scene: &Scene) {
         self.targets
             .retain(|target| scene.target_bounds(target).is_some());
         if self
@@ -113,8 +118,8 @@ mod tests {
     #[test]
     fn double_click_requires_same_object_context_and_pointer_location() {
         let mut clicks = CanvasClicks::default();
-        let a = SceneTarget::Node(ElementId::from_u128(1));
-        let b = SceneTarget::Node(ElementId::from_u128(2));
+        let a = SceneTarget::Node(fixtures::id(1));
+        let b = SceneTarget::Node(fixtures::id(2));
         assert!(!clicks.click(1, Some(&a), [10.0, 10.0], 0.0));
         assert!(!clicks.click(1, Some(&b), [10.0, 10.0], 0.1));
         assert!(!clicks.click(2, Some(&b), [10.0, 10.0], 0.2));
@@ -126,18 +131,15 @@ mod tests {
     }
 
     #[test]
-    fn stale_revision_or_missing_target_cannot_become_an_inspector_request() {
-        let projection = fixtures::architecture();
+    fn selection_survives_while_the_element_exists() {
         let scene =
-            SemanticScene::from_projection(&projection, &SceneOptions::default(), None).unwrap();
+            Scene::build(&fixtures::architecture(), &SceneOptions::default(), None).unwrap();
         let first = scene.nodes[0].id();
-        let mut selection = Selection::new(ProjectRevisionId::new());
+        let mut selection = Selection::default();
         selection.select(SceneTarget::Node(first), false);
-        assert_eq!(selection.element(&scene), None);
         selection.reconcile(&scene);
         assert_eq!(selection.element(&scene), Some(first));
-        selection.select(SceneTarget::Node(ElementId::from_u128(u128::MAX)), false);
-        assert_eq!(selection.element(&scene), None);
+        selection.select(SceneTarget::Node(fixtures::id(u64::MAX >> 20)), false);
         selection.reconcile(&scene);
         assert!(selection.primary.is_none());
     }

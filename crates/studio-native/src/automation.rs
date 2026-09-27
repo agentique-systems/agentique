@@ -1,17 +1,22 @@
-//! Opt-in native input journeys over visual fixtures. Every interaction enters
-//! egui RawInput; assertions observe the resulting application state on
-//! subsequent real frames. Refuses live model bindings and cannot authorize a
-//! service write. Compiled only with `--features automation`.
+//! Scripted UI journeys for Scenario A (`--features automation`). Every
+//! action is ordinary input (pointer, keys, text) given to egui; checks read
+//! the application state on the following frames.
+//!
+//! - `a-build --project <new folder>`: creates the project through the New
+//!   project dialog, builds part of the URL shortener by hand (parts, ports,
+//!   a connection, a rename, a type, a lock, a refused locked change) and
+//!   records a checkpoint.
+//! - `a-reopen --project <same folder>`: in a new process, checks that
+//!   everything is as it was left, including the lock and the checkpoint.
+//!
+//! Screenshots go only to the `--gallery` directory given on the command line.
 use crate::{
-    app::{ComparisonMode, StudioApp},
-    commands::{self, CommandId},
-    navigation::World,
+    app::StudioApp,
+    edit::Dialog,
     targets::{Target, target},
 };
-use agq_kernel::ElementId;
-use agq_modeling_view::ViewOrigin;
-use agq_modeling_workspace::ProjectRevisionId;
-use agq_studio_scene::{DiffMark, Point, SceneTarget, fixtures};
+use agq_language::{ElementId, ElementKind, Tree};
+use agq_studio_scene::{Point, SceneTarget};
 use eframe::egui::{self, Event, Key, Modifiers, PointerButton, Pos2, Vec2};
 use serde::Serialize;
 use std::path::Path;
@@ -22,8 +27,8 @@ pub enum ScenarioStatus {
     Complete,
 }
 
-/// Call from `eframe::App::raw_input_hook`. Closes the window when the
-/// scenario completes and exits with status 2 when it fails.
+/// Called from `raw_input_hook`. Closes the window when the journey
+/// completes; exits with status 2 when a check fails.
 pub fn raw_input(app: &StudioApp, ctx: &egui::Context, input: &mut egui::RawInput) {
     let Some(scenario) = &app.args.scenario else {
         return;
@@ -38,13 +43,460 @@ pub fn raw_input(app: &StudioApp, ctx: &egui::Context, input: &mut egui::RawInpu
         Ok(ScenarioStatus::Running) => {}
         Ok(ScenarioStatus::Complete) => ctx.send_viewport_cmd(egui::ViewportCommand::Close),
         Err(error) => {
-            eprintln!("Native interaction FAILED: {error}");
+            eprintln!("Journey FAILED: {error}");
             std::process::exit(2);
         }
     }
 }
 
-/// A requested report is written as failed before an error is returned.
+const PACKAGE: &str = "UrlShortener";
+
+#[derive(Clone, Debug)]
+enum Action {
+    Idle,
+    Key(Key, Modifiers),
+    Text(&'static str),
+    /// Click, select all, type.
+    Fill(Target, String),
+    Click(Target),
+    /// Click the card of the element at this path.
+    ClickCard(&'static str),
+    /// Drag from a port on a card to a port on another card: (card, port).
+    DragPort((&'static str, &'static str), (&'static str, &'static str)),
+}
+impl Action {
+    fn frames(&self) -> u64 {
+        match self {
+            Self::Idle | Self::Key(..) | Self::Text(_) => 1,
+            Self::Click(_) | Self::ClickCard(_) => 2,
+            Self::Fill(..) => 5,
+            Self::DragPort(..) => 12,
+        }
+    }
+    /// Pointer actions wait so egui cannot join them into a double click.
+    fn lead(&self) -> u64 {
+        match self {
+            Self::Click(_) | Self::ClickCard(_) | Self::Fill(..) | Self::DragPort(..) => 25,
+            _ => 0,
+        }
+    }
+}
+
+#[derive(Clone, Debug)]
+enum Check {
+    StartScreen,
+    DialogNewProject,
+    ProjectName(&'static str),
+    ProjectOpen,
+    CreateDialog,
+    RenameDialog,
+    CheckpointDialog,
+    NoDialog,
+    Exists(&'static str, ElementKind),
+    Selected(&'static str),
+    Port(&'static str, &'static str),
+    Interface(&'static str, &'static str),
+    TypedBy(&'static str, &'static str),
+    Locked(&'static str),
+    LockConfirmation,
+    Checkpoints(usize),
+    Comparison,
+    NothingSelected,
+    MoveDialog,
+    /// A card with this name shows a problem.
+    ProblemShown(&'static str),
+    NoProblems,
+}
+
+#[derive(Clone, Debug)]
+struct Step {
+    name: &'static str,
+    action: Action,
+    check: Check,
+    /// Frames to wait after the action before checking.
+    settle: u64,
+    screenshot: Option<&'static str>,
+}
+fn step(name: &'static str, action: Action, check: Check) -> Step {
+    Step {
+        name,
+        action,
+        check,
+        settle: 3,
+        screenshot: None,
+    }
+}
+
+fn create(kind_key: Key, name: &'static str, path: &'static str, kind: ElementKind) -> Vec<Step> {
+    vec![
+        step(
+            "open the create dialog",
+            Action::Key(kind_key, Modifiers::NONE),
+            Check::CreateDialog,
+        ),
+        step("type the name", Action::Text(name), Check::CreateDialog),
+        step(
+            "create",
+            Action::Key(Key::Enter, Modifiers::NONE),
+            Check::Exists(path, kind),
+        ),
+    ]
+}
+
+fn build(folder: &Path) -> Vec<Step> {
+    let mut steps = vec![
+        step("start screen", Action::Idle, Check::StartScreen),
+        step(
+            "New project…",
+            Action::Click(Target::Button("New project…")),
+            Check::DialogNewProject,
+        ),
+        step(
+            "project name",
+            Action::Fill(Target::Field("Project name"), PACKAGE.into()),
+            Check::ProjectName(PACKAGE),
+        ),
+        step(
+            "project folder",
+            Action::Fill(
+                Target::Field("Project folder"),
+                folder.display().to_string(),
+            ),
+            Check::DialogNewProject,
+        ),
+        step(
+            "Create project",
+            Action::Click(Target::Button("Create project")),
+            Check::ProjectOpen,
+        ),
+    ];
+    for (name, path) in [
+        ("api", "UrlShortener::api"),
+        ("store", "UrlShortener::store"),
+        ("stats", "UrlShortener::stats"),
+    ] {
+        steps.extend(create(Key::P, name, path, ElementKind::Part));
+        steps.push(step(
+            "clear the selection",
+            Action::Key(Key::Escape, Modifiers::NONE),
+            Check::NothingSelected,
+        ));
+    }
+    for (card, port, name) in [
+        ("UrlShortener::api", "UrlShortener::api::storage", "storage"),
+        ("UrlShortener::api", "UrlShortener::api::clicks", "clicks"),
+        ("UrlShortener::store", "UrlShortener::store::links", "links"),
+        (
+            "UrlShortener::stats",
+            "UrlShortener::stats::clicks",
+            "clicks",
+        ),
+    ] {
+        steps.push(step(
+            "select the part",
+            Action::ClickCard(card),
+            Check::Selected(card),
+        ));
+        steps.extend(create(Key::O, name, port, ElementKind::Port));
+    }
+    steps.push(step(
+        "clear the selection",
+        Action::Key(Key::Escape, Modifiers::NONE),
+        Check::NothingSelected,
+    ));
+    steps.push(Step {
+        screenshot: Some("01-parts-and-ports"),
+        ..step(
+            "drag from api.storage to store.links",
+            Action::DragPort(
+                ("UrlShortener::api", "UrlShortener::api::storage"),
+                ("UrlShortener::store", "UrlShortener::store::links"),
+            ),
+            Check::Interface("api.storage", "store.links"),
+        )
+    });
+    steps.extend([
+        step(
+            "select stats",
+            Action::ClickCard("UrlShortener::stats"),
+            Check::Selected("UrlShortener::stats"),
+        ),
+        step(
+            "F2 renames in place",
+            Action::Key(Key::F2, Modifiers::NONE),
+            Check::RenameDialog,
+        ),
+        step(
+            "select the old name",
+            Action::Key(Key::A, Modifiers::COMMAND),
+            Check::RenameDialog,
+        ),
+        step(
+            "type the new name",
+            Action::Text("statistics"),
+            Check::RenameDialog,
+        ),
+        step(
+            "Enter renames",
+            Action::Key(Key::Enter, Modifiers::NONE),
+            Check::Exists("UrlShortener::statistics", ElementKind::Part),
+        ),
+        step(
+            "select store",
+            Action::ClickCard("UrlShortener::store"),
+            Check::Selected("UrlShortener::store"),
+        ),
+    ]);
+    steps.extend(create(
+        Key::A,
+        "capacity",
+        "UrlShortener::store::capacity",
+        ElementKind::Attribute,
+    ));
+    steps.extend([
+        step(
+            "type Natural in the Inspector's type field",
+            Action::Fill(Target::Field("Type"), "Natural".into()),
+            Check::NoDialog,
+        ),
+        step(
+            "Enter sets the type",
+            Action::Key(Key::Enter, Modifiers::NONE),
+            Check::TypedBy("UrlShortener::store::capacity", "Natural"),
+        ),
+        step(
+            "select api",
+            Action::ClickCard("UrlShortener::api"),
+            Check::Selected("UrlShortener::api"),
+        ),
+        Step {
+            screenshot: Some("02-locked"),
+            ..step(
+                "L locks api",
+                Action::Key(Key::L, Modifiers::NONE),
+                Check::Locked("UrlShortener::api"),
+            )
+        },
+        step(
+            "rename the locked part",
+            Action::Key(Key::F2, Modifiers::NONE),
+            Check::RenameDialog,
+        ),
+        step(
+            "select the old name",
+            Action::Key(Key::A, Modifiers::COMMAND),
+            Check::RenameDialog,
+        ),
+        step(
+            "type a new name",
+            Action::Text("gateway"),
+            Check::RenameDialog,
+        ),
+        Step {
+            screenshot: Some("03-locked-confirmation"),
+            ..step(
+                "the change asks for confirmation",
+                Action::Key(Key::Enter, Modifiers::NONE),
+                Check::LockConfirmation,
+            )
+        },
+        step(
+            "Escape refuses; nothing changes",
+            Action::Key(Key::Escape, Modifiers::NONE),
+            Check::Exists("UrlShortener::api", ElementKind::Part),
+        ),
+        // Confirming a change to the locked part applies it.
+        step(
+            "create a port on the locked part",
+            Action::Key(Key::O, Modifiers::NONE),
+            Check::CreateDialog,
+        ),
+        step(
+            "type the port name",
+            Action::Text("shorten"),
+            Check::CreateDialog,
+        ),
+        step(
+            "the locked part asks first",
+            Action::Key(Key::Enter, Modifiers::NONE),
+            Check::LockConfirmation,
+        ),
+        step(
+            "Enter confirms the change",
+            Action::Key(Key::Enter, Modifiers::NONE),
+            Check::Exists("UrlShortener::api::shorten", ElementKind::Port),
+        ),
+        // A second part with a taken name is flagged at the element.
+        step(
+            "clear the selection",
+            Action::Key(Key::Escape, Modifiers::NONE),
+            Check::NothingSelected,
+        ),
+        step(
+            "create another part",
+            Action::Key(Key::P, Modifiers::NONE),
+            Check::CreateDialog,
+        ),
+        step(
+            "with a taken name",
+            Action::Text("store"),
+            Check::CreateDialog,
+        ),
+        Step {
+            screenshot: Some("03b-problem-at-element"),
+            ..step(
+                "the problem shows at the element",
+                Action::Key(Key::Enter, Modifiers::NONE),
+                Check::ProblemShown("store"),
+            )
+        },
+        step(
+            "Delete removes the new part",
+            Action::Key(Key::Delete, Modifiers::NONE),
+            Check::NoProblems,
+        ),
+        // Move a part into another, then undo and redo the move.
+        step(
+            "clear the selection",
+            Action::Key(Key::Escape, Modifiers::NONE),
+            Check::NothingSelected,
+        ),
+    ]);
+    steps.extend(create(
+        Key::P,
+        "cache",
+        "UrlShortener::cache",
+        ElementKind::Part,
+    ));
+    steps.extend([
+        step(
+            "M moves the part",
+            Action::Key(Key::M, Modifiers::NONE),
+            Check::MoveDialog,
+        ),
+        step(
+            "find the new owner",
+            Action::Text("store"),
+            Check::MoveDialog,
+        ),
+        step(
+            "Enter moves it into store",
+            Action::Key(Key::Enter, Modifiers::NONE),
+            Check::Exists("UrlShortener::store::cache", ElementKind::Part),
+        ),
+        step(
+            "Ctrl+Z undoes the move",
+            Action::Key(Key::Z, Modifiers::COMMAND),
+            Check::Exists("UrlShortener::cache", ElementKind::Part),
+        ),
+        step(
+            "Ctrl+Y redoes it",
+            Action::Key(Key::Y, Modifiers::COMMAND),
+            Check::Exists("UrlShortener::store::cache", ElementKind::Part),
+        ),
+        step(
+            "Ctrl+S asks for a checkpoint message",
+            Action::Key(Key::S, Modifiers::COMMAND),
+            Check::CheckpointDialog,
+        ),
+        step(
+            "type the message",
+            Action::Text("URL shortener skeleton"),
+            Check::CheckpointDialog,
+        ),
+        Step {
+            screenshot: Some("04-checkpoint"),
+            ..step(
+                "Enter records the checkpoint",
+                Action::Key(Key::Enter, Modifiers::NONE),
+                Check::Checkpoints(1),
+            )
+        },
+    ]);
+    steps
+}
+
+fn reopen() -> Vec<Step> {
+    vec![
+        step("the project opens", Action::Idle, Check::ProjectOpen),
+        step(
+            "parts",
+            Action::Idle,
+            Check::Exists("UrlShortener::api", ElementKind::Part),
+        ),
+        step(
+            "renamed part",
+            Action::Idle,
+            Check::Exists("UrlShortener::statistics", ElementKind::Part),
+        ),
+        step(
+            "ports",
+            Action::Idle,
+            Check::Port("UrlShortener::store", "links"),
+        ),
+        step(
+            "connection",
+            Action::Idle,
+            Check::Interface("api.storage", "store.links"),
+        ),
+        step(
+            "type",
+            Action::Idle,
+            Check::TypedBy("UrlShortener::store::capacity", "Natural"),
+        ),
+        Step {
+            screenshot: Some("05-reopened"),
+            ..step("lock", Action::Idle, Check::Locked("UrlShortener::api"))
+        },
+        step(
+            "confirmed, moved and deleted changes",
+            Action::Idle,
+            Check::Exists("UrlShortener::store::cache", ElementKind::Part),
+        ),
+        step("no problems left", Action::Idle, Check::NoProblems),
+        step("checkpoint", Action::Idle, Check::Checkpoints(1)),
+        step(
+            "History panel",
+            Action::Click(Target::Button("History")),
+            Check::Checkpoints(1),
+        ),
+        step(
+            "select the checkpoint",
+            Action::Click(Target::Button(crate::history::HISTORY_ROWS[0])),
+            Check::Checkpoints(1),
+        ),
+        Step {
+            screenshot: Some("06-what-changed"),
+            ..step(
+                "show what changed since then",
+                Action::Click(Target::Button("Show changes")),
+                Check::Comparison,
+            )
+        },
+    ]
+}
+
+#[derive(Clone, Serialize)]
+struct Report {
+    scenario: String,
+    passed: bool,
+    steps: Vec<String>,
+    failure: Option<String>,
+    gallery: Vec<String>,
+}
+
+#[derive(Clone)]
+struct Runner {
+    steps: Vec<Step>,
+    index: usize,
+    age: u64,
+    frames: u64,
+    time: Option<f64>,
+    point: Option<(Pos2, Pos2)>,
+    capture: Option<(&'static str, u64)>,
+    report: Report,
+}
+
 fn drive(
     app: &StudioApp,
     ctx: &egui::Context,
@@ -52,717 +504,81 @@ fn drive(
     scenario: &str,
     report_path: Option<&Path>,
 ) -> Result<ScenarioStatus, String> {
-    let id = egui::Id::new("agentique-native-input-scenario");
-    let mut runner = ctx
-        .data(|data| data.get_temp::<Runner>(id))
-        .unwrap_or_else(|| Runner::new(scenario));
+    let id = egui::Id::new("agentique-journey");
+    let mut runner = match ctx.data(|d| d.get_temp::<Runner>(id)) {
+        Some(runner) => runner,
+        None => {
+            let folder = app
+                .args
+                .project
+                .clone()
+                .ok_or("the journeys need --project <folder>")?;
+            Runner {
+                steps: if scenario == "a-build" {
+                    build(&folder)
+                } else {
+                    reopen()
+                },
+                index: 0,
+                age: 0,
+                frames: 0,
+                time: None,
+                point: None,
+                capture: None,
+                report: Report {
+                    scenario: scenario.into(),
+                    passed: false,
+                    steps: Vec::new(),
+                    failure: None,
+                    gallery: Vec::new(),
+                },
+            }
+        }
+    };
     let result = runner.advance(app, ctx, input);
-    match &result {
-        Ok(ScenarioStatus::Complete) => runner.report.outcome = "passed".into(),
-        Ok(ScenarioStatus::Running) => {}
-        Err(error) => {
-            runner.report.outcome = "failed".into();
-            runner.report.failure = Some(error.clone());
-        }
-    }
     runner.report.passed = matches!(result, Ok(ScenarioStatus::Complete));
-    // Intermediate evidence always says running/failed, never a premature pass.
-    if let Some(report_path) = report_path
-        && (runner.report_dirty || !matches!(result, Ok(ScenarioStatus::Running)))
+    if let Err(error) = &result {
+        runner.report.failure = Some(error.clone());
+    }
+    if let Some(path) = report_path
+        && !matches!(result, Ok(ScenarioStatus::Running))
     {
-        if let Some(parent) = report_path.parent().filter(|p| !p.as_os_str().is_empty()) {
-            std::fs::create_dir_all(parent)
-                .map_err(|e| format!("Cannot create scenario report directory: {e}"))?;
-        }
         let bytes = serde_json::to_vec_pretty(&runner.report).map_err(|e| e.to_string())?;
-        std::fs::write(report_path, bytes)
-            .map_err(|e| format!("Cannot write scenario report: {e}"))?;
-        runner.report_dirty = false;
+        std::fs::write(path, bytes).map_err(|e| format!("Cannot write the report: {e}"))?;
     }
-    ctx.data_mut(|data| data.insert_temp(id, runner));
-    if matches!(result, Ok(ScenarioStatus::Running)) {
-        ctx.request_repaint();
-    }
+    ctx.data_mut(|d| d.insert_temp(id, runner));
     result
 }
 
-#[derive(Clone, Debug)]
-enum Action {
-    Idle,
-    ClickNode(u128, bool),
-    DoubleClickContainer(u128),
-    ClickNamedNode(&'static str),
-    ClickDerivedEdge,
-    Key(Key, Modifiers),
-    Pan,
-    Wheel,
-    Palette(&'static str),
-    PaletteKeys(&'static str, usize),
-    PrepareNamedPart(&'static str),
-    PreparePartKeys(&'static str),
-    ClickTarget(Target),
-}
-impl Action {
-    fn lead_frames(&self) -> u64 {
-        // egui counts double/triple clicks globally by time, even across
-        // different widgets. Separate independent semantic gestures while
-        // keeping the two clicks inside DoubleClickContainer deliberately close.
-        match self {
-            Self::ClickNode(..)
-            | Self::DoubleClickContainer(..)
-            | Self::ClickNamedNode(..)
-            | Self::ClickDerivedEdge
-            | Self::ClickTarget(..) => 40,
-            _ => 0,
-        }
-    }
-    fn frames(&self) -> u64 {
-        match self {
-            Self::Idle | Self::Key(..) | Self::Wheel => 1,
-            Self::ClickNode(..)
-            | Self::ClickNamedNode(..)
-            | Self::ClickDerivedEdge
-            | Self::ClickTarget(..) => 2,
-            Self::DoubleClickContainer(..) | Self::Pan => 4,
-            Self::Palette(..) => 12,
-            Self::PaletteKeys(..) => 9,
-            Self::PrepareNamedPart(..) => 6,
-            Self::PreparePartKeys(..) => 6,
-        }
-    }
-}
-#[derive(Clone, Debug)]
-enum Check {
-    Ready,
-    Selected(u128),
-    MultiSelected,
-    SelectionEmpty,
-    Focused(u128),
-    RootFocus,
-    Panned,
-    ZoomAnchored,
-    World(World),
-    DerivedSelected,
-    ExplainOpen,
-    ExplainClosed,
-    Dependencies,
-    AgentReturned,
-    Diff,
-    CreateDialog,
-    Candidate,
-    ReviewMode(ComparisonMode),
-    Pinned(bool),
-    NamedSelected(&'static str),
-    Disabled(CommandId),
-    PaletteClosed,
-    Cancelled,
-    Revision(ProjectRevisionId),
-    ContrastChanged,
-    ThemeChanged,
-    ReducedMotion,
-}
-#[derive(Clone, Debug)]
-struct Step {
-    name: &'static str,
-    action: Action,
-    check: Check,
-    settle: u64,
-}
-fn vertical() -> Vec<Step> {
-    let step = |name, action, check| Step {
-        name,
-        action,
-        check,
-        settle: 3,
-    };
-    vec![
-        Step {
-            name: "native fixture and GPU ready",
-            action: Action::Idle,
-            check: Check::Ready,
-            settle: 12,
-        },
-        step(
-            "enable reduced-motion keyboard path",
-            Action::Palette("Toggle reduced motion"),
-            Check::ReducedMotion,
-        ),
-        step(
-            "select ModelRepository by scene geometry",
-            Action::ClickNode(21, false),
-            Check::Selected(21),
-        ),
-        step(
-            "shift-click adds ModelingService",
-            Action::ClickNode(22, true),
-            Check::MultiSelected,
-        ),
-        step(
-            "Escape clears scene selection",
-            Action::Key(Key::Escape, Modifiers::NONE),
-            Check::SelectionEmpty,
-        ),
-        step(
-            "double-click focuses ModelingPlatform",
-            Action::DoubleClickContainer(2),
-            Check::Focused(2),
-        ),
-        step(
-            "Alt-Up navigates to owner context",
-            Action::Key(Key::ArrowUp, Modifiers::ALT),
-            Check::RootFocus,
-        ),
-        step(
-            "select subsystem header",
-            Action::ClickNode(2, false),
-            Check::Selected(2),
-        ),
-        step(
-            "F focuses selected subsystem",
-            Action::Key(Key::F, Modifiers::NONE),
-            Check::Focused(2),
-        ),
-        step(
-            "Alt-Left restores root navigation",
-            Action::Key(Key::ArrowLeft, Modifiers::ALT),
-            Check::RootFocus,
-        ),
-        step("drag empty canvas pans camera", Action::Pan, Check::Panned),
-        Step {
-            name: "wheel zoom preserves pointer anchor",
-            action: Action::Wheel,
-            check: Check::ZoomAnchored,
-            settle: 15,
-        },
-        step(
-            "select repository before graph reasoning",
-            Action::ClickNode(21, false),
-            Check::Selected(21),
-        ),
-        step(
-            "2 opens Graph World",
-            Action::Key(Key::Num2, Modifiers::NONE),
-            Check::World(World::Graph),
-        ),
-        step(
-            "expand from readable neighborhood to graph overview",
-            Action::Palette("Show loaded graph overview"),
-            Check::World(World::Graph),
-        ),
-        step(
-            "pin graph position",
-            Action::PaletteKeys("Pin position", 0),
-            Check::Pinned(true),
-        ),
-        step(
-            "pin survives projection rebuild",
-            Action::PaletteKeys("Show loaded graph overview", 0),
-            Check::Pinned(true),
-        ),
-        step(
-            "unpin graph position",
-            Action::PaletteKeys("Unpin position", 0),
-            Check::Pinned(false),
-        ),
-        step(
-            "select derived relationship geometry",
-            Action::ClickDerivedEdge,
-            Check::DerivedSelected,
-        ),
-        step(
-            "E opens semantic Explain",
-            Action::Key(Key::E, Modifiers::NONE),
-            Check::ExplainOpen,
-        ),
-        step(
-            "Escape closes Explain",
-            Action::Key(Key::Escape, Modifiers::NONE),
-            Check::ExplainClosed,
-        ),
-        step(
-            "3 opens Requirements World",
-            Action::Key(Key::Num3, Modifiers::NONE),
-            Check::World(World::Requirements),
-        ),
-        step(
-            "return to Graph World after requirements",
-            Action::Key(Key::Num2, Modifiers::NONE),
-            Check::World(World::Graph),
-        ),
-        step(
-            "select repository in Graph World",
-            Action::ClickNode(21, false),
-            Check::Selected(21),
-        ),
-        step(
-            "command palette shows dependencies",
-            Action::Palette("Show dependencies"),
-            Check::Dependencies,
-        ),
-        step(
-            "dismiss dependency view restores operator context",
-            Action::PaletteKeys("Return from agent view", 0),
-            Check::AgentReturned,
-        ),
-        step(
-            "command palette compares revisions",
-            Action::Palette("Compare with parent"),
-            Check::Diff,
-        ),
-        step(
-            "1 opens System World comparison",
-            Action::Key(Key::Num1, Modifiers::NONE),
-            Check::World(World::System),
-        ),
-        step(
-            "keyboard palette arrows choose System World",
-            Action::PaletteKeys("World", 1),
-            Check::World(World::System),
-        ),
-        step(
-            "select candidate parent",
-            Action::ClickNode(2, false),
-            Check::Selected(2),
-        ),
-        step(
-            "palette opens nested-part dialog",
-            Action::Palette("Create nested part"),
-            Check::CreateDialog,
-        ),
-        step(
-            "text entry prepares candidate preview",
-            Action::PrepareNamedPart("ScenarioNestedPart"),
-            Check::Candidate,
-        ),
-        step(
-            "explicit focus changes frames candidate",
-            Action::PaletteKeys("Focus changes", 0),
-            Check::PaletteClosed,
-        ),
-        step(
-            "candidate element is selectable",
-            Action::ClickNamedNode("ScenarioNestedPart"),
-            Check::NamedSelected("ScenarioNestedPart"),
-        ),
-        step(
-            "Current retains candidate review memory and camera",
-            Action::PaletteKeys("Review: Current revision", 0),
-            Check::ReviewMode(ComparisonMode::Current),
-        ),
-        step(
-            "Candidate restores its element selection and camera",
-            Action::PaletteKeys("Review: Candidate revision", 0),
-            Check::ReviewMode(ComparisonMode::Candidate),
-        ),
-        step(
-            "Diff preserves candidate element and camera",
-            Action::PaletteKeys("Review: Candidate difference", 0),
-            Check::ReviewMode(ComparisonMode::Diff),
-        ),
-        step(
-            "fixture validation stays disabled",
-            Action::Palette("Validate candidate"),
-            Check::Disabled(CommandId::Validate),
-        ),
-        step(
-            "close disabled validation palette",
-            Action::Key(Key::Escape, Modifiers::NONE),
-            Check::PaletteClosed,
-        ),
-        step(
-            "fixture commit stays disabled",
-            Action::Palette("Commit validated candidate"),
-            Check::Disabled(CommandId::Commit),
-        ),
-        step(
-            "close disabled commit palette",
-            Action::Key(Key::Escape, Modifiers::NONE),
-            Check::PaletteClosed,
-        ),
-        step(
-            "cancel drops candidate and stale selection",
-            Action::Palette("Cancel candidate"),
-            Check::Cancelled,
-        ),
-        step(
-            "4 opens immutable history",
-            Action::Key(Key::Num4, Modifiers::NONE),
-            Check::World(World::History),
-        ),
-        step(
-            "history baseline changes entire revision context",
-            Action::ClickTarget(Target::HistoryRevision(fixtures::revision())),
-            Check::Revision(fixtures::revision()),
-        ),
-        step(
-            "high contrast command changes theme",
-            Action::Palette("Toggle high contrast"),
-            Check::ContrastChanged,
-        ),
-        step(
-            "light-dark command changes theme",
-            Action::Palette("Switch light"),
-            Check::ThemeChanged,
-        ),
-        step(
-            "restore theme through same command path",
-            Action::Palette("Switch light"),
-            Check::ThemeChanged,
-        ),
-        step(
-            "restore ordinary contrast",
-            Action::Palette("Toggle high contrast"),
-            Check::ContrastChanged,
-        ),
-        step(
-            "return to System World",
-            Action::Key(Key::Num1, Modifiers::NONE),
-            Check::World(World::System),
-        ),
-        step(
-            "final engineering selection",
-            Action::PaletteKeys("Focus: ModelRepository", 0),
-            Check::Selected(21),
-        ),
-    ]
-}
-
-/// A complete visual review path with no injected pointer events or source edits.
-fn keyboard_journey() -> Vec<Step> {
-    let step = |name, action, check| Step {
-        name,
-        action,
-        check,
-        settle: 5,
-    };
-    vec![
-        Step {
-            name: "native fixture and GPU ready",
-            action: Action::Idle,
-            check: Check::Ready,
-            settle: 12,
-        },
-        step(
-            "keyboard reduced motion",
-            Action::PaletteKeys("Toggle reduced motion", 0),
-            Check::ReducedMotion,
-        ),
-        step(
-            "keyboard enters subsystem",
-            Action::PaletteKeys("Focus: ModelingPlatform", 0),
-            Check::Focused(2),
-        ),
-        step(
-            "keyboard inspects repository",
-            Action::PaletteKeys("Focus: ModelRepository", 0),
-            Check::Selected(21),
-        ),
-        step(
-            "keyboard returns to owner",
-            Action::Key(Key::Backspace, Modifiers::NONE),
-            Check::RootFocus,
-        ),
-        step(
-            "keyboard opens Graph",
-            Action::Key(Key::Num2, Modifiers::NONE),
-            Check::World(World::Graph),
-        ),
-        step(
-            "keyboard asks for dependencies",
-            Action::Key(Key::D, Modifiers::NONE),
-            Check::Dependencies,
-        ),
-        step(
-            "keyboard opens Explain",
-            Action::Key(Key::E, Modifiers::NONE),
-            Check::ExplainOpen,
-        ),
-        step(
-            "keyboard dismisses Explain",
-            Action::Key(Key::Escape, Modifiers::NONE),
-            Check::ExplainClosed,
-        ),
-        step(
-            "keyboard requirements",
-            Action::Key(Key::Num3, Modifiers::NONE),
-            Check::World(World::Requirements),
-        ),
-        step(
-            "keyboard architecture",
-            Action::Key(Key::Num1, Modifiers::NONE),
-            Check::World(World::System),
-        ),
-        step(
-            "keyboard selects candidate owner",
-            Action::PaletteKeys("Focus: ModelingPlatform", 0),
-            Check::Focused(2),
-        ),
-        step(
-            "keyboard opens create dialog",
-            Action::PaletteKeys("Create nested part", 0),
-            Check::CreateDialog,
-        ),
-        step(
-            "keyboard creates preview without source",
-            Action::PreparePartKeys("ScenarioNestedPart"),
-            Check::Candidate,
-        ),
-        step(
-            "keyboard inspects added component",
-            Action::PaletteKeys("Focus: ScenarioNestedPart", 0),
-            Check::NamedSelected("ScenarioNestedPart"),
-        ),
-        step(
-            "keyboard current revision",
-            Action::PaletteKeys("Review: Current revision", 0),
-            Check::ReviewMode(ComparisonMode::Current),
-        ),
-        step(
-            "keyboard candidate revision",
-            Action::PaletteKeys("Review: Candidate revision", 0),
-            Check::ReviewMode(ComparisonMode::Candidate),
-        ),
-        step(
-            "keyboard candidate difference",
-            Action::PaletteKeys("Review: Candidate difference", 0),
-            Check::ReviewMode(ComparisonMode::Diff),
-        ),
-        step(
-            "keyboard cancels preview",
-            Action::PaletteKeys("Cancel candidate", 0),
-            Check::Cancelled,
-        ),
-        step(
-            "keyboard immutable history",
-            Action::Key(Key::Num4, Modifiers::NONE),
-            Check::World(World::History),
-        ),
-        step(
-            "keyboard returns to architecture",
-            Action::Key(Key::Num1, Modifiers::NONE),
-            Check::World(World::System),
-        ),
-    ]
-}
-
-#[derive(Clone, Debug, Serialize)]
-struct ReturnSnapshot {
-    world: String,
-    focus: Option<String>,
-    center: [f32; 2],
-    zoom: f32,
-    selection: Vec<String>,
-}
-
-#[derive(Clone, Debug, Serialize)]
-struct Snapshot {
-    frame: u64,
-    world: String,
-    revision: String,
-    selection_revision: String,
-    selected: Vec<String>,
-    focus: Option<String>,
-    camera_center: [f32; 2],
-    zoom: f32,
-    nodes: usize,
-    edges: usize,
-    dependency_elements: Option<Vec<String>>,
-    agent_overlay: bool,
-    agent_return: Option<ReturnSnapshot>,
-    added_elements: Vec<String>,
-    removed_elements: Vec<String>,
-    candidate: bool,
-    candidate_phase: Option<String>,
-    comparison: String,
-    palette: bool,
-    palette_query: String,
-    create_dialog: bool,
-    explanation_open: bool,
-    dark: bool,
-    high_contrast: bool,
-    reduced_motion: bool,
-    status: String,
-}
-impl Snapshot {
-    fn of(app: &StudioApp) -> Self {
-        Self {
-            frame: app.frame_number,
-            world: format!("{:?}", app.world),
-            revision: app.scene.revision_id.to_string(),
-            selection_revision: app.selection.revision.to_string(),
-            selected: app
-                .selection
-                .targets
-                .iter()
-                .map(|t| format!("{t:?}"))
-                .collect(),
-            focus: app.focus.map(|id| id.to_string()),
-            camera_center: [app.camera.center.x, app.camera.center.y],
-            zoom: app.camera.zoom,
-            nodes: app.scene.nodes.len(),
-            edges: app.scene.edges.len(),
-            dependency_elements: app
-                .dependencies
-                .as_ref()
-                .map(|ids| ids.iter().map(ToString::to_string).collect()),
-            agent_overlay: app.show_agent,
-            agent_return: app.agent_return.as_ref().map(|previous| ReturnSnapshot {
-                world: format!("{:?}", previous.world),
-                focus: previous.focus.map(|id| id.to_string()),
-                center: [previous.camera.center.x, previous.camera.center.y],
-                zoom: previous.camera.zoom,
-                selection: previous
-                    .selection
-                    .targets
-                    .iter()
-                    .map(|target| format!("{target:?}"))
-                    .collect(),
-            }),
-            added_elements: app
-                .scene
-                .nodes
-                .iter()
-                .filter(|n| n.diff == DiffMark::Added)
-                .map(|n| n.semantic.name.clone())
-                .collect(),
-            removed_elements: app
-                .scene
-                .nodes
-                .iter()
-                .filter(|n| n.diff == DiffMark::Removed)
-                .map(|n| n.semantic.name.clone())
-                .collect(),
-            candidate: app.candidate.is_some(),
-            comparison: format!("{:?}", app.comparison),
-            candidate_phase: app
-                .candidate
-                .as_ref()
-                .and_then(|c| c.phase.as_ref().map(|p| format!("{p:?}"))),
-            palette: app.palette,
-            palette_query: app.palette_query.clone(),
-            create_dialog: app.create_dialog,
-            explanation_open: app.show_explain,
-            dark: app.theme.dark,
-            high_contrast: app.theme.contrast,
-            reduced_motion: app.reduced_motion,
-            status: app.status.clone(),
-        }
-    }
-}
-#[derive(Clone, Debug, Serialize)]
-struct InputEvidence {
-    frame: u64,
-    palette_query_before: String,
-    keyboard_focus: Option<String>,
-    events: Vec<String>,
-}
-#[derive(Clone, Debug, Serialize)]
-struct AssertionEvidence {
-    name: String,
-    expected: String,
-    passed: bool,
-    before: Snapshot,
-    after: Snapshot,
-    inputs: Vec<InputEvidence>,
-}
-#[derive(Clone, Debug, Serialize)]
-struct Report {
-    format: &'static str,
-    scenario: String,
-    scope: &'static str,
-    outcome: String,
-    passed: bool,
-    adapter: String,
-    assertions: Vec<AssertionEvidence>,
-    failure: Option<String>,
-    gallery: Vec<String>,
-}
-#[derive(Clone, Debug)]
-struct Runner {
-    report: Report,
-    steps: Vec<Step>,
-    index: usize,
-    age: u64,
-    total_frames: u64,
-    before: Option<Snapshot>,
-    point: Option<Pos2>,
-    anchor: Option<Point>,
-    events: Vec<InputEvidence>,
-    report_dirty: bool,
-    time_origin: Option<f64>,
-    pending_capture: Option<(&'static str, u64)>,
-}
 impl Runner {
-    fn new(scenario: &str) -> Self {
-        Self {
-            report: Report {
-                format: "agentique-native-interaction/1",
-                scenario: scenario.into(),
-                scope: "Actual native egui input over deterministic visual fixture; no semantic validation or durable commit acceptance",
-                outcome: "running".into(),
-                passed: false,
-                adapter: String::new(),
-                assertions: vec![],
-                failure: None,
-                gallery: vec![],
-            },
-            steps: if scenario == "keyboard" {
-                keyboard_journey()
-            } else {
-                vertical()
-            },
-            index: 0,
-            age: 0,
-            total_frames: 0,
-            before: None,
-            point: None,
-            anchor: None,
-            events: vec![],
-            report_dirty: true,
-            time_origin: None,
-            pending_capture: None,
-        }
-    }
     fn advance(
         &mut self,
         app: &StudioApp,
         ctx: &egui::Context,
         input: &mut egui::RawInput,
     ) -> Result<ScenarioStatus, String> {
-        if !matches!(self.report.scenario.as_str(), "vertical" | "keyboard") {
-            return Err(format!("Unknown native scenario {}", self.report.scenario));
+        self.frames += 1;
+        if self.frames > 6000 {
+            return Err("the journey took more than 6000 frames".into());
         }
-        if !matches!(app.fixture.as_deref(), Some("architecture" | "typography"))
-            || app.binding.is_some()
-            || app.branch.is_some()
-        {
-            return Err("Native input scenario requires --fixture architecture or typography and refuses every live service binding".into());
-        }
-        self.report.adapter.clone_from(&app.adapter);
-        // Keep one monotonic clock during capture delivery as well as input
-        // steps. Mixing synthetic event time with wall time made transient
-        // windows fade out while a screenshot was being delivered.
-        self.total_frames += 1;
-        if self.total_frames > 3000 {
-            return Err("Native scenario exceeded its 3000-frame global deadline".into());
-        }
+        // Only scripted input reaches the app; one steady clock.
         input
             .events
             .retain(|e| matches!(e, Event::Screenshot { .. } | Event::WindowFocused(_)));
         input.focused = true;
         input.modifiers = Modifiers::NONE;
-        let origin = *self.time_origin.get_or_insert(input.time.unwrap_or(0.0));
-        input.time = Some(origin + self.total_frames as f64 / 60.0);
+        let origin = *self.time.get_or_insert(input.time.unwrap_or(0.0));
+        input.time = Some(origin + self.frames as f64 / 60.0);
         input.predicted_dt = 1.0 / 60.0;
-        if let Some((name, waiting)) = &mut self.pending_capture {
-            *waiting += 1;
+        if let Some((name, waited)) = &mut self.capture {
+            *waited += 1;
             if let Some(image) = input.events.iter().find_map(|event| match event {
                 Event::Screenshot { image, .. } => Some(image.clone()),
                 _ => None,
             }) {
-                let directory = app.args.gallery.as_ref().expect("requested gallery");
-                std::fs::create_dir_all(directory).map_err(|error| error.to_string())?;
-                let path = directory.join(format!("{name}.png"));
+                let directory = app.args.gallery.as_ref().expect("a gallery was requested");
+                std::fs::create_dir_all(directory).map_err(|e| e.to_string())?;
+                let path = directory.join(format!("{}-{name}.png", self.report.scenario));
                 let bytes: Vec<u8> = image.pixels.iter().flat_map(|p| p.to_array()).collect();
                 image::save_buffer(
                     &path,
@@ -771,114 +587,128 @@ impl Runner {
                     image.size[1] as u32,
                     image::ColorType::Rgba8,
                 )
-                .map_err(|error| format!("Cannot save gallery screenshot: {error}"))?;
+                .map_err(|e| format!("Cannot save the screenshot: {e}"))?;
                 self.report.gallery.push(path.display().to_string());
-                self.report_dirty = true;
-                self.pending_capture = None;
-            } else if *waiting > 120 {
-                return Err(format!("Native gallery capture {name} did not arrive"));
+                self.capture = None;
+            } else if *waited > 120 {
+                return Err(format!("screenshot {name} did not arrive"));
             }
             return Ok(ScenarioStatus::Running);
         }
-        if self.index == self.steps.len() {
+        let Some(step) = self.steps.get(self.index).cloned() else {
             return Ok(ScenarioStatus::Complete);
+        };
+        let lead = step.action.lead();
+        let acting = self.age >= lead && self.age < lead + step.action.frames();
+        if acting {
+            self.inject(&step.action, self.age - lead, app, ctx, input)
+                .map_err(|e| format!("step {} “{}”: {e}", self.index + 1, step.name))?;
         }
-        let step = self.steps[self.index].clone();
-        if self.age == 0 {
-            self.before = Some(Snapshot::of(app));
-            self.events.clear();
-            self.point = None;
-            self.anchor = None;
-        }
-        let before = self.before.as_ref().expect("step snapshot initialized");
-        if self.age >= step.action.lead_frames() + step.action.frames() + step.settle {
-            let passed = check(&step.check, app, before, self.anchor, self.point, ctx);
-            if passed || self.age > step.action.lead_frames() + step.action.frames() + 180 {
-                self.report.assertions.push(AssertionEvidence {
-                    name: step.name.into(),
-                    expected: format!("{:?}", step.check),
-                    passed,
-                    before: before.clone(),
-                    after: Snapshot::of(app),
-                    inputs: self.events.clone(),
-                });
-                self.report_dirty = true;
-                if !passed {
+        if self.age >= lead + step.action.frames() + step.settle {
+            match check(&step.check, app) {
+                Ok(()) => {
+                    self.report
+                        .steps
+                        .push(format!("{} · {}", self.index + 1, step.name));
+                    self.index += 1;
+                    self.age = 0;
+                    self.point = None;
+                    if let (Some(name), Some(_)) = (step.screenshot, &app.args.gallery) {
+                        self.capture = Some((name, 0));
+                        ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(
+                            egui::UserData::default(),
+                        ));
+                    }
+                    return Ok(ScenarioStatus::Running);
+                }
+                Err(reason) if self.age > lead + step.action.frames() + 180 => {
                     return Err(format!(
-                        "Native interaction assertion failed at step {} '{}': expected {:?}; status={}",
+                        "step {} “{}”: {reason} (status: {})",
                         self.index + 1,
                         step.name,
-                        step.check,
                         app.status
                     ));
                 }
-                self.index += 1;
-                self.age = 0;
-                if app.args.gallery.is_some()
-                    && let Some(name) = gallery_checkpoint(step.name)
-                {
-                    self.pending_capture = Some((name, 0));
-                    ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(
-                        egui::UserData::default(),
-                    ));
-                    return Ok(ScenarioStatus::Running);
-                }
-                return Ok(if self.index == self.steps.len() {
-                    ScenarioStatus::Complete
-                } else {
-                    ScenarioStatus::Running
-                });
-            }
-        }
-        if self.age >= step.action.lead_frames()
-            && self.age - step.action.lead_frames() < step.action.frames()
-        {
-            let start = input.events.len();
-            inject(
-                &step.action,
-                self.age - step.action.lead_frames(),
-                app,
-                ctx,
-                input,
-                &mut self.point,
-                &mut self.anchor,
-            )
-            .map_err(|error| format!("Step {} '{}': {error}", self.index + 1, step.name))?;
-            if input.events.len() > start {
-                self.events.push(InputEvidence {
-                    frame: app.frame_number,
-                    palette_query_before: app.palette_query.clone(),
-                    keyboard_focus: ctx
-                        .memory(|memory| memory.focused().map(|id| format!("{id:?}"))),
-                    events: input.events[start..]
-                        .iter()
-                        .map(|e| format!("{e:?}"))
-                        .collect(),
-                });
+                Err(_) => {}
             }
         }
         self.age += 1;
         Ok(ScenarioStatus::Running)
     }
-}
 
-fn gallery_checkpoint(step: &str) -> Option<&'static str> {
-    match step {
-        "native fixture and GPU ready" => Some("01-system-world"),
-        "double-click focuses ModelingPlatform" => Some("02-focused-subsystem"),
-        "2 opens Graph World" => Some("03-graph-world"),
-        "3 opens Requirements World" => Some("04-requirements-world"),
-        "E opens semantic Explain" => Some("05-explain"),
-        "1 opens System World comparison" => Some("06-history-diff"),
-        "command palette shows dependencies" => Some("07-agent-view"),
-        "candidate element is selectable" => Some("08-candidate"),
-        _ => None,
+    fn inject(
+        &mut self,
+        action: &Action,
+        frame: u64,
+        app: &StudioApp,
+        ctx: &egui::Context,
+        input: &mut egui::RawInput,
+    ) -> Result<(), String> {
+        match action {
+            Action::Idle => {}
+            Action::Key(k, m) => key(input, *k, *m),
+            Action::Text(text) => input.events.push(Event::Text((*text).into())),
+            Action::Click(t) => {
+                let p = target(ctx, *t)?.center();
+                click(input, p, frame == 0);
+            }
+            Action::ClickCard(path) => {
+                let p = match self.point {
+                    Some((p, _)) => p,
+                    None => {
+                        let p = card_point(app, ctx, path)?;
+                        self.point = Some((p, p));
+                        p
+                    }
+                };
+                click(input, p, frame == 0);
+            }
+            Action::Fill(t, text) => match frame {
+                0 | 1 => {
+                    let p = target(ctx, *t)?.center();
+                    click(input, p, frame == 0);
+                }
+                2 => key(input, Key::A, Modifiers::COMMAND),
+                3 => input.events.push(Event::Text(text.clone())),
+                _ => {}
+            },
+            Action::DragPort(from, to) => {
+                let (a, b) = match self.point {
+                    Some(points) => points,
+                    None => {
+                        let points = (port_point(app, ctx, *from)?, port_point(app, ctx, *to)?);
+                        self.point = Some(points);
+                        points
+                    }
+                };
+                let last = action.frames() - 1;
+                if frame == 0 {
+                    input.events.push(Event::PointerMoved(a));
+                    input.events.push(Event::PointerButton {
+                        pos: a,
+                        button: PointerButton::Primary,
+                        pressed: true,
+                        modifiers: Modifiers::NONE,
+                    });
+                } else if frame < last {
+                    let t = frame as f32 / (last - 1) as f32;
+                    input.events.push(Event::PointerMoved(a + (b - a) * t));
+                } else {
+                    input.events.push(Event::PointerMoved(b));
+                    input.events.push(Event::PointerButton {
+                        pos: b,
+                        button: PointerButton::Primary,
+                        pressed: false,
+                        modifiers: Modifiers::NONE,
+                    });
+                }
+            }
+        }
+        Ok(())
     }
 }
 
 fn key(input: &mut egui::RawInput, key: Key, mut modifiers: Modifiers) {
-    // Match the actual native platform modifier as well as egui's logical
-    // command bit; text widgets may inspect Ctrl/mac_cmd directly.
     if modifiers.command {
         modifiers.ctrl = !cfg!(target_os = "macos");
         modifiers.mac_cmd = cfg!(target_os = "macos");
@@ -894,465 +724,212 @@ fn key(input: &mut egui::RawInput, key: Key, mut modifiers: Modifiers) {
         });
     }
 }
-fn click(input: &mut egui::RawInput, position: Pos2, pressed: bool, modifiers: Modifiers) {
-    input.modifiers = modifiers;
+
+fn click(input: &mut egui::RawInput, position: Pos2, pressed: bool) {
     input.events.push(Event::PointerMoved(position));
     input.events.push(Event::PointerButton {
         pos: position,
         button: PointerButton::Primary,
         pressed,
-        modifiers,
+        modifiers: Modifiers::NONE,
     });
 }
+
+fn tree(app: &StudioApp) -> Result<&Tree, String> {
+    app.project
+        .as_ref()
+        .map(|p| p.state().tree())
+        .ok_or_else(|| "no project is open".to_string())
+}
+
+fn find(app: &StudioApp, path: &str) -> Result<ElementId, String> {
+    tree(app)?
+        .find(path)
+        .ok_or_else(|| format!("{path} does not exist"))
+}
+
 fn screen(app: &StudioApp, ctx: &egui::Context, world: Point) -> Result<Pos2, String> {
     let viewport = target(ctx, Target::Viewport)?;
     let local = app.camera.world_to_screen(world);
     let p = viewport.min + Vec2::new(local.x, local.y);
-    if !viewport.contains(p) {
-        return Err(format!(
-            "Semantic click point {p:?} lies outside viewport {viewport:?}"
-        ));
+    if !viewport.shrink(4.0).contains(p) {
+        return Err(format!("{p:?} is outside the Surface {viewport:?}"));
     }
     Ok(p)
 }
-fn node_point(app: &StudioApp, ctx: &egui::Context, id: ElementId) -> Result<Pos2, String> {
+
+fn card_point(app: &StudioApp, ctx: &egui::Context, path: &str) -> Result<Pos2, String> {
+    let id = find(app, path)?;
     let node = app
         .lookup
         .node(&app.scene, id)
-        .ok_or_else(|| format!("Semantic node {id} is absent"))?;
+        .ok_or_else(|| format!("{path} has no card on the Surface"))?;
     let point = if node.is_container {
         Point::new(node.bounds.center().x, node.bounds.min.y + 26.0)
     } else {
-        node.bounds.center()
+        Point::new(node.bounds.center().x, node.bounds.min.y + 40.0)
     };
     screen(app, ctx, point)
 }
-fn derived_point(app: &StudioApp, ctx: &egui::Context) -> Result<Pos2, String> {
-    for edge in app
-        .scene
-        .edges
-        .iter()
-        .filter(|e| e.semantic.origin == ViewOrigin::Derived)
-    {
-        for pair in edge.points.windows(2) {
-            for t in [0.5, 0.25, 0.75] {
-                let p = Point::new(
-                    pair[0].x + (pair[1].x - pair[0].x) * t,
-                    pair[0].y + (pair[1].y - pair[0].y) * t,
-                );
-                if app.spatial.hit_test(p, 6.0 / app.camera.zoom)
-                    == Some(SceneTarget::Edge(edge.semantic.id.clone()))
-                    && let Ok(screen) = screen(app, ctx, p)
-                {
-                    return Ok(screen);
-                }
-            }
-        }
-    }
-    Err("No unoccluded visible derived-edge segment was available for pointer selection".into())
-}
-fn inject(
-    action: &Action,
-    frame: u64,
+
+fn port_point(
     app: &StudioApp,
     ctx: &egui::Context,
-    input: &mut egui::RawInput,
-    point: &mut Option<Pos2>,
-    anchor: &mut Option<Point>,
-) -> Result<(), String> {
-    match action {
-        Action::Idle => {}
-        Action::Key(k, m) => key(input, *k, *m),
-        Action::ClickNode(id, shift) => {
-            let p = if let Some(p) = *point {
-                p
-            } else {
-                let p = node_point(app, ctx, fixtures::id(*id))?;
-                *point = Some(p);
-                p
-            };
-            click(
-                input,
-                p,
-                frame == 0,
-                if *shift {
-                    Modifiers::SHIFT
-                } else {
-                    Modifiers::NONE
-                },
-            );
-        }
-        Action::DoubleClickContainer(id) => {
-            let p = if let Some(p) = *point {
-                p
-            } else {
-                let p = node_point(app, ctx, fixtures::id(*id))?;
-                *point = Some(p);
-                p
-            };
-            click(input, p, frame.is_multiple_of(2), Modifiers::NONE);
-        }
-        Action::ClickNamedNode(name) => {
-            let p = if let Some(p) = *point {
-                p
-            } else {
-                let id = app
-                    .scene
-                    .nodes
-                    .iter()
-                    .find(|n| n.semantic.name == *name)
-                    .map(|n| n.id())
-                    .ok_or_else(|| format!("Expected named scene node {name} is absent"))?;
-                let p = node_point(app, ctx, id)?;
-                *point = Some(p);
-                p
-            };
-            click(input, p, frame == 0, Modifiers::NONE);
-        }
-        Action::ClickDerivedEdge => {
-            let p = if let Some(p) = *point {
-                p
-            } else {
-                let p = derived_point(app, ctx)?;
-                *point = Some(p);
-                p
-            };
-            click(input, p, frame == 0, Modifiers::NONE);
-        }
-        Action::ClickTarget(which) => {
-            let p = if let Some(p) = *point {
-                p
-            } else {
-                let p = target(ctx, *which)?.center();
-                *point = Some(p);
-                p
-            };
-            click(input, p, frame == 0, Modifiers::NONE);
-        }
-        Action::Pan => {
-            let p = if let Some(p) = *point {
-                p
-            } else {
-                let p = target(ctx, Target::Viewport)?.left_top() + Vec2::new(22.0, 22.0);
-                *point = Some(p);
-                p
-            };
-            match frame {
-                0 => click(input, p, true, Modifiers::NONE),
-                1 | 2 => input.events.push(Event::PointerMoved(
-                    p + Vec2::new(frame as f32 * 40.0, frame as f32 * 24.0),
-                )),
-                _ => click(input, p + Vec2::new(80.0, 48.0), false, Modifiers::NONE),
-            }
-        }
-        Action::Wheel => {
-            let viewport = target(ctx, Target::Viewport)?;
-            // An off-center anchor catches implementations that accidentally
-            // zoom about the camera center instead of the actual pointer.
-            let p = viewport.min + Vec2::new(viewport.width() * 0.70, viewport.height() * 0.38);
-            *point = Some(p);
-            *anchor = Some(
-                app.camera
-                    .screen_to_world(Point::new(p.x - viewport.min.x, p.y - viewport.min.y)),
-            );
-            input.events.push(Event::PointerMoved(p));
-            input.events.push(Event::MouseWheel {
-                unit: egui::MouseWheelUnit::Point,
-                delta: Vec2::new(0.0, 140.0),
-                modifiers: Modifiers::NONE,
-            });
-        }
-        Action::Palette(query) => match frame {
-            0 => key(input, Key::K, Modifiers::COMMAND),
-            // Native floating windows need their ordinary sizing/fade passes
-            // before their previous-frame hit geometry becomes interactive.
-            5 | 6 => click(
-                input,
-                target(ctx, Target::PaletteInput)?.center(),
-                frame == 5,
-                Modifiers::NONE,
-            ),
-            7 => key(input, Key::A, Modifiers::COMMAND),
-            8 => input.events.push(Event::Text((*query).into())),
-            10 => {
-                if app.palette_query != *query {
-                    return Err(format!(
-                        "Palette text input did not retain query: expected {query:?}, observed {:?}, focused {:?}",
-                        app.palette_query,
-                        ctx.memory(|memory| memory.focused())
-                    ));
-                }
-                key(input, Key::Enter, Modifiers::NONE);
-            }
-            _ => {}
-        },
-        Action::PaletteKeys(query, down) => match frame {
-            0 => key(input, Key::K, Modifiers::COMMAND),
-            2 => key(input, Key::A, Modifiers::COMMAND),
-            3 => input.events.push(Event::Text((*query).into())),
-            5 => {
-                for _ in 0..*down {
-                    key(input, Key::ArrowDown, Modifiers::NONE);
-                }
-            }
-            7 => key(input, Key::Enter, Modifiers::NONE),
-            _ => {}
-        },
-        Action::PrepareNamedPart(name) => match frame {
-            0 | 1 => click(
-                input,
-                target(ctx, Target::CandidateName)?.center(),
-                frame == 0,
-                Modifiers::NONE,
-            ),
-            2 => key(input, Key::A, Modifiers::COMMAND),
-            3 => input.events.push(Event::Text((*name).into())),
-            _ => click(
-                input,
-                target(ctx, Target::CandidatePrepare)?.center(),
-                frame == 4,
-                Modifiers::NONE,
-            ),
-        },
-        Action::PreparePartKeys(name) => match frame {
-            0 => key(input, Key::A, Modifiers::COMMAND),
-            1 => input.events.push(Event::Text((*name).into())),
-            3 => key(input, Key::Enter, Modifiers::NONE),
-            _ => {}
-        },
-    }
-    Ok(())
-}
-fn check(
-    check: &Check,
-    app: &StudioApp,
-    before: &Snapshot,
-    anchor: Option<Point>,
-    pointer: Option<Pos2>,
-    ctx: &egui::Context,
-) -> bool {
-    match check {
-        Check::Ready => {
-            app.ready
-                && !app.fit_pending
-                && app.frame_number >= 12
-                && app.gpu_stats.lock().is_ok_and(|s| s.draw_calls > 0)
-        }
-        Check::Selected(id) => {
-            app.selected_element() == Some(fixtures::id(*id)) && app.selection.targets.len() == 1
-        }
-        Check::MultiSelected => {
-            app.selection.targets.len() == 2
-                && app.selection.contains(fixtures::id(21))
-                && app.selection.contains(fixtures::id(22))
-        }
-        Check::SelectionEmpty => {
-            app.selection.targets.is_empty() && app.selection.primary.is_none()
-        }
-        Check::Focused(id) => {
-            app.focus == Some(fixtures::id(*id))
-                && app.world == World::System
-                && app.scene.nodes.iter().all(|n| {
-                    n.id() == fixtures::id(*id) || n.semantic.owner == Some(fixtures::id(*id))
-                })
-        }
-        Check::RootFocus => app.focus.is_none() && app.scene.nodes.len() == 12,
-        Check::Panned => {
-            Point::new(before.camera_center[0], before.camera_center[1]).distance(app.camera.center)
-                > 20.0
-                && (before.zoom - app.camera.zoom).abs() < 0.001
-        }
-        Check::ZoomAnchored => {
-            if let (Some(anchor), Some(pointer), Ok(viewport)) =
-                (anchor, pointer, target(ctx, Target::Viewport))
-            {
-                let after = app.camera.screen_to_world(Point::new(
-                    pointer.x - viewport.min.x,
-                    pointer.y - viewport.min.y,
-                ));
-                app.camera.zoom > before.zoom + 0.01 && anchor.distance(after) < 0.1
-            } else {
-                false
-            }
-        }
-        Check::World(world) => app.world == *world,
-        Check::DerivedSelected => app.selection.primary.as_ref().is_some_and(|t| match t {
-            SceneTarget::Edge(id) => app
-                .lookup
-                .edge(&app.scene, id)
-                .is_some_and(|e| e.semantic.origin == ViewOrigin::Derived),
-            _ => false,
-        }),
-        Check::ExplainOpen => {
-            app.show_explain
-                && target(ctx, Target::ExplainWindow).is_ok_and(|rect| {
-                    rect.intersects(ctx.viewport_rect())
-                        && rect.width() > 300.0
-                        && rect.height() > 150.0
-                })
-        }
-        Check::ExplainClosed => !app.show_explain,
-        Check::Dependencies => {
-            app.world == World::Graph
-                && app.dependencies.as_ref().is_some_and(|ids| {
-                    // Dependency projections may retain semantic port IDs.
-                    // Assert the visible owner context, preserving that identity.
-                    [21, 11, 31].into_iter().all(|owner| {
-                        ids.iter()
-                            .any(|id| app.lookup.endpoint_owner(*id) == fixtures::id(owner))
-                    })
-                })
-                && app.show_agent
-        }
-        Check::AgentReturned => {
-            !app.show_agent
-                && app.dependencies.is_none()
-                && app.agent_return.is_none()
-                && before.agent_return.as_ref().is_some_and(|previous| {
-                    previous.world == format!("{:?}", app.world)
-                        && previous.focus == app.focus.map(|id| id.to_string())
-                        && previous.center == [app.camera.center.x, app.camera.center.y]
-                        && (previous.zoom - app.camera.zoom).abs() < 0.001
-                        && previous.selection
-                            == app
-                                .selection
-                                .targets
-                                .iter()
-                                .map(|target| format!("{target:?}"))
-                                .collect::<Vec<_>>()
-                })
-        }
-        Check::Diff => {
-            app.comparison == ComparisonMode::Diff
-                && [DiffMark::Added, DiffMark::Removed, DiffMark::Changed]
-                    .into_iter()
-                    .all(|mark| app.scene.nodes.iter().any(|n| n.diff == mark))
-                && app.selection.revision == app.scene.revision_id
-        }
-        Check::CreateDialog => app.create_dialog && !app.palette,
-        Check::Candidate => {
-            app.candidate.as_ref().is_some_and(|c| {
-                c.id.is_none()
-                    && c.phase.is_none()
-                    && c.after.nodes.iter().any(|n| n.name == "ScenarioNestedPart")
-                    && !c
-                        .before
-                        .nodes
-                        .iter()
-                        .any(|n| n.name == "ScenarioNestedPart")
-            }) && app.comparison == ComparisonMode::Diff
-                && !app.create_dialog
-                && (app.camera.zoom - before.zoom).abs() < 0.001
-                && app.camera.center.x == before.camera_center[0]
-                && app.camera.center.y == before.camera_center[1]
-        }
-        Check::ReviewMode(mode) => {
-            app.comparison == *mode
-                && !app.palette
-                && (app.camera.zoom - before.zoom).abs() < 0.001
-                && app.camera.center.x == before.camera_center[0]
-                && app.camera.center.y == before.camera_center[1]
-                && if *mode == ComparisonMode::Current {
-                    app.selection.primary.is_none()
-                } else {
-                    app.selected_element()
-                        .and_then(|id| app.lookup.node(&app.scene, id))
-                        .is_some_and(|node| node.semantic.name == "ScenarioNestedPart")
-                }
-        }
-        Check::Pinned(pinned) => {
-            let id = fixtures::id(21);
-            commands::unavailable(
-                if *pinned {
-                    CommandId::Unpin
-                } else {
-                    CommandId::Pin
-                },
-                &app.context(),
-            )
-            .is_none()
-                && app.layout.is_pinned(id) == *pinned
-                && (!pinned
-                    || app
-                        .lookup
-                        .node(&app.scene, id)
-                        .is_some_and(|node| app.layout.pinned.get(&id) == Some(&node.bounds.min)))
-        }
-        Check::NamedSelected(name) => app
-            .selected_element()
-            .and_then(|id| app.lookup.node(&app.scene, id))
-            .is_some_and(|n| n.semantic.name == *name),
-        Check::Disabled(command) => {
-            app.palette
-                && commands::unavailable(*command, &app.context()).is_some()
-                && app
-                    .candidate
-                    .as_ref()
-                    .is_some_and(|c| c.id.is_none() && c.phase.is_none())
-                && app.pending.is_empty()
-        }
-        Check::PaletteClosed => !app.palette,
-        Check::Cancelled => {
-            app.candidate.is_none()
-                && app.comparison == ComparisonMode::Current
-                && !app
-                    .scene
-                    .nodes
-                    .iter()
-                    .any(|n| n.semantic.name == "ScenarioNestedPart")
-                && app.selection.targets.is_empty()
-                && app.selection.primary.is_none()
-                && app.selection.revision == app.scene.revision_id
-        }
-        Check::Revision(revision) => {
-            app.projection.revision_id == *revision
-                && app.scene.revision_id == *revision
-                && app.selection.revision == *revision
-                && app.selection.targets.is_empty()
-                && app.inspector.is_none()
-                && app.explanation.is_none()
-        }
-        Check::ContrastChanged => app.theme.contrast != before.high_contrast && !app.palette,
-        Check::ThemeChanged => app.theme.dark != before.dark && !app.palette,
-        Check::ReducedMotion => app.reduced_motion && !app.palette,
-    }
+    (card, port): (&str, &str),
+) -> Result<Pos2, String> {
+    let (card, port) = (find(app, card)?, find(app, port)?);
+    let shown = app
+        .lookup
+        .port(&app.scene, card, port)
+        .ok_or("the port is not shown on the card")?;
+    screen(app, ctx, shown.position)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn key_and_pointer_injection_use_real_events() {
-        let mut raw = egui::RawInput::default();
-        key(&mut raw, Key::K, Modifiers::COMMAND);
-        assert!(matches!(
-            raw.events[0],
-            Event::Key {
-                key: Key::K,
-                pressed: true,
-                ..
+fn check(check: &Check, app: &StudioApp) -> Result<(), String> {
+    let fail = |message: &str| Err(message.to_string());
+    match check {
+        Check::StartScreen => {
+            if app.project.is_some() {
+                return fail("a project is already open");
             }
-        ));
-        assert!(matches!(raw.events[1], Event::Key { pressed: false, .. }));
-        click(&mut raw, Pos2::new(42.0, 70.0), true, Modifiers::SHIFT);
-        assert!(
-            matches!(raw.events.last(),Some(Event::PointerButton {pressed:true,modifiers,..}) if modifiers.shift)
-        );
-    }
-    #[test]
-    fn scenario_covers_visual_edit_and_fixture_authority_boundary() {
-        let steps = vertical();
-        assert!(steps.iter().any(|s| matches!(s.check, Check::Candidate)));
-        assert!(
-            steps
+        }
+        Check::DialogNewProject => {
+            if !matches!(app.dialog, Some(Dialog::NewProject { .. })) {
+                return fail("the New project dialog is not open");
+            }
+        }
+        Check::ProjectName(expected) => match &app.dialog {
+            Some(Dialog::NewProject { name, .. }) if name == expected => {}
+            _ => return fail("the project name was not typed"),
+        },
+        Check::ProjectOpen => {
+            find(app, PACKAGE)?;
+        }
+        Check::CreateDialog => {
+            if !matches!(app.dialog, Some(Dialog::Create { .. })) {
+                return fail("the Create dialog is not open");
+            }
+        }
+        Check::RenameDialog => {
+            if !matches!(app.dialog, Some(Dialog::Rename { .. })) {
+                return fail("the name is not being edited");
+            }
+        }
+        Check::CheckpointDialog => {
+            if !matches!(app.dialog, Some(Dialog::Checkpoint { .. })) {
+                return fail("the Checkpoint dialog is not open");
+            }
+        }
+        Check::NoDialog => {
+            if app.dialog.is_some() {
+                return fail("a dialog is still open");
+            }
+        }
+        Check::Exists(path, kind) => {
+            let id = find(app, path)?;
+            if tree(app)?[id].kind != *kind {
+                return fail("the element has the wrong kind");
+            }
+            if app.dialog.is_some() {
+                return fail("a dialog is still open");
+            }
+        }
+        Check::Selected(path) => {
+            let id = find(app, path)?;
+            if app.selection.primary != Some(SceneTarget::Node(id))
+                && app.selection.primary != Some(SceneTarget::Container(id))
+            {
+                return fail("the card is not selected");
+            }
+        }
+        Check::NothingSelected => {
+            if app.selection.primary.is_some() {
+                return fail("something is still selected");
+            }
+        }
+        Check::Port(card, port) => {
+            let tree = tree(app)?;
+            let card = find(app, card)?;
+            if !tree[card].children().iter().any(|c| {
+                tree[*c].kind == ElementKind::Port && tree.effective_name(*c) == Some(port)
+            }) {
+                return fail("the port does not exist");
+            }
+        }
+        Check::Interface(from, to) => {
+            let tree = tree(app)?;
+            let found = tree.walk().into_iter().any(|id| {
+                let e = &tree[id];
+                e.kind == ElementKind::Interface
+                    && e.ends.len() == 2
+                    && e.ends[0].is_linked()
+                    && e.ends[1].is_linked()
+                    && e.ends[0].to_string() == *from
+                    && e.ends[1].to_string() == *to
+            });
+            if !found {
+                return fail("no linked interface connects the two ports");
+            }
+        }
+        Check::TypedBy(path, type_name) => {
+            let tree = tree(app)?;
+            let id = find(app, path)?;
+            let typed = tree[id]
+                .typed_by
+                .first()
+                .is_some_and(|r| r.is_linked() && r.last_name() == *type_name);
+            if !typed {
+                return fail("the type is not set and linked");
+            }
+        }
+        Check::Locked(path) => {
+            let id = find(app, path)?;
+            let project = app.project.as_ref().expect("checked by find");
+            if !project.state().locks().contains(&id) {
+                return fail("the element is not locked");
+            }
+        }
+        Check::LockConfirmation => {
+            if !matches!(app.dialog, Some(Dialog::Confirm { .. })) {
+                return fail("no confirmation was asked");
+            }
+        }
+        Check::Checkpoints(count) => {
+            let project = app.project.as_ref().ok_or("no project is open")?;
+            let found = project.checkpoints().map_err(|e| e.to_string())?.len();
+            if found < *count {
+                return Err(format!("{found} checkpoint(s), expected {count}"));
+            }
+        }
+        Check::Comparison => {
+            if app.comparison.is_none() {
+                return fail("no comparison is shown");
+            }
+        }
+        Check::MoveDialog => {
+            if !matches!(app.dialog, Some(Dialog::MoveTo { .. })) {
+                return fail("the Move to dialog is not open");
+            }
+        }
+        Check::ProblemShown(name) => {
+            let shown = app
+                .scene
+                .nodes
                 .iter()
-                .any(|s| matches!(s.check, Check::Disabled(CommandId::Validate)))
-        );
-        assert!(
-            steps
-                .iter()
-                .any(|s| matches!(s.check, Check::Disabled(CommandId::Commit)))
-        );
-        assert!(steps.iter().any(|s| matches!(s.check, Check::Cancelled)));
+                .any(|n| n.semantic.name == *name && n.semantic.problems > 0);
+            if !shown {
+                return fail("no card with that name shows a problem");
+            }
+            if app.dialog.is_some() {
+                return fail("a dialog is still open");
+            }
+        }
+        Check::NoProblems => {
+            let project = app.project.as_ref().ok_or("no project is open")?;
+            if let Some(problem) = project.state().diagnostics().first() {
+                return Err(format!("a problem remains: {}", problem.message));
+            }
+        }
     }
+    Ok(())
 }

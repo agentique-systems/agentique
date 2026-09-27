@@ -1,6 +1,7 @@
-//! CPU-only paired visibility characterization. No semantic or GPU latency claim.
+//! CPU-only paired visibility measurement: culling with target lists versus
+//! checked borrowing. Says nothing about GPU or frame latency.
 use agq_studio_scene::{
-    Rect, SceneLookup, SceneOptions, SemanticScene, SpatialIndex, VisibleScene, fixtures,
+    LayoutKind, Rect, Scene, SceneLookup, SceneOptions, SpatialIndex, VisibleScene, fixtures,
 };
 use std::{
     collections::hash_map::DefaultHasher,
@@ -40,7 +41,7 @@ impl Samples {
 }
 
 fn measure<'scene>(
-    scene: &'scene SemanticScene,
+    scene: &'scene Scene,
     spatial: &SpatialIndex,
     lookup: &SceneLookup,
     bounds: Rect,
@@ -74,11 +75,11 @@ fn measure<'scene>(
 
 fn main() {
     for count in [1_000, 10_000] {
-        let projection = fixtures::stress(count, count * 2);
-        let scene = SemanticScene::from_projection(
-            &projection,
+        let fixture = fixtures::stress(count, count * 2);
+        let scene = Scene::build(
+            &fixture,
             &SceneOptions {
-                hierarchy: false,
+                layout: LayoutKind::Graph,
                 ..Default::default()
             },
             None,
@@ -128,11 +129,11 @@ fn main() {
                         .eq(new.0.nodes.iter().map(|n| n.id()))
                 );
                 assert!(
-                    old.0
+                    old.0.ports.iter().map(|p| (p.owner, p.id)).eq(new
+                        .0
                         .ports
                         .iter()
-                        .map(|p| p.id)
-                        .eq(new.0.ports.iter().map(|p| p.id))
+                        .map(|p| (p.owner, p.id)))
                 );
                 assert!(
                     old.0.edges.iter().map(|e| &e.semantic.id).eq(new
@@ -156,7 +157,7 @@ fn main() {
                         "nodes":count,"edges":scene.edges.len(),"trace":trace,"viewport_fraction":fraction,
                         "implementation":implementation,"spatial_build_ms":spatial_build_ms,
                         "measurements":samples.report(),
-                        "scope":"CPU spatial culling + checked borrowed lookup + presentation identity hashing; excludes final vector destruction, GPU/frame/semantic timing",
+                        "scope":"CPU spatial culling, checked borrowed lookup and identity hashing; excludes GPU and frame timing",
                     })
                 );
             }

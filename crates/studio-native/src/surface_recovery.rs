@@ -9,13 +9,13 @@ use std::time::{Duration, Instant};
 /// failure is retained independently of the status text and retried at most every
 /// eight seconds, so a failed save cannot cause a write loop on each frame.
 #[derive(Default)]
-pub(crate) struct PresentationCheckpoint {
+pub(crate) struct SavedLayout {
     fault: Option<String>,
     last_attempt: Option<Instant>,
     result: Option<Result<(), String>>,
 }
 
-impl PresentationCheckpoint {
+impl SavedLayout {
     pub fn needs_attempt(&mut self, message: &str) -> bool {
         if self.fault.as_deref() != Some(message) {
             *self = Self {
@@ -41,12 +41,12 @@ impl PresentationCheckpoint {
 
     pub fn status(&self, message: &str) -> String {
         match &self.result {
-            Some(Ok(())) => format!("{message} Presentation state was saved."),
+            Some(Ok(())) => format!("{message} The layout was saved."),
             Some(Err(error)) => format!(
-                "{message} Presentation state was not saved: {error}. Restart restores the last successful presentation checkpoint."
+                "{message} The layout was not saved: {error}. Restart restores the last saved layout."
             ),
             None => {
-                format!("{message} Presentation save is waiting for the current view to finish.")
+                format!("{message} Saving the layout is waiting.")
             }
         }
     }
@@ -55,7 +55,7 @@ impl PresentationCheckpoint {
 pub(crate) fn checkpoint_title(context: &egui::Context, device: bool, failed: bool) {
     // The OS title remains readable even when the GPU cannot draw the notice.
     let title = if failed {
-        "Agentique · Graphics unavailable — presentation not saved; restart required"
+        "Agentique · Graphics unavailable — layout not saved; restart required"
     } else if device {
         "Agentique · Graphics device lost — restart required"
     } else {
@@ -160,7 +160,7 @@ impl Recovery {
         response.action
     }
 
-    fn device_lost(
+    pub(crate) fn device_lost(
         &self,
         reason: wgpu::DeviceLostReason,
         detail: &str,
@@ -170,7 +170,7 @@ impl Recovery {
             return; // Normal device teardown is not a recovery incident.
         }
         let message = format!(
-            "Graphics device lost ({reason:?}): {detail}. Restart Native Studio to recreate the renderer; committed model history remains durable."
+            "Graphics device lost ({reason:?}): {detail}. Restart the Studio to recreate the renderer; the saved model is not affected."
         );
         {
             let mut state = self.0.lock().expect("surface recovery state");
@@ -263,10 +263,6 @@ impl egui_wgpu::CallbackTrait for Heartbeat {
         self.recovery.acquired(&self.context);
     }
 }
-
-#[cfg(test)]
-#[path = "surface_recovery_host_tests.rs"]
-mod host_tests;
 
 #[cfg(test)]
 mod tests {

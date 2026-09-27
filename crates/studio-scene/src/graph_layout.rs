@@ -2,7 +2,7 @@ use crate::{
     LayoutEngine, LayoutInput, LayoutMemory, LayoutResult, PinError, Point, Rect, Size,
     spatial::RectIndex,
 };
-use agq_kernel::ElementId;
+use agq_language::ElementId;
 use std::collections::{BTreeMap, BTreeSet};
 
 /// Deterministic layered topology layout. Directed cycles are compact components;

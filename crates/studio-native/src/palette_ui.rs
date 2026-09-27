@@ -4,7 +4,7 @@ use crate::{
     commands::{self, CommandId},
     theme::{self, Theme},
 };
-use agq_kernel::ElementId;
+use agq_studio_scene::ElementId;
 use agq_studio_scene::SceneTarget;
 use eframe::egui::{self, Align2, Key, Modifiers, Sense, Vec2};
 

@@ -1,39 +1,34 @@
-use agq_kernel::ElementId;
-use agq_modeling_workspace::ProjectRevisionId;
+mod common;
+use agq_studio_scene::fixtures::{at, card, id, port};
 use agq_studio_scene::*;
+use common::{flat, grid, grid_change, options};
+use std::collections::BTreeSet;
 
-fn architecture() -> SemanticScene {
-    SemanticScene::from_projection(&fixtures::architecture(), &SceneOptions::default(), None)
-        .unwrap()
+fn architecture() -> Scene {
+    Scene::build(&grid(), &SceneOptions::default(), None).unwrap()
 }
 
 #[test]
-fn revision_bindings_and_identity_are_enforced() {
-    let mut projection = fixtures::architecture();
-    projection.nodes[0].revision_id = ProjectRevisionId::from_u128(9);
+fn duplicate_identities_are_rejected() {
+    let mut input = grid();
+    input.nodes.push(input.nodes[0].clone());
     assert!(matches!(
-        SemanticScene::from_projection(&projection, &SceneOptions::default(), None),
-        Err(SceneError::MixedRevisions)
-    ));
-    let mut projection = fixtures::architecture();
-    projection.nodes.push(projection.nodes[0].clone());
-    assert!(matches!(
-        SemanticScene::from_projection(&projection, &SceneOptions::default(), None),
+        Scene::build(&input, &SceneOptions::default(), None),
         Err(SceneError::DuplicateElement(_))
     ));
-    let mut projection = fixtures::architecture();
-    projection.edges.push(projection.edges[0].clone());
+    let mut input = grid();
+    input.edges.push(input.edges[0].clone());
     assert!(matches!(
-        SemanticScene::from_projection(&projection, &SceneOptions::default(), None),
+        Scene::build(&input, &SceneOptions::default(), None),
         Err(SceneError::DuplicateEdge(_))
     ));
 }
 #[test]
 fn ownership_cycles_are_rejected_without_recursive_overflow() {
-    let mut projection = fixtures::architecture();
-    projection.nodes[0].owner = Some(fixtures::id(11));
+    let mut input = grid();
+    input.nodes[0].owner = Some(id(11));
     assert!(matches!(
-        SemanticScene::from_projection(&projection, &SceneOptions::default(), None),
+        Scene::build(&input, &SceneOptions::default(), None),
         Err(SceneError::OwnershipCycle(_))
     ));
 }
@@ -59,21 +54,59 @@ fn hierarchy_contains_children_and_siblings_do_not_overlap() {
     }
 }
 #[test]
+fn the_url_shortener_nests_parts_and_shows_ports_through_types() {
+    let input = fixtures::architecture();
+    let named = |name: &str| input.nodes.iter().find(|n| n.name == name).unwrap();
+    let service = named("UrlShortenerService");
+    let api = named("api");
+    assert_eq!(api.owner, Some(service.id));
+    assert_eq!(api.detail, ": HttpApi");
+    // `api : HttpApi` shows HttpApi's ports with their real identities.
+    let definition = named("HttpApi");
+    let ids =
+        |ports: &[agq_studio_scene::InputPort]| ports.iter().map(|p| p.id).collect::<Vec<_>>();
+    assert_eq!(ids(&api.ports), ids(&definition.ports));
+    // On the usage they are marked as defined in HttpApi; on HttpApi they are its own.
+    assert!(
+        api.ports
+            .iter()
+            .all(|p| p.defined_in == Some(definition.id))
+    );
+    assert!(definition.ports.iter().all(|p| p.defined_in.is_none()));
+    assert!(api.ports.iter().any(|p| p.name == "storage"));
+    let scene = Scene::build(&input, &SceneOptions::default(), None).unwrap();
+    let storage = scene
+        .edges
+        .iter()
+        .find(|e| e.semantic.kind == EdgeKind::Interface && e.semantic.label.contains("storage"))
+        .unwrap();
+    assert_eq!(storage.semantic.source.node, api.id);
+    let source = scene
+        .ports
+        .iter()
+        .find(|p| p.owner == api.id && Some(p.id) == storage.semantic.source.port)
+        .unwrap();
+    assert_eq!(storage.points[0], source.position);
+    assert!(
+        scene
+            .nodes
+            .iter()
+            .all(|n| n.semantic.problems == 0 && !n.semantic.lock.locked())
+    );
+}
+#[test]
 fn rebuild_is_deterministic_and_local_edits_keep_sibling_positions() {
     let before = architecture();
-    let projection = fixtures::architecture();
-    let rebuilt =
-        SemanticScene::from_projection(&projection, &SceneOptions::default(), None).unwrap();
+    let input = grid();
+    let rebuilt = Scene::build(&input, &SceneOptions::default(), None).unwrap();
     assert_eq!(before.memory().bounds, rebuilt.memory().bounds);
-    let mut edited = projection;
+    let mut edited = input;
     let mut added = edited.nodes[6].clone();
-    added.id = ElementId::from_u128(7);
+    added.id = id(7);
     added.name = "New local component".into();
-    added.features.clear();
+    added.ports.clear();
     edited.nodes.push(added);
-    let after =
-        SemanticScene::from_projection(&edited, &SceneOptions::default(), Some(before.memory()))
-            .unwrap();
+    let after = Scene::build(&edited, &SceneOptions::default(), Some(before.memory())).unwrap();
     for n in &before.nodes {
         assert_eq!(
             after.node(n.id()).unwrap().bounds.min,
@@ -84,23 +117,47 @@ fn rebuild_is_deterministic_and_local_edits_keep_sibling_positions() {
     }
 }
 #[test]
-fn ports_have_semantic_identity_and_edges_attach_exactly() {
+fn ports_have_identity_and_edges_attach_exactly() {
     let scene = architecture();
     assert_eq!(scene.ports.len(), 18);
-    let port = scene
-        .ports
-        .iter()
-        .find(|p| p.id == fixtures::id(1102))
-        .unwrap();
+    let port = scene.ports.iter().find(|p| p.id == id(1102)).unwrap();
+    assert_eq!(port.owner, id(11));
     let edge = scene
         .edges
         .iter()
-        .find(|e| e.semantic.source == port.id)
+        .find(|e| e.semantic.source == at(11, 1102))
         .unwrap();
     assert_eq!(edge.points[0], port.position);
     assert_eq!(port.direction, PortDirection::Unspecified);
     let hit = SpatialIndex::build(&scene).hit_test(port.position, 3.0);
-    assert_eq!(hit, Some(SceneTarget::Port(port.id)));
+    assert_eq!(hit, Some(SceneTarget::Port(port.owner, port.id)));
+}
+#[test]
+fn the_same_port_on_two_cards_is_two_targets() {
+    let mut input = grid();
+    // Card 12 shows port 1102 as well, as a usage shows its type's ports.
+    input.nodes[4].ports.push(port(1102, "request"));
+    let scene = Scene::build(&input, &SceneOptions::default(), None).unwrap();
+    let shown: Vec<_> = scene.ports.iter().filter(|p| p.id == id(1102)).collect();
+    assert_eq!(shown.len(), 2);
+    let index = SpatialIndex::build(&scene);
+    for port in shown {
+        assert_eq!(
+            index.hit_test(port.position, 3.0),
+            Some(SceneTarget::Port(port.owner, port.id))
+        );
+    }
+    let edge = scene
+        .edges
+        .iter()
+        .find(|e| e.semantic.source == at(11, 1102))
+        .unwrap();
+    let on_11 = scene
+        .ports
+        .iter()
+        .find(|p| p.owner == id(11) && p.id == id(1102))
+        .unwrap();
+    assert_eq!(edge.points[0], on_11.position);
 }
 #[test]
 fn routes_are_orthogonal_and_report_obstructions() {
@@ -156,7 +213,7 @@ fn lod_hysteresis_resists_boundary_noise() {
 fn culling_and_marquee_use_geometry_including_crossing_edges() {
     let scene = architecture();
     let index = SpatialIndex::build(&scene);
-    let n = scene.node(fixtures::id(21)).unwrap();
+    let n = scene.node(id(21)).unwrap();
     assert_eq!(
         index.hit_test(n.bounds.center(), 2.0),
         Some(SceneTarget::Node(n.id()))
@@ -185,68 +242,74 @@ fn culling_and_marquee_use_geometry_including_crossing_edges() {
 }
 #[test]
 fn collapsed_and_focused_views_retain_original_ids() {
-    let projection = fixtures::architecture();
+    let input = grid();
     let mut options = SceneOptions::default();
-    options.collapsed.insert(fixtures::id(2));
-    let scene = SemanticScene::from_projection(&projection, &options, None).unwrap();
-    assert!(scene.node(fixtures::id(21)).is_none());
-    assert!(scene.node(fixtures::id(2)).unwrap().collapsed);
+    options.collapsed.insert(id(2));
+    let scene = Scene::build(&input, &options, None).unwrap();
+    assert!(scene.node(id(21)).is_none());
+    assert!(scene.node(id(2)).unwrap().collapsed);
     options.collapsed.clear();
-    options.focus = Some(fixtures::id(2));
-    let scene = SemanticScene::from_projection(&projection, &options, None).unwrap();
+    options.focus = Some(id(2));
+    let scene = Scene::build(&input, &options, None).unwrap();
     assert_eq!(scene.nodes.len(), 4);
     assert!(
         scene
             .nodes
             .iter()
-            .all(|n| n.id() == fixtures::id(2) || n.semantic.owner == Some(fixtures::id(2)))
+            .all(|n| n.id() == id(2) || n.semantic.owner == Some(id(2)))
     );
 }
 #[test]
-fn collapsed_subsystem_preserves_external_port_connections_without_inventing_ports() {
-    let projection = fixtures::architecture();
+fn collapsed_container_shows_external_port_connections_on_its_boundary() {
+    let input = grid();
     let mut options = SceneOptions::default();
-    options.collapsed.insert(fixtures::id(2));
-    let scene = SemanticScene::from_projection(&projection, &options, None).unwrap();
-    let proxy = scene
-        .ports
-        .iter()
-        .find(|port| port.id == fixtures::id(2101))
-        .unwrap();
-    assert_eq!(proxy.owner, fixtures::id(2));
-    assert_eq!(proxy.proxy_for_owner, Some(fixtures::id(21)));
-    assert_eq!(proxy.revision_id, projection.revision_id);
+    options.collapsed.insert(id(2));
+    let scene = Scene::build(&input, &options, None).unwrap();
+    let proxy = scene.ports.iter().find(|port| port.id == id(2101)).unwrap();
+    assert_eq!(proxy.owner, id(2));
+    assert_eq!(proxy.proxy_for_owner, Some(id(21)));
     assert_eq!(proxy.direction, PortDirection::Unspecified);
-    assert!(proxy.name.contains("ModelRepository"));
+    assert!(proxy.name.contains("Repository"));
     let connection = scene
         .edges
         .iter()
-        .find(|edge| edge.semantic.target == proxy.id)
+        .find(|edge| edge.semantic.target == at(21, 2101))
         .unwrap();
     assert_eq!(connection.points.last(), Some(&proxy.position));
-    assert_eq!(connection.semantic, projection.edges[0]);
-    assert_eq!(scene.edges.iter().filter(|edge| edge.semantic.family == agq_modeling_view::RelationshipFamily::Connection).count(), 6);
+    assert_eq!(connection.semantic, input.edges[0]);
+    assert_eq!(
+        scene
+            .edges
+            .iter()
+            .filter(|edge| edge.semantic.kind == EdgeKind::Connection)
+            .count(),
+        6
+    );
 }
 
 #[test]
-fn candidate_diff_does_not_union_old_absolute_container_positions() {
-    let (_, before_projection) = fixtures::revision_diff();
-    let before =
-        SemanticScene::from_projection(&before_projection, &SceneOptions::default(), None).unwrap();
-    let mut candidate = before_projection.clone();
-    let mut added = candidate
+fn diff_does_not_union_old_absolute_container_positions() {
+    let (_, changed) = grid_change();
+    let before = Scene::build(&changed, &SceneOptions::default(), None).unwrap();
+    let mut edited = changed.clone();
+    let mut added = edited
         .nodes
         .iter()
-        .find(|node| node.id == fixtures::id(24))
+        .find(|node| node.id == id(24))
         .unwrap()
         .clone();
-    added.id = ElementId::from_u128(17);
-    added.name = "ScenarioNestedPart".into();
-    candidate.nodes.push(added);
-    let mut after =
-        SemanticScene::from_projection(&candidate, &SceneOptions::default(), Some(before.memory()))
-            .unwrap();
-    after.apply_diff(&before);
+    added.id = id(17);
+    added.name = "NestedPart".into();
+    added.ports.clear();
+    edited.nodes.push(added);
+    let after = Scene::comparison(
+        &changed,
+        &edited,
+        &BTreeSet::new(),
+        &SceneOptions::default(),
+        Some(before.memory()),
+    )
+    .unwrap();
     for node in &after.nodes {
         if let Some(owner) = node.semantic.owner {
             assert!(
@@ -271,61 +334,47 @@ fn candidate_diff_does_not_union_old_absolute_container_positions() {
 }
 
 #[test]
-fn moved_diff_container_keeps_extent_in_current_coordinate_frame() {
+fn moved_diff_container_keeps_its_current_position() {
     let before = architecture();
     let mut memory = before.memory().clone();
     for node in &before.nodes {
-        if node.id() == fixtures::id(3) || node.semantic.owner == Some(fixtures::id(3)) {
+        if node.id() == id(3) || node.semantic.owner == Some(id(3)) {
             memory
                 .bounds
                 .insert(node.id(), node.bounds.translate(Point::new(1000.0, 0.0)));
         }
     }
-    let mut after = SemanticScene::from_projection(
-        &fixtures::architecture(),
+    let current = Scene::build(&grid(), &SceneOptions::default(), Some(&memory)).unwrap();
+    let expected = current.node(id(3)).unwrap().bounds;
+    let compared = Scene::comparison(
+        &grid(),
+        &grid(),
+        &BTreeSet::new(),
         &SceneOptions::default(),
         Some(&memory),
     )
     .unwrap();
-    let expected = after.node(fixtures::id(3)).unwrap().bounds;
-    after.apply_diff(&before);
-    assert_eq!(after.node(fixtures::id(3)).unwrap().bounds, expected);
-    assert_eq!(
-        expected.width(),
-        before.node(fixtures::id(3)).unwrap().bounds.width()
-    );
+    assert_eq!(compared.node(id(3)).unwrap().bounds, expected);
+    assert!(compared.nodes.iter().all(|n| n.diff == DiffMark::Unchanged));
 }
 
 #[test]
 fn many_ports_have_readable_separation_in_both_layouts() {
-    let mut projection = fixtures::architecture();
-    let node = projection
+    let mut input = grid();
+    let node = input
         .nodes
         .iter_mut()
-        .find(|node| node.id == fixtures::id(21))
+        .find(|node| node.id == id(21))
         .unwrap();
-    node.features = (0..24)
-        .map(|index| agq_modeling_view::FeatureSummary {
-            id: fixtures::id(80_000 + index),
-            name: format!("pressure_{index}_μPa"),
-            semantic_kind: "PortUsage".into(),
-        })
+    node.ports = (0..24)
+        .map(|index| port(80_000 + index, &format!("pressure_{index}_μPa")))
         .collect();
-    node.counts.ports = 24;
-    for hierarchy in [true, false] {
-        let scene = SemanticScene::from_projection(
-            &projection,
-            &SceneOptions {
-                hierarchy,
-                ..Default::default()
-            },
-            None,
-        )
-        .unwrap();
+    for layout in [LayoutKind::Hierarchy, LayoutKind::Graph] {
+        let scene = Scene::build(&input, &options(layout), None).unwrap();
         let mut left: Vec<_> = scene
             .ports
             .iter()
-            .filter(|port| port.owner == fixtures::id(21) && port.side == PortSide::Left)
+            .filter(|port| port.owner == id(21) && port.side == PortSide::Left)
             .collect();
         left.sort_by(|a, b| a.position.y.total_cmp(&b.position.y));
         assert_eq!(left.len(), 12);
@@ -336,87 +385,58 @@ fn many_ports_have_readable_separation_in_both_layouts() {
     }
 }
 #[test]
-fn diff_retains_ghost_revision_and_does_not_mark_unchanged_revision_ids() {
-    let (a, b) = fixtures::revision_diff();
-    let before = SemanticScene::from_projection(&a, &SceneOptions::default(), None).unwrap();
-    let mut after =
-        SemanticScene::from_projection(&b, &SceneOptions::default(), Some(before.memory()))
-            .unwrap();
-    after.apply_diff(&before);
-    assert_eq!(
-        after.node(fixtures::id(21)).unwrap().diff,
-        DiffMark::Unchanged
-    );
-    assert_eq!(
-        after.node(fixtures::id(22)).unwrap().diff,
-        DiffMark::Changed
-    );
-    assert_eq!(after.node(fixtures::id(24)).unwrap().diff, DiffMark::Added);
-    let removed = after.node(fixtures::id(13)).unwrap();
+fn diff_marks_changes_and_keeps_removed_ghosts() {
+    let (a, b) = grid_change();
+    let before = Scene::build(&a, &SceneOptions::default(), None).unwrap();
+    let compare = |changed: BTreeSet<_>| {
+        Scene::comparison(
+            &a,
+            &b,
+            &changed,
+            &SceneOptions::default(),
+            Some(before.memory()),
+        )
+        .unwrap()
+    };
+    let after = compare(BTreeSet::new());
+    assert_eq!(after.node(id(21)).unwrap().diff, DiffMark::Unchanged);
+    assert_eq!(after.node(id(22)).unwrap().diff, DiffMark::Changed);
+    assert_eq!(after.node(id(24)).unwrap().diff, DiffMark::Added);
+    let removed = after.node(id(13)).unwrap();
     assert_eq!(removed.diff, DiffMark::Removed);
-    assert_eq!(removed.semantic.revision_id, before.revision_id);
+    assert_eq!(removed.semantic.name, "Inspector");
+    let ghost = after
+        .edges
+        .iter()
+        .find(|e| e.semantic.source == at(13, 1302))
+        .unwrap();
+    assert_eq!(ghost.diff, DiffMark::Removed);
+    // Elements known to have changed in ways the scene does not show are marked.
+    let again = compare(BTreeSet::from([id(21)]));
+    assert_eq!(again.node(id(21)).unwrap().diff, DiffMark::Changed);
 }
 #[test]
-fn graph_layout_keeps_semantic_owners_and_handles_cycles() {
-    let projection = fixtures::architecture();
-    let options = SceneOptions {
-        hierarchy: false,
-        ..Default::default()
-    };
-    let scene = SemanticScene::from_projection(&projection, &options, None).unwrap();
+fn graph_layout_keeps_owners_and_handles_cycles() {
+    let scene = Scene::build(&grid(), &options(LayoutKind::Graph), None).unwrap();
     assert!(scene.containers.is_empty());
-    assert_eq!(
-        scene.node(fixtures::id(21)).unwrap().semantic.owner,
-        Some(fixtures::id(2))
-    );
-    let cycle = fixtures::stress(100, 200);
-    let scene = SemanticScene::from_projection(&cycle, &options, None).unwrap();
+    assert_eq!(scene.node(id(21)).unwrap().semantic.owner, Some(id(2)));
+    let scene = Scene::build(&flat(100, 200), &options(LayoutKind::Graph), None).unwrap();
     assert_eq!(scene.nodes.len(), 100);
     assert!(scene.bounds().width() < 4000.0);
     assert!(scene.bounds().height() < 4000.0);
 }
-#[test]
-fn unknown_categories_are_never_guessed_by_substring() {
-    assert_eq!(
-        NodeCategory::from_semantic_kind("MisleadingPartDefinitionWrapper"),
-        NodeCategory::Unknown
-    );
-    // Agent is a presentation participant category, not a pinned SysML metaclass.
-    assert_eq!(
-        NodeCategory::from_semantic_kind("Agent"),
-        NodeCategory::Unknown
-    );
-    assert_eq!(
-        NodeCategory::from_semantic_kind("ReferenceUsage"),
-        NodeCategory::Reference
-    );
-    assert_eq!(
-        NodeCategory::from_semantic_kind("ConstraintUsage"),
-        NodeCategory::Constraint
-    );
-    assert_eq!(
-        NodeCategory::from_semantic_kind("MisleadingConstraintUsage"),
-        NodeCategory::Unknown
-    );
-    assert_ne!(
-        NodeCategory::from_semantic_kind("ConstraintUsage"),
-        NodeCategory::Requirement,
-        "a modeled constraint is not an evaluated or satisfied requirement"
-    );
-}
 
 #[test]
 fn parallel_relationships_have_distinct_routes() {
-    let mut projection = fixtures::architecture();
-    let mut parallel = projection.edges[0].clone();
+    let mut input = grid();
+    let mut parallel = input.edges[0].clone();
     parallel.id = "parallel".into();
-    projection.edges.push(parallel);
-    let scene =
-        SemanticScene::from_projection(&projection, &SceneOptions::default(), None).unwrap();
+    input.edges.push(parallel);
+    let scene = Scene::build(&input, &SceneOptions::default(), None).unwrap();
     let a = scene
         .edges
         .iter()
-        .find(|e| e.semantic.id == projection.edges[0].id)
+        .find(|e| e.semantic.id == input.edges[0].id)
         .unwrap();
     let b = scene
         .edges
@@ -428,42 +448,39 @@ fn parallel_relationships_have_distinct_routes() {
 
 #[test]
 fn twenty_parallel_routes_select_the_nearest_exact_relationship_across_zoom_and_order() {
-    let mut projection = fixtures::stress(2, 1);
-    let original = projection.edges[0].clone();
-    projection.edges = (0..20)
+    let mut input = flat(2, 1);
+    let original = input.edges[0].clone();
+    input.edges = (0..20)
         .map(|index| {
             let mut edge = original.clone();
             edge.id = format!("parallel-{index:02}");
-            edge.relationship_id = Some(fixtures::id(1000 + index));
+            edge.element = Some(id(1000 + index));
             edge
         })
         .collect();
-    let options = SceneOptions {
-        hierarchy: false,
-        ..Default::default()
-    };
-    let scene = SemanticScene::from_projection(&projection, &options, None).unwrap();
+    let options = options(LayoutKind::Graph);
+    let scene = Scene::build(&input, &options, None).unwrap();
     let index = SpatialIndex::build(&scene);
     assert_eq!(scene.edges.len(), 20);
     assert!(
         scene.ports.is_empty(),
-        "drawing anchors must not invent modeled ports"
+        "drawing anchors must not invent ports"
     );
     for edge in &scene.edges {
         assert_eq!(
             &edge.semantic,
-            projection
+            input
                 .edges
                 .iter()
-                .find(|input| input.id == edge.semantic.id)
+                .find(|e| e.id == edge.semantic.id)
                 .unwrap()
         );
         let start = edge.points[0];
         let stub = edge.points[1];
         assert!((start.y - stub.y).abs() < 0.001 && start.distance(stub) >= 12.0);
         let direction = (stub.x - start.x).signum();
-        // Dense node-side attachments are about four world units apart. A
-        // normal pointer radius contains multiple routes; identity ordering
+        // Dense card-side attachments are about four world units apart. A
+        // normal pointer radius contains several routes; identity ordering
         // must not steal a click from the closer visible line.
         for zoom in [0.45, 0.75, 1.0, 2.0, 4.0] {
             for offset in [-0.7, 0.0, 0.7] {
@@ -476,9 +493,9 @@ fn twenty_parallel_routes_select_the_nearest_exact_relationship_across_zoom_and_
             }
         }
     }
-    let mut reordered = projection.clone();
+    let mut reordered = input.clone();
     reordered.edges.reverse();
-    let reordered = SemanticScene::from_projection(&reordered, &options, None).unwrap();
+    let reordered = Scene::build(&reordered, &options, None).unwrap();
     let reordered_index = SpatialIndex::build(&reordered);
     for edge in &scene.edges {
         let other = reordered
@@ -505,23 +522,45 @@ fn twenty_parallel_routes_select_the_nearest_exact_relationship_across_zoom_and_
 }
 
 #[test]
-fn satisfaction_and_verification_have_individually_selectable_target_lanes() {
-    let projection = fixtures::requirements();
-    let options = SceneOptions {
-        hierarchy: false,
+fn several_satisfy_edges_into_one_requirement_are_individually_selectable() {
+    let mut input = SceneInput {
+        generation: 1,
         ..Default::default()
     };
-    let scene = SemanticScene::from_projection(&projection, &options, None).unwrap();
+    for requirement in [101, 102, 103] {
+        input.nodes.push(fixtures::node(
+            requirement,
+            &format!("Requirement {requirement}"),
+            NodeCategory::Requirement,
+            None,
+        ));
+        for part in [requirement * 10, requirement * 10 + 1] {
+            input.nodes.push(fixtures::node(
+                part,
+                &format!("Part {part}"),
+                NodeCategory::Part,
+                None,
+            ));
+            input.edges.push(fixtures::edge(
+                &format!("satisfy-{part}"),
+                EdgeKind::Satisfy,
+                card(part),
+                card(requirement),
+            ));
+        }
+    }
+    let options = options(LayoutKind::Requirements);
+    let scene = Scene::build(&input, &options, None).unwrap();
     let index = SpatialIndex::build(&scene);
     assert!(
         scene.ports.is_empty(),
-        "drawing anchors must not invent semantic ports"
+        "drawing anchors must not invent ports"
     );
     for requirement in [101, 102, 103] {
         let edges: Vec<_> = scene
             .edges
             .iter()
-            .filter(|edge| edge.semantic.target == fixtures::id(requirement))
+            .filter(|edge| edge.semantic.target == card(requirement))
             .collect();
         assert_eq!(edges.len(), 2);
         assert!(
@@ -531,7 +570,7 @@ fn satisfaction_and_verification_have_individually_selectable_target_lanes() {
                 .unwrap()
                 .distance(*edges[1].points.last().unwrap())
                 >= 12.0,
-            "satisfies and verifies need distinct arrowheads"
+            "two edges into one card need distinct arrowheads"
         );
         for edge in edges {
             let end = *edge.points.last().unwrap();
@@ -550,9 +589,9 @@ fn satisfaction_and_verification_have_individually_selectable_target_lanes() {
             assert_eq!(edge.quality, RouteQuality::Clear);
         }
     }
-    let mut reordered = projection;
+    let mut reordered = input;
     reordered.edges.reverse();
-    let reordered = SemanticScene::from_projection(&reordered, &options, None).unwrap();
+    let reordered = Scene::build(&reordered, &options, None).unwrap();
     for edge in &scene.edges {
         assert_eq!(
             edge.points,
@@ -567,74 +606,58 @@ fn satisfaction_and_verification_have_individually_selectable_target_lanes() {
 }
 
 #[test]
-fn parallel_node_links_have_separate_endpoints_but_modeled_ports_remain_exact() {
-    let mut projection = fixtures::stress(2, 1);
+fn parallel_card_links_have_separate_endpoints_but_ports_remain_exact() {
+    let mut input = flat(2, 1);
     for index in 0..3 {
-        let mut edge = projection.edges[0].clone();
+        let mut edge = input.edges[0].clone();
         edge.id = format!("independent-{index}");
-        projection.edges.push(edge);
+        input.edges.push(edge);
     }
-    let scene = SemanticScene::from_projection(
-        &projection,
-        &SceneOptions {
-            hierarchy: false,
-            ..Default::default()
-        },
-        None,
-    )
-    .unwrap();
+    let scene = Scene::build(&input, &options(LayoutKind::Graph), None).unwrap();
     for (index, edge) in scene.edges.iter().enumerate() {
         for other in &scene.edges[index + 1..] {
             assert_ne!(edge.points.first(), other.points.first());
             assert_ne!(edge.points.last(), other.points.last());
         }
     }
-    let mut projection = fixtures::architecture();
-    let mut extra = projection.edges[0].clone();
-    extra.id = "same-modeled-port".into();
-    projection.edges.push(extra);
-    let scene =
-        SemanticScene::from_projection(&projection, &SceneOptions::default(), None).unwrap();
+    let mut input = grid();
+    let mut extra = input.edges[0].clone();
+    extra.id = "same-port".into();
+    input.edges.push(extra);
+    let scene = Scene::build(&input, &SceneOptions::default(), None).unwrap();
+    let position = |end: InputEnd| {
+        scene
+            .ports
+            .iter()
+            .find(|port| port.owner == end.node && Some(port.id) == end.port)
+            .unwrap()
+            .position
+    };
+    let mut checked = 0;
     for edge in scene
         .edges
         .iter()
-        .filter(|edge| edge.semantic.source == fixtures::id(1102))
+        .filter(|edge| edge.semantic.source == at(11, 1102))
     {
-        let source = scene
-            .ports
-            .iter()
-            .find(|port| port.id == edge.semantic.source)
-            .unwrap();
-        let target = scene
-            .ports
-            .iter()
-            .find(|port| port.id == edge.semantic.target)
-            .unwrap();
-        assert_eq!(edge.points.first(), Some(&source.position));
-        assert_eq!(edge.points.last(), Some(&target.position));
+        assert_eq!(edge.points.first(), Some(&position(edge.semantic.source)));
+        assert_eq!(edge.points.last(), Some(&position(edge.semantic.target)));
+        checked += 1;
     }
+    assert_eq!(checked, 2);
 }
 
 #[test]
 fn separated_attachment_stubs_stay_inside_dense_default_layout_gutters() {
-    let projection = fixtures::stress(80, 160);
-    for hierarchy in [true, false] {
-        let scene = SemanticScene::from_projection(
-            &projection,
-            &SceneOptions {
-                hierarchy,
-                ..Default::default()
-            },
-            None,
-        )
-        .unwrap();
+    let input = flat(80, 160);
+    for layout in [LayoutKind::Hierarchy, LayoutKind::Graph] {
+        let scene = Scene::build(&input, &options(layout), None).unwrap();
         assert_eq!(scene.edges.len(), 160);
         assert!(
             scene
                 .edges
                 .iter()
                 .all(|edge| edge.quality == RouteQuality::Clear),
-            "attachment staggering must not drive stubs through unrelated neighbors"
+            "attachment staggering must not drive stubs through unrelated neighbours"
         );
     }
 }
@@ -643,16 +666,10 @@ fn separated_attachment_stubs_stay_inside_dense_default_layout_gutters() {
 fn collapsed_layout_restores_hidden_component_positions() {
     let before = architecture();
     let mut options = SceneOptions::default();
-    options.collapsed.insert(fixtures::id(2));
-    let collapsed =
-        SemanticScene::from_projection(&fixtures::architecture(), &options, Some(before.memory()))
-            .unwrap();
-    let expanded = SemanticScene::from_projection(
-        &fixtures::architecture(),
-        &SceneOptions::default(),
-        Some(collapsed.memory()),
-    )
-    .unwrap();
+    options.collapsed.insert(id(2));
+    let collapsed = Scene::build(&grid(), &options, Some(before.memory())).unwrap();
+    let expanded =
+        Scene::build(&grid(), &SceneOptions::default(), Some(collapsed.memory())).unwrap();
     for n in &before.nodes {
         assert_eq!(n.bounds.min, expanded.node(n.id()).unwrap().bounds.min);
     }
@@ -660,22 +677,18 @@ fn collapsed_layout_restores_hidden_component_positions() {
 
 #[test]
 fn routing_detours_around_an_unrelated_node() {
-    let mut projection = fixtures::stress(3, 1);
-    projection.edges[0].source = projection.nodes[0].id;
-    projection.edges[0].target = projection.nodes[2].id;
-    let options = SceneOptions {
-        hierarchy: false,
-        ..Default::default()
-    };
+    let mut input = flat(3, 1);
+    input.edges[0].source = card(1);
+    input.edges[0].target = card(3);
     let memory = LayoutMemory {
         bounds: std::collections::BTreeMap::from([
-            (projection.nodes[0].id, Rect::new(0.0, 0.0, 232.0, 118.0)),
-            (projection.nodes[1].id, Rect::new(300.0, 0.0, 232.0, 118.0)),
-            (projection.nodes[2].id, Rect::new(600.0, 0.0, 232.0, 118.0)),
+            (id(1), Rect::new(0.0, 0.0, 232.0, 118.0)),
+            (id(2), Rect::new(300.0, 0.0, 232.0, 118.0)),
+            (id(3), Rect::new(600.0, 0.0, 232.0, 118.0)),
         ]),
         ..Default::default()
     };
-    let scene = SemanticScene::from_projection(&projection, &options, Some(&memory)).unwrap();
+    let scene = Scene::build(&input, &options(LayoutKind::Graph), Some(&memory)).unwrap();
     assert_eq!(scene.edges[0].quality, RouteQuality::Clear);
     assert!(
         scene.edges[0]
@@ -687,10 +700,9 @@ fn routing_detours_around_an_unrelated_node() {
 
 #[test]
 fn self_relationship_routes_form_a_visible_loop() {
-    let mut projection = fixtures::stress(1, 1);
-    projection.edges[0].target = projection.edges[0].source;
-    let scene =
-        SemanticScene::from_projection(&projection, &SceneOptions::default(), None).unwrap();
+    let mut input = flat(1, 1);
+    input.edges[0].target = input.edges[0].source;
+    let scene = Scene::build(&input, &SceneOptions::default(), None).unwrap();
     assert!(scene.edges[0].points.len() >= 5);
     assert!(scene.edges[0].bounds.width() > 0.0 && scene.edges[0].bounds.height() > 0.0);
     assert_eq!(scene.edges[0].quality, RouteQuality::Clear);
@@ -699,24 +711,19 @@ fn self_relationship_routes_form_a_visible_loop() {
 #[test]
 fn parallel_self_relationships_keep_separate_anchors_and_visible_exterior_loops() {
     for count in [1, 2, 5] {
-        let mut projection = fixtures::stress(1, count);
-        let owner = projection.nodes[0].id;
-        for edge in &mut projection.edges {
-            edge.source = owner;
-            edge.target = owner;
+        let mut input = flat(1, count);
+        for edge in &mut input.edges {
+            edge.source = card(1);
+            edge.target = card(1);
         }
-        let scene =
-            SemanticScene::from_projection(&projection, &SceneOptions::default(), None).unwrap();
-        let bounds = scene.node(owner).unwrap().bounds;
+        let scene = Scene::build(&input, &SceneOptions::default(), None).unwrap();
+        let bounds = scene.node(id(1)).unwrap().bounds;
         assert_eq!(scene.edges.len(), count);
-        assert!(
-            scene.ports.is_empty(),
-            "drawing anchors are not semantic ports"
-        );
+        assert!(scene.ports.is_empty(), "drawing anchors are not ports");
         for route in &scene.edges {
             assert_eq!(
                 &route.semantic,
-                projection
+                input
                     .edges
                     .iter()
                     .find(|edge| edge.id == route.semantic.id)
@@ -752,58 +759,34 @@ fn parallel_self_relationships_keep_separate_anchors_and_visible_exterior_loops(
 }
 
 #[test]
-fn expanded_owner_port_strips_are_clear_bounded_and_preserve_canonical_identity() {
+fn expanded_owner_port_strips_are_clear_bounded_and_keep_port_identity() {
     for count in [1_usize, 2, 4, 5, 24] {
-        let mut projection = fixtures::architecture();
-        let owner = fixtures::id(2);
-        let features: Vec<_> = (0..count)
-            .map(|index| agq_modeling_view::FeatureSummary {
-                id: fixtures::id(80_000 + index as u128),
-                name: format!("actualBoundary_{index}"),
-                semantic_kind: "PortUsage".into(),
-            })
+        let mut input = grid();
+        let owner = id(2);
+        let ports: Vec<_> = (0..count)
+            .map(|index| port(80_000 + index as u64, &format!("boundary_{index}")))
             .collect();
-        let owner_node = projection
+        input
             .nodes
             .iter_mut()
             .find(|node| node.id == owner)
-            .unwrap();
-        owner_node.features = features.clone();
-        // An advisory count must not reserve a made-up header or duplicate the
-        // actual ports also present as canonical records in this projection.
-        owner_node.counts.ports = 99;
-        for feature in &features {
-            let mut port = projection.nodes[0].clone();
-            port.id = feature.id;
-            port.owner = Some(owner);
-            port.semantic_kind = "PortUsage".into();
-            port.name = feature.name.clone();
-            port.features.clear();
-            port.counts = Default::default();
-            projection.nodes.push(port);
-        }
-        let scene =
-            SemanticScene::from_projection(&projection, &SceneOptions::default(), None).unwrap();
+            .unwrap()
+            .ports = ports.clone();
+        let scene = Scene::build(&input, &SceneOptions::default(), None).unwrap();
         let container = scene.node(owner).unwrap();
-        let ports: Vec<_> = scene
+        let shown: Vec<_> = scene
             .ports
             .iter()
             .filter(|port| port.owner == owner)
             .collect();
-        assert_eq!(ports.len(), count);
+        assert_eq!(shown.len(), count);
         assert_eq!(
-            ports
-                .iter()
-                .map(|port| port.id)
-                .collect::<std::collections::BTreeSet<_>>(),
-            features.iter().map(|feature| feature.id).collect()
+            shown.iter().map(|port| port.id).collect::<BTreeSet<_>>(),
+            ports.iter().map(|port| port.id).collect()
         );
         assert!(
-            ports
-                .iter()
-                .all(|port| port.revision_id == projection.revision_id
-                    && port.proxy_for_owner.is_none()
-                    && port.direction == PortDirection::Unspecified)
+            shown.iter().all(|port| port.proxy_for_owner.is_none()
+                && port.direction == PortDirection::Unspecified)
         );
         let child_top = scene
             .nodes
@@ -815,14 +798,14 @@ fn expanded_owner_port_strips_are_clear_bounded_and_preserve_canonical_identity(
         let header = child_top - container.bounds.min.y;
         if count <= 4 {
             assert!((92.0..=116.0).contains(&header));
-            assert!(ports.iter().all(|port| port.label_in_header
+            assert!(shown.iter().all(|port| port.label_in_header
                 && port.position.y >= container.bounds.min.y + 72.0
                 && port.position.y + 20.0 <= child_top));
             let index = SpatialIndex::build(&scene);
-            for port in &ports {
+            for port in &shown {
                 assert_eq!(
                     index.hit_test(port.position, 3.0),
-                    Some(SceneTarget::Port(port.id))
+                    Some(SceneTarget::Port(owner, port.id))
                 );
             }
         } else {
@@ -830,14 +813,9 @@ fn expanded_owner_port_strips_are_clear_bounded_and_preserve_canonical_identity(
                 header, 72.0,
                 "dense ports must not grow an unbounded header"
             );
-            assert!(ports.iter().all(|port| !port.label_in_header));
+            assert!(shown.iter().all(|port| !port.label_in_header));
         }
-        let again = SemanticScene::from_projection(
-            &projection,
-            &SceneOptions::default(),
-            Some(scene.memory()),
-        )
-        .unwrap();
+        let again = Scene::build(&input, &SceneOptions::default(), Some(scene.memory())).unwrap();
         assert_eq!(
             scene
                 .nodes
@@ -859,27 +837,8 @@ fn huge_spatial_queries_use_overflow_lane_without_integer_overflow() {
     let scene = architecture();
     let index = SpatialIndex::build(&scene);
     let hits = index.visible(Rect::new(-1.0e20, -1.0e20, 2.0e20, 2.0e20));
-    assert!(hits.contains(&SceneTarget::Node(fixtures::id(21))));
+    assert!(hits.contains(&SceneTarget::Node(id(21))));
     assert!(!Rect::from_points(Point::new(-f32::MAX, 0.0), Point::new(f32::MAX, 1.0)).finite());
-}
-
-#[test]
-fn neighborhood_is_one_hop_order_independent_and_resolves_port_owners() {
-    use agq_modeling_view::RelationshipFamily;
-    use std::collections::BTreeSet;
-    let mut projection = fixtures::architecture();
-    let seeds = BTreeSet::from([fixtures::id(21)]);
-    let families = BTreeSet::from([RelationshipFamily::Connection]);
-    let before = expand_neighborhood(&projection, &seeds, &families, NeighborhoodDirection::Both);
-    assert!(before.elements.contains(&fixtures::id(11)));
-    assert!(before.elements.contains(&fixtures::id(31)));
-    assert!(!before.elements.contains(&fixtures::id(23)));
-    assert_eq!(before.relationships.len(), 2);
-    projection.edges.reverse();
-    assert_eq!(
-        before,
-        expand_neighborhood(&projection, &seeds, &families, NeighborhoodDirection::Both)
-    );
 }
 
 #[test]
@@ -887,29 +846,25 @@ fn scene_lookup_resolves_only_culled_objects_in_containment_order() {
     let scene = architecture();
     let lookup = SceneLookup::build(&scene);
     let targets = vec![
-        SceneTarget::Node(fixtures::id(21)),
-        SceneTarget::Container(fixtures::id(2)),
-        SceneTarget::Port(fixtures::id(2101)),
-        SceneTarget::Node(fixtures::id(21)),
+        SceneTarget::Node(id(21)),
+        SceneTarget::Container(id(2)),
+        SceneTarget::Port(id(21), id(2101)),
+        SceneTarget::Node(id(21)),
         SceneTarget::Edge(scene.edges[0].semantic.id.clone()),
     ];
     let visible = lookup.visible(&scene, &targets);
     assert_eq!(
         visible.nodes.iter().map(|n| n.id()).collect::<Vec<_>>(),
-        vec![fixtures::id(2), fixtures::id(21)]
+        vec![id(2), id(21)]
     );
     assert_eq!(visible.ports.len(), 1);
     assert_eq!(visible.edges.len(), 1);
-    assert_eq!(lookup.endpoint_owner(fixtures::id(2101)), fixtures::id(21));
-    assert_eq!(lookup.endpoint_owner(fixtures::id(987)), fixtures::id(987));
     assert_eq!(
-        lookup.node(&scene, fixtures::id(21)).unwrap().semantic.name,
-        "ModelRepository"
+        lookup.node(&scene, id(21)).unwrap().semantic.name,
+        "Repository"
     );
-    assert_eq!(
-        lookup.port(&scene, fixtures::id(2101)).unwrap().id,
-        fixtures::id(2101)
-    );
+    assert_eq!(lookup.port(&scene, id(21), id(2101)).unwrap().id, id(2101));
+    assert!(lookup.port(&scene, id(22), id(2101)).is_none());
     assert_eq!(
         lookup
             .edge(&scene, &scene.edges[0].semantic.id)
@@ -921,36 +876,39 @@ fn scene_lookup_resolves_only_culled_objects_in_containment_order() {
 }
 
 #[test]
-fn stale_scene_lookup_cannot_return_unrelated_records_or_cross_revisions() {
+fn stale_scene_lookup_cannot_return_unrelated_records_or_cross_generations() {
     let scene = architecture();
     let lookup = SceneLookup::build(&scene);
     let mut reordered = scene.clone();
     reordered.nodes.reverse();
-    assert!(lookup.node(&reordered, fixtures::id(21)).is_none());
-    let mut projection = fixtures::architecture();
-    projection.nodes.truncate(1);
-    projection.edges.clear();
-    let small =
-        SemanticScene::from_projection(&projection, &SceneOptions::default(), None).unwrap();
-    assert!(lookup.node(&small, fixtures::id(21)).is_none());
+    assert!(lookup.node(&reordered, id(21)).is_none());
+    let mut input = grid();
+    input.nodes.truncate(1);
+    input.edges.clear();
+    let small = Scene::build(&input, &SceneOptions::default(), None).unwrap();
+    assert!(lookup.node(&small, id(21)).is_none());
     let mut other = scene;
-    other.revision_id = ProjectRevisionId::from_u128(9);
-    assert!(lookup.node(&other, fixtures::id(21)).is_none());
+    other.generation = 9;
+    assert!(lookup.node(&other, id(21)).is_none());
     assert!(
         lookup
-            .visible(&other, &[SceneTarget::Node(fixtures::id(21))])
+            .visible(&other, &[SceneTarget::Node(id(21))])
             .nodes
             .is_empty()
     );
 }
 #[test]
 fn comparison_preserves_container_envelope_around_removed_ghosts() {
-    let (before, after) = fixtures::revision_diff();
-    let parent = SemanticScene::from_projection(&before, &SceneOptions::default(), None).unwrap();
-    let mut child =
-        SemanticScene::from_projection(&after, &SceneOptions::default(), Some(parent.memory()))
-            .unwrap();
-    child.apply_diff(&parent);
+    let (before, after) = grid_change();
+    let parent = Scene::build(&before, &SceneOptions::default(), None).unwrap();
+    let child = Scene::comparison(
+        &before,
+        &after,
+        &BTreeSet::new(),
+        &SceneOptions::default(),
+        Some(parent.memory()),
+    )
+    .unwrap();
     let removed = child
         .nodes
         .iter()
@@ -963,4 +921,59 @@ fn comparison_preserves_container_envelope_around_removed_ghosts() {
             .bounds
             .contains_rect(parent.node(owner.id()).unwrap().bounds)
     );
+}
+
+#[test]
+fn requirements_view_flattens_and_keeps_satisfy_edges() {
+    let input = fixtures::architecture().requirements_view();
+    assert!(
+        input
+            .nodes
+            .iter()
+            .all(|n| n.owner.is_none() && n.ports.is_empty())
+    );
+    assert!(input.edges.iter().any(|e| e.kind == EdgeKind::Satisfy));
+    let scene = Scene::build(&input, &options(LayoutKind::Requirements), None).unwrap();
+    assert!(scene.containers.is_empty());
+    assert_eq!(scene.edges.len(), input.edges.len());
+}
+
+#[test]
+fn removed_cards_never_overlap_current_cards() {
+    for (before, after) in [grid_change(), fixtures::change()] {
+        let first = Scene::build(&before, &SceneOptions::default(), None).unwrap();
+        let scene = Scene::comparison(
+            &before,
+            &after,
+            &BTreeSet::new(),
+            &SceneOptions::default(),
+            Some(first.memory()),
+        )
+        .unwrap();
+        assert!(scene.nodes.iter().any(|n| n.diff == DiffMark::Removed));
+        let owners = |id| {
+            let mut out = Vec::new();
+            let mut current = scene.node(id).and_then(|n| n.semantic.owner);
+            while let Some(owner) = current {
+                out.push(owner);
+                current = scene.node(owner).and_then(|n| n.semantic.owner);
+            }
+            out
+        };
+        for ghost in scene.nodes.iter().filter(|n| n.diff == DiffMark::Removed) {
+            for other in scene.nodes.iter().filter(|n| n.id() != ghost.id()) {
+                if owners(ghost.id()).contains(&other.id())
+                    || owners(other.id()).contains(&ghost.id())
+                {
+                    continue;
+                }
+                assert!(
+                    !ghost.bounds.intersects(other.bounds),
+                    "removed {} overlaps {}",
+                    ghost.semantic.name,
+                    other.semantic.name
+                );
+            }
+        }
+    }
 }

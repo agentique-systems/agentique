@@ -1,17 +1,17 @@
-//! Engineering roles are presentation categories of exact projected relationships.
-//! They add neither a satisfaction result nor shortcut semantic relationships.
-use crate::{LayoutEngine, LayoutInput, LayoutMemory, LayoutResult, Rect, Size};
-use agq_kernel::ElementId;
-use agq_modeling_view::{RelationshipFamily, ViewProjection};
+//! Lanes for the requirements view: requirements, what satisfies them, and
+//! their subjects. Roles come from element kinds and edges, never from names.
+use crate::{
+    EdgeKind, LayoutEngine, LayoutInput, LayoutMemory, LayoutResult, NodeCategory, Rect,
+    SceneInput, Size,
+};
+use agq_language::ElementId;
 use std::collections::BTreeMap;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum RequirementRole {
     Requirement,
+    Satisfies,
     Subject,
-    Architecture,
-    Satisfaction,
-    Verification,
     Context,
 }
 
@@ -19,68 +19,51 @@ impl RequirementRole {
     pub fn label(self) -> &'static str {
         match self {
             Self::Requirement => "REQUIREMENTS",
+            Self::Satisfies => "SATISFIED BY",
             Self::Subject => "SUBJECTS",
-            Self::Architecture => "SYSTEM / PART",
-            Self::Satisfaction => "SATISFACTION LINKS",
-            Self::Verification => "VERIFICATION LINKS",
-            Self::Context => "OWNED DETAIL",
+            Self::Context => "OTHER",
         }
     }
 }
 
-/// Classify existing DTOs using metaclass and relationship kind. Display names
-/// and edge labels never establish an engineering role. Unclassified details
-/// remain visible as context instead of being promoted to satisfaction evidence.
-pub fn requirement_roles(view: &ViewProjection) -> BTreeMap<ElementId, RequirementRole> {
-    let mut roles: BTreeMap<_, _> = view
+/// The lane of each card in the requirements view.
+pub fn requirement_roles(input: &SceneInput) -> BTreeMap<ElementId, RequirementRole> {
+    let mut roles: BTreeMap<_, _> = input
         .nodes
         .iter()
         .map(|node| {
-            let role = match node.semantic_kind.as_str() {
-                "VerificationCaseDefinition" | "VerificationCaseUsage" => {
-                    RequirementRole::Verification
-                }
-                "SatisfyRequirementUsage" => RequirementRole::Satisfaction,
-                "RequirementDefinition" | "RequirementUsage" => RequirementRole::Requirement,
-                _ => RequirementRole::Context,
+            let role = if node.kind == NodeCategory::Requirement {
+                RequirementRole::Requirement
+            } else {
+                RequirementRole::Context
             };
             (node.id, role)
         })
         .collect();
-    for edge in &view.edges {
-        if edge.semantic_kind == "SubjectMembership"
-            && edge.family == RelationshipFamily::Requirement
-            && roles.get(&edge.source) == Some(&RequirementRole::Requirement)
-        {
-            roles.insert(edge.target, RequirementRole::Subject);
+    for edge in &input.edges {
+        let target_role = roles.get(&edge.target.node).copied();
+        let source_role = roles.get(&edge.source.node).copied();
+        if edge.kind == EdgeKind::Satisfy && source_role == Some(RequirementRole::Context) {
+            roles.insert(edge.source.node, RequirementRole::Satisfies);
         }
-    }
-    for edge in &view.edges {
-        if edge.family == RelationshipFamily::Typing
-            && roles.get(&edge.source) == Some(&RequirementRole::Subject)
-            && roles.get(&edge.target) == Some(&RequirementRole::Context)
+        if edge.kind == EdgeKind::Typing
+            && source_role == Some(RequirementRole::Requirement)
+            && target_role == Some(RequirementRole::Context)
         {
-            roles.insert(edge.target, RequirementRole::Architecture);
-        }
-        if edge.family == RelationshipFamily::Verification
-            && roles.get(&edge.source) == Some(&RequirementRole::Verification)
-            && roles.get(&edge.target) == Some(&RequirementRole::Context)
-        {
-            roles.insert(edge.target, RequirementRole::Verification);
+            roles.insert(edge.target.node, RequirementRole::Subject);
         }
     }
     roles
 }
 
-/// Ordered lanes keep the literal subject and its type legible as separate
-/// canonical identities. Empty lanes are omitted; coordinates are disposable.
+/// Lanes in role order; empty lanes are omitted. Positions are presentation only.
 pub struct RequirementsLayout {
     roles: BTreeMap<ElementId, RequirementRole>,
 }
 impl RequirementsLayout {
-    pub fn new(view: &ViewProjection) -> Self {
+    pub fn new(input: &SceneInput) -> Self {
         Self {
-            roles: requirement_roles(view),
+            roles: requirement_roles(input),
         }
     }
 }
@@ -121,47 +104,43 @@ impl LayoutEngine for RequirementsLayout {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{SceneOptions, SemanticScene, fixtures};
+    use crate::{LayoutKind, Scene, SceneOptions, fixtures};
 
     #[test]
-    fn canonical_subject_and_type_are_separate_ordered_lanes_without_claiming_satisfaction() {
-        let mut view = fixtures::requirements();
-        view.nodes.truncate(3);
-        view.nodes[0].semantic_kind = "RequirementDefinition".into();
-        view.nodes[1].semantic_kind = "ReferenceUsage".into();
-        view.nodes[2].semantic_kind = "PartDefinition".into();
-        let ids: Vec<_> = view.nodes.iter().map(|n| n.id).collect();
-        view.edges.truncate(2);
-        view.edges[0].source = ids[0];
-        view.edges[0].target = ids[1];
-        view.edges[0].semantic_kind = "SubjectMembership".into();
-        view.edges[1].source = ids[1];
-        view.edges[1].target = ids[2];
-        view.edges[1].family = RelationshipFamily::Typing;
-        view.edges[1].semantic_kind = "FeatureTyping".into();
-        let roles = requirement_roles(&view);
-        assert_eq!(roles[&ids[0]], RequirementRole::Requirement);
-        assert_eq!(roles[&ids[1]], RequirementRole::Subject);
-        assert_eq!(roles[&ids[2]], RequirementRole::Architecture);
-        assert!(!roles.values().any(|r| *r == RequirementRole::Satisfaction));
-        let scene = SemanticScene::from_projection(
-            &view,
+    fn requirements_satisfiers_and_subjects_are_ordered_lanes() {
+        let input = fixtures::architecture().requirements_view();
+        let roles = requirement_roles(&input);
+        let find = |name: &str| {
+            input
+                .nodes
+                .iter()
+                .find(|n| n.name == name)
+                .unwrap_or_else(|| panic!("{name} is in the requirements view"))
+                .id
+        };
+        let requirement = find("uniqueCodes");
+        let satisfier = find("store");
+        let subject = find("LinkStore");
+        assert_eq!(roles[&requirement], RequirementRole::Requirement);
+        assert_eq!(roles[&satisfier], RequirementRole::Satisfies);
+        assert_eq!(roles[&subject], RequirementRole::Subject);
+        let scene = Scene::build(
+            &input,
             &SceneOptions {
-                hierarchy: false,
+                layout: LayoutKind::Requirements,
                 ..Default::default()
             },
             None,
         )
         .unwrap();
+        let x = |id| scene.node(id).unwrap().bounds.min.x;
+        assert!(x(requirement) < x(satisfier));
+        assert!(x(satisfier) < x(subject));
         assert!(
-            scene.node(ids[0]).unwrap().bounds.max.x < scene.node(ids[1]).unwrap().bounds.min.x
+            scene
+                .edges
+                .iter()
+                .any(|e| e.semantic.kind == EdgeKind::Satisfy)
         );
-        assert!(
-            scene.node(ids[1]).unwrap().bounds.max.x < scene.node(ids[2]).unwrap().bounds.min.x
-        );
-        assert_eq!(scene.edges.len(), view.edges.len());
-        for edge in &scene.edges {
-            assert!(view.edges.contains(&edge.semantic));
-        }
     }
 }

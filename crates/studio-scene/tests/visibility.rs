@@ -1,13 +1,13 @@
-use agq_modeling_workspace::ProjectRevisionId;
+mod common;
 use agq_studio_scene::*;
+use common::{adversarial, grid, grid_change};
 use std::{
     collections::BTreeSet,
     hash::{DefaultHasher, Hash, Hasher},
 };
 
-fn architecture() -> SemanticScene {
-    SemanticScene::from_projection(&fixtures::architecture(), &SceneOptions::default(), None)
-        .unwrap()
+fn architecture() -> Scene {
+    Scene::build(&grid(), &SceneOptions::default(), None).unwrap()
 }
 
 fn identities(visible: &VisibleScene<'_>) -> Vec<SceneTarget> {
@@ -21,7 +21,12 @@ fn identities(visible: &VisibleScene<'_>) -> Vec<SceneTarget> {
                 SceneTarget::Node(node.id())
             }
         })
-        .chain(visible.ports.iter().map(|port| SceneTarget::Port(port.id)))
+        .chain(
+            visible
+                .ports
+                .iter()
+                .map(|port| SceneTarget::Port(port.owner, port.id)),
+        )
         .chain(
             visible
                 .edges
@@ -32,7 +37,7 @@ fn identities(visible: &VisibleScene<'_>) -> Vec<SceneTarget> {
 }
 
 // A full scan is deliberately independent of the grid and identity lookup.
-fn scan(scene: &SemanticScene, bounds: Rect) -> Vec<SceneTarget> {
+fn scan(scene: &Scene, bounds: Rect) -> Vec<SceneTarget> {
     let nodes = scene
         .nodes
         .iter()
@@ -52,7 +57,7 @@ fn scan(scene: &SemanticScene, bounds: Rect) -> Vec<SceneTarget> {
     })
 }
 
-fn assert_views(scene: &SemanticScene) {
+fn assert_views(scene: &Scene) {
     let spatial = SpatialIndex::build(scene);
     let lookup = SceneLookup::build(scene);
     let bounds = scene.bounds();
@@ -73,14 +78,14 @@ fn assert_views(scene: &SemanticScene) {
     for viewport in viewports {
         let borrowed = spatial.visible_scene(scene, viewport);
         let targets = spatial.visible(viewport);
-        let legacy = lookup.visible(scene, &targets);
+        let resolved = lookup.visible(scene, &targets);
         let actual = identities(&borrowed);
         assert_eq!(
             actual,
             scan(scene, viewport),
             "exact scan identities and scene order"
         );
-        assert_eq!(actual, identities(&legacy), "old public API equivalence");
+        assert_eq!(actual, identities(&resolved), "lookup equivalence");
         assert_eq!(
             actual.len(),
             actual.iter().collect::<BTreeSet<_>>().len(),
@@ -90,14 +95,14 @@ fn assert_views(scene: &SemanticScene) {
 }
 
 #[test]
-fn borrowed_culling_matches_scan_and_legacy_on_adversarial_scenes() {
+fn borrowed_culling_matches_scan_and_lookup_on_adversarial_scenes() {
     assert_views(&architecture());
-    for (_, projection) in fixtures::adversarial() {
-        for hierarchy in [false, true] {
-            let scene = SemanticScene::from_projection(
-                &projection,
+    for (_, input) in adversarial() {
+        for layout in [LayoutKind::Graph, LayoutKind::Hierarchy] {
+            let scene = Scene::build(
+                &input,
                 &SceneOptions {
-                    hierarchy,
+                    layout,
                     ..Default::default()
                 },
                 None,
@@ -109,18 +114,21 @@ fn borrowed_culling_matches_scan_and_legacy_on_adversarial_scenes() {
 }
 
 #[test]
-fn borrowed_culling_preserves_collapsed_proxy_ports_and_diff_ghosts() {
+fn borrowed_culling_preserves_collapsed_boundary_ports_and_diff_ghosts() {
     let mut options = SceneOptions::default();
     options.collapsed.insert(fixtures::id(2));
-    let scene = SemanticScene::from_projection(&fixtures::architecture(), &options, None).unwrap();
+    let scene = Scene::build(&grid(), &options, None).unwrap();
     assert!(scene.ports.iter().any(|p| p.proxy_for_owner.is_some()));
     assert_views(&scene);
-    let (before, after) = fixtures::revision_diff();
-    let before = SemanticScene::from_projection(&before, &SceneOptions::default(), None).unwrap();
-    let mut after =
-        SemanticScene::from_projection(&after, &SceneOptions::default(), Some(before.memory()))
-            .unwrap();
-    after.apply_diff(&before);
+    let (before, after) = grid_change();
+    let after = Scene::comparison(
+        &before,
+        &after,
+        &BTreeSet::new(),
+        &SceneOptions::default(),
+        None,
+    )
+    .unwrap();
     assert!(after.nodes.iter().any(|n| n.diff == DiffMark::Removed));
     assert_views(&after);
 }
@@ -141,12 +149,12 @@ fn cross_viewport_relationships_are_retained_without_visible_endpoints() {
 }
 
 #[test]
-fn stale_slots_cannot_borrow_different_identities_or_revisions() {
+fn stale_slots_cannot_borrow_different_identities_or_generations() {
     let scene = architecture();
     let index = SpatialIndex::build(&scene);
     let all = Rect::new(-1.0e20, -1.0e20, 2.0e20, 2.0e20);
     let mut changed = scene.clone();
-    changed.revision_id = ProjectRevisionId::from_u128(9);
+    changed.generation = 9;
     assert!(identities(&index.visible_scene(&changed, all)).is_empty());
     changed = scene.clone();
     changed.nodes.rotate_left(1);

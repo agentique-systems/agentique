@@ -1,5 +1,5 @@
 //! Opt-in camera benchmark through ordinary egui RawInput. Fixture-only;
-//! no direct scene mutation and no semantic service commands.
+//! it changes no model and runs no model commands.
 //! Compiled only with `--features automation`.
 use crate::{
     app::StudioApp,
@@ -76,18 +76,14 @@ impl Runner {
         input: &mut egui::RawInput,
     ) -> Result<ScenarioStatus, String> {
         if !matches!(app.fixture.as_deref(), Some("stress1000" | "stress10000"))
-            || app.binding.is_some()
+            || app.project.is_some()
         {
             return Err(
                 "Stress input scenario requires a stress visual fixture and refuses live bindings"
                     .into(),
             );
         }
-        if !app.ready
-            || app.scene_builder.busy
-            || app.fit_pending
-            || app.gpu_stats.lock().is_ok_and(|s| s.draw_calls == 0)
-        {
+        if app.fit_pending || app.gpu_stats.lock().is_ok_and(|s| s.draw_calls == 0) {
             if app.frame_number > 600 {
                 return Err("Native stress fixture did not become ready".into());
             }
