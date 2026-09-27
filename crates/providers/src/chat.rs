@@ -22,7 +22,7 @@ use rig_core::message::{
 use rig_core::providers::{anthropic, deepseek, openai, openrouter};
 use rig_core::streaming::{StreamedAssistantContent, ToolCallDeltaContent};
 use serde_json::{Value, json};
-use std::collections::BTreeSet;
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::mpsc::Sender;
 use std::time::Duration;
 
@@ -149,9 +149,6 @@ fn additional_params(request: &ChatRequest) -> Option<Value> {
             if let Some(effort) = effort {
                 params["output_config"] = json!({ "effort": effort });
             }
-            if capabilities.refusal_fallbacks {
-                params["fallbacks"] = json!("default");
-            }
             Some(params)
         }
         Provider::OpenAi => Some(match effort {
@@ -249,16 +246,29 @@ async fn stream_once<M: CompletionModel>(
     let provider = request.model.provider;
     let failed = |error: CompletionError| failure(provider, &request.model.model, &error);
     let mut response = model.stream(rig_request).await.map_err(failed)?;
-    let mut started = BTreeSet::new();
+    // Tool calls by stream id: name and raw input so far.
+    let mut calls: BTreeMap<String, (String, String)> = BTreeMap::new();
+    let mut unreadable = Vec::new();
     let mut thinking_shown = BTreeSet::new();
-    let mut usage = None;
-    let mut finish = None;
+    let mut last = None;
     let mut send = |event| {
         *streamed = true;
         let _ = sender.send(event);
     };
     while let Some(item) = response.next().await {
-        let item = item.map_err(failed)?;
+        let item = match item {
+            Ok(item) => item,
+            // rig reports a tool call whose input is not JSON in-band and
+            // goes on; it becomes a call the turn answers with an error
+            // (R-22), never a failed reply.
+            Err(CompletionError::ResponseError(message))
+                if message.contains("arrived with malformed JSON input") =>
+            {
+                unreadable.push(message);
+                continue;
+            }
+            Err(error) => return Err(failed(error)),
+        };
         match item {
             StreamedAssistantContent::Text(text) => {
                 if !text.text.is_empty() {
@@ -280,60 +290,85 @@ async fn stream_once<M: CompletionModel>(
                 internal_call_id,
                 content,
             } => {
-                let (name, json) = match content {
-                    ToolCallDeltaContent::Name(name) => (name, None),
-                    ToolCallDeltaContent::Delta(json) => (String::new(), Some(json)),
-                };
-                if started.insert(internal_call_id.clone()) {
-                    send(Event::ToolCallStarted {
-                        stream_id: internal_call_id.clone(),
-                        name,
-                    });
-                }
-                if let Some(json) = json {
-                    send(Event::ToolInput {
-                        stream_id: internal_call_id,
-                        json,
-                    });
+                let call = calls
+                    .entry(internal_call_id.clone())
+                    .or_insert_with(|| (String::new(), String::new()));
+                match content {
+                    // Every adapter names the call before its input.
+                    ToolCallDeltaContent::Name(name) => {
+                        if call.0.is_empty() {
+                            call.0 = name.clone();
+                            send(Event::ToolCallStarted {
+                                stream_id: internal_call_id,
+                                name,
+                            });
+                        }
+                    }
+                    ToolCallDeltaContent::Delta(json) => {
+                        call.1.push_str(&json);
+                        send(Event::ToolInput {
+                            stream_id: internal_call_id,
+                            json,
+                        });
+                    }
                 }
             }
             StreamedAssistantContent::ToolCall {
                 tool_call,
                 internal_call_id,
             } => {
-                if started.insert(internal_call_id.clone()) {
+                if !calls.contains_key(&internal_call_id) {
                     // The whole call arrived at once.
+                    let json = tool_call.function.arguments.to_string();
                     send(Event::ToolCallStarted {
                         stream_id: internal_call_id.clone(),
                         name: tool_call.function.name.clone(),
                     });
                     send(Event::ToolInput {
                         stream_id: internal_call_id.clone(),
-                        json: tool_call.function.arguments.to_string(),
+                        json: json.clone(),
                     });
                 }
-                let id = tool_call.wire_call_id().to_string();
-                if id != internal_call_id {
-                    send(Event::ToolCallId {
-                        stream_id: internal_call_id,
-                        id,
-                    });
-                }
+                calls.remove(&internal_call_id);
+                send(Event::ToolCallId {
+                    stream_id: internal_call_id,
+                    id: tool_call.wire_call_id().to_string(),
+                });
             }
-            StreamedAssistantContent::Final(last) => {
-                usage = Some(last.usage);
-                finish = last.finish_reason.clone();
-            }
+            StreamedAssistantContent::Final(record) => last = Some(record),
             _ => {}
         }
     }
-    let usage = self::usage(provider, usage.unwrap_or_else(|| response.usage()));
-    send(Event::Usage(usage));
-    let content: Vec<AssistantPart> = response.choice.iter().filter_map(part).collect();
+    // Without the provider's terminal record the stream was cut off: nothing
+    // of it is used, whatever arrived (rig emits none on an early end).
+    let Some(last) = last else {
+        return Err(Failure {
+            error: Error {
+                kind: ErrorKind::Unreachable,
+                message: format!(
+                    "The connection to {} was lost before the reply was complete. Try again.",
+                    provider.name()
+                ),
+            },
+            retry_after: Some(0),
+        });
+    };
+    let mut content: Vec<AssistantPart> = response.choice.iter().filter_map(part).collect();
+    // Calls whose input could not be read stay in the reply with their raw
+    // text, under their stream id, so the turn answers them with an error.
+    if !unreadable.is_empty() {
+        for (stream_id, (name, raw)) in calls {
+            content.push(AssistantPart::ToolCall {
+                id: stream_id,
+                name,
+                input: serde_json::Value::String(raw),
+            });
+        }
+    }
     let has_calls = content
         .iter()
         .any(|part| matches!(part, AssistantPart::ToolCall { .. }));
-    let stop = match finish {
+    let stop = match last.finish_reason {
         Some(FinishReason::ToolCalls) => StopReason::ToolUse,
         Some(FinishReason::Length) => StopReason::MaxTokens,
         Some(FinishReason::ContentFilter) => StopReason::Refusal,
@@ -346,22 +381,11 @@ async fn stream_once<M: CompletionModel>(
             "max_tokens" | "length" => StopReason::MaxTokens,
             _ => StopReason::Other(other),
         },
-        // No finish reason: a stream that ended early is a lost connection.
-        None if content.is_empty() => {
-            return Err(Failure {
-                error: Error {
-                    kind: ErrorKind::Unreachable,
-                    message: format!(
-                        "The connection to {} was lost before the reply was complete. Try again.",
-                        provider.name()
-                    ),
-                },
-                retry_after: Some(0),
-            });
-        }
         None if has_calls => StopReason::ToolUse,
         None => StopReason::EndTurn,
     };
+    let usage = self::usage(provider, last.usage);
+    send(Event::Usage(usage));
     Ok(Reply {
         content,
         stop,
@@ -412,9 +436,11 @@ fn usage(provider: Provider, usage: rig_core::completion::Usage) -> Usage {
     let cached = usage.cached_input_tokens;
     let input = match provider {
         Provider::Anthropic => usage.input_tokens,
-        Provider::OpenAi | Provider::OpenRouter | Provider::DeepSeek => {
-            usage.input_tokens.saturating_sub(cached)
-        }
+        Provider::OpenAi | Provider::DeepSeek => usage.input_tokens.saturating_sub(cached),
+        // OpenRouter's prompt count includes cache reads and writes.
+        Provider::OpenRouter => usage
+            .input_tokens
+            .saturating_sub(cached + usage.cache_creation_input_tokens),
     };
     Usage {
         input_tokens: input,
@@ -444,13 +470,31 @@ fn failure(provider: Provider, model: &str, error: &CompletionError) -> Failure 
         retry_after,
     };
     let Some(status) = status else {
-        return match error {
-            CompletionError::HttpError(_) | CompletionError::RequestError(_) => fail(
+        let kind = body.as_deref().and_then(error_type);
+        return match (error, kind.as_deref()) {
+            (_, Some("overloaded_error")) => fail(
+                ErrorKind::Unavailable,
+                format!("{name} became overloaded while replying. Try again in a moment."),
+                Some(1),
+            ),
+            (_, Some("rate_limit_error")) => fail(
+                ErrorKind::RateLimited,
+                format!("The {name} rate limit was reached while replying. Try again in a minute."),
+                Some(10),
+            ),
+            // Connection failures and resets on a streamed request.
+            (CompletionError::HttpError(_) | CompletionError::ProviderError(_), _) => fail(
                 ErrorKind::Unreachable,
                 format!(
                     "Could not reach {name} ({said}). Check the network connection and try again."
                 ),
                 Some(0),
+            ),
+            // The request could not be built: retrying cannot help.
+            (CompletionError::RequestError(_), _) => fail(
+                ErrorKind::Other,
+                format!("Could not prepare the request to {name} ({said})."),
+                None,
             ),
             _ => fail(
                 ErrorKind::Other,
@@ -547,6 +591,12 @@ fn http_details(error: &CompletionError) -> (Option<u16>, Option<String>, Option
     }
 }
 
+/// The provider's error type from an error body (`{"error": {"type": ...}}`).
+fn error_type(body: &str) -> Option<String> {
+    let detail: Value = serde_json::from_str(body).ok()?;
+    detail["error"]["type"].as_str().map(str::to_string)
+}
+
 /// The provider's own message from an error body, or the body's start.
 fn provider_message(body: &str) -> String {
     let detail: Value = serde_json::from_str(body).unwrap_or(Value::Null);
@@ -595,14 +645,12 @@ mod tests {
     }
 
     #[test]
-    fn anthropic_asks_for_summaries_and_fallbacks_on_the_default_model() {
+    fn anthropic_asks_for_summaries_and_effort() {
         let params =
             additional_params(&request(Provider::Anthropic, "claude-opus-5", None)).unwrap();
         assert_eq!(params["thinking"]["display"], "summarized");
         assert_eq!(params["output_config"]["effort"], "high");
-        assert_eq!(params["fallbacks"], "default");
-        let params =
-            additional_params(&request(Provider::Anthropic, "claude-opus-5-5", None)).unwrap();
+        // No server-side fallbacks through rig until the Q-18 adapter.
         assert!(params.get("fallbacks").is_none());
     }
 

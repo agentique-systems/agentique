@@ -453,11 +453,17 @@ impl Providers {
         self.key(provider).is_some()
     }
 
+    /// An explicit key, or the environment's unless the provider's requests
+    /// go to another endpoint: a real key is sent only to its own provider
+    /// (§8.7).
     fn key(&self, provider: Provider) -> Option<String> {
-        self.keys
-            .get(&provider)
-            .cloned()
-            .or_else(|| environment_key(provider))
+        self.keys.get(&provider).cloned().or_else(|| {
+            if self.endpoints.contains_key(&provider) {
+                None
+            } else {
+                environment_key(provider)
+            }
+        })
     }
 
     /// Starts one streamed model call on the background runtime.

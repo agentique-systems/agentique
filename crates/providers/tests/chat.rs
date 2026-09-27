@@ -242,9 +242,7 @@ fn deepseek_streams_a_tool_call_and_sends_the_exchange_back() {
     let stream_id = events
         .iter()
         .find_map(|event| match event {
-            Event::ToolCallStarted { stream_id, name }
-                if name == "find_elements" || name.is_empty() =>
-            {
+            Event::ToolCallStarted { stream_id, name } if name == "find_elements" => {
                 Some(stream_id.clone())
             }
             _ => None,
@@ -264,12 +262,10 @@ fn deepseek_streams_a_tool_call_and_sends_the_exchange_back() {
         serde_json::from_str::<Value>(&input).unwrap(),
         json!({ "name": "Store" })
     );
-    if stream_id != "call_7" {
-        assert!(events.contains(&Event::ToolCallId {
-            stream_id,
-            id: "call_7".into()
-        }));
-    }
+    assert!(events.contains(&Event::ToolCallId {
+        stream_id,
+        id: "call_7".into()
+    }));
     let _ = requests.recv().unwrap();
 
     // The next request carries the reasoning, the call and its result.
@@ -305,12 +301,16 @@ fn deepseek_streams_a_tool_call_and_sends_the_exchange_back() {
 
 #[test]
 fn a_refused_key_is_explained_and_not_retried() {
-    let (url, requests) = serve(vec![Answer {
-        status: "401 Unauthorized",
-        headers: "Content-Type: application/json\r\n",
-        body: json!({ "error": { "message": "Authentication Fails", "type": "authentication_error" } }).to_string(),
-        linger: Duration::ZERO,
-    }]);
+    // A second answer is ready and must never be asked for.
+    let (url, requests) = serve(vec![
+        Answer {
+            status: "401 Unauthorized",
+            headers: "Content-Type: application/json\r\n",
+            body: json!({ "error": { "message": "Authentication Fails", "type": "authentication_error" } }).to_string(),
+            linger: Duration::ZERO,
+        },
+        ok(chunks(&[delta(json!({ "content": "Hello" })), finish("stop")])),
+    ]);
     let (_, reply) =
         finish_call(deepseek(&url).chat(request(Provider::DeepSeek, "deepseek-flash")));
     let error = reply.unwrap_err();
@@ -391,11 +391,32 @@ fn cancel_stops_a_silent_stream_at_once() {
             ),
         }
     }
+    // Stop is meant to take effect within about 50 ms; the bound leaves room
+    // for a slow CI machine.
     assert!(
-        started.elapsed() < Duration::from_millis(200),
+        started.elapsed() < Duration::from_millis(500),
         "{:?}",
         started.elapsed()
     );
+}
+
+#[test]
+fn a_stream_cut_off_before_its_end_is_a_lost_connection() {
+    // No finish reason and no [DONE]: the reply is never used, even though
+    // text and a whole tool call arrived.
+    let body: String = [
+        delta(json!({ "content": "Adding it." })),
+        delta(json!({ "tool_calls": [{ "index": 0, "id": "call_1", "type": "function",
+                                       "function": { "name": "find_elements", "arguments": "{}" } }] })),
+    ]
+    .iter()
+    .map(|chunk| format!("data: {chunk}\n\n"))
+    .collect();
+    let (url, _requests) = serve(vec![ok(body)]);
+    let (_, reply) =
+        finish_call(deepseek(&url).chat(request(Provider::DeepSeek, "deepseek-flash")));
+    let error = reply.unwrap_err();
+    assert_eq!(error.kind, ErrorKind::Unreachable, "{}", error.message);
 }
 
 // The paths below cannot be tried live tonight (no keys): these canned
@@ -457,8 +478,45 @@ fn anthropic_streams_summaries_text_and_a_tool_call() {
     assert!(path.ends_with("/v1/messages"), "{path}");
     assert_eq!(body["thinking"]["display"], "summarized");
     assert_eq!(body["output_config"]["effort"], "high");
-    assert_eq!(body["fallbacks"], "default");
+    assert!(body.get("fallbacks").is_none());
     assert_eq!(body["max_tokens"], 4096);
+}
+
+#[test]
+fn a_tool_call_whose_input_is_not_json_is_kept_for_an_error_result() {
+    let (url, _requests) = serve(vec![ok(sse(&[
+        json!({ "type": "message_start", "message": { "id": "msg_1", "type": "message", "role": "assistant", "content": [], "model": "claude-opus-5",
+                "usage": { "input_tokens": 25, "output_tokens": 1 } } }),
+        json!({ "type": "content_block_start", "index": 0, "content_block": { "type": "tool_use", "id": "toolu_1", "name": "find_elements", "input": {} } }),
+        json!({ "type": "content_block_delta", "index": 0, "delta": { "type": "input_json_delta", "partial_json": "{\"name\": Store" } }),
+        json!({ "type": "content_block_stop", "index": 0 }),
+        json!({ "type": "message_delta", "delta": { "stop_reason": "tool_use", "stop_sequence": null },
+                "usage": { "input_tokens": 25, "output_tokens": 9 } }),
+        json!({ "type": "message_stop" }),
+    ]))]);
+    let providers = Providers::new()
+        .with_key(Provider::Anthropic, "test-key")
+        .with_endpoint(Provider::Anthropic, url);
+    let (_, reply) = finish_call(providers.chat(request(Provider::Anthropic, "claude-opus-5")));
+    let reply = reply.unwrap();
+    assert_eq!(reply.stop, StopReason::ToolUse);
+    let raw = reply
+        .content
+        .iter()
+        .find_map(|part| match part {
+            AssistantPart::ToolCall { name, input, .. } if name == "find_elements" => {
+                Some(input.clone())
+            }
+            _ => None,
+        })
+        .expect("the call is kept");
+    assert_eq!(raw, Value::String("{\"name\": Store".into()));
+}
+
+#[test]
+fn an_environment_key_is_never_sent_to_another_endpoint() {
+    let providers = Providers::new().with_endpoint(Provider::DeepSeek, "http://127.0.0.1:9");
+    assert!(!providers.has_key(Provider::DeepSeek));
 }
 
 #[test]

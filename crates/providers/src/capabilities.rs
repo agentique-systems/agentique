@@ -63,10 +63,13 @@ pub fn capabilities(model: &ModelRef) -> Capabilities {
             efforts: ANTHROPIC_EFFORTS,
             default_effort: Some("high"),
             reasoning_text: ReasoningText::Summary,
-            prompt_cache: PromptCache::Manual,
+            // Automatic caching only: rig's cache breakpoints are not used
+            // yet (W5.7).
+            prompt_cache: PromptCache::Automatic,
             cache_counts: true,
-            // The API documents fallbacks for the default model only (C-27).
-            refusal_fallbacks: model.model == "claude-opus-5",
+            // C-27 wants them on the default model; through rig they wait for
+            // the Q-18 adapter, so a refusal ends the turn (§4.8).
+            refusal_fallbacks: false,
             context_window: None,
             max_output_tokens: None,
         },
@@ -134,14 +137,15 @@ pub fn price(model: &ModelRef) -> Option<Price> {
         })
     };
     match (model.provider, model.model.as_str()) {
-        // Anthropic's pricing page (ROADMAP [10]); cache writes at 1.25 times
-        // and reads at a tenth of the input price.
+        // Anthropic's pricing page (ROADMAP [10]; claude-opus-5 from Stage 3's
+        // README); cache writes at 1.25 times and reads at a tenth of the
+        // input price (not verified per model).
         (Provider::Anthropic, "claude-opus-5") => price(5.0, 6.25, 0.5, 25.0),
         (Provider::Anthropic, "claude-opus-5-5") => price(4.0, 5.0, 0.4, 20.0),
         (Provider::Anthropic, "claude-fable-5-1") => price(10.0, 12.5, 1.0, 50.0),
         (Provider::Anthropic, "claude-haiku-4-5") => price(1.0, 1.25, 0.1, 5.0),
-        // DeepSeek's pricing page (ROADMAP [105]): the peak-hour price;
-        // off-peak hours cost half.
+        // DeepSeek's pricing page (ROADMAP [105], read 2026-09-27): the
+        // peak-hour price, so the estimate is never low; off-peak costs half.
         (Provider::DeepSeek, "deepseek-flash") => price(0.30, 0.30, 0.006, 1.20),
         _ => None,
     }

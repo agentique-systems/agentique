@@ -40,9 +40,16 @@ call.cancel(); // stops at once; the call ends with Finished(Err(Cancelled))
 - **Errors** are written for the Operator: a missing or refused key names its
   variable; no access, unknown model, rate limits, unavailability and lost
   connections each say what to do. Rate limits, server errors and lost
-  connections are retried twice (after one, then two seconds, or the wait the
-  provider asks for if that is at most ten seconds), only before anything
-  streamed.
+  connections are retried twice, only before anything streamed: after the wait
+  the provider asks for if that is at most ten seconds, otherwise after one,
+  then two seconds (ten seconds for a rate limit without a wait). A stream
+  that ends without the provider's final record is a lost connection, never a
+  reply; a tool call whose input is not JSON stays in the reply with its raw
+  text, so the turn answers it with an error.
+- **Not yet through rig**: Anthropic's server-side refusal fallbacks (the
+  Q-18 adapter) and explicit cache breakpoints; both are marked in the
+  capability table, and the Studio keeps the hand-written Claude client for
+  Anthropic until W5.7.
 - **Async stays inside**: one background tokio runtime; the API is synchronous.
   Cancelling drops the request or stream, which closes the connection.
 - **TLS**: rig and reqwest use `native-tls` (schannel on Windows), so no C
