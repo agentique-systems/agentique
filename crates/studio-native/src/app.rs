@@ -91,6 +91,8 @@ pub struct StudioApp {
     pub session: Session,
     pub session_path: PathBuf,
     pub fit_pending: bool,
+    /// The Conversation with the Assistant, for the open project.
+    pub conversation: crate::conversation::ConversationPanel,
     last_saved: Instant,
     saved_layout: crate::surface_recovery::SavedLayout,
 }
@@ -169,9 +171,14 @@ impl StudioApp {
             session,
             session_path,
             fit_pending: true,
+            conversation: Default::default(),
             last_saved: Instant::now(),
             saved_layout: Default::default(),
         };
+        #[cfg(feature = "automation")]
+        if app.args.scenario.as_deref() == Some("a-assistant") {
+            crate::automation::script_assistant(&mut app);
+        }
         if let Some(name) = app.args.fixture.clone() {
             app.show_fixture(&name);
         } else if let Some(folder) = app.args.project.clone() {
@@ -208,6 +215,7 @@ impl StudioApp {
         let state = self.project.as_ref().map(Project::state);
         CommandContext {
             busy: self.dialog.is_some(),
+            project: self.project.is_some(),
             editable: self.editable(),
             selected: self.selection.primary.is_some(),
             pair,
@@ -318,6 +326,7 @@ impl StudioApp {
         let folder = project.folder().to_path_buf();
         let remembered = self.session.views.get(&folder).cloned().unwrap_or_default();
         self.fixture = None;
+        self.load_conversation(&folder);
         self.project = Some(project);
         self.view = remembered.view;
         self.layouts = remembered.layouts;
@@ -358,6 +367,7 @@ impl StudioApp {
     }
 
     pub fn show_fixture(&mut self, name: &str) {
+        self.stop_assistant();
         self.project = None;
         self.fixture = Some(name.to_string());
         self.view = match name {
@@ -742,6 +752,13 @@ impl StudioApp {
             CreatePart | CreatePort | CreateItem | CreateAttribute | CreateInterface
             | CreateRequirement | Rename | Delete | Connect | MoveTo | Lock | Undo | Redo
             | Checkpoint => self.edit(id),
+            AskAssistant => {
+                self.conversation.shown = true;
+                self.conversation.focus_input = true;
+            }
+            InsertSelection => self.insert_selection(),
+            NewConversation => self.new_conversation(),
+            ShowConversation => self.conversation.shown = !self.conversation.shown,
         }
     }
 
@@ -934,6 +951,12 @@ impl eframe::App for StudioApp {
         }
         self.saved_layout = Default::default();
         self.animate(ctx);
+        self.poll_conversation();
+        if self.conversation.running() && self.conversation.waiting.is_none() {
+            // Streamed text and tool calls arrive from the Assistant's
+            // thread; while it waits for the Operator, nothing arrives.
+            ctx.request_repaint_after(Duration::from_millis(30));
+        }
         self.keyboard(ctx);
         self.shell(ctx);
         self.dialogs(ctx);

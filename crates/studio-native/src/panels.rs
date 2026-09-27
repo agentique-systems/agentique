@@ -166,6 +166,9 @@ impl StudioApp {
                     }
                 });
             });
+        if self.project.is_some() && self.conversation.shown {
+            self.conversation_column(ctx);
+        }
         egui::SidePanel::right("panels")
             .default_width(theme::PANEL_WIDTH + 40.0)
             .frame(

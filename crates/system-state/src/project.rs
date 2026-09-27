@@ -238,6 +238,24 @@ impl Project {
         Ok(Some(event))
     }
 
+    /// Undoes every change applied or redone after `revision`, most recent
+    /// first ([`SystemState::undo_since`]: the Assistant's work since its
+    /// turn started, R-12), and saves once. If the save fails, the changes
+    /// are redone and the model is as before.
+    pub fn undo_since(&mut self, revision: u64) -> Result<Vec<ChangeEvent>, ProjectError> {
+        let events = self.state.undo_since(revision);
+        if events.is_empty() {
+            return Ok(events);
+        }
+        if let Err(error) = self.save() {
+            for _ in &events {
+                self.state.redo();
+            }
+            return Err(error);
+        }
+        Ok(events)
+    }
+
     /// Reapplies the most recently undone change and saves.
     pub fn redo(&mut self) -> Result<Option<ChangeEvent>, ProjectError> {
         let Some(event) = self.state.redo() else {

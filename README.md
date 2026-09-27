@@ -20,11 +20,12 @@ Progress per stage is in [docs/stages.md](docs/stages.md).
 
 ## Current stage
 
-The realignment is in progress. Stages 0–2 are done, pending the Operator's
-acceptance: the repository is cleaned up, the language core is rebuilt, and
-the Studio edits a git-backed System State by hand. Stage 3 (the Assistant)
-is under way. See [docs/stages.md](docs/stages.md) for what works and what to
-try. The language core can also be tried on its own:
+The realignment is in progress. Stages 0–3 are built, pending the Operator's
+acceptance: the repository is cleaned up, the language core is rebuilt, the
+Studio edits a git-backed System State by hand, and the Assistant works in the
+Conversation through the same operations (set `ANTHROPIC_API_KEY`; the live
+API has not been tried yet). See [docs/stages.md](docs/stages.md) for what
+works and what to try. The language core can also be tried on its own:
 
 ```text
 cargo run -p agq-language --example check -- models/url-shortener
@@ -78,7 +79,8 @@ pull request.
 | `crates/language` | The language core: the SysML subset as an element tree (parse, print, validate) |
 | `crates/system-state` | The System State: typed operations, locks, undo, change events; `Project` ties it to History |
 | `crates/history` | The model folder in git: crash-safe saves, checkpoints, branches |
-| `crates/studio-native`, `crates/studio-scene` | The Studio application and its Surface layout and rendering |
+| `crates/assistant` | The Assistant: tools over the System State, the Claude API client and the tool-use loop |
+| `crates/studio-native`, `crates/studio-scene` | The Studio application (Surface, Panels, Conversation) and its Surface layout and rendering |
 | `models/url-shortener/` | The Scenario A architecture, used by tests and the language check |
 | `docs/` | `stages.md` (progress), `subset.md` (supported SysML), `deviations.md` (departures from the standard) |
 | `standards/` | Pinned KerML 1.0 / SysML 2.0 artifacts, libraries and grammar, kept as the reference (never edited) |

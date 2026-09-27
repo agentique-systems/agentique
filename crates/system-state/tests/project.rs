@@ -301,6 +301,35 @@ fn a_change_that_could_not_be_saved_is_not_redoable() {
 }
 
 #[test]
+fn undo_since_reverts_the_assistants_work_and_saves_it() {
+    let (_dir, folder, mut project) = shop();
+    let shop = id(&project, "Shop");
+    let started = project.state().revision();
+    for name in ["Cache", "Queue"] {
+        let create = Operation::Create {
+            parent: Parent::Element(shop),
+            element: Box::new(Element::named(ElementKind::PartDef, name)),
+        };
+        project
+            .apply(Change::new(Actor::Assistant, name, vec![create]))
+            .unwrap();
+    }
+    let events = project.undo_since(started).unwrap();
+    assert_eq!(events.len(), 2);
+    assert!(project.state().tree().find("Shop::Cache").is_none());
+    assert!(
+        project
+            .undo_since(project.state().revision())
+            .unwrap()
+            .is_empty()
+    );
+    drop(project);
+    let project = Project::open(&folder).unwrap();
+    assert!(project.state().tree().find("Shop::Queue").is_none());
+    assert!(project.state().tree().find("Shop::Store").is_some());
+}
+
+#[test]
 fn an_interrupted_save_opens_to_the_old_or_the_new_state() {
     let (_dir, folder, project) = shop();
     let store = id(&project, "Shop::Store");

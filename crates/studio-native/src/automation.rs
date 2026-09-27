@@ -14,6 +14,12 @@
 //!   checkpoints, nothing unmatched, and the edit made just before the
 //!   unclean exit, shown in the "what changed" view since the newest
 //!   checkpoint. Run a-build, a-crash, a-reopen.
+//! - `a-assistant --project <new folder>`: creates a project and asks the
+//!   Assistant (a built-in scripted model, never the network) to build the
+//!   URL shortener: cards and parts appear, a question is answered with an
+//!   option, an element link selects its element. A second request touches
+//!   a locked part (refused), is stopped while it asks a question, and
+//!   "Undo the Assistant's changes" removes what it did.
 //!
 //! What this proves: an edit is on disk when it is shown, so ending the
 //! process uncleanly loses nothing that was shown. It does not interrupt a
@@ -72,6 +78,8 @@ enum Action {
     Click(Target),
     /// Click the card of the element at this path.
     ClickCard(&'static str),
+    /// Click the link to the element at this path in the Conversation.
+    ClickLink(&'static str),
     /// Drag from a port on a card to a port on another card: (card, port).
     DragPort((&'static str, &'static str), (&'static str, &'static str)),
     /// End the process at once, as a crash would: nothing is closed or saved.
@@ -81,7 +89,7 @@ impl Action {
     fn frames(&self) -> u64 {
         match self {
             Self::Idle | Self::Key(..) | Self::Text(_) | Self::Crash => 1,
-            Self::Click(_) | Self::ClickCard(_) => 2,
+            Self::Click(_) | Self::ClickCard(_) | Self::ClickLink(_) => 2,
             Self::Fill(..) => 5,
             Self::DragPort(..) => 12,
         }
@@ -89,7 +97,11 @@ impl Action {
     /// Pointer actions wait so egui cannot join them into a double click.
     fn lead(&self) -> u64 {
         match self {
-            Self::Click(_) | Self::ClickCard(_) | Self::Fill(..) | Self::DragPort(..) => 25,
+            Self::Click(_)
+            | Self::ClickCard(_)
+            | Self::ClickLink(_)
+            | Self::Fill(..)
+            | Self::DragPort(..) => 25,
             _ => 0,
         }
     }
@@ -121,6 +133,16 @@ enum Check {
     /// A card with this name shows a problem.
     ProblemShown(&'static str),
     NoProblems,
+    /// The message input holds text.
+    MessageTyped,
+    /// The Assistant asks a question and this element exists.
+    Question(&'static str),
+    /// The Assistant's turn is over and this element exists.
+    AssistantDone(&'static str),
+    /// The element does not exist.
+    Missing(&'static str),
+    /// The Assistant stopped after the Operator pressed Stop.
+    Stopped,
 }
 
 #[derive(Clone, Debug)]
@@ -159,7 +181,13 @@ fn create(kind_key: Key, name: &'static str, path: &'static str, kind: ElementKi
 }
 
 fn build(folder: &Path) -> Vec<Step> {
-    let mut steps = vec![
+    let mut steps = new_project(folder);
+    steps.extend(build_by_hand());
+    steps
+}
+
+fn new_project(folder: &Path) -> Vec<Step> {
+    vec![
         step("start screen", Action::Idle, Check::StartScreen),
         step(
             "New project…",
@@ -184,7 +212,11 @@ fn build(folder: &Path) -> Vec<Step> {
             Action::Click(Target::Button("Create project")),
             Check::ProjectOpen,
         ),
-    ];
+    ]
+}
+
+fn build_by_hand() -> Vec<Step> {
+    let mut steps = Vec::new();
     for (name, path) in [
         ("api", "UrlShortener::api"),
         ("store", "UrlShortener::store"),
@@ -431,6 +463,244 @@ fn build(folder: &Path) -> Vec<Step> {
     steps
 }
 
+const SERVICE: &str = "UrlShortener::UrlShortenerService";
+
+fn assistant(folder: &Path) -> Vec<Step> {
+    let mut steps = new_project(folder);
+    steps.extend([
+        step(
+            "type a request for the Assistant",
+            Action::Fill(
+                Target::Field("Message"),
+                "Build a URL shortener: an HTTP API, a link store and click statistics.".into(),
+            ),
+            Check::MessageTyped,
+        ),
+        Step {
+            screenshot: Some("01-cards-and-question"),
+            settle: 20,
+            ..step(
+                "Enter sends; parts appear, then a question",
+                Action::Key(Key::Enter, Modifiers::NONE),
+                Check::Question("UrlShortener::UrlShortenerService::store"),
+            )
+        },
+        Step {
+            screenshot: Some("02-answered"),
+            settle: 20,
+            ..step(
+                "answer with the first option",
+                Action::Click(Target::Button(crate::conversation_ui::OPTIONS[0])),
+                Check::AssistantDone("UrlShortener::UrlShortenerService::stats"),
+            )
+        },
+        Step {
+            screenshot: Some("03-link-selects"),
+            ..step(
+                "an element link selects the element",
+                Action::ClickLink("UrlShortener::UrlShortenerService::store"),
+                Check::Selected("UrlShortener::UrlShortenerService::store"),
+            )
+        },
+        step(
+            "select api",
+            Action::ClickCard("UrlShortener::UrlShortenerService::api"),
+            Check::Selected("UrlShortener::UrlShortenerService::api"),
+        ),
+        step(
+            "L locks api",
+            Action::Key(Key::L, Modifiers::NONE),
+            Check::Locked("UrlShortener::UrlShortenerService::api"),
+        ),
+        step(
+            "type a second request",
+            Action::Fill(Target::Field("Message"), "Add expiring links.".into()),
+            Check::MessageTyped,
+        ),
+        Step {
+            screenshot: Some("04-locked-asks"),
+            settle: 20,
+            ..step(
+                "a change to the locked part asks first",
+                Action::Key(Key::Enter, Modifiers::NONE),
+                Check::LockConfirmation,
+            )
+        },
+        Step {
+            settle: 20,
+            ..step(
+                "Escape refuses; the Assistant goes on and asks",
+                Action::Key(Key::Escape, Modifiers::NONE),
+                Check::Question("UrlShortener::ShortLink::expiresAt"),
+            )
+        },
+        step(
+            "the refused change was not made",
+            Action::Idle,
+            Check::Missing("UrlShortener::UrlShortenerService::api::linkLifetime"),
+        ),
+        Step {
+            screenshot: Some("05-stopped"),
+            ..step(
+                "Stop ends the turn; its work stays",
+                Action::Click(Target::Button("Stop")),
+                Check::Stopped,
+            )
+        },
+        step(
+            "the partial work is there",
+            Action::Idle,
+            Check::Exists("UrlShortener::ShortLink::expiresAt", ElementKind::Attribute),
+        ),
+        Step {
+            screenshot: Some("06-undone"),
+            ..step(
+                "undo the Assistant's changes",
+                Action::Click(Target::Button("Undo the Assistant's changes")),
+                Check::Missing("UrlShortener::ShortLink::expiresAt"),
+            )
+        },
+        step(
+            "the first turn's work stays",
+            Action::Idle,
+            Check::Exists(
+                "UrlShortener::UrlShortenerService::stats",
+                ElementKind::Part,
+            ),
+        ),
+    ]);
+    steps
+}
+
+/// The Assistant for `a-assistant`: a scripted stand-in with the replies
+/// the journey expects, never the network.
+pub fn script_assistant(app: &mut StudioApp) {
+    use serde_json::{Value, json};
+    let text = |text: &str| json!({ "type": "text", "text": text });
+    let tool = |id: &str, name: &str, input: Value| json!({ "type": "tool_use", "id": id, "name": name, "input": input });
+    let reply = |content: Vec<Value>, stop: &str| agq_assistant::Reply {
+        content,
+        stop_reason: stop.to_string(),
+    };
+    let changes = |id: &str, description: &str, operations: Value| {
+        tool(
+            id,
+            "apply_changes",
+            json!({ "description": description, "operations": operations }),
+        )
+    };
+    let build = json!([
+        { "op": "create", "parent": "UrlShortener", "kind": "item def", "name": "ShortLink" },
+        { "op": "create", "parent": "UrlShortener::ShortLink", "kind": "attribute", "name": "code", "type": "ScalarValues::String" },
+        { "op": "create", "parent": "UrlShortener", "kind": "port def", "name": "LinkStorePort" },
+        { "op": "create", "parent": "UrlShortener::LinkStorePort", "kind": "item", "name": "save", "direction": "in", "type": "ShortLink" },
+        { "op": "create", "parent": "UrlShortener::LinkStorePort", "kind": "item", "name": "found", "direction": "out", "type": "ShortLink" },
+        { "op": "create", "parent": "UrlShortener", "kind": "interface def", "name": "LinkStorage" },
+        { "op": "create", "parent": "UrlShortener::LinkStorage", "kind": "port", "name": "client", "type": "~LinkStorePort", "end": true },
+        { "op": "create", "parent": "UrlShortener::LinkStorage", "kind": "port", "name": "store", "type": "LinkStorePort", "end": true },
+        { "op": "create", "parent": "UrlShortener", "kind": "part def", "name": "HttpApi", "doc": "Accepts shorten and resolve requests over HTTP." },
+        { "op": "create", "parent": "UrlShortener::HttpApi", "kind": "port", "name": "storage", "type": "~LinkStorePort" },
+        { "op": "create", "parent": "UrlShortener", "kind": "part def", "name": "LinkStore", "doc": "Keeps short links." },
+        { "op": "create", "parent": "UrlShortener::LinkStore", "kind": "port", "name": "links", "type": "LinkStorePort" },
+        { "op": "create", "parent": "UrlShortener", "kind": "part def", "name": "UrlShortenerService" },
+        { "op": "create", "parent": SERVICE, "kind": "part", "name": "api", "type": "HttpApi" },
+        { "op": "create", "parent": SERVICE, "kind": "part", "name": "store", "type": "LinkStore" },
+        { "op": "connect", "parent": SERVICE, "kind": "interface", "name": "storage",
+          "definition": "LinkStorage", "from": "api.storage", "to": "store.links" },
+        { "op": "create", "parent": "UrlShortener", "kind": "part", "name": "shortener", "type": "UrlShortenerService" }
+    ]);
+    let stats = json!([
+        { "op": "create", "parent": "UrlShortener", "kind": "part def", "name": "ClickStatistics", "doc": "Counts clicks per short link." },
+        { "op": "create", "parent": SERVICE, "kind": "part", "name": "stats", "type": "ClickStatistics" }
+    ]);
+    let finished = [
+        "The URL shortener is in place:",
+        "",
+        "- `UrlShortener::UrlShortenerService::api` takes **shorten** and **resolve** requests.",
+        "- `UrlShortener::UrlShortenerService::store` keeps the links; the `storage` interface joins it to the API.",
+        "- `UrlShortener::UrlShortenerService::stats` counts clicks, as a *separate* part.",
+        "",
+        "```sysml",
+        "part def UrlShortenerService {",
+        "    part api : HttpApi;",
+        "    part store : LinkStore;",
+        "    part stats : ClickStatistics;",
+        "}",
+        "```",
+    ]
+    .join("\n");
+    let replies = vec![
+        reply(
+            vec![
+                text("I'll read the model first."),
+                tool("r1", "read_model", json!({})),
+            ],
+            "tool_use",
+        ),
+        reply(
+            vec![
+                text("An API and a link store, joined by an interface."),
+                changes("c1", "Add the API and the link store", build),
+            ],
+            "tool_use",
+        ),
+        reply(
+            vec![tool(
+                "q1",
+                "ask_operator",
+                json!({
+                    "question": "Should click statistics be a separate part, or counted inside the API?",
+                    "options": ["A separate part", "Inside the API"]
+                }),
+            )],
+            "tool_use",
+        ),
+        reply(
+            vec![changes("c2", "Add click statistics", stats)],
+            "tool_use",
+        ),
+        reply(vec![text(&finished)], "end_turn"),
+        // The second request: the change to the locked API is refused, and
+        // the Operator stops the turn while it asks a question.
+        reply(
+            vec![
+                text("Links need a lifetime. The API is locked, so this asks you first."),
+                changes(
+                    "c3",
+                    "Add a link lifetime to the API",
+                    json!([{ "op": "create", "parent": "UrlShortener::UrlShortenerService::api", "kind": "attribute", "name": "linkLifetime" }]),
+                ),
+            ],
+            "tool_use",
+        ),
+        reply(
+            vec![
+                text("I'll keep the API as it is and store the expiry with the link."),
+                changes(
+                    "c4",
+                    "Add an expiry time to short links",
+                    json!([{ "op": "create", "parent": "UrlShortener::ShortLink", "kind": "attribute", "name": "expiresAt", "type": "ScalarValues::String" }]),
+                ),
+            ],
+            "tool_use",
+        ),
+        reply(
+            vec![tool(
+                "q2",
+                "ask_operator",
+                json!({
+                    "question": "Should expired links be deleted, or kept and reported as expired?",
+                    "options": ["Delete them", "Keep and report"]
+                }),
+            )],
+            "tool_use",
+        ),
+    ];
+    app.conversation.new_model = crate::conversation::scripted(replies);
+    app.conversation.key_missing = false;
+    app.conversation.model_name = "scripted stand-in (no network)".into();
+}
+
 fn crash() -> Vec<Step> {
     let mut steps = vec![
         step("the project opens", Action::Idle, Check::ProjectOpen),
@@ -564,6 +834,7 @@ fn drive(
                 steps: match scenario {
                     "a-build" => build(&folder),
                     "a-crash" => crash(),
+                    "a-assistant" => assistant(&folder),
                     _ => reopen(),
                 },
                 index: 0,
@@ -719,6 +990,11 @@ impl Runner {
                         p
                     }
                 };
+                click(input, p, frame == 0);
+            }
+            Action::ClickLink(path) => {
+                let id = find(app, path)?;
+                let p = target(ctx, Target::Link(id.raw()))?.center();
                 click(input, p, frame == 0);
             }
             Action::Fill(t, text) => match frame {
@@ -996,6 +1272,43 @@ fn check(check: &Check, app: &StudioApp) -> Result<(), String> {
             let project = app.project.as_ref().ok_or("no project is open")?;
             if let Some(problem) = project.state().diagnostics().first() {
                 return Err(format!("a problem remains: {}", problem.message));
+            }
+        }
+        Check::MessageTyped => {
+            if app.conversation.input.trim().is_empty() {
+                return fail("the message input is empty");
+            }
+        }
+        Check::Question(path) => {
+            find(app, path)?;
+            if !matches!(
+                app.conversation.waiting,
+                Some(crate::conversation::Waiting {
+                    kind: crate::conversation::WaitingFor::Question { .. },
+                    ..
+                })
+            ) {
+                return fail("the Assistant is not asking a question");
+            }
+        }
+        Check::AssistantDone(path) => {
+            find(app, path)?;
+            if app.conversation.running() || app.dialog.is_some() {
+                return fail("the Assistant is still working");
+            }
+        }
+        Check::Missing(path) => {
+            if tree(app)?.find(path).is_some() {
+                return Err(format!("{path} still exists"));
+            }
+        }
+        Check::Stopped => {
+            let stopped = matches!(
+                app.conversation.conversation.entries.last(),
+                Some(agq_assistant::Entry::Notice { text }) if text.starts_with("Stopped")
+            );
+            if app.conversation.running() || !stopped {
+                return fail("the Assistant did not stop");
             }
         }
     }
