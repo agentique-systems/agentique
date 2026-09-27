@@ -15,7 +15,7 @@
 //!
 //! When the text was edited by hand, an element whose locator has no entry
 //! gets a new identity on open and is listed in [`Project::unmatched`].
-//! Elements are never matched by name or similarity.
+//! Elements are matched only by their exact locator, never by similarity.
 use crate::{Change, ChangeEvent, Rejection, SystemState};
 use agq_history::{CommitInfo, History, Identities, Snapshot};
 use agq_language::{
