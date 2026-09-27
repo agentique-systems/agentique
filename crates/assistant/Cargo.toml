@@ -1,0 +1,14 @@
+[package]
+name = "agq-assistant"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "The Assistant: tools over the System State, the Conversation, the Claude API client, the tool-use loop and the skills"
+
+[dependencies]
+agq-language = { path = "../language" }
+agq-system-state = { path = "../system-state" }
+serde.workspace = true
+serde_json.workspace = true
+# The Claude API client: blocking HTTPS with rustls, the response body read as it streams in.
+reqwest = { version = "0.12.28", default-features = false, features = ["blocking", "rustls-tls"] }

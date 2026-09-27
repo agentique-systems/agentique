@@ -51,8 +51,8 @@ package AgentiqueArchitecture {
 
     part def Assistant {
         doc /* The Claude API client: tool-use loop, skills, and tools that call System
-             * State operations. An Orchestrator comes later. Its crate arrives in
-             * Stage 3. */
+             * State operations. An Orchestrator comes later. */
+        part 'agq-assistant' : Crate;
     }
 
     part def Simulation {
