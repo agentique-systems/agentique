@@ -98,11 +98,12 @@ impl History {
             serde_json::to_string(&journal).expect("journal").as_bytes(),
         )?;
         rename(&pending, &self.dir.join(JOURNAL))?;
-        sync_dir(&self.dir)?;
-        // The save has happened. If moving the files into place fails or
-        // stops from here on, recovery finishes it.
+        // The save has happened. Whatever fails or stops from here on, the
+        // next load, save or commit finishes it through recovery, so it is
+        // not reported as a failed save.
         self.seen = next;
-        let moved = matches!(apply(&self.dir, &journal, &mut stop_after), Ok(true));
+        let moved = sync_dir(&self.dir).is_ok()
+            && matches!(apply(&self.dir, &journal, &mut stop_after), Ok(true));
         Ok(moved && step(&mut stop_after) && remove(&self.dir.join(JOURNAL)).is_ok())
     }
 
@@ -181,13 +182,17 @@ fn apply(dir: &Path, journal: &Journal, stop_after: &mut Option<usize>) -> Resul
             _ => {}
         }
     }
-    // Every folder that had a file renamed or deleted in it.
-    let folders: BTreeSet<&str> = journal
-        .write
-        .iter()
-        .chain(&journal.delete)
-        .map(|path| path.rsplit_once('/').map_or("", |(folder, _)| folder))
-        .collect();
+    // Every folder that had a file renamed or deleted in it, and the folders
+    // above it, which may have got a new subfolder.
+    let mut folders = BTreeSet::new();
+    for path in journal.write.iter().chain(&journal.delete) {
+        let mut folder = path.as_str();
+        while let Some((above, _)) = folder.rsplit_once('/') {
+            folders.insert(above);
+            folder = above;
+        }
+        folders.insert("");
+    }
     for folder in folders {
         sync_dir(&dir.join(folder))?;
     }
@@ -354,19 +359,49 @@ fn is_transient(error: &io::Error) -> bool {
     matches!(error.raw_os_error(), Some(5 | 32 | 33))
 }
 
-/// Makes renames and deletes in the folder `dir` durable.
+/// Makes renames and deletes in the folder `dir` durable where the file
+/// system can. Some cannot flush a folder (a network share on Windows
+/// answers "Incorrect function"); there this does nothing.
 fn sync_dir(dir: &Path) -> Result<()> {
+    match flush_folder(dir) {
+        Err(e) if cannot_flush_folders(&e) => Ok(()),
+        result => Ok(result?),
+    }
+}
+
+fn flush_folder(dir: &Path) -> io::Result<()> {
+    #[cfg(test)]
+    if let Some(error) = FAILING_FOLDER_FLUSH.get() {
+        return Err(error());
+    }
     #[cfg(windows)]
     {
         use std::os::windows::fs::OpenOptionsExt;
         // FILE_FLAG_BACKUP_SEMANTICS: needed to open a folder.
-        let folder = fs::OpenOptions::new()
+        fs::OpenOptions::new()
             .write(true)
             .custom_flags(0x0200_0000)
-            .open(dir)?;
-        folder.sync_all()?;
+            .open(dir)?
+            .sync_all()
     }
     #[cfg(not(windows))]
-    fs::File::open(dir)?.sync_all()?;
-    Ok(())
+    fs::File::open(dir)?.sync_all()
+}
+
+/// ERROR_INVALID_FUNCTION or ERROR_NOT_SUPPORTED on Windows, EINVAL elsewhere.
+fn cannot_flush_folders(error: &io::Error) -> bool {
+    let code = error.raw_os_error();
+    error.kind() == ErrorKind::Unsupported
+        || if cfg!(windows) {
+            matches!(code, Some(1 | 50))
+        } else {
+            code == Some(22)
+        }
+}
+
+#[cfg(test)]
+thread_local! {
+    /// Tests make folder flushes on their thread fail with this error.
+    pub(crate) static FAILING_FOLDER_FLUSH: std::cell::Cell<Option<fn() -> io::Error>> =
+        const { std::cell::Cell::new(None) };
 }

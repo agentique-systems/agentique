@@ -77,7 +77,8 @@ pub enum Error {
     )]
     ConflictMarkers { path: String },
     #[error(
-        "model files were changed outside Agentique while the project was open ({});          open the project again to load them",
+        "model files were changed outside Agentique while the project was open ({}); \
+         open the project again to load them",
         .0.join(", ")
     )]
     ChangedOnDisk(Vec<String>),

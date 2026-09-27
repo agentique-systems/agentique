@@ -1,8 +1,10 @@
 //! Crash safety: an interrupted save leaves the old or the new state, never
 //! a mix, and never touches committed history.
+use crate::folder::FAILING_FOLDER_FLUSH;
 use crate::{Error, History, Identities, ModelFiles};
 use std::collections::BTreeSet;
 use std::fs;
+use std::io;
 use std::path::Path;
 
 fn model(documents: &[(&str, &str)], elements: &[(&str, &str)], locks: &[&str]) -> ModelFiles {
@@ -177,4 +179,47 @@ fn an_unfinished_git_merge_is_explained() {
     assert!(matches!(&error, Error::ConflictMarkers { path } if path == "agentique.json"));
     assert!(error.to_string().contains("git merge --abort"), "{error}");
     assert_eq!(fs::read_to_string(&path).unwrap(), text);
+}
+
+/// The files a model folder holds for `files`, as `listing` shows them.
+fn expected(files: &ModelFiles) -> Vec<String> {
+    let mut paths: Vec<String> = files.documents.keys().cloned().collect();
+    paths.push("agentique.json".into());
+    paths.sort();
+    paths
+}
+
+#[test]
+fn a_folder_that_cannot_be_flushed_still_saves_and_opens() {
+    // As on a network share on Windows: "Incorrect function".
+    let dir = committed();
+    FAILING_FOLDER_FLUSH.set(Some(|| {
+        io::Error::from_raw_os_error(if cfg!(windows) { 1 } else { 22 })
+    }));
+    let (mut history, _) = History::open(dir.path()).unwrap();
+    history.save(&new()).unwrap();
+    history.commit("Rework the shop").unwrap().unwrap();
+    drop(history);
+    let (_, loaded) = History::open(dir.path()).unwrap();
+    FAILING_FOLDER_FLUSH.set(None);
+    assert_eq!(loaded, new());
+    assert_eq!(listing(&dir.path().join("model"), ""), expected(&new()));
+}
+
+#[test]
+fn a_failure_after_the_journal_is_finished_later_and_never_wedges_the_folder() {
+    let dir = committed();
+    let (mut history, _) = History::open(dir.path()).unwrap();
+    FAILING_FOLDER_FLUSH.set(Some(|| io::Error::other("the disk failed")));
+    // The journal is on disk, so the save has happened.
+    history.save(&new()).unwrap();
+    // While the disk fails, finishing the save fails and nothing else runs.
+    assert!(matches!(history.save(&old()), Err(Error::Io(_))));
+    FAILING_FOLDER_FLUSH.set(None);
+    // Then it is finished, and later saves work: no ChangedOnDisk.
+    history.save(&old()).unwrap();
+    drop(history);
+    let (_, loaded) = History::open(dir.path()).unwrap();
+    assert_eq!(loaded, old());
+    assert_eq!(listing(&dir.path().join("model"), ""), expected(&old()));
 }

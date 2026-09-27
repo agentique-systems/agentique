@@ -429,7 +429,8 @@ fn next_id(identities: &Identities) -> Result<u64, ProjectError> {
 
 /// The highest next id at the tip of any branch, so that an element created
 /// on one branch never takes the id of a different element on another.
-/// Unreadable branches are skipped.
+/// Unreadable branches are skipped. Reads each branch's model folder: fine
+/// for a few branches, to be replaced by reading only `agentique.json`.
 fn next_on_branches(history: &History) -> u64 {
     let branches = history.branches().unwrap_or_default();
     branches
