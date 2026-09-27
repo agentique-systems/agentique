@@ -20,12 +20,14 @@ Progress per stage is in [docs/stages.md](docs/stages.md).
 
 ## Current stage
 
-Stage 4 (live proof and foundations, ROADMAP §6.2) is in progress. Stages 0–3
-are built, pending the Operator's acceptance by a live run (C-29): the repository is cleaned up, the language core is rebuilt, the
-Studio edits a git-backed System State by hand, and the Assistant works in the
-Conversation through the same operations (set `ANTHROPIC_API_KEY`; the live
-API has not been tried yet). See [docs/stages.md](docs/stages.md) for what
-works and what to try. The language core can also be tried on its own:
+Stage 4 (live proof and foundations, ROADMAP §6.2) is built, provisionally
+complete and pending the Operator's acceptance; Stages 0–3 wait for the
+Operator's live run of Scenario A (C-29). The Assistant runs through the
+provider layer on rig: with only `DEEPSEEK_API_KEY` set it uses
+`deepseek-flash` (C-35); Anthropic, OpenAI and OpenRouter keys also work (only
+DeepSeek has been tried live). See [docs/stages.md](docs/stages.md) for what
+works, what was measured and what to try. The language core can also be tried
+on its own:
 
 ```text
 cargo run -p agq-language --example check -- models/url-shortener
@@ -37,9 +39,11 @@ retired to git history (last version on `main` at `6fc90b78`).
 
 ## Build and run
 
-Requirements: Windows 10 or later (Linux builds in CI), the Rust toolchain
-pinned in `rust-toolchain.toml`, and a C/C++ build toolchain for the embedded
-git library (libgit2). No git install, runtime bundle or network is needed.
+Requirements: Windows 10 or later (Linux builds in CI and needs OpenSSL's
+development files for TLS), the Rust toolchain pinned in
+`rust-toolchain.toml`, and a C/C++ build toolchain for the embedded git library
+(libgit2). No git install or runtime bundle is needed; the network is used only
+by the Assistant, with a provider key.
 
 Run the Studio:
 
@@ -80,7 +84,8 @@ pull request.
 | `crates/language` | The language core: the SysML subset as an element tree (parse, print, validate) |
 | `crates/system-state` | The System State: typed operations, locks, undo, change events; `Project` ties it to History |
 | `crates/history` | The model folder in git: crash-safe saves, checkpoints, branches |
-| `crates/assistant` | The Assistant: tools over the System State, the Claude API client and the tool-use loop |
+| `crates/assistant` | The Assistant: tools over the System State, the turn loop, skills, the conversation, the evaluation set |
+| `crates/providers` | Providers: model providers through rig, capabilities, keys, usage |
 | `crates/studio-native`, `crates/studio-scene` | The Studio application (Surface, Panels, Conversation) and its Surface layout and rendering |
 | `models/url-shortener/` | The Scenario A architecture, used by tests and the language check |
 | `docs/` | `stages.md` (progress), `subset.md` (supported SysML), `deviations.md` (departures from the standard) |
