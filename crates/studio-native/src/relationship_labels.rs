@@ -1,6 +1,73 @@
-//! Screen-space annotation placement. Routes and semantic identity are untouched.
-use eframe::egui::{Pos2, Rect, Vec2};
-use std::collections::HashMap;
+//! Screen-space annotation placement and drawing. Routes and semantic identity
+//! are untouched.
+use crate::theme::{self, Theme};
+use eframe::egui::{self, Galley, Painter, Pos2, Rect, Shadow, Stroke, Vec2};
+use std::{collections::HashMap, sync::Arc};
+
+/// Space between a label's text and its outline; `place` takes the text size
+/// plus twice this.
+#[allow(dead_code, reason = "the Surface adopts it with `paint`")]
+pub(crate) const PADDING: Vec2 = Vec2::new(8.0, 4.0);
+
+/// Lay out a relationship label: at most two rows within `max_width`, broken
+/// at spaces, never shrunk below `theme::LABEL`, elided rather than clipped.
+/// The colour is left to `paint`.
+#[allow(dead_code, reason = "the Surface adopts it with `paint`")]
+pub(crate) fn layout(painter: &Painter, text: String, max_width: f32) -> Arc<Galley> {
+    let mut job = egui::text::LayoutJob::simple_singleline(
+        text,
+        theme::medium(theme::LABEL),
+        egui::Color32::PLACEHOLDER,
+    );
+    job.wrap.max_width = max_width;
+    job.wrap.max_rows = 2;
+    job.wrap.break_anywhere = false;
+    job.wrap.overflow_character = Some('…');
+    painter.layout_job(job)
+}
+
+/// Draw a placed label: a short leader from the route to the label, and the
+/// text on a raised tag. `emphasis` marks the selected or hovered relationship.
+#[allow(dead_code, reason = "the Surface adopts it in place of inline drawing")]
+pub(crate) fn paint(
+    painter: &Painter,
+    placement: &Placement,
+    galley: Arc<Galley>,
+    emphasis: bool,
+    theme: Theme,
+) {
+    let bounds = placement.bounds;
+    let (line, text) = if emphasis {
+        (theme.accent, theme.text)
+    } else {
+        (theme.border_strong, theme.text_secondary)
+    };
+    let end = bounds.clamp(placement.anchor);
+    if end.distance(placement.anchor) > 1.0 {
+        painter.line_segment([placement.anchor, end], Stroke::new(theme::HAIRLINE, line));
+    }
+    painter.circle_filled(placement.anchor, 2.5, line);
+    painter.add(
+        Shadow {
+            offset: [0, 1],
+            blur: 6,
+            spread: 0,
+            color: theme.shadow,
+        }
+        .as_shape(bounds, theme::RADIUS),
+    );
+    painter.rect(
+        bounds,
+        theme::RADIUS,
+        theme.elevated,
+        Stroke::new(
+            theme::HAIRLINE,
+            if emphasis { theme.accent } else { theme.border },
+        ),
+        egui::StrokeKind::Inside,
+    );
+    painter.galley(bounds.min + PADDING, galley, text);
+}
 
 /// Screen-space cells bound the work of avoiding dense routes. This contains
 /// drawing segments only, never semantic records or graph authority.

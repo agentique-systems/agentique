@@ -3,11 +3,16 @@
 //! Camera motion updates one uniform. Geometry uploads only when the presentation
 //! generation/visibility/selection changes. Text uses the toolkit glyph atlas above
 //! this pass; it is culled and selected by semantic LOD before shaping.
+//!
+//! Visual parameters come from `theme`: cards in the node batch cast a soft
+//! shadow, and `Quad::changed` / `Quad::halo` draw glows whose fade runs on the
+//! GPU from `clock()`, so a highlight never forces a geometry upload.
+use crate::theme;
 use bytemuck::{Pod, Zeroable};
 use eframe::egui;
 use egui_wgpu::{CallbackResources, CallbackTrait, ScreenDescriptor, wgpu};
 use std::{
-    sync::{Arc, Mutex},
+    sync::{Arc, Mutex, OnceLock},
     time::Instant,
 };
 use wgpu::util::DeviceExt;
@@ -20,8 +25,17 @@ pub struct Quad {
     pub border: [f32; 4],
     /// radius, border width, cos, sin
     pub style: [f32; 4],
-    /// Dash period / ink length in world units; zero period is solid.
+    /// Dash period and ink length in world units (zero period is solid),
+    /// effect (0 plain, `CHANGED`, `HALO`), effect start on `clock()`.
     pub detail: [f32; 4],
+}
+const CHANGED: f32 = 1.0;
+const HALO: f32 = 2.0;
+
+/// Seconds since the renderer started; the time base of `Quad::changed`.
+pub fn clock() -> f32 {
+    static START: OnceLock<Instant> = OnceLock::new();
+    START.get_or_init(Instant::now).elapsed().as_secs_f32()
 }
 impl Quad {
     pub fn rect(
@@ -56,10 +70,34 @@ impl Quad {
             detail: [0.0; 4],
         })
     }
+    /// The changed highlight around `rect` (a card's own rectangle and radius):
+    /// a ring, a soft outer glow and a light tint in `color` (`Theme::changed`)
+    /// that rise and fade over `theme::CHANGED_SECONDS` from `started`
+    /// (`clock()` when the change arrived). Push it to `Batch::overlays`, and
+    /// request repaints while `theme::changed_intensity(clock() - started) > 0`.
+    #[allow(dead_code, reason = "the Studio calls it when change events arrive")]
+    pub fn changed(rect: [f32; 4], radius: f32, color: egui::Color32, started: f32) -> Self {
+        Self {
+            detail: [0.0, 0.0, CHANGED, started],
+            ..Self::rect(rect, color, color, radius, 0.0)
+        }
+    }
+    /// A static soft glow around `rect` in `color`: selection and focus halos.
+    /// Push it before the card it surrounds.
+    #[allow(dead_code, reason = "the Studio's selection rendering adopts it")]
+    pub fn halo(rect: [f32; 4], radius: f32, color: egui::Color32) -> Self {
+        Self {
+            detail: [0.0, 0.0, HALO, 0.0],
+            ..Self::rect(rect, color, color, radius, 0.0)
+        }
+    }
 }
 fn color(value: egui::Color32) -> [f32; 4] {
     value.to_array().map(|v| v as f32 / 255.0)
 }
+
+/// Index of `Batch::nodes` among the four ordered ranges.
+const NODES: usize = 2;
 
 #[derive(Default)]
 pub struct Batch {
@@ -83,6 +121,7 @@ pub struct GpuStats {
 }
 struct Resources {
     pipeline: wgpu::RenderPipeline,
+    shadow_pipeline: wgpu::RenderPipeline,
     bind_group: wgpu::BindGroup,
     uniform: wgpu::Buffer,
     instances: wgpu::Buffer,
@@ -117,7 +156,7 @@ pub fn install(
             ty: wgpu::BindingType::Buffer {
                 ty: wgpu::BufferBindingType::Uniform,
                 has_dynamic_offset: false,
-                min_binding_size: std::num::NonZeroU64::new(32),
+                min_binding_size: std::num::NonZeroU64::new(UNIFORM_BYTES),
             },
             count: None,
         }],
@@ -129,38 +168,42 @@ pub fn install(
     });
     let attributes =
         wgpu::vertex_attr_array![0=>Float32x4,1=>Float32x4,2=>Float32x4,3=>Float32x4,4=>Float32x4];
-    let pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-        label: Some("Scene quads and routes"),
-        layout: Some(&pipeline_layout),
-        vertex: wgpu::VertexState {
-            module: &shader,
-            entry_point: Some("vertex"),
-            compilation_options: Default::default(),
-            buffers: &[wgpu::VertexBufferLayout {
-                array_stride: std::mem::size_of::<Quad>() as u64,
-                step_mode: wgpu::VertexStepMode::Instance,
-                attributes: &attributes,
-            }],
-        },
-        fragment: Some(wgpu::FragmentState {
-            module: &shader,
-            entry_point: Some("fragment"),
-            compilation_options: Default::default(),
-            targets: &[Some(wgpu::ColorTargetState {
-                format: state.target_format,
-                blend: Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),
-                write_mask: wgpu::ColorWrites::ALL,
-            })],
-        }),
-        primitive: Default::default(),
-        depth_stencil: None,
-        multisample: Default::default(),
-        multiview: None,
-        cache: None,
-    });
+    let pipeline = |label: &str, vertex: &str, fragment: &str| {
+        device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some(label),
+            layout: Some(&pipeline_layout),
+            vertex: wgpu::VertexState {
+                module: &shader,
+                entry_point: Some(vertex),
+                compilation_options: Default::default(),
+                buffers: &[wgpu::VertexBufferLayout {
+                    array_stride: std::mem::size_of::<Quad>() as u64,
+                    step_mode: wgpu::VertexStepMode::Instance,
+                    attributes: &attributes,
+                }],
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &shader,
+                entry_point: Some(fragment),
+                compilation_options: Default::default(),
+                targets: &[Some(wgpu::ColorTargetState {
+                    format: state.target_format,
+                    blend: Some(wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
+            }),
+            primitive: Default::default(),
+            depth_stencil: None,
+            multisample: Default::default(),
+            multiview: None,
+            cache: None,
+        })
+    };
+    let shadow_pipeline = pipeline("Scene card shadows", "shadow_vertex", "shadow_fragment");
+    let pipeline = pipeline("Scene quads and routes", "vertex", "fragment");
     let uniform = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
         label: Some("Scene camera uniform"),
-        contents: bytemuck::cast_slice(&[0.0f32; 8]),
+        contents: bytemuck::cast_slice(&[0.0f32; UNIFORM_FLOATS]),
         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
     });
     let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
@@ -179,6 +222,7 @@ pub fn install(
     });
     state.renderer.write().callback_resources.insert(Resources {
         pipeline,
+        shadow_pipeline,
         bind_group,
         uniform,
         instances,
@@ -199,9 +243,31 @@ pub fn install(
     Ok(())
 }
 
+const UNIFORM_FLOATS: usize = 16;
+const UNIFORM_BYTES: u64 = (UNIFORM_FLOATS * 4) as u64;
+
+/// The shader uniform: camera, scene clock, then the shadow and glow tokens.
+fn uniform(camera: &[f32; 8], time: f32) -> [f32; UNIFORM_FLOATS] {
+    let mut values = [0.0; UNIFORM_FLOATS];
+    values[..6].copy_from_slice(&camera[..6]);
+    values[6] = time;
+    values[8..].copy_from_slice(&[
+        theme::SHADOW_OFFSET,
+        theme::SHADOW_BLUR,
+        theme::SHADOW_OPACITY_DARK,
+        theme::SHADOW_OPACITY_LIGHT,
+        theme::GLOW_WIDTH,
+        theme::CHANGED_RISE_SECONDS,
+        theme::CHANGED_SECONDS,
+        0.0,
+    ]);
+    values
+}
+
 pub struct SceneCallback {
     pub batch: Arc<Batch>,
-    /// center x/y, width/height, zoom, dpi, reserved
+    /// center x/y, width/height, zoom, dpi; the last two are unused
+    /// (the renderer supplies the clock itself).
     pub camera: [f32; 8],
     pub stats: Arc<Mutex<GpuStats>>,
 }
@@ -237,7 +303,11 @@ impl CallbackTrait for SceneCallback {
                 timing.prepare(device, encoder, &mut stats);
             }
         }
-        queue.write_buffer(&renderer.uniform, 0, bytemuck::cast_slice(&self.camera));
+        queue.write_buffer(
+            &renderer.uniform,
+            0,
+            bytemuck::cast_slice(&uniform(&self.camera, clock())),
+        );
         if renderer.key != Some(self.batch.key) {
             let started = Instant::now();
             let lists = [
@@ -271,11 +341,13 @@ impl CallbackTrait for SceneCallback {
                 stats.uploaded_bytes = bytes.len();
                 stats.uploads += 1;
                 stats.instances = all.len();
+                // The node batch is drawn twice: its shadows, then the cards.
                 stats.draw_calls = renderer
                     .ranges
                     .iter()
                     .filter(|range| !range.is_empty())
-                    .count();
+                    .count()
+                    + usize::from(!renderer.ranges[NODES].is_empty());
             }
         }
         Vec::new()
@@ -295,13 +367,18 @@ impl CallbackTrait for SceneCallback {
         if let Some(timing) = &renderer.timing {
             timing.begin(pass);
         }
-        pass.set_pipeline(&renderer.pipeline);
         pass.set_bind_group(0, &renderer.bind_group, &[]);
         pass.set_vertex_buffer(0, renderer.instances.slice(..));
-        for range in &renderer.ranges {
-            if !range.is_empty() {
+        for (index, range) in renderer.ranges.iter().enumerate() {
+            if range.is_empty() {
+                continue;
+            }
+            if index == NODES {
+                pass.set_pipeline(&renderer.shadow_pipeline);
                 pass.draw(0..6, range.clone());
             }
+            pass.set_pipeline(&renderer.pipeline);
+            pass.draw(0..6, range.clone());
         }
         if let Some(timing) = &renderer.timing {
             timing.end(pass);
