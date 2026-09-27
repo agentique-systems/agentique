@@ -58,6 +58,12 @@ The column on the right (`conversation.rs` for the state and tool calls,
 
 ## Type, motion and screen readers
 
+- **Tokens** (`tokens.rs`, ROADMAP §3.2): every size, radius, duration and
+  easing curve, and the colour scales generated in OKLCH from three inputs
+  (base hue, accent hue, contrast), with the component list and the states
+  every component shows. `--fixture components` shows them all
+  (`gallery.rs`); `theme.rs` moves onto the generated colours in W5.2.
+
 - **Type**: Inter's variable font (`assets/fonts/InterVariable.ttf`, Inter
   4.1, OFL) at `wght` 400, 500 and 600 (`theme.rs`), not synthetic bold.
   `--ui-scale 1.5` scales the UI as display scaling does, for checking text

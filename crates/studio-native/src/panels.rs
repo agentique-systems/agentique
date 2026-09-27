@@ -199,7 +199,13 @@ impl StudioApp {
             });
         egui::CentralPanel::default()
             .frame(egui::Frame::NONE.fill(theme.canvas))
-            .show(root, |ui| self.viewport(ui));
+            .show(root, |ui| {
+                if self.fixture.as_deref() == Some("components") {
+                    crate::gallery::show(ui, theme);
+                } else {
+                    self.viewport(ui);
+                }
+            });
     }
 
     /// The cards on the Surface as an indented list; click to select.

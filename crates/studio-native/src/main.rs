@@ -13,6 +13,7 @@ mod commands;
 mod conversation;
 mod conversation_ui;
 mod edit;
+mod gallery;
 mod gpu;
 mod gpu_timing;
 mod history;
@@ -37,6 +38,10 @@ mod surface_recovery;
 mod targets;
 mod theme;
 mod timing;
+// Design tokens and the component list (interface 3 of ROADMAP §6.2); the
+// Studio's drawing moves onto them in W5.2.
+#[allow(dead_code)]
+mod tokens;
 mod viewport;
 mod zoom_input;
 
@@ -47,7 +52,7 @@ use std::path::PathBuf;
 #[command(about = "Agentique Studio")]
 pub struct Args {
     /// Show a read-only example instead of a project.
-    #[arg(long, value_parser = ["architecture", "typography", "ports", "requirements", "diff", "stress1000", "stress10000"])]
+    #[arg(long, value_parser = ["architecture", "typography", "ports", "requirements", "diff", "stress1000", "stress10000", "components"])]
     fixture: Option<String>,
     /// Open this project folder.
     #[arg(long)]

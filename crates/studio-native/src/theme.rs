@@ -89,7 +89,7 @@ pub const GLOW_WIDTH: f32 = 14.0;
 pub const HOVER_SECONDS: f32 = 0.10;
 /// Camera moves: fit view and following the selection (Fluent 2
 /// `durationSlow`). Reduced motion makes them instant (`motion`).
-pub const CAMERA_SECONDS: f32 = 0.30;
+pub const CAMERA_SECONDS: f32 = crate::tokens::motion::CAMERA_MS as f32 / 1000.0;
 /// How long a changed element stays highlighted.
 pub const CHANGED_SECONDS: f32 = 1.5;
 /// How long the highlight takes to reach full strength.

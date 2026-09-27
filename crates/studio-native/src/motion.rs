@@ -15,7 +15,11 @@ pub struct Curve {
 
 impl Curve {
     /// Fluent 2 `curveEasyEase`: something moving within the view.
-    pub const EASY_EASE: Self = Self::new(0.33, 0.0, 0.67, 1.0);
+    pub const EASY_EASE: Self = Self::token(crate::tokens::motion::EASY_EASE);
+
+    const fn token((x1, y1, x2, y2): crate::tokens::motion::Curve) -> Self {
+        Self::new(x1, y1, x2, y2)
+    }
 
     pub const fn new(x1: f32, y1: f32, x2: f32, y2: f32) -> Self {
         Self { x1, y1, x2, y2 }
