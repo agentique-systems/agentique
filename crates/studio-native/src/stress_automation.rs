@@ -45,9 +45,16 @@ pub fn drive(
     if runner.completed {
         return Ok(ScenarioStatus::Complete);
     }
-    let result = runner.advance(app, ctx, input);
+    let mut result = runner.advance(app, ctx, input);
     if !matches!(result, Ok(ScenarioStatus::Running)) {
-        let report = runner.report(app, ctx, &result);
+        // A completed run that misses a budget fails (R-27, §8.6); the
+        // report says so too.
+        let budgets = runner.budgets(app);
+        let missed = crate::budgets::missed(&budgets);
+        if result.is_ok() && !missed.is_empty() {
+            result = Err(format!("Budgets missed: {}", missed.join("; ")));
+        }
+        let report = runner.report(app, ctx, &result, &budgets);
         if let Some(report_path) = report_path {
             if let Some(parent) = report_path.parent().filter(|p| !p.as_os_str().is_empty()) {
                 std::fs::create_dir_all(parent).map_err(|error| error.to_string())?;
@@ -210,14 +217,47 @@ impl Runner {
         ));
         Some(self.zoom_anchor?.distance(after))
     }
+    /// The budgets of ROADMAP §3.3 this run measures. The start budget is
+    /// not among them: a fixture's scene is built before the first frame, so
+    /// it is measured by a run on the start screen instead.
+    fn budgets(&self, app: &StudioApp) -> Vec<serde_json::Value> {
+        use crate::budgets;
+        let elements = app.scene.nodes.len();
+        let pan_input = app.timing.input_summary(crate::timing::InputKind::Pan).p95;
+        let zoom_input = app.timing.input_summary(crate::timing::InputKind::Zoom).p95;
+        vec![
+            budgets::result(
+                "pan frame interval p95",
+                budgets::frame_p95_ms(elements),
+                self.pan.summary().p95,
+            ),
+            budgets::result(
+                "zoom frame interval p95",
+                budgets::frame_p95_ms(elements),
+                self.zoom.summary().p95,
+            ),
+            budgets::result(
+                "pan input to next update p95",
+                budgets::input_p95_ms(elements),
+                pan_input,
+            ),
+            budgets::result(
+                "zoom input to next update p95",
+                budgets::input_p95_ms(elements),
+                zoom_input,
+            ),
+        ]
+    }
     fn report(
         &self,
         app: &StudioApp,
         ctx: &egui::Context,
         result: &Result<ScenarioStatus, String>,
+        budgets: &[serde_json::Value],
     ) -> serde_json::Value {
         serde_json::json!({
             "format": "agentique-native-stress-v1",
+            "budgets": budgets,
             "passed": matches!(result, Ok(ScenarioStatus::Complete)),
             "failure": result.as_ref().err(),
             "first_anchor_divergence_frame": self.first_anchor_divergence_frame,

@@ -466,7 +466,10 @@ about 400 ms follow common responsiveness guidance [67].
 - **CI (every pull request):** CPU-side work only, because the CI runner has no
   GPU: System State apply at 2k and 10k elements, scene update at 1k and 10k,
   layout and routing, label layout. Ceilings are set at about twice the target
-  so noise does not fail builds, and tightened as the numbers settle.
+  so noise does not fail builds, and tightened as the numbers settle. A budget
+  not met yet (scene update at 1k and 10k until W5.5) has an interim ceiling
+  at about three times today's reference measurement, guarding against
+  regressions; the budget itself is unchanged.
 - **Reference machine (before merging a change to the Studio or the Surface,
   and at every stage end):** the stress harness and journeys assert the frame,
   latency, start and memory budgets and exit non-zero on a miss. Reports go to a
@@ -1881,6 +1884,7 @@ The ADRs named here are preserved at the tag `archive/pre-realignment`.
 | 2026-09-27 | §4.8 gains DeepSeek and Jev columns, each capability verified from rig 0.42.0's source or the vendor's documentation and cited | C-35 as amended |
 | 2026-09-27 | Stage completion during the overnight run is provisional: a stage built overnight is "provisionally complete, pending Operator acceptance" until the Operator has used it (C-15) | Overnight instructions, point 1 |
 | 2026-09-27 | S4.2's provider layer is kept and merged in Stage 4 as the start of W5.7, a deviation from "throwaway" (§8.8); S4.2 gains P3a (live on DeepSeek). Decided overnight 2026-09-27, pending Operator confirmation | C-35 as amended: the Assistant must work end to end with only a DeepSeek key during Stage 4's live acceptance (W4.4) |
+| 2026-09-27 | W4.7: CI checks the CPU-side budgets in release builds; budgets not met yet (scene update at 1k and 10k, W5.5) get interim ceilings at about three times today's measurements, recorded in §3.3; the budgets are unchanged | §8.6: never loosen a budget silently |
 | 2026-09-27 | API keys for the overnight run live in a git-ignored `.env` (the Operator's `.gitignore` change, commit `400feced`); keys never enter the repository, logs, fixtures, recordings or pull requests (§8.7) | Key handling (R-25) |
 
 ### 7.7 The original requirements

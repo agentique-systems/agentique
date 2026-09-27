@@ -6,6 +6,15 @@ use std::{
 };
 
 const SAMPLE_WINDOW: usize = 240;
+
+/// When the process started, as early in `main` as it can be taken.
+static PROCESS_START: std::sync::OnceLock<Instant> = std::sync::OnceLock::new();
+
+/// Takes the process start time (the start budget of ROADMAP §3.3 counts
+/// from here).
+pub fn mark_process_start() {
+    PROCESS_START.get_or_init(Instant::now);
+}
 const FRAME_WARMUP_INTERVALS: usize = 60;
 
 #[derive(Clone, Copy)]
@@ -91,6 +100,8 @@ pub struct FrameTiming {
     received_input: Option<Instant>,
     previous_input: Option<Instant>,
     update_started: Option<Instant>,
+    /// Process start to the end of the first update, in milliseconds.
+    pub start_to_first_update_ms: Option<f64>,
 }
 impl FrameTiming {
     pub fn visibility(&mut self, duration: Duration) {
@@ -124,6 +135,11 @@ impl FrameTiming {
     /// neither this marker nor the next-update marker claims visible photons.
     pub fn ui_complete(&mut self) {
         let now = Instant::now();
+        if self.start_to_first_update_ms.is_none()
+            && let Some(start) = PROCESS_START.get()
+        {
+            self.start_to_first_update_ms = Some(now.duration_since(*start).as_secs_f64() * 1000.0);
+        }
         if let Some(started) = self.update_started.take() {
             self.ui_cpu
                 .push(now.duration_since(started).as_secs_f64() * 1000.0);

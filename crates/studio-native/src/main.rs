@@ -5,6 +5,9 @@
 mod app;
 #[cfg(feature = "automation")]
 mod automation;
+// Asserted by the stress harness (feature `automation`); its tests run in every build.
+#[cfg_attr(not(feature = "automation"), allow(dead_code))]
+mod budgets;
 mod commands;
 mod conversation;
 mod conversation_ui;
@@ -99,6 +102,7 @@ impl Args {
 }
 
 fn main() -> eframe::Result {
+    timing::mark_process_start();
     let args = Args::parse();
     let mut wgpu_setup = egui_wgpu::WgpuSetupCreateNew::default();
     if args.gpu_timestamps {

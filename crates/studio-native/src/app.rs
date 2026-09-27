@@ -901,6 +901,18 @@ impl StudioApp {
             "fixture": self.fixture,
             "adapter": self.adapter,
             "frame_count": self.frame_number,
+            "start_to_first_update_ms": self.timing.start_to_first_update_ms,
+            // The start budget holds for the start screen; a fixture's scene
+            // is built before the first frame.
+            "budgets": if self.fixture.is_none() {
+                vec![crate::budgets::result(
+                    "start to first update (warm)",
+                    crate::budgets::START_TO_FIRST_UPDATE_MS,
+                    self.timing.start_to_first_update_ms,
+                )]
+            } else {
+                Vec::new()
+            },
             "frame_interval_median_ms": frames.median,
             "frame_interval_p95_ms": frames.p95,
             "scene_build_ms": self.timing.scene_ms,
