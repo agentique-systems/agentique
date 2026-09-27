@@ -15,6 +15,12 @@ package AgentiqueArchitecture {
         doc /* The KerML/SysML subset: element graph, text parse and print, name
              * resolution, typing, specialisation and validation. Depends on no other
              * part. Locked core (R-16). */
+        part 'agq-language' : Crate {
+            doc /* The language core: the SysML subset as an element tree with parse,
+                 * print and validate (Stage 1, R-3 rebuild). */
+        }
+        // The pre-realignment engine below serves only the current Studio. Stage 2
+        // moves the Studio onto the System State and retires these crates.
         part 'agq-kernel' : Crate;
         part 'agq-kerml' : Crate;
         part 'agq-sysml' : Crate;
@@ -24,8 +30,7 @@ package AgentiqueArchitecture {
         part 'agq-sysml-semantics' : Crate;
         part 'agq-standard-libraries' : Crate;
         part 'agq-runtime-publications' : Crate {
-            doc /* Loads the precomputed standard library bundle. Retired in Stage 1
-                 * when the language core no longer needs the bundle (§4.2). */
+            doc /* Loads the precomputed standard library bundle. */
         }
         part 'agq-metamodel-gen' : Crate {
             doc /* Generates the KerML/SysML metamodel descriptors. */
