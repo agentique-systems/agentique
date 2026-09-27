@@ -1,7 +1,7 @@
 package UrlShortener {
     doc /* A small web service that turns long URLs into short codes,
          * redirects visitors to the long URL and counts clicks per code.
-         * REALIGNMENT Scenario A.
+         * ROADMAP Scenario A (§2.1).
          * Test fixture: a copy with one deliberate error. */
 
     private import ScalarValues::*;

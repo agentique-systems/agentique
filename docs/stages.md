@@ -1,6 +1,6 @@
 # Stages
 
-The single progress record for the realignment (REALIGNMENT §5, §7.3). One
+The single progress record (ROADMAP §6, §8.3). One
 short section per stage: what was done, what was measured, what failed, what
 is deferred, and what the Operator should try. A stage is complete only when
 the Operator has used its outcome and accepts it (C-15).
@@ -45,7 +45,7 @@ Status: **provisionally complete, pending Operator acceptance.**
   `tools/check_architecture.py` fails CI when a crate dependency contradicts it
   (R-15, #28).
 - `AGENTS.md` and `README.md` rewritten; still-valid decisions from the retired
-  records carried into REALIGNMENT §6.6 (#26).
+  records carried into the governing text, now ROADMAP §7.5 (#26).
 - Local leftovers `target-phase2-frontend/` and `test-results/` deleted.
 
 **Measured**
@@ -59,7 +59,7 @@ Status: **provisionally complete, pending Operator acceptance.**
 - Not tried: building the archive tag (it needs about 15 GB of free disk,
   which this machine did not have during the run).
 
-**Decided overnight** (see REALIGNMENT §6.7):
+**Decided overnight** (ROADMAP §7.6):
 
 - Studio may depend on Assistant (the Conversation drives it); R-14 refined.
 - R-15 uses SysML `dependency` between part definitions, listed explicitly
@@ -131,7 +131,7 @@ Status: **provisionally complete, pending Operator acceptance.**
   - *rebuild*: wrote a small subset core, `crates/language` (`agq-language`);
   - *git*: prototyped git persistence, `agq-history`, on its own branch (used
     in Stage 2).
-- **Decision R-3: rebuild** (REALIGNMENT §6.2, decided overnight, pending
+- **Decision R-3: rebuild** (ROADMAP §7.2; decided overnight, pending
   Operator confirmation). `agq-language` is the language core: about 3,800
   lines, no dependencies, one generic element tree whose references carry
   their target's identity, with `parse`, `print` and
@@ -176,7 +176,7 @@ files: reload 2–3 ms, save + commit 69 ms (parsing excluded).
   (they fall back to the qualified name).
 - Not supported yet (reported explicitly as unsupported): expressions (only
   literal values), n-ary connections, feature chains as `satisfy` targets,
-  states and actions (Stage 4).
+  states and actions (Stage 7).
 
 **Operator: try this**
 
@@ -231,7 +231,7 @@ Stage 2 builders did not depend on that code.)
 | "What changed" between checkpoints | 0.9 ms |
 | One edit on a 2,048-element model (apply + validate + event) | 8 ms (55 ms debug) |
 
-**Decided overnight** (REALIGNMENT §6.7, pending the Operator's confirmation):
+**Decided overnight** (ROADMAP §7.6, pending the Operator's confirmation):
 R-18; the identity file format; deleted-target references re-bind by name
 like a reload; saves write only changed documents; a project's repository is
 used only if rooted at the project folder; Q-6: stay with egui.
@@ -319,7 +319,7 @@ merged before Stage 2 did.)
   "add expiring links" hits the locked API and asks the Operator, Stop, and
   undoing the Assistant's changes.
 
-**Decided overnight** (REALIGNMENT §6.7, pending the Operator's confirmation):
+**Decided overnight** (ROADMAP §7.6, pending the Operator's confirmation):
 Q-9, the conversation is stored per project in the app's local data next to
 the session file, not in the code repository; the default model is
 `claude-opus-5` (`AGENTIQUE_MODEL`) at effort `high` (`AGENTIQUE_EFFORT`), with

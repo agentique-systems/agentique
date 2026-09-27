@@ -15,13 +15,13 @@ Both change one **System State**, built from KerML and SysML concepts (parts,
 ports, interfaces, connections, items, attributes, requirements). SysML text is
 only the storage format; the Operator never has to read or write it.
 
-The direction, decisions and stage plan are in [REALIGNMENT.md](REALIGNMENT.md).
+The direction, decisions and stage plan are in [ROADMAP.md](ROADMAP.md).
 Progress per stage is in [docs/stages.md](docs/stages.md).
 
 ## Current stage
 
-The realignment is in progress. Stages 0–3 are built, pending the Operator's
-acceptance: the repository is cleaned up, the language core is rebuilt, the
+Stage 4 (live proof and foundations, ROADMAP §6.2) is in progress. Stages 0–3
+are built, pending the Operator's acceptance by a live run (C-29): the repository is cleaned up, the language core is rebuilt, the
 Studio edits a git-backed System State by hand, and the Assistant works in the
 Conversation through the same operations (set `ANTHROPIC_API_KEY`; the live
 API has not been tried yet). See [docs/stages.md](docs/stages.md) for what
@@ -32,7 +32,8 @@ cargo run -p agq-language --example check -- models/url-shortener
 ```
 
 Everything retired by the realignment is preserved at the git tag
-`archive/pre-realignment`.
+`archive/pre-realignment`; `REALIGNMENT.md`, which governed Stages 0–3, is
+retired to git history (last version on `main` at `6fc90b78`).
 
 ## Build and run
 
@@ -72,7 +73,7 @@ pull request.
 
 | Path | Purpose |
 |---|---|
-| `REALIGNMENT.md` | Governing direction, decisions and stage plan |
+| `ROADMAP.md` | Governing direction, decisions and stage plan |
 | `AGENTS.md` | Short working rules for AI agents |
 | `docs/stages.md` | Progress record, one section per stage |
 | `models/agentique/` | Agentique's own architecture in SysML, checked against the crates |

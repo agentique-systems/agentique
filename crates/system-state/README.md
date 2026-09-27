@@ -1,7 +1,7 @@
 # agq-system-state
 
 The System State: the live, authoritative model of one project
-(REALIGNMENT §3.1, part `SystemState` in `models/agentique/Agentique.sysml`).
+(ROADMAP §4.1, part `SystemState` in `models/agentique/Agentique.sysml`).
 It holds an `agq-language` element tree, and the Surface and the Assistant
 change it through the same typed operations (§3.2).
 

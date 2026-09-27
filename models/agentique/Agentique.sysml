@@ -1,5 +1,5 @@
 package AgentiqueArchitecture {
-    doc /* The logical architecture of Agentique (REALIGNMENT §3.6, R-14). Each part
+    doc /* The logical architecture of Agentique (ROADMAP §4.6, R-14). Each part
          * definition names the crates that implement it. The dependencies at the end
          * list every allowed use of one part by another; tools/check_architecture.py
          * compares both with the Cargo crate graph (R-15). */
@@ -56,12 +56,12 @@ package AgentiqueArchitecture {
     }
 
     part def Simulation {
-        doc /* Stage 4: scenarios run over the architecture, with runs, traces and
+        doc /* Stage 7: scenarios run over the architecture, with runs, traces and
              * separate check verdicts. No crate yet. */
     }
 
     part def ImplementationLinks {
-        doc /* Stage 5: links from model elements to code and tests, and drift checks.
+        doc /* Stage 8: links from model elements to code and tests, and drift checks.
              * No crate yet. */
     }
 

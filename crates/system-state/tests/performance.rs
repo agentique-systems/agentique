@@ -1,4 +1,4 @@
-//! Edits must feel live (REALIGNMENT §3.7): one edit on a model of about
+//! Edits must feel live (ROADMAP §3.3): one edit on a model of about
 //! 2,000 elements, applied, revalidated and described as an event.
 
 use agq_language::{Element, ElementKind, Parent, Source, parse};

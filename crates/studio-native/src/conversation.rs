@@ -1,4 +1,4 @@
-//! The Conversation with the Assistant (REALIGNMENT §2.4, §3.2): the
+//! The Conversation with the Assistant (ROADMAP §3.6, §4.2): the
 //! Operator's messages, the Assistant's streamed replies, and its tool calls
 //! carried out on the UI thread.
 //!
@@ -435,7 +435,7 @@ impl StudioApp {
     }
 
     /// Carries out one tool call, as the Studio does for the Operator's own
-    /// edits (REALIGNMENT §3.2).
+    /// edits (ROADMAP §4.2).
     fn carry_out(&mut self, call: ToolCall, reply: Sender<ToolResult>) {
         if self.conversation.stopped {
             let _ = reply.send(ToolResult::error("Not run: stopped by the Operator."));

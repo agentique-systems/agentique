@@ -1,4 +1,4 @@
-//! Times the URL shortener (Scenario A) as a project (REALIGNMENT §3.7,
+//! Times the URL shortener (Scenario A) as a project (ROADMAP §3.3,
 //! "performance is part of correctness"): opening it (parse, identities,
 //! validation), one change saved, a checkpoint, and the "what changed" view.
 //!

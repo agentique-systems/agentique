@@ -1,6 +1,6 @@
 # agq-assistant
 
-The Assistant (REALIGNMENT §3.1, part `Assistant` in
+The Assistant (ROADMAP §4.1, §4.10, part `Assistant` in
 `models/agentique/Agentique.sysml`): the AI agent the Operator works with in
 the Conversation. It depends on the System State and the language core only;
 it is the one place in Agentique that talks to the network.
