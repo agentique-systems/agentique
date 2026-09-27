@@ -42,11 +42,11 @@ The column on the right (`conversation.rs` for the state and tool calls,
 - **Saved per project** in the Studio's local data, next to the session file
   (`conversations/<folder>-<hash>.json`), never in the project folder, after
   every entry. "New conversation" starts again; the model is unaffected.
-- **Model**: `ModelChoice::from_env()` (a provider key such as
-  `DEEPSEEK_API_KEY` or `ANTHROPIC_API_KEY`, and optionally
+- **Model**: the provider, model and effort chosen in Settings, with the
+  environment winning (a provider key such as `DEEPSEEK_API_KEY`, and
   `AGENTIQUE_PROVIDER`, `AGENTIQUE_MODEL`, `AGENTIQUE_EFFORT`; see the
   Assistant's README), named discreetly in the header. Without a key the
-  column says which variable to set and everything else works.
+  column says how to add one and everything else works.
 - **Thinking** shows as a collapsed row per step with its first line
   (R-31): Claude's summaries, or the reasoning of models that show it.
 - **Selecting text** (`markdown.rs`): dragging over the messages selects
@@ -55,6 +55,21 @@ The column on the right (`conversation.rs` for the state and tool calls,
   block, character), not by widget, so it survives scrolling, messages
   outside the view (which are not laid out) and replies streaming in below.
   Ctrl+C copies it in order; a click clears it.
+
+## Settings
+
+Ctrl+, (or the Settings button) shows Settings in place of the Surface and
+the Panels (`settings_ui.rs`; the table and `settings.json` are in
+`settings.rs`). Sections: Providers (paste a key, Test, Save; the key goes to
+the Windows Credential Manager and only its hint is shown again; the model
+list with capabilities and list prices), Assistant (provider, model, effort),
+Appearance, Keyboard and About; the search box finds rows by label,
+description and synonyms. Choices apply at once and are saved to
+`settings.json` beside the session file. The theme, contrast and reduced
+motion commands change the same settings. Environment variables
+(`DEEPSEEK_API_KEY`, `AGENTIQUE_PROVIDER`, ...) win over Settings; an
+Anthropic key saved in Settings is not used until W5.7 moves Anthropic onto
+the provider layer.
 
 ## Type, motion and screen readers
 

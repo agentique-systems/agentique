@@ -44,6 +44,13 @@ impl StudioApp {
                         if ui.button("⌘ Commands").on_hover_text("Ctrl+K").clicked() {
                             self.execute(CommandId::Palette, ctx);
                         }
+                        if ui
+                            .add(egui::Button::selectable(self.settings.open, "Settings"))
+                            .on_hover_text("Ctrl+,")
+                            .clicked()
+                        {
+                            self.execute(CommandId::Settings, ctx);
+                        }
                         let context = self.context();
                         for (id, label) in [
                             (CommandId::Checkpoint, "Checkpoint"),
@@ -146,6 +153,12 @@ impl StudioApp {
                     });
                 });
             });
+        // Settings take the place of the Surface and the Panels (§3.7).
+        if self.settings.open {
+            let changed = self.settings.ui(root, theme);
+            self.apply_settings(ctx, changed);
+            return;
+        }
         if self.project.is_none() && self.fixture.is_none() {
             egui::CentralPanel::default().show(root, |ui| self.start_screen(ui, ctx));
             return;

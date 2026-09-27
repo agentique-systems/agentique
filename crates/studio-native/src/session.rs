@@ -17,9 +17,13 @@ pub struct Session {
     pub recent: Vec<PathBuf>,
     #[serde(default)]
     pub views: BTreeMap<PathBuf, ProjectView>,
+    /// Stage 4 kept the appearance here; Settings has it now (read once,
+    /// then `appearance_in_settings`).
     pub dark: bool,
     pub high_contrast: bool,
     pub reduced_motion: bool,
+    #[serde(default)]
+    pub appearance_in_settings: bool,
 }
 
 /// How one project was last shown.

@@ -62,7 +62,7 @@ async fn call(
         return Err(Error {
             kind: ErrorKind::MissingKey,
             message: format!(
-                "No {} key is set. Set {} and restart Agentique; the Surface keeps working without it.",
+                "No {} key is set. Add one in Settings (Ctrl+,) or set {}; the Surface keeps working without it.",
                 provider.name(),
                 provider.key_variable()
             ),
@@ -594,7 +594,7 @@ fn failure(provider: Provider, model: &str, error: &CompletionError) -> Failure 
         401 => fail(
             ErrorKind::KeyRefused,
             format!(
-                "{name} did not accept the API key (401). Check {variable} and restart Agentique; the Surface keeps working by hand."
+                "{name} did not accept the API key (401). Check the key in Settings (Ctrl+,) or {variable}; the Surface keeps working by hand."
             ),
             None,
         ),

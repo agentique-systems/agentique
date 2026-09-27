@@ -1,5 +1,5 @@
-//! Which model the Assistant uses. Until Settings exists (W5.8) it comes
-//! from the environment:
+//! Which model the Assistant uses: Settings' choice (W5.8), with these
+//! environment variables winning over it:
 //!
 //! - `AGENTIQUE_PROVIDER`: `anthropic`, `deepseek`, `openai` or `openrouter`.
 //!   Without it, the first provider with a key, in that order (C-27 keeps
@@ -46,13 +46,45 @@ pub struct ModelChoice {
 
 impl ModelChoice {
     pub fn from_env() -> ModelChoice {
+        ModelChoice::configured(None, None, None)
+    }
+
+    /// The model from Settings (provider, model, effort; `None` or empty for
+    /// "automatic"), with the environment variables winning over each, as a
+    /// key's variable wins over a stored key (R-25):
+    /// `AGENTIQUE_PROVIDER`, `AGENTIQUE_MODEL`, `AGENTIQUE_EFFORT`.
+    pub fn configured(
+        provider: Option<&str>,
+        model: Option<&str>,
+        effort: Option<&str>,
+    ) -> ModelChoice {
         let var = |name: &str| {
             std::env::var(name)
                 .ok()
                 .map(|value| value.trim().to_string())
                 .filter(|value| !value.is_empty())
         };
-        let chosen = var("AGENTIQUE_PROVIDER");
+        ModelChoice::resolve(&var, &usable_key, provider, model, effort)
+    }
+
+    /// [`configured`](Self::configured) with the environment and the keys
+    /// given, for tests.
+    fn resolve(
+        var: &dyn Fn(&str) -> Option<String>,
+        has_key: &dyn Fn(Provider) -> bool,
+        provider: Option<&str>,
+        model: Option<&str>,
+        effort: Option<&str>,
+    ) -> ModelChoice {
+        let setting = |value: Option<&str>| {
+            value
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(str::to_string)
+        };
+        let from_environment = var("AGENTIQUE_PROVIDER");
+        let from_settings = setting(provider);
+        let chosen = from_environment.clone().or_else(|| from_settings.clone());
         // A provider whose models cannot use tools (TypeSafe AI's Jev) is
         // never the Assistant's (§4.8).
         let named = chosen
@@ -62,23 +94,26 @@ impl ModelChoice {
                 capabilities(&ModelRef::new(*provider, provider.default_model())).tools
             });
         let provider = named
-            .or_else(|| {
-                PREFERENCE
-                    .into_iter()
-                    .find(|provider| usable_key(*provider))
-            })
+            .or_else(|| PREFERENCE.into_iter().find(|provider| has_key(*provider)))
             .unwrap_or(Provider::Anthropic);
+        // Settings' model and effort belong to Settings' provider: they
+        // apply only while it is the one chosen.
+        let settings_apply = named.is_some()
+            && from_settings.is_some()
+            && from_environment.is_none_or(|id| Some(id) == from_settings);
         // AGENTIQUE_MODEL names a model of the chosen provider: it applies
         // when the provider is named too, or to Anthropic as in Stage 3, so a
         // Claude model id left in the environment never goes to DeepSeek.
         let model = var("AGENTIQUE_MODEL")
             .filter(|_| named.is_some() || provider == Provider::Anthropic)
+            .or_else(|| setting(model).filter(|_| settings_apply))
             .unwrap_or_else(|| provider.default_model().to_string());
-        let mut choice = ModelChoice::new(ModelRef::new(provider, model), var("AGENTIQUE_EFFORT"));
+        let effort = var("AGENTIQUE_EFFORT").or_else(|| setting(effort).filter(|_| settings_apply));
+        let mut choice = ModelChoice::new(ModelRef::new(provider, model), effort);
         choice.named = chosen.is_some();
         if let Some(id) = chosen.filter(|_| named.is_none()) {
             choice.problem = Some(format!(
-                "AGENTIQUE_PROVIDER is `{id}`, which is not a provider the Assistant can use (anthropic, deepseek, openai, openrouter)."
+                "The provider is set to `{id}`, which is not a provider the Assistant can use (anthropic, deepseek, openai, openrouter)."
             ));
         }
         choice
@@ -129,8 +164,23 @@ impl ModelChoice {
                 .collect();
             format!(" (or another provider's key: {})", others.join(", "))
         };
+        // A key saved in Settings does not count for Anthropic until W5.7
+        // (`usable_key`).
+        if self.model.provider == Provider::Anthropic
+            && key_status(Provider::Anthropic) == agq_providers::KeyStatus::Stored
+        {
+            return format!(
+                "{problem}The Anthropic key saved in Settings is not used by the Assistant yet. Set {variable} and restart Agentique, or choose another provider in Settings (Ctrl+,), to work with the Assistant. Everything else works as usual."
+            );
+        }
+        if self.model.provider == Provider::Anthropic {
+            return format!(
+                "{problem}No {} key is set. Set {variable}{alternatives} and restart Agentique, or add another provider's key in Settings (Ctrl+,), to work with the Assistant. Everything else works as usual.",
+                self.model.provider.name()
+            );
+        }
         format!(
-            "{problem}No {} key is set. Set {variable}{alternatives} and restart Agentique to work with the Assistant. Everything else works as usual.",
+            "{problem}No {} key is set. Add one in Settings (Ctrl+,) or set {variable}{alternatives} to work with the Assistant. Everything else works as usual.",
             self.model.provider.name()
         )
     }
@@ -156,6 +206,58 @@ impl ModelChoice {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn choose(
+        environment: &[(&str, &str)],
+        keys: &[Provider],
+        settings: (&str, &str, &str),
+    ) -> ModelChoice {
+        let var = |name: &str| {
+            environment
+                .iter()
+                .find(|(variable, _)| *variable == name)
+                .map(|(_, value)| value.to_string())
+        };
+        let has_key = |provider: Provider| keys.contains(&provider);
+        let (provider, model, effort) = settings;
+        ModelChoice::resolve(&var, &has_key, Some(provider), Some(model), Some(effort))
+    }
+
+    #[test]
+    fn settings_choose_the_model_and_the_environment_wins() {
+        let deepseek = choose(
+            &[],
+            &[Provider::DeepSeek],
+            ("deepseek", "deepseek-flash", "max"),
+        );
+        assert_eq!(
+            deepseek.model,
+            ModelRef::new(Provider::DeepSeek, "deepseek-flash")
+        );
+        assert_eq!(deepseek.effort.as_deref(), Some("max"));
+        // The environment's provider wins, and Settings' model does not go
+        // to it.
+        let openai = choose(
+            &[("AGENTIQUE_PROVIDER", "openai")],
+            &[Provider::DeepSeek, Provider::OpenAi],
+            ("deepseek", "deepseek-pro", "max"),
+        );
+        assert_eq!(openai.model.provider, Provider::OpenAi);
+        assert_eq!(openai.model.model, Provider::OpenAi.default_model());
+        // With the provider automatic, a model typed in Settings is not used.
+        let automatic = choose(&[], &[Provider::DeepSeek], ("", "some-model", ""));
+        assert_eq!(
+            automatic.model,
+            ModelRef::new(Provider::DeepSeek, Provider::DeepSeek.default_model())
+        );
+        // AGENTIQUE_MODEL wins over Settings' model for the same provider.
+        let named = choose(
+            &[("AGENTIQUE_MODEL", "deepseek-flash")],
+            &[Provider::DeepSeek],
+            ("deepseek", "deepseek-other", ""),
+        );
+        assert_eq!(named.model.model, "deepseek-flash");
+    }
 
     #[test]
     fn an_effort_the_model_lacks_falls_back_to_its_default() {
