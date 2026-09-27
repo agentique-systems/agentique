@@ -114,7 +114,9 @@ impl StudioApp {
                                     " · {} this turn · {today} today",
                                     crate::cost::dollars(turn)
                                 )),
-                                None => label.push_str(&format!(" · cost not known · {today} today")),
+                                None => {
+                                    label.push_str(&format!(" · cost not known · {today} today"))
+                                }
                             }
                             let as_of = agq_providers::price(model).map_or_else(
                                 || "no list price is known for this model".to_string(),
