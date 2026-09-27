@@ -380,7 +380,17 @@ impl SystemState {
     fn finish(&mut self, before: &Snapshot, kind: EventKind) -> ChangeEvent {
         self.diagnostics = validate(&self.tree);
         self.revision += 1;
-        let (created, updated, deleted) = difference(before, &self.tree, &self.locks);
+        let Comparison {
+            created,
+            mut updated,
+            deleted,
+        } = compare(&before.tree, &self.tree);
+        // A lock change is an update of the locked element.
+        for id in before.locks.symmetric_difference(&self.locks) {
+            if self.tree.contains(*id) && !created.contains(id) && !updated.contains(id) {
+                updated.push(*id);
+            }
+        }
         ChangeEvent {
             revision: self.revision,
             kind,
@@ -626,31 +636,32 @@ fn describe(error: TreeError) -> String {
     }
 }
 
-/// Elements created, updated (properties, owner, members or lock) and
-/// deleted between `before` and the current tree and locks.
-fn difference(
-    before: &Snapshot,
-    after: &Tree,
-    after_locks: &BTreeSet<ElementId>,
-) -> (Vec<ElementId>, Vec<ElementId>, Vec<ElementId>) {
-    let mut created = Vec::new();
-    let mut updated = Vec::new();
+/// Which elements differ between two versions of a model, by identity.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Comparison {
+    /// In `after` only, in document order.
+    pub created: Vec<ElementId>,
+    /// In both, with different properties, owner or members.
+    pub updated: Vec<ElementId>,
+    /// In `before` only, in document order.
+    pub deleted: Vec<ElementId>,
+}
+
+/// Compares two versions of a model by element identity: the basis of change
+/// events and of the "what changed" view between checkpoints.
+pub fn compare(before: &Tree, after: &Tree) -> Comparison {
+    let mut comparison = Comparison::default();
     for id in after.walk() {
-        match before.tree.get(id) {
-            None => created.push(id),
-            Some(old) => {
-                let lock_changed = before.locks.contains(&id) != after_locks.contains(&id);
-                if lock_changed || Some(old) != after.get(id) {
-                    updated.push(id);
-                }
-            }
+        match before.get(id) {
+            None => comparison.created.push(id),
+            Some(old) if Some(old) != after.get(id) => comparison.updated.push(id),
+            Some(_) => {}
         }
     }
-    let deleted = before
-        .tree
+    comparison.deleted = before
         .walk()
         .into_iter()
         .filter(|id| !after.contains(*id))
         .collect();
-    (created, updated, deleted)
+    comparison
 }
