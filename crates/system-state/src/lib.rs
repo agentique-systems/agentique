@@ -19,11 +19,18 @@
 //! A lock on an element covers it and everything it owns (R-11). Every applied
 //! change, undo and redo returns a [`ChangeEvent`] naming the elements that
 //! were created, updated or deleted, so views can update only what changed.
+//!
+//! A [`Project`] keeps a System State saved in a project folder, with
+//! checkpoints and branches in git (R-6).
 #![forbid(unsafe_code)]
+
+mod project;
+
+pub use project::{ApplyError, Checkpoint, Project, ProjectError};
 
 use agq_language::{
     Diagnostic, Direction, Element, ElementId, ElementKind, Literal, Multiplicity, Parent,
-    QualifiedName, Reference, Tree, TreeError, Visibility, link, validate,
+    QualifiedName, Reference, Tree, TreeError, Visibility, library, link, validate,
 };
 use std::collections::BTreeSet;
 use std::fmt;
@@ -650,15 +657,16 @@ pub struct Comparison {
 /// Compares two versions of a model by element identity: the basis of change
 /// events and of the "what changed" view between checkpoints.
 ///
-/// Where an element was read from does not count, nor the name a linked
-/// reference was written with: the target is what the reference means, and
-/// printing names it by its current name.
+/// It compares what elements mean, so a model and the same model saved and
+/// read back compare equal: where an element was read from does not count;
+/// a linked reference is its target, whatever name it was written with; and
+/// a reference to an element that is gone is the name it is saved as.
 pub fn compare(before: &Tree, after: &Tree) -> Comparison {
     let mut comparison = Comparison::default();
     for id in after.walk() {
         match before.get(id) {
             None => comparison.created.push(id),
-            Some(old) if !same(old, &after[id]) => comparison.updated.push(id),
+            Some(old) if !same(before, old, after, &after[id]) => comparison.updated.push(id),
             Some(_) => {}
         }
     }
@@ -670,13 +678,14 @@ pub fn compare(before: &Tree, after: &Tree) -> Comparison {
     comparison
 }
 
-fn same(a: &Element, b: &Element) -> bool {
-    a == b || meaning(a) == meaning(b)
+fn same(before: &Tree, a: &Element, after: &Tree, b: &Element) -> bool {
+    a == b || meaning(before, a) == meaning(after, b)
 }
 
-/// An element without its source location and without the written names of
-/// linked reference steps.
-fn meaning(element: &Element) -> Element {
+/// An element without its source location, with each linked reference step
+/// reduced to its target, and each step whose target is gone reduced to its
+/// written name.
+fn meaning(tree: &Tree, element: &Element) -> Element {
     let mut element = element.clone();
     element.location = None;
     let references = element
@@ -689,8 +698,12 @@ fn meaning(element: &Element) -> Element {
         .chain(&mut element.by);
     for reference in references {
         for step in &mut reference.steps {
-            if step.target.is_some() {
-                step.name = QualifiedName::default();
+            match step.target {
+                Some(target) if tree.contains(target) || library().contains(target) => {
+                    step.name = QualifiedName::default();
+                }
+                Some(_) => step.target = None,
+                None => {}
             }
         }
     }

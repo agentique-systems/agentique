@@ -60,7 +60,7 @@ pub struct Snapshot {
 pub enum Error {
     #[error(transparent)]
     Io(#[from] std::io::Error),
-    #[error(transparent)]
+    #[error("git: {}", .0.message())]
     Git(#[from] git2::Error),
     #[error("{path}: {message}")]
     Invalid { path: String, message: String },

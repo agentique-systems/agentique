@@ -302,7 +302,8 @@ fn a_printed_and_reread_model_compares_equal() {
         ))
         .unwrap();
     // Reread from text, every element has a new location, and `store : Store`
-    // is now written `store : Warehouse`; neither is a change.
+    // is now written `store : Warehouse`; neither is a change. (References to
+    // removed elements: see tests/project.rs.)
     let text = format!("\n\n{}", print(state.tree())[0].text);
     let reread = parse(&[Source::new("shop.sysml", text)]);
     assert_eq!(compare(state.tree(), &reread), Comparison::default());

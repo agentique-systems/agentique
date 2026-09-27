@@ -27,4 +27,29 @@ state.undo();
 - **Undo and redo**: one step per change.
 - **Change events**: every apply, undo, redo and load returns a `ChangeEvent`.
 
-Saving and loading through git (History) are added in Stage 2.
+## Projects
+
+A `Project` keeps a System State saved in a project folder through History
+(`agq-history`, R-6): `model/*.sysml` plus `agentique.json`, in git.
+
+```rust
+let mut project = Project::create(folder, "UrlShortener")?; // first checkpoint
+let event = project.apply(change)?;       // applied and saved before it returns
+project.checkpoint("Add the link store")?; // a git commit of the model folder
+let before = project.tree_at(&project.checkpoints()?[1].id)?;
+let what = compare(&before, project.state().tree()); // the "what changed" view
+```
+
+- **Identity**: `agentique.json` maps each element id to a locator, its kind
+  and path of names (`part def Shop::Store`; `#n` for the n-th unnamed
+  member, `name#2` for a repeated name). Renames and moves in the app keep
+  ids. An element renamed by hand in the text gets a new id on open and is
+  listed in `unmatched()`; it is never matched by name. New elements get ids
+  above every id in the identity file and at the tip of every branch.
+- **Continuous save**: `apply`, `undo` and `redo` save before they return. A
+  change that cannot be saved is undone and reported. A crash loses at most
+  the change being saved, never mixes old and new.
+- **Checkpoints and branches**: `checkpoint`, `checkpoints` (newest first),
+  `tree_at`, `branches`, `create_branch`, `switch_branch` (refused with
+  `UncommittedChanges` while the model has changes since the last checkpoint).
+- **One window**: a second `open` of the same folder fails with `Locked`.

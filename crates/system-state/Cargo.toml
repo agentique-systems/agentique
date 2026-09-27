@@ -3,7 +3,11 @@ name = "agq-system-state"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "The live System State of one project: typed operations, locks, undo and change events"
+description = "The live System State of one project: typed operations, locks, undo, change events, and saving in git"
 
 [dependencies]
+agq-history = { path = "../history" }
 agq-language = { path = "../language" }
+
+[dev-dependencies]
+tempfile.workspace = true
