@@ -450,7 +450,7 @@ fn run_task(task: &Task, model: &mut spend::GuardedModel) -> (Run, Value) {
             messages.push(task.answer(&question, &[]));
         }
     }
-    let transcript = serde_json::to_value(&conversation).unwrap_or(Value::Null);
+    let transcript = serde_json::from_str(&conversation.to_text()).unwrap_or(Value::Null);
     run.state = Some(state);
     (run, transcript)
 }

@@ -24,8 +24,9 @@ hand-written Claude client still uses the network directly until W5.7.
   `reasoning` block naming its provider and model, and sent back only to it.
 - `claude`: the hand-written Claude API client (retired in W5.7).
 - `skills`: the system prompt, compiled in from `skills/*.md`.
-- `conversation`: the per-project Conversation. The model's content blocks
-  are stored as returned, so a conversation continues after a restart.
+- `conversation`: the per-project Conversation in conversation format 2
+  (below): provider-neutral entries, each reply with the model that wrote it,
+  so a conversation continues after a restart or on another model.
 - `model`: the language model interface. `ScriptedModel` is a deterministic
   stand-in for tests.
 
@@ -193,12 +194,13 @@ definitions are committed; reports and transcripts are written to `--out` and
 never committed (§8.3). The rubric grader for simplicity (R-19) is not built
 yet: it needs calibrating against the Operator's judgment.
 
-## Conversation format 2 (interface 4 of ROADMAP §6.2; built in W5.7)
+## Conversation format 2 (interface 4 of ROADMAP §6.2; W5.7)
 
-Today a conversation is stored as the Claude API's content blocks (format 1),
-with other providers' reasoning in `reasoning` blocks. W5.7 replaces it with a
-provider-neutral format (R-23), stored per project at
-`%APPDATA%\Agentique\projects\<folder>-<hash>\conversation.json` (R-43):
+A conversation is stored in a provider-neutral format (R-23), per project at
+`%APPDATA%\Agentique\projects\<folder>-<hash>\conversation.json` (R-43).
+Stages 3 and 4 stored the Claude API's content blocks (format 1) at
+`%APPDATA%\Agentique\conversations\<folder>-<hash>.json`; such a file is read
+once, as a read-only transcript, and left as it is:
 
 ```json
 {
@@ -232,6 +234,11 @@ provider-neutral format (R-23), stored per project at
   and never sent to a model. Stage 6 adds `plan`, `queued` and `delivered`
   messages, `preview`, `note_proposal` and `compaction` this way.
 - **Format 1 files are imported read-only** (R-23): their entries are shown
-  as a transcript; the next message starts a new exchange with the model.
+  as a transcript, followed by a notice; the next message starts a new
+  exchange with the model. The file records how many leading entries are
+  transcript (`"transcript": n`); retry and edit never reach into them.
+- **The turn** still sees a reply as Claude-style content blocks
+  (`Entry::reply` and `blocks_from_parts` convert); the stored entry is
+  neutral.
 - **Durability** (§5.5): written atomically; an unknown `format` is refused
   and the file left as it is.

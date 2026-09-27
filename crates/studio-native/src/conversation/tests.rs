@@ -399,7 +399,7 @@ fn the_conversation_is_kept_per_project_and_survives_a_restart() {
     assert_eq!(saved.entries.len(), 2);
     let path = conversation_path(&app.session_path, &project);
     assert!(
-        path.starts_with(folder.0.join("conversations")),
+        path.starts_with(folder.0.join("projects")),
         "{}",
         path.display()
     );
@@ -426,6 +426,47 @@ fn the_conversation_is_kept_per_project_and_survives_a_restart() {
     assert_eq!(again.conversation.conversation, saved);
     again.new_conversation();
     assert!(Conversation::load(&path).unwrap().entries.is_empty());
+}
+
+#[test]
+fn a_conversation_from_stage_4_is_shown_as_a_transcript_and_never_sent() {
+    let (mut app, _context, folder) = assisted(
+        "assistant-format-1",
+        vec![reply(vec![text("Starting afresh.")], "end_turn")],
+    );
+    let project = app.project.as_ref().unwrap().folder().to_path_buf();
+    // Where Stages 3 and 4 kept it, in format 1.
+    let name = conversation_path(&app.session_path, &project)
+        .parent()
+        .unwrap()
+        .file_name()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+    let earlier = folder.0.join("conversations").join(format!("{name}.json"));
+    std::fs::create_dir_all(earlier.parent().unwrap()).unwrap();
+    let format_1 = json!({ "entries": [
+        { "type": "operator", "text": "Build the store" },
+        { "type": "assistant", "content": [text("Built it.")] }
+    ] })
+    .to_string();
+    std::fs::write(&earlier, &format_1).unwrap();
+    app.open_project(&project);
+    let conversation = &app.conversation.conversation;
+    assert_eq!(conversation.transcript, 3, "{:#?}", conversation.entries);
+    assert!(conversation.api_messages().is_empty());
+    // The transcript's message cannot be edited and sent again.
+    assert_eq!(app.conversation.last_operator(), None);
+
+    say(&mut app, "Carry on");
+    wait(&mut app, finished);
+    let messages = app.conversation.conversation.api_messages();
+    assert_eq!(messages.len(), 2, "only the new exchange: {messages:#?}");
+    assert_eq!(messages[0]["content"][0]["text"], "Carry on");
+    // Saved in the new place, as format 2; the earlier file is left as it was.
+    let saved = std::fs::read_to_string(conversation_path(&app.session_path, &project)).unwrap();
+    assert!(saved.contains("\"format\":2"), "{saved}");
+    assert_eq!(std::fs::read_to_string(&earlier).unwrap(), format_1);
 }
 
 #[test]
@@ -640,9 +681,10 @@ fn text_is_selected_across_messages_and_copied_in_order() {
     entries.push(Entry::Operator {
         text: "First message from you.".into(),
     });
-    entries.push(Entry::Assistant {
-        content: vec![text("The **second** message.\n\n- one\n- two")],
-    });
+    entries.push(Entry::reply(
+        None,
+        &[text("The **second** message.\n\n- one\n- two")],
+    ));
     entries.push(Entry::Operator {
         text: "Third message here.".into(),
     });

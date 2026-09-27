@@ -91,6 +91,12 @@ impl std::fmt::Display for ModelError {
 impl std::error::Error for ModelError {}
 
 pub trait Model {
+    /// The model behind this, for tagging its replies (conversation format
+    /// 2); `None` for stand-ins.
+    fn model(&self) -> Option<agq_providers::ModelRef> {
+        None
+    }
+
     /// Sends a request and streams the reply. Returns [`ModelError::Stopped`]
     /// promptly once `stop` is set; a stopped or failed reply is dropped.
     fn send(

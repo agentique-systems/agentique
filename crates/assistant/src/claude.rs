@@ -205,6 +205,13 @@ impl ClaudeModel {
 }
 
 impl Model for ClaudeModel {
+    fn model(&self) -> Option<agq_providers::ModelRef> {
+        Some(agq_providers::ModelRef::new(
+            agq_providers::Provider::Anthropic,
+            self.model.clone(),
+        ))
+    }
+
     fn send(
         &mut self,
         request: &Request,

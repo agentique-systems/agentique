@@ -69,6 +69,10 @@ impl ProviderModel {
 }
 
 impl Model for ProviderModel {
+    fn model(&self) -> Option<ModelRef> {
+        Some(self.model.clone())
+    }
+
     fn send(
         &mut self,
         request: &Request,

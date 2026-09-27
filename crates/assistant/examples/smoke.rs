@@ -60,6 +60,7 @@ fn main() {
     let tree = parse(&[Source::new("UrlShortener.sysml", "package UrlShortener;")]);
     let mut state = SystemState::new(tree, BTreeSet::new());
     let mut conversation = Conversation {
+        transcript: 0,
         entries: vec![Entry::Operator { text: request }],
     };
     turn::run(

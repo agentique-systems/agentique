@@ -40,8 +40,10 @@ The column on the right (`conversation.rs` for the state and tool calls,
   everything after it. Opening another project stops the turn and records
   its last results first.
 - **Saved per project** in the Studio's local data, next to the session file
-  (`conversations/<folder>-<hash>.json`), never in the project folder, after
-  every entry. "New conversation" starts again; the model is unaffected.
+  (`projects/<folder>-<hash>/conversation.json`, conversation format 2; see
+  `crates/assistant/README.md`), never in the project folder, after every
+  entry. A conversation Stage 4 kept in `conversations/` is shown as a
+  read-only transcript. "New conversation" starts again; the model is unaffected.
 - **Model**: the provider, model and effort chosen in Settings, with the
   environment winning (a provider key such as `DEEPSEEK_API_KEY`, and
   `AGENTIQUE_PROVIDER`, `AGENTIQUE_MODEL`, `AGENTIQUE_EFFORT`; see the

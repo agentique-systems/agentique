@@ -41,6 +41,7 @@ fn model_of(text: &str) -> SystemState {
 
 fn asked(text: &str) -> Conversation {
     Conversation {
+        transcript: 0,
         entries: vec![Entry::Operator {
             text: text.to_string(),
         }],
@@ -245,6 +246,7 @@ fn a_turn_builds_an_architecture_and_ends() {
             Entry::Assistant { .. } => "assistant",
             Entry::ToolResults { .. } => "results",
             Entry::Notice { .. } => "notice",
+            Entry::Other(_) => "other",
         })
         .collect();
     assert_eq!(
@@ -470,10 +472,12 @@ fn invalid_tool_input_is_answered_with_an_error_and_never_run() {
         results[3].content
     );
     // The stored reply can be sent back: the unreadable input became `{}`.
-    let Entry::Assistant { content } = &run.conversation.entries[1] else {
+    let Entry::Assistant { parts, .. } = &run.conversation.entries[1] else {
         panic!()
     };
-    assert_eq!(content[0]["input"], json!({}));
+    assert!(
+        matches!(&parts[0], agq_providers::AssistantPart::ToolCall { input, .. } if *input == json!({}))
+    );
     assert_well_formed(&run.conversation.api_messages());
 }
 
@@ -591,9 +595,7 @@ fn a_stop_while_the_reply_streams_keeps_the_text_shown() {
     let run = run(&mut StoppedWhileWriting, &mut studio, asked("Build it."));
     assert_eq!(
         run.conversation.entries[1],
-        Entry::Assistant {
-            content: vec![text("I will add the link")]
-        }
+        Entry::reply(None, &[text("I will add the link")])
     );
     assert!(notices(&run.conversation)[0].starts_with("Stopped by the Operator"));
     let mut conversation = run.conversation;
@@ -796,9 +798,7 @@ fn the_assistant_runs_a_turn_in_the_background() {
     assert_eq!(conversation.entries.len(), 4);
     assert_eq!(
         conversation.entries[3],
-        Entry::Assistant {
-            content: vec![text("Done.")]
-        }
+        Entry::reply(None, &[text("Done.")])
     );
 }
 

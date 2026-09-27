@@ -11,6 +11,7 @@ use crate::{
 };
 use agq_assistant::{Entry, ToolResult, tools};
 use agq_language::{ElementId, ElementKind, Tree};
+use agq_providers::AssistantPart;
 use eframe::egui::{self, Key, Modifiers, RichText, Stroke, Vec2, accesskit::Role};
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
@@ -313,6 +314,7 @@ fn messages(
     let failed = panel.last_turn.as_ref().is_some_and(|turn| turn.failed);
     let tree = state.map(|state| state.tree());
     let revision = state.map_or(0, |state| state.revision());
+    let last_operator = panel.last_operator();
     let view = &mut panel.view;
     if view.names_revision != Some(revision) {
         // Names for element links: qualified names, and simple names that
@@ -336,9 +338,6 @@ fn messages(
     view.selecting
         .begin(view.selection.map(|selection| selection.range()));
     let entries = &panel.conversation.entries;
-    let last_operator = entries
-        .iter()
-        .rposition(|entry| matches!(entry, Entry::Operator { .. }));
     let waiting_question = match &panel.waiting {
         Some(waiting) => match &waiting.kind {
             WaitingFor::Question { question, options } => Some((
@@ -386,29 +385,24 @@ fn messages(
                         let editable = Some(index) == last_operator && !running && panel.editing.is_none();
                         operator_message(ui, view, &ctx, index, text, editable, actions);
                     }
-                    Entry::Assistant { content } => {
-                        for (slot, block) in content.iter().enumerate() {
-                            match block["type"].as_str() {
-                                Some("text") => {
-                                    let text = block["text"].as_str().unwrap_or_default();
+                    Entry::Assistant { parts, .. } => {
+                        for (slot, part) in parts.iter().enumerate() {
+                            match part {
+                                AssistantPart::Text { text } => {
                                     let id = egui::Id::new(("message", index, slot));
                                     let key = (index, slot);
                                     if let Some(id) = markdown_message(ui, view, &ctx, id, key, ASSISTANT, text) {
                                         actions.push(Action::Reveal(id));
                                     }
                                 }
-                                Some("tool_use") => {
-                                    let id = block["id"].as_str().unwrap_or_default();
-                                    let name = block["name"].as_str().unwrap_or_default();
-                                    tool_card(ui, &ctx, id, name, &block["input"], actions);
+                                AssistantPart::ToolCall { id, name, input } => {
+                                    tool_card(ui, &ctx, id, name, input, actions);
                                 }
                                 // Claude's summaries, or another provider's reasoning.
-                                Some("thinking") | Some("reasoning") => {
-                                    let field = if block["type"] == "thinking" { "thinking" } else { "text" };
-                                    let text = block[field].as_str().unwrap_or_default();
-                                    thinking_row(ui, theme, egui::Id::new(("thinking", index, slot)), text, false);
+                                AssistantPart::Reasoning(reasoning) => {
+                                    let text = reasoning.text();
+                                    thinking_row(ui, theme, egui::Id::new(("thinking", index, slot)), &text, false);
                                 }
-                                _ => {}
                             }
                         }
                     }
@@ -416,6 +410,12 @@ fn messages(
                     Entry::Notice { text } => {
                         let retry = index + 1 == entries.len() && failed && !running;
                         notice(ui, theme, text, retry, actions);
+                    }
+                    // A later version's entry: kept, shown plainly.
+                    Entry::Other(value) => {
+                        let kind = value["type"].as_str().unwrap_or("unknown");
+                        let text = format!("A `{kind}` entry from a later version of Agentique; it is kept as it is.");
+                        notice(ui, theme, &text, false, actions);
                     }
                 }
             }

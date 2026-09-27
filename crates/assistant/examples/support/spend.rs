@@ -199,6 +199,10 @@ pub struct GuardedModel {
 }
 
 impl Model for GuardedModel {
+    fn model(&self) -> Option<agq_providers::ModelRef> {
+        self.inner.model()
+    }
+
     fn send(
         &mut self,
         request: &Request,
