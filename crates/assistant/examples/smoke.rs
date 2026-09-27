@@ -54,6 +54,7 @@ fn main() {
     let mut model = spend::GuardedModel {
         inner: choice.start(),
         guard: guard.clone(),
+        failures: 0,
     };
     println!("Model {}.\nOperator: {request}\n", choice.label());
     let tree = parse(&[Source::new("UrlShortener.sysml", "package UrlShortener;")]);

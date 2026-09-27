@@ -31,6 +31,10 @@ pub struct SpendGuard {
     max_calls: u32,
     max_output_tokens: u64,
     calls: u32,
+    /// Worst cases of calls admitted and not yet recorded (parallel runs).
+    reserved_usd: f64,
+    /// A log line could not be written: no further call is admitted.
+    broken: bool,
     /// This run's estimated cost so far.
     pub run_usd: f64,
 }
@@ -69,6 +73,8 @@ impl SpendGuard {
             max_calls,
             max_output_tokens,
             calls: 0,
+            reserved_usd: 0.0,
+            broken: false,
             run_usd: 0.0,
         };
         let worst = guard.worst_call(ASSUMED_INPUT_TOKENS) * f64::from(max_calls);
@@ -107,14 +113,19 @@ impl SpendGuard {
                 self.max_calls
             ));
         }
+        if self.broken {
+            return Err("the spend log could not be written".to_string());
+        }
         let worst = self.worst_call(input_tokens);
         let logged = self.logged();
-        if logged + worst > self.stop_usd {
+        if logged + self.reserved_usd + worst > self.stop_usd {
             return Err(format!(
-                "the logged spend (${logged:.4}) plus this call's worst case (${worst:.4}) would pass the stop"
+                "the logged spend (${logged:.4}), calls under way (${:.4}) and this call's worst case (${worst:.4}) would pass the stop",
+                self.reserved_usd
             ));
         }
         self.calls += 1;
+        self.reserved_usd += worst;
         Ok(worst)
     }
 
@@ -135,6 +146,7 @@ impl SpendGuard {
             None => (worst, None),
         };
         self.run_usd += cost;
+        self.reserved_usd = (self.reserved_usd - worst).max(0.0);
         let line = json!({
             "time": timestamp(),
             "purpose": self.purpose,
@@ -147,12 +159,13 @@ impl SpendGuard {
             "output_tokens": tokens.map(|t| t.output_tokens),
             "cost_usd": cost,
         });
-        if let Ok(mut file) = std::fs::OpenOptions::new()
+        let written = std::fs::OpenOptions::new()
             .create(true)
             .append(true)
             .open(&self.log)
-        {
-            let _ = writeln!(file, "{line}");
+            .and_then(|mut file| writeln!(file, "{line}"));
+        if written.is_err() {
+            self.broken = true;
         }
     }
 }
@@ -180,6 +193,9 @@ fn timestamp() -> String {
 pub struct GuardedModel {
     pub inner: Box<dyn Model + Send>,
     pub guard: Arc<Mutex<SpendGuard>>,
+    /// Calls that failed or were refused, for runs that must not count a
+    /// trial that never ran.
+    pub failures: usize,
 }
 
 impl Model for GuardedModel {
@@ -202,7 +218,10 @@ impl Model for GuardedModel {
             .lock()
             .unwrap()
             .allow((size / 4) as u64 + 1)
-            .map_err(|why| ModelError::Failed(format!("Spend guard: {why}.")))?;
+            .map_err(|why| {
+                self.failures += 1;
+                ModelError::Failed(format!("Spend guard: {why}."))
+            })?;
         let guard = self.guard.clone();
         let mut reported = false;
         let result = self.inner.send(
@@ -223,6 +242,9 @@ impl Model for GuardedModel {
                 Err(_) => "failed",
             };
             self.guard.lock().unwrap().record(None, outcome, worst);
+        }
+        if result.is_err() {
+            self.failures += 1;
         }
         result
     }

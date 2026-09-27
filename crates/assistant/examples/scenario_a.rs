@@ -68,6 +68,7 @@ fn main() {
             Box::new(model)
         },
         guard: guard.clone(),
+        failures: 0,
     };
     let mut lines = vec![
         format!("# Scenario A, headless, on {}", choice.label()),

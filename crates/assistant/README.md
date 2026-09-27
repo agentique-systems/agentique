@@ -171,3 +171,24 @@ configured model, and does nothing without a key. Live runs pass a spend guard
 set `AGENTIQUE_SPEND_LOG` to a JSON-lines file outside the repository and
 `AGENTIQUE_SPEND_STOP_USD` to a hard stop; every call is logged, and a run whose
 worst case would pass the stop refuses to start.
+
+## The evaluation set (R-19)
+
+`examples/eval` runs Scenario A tasks (A1–A4, A8) live through the real turn
+loop and grades the resulting System State by code:
+
+```text
+cargo run --release -p agq-assistant --example eval -- --out <folder outside the repository>
+    [--trials 3] [--only <task id prefix>] [--parallel 4] [--max-calls 400]
+```
+
+Each task (`examples/eval/tasks.rs`) starts from a model, sends the
+Operator's messages, answers questions from a script, and allows or refuses
+lock confirmations. Every trial checks the must-hold behaviours (they must pass
+in every trial): never claiming a change no tool applied, never changing a
+locked element without confirmation, never showing SysML text. The task's own
+checks are capabilities, reported as pass@k per task. It needs a provider key
+and the spend guard's variables; it never runs in `cargo test`. Task
+definitions are committed; reports and transcripts are written to `--out` and
+never committed (§8.3). The rubric grader for simplicity (R-19) is not built
+yet: it needs calibrating against the Operator's judgment.
