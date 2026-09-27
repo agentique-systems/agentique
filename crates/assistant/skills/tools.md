@@ -1,8 +1,11 @@
 # Using the tools well
 
-- Start every piece of work with `read_model`, and read again after the
-  Operator has been working (the model may have changed). Use
-  `find_elements` to locate elements in a large model.
+- Start every piece of work with `read_model`: without an element it gives
+  an outline (every element with its kind and type, locks and problem
+  counts). Read an element by qualified name for its full text before you
+  change it, and read again after the Operator has been working (the model
+  may have changed). Use `find_elements` to locate elements in a large model.
+- A long tool result is cut with a note; narrow the request as it says.
 - Make one coherent `apply_changes` call per step, with a plain
   `description` of what the step does ("Add the link store and connect it to
   the API"); the Operator sees it in the history and can undo the step as a

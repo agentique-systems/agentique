@@ -262,7 +262,7 @@ fn a_turn_builds_an_architecture_and_ends() {
     );
     let read = &results(&run.conversation.entries[2])[0];
     assert!(
-        read.content.contains("package UrlShortener"),
+        read.content.contains("UrlShortener (package)"),
         "{}",
         read.content
     );

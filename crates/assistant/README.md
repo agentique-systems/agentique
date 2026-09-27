@@ -6,8 +6,10 @@ the Conversation. It depends on the System State, the language core and
 Providers (`agq-providers`), which talks to model providers through rig. Its
 hand-written Claude client still uses the network directly until W5.7.
 
-- `tools`: what the Assistant can do. `read_model`, `find_elements` and
-  `get_problems` read the System State; `apply_changes` turns a request into
+- `tools`: what the Assistant can do. `read_model` (an outline of the whole
+  model, or one element's full text), `find_elements` and `get_problems`
+  read the System State; every result is cut at about 8,000 tokens with a
+  note on narrowing the request (R-34); `apply_changes` turns a request into
   one System State `Change` (one undo step) that the Studio applies exactly
   like an Operator edit, so locks ask the Operator first; `ask_operator` puts
   a question to the Operator. Tool input is untrusted: the turn checks it

@@ -620,13 +620,7 @@ pub fn script_assistant(app: &mut StudioApp) {
         "- `UrlShortener::UrlShortenerService::store` keeps the links; the `storage` interface joins it to the API.",
         "- `UrlShortener::UrlShortenerService::stats` counts clicks, as a *separate* part.",
         "",
-        "```sysml",
-        "part def UrlShortenerService {",
-        "    part api : HttpApi;",
-        "    part store : LinkStore;",
-        "    part stats : ClickStatistics;",
-        "}",
-        "```",
+        "Nothing is locked yet: lock the parts you consider settled.",
     ]
     .join("\n");
     let replies = vec![

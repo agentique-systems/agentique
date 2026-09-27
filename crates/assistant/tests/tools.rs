@@ -171,8 +171,28 @@ fn reading_and_finding_and_asking() {
     let Prepared::Answer(model) = tools::prepare(&state, READ_MODEL, &json!({})) else {
         panic!()
     };
-    assert!(model.contains("part def LinkStore"), "{model}");
+    // Without an element: an outline, not the whole text (R-34).
+    assert!(
+        model.contains(
+            "
+  LinkStore (part def)
+"
+        ),
+        "{model}"
+    );
+    assert!(model.contains("storage (port : ~LinkStorePort)"), "{model}");
+    assert!(model.contains("save (in item : Link)"), "{model}");
+    assert!(!model.contains("part def LinkStore {"), "{model}");
     assert!(model.contains("Locked: none."), "{model}");
+    // With an element: its full text.
+    let Prepared::Answer(store) = tools::prepare(
+        &state,
+        READ_MODEL,
+        &json!({ "element": "UrlShortener::LinkStore" }),
+    ) else {
+        panic!()
+    };
+    assert!(store.contains("part def LinkStore"), "{store}");
     let Prepared::Answer(found) =
         tools::prepare(&state, FIND_ELEMENTS, &json!({ "name": "store" }))
     else {
@@ -332,4 +352,28 @@ fn tool_input_is_checked_against_the_schema() {
         let message = tools::check_input(tool, &input).unwrap_err();
         assert!(message.contains(expected), "{tool} {input}: {message}");
     }
+}
+
+#[test]
+fn a_long_tool_result_is_cut_with_a_way_to_narrow_it() {
+    let long: String = (0..5_000)
+        .map(|n| {
+            format!(
+                "UrlShortener::Part{n} (part def)
+"
+            )
+        })
+        .collect();
+    let result = agq_assistant::ToolResult::answer(long);
+    assert!(result.content.len() <= tools::RESULT_LIMIT + 200);
+    assert!(
+        result.content.contains("[Cut: "),
+        "{}",
+        &result.content[result.content.len() - 200..]
+    );
+    assert!(
+        result
+            .content
+            .contains("read one element by qualified name")
+    );
 }
