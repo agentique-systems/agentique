@@ -194,8 +194,27 @@ and run the check on the copy. Please also read `docs/deviations.md` entries
 
 ## Stage 2: Studio foundation
 
-Status: not started.
+Status: **in progress.** (Its work started on 2026-09-27 while the last
+Stage 1 review fixes, in the language core's name printing and import lookup,
+were still being made; the Stage 2 builders did not depend on that code.)
+
+Merged so far:
+
+- The System State interface (#30) and its hardening (this change): typed
+  operations in atomic changes, rejections that leave the model unchanged,
+  R-18, locks covering what they own, undo/redo, change events,
+  `undo_since` for undoing Assistant work. What can be written as SysML text
+  is checked in one place in the language core (`agq_language::writable`).
+- Git-backed History and `Project` (#32): save, reopen, checkpoints,
+  branches, crash-safe continuous saving, identities and locks in
+  `agentique.json`.
+- The visual quality pass (#31): design tokens, fonts, Surface depth and the
+  change highlight; Q-6 assessed (stay with egui, with mitigations).
+
+Still to merge: the Studio on the System State (direct manipulation, panels,
+history view), then retiring the pre-realignment engine.
 
 ## Stage 3: the Assistant
 
-Status: not started.
+Status: **in progress** (the Assistant crate and the Claude client are being
+built on branches; nothing is merged until Stage 2 is).
