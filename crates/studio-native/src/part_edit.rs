@@ -317,6 +317,55 @@ mod tests {
     }
 
     #[test]
+    fn review_modes_keep_selection_and_focus_and_drop_the_new_part_from_current() {
+        let mut app = application();
+        let owner = named(&app, "ModelingPlatform");
+        let observed = named(&app, "ModelRepository");
+        app.select(SceneTarget::Node(owner), false);
+        app.open_part_edit(CommandId::CreatePart);
+        assert!(app.part_edit_ready());
+        app.select(SceneTarget::Node(observed), false);
+        app.new_part_name = "reviewedPart".into();
+        app.prepare_part();
+        let candidate = app.candidate.as_ref().unwrap();
+        let revision = candidate.after.revision_id;
+        let added = candidate
+            .after
+            .nodes
+            .iter()
+            .find(|node| node.name == "reviewedPart")
+            .unwrap()
+            .id;
+
+        // The existing selection carries into the proposed revision.
+        app.change_comparison(ComparisonMode::Candidate);
+        assert_eq!(app.selection.revision, revision);
+        assert_eq!(app.selected_element(), Some(observed));
+        assert_eq!(app.focus, Some(owner));
+
+        // Choosing the new part in the outliner reveals it when it is offscreen.
+        app.reduced_motion = true;
+        app.camera.center = agq_studio_scene::Point::new(100_000.0, 100_000.0);
+        let bounds = app.scene.node(added).unwrap().bounds;
+        assert!(!app.camera.visible_rect().intersects(bounds));
+        app.select_from_outliner(SceneTarget::Node(added), false);
+        assert_eq!(app.selected_element(), Some(added));
+        assert!(app.camera.visible_rect().intersects(bounds));
+
+        // Current has no such part; returning to review restores the selection.
+        app.change_comparison(ComparisonMode::Current);
+        assert!(app.scene.node(added).is_none());
+        assert!(!app.selection.contains(added));
+        app.change_comparison(ComparisonMode::Candidate);
+        assert_eq!(app.selection.revision, revision);
+        assert_eq!(app.selected_element(), Some(added));
+        app.change_comparison(ComparisonMode::Diff);
+        assert_eq!(app.comparison, ComparisonMode::Diff);
+        assert_eq!(app.selected_element(), Some(added));
+        assert_eq!(app.focus, Some(owner));
+    }
+
+    #[test]
     fn create_enters_the_owner_view_and_keeps_the_previous_camera_for_back() {
         let mut app = application();
         let owner = named(&app, "ModelingPlatform");
