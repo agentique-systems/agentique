@@ -827,7 +827,7 @@ impl Model for Thinking {
         on_event: &mut dyn FnMut(StreamEvent),
         stop: &AtomicBool,
     ) -> Result<Reply, ModelError> {
-        on_event(StreamEvent::Thinking);
+        on_event(StreamEvent::Thinking(String::new()));
         while !stop.load(Ordering::SeqCst) {
             std::thread::sleep(Duration::from_millis(5));
         }
@@ -842,7 +842,7 @@ fn stopping_the_assistant_ends_the_turn_at_once() {
     let background = BackgroundTurn::start(Box::new(Thinking), conversation.clone());
     // Wait until the model is at work, then stop.
     loop {
-        if let Some(BackgroundEvent::Turn(TurnEvent::Stream(StreamEvent::Thinking))) =
+        if let Some(BackgroundEvent::Turn(TurnEvent::Stream(StreamEvent::Thinking(_)))) =
             background.next_event()
         {
             break;

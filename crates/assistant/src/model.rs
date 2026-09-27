@@ -1,7 +1,8 @@
 //! The language model behind the Assistant.
 //!
-//! [`Model`] is what the tool-use loop talks to: the Claude API client in
-//! production, a scripted stand-in in tests. The model's output is untrusted:
+//! [`Model`] is what the tool-use loop talks to: a provider through
+//! `agq-providers` ([`crate::ProviderModel`]) or the hand-written Claude
+//! client (until W5.7) in production, a scripted stand-in in tests. The model's output is untrusted:
 //! its tool calls are checked and go through [`crate::tools`], and change the
 //! System State only the way the Operator's own edits do.
 
@@ -23,12 +24,17 @@ pub struct Request {
 pub enum StreamEvent {
     /// More text of the reply.
     Text(String),
-    /// The model started thinking. The thinking itself is not shown.
-    Thinking,
+    /// More of the model's thinking as it may be shown: a summary or the
+    /// reasoning itself, per the model's capabilities (R-31); empty when the
+    /// model thinks without showing it.
+    Thinking(String),
     /// The model started a tool call; its input follows.
     ToolCallStarted { id: String, name: String },
     /// More of a tool call's input, as raw JSON text.
     ToolInput { id: String, json: String },
+    /// The provider's id for a call that started under a stream id; the
+    /// reply's `tool_use` block carries it.
+    ToolCallId { stream_id: String, id: String },
     /// The tokens the reply used, once it is complete; for showing costs.
     Usage(Usage),
 }
@@ -135,7 +141,9 @@ impl Model for ScriptedModel {
                         on_event(StreamEvent::Text(text.to_string()));
                     }
                 }
-                Some("thinking") => on_event(StreamEvent::Thinking),
+                Some("thinking") => on_event(StreamEvent::Thinking(
+                    block["thinking"].as_str().unwrap_or_default().to_string(),
+                )),
                 Some("tool_use") => {
                     let id = block["id"].as_str().unwrap_or_default().to_string();
                     on_event(StreamEvent::ToolCallStarted {

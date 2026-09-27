@@ -128,7 +128,9 @@ fn thinking_keeps_its_signature_for_sending_back() {
         json!({ "type": "thinking", "thinking": "Plan the parts.", "signature": "c2lnbmF0dXJl" })
     );
     assert_eq!(reply.content[1]["text"], "Done.");
-    assert_eq!(stream[0], StreamEvent::Thinking);
+    // The thinking row learns that thinking started, then its summary.
+    assert_eq!(stream[0], StreamEvent::Thinking(String::new()));
+    assert_eq!(stream[1], StreamEvent::Thinking("Plan the parts.".into()));
 }
 
 #[test]
@@ -439,7 +441,10 @@ fn a_request_is_streamed_with_the_documented_settings() {
     assert_eq!(body["model"], "claude-opus-5");
     assert_eq!(body["stream"], true);
     assert_eq!(body["max_tokens"], 64000);
-    assert_eq!(body["thinking"], json!({ "type": "adaptive" }));
+    assert_eq!(
+        body["thinking"],
+        json!({ "type": "adaptive", "display": "summarized" })
+    );
     assert_eq!(body["output_config"], json!({ "effort": "high" }));
     assert_eq!(body["fallbacks"], "default");
     assert_eq!(body["cache_control"], json!({ "type": "ephemeral" }));
@@ -602,5 +607,5 @@ fn a_stop_ends_a_silent_reply_at_once() {
         "{:?}",
         begun.elapsed()
     );
-    assert_eq!(events, [StreamEvent::Thinking]);
+    assert_eq!(events, [StreamEvent::Thinking(String::new())]);
 }

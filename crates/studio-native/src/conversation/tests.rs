@@ -42,7 +42,7 @@ fn changes(id: &str, description: &str, operations: Vec<Value>) -> Value {
 fn assisted(name: &str, replies: Vec<Reply>) -> (StudioApp, egui::Context, Folder) {
     let (mut app, context, folder) = studio(name);
     app.conversation.new_model = scripted(replies);
-    app.conversation.key_missing = false;
+    app.conversation.key_missing = None;
     (app, context, folder)
 }
 

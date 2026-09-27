@@ -16,7 +16,7 @@
 //! entry.
 use crate::{app::StudioApp, edit::Outcome};
 use agq_assistant::{
-    BackgroundEvent, BackgroundTurn, ClaudeModel, Conversation, Entry, Model, Prepared,
+    BackgroundEvent, BackgroundTurn, Conversation, Entry, Model, ModelChoice, Prepared,
     StreamEvent, ToolCall, ToolResult, TurnEvent, Usage, conversation::tool_use_ids, tools,
 };
 use agq_language::ElementId;
@@ -58,7 +58,8 @@ pub struct ConversationPanel {
     pub usage: Usage,
     /// The model and effort, shown discreetly in the panel.
     pub model_name: String,
-    pub key_missing: bool,
+    /// What to tell the Operator while no key is set for the model.
+    pub key_missing: Option<String>,
     pub new_model: ModelSource,
     /// Why the saved conversation could not be read; shown until another
     /// project is opened.
@@ -74,6 +75,8 @@ pub struct ConversationPanel {
 /// Part of the reply that is streaming in.
 pub enum Live {
     Text(String),
+    /// The model's thinking as it may be shown (a summary or the reasoning).
+    Thinking(String),
     Tool {
         id: String,
         name: String,
@@ -123,7 +126,7 @@ pub enum WaitingFor {
 
 impl Default for ConversationPanel {
     fn default() -> Self {
-        let claude = ClaudeModel::from_env();
+        let choice = ModelChoice::from_env();
         ConversationPanel {
             conversation: Conversation::default(),
             path: None,
@@ -137,9 +140,9 @@ impl Default for ConversationPanel {
             live: Vec::new(),
             thinking: false,
             usage: Usage::default(),
-            model_name: format!("{} · {}", claude.model, claude.effort),
-            key_missing: !claude.has_key(),
-            new_model: Box::new(|| Box::new(ClaudeModel::from_env())),
+            model_name: choice.label(),
+            key_missing: (!choice.has_key()).then(|| choice.missing_key_message()),
+            new_model: Box::new(move || choice.start()),
             read_error: None,
             save_error: None,
             shown: true,
@@ -302,7 +305,7 @@ impl StudioApp {
             return;
         }
         let panel = &mut self.conversation;
-        if panel.running() || panel.key_missing {
+        if panel.running() || panel.key_missing.is_some() {
             return;
         }
         if let Some((index, draft)) = panel.editing.take() {
@@ -372,7 +375,22 @@ impl StudioApp {
                         _ => panel.live.push(Live::Text(text)),
                     }
                 }
-                StreamEvent::Thinking => panel.thinking = true,
+                StreamEvent::Thinking(text) => {
+                    panel.thinking = true;
+                    match panel.live.last_mut() {
+                        Some(Live::Thinking(live)) => live.push_str(&text),
+                        _ => panel.live.push(Live::Thinking(text)),
+                    }
+                }
+                StreamEvent::ToolCallId { stream_id, id } => {
+                    for live in &mut panel.live {
+                        if let Live::Tool { id: call, .. } = live
+                            && *call == stream_id
+                        {
+                            *call = id.clone();
+                        }
+                    }
+                }
                 StreamEvent::ToolCallStarted { id, name } => {
                     panel.thinking = false;
                     panel.live.push(Live::Tool {

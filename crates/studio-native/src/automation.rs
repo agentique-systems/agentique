@@ -697,7 +697,7 @@ pub fn script_assistant(app: &mut StudioApp) {
         ),
     ];
     app.conversation.new_model = crate::conversation::scripted(replies);
-    app.conversation.key_missing = false;
+    app.conversation.key_missing = None;
     app.conversation.model_name = "scripted stand-in (no network)".into();
 }
 
