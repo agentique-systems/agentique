@@ -13,3 +13,5 @@
 /verification/**/output.txt
 /verification/**/result.json
 __pycache__/
+
+.env
