@@ -4,38 +4,12 @@
 *.png -text
 # Preserve exact supplied/locked engineering artifacts, including line endings.
 Agentique-Specification-v0.1.html -text
-models/** -text
-scenarios/** -text
-contracts/engine-operations.json -text
-requirements.json -text
 standards.references.json -text
-verification/coverage-plan.json -text
 standards/libraries/** -text
 standards/libraries-2026-04/** -text
 standards/artifacts/** -text
 standards/normative/** -text
 
-# Freeze exact v3 research responses, original captures, and process output bytes.
-verification/language-core-completion-v3/** -text
-verification/sysml-semantic-foundation-v1/** -text
-verification/kerml-operational-errata-publication-v3/** -text
-verification/kerml-name-resolution-errata-publication-v4/** -text
-verification/kerml-library-content-errata-publication-v5/** -text
-verification/kerml-semantic-closure-v6/** -text
-verification/kerml-semantic-closure-v7/** -text
-# Native alpha receipts hash the actual captured process and gallery bytes.
-verification/native-studio-alpha/**/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
-# Raw command output may contain whitespace emitted by external programs.
-verification/native-studio-alpha/**/*.txt -text -whitespace
-verification/native-studio-alpha/**/*.log -text -whitespace
-verification/native-studio-acceptance/**/*.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
-verification/native-studio-acceptance/**/*.jsonl -text -whitespace
-verification/native-studio-acceptance/**/*.txt -text -whitespace
-verification/native-studio-acceptance/**/*.log -text -whitespace
-# Retained CI manifests bind every original byte, including copied source files.
-verification/native-studio-acceptance/ci-oracle-01/** -text -whitespace
-verification/native-studio-acceptance/ci-helpers-02/** -text -whitespace
-verification/native-studio-acceptance/semantics/*.patch -text -whitespace
 standards/kerml-1.0-operational-formal-target-errata-v5.json -text
 # Manifest hashes identify reviewed bytes, including line endings.
 standards/kerml-1.0-operational-errata*.json -text

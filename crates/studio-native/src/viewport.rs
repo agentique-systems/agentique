@@ -27,7 +27,7 @@ impl StudioApp {
             ui.available_size().max(Vec2::splat(1.0)),
             Sense::click_and_drag(),
         );
-        crate::automation::record(ui.ctx(), crate::automation::Target::Viewport, rect);
+        crate::targets::record(ui.ctx(), crate::targets::Target::Viewport, rect);
         self.camera.viewport = Size::new(rect.width(), rect.height());
         if self.focus_changes_pending && !self.scene_builder.busy {
             self.focus_changes_pending = false;

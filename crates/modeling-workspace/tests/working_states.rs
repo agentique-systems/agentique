@@ -1,5 +1,5 @@
 //! Accepted-publication tests for current Working inputs; see tests/README.md.
-#[path = "../../../verification/fixtures/modeling-workspace-phase1/working_state_inputs.rs"]
+#[path = "../../kerml-text/tests/fixtures/modeling-workspace/working_state_inputs.rs"]
 mod inputs;
 #[allow(dead_code)]
 mod support;

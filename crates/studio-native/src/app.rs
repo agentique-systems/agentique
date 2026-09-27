@@ -221,8 +221,6 @@ impl StudioApp {
         if let Some(database) = &args.database {
             config.database = database.clone();
         }
-        config.seed_agentique_on_empty =
-            crate::real_automation::seed_isolated_project(&args).map_err(std::io::Error::other)?;
         let session_path = config.database.with_extension("native-session.json");
         let restore = if args.no_restore || args.fixture.is_some() {
             None
@@ -636,11 +634,7 @@ impl StudioApp {
                 })
             || self.args.screenshot.is_some()
             || self.args.frames.is_some()
-            || self
-                .args
-                .scenario
-                .as_deref()
-                .is_some_and(|scenario| scenario != "presentation")
+            || self.args.scenario_running()
         {
             return Ok(false);
         }
@@ -685,7 +679,7 @@ impl StudioApp {
 }
 
 impl eframe::App for StudioApp {
-    fn raw_input_hook(&mut self, ctx: &egui::Context, input: &mut egui::RawInput) {
+    fn raw_input_hook(&mut self, _ctx: &egui::Context, input: &mut egui::RawInput) {
         for event in &input.events {
             match event {
                 egui::Event::Ime(egui::ImeEvent::Preedit(text)) => {
@@ -697,27 +691,8 @@ impl eframe::App for StudioApp {
                 _ => {}
             }
         }
-        if let Some(scenario) = &self.args.scenario {
-            let outcome = if crate::presentation_automation::is_scenario(Some(scenario)) {
-                crate::presentation_automation::drive(self, ctx, input)
-            } else if matches!(scenario.as_str(), "real" | "real-restart") {
-                crate::real_automation::drive(self, ctx, input, &self.args.scenario_report)
-            } else if scenario == "stress" {
-                crate::stress_automation::drive(self, ctx, input, &self.args.scenario_report)
-            } else {
-                crate::automation::drive(self, ctx, input, scenario, &self.args.scenario_report)
-            };
-            match outcome {
-                Ok(crate::automation::ScenarioStatus::Running) => {}
-                Ok(crate::automation::ScenarioStatus::Complete) => {
-                    ctx.send_viewport_cmd(egui::ViewportCommand::Close)
-                }
-                Err(error) => {
-                    eprintln!("Native interaction FAILED: {error}");
-                    std::process::exit(2);
-                }
-            }
-        }
+        #[cfg(feature = "automation")]
+        crate::automation::raw_input(self, _ctx, input);
         self.timing.raw_input(input);
     }
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
@@ -757,7 +732,7 @@ impl eframe::App for StudioApp {
         self.capture(ctx);
         if self.args.frames.is_some() {
             ctx.request_repaint();
-        } else if self.args.scenario.is_some() {
+        } else if self.args.scenario_running() {
             // raw_input_hook runs before begin_pass, which can clear a delayed
             // repaint requested by a scenario. Keep its opt-in input clock in
             // the actual UI pass, including when every visible widget is idle.

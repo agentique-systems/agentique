@@ -1,8 +1,10 @@
 //! Opt-in camera benchmark through ordinary egui RawInput. Fixture-only;
 //! no direct scene mutation and no semantic service commands.
+//! Compiled only with `--features automation`.
 use crate::{
     app::StudioApp,
-    automation::{self, ScenarioStatus, Target},
+    automation::ScenarioStatus,
+    targets::{Target, target},
     timing::Samples,
 };
 use agq_studio_scene::Point;
@@ -34,7 +36,7 @@ pub fn drive(
     app: &StudioApp,
     ctx: &egui::Context,
     input: &mut egui::RawInput,
-    report_path: &Path,
+    report_path: Option<&Path>,
 ) -> Result<ScenarioStatus, String> {
     let id = egui::Id::new("native-camera-stress-scenario");
     let mut runner = ctx
@@ -46,14 +48,16 @@ pub fn drive(
     let result = runner.advance(app, ctx, input);
     if !matches!(result, Ok(ScenarioStatus::Running)) {
         let report = runner.report(app, ctx, &result);
-        if let Some(parent) = report_path.parent().filter(|p| !p.as_os_str().is_empty()) {
-            std::fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+        if let Some(report_path) = report_path {
+            if let Some(parent) = report_path.parent().filter(|p| !p.as_os_str().is_empty()) {
+                std::fs::create_dir_all(parent).map_err(|error| error.to_string())?;
+            }
+            std::fs::write(
+                report_path,
+                serde_json::to_vec_pretty(&report).map_err(|e| e.to_string())?,
+            )
+            .map_err(|error| format!("Cannot persist stress scenario report: {error}"))?;
         }
-        std::fs::write(
-            report_path,
-            serde_json::to_vec_pretty(&report).map_err(|e| e.to_string())?,
-        )
-        .map_err(|error| format!("Cannot persist stress scenario report: {error}"))?;
         println!("{report}");
         runner.completed = true;
     }
@@ -89,7 +93,7 @@ impl Runner {
             }
             return Ok(ScenarioStatus::Running);
         }
-        let viewport = automation::target(ctx, Target::Viewport)?;
+        let viewport = target(ctx, Target::Viewport)?;
         if self.zoom_anchor.is_some() {
             let error = self.anchor_error(app, ctx);
             if error.is_some_and(|error| error > 0.25)
@@ -202,7 +206,7 @@ impl Runner {
         Ok(ScenarioStatus::Running)
     }
     fn anchor_error(&self, app: &StudioApp, ctx: &egui::Context) -> Option<f32> {
-        let viewport = automation::target(ctx, Target::Viewport).ok()?;
+        let viewport = target(ctx, Target::Viewport).ok()?;
         let pointer = self.zoom_pointer?;
         let after = app.camera.screen_to_world(Point::new(
             pointer.x - viewport.left(),

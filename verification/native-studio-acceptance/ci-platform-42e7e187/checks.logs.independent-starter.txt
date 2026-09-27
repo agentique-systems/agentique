@@ -1,1 +1,0 @@
-sysml-validate: 21 diagnostics written to verification/independent-validation.json

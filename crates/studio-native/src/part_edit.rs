@@ -192,7 +192,7 @@ impl StudioApp {
                 }
                 let submit = response.lost_focus()
                     && ui.input(|input| input.key_pressed(egui::Key::Enter));
-                crate::automation::record(ctx, crate::automation::Target::CandidateName, response.rect);
+                crate::targets::record(ctx, crate::targets::Target::CandidateName, response.rect);
                 ui.add_space(16.0);
                 ui.label(muted(if let Some(reason) = unavailable {
                     reason
@@ -203,7 +203,7 @@ impl StudioApp {
                 }, self.theme));
                 ui.add_space(16.0);
                 let prepare = ui.add_enabled(ready, egui::Button::new("Prepare candidate"));
-                crate::automation::record(ctx, crate::automation::Target::CandidatePrepare, prepare.rect);
+                crate::targets::record(ctx, crate::targets::Target::CandidatePrepare, prepare.rect);
                 if ready && (prepare.clicked() || submit) {
                     if rename { self.prepare_rename(); } else { self.prepare_part(); }
                 }
@@ -314,6 +314,55 @@ mod tests {
             candidate.phase, None,
             "fixture is never semantic acceptance"
         );
+    }
+
+    #[test]
+    fn review_modes_keep_selection_and_focus_and_drop_the_new_part_from_current() {
+        let mut app = application();
+        let owner = named(&app, "ModelingPlatform");
+        let observed = named(&app, "ModelRepository");
+        app.select(SceneTarget::Node(owner), false);
+        app.open_part_edit(CommandId::CreatePart);
+        assert!(app.part_edit_ready());
+        app.select(SceneTarget::Node(observed), false);
+        app.new_part_name = "reviewedPart".into();
+        app.prepare_part();
+        let candidate = app.candidate.as_ref().unwrap();
+        let revision = candidate.after.revision_id;
+        let added = candidate
+            .after
+            .nodes
+            .iter()
+            .find(|node| node.name == "reviewedPart")
+            .unwrap()
+            .id;
+
+        // The existing selection carries into the proposed revision.
+        app.change_comparison(ComparisonMode::Candidate);
+        assert_eq!(app.selection.revision, revision);
+        assert_eq!(app.selected_element(), Some(observed));
+        assert_eq!(app.focus, Some(owner));
+
+        // Choosing the new part in the outliner reveals it when it is offscreen.
+        app.reduced_motion = true;
+        app.camera.center = agq_studio_scene::Point::new(100_000.0, 100_000.0);
+        let bounds = app.scene.node(added).unwrap().bounds;
+        assert!(!app.camera.visible_rect().intersects(bounds));
+        app.select_from_outliner(SceneTarget::Node(added), false);
+        assert_eq!(app.selected_element(), Some(added));
+        assert!(app.camera.visible_rect().intersects(bounds));
+
+        // Current has no such part; returning to review restores the selection.
+        app.change_comparison(ComparisonMode::Current);
+        assert!(app.scene.node(added).is_none());
+        assert!(!app.selection.contains(added));
+        app.change_comparison(ComparisonMode::Candidate);
+        assert_eq!(app.selection.revision, revision);
+        assert_eq!(app.selected_element(), Some(added));
+        app.change_comparison(ComparisonMode::Diff);
+        assert_eq!(app.comparison, ComparisonMode::Diff);
+        assert_eq!(app.selected_element(), Some(added));
+        assert_eq!(app.focus, Some(owner));
     }
 
     #[test]

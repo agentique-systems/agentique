@@ -1,5 +1,5 @@
 //! Parser and edit-identity preflight only. No workspace or accepted graph load.
-#[path = "../../../verification/fixtures/modeling-workspace-phase1/working_state_inputs.rs"]
+#[path = "fixtures/modeling-workspace/working_state_inputs.rs"]
 mod inputs;
 
 use agq_kerml_syntax::{

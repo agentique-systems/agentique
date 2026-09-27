@@ -3,7 +3,7 @@
 use super::*;
 use crate::{ProjectChange, SourceCompilation, SourceDiagnostic, SourceInputs, SourceLanguage};
 
-#[path = "../../../../verification/fixtures/modeling-workspace-phase1/working_state_inputs.rs"]
+#[path = "../../tests/fixtures/modeling-workspace/working_state_inputs.rs"]
 mod inputs;
 
 fn capability(

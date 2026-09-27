@@ -1,7 +1,7 @@
 //! The real host update/save/reopen path with renderer callbacks injected before
 //! input routing. These tests do not claim GPU or physical device qualification.
 use super::*;
-use crate::{app::StudioApp, automation, commands::CommandId, session::Session};
+use crate::{app::StudioApp, commands::CommandId, session::Session, targets};
 use agq_modeling_repository::ProjectRevisionId;
 use agq_studio_scene::{Point, SceneTarget};
 use clap::Parser;
@@ -75,7 +75,7 @@ fn open_edit(app: &mut StudioApp, context: &egui::Context) -> egui::Pos2 {
     assert!(app.part_edit_ready());
     frame(app, context, Vec::new());
     frame(app, context, Vec::new());
-    automation::target(context, automation::Target::CandidatePrepare)
+    targets::target(context, targets::Target::CandidatePrepare)
         .unwrap()
         .center()
 }
