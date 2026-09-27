@@ -118,9 +118,11 @@ Status: **provisionally complete, pending Operator acceptance.**
 
 **Done**
 
-- A review found four blocking problems in the first version (a crash on
-  import cycles, references bound by name, poor parser recovery, comments
-  swallowing members); all were fixed and re-reviewed before merging.
+- Two review rounds found six blocking problems (a crash on import cycles,
+  references bound by name, poor parser recovery, comments swallowing
+  members, printed names that could re-bind after reload, an import cache
+  keyed by the wrong thing) plus smaller ones; all were fixed before merging.
+  A valid model now always prints text that reloads with the same bindings.
 - Three spikes ran in parallel (all on 2026-09-27; they started while the last
   Stage 0 pull requests were in CI, after every Stage 0 change was finished and
   locally green):
@@ -146,9 +148,9 @@ Status: **provisionally complete, pending Operator acceptance.**
 | | debug | release |
 |---|---|---|
 | parse (with linking references) | 0.4 ms | 0.29 ms |
-| validate | 1.2 ms | 0.18 ms |
-| rename a part + re-validate + print | 1.1 ms | 0.30 ms |
-| 20 copies (2,300 lines): parse / validate / edit | 6.3 / 22 / 22 ms | 3.6 / 2.3 / 4.7 ms |
+| validate | 1.2 ms | 0.32 ms |
+| rename a part + re-validate + print | 1.1 ms | 0.73 ms |
+| 20 copies (2,300 lines): validate / edit | 22 / 22 ms | 3.8 / 6.0 ms |
 
 The Generation 2 engine on the same model, bundle and certification bypassed
 (release build): loading the standard library from the pinned sources took
