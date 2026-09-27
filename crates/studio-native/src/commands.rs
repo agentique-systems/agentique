@@ -1,40 +1,36 @@
-//! One action vocabulary for menus, palette, keyboard and future agent requests.
+//! Every Studio action, with its shortcut, for the menus, the command palette
+//! and the keyboard.
+use eframe::egui::{Key, Modifiers};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CommandId {
-    Home,
-    Back,
-    Forward,
-    Up,
-    Focus,
-    Fit,
-    System,
+    Architecture,
     Graph,
     Requirements,
-    SelectionRequirements,
-    History,
-    Dependencies,
-    DismissAgent,
-    Explain,
-    Source,
-    Neighbors,
-    ExpandOutgoing,
-    ExpandIncoming,
-    ExpandBoth,
-    CollapseNeighborhood,
-    ShowLoadedGraph,
-    ReviewCurrent,
-    ReviewCandidate,
-    ReviewDiff,
-    FocusChanges,
+    Fit,
+    Focus,
+    LeaveFocus,
+    Collapse,
     Pin,
     Unpin,
     CreatePart,
-    RenamePart,
-    Compare,
-    Validate,
-    Commit,
-    Cancel,
+    CreatePort,
+    CreateItem,
+    CreateAttribute,
+    CreateInterface,
+    CreateRequirement,
+    Rename,
+    Delete,
+    Connect,
+    MoveTo,
+    Lock,
+    Undo,
+    Redo,
+    Checkpoint,
+    History,
+    NewProject,
+    OpenProject,
+    Palette,
     Theme,
     Contrast,
     ReducedMotion,
@@ -45,391 +41,279 @@ pub struct Command {
     pub label: &'static str,
     pub shortcut: &'static str,
     pub description: &'static str,
+    /// The key that runs the command when no text field has focus.
+    pub key: Option<(Modifiers, Key)>,
 }
+
+const NONE: Modifiers = Modifiers::NONE;
+const COMMAND: Modifiers = Modifiers::COMMAND;
 
 pub const COMMANDS: &[Command] = &[
     Command {
-        id: CommandId::SelectionRequirements,
-        label: "Show requirements affecting selection",
-        shortcut: "",
-        description: "Follow modeled requirement subjects and verification links for this element",
+        id: CommandId::CreatePart,
+        label: "Create part",
+        shortcut: "P",
+        description: "Add a part inside the selected element, or at the top level",
+        key: Some((NONE, Key::P)),
     },
     Command {
-        id: CommandId::DismissAgent,
-        label: "Return from agent view",
-        shortcut: "",
-        description: "Restore your previous view, selection and camera",
+        id: CommandId::CreatePort,
+        label: "Create port",
+        shortcut: "O",
+        description: "Add a port to the selected part or definition",
+        key: Some((NONE, Key::O)),
     },
     Command {
-        id: CommandId::Pin,
-        label: "Pin position",
-        shortcut: "",
-        description: "Keep this graph object's location across layout changes",
+        id: CommandId::CreateItem,
+        label: "Create item",
+        shortcut: "I",
+        description: "Add an item: something that flows between parts",
+        key: Some((NONE, Key::I)),
     },
     Command {
-        id: CommandId::Unpin,
-        label: "Unpin position",
-        shortcut: "",
-        description: "Let graph layout place this object again",
+        id: CommandId::CreateAttribute,
+        label: "Create attribute",
+        shortcut: "A",
+        description: "Add an attribute (a value) to the selected element",
+        key: Some((NONE, Key::A)),
     },
     Command {
-        id: CommandId::ReviewCurrent,
-        label: "Review: Current revision",
-        shortcut: "",
-        description: "Inspect the unchanged base while retaining candidate selection",
+        id: CommandId::CreateInterface,
+        label: "Create interface definition",
+        shortcut: "N",
+        description: "Add an interface definition with two port ends",
+        key: Some((NONE, Key::N)),
     },
     Command {
-        id: CommandId::ReviewCandidate,
-        label: "Review: Candidate revision",
-        shortcut: "",
-        description: "Return to the proposed revision at the same camera",
+        id: CommandId::CreateRequirement,
+        label: "Create requirement",
+        shortcut: "R",
+        description: "Add a requirement inside the selected element, or at the top level",
+        key: Some((NONE, Key::R)),
     },
     Command {
-        id: CommandId::ReviewDiff,
-        label: "Review: Candidate difference",
-        shortcut: "",
-        description: "Show added, changed and removed objects",
+        id: CommandId::Rename,
+        label: "Rename",
+        shortcut: "F2",
+        description: "Rename the selected element; references keep pointing at it",
+        key: Some((NONE, Key::F2)),
     },
     Command {
-        id: CommandId::FocusChanges,
-        label: "Focus changes",
-        shortcut: "",
-        description: "Frame visible changed objects without changing model state",
+        id: CommandId::Delete,
+        label: "Delete",
+        shortcut: "Del",
+        description: "Delete the selected elements and everything they own",
+        key: Some((NONE, Key::Delete)),
     },
     Command {
-        id: CommandId::ShowLoadedGraph,
-        label: "Show loaded graph overview",
-        shortcut: "",
-        description: "Remove neighborhood focus and show the current semantic projection",
+        id: CommandId::Connect,
+        label: "Connect",
+        shortcut: "C",
+        description: "Connect the two selected ports or parts",
+        key: Some((NONE, Key::C)),
+    },
+    Command {
+        id: CommandId::MoveTo,
+        label: "Move to…",
+        shortcut: "M",
+        description: "Move the selected element into another owner",
+        key: Some((NONE, Key::M)),
+    },
+    Command {
+        id: CommandId::Lock,
+        label: "Lock or unlock",
+        shortcut: "L",
+        description: "A locked element changes only after you confirm",
+        key: Some((NONE, Key::L)),
+    },
+    Command {
+        id: CommandId::Undo,
+        label: "Undo",
+        shortcut: "Ctrl+Z",
+        description: "Undo the last change",
+        key: Some((COMMAND, Key::Z)),
+    },
+    Command {
+        id: CommandId::Redo,
+        label: "Redo",
+        shortcut: "Ctrl+Y",
+        description: "Redo the last undone change",
+        key: Some((COMMAND, Key::Y)),
+    },
+    Command {
+        id: CommandId::Checkpoint,
+        label: "Checkpoint",
+        shortcut: "Ctrl+S",
+        description: "Record the current model in the history with a message",
+        key: Some((COMMAND, Key::S)),
+    },
+    Command {
+        id: CommandId::History,
+        label: "Show history",
+        shortcut: "H",
+        description: "Checkpoints, and what changed between them",
+        key: Some((NONE, Key::H)),
+    },
+    Command {
+        id: CommandId::Architecture,
+        label: "Architecture view",
+        shortcut: "1",
+        description: "Containment, ports and connections",
+        key: Some((NONE, Key::Num1)),
+    },
+    Command {
+        id: CommandId::Graph,
+        label: "Graph view",
+        shortcut: "2",
+        description: "Elements layered by their relationships",
+        key: Some((NONE, Key::Num2)),
+    },
+    Command {
+        id: CommandId::Requirements,
+        label: "Requirements view",
+        shortcut: "3",
+        description: "Requirements, what satisfies them and their subjects",
+        key: Some((NONE, Key::Num3)),
+    },
+    Command {
+        id: CommandId::Fit,
+        label: "Fit to view",
+        shortcut: "Home",
+        description: "Show the whole model",
+        key: Some((NONE, Key::Home)),
     },
     Command {
         id: CommandId::Focus,
         label: "Focus selection",
         shortcut: "F",
-        description: "Move into the selected system",
+        description: "Show only the selected element and what it owns",
+        key: Some((NONE, Key::F)),
     },
     Command {
-        id: CommandId::Dependencies,
-        label: "Show dependencies",
-        shortcut: "D",
-        description: "Create a temporary semantic neighborhood",
+        id: CommandId::LeaveFocus,
+        label: "Leave focus",
+        shortcut: "Backspace",
+        description: "Show the whole model again",
+        key: Some((NONE, Key::Backspace)),
     },
     Command {
-        id: CommandId::CreatePart,
-        label: "Create: nested Part",
+        id: CommandId::Collapse,
+        label: "Collapse or expand",
+        shortcut: "X",
+        description: "Hide or show what the selected container owns",
+        key: Some((NONE, Key::X)),
+    },
+    Command {
+        id: CommandId::Pin,
+        label: "Pin position",
         shortcut: "",
-        description: "Prepare a source-backed candidate for review",
+        description: "Keep this card where it is in the graph view",
+        key: None,
     },
     Command {
-        id: CommandId::RenamePart,
-        label: "Rename selected Part",
+        id: CommandId::Unpin,
+        label: "Unpin position",
         shortcut: "",
-        description: "Review a name change while retaining the part's identity",
+        description: "Let the graph layout place this card again",
+        key: None,
     },
     Command {
-        id: CommandId::Graph,
-        label: "Graph World",
-        shortcut: "2",
-        description: "Explore typed relationship families",
+        id: CommandId::NewProject,
+        label: "New project…",
+        shortcut: "Ctrl+N",
+        description: "Create a project in a new folder",
+        key: Some((COMMAND, Key::N)),
     },
     Command {
-        id: CommandId::System,
-        label: "Open System World",
-        shortcut: "1",
-        description: "Navigate the system architecture",
+        id: CommandId::OpenProject,
+        label: "Open project…",
+        shortcut: "Ctrl+O",
+        description: "Open a project folder",
+        key: Some((COMMAND, Key::O)),
     },
     Command {
-        id: CommandId::Requirements,
-        label: "Open Requirements World",
-        shortcut: "3",
-        description: "Follow requirement and verification context",
-    },
-    Command {
-        id: CommandId::History,
-        label: "Open revision history",
-        shortcut: "4",
-        description: "Inspect immutable design history",
-    },
-    Command {
-        id: CommandId::Explain,
-        label: "Explain selection",
-        shortcut: "E",
-        description: "Inspect provenance and its evidence",
-    },
-    Command {
-        id: CommandId::Source,
-        label: "Open source",
-        shortcut: "",
-        description: "Inspect source in the exact selected revision",
-    },
-    Command {
-        id: CommandId::Compare,
-        label: "Compare with parent",
-        shortcut: "",
-        description: "Show additions, changes and removed ghosts",
-    },
-    Command {
-        id: CommandId::ExpandOutgoing,
-        label: "Expand outgoing relationships",
-        shortcut: "",
-        description: "Add one deliberate neighborhood step",
-    },
-    Command {
-        id: CommandId::ExpandIncoming,
-        label: "Expand incoming relationships",
-        shortcut: "",
-        description: "Follow relationships into the selection",
-    },
-    Command {
-        id: CommandId::Neighbors,
-        label: "Select neighbors",
-        shortcut: "N",
-        description: "Select adjacent elements in the current projection",
-    },
-    Command {
-        id: CommandId::ExpandBoth,
-        label: "Graph: expand next hop",
-        shortcut: "",
-        description: "Expand incoming and outgoing relationships from the visible neighborhood",
-    },
-    Command {
-        id: CommandId::CollapseNeighborhood,
-        label: "Graph: return to one hop",
-        shortcut: "",
-        description: "Keep the selection and its immediate neighbors",
-    },
-    Command {
-        id: CommandId::Fit,
-        label: "Fit view",
-        shortcut: "Home",
-        description: "Frame the visible system",
-    },
-    Command {
-        id: CommandId::Home,
-        label: "Home",
-        shortcut: "",
-        description: "Return to the project architecture",
-    },
-    Command {
-        id: CommandId::Back,
-        label: "Navigate back",
-        shortcut: "Alt+Left",
-        description: "Restore previous camera and focus",
-    },
-    Command {
-        id: CommandId::Forward,
-        label: "Navigate forward",
-        shortcut: "Alt+Right",
-        description: "Restore next camera and focus",
-    },
-    Command {
-        id: CommandId::Up,
-        label: "Up to owner",
-        shortcut: "Alt+Up",
-        description: "Navigate through semantic ownership",
-    },
-    Command {
-        id: CommandId::Validate,
-        label: "Validate candidate",
-        shortcut: "",
-        description: "Run the platform validation contract",
-    },
-    Command {
-        id: CommandId::Commit,
-        label: "Commit validated candidate",
-        shortcut: "",
-        description: "Durable compare-and-set of the branch head",
-    },
-    Command {
-        id: CommandId::Cancel,
-        label: "Cancel candidate",
-        shortcut: "",
-        description: "Discard the uncommitted alternate revision",
+        id: CommandId::Palette,
+        label: "Command palette",
+        shortcut: "Ctrl+K",
+        description: "Find any command or element",
+        key: Some((COMMAND, Key::K)),
     },
     Command {
         id: CommandId::Theme,
-        label: "Switch light / dark theme",
+        label: "Switch light or dark theme",
         shortcut: "",
-        description: "Change presentation surfaces",
+        description: "Presentation only",
+        key: None,
     },
     Command {
         id: CommandId::Contrast,
-        label: "Toggle high contrast",
+        label: "Switch high contrast",
         shortcut: "",
-        description: "Increase focus, edge and text contrast",
+        description: "Presentation only",
+        key: None,
     },
     Command {
         id: CommandId::ReducedMotion,
-        label: "Toggle reduced motion",
+        label: "Switch reduced motion",
         shortcut: "",
-        description: "Use immediate camera transitions",
+        description: "Camera moves and highlights without animation",
+        key: None,
     },
 ];
 
-/// UI review state preserves the platform lifecycle; a visual preview cannot be
-/// promoted to Validated by a boolean or confused with unresolved durability.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum CandidateReview {
-    #[default]
-    None,
-    Visual,
-    Semantic(agq_studio_platform::CandidatePhase),
+pub fn command(id: CommandId) -> &'static Command {
+    COMMANDS
+        .iter()
+        .find(|command| command.id == id)
+        .expect("every command is registered")
 }
 
-impl CandidateReview {
-    pub fn title(self) -> &'static str {
-        use agq_studio_platform::CandidatePhase;
-        match self {
-            Self::None => "CURRENT REVISION",
-            Self::Visual => "VISUAL CANDIDATE",
-            Self::Semantic(CandidatePhase::Working) => "WORKING CANDIDATE",
-            Self::Semantic(CandidatePhase::Validated) => "VALIDATED CANDIDATE",
-            Self::Semantic(CandidatePhase::CommitUnresolved) => "COMMIT ACKNOWLEDGEMENT PENDING",
-            Self::Semantic(CandidatePhase::Committed) => "COMMITTED REVISION",
-        }
-    }
-
-    pub fn description(self) -> &'static str {
-        use agq_studio_platform::CandidatePhase;
-        match self {
-            Self::None => "Immutable design history",
-            Self::Visual => "Illustrative preview · semantic validation unavailable",
-            Self::Semantic(CandidatePhase::Working) => {
-                "Not committed · review changes, then validate"
-            }
-            Self::Semantic(CandidatePhase::Validated) => {
-                "Not committed · validated and ready for operator approval"
-            }
-            Self::Semantic(CandidatePhase::CommitUnresolved) => {
-                "Durability unresolved · retry this same commit to reconcile"
-            }
-            Self::Semantic(CandidatePhase::Committed) => "Durably committed to design history",
-        }
-    }
-}
-
-#[derive(Default)]
+/// What a command's availability depends on.
+#[derive(Clone, Copy, Debug, Default)]
 pub struct CommandContext {
-    pub selected: bool,
-    pub can_create: bool,
-    pub create_base_ready: bool,
-    pub candidate: CandidateReview,
-    pub live: bool,
+    /// A dialog is waiting for the Operator.
     pub busy: bool,
-    pub graph_node: bool,
-    pub pinned: bool,
-    pub agent_view: bool,
-    pub diff: bool,
+    /// A project is open (fixtures are read-only).
+    pub editable: bool,
+    /// Something is selected.
+    pub selected: bool,
+    /// Two ports or cards are selected.
+    pub pair: bool,
+    /// The selection is a card that can own members.
+    pub container: bool,
+    pub can_undo: bool,
+    pub can_redo: bool,
+    pub graph_view: bool,
+    pub focused: bool,
 }
 
-/// Advisory UI eligibility for the existing reviewed source command. The service
-/// independently verifies exact source provenance and owner semantics on proposal.
-pub fn can_create_part(
-    node: &agq_modeling_view::ViewNode,
-    fixture: bool,
-    revision: agq_modeling_workspace::ProjectRevisionId,
-) -> bool {
-    node.revision_id == revision
-        && node.origin == agq_modeling_view::ViewOrigin::Authored
-        && (fixture || node.source_available)
-        && matches!(node.semantic_kind.as_str(), "PartDefinition" | "PartUsage")
-}
-
+/// Why a command cannot run now, in plain words; `None` when it can.
 pub fn unavailable(id: CommandId, context: &CommandContext) -> Option<&'static str> {
     use CommandId::*;
-    if context.busy && matches!(id, CreatePart | RenamePart | Validate | Commit | Cancel) {
-        return Some("A model operation is running");
-    }
     match id {
-        ExpandIncoming
-        | ExpandOutgoing
-        | ExpandBoth
-        | CollapseNeighborhood
-        | Neighbors
-        | SelectionRequirements
-            if context.diff =>
-        {
-            Some(
-                "Review Current or Candidate to change the neighborhood; Diff retains removed objects",
-            )
+        _ if context.busy && !matches!(id, Palette | Theme | Contrast | ReducedMotion) => {
+            Some("Finish or cancel the open dialog first")
         }
-        DismissAgent if !context.agent_view => Some("No temporary agent view is open"),
-        Pin | Unpin if !context.graph_node => Some("Select a node in Graph World"),
-        Pin if context.pinned => Some("This graph position is already pinned"),
-        Unpin if !context.pinned => Some("This graph position is not pinned"),
-        ReviewCurrent | ReviewCandidate | ReviewDiff
-            if context.candidate == CandidateReview::None =>
+        CreatePart | CreatePort | CreateItem | CreateAttribute | CreateInterface
+        | CreateRequirement | Rename | Delete | Connect | MoveTo | Lock | Undo | Redo
+        | Checkpoint
+            if !context.editable =>
         {
-            Some("No candidate to review")
+            Some("Open or create a project to edit")
         }
-        Compare if context.candidate != CandidateReview::None => {
-            Some("Review or cancel the candidate before comparing durable revisions")
+        CreatePort | CreateAttribute if !context.container => {
+            Some("Select the part or definition to add it to")
         }
-        Focus
-        | Dependencies
-        | Explain
-        | Source
-        | Neighbors
-        | CreatePart
-        | RenamePart
-        | SelectionRequirements
-        | ExpandIncoming
-        | ExpandOutgoing
-        | ExpandBoth
-        | CollapseNeighborhood
-            if !context.selected =>
-        {
+        Rename | Delete | MoveTo | Lock | Focus | Collapse if !context.selected => {
             Some("Select an element first")
         }
-        CreatePart | RenamePart if context.candidate != CandidateReview::None => {
-            Some("Review or cancel the existing candidate")
+        Connect if !context.pair => Some("Select two ports or two parts (Shift+click)"),
+        Undo if !context.can_undo => Some("Nothing to undo"),
+        Redo if !context.can_redo => Some("Nothing to redo"),
+        Pin | Unpin if !context.graph_view || !context.selected => {
+            Some("Select a card in the graph view")
         }
-        RenamePart if !context.live => Some("Rename requires an authenticated project"),
-        RenamePart if !context.can_create => Some("Select an authored part with editable source"),
-        CreatePart if !context.can_create => {
-            Some("Select an authored part with source to create a nested part")
-        }
-        CreatePart | RenamePart if context.live && !context.create_base_ready => {
-            Some("Open the Validated branch-head revision before editing a part")
-        }
-        Validate if !context.live => Some("Visual fixtures cannot establish semantic validation"),
-        Validate | Commit | Cancel if context.candidate == CandidateReview::None => {
-            Some("No candidate to review")
-        }
-        Validate | Cancel
-            if context.candidate
-                == CandidateReview::Semantic(
-                    agq_studio_platform::CandidatePhase::CommitUnresolved,
-                ) =>
-        {
-            Some("Commit acknowledgement is unresolved; retry the same commit")
-        }
-        Validate | Cancel | Commit
-            if context.candidate
-                == CandidateReview::Semantic(agq_studio_platform::CandidatePhase::Committed) =>
-        {
-            Some("Candidate is already durably committed")
-        }
-        Validate
-            if context.candidate
-                != CandidateReview::Semantic(agq_studio_platform::CandidatePhase::Working) =>
-        {
-            Some("This candidate is not awaiting validation")
-        }
-        Commit if !context.live => {
-            Some("Install the authenticated runtime to commit model changes")
-        }
-        Commit
-            if !matches!(
-                context.candidate,
-                CandidateReview::Semantic(
-                    agq_studio_platform::CandidatePhase::Validated
-                        | agq_studio_platform::CandidatePhase::CommitUnresolved
-                )
-            ) =>
-        {
-            Some("Validate this candidate before committing")
-        }
+        LeaveFocus if !context.focused => Some("Nothing is focused"),
         _ => None,
     }
 }
@@ -446,8 +330,6 @@ pub fn search(query: &str) -> impl Iterator<Item = &'static Command> {
     found.into_iter().map(|(_, command)| command)
 }
 
-/// Unicode-safe ordered abbreviation search. Exact phrases rank before scattered
-/// matches; the score is presentation ranking, never a semantic confidence.
 pub fn fuzzy_score(query: &str, text: &str) -> Option<usize> {
     let query = query.trim().to_lowercase();
     let text = text.to_lowercase();
@@ -473,141 +355,37 @@ pub fn fuzzy_score(query: &str, text: &str) -> Option<usize> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
-    fn palette_finds_abbreviations_without_losing_exact_match_priority() {
+    fn palette_finds_abbreviations_and_exact_matches_first() {
         assert_eq!(search("grph").next().unwrap().id, CommandId::Graph);
         assert_eq!(
-            search("nested part").next().unwrap().id,
-            CommandId::CreatePart
+            search("create port").next().unwrap().id,
+            CommandId::CreatePort
         );
         assert!(fuzzy_score("μs", "周期 μs").is_some());
         assert!(fuzzy_score("missing", "Part").is_none());
     }
 
     #[test]
-    fn candidate_lifecycle_copy_never_calls_working_validated_or_unresolved_committed() {
-        use agq_studio_platform::CandidatePhase;
-        assert_eq!(
-            CandidateReview::Semantic(CandidatePhase::Working).title(),
-            "WORKING CANDIDATE"
-        );
-        assert!(
-            CandidateReview::Semantic(CandidatePhase::Validated)
-                .description()
-                .starts_with("Not committed")
-        );
-        assert!(
-            CandidateReview::Semantic(CandidatePhase::CommitUnresolved)
-                .description()
-                .contains("unresolved")
-        );
-        assert!(
-            CandidateReview::Visual
-                .description()
-                .contains("unavailable")
-        );
-    }
-    #[test]
-    fn fixture_cannot_enable_validation_or_commit() {
-        let context = CommandContext {
-            candidate: CandidateReview::Semantic(agq_studio_platform::CandidatePhase::Validated),
+    fn edits_need_a_project_and_the_right_selection() {
+        let fixture = CommandContext::default();
+        assert!(unavailable(CommandId::CreatePart, &fixture).is_some());
+        let project = CommandContext {
+            editable: true,
             ..Default::default()
         };
-        assert!(unavailable(CommandId::Validate, &context).is_some());
-        assert!(unavailable(CommandId::Commit, &context).is_some());
-        assert_eq!(
-            search("nested part").next().unwrap().id,
-            CommandId::CreatePart
-        );
+        assert!(unavailable(CommandId::CreatePart, &project).is_none());
+        assert!(unavailable(CommandId::CreatePort, &project).is_some());
+        assert!(unavailable(CommandId::Connect, &project).is_some());
+        assert!(unavailable(CommandId::Undo, &project).is_some());
     }
 
     #[test]
-    fn unknown_acknowledgement_exposes_only_commit_retry_among_mutations() {
-        use agq_studio_platform::CandidatePhase;
-        let mut context = CommandContext {
-            selected: true,
-            can_create: true,
-            create_base_ready: true,
-            candidate: CandidateReview::Semantic(CandidatePhase::CommitUnresolved),
-            live: true,
-            busy: false,
-            graph_node: false,
-            pinned: false,
-            agent_view: false,
-            diff: false,
-        };
-        assert!(unavailable(CommandId::Commit, &context).is_none());
-        for command in [
-            CommandId::Validate,
-            CommandId::Cancel,
-            CommandId::CreatePart,
-            CommandId::Compare,
-        ] {
-            assert!(unavailable(command, &context).is_some());
+    fn every_shortcut_is_unique() {
+        let keys: Vec<_> = COMMANDS.iter().filter_map(|c| c.key).collect();
+        for (i, a) in keys.iter().enumerate() {
+            assert!(!keys[i + 1..].contains(a), "{a:?} is bound twice");
         }
-        context.busy = true;
-        assert!(unavailable(CommandId::Commit, &context).is_some());
-    }
-
-    #[test]
-    fn only_validated_semantic_candidate_can_commit_and_visual_preview_can_cancel() {
-        use agq_studio_platform::CandidatePhase;
-        for (candidate, can_commit) in [
-            (CandidateReview::None, false),
-            (CandidateReview::Visual, false),
-            (CandidateReview::Semantic(CandidatePhase::Working), false),
-            (CandidateReview::Semantic(CandidatePhase::Validated), true),
-            (CandidateReview::Semantic(CandidatePhase::Committed), false),
-        ] {
-            let context = CommandContext {
-                candidate,
-                live: true,
-                ..Default::default()
-            };
-            assert_eq!(
-                unavailable(CommandId::Commit, &context).is_none(),
-                can_commit
-            );
-            assert_eq!(
-                unavailable(CommandId::Compare, &context).is_none(),
-                candidate == CandidateReview::None,
-                "Durable comparisons cannot be shadowed by a retained candidate"
-            );
-        }
-        let context = CommandContext {
-            candidate: CandidateReview::Visual,
-            ..Default::default()
-        };
-        assert!(unavailable(CommandId::Cancel, &context).is_none());
-    }
-
-    #[test]
-    fn source_edit_eligibility_excludes_requirements_derived_standard_and_old_ghosts() {
-        let fixture = agq_studio_scene::fixtures::architecture();
-        let mut node = fixture
-            .nodes
-            .iter()
-            .find(|n| n.semantic_kind == "PartUsage")
-            .unwrap()
-            .clone();
-        assert!(can_create_part(&node, true, fixture.revision_id));
-        assert!(!can_create_part(&node, false, fixture.revision_id));
-        node.source_available = true;
-        assert!(can_create_part(&node, false, fixture.revision_id));
-        for kind in ["RequirementDefinition", "PortUsage", "CustomPartUsage"] {
-            node.semantic_kind = kind.into();
-            assert!(!can_create_part(&node, true, fixture.revision_id));
-        }
-        node.semantic_kind = "PartDefinition".into();
-        node.origin = agq_modeling_view::ViewOrigin::Derived;
-        assert!(!can_create_part(&node, true, fixture.revision_id));
-        node.origin = agq_modeling_view::ViewOrigin::Standard;
-        assert!(!can_create_part(&node, true, fixture.revision_id));
-        node.origin = agq_modeling_view::ViewOrigin::Authored;
-        assert!(!can_create_part(
-            &node,
-            true,
-            agq_modeling_workspace::ProjectRevisionId::new()
-        ));
     }
 }

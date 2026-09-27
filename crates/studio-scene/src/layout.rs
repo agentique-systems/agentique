@@ -1,23 +1,53 @@
-use crate::{NodeCategory, Point, Rect, SceneError, SceneOptions, Size};
-use agq_kernel::ElementId;
-use agq_modeling_view::{RelationshipFamily, ViewNode, ViewOrigin, ViewProjection};
+use crate::{
+    EdgeKind, InputNode, InputPort, LayoutKind, Point, Rect, SceneError, SceneInput, SceneOptions,
+    Size,
+};
+use agq_language::ElementId;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 
-/// Session geometry can survive revisions without entering model checkpoints.
+/// Where cards were placed. Presentation only: saved with the session, never
+/// with the model.
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct LayoutMemory {
+    #[serde(with = "by_raw_id")]
     pub bounds: BTreeMap<ElementId, Rect>,
     /// Graph-only presentation anchors. Kept separately from cached geometry so
     /// a hierarchy visit or a changing card size cannot overwrite a fixed origin.
     /// Missing/filtered identities never reserve space in a graph layout.
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        with = "by_raw_id"
+    )]
     pub pinned: BTreeMap<ElementId, Point>,
+}
+/// Element ids are stored as their raw numbers.
+mod by_raw_id {
+    use agq_language::ElementId;
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
+    use std::collections::BTreeMap;
+    pub fn serialize<T: Serialize, S: Serializer>(
+        map: &BTreeMap<ElementId, T>,
+        serializer: S,
+    ) -> Result<S::Ok, S::Error> {
+        let raw: BTreeMap<u64, &T> = map.iter().map(|(id, v)| (id.raw(), v)).collect();
+        raw.serialize(serializer)
+    }
+    pub fn deserialize<'de, T: Deserialize<'de>, D: Deserializer<'de>>(
+        deserializer: D,
+    ) -> Result<BTreeMap<ElementId, T>, D::Error> {
+        let raw = BTreeMap::<u64, T>::deserialize(deserializer)?;
+        Ok(raw
+            .into_iter()
+            .map(|(id, v)| (ElementId::from_raw(id), v))
+            .collect())
+    }
 }
 impl LayoutMemory {
     /// Pin an observed graph node's top-left position. The card may still resize
     /// to show newly projected features; its semantic record is never changed.
-    /// Active pin conflicts are checked against the next graph projection.
+    /// Pin conflicts are checked at the next graph layout.
     pub fn pin(&mut self, id: ElementId, bounds: Rect) -> Result<(), PinError> {
         if !bounds.finite() || bounds.width() <= 0.0 || bounds.height() <= 0.0 {
             return Err(PinError::InvalidBounds(id));
@@ -44,40 +74,36 @@ pub enum PinError {
 }
 #[derive(Clone, Debug)]
 pub struct LayoutInput {
-    pub nodes: Vec<ViewNode>,
+    pub nodes: Vec<InputNode>,
     pub children: BTreeMap<ElementId, Vec<ElementId>>,
     pub parents: BTreeMap<ElementId, ElementId>,
     pub depths: BTreeMap<ElementId, usize>,
     pub collapsed: BTreeSet<ElementId>,
-    /// Port endpoints resolve to their visible owner's topology node.
+    /// Edge ends resolved to their shown cards.
     pub edges: Vec<(ElementId, ElementId)>,
     pub(crate) boundary_ports: Vec<BoundaryPort>,
-    /// Exact distinct projected port identities, including collapsed proxies.
-    port_counts: BTreeMap<ElementId, usize>,
+    /// Hidden cards mapped to the nearest shown card that contains them.
+    pub(crate) hidden: BTreeMap<ElementId, ElementId>,
 }
 #[derive(Clone, Debug)]
 pub(crate) struct BoundaryPort {
-    pub id: ElementId,
+    /// The port, named with its card: `api · storage`.
+    pub port: InputPort,
     pub owner: ElementId,
     pub semantic_owner: ElementId,
-    pub name: String,
-    pub origin: ViewOrigin,
 }
 impl LayoutInput {
-    pub fn from_projection(
-        projection: &ViewProjection,
-        options: &SceneOptions,
-    ) -> Result<Self, SceneError> {
-        let all: BTreeMap<_, _> = projection.nodes.iter().map(|n| (n.id, n)).collect();
+    pub fn from_input(input: &SceneInput, options: &SceneOptions) -> Result<Self, SceneError> {
+        let all: BTreeMap<_, _> = input.nodes.iter().map(|n| (n.id, n)).collect();
         let mut parents = BTreeMap::new();
-        for n in &projection.nodes {
+        for n in &input.nodes {
             if let Some(owner) = n.owner.filter(|id| all.contains_key(id)) {
                 parents.insert(n.id, owner);
             }
         }
-        // Iterative color traversal detects cycles without recursive stack growth.
+        // Iterative traversal detects cycles without recursive stack growth.
         let mut depths = BTreeMap::new();
-        for node in &projection.nodes {
+        for node in &input.nodes {
             let mut path = Vec::new();
             let mut visiting = BTreeSet::new();
             let mut id = node.id;
@@ -97,109 +123,86 @@ impl LayoutInput {
                 depth += 1;
             }
         }
+        let hierarchy = options.layout == LayoutKind::Hierarchy;
         let mut displayable = BTreeMap::new();
-        let mut ordered: Vec<_> = projection.nodes.iter().collect();
+        let mut ordered: Vec<_> = input.nodes.iter().collect();
         ordered.sort_by_key(|n| (depths[&n.id], n.id));
         for n in ordered {
             let parent_shown = parents.get(&n.id).is_none_or(|p| {
-                displayable.get(p).copied().unwrap_or(false) && !options.collapsed.contains(p)
+                displayable.get(p).copied().unwrap_or(false)
+                    && !(hierarchy && options.collapsed.contains(p))
             });
             let focused = options.focus.is_none()
                 || options.focus == Some(n.id)
                 || parents
                     .get(&n.id)
                     .is_some_and(|p| displayable.get(p).copied().unwrap_or(false));
-            let is_port = NodeCategory::from_semantic_kind(&n.semantic_kind) == NodeCategory::Port
-                && n.owner.is_some_and(|id| all.contains_key(&id));
             displayable.insert(
                 n.id,
-                !is_port && focused && (parent_shown || options.focus == Some(n.id)),
+                focused && (parent_shown || options.focus == Some(n.id)),
             );
         }
-        let nodes: Vec<_> = projection
+        let nodes: Vec<_> = input
             .nodes
             .iter()
             .filter(|n| displayable[&n.id])
             .cloned()
             .collect();
+        let visible: BTreeSet<_> = nodes.iter().map(|n| n.id).collect();
+        let mut hidden = BTreeMap::new();
+        for n in &input.nodes {
+            if visible.contains(&n.id) {
+                continue;
+            }
+            let mut owner = parents.get(&n.id).copied();
+            while let Some(id) = owner {
+                if visible.contains(&id) {
+                    hidden.insert(n.id, id);
+                    break;
+                }
+                owner = parents.get(&id).copied();
+            }
+        }
         let mut children: BTreeMap<ElementId, Vec<ElementId>> = BTreeMap::new();
         for n in &nodes {
-            // Preserve collapsed containment metadata even though children hide.
-            if let Some(owner) = n.owner.filter(|p| displayable.get(p) == Some(&true)) {
+            if let Some(owner) = n.owner.filter(|p| visible.contains(p)) {
                 children.entry(owner).or_default().push(n.id);
             }
         }
+        // Collapsed containers keep their containment even though children hide.
         for id in &options.collapsed {
-            let children_all: Vec<_> = projection
+            let owned: Vec<_> = input
                 .nodes
                 .iter()
                 .filter(|n| n.owner == Some(*id))
                 .map(|n| n.id)
                 .collect();
-            if !children_all.is_empty() {
-                children.insert(*id, children_all);
+            if !owned.is_empty() && visible.contains(id) {
+                children.insert(*id, owned);
             }
         }
         for children in children.values_mut() {
             children.sort();
         }
-        parents.retain(|child, parent| {
-            displayable.get(child) == Some(&true) && displayable.get(parent) == Some(&true)
-        });
-        let visible: BTreeSet<_> = nodes.iter().map(|n| n.id).collect();
-        let boundary_ports = if options.hierarchy {
-            boundary_ports(projection, &visible, &options.collapsed)
+        parents.retain(|child, parent| visible.contains(child) && visible.contains(parent));
+        let boundary_ports = if hierarchy {
+            boundary_ports(input, &visible, &hidden, &options.collapsed)
         } else {
             Vec::new()
         };
-        let mut port_owners: BTreeMap<_, _> = projection
-            .nodes
-            .iter()
-            .filter_map(|n| n.owner.map(|owner| (n.id, owner)))
-            .collect();
-        for n in &nodes {
-            for f in &n.features {
-                port_owners.insert(f.id, n.id);
-            }
-        }
-        let mut port_ids = BTreeMap::<ElementId, BTreeSet<ElementId>>::new();
-        for n in &projection.nodes {
-            if NodeCategory::from_semantic_kind(&n.semantic_kind) == NodeCategory::Port
-                && let Some(owner) = n.owner
-            {
-                port_ids.entry(owner).or_default().insert(n.id);
-            }
-        }
-        for n in &nodes {
-            for feature in &n.features {
-                if NodeCategory::from_semantic_kind(&feature.semantic_kind) == NodeCategory::Port {
-                    port_ids.entry(n.id).or_default().insert(feature.id);
-                }
-            }
-        }
-        for port in &boundary_ports {
-            port_ids.entry(port.owner).or_default().insert(port.id);
-        }
-        let port_counts = port_ids
-            .into_iter()
-            .map(|(owner, ids)| (owner, ids.len()))
-            .collect();
-        let endpoint = |id: ElementId| {
+        let shown = |id: ElementId| {
             if visible.contains(&id) {
                 Some(id)
             } else {
-                port_owners
-                    .get(&id)
-                    .copied()
-                    .filter(|p| visible.contains(p))
+                hidden.get(&id).copied()
             }
         };
-        let edges = projection
+        let edges = input
             .edges
             .iter()
-            .filter_map(|e| Some((endpoint(e.source)?, endpoint(e.target)?)))
+            .filter_map(|e| Some((shown(e.source.node)?, shown(e.target.node)?)))
             .collect();
-        if !options.hierarchy {
+        if !hierarchy {
             parents.clear();
             children.clear();
             for depth in depths.values_mut() {
@@ -214,26 +217,39 @@ impl LayoutInput {
             collapsed: options.collapsed.clone(),
             edges,
             boundary_ports,
-            port_counts,
+            hidden,
         })
     }
-    pub(crate) fn node_size(&self, node: &ViewNode, base: Size) -> Size {
-        let ports = node.counts.ports.max(
-            node.features
-                .iter()
-                .filter(|feature| {
-                    NodeCategory::from_semantic_kind(&feature.semantic_kind) == NodeCategory::Port
-                })
-                .count(),
-        ) + self
-            .boundary_ports
+    fn port_count(&self, id: ElementId) -> usize {
+        self.nodes
             .iter()
-            .filter(|p| p.owner == node.id)
-            .count();
+            .find(|n| n.id == id)
+            .map_or(0, |n| n.ports.len())
+            + self.boundary_ports.iter().filter(|p| p.owner == id).count()
+    }
+    pub(crate) fn node_size(&self, node: &InputNode, base: Size) -> Size {
+        let ports = node.ports.len()
+            + self
+                .boundary_ports
+                .iter()
+                .filter(|p| p.owner == node.id)
+                .count();
+        let port_rows = ports.div_ceil(2).saturating_sub(2) as f32 * 24.0;
         Size::new(
             base.width,
-            base.height + ports.div_ceil(2).saturating_sub(2) as f32 * 24.0,
+            base.height + port_rows + feature_block(node.features.len()),
         )
+    }
+}
+
+/// Feature lines (attributes, items) shown on a card, and their height.
+pub const MAX_FEATURE_LINES: usize = 6;
+pub const FEATURE_LINE: f32 = 16.0;
+/// The height of the feature lines at the bottom of a card, below its ports.
+pub fn feature_block(features: usize) -> f32 {
+    match features.min(MAX_FEATURE_LINES) {
+        0 => 0.0,
+        lines => lines as f32 * FEATURE_LINE + 10.0,
     }
 }
 
@@ -247,65 +263,60 @@ pub(crate) fn port_strip_header(count: usize) -> Option<f32> {
     })
 }
 
-/// Resolve external connections to the boundary of a collapsed subsystem while
-/// preserving every actual endpoint identity. Internal links stay hidden.
+/// Ports of hidden cards inside a collapsed container that connect to
+/// something outside it are shown on the container's boundary, with their
+/// real identity. Links inside the container stay hidden.
 fn boundary_ports(
-    projection: &ViewProjection,
+    input: &SceneInput,
     visible: &BTreeSet<ElementId>,
+    hidden: &BTreeMap<ElementId, ElementId>,
     collapsed: &BTreeSet<ElementId>,
 ) -> Vec<BoundaryPort> {
     if collapsed.is_empty() {
         return Vec::new();
     }
-    let nodes: BTreeMap<_, _> = projection.nodes.iter().map(|n| (n.id, n)).collect();
-    let mut ports = BTreeMap::new();
-    for node in &projection.nodes {
-        if NodeCategory::from_semantic_kind(&node.semantic_kind) == NodeCategory::Port
-            && let Some(owner) = node.owner
-        {
-            ports.insert(node.id, (owner, node.name.clone(), node.origin));
+    let shown = |id: ElementId| {
+        if visible.contains(&id) {
+            Some(id)
+        } else {
+            hidden.get(&id).copied()
         }
-        for feature in &node.features {
-            if NodeCategory::from_semantic_kind(&feature.semantic_kind) == NodeCategory::Port {
-                ports.insert(feature.id, (node.id, feature.name.clone(), node.origin));
+    };
+    let mut external = BTreeSet::new();
+    for edge in &input.edges {
+        if matches!(edge.kind, EdgeKind::Connection | EdgeKind::Interface)
+            && let (Some(a), Some(b)) = (shown(edge.source.node), shown(edge.target.node))
+            && a != b
+        {
+            for end in [edge.source, edge.target] {
+                if let Some(port) = end.port {
+                    external.insert((end.node, port));
+                }
             }
         }
     }
-    let boundary = |mut owner| {
-        while !visible.contains(&owner) {
-            owner = nodes.get(&owner)?.owner?;
+    let nodes: BTreeMap<_, _> = input.nodes.iter().map(|n| (n.id, n)).collect();
+    let mut result = Vec::new();
+    for (node, port) in external {
+        let (Some(owner), Some(card)) = (shown(node), nodes.get(&node)) else {
+            continue;
+        };
+        if owner == node || !collapsed.contains(&owner) {
+            continue;
         }
-        Some(owner)
-    };
-    let endpoint_owner = |id| boundary(ports.get(&id).map_or(id, |(owner, _, _)| *owner));
-    let mut external = BTreeSet::new();
-    for edge in &projection.edges {
-        if edge.family == RelationshipFamily::Connection
-            && let (Some(a), Some(b)) = (endpoint_owner(edge.source), endpoint_owner(edge.target))
-            && a != b
-        {
-            external.insert(edge.source);
-            external.insert(edge.target);
-        }
+        let Some(info) = card.ports.iter().find(|p| p.id == port) else {
+            continue;
+        };
+        result.push(BoundaryPort {
+            port: InputPort {
+                name: format!("{} · {}", card.name, info.name),
+                ..info.clone()
+            },
+            owner,
+            semantic_owner: node,
+        });
     }
-    ports
-        .into_iter()
-        .filter_map(|(id, (owner, name, origin))| {
-            let displayed = boundary(owner)?;
-            (displayed != owner && collapsed.contains(&displayed) && external.contains(&id)).then(
-                || BoundaryPort {
-                    id,
-                    owner: displayed,
-                    semantic_owner: owner,
-                    name: format!(
-                        "{} · {name}",
-                        nodes.get(&owner).map_or("Part", |n| n.name.as_str())
-                    ),
-                    origin,
-                },
-            )
-        })
-        .collect()
+    result
 }
 #[derive(Clone, Debug, Default)]
 pub struct LayoutResult {
@@ -340,6 +351,12 @@ impl Default for HierarchyLayout {
 impl LayoutEngine for HierarchyLayout {
     fn layout(&self, input: &LayoutInput, previous: Option<&LayoutMemory>) -> LayoutResult {
         let ids: BTreeSet<_> = input.nodes.iter().map(|n| n.id).collect();
+        let secondary: BTreeSet<_> = input
+            .nodes
+            .iter()
+            .filter(|n| is_secondary(n, input.children.get(&n.id).is_some_and(|c| !c.is_empty())))
+            .map(|n| n.id)
+            .collect();
         let mut ordered: Vec<_> = input.nodes.iter().collect();
         ordered.sort_by_key(|n| std::cmp::Reverse((input.depths[&n.id], n.id)));
         let mut sizes = BTreeMap::new();
@@ -356,13 +373,23 @@ impl LayoutEngine for HierarchyLayout {
                 .filter(|id| ids.contains(id))
                 .collect();
             if children.is_empty() {
-                sizes.insert(n.id, input.node_size(n, self.node_size));
+                let base = if secondary.contains(&n.id) {
+                    // A definition with nothing to show inside is a short card.
+                    let empty = n.ports.is_empty() && n.features.is_empty();
+                    Size::new(
+                        SECONDARY_WIDTH,
+                        if empty { 64.0 } else { self.node_size.height },
+                    )
+                } else {
+                    self.node_size
+                };
+                sizes.insert(n.id, input.node_size(n, base));
                 continue;
             }
-            let header = port_strip_header(input.port_counts.get(&n.id).copied().unwrap_or(0))
+            let header = port_strip_header(input.port_count(n.id))
                 .map_or(self.header, |strip| self.header.max(strip));
             let origin = Point::new(self.inset, header);
-            let placed = self.pack(&children, &sizes, previous, n.id, origin);
+            let placed = self.pack_structure(&children, &secondary, &sizes, previous, n.id, origin);
             let width = placed
                 .values()
                 .map(|r| r.max.x)
@@ -373,17 +400,9 @@ impl LayoutEngine for HierarchyLayout {
                 .map(|r| r.max.y)
                 .fold(self.node_size.height, f32::max)
                 + self.inset;
-            // Keep an established containment envelope when a child disappears.
-            // Besides preserving the mental map, this reserves room for diff
-            // ghosts before neighboring containers are packed.
-            let old = previous.and_then(|memory| memory.bounds.get(&n.id));
-            sizes.insert(
-                n.id,
-                Size::new(
-                    old.map_or(width, |bounds| width.max(bounds.width())),
-                    old.map_or(height, |bounds| height.max(bounds.height())),
-                ),
-            );
+            // A container fits what it shows now. Removed cards in a "what
+            // changed" view are laid out with the others (`Scene::comparison`).
+            sizes.insert(n.id, Size::new(width, height));
             offsets.extend(placed.into_iter().map(|(id, r)| (id, r.min)));
         }
         let roots: Vec<_> = ids
@@ -391,11 +410,12 @@ impl LayoutEngine for HierarchyLayout {
             .filter(|id| !input.parents.contains_key(id))
             .copied()
             .collect();
-        let roots = self.pack(
+        let roots = self.pack_structure(
             &roots,
+            &secondary,
             &sizes,
             previous,
-            ElementId::from_u128(0),
+            ElementId::from_raw(0),
             Point::default(),
         );
         let mut result = LayoutResult::default();
@@ -417,7 +437,80 @@ impl LayoutEngine for HierarchyLayout {
         result
     }
 }
+/// Width of secondary cards (definitions that own no cards).
+pub const SECONDARY_WIDTH: f32 = 196.0;
+
+/// A definition that owns no cards is secondary on the Surface: the
+/// structure (usages, their connections and the definitions that contain
+/// them) comes first, type definitions after it, in a compact band.
+pub fn is_secondary(node: &InputNode, has_children: bool) -> bool {
+    node.keyword.ends_with(" def") && !has_children
+}
+
 impl HierarchyLayout {
+    /// Moves remembered cards up, in order from the top, until each sits one
+    /// gap below the card above it (or at the top), so removed or moved
+    /// cards leave no holes. Columns and order are kept.
+    fn compact(&self, placed: &mut BTreeMap<ElementId, Rect>, origin: Point) {
+        let mut order: Vec<ElementId> = placed.keys().copied().collect();
+        order.sort_by(|a, b| {
+            placed[a]
+                .min
+                .y
+                .total_cmp(&placed[b].min.y)
+                .then(placed[a].min.x.total_cmp(&placed[b].min.x))
+        });
+        let mut done: Vec<Rect> = Vec::new();
+        for id in order {
+            let rect = placed[&id];
+            let floor = done
+                .iter()
+                .filter(|above| above.min.x < rect.max.x && rect.min.x < above.max.x)
+                .map(|above| above.max.y + self.gap)
+                .fold(origin.y, f32::max);
+            let moved = if rect.min.y > floor {
+                rect.translate(Point::new(0.0, floor - rect.min.y))
+            } else {
+                rect
+            };
+            placed.insert(id, moved);
+            done.push(moved);
+        }
+    }
+
+    /// Packs the structure first and the secondary cards in a band below it.
+    fn pack_structure(
+        &self,
+        children: &[ElementId],
+        secondary: &BTreeSet<ElementId>,
+        sizes: &BTreeMap<ElementId, Size>,
+        previous: Option<&LayoutMemory>,
+        parent: ElementId,
+        origin: Point,
+    ) -> BTreeMap<ElementId, Rect> {
+        let (rest, primary): (Vec<ElementId>, Vec<ElementId>) =
+            children.iter().partition(|id| secondary.contains(id));
+        if primary.is_empty() || rest.is_empty() {
+            return self.pack(children, sizes, previous, parent, origin);
+        }
+        let mut placed = self.pack(&primary, sizes, previous, parent, origin);
+        let right = placed.values().map(|r| r.max.x).fold(origin.x, f32::max);
+        let bottom = placed.values().map(|r| r.max.y).fold(origin.y, f32::max);
+        let band_origin = Point::new(origin.x, bottom + self.gap * 1.5);
+        let columns = (((right - origin.x + self.gap) / (SECONDARY_WIDTH + self.gap)).floor()
+            as usize)
+            .max(self.max_columns);
+        let mut band = self.pack(&rest, sizes, previous, parent, band_origin);
+        let collides = band.values().any(|r| {
+            r.min.y < band_origin.y || placed.values().any(|p| p.inflate(4.0).intersects(*r))
+        });
+        if collides || previous.is_none() {
+            band = self.pack_roots(&rest, sizes, band_origin, columns);
+        }
+        placed.extend(band);
+        placed
+    }
+
     fn pack(
         &self,
         children: &[ElementId],
@@ -430,23 +523,37 @@ impl HierarchyLayout {
         // subsystem while its type context is a handful of small cards. A grid
         // whose every cell inherits the largest width and height creates vast
         // empty bands and forces fit-to-view below readable zoom.
-        if parent == ElementId::from_u128(0)
-            && children.len() > 1
+        if children.len() > 1
             && previous
                 .is_none_or(|memory| children.iter().all(|id| !memory.bounds.contains_key(id)))
         {
-            return self.pack_roots(children, sizes, origin);
+            // A few cards inside a container stack in one column; larger or
+            // mixed groups use columns.
+            let stacked = parent != ElementId::from_raw(0)
+                && children.len() <= 4
+                && children
+                    .iter()
+                    .all(|id| sizes[id].height <= self.node_size.height * 1.6);
+            let columns = if stacked { 1 } else { self.max_columns };
+            return self.pack_roots(children, sizes, origin, columns);
         }
         let mut result = BTreeMap::new();
         let mut occupied = crate::spatial::RectIndex::new(320.0);
-        let parent_old = previous
-            .and_then(|p| p.bounds.get(&parent))
-            .map_or(Point::default(), |r| r.min);
+        let parent_rect = previous.and_then(|p| p.bounds.get(&parent)).copied();
+        let parent_old = parent_rect.map_or(Point::default(), |r| r.min);
         // Restore old siblings before allocating added objects; insertions cannot
         // steal a retained position merely because their identity sorts earlier.
+        // A card that was elsewhere before (it moved into this owner) is placed anew.
+        let was_inside = |old: &Rect| {
+            parent == ElementId::from_raw(0) || parent_rect.is_some_and(|r| r.contains_rect(*old))
+        };
         if let Some(previous) = previous {
             for id in children {
-                if let Some(old) = previous.bounds.get(id).filter(|r| r.finite()) {
+                if let Some(old) = previous
+                    .bounds
+                    .get(id)
+                    .filter(|r| r.finite() && was_inside(r))
+                {
                     let size = sizes[id];
                     let rect = Rect::new(
                         (old.min.x - parent_old.x).max(origin.x),
@@ -461,9 +568,10 @@ impl HierarchyLayout {
                 }
             }
         }
+        self.compact(&mut result, origin);
         let mut columns = if children.len() > self.max_columns * 4 {
             (children.len() as f32).sqrt().ceil() as usize
-        } else if parent != ElementId::from_u128(0) && children.len() <= 4 {
+        } else if parent != ElementId::from_raw(0) && children.len() <= 4 {
             1
         } else {
             self.max_columns.min(children.len()).max(1)
@@ -476,7 +584,7 @@ impl HierarchyLayout {
         // Preserve the established sibling column count for local insertions.
         // Switching a four-part column into a three-column grid for the fifth
         // part needlessly pushes every neighboring subsystem out of place.
-        if parent != ElementId::from_u128(0)
+        if parent != ElementId::from_raw(0)
             && let Some(old) = previous.and_then(|memory| memory.bounds.get(&parent))
         {
             columns = ((old.width() - 2.0 * self.inset + self.gap) / cell_width)
@@ -517,11 +625,12 @@ impl HierarchyLayout {
         children: &[ElementId],
         sizes: &BTreeMap<ElementId, Size>,
         origin: Point,
+        max_columns: usize,
     ) -> BTreeMap<ElementId, Rect> {
-        let columns = if children.len() > self.max_columns * 4 {
+        let columns = if children.len() > max_columns * 4 {
             (children.len() as f32).sqrt().ceil() as usize
         } else {
-            self.max_columns.min(children.len()).max(1)
+            max_columns.min(children.len()).max(1)
         };
         let mut ordered = children.to_vec();
         ordered.sort_by(|a, b| sizes[b].height.total_cmp(&sizes[a].height).then(a.cmp(b)));
@@ -564,20 +673,14 @@ mod root_packing_tests {
 
     #[test]
     fn a_large_subsystem_does_not_inflate_every_context_card_cell() {
-        let ids: Vec<_> = (1..=9).map(ElementId::from_u128).collect();
+        let ids: Vec<_> = (1..=9).map(ElementId::from_raw).collect();
         let mut sizes: BTreeMap<_, _> = ids
             .iter()
             .map(|id| (*id, Size::new(232.0, 118.0)))
             .collect();
         sizes.insert(ids[0], Size::new(850.0, 500.0));
         let layout = HierarchyLayout::default();
-        let first = layout.pack(
-            &ids,
-            &sizes,
-            None,
-            ElementId::from_u128(0),
-            Point::default(),
-        );
+        let first = layout.pack(&ids, &sizes, None, ElementId::from_raw(0), Point::default());
         assert!(first.values().map(|r| r.max.x).fold(0.0_f32, f32::max) < 1500.0);
         assert!(first.values().map(|r| r.max.y).fold(0.0_f32, f32::max) < 700.0);
         for (id, bounds) in &first {
@@ -595,7 +698,7 @@ mod root_packing_tests {
             &ids,
             &sizes,
             Some(&memory),
-            ElementId::from_u128(0),
+            ElementId::from_raw(0),
             Point::default(),
         );
         assert_eq!(first, restored);

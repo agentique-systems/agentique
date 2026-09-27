@@ -1,18 +1,16 @@
 //! Widget geometry for the scripted input driver (`--features automation`).
 //! Ordinary widget construction records its rectangle; the driver clicks it
 //! through egui RawInput. Without the feature, outside tests, recording is a no-op.
-use agq_modeling_workspace::ProjectRevisionId;
 use eframe::egui::{self, Rect};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Target {
     Viewport,
     PaletteInput,
-    CandidateName,
-    CandidatePrepare,
-    CancelPreparation,
-    ExplainWindow,
-    HistoryRevision(ProjectRevisionId),
+    /// A text field, by its label.
+    Field(&'static str),
+    /// A button, by its label.
+    Button(&'static str),
 }
 
 #[cfg(any(test, feature = "automation"))]
@@ -26,7 +24,7 @@ pub fn record(ctx: &egui::Context, target: Target, rect: Rect) {
 #[inline(always)]
 pub fn record(_: &egui::Context, _: Target, _: Rect) {}
 
-#[cfg(any(test, feature = "automation"))]
+#[cfg(feature = "automation")]
 pub fn target(ctx: &egui::Context, key: Target) -> Result<Rect, String> {
     ctx.data(|data| data.get_temp::<Rect>(egui::Id::new(("native-interaction-target", key))))
         .filter(|rect| rect.is_finite() && rect.is_positive())

@@ -7,21 +7,21 @@ fn elapsed_ms(start: Instant) -> f64 {
 fn main() {
     for count in [1_000, 10_000] {
         let start = Instant::now();
-        let projection = fixtures::stress(count, count * 2);
+        let fixture = fixtures::stress(count, count * 2);
         let fixture_ms = elapsed_ms(start);
         let options = SceneOptions {
-            hierarchy: false,
+            layout: LayoutKind::Graph,
             ..Default::default()
         };
         let start = Instant::now();
-        let input = LayoutInput::from_projection(&projection, &options).unwrap();
+        let input = LayoutInput::from_input(&fixture, &options).unwrap();
         let input_ms = elapsed_ms(start);
         let start = Instant::now();
         let layout = GraphLayout::default().layout(&input, None);
         let layout_ms = elapsed_ms(start);
         std::hint::black_box(layout);
         let start = Instant::now();
-        let scene = SemanticScene::from_projection(&projection, &options, None).unwrap();
+        let scene = Scene::build(&fixture, &options, None).unwrap();
         let scene_ms = elapsed_ms(start);
         let start = Instant::now();
         let index = SpatialIndex::build(&scene);
@@ -55,8 +55,7 @@ fn main() {
             std::hint::black_box(lookup.visible(&scene, &visible_targets));
         }
         let visible_lookup_us = elapsed_ms(start);
-        // Reference reproduces the previous UI's full-scene visibility filter,
-        // including semantic identity construction. It is never used by lookup.
+        // Reference: a full-scene visibility filter, for comparison with lookup.
         let start = Instant::now();
         let mut scanned = 0;
         for _ in 0..100 {
@@ -66,7 +65,7 @@ fn main() {
                 }
             }
             for p in &scene.ports {
-                if visible_targets.contains(&SceneTarget::Port(p.id)) {
+                if visible_targets.contains(&SceneTarget::Port(p.owner, p.id)) {
                     scanned += 1;
                 }
             }
@@ -88,7 +87,7 @@ fn main() {
         let camera_us = elapsed_ms(start) * 1000.0 / 10000.0;
         println!(
             "{}",
-            serde_json::json!({"fixture":true,"nodes":count,"edges":scene.edges.len(),"fixture_build_ms":fixture_ms,"projection_adapter_ms":input_ms,"layout_ms":layout_ms,"scene_build_including_layout_and_routing_ms":scene_ms,"spatial_index_ms":index_ms,"scene_lookup_build_ms":lookup_ms,"visible_lookup_mean_us":visible_lookup_us,"full_scene_scan_reference_mean_us":full_scan_us,"lookup_visible_targets":visible_targets.len(),"hit_test_mean_us":hit_us,"hit_test_successes":hits,"culling_mean_us":cull_us,"culling_total_targets":visible,"pan_zoom_math_mean_us":camera_us,"obstructed_routes":scene.edges.iter().filter(|e|e.quality==RouteQuality::Obstructed).count(),"gpu_upload_ms":null,"render_fps":null})
+            serde_json::json!({"fixture":true,"nodes":count,"edges":scene.edges.len(),"fixture_build_ms":fixture_ms,"layout_input_ms":input_ms,"layout_ms":layout_ms,"scene_build_including_layout_and_routing_ms":scene_ms,"spatial_index_ms":index_ms,"scene_lookup_build_ms":lookup_ms,"visible_lookup_mean_us":visible_lookup_us,"full_scene_scan_reference_mean_us":full_scan_us,"lookup_visible_targets":visible_targets.len(),"hit_test_mean_us":hit_us,"hit_test_successes":hits,"culling_mean_us":cull_us,"culling_total_targets":visible,"pan_zoom_math_mean_us":camera_us,"obstructed_routes":scene.edges.iter().filter(|e|e.quality==RouteQuality::Obstructed).count(),"gpu_upload_ms":null,"render_fps":null})
         );
     }
 }

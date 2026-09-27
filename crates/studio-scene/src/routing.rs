@@ -1,6 +1,8 @@
-use crate::{DiffMark, Point, PortSide, Rect, SceneEdge, SceneNode, ScenePort, spatial::RectIndex};
-use agq_kernel::ElementId;
-use agq_modeling_view::ViewEdge;
+use crate::{
+    DiffMark, InputEdge, InputEnd, Point, PortSide, Rect, SceneEdge, SceneNode, ScenePort,
+    spatial::RectIndex,
+};
+use agq_language::ElementId;
 use std::collections::BTreeMap;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -17,31 +19,58 @@ struct Endpoint {
     bounds: Rect,
     side: PortSide,
 }
+type Ports<'a> = BTreeMap<(ElementId, ElementId), &'a ScenePort>;
+/// Edge ends as shown: a hidden card is replaced by the shown card that
+/// contains it, and a port by that card's boundary port when it has one.
+fn shown_end(
+    end: InputEnd,
+    nodes: &BTreeMap<ElementId, &SceneNode>,
+    ports: &Ports<'_>,
+    hidden: &BTreeMap<ElementId, ElementId>,
+) -> Option<InputEnd> {
+    let node = if nodes.contains_key(&end.node) {
+        end.node
+    } else {
+        *hidden.get(&end.node)?
+    };
+    Some(InputEnd {
+        node,
+        port: end.port.filter(|port| ports.contains_key(&(node, *port))),
+    })
+}
 pub(crate) fn route_edges(
     nodes: &[SceneNode],
     ports: &[ScenePort],
-    edges: &[ViewEdge],
+    edges: &[InputEdge],
+    hidden: &BTreeMap<ElementId, ElementId>,
 ) -> Vec<SceneEdge> {
     let nodes: BTreeMap<_, _> = nodes.iter().map(|n| (n.id(), n)).collect();
-    let ports: BTreeMap<_, _> = ports.iter().map(|p| (p.id, p)).collect();
+    let ports: Ports<'_> = ports.iter().map(|p| ((p.owner, p.id), p)).collect();
     let mut obstacles = RectIndex::new(320.0);
     for n in nodes.values().filter(|n| !n.is_container || n.collapsed) {
         obstacles.insert(n.bounds.inflate(10.0), (n.id(), n.bounds.inflate(10.0)));
     }
-    let mut parallel = BTreeMap::<(ElementId, ElementId), usize>::new();
+    let mut parallel = BTreeMap::<(InputEnd, InputEnd), usize>::new();
     let mut result = Vec::new();
-    let mut edges: Vec<_> = edges.iter().collect();
-    edges.sort_by(|a, b| a.id.cmp(&b.id));
-    let attachments = node_attachments(&nodes, &ports, &edges);
-    for edge in edges {
-        let Some(source_center) = center(edge.source, &nodes, &ports) else {
+    let mut shown: Vec<_> = edges
+        .iter()
+        .filter_map(|edge| {
+            let source = shown_end(edge.source, &nodes, &ports, hidden)?;
+            let target = shown_end(edge.target, &nodes, &ports, hidden)?;
+            Some((edge, source, target))
+        })
+        .collect();
+    shown.sort_by(|a, b| a.0.id.cmp(&b.0.id));
+    let attachments = node_attachments(&nodes, &ports, &shown);
+    for (edge, source_end, target_end) in shown {
+        let Some(source_center) = center(source_end, &nodes, &ports) else {
             continue;
         };
-        let Some(target_center) = center(edge.target, &nodes, &ports) else {
+        let Some(target_center) = center(target_end, &nodes, &ports) else {
             continue;
         };
         let Some(source) = endpoint(
-            edge.source,
+            source_end,
             target_center,
             attachments.get(&(edge.id.as_str(), true)),
             &nodes,
@@ -50,7 +79,7 @@ pub(crate) fn route_edges(
             continue;
         };
         let Some(target) = endpoint(
-            edge.target,
+            target_end,
             source_center,
             attachments.get(&(edge.id.as_str(), false)),
             &nodes,
@@ -58,10 +87,10 @@ pub(crate) fn route_edges(
         ) else {
             continue;
         };
-        let pair = if edge.source <= edge.target {
-            (edge.source, edge.target)
+        let pair = if source_end <= target_end {
+            (source_end, target_end)
         } else {
-            (edge.target, edge.source)
+            (target_end, source_end)
         };
         let index = parallel.entry(pair).or_default();
         let lane = *index as f32 * 11.0;
@@ -83,36 +112,32 @@ pub(crate) fn route_edges(
     }
     result
 }
-/// Separate relationship attachment lanes on ordinary node boundaries. These
-/// positions are drawing geometry only: they introduce no ScenePort or semantic
-/// identity. Actual modeled ports always retain their exact position.
+/// Separate attachment lanes for edges that end on a card's boundary rather
+/// than at a port. Drawing geometry only; ports keep their exact position.
 fn node_attachments<'a>(
     nodes: &BTreeMap<ElementId, &SceneNode>,
-    ports: &BTreeMap<ElementId, &ScenePort>,
-    edges: &[&'a ViewEdge],
+    ports: &Ports<'_>,
+    edges: &[(&'a InputEdge, InputEnd, InputEnd)],
 ) -> BTreeMap<(&'a str, bool), (f32, f32)> {
     let mut sides = BTreeMap::<(ElementId, bool), Vec<(&str, bool, f32)>>::new();
-    for edge in edges {
-        for (id, other, source) in [
-            (edge.source, edge.target, true),
-            (edge.target, edge.source, false),
-        ] {
-            if ports.contains_key(&id) {
+    for (edge, source, target) in edges {
+        for (end, other, is_source) in [(*source, *target, true), (*target, *source, false)] {
+            if end.port.is_some() {
                 continue;
             }
-            let (Some(node), Some(toward)) = (nodes.get(&id), center(other, nodes, ports)) else {
+            let (Some(node), Some(toward)) = (nodes.get(&end.node), center(other, nodes, ports))
+            else {
                 continue;
             };
             sides
-                .entry((id, toward.x >= node.bounds.center().x))
+                .entry((end.node, toward.x >= node.bounds.center().x))
                 .or_default()
-                .push((edge.id.as_str(), source, toward.y));
+                .push((edge.id.as_str(), is_source, toward.y));
         }
     }
     let mut attachments = BTreeMap::new();
     for ((id, _), mut entries) in sides {
-        // Neighbor order prevents avoidable local crossings. Identity is the
-        // tie-breaker, so transport order cannot change the drawing.
+        // Neighbour order prevents avoidable local crossings; identity breaks ties.
         entries.sort_by(|a, b| {
             a.2.total_cmp(&b.2)
                 .then_with(|| a.0.cmp(b.0))
@@ -125,10 +150,8 @@ fn node_attachments<'a>(
         let middle = (entries.len() - 1) as f32 * 0.5;
         for (index, (edge, source, _)) in entries.into_iter().enumerate() {
             let y = bounds.center().y + (index as f32 - middle) * spacing;
-            // Stagger the nearby turn as well as the endpoint, keeping the
-            // final corridor and arrowhead independently traceable.
-            // Stay inside the 42-world-unit minimum node gutter, including
-            // obstacle clearance; long stubs can pierce unrelated neighbors.
+            // Stagger the nearby turn as well as the endpoint, staying inside
+            // the minimum gutter between cards.
             let stub_length = 22.0 + (index % 3) as f32 * 3.0;
             attachments.insert((edge, source), (y, stub_length));
         }
@@ -136,23 +159,23 @@ fn node_attachments<'a>(
     attachments
 }
 fn center(
-    id: ElementId,
+    end: InputEnd,
     nodes: &BTreeMap<ElementId, &SceneNode>,
-    ports: &BTreeMap<ElementId, &ScenePort>,
+    ports: &Ports<'_>,
 ) -> Option<Point> {
-    ports
-        .get(&id)
+    end.port
+        .and_then(|port| ports.get(&(end.node, port)))
         .map(|p| p.position)
-        .or_else(|| nodes.get(&id).map(|n| n.bounds.center()))
+        .or_else(|| nodes.get(&end.node).map(|n| n.bounds.center()))
 }
 fn endpoint(
-    id: ElementId,
+    end: InputEnd,
     toward: Point,
     attachment: Option<&(f32, f32)>,
     nodes: &BTreeMap<ElementId, &SceneNode>,
-    ports: &BTreeMap<ElementId, &ScenePort>,
+    ports: &Ports<'_>,
 ) -> Option<Endpoint> {
-    if let Some(p) = ports.get(&id) {
+    if let Some(p) = end.port.and_then(|port| ports.get(&(end.node, port))) {
         let bounds = nodes.get(&p.owner)?.bounds;
         let stub = match p.side {
             PortSide::Left => Point::new(p.position.x - 22.0, p.position.y),
@@ -161,7 +184,7 @@ fn endpoint(
             PortSide::Bottom => Point::new(p.position.x, p.position.y + 22.0),
         };
         return Some(Endpoint {
-            element: id,
+            element: p.id,
             point: p.position,
             stub,
             owner: p.owner,
@@ -169,6 +192,7 @@ fn endpoint(
             side: p.side,
         });
     }
+    let id = end.node;
     let bounds = nodes.get(&id)?.bounds;
     let center = bounds.center();
     let right = toward.x >= center.x;
@@ -220,7 +244,7 @@ fn route(
             target.point,
         ])
     };
-    let mut candidates = vec![
+    let mut routes = vec![
         via_x((a.x + b.x) * 0.5 + lane),
         via_y((a.y + b.y) * 0.5 + lane),
         via_y(bounds.min.y - 28.0 - lane),
@@ -229,12 +253,12 @@ fn route(
         via_x(bounds.max.x + 28.0 + lane),
     ];
     if lane > 0.0 && (a.y - b.y).abs() < 1.0 {
-        candidates.insert(0, via_y(a.y + 24.0 + lane));
+        routes.insert(0, via_y(a.y + 24.0 + lane));
     }
     let mut best = None::<(usize, f32, Vec<Point>)>;
     let mut index = 0;
-    while index < candidates.len() && index < 24 {
-        let path = &candidates[index];
+    while index < routes.len() && index < 24 {
+        let path = &routes[index];
         let collisions = blockers(path, source.owner, target.owner, obstacles);
         let length = path.windows(2).map(|p| p[0].distance(p[1])).sum::<f32>();
         if best.as_ref().is_none_or(|(count, old_length, _)| {
@@ -242,22 +266,22 @@ fn route(
         }) {
             best = Some((collisions.len(), length, path.clone()));
         }
-        // Initial direct candidate wins if clear; otherwise examine alternate
+        // The direct route wins if clear; otherwise examine alternate
         // corridors and the near sides of encountered obstacles, bounded work.
         if index == 0 && collisions.is_empty() {
             break;
         }
         if index < 2 {
             for r in collisions.into_iter().take(4) {
-                candidates.push(via_x(r.min.x - 16.0 - lane));
-                candidates.push(via_x(r.max.x + 16.0 + lane));
-                candidates.push(via_y(r.min.y - 16.0 - lane));
-                candidates.push(via_y(r.max.y + 16.0 + lane));
+                routes.push(via_x(r.min.x - 16.0 - lane));
+                routes.push(via_x(r.max.x + 16.0 + lane));
+                routes.push(via_y(r.min.y - 16.0 - lane));
+                routes.push(via_y(r.max.y + 16.0 + lane));
             }
         }
         index += 1;
     }
-    let (count, _, points) = best.expect("router always evaluates a candidate");
+    let (count, _, points) = best.expect("the router always evaluates a route");
     (
         points,
         if count == 0 {
@@ -480,15 +504,13 @@ fn simplify(points: Vec<Point>) -> Vec<Point> {
 #[cfg(test)]
 mod owner_route_tests {
     use super::*;
-    use crate::{NodeCategory, PortDirection, fixtures};
-    use agq_modeling_view::ViewOrigin;
+    use crate::{EdgeKind, NodeCategory, PortDirection, fixtures};
 
-    fn node(id: u128, bounds: Rect, container: bool) -> SceneNode {
-        let mut semantic = fixtures::architecture().nodes[0].clone();
-        semantic.id = fixtures::id(id);
+    fn node(id: u64, bounds: Rect, container: bool) -> SceneNode {
         SceneNode {
-            semantic,
+            semantic: fixtures::node(id, &format!("Node{id}"), NodeCategory::Part, None),
             category: NodeCategory::Part,
+            secondary: false,
             bounds,
             depth: usize::from(!container),
             is_container: container,
@@ -496,10 +518,9 @@ mod owner_route_tests {
             diff: DiffMark::Unchanged,
         }
     }
-    fn port(id: u128, side: PortSide, position: Point) -> ScenePort {
+    fn port(id: u64, side: PortSide, position: Point) -> ScenePort {
         ScenePort {
             id: fixtures::id(id),
-            revision_id: fixtures::revision(),
             owner: fixtures::id(1),
             proxy_for_owner: None,
             name: format!("port{id}"),
@@ -507,15 +528,21 @@ mod owner_route_tests {
             label_in_header: false,
             side,
             direction: PortDirection::Unspecified,
-            origin: ViewOrigin::Authored,
+            lock: crate::LockMark::None,
+            defined_in: None,
             diff: DiffMark::Unchanged,
         }
     }
-    fn edge(source: &ScenePort, target: &ScenePort) -> ViewEdge {
-        let mut edge = fixtures::architecture().edges[0].clone();
-        edge.source = source.id;
-        edge.target = target.id;
-        edge
+    fn edge(source: &ScenePort, target: &ScenePort) -> InputEdge {
+        fixtures::edge(
+            &format!("edge-{}-{}", source.id.raw(), target.id.raw()),
+            EdgeKind::Connection,
+            fixtures::at(source.owner.raw(), source.id.raw()),
+            fixtures::at(target.owner.raw(), target.id.raw()),
+        )
+    }
+    fn route_all(nodes: &[SceneNode], ports: &[ScenePort], edges: &[InputEdge]) -> Vec<SceneEdge> {
+        route_edges(nodes, ports, edges, &BTreeMap::new())
     }
     fn assert_boundary_route(
         route: &SceneEdge,
@@ -575,7 +602,7 @@ mod owner_route_tests {
             port(1002, PortSide::Right, Point::new(844.0, 292.0)),
         ];
         let semantic = edge(&ports[0], &ports[1]);
-        let routes = route_edges(&nodes, &ports, std::slice::from_ref(&semantic));
+        let routes = route_all(&nodes, &ports, std::slice::from_ref(&semantic));
         assert_eq!(routes.len(), 1);
         assert_eq!(routes[0].semantic, semantic);
         assert_eq!(routes[0].quality, RouteQuality::Clear);
@@ -612,12 +639,12 @@ mod owner_route_tests {
                     port(1001, a, position(a, false)),
                     port(1002, b, position(b, true)),
                 ];
-                let routes = route_edges(&nodes, &ports, &[edge(&ports[0], &ports[1])]);
+                let routes = route_all(&nodes, &ports, &[edge(&ports[0], &ports[1])]);
                 assert_eq!(routes[0].quality, RouteQuality::Clear);
                 assert_boundary_route(&routes[0], &ports[0], &ports[1], owner);
             }
             let port = port(1001, a, position(a, false));
-            let routes = route_edges(&nodes, std::slice::from_ref(&port), &[edge(&port, &port)]);
+            let routes = route_all(&nodes, std::slice::from_ref(&port), &[edge(&port, &port)]);
             assert_eq!(routes[0].quality, RouteQuality::Clear);
             assert_boundary_route(&routes[0], &port, &port, owner);
             assert!(routes[0].points.len() >= 5);
@@ -693,9 +720,9 @@ mod owner_route_tests {
         let first = edge(&ports[0], &ports[1]);
         let mut second = first.clone();
         second.id.push_str("-parallel");
-        second.relationship_id = Some(fixtures::id(7000));
+        second.element = Some(fixtures::id(7000));
         let edges = [first, second];
-        let routes = route_edges(&nodes, &ports, &edges);
+        let routes = route_all(&nodes, &ports, &edges);
         assert_ne!(routes[0].points, routes[1].points);
         for route in &routes {
             assert_boundary_route(route, &ports[0], &ports[1], owner);
@@ -709,7 +736,7 @@ mod owner_route_tests {
             edges.iter().collect::<Vec<_>>()
         );
         nodes.push(node(50, Rect::new(-12.0, 110.0, 24.0, 20.0), false));
-        let blocked = route_edges(&nodes, &ports, &edges);
+        let blocked = route_all(&nodes, &ports, &edges);
         assert!(
             blocked
                 .iter()

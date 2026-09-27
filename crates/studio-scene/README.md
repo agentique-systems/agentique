@@ -1,59 +1,67 @@
-# Agentique native scene
+# agq-studio-scene
 
-`agq-studio-scene` converts an actual `agq-modeling-view::ViewProjection` into
-disposable geometry. It owns no semantic truth, repository storage, language
-producer or toolkit. It retains immutable revision/element/relationship IDs.
+The Surface's scene for the Studio: layout, edge routing, hit testing and
+culling. It turns a small description of what to draw into positioned cards,
+ports and routed edges. Nothing here changes the model; geometry, collapsed
+containers, focus, camera and change marks are presentation only.
 
-The native shell supplies a projection, `SceneOptions` and optional
-`LayoutMemory`; a renderer consumes retained nodes, semantic ports and routed
-edge polylines. Layout memory, camera, LOD, selection and overlays are session
-state. Structural containment is a presentation of existing owners; Graph World
-uses SCC-condensed topology without changing those owners. Layout preserves old
-positions when geometry permits and retains hidden positions through collapse.
+## Input
 
-Graph positions can be pinned with `LayoutMemory::pin(element_id, node.bounds)`;
-`unpin(element_id)` releases the constraint and `is_pinned(element_id)` reports
-it. Pins are saved presentation anchors, separate from cached card geometry.
-The exact top-left position stays fixed; a card may grow when projected features
-change. Active pins are placed before soft position hints and new graph nodes.
-Filtered or deleted IDs reserve no space. Hierarchy layout does not enforce
-graph pins. Old saved memories without a `pinned` field still deserialize.
+`SceneInput::from_tree(tree, locks, problems, generation)` builds the input
+from an `agq-language` element tree:
 
-Conflicting active pins return `SceneError::GraphPin(PinError::Conflict { .. })`.
-The shell should retain the previous scene and offer to unpin a conflicting
-node; it must not claim that overlapping fixed constraints were satisfied.
-Calling `LayoutEngine` directly requires checking `LayoutResult::pin_error`.
-Invalid pin geometry is rejected. These errors concern presentation only and
-never affect model validation or durable revision state.
+- **Cards** (`InputNode`): packages, definitions, parts, items, attributes and
+  requirements, with their owner, lock and problem count.
+- **Ports** are shown on the card of their owner and, found through the type
+  (never copied), on the cards of usages typed by it. A port shown on a card
+  is identified by the pair (card, port): `SceneTarget::Port(card, port)`.
+- **Edges** (`InputEdge`): connections, interfaces, satisfy relationships,
+  subjects, typing and specialisation. Each end is a card or a port on a card
+  (`InputEnd`).
 
-The uniform spatial grid serves hits, marquee and culling. Very large containers
-and edge segments use an overflow list rather than allocating arbitrarily many
-cells. Port hits precede nodes, then edges, then containing backgrounds. Geometry
-is logical world coordinates; hit tolerance should be `logical_pixels / zoom`.
+`requirements_view()` keeps requirements, what satisfies them and their
+subjects, without nesting. `fixtures` holds inputs for tests, benchmarks and
+the Studio's `--fixture` option; the architecture fixture is the Scenario A
+URL shortener.
 
-Routing is deterministic orthogonal corridor search with indexed obstacles,
-semantic endpoint ports, parallel lanes and self loops. Bounded search reports
-`RouteQuality::Obstructed` explicitly when it cannot find a clean route. It is
-not a claim of globally optimal edge routing. Collapsed external connections use
-boundary proxies with the original port identity and explicit original owner.
-Other omitted endpoints are never silently retargeted to a different identity.
+## Layouts
 
-The current view transport exposes metaclass names. One exact-name adapter
-assigns a typed `NodeCategory`; no name substring or element label heuristic is
-allowed. Unknown metaclasses remain generic. Port direction stays `Unspecified`
-until a public semantic projection carries an authoritative direction.
+`Scene::build(input, options, previous_memory)` picks the layout from
+`SceneOptions::layout`:
 
-`fixtures` contains explicitly labeled visual test records for architecture,
-ports, requirements, comparison and 1k/10k scale. These use the real DTO shape but
-do not establish language acceptance, candidate validity or durable history.
+- `Hierarchy`: containers hold what they own. Cards keep their previous
+  positions (from `LayoutMemory`) when they still fit, so local edits do not
+  move unrelated cards. Collapsed containers show the ports of hidden cards
+  that connect outside as boundary ports with their real identity.
+- `Graph`: layered by the edges; directed cycles become compact groups.
+  Positions can be pinned with `LayoutMemory::pin`; overlapping pins are
+  reported as `SceneError::GraphPin(PinError::Conflict { .. })` instead of
+  being drawn on top of each other.
+- `Requirements`: lanes for requirements, what satisfies them and subjects.
+
+`LayoutMemory` is saved with the session, never with the model.
+
+`Scene::apply_diff(before, changed)` marks added, changed and removed cards,
+ports and edges against an earlier scene; removed ones stay as ghosts where
+they were.
+
+## Routing, hit testing and culling
+
+Routes are orthogonal, start and end exactly at ports, keep parallel edges in
+separate lanes and loop around their card for self edges. When the bounded
+search finds no clear corridor the route is marked `RouteQuality::Obstructed`.
+
+`SpatialIndex` answers hit tests (ports first, then cards, then edges, then
+container backgrounds), marquee selection and visible-area queries.
+`SceneLookup` finds records by identity. Both belong to one scene
+`generation` and return nothing for another. Geometry is in world units; hit
+tolerance should be `pixels / zoom`.
 
 ```powershell
 cargo test -p agq-studio-scene
 cargo run --release -p agq-studio-scene --example scene_benchmark
-cargo doc -p agq-studio-scene --no-deps
+cargo run --release -p agq-studio-scene --example layout_quality
 ```
 
-CPU benchmarks distinguish projection adaptation, layout, total scene build,
-spatial indexing, hits and culling. GPU upload, frame timing and input-to-frame
-latency must be measured by the native renderer; camera arithmetic is not an
-input latency result.
+The benchmarks measure CPU work only (layout, routing, indexing, hits and
+culling); GPU upload and frame timing are measured by the Studio.

@@ -1,595 +1,626 @@
+//! The Studio application: owns the open project and the Surface, and
+//! updates the Surface from every change event.
 use crate::{
     Args,
-    bridge::Bridge,
+    commands::{self, CommandContext, CommandId},
     gpu::{Batch, GpuStats},
-    navigation::{Navigation, World},
+    navigation::SurfaceView,
     selection::{CanvasClicks, Selection},
-    session::Session,
+    session::{ProjectView, Session},
     theme::Theme,
     timing::FrameTiming,
 };
-use agq_kernel::ElementId;
-use agq_modeling_repository::{BranchId, Project, ProjectId};
-use agq_modeling_view::{
-    ElementInspector, ExplanationProjection, RelationshipFamily, ViewDefinition, ViewProjection,
-};
-use agq_studio_platform::{
-    CandidateId, CandidatePhase, NativeConfig, ProjectHistory, RevisionBinding, SourceProjection,
-};
 use agq_studio_scene::{
-    Camera2D, LayoutMemory, LodController, Point, SceneLookup, SceneOptions, SemanticScene,
-    SpatialIndex, fixtures,
+    Camera2D, EdgeKind, ElementId, LayoutKind, LayoutMemory, LodController, Scene, SceneInput,
+    SceneLookup, SceneOptions, SceneTarget, SpatialIndex, fixtures,
 };
+use agq_system_state::{ChangeEvent, Project, ProjectError};
 use eframe::egui;
 use std::{
     collections::{BTreeMap, BTreeSet},
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
 
+/// Definitions a type can be chosen from: kind, name and reference.
+pub type TypeOptions = Vec<(agq_language::ElementKind, String, agq_language::Reference)>;
+
+/// The Panel shown on the right.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum ComparisonMode {
-    Current,
-    Candidate,
-    Diff,
-}
-
-pub struct Candidate {
-    pub id: Option<CandidateId>,
-    pub phase: Option<CandidatePhase>,
-    pub intent: String,
-    pub actor: String,
-    pub before: ViewProjection,
-    pub after: ViewProjection,
-    pub source: String,
-    pub review_selection: Option<Selection>,
-}
-
-pub struct PendingPreparation {
-    pub request: u64,
-    pub started: Instant,
-    pub cancelled: bool,
-    pub cancel_requested_at: Option<Instant>,
-    pub control: agq_studio_platform::CompilationControl,
-    pub intent: String,
-}
-impl PendingPreparation {
-    pub fn cancel(&mut self) {
-        self.cancelled = true;
-        self.cancel_requested_at.get_or_insert_with(Instant::now);
-        self.control.cancel();
-    }
-}
-
-#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
-pub struct PreparationCancellationReceipt {
-    pub request: u64,
-    pub epoch: u64,
-    pub binding: Option<RevisionBinding>,
-    pub preparation_elapsed_ms: u128,
-    pub request_to_ack_ms: Option<u128>,
-    pub last_stage: Option<String>,
-}
-
-/// Disposable display state only. Restoring this must never restore a lifecycle
-/// phase, durable binding, receipt or operator authority from an older snapshot.
-pub struct DisplayState {
-    projection: ViewProjection,
-    candidate: Option<CandidateDisplay>,
-    comparison: ComparisonMode,
-    compare_before: Option<ViewProjection>,
-    world: World,
-    focus: Option<ElementId>,
-    selection: Selection,
-    camera: Camera2D,
-    camera_target: Option<Camera2D>,
-    layout: LayoutMemory,
-    layouts: BTreeMap<(World, Option<ElementId>), LayoutMemory>,
-    layout_world: World,
-    layout_focus: Option<ElementId>,
-    collapsed: BTreeSet<ElementId>,
-    expanded: Option<BTreeSet<ElementId>>,
-    families: BTreeSet<RelationshipFamily>,
-    include_standard: bool,
-    world_filters: BTreeMap<World, (BTreeSet<RelationshipFamily>, bool)>,
-    show_agent: bool,
-    dependencies: Option<BTreeSet<ElementId>>,
-    agent_activity: Option<crate::agents::DependencyActivity>,
-    agent_return: Option<crate::agents::AgentReturn>,
-    fit_pending: bool,
-    focus_changes_pending: bool,
-    requested_definition: Option<(u64, ViewDefinition)>,
-    deferred_definition: Option<ViewDefinition>,
-}
-
-struct CandidateDisplay {
-    id: Option<CandidateId>,
-    before: ViewProjection,
-    after: ViewProjection,
-    review_selection: Option<Selection>,
+pub enum Panel {
+    Inspector,
+    Requirements,
+    History,
 }
 
 pub struct StudioApp {
     pub args: Args,
     pub theme: Theme,
     pub reduced_motion: bool,
-    pub ime_composing: bool,
-    pub ready: bool,
-    /// Successful worker host opening, distinct from a displayed scene or a nonempty project list.
-    pub runtime_ready_epoch: Option<u64>,
+    pub adapter: String,
+    /// The open project. `None` shows a read-only fixture or the start screen.
+    pub project: Option<Project>,
     pub fixture: Option<String>,
-    pub config: NativeConfig,
-    pub setup_reason: String,
-    pub opening: Option<crate::loading::OpeningProgress>,
-    pub bundle_path: String,
-    pub projects: Vec<Project>,
-    pub binding: Option<RevisionBinding>,
-    /// Requested revision becomes current only when its projection is ready.
-    pub pending_revision: Option<RevisionBinding>,
-    /// A durable acknowledgement survives failed or superseded view preparation.
-    pub committed_receipt: Option<(ProjectId, agq_modeling_repository::CommitReceipt)>,
-    pub revision_retry: Option<RevisionBinding>,
-    pub branch: Option<BranchId>,
-    pub history: Option<ProjectHistory>,
-    pub bridge: Bridge,
-    pub pending: BTreeSet<u64>,
-    pub scene_request: u64,
-    pub inspector_request: u64,
-    pub explanation_request: u64,
-    pub source_request: u64,
-    pub project_request: u64,
-    pub lifecycle_request: u64,
-    pub lifecycle_unknown: bool,
-    pub history_request: Option<(u64, ProjectId)>,
-    pub projection: ViewProjection,
-    pub scene: SemanticScene,
-    pub scene_builder: crate::scene_build::SceneBuilder,
+    pub view: SurfaceView,
+    /// What the Surface shows, built from the model after every change.
+    pub input: SceneInput,
+    pub scene: Scene,
     pub spatial: SpatialIndex,
     pub lookup: SceneLookup,
-    pub outliner_order: Vec<usize>,
+    pub generation: u64,
     pub camera: Camera2D,
     pub camera_target: Option<Camera2D>,
     pub lod: LodController,
-    pub layout: LayoutMemory,
-    pub layouts: BTreeMap<(World, Option<ElementId>), LayoutMemory>,
-    pub layout_world: World,
-    pub layout_focus: Option<ElementId>,
-    pub generation: u64,
+    pub layouts: BTreeMap<SurfaceView, LayoutMemory>,
+    pub collapsed: BTreeSet<ElementId>,
+    pub focus: Option<ElementId>,
+    pub selection: Selection,
+    /// An element chosen in the Inspector that has no card, with the
+    /// selection it was chosen from.
+    pub inspected: Option<(Option<SceneTarget>, ElementId)>,
+    pub canvas_clicks: CanvasClicks,
+    /// Recently created or changed elements, highlighted where they are.
+    /// Start of each highlight on `gpu::clock()`; the fade runs on the GPU.
+    pub highlights: BTreeMap<ElementId, f32>,
+    /// A "what changed" comparison shown on the Surface.
+    pub comparison: Option<crate::history::Comparison>,
+    pub gesture: Option<crate::viewport::Gesture>,
     pub batch: Arc<Batch>,
     pub batch_key: Option<u64>,
     pub gpu_stats: Arc<Mutex<GpuStats>>,
-    pub selection: Selection,
-    pub canvas_clicks: CanvasClicks,
-    pub explorer_clicks: CanvasClicks,
-    pub navigation: Navigation,
-    pub world: World,
-    pub focus: Option<ElementId>,
-    pub collapsed: BTreeSet<ElementId>,
-    pub families: BTreeSet<RelationshipFamily>,
-    pub expanded: Option<BTreeSet<ElementId>>,
-    pub include_standard: bool,
-    pub world_filters: BTreeMap<World, (BTreeSet<RelationshipFamily>, bool)>,
-    pub inspector: Option<ElementInspector>,
-    pub explanation: Option<ExplanationProjection>,
-    pub source: Option<SourceProjection>,
-    pub show_explain: bool,
-    pub show_source: bool,
     pub palette: bool,
     pub palette_query: String,
     pub palette_focus: bool,
-    pub create_dialog: bool,
-    pub project_dialog: crate::project_dialog::ProjectDialog,
-    pub edit_target: Option<crate::part_edit::EditTarget>,
-    pub create_dialog_focus: bool,
-    pub new_part_name: String,
-    pub candidate: Option<Candidate>,
-    pub preparation: Option<PendingPreparation>,
-    pub last_preparation_cancellation: Option<PreparationCancellationReceipt>,
-    pub comparison: ComparisonMode,
-    pub compare_before: Option<ViewProjection>,
-    pub dependencies: Option<BTreeSet<ElementId>>,
-    pub show_agent: bool,
-    pub agent_activity: Option<crate::agents::DependencyActivity>,
-    pub agent_return: Option<crate::agents::AgentReturn>,
-    pub search: String,
+    pub dialog: Option<crate::edit::Dialog>,
+    pub panel: Panel,
+    pub history: crate::history::HistoryPanel,
     pub status: String,
-    pub fit_pending: bool,
-    pub focus_changes_pending: bool,
-    pub requested_definition: Option<(u64, ViewDefinition)>,
-    pub deferred_definition: Option<ViewDefinition>,
-    pub marquee_start: Option<Point>,
-    pub marquee_end: Option<Point>,
+    /// Whether the last change was saved, with the reason when it was not.
+    pub saved: Result<(), String>,
+    /// Problem messages at each element, for the current model.
+    pub problems: BTreeMap<ElementId, Vec<String>>,
+    /// Definitions a type can be chosen from, for the current model.
+    pub type_options: Option<(u64, TypeOptions)>,
+    /// The Requirements Panel's rows, for the current model.
+    pub requirement_rows: Option<(u64, Vec<crate::requirements::Row>)>,
     pub timing: FrameTiming,
     pub frame_number: u64,
     pub capture_requested: bool,
     pub capture_done: bool,
+    pub session: Session,
     pub session_path: PathBuf,
-    pub restore: Option<Session>,
-    pub last_saved: Instant,
-    graphics_checkpoint: crate::surface_recovery::PresentationCheckpoint,
-    pub adapter: String,
+    pub fit_pending: bool,
+    last_saved: Instant,
+    saved_layout: crate::surface_recovery::SavedLayout,
 }
 
 impl StudioApp {
-    pub fn new(
-        cc: &eframe::CreationContext<'_>,
-        args: Args,
-    ) -> Result<Self, Box<dyn std::error::Error + Send + Sync>> {
-        install_fonts(&cc.egui_ctx);
-        let mut config = NativeConfig::for_root(args.root.clone(), args.runtime_dir.clone())?;
-        if let Some(database) = &args.database {
-            config.database = database.clone();
-        }
-        let session_path = config.database.with_extension("native-session.json");
-        let restore = if args.no_restore || args.fixture.is_some() {
-            None
-        } else {
-            Session::load(&session_path)
-        };
-        let restored_fixture = restore.as_ref().and_then(restorable_fixture);
-        let fixture = args
-            .fixture
-            .clone()
-            .or_else(|| restored_fixture.as_ref().map(|(name, _)| name.clone()));
-        let projection = restored_fixture
-            .map(|(_, projection)| projection)
-            .unwrap_or_else(|| initial_projection(fixture.as_deref()));
-        let scene = SemanticScene::from_projection(&projection, &SceneOptions::default(), None)?;
-        let spatial = SpatialIndex::build(&scene);
-        let lookup = SceneLookup::build(&scene);
-        let outliner_order = hierarchy_order(&scene);
-        let layout = scene.memory().clone();
-        let selection = Selection::new(projection.revision_id);
-        let dark = restore.as_ref().map_or(!args.light, |r| r.dark);
-        let theme = Theme::new(dark, restore.as_ref().is_some_and(|r| r.high_contrast));
+    pub fn new(cc: &eframe::CreationContext<'_>, args: Args) -> Self {
+        let session_path = args.session.clone().unwrap_or_else(Session::default_path);
+        let session = Session::load(&session_path).unwrap_or(Session {
+            version: Session::VERSION,
+            dark: !args.light,
+            ..Default::default()
+        });
+        let theme = Theme::new(session.dark && !args.light, session.high_contrast);
         theme.install(&cc.egui_ctx);
-        cc.egui_ctx.style_mut(|style| {
-            style.animation_time = if restore.as_ref().is_some_and(|r| r.reduced_motion) {
+        // Scripted journeys run without animation so positions are final.
+        let reduced_motion = session.reduced_motion || args.scenario_running();
+        // Both the dark and the light style, so switching theme keeps it.
+        cc.egui_ctx.all_styles_mut(|style| {
+            style.animation_time = if reduced_motion {
                 0.0
             } else {
-                0.12
+                crate::theme::HOVER_SECONDS
             };
         });
-        let setup = agq_studio_platform::setup_surface(&config)?;
-        let mut bridge = Bridge::new(cc.egui_ctx.clone());
-        let mut pending = BTreeSet::new();
-        let mut opening = None;
-        if fixture.is_none() && setup.bundle_located {
-            let request = bridge
-                .open(config.clone(), None)
-                .map_err(std::io::Error::other)?;
-            pending.insert(request);
-            opening = Some(crate::loading::OpeningProgress::new(request));
-        }
         let adapter = cc
             .wgpu_render_state
             .as_ref()
             .map(|s| format!("{:?}", s.adapter.get_info()))
             .unwrap_or_default();
+        let input = SceneInput::default();
+        let scene = Scene::build(&input, &SceneOptions::default(), None)
+            .expect("an empty scene always builds");
         let mut app = Self {
+            spatial: SpatialIndex::build(&scene),
+            lookup: SceneLookup::build(&scene),
+            scene,
+            input,
             args,
             theme,
-            reduced_motion: restore.as_ref().is_some_and(|r| r.reduced_motion),
-            ime_composing: false,
-            ready: fixture.is_some(),
-            runtime_ready_epoch: None,
-            fixture,
-            config,
-            setup_reason: setup
-                .reason
-                .unwrap_or_else(|| "Authenticating accepted publications…".into()),
-            opening,
-            bundle_path: String::new(),
-            projects: vec![],
-            binding: None,
-            pending_revision: None,
-            committed_receipt: None,
-            revision_retry: None,
-            branch: None,
-            history: None,
-            bridge,
-            pending,
-            scene_request: 0,
-            inspector_request: 0,
-            explanation_request: 0,
-            source_request: 0,
-            project_request: 0,
-            lifecycle_request: 0,
-            lifecycle_unknown: false,
-            history_request: None,
-            projection,
-            scene,
-            scene_builder: crate::scene_build::SceneBuilder::new(cc.egui_ctx.clone())?,
-            spatial,
-            lookup,
-            outliner_order,
+            reduced_motion,
+            adapter,
+            project: None,
+            fixture: None,
+            view: SurfaceView::Architecture,
+            generation: 0,
             camera: Camera2D::default(),
             camera_target: None,
             lod: LodController::default(),
-            layout,
             layouts: BTreeMap::new(),
-            layout_world: World::System,
-            layout_focus: None,
-            generation: 1,
+            collapsed: BTreeSet::new(),
+            focus: None,
+            selection: Selection::default(),
+            inspected: None,
+            canvas_clicks: CanvasClicks::default(),
+            highlights: BTreeMap::new(),
+            comparison: None,
+            gesture: None,
             batch: Arc::new(Batch::default()),
             batch_key: None,
             gpu_stats: Arc::new(Mutex::new(GpuStats::default())),
-            selection,
-            canvas_clicks: CanvasClicks::default(),
-            explorer_clicks: CanvasClicks::default(),
-            navigation: Navigation::default(),
-            world: World::System,
-            focus: None,
-            collapsed: BTreeSet::new(),
-            families: RelationshipFamily::all().into_iter().collect(),
-            expanded: None,
-            include_standard: false,
-            world_filters: BTreeMap::new(),
-            inspector: None,
-            explanation: None,
-            source: None,
-            show_explain: false,
-            show_source: false,
             palette: false,
             palette_query: String::new(),
             palette_focus: false,
-            create_dialog: false,
-            project_dialog: Default::default(),
-            edit_target: None,
-            create_dialog_focus: false,
-            new_part_name: "newPart".into(),
-            candidate: None,
-            preparation: None,
-            last_preparation_cancellation: None,
-            comparison: ComparisonMode::Current,
-            compare_before: None,
-            dependencies: None,
-            show_agent: false,
-            agent_activity: None,
-            agent_return: None,
-            search: String::new(),
-            status: "Ready".into(),
-            fit_pending: true,
-            focus_changes_pending: false,
-            requested_definition: None,
-            deferred_definition: None,
-            marquee_start: None,
-            marquee_end: None,
+            dialog: None,
+            panel: Panel::Inspector,
+            history: Default::default(),
+            status: String::new(),
+            saved: Ok(()),
+            problems: BTreeMap::new(),
+            type_options: None,
+            requirement_rows: None,
             timing: FrameTiming::default(),
             frame_number: 0,
             capture_requested: false,
             capture_done: false,
+            session,
             session_path,
-            restore,
+            fit_pending: true,
             last_saved: Instant::now(),
-            graphics_checkpoint: Default::default(),
-            adapter,
+            saved_layout: Default::default(),
         };
-        if app.fixture.as_deref() == Some("requirements") {
-            app.world = World::Requirements;
-        }
-        if matches!(
-            app.fixture.as_deref(),
-            Some("stress1000" | "stress10000" | "ports")
-        ) {
-            app.world = World::Graph;
-        }
-        if app.fixture.is_some()
-            && let Some(session) = app.restore.take()
-            && let Some(presentation) = session.presentation
+        if let Some(name) = app.args.fixture.clone() {
+            app.show_fixture(&name);
+        } else if let Some(folder) = app.args.project.clone() {
+            if !app.args.creates_project() {
+                app.open_project(&folder);
+            }
+        } else if !app.args.no_restore
+            && let Some(folder) = app.session.project.clone()
         {
-            app.apply_saved_presentation(presentation);
+            app.open_project(&folder);
         }
-        app.rebuild();
-        if app.fixture.as_deref() == Some("diff") {
-            app.show_fixture_diff();
-        }
-        if let Some(id) = app
-            .projection
-            .nodes
-            .iter()
-            .find(|n| n.name == "ModelRepository")
-            .map(|n| n.id)
-        {
-            app.select(agq_studio_scene::SceneTarget::Node(id), false);
-        }
-        app.record_location();
-        Ok(app)
+        app
     }
-    pub fn project_id(&self) -> Option<ProjectId> {
-        self.binding.map(|b| b.project)
+
+    /// Whether the model can be edited now: a project is open and the
+    /// Surface is not showing an earlier checkpoint.
+    pub fn editable(&self) -> bool {
+        self.project.is_some()
+            && self
+                .comparison
+                .as_ref()
+                .is_none_or(|comparison| comparison.after_is_now)
     }
-    pub fn display_snapshot(&self) -> DisplayState {
-        DisplayState {
-            projection: self.projection.clone(),
-            candidate: self.candidate.as_ref().map(|candidate| CandidateDisplay {
-                id: candidate.id,
-                before: candidate.before.clone(),
-                after: candidate.after.clone(),
-                review_selection: candidate.review_selection.clone(),
-            }),
-            comparison: self.comparison,
-            compare_before: self.compare_before.clone(),
-            world: self.world,
-            focus: self.focus,
-            selection: self.selection.clone(),
-            camera: self.camera,
-            camera_target: self.camera_target,
-            layout: self.layout.clone(),
-            layouts: self.layouts.clone(),
-            layout_world: self.layout_world,
-            layout_focus: self.layout_focus,
-            collapsed: self.collapsed.clone(),
-            expanded: self.expanded.clone(),
-            families: self.families.clone(),
-            include_standard: self.include_standard,
-            world_filters: self.world_filters.clone(),
-            show_agent: self.show_agent,
-            dependencies: self.dependencies.clone(),
-            agent_activity: self.agent_activity.clone(),
-            agent_return: self.agent_return.clone(),
-            fit_pending: self.fit_pending,
-            focus_changes_pending: self.focus_changes_pending,
-            requested_definition: self.requested_definition.clone(),
-            deferred_definition: self.deferred_definition.clone(),
+
+    pub fn context(&self) -> CommandContext {
+        let container = self.selected_card().is_some();
+        let pair = self.selection.targets.len() == 2
+            && self.selection.targets.iter().all(|t| {
+                matches!(
+                    t,
+                    SceneTarget::Port(..) | SceneTarget::Node(_) | SceneTarget::Container(_)
+                )
+            });
+        let state = self.project.as_ref().map(Project::state);
+        CommandContext {
+            busy: self.dialog.is_some(),
+            editable: self.editable(),
+            selected: self.selection.primary.is_some(),
+            pair,
+            container,
+            can_undo: state.is_some_and(|s| s.undo_description().is_some()),
+            can_redo: state.is_some_and(|s| s.redo_description().is_some()),
+            graph_view: self.view == SurfaceView::Graph,
+            focused: self.focus.is_some(),
         }
     }
-    pub fn restore_display(&mut self, previous: DisplayState) {
-        self.scene_builder.invalidate();
-        self.projection = previous.projection;
-        if let (Some(current), Some(old)) = (&mut self.candidate, previous.candidate)
-            && current.id == old.id
-        {
-            current.before = old.before;
-            current.after = old.after;
-            current.review_selection = old.review_selection;
+
+    /// The card of the primary selection: a selected card, or the card a
+    /// selected port is shown on.
+    pub fn selected_card(&self) -> Option<ElementId> {
+        match self.selection.primary.as_ref()? {
+            SceneTarget::Node(id) | SceneTarget::Container(id) => Some(*id),
+            SceneTarget::Port(card, _) => Some(*card),
+            SceneTarget::Edge(_) => None,
         }
-        self.comparison = previous.comparison;
-        self.compare_before = previous.compare_before;
-        self.world = previous.world;
-        self.focus = previous.focus;
-        self.selection = previous.selection;
-        self.camera = previous.camera;
-        self.camera_target = previous.camera_target;
-        self.layout = previous.layout;
-        self.layouts = previous.layouts;
-        self.layout_world = previous.layout_world;
-        self.layout_focus = previous.layout_focus;
-        self.collapsed = previous.collapsed;
-        self.expanded = previous.expanded;
-        self.families = previous.families;
-        self.include_standard = previous.include_standard;
-        self.world_filters = previous.world_filters;
-        self.show_agent = previous.show_agent;
-        self.dependencies = previous.dependencies;
-        self.agent_activity = previous.agent_activity;
-        self.agent_return = previous.agent_return;
-        self.fit_pending = previous.fit_pending;
-        self.focus_changes_pending = previous.focus_changes_pending;
-        self.requested_definition = previous.requested_definition;
-        self.deferred_definition = previous.deferred_definition;
-        self.invalidate_inspection();
+    }
+
+    /// The element the Inspector shows: one chosen there without a card, or
+    /// the selected element.
+    pub fn inspected_element(&self) -> Option<ElementId> {
+        self.inspected
+            .as_ref()
+            .filter(|(from, _)| *from == self.selection.primary)
+            .map(|(_, id)| *id)
+            .or_else(|| self.selection.element(&self.scene))
+    }
+
+    /// The elements the Operator is working on: the element chosen in the
+    /// Inspector (such as an attribute line), else every selected element.
+    pub fn working_elements(&self) -> Vec<ElementId> {
+        match self
+            .inspected
+            .as_ref()
+            .filter(|(from, _)| *from == self.selection.primary)
+        {
+            Some((_, id)) => vec![*id],
+            None => self.selection.elements(&self.scene),
+        }
+    }
+
+    /// The definition that owns the port the Operator is working on, when the
+    /// port is shown on a usage through its type.
+    pub fn shared_definition(&self) -> Option<ElementId> {
+        let SceneTarget::Port(card, port) = self.selection.primary.as_ref()? else {
+            return None;
+        };
+        if self.inspected_element() != Some(*port) {
+            return None;
+        }
+        self.lookup.port(&self.scene, *card, *port)?;
+        let tree = self.project.as_ref()?.state().tree();
+        tree.get(*port)?.owner().filter(|owner| owner != card)
+    }
+
+    pub fn select(&mut self, target: SceneTarget, extend: bool) {
+        self.selection.select(target, extend);
         self.batch_key = None;
     }
-    pub fn rebuild(&mut self) -> bool {
-        self.rebuild_with_background(true)
-    }
-    /// Revision/candidate/return swaps must finish before publishing matching DTOs.
-    pub fn rebuild_immediate(&mut self) -> bool {
-        self.rebuild_with_background(false)
-    }
-    fn rebuild_with_background(&mut self, background: bool) -> bool {
-        if (self.layout_world, self.layout_focus) != (self.world, self.focus) {
-            self.layouts
-                .insert((self.layout_world, self.layout_focus), self.layout.clone());
-            self.layout = self
-                .layouts
-                .get(&(self.world, self.focus))
-                .cloned()
-                .unwrap_or_default();
-            // Retain every coordinate system referenced by bounded navigation
-            // plus each world's Home. Key-order eviction could otherwise pair
-            // an old Back camera with a newly packed layout.
-            if self.layouts.len() > 24 {
-                let retained = self.navigation.retained_views();
-                self.layouts
-                    .retain(|key, _| key.1.is_none() || retained.contains(key));
-            }
-            self.layout_world = self.world;
-            self.layout_focus = self.focus;
+
+    // Projects and fixtures.
+
+    pub fn open_project(&mut self, folder: &Path) {
+        // Opening the project that is open reads it again from disk: this
+        // window's project must let go of the folder first.
+        let same = |a: &Path, b: &Path| match (std::fs::canonicalize(a), std::fs::canonicalize(b)) {
+            (Ok(a), Ok(b)) => a == b,
+            _ => a == b,
+        };
+        if self
+            .project
+            .as_ref()
+            .is_some_and(|project| same(project.folder(), folder))
+        {
+            self.save_session();
+            self.project = None;
         }
-        // A loaded current-neighborhood ID set cannot classify removals. Diff
-        // keeps the complete paired query scope, including genuine old ghosts.
-        let expanded = (self.comparison != ComparisonMode::Diff)
-            .then_some(self.expanded.as_ref())
-            .flatten();
-        let visible_projection = |projection: &ViewProjection| {
-            crate::scene_build::presentation_projection(
-                projection,
-                &self.families,
-                expanded,
-                self.world == World::System,
+        match Project::open(folder) {
+            Ok(project) => self.install_project(project),
+            Err(ProjectError::Locked) => {
+                self.status = format!("{} is open in another Agentique window", folder.display());
+            }
+            Err(error) => {
+                self.status = format!("Could not open {}: {error}", folder.display());
+                self.session.recent.retain(|recent| recent != folder);
+                if self.session.project.as_deref() == Some(folder) {
+                    self.session.project = None;
+                }
+            }
+        }
+    }
+
+    pub fn create_project(&mut self, folder: &Path, name: &str) {
+        match Project::create(folder, name) {
+            Ok(project) => self.install_project(project),
+            Err(ProjectError::Locked) => {
+                self.status = format!("{} is open in another Agentique window", folder.display())
+            }
+            Err(error) => self.status = format!("Could not create the project: {error}"),
+        }
+    }
+
+    fn install_project(&mut self, project: Project) {
+        self.save_session();
+        let folder = project.folder().to_path_buf();
+        let remembered = self.session.views.get(&folder).cloned().unwrap_or_default();
+        self.fixture = None;
+        self.project = Some(project);
+        self.view = remembered.view;
+        self.layouts = remembered.layouts;
+        self.collapsed.clear();
+        self.focus = None;
+        self.selection.clear();
+        self.comparison = None;
+        self.highlights.clear();
+        self.history = Default::default();
+        match remembered.camera {
+            Some(camera) => {
+                self.camera = camera;
+                self.fit_pending = false;
+            }
+            None => self.fit_pending = true,
+        }
+        self.camera_target = None;
+        self.session.remember(&folder);
+        let unmatched: Vec<String> = self
+            .project
+            .as_ref()
+            .map(|p| p.unmatched().to_vec())
+            .unwrap_or_default();
+        self.status = if unmatched.is_empty() {
+            format!("Opened {}", folder.display())
+        } else {
+            let listed: Vec<&str> = unmatched.iter().take(3).map(String::as_str).collect();
+            format!(
+                "Opened {}. The model text was edited outside Agentique: {} element(s) could not be matched to their saved identity and were treated as new ({}{}). Locks and history links on them were not carried over.",
+                folder.display(),
+                unmatched.len(),
+                listed.join(", "),
+                if unmatched.len() > 3 { ", …" } else { "" }
             )
         };
-        let projection = visible_projection(self.active_projection());
-        let options = SceneOptions {
-            collapsed: self.collapsed.clone(),
-            focus: ownership_focus(&projection, self.world, self.focus, self.fixture.is_some()),
-            hierarchy: matches!(self.world, World::System | World::History),
-        };
-        let input = crate::scene_build::SceneInput {
-            projection,
-            before: (self.comparison == ComparisonMode::Diff)
-                .then(|| {
-                    self.candidate
-                        .as_ref()
-                        .map(|c| &c.before)
-                        .or(self.compare_before.as_ref())
-                        .map(visible_projection)
-                })
-                .flatten(),
-            options,
-            memory: self.layout.clone(),
-        };
-        // Large same-revision presentation changes retain the explorable previous
-        // scene while layout, routing and indexes build on a dedicated worker.
-        // Revision swaps stay atomic until all revision-bound UI is staged.
-        if background
-            && input.projection.nodes.len() >= 750
-            && input.projection.revision_id == self.scene.revision_id
-            && self.pending_revision.is_none()
-        {
-            if let Err(error) = self.scene_builder.request(input) {
-                self.status = error;
-                return false;
-            }
-        } else {
-            self.scene_builder.invalidate();
-            match crate::scene_build::build(input) {
-                Ok(built) => self.install_scene(built),
-                Err(error) => {
-                    self.status = error;
-                    return false;
-                }
-            }
-        }
-        true
+        self.refresh();
+        self.save_session();
     }
-    fn install_scene(&mut self, built: crate::scene_build::BuiltScene) {
-        self.layout = built.scene.memory().clone();
-        self.spatial = built.spatial;
-        self.lookup = built.lookup;
-        self.outliner_order = built.outliner;
-        self.selection.reconcile(&built.scene);
-        self.scene = built.scene;
+
+    pub fn show_fixture(&mut self, name: &str) {
+        self.project = None;
+        self.fixture = Some(name.to_string());
+        self.view = match name {
+            "requirements" => SurfaceView::Requirements,
+            "stress1000" | "stress10000" | "ports" => SurfaceView::Graph,
+            _ => SurfaceView::Architecture,
+        };
+        self.fit_pending = true;
+        self.refresh();
+        if name == "diff" {
+            let (before, after) = fixtures::change_trees();
+            self.comparison = Some(crate::history::Comparison::of_trees(
+                "URL shortener",
+                before,
+                "edited",
+                &after,
+                self.input.clone(),
+                false,
+            ));
+            self.rebuild();
+        }
+    }
+
+    // Building the Surface.
+
+    /// Rebuilds the scene input from the model (or fixture), then the scene.
+    pub fn refresh(&mut self) {
         self.generation += 1;
-        self.batch_key = None;
-        self.invalidate_inspection();
-        self.timing.scene_ms = built.build_ms;
-        self.timing.layout_ms = built.scene_ms;
-        self.timing.index_ms = built.index_ms;
-    }
-    fn receive_scene(&mut self) {
-        if let Some(result) = self.scene_builder.poll() {
-            match result {
-                Ok(built) => {
-                    self.install_scene(built);
-                    self.request_inspection();
+        self.input = match (&self.project, self.fixture.as_deref()) {
+            (Some(project), _) => {
+                let state = project.state();
+                let mut counts = BTreeMap::new();
+                self.problems.clear();
+                for diagnostic in state.diagnostics() {
+                    *counts.entry(diagnostic.element).or_insert(0) += 1;
+                    self.problems
+                        .entry(diagnostic.element)
+                        .or_default()
+                        .push(diagnostic.message.clone());
                 }
-                Err(error) => self.status = format!("View rebuild failed: {error}"),
+                self.history.uncommitted = project.has_uncommitted_changes().ok();
+                SceneInput::from_tree(state.tree(), state.locks(), &counts, self.generation)
+            }
+            (None, Some(name)) => {
+                let mut input = match name {
+                    "typography" => fixtures::typography(),
+                    "ports" => fixtures::dense_ports(),
+                    "stress1000" => fixtures::stress(1000, 2000),
+                    "stress10000" => fixtures::stress(10000, 20000),
+                    "diff" => fixtures::change().1,
+                    _ => fixtures::architecture(),
+                };
+                input.generation = self.generation;
+                input
+            }
+            (None, None) => SceneInput {
+                generation: self.generation,
+                ..Default::default()
+            },
+        };
+        if let (Some(comparison), Some(project)) = (&mut self.comparison, &self.project)
+            && comparison.after_is_now
+        {
+            comparison.update_now(project.state().tree(), &self.input);
+        }
+        self.rebuild();
+    }
+
+    /// Lays out the current input for the current view.
+    pub fn rebuild(&mut self) {
+        let started = Instant::now();
+        let after = match &self.comparison {
+            Some(comparison) if !comparison.after_is_now => comparison.after.clone(),
+            _ => self.input.clone(),
+        };
+        let shown = self.view_input(&after);
+        let options = self.scene_options();
+        let memory = self.layouts.get(&self.view);
+        let built = match &self.comparison {
+            // Removed cards are laid out with the current ones, never on top.
+            Some(comparison) => Scene::comparison(
+                &self.view_input(&comparison.before),
+                &shown,
+                &comparison.changed,
+                &options,
+                memory,
+            ),
+            None => Scene::build(&shown, &options, memory),
+        };
+        let scene = match built {
+            Ok(scene) => scene,
+            Err(error) => {
+                self.status = format!("The Surface could not be laid out: {error}");
+                return;
+            }
+        };
+        self.timing.layout_ms = started.elapsed().as_secs_f64() * 1000.0;
+        let indexed = Instant::now();
+        // A comparison's extra cards do not change the remembered layout.
+        if self.comparison.is_none() {
+            self.layouts.insert(self.view, scene.memory().clone());
+        }
+        self.spatial = SpatialIndex::build(&scene);
+        self.lookup = SceneLookup::build(&scene);
+        self.selection.reconcile(&scene);
+        self.scene = scene;
+        self.batch_key = None;
+        self.timing.index_ms = indexed.elapsed().as_secs_f64() * 1000.0;
+        self.timing.scene_ms = started.elapsed().as_secs_f64() * 1000.0;
+    }
+
+    fn view_input(&self, input: &SceneInput) -> SceneInput {
+        match self.view {
+            SurfaceView::Architecture => {
+                let mut input = input.clone();
+                input.retain_edges(&[EdgeKind::Connection, EdgeKind::Interface, EdgeKind::Satisfy]);
+                input
+            }
+            SurfaceView::Graph => input.clone(),
+            SurfaceView::Requirements => input.requirements_view(),
+        }
+    }
+
+    fn scene_options(&self) -> SceneOptions {
+        SceneOptions {
+            collapsed: self.collapsed.clone(),
+            focus: self
+                .focus
+                .filter(|_| self.view == SurfaceView::Architecture),
+            layout: match self.view {
+                SurfaceView::Architecture => LayoutKind::Hierarchy,
+                SurfaceView::Graph => LayoutKind::Graph,
+                SurfaceView::Requirements => LayoutKind::Requirements,
+            },
+        }
+    }
+
+    /// Updates the Surface after a change, undo or redo, and highlights what
+    /// was created or changed where it is.
+    pub fn changed(&mut self, event: &ChangeEvent) {
+        self.refresh();
+        let now = crate::gpu::clock();
+        let tree = self.project.as_ref().map(|p| p.state().tree());
+        // An owner changes when a member is added or removed; highlight the
+        // member, not the whole owner.
+        let owners: std::collections::BTreeSet<ElementId> = event
+            .created
+            .iter()
+            .filter_map(|id| tree.and_then(|t| t.get(*id)).and_then(|e| e.owner()))
+            .collect();
+        // After a delete, the containers that lost a member are not highlighted.
+        let only_deleted = !event.deleted.is_empty() && event.created.is_empty();
+        let updated = event.updated.iter().filter(|id| {
+            let container = self
+                .lookup
+                .node(&self.scene, **id)
+                .is_some_and(|n| n.is_container);
+            let skipped = owners.contains(id) || (only_deleted && container);
+            !skipped
+        });
+        for id in event.created.iter().chain(updated) {
+            // Highlight the element's card, or the nearest card that owns it.
+            let mut current = Some(*id);
+            while let Some(element) = current {
+                let shown = self.lookup.node(&self.scene, element).is_some()
+                    || self.scene.ports.iter().any(|p| p.id == element)
+                    || self
+                        .scene
+                        .edges
+                        .iter()
+                        .any(|e| e.semantic.element == Some(element));
+                if shown {
+                    self.highlights.insert(element, now);
+                    break;
+                }
+                current = tree.and_then(|t| t.get(element)).and_then(|e| e.owner());
+            }
+        }
+        self.batch_key = None;
+        // Bring new cards into view.
+        let visible = self.camera.visible_rect();
+        let outside = event.created.iter().any(|id| {
+            self.lookup
+                .node(&self.scene, *id)
+                .is_some_and(|n| !visible.contains_rect(n.bounds))
+        });
+        if outside {
+            self.frame_all();
+        }
+    }
+
+    pub fn set_view(&mut self, view: SurfaceView) {
+        if self.view != view {
+            self.view = view;
+            self.fit_pending = !self.layouts.contains_key(&view);
+            self.rebuild();
+            if self.fit_pending {
+                self.frame_all();
             }
         }
     }
-    pub fn active_projection(&self) -> &ViewProjection {
-        if self.comparison != ComparisonMode::Current
-            && let Some(candidate) = &self.candidate
-        {
-            &candidate.after
+
+    /// Frames the model. The architecture view frames its structure (usages,
+    /// connections and the definitions that contain them); definitions that
+    /// own nothing are below it.
+    pub fn frame_all(&mut self) {
+        let mut target = self.camera;
+        let has_secondary = self.scene.nodes.iter().any(|n| n.secondary);
+        let bounds =
+            if self.view == SurfaceView::Architecture && self.comparison.is_none() && has_secondary
+            {
+                // The structure, with the title of the package around it.
+                let mut structure = self.scene.structure_bounds();
+                if let Some(top) = self
+                    .scene
+                    .nodes
+                    .iter()
+                    .filter(|n| n.category == agq_studio_scene::NodeCategory::Package)
+                    .filter(|n| n.bounds.contains_rect(structure))
+                    .map(|n| n.bounds.min.y)
+                    .reduce(f32::max)
+                {
+                    structure = agq_studio_scene::Rect::new(
+                        structure.min.x,
+                        top,
+                        structure.width(),
+                        structure.max.y - top,
+                    );
+                }
+                structure
+            } else {
+                self.scene.bounds()
+            };
+        target.fit(bounds, 42.0);
+        target.zoom = target.zoom.min(1.3);
+        // When more follows below the structure, show the structure at the top.
+        let whole = self.scene.bounds();
+        let half = target.viewport.height * 0.5 / target.zoom;
+        if whole.max.y > bounds.max.y + 1.0 && bounds.height() < 2.0 * half {
+            target.center.y = bounds.min.y - 42.0 / target.zoom + half;
+        }
+        if self.frame_number > 2 && !self.reduced_motion {
+            self.camera_target = Some(target);
         } else {
-            &self.projection
+            self.camera = target;
+            self.camera_target = None;
+        }
+        self.fit_pending = false;
+    }
+
+    pub fn frame_target(&mut self, target: &SceneTarget) {
+        if let Some(bounds) = self.scene.target_bounds(target) {
+            let mut camera = self.camera;
+            camera.fit(bounds, 120.0);
+            camera.zoom = camera.zoom.clamp(0.4, 1.4);
+            if self.reduced_motion {
+                self.camera = camera;
+            } else {
+                self.camera_target = Some(camera);
+            }
         }
     }
+
     pub fn animate(&mut self, ctx: &egui::Context) {
         if let Some(target) = self.camera_target {
             let dt = ctx.input(|i| i.stable_dt).min(0.05);
@@ -608,89 +639,276 @@ impl StudioApp {
             {
                 self.camera = target;
                 self.camera_target = None;
-                self.navigation
-                    .update_camera([target.center.x, target.center.y], target.zoom);
             } else {
                 ctx.request_repaint();
             }
         }
-    }
-    pub fn save_session(&mut self) {
-        if let Err(error) = self.persist_session() {
-            self.status = format!("Presentation state was not saved: {error}");
+        // Highlights fade on the GPU; the app only repaints while one lasts
+        // and rebuilds the batch when one ends.
+        let now = crate::gpu::clock();
+        let before = self.highlights.len();
+        self.highlights
+            .retain(|_, started| now - *started < crate::theme::CHANGED_SECONDS);
+        if self.highlights.len() != before {
+            self.batch_key = None;
+        }
+        if !self.highlights.is_empty() {
+            ctx.request_repaint();
         }
     }
 
-    /// `false` means the current view is not stable enough to checkpoint.
-    fn persist_session(&mut self) -> Result<bool, String> {
-        if !self.ready
-            || self.pending_revision.is_some()
-            || self.deferred_definition.is_some()
-            || self
-                .requested_definition
-                .as_ref()
-                .is_some_and(|(request, _)| {
-                    *request == self.scene_request && self.pending.contains(request)
-                })
-            || self.args.screenshot.is_some()
-            || self.args.frames.is_some()
-            || self.args.scenario_running()
-        {
-            return Ok(false);
+    /// Runs a command from the keyboard, the palette or a menu.
+    pub fn execute(&mut self, id: CommandId, ctx: &egui::Context) {
+        if let Some(reason) = commands::unavailable(id, &self.context()) {
+            self.status = reason.to_string();
+            return;
         }
-        // Never restore a process-local candidate as durable model state.
-        let session = Session {
-            version: 1,
-            project: self.project_id(),
-            revision: self.projection.revision_id,
-            fixture: self.fixture.clone(),
-            world: self.world,
-            focus: self.focus,
-            camera: self.camera,
-            layout: self.layout.clone(),
-            dark: self.theme.dark,
-            high_contrast: self.theme.contrast,
-            reduced_motion: self.reduced_motion,
-            presentation: Some(self.capture_presentation()),
-        };
-        let result = session.save(&self.session_path);
-        self.last_saved = Instant::now();
-        result.map(|()| true).map_err(|error| error.to_string())
-    }
-
-    fn checkpoint_graphics_fault(&mut self, ctx: &egui::Context, message: &str, device: bool) {
-        if self.graphics_checkpoint.needs_attempt(message) {
-            let result = self.persist_session();
-            if let Err(error) = &result {
-                eprintln!("Graphics recovery could not save presentation state: {error}");
+        use CommandId::*;
+        match id {
+            Architecture => self.set_view(SurfaceView::Architecture),
+            Graph => self.set_view(SurfaceView::Graph),
+            Requirements => {
+                self.set_view(SurfaceView::Requirements);
+                self.panel = Panel::Requirements;
             }
-            self.graphics_checkpoint.record(result);
-            crate::surface_recovery::checkpoint_title(
-                ctx,
-                device,
-                self.graphics_checkpoint.failed(),
+            Fit => self.frame_all(),
+            Focus => {
+                if let Some(card) = self.selected_card() {
+                    self.view = SurfaceView::Architecture;
+                    self.focus = Some(card);
+                    self.rebuild();
+                    self.frame_all();
+                }
+            }
+            LeaveFocus => {
+                self.focus = None;
+                self.rebuild();
+                self.frame_all();
+            }
+            Collapse => {
+                if let Some(card) = self.selected_card() {
+                    if !self.collapsed.remove(&card) {
+                        self.collapsed.insert(card);
+                    }
+                    self.rebuild();
+                }
+            }
+            Pin | Unpin => {
+                if let Some(card) = self.selected_card()
+                    && let Some(node) = self.lookup.node(&self.scene, card)
+                {
+                    let bounds = node.bounds;
+                    let memory = self.layouts.entry(self.view).or_default();
+                    if id == Pin {
+                        let _ = memory.pin(card, bounds);
+                    } else {
+                        memory.unpin(card);
+                    }
+                    self.rebuild();
+                }
+            }
+            History => self.panel = Panel::History,
+            Palette => {
+                self.palette = true;
+                self.palette_focus = true;
+                self.palette_query.clear();
+            }
+            NewProject => self.dialog = Some(crate::edit::Dialog::new_project()),
+            OpenProject => {
+                self.dialog = Some(crate::edit::Dialog::OpenProject {
+                    folder: String::new(),
+                })
+            }
+            Theme => {
+                self.theme = crate::theme::Theme::new(!self.theme.dark, self.theme.contrast);
+                self.theme.install(ctx);
+                self.batch_key = None;
+            }
+            Contrast => {
+                self.theme = crate::theme::Theme::new(self.theme.dark, !self.theme.contrast);
+                self.theme.install(ctx);
+                self.batch_key = None;
+            }
+            ReducedMotion => {
+                self.reduced_motion = !self.reduced_motion;
+                ctx.all_styles_mut(|style| {
+                    style.animation_time = if self.reduced_motion {
+                        0.0
+                    } else {
+                        crate::theme::HOVER_SECONDS
+                    };
+                });
+            }
+            CreatePart | CreatePort | CreateItem | CreateAttribute | CreateInterface
+            | CreateRequirement | Rename | Delete | Connect | MoveTo | Lock | Undo | Redo
+            | Checkpoint => self.edit(id),
+        }
+    }
+
+    /// Runs the command bound to a key pressed on the Surface.
+    fn keyboard(&mut self, ctx: &egui::Context) {
+        if ctx.wants_keyboard_input() || self.palette || self.dialog.is_some() {
+            return;
+        }
+        if ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
+            self.selection.clear();
+            self.batch_key = None;
+            return;
+        }
+        // Redo also answers to Ctrl+Shift+Z.
+        if ctx.input_mut(|i| {
+            i.consume_key(
+                egui::Modifiers::COMMAND | egui::Modifiers::SHIFT,
+                egui::Key::Z,
+            )
+        }) {
+            self.execute(CommandId::Redo, ctx);
+            return;
+        }
+        for command in commands::COMMANDS {
+            if let Some((modifiers, key)) = command.key
+                && ctx.input_mut(|i| i.consume_key(modifiers, key))
+            {
+                self.execute(command.id, ctx);
+                return;
+            }
+        }
+    }
+
+    // The session.
+
+    pub fn save_session(&mut self) {
+        if let Err(error) = self.write_session() {
+            self.status = format!("The session was not saved: {error}");
+        }
+    }
+
+    fn write_session(&mut self) -> Result<(), String> {
+        self.last_saved = Instant::now();
+        if self.args.screenshot.is_some() || self.args.frames.is_some() {
+            return Ok(());
+        }
+        if let Some(project) = &self.project {
+            self.session.views.insert(
+                project.folder().to_path_buf(),
+                ProjectView {
+                    view: self.view,
+                    camera: Some(self.camera_target.unwrap_or(self.camera)),
+                    layouts: self.layouts.clone(),
+                },
             );
         }
-        self.status = self.graphics_checkpoint.status(message);
-        // A pending view completion requests a repaint itself. Retry I/O failures
-        // at the normal checkpoint cadence, without writing on every fault frame.
+        self.session.dark = self.theme.dark;
+        self.session.high_contrast = self.theme.contrast;
+        self.session.reduced_motion = self.reduced_motion;
+        self.session
+            .save(&self.session_path)
+            .map_err(|error| error.to_string())
+    }
+
+    fn graphics_fault(&mut self, ctx: &egui::Context, message: &str, device: bool) {
+        if self.saved_layout.needs_attempt(message) {
+            let result = self.write_session().map(|()| true);
+            self.saved_layout.record(result);
+            crate::surface_recovery::checkpoint_title(ctx, device, self.saved_layout.failed());
+        }
+        self.status = self.saved_layout.status(message);
         ctx.request_repaint_after(Duration::from_secs(8));
+    }
+
+    pub fn capture(&mut self, ctx: &egui::Context) {
+        if self.args.screenshot.is_some() && !self.capture_requested && self.frame_number >= 20 {
+            self.capture_requested = true;
+            ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::default()));
+        }
+        let screenshot = ctx.input(|i| {
+            i.events.iter().find_map(|event| match event {
+                egui::Event::Screenshot { image, .. } => Some(image.clone()),
+                _ => None,
+            })
+        });
+        if let Some(image) = screenshot
+            && let Some(path) = &self.args.screenshot
+        {
+            if let Some(parent) = path.parent() {
+                let _ = std::fs::create_dir_all(parent);
+            }
+            let bytes: Vec<u8> = image.pixels.iter().flat_map(|p| p.to_array()).collect();
+            match image::save_buffer(
+                path,
+                &bytes,
+                image.size[0] as u32,
+                image.size[1] as u32,
+                image::ColorType::Rgba8,
+            ) {
+                Ok(()) => println!("Screenshot saved: {}", path.display()),
+                Err(error) => eprintln!("Screenshot failed: {error}"),
+            }
+            self.capture_done = true;
+        }
+        if self.args.screenshot.is_some() && !self.capture_done {
+            ctx.request_repaint_after(Duration::from_millis(16));
+        }
+        let finished = self
+            .args
+            .frames
+            .is_some_and(|frames| self.frame_number >= frames)
+            || (self.args.frames.is_none() && self.args.screenshot.is_some() && self.capture_done);
+        if finished
+            && !self.args.scenario_running()
+            && (self.args.screenshot.is_none() || self.capture_done)
+        {
+            let emitted = egui::Id::new("studio-metrics-emitted");
+            if ctx
+                .data(|data| data.get_temp::<bool>(emitted))
+                .unwrap_or(false)
+            {
+                return;
+            }
+            let report = self.metrics_report();
+            if let Some(path) = &self.args.metrics
+                && let Err(error) = std::fs::write(path, report.to_string())
+            {
+                eprintln!("Cannot write the metrics: {error}");
+            }
+            println!("{report}");
+            ctx.data_mut(|data| data.insert_temp(emitted, true));
+            ctx.send_viewport_cmd(egui::ViewportCommand::Close);
+        }
+    }
+
+    pub fn metrics_report(&self) -> serde_json::Value {
+        let stats = self.gpu_stats.lock().ok();
+        let frames = self.timing.frame_summary();
+        serde_json::json!({
+            "fixture": self.fixture,
+            "adapter": self.adapter,
+            "frame_count": self.frame_number,
+            "frame_interval_median_ms": frames.median,
+            "frame_interval_p95_ms": frames.p95,
+            "scene_build_ms": self.timing.scene_ms,
+            "layout_ms": self.timing.layout_ms,
+            "index_ms": self.timing.index_ms,
+            "warmup_frame_intervals_discarded": self.timing.discarded_frame_intervals(),
+            "input_pipeline": self.timing.latency_report(),
+            "hit_test_us": self.timing.hit_summary(),
+            "input_to_next_update_ms": {
+                "pan": self.timing.input_summary(crate::timing::InputKind::Pan),
+                "zoom": self.timing.input_summary(crate::timing::InputKind::Zoom),
+                "selection": self.timing.input_summary(crate::timing::InputKind::Selection),
+            },
+            "gpu_upload_cpu_ms": stats.as_ref().filter(|s| s.uploads > 0).map(|s| s.upload_ms),
+            "gpu_instances": stats.as_ref().map(|s| s.instances),
+            "visible_nodes": self.timing.visible_nodes,
+            "total_nodes": self.scene.nodes.len(),
+            "total_edges": self.scene.edges.len(),
+            "gpu_timestamp_ms": stats.as_ref().map(|s| s.timestamp_ms.summary()),
+        })
     }
 }
 
 impl eframe::App for StudioApp {
     fn raw_input_hook(&mut self, _ctx: &egui::Context, input: &mut egui::RawInput) {
-        for event in &input.events {
-            match event {
-                egui::Event::Ime(egui::ImeEvent::Preedit(text)) => {
-                    self.ime_composing = !text.is_empty()
-                }
-                egui::Event::Ime(egui::ImeEvent::Commit(_) | egui::ImeEvent::Disabled) => {
-                    self.ime_composing = false
-                }
-                _ => {}
-            }
-        }
         #[cfg(feature = "automation")]
         crate::automation::raw_input(self, _ctx, input);
         self.timing.raw_input(input);
@@ -698,44 +916,36 @@ impl eframe::App for StudioApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         self.frame_number += 1;
         self.timing.frame();
-        self.receive();
-        self.receive_scene();
         if let Some(message) = crate::surface_recovery::device_fault(ctx) {
-            // Keep processing in-flight semantic outcomes, but do not accept new
-            // blind editor actions while its graphics device cannot show them.
-            self.checkpoint_graphics_fault(ctx, &message, true);
+            // No edits while the Surface cannot show them.
+            self.graphics_fault(ctx, &message, true);
             self.timing.ui_complete();
             return;
         }
         if let Some(message) = crate::surface_recovery::surface_fault(ctx) {
-            self.checkpoint_graphics_fault(ctx, &message, false);
+            self.graphics_fault(ctx, &message, false);
             egui::CentralPanel::default().show(ctx, |ui| {
                 ui.heading("Graphics surface unavailable");
                 ui.label(&self.status);
             });
-            // Resizing or a later input can acquire a surface again. The minimal
-            // recovery view accepts no model-edit commands while pixels are stale.
             crate::surface_recovery::paint_heartbeat(ctx);
             self.timing.ui_complete();
             return;
         }
-        self.graphics_checkpoint = Default::default();
+        self.saved_layout = Default::default();
         self.animate(ctx);
         self.keyboard(ctx);
-        if self.ready {
-            self.shell(ctx);
-        } else {
-            self.setup(ctx);
-        }
+        self.shell(ctx);
         self.dialogs(ctx);
+        if self.palette {
+            self.command_palette(ctx);
+        }
         crate::surface_recovery::paint_heartbeat(ctx);
         self.capture(ctx);
         if self.args.frames.is_some() {
             ctx.request_repaint();
         } else if self.args.scenario_running() {
-            // raw_input_hook runs before begin_pass, which can clear a delayed
-            // repaint requested by a scenario. Keep its opt-in input clock in
-            // the actual UI pass, including when every visible widget is idle.
+            // The scripted input clock runs in the UI pass.
             ctx.request_repaint_after(Duration::from_millis(16));
         }
         if self.last_saved.elapsed() > Duration::from_secs(8) {
@@ -751,284 +961,6 @@ impl eframe::App for StudioApp {
     }
 }
 
-pub fn fixture_projection(name: &str) -> ViewProjection {
-    match name {
-        "typography" => {
-            fixtures::adversarial()
-                .into_iter()
-                .find(|(name, _)| *name == "long-unicode-names")
-                .expect("retained typography stress fixture")
-                .1
-        }
-        "ports" => fixtures::dense_ports(),
-        "requirements" => fixtures::requirements(),
-        "stress1000" => fixtures::stress(1000, 2000),
-        "stress10000" => fixtures::stress(10000, 20000),
-        _ => fixtures::architecture(),
-    }
-}
-
-/// Restore only known disposable fixtures at their exact retained revision.
-/// A persisted fixture name can never select a real project or invent a model.
-fn restorable_fixture(session: &Session) -> Option<(String, ViewProjection)> {
-    let name = session.fixture.as_deref()?;
-    if session.project.is_some()
-        || session.presentation.is_none()
-        || !matches!(
-            name,
-            "architecture" | "typography" | "ports" | "requirements" | "stress1000" | "stress10000"
-        )
-    {
-        return None;
-    }
-    let projection = if session.world == World::Requirements {
-        fixtures::requirements()
-    } else {
-        fixture_projection(name)
-    };
-    (projection.revision_id == session.revision).then(|| (name.to_owned(), projection))
-}
-
-fn initial_projection(fixture: Option<&str>) -> ViewProjection {
-    if let Some(name) = fixture {
-        return fixture_projection(name);
-    }
-    // An unloaded presentation has no semantic objects, including for command
-    // discovery. This sentinel revision is never submitted to a model service.
-    ViewProjection {
-        revision_id: agq_modeling_workspace::ProjectRevisionId::from_u128(0),
-        view: agq_modeling_view::ViewDefinition {
-            name: "No project open".into(),
-            ..Default::default()
-        },
-        nodes: vec![],
-        edges: vec![],
-        groups: vec![],
-        metadata: agq_modeling_view::ViewMetadata {
-            suggested_focus: None,
-            scope: "No project open".into(),
-            producer_completeness: "Unavailable".into(),
-            local_element_count: 0,
-            omitted_standard_endpoints: 0,
-            warnings: vec![],
-        },
-    }
-}
-
-fn install_fonts(ctx: &egui::Context) {
-    let mut fonts = egui::FontDefinitions::default();
-    // Platform fonts are read locally, never redistributed. Built-in fonts remain fallback.
-    for path in [
-        "C:/Windows/Fonts/segoeui.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
-        "/System/Library/Fonts/Supplemental/Arial.ttf",
-    ] {
-        if let Ok(bytes) = std::fs::read(path) {
-            fonts.font_data.insert(
-                "studio-ui".into(),
-                Arc::new(egui::FontData::from_owned(bytes)),
-            );
-            fonts
-                .families
-                .entry(egui::FontFamily::Proportional)
-                .or_default()
-                .insert(0, "studio-ui".into());
-            break;
-        }
-    }
-    for (name, paths) in [
-        (
-            "studio-symbols",
-            vec![
-                "C:/Windows/Fonts/seguisym.ttf",
-                "/usr/share/fonts/truetype/noto/NotoSansSymbols-Regular.ttf",
-            ],
-        ),
-        (
-            "studio-cjk",
-            vec![
-                "C:/Windows/Fonts/msyh.ttc",
-                "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
-            ],
-        ),
-    ] {
-        for path in paths {
-            if let Ok(bytes) = std::fs::read(path) {
-                fonts
-                    .font_data
-                    .insert(name.into(), Arc::new(egui::FontData::from_owned(bytes)));
-                fonts
-                    .families
-                    .entry(egui::FontFamily::Proportional)
-                    .or_default()
-                    .push(name.into());
-                break;
-            }
-        }
-    }
-    ctx.set_fonts(fonts);
-}
-
 pub fn muted(text: impl Into<String>, theme: Theme) -> egui::RichText {
     egui::RichText::new(text).color(theme.muted)
-}
-pub fn short_revision(id: agq_modeling_workspace::ProjectRevisionId) -> String {
-    format!(
-        "{:04x}…{:04x}",
-        (id.as_u128() >> 112) as u16,
-        id.as_u128() as u16
-    )
-}
-
-pub(crate) fn hierarchy_order(scene: &SemanticScene) -> Vec<usize> {
-    hierarchy_order_with_focus(scene, None)
-}
-
-pub(crate) fn hierarchy_order_with_focus(
-    scene: &SemanticScene,
-    focus: Option<ElementId>,
-) -> Vec<usize> {
-    let ids: BTreeSet<_> = scene.nodes.iter().map(|n| n.id()).collect();
-    let mut children = BTreeMap::<Option<ElementId>, Vec<usize>>::new();
-    for (index, node) in scene.nodes.iter().enumerate() {
-        children
-            .entry(node.semantic.owner.filter(|id| ids.contains(id)))
-            .or_default()
-            .push(index);
-    }
-    let mut stack = children.get(&None).cloned().unwrap_or_default();
-    stack.sort_by_key(|index| {
-        (
-            Some(scene.nodes[*index].id()) != focus,
-            scene.nodes[*index].semantic.name.to_lowercase(),
-        )
-    });
-    stack.reverse();
-    let mut ordered = Vec::with_capacity(scene.nodes.len());
-    let mut seen = BTreeSet::new();
-    while let Some(index) = stack.pop() {
-        if !seen.insert(index) {
-            continue;
-        }
-        ordered.push(index);
-        if let Some(owned) = children.get(&Some(scene.nodes[index].id())) {
-            stack.extend(owned.iter().rev().copied());
-        }
-    }
-    ordered
-}
-
-/// A real focused architecture projection has already crossed canonical ownership
-/// and typing edges. A second lexical subtree filter would discard definitions
-/// referenced by its parts (for example ModelRepository inside ModelingPlatform).
-/// Fixtures and temporary local navigation still use presentation-only ownership.
-fn ownership_focus(
-    projection: &ViewProjection,
-    world: World,
-    focus: Option<ElementId>,
-    fixture: bool,
-) -> Option<ElementId> {
-    if world != World::System
-        || (!fixture
-            && projection.view.kind == agq_modeling_view::ViewKind::Architecture
-            && projection.view.focus == focus)
-    {
-        None
-    } else {
-        focus
-    }
-}
-
-#[cfg(test)]
-mod bootstrap_tests {
-    use super::*;
-
-    #[test]
-    fn focused_semantic_architecture_keeps_referenced_definitions_outside_lexical_owner() {
-        let mut projection = fixture_projection("architecture");
-        let focus = projection
-            .nodes
-            .iter()
-            .find(|n| n.name == "ModelingPlatform")
-            .unwrap()
-            .id;
-        let external = projection
-            .nodes
-            .iter_mut()
-            .find(|n| n.name == "ModelRepository")
-            .unwrap();
-        external.owner = None;
-        let external_id = external.id;
-        projection.view.focus = Some(focus);
-        let options = SceneOptions {
-            focus: ownership_focus(&projection, World::System, Some(focus), false),
-            ..Default::default()
-        };
-        let scene = SemanticScene::from_projection(&projection, &options, None).unwrap();
-        assert!(scene.node(external_id).is_some());
-        assert_eq!(scene.node(external_id).unwrap().semantic.owner, None);
-        let fixture_options = SceneOptions {
-            focus: ownership_focus(&projection, World::System, Some(focus), true),
-            ..Default::default()
-        };
-        let local = SemanticScene::from_projection(&projection, &fixture_options, None).unwrap();
-        assert!(local.node(external_id).is_none());
-    }
-
-    #[test]
-    fn unloaded_workspace_has_no_hidden_fixture_objects_or_selection_targets() {
-        let projection = initial_projection(None);
-        assert!(projection.nodes.is_empty());
-        assert!(projection.edges.is_empty());
-        assert!(projection.groups.is_empty());
-        assert_eq!(projection.metadata.producer_completeness, "Unavailable");
-        let scene =
-            SemanticScene::from_projection(&projection, &SceneOptions::default(), None).unwrap();
-        assert!(scene.nodes.is_empty());
-        assert!(scene.ports.is_empty());
-        assert!(hierarchy_order(&scene).is_empty());
-        assert_eq!(initial_projection(Some("architecture")).nodes.len(), 12);
-    }
-
-    #[test]
-    fn fixture_session_restoration_requires_known_name_exact_revision_and_no_project() {
-        let projection = fixture_projection("architecture");
-        let presentation = crate::saved_views::SavedPresentation {
-            world: World::System,
-            definition: projection.view,
-            camera: Camera2D::default(),
-            layout: LayoutMemory::default(),
-            collapsed: BTreeSet::new(),
-            expanded: None,
-            branch: None,
-            panels: Default::default(),
-            selection: None,
-        };
-        let mut session = Session {
-            version: 1,
-            project: None,
-            revision: projection.revision_id,
-            fixture: Some("architecture".into()),
-            world: World::System,
-            focus: None,
-            camera: Camera2D::default(),
-            layout: LayoutMemory::default(),
-            dark: true,
-            high_contrast: false,
-            reduced_motion: false,
-            presentation: Some(presentation),
-        };
-        assert!(restorable_fixture(&session).is_some());
-        session.fixture = Some("unknown".into());
-        assert!(restorable_fixture(&session).is_none());
-        session.fixture = Some("architecture".into());
-        session.project = Some(ProjectId::new());
-        assert!(restorable_fixture(&session).is_none());
-        session.project = None;
-        session.revision = agq_modeling_repository::ProjectRevisionId::new();
-        assert!(restorable_fixture(&session).is_none());
-        session.revision = projection.revision_id;
-        session.presentation = None;
-        assert!(restorable_fixture(&session).is_none());
-    }
 }

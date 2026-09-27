@@ -350,13 +350,9 @@ dependencies = [
 name = "agq-studio-native"
 version = "0.1.0"
 dependencies = [
- "agq-kernel",
- "agq-modeling-agent",
- "agq-modeling-repository",
- "agq-modeling-view",
- "agq-modeling-workspace",
- "agq-studio-platform",
+ "agq-language",
  "agq-studio-scene",
+ "agq-system-state",
  "bytemuck",
  "clap",
  "eframe",
@@ -368,32 +364,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "agq-studio-platform"
-version = "0.1.0"
-dependencies = [
- "agq-kerml-text",
- "agq-kernel",
- "agq-modeling-agent",
- "agq-modeling-repository",
- "agq-modeling-service",
- "agq-modeling-sqlite",
- "agq-modeling-view",
- "agq-runtime-publications",
- "rusqlite",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror 2.0.20",
- "uuid",
-]
-
-[[package]]
 name = "agq-studio-scene"
 version = "0.1.0"
 dependencies = [
- "agq-kernel",
- "agq-modeling-view",
- "agq-modeling-workspace",
+ "agq-language",
  "serde",
  "serde_json",
  "thiserror 2.0.20",

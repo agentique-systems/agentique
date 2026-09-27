@@ -1,56 +1,87 @@
-//! GPU viewport, semantic accessibility proxies and spatial gesture translation.
+//! The Surface: GPU drawing of the scene, labels, and direct manipulation.
+//!
+//! Click selects (Shift adds), drag on the background pans (Shift+drag
+//! selects an area), drag a card to move it on the Surface (layout only),
+//! Alt+drag a card onto a container to move it into that container, drag
+//! from a port to a port to connect them, double-click to rename.
 use crate::{
     app::StudioApp,
     commands::{self, CommandId},
     gpu::{Batch, Quad, SceneCallback},
+    navigation::SurfaceView,
+    theme::{self, Theme},
 };
-use agq_modeling_view::{RelationshipFamily, ViewOrigin};
+use agq_language::Parent;
 use agq_studio_scene::{
-    DiffMark, LodLevel, NodeCategory, Point, PortSide, SceneTarget, Size, VisibleScene,
+    DiffMark, EdgeKind, ElementId, LockMark, LodLevel, NodeCategory, Point, PortDirection,
+    PortSide, Rect, SceneTarget, Size, VisibleScene,
 };
 use eframe::egui::{self, Align2, Color32, FontId, Sense, Stroke, Vec2};
 use std::{
-    collections::{BTreeSet, hash_map::DefaultHasher},
+    collections::hash_map::DefaultHasher,
     hash::{Hash, Hasher},
     sync::Arc,
     time::Instant,
 };
 
+/// A drag in progress on the Surface.
+#[derive(Clone, Debug)]
+pub enum Gesture {
+    Pan,
+    Marquee {
+        start: Point,
+        end: Point,
+    },
+    /// Moving a card: presentation only unless dropped with Alt on a container.
+    Move {
+        card: ElementId,
+        start: Point,
+        now: Point,
+    },
+    /// Dragging from a port to connect it.
+    Connect {
+        card: ElementId,
+        port: ElementId,
+        now: Point,
+    },
+}
+
 impl StudioApp {
-    fn port_visible(&self, port: &agq_studio_scene::ScenePort) -> bool {
-        self.lod.level() >= LodLevel::Features
-            || self.selection.contains(port.id)
-            || (self.world == crate::navigation::World::System && self.focus == Some(port.owner))
+    fn to_screen(&self, rect: egui::Rect, point: Point) -> egui::Pos2 {
+        let p = self.camera.world_to_screen(point);
+        rect.min + Vec2::new(p.x, p.y)
     }
+
+    fn screen_bounds(&self, rect: egui::Rect, bounds: Rect) -> egui::Rect {
+        egui::Rect::from_min_max(
+            self.to_screen(rect, bounds.min),
+            self.to_screen(rect, bounds.max),
+        )
+    }
+
+    /// Whether an element changed a moment ago and is highlighted.
+    fn highlighted(&self, id: ElementId) -> bool {
+        self.highlights.contains_key(&id)
+    }
+
+    fn port_visible(&self, card: ElementId, port: ElementId) -> bool {
+        self.lod.level() >= LodLevel::Summary
+            || self.selection.contains(port)
+            || self.selection.contains(card)
+            || self.highlights.contains_key(&port)
+    }
+
     pub fn viewport(&mut self, ui: &mut egui::Ui) {
         let (rect, response) = ui.allocate_exact_size(
             ui.available_size().max(Vec2::splat(1.0)),
             Sense::click_and_drag(),
         );
         crate::targets::record(ui.ctx(), crate::targets::Target::Viewport, rect);
+        ui.ctx()
+            .data_mut(|d| d.insert_temp(egui::Id::new("studio-viewport-rect"), rect));
         self.camera.viewport = Size::new(rect.width(), rect.height());
-        if self.focus_changes_pending && !self.scene_builder.busy {
-            self.focus_changes_pending = false;
-            if self.comparison == crate::app::ComparisonMode::Diff {
-                self.fit_pending = false;
-                if self.candidate.is_none() {
-                    self.focus_durable_change_overview();
-                } else {
-                    self.focus_changes();
-                }
-            }
-        }
-        if self.fit_pending && !self.scene_builder.busy {
-            let mut target = self.camera;
-            target.fit(self.scene.bounds(), 42.0);
-            target.zoom = target.zoom.min(1.3);
-            if self.frame_number > 2 && !self.reduced_motion {
-                self.camera_target = Some(target);
-            } else {
-                self.camera = target;
-                self.camera_target = None;
-            }
-            self.fit_pending = false;
+        if self.fit_pending {
+            self.frame_all();
         }
         if crate::zoom_input::apply(ui, &response, &mut self.camera) {
             self.camera_target = None;
@@ -61,114 +92,53 @@ impl StudioApp {
         let pointer = response
             .hover_pos()
             .or_else(|| ui.input(|i| i.pointer.interact_pos()));
-        let local = pointer.map(|p| Point::new(p.x - rect.left(), p.y - rect.top()));
-        let world = local.map(|p| self.camera.screen_to_world(p));
+        let world = pointer.map(|p| {
+            self.camera
+                .screen_to_world(Point::new(p.x - rect.left(), p.y - rect.top()))
+        });
         let mut hovered = None;
-        if response.hovered()
+        if (response.hovered() || response.dragged())
             && let Some(point) = world
         {
             let started = Instant::now();
             hovered = self.spatial.hit_test(point, 6.0 / self.camera.zoom);
-            if self.comparison == crate::app::ComparisonMode::Diff
-                && let Some(SceneTarget::Edge(id)) = &hovered
-                && !self
-                    .selection
-                    .targets
-                    .contains(&SceneTarget::Edge(id.clone()))
-                && self.lookup.edge(&self.scene, id).is_some_and(|edge| {
-                    !crate::history::diff_mode(ui.ctx()).includes_edge(edge.semantic.family)
-                })
+            // Hidden ports are represented by their card at low detail.
+            if let Some(SceneTarget::Port(card, port)) = hovered
+                && !self.port_visible(card, port)
             {
-                hovered = None;
-            }
-            // A hidden feature port is represented by its owning node at low LOD.
-            if self.lod.level() < LodLevel::Features
-                && let Some(SceneTarget::Port(id)) = hovered.as_ref()
-                && let Some(port) = self.lookup.port(&self.scene, *id)
-                && !self.port_visible(port)
-            {
-                hovered = Some(SceneTarget::Node(port.owner));
+                hovered = Some(SceneTarget::Node(card));
             }
             self.timing.hit(started.elapsed());
         }
-        if response.drag_started() && ui.input(|i| i.modifiers.shift) {
-            self.marquee_start = world;
-            self.marquee_end = world;
-        }
-        if response.dragged() {
-            self.timing.input(crate::timing::InputKind::Pan);
-            self.camera_target = None;
-            if self.marquee_start.is_some() {
-                self.marquee_end = world;
-            } else {
-                let delta = ui.input(|i| i.pointer.delta());
-                self.camera.pan_screen(Point::new(delta.x, delta.y));
-            }
-        }
-        if response.drag_stopped()
-            && let (Some(a), Some(b)) = (self.marquee_start.take(), self.marquee_end.take())
-        {
-            let mut targets = self
-                .spatial
-                .marquee(agq_studio_scene::Rect::from_points(a, b));
-            targets.retain(|target| match target {
-                SceneTarget::Port(id) => self
-                    .lookup
-                    .port(&self.scene, *id)
-                    .is_some_and(|port| self.port_visible(port)),
-                _ => true,
-            });
-            self.selection.replace(targets);
-            self.batch_key = None;
-            self.inspector = None;
-        }
-        let mut focus_click = false;
-        if response.clicked() {
-            self.timing.input(crate::timing::InputKind::Selection);
-            focus_click = self.canvas_clicks.click(
-                self.generation,
-                hovered.as_ref(),
-                pointer.map_or([0.0, 0.0], |point| [point.x, point.y]),
-                ui.input(|input| input.time),
-            );
-            if let Some(target) = hovered.clone() {
-                self.select(target, ui.input(|i| i.modifiers.shift));
-            } else if !ui.input(|i| i.modifiers.shift) {
-                self.selection.clear();
-                self.inspector = None;
-                self.batch_key = None;
-            }
-        }
-        if response.double_clicked() && focus_click && self.selection.primary.is_some() {
-            self.execute(CommandId::Focus, ui.ctx());
-        }
-        if response.secondary_clicked() {
-            if let Some(target) = hovered.clone() {
-                self.select(target, false);
-            } else {
-                self.selection.clear();
-                self.invalidate_inspection();
-                self.batch_key = None;
-            }
-        }
+        self.gestures(ui, &response, hovered.as_ref(), world);
+        let shared = self.shared_definition().and_then(|definition| {
+            let tree = self.project.as_ref()?.state().tree();
+            Some(crate::edit::display_name(tree, definition))
+        });
         response.context_menu(|ui| {
             for id in context_commands(self.selection.primary.as_ref()) {
-                let id = *id;
-                let command = commands::COMMANDS.iter().find(|c| c.id == id).unwrap();
-                let reason = commands::unavailable(id, &self.context());
-                if reason.is_some() {
+                if commands::unavailable(*id, &self.context()).is_some() {
                     continue;
                 }
-                let button = ui.button(command.label);
-                if button.clicked() {
-                    self.execute(id, ui.ctx());
+                let command = commands::command(*id);
+                let label = match (&shared, id) {
+                    (Some(definition), CommandId::Rename | CommandId::Delete | CommandId::Lock) => {
+                        format!(
+                            "{} in {definition} (shared)    {}",
+                            command.label, command.shortcut
+                        )
+                    }
+                    _ => format!("{}    {}", command.label, command.shortcut),
+                };
+                if ui.button(label).clicked() {
+                    self.execute(*id, ui.ctx());
                     ui.close();
                 }
             }
         });
         let painter = ui.painter_at(rect);
         let theme = self.theme;
-        // A presentation grid follows the camera and disappears when too dense.
+        // A dot grid follows the camera and disappears when too dense.
         let spacing = 80.0 * self.camera.zoom;
         if spacing >= 18.0 {
             let origin = self.camera.world_to_screen(Point::default());
@@ -176,49 +146,33 @@ impl StudioApp {
             while y < rect.bottom() {
                 let mut x = rect.left() + origin.x.rem_euclid(spacing);
                 while x < rect.right() {
-                    painter.circle_filled(egui::pos2(x, y), 0.8, theme.border.gamma_multiply(0.60));
+                    painter.circle_filled(egui::pos2(x, y), 0.8, theme.border.gamma_multiply(0.6));
                     x += spacing;
                 }
                 y += spacing;
             }
         }
-        let visibility_started = Instant::now();
+        let visibility = Instant::now();
         let objects = self.spatial.visible_scene(
             &self.scene,
             self.camera.visible_rect().inflate(20.0 / self.camera.zoom),
         );
         let mut hasher = DefaultHasher::new();
-        let diff_mode = if self.comparison == crate::app::ComparisonMode::Diff {
-            crate::history::diff_mode(ui.ctx())
-        } else {
-            crate::history::DiffMode::All
-        };
-        diff_mode.hash(&mut hasher);
-        self.generation.hash(&mut hasher);
+        self.scene.generation.hash(&mut hasher);
         self.theme.dark.hash(&mut hasher);
         self.theme.contrast.hash(&mut hasher);
         (self.lod.level() as u8).hash(&mut hasher);
         objects.hash(&mut hasher);
         self.selection.targets.hash(&mut hasher);
-        if let Some(ids) = &self.dependencies {
-            ids.hash(&mut hasher);
+        for (id, started) in &self.highlights {
+            id.hash(&mut hasher);
+            started.to_bits().hash(&mut hasher);
         }
         let key = hasher.finish();
-        // The index checks revision and identity before borrowing objects in
-        // draw order; no per-frame target strings or reverse lookup are needed.
-        self.timing.visibility(visibility_started.elapsed());
-        let selected_edges: BTreeSet<&str> = self
-            .selection
-            .targets
-            .iter()
-            .filter_map(|target| match target {
-                SceneTarget::Edge(id) => Some(id.as_str()),
-                _ => None,
-            })
-            .collect();
+        self.timing.visibility(visibility.elapsed());
         if self.batch_key != Some(key) {
             let started = Instant::now();
-            self.batch = Arc::new(self.make_batch(key, &objects, &selected_edges, diff_mode));
+            self.batch = Arc::new(self.make_batch(key, &objects));
             self.batch_key = Some(key);
             self.timing.batch(started.elapsed());
         }
@@ -239,702 +193,700 @@ impl StudioApp {
                 stats: self.gpu_stats.clone(),
             },
         ));
-        self.timing.visible_nodes = 0;
-        self.requirement_lane_labels(&painter, rect);
-        let labels_started = Instant::now();
+        let labels = Instant::now();
         self.timing.total_nodes = self.scene.nodes.len();
-        let mut keyboard_selection = None;
-        let mut keyboard_focus = false;
-        let mut port_command = None;
-        for node in &objects.nodes {
-            self.timing.visible_nodes += 1;
-            let a = self.camera.world_to_screen(node.bounds.min);
-            let b = self.camera.world_to_screen(node.bounds.max);
-            let bounds = egui::Rect::from_min_max(
-                rect.min + Vec2::new(a.x, a.y),
-                rect.min + Vec2::new(b.x, b.y),
+        self.timing.visible_nodes = objects.nodes.len();
+        self.node_labels(&painter, rect, &objects);
+        self.edge_labels(&painter, rect, &objects, hovered.as_ref());
+        self.port_labels(&painter, rect, &objects);
+        self.timing.labels(labels.elapsed());
+        self.gesture_overlay(&painter, rect);
+        if let Some(target) = &hovered
+            && self.gesture.is_none()
+            && let Some(text) = self.hover_text(target)
+        {
+            response.clone().on_hover_text(text);
+        }
+        if let Some(comparison) = &self.comparison {
+            // A tag above the Surface's content, like a raised label.
+            let text = format!(
+                "What changed · {} → {}   ·   + new   ~ changed   − deleted",
+                comparison.before_label, comparison.after_label
             );
-            let faded = self.dependencies.as_ref().is_some_and(|ids| {
-                !ids.contains(&node.id())
-                    && !node.semantic.features.iter().any(|f| ids.contains(&f.id))
-            });
-            let text = if faded {
-                theme.muted.gamma_multiply(0.48)
-            } else if node.diff == DiffMark::Removed {
-                theme.muted
-            } else {
-                theme.text
-            };
-            let scale = self.camera.zoom;
-            let inset = 14.0 * scale;
-            if self.lod.level() >= LodLevel::Summary
-                || (bounds.width() >= 55.0 && bounds.height() >= 24.0)
-            {
-                let title_size = if node.is_container { 17.0 } else { 16.0 };
-                let top = bounds.min
-                    + Vec2::new(
-                        inset,
-                        if self.lod.level() < LodLevel::Summary {
-                            5.0
-                        } else if node.is_container {
-                            15.0 * scale
-                        } else {
-                            37.0 * scale
-                        },
-                    );
-                let label = if node.is_container {
-                    format!(
-                        "{}  {}",
-                        if node.collapsed { "▸" } else { "▾" },
-                        node.semantic.name
-                    )
+            let galley = painter.layout_no_wrap(text, theme::medium(theme::LABEL), theme.text);
+            let tag = egui::Rect::from_center_size(
+                rect.center_top() + Vec2::new(0.0, theme::SPACE_XL + galley.size().y * 0.5),
+                galley.size() + Vec2::new(2.0 * theme::SPACE_L, 2.0 * theme::SPACE_S + 2.0),
+            );
+            painter.rect(
+                tag,
+                theme::RADIUS,
+                theme.elevated,
+                Stroke::new(theme::HAIRLINE, theme.border_strong),
+                egui::StrokeKind::Inside,
+            );
+            painter.galley(tag.center() - galley.size() * 0.5, galley, theme.text);
+        }
+        if self.scene.nodes.is_empty() {
+            painter.text(
+                rect.center(),
+                Align2::CENTER_CENTER,
+                if self.editable() {
+                    "Empty model · press P to create a part"
                 } else {
-                    node.semantic.name.clone()
-                };
-                let requirement_title = node.category == NodeCategory::Requirement;
-                bounded_label(
-                    &painter,
-                    top,
-                    &label,
-                    (title_size * scale).clamp(12.0, 26.0),
-                    text,
-                    (bounds.width() - 2.0 * inset).max(10.0),
-                    if requirement_title { 2 } else { 1 },
-                );
-                if node.is_container && self.lod.level() >= LodLevel::Summary {
-                    painter.text(
-                        bounds.min + Vec2::new(inset, 40.0 * scale),
-                        Align2::LEFT_TOP,
-                        format!(
-                            "{} part{}{}",
-                            node.semantic.counts.parts,
-                            if node.semantic.counts.parts == 1 {
-                                ""
-                            } else {
-                                "s"
-                            },
-                            if node.collapsed { " · collapsed" } else { "" }
-                        ),
-                        FontId::proportional((10.0 * scale).clamp(9.0, 14.0)),
-                        theme.muted,
-                    );
-                }
-                if !node.is_container && self.lod.level() >= LodLevel::Summary {
-                    category_mark(
-                        &painter,
-                        bounds.min + Vec2::new(inset + 4.0 * scale, 20.0 * scale),
-                        node.category,
-                        (7.0 * scale).clamp(5.0, 12.0),
-                        category_color(node.category, theme),
-                    );
-                    painter.text(
-                        bounds.min + Vec2::new(inset + 15.0 * scale, 15.0 * scale),
-                        Align2::LEFT_TOP,
-                        node.category.label(),
-                        FontId::proportional((9.0 * scale).clamp(8.0, 14.0)),
-                        if faded {
-                            theme.muted.gamma_multiply(0.5)
-                        } else {
-                            category_color(node.category, theme)
-                        },
-                    );
-                }
-                if self.world == crate::navigation::World::Graph && self.layout.is_pinned(node.id())
+                    "Nothing to show in this view"
+                },
+                theme::regular(theme::HEADING),
+                theme.muted,
+            );
+        }
+    }
+
+    fn gestures(
+        &mut self,
+        ui: &egui::Ui,
+        response: &egui::Response,
+        hovered: Option<&SceneTarget>,
+        world: Option<Point>,
+    ) {
+        let modifiers = ui.input(|i| i.modifiers);
+        // A dialog waits for an answer: the Surface takes no input.
+        if self.dialog.is_some() {
+            return;
+        }
+        if response.drag_started()
+            && let Some(point) = world
+        {
+            self.camera_target = None;
+            // The press position decides what is dragged.
+            let press = ui
+                .input(|i| i.pointer.press_origin())
+                .map(|p| {
+                    let rect = response.rect;
+                    self.camera
+                        .screen_to_world(Point::new(p.x - rect.left(), p.y - rect.top()))
+                })
+                .unwrap_or(point);
+            let target = self.spatial.hit_test(press, 6.0 / self.camera.zoom);
+            self.gesture = Some(match target {
+                _ if modifiers.shift => Gesture::Marquee {
+                    start: press,
+                    end: point,
+                },
+                Some(SceneTarget::Port(card, port))
+                    if self.editable() && self.port_visible(card, port) =>
                 {
-                    painter.text(
-                        bounds.right_top() + Vec2::new(-inset, 15.0 * scale),
-                        Align2::RIGHT_TOP,
-                        "Pinned",
-                        FontId::proportional(10.0),
-                        theme.text,
-                    );
-                }
-                if self.lod.level() >= LodLevel::Features && !node.is_container {
-                    let subtitle = if node.semantic.counts.ports > 0 {
-                        let parts = node.semantic.counts.parts;
-                        format!(
-                            "{} port{}{}",
-                            node.semantic.counts.ports,
-                            if node.semantic.counts.ports == 1 {
-                                ""
-                            } else {
-                                "s"
-                            },
-                            if parts > 0 {
-                                format!(" · {parts} part{}", if parts == 1 { "" } else { "s" })
-                            } else {
-                                String::new()
-                            }
-                        )
-                    } else {
-                        match node.semantic.origin {
-                            ViewOrigin::Authored => "Authored".into(),
-                            ViewOrigin::Derived => "Derived · Explain available".into(),
-                            ViewOrigin::Standard => "Standard library".into(),
-                            ViewOrigin::Generated => "Generated".into(),
-                        }
-                    };
-                    elided(
-                        &painter,
-                        bounds.min
-                            + Vec2::new(inset, if requirement_title { 87.0 } else { 69.0 } * scale),
-                        &subtitle,
-                        (11.0 * scale).clamp(9.0, 16.0),
-                        theme.muted,
-                        (bounds.width() - 2.0 * inset).max(10.0),
-                    );
-                    if self.lod.level() >= LodLevel::Relationships && !requirement_title {
-                        for (index, feature) in node
-                            .semantic
-                            .features
-                            .iter()
-                            .filter(|f| {
-                                NodeCategory::from_semantic_kind(&f.semantic_kind)
-                                    != NodeCategory::Port
-                            })
-                            .take(1)
-                            .enumerate()
-                        {
-                            elided(
-                                &painter,
-                                bounds.min + Vec2::new(inset, (90.0 + index as f32 * 15.0) * scale),
-                                &feature.name,
-                                (10.0 * scale).clamp(9.0, 15.0),
-                                theme.muted,
-                                (bounds.width() - 2.0 * inset).max(10.0),
-                            );
-                        }
+                    Gesture::Connect {
+                        card,
+                        port,
+                        now: point,
                     }
                 }
+                Some(SceneTarget::Node(card) | SceneTarget::Container(card))
+                    if self.view != SurfaceView::Requirements =>
+                {
+                    Gesture::Move {
+                        card,
+                        start: press,
+                        now: point,
+                    }
+                }
+                _ => Gesture::Pan,
+            });
+        }
+        if response.dragged() {
+            self.timing.input(crate::timing::InputKind::Pan);
+            let delta = ui.input(|i| i.pointer.delta());
+            match (&mut self.gesture, world) {
+                (Some(Gesture::Pan), _) | (None, _) => {
+                    self.camera.pan_screen(Point::new(delta.x, delta.y));
+                }
+                (Some(Gesture::Marquee { end, .. }), Some(point)) => *end = point,
+                (Some(Gesture::Move { now, .. } | Gesture::Connect { now, .. }), Some(point)) => {
+                    *now = point
+                }
+                _ => {}
+            }
+            ui.ctx().request_repaint();
+        }
+        if response.drag_stopped() {
+            match self.gesture.take() {
+                Some(Gesture::Marquee { start, end }) => {
+                    let targets = self.spatial.marquee(Rect::from_points(start, end));
+                    self.selection.replace(targets);
+                    self.batch_key = None;
+                }
+                Some(Gesture::Move { card, start, now }) => {
+                    self.drop_card(card, start, now, modifiers.alt, hovered)
+                }
+                Some(Gesture::Connect { card, port, .. }) => match hovered {
+                    Some(SceneTarget::Port(other_card, other)) if *other != port => {
+                        self.connect((card, Some(port)), (*other_card, Some(*other)))
+                    }
+                    Some(SceneTarget::Node(other) | SceneTarget::Container(other))
+                        if *other != card =>
+                    {
+                        self.connect((card, Some(port)), (*other, None))
+                    }
+                    _ => self.status = "Drop on another port to connect".into(),
+                },
+                _ => {}
+            }
+        }
+        if response.clicked() {
+            self.timing.input(crate::timing::InputKind::Selection);
+            let double = self.canvas_clicks.click(
+                self.scene.generation,
+                hovered,
+                response
+                    .interact_pointer_pos()
+                    .map_or([0.0, 0.0], |p| [p.x, p.y]),
+                ui.input(|i| i.time),
+            );
+            match hovered {
+                Some(target) => {
+                    self.select(target.clone(), modifiers.shift);
+                    // A click on an attribute or item line works on that line.
+                    if let (SceneTarget::Node(card), Some(point)) = (target, world)
+                        && let Some(feature) = self.feature_at(*card, point)
+                    {
+                        self.inspected = Some((self.selection.primary.clone(), feature));
+                    }
+                    if double {
+                        let id = if self.editable() {
+                            CommandId::Rename
+                        } else {
+                            CommandId::Focus
+                        };
+                        self.execute(id, ui.ctx());
+                    }
+                }
+                None if !modifiers.shift => {
+                    self.selection.clear();
+                    self.batch_key = None;
+                }
+                None => {}
+            }
+        }
+        if response.secondary_clicked() {
+            match hovered {
+                Some(target) if !self.selection.targets.contains(target) => {
+                    self.select(target.clone(), false)
+                }
+                Some(_) => {}
+                None => self.selection.clear(),
+            }
+            self.batch_key = None;
+        }
+    }
+
+    /// Ends a card drag: Alt over a container moves the element into it;
+    /// otherwise the card keeps its new place on the Surface (layout only).
+    fn drop_card(
+        &mut self,
+        card: ElementId,
+        start: Point,
+        now: Point,
+        alt: bool,
+        hovered: Option<&SceneTarget>,
+    ) {
+        if alt {
+            let into = match hovered {
+                Some(SceneTarget::Node(id) | SceneTarget::Container(id)) if *id != card => {
+                    Some(*id)
+                }
+                _ => None,
+            };
+            match into {
+                Some(container) if self.editable() => {
+                    self.move_to(card, Parent::Element(container))
+                }
+                _ => self.status = "Hold Alt and drop onto a container to move into it".into(),
+            }
+            return;
+        }
+        let dx = now.x - start.x;
+        let dy = now.y - start.y;
+        if dx.abs() + dy.abs() < 2.0 {
+            return;
+        }
+        let mut moved = vec![card];
+        let mut index = 0;
+        while index < moved.len() {
+            let owner = moved[index];
+            moved.extend(
+                self.scene
+                    .nodes
+                    .iter()
+                    .filter(|n| n.semantic.owner == Some(owner))
+                    .map(|n| n.id()),
+            );
+            index += 1;
+        }
+        let memory = self.layouts.entry(self.view).or_default();
+        for id in moved {
+            if let Some(node) = self.scene.nodes.iter().find(|n| n.id() == id) {
+                memory
+                    .bounds
+                    .insert(id, node.bounds.translate(Point::new(dx, dy)));
+                if memory.is_pinned(id) {
+                    let _ = memory.pin(id, node.bounds.translate(Point::new(dx, dy)));
+                }
+            }
+        }
+        self.rebuild();
+    }
+
+    fn gesture_overlay(&self, painter: &egui::Painter, rect: egui::Rect) {
+        let theme = self.theme;
+        match &self.gesture {
+            Some(Gesture::Marquee { start, end }) => {
+                let area = egui::Rect::from_two_pos(
+                    self.to_screen(rect, *start),
+                    self.to_screen(rect, *end),
+                );
+                painter.rect(
+                    area,
+                    0.0,
+                    theme.accent.gamma_multiply(0.10),
+                    Stroke::new(1.0, theme.accent),
+                    egui::StrokeKind::Inside,
+                );
+            }
+            Some(Gesture::Move { card, start, now }) => {
+                if let Some(node) = self.lookup.node(&self.scene, *card) {
+                    let moved = node
+                        .bounds
+                        .translate(Point::new(now.x - start.x, now.y - start.y));
+                    painter.rect(
+                        self.screen_bounds(rect, moved),
+                        8.0,
+                        theme.accent.gamma_multiply(0.08),
+                        Stroke::new(1.5, theme.accent),
+                        egui::StrokeKind::Inside,
+                    );
+                }
+            }
+            Some(Gesture::Connect { card, port, now }) => {
+                if let Some(from) = self.lookup.port(&self.scene, *card, *port) {
+                    painter.line_segment(
+                        [
+                            self.to_screen(rect, from.position),
+                            self.to_screen(rect, *now),
+                        ],
+                        Stroke::new(2.0, theme.accent),
+                    );
+                    painter.circle_filled(self.to_screen(rect, *now), 4.0, theme.accent);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    fn hover_text(&self, target: &SceneTarget) -> Option<String> {
+        match target {
+            SceneTarget::Node(id) | SceneTarget::Container(id) => {
+                self.lookup.node(&self.scene, *id).map(|n| {
+                    let mut text = format!("{} {}", n.semantic.keyword, n.semantic.name);
+                    if !n.semantic.detail.is_empty() {
+                        text.push_str(&format!(" {}", n.semantic.detail));
+                    }
+                    match n.semantic.lock {
+                        LockMark::Own => text.push_str("\nLocked"),
+                        LockMark::Covered => text.push_str("\nLocked with its owner"),
+                        LockMark::None => {}
+                    }
+                    if n.semantic.problems > 0 {
+                        text.push_str(&format!(
+                            "\n{} problem(s); see the Inspector",
+                            n.semantic.problems
+                        ));
+                    }
+                    text
+                })
+            }
+            SceneTarget::Port(card, id) => self.lookup.port(&self.scene, *card, *id).map(|p| {
+                let shared = p
+                    .defined_in
+                    .and_then(|d| self.lookup.node(&self.scene, d))
+                    .map(|d| format!("\nDefined in {}: changes apply to it", d.semantic.name))
+                    .unwrap_or_default();
+                format!(
+                    "port {} · direction {}{shared}\nDrag to another port to connect",
+                    p.name,
+                    direction_label(p.direction)
+                )
+            }),
+            SceneTarget::Edge(id) => self
+                .scene
+                .edges
+                .iter()
+                .find(|e| e.semantic.id == *id)
+                .map(|e| format!("{} · {}", e.semantic.kind.label(), e.semantic.label)),
+        }
+    }
+
+    /// Card text, laid out top to bottom in screen space so nothing overlaps
+    /// at any zoom: a marks row (kind, change, problems, lock), the name on
+    /// up to two lines, the type, and the attribute and item lines at the
+    /// bottom. Text that does not fit is left out rather than overprinted.
+    fn node_labels(&self, painter: &egui::Painter, rect: egui::Rect, objects: &VisibleScene<'_>) {
+        let theme = self.theme;
+        let scale = self.camera.zoom;
+        let inspected = self.inspected_element();
+        for node in &objects.nodes {
+            let bounds = self.screen_bounds(rect, node.bounds);
+            if bounds.width() < 36.0 || bounds.height() < 16.0 {
+                continue;
+            }
+            let pad = (14.0 * scale).clamp(5.0, 20.0);
+            let width = (bounds.width() - 2.0 * pad).max(10.0);
+            let removed = node.diff == DiffMark::Removed;
+            let text = if removed { theme.muted } else { theme.text };
+            // No text is drawn below the caption size: rows that would need
+            // smaller text are left out at this zoom.
+            let caption = (9.5 * scale).clamp(theme::CAPTION, 13.0);
+            let name_size =
+                ((if node.is_container { 17.0 } else { 16.0 }) * scale).clamp(11.0, 26.0);
+            let mut y = bounds.top() + (8.0 * scale).clamp(3.0, 12.0);
+            // The marks row: kind on the left; change, problems, lock on the right.
+            let marks_row = bounds.height() >= caption + name_size + 2.0 * pad;
+            if marks_row {
+                let mut right = bounds.right() - pad;
+                let middle = y + caption * 0.5;
                 if node.diff != DiffMark::Unchanged {
-                    let text = match node.diff {
-                        DiffMark::Added => "+ NEW",
-                        DiffMark::Removed => "− REMOVED",
-                        DiffMark::Changed => "~ CHANGED",
-                        _ => "",
+                    let (badge, color) = match node.diff {
+                        DiffMark::Added => ("+ NEW", theme.green),
+                        DiffMark::Removed => ("− DELETED", theme.muted),
+                        _ => ("~ CHANGED", theme.violet),
                     };
+                    let placed = painter.text(
+                        egui::pos2(right, middle),
+                        Align2::RIGHT_CENTER,
+                        badge,
+                        theme::semibold(caption),
+                        color,
+                    );
+                    right = placed.left() - caption * 0.6;
+                }
+                if node.semantic.problems > 0 {
+                    let center = egui::pos2(right - caption * 0.55, middle);
+                    painter.circle_filled(center, caption * 0.62, theme.amber);
                     painter.text(
-                        bounds.right_bottom() - Vec2::new(10.0, 10.0),
-                        Align2::RIGHT_BOTTOM,
-                        text,
-                        FontId::proportional(9.0),
+                        center,
+                        Align2::CENTER_CENTER,
+                        "!",
+                        theme::semibold(caption),
+                        theme.canvas,
+                    );
+                    let count = painter.text(
+                        egui::pos2(center.x - caption * 0.9, middle),
+                        Align2::RIGHT_CENTER,
+                        node.semantic.problems.to_string(),
+                        theme::medium(caption),
                         theme.amber,
                     );
+                    right = count.left() - caption * 0.6;
                 }
-            }
-            // Keyboard/screen-reader names expose semantic objects independently of raster text.
-            // Spatial selection still uses the index, rather than traversing widget geometry.
-            if self.lod.level() >= LodLevel::Summary && rect.intersects(bounds) {
-                let accessibility = ui.interact(
-                    bounds.intersect(rect),
-                    egui::Id::new(("semantic", self.scene.revision_id, node.id())),
-                    Sense::focusable_noninteractive(),
+                if node.semantic.lock.locked() {
+                    let size = (caption * 1.3).max(theme::LOCK_MARK);
+                    lock_mark(
+                        painter,
+                        egui::pos2(right - size * 0.5, middle),
+                        size,
+                        node.semantic.lock,
+                        theme,
+                    );
+                    right -= size + theme::SPACE_S;
+                }
+                bounded_label(
+                    painter,
+                    egui::pos2(bounds.left() + pad, y),
+                    &node.semantic.keyword.to_uppercase(),
+                    theme::semibold(caption),
+                    category_color(node.category, theme),
+                    (right - bounds.left() - 2.0 * pad).max(10.0),
+                    1,
                 );
-                accessibility.widget_info(|| {
-                    egui::WidgetInfo::labeled(
-                        egui::WidgetType::Label,
-                        true,
-                        format!(
-                            "{}, {}, {:?}",
-                            node.semantic.name,
-                            node.category.label().to_lowercase(),
-                            node.semantic.origin
-                        ),
-                    )
-                });
-                if accessibility.has_focus() {
-                    painter.rect_stroke(
-                        bounds.expand(5.0),
-                        7.0,
-                        Stroke::new(2.0, theme.accent),
-                        egui::StrokeKind::Outside,
-                    );
-                    if accessibility.gained_focus() {
-                        keyboard_selection = Some(SceneTarget::Node(node.id()));
-                    }
-                    if ui.input_mut(|input| {
-                        input.consume_key(egui::Modifiers::NONE, egui::Key::Enter)
-                    }) {
-                        keyboard_selection = Some(SceneTarget::Node(node.id()));
-                        keyboard_focus = true;
-                    }
-                }
+                y += caption + 5.0 * scale.clamp(0.5, 1.5);
             }
-        }
-        let mut label_edges = Vec::new();
-        for edge in &objects.edges {
-            if !diff_mode.includes_edge(edge.semantic.family)
-                && !selected_edges.contains(edge.semantic.id.as_str())
-            {
+            let label = if node.is_container {
+                format!(
+                    "{}  {}",
+                    if node.collapsed { "▸" } else { "▾" },
+                    node.semantic.name
+                )
+            } else {
+                node.semantic.name.clone()
+            };
+            let room = bounds.bottom() - y - 2.0;
+            if room < name_size {
                 continue;
             }
-            let incident = self
-                .selection
-                .contains(self.lookup.endpoint_owner(edge.semantic.source))
-                || self
-                    .selection
-                    .contains(self.lookup.endpoint_owner(edge.semantic.target));
-            let hovered_edge = hovered.as_ref().is_some_and(
-                |target| matches!(target, SceneTarget::Edge(id) if id == &edge.semantic.id),
+            // Names wrap only between words; a single word is elided.
+            let rows = if room >= name_size * 2.6 && !node.is_container && label.contains(' ') {
+                2
+            } else {
+                1
+            };
+            let name = bounded_label(
+                painter,
+                egui::pos2(bounds.left() + pad, y),
+                &label,
+                theme::medium(name_size),
+                text,
+                width,
+                rows,
             );
-            let requirement_context = self.world == crate::navigation::World::Requirements
-                && objects.edges.len() <= 24
-                && self.lod.level() >= LodLevel::Summary;
-            let selected_edge = selected_edges.contains(edge.semantic.id.as_str());
-            let graph_context = self.world == crate::navigation::World::Graph
-                && self.lod.level() >= LodLevel::Summary;
-            if !(selected_edge
-                || hovered_edge
-                || requirement_context
-                || (incident
-                    && (graph_context || self.lod.level() >= LodLevel::Features)
-                    && objects.edges.len() <= 24))
+            y = name.bottom() + 4.0 * scale.clamp(0.5, 1.5);
+            let features_top = bounds.top()
+                + (node.bounds.height()
+                    - agq_studio_scene::feature_block(node.semantic.features.len()))
+                    * scale;
+            let small = (11.0 * scale).clamp(theme::CAPTION, 16.0);
+            if self.lod.level() >= LodLevel::Features
+                && !node.semantic.detail.is_empty()
+                && y + small <= features_top.min(bounds.bottom() - 2.0)
             {
-                continue;
+                bounded_label(
+                    painter,
+                    egui::pos2(bounds.left() + pad, y),
+                    &node.semantic.detail,
+                    theme::regular(small),
+                    theme.muted,
+                    width,
+                    1,
+                );
             }
-            label_edges.push((
-                if selected_edge {
-                    0
-                } else if hovered_edge {
-                    1
-                } else {
-                    2
-                },
-                *edge,
-            ));
-        }
-        // Give explicit inspection priority. Automatic neighborhood labels have
-        // a small screen-space budget even when many nodes are selected.
-        label_edges.sort_by_key(|(priority, _)| *priority);
-        let mut header_bottoms = std::collections::HashMap::<_, f32>::new();
-        if !label_edges.is_empty() {
-            for port in objects.ports.iter().filter(|port| port.label_in_header) {
-                let bottom = rect.top() + self.camera.world_to_screen(port.position).y + 12.0;
-                header_bottoms
-                    .entry(port.owner)
-                    .and_modify(|current| *current = current.max(bottom))
-                    .or_insert(bottom);
-            }
-        }
-        let mut obstacles: Vec<_> = if label_edges.is_empty() {
-            Vec::new()
-        } else {
-            objects
-                .nodes
-                .iter()
-                .map(|node| {
-                    let a = self.camera.world_to_screen(node.bounds.min);
-                    let b = self.camera.world_to_screen(node.bounds.max);
-                    let mut bounds = egui::Rect::from_min_max(
-                        rect.min + Vec2::new(a.x, a.y),
-                        rect.min + Vec2::new(b.x, b.y),
-                    );
-                    if node.is_container && !node.collapsed {
-                        let title_bottom = bounds.min.y + 58.0 * self.camera.zoom;
-                        let header_bottom = header_bottoms
-                            .get(&node.id())
-                            .copied()
-                            .unwrap_or(title_bottom)
-                            .max(title_bottom);
-                        bounds.max.y = bounds.max.y.min(header_bottom);
+            let line = agq_studio_scene::FEATURE_LINE * scale;
+            if self.lod.level() >= LodLevel::Features
+                && !node.is_container
+                && line >= theme::CAPTION + 2.0
+            {
+                let size = (10.5 * scale).min(line * 0.8).clamp(theme::CAPTION, 15.0);
+                let shown = node
+                    .semantic
+                    .features
+                    .len()
+                    .min(agq_studio_scene::MAX_FEATURE_LINES);
+                let more = node.semantic.features.len() - shown;
+                for (index, feature) in node.semantic.features.iter().take(shown).enumerate() {
+                    let top = features_top + index as f32 * line;
+                    if top < y {
+                        continue;
                     }
-                    bounds
-                })
-                .collect()
-        };
-        let mut route_obstacles = crate::relationship_labels::RouteObstacles::default();
-        if !label_edges.is_empty() {
-            for port in &objects.ports {
-                let screen = self.camera.world_to_screen(port.position);
-                obstacles.push(egui::Rect::from_center_size(
-                    rect.min + Vec2::new(screen.x, screen.y),
-                    Vec2::splat(12.0),
-                ));
-            }
-            for edge in &objects.edges {
-                if diff_mode.includes_edge(edge.semantic.family)
-                    || selected_edges.contains(edge.semantic.id.as_str())
-                {
-                    for pair in edge.points.windows(2) {
-                        let a = self.camera.world_to_screen(pair[0]);
-                        let b = self.camera.world_to_screen(pair[1]);
-                        route_obstacles.insert(
-                            rect.min + Vec2::new(a.x, a.y),
-                            rect.min + Vec2::new(b.x, b.y),
-                            rect,
+                    let last = index + 1 == shown && more > 0;
+                    let text = if last {
+                        format!("+{} more", more + 1)
+                    } else {
+                        feature.text.clone()
+                    };
+                    let color = if inspected == Some(feature.id) && !last {
+                        theme.accent
+                    } else if feature.problems > 0 && !last {
+                        theme.amber
+                    } else {
+                        theme.muted
+                    };
+                    let lock_room = if feature.lock.locked() {
+                        size * 1.6
+                    } else {
+                        0.0
+                    };
+                    bounded_label(
+                        painter,
+                        egui::pos2(bounds.left() + pad, top),
+                        &text,
+                        theme::regular(size),
+                        color,
+                        (width - lock_room).max(10.0),
+                        1,
+                    );
+                    if feature.lock.locked() && !last {
+                        lock_mark(
+                            painter,
+                            egui::pos2(bounds.right() - pad - 6.0, top + size * 0.6),
+                            theme::LOCK_MARK,
+                            feature.lock,
+                            theme,
                         );
                     }
                 }
             }
         }
-        let mut placed_labels = Vec::new();
-        let mut automatic_labels = 0;
-        for (priority, edge) in label_edges {
-            if priority == 2 && automatic_labels >= 8 {
+    }
+
+    /// The attribute or item line of a card under a Surface point, if any.
+    pub fn feature_at(&self, card: ElementId, point: Point) -> Option<ElementId> {
+        let node = self.lookup.node(&self.scene, card)?;
+        if node.is_container {
+            return None;
+        }
+        let top = node.bounds.max.y - agq_studio_scene::feature_block(node.semantic.features.len());
+        if point.y < top {
+            return None;
+        }
+        let index = ((point.y - top) / agq_studio_scene::FEATURE_LINE).floor() as usize;
+        let shown = node
+            .semantic
+            .features
+            .len()
+            .min(agq_studio_scene::MAX_FEATURE_LINES);
+        (index < shown).then(|| node.semantic.features[index].id)
+    }
+
+    fn edge_labels(
+        &self,
+        painter: &egui::Painter,
+        rect: egui::Rect,
+        objects: &VisibleScene<'_>,
+        hovered: Option<&SceneTarget>,
+    ) {
+        let theme = self.theme;
+        if self.lod.level() < LodLevel::Features && self.selection.targets.is_empty() {
+            return;
+        }
+        let obstacles: Vec<egui::Rect> = objects
+            .nodes
+            .iter()
+            .map(|node| {
+                let mut bounds = self.screen_bounds(rect, node.bounds);
+                if node.is_container && !node.collapsed {
+                    bounds.max.y = bounds.max.y.min(bounds.min.y + 58.0 * self.camera.zoom);
+                }
+                bounds
+            })
+            .collect();
+        let mut routes = crate::relationship_labels::RouteObstacles::default();
+        for edge in &objects.edges {
+            for pair in edge.points.windows(2) {
+                routes.insert(
+                    self.to_screen(rect, pair[0]),
+                    self.to_screen(rect, pair[1]),
+                    rect,
+                );
+            }
+        }
+        let mut placed = Vec::new();
+        let mut automatic = 0;
+        for edge in &objects.edges {
+            let target = SceneTarget::Edge(edge.semantic.id.clone());
+            let explicit = self.selection.targets.contains(&target) || hovered == Some(&target);
+            let incident = self.selection.contains(edge.semantic.source.node)
+                || self.selection.contains(edge.semantic.target.node)
+                || edge
+                    .semantic
+                    .element
+                    .is_some_and(|e| self.highlights.contains_key(&e));
+            let shown = explicit
+                || edge.semantic.lock.locked()
+                || (incident && objects.edges.len() <= 40)
+                || (self.lod.level() >= LodLevel::Relationships && objects.edges.len() <= 16);
+            if !shown || (!explicit && automatic >= 10) {
                 continue;
             }
-            let label = format!(
-                "{}{}",
-                edge.semantic.label,
-                if edge.semantic.origin == ViewOrigin::Derived {
-                    " · derived"
-                } else {
-                    ""
-                }
+            let galley = crate::relationship_labels::layout(
+                painter,
+                edge.semantic.label.clone(),
+                (rect.width() * 0.3).clamp(80.0, 280.0),
             );
-            let mut label_job = egui::text::LayoutJob::simple_singleline(
-                label,
-                FontId::proportional(12.0),
-                theme.accent,
-            );
-            label_job.wrap.max_width = (rect.width() * 0.35).clamp(80.0, 320.0);
-            label_job.wrap.max_rows = 2;
-            label_job.wrap.break_anywhere = true;
-            let galley = painter.layout_job(label_job);
             let route: Vec<_> = edge
                 .points
                 .iter()
-                .map(|point| {
-                    let screen = self.camera.world_to_screen(*point);
-                    rect.min + Vec2::new(screen.x, screen.y)
-                })
+                .map(|p| self.to_screen(rect, *p))
                 .collect();
+            let lock_room = if edge.semantic.lock.locked() {
+                theme::LOCK_MARK + theme::SPACE_S
+            } else {
+                0.0
+            };
             let Some(placement) = crate::relationship_labels::place(
                 &route,
-                galley.size() + Vec2::new(16.0, 8.0),
+                galley.size()
+                    + 2.0 * crate::relationship_labels::PADDING
+                    + Vec2::new(lock_room, 0.0),
                 rect,
                 &obstacles,
-                &placed_labels,
-                priority < 2,
-                &route_obstacles,
+                &placed,
+                explicit,
+                &routes,
             ) else {
                 continue;
             };
-            let label_rect = placement.bounds;
-            let leader_end = egui::pos2(
-                placement
-                    .anchor
-                    .x
-                    .clamp(label_rect.left(), label_rect.right()),
-                placement
-                    .anchor
-                    .y
-                    .clamp(label_rect.top(), label_rect.bottom()),
-            );
-            painter.line_segment(
-                [placement.anchor, leader_end],
-                Stroke::new(1.0, theme.muted),
-            );
-            painter.rect(
-                label_rect,
-                4.0,
-                theme.canvas,
-                Stroke::new(1.0, theme.border),
-                egui::StrokeKind::Inside,
-            );
-            painter.galley(label_rect.min + Vec2::new(8.0, 4.0), galley, theme.accent);
-            placed_labels.push(label_rect);
-            automatic_labels += usize::from(priority == 2);
-        }
-        if self.lod.level() >= LodLevel::Features
-            || (self.world == crate::navigation::World::System && self.focus.is_some())
-            || self
-                .selection
-                .targets
-                .iter()
-                .any(|target| matches!(target, SceneTarget::Port(_)))
-        {
-            for port in &objects.ports {
-                let selected_port = self.selection.contains(port.id);
-                let focused_boundary = self.world == crate::navigation::World::System
-                    && self.focus == Some(port.owner);
-                if !self.port_visible(port) {
-                    continue;
-                }
-                let point = self.camera.world_to_screen(port.position);
-                let position = rect.min + Vec2::new(point.x, point.y);
-                let port_rect =
-                    egui::Rect::from_center_size(position, Vec2::splat(16.0)).intersect(rect);
-                if !port_rect.is_positive() {
-                    continue;
-                }
-                // Semantic selection remains visible even when ordinary port
-                // detail is suppressed at overview/summary zoom. This marker
-                // stays a legible screen size without rebuilding GPU batches
-                // on every zoom tick.
-                if selected_port || (focused_boundary && self.lod.level() < LodLevel::Features) {
-                    painter.rect(
-                        egui::Rect::from_center_size(
-                            position,
-                            Vec2::splat(if selected_port { 12.0 } else { 9.0 }),
-                        ),
-                        2.0,
-                        theme.canvas,
-                        Stroke::new(
-                            2.0,
-                            if selected_port {
-                                theme.accent
-                            } else {
-                                theme.muted
-                            },
-                        ),
-                        egui::StrokeKind::Inside,
-                    );
-                }
-                if selected_port {
-                    painter.rect_stroke(
-                        egui::Rect::from_center_size(position, Vec2::splat(22.0)),
-                        4.0,
-                        Stroke::new(1.0, theme.accent.gamma_multiply(0.6)),
-                        egui::StrokeKind::Outside,
-                    );
-                }
-                let port_response = ui.interact(
-                    port_rect,
-                    egui::Id::new(("semantic-port", self.scene.revision_id, port.id)),
-                    Sense::click(),
+            let label = placement.bounds;
+            crate::relationship_labels::paint(painter, &placement, galley, explicit, theme);
+            if edge.semantic.lock.locked() {
+                lock_mark(
+                    painter,
+                    egui::pos2(label.right() - theme::SPACE_S - 6.0, label.center().y),
+                    theme::LOCK_MARK,
+                    edge.semantic.lock,
+                    theme,
                 );
-                port_response.widget_info(|| {
-                    egui::WidgetInfo::labeled(
-                        egui::WidgetType::Button,
-                        true,
-                        format!(
-                            "{}, Port in {}, direction {}",
-                            port.name,
-                            self.active_projection()
-                                .nodes
-                                .iter()
-                                .find(|node| node.id == port.proxy_for_owner.unwrap_or(port.owner))
-                                .map_or("owner outside this view", |node| node.name.as_str()),
-                            port_direction_label(port.direction)
-                        ),
-                    )
-                });
-                if port_response.clicked() || port_response.gained_focus() {
-                    keyboard_selection = Some(SceneTarget::Port(port.id));
-                }
-                if port_response.double_clicked() {
-                    keyboard_selection = Some(SceneTarget::Port(port.id));
-                    keyboard_focus = true;
-                }
-                if port_response.secondary_clicked() {
-                    keyboard_selection = Some(SceneTarget::Port(port.id));
-                }
-                port_response.context_menu(|ui| {
-                    let mut context = self.context();
-                    context.selected = true;
-                    for id in context_commands(Some(&SceneTarget::Port(port.id))) {
-                        if commands::unavailable(*id, &context).is_some() {
-                            continue;
-                        }
-                        let command = commands::COMMANDS
-                            .iter()
-                            .find(|command| command.id == *id)
-                            .expect("registered command");
-                        if ui.button(command.label).clicked() {
-                            keyboard_selection = Some(SceneTarget::Port(port.id));
-                            port_command = Some(*id);
-                            ui.close();
-                        }
-                    }
-                });
-                if port_response.has_focus() {
-                    painter.rect_stroke(
-                        port_rect.expand(3.0),
-                        3.0,
-                        Stroke::new(2.0, theme.accent),
-                        egui::StrokeKind::Outside,
-                    );
-                }
-                if self.lod.level() >= LodLevel::Relationships
-                    || self.selection.contains(port.id)
-                    || self.selection.contains(port.owner)
-                    || port_response.hovered()
-                    || (self.world == crate::navigation::World::System
-                        && self.focus.is_some()
-                        && objects.ports.len() <= 24)
-                {
-                    let owner = self.lookup.node(&self.scene, port.owner);
-                    let expanded_owner =
-                        owner.is_some_and(|node| node.is_container && !node.collapsed);
-                    let owner_width =
-                        owner.map_or(100.0 / 0.44, |node| node.bounds.width() * self.camera.zoom);
-                    let width = if port.label_in_header {
-                        (owner_width * 0.44).min((owner_width * 0.5 - 20.0).max(10.0))
-                    } else {
-                        owner_width * 0.44
-                    };
-                    let label_color = if selected_port {
-                        theme.accent
-                    } else {
-                        theme.muted
-                    };
-                    let mut job = egui::text::LayoutJob::simple_singleline(
-                        port.name.clone(),
-                        FontId::proportional(12.0),
-                        label_color,
-                    );
-                    job.wrap.max_width = width;
-                    job.wrap.max_rows = 1;
-                    job.wrap.break_anywhere = true;
-                    job.wrap.overflow_character = Some('…');
-                    let galley = painter.layout_job(job);
-                    // At low zoom a fixed-size name cannot fit the reserved
-                    // row. Keep it outside the body with an explicit leader.
-                    let header_label = port.label_in_header
-                        && self.camera.zoom * 24.0 >= galley.size().y
-                        && owner_width >= 80.0;
-                    let external = expanded_owner && !header_label;
-                    let label_origin = port_label_origin(
-                        port.side,
-                        position,
-                        galley.size(),
-                        expanded_owner,
-                        header_label,
-                    );
-                    if external {
-                        // A distributed boundary label belongs outside an
-                        // expanded owner, never over a child card. A short
-                        // leader ties this disposable label to the exact port.
-                        let label_rect = egui::Rect::from_min_size(label_origin, galley.size());
-                        let end = match port.side {
-                            PortSide::Left => label_rect.right_center(),
-                            PortSide::Right => label_rect.left_center(),
-                            PortSide::Top => label_rect.center_bottom(),
-                            PortSide::Bottom => label_rect.center_top(),
-                        };
-                        painter.line_segment([position, end], Stroke::new(1.0, label_color));
-                        painter.rect_filled(label_rect.expand(2.0), 2.0, theme.surface);
-                    }
-                    painter.galley(label_origin, galley, label_color);
-                }
-                if port_response.hovered() {
-                    let connections = self
-                        .active_projection()
-                        .edges
-                        .iter()
-                        .filter(|edge| {
-                            edge.family == RelationshipFamily::Connection
-                                && (edge.source == port.id || edge.target == port.id)
-                        })
-                        .count();
-                    port_response.on_hover_text(format!(
-                        "{} · Port\nDirection {}\n{} connections in this view{}",
-                        port.name,
-                        port_direction_label(port.direction),
-                        connections,
-                        if port.proxy_for_owner.is_some() {
-                            "\nExposed at collapsed subsystem boundary"
-                        } else {
-                            ""
-                        }
-                    ));
-                }
             }
-        }
-        self.timing.labels(labels_started.elapsed());
-        if let Some(target) = keyboard_selection {
-            self.select(target, false);
-            if keyboard_focus {
-                self.execute(CommandId::Focus, ui.ctx());
-            }
-        }
-        if let Some(command) = port_command {
-            self.execute(command, ui.ctx());
-        }
-        if let Some(target) = hovered {
-            let label = match &target {
-                SceneTarget::Node(id) | SceneTarget::Container(id) => self
-                    .scene
-                    .node(*id)
-                    .map(|n| format!("{} · {}", n.semantic.name, n.semantic.semantic_kind)),
-                SceneTarget::Port(id) => self.scene.ports.iter().find(|p| p.id == *id).map(|p| {
-                    format!(
-                        "{} · Port · direction {}{}",
-                        p.name,
-                        port_direction_label(p.direction),
-                        if p.proxy_for_owner.is_some() {
-                            " · collapsed boundary proxy; original port identity"
-                        } else {
-                            ""
-                        }
-                    )
-                }),
-                SceneTarget::Edge(id) => self
-                    .scene
-                    .edges
-                    .iter()
-                    .find(|e| e.semantic.id == *id)
-                    .map(|e| {
-                        format!(
-                            "{} · {:?} · {:?}",
-                            e.semantic.label, e.semantic.family, e.semantic.origin
-                        )
-                    }),
-            };
-            if let Some(label) = label {
-                response.clone().on_hover_text(label);
-            }
-        }
-        if let (Some(a), Some(b)) = (self.marquee_start, self.marquee_end) {
-            let a = self.camera.world_to_screen(a);
-            let b = self.camera.world_to_screen(b);
-            let box_rect = egui::Rect::from_two_pos(
-                rect.min + Vec2::new(a.x, a.y),
-                rect.min + Vec2::new(b.x, b.y),
-            );
-            painter.rect(
-                box_rect,
-                0.0,
-                theme.accent.gamma_multiply(0.10),
-                Stroke::new(1.0, theme.accent),
-                egui::StrokeKind::Inside,
-            );
-        }
-        if self.fixture.is_some() {
-            painter.text(
-                rect.left_bottom() + Vec2::new(24.0, -23.0),
-                Align2::LEFT_BOTTOM,
-                "DETERMINISTIC VISUAL FIXTURE",
-                FontId::proportional(10.0),
-                theme.muted.gamma_multiply(0.8),
-            );
-        }
-        painter.text(
-            rect.right_bottom() + Vec2::new(-24.0, -23.0),
-            Align2::RIGHT_BOTTOM,
-            "Drag to pan   ·   Wheel to zoom   ·   F to focus",
-            FontId::proportional(11.0),
-            theme.muted,
-        );
-        if self.scene.nodes.is_empty() {
-            let empty_project = self.fixture.is_none()
-                && self.history.as_ref().is_some_and(|history| {
-                    history.revisions.iter().any(|revision| {
-                        revision.revision_id == self.projection.revision_id
-                            && revision.documents.is_empty()
-                    })
-                });
-            painter.text(
-                rect.center(),
-                Align2::CENTER_CENTER,
-                if empty_project {
-                    "Empty Working project · use the project menu to Add source document"
-                } else {
-                    "No elements in this view"
-                },
-                FontId::proportional(20.0),
-                theme.muted,
-            );
+            placed.push(label);
+            automatic += usize::from(!explicit);
         }
     }
-    fn make_batch(
-        &self,
-        key: u64,
-        objects: &VisibleScene<'_>,
-        selected_edges: &BTreeSet<&str>,
-        diff_mode: crate::history::DiffMode,
-    ) -> Batch {
+
+    fn port_labels(&self, painter: &egui::Painter, rect: egui::Rect, objects: &VisibleScene<'_>) {
+        let theme = self.theme;
+        for port in &objects.ports {
+            if !self.port_visible(port.owner, port.id) {
+                continue;
+            }
+            let selected = self
+                .selection
+                .targets
+                .contains(&SceneTarget::Port(port.owner, port.id));
+            if !(self.lod.level() >= LodLevel::Relationships
+                || selected
+                || self.selection.contains(port.owner)
+                || self.lod.level() >= LodLevel::Features && objects.ports.len() <= 60)
+            {
+                continue;
+            }
+            let position = self.to_screen(rect, port.position);
+            let owner = self.lookup.node(&self.scene, port.owner);
+            let expanded = owner.is_some_and(|n| n.is_container && !n.collapsed);
+            let owner_width = owner.map_or(200.0, |n| n.bounds.width() * self.camera.zoom);
+            let color = if selected { theme.accent } else { theme.muted };
+            let mut job = egui::text::LayoutJob::simple_singleline(
+                port.name.clone(),
+                theme::medium(theme::LABEL),
+                color,
+            );
+            job.wrap.max_width = (owner_width * 0.44).max(40.0);
+            job.wrap.max_rows = 1;
+            job.wrap.break_anywhere = false;
+            job.wrap.overflow_character = Some('…');
+            let galley = painter.layout_job(job);
+            let header = port.label_in_header && self.camera.zoom * 24.0 >= galley.size().y;
+            let origin = port_label_origin(port.side, position, galley.size(), expanded, header);
+            let label = egui::Rect::from_min_size(origin, galley.size());
+            if expanded && !header {
+                painter.rect_filled(label.expand(2.0), 2.0, theme.surface);
+            }
+            painter.galley(origin, galley, color);
+            if port.lock.locked() {
+                // The lock mark sits beside the label, away from the port.
+                let x = if label.center().x >= position.x {
+                    label.right() + 8.0
+                } else {
+                    label.left() - 8.0
+                };
+                lock_mark(
+                    painter,
+                    egui::pos2(x, label.center().y),
+                    theme::LOCK_MARK,
+                    port.lock,
+                    theme,
+                );
+            }
+        }
+    }
+
+    fn make_batch(&self, key: u64, objects: &VisibleScene<'_>) -> Batch {
         let mut batch = Batch {
             key,
             ..Default::default()
@@ -942,143 +894,145 @@ impl StudioApp {
         let theme = self.theme;
         for node in &objects.nodes {
             let selected = self.selection.contains(node.id());
-            let faded = self.dependencies.as_ref().is_some_and(|ids| {
-                !ids.contains(&node.id())
-                    && !node.semantic.features.iter().any(|f| ids.contains(&f.id))
-            });
             let mut border = if selected { theme.accent } else { theme.border };
-            if node.diff == DiffMark::Added {
-                border = theme.green;
-            } else if node.diff == DiffMark::Changed {
-                border = theme.amber;
+            match node.diff {
+                DiffMark::Added => border = theme.green,
+                DiffMark::Changed => border = theme.violet,
+                _ => {}
+            }
+            if node.semantic.lock == LockMark::Own && !selected {
+                border = theme.border_strong;
             }
             let mut fill = if node.is_container {
                 theme.containment(node.depth)
             } else {
                 theme.elevated
             };
-            if faded {
-                fill = theme.canvas;
-                border = border.gamma_multiply(0.35);
-            }
             if node.diff == DiffMark::Removed {
                 fill = theme.canvas;
-                border = theme.muted.gamma_multiply(0.6);
+                border = theme.error;
             }
-            let rect = [
+            let r = [
                 node.bounds.min.x,
                 node.bounds.min.y,
                 node.bounds.width(),
                 node.bounds.height(),
             ];
             let radius = match node.category {
-                NodeCategory::Requirement => 2.0,
-                NodeCategory::Action | NodeCategory::State => 22.0,
-                _ => 8.0,
+                NodeCategory::Requirement => theme::REQUIREMENT_RADIUS,
+                _ if node.is_container => theme::CONTAINER_RADIUS,
+                _ => theme::CARD_RADIUS,
             };
-            let quad = Quad::rect(rect, fill, border, radius, if selected { 2.0 } else { 1.0 });
-            if node.is_container {
-                batch.containers.push(quad);
-                // A header separator makes containment readable without another bright card.
-                batch.containers.push(Quad::rect(
-                    [rect[0] + 14.0, rect[1] + 58.0, rect[2] - 28.0, 0.8],
-                    theme.border.gamma_multiply(0.65),
-                    Color32::TRANSPARENT,
-                    0.0,
-                    0.0,
-                ));
+            let width = if selected || node.diff != DiffMark::Unchanged {
+                theme::STROKE_SELECTED
             } else {
-                if selected || node.diff == DiffMark::Added {
-                    batch.nodes.push(Quad::rect(
-                        [rect[0] - 4.0, rect[1] - 4.0, rect[2] + 8.0, rect[3] + 8.0],
-                        Color32::TRANSPARENT,
-                        border.gamma_multiply(0.22),
-                        radius + 4.0,
-                        3.0,
-                    ));
-                }
-                batch.nodes.push(quad);
-                batch.nodes.push(Quad::rect(
-                    [rect[0] + 14.0, rect[1] + 30.0, rect[2] - 28.0, 0.7],
-                    theme.border.gamma_multiply(0.55),
+                theme::HAIRLINE
+            };
+            let mut quad = Quad::rect(r, fill, border, radius, width);
+            if node.diff == DiffMark::Removed {
+                quad.detail = [10.0, 6.0, 0.0, 0.0];
+            }
+            // A just-changed card glows; the fade runs on the GPU. Under
+            // reduced motion it gets a steady halo until the highlight ends.
+            if let Some(started) = self.highlights.get(&node.id()) {
+                batch.overlays.push(if self.reduced_motion {
+                    Quad::halo(r, radius, theme.changed)
+                } else {
+                    Quad::changed(r, radius, theme.changed, *started)
+                });
+            }
+            let list = if node.is_container {
+                &mut batch.containers
+            } else {
+                &mut batch.nodes
+            };
+            if selected {
+                list.push(Quad::halo(r, radius, theme.accent));
+            } else if node.diff == DiffMark::Added {
+                list.push(Quad::halo(r, radius, theme.green));
+            }
+            list.push(quad);
+            // A separator under the title makes the card easy to read.
+            let separator_y = if node.is_container { 58.0 } else { 28.0 };
+            list.push(Quad::rect(
+                [r[0] + 14.0, r[1] + separator_y, (r[2] - 28.0).max(0.0), 0.8],
+                theme.border.gamma_multiply(0.6),
+                Color32::TRANSPARENT,
+                0.0,
+                0.0,
+            ));
+            // A problem bar along the card's left edge.
+            if node.semantic.problems > 0 {
+                list.push(Quad::rect(
+                    [r[0] + 1.0, r[1] + 8.0, 3.0, (r[3] - 16.0).max(0.0)],
+                    theme.amber,
                     Color32::TRANSPARENT,
-                    0.0,
+                    1.5,
                     0.0,
                 ));
             }
         }
+        let selected_edges: Vec<&str> = self
+            .selection
+            .targets
+            .iter()
+            .filter_map(|t| match t {
+                SceneTarget::Edge(id) => Some(id.as_str()),
+                _ => None,
+            })
+            .collect();
         for edge in &objects.edges {
-            if !diff_mode.includes_edge(edge.semantic.family)
-                && !selected_edges.contains(edge.semantic.id.as_str())
-            {
-                continue;
-            }
-            // Ownership is already explicit spatially; graph mode exposes its actual edges.
-            if self.world == crate::navigation::World::System
-                && edge.semantic.family == RelationshipFamily::Ownership
-            {
-                continue;
-            }
-            let selected = selected_edges.contains(edge.semantic.id.as_str());
-            let incident = self.selection.contains(edge.semantic.source)
-                || self.selection.contains(edge.semantic.target)
-                || self
-                    .selection
-                    .contains(self.lookup.endpoint_owner(edge.semantic.source))
-                || self
-                    .selection
-                    .contains(self.lookup.endpoint_owner(edge.semantic.target));
-            let mut color = if selected || incident {
-                theme.accent
-            } else {
-                theme
-                    .muted
-                    .gamma_multiply(if theme.contrast { 0.95 } else { 0.65 })
+            let selected = selected_edges.contains(&edge.semantic.id.as_str());
+            let incident = self.selection.contains(edge.semantic.source.node)
+                || self.selection.contains(edge.semantic.target.node)
+                || edge
+                    .semantic
+                    .source
+                    .port
+                    .is_some_and(|p| self.selection.contains(p))
+                || edge
+                    .semantic
+                    .target
+                    .port
+                    .is_some_and(|p| self.selection.contains(p));
+            let glow = edge.semantic.element.is_some_and(|e| self.highlighted(e));
+            let mut color = match edge.semantic.kind {
+                EdgeKind::Satisfy => theme.amber.gamma_multiply(0.8),
+                EdgeKind::Typing | EdgeKind::Specialization => theme.muted.gamma_multiply(0.55),
+                _ => theme.edge,
             };
-            // In System World a selected container establishes the surrounding
-            // engineering context; its children's connections remain readable.
-            // Graph World uses deliberate path emphasis for semantic reasoning.
-            if self.world == crate::navigation::World::Graph
-                && !self.selection.targets.is_empty()
-                && !selected
-                && !incident
-            {
-                color = color.gamma_multiply(if theme.contrast { 0.70 } else { 0.44 });
+            if selected || incident {
+                color = theme.accent;
             }
-            if edge.diff == DiffMark::Added {
-                color = theme.green;
-            } else if edge.diff == DiffMark::Removed {
-                color = theme.amber.gamma_multiply(0.6);
+            if edge.semantic.problems > 0 {
+                color = theme.amber;
             }
-            // Change coloring must respect the same explicit-selection priority
-            // as ordinary edges, otherwise every added relation shouts at once.
-            if self.comparison == crate::app::ComparisonMode::Diff
-                && !self.selection.targets.is_empty()
-                && !selected
-                && !incident
-            {
-                color = color.gamma_multiply(0.35);
+            match edge.diff {
+                DiffMark::Added => color = theme.green,
+                DiffMark::Changed => color = theme.violet,
+                DiffMark::Removed => color = theme.error,
+                DiffMark::Unchanged => {}
             }
-            if self.dependencies.as_ref().is_some_and(|ids| {
-                !ids.contains(&edge.semantic.source) || !ids.contains(&edge.semantic.target)
-            }) {
-                color = color.gamma_multiply(0.22);
+            if glow {
+                color = theme.changed;
             }
             let width = if selected {
-                2.8
-            } else if incident {
-                1.8
+                theme::EDGE_WIDTH_SELECTED
+            } else if incident || glow {
+                theme::EDGE_WIDTH_INCIDENT
             } else {
-                1.1
+                theme::EDGE_WIDTH
             };
-            let dashed =
-                edge.semantic.origin == ViewOrigin::Derived || edge.diff == DiffMark::Removed;
-            for points in edge.points.windows(2) {
-                let a = points[0];
-                let b = points[1];
-                if let Some(mut quad) = Quad::segment([a.x, a.y], [b.x, b.y], width, color) {
+            let dashed = matches!(
+                edge.semantic.kind,
+                EdgeKind::Typing | EdgeKind::Specialization | EdgeKind::Satisfy
+            ) || edge.diff == DiffMark::Removed;
+            for pair in edge.points.windows(2) {
+                if let Some(mut quad) =
+                    Quad::segment([pair[0].x, pair[0].y], [pair[1].x, pair[1].y], width, color)
+                {
                     if dashed {
-                        quad.detail = [12.0, 7.0, 0.0, 0.0];
+                        quad.detail = [10.0, 6.0, 0.0, 0.0];
                     }
                     batch.edges.push(quad);
                 }
@@ -1086,16 +1040,13 @@ impl StudioApp {
             if edge.semantic.directed && edge.points.len() >= 2 {
                 let end = edge.points[edge.points.len() - 1];
                 let before = edge.points[edge.points.len() - 2];
-                let dx = end.x - before.x;
-                let dy = end.y - before.y;
-                let length = dx.hypot(dy).max(0.001);
-                let ux = dx / length;
-                let uy = dy / length;
+                let length = (end.x - before.x).hypot(end.y - before.y).max(0.001);
+                let (ux, uy) = ((end.x - before.x) / length, (end.y - before.y) / length);
                 for side in [-1.0, 1.0] {
                     if let Some(quad) = Quad::segment(
                         [
-                            end.x - ux * 7.0 - uy * 4.0 * side,
-                            end.y - uy * 7.0 + ux * 4.0 * side,
+                            end.x - ux * 8.0 - uy * 4.5 * side,
+                            end.y - uy * 8.0 + ux * 4.5 * side,
                         ],
                         [end.x, end.y],
                         width,
@@ -1106,51 +1057,77 @@ impl StudioApp {
                 }
             }
         }
-        if self.lod.level() >= LodLevel::Features {
-            let connected: BTreeSet<_> = objects
-                .edges
-                .iter()
-                .filter(|edge| edge.semantic.family == RelationshipFamily::Connection)
-                .flat_map(|edge| [edge.semantic.source, edge.semantic.target])
-                .collect();
-            for port in &objects.ports {
-                let selected = self.selection.contains(port.id);
-                let size = if selected { 12.0 } else { 9.0 };
-                batch.overlays.push(Quad::rect(
-                    [
-                        port.position.x - size / 2.0,
-                        port.position.y - size / 2.0,
-                        size,
-                        size,
-                    ],
-                    theme.canvas,
-                    if selected { theme.accent } else { theme.muted },
-                    2.0,
-                    if selected { 2.5 } else { 1.5 },
-                ));
-                if connected.contains(&port.id) {
-                    batch.overlays.push(Quad::rect(
-                        [port.position.x - 1.5, port.position.y - 1.5, 3.0, 3.0],
-                        if selected { theme.accent } else { theme.green },
-                        Color32::TRANSPARENT,
-                        0.0,
-                        0.0,
-                    ));
+        let connected: std::collections::BTreeSet<ElementId> = objects
+            .edges
+            .iter()
+            .flat_map(|e| [e.semantic.source.port, e.semantic.target.port])
+            .flatten()
+            .collect();
+        for port in &objects.ports {
+            if !self.port_visible(port.owner, port.id) {
+                continue;
+            }
+            let selected = self
+                .selection
+                .targets
+                .contains(&SceneTarget::Port(port.owner, port.id));
+            let glow = self.highlighted(port.id);
+            let size = if selected {
+                theme::PORT_SIZE + 3.0
+            } else {
+                theme::PORT_SIZE
+            };
+            let border = if selected {
+                theme.accent
+            } else if glow {
+                theme.changed
+            } else {
+                match port.diff {
+                    DiffMark::Added => theme.green,
+                    DiffMark::Changed => theme.violet,
+                    DiffMark::Removed => theme.error,
+                    _ => theme.muted,
                 }
+            };
+            batch.overlays.push(Quad::rect(
+                [
+                    port.position.x - size / 2.0,
+                    port.position.y - size / 2.0,
+                    size,
+                    size,
+                ],
+                theme.canvas,
+                border,
+                theme::RADIUS_S * 0.6,
+                if selected || glow {
+                    theme::STROKE_SELECTED
+                } else {
+                    1.5
+                },
+            ));
+            if connected.contains(&port.id) {
+                batch.overlays.push(Quad::rect(
+                    [port.position.x - 2.0, port.position.y - 2.0, 4.0, 4.0],
+                    if selected { theme.accent } else { theme.green },
+                    Color32::TRANSPARENT,
+                    1.0,
+                    0.0,
+                ));
             }
         }
         batch
     }
 }
+
 fn port_label_origin(
     side: PortSide,
     position: egui::Pos2,
     size: Vec2,
     expanded_owner: bool,
-    label_in_header: bool,
+    in_header: bool,
 ) -> egui::Pos2 {
     if expanded_owner {
-        let offset = match (side, label_in_header) {
+        let offset = match (side, in_header) {
             (PortSide::Left, true) => Vec2::new(10.0, -size.y * 0.5),
             (PortSide::Right, true) => Vec2::new(-10.0 - size.x, -size.y * 0.5),
             (PortSide::Left, false) => Vec2::new(-10.0 - size.x, -size.y * 0.5),
@@ -1162,142 +1139,103 @@ fn port_label_origin(
     } else {
         position
             + match side {
-                PortSide::Left => Vec2::new(10.0, 10.0),
-                PortSide::Right => Vec2::new(-10.0 - size.x, 10.0),
+                PortSide::Left => Vec2::new(10.0, -size.y * 0.5),
+                PortSide::Right => Vec2::new(-10.0 - size.x, -size.y * 0.5),
                 PortSide::Top => Vec2::new(-size.x * 0.5, -10.0 - size.y),
                 PortSide::Bottom => Vec2::new(-size.x * 0.5, 10.0),
             }
     }
 }
 
-pub(crate) fn port_direction_label(direction: agq_studio_scene::PortDirection) -> &'static str {
+fn direction_label(direction: PortDirection) -> &'static str {
     match direction {
-        agq_studio_scene::PortDirection::Unspecified => "not specified",
-        agq_studio_scene::PortDirection::In => "in",
-        agq_studio_scene::PortDirection::Out => "out",
-        agq_studio_scene::PortDirection::InOut => "in/out",
+        PortDirection::Unspecified => "not given",
+        PortDirection::In => "in",
+        PortDirection::Out => "out",
+        PortDirection::InOut => "inout",
     }
 }
+
 fn context_commands(target: Option<&SceneTarget>) -> &'static [CommandId] {
     use CommandId::*;
     match target {
-        None => &[Fit, Home, System, Graph, Requirements],
-        Some(SceneTarget::Port(_)) => {
-            &[Focus, Explain, Source, Dependencies, SelectionRequirements]
-        }
-        Some(SceneTarget::Edge(_)) => &[Focus, Explain, Source],
-        Some(SceneTarget::Node(_) | SceneTarget::Container(_)) => &[
-            Focus,
-            SelectionRequirements,
-            Dependencies,
-            Explain,
-            Source,
+        None => &[
             CreatePart,
-            RenamePart,
+            CreateRequirement,
+            Fit,
+            Architecture,
+            Graph,
+            Requirements,
+        ],
+        Some(SceneTarget::Port(..)) => &[Rename, Connect, Delete, Lock],
+        Some(SceneTarget::Edge(_)) => &[Delete],
+        Some(SceneTarget::Node(_) | SceneTarget::Container(_)) => &[
+            Rename,
+            CreatePart,
+            CreatePort,
+            CreateAttribute,
+            Connect,
+            MoveTo,
+            Lock,
+            Delete,
+            Focus,
+            Collapse,
             Pin,
             Unpin,
-            Neighbors,
         ],
     }
 }
+
 fn category_color(category: NodeCategory, theme: crate::theme::Theme) -> Color32 {
     match category {
         NodeCategory::Requirement => theme.amber,
-        NodeCategory::Agent | NodeCategory::Action | NodeCategory::State => theme.violet,
-        NodeCategory::Interface | NodeCategory::Port => theme.green,
+        NodeCategory::Definition => theme.violet,
+        NodeCategory::Package => theme.muted,
         _ => theme.accent,
     }
 }
-/// Font-independent marks. The adjacent text always supplies the category name.
-fn category_mark(
-    painter: &egui::Painter,
-    center: egui::Pos2,
-    category: NodeCategory,
-    size: f32,
-    color: Color32,
-) {
-    let bounds = egui::Rect::from_center_size(center, Vec2::splat(size));
-    let stroke = Stroke::new(1.0, color);
-    match category {
-        NodeCategory::Interface | NodeCategory::Port => {
-            for y in [-2.0, 2.0] {
-                painter.line_segment(
-                    [
-                        center + Vec2::new(-size * 0.5, y),
-                        center + Vec2::new(size * 0.5, y),
-                    ],
-                    stroke,
-                );
-            }
-        }
-        NodeCategory::Agent => {
-            let r = size * 0.6;
-            painter.add(egui::Shape::closed_line(
-                vec![
-                    center + Vec2::new(0.0, -r),
-                    center + Vec2::new(r, 0.0),
-                    center + Vec2::new(0.0, r),
-                    center + Vec2::new(-r, 0.0),
-                ],
-                stroke,
-            ));
-        }
-        NodeCategory::Action | NodeCategory::State => {
-            painter.circle_stroke(center, size * 0.5, stroke);
-        }
-        _ => {
-            painter.rect_stroke(bounds, 0.0, stroke, egui::StrokeKind::Inside);
-            if category == NodeCategory::System {
-                painter.rect_stroke(bounds.shrink(2.0), 0.0, stroke, egui::StrokeKind::Inside);
-            } else if category == NodeCategory::Requirement {
-                painter.line_segment(
-                    [
-                        center - Vec2::new(size * 0.25, 0.0),
-                        center + Vec2::new(size * 0.25, 0.0),
-                    ],
-                    stroke,
-                );
-            }
-        }
+
+/// The lock mark: full for an element that carries the lock, faint for one
+/// covered by an owner's lock.
+fn lock_mark(painter: &egui::Painter, center: egui::Pos2, size: f32, lock: LockMark, theme: Theme) {
+    let size = size.max(theme::LOCK_MARK);
+    if lock == LockMark::Own {
+        theme.lock_mark(painter, center, size);
+    } else {
+        let mut faint = painter.clone();
+        faint.set_opacity(0.45);
+        theme.lock_mark(&faint, center, size);
     }
 }
-fn elided(
-    painter: &egui::Painter,
-    position: egui::Pos2,
-    text: &str,
-    size: f32,
-    color: Color32,
-    width: f32,
-) {
-    bounded_label(painter, position, text, size, color, width, 1);
-}
+
+/// Text within a width, on at most `rows` lines; returns where it was drawn.
 fn bounded_label(
     painter: &egui::Painter,
     position: egui::Pos2,
     text: &str,
-    size: f32,
+    font: FontId,
     color: Color32,
     width: f32,
     rows: usize,
-) {
-    let mut job =
-        egui::text::LayoutJob::simple_singleline(text.into(), FontId::proportional(size), color);
+) -> egui::Rect {
+    let mut job = egui::text::LayoutJob::simple_singleline(text.into(), font, color);
     job.wrap.max_width = width;
     job.wrap.max_rows = rows;
-    job.wrap.break_anywhere = rows == 1;
+    job.wrap.break_anywhere = false;
     job.wrap.overflow_character = Some('…');
-    painter.galley(position, painter.layout_job(job), color);
+    let galley = painter.layout_job(job);
+    let drawn = egui::Rect::from_min_size(position, galley.size());
+    painter.galley(position, galley, color);
+    drawn
 }
 
 #[cfg(test)]
-mod port_label_tests {
+mod tests {
     use super::*;
 
     #[test]
-    fn expanded_owner_labels_use_the_clear_header_or_the_exterior_not_child_cards() {
+    fn expanded_owner_labels_use_the_header_or_the_outside_not_child_cards() {
         let size = Vec2::new(92.0, 14.0);
-        // Real-run04's focused container is shown near 71% zoom. The new
-        // reserved row at world y=72 stays above children at world y=92.
         let zoom = 0.708;
         for side in [PortSide::Left, PortSide::Right] {
             let x = if side == PortSide::Left {
@@ -1306,35 +1244,17 @@ mod port_label_tests {
                 844.0 * zoom
             };
             let port = egui::pos2(x, 72.0 * zoom);
-            let rect =
+            let header =
                 egui::Rect::from_min_size(port_label_origin(side, port, size, true, true), size);
-            assert!(rect.min.y > 58.0 * zoom);
-            assert!(rect.max.y < 92.0 * zoom);
-            assert!(rect.min.x >= 0.0 && rect.max.x <= 844.0 * zoom);
-
-            let body_port = egui::pos2(x, 292.0 * zoom);
-            let exterior = egui::Rect::from_min_size(
-                port_label_origin(side, body_port, size, true, false),
-                size,
-            );
+            assert!(header.min.x >= 0.0 && header.max.x <= 844.0 * zoom);
+            let body = egui::pos2(x, 292.0 * zoom);
+            let outside =
+                egui::Rect::from_min_size(port_label_origin(side, body, size, true, false), size);
             if side == PortSide::Left {
-                assert!(exterior.max.x < 0.0);
+                assert!(outside.max.x < 0.0);
             } else {
-                assert!(exterior.min.x > 844.0 * zoom);
+                assert!(outside.min.x > 844.0 * zoom);
             }
-            assert_eq!(exterior.center().y, body_port.y);
         }
-        let top = egui::pos2(140.0, 0.0);
-        let top_label = egui::Rect::from_min_size(
-            port_label_origin(PortSide::Top, top, size, true, false),
-            size,
-        );
-        assert!(top_label.max.y < top.y);
-        let bottom = egui::pos2(140.0, 500.0);
-        let bottom_label = egui::Rect::from_min_size(
-            port_label_origin(PortSide::Bottom, bottom, size, true, false),
-            size,
-        );
-        assert!(bottom_label.min.y > bottom.y);
     }
 }

@@ -18,7 +18,6 @@ members = [
     "crates/modeling-view",
     "crates/modeling-agent",
     "adapters/modeling-sqlite",
-    "crates/studio-platform",
     "crates/studio-scene",
     "crates/studio-native",
     "tools/metamodel-gen",

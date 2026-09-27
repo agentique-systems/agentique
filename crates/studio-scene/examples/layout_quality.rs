@@ -1,27 +1,34 @@
-//! Measures geometry correctness and mental-map displacement on adversarial fixtures.
+//! Measures layout correctness and how far unchanged cards move after a local
+//! edit, on the fixtures.
 use agq_studio_scene::*;
 use std::time::Instant;
 
 fn main() {
-    for (name, projection) in fixtures::adversarial() {
-        for hierarchy in [true, false] {
+    let inputs = [
+        ("url-shortener", fixtures::architecture()),
+        ("requirements", fixtures::architecture().requirements_view()),
+        ("dense-ports", fixtures::dense_ports()),
+        ("typography", fixtures::typography()),
+        ("stress-200", fixtures::stress(200, 400)),
+    ];
+    for (name, input) in inputs {
+        for layout in [LayoutKind::Hierarchy, LayoutKind::Graph] {
+            let hierarchy = layout == LayoutKind::Hierarchy;
             let options = SceneOptions {
-                hierarchy,
+                layout,
                 ..Default::default()
             };
             let start = Instant::now();
-            let before = SemanticScene::from_projection(&projection, &options, None).unwrap();
+            let before = Scene::build(&input, &options, None).unwrap();
             let scene_ms = start.elapsed().as_secs_f64() * 1000.0;
-            let mut edited = projection.clone();
+            let mut edited = input.clone();
             let mut added = edited.nodes.last().unwrap().clone();
             added.id = fixtures::id(9_000_000);
             added.name = "LocalAddedPart".into();
-            added.features.clear();
-            added.counts = Default::default();
+            added.ports.clear();
             edited.nodes.push(added);
             let start = Instant::now();
-            let after =
-                SemanticScene::from_projection(&edited, &options, Some(before.memory())).unwrap();
+            let after = Scene::build(&edited, &options, Some(before.memory())).unwrap();
             let edit_scene_ms = start.elapsed().as_secs_f64() * 1000.0;
             let mut movement: Vec<_> = before
                 .nodes
@@ -62,7 +69,7 @@ fn main() {
             println!(
                 "{}",
                 serde_json::json!({
-                    "fixture": name, "semantic_acceptance": false,
+                    "fixture": name,
                     "layout": if hierarchy { "hierarchy" } else { "graph" },
                     "nodes": after.nodes.len(), "ports": after.ports.len(), "edges": after.edges.len(),
                     "scene_build_ms": scene_ms, "edit_scene_build_ms": edit_scene_ms,

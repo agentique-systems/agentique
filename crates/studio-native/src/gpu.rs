@@ -75,7 +75,6 @@ impl Quad {
     /// that rise and fade over `theme::CHANGED_SECONDS` from `started`
     /// (`clock()` when the change arrived). Push it to `Batch::overlays`, and
     /// request repaints while `theme::changed_intensity(clock() - started) > 0`.
-    #[allow(dead_code, reason = "the Studio calls it when change events arrive")]
     pub fn changed(rect: [f32; 4], radius: f32, color: egui::Color32, started: f32) -> Self {
         Self {
             detail: [0.0, 0.0, CHANGED, started],
@@ -84,7 +83,6 @@ impl Quad {
     }
     /// A static soft glow around `rect` in `color`: selection and focus halos.
     /// Push it before the card it surrounds.
-    #[allow(dead_code, reason = "the Studio's selection rendering adopts it")]
     pub fn halo(rect: [f32; 4], radius: f32, color: egui::Color32) -> Self {
         Self {
             detail: [0.0, 0.0, HALO, 0.0],

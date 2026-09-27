@@ -1,29 +1,22 @@
-//! Agentique Native Studio. Semantic work crosses the in-process platform boundary.
+//! Agentique Studio: the Operator builds and changes an architecture on the
+//! Surface. Every model change goes through the System State's typed
+//! operations; the project saves it.
 #![forbid(unsafe_code)]
-mod actions;
-mod agents;
 mod app;
 #[cfg(feature = "automation")]
 mod automation;
-mod bridge;
 mod commands;
+mod edit;
 mod gpu;
 mod gpu_timing;
 mod history;
 mod inspector;
-mod loading;
 mod navigation;
 mod palette_ui;
 mod panels;
-mod part_edit;
-mod presentation;
 mod project_dialog;
-mod read_lane;
 mod relationship_labels;
 mod requirements;
-mod revision_reads;
-mod saved_views;
-mod scene_build;
 mod selection;
 mod session;
 #[cfg(feature = "automation")]
@@ -32,9 +25,6 @@ mod surface_recovery;
 mod targets;
 mod theme;
 mod timing;
-mod updates;
-#[cfg(test)]
-mod view_intent_tests;
 mod viewport;
 mod zoom_input;
 
@@ -42,41 +32,42 @@ use clap::Parser;
 use std::path::PathBuf;
 
 #[derive(Parser, Clone, Debug)]
-#[command(about = "Agentique Native Studio — spatial engineering")]
+#[command(about = "Agentique Studio")]
 pub struct Args {
-    /// Explicit visual fixture. Never substitutes for an authenticated project.
+    /// Show a read-only example instead of a project.
     #[arg(long, value_parser = ["architecture", "typography", "ports", "requirements", "diff", "stress1000", "stress10000"])]
     fixture: Option<String>,
-    #[arg(long, default_value = ".")]
-    root: PathBuf,
+    /// Open this project folder.
     #[arg(long)]
-    runtime_dir: Option<PathBuf>,
+    project: Option<PathBuf>,
+    /// Where the Studio remembers the last project, recent projects and cameras.
     #[arg(long)]
-    database: Option<PathBuf>,
-    /// Capture the actual native GPU surface after a settling period.
+    session: Option<PathBuf>,
+    /// Save a screenshot of the window after it settles, then close.
     #[arg(long)]
     screenshot: Option<PathBuf>,
-    /// Benchmark frames then close; vsync stays enabled and timings are wall-frame intervals.
+    /// Close after this many frames and print frame timings.
     #[arg(long)]
     frames: Option<u64>,
     #[arg(long)]
     metrics: Option<PathBuf>,
-    /// Measure the custom scene GPU pass when the adapter supports timestamp queries.
+    /// Measure the Surface's GPU pass when the adapter supports timestamp queries.
     #[arg(long)]
     gpu_timestamps: bool,
     #[arg(long)]
     light: bool,
+    /// Start without reopening the last project.
     #[arg(long)]
     no_restore: bool,
-    /// Drive native input through a scripted fixture journey or the camera benchmark.
+    /// Drive the UI through a scripted journey (a-build, a-crash, a-reopen) or the camera benchmark (stress).
     #[cfg(feature = "automation")]
-    #[arg(long, value_parser = ["vertical", "keyboard", "stress"])]
+    #[arg(long, value_parser = ["a-build", "a-crash", "a-reopen", "stress"])]
     scenario: Option<String>,
     /// Write the scenario report (JSON) to this path.
     #[cfg(feature = "automation")]
     #[arg(long, requires = "scenario")]
     scenario_report: Option<PathBuf>,
-    /// Save native screenshots at journey checkpoints into this directory.
+    /// Save screenshots at journey checkpoints into this directory.
     #[cfg(feature = "automation")]
     #[arg(long, requires = "scenario", conflicts_with = "screenshot")]
     gallery: Option<PathBuf>,
@@ -90,6 +81,15 @@ impl Args {
     }
     #[cfg(not(feature = "automation"))]
     fn scenario_running(&self) -> bool {
+        false
+    }
+    /// The `a-build` journey creates the project at `--project` through the UI.
+    #[cfg(feature = "automation")]
+    fn creates_project(&self) -> bool {
+        self.scenario.as_deref() == Some("a-build")
+    }
+    #[cfg(not(feature = "automation"))]
+    fn creates_project(&self) -> bool {
         false
     }
 }
@@ -122,14 +122,14 @@ fn main() -> eframe::Result {
             ..Default::default()
         },
         viewport: eframe::egui::ViewportBuilder::default()
-            .with_title("Agentique · Native Studio")
+            .with_title("Agentique Studio")
             .with_inner_size([1600.0, 1000.0])
             .with_min_inner_size([1080.0, 720.0])
-            .with_app_id("systems.agentique.studio.native"),
+            .with_app_id("systems.agentique.studio"),
         ..Default::default()
     };
     eframe::run_native(
-        "Agentique Native Studio",
+        "Agentique Studio",
         options,
         Box::new(move |cc| {
             *surface_context.lock().expect("surface context") = Some(cc.egui_ctx.clone());
@@ -137,7 +137,7 @@ fn main() -> eframe::Result {
                 recovery.attach(&cc.egui_ctx, &render_state.device);
             }
             gpu::install(cc, args.gpu_timestamps, recovery).map_err(std::io::Error::other)?;
-            Ok(Box::new(app::StudioApp::new(cc, args)?))
+            Ok(Box::new(app::StudioApp::new(cc, args)))
         }),
     )
 }

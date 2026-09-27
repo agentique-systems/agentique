@@ -1,5 +1,5 @@
 use super::*;
-use agq_studio_scene::{SceneOptions, SemanticScene, Size, SpatialIndex, fixtures};
+use agq_studio_scene::{Scene, SceneOptions, Size, SpatialIndex, fixtures};
 use egui::{Modifiers, Rect, Sense, Vec2};
 
 struct Harness {
@@ -166,9 +166,8 @@ fn ordered_wheel_anchor_survives_12000_native_input_cycles() {
 
 #[test]
 fn mixed_dpi_scene_hit_ports_and_popup_anchor_use_logical_coordinates() {
-    let projection = fixtures::architecture();
-    let scene =
-        SemanticScene::from_projection(&projection, &SceneOptions::default(), None).unwrap();
+    let input = fixtures::architecture();
+    let scene = Scene::build(&input, &SceneOptions::default(), None).unwrap();
     let index = SpatialIndex::build(&scene);
     let node = scene.nodes.iter().find(|node| !node.is_container).unwrap();
     let mut camera = Camera2D::default();

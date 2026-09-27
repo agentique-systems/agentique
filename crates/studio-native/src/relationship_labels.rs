@@ -6,13 +6,11 @@ use std::{collections::HashMap, sync::Arc};
 
 /// Space between a label's text and its outline; `place` takes the text size
 /// plus twice this.
-#[allow(dead_code, reason = "the Surface adopts it with `paint`")]
 pub(crate) const PADDING: Vec2 = Vec2::new(8.0, 4.0);
 
 /// Lay out a relationship label: at most two rows within `max_width`, broken
 /// at spaces, never shrunk below `theme::LABEL`, elided rather than clipped.
 /// The colour is left to `paint`.
-#[allow(dead_code, reason = "the Surface adopts it with `paint`")]
 pub(crate) fn layout(painter: &Painter, text: String, max_width: f32) -> Arc<Galley> {
     let mut job = egui::text::LayoutJob::simple_singleline(
         text,
@@ -28,7 +26,6 @@ pub(crate) fn layout(painter: &Painter, text: String, max_width: f32) -> Arc<Gal
 
 /// Draw a placed label: a short leader from the route to the label, and the
 /// text on a raised tag. `emphasis` marks the selected or hovered relationship.
-#[allow(dead_code, reason = "the Surface adopts it in place of inline drawing")]
 pub(crate) fn paint(
     painter: &Painter,
     placement: &Placement,
@@ -70,7 +67,7 @@ pub(crate) fn paint(
 }
 
 /// Screen-space cells bound the work of avoiding dense routes. This contains
-/// drawing segments only, never semantic records or graph authority.
+/// drawing segments only, never model elements or relationships.
 #[derive(Default)]
 pub(crate) struct RouteObstacles {
     cells: HashMap<(i32, i32), Vec<[Pos2; 2]>>,

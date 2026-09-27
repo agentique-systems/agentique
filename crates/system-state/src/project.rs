@@ -123,7 +123,8 @@ impl From<HistoryError> for ProjectError {
 pub enum ApplyError {
     /// The change was rejected (R-18).
     Rejection(Rejection),
-    /// The change could not be saved, so it was undone; redo tries again.
+    /// The change could not be saved, so it was reverted. It is not kept for
+    /// redo: the model and the undo and redo steps are as before the change.
     Project(ProjectError),
 }
 
@@ -216,7 +217,10 @@ impl Project {
     pub fn apply(&mut self, change: Change) -> Result<ChangeEvent, ApplyError> {
         let event = self.state.apply(change)?;
         if let Err(error) = self.save() {
+            // The change was not applied: revert it, and do not keep it for
+            // redo, which would apply it without the Operator asking.
             self.state.undo();
+            self.state.redo.clear();
             return Err(error.into());
         }
         Ok(event)

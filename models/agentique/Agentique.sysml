@@ -73,7 +73,6 @@ package AgentiqueArchitecture {
              * rendering and direct manipulation), the Panels (inspector, requirements,
              * history, simulation, links) and the Conversation with the Assistant. */
         part 'agq-studio-native' : Crate;
-        part 'agq-studio-platform' : Crate;
         part 'agq-studio-scene' : Crate;
     }
 
@@ -126,10 +125,6 @@ package AgentiqueArchitecture {
 
     // Temporary dependencies of code that Stage 2 replaces with git-backed History.
 
-    dependency from Studio to History {
-        doc /* Temporary: agq-studio-native and agq-studio-platform open the SQLite
-             * revision store directly instead of through the System State. */
-    }
     dependency from Assistant to History {
         doc /* Temporary: agq-modeling-agent reads revisions from agq-modeling-repository. */
     }
