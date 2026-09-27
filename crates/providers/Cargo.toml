@@ -1,0 +1,17 @@
+[package]
+name = "agq-providers"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Providers: model providers through rig, keys, model capabilities, usage and cost"
+
+[dependencies]
+# rig is pinned exactly and upgraded deliberately, one pull request per upgrade
+# (ROADMAP §4.7, §8.7). native-tls uses the Windows TLS stack (schannel), so no
+# C crypto library is built on the reference machine (S4.2, P4).
+rig-core = { version = "=0.42.0", default-features = false, features = ["reqwest", "native-tls"] }
+reqwest = { version = "0.13", default-features = false, features = ["json", "native-tls"] }
+tokio = { version = "1", features = ["rt-multi-thread", "time", "sync"] }
+futures = "0.3"
+serde.workspace = true
+serde_json.workspace = true

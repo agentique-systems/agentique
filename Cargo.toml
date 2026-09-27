@@ -4,6 +4,7 @@ members = [
     "crates/system-state",
     "crates/history",
     "crates/assistant",
+    "crates/providers",
     "crates/studio-scene",
     "crates/studio-native",
 ]

@@ -62,7 +62,11 @@ package AgentiqueArchitecture {
         doc /* Talks to model providers through rig (and a thin Jev client, C-34);
              * keys in the OS credential store; model lists, capabilities, usage. The
              * only part that uses rig, tokio, reqwest or the credential-store crates
-             * (R-21, R-41). No crate yet. */
+             * (R-21, R-41). */
+        part 'agq-providers' : Crate {
+            doc /* The provider layer: one streamed model call for every provider,
+                 * the capability table, keys and usage (S4.2 kept, start of W5.7). */
+        }
     }
 
     part def Simulation {
