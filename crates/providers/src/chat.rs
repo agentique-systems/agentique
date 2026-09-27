@@ -49,6 +49,15 @@ async fn call(
     sender: &Sender<Event>,
 ) -> Result<Reply, Error> {
     let provider = request.model.provider;
+    if !capabilities(&request.model).tools {
+        return Err(Error {
+            kind: ErrorKind::Rejected,
+            message: format!(
+                "{} answers typed questions and cannot hold a conversation, so it is not a model for the Assistant.",
+                provider.name()
+            ),
+        });
+    }
     let Some(key) = key else {
         return Err(Error {
             kind: ErrorKind::MissingKey,
@@ -59,15 +68,6 @@ async fn call(
             ),
         });
     };
-    if !capabilities(&request.model).tools {
-        return Err(Error {
-            kind: ErrorKind::Rejected,
-            message: format!(
-                "{} answers typed questions and cannot hold a conversation, so it is not a model for the Assistant.",
-                provider.name()
-            ),
-        });
-    }
     let rig_request = rig_request(request)?;
     let model = request.model.model.clone();
     let setup = |error: rig_core::http_client::Error| Error {
@@ -109,7 +109,11 @@ async fn call(
         }
         Provider::OpenAi => stream_with!(openai::Client),
         Provider::OpenRouter => stream_with!(openrouter::Client),
-        Provider::TypeSafe => unreachable!("refused above: no tools"),
+        // Refused above (no tools); kept as an error, never a panic.
+        Provider::TypeSafe => Err(Error {
+            kind: ErrorKind::Rejected,
+            message: "TypeSafe AI is not a model for the Assistant.".to_string(),
+        }),
     }
 }
 

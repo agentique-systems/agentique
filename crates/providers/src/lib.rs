@@ -57,7 +57,7 @@ impl Provider {
     ];
 
     /// The stable id used in settings and conversations: `anthropic`,
-    /// `openai`, `openrouter`, `deepseek`.
+    /// `openai`, `openrouter`, `deepseek`, `typesafe`.
     pub fn id(self) -> &'static str {
         match self {
             Provider::Anthropic => "anthropic",

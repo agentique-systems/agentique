@@ -35,8 +35,11 @@ call.cancel(); // stops at once; the call ends with Finished(Err(Cancelled))
   `rig-typesafeai` (C-34): yes or no, a choice among 2–255 options or a score
   on 2–10 levels about a state, with probabilities and a confidence; pinned
   to `jev-1.13.0`; limits checked before sending; 429 and 529 retried twice;
-  never the Assistant's model (it has no tools). `cargo run -p agq-providers
-  --example jev` makes one live decision under a spend log and stop.
+  never the Assistant's model (it has no tools). `decide` blocks for at most
+  30 seconds and cannot be cancelled yet, unlike `chat` (§4.7): Stage 7
+  decides whether live evaluations need a handle. `cargo run -p
+  agq-providers --example jev` makes one live decision under a spend log and
+  stop.
 - **Capabilities** (`capabilities(&model)`) and **prices** (`price(&model)`, a
   dated table, an estimate) are data. Code outside this crate asks them, never a
   provider's name (§8.7).

@@ -61,10 +61,7 @@ fn main() {
                     instructions:
                         "Is this new short link likely to be abuse (spam, phishing or scams)?"
                             .into(),
-                    kind: QuestionKind::YesNo {
-                        yes: None,
-                        no: None,
-                    },
+                    kind: QuestionKind::YesNo { meanings: None },
                 },
             ),
             (

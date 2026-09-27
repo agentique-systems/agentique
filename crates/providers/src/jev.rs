@@ -44,11 +44,9 @@ pub struct Question {
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum QuestionKind {
-    /// Yes or no, optionally with what each means.
-    YesNo {
-        yes: Option<String>,
-        no: Option<String>,
-    },
+    /// Yes or no, optionally with what yes and what no mean (both or
+    /// neither, as the API requires).
+    YesNo { meanings: Option<(String, String)> },
     /// One of these options (2–255), each with an optional description.
     Choice {
         options: BTreeMap<String, Option<String>>,
@@ -87,7 +85,7 @@ pub enum Answer {
 
 impl DecisionRequest {
     /// The request body, after checking the limits the API documents.
-    pub fn body(&self) -> Result<Value, String> {
+    pub(crate) fn body(&self) -> Result<Value, String> {
         if self.questions.is_empty() {
             return Err("A decision needs at least one question.".into());
         }
@@ -97,10 +95,10 @@ impl DecisionRequest {
                 return Err("A question id must not be empty.".into());
             }
             let value = match &question.kind {
-                QuestionKind::YesNo { yes, no } => {
+                QuestionKind::YesNo { meanings } => {
                     let mut value =
                         json!({ "type": "noul", "instructions": question.instructions });
-                    if yes.is_some() || no.is_some() {
+                    if let Some((yes, no)) = meanings {
                         value["criteria"] = json!({ "true": yes, "false": no });
                     }
                     value
@@ -162,7 +160,7 @@ struct WireUsage {
 }
 
 /// Reads a reply body.
-pub fn read_reply(body: &str, request_id: Option<String>) -> Result<DecisionReply, Error> {
+pub(crate) fn read_reply(body: &str, request_id: Option<String>) -> Result<DecisionReply, Error> {
     let wire: WireReply = serde_json::from_str(body).map_err(|error| Error {
         kind: ErrorKind::Other,
         message: format!("TypeSafe AI sent a reply that could not be read ({error})."),
@@ -236,7 +234,7 @@ pub(crate) fn decide(
         endpoint.as_deref().unwrap_or(API_URL).trim_end_matches('/')
     );
     runtime::run(TIMEOUT, async move {
-        let client = reqwest::Client::new();
+        let client = client();
         let mut attempt = 0;
         loop {
             let sent = client
@@ -274,7 +272,14 @@ pub(crate) fn decide(
                         .and_then(|seconds| seconds.trim().parse().ok())
                         .map(Duration::from_secs)
                 });
-            let text = response.text().await.unwrap_or_default();
+            // An error body is shown to the Operator: keep it short.
+            let text: String = response
+                .text()
+                .await
+                .unwrap_or_default()
+                .chars()
+                .take(300)
+                .collect();
             if (200..300).contains(&status) {
                 return read_reply(&text, request_id);
             }
@@ -322,15 +327,27 @@ pub(crate) fn decide(
             return Err(Error { kind, message });
         }
     })
-    .unwrap_or_else(|| {
+    .unwrap_or_else(|failure| {
         Err(Error {
             kind: ErrorKind::Unreachable,
-            message: format!(
-                "TypeSafe AI did not answer within {} seconds.",
-                TIMEOUT.as_secs()
-            ),
+            message: match failure {
+                runtime::Failure::TimedOut => format!(
+                    "TypeSafe AI did not answer within {} seconds.",
+                    TIMEOUT.as_secs()
+                ),
+                runtime::Failure::Crashed => {
+                    "The request to TypeSafe AI failed unexpectedly. Try again.".to_string()
+                }
+            },
         })
     })
+}
+
+/// One HTTP client for every decision, so connections and TLS sessions are
+/// reused (a fast agent may decide many times a second).
+fn client() -> reqwest::Client {
+    static CLIENT: std::sync::OnceLock<reqwest::Client> = std::sync::OnceLock::new();
+    CLIENT.get_or_init(reqwest::Client::new).clone()
 }
 
 #[cfg(test)]
@@ -346,10 +363,7 @@ mod tests {
                     "suspicious".to_string(),
                     Question {
                         instructions: "Is this link likely abuse?".into(),
-                        kind: QuestionKind::YesNo {
-                            yes: None,
-                            no: None,
-                        },
+                        kind: QuestionKind::YesNo { meanings: None },
                     },
                 ),
                 (
@@ -383,6 +397,25 @@ mod tests {
         assert_eq!(
             body["questions"]["action"]["criteria"]["activate"],
             Value::Null
+        );
+    }
+
+    #[test]
+    fn yes_and_no_are_described_together() {
+        let mut request = triage();
+        request.questions.insert(
+            "urgent".into(),
+            Question {
+                instructions: "Is it urgent?".into(),
+                kind: QuestionKind::YesNo {
+                    meanings: Some(("It must be handled now".into(), "It can wait".into())),
+                },
+            },
+        );
+        let body = request.body().unwrap();
+        assert_eq!(
+            body["questions"]["urgent"]["criteria"],
+            json!({ "true": "It must be handled now", "false": "It can wait" })
         );
     }
 
