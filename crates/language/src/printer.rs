@@ -213,6 +213,7 @@ fn is_bare_connect(e: &Element) -> bool {
         && e.redefines.is_empty()
         && e.multiplicity.is_none()
         && !e.is_abstract
+        && !e.is_end
         && e.direction.is_none()
 }
 

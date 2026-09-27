@@ -13,6 +13,8 @@
 //!   targets, wrong kinds of type, bad redefinitions, connections whose ends
 //!   do not fit, parts that contain themselves, and requirements satisfied by
 //!   the wrong kind of subject.
+//! - [`writable`] checks that an element built or changed in code can be
+//!   printed and read back as the same element.
 //!
 //! Names are never identity. Inheritance is lookup: inherited features are
 //! found through the generals, never copied. The supported subset is listed
@@ -35,6 +37,7 @@ mod printer;
 mod resolve;
 mod tree;
 mod validate;
+mod writable;
 
 pub use library::{LIBRARY_TEXT, library};
 pub use parser::{Source, parse};
@@ -45,3 +48,4 @@ pub use tree::{
     QualifiedName, Reference, Role, Step, Tree, TreeError, Visibility,
 };
 pub use validate::{Diagnostic, validate};
+pub use writable::{Field, writable};
