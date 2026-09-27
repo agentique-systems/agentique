@@ -17,7 +17,7 @@ With an accepted bundle supplied as a local directory or `.agq-runtime` file:
 
 ```text
 cargo run --locked --offline -p agq-runtime-publications --bin agq-publications -- install --bundle /path/to/accepted-runtime.agq-runtime
-cargo run --locked --offline -p agq-studio-native
+cargo run --locked --offline --manifest-path crates/studio-native/Cargo.toml --target-dir target
 ```
 
 `--offline` applies to Cargo after dependencies are cached. It does not grant
