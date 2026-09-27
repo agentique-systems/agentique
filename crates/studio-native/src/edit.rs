@@ -596,7 +596,14 @@ impl StudioApp {
                 );
                 self.changed(&event);
             }
-            Ok(None) => self.status = "Nothing to undo".into(),
+            Ok(None) => {
+                self.status = if undo {
+                    "Nothing to undo"
+                } else {
+                    "Nothing to redo"
+                }
+                .into()
+            }
             Err(error) => {
                 self.saved = Err(error.to_string());
                 let verb = if undo { "undone" } else { "redone" };
@@ -945,13 +952,9 @@ pub fn modal(
         .shadow(ctx.style().visuals.window_shadow);
     egui::Modal::new(egui::Id::new(("studio-dialog", title)))
         .frame(frame)
-        .backdrop_color(egui::Color32::from_black_alpha(if theme.dark {
-            150
-        } else {
-            80
-        }))
+        .backdrop_color(theme.backdrop)
         .show(ctx, |ui| {
-            ui.set_width(420.0);
+            ui.set_width(tokens::DIALOG_WIDTH);
             ui.label(
                 egui::RichText::new(title)
                     .font(tokens::semibold(tokens::HEADING))

@@ -131,13 +131,24 @@ pub struct HistoryPanel {
     loaded: bool,
     /// Selected checkpoint ids, at most two.
     pub selected: Vec<String>,
+    /// Why the checkpoints could not be read, if they could not.
+    pub error: Option<String>,
     /// Whether the model differs from the last checkpoint; updated on
     /// change events and checkpoints, not every frame.
     pub uncommitted: Option<bool>,
 }
 impl HistoryPanel {
     pub fn reload(&mut self, project: &Project) {
-        self.checkpoints = project.checkpoints().unwrap_or_default();
+        match project.checkpoints() {
+            Ok(checkpoints) => {
+                self.checkpoints = checkpoints;
+                self.error = None;
+            }
+            Err(error) => {
+                self.checkpoints.clear();
+                self.error = Some(error.to_string());
+            }
+        }
         self.uncommitted = project.has_uncommitted_changes().ok();
         self.loaded = true;
         let ids: BTreeSet<_> = self.checkpoints.iter().map(|c| c.id.clone()).collect();
@@ -188,7 +199,11 @@ impl StudioApp {
         } else {
             RichText::new("●  Now · same as the last checkpoint").color(theme.muted)
         });
-        if self.history.checkpoints.is_empty() {
+        if let Some(error) = &self.history.error {
+            ui.label(
+                RichText::new(format!("The history could not be read: {error}")).color(theme.error),
+            );
+        } else if self.history.checkpoints.is_empty() {
             ui.label(crate::app::muted(
                 "No checkpoints yet. Ctrl+S records one.",
                 theme,

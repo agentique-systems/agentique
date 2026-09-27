@@ -107,7 +107,8 @@ impl StudioApp {
         theme.install(&cc.egui_ctx);
         // Scripted journeys run without animation so positions are final.
         let reduced_motion = session.reduced_motion || args.scenario_running();
-        cc.egui_ctx.style_mut(|style| {
+        // Both the dark and the light style, so switching theme keeps it.
+        cc.egui_ctx.all_styles_mut(|style| {
             style.animation_time = if reduced_motion {
                 0.0
             } else {
@@ -273,6 +274,20 @@ impl StudioApp {
     // Projects and fixtures.
 
     pub fn open_project(&mut self, folder: &Path) {
+        // Opening the project that is open reads it again from disk: this
+        // window's project must let go of the folder first.
+        let same = |a: &Path, b: &Path| match (std::fs::canonicalize(a), std::fs::canonicalize(b)) {
+            (Ok(a), Ok(b)) => a == b,
+            _ => a == b,
+        };
+        if self
+            .project
+            .as_ref()
+            .is_some_and(|project| same(project.folder(), folder))
+        {
+            self.save_session();
+            self.project = None;
+        }
         match Project::open(folder) {
             Ok(project) => self.install_project(project),
             Err(ProjectError::Locked) => {
@@ -713,7 +728,7 @@ impl StudioApp {
             }
             ReducedMotion => {
                 self.reduced_motion = !self.reduced_motion;
-                ctx.style_mut(|style| {
+                ctx.all_styles_mut(|style| {
                     style.animation_time = if self.reduced_motion {
                         0.0
                     } else {

@@ -250,12 +250,8 @@ impl StudioApp {
         world: Option<Point>,
     ) {
         let modifiers = ui.input(|i| i.modifiers);
-        // A dialog waits for an answer: the Surface only pans and zooms.
+        // A dialog waits for an answer: the Surface takes no input.
         if self.dialog.is_some() {
-            if response.dragged() {
-                let delta = ui.input(|i| i.pointer.delta());
-                self.camera.pan_screen(Point::new(delta.x, delta.y));
-            }
             return;
         }
         if response.drag_started()
@@ -591,7 +587,7 @@ impl StudioApp {
                     right = count.left() - caption * 0.6;
                 }
                 if node.semantic.lock.locked() {
-                    let size = (caption * 1.3).max(12.0);
+                    let size = (caption * 1.3).max(theme::LOCK_MARK);
                     lock_mark(
                         painter,
                         egui::pos2(right - size * 0.5, middle),
@@ -704,7 +700,7 @@ impl StudioApp {
                         lock_mark(
                             painter,
                             egui::pos2(bounds.right() - pad - 6.0, top + size * 0.6),
-                            12.0,
+                            theme::LOCK_MARK,
                             feature.lock,
                             theme,
                         );
@@ -794,7 +790,7 @@ impl StudioApp {
                 .map(|p| self.to_screen(rect, *p))
                 .collect();
             let lock_room = if edge.semantic.lock.locked() {
-                12.0 + theme::SPACE_S
+                theme::LOCK_MARK + theme::SPACE_S
             } else {
                 0.0
             };
@@ -817,7 +813,7 @@ impl StudioApp {
                 lock_mark(
                     painter,
                     egui::pos2(label.right() - theme::SPACE_S - 6.0, label.center().y),
-                    12.0,
+                    theme::LOCK_MARK,
                     edge.semantic.lock,
                     theme,
                 );
@@ -876,7 +872,7 @@ impl StudioApp {
                 lock_mark(
                     painter,
                     egui::pos2(x, label.center().y),
-                    12.0,
+                    theme::LOCK_MARK,
                     port.lock,
                     theme,
                 );
@@ -1196,7 +1192,7 @@ fn category_color(category: NodeCategory, theme: crate::theme::Theme) -> Color32
 /// The lock mark: full for an element that carries the lock, faint for one
 /// covered by an owner's lock.
 fn lock_mark(painter: &egui::Painter, center: egui::Pos2, size: f32, lock: LockMark, theme: Theme) {
-    let size = size.max(12.0);
+    let size = size.max(theme::LOCK_MARK);
     if lock == LockMark::Own {
         theme.lock_mark(painter, center, size);
     } else {

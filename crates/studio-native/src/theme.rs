@@ -50,7 +50,7 @@ pub const HAIRLINE: f32 = 1.0;
 /// Selected cards and the active control.
 pub const STROKE_SELECTED: f32 = 2.0;
 /// Keyboard focus rings.
-#[allow(dead_code, reason = "adopted in the Studio integration")]
+#[allow(dead_code, reason = "the Surface has no keyboard-focusable cards yet")]
 pub const FOCUS_RING: f32 = 2.0;
 
 // Surface shapes and lines, in world units at zoom 1. The shape carries the
@@ -62,7 +62,7 @@ pub const CONTAINER_RADIUS: f32 = 14.0;
 /// Requirement cards.
 pub const REQUIREMENT_RADIUS: f32 = 3.0;
 /// Actions and states.
-#[allow(dead_code, reason = "adopted in the Studio integration")]
+#[allow(dead_code, reason = "the subset has no actions or states yet")]
 pub const BEHAVIOUR_RADIUS: f32 = 22.0;
 pub const EDGE_WIDTH: f32 = 1.25;
 /// Connections touching the selection.
@@ -76,6 +76,10 @@ pub const SHADOW_BLUR: f32 = 14.0;
 /// interpolates by the card's fill brightness so one rule suits both themes.
 pub const SHADOW_OPACITY_DARK: f32 = 0.55;
 pub const SHADOW_OPACITY_LIGHT: f32 = 0.11;
+/// Smallest size of the lock mark on the Surface, in screen points.
+pub const LOCK_MARK: f32 = 12.0;
+/// Width of dialog content, in points.
+pub const DIALOG_WIDTH: f32 = 420.0;
 /// Width of the soft glow around selected and changed elements, in screen points.
 pub const GLOW_WIDTH: f32 = 14.0;
 
@@ -91,7 +95,10 @@ pub const CHANGED_RISE_SECONDS: f32 = 0.12;
 /// Strength (`0..=1`) of the changed highlight `age` seconds after the change.
 /// Zero once the highlight has finished, so callers can stop repainting.
 /// `scene.wgsl` mirrors this curve for highlights drawn on the Surface.
-#[allow(dead_code, reason = "adopted in the Studio integration")]
+#[allow(
+    dead_code,
+    reason = "the fade runs on the GPU; kept to document the curve"
+)]
 pub fn changed_intensity(age: f32) -> f32 {
     if !(0.0..CHANGED_SECONDS).contains(&age) {
         return 0.0;
@@ -246,6 +253,8 @@ pub struct Theme {
     pub edge: Color32,
     /// Window and popover shadows.
     pub shadow: Color32,
+    /// Dims everything behind a modal dialog.
+    pub backdrop: Color32,
 }
 
 impl Theme {
@@ -277,6 +286,7 @@ impl Theme {
                 lock: rgb(214, 219, 229),
                 edge: pick(rgb(92, 98, 112), rgb(150, 158, 176)),
                 shadow: Color32::from_black_alpha(140),
+                backdrop: Color32::from_black_alpha(150),
             }
         } else {
             Self {
@@ -303,6 +313,7 @@ impl Theme {
                 lock: rgb(52, 60, 74),
                 edge: pick(rgb(160, 167, 180), rgb(96, 104, 118)),
                 shadow: Color32::from_rgba_unmultiplied(16, 24, 40, 34),
+                backdrop: Color32::from_black_alpha(80),
             }
         }
     }
