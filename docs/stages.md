@@ -194,25 +194,94 @@ and run the check on the copy. Please also read `docs/deviations.md` entries
 
 ## Stage 2: Studio foundation
 
-Status: **in progress.** (Its work started on 2026-09-27 while the last
-Stage 1 review fixes, in the language core's name printing and import lookup,
-were still being made; the Stage 2 builders did not depend on that code.)
+Status: **provisionally complete, pending Operator acceptance.** (Its work
+started on 2026-09-27 while the last Stage 1 review fixes were being made; the
+Stage 2 builders did not depend on that code.)
 
-Merged so far:
+**Done**
 
-- The System State interface (#30) and its hardening (this change): typed
-  operations in atomic changes, rejections that leave the model unchanged,
-  R-18, locks covering what they own, undo/redo, change events,
-  `undo_since` for undoing Assistant work. What can be written as SysML text
-  is checked in one place in the language core (`agq_language::writable`).
-- Git-backed History and `Project` (#32): save, reopen, checkpoints,
-  branches, crash-safe continuous saving, identities and locks in
-  `agentique.json`.
-- The visual quality pass (#31): design tokens, fonts, Surface depth and the
-  change highlight; Q-6 assessed (stay with egui, with mitigations).
+- The System State interface (#30), then hardened (#33): typed operations
+  (create, delete, rename, move, connect, set property, lock, unlock) in atomic
+  changes; rejections leave the model unchanged; a well-formed change that makes
+  the model invalid is applied and its problems shown at the elements (R-18);
+  locks cover what they own (R-11) and ask the Operator; undo/redo per change;
+  change events; `undo_since` for undoing Assistant work (R-12). What can be
+  written as SysML text is checked in one place in the language core.
+- Git-backed History and `Project` (#32): embedded git, `model/` folder with
+  `agentique.json` (identities, locks, next id), crash-safe continuous saving,
+  checkpoints, branches, the "what changed" comparison between checkpoints.
+- The Studio on the System State (#34): the Surface, Inspector,
+  Requirements and History panels read the System State directly; direct
+  manipulation for every operation, all in the command palette with shortcuts;
+  lock confirmation; change highlighting; about 12,000 lines of the old
+  engine's plumbing removed from the Studio.
+- Visual quality pass (#31): design tokens, Inter and JetBrains Mono, Surface
+  depth, change glow, readable labels.
+- Pre-realignment engine retired (#35): the Generation 2 language
+  engine, the modelling platform, the SQLite store, the generators and the
+  conformance data are gone; the workspace has five crates.
 
-Still to merge: the Studio on the System State (direct manipulation, panels,
-history view), then retiring the pre-realignment engine.
+**Measured** (URL shortener unless noted; Windows 10, release)
+
+| | |
+|---|---|
+| Open a project | 3.3 ms |
+| One edit applied, validated and saved (fsync) | about 6 ms |
+| Checkpoint | 18 ms |
+| "What changed" between checkpoints | 0.9 ms |
+| One edit on a 2,048-element model (apply + validate + event) | 8 ms (55 ms debug) |
+
+**Decided overnight** (REALIGNMENT §6.7, pending the Operator's confirmation):
+R-18; the identity file format; deleted-target references re-bind by name
+like a reload; saves write only changed documents; a project's repository is
+used only if rooted at the project folder; Q-6: stay with egui.
+
+**Q-6 (toolkit)**: stay with egui. A throwaway egui chat prototype streamed
+Markdown with tool cards, element links, question prompts and stop/retry at
+under 0.5 ms per frame for a normal conversation. What egui lacks (bold weight
+in rich text, cross-block selection, inline widgets in wrapped text) is
+covered by about two weeks of mitigations planned with the Conversation panel:
+our own Markdown layout, a virtualised message list, copy buttons, and
+accessibility labels. A web stack would split the app in two and put the GPU
+Surface behind a webview.
+
+**Not done or not tried**
+
+- The Operator has not used it yet; the journeys are scripted UI input
+  (`a-build` 74 steps, `a-crash`, `a-reopen` 14 steps, all passing).
+- The light theme was not inspected.
+- Branches: supported by `Project`, no UI yet. Merging branches by element
+  identity is not built.
+- The crash journey aborts the process after a completed save; saves
+  interrupted mid-way are covered by History's own tests (every step). A real
+  network share was not tried (only a simulated one).
+- After reopening, a remembered layout position can leave a vertical gap.
+
+**Operator: try this**
+
+1. `cargo run --release -p agq-studio-native`, then **New project** in an empty
+   folder.
+2. Build the URL shortener by hand (A3): create parts (api, store,
+   statistics), ports, connect two ports by dragging, rename with F2, set
+   types and multiplicities in the Inspector, add a requirement and mark what
+   satisfies it. Make a mistake on purpose (a type that does not exist) and
+   see it reported at the element; undo it (Ctrl+Z).
+3. Lock a part (L) and try to rename it (A4): a confirmation appears.
+4. Checkpoint (Ctrl+S) with a message; make more changes; open the History
+   panel and compare with the checkpoint.
+5. Close the Studio and reopen the project (A9): everything as left,
+   including the lock and the history. Kill it from Task Manager right after
+   an edit and reopen.
+6. Judge the look and feel for daily use (§2.4).
+
+The same journey runs scripted (screenshots to a folder of your choice):
+
+```text
+cargo build -p agq-studio-native --features automation
+target\debug\agq-studio-native.exe --no-restore --session %TEMP%\agq-session --scenario a-build --project %TEMP%\agq-demo --gallery %TEMP%\agq-shots
+target\debug\agq-studio-native.exe --no-restore --session %TEMP%\agq-session --scenario a-crash --project %TEMP%\agq-demo
+target\debug\agq-studio-native.exe --no-restore --session %TEMP%\agq-session --scenario a-reopen --project %TEMP%\agq-demo --gallery %TEMP%\agq-shots
+```
 
 ## Stage 3: the Assistant
 

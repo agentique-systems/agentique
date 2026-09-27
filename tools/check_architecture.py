@@ -2,7 +2,7 @@
 """Check the Cargo crate graph against the SysML architecture model (REALIGNMENT R-15).
 
 models/agentique/*.sysml maps every workspace crate to a part definition
-(`part 'agq-kernel' : Crate;` inside `part def LanguageCore`) and lists every allowed
+(`part 'agq-language' : Crate;` inside `part def LanguageCore`) and lists every allowed
 dependency between parts (`dependency from Studio to SystemState;`). A crate may use
 crates of its own part and of the parts its part depends on directly. Normal and build
 dependencies count; dev-dependencies are ignored.

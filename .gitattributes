@@ -9,11 +9,3 @@ standards/libraries/** -text
 standards/libraries-2026-04/** -text
 standards/artifacts/** -text
 standards/normative/** -text
-
-standards/kerml-1.0-operational-formal-target-errata-v5.json -text
-# Manifest hashes identify reviewed bytes, including line endings.
-standards/kerml-1.0-operational-errata*.json -text
-standards/kerml-1.0-operational-library-errata-v3.json -text
-standards/kerml-1.0-operational-validation-errata-v4.json -text
-# Reviewed v1 bytes use CRLF; still check actual spaces and blank lines.
-standards/kerml-1.0-operational-errata.json whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol
