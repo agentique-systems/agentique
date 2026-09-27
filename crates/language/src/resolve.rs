@@ -253,16 +253,26 @@ impl<'a> Model<'a> {
     /// unnamed element. Unlinked references and removed targets print as
     /// written.
     pub fn name_for(&self, holder: ElementId, role: Role, reference: &Reference) -> (String, bool) {
-        let written = reference.to_string();
+        let (printed, ok) = self.printed(holder, role, reference);
+        (printed.to_string(), ok)
+    }
+
+    /// [`Model::name_for`] as a reference: the steps renamed as printed.
+    pub fn printed(
+        &self,
+        holder: ElementId,
+        role: Role,
+        reference: &Reference,
+    ) -> (Reference, bool) {
         let targets = match self.resolve_reference(holder, role, reference) {
             Ok(targets) if reference.is_linked() => targets,
-            _ => return (written, true),
+            _ => return (reference.clone(), true),
         };
         let leads_back = |candidate: &Reference| {
             self.resolve_by_name(holder, role, candidate).as_ref() == Ok(&targets)
         };
         if leads_back(reference) {
-            return (written, true);
+            return (reference.clone(), true);
         }
         let mut renamed = reference.clone();
         for (step, target) in renamed.steps.iter_mut().zip(&targets) {
@@ -271,13 +281,13 @@ impl<'a> Model<'a> {
             }
         }
         if leads_back(&renamed) {
-            return (renamed.to_string(), true);
+            return (renamed, true);
         }
         if let Some(path) = self.path(targets[0]) {
             renamed.steps[0].name = QualifiedName::new(path);
         }
         let ok = leads_back(&renamed);
-        (renamed.to_string(), ok)
+        (renamed, ok)
     }
 
     /// Effective names from the top level down to `id`.

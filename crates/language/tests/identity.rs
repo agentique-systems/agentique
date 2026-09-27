@@ -2,7 +2,7 @@
 //! reported, unresolved names are retried, and ids are never reused.
 use agq_language::{
     Element, ElementId, ElementKind, Parent, Role, Source, Tree, TreeError, link, parse, print,
-    validate,
+    printed_reference, validate,
 };
 use std::collections::HashMap;
 
@@ -345,4 +345,17 @@ fn reserved_ids_are_never_handed_out() {
     // Reserving never lowers the next id.
     tree.reserve_ids(ElementId::from_raw(1));
     assert!(tree.next_id() > added);
+}
+
+#[test]
+fn printed_reference_names_the_target_as_print_writes_it() {
+    let mut tree = load(PROBE);
+    let inner = tree.find("P::Q::A").unwrap();
+    let x = tree.find("P::Q::x").unwrap();
+    tree.get_mut(inner).unwrap().name = Some("B".into());
+    let reference = &tree[x].typed_by[0];
+    assert_eq!(reference.to_string(), "A", "the name as written");
+    let printed = printed_reference(&tree, x, Role::TypedBy, reference);
+    assert_eq!(printed.to_string(), "B");
+    assert_eq!(printed.target(), Some(inner));
 }
