@@ -12,7 +12,7 @@ it is the one place in Agentique that talks to the network.
   a question to the Operator. Tool input is untrusted: the turn checks it
   against the tool's schema (`check_input`), then `prepare` resolves names
   and tries every operation on a copy of the model before the change is
-  handed over (§3.2).
+  handed over (ROADMAP §4.2).
 - `turn`: the tool-use loop for one turn of the Conversation.
 - `claude`: the Claude API client.
 - `skills`: the system prompt, compiled in from `skills/*.md`.

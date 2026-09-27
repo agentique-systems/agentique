@@ -733,7 +733,7 @@ cut across parts start there**, in the same change, and the check stays green.
 
 | When | Change to `models/agentique/` | Why |
 |---|---|---|
-| Stage 4 (W4.8) | Add `part def Providers` as a planned part without a crate: "Talks to model providers through rig; keys in the OS credential store; model lists, capabilities, usage". Add `dependency from Assistant to Providers` and `dependency from Studio to Providers` (Settings tests keys and lists models) | A distinct responsibility with three users over the phase (Studio's Settings, the Assistant, live evaluations of agents), and one place that contains rig's API churn (R-21) |
+| Stage 4 (W4.8) | Add `part def Providers` as a planned part without a crate: "Talks to model providers through rig (and a thin Jev client, C-34); keys in the OS credential store; model lists, capabilities, usage". Add `dependency from Assistant to Providers` and `dependency from Studio to Providers` (Settings tests keys and lists models) | A distinct responsibility with three users over the phase (Studio's Settings, the Assistant, live evaluations of agents), and one place that contains rig's API churn (R-21) |
 | Stage 4 (W4.8) | Extend the check: the rig crates, `tokio`, `reqwest` and the credential-store crates (`keyring`, `keyring-core`, `windows-native-keyring-store`) may only be dependencies of the Providers crate; `reqwest` in `agq-assistant` is listed as a temporary exception until W5.7, as the model marks other temporary dependencies | Provider neutrality and network isolation are checked, not hoped for (§8.7) |
 | Stage 5 (W5.7) | Map `part 'agq-providers' : Crate;` into `Providers`; remove `reqwest` from `agq-assistant` | The crate exists |
 | Stage 6 (W6.10) | Model the Assistant as the first agent: `part def Assistant :> Agents::Agent`, with ports for its tools towards the System State and requirements for its guardrails (locks need confirmation; output is untrusted; every change is visible and undoable) and no `fallback` part: when the Assistant fails, the Operator carries on by hand, which a requirement states (a failed provider never blocks manual work) (C-44) | Dogfooding (C-13, C-20); a real example of the concept |
@@ -783,7 +783,7 @@ three weeks, and `main` carried 110 unreleased, largely breaking commits on
   cancelled; the async runtime stays inside the crate.
 - **rig is pinned to an exact version** (`=0.4x.y`) and upgraded deliberately,
   one pull request per upgrade, with five tasks of the evaluation set run
-  on each provider.
+  on each Assistant provider.
 - **Our turn loop stays ours** (`crates/assistant/src/turn.rs`). It holds
   Agentique's policy (locks, questions, autonomy modes, steering, stop,
   compaction) and its 49 tests. It calls rig's per-provider completion models
@@ -863,7 +863,7 @@ servers, Mistral, xAI, Groq and more [2]) wait for a scenario need (Q-12).
 
 **Capabilities are data, not code paths.** `agq-providers` holds a small table
 of capabilities per provider and model family, filled from the matrix above
-and confirmed by five tasks of the evaluation set on each provider (A-8). The Assistant
+and confirmed by five tasks of the evaluation set on each Assistant provider (A-8). The Assistant
 asks the table, never the provider's name. When a capability is missing:
 
 | Missing capability | Behaviour |
@@ -902,7 +902,9 @@ asks the table, never the provider's name. When a capability is missing:
 3. **Test** calls an endpoint that needs the key and sends no prompt: the
    models endpoint for Anthropic [16] and OpenAI (not verified); for
    OpenRouter, whose model list is public [100], an authenticated endpoint
-   chosen in W5.8 (not verified). The result maps to plain states (works,
+   chosen in W5.8 (not verified); for DeepSeek, `GET /user/balance` (rig's key
+   check) or `GET /models` [105]; for Jev, `GET /v1/models` [98] (not verified
+   whether it needs a key). The result maps to plain states (works,
    refused, no access, rate limited, cannot reach), as Jan's key test does [45]. Save runs the test first; "Save anyway (offline)" is
    explicit.
 4. After Save the key is never shown again; Settings shows the fixed prefix and
@@ -1350,7 +1352,8 @@ and 6 build on are merged. Performance budgets are measured continuously.
   extend the check (§4.6).
 
 **Spike S4.1: toolkit** (R-20). Ten working days, hard stop, throwaway
-branches only; nothing merges.
+branches only; nothing merges. Exception (§7.6, 2026-09-27): Track A's code may
+be kept and merged as W5.1 after review.
 
 - **Tracks.** (A) egui upgraded to 0.36, plus the four "to the bar" items:
   selection across Conversation messages, real Inter weights from the variable
@@ -1423,6 +1426,11 @@ the Stage 3 loop unchanged.
   re-checked against the live page).
 - **P3** Live on OpenAI and OpenRouter: five evaluation tasks end to end with
   tools, streaming, and reasoning summaries where offered.
+- **P3a** Live on DeepSeek (`deepseek-flash`, effort `high`, C-35): five
+  evaluation tasks end to end with tools, streaming, and `reasoning_content`
+  sent back across tool turns.
+- **Without a provider's key**, its live items run against canned streams and
+  the local HTTP stand-in and are marked "not tried live" (§7.6).
 - **P4** Build: clean and incremental builds within the disk limits; the TLS
   option chosen (§4.7); incremental build time of the Studio at most 30% above
   today's.
@@ -1435,9 +1443,15 @@ the Stage 3 loop unchanged.
   "Retry with another model" (acceptable if no refusal appears in the evaluation
   set). Dropping server-side fallbacks changes C-27 and needs the Operator's
   decision.
-- **Decision rule.** Proceed with rig for every provider (C-34) if P1–P5 pass.
-  If a P2 item fails with no workaround, bring the specific loss to the Operator
-  instead of reverting by default.
+- **Decision rule.** Proceed with rig for every provider (C-34) if P1–P5 pass,
+  with live items that could not be tried marked so. If a P2 item fails with no
+  workaround, bring the specific loss to the Operator instead of reverting by
+  default.
+- **Kept code (exception, §7.6, 2026-09-27).** Because C-35 requires the
+  product to work end to end with only a DeepSeek key during Stage 4's live
+  acceptance, the S4.2 provider layer is reviewed and merged as the start of
+  W5.7 instead of being thrown away: `agq-providers` with the DeepSeek path
+  used by the Assistant, and the other providers' paths tested without keys.
 
 **Interfaces to define and merge before Stage 5 fans out**
 
@@ -1496,7 +1510,8 @@ selectable (C-34, C-35), and behaves as in Stage 3.
   message actions, new tool cards, composer with context chips and model picker
   (§3.6).
 - **W5.7 Providers.** `agq-providers` on rig for Anthropic, OpenAI,
-  OpenRouter and DeepSeek, and the thin Jev client (R-21, R-22, C-35); the Assistant moved onto it; conversation format 2,
+  OpenRouter and DeepSeek, and the thin Jev client, whose key Settings tests in
+  Scenario E (E4) before Stage 7 uses it (R-21, R-22, C-35); the Assistant moved onto it; conversation format 2,
   with existing conversations moved into the per-project folder (R-23, R-43);
   the self-model maps the crate (§4.6).
 - **W5.8 Settings.** The view, the table, search, deep links, `settings.json`,
@@ -1779,7 +1794,7 @@ Confirmed in the interview of 2026-09-27:
 | R-42 | Cost display per turn and per day, from provider usage and a dated local price table marked as an estimate, per provider in Settings | C-37; the Models API has no prices [16] |
 | R-43 | One per-project folder in the app's local data (`projects\<folder>-<hash>\`: conversation, notes, skills); existing conversations move there; the session file keeps only presentation state; preferences move to `settings.json` *(provisional for notes and skills, Q-10)* | C-26; one place per kind of data |
 | R-44 | Investigate the memory footprint in Stage 5 (wgpu backend on Windows, font atlas, buffers) before fixing the memory budgets | §5.2: 322 MB at rest, not understood |
-| R-45 | The evaluation set also compares default models and effort (for example `claude-opus-5` at `high` against `claude-opus-5-5` at `medium` and `high`) and the three providers before any default changes | Q-19; C-27 |
+| R-45 | The evaluation set also compares default models and effort (for example `claude-opus-5` at `high` against `claude-opus-5-5` at `medium` and `high`) and every Assistant provider (Anthropic, OpenAI, OpenRouter, DeepSeek) before any default changes | Q-19; C-27 |
 | R-46 | A three-step first run (what Agentique is; connect a provider or skip; create or open a project), with the URL shortener as a sample | Scenario E1 |
 
 ### 7.3 Assumptions
@@ -1793,7 +1808,7 @@ Confirmed in the interview of 2026-09-27:
 | A-5 | egui (with custom rendering) can reach the quality bar, including the Conversation | Open: S4.1 |
 | A-6 | Nothing in Generation 1 is used by anyone else | Held; retired with no reported cost |
 | A-7 | rig's churn can be contained in `agq-providers` and absorbed on our schedule | S4.2, then every rig upgrade |
-| A-8 | OpenAI and OpenRouter models use the Assistant's tools and follow its skills well enough for daily work | Evaluation set per provider (Stages 4 and 6) |
+| A-8 | OpenAI, OpenRouter and DeepSeek models use the Assistant's tools and follow its skills well enough for daily work | Evaluation set per provider (Stages 4 and 6); DeepSeek live first (C-35) |
 | A-9 | Incremental layout brings a 10k edit to the Surface in ≤ 100 ms, and CPU culling and label caching bring 10k pan and zoom to ≤ 16.7 ms p95, without a toolkit change | S5.1, W5.5 |
 | A-10 | An agent's contract fits the current subset plus `enum def` and enumeration values (ports, requirements, a redefined `fallback`) | S6.1 |
 | A-11 | Recorded agent answers stay valid long enough between prompt changes to be useful | Stage 7 |
@@ -1860,11 +1875,12 @@ The ADRs named here are preserved at the tag `archive/pre-realignment`.
 | 2026-09-27 | Stages renumbered: `REALIGNMENT.md`'s Stages 4 (simulation) and 5 (implementation links) become Stages 7 and 8; its later Stages 6 and 7 become 9 and 10 | C-31 puts the Studio, Settings and the agentic Assistant first |
 | 2026-09-27 | `ROADMAP.md` replaces `REALIGNMENT.md` as the single governing text (C-47); `REALIGNMENT.md` is removed in W4.1 | One truth per topic (§8.2) |
 | 2026-09-27 | W4.1: `REALIGNMENT.md` removed; `AGENTS.md` (rules of §8.1), `README.md`, `docs/stages.md`, `docs/subset.md`, the self-model, the architecture check, crate READMEs and source comments point here; stage references renumbered (simulation Stage 7, implementation links Stage 8) | C-47 |
-| 2026-09-27 | **The Operator's overnight instructions** for Stages 4–8 (given on the evening of 2026-09-27): (1) no stopping at Operator gates: the evidence a gate asks for is produced and kept outside the repository, the stage is set to "provisionally complete, pending Operator acceptance", and a choice that is the Operator's takes this document's recommended (or the more conservative) option, recorded here as "Decided overnight 2026-09-27, pending Operator confirmation"; nothing is recorded as accepted or confirmed by the Operator that they did not accept or confirm; (2) exactly the three locked-core changes of §4.6 are authorised (`enum def` and enumeration values; the built-in `Agents` library; `dependency` in the subset), each recorded here when made, and no other; (3) S4.1 runs the automated gates G1–G8 only, with no switch to GPUI (that needs the Operator to accept the governance risk); Track A's code may be kept and merged as W5.1 after review, a recorded deviation from "throwaway"; Track B's kill check runs only with at least 12 GB of free disk; blind scoring waits for the Operator; (4) S4.2 builds the Anthropic, OpenAI and OpenRouter paths without keys, tested on canned streams and the local HTTP stand-in and marked "not tried live"; live parity checks run on DeepSeek; (5) Q-18 keeps C-27 with a thin adapter (Q-18 row); Q-17 keeps Inter; Q-10 is the app's local data (R-43); anything else takes this document's recommendation; (6) live calls tonight run under a developer spend guard outside the product (C-37 is unchanged: the product has no spending limits) | The Operator is asleep; one stage finished well is worth more than several half-done |
+| 2026-09-27 | **The Operator's overnight instructions** for Stages 4–8 (given on the evening of 2026-09-27): (1) no stopping at Operator gates: the evidence a gate asks for is produced and kept outside the repository, the stage is set to "provisionally complete, pending Operator acceptance", and a choice that is the Operator's takes this document's recommended (or the more conservative) option, recorded here as "Decided overnight 2026-09-27, pending Operator confirmation"; nothing is recorded as accepted or confirmed by the Operator that they did not accept or confirm; (2) exactly the three locked-core changes of §4.6 are authorised (`enum def` and enumeration values; the built-in `Agents` library; `dependency` in the subset), each recorded here when made, and no other; (3) S4.1 runs the automated gates G1–G8 only, with no switch to GPUI (that needs the Operator to accept the governance risk); Track A's code may be kept and merged as W5.1 after review, a recorded deviation from "throwaway"; Track B's kill check runs only with at least 12 GB of free disk; blind scoring waits for the Operator; (4) S4.2 builds the Anthropic, OpenAI and OpenRouter paths without keys, tested on canned streams and the local HTTP stand-in and marked "not tried live"; live parity checks run on DeepSeek; (5) Q-18 keeps C-27 with a thin adapter (Q-18 row); Q-17 keeps Inter; Q-10 is the app's local data (R-43); each decided overnight 2026-09-27, pending Operator confirmation (§7.4); anything else takes this document's recommendation; (6) live calls tonight run under a developer spend guard outside the product (C-37 is unchanged: the product has no spending limits) | The Operator is asleep; one stage finished well is worth more than several half-done |
 | 2026-09-27 | **C-35 amended by the Operator:** DeepSeek joins the providers, with model `deepseek-flash` at effort `high` (the model offers `low`, `high` and `max`), as the only live test provider for the Assistant overnight; the product must work end to end with only a DeepSeek key configured. TypeSafe AI's Jev joins as a model provider for fast agents in designed systems, never for the Assistant. Q-11 resolved. §1.5, §1.6, §2.2 (L1), §2.4 (E4), §3.7, §4.1, §4.7, §4.8, §4.9, §4.11, §6.3, §6.7 and the glossary follow | The Operator tests with a DeepSeek key; Jev is exactly a fast agent's shape (§4.11) |
 | 2026-09-27 | **C-34 clarified by the Operator:** Jev is a typed decision API that released rig does not support (`rig-typesafeai` is a `0.0.0` placeholder on crates.io [9]); it is implemented as a thin client inside `agq-providers`, behind the same boundary, until rig releases it | Provider neutrality without waiting for rig |
 | 2026-09-27 | §4.8 gains DeepSeek and Jev columns, each capability verified from rig 0.42.0's source or the vendor's documentation and cited | C-35 as amended |
 | 2026-09-27 | Stage completion during the overnight run is provisional: a stage built overnight is "provisionally complete, pending Operator acceptance" until the Operator has used it (C-15) | Overnight instructions, point 1 |
+| 2026-09-27 | S4.2's provider layer is kept and merged in Stage 4 as the start of W5.7, a deviation from "throwaway" (§8.8); S4.2 gains P3a (live on DeepSeek). Decided overnight 2026-09-27, pending Operator confirmation | C-35 as amended: the Assistant must work end to end with only a DeepSeek key during Stage 4's live acceptance (W4.4) |
 | 2026-09-27 | API keys for the overnight run live in a git-ignored `.env` (the Operator's `.gitignore` change, commit `400feced`); keys never enter the repository, logs, fixtures, recordings or pull requests (§8.7) | Key handling (R-25) |
 
 ### 7.7 The original requirements
@@ -2005,12 +2021,13 @@ on `main` at `6fc90b78`; its retained content is in this document (§4.2, §4.5,
    §4.8; a new such feature adds its row there.
 4. Keys leave the credential store only in the request to their own provider.
 5. rig upgrades are deliberate: one pull request each, with five tasks of the
-   evaluation set run on every supported provider.
+   evaluation set run on every Assistant provider.
 
 ### 8.8 Spikes and evaluations
 
 1. A spike has a time box, fixtures, gates and a decision rule written before it
-   starts. Its code is thrown away; its decision is recorded in §7.6.
+   starts. Its code is thrown away unless §7.6 records an exception; its
+   decision is recorded in §7.6.
 2. Evaluations cost money and need keys: they run on demand, never in the
    default test suite, and their results are shown to the Operator, not
    committed.

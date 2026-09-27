@@ -272,7 +272,7 @@ Surface behind a webview.
 5. Close the Studio and reopen the project (A9): everything as left,
    including the lock and the history. Kill it from Task Manager right after
    an edit and reopen.
-6. Judge the look and feel for daily use (§2.4).
+6. Judge the look and feel for daily use (ROADMAP §3.1, C-21).
 
 The same journey runs scripted (screenshots to a folder of your choice):
 
