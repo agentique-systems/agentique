@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "crates/language",
+    "crates/system-state",
     "crates/kernel",
     "crates/kerml",
     "crates/sysml",

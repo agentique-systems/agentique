@@ -1,0 +1,9 @@
+[package]
+name = "agq-system-state"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "The live System State of one project: typed operations, locks, undo and change events"
+
+[dependencies]
+agq-language = { path = "../language" }
