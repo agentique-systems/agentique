@@ -468,6 +468,17 @@ impl SystemState {
         events
     }
 
+    /// The steps [`undo_since`](Self::undo_since) would undo, most recent
+    /// first: the revision each was applied or redone at, and who made it.
+    pub fn steps_since(&self, revision: u64) -> Vec<(u64, Actor)> {
+        self.undo
+            .iter()
+            .rev()
+            .take_while(|step| step.revision > revision)
+            .map(|step| (step.revision, step.actor))
+            .collect()
+    }
+
     /// Replaces the whole model, for example when a project is opened or a
     /// branch is switched. Clears undo and redo.
     pub fn load(

@@ -3,7 +3,7 @@
 //! as answerable prompts, and the message input with Send and Stop.
 use crate::{
     app::StudioApp,
-    conversation::{ConversationPanel, Live, WaitingFor},
+    conversation::{ConversationPanel, Live, Undo, WaitingFor, plural},
     markdown::{self, Block},
     targets::{Target, record},
     theme::{self, Theme},
@@ -22,8 +22,9 @@ pub const OPTIONS: [&str; 6] = [
 
 const INPUT: &str = "conversation-input";
 
-/// Parsed messages and their heights, so a message is parsed once and laid
-/// out again only when its text, the model or the width changes.
+/// Parsed messages and their heights: a message is parsed once per text
+/// and theme, again only when an element it names appears or goes, and laid
+/// out again only when that or the width changes.
 #[derive(Default)]
 pub struct ViewCache {
     messages: HashMap<u64, Message>,
@@ -36,6 +37,10 @@ pub struct ViewCache {
 
 struct Message {
     blocks: Vec<Block>,
+    /// Its inline code spans and the elements they named when parsed.
+    links: Vec<(String, Option<ElementId>)>,
+    /// The model revision the links were checked at.
+    checked: u64,
     /// Height at a width, to skip messages outside the view.
     height: Option<(f32, f32)>,
 }
@@ -98,7 +103,10 @@ impl StudioApp {
                         "No Claude API key is set. Set ANTHROPIC_API_KEY and restart Agentique to work with the Assistant. Everything else works as usual.",
                     );
                 }
-                if let Some(error) = &self.conversation.error {
+                for error in [&self.conversation.read_error, &self.conversation.save_error]
+                    .into_iter()
+                    .flatten()
+                {
                     banner(ui, theme, error);
                 }
                 ui.add_space(theme::SPACE_S);
@@ -112,9 +120,23 @@ impl StudioApp {
                 egui::CentralPanel::default()
                     .frame(egui::Frame::NONE)
                     .show_inside(ui, |ui| {
-                        let tree = self.project.as_ref().map(|p| p.state().tree());
-                        let revision = self.project.as_ref().map_or(0, |p| p.state().revision());
-                        messages(ui, &mut self.conversation, tree, revision, theme, &mut actions);
+                        let state = self.project.as_ref().map(|p| p.state());
+                        // What the running turn waits for, if the Operator is to act.
+                        let assistant_asks = matches!(
+                            &self.dialog,
+                            Some(crate::edit::Dialog::Confirm { change, .. })
+                                if change.actor == agq_system_state::Actor::Assistant
+                        );
+                        let waiting = match self.conversation.waiting.as_ref().map(|w| &w.kind) {
+                            Some(WaitingFor::Confirmation) if assistant_asks => {
+                                Some("Waiting for your answer about the locked element")
+                            }
+                            Some(WaitingFor::Dialog(_)) => {
+                                Some("Waiting until you close the open dialog")
+                            }
+                            _ => None,
+                        };
+                        messages(ui, &mut self.conversation, state, waiting, theme, &mut actions);
                     });
             });
         for action in actions {
@@ -270,16 +292,20 @@ fn banner(ui: &mut egui::Ui, theme: Theme, text: &str) {
 fn messages(
     ui: &mut egui::Ui,
     panel: &mut ConversationPanel,
-    tree: Option<&Tree>,
-    revision: u64,
+    state: Option<&agq_system_state::SystemState>,
+    waiting: Option<&str>,
     theme: Theme,
     actions: &mut Vec<Action>,
 ) {
     let running = panel.running();
-    let undoable = panel.undoable(revision);
+    let undoable = state.and_then(|state| panel.undoable(state));
     let failed = panel.last_turn.as_ref().is_some_and(|turn| turn.failed);
+    let tree = state.map(|state| state.tree());
+    let revision = state.map_or(0, |state| state.revision());
     let view = &mut panel.view;
     if view.names_revision != Some(revision) {
+        // Names for element links: qualified names, and simple names that
+        // are unique (`None` otherwise). Built once per model revision.
         view.names_revision = Some(revision);
         view.names.clear();
         if let Some(tree) = tree {
@@ -289,6 +315,7 @@ fn messages(
                         .entry(name.to_string())
                         .and_modify(|found| *found = None)
                         .or_insert(Some(id));
+                    view.names.insert(tree.qualified_name(id), Some(id));
                 }
             }
         }
@@ -309,10 +336,6 @@ fn messages(
         },
         None => None,
     };
-    let confirming = matches!(
-        panel.waiting.as_ref().map(|w| &w.kind),
-        Some(WaitingFor::Confirmation | WaitingFor::Dialog(_))
-    );
     egui::ScrollArea::vertical()
         .stick_to_bottom(true)
         // Pressing on a message is a click (a link, a button), never a scroll.
@@ -322,6 +345,8 @@ fn messages(
         })
         .auto_shrink([false, false])
         .show(ui, |ui| {
+            // Room for the floating scroll bar, so it never covers a card.
+            ui.set_max_width(ui.available_width() - 10.0);
             ui.spacing_mut().item_spacing.y = theme::SPACE;
             if entries.is_empty() && panel.live.is_empty() {
                 ui.add_space(theme::SPACE_XL);
@@ -389,8 +414,8 @@ fn messages(
             if running && waiting_question.is_none() {
                 ui.horizontal(|ui| {
                     ui.add(egui::Spinner::new().size(12.0).color(theme.muted));
-                    let text = if confirming {
-                        "Waiting for your confirmation"
+                    let text = if let Some(waiting) = waiting {
+                        waiting
                     } else if panel.thinking {
                         "Thinking…"
                     } else {
@@ -399,7 +424,22 @@ fn messages(
                     ui.label(RichText::new(text).color(theme.muted));
                 });
             }
-            if let Some(count) = undoable {
+            if let Some(undo) = undoable {
+                let (text, button, hint) = match undo {
+                    Undo::Assistant(count) => (
+                        format!("The Assistant made {} in this turn.", plural(count, "change", "changes")),
+                        "Undo the Assistant's changes",
+                        "Each can be redone with Ctrl+Y",
+                    ),
+                    Undo::All(count) => (
+                        format!(
+                            "{} since the Assistant started, not all of them the Assistant's.",
+                            plural(count, "change", "changes")
+                        ),
+                        "Undo all changes since the Assistant started",
+                        "Also undoes your own changes made since then; each can be redone with Ctrl+Y",
+                    ),
+                };
                 egui::Frame::new()
                     .fill(theme.elevated)
                     .stroke(Stroke::new(theme::HAIRLINE, theme.border))
@@ -407,17 +447,9 @@ fn messages(
                     .inner_margin(egui::Margin::symmetric(10, 8))
                     .show(ui, |ui| {
                         ui.set_width(ui.available_width());
-                        ui.label(
-                            RichText::new(format!(
-                                "The Assistant made {count} change{} in this turn.",
-                                if count == 1 { "" } else { "s" }
-                            ))
-                            .color(theme.text_secondary),
-                        );
-                        let undo = ui
-                            .button("Undo the Assistant's changes")
-                            .on_hover_text("Undoes every change since the turn started; each can be redone");
-                        record(ui.ctx(), Target::Button("Undo the Assistant's changes"), undo.rect);
+                        ui.label(RichText::new(text).color(theme.text_secondary));
+                        let undo = ui.button(button).on_hover_text(hint);
+                        record(ui.ctx(), Target::Button(button), undo.rect);
                         if undo.clicked() {
                             actions.push(Action::Undo);
                         }
@@ -489,25 +521,40 @@ fn markdown_message(
     text: &str,
 ) -> Option<ElementId> {
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
-    (text, ctx.revision, ctx.theme.dark, ctx.theme.contrast).hash(&mut hasher);
+    (text, ctx.theme.dark, ctx.theme.contrast).hash(&mut hasher);
     let key = hasher.finish();
     view.used.insert(key);
     let width = ui.available_width();
     let names = &view.names;
-    let tree = ctx.tree;
+    let resolve = |name: &str| names.get(name).copied().flatten();
+    let parse = || {
+        let links = std::cell::RefCell::new(Vec::new());
+        let blocks = markdown::parse(text, ctx.theme, &|name: &str| {
+            let element = resolve(name);
+            links.borrow_mut().push((name.to_string(), element));
+            element
+        });
+        (blocks, links.into_inner())
+    };
     let message = view.messages.entry(key).or_insert_with(|| {
-        let resolve = |name: &str| -> Option<ElementId> {
-            if name.is_empty() || name.contains(char::is_whitespace) {
-                return None;
-            }
-            tree.and_then(|tree| tree.find(name))
-                .or_else(|| names.get(name).copied().flatten())
-        };
+        let (blocks, links) = parse();
         Message {
-            blocks: markdown::parse(text, ctx.theme, &resolve),
+            blocks,
+            links,
+            checked: ctx.revision,
             height: None,
         }
     });
+    if message.checked != ctx.revision {
+        message.checked = ctx.revision;
+        if message
+            .links
+            .iter()
+            .any(|(name, element)| resolve(name) != *element)
+        {
+            (message.blocks, message.links) = parse();
+        }
+    }
     if let Some((at, height)) = message.height
         && (at - width).abs() < 0.5
     {
@@ -604,7 +651,7 @@ fn tool_card(
     };
     frame.show(ui, |ui| {
         ui.set_width(ui.available_width());
-        let header = ui.horizontal(|ui| {
+        ui.horizontal(|ui| {
             status_icon(ui, theme, result, ctx.running);
             let size = if read_only { theme::LABEL } else { theme::BODY };
             let font = if read_only {
@@ -628,7 +675,6 @@ fn tool_card(
                 }
             });
         });
-        let _ = header;
         if let Some(result) = result
             && !read_only
         {
@@ -652,6 +698,15 @@ fn status_icon(ui: &mut egui::Ui, theme: Theme, result: Option<&ToolResult>, run
             return;
         }
         None => ("○", theme.muted),
+        // A locked element the Operator kept: their decision, not a failure.
+        Some(result)
+            if result
+                .change
+                .as_ref()
+                .is_some_and(|c| !c.refused.is_empty()) =>
+        {
+            ("–", theme.muted)
+        }
         Some(result) if result.is_error => ("!", theme.amber),
         Some(_) => ("✓", theme.green),
     };
@@ -663,35 +718,45 @@ fn status_icon(ui: &mut egui::Ui, theme: Theme, result: Option<&ToolResult>, run
 }
 
 /// The outcome of a change: the elements it created or changed, as links,
-/// what it deleted, and problems at those elements; or why it was not done.
+/// what it deleted and problems at those elements; the locked elements the
+/// Operator kept; or why it was not done. The model's own wording is in the
+/// card's details.
 fn summary(ui: &mut egui::Ui, ctx: &Context, result: &ToolResult, actions: &mut Vec<Action>) {
     let theme = ctx.theme;
-    if result.is_error {
-        let first = result.content.lines().next().unwrap_or_default();
-        ui.label(RichText::new(first).color(theme.amber));
+    let tree = ctx.tree;
+    let caption = |text: String, color| {
+        RichText::new(text)
+            .font(theme::regular(theme::CAPTION))
+            .color(color)
+    };
+    let ids =
+        |raw: &[u64]| -> Vec<ElementId> { raw.iter().map(|r| ElementId::from_raw(*r)).collect() };
+    let Some(change) = &result.change else {
+        if result.is_error {
+            let first = result.content.lines().next().unwrap_or_default();
+            ui.add(egui::Label::new(RichText::new(first).color(theme.amber)).wrap());
+        }
+        return;
+    };
+    if !change.refused.is_empty() {
+        let names: Vec<String> = ids(&change.refused)
+            .into_iter()
+            .map(|id| tree.map_or_else(String::new, |tree| crate::edit::display_name(tree, id)))
+            .collect();
+        ui.label(caption(
+            format!("You kept {} unchanged.", names.join(", ")),
+            theme.text_secondary,
+        ));
         return;
     }
-    let tree = ctx.tree;
-    // The result lists the created elements first, as many as its
-    // "Created:" line names, then the changed ones.
-    let ids: Vec<ElementId> = result
-        .elements
-        .iter()
-        .map(|raw| ElementId::from_raw(*raw))
-        .collect();
-    let count = result
-        .content
-        .lines()
-        .find_map(|line| line.strip_prefix("Created: "))
-        .map_or(0, |list| list.split(", ").count())
-        .min(ids.len());
-    let (created, updated) = ids.split_at(count);
+    if result.is_error {
+        let first = result.content.lines().next().unwrap_or_default();
+        ui.add(egui::Label::new(RichText::new(first).color(theme.amber)).wrap());
+        return;
+    }
+    let created = ids(&change.created);
     if !created.is_empty() && tree.is_none_or(|tree| created.iter().all(|id| !tree.contains(*id))) {
-        ui.label(
-            RichText::new("Undone or deleted since.")
-                .font(theme::regular(theme::CAPTION))
-                .color(theme.muted),
-        );
+        ui.label(caption("Undone or deleted since.".into(), theme.muted));
         return;
     }
     let owner = |id: &ElementId| tree.and_then(|tree| tree.get(*id)).and_then(|e| e.owner());
@@ -702,34 +767,25 @@ fn summary(ui: &mut egui::Ui, ctx: &Context, result: &ToolResult, actions: &mut 
     // What was created, outermost first; what changed, without the owners
     // that only gained members (as the Surface highlights them).
     let owners: HashSet<ElementId> = created.iter().filter_map(owner).collect();
-    let created: Vec<ElementId> = created
+    let shown_created: Vec<ElementId> = created
         .iter()
         .filter(|id| !comment(id) && owner(id).is_none_or(|o| !created.contains(&o)))
         .copied()
         .collect();
-    let updated: Vec<ElementId> = updated
-        .iter()
+    let shown_changed: Vec<ElementId> = ids(&change.changed)
+        .into_iter()
         .filter(|id| !comment(id) && !owners.contains(id))
-        .copied()
         .collect();
-    for (label, ids) in [("Created", created), ("Changed", updated)] {
-        if ids.is_empty() {
+    for (label, shown) in [("Created", shown_created), ("Changed", shown_changed)] {
+        if shown.is_empty() {
             continue;
         }
         ui.horizontal_wrapped(|ui| {
             ui.spacing_mut().item_spacing.x = 6.0;
-            ui.label(
-                RichText::new(label)
-                    .font(theme::regular(theme::CAPTION))
-                    .color(theme.muted),
-            );
-            for id in ids {
+            ui.label(caption(label.into(), theme.muted));
+            for id in shown {
                 let Some(tree) = tree.filter(|tree| tree.contains(id)) else {
-                    ui.label(
-                        RichText::new("(undone or deleted)")
-                            .font(theme::regular(theme::CAPTION))
-                            .color(theme.muted),
-                    );
+                    ui.label(caption("(undone or deleted)".into(), theme.muted));
                     continue;
                 };
                 let name = crate::edit::display_name(tree, id);
@@ -747,30 +803,23 @@ fn summary(ui: &mut egui::Ui, ctx: &Context, result: &ToolResult, actions: &mut 
             }
         });
     }
-    for line in result.content.lines() {
-        if line.starts_with("Deleted ") {
-            ui.label(
-                RichText::new(line)
-                    .font(theme::regular(theme::CAPTION))
-                    .color(theme.muted),
-            );
-        }
+    if change.deleted > 0 {
+        ui.label(caption(
+            format!(
+                "Deleted {}",
+                crate::conversation::plural(change.deleted, "element", "elements")
+            ),
+            theme.muted,
+        ));
     }
-    let problems = result
-        .content
-        .split_once("Problems:\n")
-        .map_or(0, |(_, list)| {
-            list.lines().filter(|l| l.starts_with("- ")).count()
-        });
-    if problems > 0 {
-        ui.label(
-            RichText::new(format!(
-                "{problems} problem{} at the changed elements",
-                if problems == 1 { "" } else { "s" }
-            ))
-            .font(theme::regular(theme::CAPTION))
-            .color(theme.amber),
-        );
+    if change.problems > 0 {
+        ui.label(caption(
+            format!(
+                "{} at the changed elements",
+                crate::conversation::plural(change.problems, "problem", "problems")
+            ),
+            theme.amber,
+        ));
     }
 }
 

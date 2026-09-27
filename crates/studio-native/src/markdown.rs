@@ -20,7 +20,13 @@ use std::ops::Range;
 /// One block of a message.
 pub enum Block {
     Text(TextBlock),
-    Code { language: String, code: String },
+    Code {
+        language: String,
+        code: String,
+        indent: f32,
+        /// A list item's bullet or number, when the item starts with code.
+        marker: Option<String>,
+    },
     Rule,
 }
 
@@ -51,7 +57,6 @@ pub fn parse(text: &str, theme: Theme, resolve: &dyn Fn(&str) -> Option<ElementI
         bold: 0,
         italic: 0,
         strike: 0,
-        link: 0,
         heading: None,
         lists: Vec::new(),
         quote: 0,
@@ -74,25 +79,27 @@ struct Builder<'a> {
     bold: usize,
     italic: usize,
     strike: usize,
-    link: usize,
     heading: Option<HeadingLevel>,
     /// Open lists: the next number of an ordered list.
     lists: Vec<Option<u64>>,
     quote: usize,
-    code: Option<(String, String)>,
+    /// The code block being read.
+    code: Option<Block>,
 }
 
 impl Builder<'_> {
     fn event(&mut self, event: Event) {
-        if let Some((_, code)) = &mut self.code {
+        if let Some(Block::Code { code, .. }) = &mut self.code {
             match event {
                 Event::Text(text) => code.push_str(&text),
                 Event::End(TagEnd::CodeBlock) => {
-                    let (language, mut code) = self.code.take().expect("inside a code block");
-                    if code.ends_with('\n') {
+                    let mut block = self.code.take().expect("inside a code block");
+                    if let Block::Code { code, .. } = &mut block
+                        && code.ends_with('\n')
+                    {
                         code.pop();
                     }
-                    self.blocks.push(Block::Code { language, code });
+                    self.blocks.push(block);
                 }
                 _ => {}
             }
@@ -124,7 +131,12 @@ impl Builder<'_> {
                         CodeBlockKind::Fenced(language) => language.to_string(),
                         CodeBlockKind::Indented => String::new(),
                     };
-                    self.code = Some((language, String::new()));
+                    self.code = Some(Block::Code {
+                        language,
+                        code: String::new(),
+                        indent: self.indent(),
+                        marker: self.marker.take(),
+                    });
                 }
                 Tag::BlockQuote(_) => {
                     self.flush();
@@ -133,11 +145,12 @@ impl Builder<'_> {
                 Tag::Strong => self.bold += 1,
                 Tag::Emphasis => self.italic += 1,
                 Tag::Strikethrough => self.strike += 1,
-                Tag::Link { .. } => self.link += 1,
+                // Web links are shown as their text: the Studio opens no
+                // browser, so nothing may look clickable that is not.
                 _ => {}
             },
             Event::End(tag) => match tag {
-                TagEnd::Paragraph | TagEnd::Item => self.flush(),
+                TagEnd::Paragraph | TagEnd::Item | TagEnd::HtmlBlock => self.flush(),
                 TagEnd::Heading(_) => {
                     self.flush();
                     self.heading = None;
@@ -153,7 +166,6 @@ impl Builder<'_> {
                 TagEnd::Strong => self.bold = self.bold.saturating_sub(1),
                 TagEnd::Emphasis => self.italic = self.italic.saturating_sub(1),
                 TagEnd::Strikethrough => self.strike = self.strike.saturating_sub(1),
-                TagEnd::Link => self.link = self.link.saturating_sub(1),
                 _ => {}
             },
             Event::Text(text) | Event::Html(text) | Event::InlineHtml(text) => self.text(&text),
@@ -176,8 +188,12 @@ impl Builder<'_> {
         }
     }
 
+    fn indent(&self) -> f32 {
+        LIST_INDENT * self.lists.len() as f32 + QUOTE_INDENT * self.quote as f32
+    }
+
     fn block(&mut self) -> &mut TextBlock {
-        let indent = LIST_INDENT * self.lists.len() as f32 + QUOTE_INDENT * self.quote as f32;
+        let indent = self.indent();
         let (marker, quote) = (&mut self.marker, self.quote > 0);
         self.current.get_or_insert_with(|| TextBlock {
             job: LayoutJob::default(),
@@ -204,9 +220,7 @@ impl Builder<'_> {
         } else {
             theme::regular(size)
         };
-        let color = if self.link > 0 {
-            theme.accent
-        } else if self.quote > 0 {
+        let color = if self.quote > 0 {
             theme.text_secondary
         } else {
             theme.text
@@ -275,7 +289,12 @@ pub fn show(ui: &mut egui::Ui, id: egui::Id, blocks: &[Block], theme: Theme) -> 
                     clicked = Some(element);
                 }
             }
-            Block::Code { language, code } => code_block(ui, language, code, width, theme),
+            Block::Code {
+                language,
+                code,
+                indent,
+                marker,
+            } => code_block(ui, language, code, *indent, marker.as_deref(), width, theme),
             Block::Rule => {
                 let (rect, _) = ui.allocate_exact_size(Vec2::new(width, 9.0), Sense::hover());
                 ui.painter().hline(
@@ -344,12 +363,21 @@ fn text_block(
     if !block.links.is_empty()
         && let Some(pointer) = response.hover_pos()
     {
-        let cursor = galley.cursor_from_pos(pointer - origin);
-        let row_hit = galley.rect.translate(origin.to_vec2()).contains(pointer);
-        if let Some((_, id)) = block
-            .links
-            .iter()
-            .find(|(range, _)| row_hit && range.start <= cursor.index && cursor.index <= range.end)
+        // The character under the pointer: the one before or after the
+        // nearest cursor position whose glyph box holds the pointer.
+        let local = pointer - origin;
+        let cursor = galley.cursor_from_pos(local);
+        let under = [cursor.index.saturating_sub(1), cursor.index]
+            .into_iter()
+            .find(|&index| {
+                let a = galley.pos_from_cursor(CCursor::new(index));
+                let b = galley.pos_from_cursor(CCursor::new(index + 1));
+                a.min.y == b.min.y
+                    && (a.min.x..b.min.x).contains(&local.x)
+                    && (a.min.y..a.max.y).contains(&local.y)
+            });
+        if let Some((_, id)) =
+            under.and_then(|index| block.links.iter().find(|(range, _)| range.contains(&index)))
         {
             ui.ctx().set_cursor_icon(egui::CursorIcon::PointingHand);
             if response.clicked() {
@@ -361,19 +389,37 @@ fn text_block(
     clicked
 }
 
-fn code_block(ui: &mut egui::Ui, language: &str, code: &str, width: f32, theme: Theme) {
+fn code_block(
+    ui: &mut egui::Ui,
+    language: &str,
+    code: &str,
+    indent: f32,
+    marker: Option<&str>,
+    width: f32,
+    theme: Theme,
+) {
     let padding = theme::SPACE;
     let mut job = LayoutJob::simple(
         code.to_string(),
         theme::code(theme::CODE - 0.5),
         theme.text,
-        width - 2.0 * padding,
+        (width - indent - 2.0 * padding).max(40.0),
     );
     job.wrap.break_anywhere = false;
     let galley = ui.painter().layout_job(job);
     let header = 20.0;
     let size = Vec2::new(width, galley.size().y + header + padding);
-    let (rect, _) = ui.allocate_exact_size(size, Sense::hover());
+    let (whole, _) = ui.allocate_exact_size(size, Sense::hover());
+    let rect = egui::Rect::from_min_max(whole.min + Vec2::new(indent, 0.0), whole.max);
+    if let Some(marker) = marker {
+        ui.painter().text(
+            egui::pos2(rect.left() - 6.0, rect.top() + header / 2.0 + 2.0),
+            egui::Align2::RIGHT_CENTER,
+            marker,
+            theme::regular(theme::BODY),
+            theme.muted,
+        );
+    }
     let fill = if theme.dark {
         theme.canvas
     } else {
@@ -474,6 +520,58 @@ mod tests {
                 .sections
                 .iter()
                 .any(|s| s.format.font_id == theme::semibold(theme::BODY))
+        );
+    }
+
+    fn texts(markdown: &str) -> Vec<String> {
+        parse(markdown, Theme::default(), &|_| None)
+            .iter()
+            .map(|block| text_of(block).to_string())
+            .collect()
+    }
+
+    #[test]
+    fn odd_input_keeps_blocks_apart() {
+        assert!(texts("").is_empty());
+        assert_eq!(texts("```\nno end"), ["no end"], "an unclosed fence");
+        // An HTML block ends before the next paragraph.
+        assert_eq!(
+            texts("<div>\nhello\n</div>\n\nNext").last().unwrap(),
+            "Next"
+        );
+        // A list item that starts with code keeps its bullet and indent.
+        let blocks = parse(
+            "- ```\n  code\n  ```\n- next\n\nAfter",
+            Theme::default(),
+            &|_| None,
+        );
+        assert!(matches!(
+            &blocks[0],
+            Block::Code { marker: Some(m), indent, code, .. }
+                if m == "•" && *indent == LIST_INDENT && code == "code"
+        ));
+        assert!(matches!(&blocks[1], Block::Text(t) if t.marker.as_deref() == Some("•")));
+        assert!(matches!(&blocks[2], Block::Text(t) if t.marker.is_none() && t.indent == 0.0));
+    }
+
+    #[test]
+    fn web_links_are_plain_text() {
+        let blocks = parse(
+            "See [the site](https://example.com).",
+            Theme::default(),
+            &|_| None,
+        );
+        let Block::Text(text) = &blocks[0] else {
+            panic!("a paragraph")
+        };
+        assert_eq!(text.job.text, "See the site.");
+        assert!(text.links.is_empty());
+        let theme = Theme::default();
+        assert!(
+            text.job
+                .sections
+                .iter()
+                .all(|s| s.format.color == theme.text)
         );
     }
 }

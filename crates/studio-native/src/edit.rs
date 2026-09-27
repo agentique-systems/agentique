@@ -377,6 +377,14 @@ impl StudioApp {
                 });
                 Outcome::Asking
             }
+            Err(ApplyError::Rejection(rejection @ Rejection::Stale { .. }))
+                if change.actor == Actor::Assistant && change.confirmed.is_empty() =>
+            {
+                // The model changed after the Assistant prepared this change
+                // (for example in a dialog the Operator had open): it reads
+                // the model again rather than overwrite that edit.
+                Outcome::NotApplied(ApplyError::Rejection(rejection))
+            }
             Err(ApplyError::Rejection(Rejection::Stale { .. })) => {
                 // The model changed while the Operator was deciding: ask again.
                 self.status =

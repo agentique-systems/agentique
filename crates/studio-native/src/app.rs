@@ -367,7 +367,7 @@ impl StudioApp {
     }
 
     pub fn show_fixture(&mut self, name: &str) {
-        self.stop_assistant();
+        self.end_turn();
         self.project = None;
         self.fixture = Some(name.to_string());
         self.view = match name {

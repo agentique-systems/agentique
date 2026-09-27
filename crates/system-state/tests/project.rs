@@ -270,6 +270,30 @@ fn an_edit_made_outside_while_the_project_is_open_is_not_overwritten() {
 }
 
 #[test]
+fn undo_since_that_cannot_be_saved_leaves_the_model_as_it_was() {
+    let (_dir, folder, mut project) = shop();
+    let shop = id(&project, "Shop");
+    let started = project.state().revision();
+    let create = Operation::Create {
+        parent: Parent::Element(shop),
+        element: Box::new(Element::named(ElementKind::PartDef, "Cache")),
+    };
+    project
+        .apply(Change::new(Actor::Assistant, "Add Cache", vec![create]))
+        .unwrap();
+    assert_eq!(project.state().steps_since(started).len(), 1);
+    // An edit made outside: the project refuses to overwrite it.
+    let path = model_file(&folder);
+    let edited = fs::read_to_string(&path).unwrap() + "\n// edited outside\n";
+    fs::write(&path, edited).unwrap();
+    assert!(project.undo_since(started).is_err());
+    assert!(project.state().tree().find("Shop::Cache").is_some());
+    let steps = project.state().steps_since(started);
+    assert_eq!(steps.len(), 1, "the change can still be undone");
+    assert_eq!(steps[0].1, Actor::Assistant);
+}
+
+#[test]
 fn a_change_that_could_not_be_saved_is_not_redoable() {
     let (_dir, folder, mut project) = shop();
     let undo_before = project.state().undo_description().map(str::to_string);

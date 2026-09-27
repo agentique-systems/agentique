@@ -21,10 +21,11 @@ use agq_assistant::{
 };
 use agq_language::ElementId;
 use agq_studio_scene::SceneTarget;
-use agq_system_state::{Actor, ApplyError};
+use agq_system_state::{Actor, ApplyError, ChangeEvent, SystemState};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::Sender;
+use std::time::{Duration, Instant};
 
 /// Makes the model for each turn.
 pub type ModelSource = Box<dyn Fn() -> Box<dyn Model + Send>>;
@@ -41,6 +42,9 @@ pub struct ConversationPanel {
     /// it are replaced. The draft that was in the input before is kept.
     pub editing: Option<(usize, String)>,
     turn: Option<BackgroundTurn>,
+    /// The Operator stopped the running turn: tool calls it still sends are
+    /// answered "not run" and never carried out.
+    stopped: bool,
     /// The running turn, or the last one.
     pub last_turn: Option<TurnRecord>,
     /// A tool call waiting for the Operator.
@@ -56,8 +60,11 @@ pub struct ConversationPanel {
     pub model_name: String,
     pub key_missing: bool,
     pub new_model: ModelSource,
-    /// Why the conversation could not be read or saved.
-    pub error: Option<String>,
+    /// Why the saved conversation could not be read; shown until another
+    /// project is opened.
+    pub read_error: Option<String>,
+    /// Why the conversation could not be saved the last time.
+    pub save_error: Option<String>,
     pub shown: bool,
     /// Move the keyboard focus to the message input on the next frame.
     pub focus_input: bool,
@@ -75,15 +82,23 @@ pub enum Live {
     },
 }
 
-/// One turn: the revision it started at, for undoing its changes.
+/// One turn: the revision it started at and the revisions of the changes
+/// it applied, for undoing them.
 pub struct TurnRecord {
     pub start: u64,
-    /// The revision when it ended.
-    pub end: Option<u64>,
-    /// Changes it applied.
-    pub changes: usize,
+    pub applied: Vec<u64>,
     /// It ended with a notice (an error, a stop, a limit) and can be retried.
     pub failed: bool,
+}
+
+/// What undoing the last turn would undo.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Undo {
+    /// Only changes the Assistant made in the turn, this many.
+    Assistant(usize),
+    /// This many changes since the turn started, some of them not the
+    /// Assistant's (the Operator's edits, or a redo).
+    All(usize),
 }
 
 /// A tool call waiting for the Operator.
@@ -115,6 +130,7 @@ impl Default for ConversationPanel {
             input: String::new(),
             editing: None,
             turn: None,
+            stopped: false,
             last_turn: None,
             waiting: None,
             results: HashMap::new(),
@@ -124,7 +140,8 @@ impl Default for ConversationPanel {
             model_name: format!("{} · {}", claude.model, claude.effort),
             key_missing: !claude.has_key(),
             new_model: Box::new(|| Box::new(ClaudeModel::from_env())),
-            error: None,
+            read_error: None,
+            save_error: None,
             shown: true,
             focus_input: false,
             view: Default::default(),
@@ -150,12 +167,26 @@ impl ConversationPanel {
         }
     }
 
-    /// The number of changes "Undo the Assistant's changes" would undo, when
-    /// it can: the last turn changed the model and nothing changed since.
-    pub fn undoable(&self, revision: u64) -> Option<usize> {
+    /// What undoing the last turn would undo, once it is over: only the
+    /// Assistant's changes of that turn, or also changes by others made
+    /// since it started.
+    pub fn undoable(&self, state: &SystemState) -> Option<Undo> {
         let record = self.last_turn.as_ref()?;
-        (self.turn.is_none() && record.changes > 0 && record.end == Some(revision))
-            .then_some(record.changes)
+        if self.turn.is_some() || record.applied.is_empty() {
+            return None;
+        }
+        let steps = state.steps_since(record.start);
+        if steps.is_empty() {
+            return None;
+        }
+        let assistant = steps.iter().all(|(revision, actor)| {
+            *actor == Actor::Assistant && record.applied.contains(revision)
+        });
+        Some(if assistant {
+            Undo::Assistant(steps.len())
+        } else {
+            Undo::All(steps.len())
+        })
     }
 
     /// Whether the last turn failed and can be sent again.
@@ -198,12 +229,15 @@ impl StudioApp {
         panel.conversation = match Conversation::load(&path) {
             Ok(conversation) => conversation,
             Err(error) => {
-                panel.error = Some(format!(
-                    "The saved conversation could not be read ({error}); a new one was started. The file is kept at {}.",
-                    path.display()
-                ));
                 // Keep the unreadable file; the new conversation saves beside it.
-                let _ = std::fs::rename(&path, path.with_extension("unreadable.json"));
+                let kept = path.with_extension("unreadable.json");
+                let place = match std::fs::rename(&path, &kept) {
+                    Ok(()) => format!("It was kept as {}.", kept.display()),
+                    Err(_) => format!("It is at {}.", path.display()),
+                };
+                panel.read_error = Some(format!(
+                    "The saved conversation could not be read ({error}); a new one was started. {place}"
+                ));
                 Conversation::default()
             }
         };
@@ -214,15 +248,29 @@ impl StudioApp {
     /// Stops the turn and forgets everything that belongs to the open
     /// conversation, before another project is opened.
     fn close_conversation(&mut self) {
+        self.end_turn();
+        let panel = &mut self.conversation;
+        panel.last_turn = None;
+        panel.editing = None;
+        panel.read_error = None;
+        panel.save_error = None;
+        panel.path = None;
+    }
+
+    /// Stops the turn and takes its remaining events, so every result it
+    /// produced is recorded and saved before the conversation is closed or
+    /// replaced. A stopped turn ends within a fraction of a second.
+    pub fn end_turn(&mut self) {
         self.stop_assistant();
+        let started = Instant::now();
+        while self.conversation.turn.is_some() && started.elapsed() < Duration::from_secs(2) {
+            self.poll_conversation();
+            std::thread::sleep(Duration::from_millis(2));
+        }
         let panel = &mut self.conversation;
         panel.turn = None;
-        panel.last_turn = None;
         panel.live.clear();
         panel.thinking = false;
-        panel.editing = None;
-        panel.error = None;
-        panel.path = None;
     }
 
     fn save_conversation(&mut self) {
@@ -232,7 +280,7 @@ impl StudioApp {
             .parent()
             .map_or(Ok(()), std::fs::create_dir_all)
             .and_then(|()| panel.conversation.save(path));
-        panel.error = saved
+        panel.save_error = saved
             .err()
             .map(|error| format!("The conversation could not be saved: {error}"));
     }
@@ -273,10 +321,10 @@ impl StudioApp {
         let panel = &mut self.conversation;
         panel.live.clear();
         panel.thinking = false;
+        panel.stopped = false;
         panel.last_turn = Some(TurnRecord {
             start: project.state().revision(),
-            end: None,
-            changes: 0,
+            applied: Vec::new(),
             failed: false,
         });
         let model = (panel.new_model)();
@@ -377,11 +425,11 @@ impl StudioApp {
                     panel.conversation.entries.last(),
                     Some(Entry::Notice { .. })
                 );
-                let revision = self.project.as_ref().map(|p| p.state().revision());
-                if let Some(record) = &mut self.conversation.last_turn {
-                    record.end = revision;
+                if let Some(record) = &mut panel.last_turn {
                     record.failed = failed;
                 }
+                // Nothing waits for an answer any more.
+                self.close_waiting(None);
             }
         }
     }
@@ -389,6 +437,10 @@ impl StudioApp {
     /// Carries out one tool call, as the Studio does for the Operator's own
     /// edits (REALIGNMENT §3.2).
     fn carry_out(&mut self, call: ToolCall, reply: Sender<ToolResult>) {
+        if self.conversation.stopped {
+            let _ = reply.send(ToolResult::error("Not run: stopped by the Operator."));
+            return;
+        }
         let Some(project) = &self.project else {
             let _ = reply.send(ToolResult::error("Not run: no project is open."));
             return;
@@ -409,6 +461,9 @@ impl StudioApp {
                 panel.shown = true;
                 panel.focus_input = true;
             }
+            Prepared::Change(_) if !self.editable() => answer(ToolResult::error(
+                "Not applied: the Operator is looking at an earlier checkpoint, so the model cannot change now. Wait, or ask the Operator to return to the current model, then try again.",
+            )),
             Prepared::Change(change) if self.dialog.is_some() => {
                 self.conversation.waiting = Some(Waiting {
                     call,
@@ -455,7 +510,7 @@ impl StudioApp {
         let result = match outcome {
             Outcome::Applied(event) => {
                 if let Some(record) = &mut self.conversation.last_turn {
-                    record.changes += 1;
+                    record.applied.push(event.revision);
                 }
                 ToolResult::applied(state, &event)
             }
@@ -473,7 +528,7 @@ impl StudioApp {
     }
 
     /// Answers the Assistant's open question. Returns false when no question
-    /// is open.
+    /// is open or the turn that asked it is gone.
     pub fn answer_question(&mut self, answer: &str) -> bool {
         let panel = &mut self.conversation;
         let Some(Waiting {
@@ -484,8 +539,10 @@ impl StudioApp {
             return false;
         };
         let waiting = panel.waiting.take().expect("checked above");
-        let _ = waiting.reply.send(ToolResult::answer(answer.trim()));
-        true
+        waiting
+            .reply
+            .send(ToolResult::answer(answer.trim()))
+            .is_ok()
     }
 
     /// Stops the Assistant at once: no further model or tool call starts, a
@@ -495,29 +552,35 @@ impl StudioApp {
         let panel = &mut self.conversation;
         if let Some(turn) = &panel.turn {
             turn.stop();
+            panel.stopped = true;
         }
-        if let Some(waiting) = panel.waiting.take() {
-            let _ = waiting
-                .reply
-                .send(ToolResult::error("Not run: stopped by the Operator."));
-            if matches!(waiting.kind, WaitingFor::Confirmation)
-                && matches!(&self.dialog, Some(crate::edit::Dialog::Confirm { change, .. }) if change.actor == Actor::Assistant)
-            {
-                self.dialog = None;
-            }
+        self.close_waiting(Some("Not run: stopped by the Operator."));
+    }
+
+    /// Closes the call waiting for the Operator, answering it with `reply`
+    /// if the turn still listens, and its lock confirmation if one is open.
+    fn close_waiting(&mut self, reply: Option<&str>) {
+        let Some(waiting) = self.conversation.waiting.take() else {
+            return;
+        };
+        if let Some(reply) = reply {
+            let _ = waiting.reply.send(ToolResult::error(reply));
+        }
+        if matches!(waiting.kind, WaitingFor::Confirmation)
+            && matches!(&self.dialog, Some(crate::edit::Dialog::Confirm { change, .. }) if change.actor == Actor::Assistant)
+        {
+            self.dialog = None;
         }
     }
 
-    /// Undoes every change made since the last turn started (R-12).
+    /// Undoes every change made since the last turn started (R-12): the
+    /// Assistant's, and those of others when [`ConversationPanel::undoable`]
+    /// says so. Each can be redone.
     pub fn undo_assistant_changes(&mut self) {
         let Some(project) = &self.project else { return };
-        if self
-            .conversation
-            .undoable(project.state().revision())
-            .is_none()
-        {
+        let Some(undo) = self.conversation.undoable(project.state()) else {
             return;
-        }
+        };
         let Some(record) = self.conversation.last_turn.take() else {
             return;
         };
@@ -527,16 +590,14 @@ impl StudioApp {
         match project.undo_since(record.start) {
             Ok(events) => {
                 self.saved = Ok(());
-                for event in &events {
-                    self.changed(event);
+                if let Some(all) = merged(&events) {
+                    self.changed(&all);
                 }
-                self.status = format!("Undid {} change(s) by the Assistant", events.len());
-                self.add_entry(Entry::Notice {
-                    text: format!(
-                        "You undid the Assistant's changes from this turn ({}). They can be redone with Ctrl+Y.",
-                        events.len()
-                    ),
-                });
+                let count = plural(events.len(), "change", "changes");
+                self.status = match undo {
+                    Undo::Assistant(_) => format!("Undid {count} by the Assistant"),
+                    Undo::All(_) => format!("Undid {count} since the Assistant started"),
+                };
             }
             Err(error) => {
                 self.saved = Err(error.to_string());
@@ -604,11 +665,9 @@ impl StudioApp {
 
     /// Starts a new conversation for this project. The model is unaffected.
     pub fn new_conversation(&mut self) {
-        self.stop_assistant();
+        self.end_turn();
         let panel = &mut self.conversation;
-        panel.turn = None;
         panel.last_turn = None;
-        panel.live.clear();
         panel.editing = None;
         panel.conversation = Conversation::default();
         panel.results.clear();
@@ -694,6 +753,27 @@ impl StudioApp {
         self.panel = crate::app::Panel::Inspector;
         self.frame_target(&target);
     }
+}
+
+/// `1 change`, `2 changes`.
+pub fn plural(count: usize, one: &str, many: &str) -> String {
+    format!("{count} {}", if count == 1 { one } else { many })
+}
+
+/// One event for a series of undone changes, so the Surface is rebuilt and
+/// highlighted once.
+fn merged(events: &[ChangeEvent]) -> Option<ChangeEvent> {
+    let mut all = events.last()?.clone();
+    for event in &events[..events.len() - 1] {
+        all.created.extend(&event.created);
+        all.updated.extend(&event.updated);
+        all.deleted.extend(&event.deleted);
+    }
+    for ids in [&mut all.created, &mut all.updated, &mut all.deleted] {
+        ids.sort();
+        ids.dedup();
+    }
+    Some(all)
 }
 
 /// A scripted stand-in for the Claude API, shared by the turns of one

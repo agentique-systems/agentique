@@ -30,11 +30,15 @@ The column on the right (`conversation.rs` for the state and tool calls,
   tools are shown smaller.
 - **Questions** (`ask_operator`) are prompt cards with the options as
   buttons; a typed message answers an open question.
-- **Stop** stops at once: a question or confirmation still open is closed and
-  answered "not run". Changes made so far stay; "Undo the Assistant's
-  changes" undoes every change since the turn started (`Project::undo_since`),
-  each redoable. **Retry** sends again after a failed or stopped turn;
-  **Edit** replaces the last message and everything after it.
+- **Stop** stops at once: a question or confirmation still open is closed,
+  and every tool call of the turn not yet carried out is answered "not run".
+  Changes made so far stay. "Undo the Assistant's changes" undoes the turn's
+  changes (`Project::undo_since`), each redoable; when changes by others were
+  made since the turn started (`SystemState::steps_since` tells), it says
+  so: "Undo all changes since the Assistant started". **Retry** sends again
+  after a failed or stopped turn; **Edit** replaces the last message and
+  everything after it. Opening another project stops the turn and records
+  its last results first.
 - **Saved per project** in the Studio's local data, next to the session file
   (`conversations/<folder>-<hash>.json`), never in the project folder, after
   every entry. "New conversation" starts again; the model is unaffected.

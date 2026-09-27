@@ -239,7 +239,7 @@ fn a_stopped_reply_still_forms_a_valid_exchange() {
                     tool_use_id: "t2".into(),
                     content: "No problems.".into(),
                     is_error: false,
-                    elements: Vec::new(),
+                    change: None,
                 }],
             },
         ],

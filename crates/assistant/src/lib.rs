@@ -22,7 +22,7 @@ pub mod tools;
 pub mod turn;
 
 pub use claude::ClaudeModel;
-pub use conversation::{Conversation, Entry, ToolResult};
+pub use conversation::{ChangeSummary, Conversation, Entry, ToolResult};
 pub use model::{Model, ModelError, Reply, Request, ScriptedModel, StreamEvent, Usage};
 pub use skills::system_prompt;
 pub use tools::Prepared;

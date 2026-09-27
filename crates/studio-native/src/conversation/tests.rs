@@ -155,13 +155,11 @@ fn a_turn_builds_parts_that_appear_on_the_surface_as_cards_with_links() {
     assert_eq!(state.undo_description(), Some("Add the API and the store"));
     // The card's result names the new elements for links.
     assert!(!result(&app, "t1").is_error);
-    assert!(
-        result(&app, "t2")
-            .elements
-            .starts_with(&[api.raw(), store.raw()])
-    );
+    let change = result(&app, "t2").change.clone().unwrap();
+    assert_eq!(change.created, vec![api.raw(), store.raw()]);
+    assert_eq!(change.problems, 0);
     assert_valid(&app);
-    assert_eq!(app.conversation.undoable(state.revision()), Some(1));
+    assert_eq!(app.conversation.undoable(state), Some(Undo::Assistant(1)));
     // Element names in the reply are links: clicking one selects it.
     frame(&mut app, &context, Vec::new());
     frame(&mut app, &context, Vec::new());
@@ -219,6 +217,7 @@ fn a_locked_part_asks_the_operator_and_a_refusal_changes_nothing() {
         refused.is_error && refused.content.contains("did not allow"),
         "{refused:?}"
     );
+    assert_eq!(refused.change.as_ref().unwrap().refused, vec![api.raw()]);
     assert_valid(&app);
 
     // Confirming applies it, and the lock stays.
@@ -329,8 +328,8 @@ fn stop_keeps_the_partial_work_and_undo_removes_the_turns_changes() {
     ));
     assert_valid(&app);
 
-    let revision = app.project.as_ref().unwrap().state().revision();
-    assert_eq!(app.conversation.undoable(revision), Some(2));
+    let state = app.project.as_ref().unwrap().state();
+    assert_eq!(app.conversation.undoable(state), Some(Undo::Assistant(2)));
     frame(&mut app, &context, Vec::new());
     click(
         &mut app,
@@ -338,8 +337,8 @@ fn stop_keeps_the_partial_work_and_undo_removes_the_turns_changes() {
         Target::Button("Undo the Assistant's changes"),
     );
     assert!(find(&app, "P::api").is_none() && find(&app, "P::store").is_none());
-    let revision = app.project.as_ref().unwrap().state().revision();
-    assert_eq!(app.conversation.undoable(revision), None);
+    let state = app.project.as_ref().unwrap().state();
+    assert_eq!(app.conversation.undoable(state), None);
     // Undone work can be redone like any undo.
     app.execute(crate::commands::CommandId::Redo, &context);
     assert!(find(&app, "P::api").is_some() && find(&app, "P::store").is_none());
@@ -449,5 +448,156 @@ fn insert_selection_puts_the_selected_names_into_the_message() {
     assert_eq!(
         app.conversation.input, "Split `P::api` ",
         "nothing selected"
+    );
+}
+
+#[test]
+fn stop_carries_out_no_tool_call_after_it() {
+    let (mut app, _context, _folder) = assisted(
+        "assistant-stop-queued",
+        vec![
+            reply(
+                vec![changes("t1", "Add api", vec![create("api")])],
+                "tool_use",
+            ),
+            reply(
+                vec![
+                    changes("t2", "Add store", vec![create("store")]),
+                    changes("t3", "Add stats", vec![create("stats")]),
+                ],
+                "tool_use",
+            ),
+        ],
+    );
+    say(&mut app, "Build it");
+    wait(&mut app, |app| find(app, "P::api").is_some());
+    // The turn asks for the next change while the Operator presses Stop,
+    // before the Studio has taken that call.
+    std::thread::sleep(Duration::from_millis(150));
+    app.stop_assistant();
+    wait(&mut app, finished);
+    assert!(find(&app, "P::store").is_none(), "no change after Stop");
+    assert!(find(&app, "P::stats").is_none());
+    for id in ["t2", "t3"] {
+        let card = result(&app, id);
+        assert!(
+            card.is_error && card.content.starts_with("Not run"),
+            "{card:?}"
+        );
+    }
+    assert!(!result(&app, "t1").is_error);
+    assert_valid(&app);
+    let state = app.project.as_ref().unwrap().state();
+    assert_eq!(app.conversation.undoable(state), Some(Undo::Assistant(1)));
+}
+
+#[test]
+fn a_question_left_open_by_a_finished_turn_keeps_the_typed_answer() {
+    let (mut app, _context, _folder) = assisted(
+        "assistant-gone",
+        vec![reply(
+            vec![tool(
+                "t1",
+                tools::ASK_OPERATOR,
+                json!({ "question": "Cache?" }),
+            )],
+            "tool_use",
+        )],
+    );
+    say(&mut app, "Build it");
+    wait(&mut app, |app| app.conversation.waiting.is_some());
+    // The turn ends (here: stopped) before the Studio hears of it.
+    app.conversation.turn.as_ref().unwrap().stop();
+    std::thread::sleep(Duration::from_millis(200));
+    say(&mut app, "No cache");
+    assert_eq!(
+        app.conversation.input, "No cache",
+        "an answer nobody receives is not lost"
+    );
+    wait(&mut app, finished);
+    assert!(app.conversation.waiting.is_none(), "nothing waits any more");
+}
+
+#[test]
+fn undo_says_so_when_the_operator_also_changed_the_model_during_the_turn() {
+    let (mut app, context, _folder) = assisted(
+        "assistant-undo-mixed",
+        vec![
+            reply(
+                vec![changes("t1", "Add api", vec![create("api")])],
+                "tool_use",
+            ),
+            reply(
+                vec![tool(
+                    "t2",
+                    tools::ASK_OPERATOR,
+                    json!({ "question": "Anything else?" }),
+                )],
+                "tool_use",
+            ),
+            reply(vec![text("Done.")], "end_turn"),
+        ],
+    );
+    say(&mut app, "Build it");
+    wait(&mut app, |app| app.conversation.waiting.is_some());
+    // While the question waits, the Operator adds a part by hand.
+    let package = find(&app, "P").unwrap();
+    app.create(
+        crate::edit::CreateKind::Part,
+        false,
+        "cache",
+        agq_language::Parent::Element(package),
+    );
+    say(&mut app, "No");
+    wait(&mut app, finished);
+    let state = app.project.as_ref().unwrap().state();
+    assert_eq!(app.conversation.undoable(state), Some(Undo::All(2)));
+    frame(&mut app, &context, Vec::new());
+    frame(&mut app, &context, Vec::new());
+    let label = "Undo all changes since the Assistant started";
+    click(&mut app, &context, Target::Button(label));
+    assert!(find(&app, "P::api").is_none() && find(&app, "P::cache").is_none());
+    assert_eq!(app.status, "Undid 2 changes since the Assistant started");
+}
+
+#[test]
+fn a_change_that_waited_for_an_edited_dialog_goes_back_to_the_model() {
+    let (mut app, _context, _folder) = assisted(
+        "assistant-stale",
+        vec![
+            reply(
+                vec![changes("t1", "Add api", vec![create("api")])],
+                "tool_use",
+            ),
+            reply(vec![text("I'll read the model again.")], "end_turn"),
+        ],
+    );
+    // The Operator has a dialog open; the change waits for it.
+    app.dialog = Some(crate::edit::Dialog::Checkpoint {
+        message: String::new(),
+    });
+    say(&mut app, "Build it");
+    wait(&mut app, |app| {
+        matches!(
+            app.conversation.waiting.as_ref().map(|w| &w.kind),
+            Some(WaitingFor::Dialog(_))
+        )
+    });
+    // Closing it after an edit: the change was prepared for the model before.
+    app.dialog = None;
+    let package = find(&app, "P").unwrap();
+    app.create(
+        crate::edit::CreateKind::Part,
+        false,
+        "cache",
+        agq_language::Parent::Element(package),
+    );
+    wait(&mut app, finished);
+    assert!(find(&app, "P::api").is_none(), "not applied over the edit");
+    assert!(find(&app, "P::cache").is_some());
+    let stale = result(&app, "t1");
+    assert!(
+        stale.is_error && stale.content.contains("model changed"),
+        "{stale:?}"
     );
 }

@@ -6,6 +6,7 @@
 //! a restart, and the panel renders the same entries.
 
 use crate::tools;
+use agq_language::ElementId;
 use agq_system_state::{ChangeEvent, Rejection, SystemState};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -40,10 +41,27 @@ pub struct ToolResult {
     pub content: String,
     #[serde(default)]
     pub is_error: bool,
-    /// Elements the tool created or changed, for links on the Surface
-    /// (raw element ids).
+    /// What a change did, for the Operator; the model reads `content`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub change: Option<ChangeSummary>,
+}
+
+/// What a change did, or which locked elements the Operator kept, by raw
+/// element ids: for the Conversation's cards and links to the Surface.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ChangeSummary {
     #[serde(default)]
-    pub elements: Vec<u64>,
+    pub created: Vec<u64>,
+    #[serde(default)]
+    pub changed: Vec<u64>,
+    #[serde(default)]
+    pub deleted: usize,
+    /// Problems at the created and changed elements after the change.
+    #[serde(default)]
+    pub problems: usize,
+    /// Locked elements the Operator did not allow to change.
+    #[serde(default)]
+    pub refused: Vec<u64>,
 }
 
 impl ToolResult {
@@ -53,7 +71,7 @@ impl ToolResult {
             tool_use_id: String::new(),
             content: content.into(),
             is_error: false,
-            elements: Vec::new(),
+            change: None,
         }
     }
 
@@ -67,13 +85,20 @@ impl ToolResult {
 
     /// A change was applied: what changed, and problems at those elements.
     pub fn applied(state: &SystemState, event: &ChangeEvent) -> Self {
+        let raw = |ids: &[ElementId]| ids.iter().map(|id| id.raw()).collect();
+        let problems = state
+            .diagnostics()
+            .iter()
+            .filter(|d| event.created.contains(&d.element) || event.updated.contains(&d.element))
+            .count();
         ToolResult {
-            elements: event
-                .created
-                .iter()
-                .chain(&event.updated)
-                .map(|id| id.raw())
-                .collect(),
+            change: Some(ChangeSummary {
+                created: raw(&event.created),
+                changed: raw(&event.updated),
+                deleted: event.deleted.len(),
+                problems,
+                refused: Vec::new(),
+            }),
             ..ToolResult::answer(tools::describe_event(state, event))
         }
     }
@@ -81,7 +106,17 @@ impl ToolResult {
     /// A change was not applied, for example because the Operator did not
     /// allow a change to a locked element.
     pub fn rejected(state: &SystemState, rejection: &Rejection) -> Self {
-        ToolResult::error(tools::describe_rejection(state, rejection))
+        let refused = match rejection {
+            Rejection::Locked { elements } => elements.iter().map(|id| id.raw()).collect(),
+            _ => Vec::new(),
+        };
+        ToolResult {
+            change: Some(ChangeSummary {
+                refused,
+                ..ChangeSummary::default()
+            }),
+            ..ToolResult::error(tools::describe_rejection(state, rejection))
+        }
     }
 }
 
@@ -147,7 +182,7 @@ impl Conversation {
 
     /// Writes the conversation atomically (temporary file, then rename).
     pub fn save(&self, path: &Path) -> std::io::Result<()> {
-        let text = serde_json::to_string_pretty(self)
+        let text = serde_json::to_string(self)
             .map_err(|error| std::io::Error::new(std::io::ErrorKind::InvalidData, error))?;
         let temporary = path.with_extension("json.tmp");
         std::fs::write(&temporary, text)?;
