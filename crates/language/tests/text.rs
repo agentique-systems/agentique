@@ -293,3 +293,23 @@ fn an_escape_at_a_line_end_keeps_line_numbers() {
         .collect();
     assert_eq!(located, [("syntax", 2), ("unresolved", 4)]);
 }
+
+#[test]
+fn valid_sysml_outside_the_subset_is_unsupported_not_a_syntax_error() {
+    let tree = load(
+        "package P {
+             part def A { part a : A[0..1]; }
+             connection def C { end a : A; }
+             part x :> a.b;
+             part y :>> a.b;
+             #M part z;
+             @M;
+         }",
+    );
+    let found: Vec<(String, &str)> = codes(&tree);
+    assert_eq!(found.len(), 5, "{found:?}");
+    assert!(
+        found.iter().all(|(_, code)| *code == "unsupported"),
+        "{found:?}"
+    );
+}

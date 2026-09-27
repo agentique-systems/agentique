@@ -375,3 +375,41 @@ fn a_port_may_pass_items_on_to_an_inner_part() {
         &[("P::Outer::reversed", "incompatible-ends")],
     );
 }
+
+#[test]
+fn delegation_is_decided_by_which_part_contains_which() {
+    expect(
+        "package P {
+             item def M;
+             port def Takes { in item m : M; }
+             part def Inner { port i : Takes; }
+             part def Sub { port i : Takes; part inner : Inner; }
+             part def Top { part sub : Sub; connection passOn connect sub.i to sub.inner.i; }
+             port g : Takes;
+             part def Other { part inner : Inner; connection fromPackage connect g to inner.i; }
+         }",
+        &[("P::Other::fromPackage", "incompatible-ends")],
+    );
+}
+
+#[test]
+fn many_mutually_importing_packages_resolve_quickly() {
+    let n = 20;
+    let mut text = String::new();
+    for i in 0..n {
+        text.push_str(&format!("package P{i} {{\n"));
+        for j in (0..n).filter(|j| *j != i) {
+            text.push_str(&format!("    public import P{j}::*;\n"));
+        }
+        let next = (i + 1) % n;
+        text.push_str(&format!(
+            "    part def D{i};\n    part x{i} : D{next};\n    part y{i} : Missing;\n}}\n"
+        ));
+    }
+    let start = std::time::Instant::now();
+    let tree = parse(&[Source::new("many.sysml", text)]);
+    let problems = validate(&tree);
+    let elapsed = start.elapsed();
+    assert_eq!(problems.len(), n, "only the `Missing` types are unresolved");
+    assert!(elapsed < std::time::Duration::from_secs(1), "{elapsed:?}");
+}

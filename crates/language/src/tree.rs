@@ -617,9 +617,18 @@ impl Tree {
         &mut self,
         ids: &HashMap<ElementId, ElementId>,
     ) -> Result<Vec<ElementId>, TreeError> {
+        // Targets of removed elements are retired ids. They are re-keyed too
+        // (through `ids`, or to a fresh id), so such references stay removed
+        // and never meet a new element.
+        let retired: std::collections::BTreeSet<ElementId> = self
+            .references()
+            .into_iter()
+            .flat_map(|(_, _, r)| r.steps.iter().filter_map(|s| s.target))
+            .filter(|t| t.0 < FIRST_LIBRARY_ID && !self.contains(*t))
+            .collect();
         let mut used = std::collections::HashSet::new();
         for (old, new) in ids {
-            if self.contains(*old)
+            if (self.contains(*old) || retired.contains(old))
                 && (new.0 == 0 || new.0 >= FIRST_LIBRARY_ID || !used.insert(*new))
             {
                 return Err(TreeError::BadId(*new));
@@ -630,13 +639,15 @@ impl Tree {
         self.next_id = self.next_id.max(highest + 1);
         let mut map = HashMap::new();
         let mut fresh = Vec::new();
-        for id in self.walk() {
+        for id in self.walk().into_iter().chain(retired.iter().copied()) {
             let new = match ids.get(&id) {
                 Some(new) => *new,
                 None => {
                     let new = ElementId(self.next_id);
                     self.next_id += 1;
-                    fresh.push(new);
+                    if self.contains(id) {
+                        fresh.push(new);
+                    }
                     new
                 }
             };
@@ -649,15 +660,10 @@ impl Tree {
             element.children = element.children.iter().filter_map(|c| remap(*c)).collect();
             for reference in element.references_mut() {
                 for step in &mut reference.steps {
-                    // Library targets keep their ids; targets of removed
-                    // elements cannot be carried over and are cleared.
-                    step.target = step.target.and_then(|t| {
-                        if t.0 >= FIRST_LIBRARY_ID {
-                            Some(t)
-                        } else {
-                            remap(t)
-                        }
-                    });
+                    // Library targets keep their ids.
+                    step.target = step
+                        .target
+                        .map(|t| if t.0 >= FIRST_LIBRARY_ID { t } else { map[&t] });
                 }
             }
             self.elements.insert(map[&id], element);
@@ -786,11 +792,15 @@ impl Tree {
         let mut parts = Vec::new();
         let mut next = Some(id);
         while let Some(current) = next {
+            let Some(element) = self.get(current) else {
+                parts.push(current.to_string()); // removed: `#id`
+                break;
+            };
             parts.push(match self.effective_name(current) {
                 Some(name) => QualifiedName::new([name]).to_string(),
-                None => format!("({})", self.describe_unnamed(&self[current])),
+                None => format!("({})", self.describe_unnamed(element)),
             });
-            next = self[current].owner;
+            next = element.owner;
         }
         parts.reverse();
         parts.join("::")

@@ -39,8 +39,8 @@ Departures from the standard are listed in [deviations.md](deviations.md).
 |---|---|---|
 | Feature values | `= literal` (integer, real, string, `true`/`false`) | Expressions need an evaluator; Stage 4 |
 | Value checking | Literals against the built-in scalar types | User value types need expression typing |
-| Connections | Binary; plain feature chains as ends | Scenario A needs no n-ary or named ends |
-| Feature chains | Connection ends and `satisfy ... by`; steps after the first are simple names | Enough for `a.b.c`; typing by chains is rare |
+| Connections | Binary; plain feature chains as ends; `end` features need a kind keyword (`end part a`) outside interface defs | Scenario A needs no n-ary or named ends |
+| Feature chains | Connection ends and `satisfy ... by`; steps after the first are simple names; typing, subsetting or redefining by a chain is unsupported | Enough for `a.b.c` |
 | Requirements | Subject, doc text, attributes, satisfy | Constraints need expressions |
 | Standard library | `ScalarValues` only, built in | No runtime bundle (R-4); grows by need |
 
@@ -72,6 +72,9 @@ Diagnostic codes reported by `validate`:
 | `unsupported` | A construct outside the subset, or a reference to one |
 | `unresolved` | A name cannot be found from where it is written, or a linked chain step is no longer a feature of the step before |
 | `removed-target` | A linked reference points at an element that was removed |
+| `unreachable-target` | No name written at the reference leads back to its target (the target is private, hidden by another element with that name, or inside an unnamed element), so saving would lose the link |
+| `missing-target` | A `satisfy` or `import` without the name it needs |
+| `wrong-end-count` | A connection or interface usage with other than two ends (or none) |
 | `ambiguous` | A name matches several different elements |
 | `duplicate-name` | Two members share a name, or an owned feature hides an inherited one without redefining it |
 | `wrong-type` | A usage's type is not the right kind of definition (a part by a part def, a port by a port def, ...); `~` on a non-port |

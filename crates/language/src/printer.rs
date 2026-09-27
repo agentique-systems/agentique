@@ -26,14 +26,16 @@ pub fn print(tree: &Tree) -> Vec<Source> {
         .collect()
 }
 
-/// Prints one element (and its children) at indentation level 0.
-pub fn print_element(tree: &Tree, id: ElementId) -> String {
+/// Prints one element (and its children) at indentation level 0, or `None`
+/// if the tree has no such element.
+pub fn print_element(tree: &Tree, id: ElementId) -> Option<String> {
+    tree.get(id)?;
     let printer = Printer {
         model: Model::new(tree, library()),
     };
     let mut out = String::new();
     printer.member(id, 0, &mut out);
-    out
+    Some(out)
 }
 
 struct Printer<'a> {
@@ -85,7 +87,7 @@ impl Printer<'_> {
     }
 
     fn reference(&self, id: ElementId, role: Role, reference: &Reference) -> String {
-        self.model.reference_text(id, role, reference)
+        self.model.name_for(id, role, reference).0
     }
 
     fn list(&self, id: ElementId, role: Role, references: &[Reference]) -> String {
