@@ -673,3 +673,46 @@ fn an_unnamed_element_inserted_by_hand_shifts_positions_and_is_reported() {
     // entry and is reported.
     assert_eq!(project.unmatched(), ["doc Shop::System::#2"]);
 }
+
+#[test]
+fn deleting_a_renamed_element_never_binds_its_references_to_another() {
+    // Rename Store to Depot, add a new Store, delete Depot: `store : Depot`
+    // stays unresolved, with or without reopening before the delete.
+    let mut texts = Vec::new();
+    for reopen in [false, true] {
+        let (_dir, folder, mut project) = shop();
+        let shop = id(&project, "Shop");
+        let store = id(&project, "Shop::Store");
+        let usage = id(&project, "Shop::System::store");
+        change(
+            &mut project,
+            Operation::Rename {
+                element: store,
+                name: "Depot".into(),
+            },
+        );
+        add(
+            &mut project,
+            shop,
+            Element::named(ElementKind::PartDef, "Store"),
+        );
+        if reopen {
+            drop(project);
+            project = Project::open(&folder).unwrap();
+        }
+        change(&mut project, Operation::Delete { element: store });
+        assert_eq!(project.state().tree()[usage].typed_by[0].target(), None);
+        assert_eq!(project.state().diagnostics_for(usage).count(), 1);
+        let text = fs::read_to_string(model_file(&folder)).unwrap();
+        assert!(text.contains("part store : Depot;"), "{text}");
+        let before = project.state().tree().clone();
+        drop(project);
+        let project = Project::open(&folder).unwrap();
+        assert_eq!(
+            compare(&before, project.state().tree()),
+            Comparison::default()
+        );
+        texts.push(text);
+    }
+    assert_eq!(texts[0], texts[1]);
+}

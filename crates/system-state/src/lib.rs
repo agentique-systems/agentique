@@ -30,7 +30,7 @@ pub use project::{ApplyError, Checkpoint, HistoryError, Project, ProjectError};
 
 use agq_language::{
     Diagnostic, Direction, Element, ElementId, ElementKind, Literal, Multiplicity, Parent,
-    QualifiedName, Reference, Tree, TreeError, Visibility, library, link, validate,
+    QualifiedName, Reference, Step, Tree, TreeError, Visibility, link, printed_reference, validate,
 };
 use std::collections::BTreeSet;
 use std::fmt;
@@ -54,9 +54,9 @@ pub enum Operation {
         element: Box<Element>,
     },
     /// Removes an element and everything it owns. References to it keep the
-    /// name they were written with and are linked again by that name, as when
-    /// the saved text is read back; if nothing has the name they are reported
-    /// as problems until they are changed.
+    /// name they are saved with (its current name) and are linked again by
+    /// that name, as when the saved text is read back; if nothing has the
+    /// name they are reported as problems until they are changed.
     Delete { element: ElementId },
     /// Gives an element a new name. References to it stay bound to it.
     Rename { element: ElementId, name: String },
@@ -320,7 +320,6 @@ impl SystemState {
             }
         }
         locks.retain(|id| tree.contains(*id));
-        unlink_removed(&mut tree);
         link(&mut tree);
         let before = Snapshot {
             tree: std::mem::replace(&mut self.tree, tree),
@@ -486,9 +485,7 @@ fn apply_operation(
         }
         Operation::Delete { element } => {
             existing(tree, *element)?;
-            for id in tree.remove(*element) {
-                locks.remove(&id);
-            }
+            delete(tree, locks, *element);
             Ok(None)
         }
         Operation::Rename { element, name } => {
@@ -702,31 +699,37 @@ fn meaning(element: &Element) -> Element {
     element
 }
 
-/// Unlinks every reference with a step whose target was removed, so that
-/// linking binds it again by its written names, exactly as reading the saved
-/// text back does.
-fn unlink_removed(tree: &mut Tree) {
-    let gone = |tree: &Tree, target: Option<ElementId>| {
-        target.is_some_and(|t| !tree.contains(t) && !library().contains(t))
-    };
-    let holders: Vec<ElementId> = tree
-        .walk()
-        .into_iter()
-        .filter(|id| {
-            let references = tree[*id].references();
-            references
-                .iter()
-                .any(|(_, r)| r.steps.iter().any(|s| gone(tree, s.target)))
-        })
-        .collect();
-    for id in holders {
-        let mut element = tree[id].clone();
-        for reference in references_mut(&mut element) {
-            if reference.steps.iter().any(|s| gone(tree, s.target)) {
-                reference.steps.iter_mut().for_each(|s| s.target = None);
+/// Removes an element and everything it owns. References to them are
+/// unlinked and keep the names they are saved with at this moment (the
+/// targets' current names), so linking binds them again by those names,
+/// exactly as reading the saved text back does.
+fn delete(tree: &mut Tree, locks: &mut BTreeSet<ElementId>, element: ElementId) {
+    let removed: BTreeSet<ElementId> = tree.descendants(element).into_iter().collect();
+    let mut written = Vec::new();
+    for holder in tree.walk() {
+        if removed.contains(&holder) {
+            continue;
+        }
+        for (index, (role, reference)) in tree[holder].references().into_iter().enumerate() {
+            let points_at_removed = |step: &Step| step.target.is_some_and(|t| removed.contains(&t));
+            if reference.steps.iter().any(points_at_removed) {
+                let printed = printed_reference(tree, holder, role, reference);
+                written.push((holder, index, printed));
             }
         }
-        *tree.get_mut(id).expect("walked element exists") = element;
+    }
+    for id in tree.remove(element) {
+        locks.remove(&id);
+    }
+    for (holder, index, mut reference) in written {
+        reference
+            .steps
+            .iter_mut()
+            .for_each(|step| step.target = None);
+        let holder = tree.get_mut(holder).expect("a holder is not removed");
+        *references_mut(holder)
+            .nth(index)
+            .expect("the order of Element::references") = reference;
     }
 }
 
