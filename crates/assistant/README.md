@@ -192,3 +192,46 @@ and the spend guard's variables; it never runs in `cargo test`. Task
 definitions are committed; reports and transcripts are written to `--out` and
 never committed (§8.3). The rubric grader for simplicity (R-19) is not built
 yet: it needs calibrating against the Operator's judgment.
+
+## Conversation format 2 (interface 4 of ROADMAP §6.2; built in W5.7)
+
+Today a conversation is stored as the Claude API's content blocks (format 1),
+with other providers' reasoning in `reasoning` blocks. W5.7 replaces it with a
+provider-neutral format (R-23), stored per project at
+`%APPDATA%\Agentique\projects\<folder>-<hash>\conversation.json` (R-43):
+
+```json
+{
+  "format": 2,
+  "entries": [
+    { "type": "operator", "text": "Add expiring links." },
+    { "type": "assistant",
+      "model": { "provider": "deepseek", "model": "deepseek-flash" },
+      "parts": [
+        { "type": "reasoning", "parts": [{ "type": "text", "text": "…" }] },
+        { "type": "text", "text": "I'll read the model first." },
+        { "type": "tool_call", "id": "call_1", "name": "read_model", "input": {} }
+      ] },
+    { "type": "tool_results", "results": [
+        { "tool_use_id": "call_1", "content": "Outline …", "is_error": false, "change": null }
+      ] },
+    { "type": "notice", "text": "Stopped by the Operator. …" }
+  ]
+}
+```
+
+- **Entries Stage 5 needs**: `operator`, `assistant` (the model that wrote it
+  and its parts, which are `agq_providers::AssistantPart`: `text`,
+  `reasoning` as the provider returned it, `tool_call`), `tool_results` (as
+  today's `ToolResult`, with the change summary for the Conversation's cards)
+  and `notice`.
+- **Reasoning goes back only to the model that wrote it**; for DeepSeek, a
+  turn without it gets a stand-in (as today).
+- **Later kinds without a new format**: every entry has a `type`; an entry of
+  a type this version does not know is kept as it is, shown as a plain notice
+  and never sent to a model. Stage 6 adds `plan`, `queued` and `delivered`
+  messages, `preview`, `note_proposal` and `compaction` this way.
+- **Format 1 files are imported read-only** (R-23): their entries are shown
+  as a transcript; the next message starts a new exchange with the model.
+- **Durability** (§5.5): written atomically; an unknown `format` is refused
+  and the file left as it is.
