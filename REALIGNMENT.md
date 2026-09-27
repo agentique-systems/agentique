@@ -726,9 +726,9 @@ locked part refusing silent change.
 |---|---|---|
 | R-1 | Consolidate onto one line: Native Studio shell plus a simplified language core; retire Gen1 and the browser/HTTP paths | §4.1 duplication; C-9, C-10 |
 | R-2 | Remove the certification machinery (publications, profiles, receipts, runtime bundle) from the working path | C-4, C-14; the per-edit rebuild of about 2 minutes breaks C-2/C-8 |
-| R-3 | Decide "extract Gen2 core" or "rebuild core simply" by a Stage 1 spike *(provisional)* | Separability is uncertain |
-| R-4 | Load only the standard libraries the subset needs; compute them at startup or cache them locally, with no authentication | C-4 |
-| R-6 | Git history, with SysML text plus an identity/lock file, next to the code by default; the live state is in the app; commits at meaningful points; branches for ideas; a visual diff *(provisional until spike)* | Delegated under C-9; §3.5 |
+| R-3 | Decide "extract Gen2 core" or "rebuild core simply" by a Stage 1 spike. **Decided overnight 2026-09-27, pending Operator confirmation: rebuild.** The language core is `crates/language` (`agq-language`); the Generation 2 crates are retired in Stage 2 once the Studio no longer uses them, including the generated descriptors, the parser and their generators, which the new core does not use | Separability is uncertain. Stage 1 measured Generation 2 at about 72 s per edit and 5.5 min to the first validated view without the bundle; the rebuilt core validates the URL shortener in 0.2 ms (`docs/stages.md`) |
+| R-4 | Load only the standard libraries the subset needs; compute them at startup or cache them locally, with no authentication. Stage 1: only `ScalarValues` is needed, built in (deviation 1) | C-4 |
+| R-6 | Git history, with SysML text plus an identity/lock file, next to the code by default; the live state is in the app; commits at meaningful points; branches for ideas; a visual diff. **Spike done; decided overnight 2026-09-27, pending Operator confirmation: keep, with git embedded through `git2` (no separate git install), a `model/` folder of `*.sysml` files plus `agentique.json` (identities and locks), continuous saving with commits at checkpoints, and merges done by element identity, never by git's text merge** | Delegated under C-9; §3.5. The spike showed git's text merge can merge cleanly yet leave a reference pointing at nothing |
 | R-7 | Merge `studio-native` into the root workspace; keep test harnesses out of the production binary | §4.1 |
 | R-8 | One subset manifest: supported / partial / excluded constructs with reasons | C-4 (the "what are we missing" concern) |
 | R-9 | One deviations list for places Agentique departs from the standard, with reasons; no profile versions | C-4, C-10 |
@@ -800,7 +800,7 @@ still-valid decisions. They apply from Stage 1 on.
 
 | ID | Decision | Origin |
 |---|---|---|
-| D-1 | Relationships are elements with their own identity. Inheritance is a lookup over the graph; inherited features are never copied into the specialising type | ADR-0001, 0005, 0026 |
+| D-1 | Inheritance is a lookup over the element graph; inherited features are never copied into the specialising type. A reference (typing, specialisation, redefinition, connection end, satisfy) holds its target's identity once resolved, so renaming or moving the target never re-binds it by name | ADR-0001, 0005, 0026; Stage 1 review |
 | D-2 | Authored and implied facts stay separate. Implied relationships (implicit specialisation, implied redefinition) are derived, never written into the SysML text and never treated as authored | ADR-0001, 0026 |
 | D-3 | Identity: retired identities are never reused; deleting and recreating gives a new element; identity is never re-matched by name. Library elements get identities derived from the pinned library bytes, so the identity file covers authored elements only | ADR-0006, 0012 |
 | D-4 | An unresolved or wrongly typed reference never becomes a relationship. It stays a reported error at its source location; no placeholder targets | ADR-0006 |
@@ -819,6 +819,7 @@ input to the Stage 1 deviations list (R-9), not decisions by themselves.
 | 2026-09-27 | R-14 refined: Studio may depend on Assistant (the Conversation lives in the Studio and drives the Assistant). Recorded in `models/agentique/` | The Stage 0 dependency check (R-15) found the Studio already uses the Assistant crate; the dependency is inherent, not accidental |
 | 2026-09-27 | R-15 implemented with the standard SysML `dependency` relationship between part definitions (§3.6 says "connections"). Every allowed dependency is listed; they are not transitive. Crates are mapped as `part 'crate' : Crate;` inside each part definition. Temporary dependencies are marked in the model with the stage that removes them. Checked by `tools/check_architecture.py` in CI | `dependency` is the standard KerML/SysML concept for "requires"; connections describe runtime interaction. Explicit edges keep shortcuts around SystemState visible instead of hiding them behind transitivity |
 | 2026-09-27 | Studio → LanguageCore and Assistant → LanguageCore allowed explicitly (element identities and model types) | Both already use language identities and types; stating it keeps the rule honest |
+| 2026-09-27 | R-3 decided (rebuild) and R-6 adjusted (git2, `model/` + `agentique.json`, merge by identity), both pending Operator confirmation. D-1 reworded: relationships are properties of their owning element whose references carry the target's identity, instead of separate relationship elements | Stage 1 spikes and review (`docs/stages.md`) |
 
 ---
 
