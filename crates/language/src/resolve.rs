@@ -43,6 +43,10 @@ enum Access {
 /// stay unlinked (and are reported by [`crate::validate`]); the next call
 /// tries them again.
 pub fn link(tree: &mut Tree) {
+    // Usually everything is linked already; then there is no model to build.
+    if tree.references().iter().all(|(_, _, r)| r.is_linked()) {
+        return;
+    }
     let updates: Vec<(ElementId, usize, Vec<ElementId>)> = {
         let model = Model::new(tree, library());
         let mut updates = Vec::new();
