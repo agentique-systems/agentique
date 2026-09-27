@@ -82,12 +82,16 @@ struct ProviderState {
     /// The key being pasted; cleared once saved (R-25 point 2).
     input: String,
     test: Background<KeyCheck>,
+    /// The key the last test ran on; Save stores exactly this key.
+    tested: String,
     /// Save once the test says the key works.
     save_after_test: bool,
     models: Background<Result<Vec<ModelInfo>, String>>,
     confirm_remove: bool,
     /// Move the focus to Cancel on the next frame.
     focus_cancel: bool,
+    /// The saved key was just removed: its hint goes too.
+    removed: bool,
     /// "Save anyway (offline)" was pressed.
     save_anyway: bool,
     status: KeyStatus,
@@ -99,10 +103,12 @@ impl ProviderState {
         ProviderState {
             input: String::new(),
             test: Background::Idle,
+            tested: String::new(),
             save_after_test: false,
             models: Background::Idle,
             confirm_remove: false,
             focus_cancel: false,
+            removed: false,
             save_anyway: false,
             status: agq_providers::key_status(provider),
             message: None,
@@ -121,6 +127,8 @@ pub struct SettingsView {
     providers: BTreeMap<Provider, ProviderState>,
     /// Why the last save failed.
     save_error: Option<String>,
+    /// Text being typed into a text row; committed on Enter or leaving it.
+    drafts: BTreeMap<&'static str, String>,
     focus_search: bool,
 }
 
@@ -136,8 +144,20 @@ impl SettingsView {
             path,
             providers: BTreeMap::new(),
             save_error: None,
+            drafts: BTreeMap::new(),
             focus_search: false,
         }
+    }
+
+    /// Closes Settings; a pasted key that was not saved is dropped (R-25).
+    pub fn close(&mut self) {
+        self.open = false;
+        for state in self.providers.values_mut() {
+            state.input.clear();
+            state.tested.clear();
+            state.confirm_remove = false;
+        }
+        self.drafts.clear();
     }
 
     /// Opens Settings at a section (deep links from errors, §3.7).
@@ -159,16 +179,17 @@ impl SettingsView {
         agq_assistant::ModelChoice::configured(Some(&provider), Some(&model), Some(&effort))
     }
 
-    /// Whether the Operator chose any appearance setting; before they do,
-    /// the Studio keeps what the session remembers.
-    pub fn appearance_chosen(&self) -> bool {
-        [
-            "appearance.theme",
-            "appearance.uiScale",
-            "appearance.reducedMotion",
-        ]
-        .iter()
-        .any(|id| self.settings.changed(id))
+    /// Takes the appearance a Stage 4 session remembered, once.
+    pub fn adopt_appearance(&mut self, dark: bool, contrast: bool, reduced_motion: bool) {
+        let theme = match (contrast, dark) {
+            (true, _) => "high-contrast",
+            (false, true) => "dark",
+            (false, false) => "light",
+        };
+        self.set("appearance.theme", json!(theme));
+        if reduced_motion {
+            self.set("appearance.reducedMotion", json!("on"));
+        }
     }
 
     /// Sets a value and saves it (the Studio's own commands change
@@ -225,14 +246,19 @@ impl SettingsView {
                 if state.save_after_test {
                     state.save_after_test = false;
                     if works {
-                        changed.assistant |= self.store_key(provider);
+                        let key = state.tested.clone();
+                        changed.assistant |= self.store_key(provider, key);
                     }
                 }
             }
         }
-        if ctx.input(|input| input.key_pressed(egui::Key::Escape)) {
+        let confirming = self.providers.values().any(|state| state.confirm_remove);
+        if !confirming
+            && !egui::Popup::is_any_open(&ctx)
+            && ctx.input(|input| input.key_pressed(egui::Key::Escape))
+        {
             if self.search.is_empty() {
-                self.open = false;
+                self.close();
             } else {
                 self.search.clear();
             }
@@ -270,7 +296,7 @@ impl SettingsView {
                 }
                 ui.add_space(theme::SPACE_L);
                 if ui.button("Close").on_hover_text("Esc").clicked() {
-                    self.open = false;
+                    self.close();
                 }
             });
         egui::CentralPanel::default()
@@ -317,13 +343,15 @@ impl SettingsView {
 
     /// Saves the pasted key in the Credential Manager and its hint in the
     /// settings; clears the field. True when the key changed.
-    fn store_key(&mut self, provider: Provider) -> bool {
-        let key = std::mem::take(&mut self.provider(provider).input);
+    fn store_key(&mut self, provider: Provider, key: String) -> bool {
         let result = keys::store(provider, &key);
         let hint = keys::hint(&key);
         let state = self.provider(provider);
         match result {
             Ok(()) => {
+                // The key is gone from the form once it is saved (R-25).
+                state.input.clear();
+                state.tested.clear();
                 state.status = KeyStatus::Stored;
                 state.message = Some("Saved in Windows Credential Manager.".into());
                 state.test = Background::Idle;
@@ -368,7 +396,7 @@ impl SettingsView {
         let state = self.provider(provider);
         let status = match &state.status {
             KeyStatus::FromEnvironment { variable } => {
-                format!("From environment variable {variable} (a saved key is ignored).")
+                format!("From environment variable {variable} (the saved key is ignored).")
             }
             KeyStatus::Stored if hint.is_empty() => {
                 "Saved in Windows Credential Manager.".to_string()
@@ -387,6 +415,15 @@ impl SettingsView {
                 ui.set_width(ui.available_width());
                 ui.label(RichText::new(provider.name()).font(theme::semibold(theme::BODY)).color(theme.text));
                 ui.label(RichText::new(status).color(theme.text_secondary));
+                if provider == Provider::Anthropic {
+                    ui.label(
+                        RichText::new(
+                            "The Assistant reads Anthropic's key from ANTHROPIC_API_KEY until Anthropic moves onto the provider layer (W5.7); a key saved here is tested and kept for then.",
+                        )
+                        .font(theme::regular(theme::CAPTION))
+                        .color(theme.muted),
+                    );
+                }
                 if provider == Provider::TypeSafe {
                     ui.label(
                         RichText::new("Jev answers typed questions for fast agents; it is never the Assistant's model.")
@@ -397,21 +434,31 @@ impl SettingsView {
                 ui.add_space(theme::SPACE_S);
                 ui.add_enabled_ui(!from_environment, |ui| {
                     ui.horizontal(|ui| {
-                        ui.add(
+                        let busy = state.test.running();
+                        // The key cannot change while it is being tested.
+                        let field = ui.add_enabled(
+                            !busy,
                             egui::TextEdit::singleline(&mut state.input)
                                 .password(true)
                                 .hint_text(format!("Paste a {} key", provider.name()))
                                 .desired_width(280.0),
                         );
+                        if field.changed() {
+                            // A result belongs to the key it tested.
+                            state.test = Background::Idle;
+                            state.save_after_test = false;
+                            state.message = None;
+                        }
                         let has_input = !state.input.trim().is_empty();
-                        let busy = state.test.running();
                         if ui.add_enabled(has_input && !busy, egui::Button::new("Test")).clicked() {
-                            let key = state.input.clone();
+                            state.tested = state.input.trim().to_string();
+                            let key = state.tested.clone();
                             state.test = Background::start(move || Providers::new().check_key(provider, Some(&key)));
                         }
                         if ui.add_enabled(has_input && !busy, egui::Button::new("Save")).clicked() {
                             // Save runs the test first (R-25 point 3).
-                            let key = state.input.clone();
+                            state.tested = state.input.trim().to_string();
+                            let key = state.tested.clone();
                             state.save_after_test = true;
                             state.test = Background::start(move || Providers::new().check_key(provider, Some(&key)));
                         }
@@ -454,6 +501,7 @@ impl SettingsView {
                                     Ok(()) => {
                                         state.status = agq_providers::key_status(provider);
                                         state.message = Some("The saved key was removed.".into());
+                                        state.removed = true;
                                         changed = true;
                                     }
                                     Err(error) => state.message = Some(error.0),
@@ -489,8 +537,14 @@ impl SettingsView {
                     Background::Idle => {}
                 }
             });
+        if std::mem::take(&mut self.provider(provider).removed) {
+            self.set(&format!("providers.{}.keyHint", provider.id()), json!(""));
+        }
         if std::mem::take(&mut self.provider(provider).save_anyway) {
-            changed |= self.store_key(provider);
+            // The failed test was on this very key: the field resets the
+            // result when it changes.
+            let key = self.provider(provider).tested.clone();
+            changed |= self.store_key(provider, key);
         }
         changed
     }
@@ -513,6 +567,10 @@ impl SettingsView {
             let current = self.text(id);
             let default = row.default.value();
             let is_changed = self.settings.changed(id);
+            // A model and an effort belong to a chosen provider.
+            let automatic = self.text("assistant.provider").is_empty();
+            let mut draft = self.drafts.remove(id).unwrap_or_else(|| current.clone());
+            let mut typing = false;
             let new_value = setting_row(
                 ui,
                 theme,
@@ -558,18 +616,25 @@ impl SettingsView {
                             (on != before).then(|| json!(on))
                         }
                         _ => {
-                            let mut value = current.clone();
-                            let response = ui.add(
-                                egui::TextEdit::singleline(&mut value)
-                                    .hint_text("Default")
-                                    .desired_width(200.0),
-                            );
+                            let response = ui
+                                .add_enabled(
+                                    !automatic,
+                                    egui::TextEdit::singleline(&mut draft)
+                                        .hint_text("Default")
+                                        .desired_width(200.0),
+                                )
+                                .on_disabled_hover_text("Choose a provider first");
+                            typing = response.has_focus();
                             // Text commits on Enter or leaving the field (§3.7).
-                            (response.lost_focus() && value != current).then(|| json!(value.trim()))
+                            (response.lost_focus() && draft.trim() != current)
+                                .then(|| json!(draft.trim()))
                         }
                     }
                 },
             );
+            if typing {
+                self.drafts.insert(id, draft);
+            }
             if let Some(value) = new_value {
                 self.set(id, value);
                 changed = true;
@@ -959,5 +1024,75 @@ mod studio_tests {
             saved.contains("\"appearance.reducedMotion\": \"on\""),
             "{saved}"
         );
+    }
+
+    #[test]
+    fn the_ui_scale_applies_and_goes_back_to_100_percent() {
+        let (mut app, context, _folder) = studio("settings-scale");
+        app.settings
+            .set_value("appearance.uiScale", serde_json::json!(1.5));
+        app.apply_settings(
+            &context,
+            super::Changed {
+                appearance: true,
+                assistant: false,
+            },
+        );
+        frame(&mut app, &context, vec![]);
+        assert_eq!(context.zoom_factor(), 1.5);
+        // 100% is the default, so the file forgets the value; it still applies.
+        app.settings
+            .set_value("appearance.uiScale", serde_json::json!(1.0));
+        app.apply_settings(
+            &context,
+            super::Changed {
+                appearance: true,
+                assistant: false,
+            },
+        );
+        frame(&mut app, &context, vec![]);
+        assert_eq!(context.zoom_factor(), 1.0);
+    }
+
+    #[test]
+    fn a_stage_4_session_gives_its_appearance_to_settings_once() {
+        use clap::Parser;
+        let folder =
+            std::env::temp_dir().join(format!("agq-settings-adopt-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&folder);
+        std::fs::create_dir_all(&folder).unwrap();
+        let session_path = folder.join("session.json");
+        crate::session::Session {
+            version: crate::session::Session::VERSION,
+            dark: false,
+            high_contrast: true,
+            reduced_motion: true,
+            ..Default::default()
+        }
+        .save(&session_path)
+        .unwrap();
+        let start = || {
+            let args = crate::Args::parse_from([
+                "studio",
+                "--no-restore",
+                "--session",
+                session_path.to_str().unwrap(),
+            ]);
+            let creation = eframe::CreationContext::_new_kittest(egui::Context::default());
+            crate::app::StudioApp::new(&creation, args)
+        };
+        let mut app = start();
+        assert_eq!(app.settings.text("appearance.theme"), "high-contrast");
+        assert_eq!(app.settings.text("appearance.reducedMotion"), "on");
+        assert!(app.theme.contrast && app.reduced_motion);
+        // Once: after "Follow Windows" is chosen, a restart keeps it.
+        app.settings
+            .set_value("appearance.theme", serde_json::json!("system"));
+        app.save_session();
+        drop(app);
+        let again = start();
+        assert_eq!(again.settings.text("appearance.theme"), "system");
+        drop(again);
+        let _ = std::fs::remove_dir_all(&folder);
     }
 }

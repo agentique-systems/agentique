@@ -28,9 +28,11 @@ mod relationship_labels;
 mod requirements;
 mod selection;
 mod session;
-// The settings table and settings.json (interface 2 of ROADMAP §6.2); the
-// Settings view that uses it is W5.8.
-#[allow(dead_code)]
+// The settings table and settings.json (interface 2 of ROADMAP §6.2).
+#[allow(
+    dead_code,
+    reason = "Scope and the default path are for later settings and tools"
+)]
 mod settings;
 mod settings_ui;
 #[cfg(feature = "automation")]

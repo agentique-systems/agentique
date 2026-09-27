@@ -36,6 +36,8 @@ pub enum Panel {
 
 pub struct StudioApp {
     pub args: Args,
+    /// Windows' theme as last applied (`follow_windows`).
+    system_theme: Option<egui::Theme>,
     /// Settings, and the view that edits them (Ctrl+,).
     pub settings: crate::settings_ui::SettingsView,
     pub theme: Theme,
@@ -106,7 +108,9 @@ pub struct StudioApp {
 impl StudioApp {
     pub fn new(cc: &eframe::CreationContext<'_>, args: Args) -> Self {
         let session_path = args.session.clone().unwrap_or_else(Session::default_path);
-        let session = Session::load(&session_path).unwrap_or(Session {
+        let loaded = Session::load(&session_path);
+        let session_loaded = loaded.is_some();
+        let session = loaded.unwrap_or(Session {
             version: Session::VERSION,
             dark: !args.light,
             ..Default::default()
@@ -115,13 +119,24 @@ impl StudioApp {
         // journeys away from the Operator's own.
         let settings =
             crate::settings_ui::SettingsView::load(session_path.with_file_name("settings.json"));
-        // Until the Operator chooses an appearance in Settings, the session's
-        // (from the commands of Stage 3) holds.
-        let (dark, contrast, reduced) = if settings.appearance_chosen() {
-            appearance(&settings, &cc.egui_ctx)
-        } else {
-            (session.dark, session.high_contrast, session.reduced_motion)
-        };
+        let mut settings = settings;
+        let mut session = session;
+        // Appearance lives in Settings; a session from Stage 4 gives its
+        // theme, contrast and reduced motion to Settings once.
+        if !session.appearance_in_settings {
+            let chosen = ["appearance.theme", "appearance.reducedMotion"]
+                .iter()
+                .any(|id| settings.settings.changed(id));
+            if session_loaded && !chosen {
+                settings.adopt_appearance(
+                    session.dark,
+                    session.high_contrast,
+                    session.reduced_motion,
+                );
+            }
+            session.appearance_in_settings = true;
+        }
+        let (dark, contrast, reduced) = appearance(&settings, &cc.egui_ctx);
         let theme = Theme::new(dark && !args.light, contrast);
         theme.install(&cc.egui_ctx);
         if let Some(scale) = ui_scale(&args, &settings) {
@@ -197,6 +212,7 @@ impl StudioApp {
                 settings.model_choice(),
             ),
             settings,
+            system_theme: None,
             last_saved: Instant::now(),
             saved_layout: Default::default(),
         };
@@ -795,7 +811,7 @@ impl StudioApp {
             }
             Settings => {
                 if self.settings.open {
-                    self.settings.open = false;
+                    self.settings.close();
                 } else {
                     self.settings.show(crate::settings_ui::Section::Providers);
                 }
@@ -818,7 +834,7 @@ impl StudioApp {
         if self.settings.open {
             // Settings takes the keyboard; Ctrl+, or Escape closes it.
             if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::Comma)) {
-                self.settings.open = false;
+                self.settings.close();
             }
             return;
         }
@@ -873,9 +889,7 @@ impl StudioApp {
                 },
             );
         }
-        self.session.dark = self.theme.dark;
-        self.session.high_contrast = self.theme.contrast;
-        self.session.reduced_motion = self.reduced_motion;
+
         self.session
             .save(&self.session_path)
             .map_err(|error| error.to_string())
@@ -1026,6 +1040,7 @@ impl eframe::App for StudioApp {
             return;
         }
         self.saved_layout = Default::default();
+        self.follow_windows(ctx);
         self.animate(ctx);
         self.poll_conversation();
         if self.conversation.running() && self.conversation.waiting.is_none() {
@@ -1072,6 +1087,16 @@ impl StudioApp {
         }
     }
 
+    /// "Follow Windows" follows it: egui learns Windows' theme at the first
+    /// frame and whenever it changes.
+    pub fn follow_windows(&mut self, ctx: &egui::Context) {
+        let system = ctx.system_theme();
+        if system != self.system_theme {
+            self.system_theme = system;
+            self.apply_appearance(ctx);
+        }
+    }
+
     fn apply_appearance(&mut self, ctx: &egui::Context) {
         let (dark, contrast, reduced) = appearance(&self.settings, ctx);
         self.theme = Theme::new(dark && !self.args.light, contrast);
@@ -1108,17 +1133,17 @@ fn appearance(
     (dark, contrast, reduced)
 }
 
-/// `--ui-scale` wins over the setting; `None` leaves egui's own.
+/// `--ui-scale` wins over the setting (100% when not set).
 fn ui_scale(args: &Args, settings: &crate::settings_ui::SettingsView) -> Option<f32> {
     if let Some(scale) = args.ui_scale.filter(|scale| scale.is_finite()) {
         return Some(scale.clamp(0.5, 3.0));
     }
-    settings
+    let scale = settings
         .settings
-        .changed("appearance.uiScale")
-        .then(|| settings.settings.get("appearance.uiScale").as_f64())
-        .flatten()
-        .map(|scale| (scale as f32).clamp(1.0, 2.0))
+        .get("appearance.uiScale")
+        .as_f64()
+        .unwrap_or(1.0);
+    Some((scale as f32).clamp(1.0, 2.0))
 }
 
 pub fn muted(text: impl Into<String>, theme: Theme) -> egui::RichText {
