@@ -509,14 +509,21 @@ impl HierarchyLayout {
         }
         let mut result = BTreeMap::new();
         let mut occupied = crate::spatial::RectIndex::new(320.0);
-        let parent_old = previous
-            .and_then(|p| p.bounds.get(&parent))
-            .map_or(Point::default(), |r| r.min);
+        let parent_rect = previous.and_then(|p| p.bounds.get(&parent)).copied();
+        let parent_old = parent_rect.map_or(Point::default(), |r| r.min);
         // Restore old siblings before allocating added objects; insertions cannot
         // steal a retained position merely because their identity sorts earlier.
+        // A card that was elsewhere before (it moved into this owner) is placed anew.
+        let was_inside = |old: &Rect| {
+            parent == ElementId::from_raw(0) || parent_rect.is_some_and(|r| r.contains_rect(*old))
+        };
         if let Some(previous) = previous {
             for id in children {
-                if let Some(old) = previous.bounds.get(id).filter(|r| r.finite()) {
+                if let Some(old) = previous
+                    .bounds
+                    .get(id)
+                    .filter(|r| r.finite() && was_inside(r))
+                {
                     let size = sizes[id];
                     let rect = Rect::new(
                         (old.min.x - parent_old.x).max(origin.x),
