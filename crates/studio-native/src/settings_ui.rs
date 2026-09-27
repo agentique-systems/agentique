@@ -584,7 +584,7 @@ impl SettingsView {
                 row.description,
                 is_changed,
                 &default,
-                |ui| {
+                |ui, label| {
                     match id {
                         "assistant.provider" => {
                             let mut value = current.clone();
@@ -612,13 +612,15 @@ impl SettingsView {
                                             provider.name(),
                                         );
                                     }
-                                });
+                                })
+                                .response
+                                .labelled_by(label);
                             (value != current).then(|| json!(value))
                         }
                         "assistant.showCost" => {
                             let mut on = self.settings.get(id).as_bool().unwrap_or(true);
                             let before = on;
-                            ui.checkbox(&mut on, "");
+                            ui.checkbox(&mut on, "").labelled_by(label);
                             (on != before).then(|| json!(on))
                         }
                         _ => {
@@ -629,7 +631,8 @@ impl SettingsView {
                                         .hint_text("Default")
                                         .desired_width(200.0),
                                 )
-                                .on_disabled_hover_text("Choose a provider first");
+                                .on_disabled_hover_text("Choose a provider first")
+                                .labelled_by(label);
                             typing = response.has_focus();
                             // Text commits on Enter or leaving the field (§3.7).
                             (response.lost_focus() && draft.trim() != current)
@@ -673,7 +676,7 @@ impl SettingsView {
                 row.description,
                 is_changed,
                 &default,
-                |ui| match row.allowed {
+                |ui, label| match row.allowed {
                     Allowed::Choice(choices) => {
                         let current = value.as_str().unwrap_or_default().to_string();
                         let mut selected = current.clone();
@@ -687,7 +690,9 @@ impl SettingsView {
                                         choice_label(choice),
                                     );
                                 }
-                            });
+                            })
+                            .response
+                            .labelled_by(label);
                         (selected != current).then(|| json!(selected))
                     }
                     Allowed::Number { min, max, step } => {
@@ -705,7 +710,9 @@ impl SettingsView {
                                     );
                                     scale += step;
                                 }
-                            });
+                            })
+                            .response
+                            .labelled_by(label);
                         ((selected - current).abs() > 1e-9).then(|| json!(selected))
                     }
                     _ => None,
@@ -863,14 +870,15 @@ fn setting_row(
     description: &str,
     is_changed: bool,
     default: &Value,
-    control: impl FnOnce(&mut egui::Ui) -> Option<Value>,
+    control: impl FnOnce(&mut egui::Ui, egui::Id) -> Option<Value>,
 ) -> Option<Value> {
     let mut result = None;
+    let mut label_id = egui::Id::NULL;
     ui.horizontal(|ui| {
         ui.vertical(|ui| {
             ui.set_width((ui.available_width() - 260.0).max(200.0));
             ui.horizontal(|ui| {
-                ui.label(RichText::new(label).color(theme.text));
+                label_id = ui.label(RichText::new(label).color(theme.text)).id;
                 if is_changed {
                     ui.label(
                         RichText::new("●")
@@ -898,7 +906,9 @@ fn setting_row(
             {
                 result = Some(default.clone());
             }
-            if let Some(value) = control(ui) {
+            // The control is named by its row's label for screen readers
+            // (§3.5).
+            if let Some(value) = control(ui, label_id) {
                 result = Some(value);
             }
         });
@@ -1030,6 +1040,27 @@ mod studio_tests {
             saved.contains("\"appearance.reducedMotion\": \"on\""),
             "{saved}"
         );
+    }
+
+    #[test]
+    fn every_choice_in_settings_is_named_by_its_row() {
+        use eframe::egui::accesskit::Role;
+        let (mut app, context, _folder) = studio("settings-names");
+        app.settings.show(super::Section::Appearance);
+        context.enable_accesskit();
+        frame(&mut app, &context, vec![]);
+        let output = frame(&mut app, &context, vec![]);
+        let combos: Vec<_> = output
+            .accesskit_update
+            .iter()
+            .flat_map(|update| &update.nodes)
+            .filter(|(_, node)| node.role() == Role::ComboBox)
+            .collect();
+        // Theme, UI scale and reduced motion.
+        assert_eq!(combos.len(), 3, "{combos:#?}");
+        for (_, node) in combos {
+            assert!(!node.labelled_by().is_empty(), "{node:?}");
+        }
     }
 
     #[test]
