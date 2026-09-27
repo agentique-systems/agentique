@@ -38,7 +38,7 @@ use agq_language::{
     QualifiedName, Reference, Step, Tree, TreeError, Visibility, link, printed_reference, validate,
     writable,
 };
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt;
 
 /// Who made a change.
@@ -872,8 +872,9 @@ fn describe(error: TreeError) -> String {
 pub struct Comparison {
     /// In `after` only, in document order.
     pub created: Vec<ElementId>,
-    /// In both, with different properties, owner, members or (for top-level
-    /// elements) document: renamed and moved elements are updated.
+    /// In both, with different properties, owner or members, or (for
+    /// top-level elements) a different document or place in it: renamed and
+    /// moved elements are updated.
     pub updated: Vec<ElementId>,
     /// In `before` only, in document order.
     pub deleted: Vec<ElementId>,
@@ -886,16 +887,12 @@ pub struct Comparison {
 /// read back compare equal: where an element was read from does not count,
 /// and a linked reference is its target, whatever name it was written with.
 pub fn compare(before: &Tree, after: &Tree) -> Comparison {
+    let moved = moved_roots(before, after);
     let mut comparison = Comparison::default();
     for id in after.walk() {
-        let new = &after[id];
         match before.get(id) {
             None => comparison.created.push(id),
-            Some(old)
-                if !same(old, new)
-                    || (new.owner().is_none()
-                        && before.document_of(id) != after.document_of(id)) =>
-            {
+            Some(old) if !same(old, &after[id]) || moved.contains(&id) => {
                 comparison.updated.push(id)
             }
             Some(_) => {}
@@ -907,6 +904,68 @@ pub fn compare(before: &Tree, after: &Tree) -> Comparison {
         .filter(|id| !after.contains(*id))
         .collect();
     comparison
+}
+
+/// Top-level elements that moved: to another document, or to another place
+/// in their document. A move among an element's members changes the owner's
+/// members instead, and the owner is updated.
+fn moved_roots(before: &Tree, after: &Tree) -> HashSet<ElementId> {
+    let mut moved = HashSet::new();
+    for (index, document) in after.documents().iter().enumerate() {
+        let old = before
+            .documents()
+            .get(index)
+            .map_or(&[][..], |d| d.members());
+        let kept: HashSet<ElementId> = old.iter().copied().collect();
+        let new: Vec<ElementId> = document.members().to_vec();
+        // New here: from another document (or from inside an element, whose
+        // owner then changed anyway).
+        moved.extend(
+            new.iter()
+                .filter(|id| !kept.contains(*id) && before.contains(**id)),
+        );
+        let stayed: HashSet<ElementId> = new.iter().copied().collect();
+        let old: Vec<ElementId> = old
+            .iter()
+            .copied()
+            .filter(|id| stayed.contains(id))
+            .collect();
+        let new: Vec<ElementId> = new.into_iter().filter(|id| kept.contains(id)).collect();
+        moved.extend(reordered(&old, &new));
+    }
+    moved
+}
+
+/// The elements of `new` (a reordering of `old`) that changed place: those
+/// outside a longest run of elements that kept their order.
+fn reordered(old: &[ElementId], new: &[ElementId]) -> Vec<ElementId> {
+    let position: HashMap<ElementId, usize> =
+        old.iter().enumerate().map(|(i, id)| (*id, i)).collect();
+    let order: Vec<usize> = new.iter().map(|id| position[id]).collect();
+    // A longest increasing run of old positions, by patience sorting:
+    // `tails[n]` ends the best run of length n + 1 found so far.
+    let mut tails: Vec<usize> = Vec::new();
+    let mut previous = vec![None; order.len()];
+    for (i, &value) in order.iter().enumerate() {
+        let length = tails.partition_point(|&t| order[t] < value);
+        previous[i] = length.checked_sub(1).map(|l| tails[l]);
+        if length == tails.len() {
+            tails.push(i);
+        } else {
+            tails[length] = i;
+        }
+    }
+    let mut kept = vec![false; order.len()];
+    let mut next = tails.last().copied();
+    while let Some(i) = next {
+        kept[i] = true;
+        next = previous[i];
+    }
+    new.iter()
+        .zip(kept)
+        .filter(|(_, kept)| !kept)
+        .map(|(id, _)| *id)
+        .collect()
 }
 
 fn same(a: &Element, b: &Element) -> bool {

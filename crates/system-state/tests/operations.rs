@@ -1171,6 +1171,30 @@ fn deleting_a_doc_that_clearing_the_doc_removed_does_nothing() {
 }
 
 #[test]
+fn moving_a_top_level_element_within_its_document_is_an_update() {
+    let text = "package A; package B; package C;";
+    let mut state = SystemState::new(parse(&[Source::new("abc.sysml", text)]), BTreeSet::new());
+    let a = id(&state, "A");
+    let event = state
+        .apply(operator(
+            "Move A to the end",
+            vec![Operation::Move {
+                element: a,
+                parent: Parent::Document(0),
+            }],
+        ))
+        .unwrap();
+    assert_eq!(event.updated, vec![a], "only the moved package");
+    assert_eq!(state.undo().unwrap().updated, vec![a]);
+    // Deleting a package moves nothing else.
+    let b = id(&state, "B");
+    let event = state
+        .apply(operator("Delete B", vec![Operation::Delete { element: b }]))
+        .unwrap();
+    assert!(event.updated.is_empty(), "{:?}", event.updated);
+}
+
+#[test]
 fn a_printed_and_reread_model_compares_equal() {
     let mut state = state();
     let store = id(&state, "Shop::Store");
