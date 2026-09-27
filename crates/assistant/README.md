@@ -1,6 +1,6 @@
 # agq-assistant
 
-The Assistant (REALIGNMENT §3.1, part `Assistant` in
+The Assistant (ROADMAP §4.1, §4.10, part `Assistant` in
 `models/agentique/Agentique.sysml`): the AI agent the Operator works with in
 the Conversation. It depends on the System State and the language core only;
 it is the one place in Agentique that talks to the network.
@@ -12,7 +12,7 @@ it is the one place in Agentique that talks to the network.
   a question to the Operator. Tool input is untrusted: the turn checks it
   against the tool's schema (`check_input`), then `prepare` resolves names
   and tries every operation on a copy of the model before the change is
-  handed over (§3.2).
+  handed over (ROADMAP §4.2).
 - `turn`: the tool-use loop for one turn of the Conversation.
 - `claude`: the Claude API client.
 - `skills`: the system prompt, compiled in from `skills/*.md`.

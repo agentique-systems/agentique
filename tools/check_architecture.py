@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check the Cargo crate graph against the SysML architecture model (REALIGNMENT R-15).
+"""Check the Cargo crate graph against the SysML architecture model (ROADMAP R-15, R-41).
 
 models/agentique/*.sysml maps every workspace crate to a part definition
 (`part 'agq-language' : Crate;` inside `part def LanguageCore`) and lists every allowed

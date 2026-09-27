@@ -37,7 +37,7 @@ Departures from the standard are listed in [deviations.md](deviations.md).
 
 | Construct | What works | Reason for the limit |
 |---|---|---|
-| Feature values | `= literal` (integer, real, string, `true`/`false`) | Expressions need an evaluator; Stage 4 |
+| Feature values | `= literal` (integer, real, string, `true`/`false`) | Expressions need an evaluator; Stage 7 |
 | Value checking | Literals against the built-in scalar types | User value types need expression typing |
 | Connections | Binary; plain feature chains as ends; `end` features need a kind keyword (`end part a`) outside interface defs | Scenario A needs no n-ary or named ends |
 | Feature chains | Connection ends and `satisfy ... by`; steps after the first are simple names; typing, subsetting or redefining by a chain is unsupported | Enough for `a.b.c` |
@@ -48,7 +48,7 @@ Departures from the standard are listed in [deviations.md](deviations.md).
 
 | Construct | Reason |
 |---|---|
-| `action`, `state`, `calc`, `constraint`, `use case`, `analysis`, `verification` | Behaviour; added with simulation (Stage 4) |
+| `action`, `state`, `calc`, `constraint`, `use case`, `analysis`, `verification` | Behaviour; added with simulation (Stage 7) |
 | `flow`, `message`, `succession`, `bind`, `allocation`, `perform`, `exhibit` | Added when simulation or allocation needs them |
 | `require` / `assume` constraints, `actor`, `stakeholder`, `frame`, `concern` | Need constraint expressions |
 | `enum def` / `enum` | Not needed by Scenario A yet; cheap to add |

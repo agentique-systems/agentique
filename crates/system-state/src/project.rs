@@ -1,5 +1,5 @@
 //! A project on disk: the System State saved as SysML text in git
-//! (REALIGNMENT §3.5, R-6), through History (`agq-history`).
+//! (ROADMAP §4.5, R-6), through History (`agq-history`).
 //!
 //! A project folder holds `model/`, with one `.sysml` file per document and
 //! `agentique.json`, which gives every element its identity (the number of

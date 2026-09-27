@@ -1,7 +1,7 @@
-//! SystemState: the live, authoritative model of one project (REALIGNMENT §3.1).
+//! SystemState: the live, authoritative model of one project (ROADMAP §4.1).
 //!
 //! The Surface and the Assistant change the model through the same typed
-//! [`Operation`]s, grouped into one atomic [`Change`] (§3.2). A change either
+//! [`Operation`]s, grouped into one atomic [`Change`] (ROADMAP §4.2). A change either
 //! applies completely or is rejected with a [`Rejection`] and leaves the state
 //! (model and locks) as it was:
 //!

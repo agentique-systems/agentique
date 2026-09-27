@@ -1,11 +1,10 @@
 # ROADMAP
 
-**Status:** The governing direction for Agentique. On adoption this document
-replaces `REALIGNMENT.md` as the single governing text (C-47). It carries
-forward every still-valid decision of `REALIGNMENT.md`, which is retired to git
-history (its last version is on `main` at `6fc90b78`). Where any other
-document, register or agent instruction conflicts with this one, this one wins
-until that file is reconciled (§8).
+**Status:** The governing direction for Agentique and the single governing
+text (C-47). It carries forward every still-valid decision of `REALIGNMENT.md`,
+which W4.1 retired to git history (its last version is on `main` at
+`6fc90b78`). Where any other document, register or agent instruction conflicts
+with this one, this one wins until that file is reconciled (§8).
 
 **Date:** 2026-09-27
 **Baseline inspected:** `main` at `6fc90b78` (Stages 0–3 built, pending the
@@ -18,10 +17,10 @@ modes. Research notes, screenshots and measurements are kept outside the
 repository (§8.3). Every claim about an external product carries a numbered
 source (§10).
 
-**Adoption.** Merging this document is the Operator's adoption of it. The first
-work item of Stage 4 (W4.1) removes `REALIGNMENT.md` and points `AGENTS.md`,
-`README.md`, `docs/stages.md` and the crate READMEs here, so that no competing
-version remains (§8.2).
+**Adoption.** Merging this document was the Operator's adoption of it. The
+first work item of Stage 4 (W4.1) removed `REALIGNMENT.md` and pointed
+`AGENTS.md`, `README.md`, `docs/stages.md` and the crate READMEs here, so that
+no competing version remains (§8.2).
 
 **How to read the labels**
 
@@ -143,8 +142,8 @@ and makes it about what its name promises: **agentic systems**.
    elements (C-33). Many quality-of-life features one expects from a daily tool
    (§3.4).
 2. **A real agentic Assistant, independent of any one provider.** It runs on
-   rig for every provider (C-34): Anthropic, OpenAI and OpenRouter in this phase
-   (C-35). It maps a task onto the architecture, shows a plan, thinks visibly,
+   rig for every provider (C-34): Anthropic, OpenAI, OpenRouter and DeepSeek in
+   this phase (C-35). It maps a task onto the architecture, shows a plan, thinks visibly,
    acts through tools, checks its work, follows skills and keeps notes the
    Operator approved. It works long tasks that the Operator can follow, steer
    and interrupt, under one of three autonomy modes (C-38 to C-41).
@@ -181,7 +180,7 @@ decisions named in each row.
 | An agent framework or runtime for other people's code | Not a goal; agents in designed systems are implemented in the project's own code (C-46) |
 | A chat product with the architecture on the side | Never; the Surface stays an equal way to work (C-3) |
 | Local models and Gemini | Not in this phase (C-35); the provider layer keeps the door open (Q-12) |
-| Typed fast-decision APIs such as Jev | Not in this phase, by the principle of building only for a scenario need (Q-11) |
+| Typed fast-decision APIs other than Jev | Not in this phase; Jev is a model provider for fast agents (C-35, Q-11) |
 | Spending limits | Not in this phase; costs are shown, not capped (C-37) |
 
 ---
@@ -227,7 +226,7 @@ for running it live and accepting Stages 0–3 (C-29).
 
 | Step | What the Operator does | Observable success | Failure and recovery behaviour |
 |---|---|---|---|
-| L1 | Sets a Claude key (the environment variable until Settings exists in Stage 5) and creates a fresh project. | The Conversation shows the model in use; no key banner. | A refused key is explained plainly; the Surface works by hand. |
+| L1 | Sets a key for a provider the Assistant supports (for example `DEEPSEEK_API_KEY` or `ANTHROPIC_API_KEY`; the environment variable until Settings exists in Stage 5) and creates a fresh project. | The Conversation shows the model in use; no key banner. | A refused key is explained plainly; the Surface works by hand. |
 | L2 | Runs A1–A2: describes the URL shortener in ordinary words. | Parts, ports, interfaces and requirements appear live as cards and on the Surface; names are plain; readable thinking summaries show between steps (R-31). The Assistant never shows SysML text (C-4). | Anything the model does against the skills (guessing a major decision, inventing names, showing SysML) is recorded as a failed task in the evaluation set (R-19), the skill is fixed, and the step is repeated. |
 | L3 | Runs A3 and A4: adjusts by hand and in words; locks the settled parts. | Both kinds of edit behave the same; locks are marked. | An invalid edit shows at the element; undo works. |
 | L4 | Runs A8: "add expiring links". | The Assistant says what would change first; before touching a locked part it explains and the lock prompt asks. | A refusal leaves everything as it was; the Assistant says what remains undone. |
@@ -259,7 +258,7 @@ The Operator uses the Studio as their daily tool for architecture work
 | E1 | Starts Agentique for the first time. | A three-step welcome: what Agentique is, connect a model provider (or skip), create or open a project; the URL shortener is offered as a sample. | Skip is always possible; the Surface works fully by hand (§4.2). |
 | E2 | Opens Settings (Ctrl+,) › Providers › Anthropic, pastes a key and presses Test. | "Key works" within about two seconds. The model list appears with context size, capability badges and a list price marked as an estimate. | 401 "Key refused", 403 "Key has no access", 429 "Rate limited, try later", or "Could not reach Anthropic". The key is not saved unless the Operator chooses "Save anyway (offline)". |
 | E3 | Saves. | The row says "Saved in Windows Credential Manager". The key is never shown again, only a hint such as `sk-ant-…a1B2` (R-25). | If the credential store is unavailable, a plain message says so and points to the environment variable. There is no plain-text fallback. |
-| E4 | Adds OpenAI and OpenRouter the same way. | Each provider row shows its own status and test result. | As in E2–E3. |
+| E4 | Adds OpenAI, OpenRouter, DeepSeek and TypeSafe AI (Jev) the same way. | Each provider row shows its own status and test result. | As in E2–E3. |
 | E5 | Chooses the Assistant's default model and effort. | Effort levels the model lacks are disabled with the reason; models that cannot use tools are greyed out with the reason; missing features (for example "no prompt caching") are shown as badges (§4.8). | — |
 | E6 | Switches the model for one conversation from the Conversation's composer. | The switch is instant; a one-line note says the prompt cache restarts. | A provider without a key links straight to its Settings row. |
 | E7 | Searches Settings for "dark" and then for "api key". | Matching rows are shown with the match highlighted; searching matches descriptions and synonyms, not only labels; Esc clears. | — |
@@ -595,7 +594,7 @@ interfaces studied (R-24):
 
 | Section | Contents | Tag |
 |---|---|---|
-| Providers | Anthropic, OpenAI, OpenRouter: key status, set, test, replace, remove; environment-variable override; model list with refresh, context size, capability badges and list price marked as an estimate (§4.8) | must |
+| Providers | Anthropic, OpenAI, OpenRouter, DeepSeek, TypeSafe AI (Jev): key status, set, test, replace, remove; environment-variable override; model list with refresh, context size, capability badges and list price marked as an estimate (§4.8) | must |
 | Assistant | Default provider and model; effort; default autonomy mode; thinking summaries on or off; skills (built-in, app-wide, per project; open folder; errors); notes (list, edit, delete); cost display per turn and per day | must (provider, model, effort, cost display); Stage 6 (autonomy mode, thinking summaries, skills, notes) |
 | Appearance | Theme (use the Windows setting, light, dark, high contrast); UI scale; reduced motion (follow Windows, on, off); density (compact, default) | must (theme, scale, motion); should (density) |
 | Keyboard | Searchable list of every shortcut; an editor with a key recorder, conflict warning naming the other command, and per-binding reset | must (list); should (editor) |
@@ -617,7 +616,7 @@ interfaces studied (R-24):
 | **System State service** | Holding the live state; applying changes atomically; enforcing locks; publishing change events | Deciding intent |
 | **History (git)** | Durable checkpoints, branches and past states | Live editing state |
 | **Providers** (new) | Talking to model providers through rig; keys in the OS credential store; model lists and capabilities; usage and cost figures | Control over the System State; the Assistant's policy; being required for manual work |
-| **Model providers** (Anthropic, OpenAI, OpenRouter) | Language reasoning behind the Assistant and, later, behind live evaluations of agents | Anything else |
+| **Model providers** (Anthropic, OpenAI, OpenRouter, DeepSeek; TypeSafe AI's Jev for fast agents only) | Language reasoning behind the Assistant and, later, behind live evaluations of agents; Jev answers typed questions for fast agents and never serves the Assistant | Anything else |
 
 ### 4.2 Control and autonomy
 
@@ -734,7 +733,7 @@ cut across parts start there**, in the same change, and the check stays green.
 
 | When | Change to `models/agentique/` | Why |
 |---|---|---|
-| Stage 4 (W4.8) | Add `part def Providers` as a planned part without a crate: "Talks to model providers through rig; keys in the OS credential store; model lists, capabilities, usage". Add `dependency from Assistant to Providers` and `dependency from Studio to Providers` (Settings tests keys and lists models) | A distinct responsibility with three users over the phase (Studio's Settings, the Assistant, live evaluations of agents), and one place that contains rig's API churn (R-21) |
+| Stage 4 (W4.8) | Add `part def Providers` as a planned part without a crate: "Talks to model providers through rig (and a thin Jev client, C-34); keys in the OS credential store; model lists, capabilities, usage". Add `dependency from Assistant to Providers` and `dependency from Studio to Providers` (Settings tests keys and lists models) | A distinct responsibility with three users over the phase (Studio's Settings, the Assistant, live evaluations of agents), and one place that contains rig's API churn (R-21) |
 | Stage 4 (W4.8) | Extend the check: the rig crates, `tokio`, `reqwest` and the credential-store crates (`keyring`, `keyring-core`, `windows-native-keyring-store`) may only be dependencies of the Providers crate; `reqwest` in `agq-assistant` is listed as a temporary exception until W5.7, as the model marks other temporary dependencies | Provider neutrality and network isolation are checked, not hoped for (§8.7) |
 | Stage 5 (W5.7) | Map `part 'agq-providers' : Crate;` into `Providers`; remove `reqwest` from `agq-assistant` | The crate exists |
 | Stage 6 (W6.10) | Model the Assistant as the first agent: `part def Assistant :> Agents::Agent`, with ports for its tools towards the System State and requirements for its guardrails (locks need confirmation; output is untrusted; every change is visible and undoable) and no `fallback` part: when the Assistant fails, the Operator carries on by hand, which a requirement states (a failed provider never blocks manual work) (C-44) | Dogfooding (C-13, C-20); a real example of the concept |
@@ -767,7 +766,10 @@ validate our own model (R-41).
 ### 4.7 Where rig sits and what it may touch (C-34)
 
 rig (package `rig-core`, with `rig-agent` and the `rig` facade) is the
-provider layer for **every** provider, Claude included (C-34). Version 0.42.0
+provider layer for **every** provider, Claude included (C-34). A provider that
+released rig does not support, such as TypeSafe AI's Jev, gets a thin client
+inside `agq-providers`, behind the same boundary and with the same small types,
+until rig releases it (C-34, clarified 2026-09-27). Version 0.42.0
 was released on 2026-08-17; releases are breaking 0.x versions every two to
 three weeks, and `main` carried 110 unreleased, largely breaking commits on
 2026-09-27 [1][4]. That churn shapes where rig may go.
@@ -781,7 +783,7 @@ three weeks, and `main` carried 110 unreleased, largely breaking commits on
   cancelled; the async runtime stays inside the crate.
 - **rig is pinned to an exact version** (`=0.4x.y`) and upgraded deliberately,
   one pull request per upgrade, with five tasks of the evaluation set run
-  on each provider.
+  on each Assistant provider.
 - **Our turn loop stays ours** (`crates/assistant/src/turn.rs`). It holds
   Agentique's policy (locks, questions, autonomy modes, steering, stop,
   compaction) and its 49 tests. It calls rig's per-provider completion models
@@ -832,35 +834,36 @@ three weeks, and `main` carried 110 unreleased, largely breaking commits on
 
 ### 4.8 Providers, capabilities and graceful degradation (C-35)
 
-This phase supports **Anthropic, OpenAI and OpenRouter** (C-35). Capabilities
-below are those of rig 0.42.0, from its source and tests at tag `v0.42.0`
-(commit `d5a34986`) [2], unless marked. "Not verified" means no source or test
-was found.
+This phase supports **Anthropic, OpenAI, OpenRouter and DeepSeek** for the
+Assistant, and **TypeSafe AI's Jev** for fast agents (C-35). Capabilities below
+are those of rig 0.42.0, from its source and tests at tag `v0.42.0` (commit
+`d5a34986`) [2], unless marked; the DeepSeek column also cites DeepSeek's API
+documentation [105], and the Jev column (a thin client, not rig: C-34) cites
+TypeSafe AI's [98]. "Not verified" means no source or test was found.
 
-| Capability | Anthropic | OpenAI (Responses API) | OpenRouter |
-|---|---|---|---|
-| Streaming text | yes | yes | yes |
-| Tool calling | yes | yes | yes |
-| Tool arguments streamed as partial JSON | yes | yes | yes (shared chat-completions path) |
-| Parallel tool calls | not used: the Assistant runs tool calls in order by design; rig offers concurrency only in its own agent runner [2] | not used | not used |
-| Reasoning control | partial: raw `thinking` and effort through `additional_params`; no typed API (issues #1452, #951 [5]) | yes: typed effort and summary settings | partial: raw `reasoning` parameters |
-| Reasoning text streamed | yes (summaries when requested [11]) | yes | yes |
-| Reasoning preserved across tool turns | yes (normalised) | yes (encrypted reasoning) | yes (`reasoning_details` with signatures) |
-| Structured output, native | yes | yes | yes |
-| Prompt caching control | yes (manual and automatic, time-to-live) | partial (automatic, cache key; no breakpoints, issue #2170 [5]) | partial (system prompt only) |
-| Usage including cache counts | yes | yes | yes |
-| Image input | yes | yes | yes |
-| Server-side refusal fallbacks | no (see §4.7) | not applicable | not verified |
-| Server-side compaction | not carried through rig (unknown blocks end the stream [2]) | not verified | not applicable |
-| Model list | provider endpoint `GET /v1/models` [16]; not provided by rig (not verified) | not verified | public model list endpoint [100] |
+| Capability | Anthropic | OpenAI (Responses API) | OpenRouter | DeepSeek (`deepseek-flash`) | Jev (typed decisions) |
+|---|---|---|---|---|---|
+| Streaming text | yes | yes | yes | yes (rig's shared chat-completions path) [2] | not applicable: one typed answer per call [98] |
+| Tool calling | yes | yes | yes | yes; a forced `tool_choice` is refused while thinking, and rig clears it [2][105] | not applicable |
+| Tool arguments streamed as partial JSON | yes | yes | yes (shared chat-completions path) | yes: the first chunk of a call carries its id and name, later chunks its arguments [105] | not applicable |
+| Parallel tool calls | not used: the Assistant runs tool calls in order by design; rig offers concurrency only in its own agent runner [2] | not used | not used | not used | not applicable |
+| Reasoning control | partial: raw `thinking` and effort through `additional_params`; no typed API (issues #1452, #951 [5]) | yes: typed effort and summary settings | partial: raw `reasoning` parameters | partial: top-level `reasoning_effort` (`low`, `high`, `max`; default `high`; no `medium`) and `thinking: {type}` through `additional_params` [105] | not applicable |
+| Reasoning text streamed | yes (summaries when requested [11]) | yes | yes | yes (`reasoning_content`, full text, not a summary) [2][105] | no |
+| Reasoning preserved across tool turns | yes (normalised) | yes (encrypted reasoning) | yes (`reasoning_details` with signatures) | required: with tools, every earlier assistant turn's `reasoning_content` must be sent back or the API answers 400 [105]; rig attaches it to every assistant message with text or tool calls [2] | not applicable |
+| Structured output, native | yes | yes | yes | no: `json_object` only; rig does not map `output_schema` [2][105] | yes, and only that: yes or no, a choice among up to 255 options, or a score on 2–10 levels, with probabilities and (for choice and score) a confidence [98] |
+| Prompt caching control | yes (manual and automatic, time-to-live) | partial (automatic, cache key; no breakpoints, issue #2170 [5]) | partial (system prompt only) | automatic only, no control [105] | not applicable |
+| Usage including cache counts | yes | yes | yes | yes (`prompt_cache_hit_tokens`, `prompt_cache_miss_tokens`; reasoning tokens separately) [2][105] | input and output tokens only; output is free [98] |
+| Image input | yes | yes | yes | the model list offers it, but rig's path passes image parts through for DeepSeek to refuse [2]; not used | no |
+| Server-side refusal fallbacks | no (see §4.7) | not applicable | not verified | not applicable | not applicable |
+| Server-side compaction | not carried through rig (unknown blocks end the stream [2]) | not verified | not applicable | not applicable | not applicable |
+| Model list | provider endpoint `GET /v1/models` [16]; not provided by rig (not verified) | not verified | public model list endpoint [100] | `GET /models`, with rig's model lister [2][105] | `GET /v1/models`; pinned versions such as `jev-1.13.0` are accepted though not listed [98] |
 
 Other providers rig supports (Gemini, Ollama and local OpenAI-compatible
-servers, Mistral, DeepSeek, xAI, Groq and more [2]) wait for a scenario need
-(Q-12).
+servers, Mistral, xAI, Groq and more [2]) wait for a scenario need (Q-12).
 
 **Capabilities are data, not code paths.** `agq-providers` holds a small table
 of capabilities per provider and model family, filled from the matrix above
-and confirmed by five tasks of the evaluation set on each provider (A-8). The Assistant
+and confirmed by five tasks of the evaluation set on each Assistant provider (A-8). The Assistant
 asks the table, never the provider's name. When a capability is missing:
 
 | Missing capability | Behaviour |
@@ -890,7 +893,8 @@ asks the table, never the provider's name. When a capability is missing:
 **Key handling contract** (R-25):
 
 1. A non-empty environment variable (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`,
-   `OPENROUTER_API_KEY`) wins over the stored key, as in Zed and GitHub CLI
+   `OPENROUTER_API_KEY`, `DEEPSEEK_API_KEY`, `TYPESAFE_API_KEY`) wins over the
+   stored key, as in Zed and GitHub CLI
    [37][40]; Settings says so and disables editing.
 2. Keys are written to the Credential Manager, never to a file, a log, the
    project folder or the System State. The Studio holds a key only in the input
@@ -898,7 +902,9 @@ asks the table, never the provider's name. When a capability is missing:
 3. **Test** calls an endpoint that needs the key and sends no prompt: the
    models endpoint for Anthropic [16] and OpenAI (not verified); for
    OpenRouter, whose model list is public [100], an authenticated endpoint
-   chosen in W5.8 (not verified). The result maps to plain states (works,
+   chosen in W5.8 (not verified); for DeepSeek, `GET /user/balance` (rig's key
+   check) or `GET /models` [105]; for Jev, `GET /v1/models` [98] (not verified
+   whether it needs a key). The result maps to plain states (works,
    refused, no access, rate limited, cannot reach), as Jan's key test does [45]. Save runs the test first; "Save anyway (offline)" is
    explicit.
 4. After Save the key is never shown again; Settings shows the fixed prefix and
@@ -1123,9 +1129,13 @@ flipping across runs [98], and it is not OpenAI-compatible [99]; OpenRouter serv
 route, not its chat API [100]. One
 independent test found accuracy close to fast LLMs on intent routing (92.2%
 versus 93.6%) at much lower cost [101]. It is exactly a fast-mode agent's shape
-(a typed decision with a confidence), and supporting it or similar APIs as an
-agent's model waits for a need and for rig's experimental `rig-typesafeai`
-crate to be released [9] (Q-11).
+(a typed decision with a confidence), so C-35 makes it a model provider for
+fast agents in designed systems (Q-11 resolved). rig's experimental
+`rig-typesafeai` crate is not released: crates.io holds only a `0.0.0`
+placeholder, published 2026-09-21 [9]. Until it is, `agq-providers` has a thin
+client for Jev behind the same boundary (C-34). Jev is used for live
+evaluations of fast agents (Stage 7) and examples (Stage 8), never for the
+Assistant.
 
 **Simulation of agents** (Stage 7, C-43, R-39). The agent's contract (ports,
 guardrails, budgets) is checked in every mode; modes differ only in where the
@@ -1342,7 +1352,8 @@ and 6 build on are merged. Performance budgets are measured continuously.
   extend the check (§4.6).
 
 **Spike S4.1: toolkit** (R-20). Ten working days, hard stop, throwaway
-branches only; nothing merges.
+branches only; nothing merges. Exception (§7.6, 2026-09-27): Track A's code may
+be kept and merged as W5.1 after review.
 
 - **Tracks.** (A) egui upgraded to 0.36, plus the four "to the bar" items:
   selection across Conversation messages, real Inter weights from the variable
@@ -1415,6 +1426,11 @@ the Stage 3 loop unchanged.
   re-checked against the live page).
 - **P3** Live on OpenAI and OpenRouter: five evaluation tasks end to end with
   tools, streaming, and reasoning summaries where offered.
+- **P3a** Live on DeepSeek (`deepseek-flash`, effort `high`, C-35): five
+  evaluation tasks end to end with tools, streaming, and `reasoning_content`
+  sent back across tool turns.
+- **Without a provider's key**, its live items run against canned streams and
+  the local HTTP stand-in and are marked "not tried live" (§7.6).
 - **P4** Build: clean and incremental builds within the disk limits; the TLS
   option chosen (§4.7); incremental build time of the Studio at most 30% above
   today's.
@@ -1427,9 +1443,15 @@ the Stage 3 loop unchanged.
   "Retry with another model" (acceptable if no refusal appears in the evaluation
   set). Dropping server-side fallbacks changes C-27 and needs the Operator's
   decision.
-- **Decision rule.** Proceed with rig for every provider (C-34) if P1–P5 pass.
-  If a P2 item fails with no workaround, bring the specific loss to the Operator
-  instead of reverting by default.
+- **Decision rule.** Proceed with rig for every provider (C-34) if P1–P5 pass,
+  with live items that could not be tried marked so. If a P2 item fails with no
+  workaround, bring the specific loss to the Operator instead of reverting by
+  default.
+- **Kept code (exception, §7.6, 2026-09-27).** Because C-35 requires the
+  product to work end to end with only a DeepSeek key during Stage 4's live
+  acceptance, the S4.2 provider layer is reviewed and merged as the start of
+  W5.7 instead of being thrown away: `agq-providers` with the DeepSeek path
+  used by the Assistant, and the other providers' paths tested without keys.
 
 **Interfaces to define and merge before Stage 5 fans out**
 
@@ -1464,8 +1486,8 @@ new Assistant features, agents.
 
 **Outcome.** Scenarios D and E work at the C-32 bar on the reference machine.
 The Surface meets its budgets at 1k and 10k (C-33). The Assistant runs through
-the provider layer on rig, with Anthropic, OpenAI and OpenRouter selectable
-(C-34, C-35), and behaves as in Stage 3.
+the provider layer on rig, with Anthropic, OpenAI, OpenRouter and DeepSeek
+selectable (C-34, C-35), and behaves as in Stage 3.
 
 **Work items**
 
@@ -1487,8 +1509,9 @@ the provider layer on rig, with Anthropic, OpenAI and OpenRouter selectable
 - **W5.6 Conversation.** Selection across messages, virtualised list, tables,
   message actions, new tool cards, composer with context chips and model picker
   (§3.6).
-- **W5.7 Providers.** `agq-providers` on rig for Anthropic, OpenAI and
-  OpenRouter (R-21, R-22); the Assistant moved onto it; conversation format 2,
+- **W5.7 Providers.** `agq-providers` on rig for Anthropic, OpenAI,
+  OpenRouter and DeepSeek, and the thin Jev client, whose key Settings tests in
+  Scenario E (E4) before Stage 7 uses it (R-21, R-22, C-35); the Assistant moved onto it; conversation format 2,
   with existing conversations moved into the per-project folder (R-23, R-43);
   the self-model maps the crate (§4.6).
 - **W5.8 Settings.** The view, the table, search, deep links, `settings.json`,
@@ -1515,7 +1538,8 @@ drawing parameters from tokens; the settings table's first rows; the
   and judges the daily paths at the bar in a side-by-side review (§3.1).
 - The reference run meets every §3.3 budget marked for this stage; CI checks
   are green.
-- The Operator performs Scenario E with real keys for all three providers.
+- The Operator performs Scenario E with real keys for every supported
+  provider.
 - Journeys `a-build`, `a-crash`, `a-reopen`, `a-assistant`, `d-daily` and
   `e-settings` pass.
 
@@ -1648,7 +1672,7 @@ deliberate drift.
   (Q-7); Agentique opens and changes itself.
 - **Afterwards:** the Orchestrator and assistant roles (C-5, Q-4); two-way
   reconciliation (C-7); links to deployed systems; local models, Gemini and
-  typed fast-decision APIs (Q-11, Q-12); spending limits if wanted.
+  typed fast-decision APIs other than Jev (Q-12); spending limits if wanted.
 
 ---
 
@@ -1699,8 +1723,8 @@ Confirmed in the interview of 2026-09-27:
 | C-31 | Stage order for this phase: foundations (4), daily-use Studio and Settings (5), agentic Assistant with agents in the model (6), simulation with agents (7), implementation links with agents (8). C-17's order is kept |
 | C-32 | Ambition: Linear- and Figma-grade on every path used daily; rarely used paths clean but plain. Done means the Operator prefers Agentique to a whiteboard plus an IDE for architecture work |
 | C-33 | Surface performance: p95 frame time ≤ 8.3 ms at 1k elements and ≤ 16.7 ms at 10k during pan and zoom; an edit on a 10k model reaches the Surface in ≤ 100 ms |
-| C-34 | Provider independence through rig for every provider, Claude included, using escape hatches where rig lacks a feature |
-| C-35 | Providers in this phase: Anthropic, OpenAI and OpenRouter |
+| C-34 | Provider independence through rig for every provider, Claude included, using escape hatches where rig lacks a feature. Clarified 2026-09-27: a provider released rig does not support (TypeSafe AI's Jev, a typed decision API) gets a thin client inside `agq-providers`, behind the same boundary, until rig releases it |
+| C-35 | Providers in this phase: Anthropic, OpenAI, OpenRouter and DeepSeek (model `deepseek-flash`, effort `high`), and TypeSafe AI's Jev as a model provider for fast ("system 1") agents in designed systems, never for the Assistant. Amended 2026-09-27: the product works end to end with only a DeepSeek key configured |
 | C-36 | API keys are stored in the Windows Credential Manager |
 | C-37 | Costs are shown; there are no spending limits |
 | C-38 | Three autonomy modes, after Claude Code and Codex: ask before every change; act, but ask on major decisions; act freely, asking only on locks |
@@ -1770,7 +1794,7 @@ Confirmed in the interview of 2026-09-27:
 | R-42 | Cost display per turn and per day, from provider usage and a dated local price table marked as an estimate, per provider in Settings | C-37; the Models API has no prices [16] |
 | R-43 | One per-project folder in the app's local data (`projects\<folder>-<hash>\`: conversation, notes, skills); existing conversations move there; the session file keeps only presentation state; preferences move to `settings.json` *(provisional for notes and skills, Q-10)* | C-26; one place per kind of data |
 | R-44 | Investigate the memory footprint in Stage 5 (wgpu backend on Windows, font atlas, buffers) before fixing the memory budgets | §5.2: 322 MB at rest, not understood |
-| R-45 | The evaluation set also compares default models and effort (for example `claude-opus-5` at `high` against `claude-opus-5-5` at `medium` and `high`) and the three providers before any default changes | Q-19; C-27 |
+| R-45 | The evaluation set also compares default models and effort (for example `claude-opus-5` at `high` against `claude-opus-5-5` at `medium` and `high`) and every Assistant provider (Anthropic, OpenAI, OpenRouter, DeepSeek) before any default changes | Q-19; C-27 |
 | R-46 | A three-step first run (what Agentique is; connect a provider or skip; create or open a project), with the URL shortener as a sample | Scenario E1 |
 
 ### 7.3 Assumptions
@@ -1784,7 +1808,7 @@ Confirmed in the interview of 2026-09-27:
 | A-5 | egui (with custom rendering) can reach the quality bar, including the Conversation | Open: S4.1 |
 | A-6 | Nothing in Generation 1 is used by anyone else | Held; retired with no reported cost |
 | A-7 | rig's churn can be contained in `agq-providers` and absorbed on our schedule | S4.2, then every rig upgrade |
-| A-8 | OpenAI and OpenRouter models use the Assistant's tools and follow its skills well enough for daily work | Evaluation set per provider (Stages 4 and 6) |
+| A-8 | OpenAI, OpenRouter and DeepSeek models use the Assistant's tools and follow its skills well enough for daily work | Evaluation set per provider (Stages 4 and 6); DeepSeek live first (C-35) |
 | A-9 | Incremental layout brings a 10k edit to the Surface in ≤ 100 ms, and CPU culling and label caching bring 10k pan and zoom to ≤ 16.7 ms p95, without a toolkit change | S5.1, W5.5 |
 | A-10 | An agent's contract fits the current subset plus `enum def` and enumeration values (ports, requirements, a redefined `fallback`) | S6.1 |
 | A-11 | Recorded agent answers stay valid long enough between prompt changes to be useful | Stage 7 |
@@ -1803,15 +1827,15 @@ Confirmed in the interview of 2026-09-27:
 | Q-7 | How to read an existing codebase into a model | No (Stage 10) |
 | Q-8 | Which parts of the SysML standard the Operator would miss under the subset | No (reviewed as it grows) |
 | Q-9 | Where conversation history is stored | Resolved (C-26) |
-| Q-10 | Should per-project skills and notes live in the project folder, versioned with the code, instead of the app's local data? | No; decide in Stage 6 |
-| Q-11 | Should Jev or another typed fast-decision API become an agent's model provider, once rig releases `rig-typesafeai` [9]? | No |
+| Q-10 | Should per-project skills and notes live in the project folder, versioned with the code, instead of the app's local data? | Decided overnight 2026-09-27, pending Operator confirmation: the app's local data, as in R-43 |
+| Q-11 | Should Jev or another typed fast-decision API become an agent's model provider, once rig releases `rig-typesafeai` [9]? | Resolved by the Operator (C-35): Jev is a model provider for fast agents now, through a thin client until rig releases it (C-34) |
 | Q-12 | When do local models and Gemini arrive? | No; after Stage 8 unless the Operator pulls them earlier |
 | Q-13 | How is escalation from a fast agent to a deliberate one modelled: two agents and a routing part, or a state machine? | S6.1 and Stage 7 |
 | Q-14 | How does a requirement state an agent's required pass rate (needs constraint expressions or a convention on attributes)? | Stage 7 |
 | Q-15 | Which code tools does the Assistant get for implementation, and how do the autonomy modes extend to side effects outside the System State? | Stage 8 (W8.2) |
 | Q-16 | Where are recordings of agent answers stored (project folder or app data), and are they committed? | Stage 7 |
-| Q-17 | Inter or Segoe UI Variable for the interface font, judged side by side at 100% and 125% scaling | Stage 5 (W5.2) |
-| Q-18 | Server-side safety fallbacks under rig: an upstream contribution, a thin adapter, or none with "Retry with another model" | S4.2 (P6) |
+| Q-17 | Inter or Segoe UI Variable for the interface font, judged side by side at 100% and 125% scaling | Decided overnight 2026-09-27, pending Operator confirmation: keep Inter; the side-by-side judgment stays with the Operator (W5.2) |
+| Q-18 | Server-side safety fallbacks under rig: an upstream contribution, a thin adapter, or none with "Retry with another model" | Decided overnight 2026-09-27, pending Operator confirmation: keep C-27 with a thin adapter in `agq-providers` for the `fallback` content block; the upstream contribution is written as a proposal, not filed |
 | Q-19 | Should the default model move from `claude-opus-5` at `high` to `claude-opus-5-5` (cheaper; its default effort is `medium` per Anthropic's model documentation, not re-checked against the live page [10][12])? Newer models also tie thinking blocks to their model and conversation (S4.2, P2) | No; the evaluation set informs the Operator (R-45) |
 | Q-20 | Do live evaluations of agents belong to the Simulation part (with a dependency on Providers) or to a separate part? | Stage 7 |
 
@@ -1850,6 +1874,14 @@ The ADRs named here are preserved at the tag `archive/pre-realignment`.
 | 2026-09-27 | C-22 edited in place: "retire" also covers preservation in git history, so `REALIGNMENT.md` is retired without a new tag (C-47) | Adoption of this document |
 | 2026-09-27 | Stages renumbered: `REALIGNMENT.md`'s Stages 4 (simulation) and 5 (implementation links) become Stages 7 and 8; its later Stages 6 and 7 become 9 and 10 | C-31 puts the Studio, Settings and the agentic Assistant first |
 | 2026-09-27 | `ROADMAP.md` replaces `REALIGNMENT.md` as the single governing text (C-47); `REALIGNMENT.md` is removed in W4.1 | One truth per topic (§8.2) |
+| 2026-09-27 | W4.1: `REALIGNMENT.md` removed; `AGENTS.md` (rules of §8.1), `README.md`, `docs/stages.md`, `docs/subset.md`, the self-model, the architecture check, crate READMEs and source comments point here; stage references renumbered (simulation Stage 7, implementation links Stage 8) | C-47 |
+| 2026-09-27 | **The Operator's overnight instructions** for Stages 4–8 (given on the evening of 2026-09-27): (1) no stopping at Operator gates: the evidence a gate asks for is produced and kept outside the repository, the stage is set to "provisionally complete, pending Operator acceptance", and a choice that is the Operator's takes this document's recommended (or the more conservative) option, recorded here as "Decided overnight 2026-09-27, pending Operator confirmation"; nothing is recorded as accepted or confirmed by the Operator that they did not accept or confirm; (2) exactly the three locked-core changes of §4.6 are authorised (`enum def` and enumeration values; the built-in `Agents` library; `dependency` in the subset), each recorded here when made, and no other; (3) S4.1 runs the automated gates G1–G8 only, with no switch to GPUI (that needs the Operator to accept the governance risk); Track A's code may be kept and merged as W5.1 after review, a recorded deviation from "throwaway"; Track B's kill check runs only with at least 12 GB of free disk; blind scoring waits for the Operator; (4) S4.2 builds the Anthropic, OpenAI and OpenRouter paths without keys, tested on canned streams and the local HTTP stand-in and marked "not tried live"; live parity checks run on DeepSeek; (5) Q-18 keeps C-27 with a thin adapter (Q-18 row); Q-17 keeps Inter; Q-10 is the app's local data (R-43); each decided overnight 2026-09-27, pending Operator confirmation (§7.4); anything else takes this document's recommendation; (6) live calls tonight run under a developer spend guard outside the product (C-37 is unchanged: the product has no spending limits) | The Operator is asleep; one stage finished well is worth more than several half-done |
+| 2026-09-27 | **C-35 amended by the Operator:** DeepSeek joins the providers, with model `deepseek-flash` at effort `high` (the model offers `low`, `high` and `max`), as the only live test provider for the Assistant overnight; the product must work end to end with only a DeepSeek key configured. TypeSafe AI's Jev joins as a model provider for fast agents in designed systems, never for the Assistant. Q-11 resolved. §1.5, §1.6, §2.2 (L1), §2.4 (E4), §3.7, §4.1, §4.7, §4.8, §4.9, §4.11, §6.3, §6.7 and the glossary follow | The Operator tests with a DeepSeek key; Jev is exactly a fast agent's shape (§4.11) |
+| 2026-09-27 | **C-34 clarified by the Operator:** Jev is a typed decision API that released rig does not support (`rig-typesafeai` is a `0.0.0` placeholder on crates.io [9]); it is implemented as a thin client inside `agq-providers`, behind the same boundary, until rig releases it | Provider neutrality without waiting for rig |
+| 2026-09-27 | §4.8 gains DeepSeek and Jev columns, each capability verified from rig 0.42.0's source or the vendor's documentation and cited | C-35 as amended |
+| 2026-09-27 | Stage completion during the overnight run is provisional: a stage built overnight is "provisionally complete, pending Operator acceptance" until the Operator has used it (C-15) | Overnight instructions, point 1 |
+| 2026-09-27 | S4.2's provider layer is kept and merged in Stage 4 as the start of W5.7, a deviation from "throwaway" (§8.8); S4.2 gains P3a (live on DeepSeek). Decided overnight 2026-09-27, pending Operator confirmation | C-35 as amended: the Assistant must work end to end with only a DeepSeek key during Stage 4's live acceptance (W4.4) |
+| 2026-09-27 | API keys for the overnight run live in a git-ignored `.env` (the Operator's `.gitignore` change, commit `400feced`); keys never enter the repository, logs, fixtures, recordings or pull requests (§8.7) | Key handling (R-25) |
 
 ### 7.7 The original requirements
 
@@ -1989,12 +2021,13 @@ on `main` at `6fc90b78`; its retained content is in this document (§4.2, §4.5,
    §4.8; a new such feature adds its row there.
 4. Keys leave the credential store only in the request to their own provider.
 5. rig upgrades are deliberate: one pull request each, with five tasks of the
-   evaluation set run on every supported provider.
+   evaluation set run on every Assistant provider.
 
 ### 8.8 Spikes and evaluations
 
 1. A spike has a time box, fixtures, gates and a decision rule written before it
-   starts. Its code is thrown away; its decision is recorded in §7.6.
+   starts. Its code is thrown away unless §7.6 records an exception; its
+   decision is recorded in §7.6.
 2. Evaluations cost money and need keys: they run on demand, never in the
    default test suite, and their results are shown to the Operator, not
    committed.
@@ -2015,7 +2048,7 @@ on `main` at `6fc90b78`; its retained content is in this document (§4.2, §4.5,
 | **System State** | The live, authoritative KerML/SysML description of the system being built |
 | **Lock** | A mark on a part meaning it changes only with the Operator's confirmation |
 | **Settings** | The Studio view for the Operator's choices: providers and keys, models, the Assistant's behaviour, appearance, keyboard, projects |
-| **Provider** | A service that runs models: Anthropic, OpenAI, OpenRouter |
+| **Provider** | A service that runs models: Anthropic, OpenAI, OpenRouter, DeepSeek; TypeSafe AI (Jev) for fast agents |
 | **Autonomy mode** | How much the Assistant asks before acting: ask before every change, ask on major decisions, or ask only on locks |
 | **Plan card** | The Assistant's short plan for a task, shown in the Conversation and updated as steps finish |
 | **Skill** | An instruction file (`SKILL.md`) the Assistant follows; built in or the Operator's own |
@@ -2058,7 +2091,7 @@ text depends on them.
 6. reqwest 0.13.2 features (`rustls` uses aws-lc-rs): https://crates.io/api/v1/crates/reqwest/0.13.2
 7. genai, a thin multi-provider client without an agent loop: https://github.com/jeremychone/rust-genai
 8. Anthropic's public repositories (SDKs for other languages, none for Rust): https://api.github.com/orgs/anthropics/repos
-9. rig's experimental `rig-typesafeai` crate on `main`: https://github.com/0xPlaygrounds/rig/tree/main/crates/rig-typesafeai
+9. rig's experimental `rig-typesafeai` crate on `main`: https://github.com/0xPlaygrounds/rig/tree/main/crates/rig-typesafeai ; on crates.io only a `0.0.0` placeholder (published 2026-09-21, read 2026-09-27): https://crates.io/api/v1/crates/rig-typesafeai
 
 **Claude API**
 
@@ -2175,3 +2208,4 @@ text depends on them.
 102. VS Code, the agent's request limit per turn: https://github.com/microsoft/vscode/blob/main/src/vs/workbench/contrib/chat/browser/chat.shared.contribution.ts
 103. Devin, knowledge suggestions: https://docs.devin.ai/product-guides/knowledge.md
 104. Apple Human Interface Guidelines, dark mode: https://developer.apple.com/design/human-interface-guidelines/dark-mode
+105. DeepSeek API documentation (read 2026-09-27): pricing https://api-docs.deepseek.com/quick_start/pricing ; chat completions https://api-docs.deepseek.com/api/create-chat-completion ; thinking mode https://api-docs.deepseek.com/guides/thinking_mode ; tool calls https://api-docs.deepseek.com/guides/tool_calls ; balance https://api-docs.deepseek.com/api/get-user-balance ; the model list `GET https://api.deepseek.com/models` (read by the Operator on 2026-09-27)

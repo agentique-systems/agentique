@@ -1,7 +1,7 @@
 # agq-history
 
 History: a project's model folder on disk and its history in git
-(REALIGNMENT §3.5, R-6; part `History` in `models/agentique/Agentique.sysml`).
+(ROADMAP §4.5, R-6; part `History` in `models/agentique/Agentique.sysml`).
 It stores text and knows nothing about SysML; the System State
 (`agq-system-state`, module `project`) prints the model and decides what an
 element id and a locator are.

@@ -1,4 +1,4 @@
-//! The Assistant (REALIGNMENT §3.1, §3.2): the AI agent the Operator works
+//! The Assistant (ROADMAP §4.1, §4.10): the AI agent the Operator works
 //! with in the Conversation.
 //!
 //! - [`tools`]: what the Assistant can do. Tools read the System State or turn

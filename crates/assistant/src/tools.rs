@@ -1,4 +1,4 @@
-//! The Assistant's tools (REALIGNMENT §3.2).
+//! The Assistant's tools (ROADMAP §4.2, §4.10).
 //!
 //! A tool either reads the System State or turns the Assistant's request into
 //! one System State [`Change`]. The Assistant never changes the model itself:

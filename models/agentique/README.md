@@ -1,7 +1,7 @@
 # Agentique architecture model
 
 `Agentique.sysml` describes the logical architecture of Agentique in SysML v2
-textual notation (REALIGNMENT §3.6). It is the contract for our own code: when
+textual notation (ROADMAP §4.6). It is the contract for our own code: when
 the architecture changes, update the model first, in the same change.
 
 - Each major part is a `part def` with a one- or two-sentence `doc`. The crates
@@ -9,14 +9,13 @@ the architecture changes, update the model first, in the same change.
   package, for example `part 'agq-language' : Crate;`.
 - Allowed dependencies between parts use the standard SysML `dependency`
   relationship, from client to supplier: `dependency from Studio to SystemState;`.
-  `dependency` is the standard concept for "requires"; REALIGNMENT §3.6 calls
-  these connections.
+  `dependency` is the standard concept for "requires".
 - Every allowed dependency is listed. A crate may depend on crates of its own
   part and of the parts its part depends on directly; dependencies are not
   transitive, so a shortcut around the System State shows up in the model.
 - A dependency that exists only because of code due for retirement is marked
   temporary in its `doc`.
-- Simulation (Stage 4) and ImplementationLinks (Stage 5) are planned parts
+- Simulation (Stage 7) and ImplementationLinks (Stage 8) are planned parts
   without crates.
 
 ## Check

@@ -1,6 +1,6 @@
 # agq-studio-native
 
-The Studio (REALIGNMENT §3.6, part `Studio` in `models/agentique/Agentique.sysml`):
+The Studio (ROADMAP §4.6, part `Studio` in `models/agentique/Agentique.sysml`):
 the Surface, the Panels (Inspector, Requirements, History) and the
 Conversation with the Assistant, on egui and wgpu. Every model change is a
 System State change applied through one path (`StudioApp::apply_change` in
