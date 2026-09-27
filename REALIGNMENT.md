@@ -740,6 +740,7 @@ locked part refusing silent change.
 | R-15 | Automated check: the crate dependency graph must agree with the self-model's allowed dependencies | C-7, C-20 |
 | R-16 | The stable core of Agentique (LanguageCore, SystemState operations, persistence format) is locked: changes need a recorded Operator decision | C-10, C-11 |
 | R-17 | Minimise the Node toolchain to what the retained pinning tools need *(investigate)* | C-10 |
+| R-18 | Two kinds of failure in the System State. A malformed change (stale base, unknown element, an operation impossible for the element, a locked element without confirmation) is rejected and leaves the state unchanged. A well-formed change that makes the model invalid is applied, its problems are shown at the elements concerned, and it can be fixed or undone. **Decided overnight 2026-09-27, pending Operator confirmation** | Reconciles §4.4 ("an invalid change never replaces the valid state") with Scenario A3 ("shown as invalid and can be fixed or undone"); carried forward from ADR-0024 |
 
 ### 6.3 Assumptions
 
@@ -820,6 +821,7 @@ input to the Stage 1 deviations list (R-9), not decisions by themselves.
 | 2026-09-27 | R-15 implemented with the standard SysML `dependency` relationship between part definitions (§3.6 says "connections"). Every allowed dependency is listed; they are not transitive. Crates are mapped as `part 'crate' : Crate;` inside each part definition. Temporary dependencies are marked in the model with the stage that removes them. Checked by `tools/check_architecture.py` in CI | `dependency` is the standard KerML/SysML concept for "requires"; connections describe runtime interaction. Explicit edges keep shortcuts around SystemState visible instead of hiding them behind transitivity |
 | 2026-09-27 | Studio → LanguageCore and Assistant → LanguageCore allowed explicitly (element identities and model types) | Both already use language identities and types; stating it keeps the rule honest |
 | 2026-09-27 | R-3 decided (rebuild) and R-6 adjusted (git2, `model/` + `agentique.json`, merge by identity), both pending Operator confirmation. D-1 reworded: relationships are properties of their owning element whose references carry the target's identity, instead of separate relationship elements | Stage 1 spikes and review (`docs/stages.md`) |
+| 2026-09-27 | R-18 added with the System State interface (`crates/system-state`) | Stage 2 needs one rule for invalid edits; A3 asks for them to be shown and fixable |
 
 ---
 
