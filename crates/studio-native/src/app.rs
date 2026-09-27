@@ -744,6 +744,18 @@ impl StudioApp {
                 self.panel = Panel::Requirements;
             }
             Fit => self.frame_all(),
+            ZoomToSelection => {
+                if let Some(target) = self.selection.primary.clone() {
+                    self.frame_target(&target);
+                }
+            }
+            GoToElement => {
+                // The palette, searching elements only.
+                self.palette = true;
+                self.palette_focus = true;
+                self.palette_query = "focus: ".into();
+            }
+            ShortcutHelp => self.settings.show(crate::settings_ui::Section::Keyboard),
             Focus => {
                 if let Some(card) = self.selected_card() {
                     self.view = SurfaceView::Architecture;
@@ -850,6 +862,18 @@ impl StudioApp {
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
             self.selection.clear();
             self.batch_key = None;
+            return;
+        }
+        // Shift+1 and Shift+2 by their place on the keyboard, since the
+        // characters they type differ between layouts; Home fits too.
+        if consume_shifted(ctx, egui::Key::Num1)
+            || ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Home))
+        {
+            self.execute(CommandId::Fit, ctx);
+            return;
+        }
+        if consume_shifted(ctx, egui::Key::Num2) {
+            self.execute(CommandId::ZoomToSelection, ctx);
             return;
         }
         // Redo also answers to Ctrl+Shift+Z.
@@ -1153,6 +1177,21 @@ fn ui_scale(args: &Args, settings: &crate::settings_ui::SettingsView) -> Option<
         .as_f64()
         .unwrap_or(1.0);
     Some((scale as f32).clamp(1.0, 2.0))
+}
+
+/// Takes a key pressed with Shift (and no other modifier) by its physical
+/// place, whatever character it types.
+fn consume_shifted(ctx: &egui::Context, physical: egui::Key) -> bool {
+    ctx.input_mut(|input| {
+        let found = input.events.iter().position(|event| {
+            matches!(
+                event,
+                egui::Event::Key { physical_key: Some(key), pressed: true, modifiers, .. }
+                    if *key == physical && modifiers.shift && !modifiers.command && !modifiers.alt
+            )
+        });
+        found.map(|index| input.events.remove(index)).is_some()
+    })
 }
 
 pub fn muted(text: impl Into<String>, theme: Theme) -> egui::RichText {

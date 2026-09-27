@@ -1234,6 +1234,78 @@ pub(crate) mod app_tests {
         assert!(median < std::time::Duration::from_millis(200), "{median:?}");
     }
 
+    fn press(key: egui::Key, physical: egui::Key, modifiers: egui::Modifiers) -> Vec<egui::Event> {
+        [true, false]
+            .into_iter()
+            .map(|pressed| egui::Event::Key {
+                key,
+                physical_key: Some(physical),
+                pressed,
+                repeat: false,
+                modifiers,
+            })
+            .collect()
+    }
+
+    #[test]
+    fn the_standard_shortcuts_fit_zoom_find_and_list_shortcuts() {
+        let (mut app, context, _folder) = studio("shortcuts");
+        let store = part(&mut app, "store");
+        for _ in 0..6 {
+            frame(&mut app, &context, vec![]);
+        }
+        app.set_view(crate::navigation::SurfaceView::Graph);
+        frame(&mut app, &context, vec![]);
+        // Shift+1 fits (it types "!"); it does not switch to the first view.
+        let far = agq_studio_scene::Point::new(1.0e5, 1.0e5);
+        app.camera.center = far;
+        app.camera_target = None;
+        frame(
+            &mut app,
+            &context,
+            press(
+                egui::Key::Exclamationmark,
+                egui::Key::Num1,
+                egui::Modifiers::SHIFT,
+            ),
+        );
+        assert_eq!(app.view, crate::navigation::SurfaceView::Graph);
+        let aimed = app
+            .camera_target
+            .map_or(app.camera.center, |target| target.center);
+        assert!(aimed != far, "the camera was not fitted");
+        // Shift+2 moves the camera to the selection.
+        app.selection.primary = Some(agq_studio_scene::SceneTarget::Node(store));
+        app.camera_target = None;
+        frame(
+            &mut app,
+            &context,
+            press(egui::Key::Quote, egui::Key::Num2, egui::Modifiers::SHIFT),
+        );
+        assert!(app.camera_target.is_some() || app.reduced_motion);
+        // Ctrl+P finds elements; ? lists every shortcut in Settings.
+        frame(
+            &mut app,
+            &context,
+            press(egui::Key::P, egui::Key::P, egui::Modifiers::COMMAND),
+        );
+        assert!(app.palette);
+        assert_eq!(app.palette_query, "focus: ");
+        app.palette = false;
+        frame(&mut app, &context, vec![]);
+        frame(
+            &mut app,
+            &context,
+            press(
+                egui::Key::Questionmark,
+                egui::Key::Slash,
+                egui::Modifiers::SHIFT,
+            ),
+        );
+        assert!(app.settings.open);
+        assert_eq!(app.settings.section, crate::settings_ui::Section::Keyboard);
+    }
+
     fn part(app: &mut StudioApp, name: &str) -> ElementId {
         let package = app
             .project
