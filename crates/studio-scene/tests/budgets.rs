@@ -6,9 +6,9 @@
 //! again and only the edges the edit touches are routed. The targets are
 //! 50 ms at 1k and 100 ms at 10k (C-33); the ceilings are about twice that,
 //! so noise does not fail builds. A full build happens when a project opens;
-//! its ceilings still guard against regressions at about three times the
-//! reference measurements before W5.5 (§5.2: 114 ms and 2,662 ms). Budgets
-//! are measured in release builds:
+//! its ceilings guard against regressions at about three times the reference
+//! measurements after S5.1 (86 ms and 1.95 s; 10k is still over its 1 s
+//! target). Budgets are measured in release builds:
 //!
 //! ```text
 //! cargo test --release -p agq-studio-scene --test budgets -- --nocapture --test-threads=1
@@ -107,7 +107,7 @@ fn edit_to_surface_at_ten_thousand_elements() {
 fn scene_build_at_one_thousand_elements() {
     let elapsed = scene_build(1_000, 3);
     println!("scene build, 1k elements: {elapsed:?}");
-    assert!(elapsed < Duration::from_millis(350), "{elapsed:?}");
+    assert!(elapsed < Duration::from_millis(260), "{elapsed:?}");
 }
 
 #[test]
@@ -115,5 +115,5 @@ fn scene_build_at_one_thousand_elements() {
 fn scene_build_at_ten_thousand_elements() {
     let elapsed = scene_build(10_000, 1);
     println!("scene build, 10k elements: {elapsed:?} (project open: target 1 s)");
-    assert!(elapsed < Duration::from_millis(8_000), "{elapsed:?}");
+    assert!(elapsed < Duration::from_millis(6_000), "{elapsed:?}");
 }

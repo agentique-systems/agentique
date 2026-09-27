@@ -467,9 +467,10 @@ about 400 ms follow common responsiveness guidance [67].
   GPU: System State apply at 2k and 10k elements, scene update at 1k and 10k,
   layout and routing, label layout. Ceilings are set at about twice the target
   so noise does not fail builds, and tightened as the numbers settle. A budget
-  not met yet (scene update at 1k and 10k until W5.5) has an interim ceiling
-  at about three times today's reference measurement, guarding against
-  regressions; the budget itself is unchanged.
+  not met yet (the full scene build when a 10k project opens: 1.9 s after
+  S5.1, against 1 s) has an interim ceiling at about three times today's
+  reference measurement, guarding against regressions; the budget itself is
+  unchanged.
 - **Reference machine (before merging a change to the Studio or the Surface,
   and at every stage end):** the stress harness and journeys assert the frame,
   latency, start and memory budgets and exit non-zero on a miss. Reports go to a
@@ -1780,7 +1781,7 @@ Confirmed in the interview of 2026-09-27:
 | R-25 | The key handling contract in §4.9 | Zed and GitHub CLI on Windows [38][40]; `keyring` threading note [46] |
 | R-26 | The design system of §3.2 as starting values, generated themes, one icon set, and a component gallery | Design research [49]–[69] |
 | R-27 | Budgets enforced continuously: CPU-side ceilings in CI; frame, latency, start and memory budgets asserted by the harness on the reference machine before merging Studio or Surface changes and at stage ends; reports never committed | C-33; Zed, Warp and Figma treat speed as a checked property [61][55] |
-| R-28 | Incremental Surface updates: a change re-lays out only the containers it affects and re-routes only the edges it touches; label layouts cached *(provisional, S5.1)* | §5.2: 2.7 s per edit at 10k |
+| R-28 | Incremental Surface updates: a change lays out the cards again in full with `LayoutMemory` (10–20 ms at 10k) and re-routes only the edges it touches; label layouts cached *(S5.1; decided overnight 2026-09-28, pending Operator confirmation)* | §5.2: 2.7 s per edit at 10k |
 | R-29 | The default autonomy mode is "Ask on major decisions"; the mode is chosen per conversation and sent as a short note with each Operator message, so changing it does not rebuild the prompt cache; previews reuse the "what changed" comparison | C-6, C-38; prompt caching [13]; keep the cached prefix stable [33] |
 | R-30 | The plan card through an `update_plan` tool (3–7 short steps, one running), used for tasks of three or more steps and re-sent after compaction | C-39; Codex's `update_plan` [29]. Claude Code now leaves its task tools off by default on the newest models because they cost context [26], so the card is kept small and used only for longer tasks |
 | R-31 | Thinking summaries (`display: "summarized"`) shown collapsed per step; progress updates as tool-card subtitles where offered; degradation per §4.8 | C-8; Claude thinking display [11] |
@@ -1890,6 +1891,7 @@ The ADRs named here are preserved at the tag `archive/pre-realignment`.
 | 2026-09-27 | Stage 4 recorded as provisionally complete, pending Operator acceptance (C-15); its live acceptance (W4.4) and that of Stages 0–3 (C-29) remain the Operator's | Overnight instructions, point 1 |
 | 2026-09-27 | API keys for the overnight run live in a git-ignored `.env` (the Operator's `.gitignore` change, commit `400feced`); keys never enter the repository, logs, fixtures, recordings or pull requests (§8.7) | Key handling (R-25) |
 | 2026-09-27 | S4.1 Track A built on a branch kept for W5.1 review: egui and eframe 0.36.2 with wgpu 30.0.1; the Rust toolchain moves from 1.92.0 to 1.97.1 (egui 0.36 needs 1.95; 1.97.1 was already installed); Inter's variable font replaces the three static weights; the Studio uses eframe's low-latency surface (one frame in flight), eframe's own default since 0.35. S4.1's provisional decision is to stay with egui 0.36 and keep Track A as W5.1: Track A failed no gate it was measured on (G1 partly, G3, G4, G5, G8 partly); G2, G6 and G7 and all of Track B were not tried, so the rule does not settle it yet (`docs/stages.md`). Decided overnight 2026-09-28, pending Operator confirmation | §7.6 exception for Track A (overnight instructions, point 3); egui's minimum Rust version |
+| 2026-09-28 | S5.1 decided by its rule: routing was 98% of a rebuild, so an edit lays out the cards in full with `LayoutMemory` and re-routes only edges whose ends or lane changed or whose route crosses the old or new place of a changed card (R-28 amended). The Surface half of an edit on the 10k fixture takes 71–86 ms (77.7 ms on CI), 5–7 ms at 1k; unrelated cards do not move. A kept route may keep a detour a full build would not choose, and routes then depend on the edit history (undo does not always restore earlier routes) until the next full build. The end-to-end edit at 10k (apply, `from_tree`, one frame) was not measured, so A-9's first half is not yet shown. The spike's code is kept and merged as the start of W5.5, a deviation from "throwaway" (§8.8). Decided overnight 2026-09-28, pending Operator confirmation | Criterion of S5.1; A-9 |
 
 ### 7.7 The original requirements
 

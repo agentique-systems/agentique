@@ -125,6 +125,13 @@ pub(crate) fn route_edges(
                 mark(n.id(), area);
             }
         }
+        // The walk below matches edges in id order; every scene is built
+        // that way (`route_edges`).
+        debug_assert!(
+            earlier
+                .edges
+                .is_sorted_by(|a, b| a.semantic.id < b.semantic.id)
+        );
         kept = &earlier.edges;
     }
     let mut parallel = Map::<(InputEnd, InputEnd), usize>::default();

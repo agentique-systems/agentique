@@ -104,12 +104,14 @@ impl<T> RectIndex<T> {
                 },
             )
         };
+        // Bounds first: far-apart items (a pin far out in the layout memory,
+        // say) make spans whose product does not fit in i64.
         let fits = |(a, b, c, d): (i64, i64, i64, i64)| {
-            (c - a) * (d - b) <= MAX_CELLS
-                && a >= i64::from(i32::MIN)
-                && c <= i64::from(i32::MAX)
+            a >= i64::from(i32::MIN)
                 && b >= i64::from(i32::MIN)
+                && c <= i64::from(i32::MAX)
                 && d <= i64::from(i32::MAX)
+                && (c - a).checked_mul(d - b).is_some_and(|n| n <= MAX_CELLS)
         };
         let Some((nx0, ny0, nx1, ny1)) = [doubled, exact].into_iter().find(|e| fits(*e)) else {
             return false;
@@ -414,5 +416,21 @@ mod grid_tests {
                 .query(Rect::new(2_000.0, 2_000.0, 5.0, 5.0))
                 .is_empty()
         );
+    }
+
+    #[test]
+    fn items_very_far_apart_overflow_instead_of_growing_the_grid() {
+        let mut index = RectIndex::new(100.0);
+        index.insert(Rect::new(-1.0e12, -1.0e12, 40.0, 30.0), 0);
+        index.insert(Rect::new(1.5e11, 1.5e11, 40.0, 30.0), 1);
+        index.insert(Rect::new(3.0e11, -3.0e11, 40.0, 30.0), 2);
+        assert!(index.cells.len() as i64 <= MAX_CELLS);
+        for (i, (x, y)) in [(-1.0e12, -1.0e12), (1.5e11, 1.5e11), (3.0e11, -3.0e11)]
+            .into_iter()
+            .enumerate()
+        {
+            let hits = index.query(Rect::new(x + 10.0, y + 10.0, 1.0, 1.0));
+            assert_eq!(hits, vec![&i], "item {i}");
+        }
     }
 }
