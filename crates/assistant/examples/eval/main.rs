@@ -235,49 +235,13 @@ fn locks_kept(run: &Run) -> bool {
     })
 }
 
-/// SysML text in a visible reply: a `sysml` code block, or a line that reads
-/// as a declaration (`part def X {`, `port p : P;`, `connect a to b;`).
+/// SysML text in a visible reply (see `agq_assistant::sysml_text`).
 fn no_sysml_shown(run: &Run) -> bool {
     run.replies.iter().all(|reply| !shows_sysml(reply))
 }
 
 pub fn shows_sysml(text: &str) -> bool {
-    let keywords = [
-        "package ",
-        "part def ",
-        "port def ",
-        "item def ",
-        "attribute def ",
-        "interface def ",
-        "connection def ",
-        "requirement def ",
-        "abstract part def ",
-        "part ",
-        "port ",
-        "item ",
-        "attribute ",
-        "in item ",
-        "out item ",
-        "inout item ",
-        "interface ",
-        "connection ",
-        "requirement ",
-        "satisfy ",
-        "connect ",
-        "end port ",
-        "subject ",
-        "doc /*",
-        "import ",
-    ];
-    text.lines().any(|line| {
-        let line = line.trim().trim_start_matches(['-', '*', '>', ' ']);
-        if line.starts_with("```") && line.to_lowercase().contains("sysml") {
-            return true;
-        }
-        let code = line.trim_matches('`');
-        (code.ends_with('{') || code.ends_with(';') || code == "}")
-            && keywords.iter().any(|keyword| code.starts_with(keyword))
-    })
+    agq_assistant::sysml_text::shows_sysml(text)
 }
 
 fn main() {
