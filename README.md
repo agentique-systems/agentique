@@ -20,9 +20,14 @@ Progress per stage is in [docs/stages.md](docs/stages.md).
 
 ## Current stage
 
-The realignment is in progress. Stage 0 (archive and clean) is done; the
-language core (Stage 1), the Studio foundation (Stage 2) and the Assistant
-(Stage 3) follow. See [docs/stages.md](docs/stages.md) for what works today and
+The realignment is in progress. Stage 0 (archive and clean) and Stage 1 (the
+language core, `crates/language`) are done, pending the Operator's acceptance;
+the Studio foundation (Stage 2) and the Assistant (Stage 3) follow. Try the
+language core on the Scenario A model:
+
+```text
+cargo run -p agq-language --example check -- models/url-shortener
+``` See [docs/stages.md](docs/stages.md) for what works today and
 what to try.
 
 Everything retired by the realignment is preserved at the git tag
