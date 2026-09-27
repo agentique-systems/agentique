@@ -103,6 +103,11 @@ pub fn run(
                 match &event {
                     StreamEvent::Text(text) => partial.push_str(text),
                     StreamEvent::ToolCallStarted { id, .. } => started.push(id.clone()),
+                    StreamEvent::ToolCallId { stream_id, id } => {
+                        for started in started.iter_mut().filter(|s| *s == stream_id) {
+                            *started = id.clone();
+                        }
+                    }
                     _ => {}
                 }
                 on_event(TurnEvent::Stream(event));
@@ -158,7 +163,7 @@ pub fn run(
             .collect();
         discard(
             &dropped,
-            "the reply was continued by another model",
+            "the call was not part of the finished reply",
             on_event,
         );
         // The API does not accept an empty assistant message back.

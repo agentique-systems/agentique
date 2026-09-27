@@ -8,6 +8,7 @@ description = "The Assistant: tools over the System State, the Conversation, the
 [dependencies]
 agq-language = { path = "../language" }
 agq-system-state = { path = "../system-state" }
+agq-providers = { path = "../providers" }
 serde.workspace = true
 serde_json.workspace = true
 # The Claude API client: blocking HTTPS with rustls, the response body read as it streams in.

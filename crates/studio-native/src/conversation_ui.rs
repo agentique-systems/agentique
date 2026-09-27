@@ -96,12 +96,8 @@ impl StudioApp {
                         ));
                     });
                 });
-                if self.conversation.key_missing {
-                    banner(
-                        ui,
-                        theme,
-                        "No Claude API key is set. Set ANTHROPIC_API_KEY and restart Agentique to work with the Assistant. Everything else works as usual.",
-                    );
+                if let Some(message) = &self.conversation.key_missing {
+                    banner(ui, theme, message);
                 }
                 for error in [&self.conversation.read_error, &self.conversation.save_error]
                     .into_iter()
@@ -136,7 +132,14 @@ impl StudioApp {
                             }
                             _ => None,
                         };
-                        messages(ui, &mut self.conversation, state, waiting, theme, &mut actions);
+                        messages(
+                            ui,
+                            &mut self.conversation,
+                            state,
+                            waiting,
+                            theme,
+                            &mut actions,
+                        );
                     });
             });
         for action in actions {
@@ -227,8 +230,8 @@ impl StudioApp {
         }
         ui.add_space(theme::SPACE_S);
         let running = panel.running();
-        let can_send =
-            !panel.input.trim().is_empty() && (question || (!running && !panel.key_missing));
+        let can_send = !panel.input.trim().is_empty()
+            && (question || (!running && panel.key_missing.is_none()));
         ui.horizontal(|ui| {
             let insert = ui
                 .add(egui::Button::new(RichText::new("Insert selection").small()).frame(false))
@@ -254,11 +257,12 @@ impl StudioApp {
                 } else {
                     let label = if question { "Answer" } else { "Send" };
                     let send = ui.add_enabled(can_send, crate::edit::primary_button(theme, label));
-                    let send = if panel.key_missing && !question {
-                        send.on_disabled_hover_text("Set ANTHROPIC_API_KEY and restart Agentique")
-                    } else {
-                        send
-                    };
+                    let send =
+                        if let Some(message) = panel.key_missing.as_ref().filter(|_| !question) {
+                            send.on_disabled_hover_text(message)
+                        } else {
+                            send
+                        };
                     record(ui.ctx(), Target::Button("Send"), send.rect);
                     if send.clicked() {
                         actions.push(Action::Send);
@@ -386,6 +390,12 @@ fn messages(
                                     let name = block["name"].as_str().unwrap_or_default();
                                     tool_card(ui, &ctx, id, name, &block["input"], actions);
                                 }
+                                // Claude's summaries, or another provider's reasoning.
+                                Some("thinking") | Some("reasoning") => {
+                                    let field = if block["type"] == "thinking" { "thinking" } else { "text" };
+                                    let text = block[field].as_str().unwrap_or_default();
+                                    thinking_row(ui, theme, egui::Id::new(("thinking", index, slot)), text, false);
+                                }
                                 _ => {}
                             }
                         }
@@ -409,6 +419,9 @@ fn messages(
                         let input = serde_json::from_str(input).unwrap_or(Value::Null);
                         tool_card(ui, &ctx, id, name, &input, actions);
                     }
+                    Live::Thinking(text) => {
+                        thinking_row(ui, theme, egui::Id::new(("live-thinking", slot)), text, true);
+                    }
                 }
             }
             if running && waiting_question.is_none() {
@@ -416,7 +429,9 @@ fn messages(
                     ui.add(egui::Spinner::new().size(12.0).color(theme.muted));
                     let text = if let Some(waiting) = waiting {
                         waiting
-                    } else if panel.thinking {
+                    } else if panel.thinking
+                        && !matches!(panel.live.last(), Some(Live::Thinking(text)) if !text.trim().is_empty())
+                    {
                         "Thinking…"
                     } else {
                         "Working…"
@@ -567,6 +582,32 @@ fn markdown_message(
     let shown = ui.scope(|ui| markdown::show(ui, id, &message.blocks, ctx.theme));
     message.height = Some((width, shown.response.rect.height()));
     shown.inner
+}
+
+/// The model's thinking for one step, collapsed to its first line (R-31).
+/// Nothing is shown for thinking without readable text.
+fn thinking_row(ui: &mut egui::Ui, theme: Theme, id: egui::Id, text: &str, live: bool) {
+    let text = text.trim();
+    let Some(first) = text.lines().map(str::trim).find(|line| !line.is_empty()) else {
+        return;
+    };
+    const SUMMARY: usize = 90;
+    let mut summary: String = first.chars().take(SUMMARY).collect();
+    if first.chars().count() > SUMMARY || text.lines().nth(1).is_some() {
+        summary.push('…');
+    }
+    let verb = if live { "Thinking" } else { "Thought" };
+    let font = theme::regular(theme::CAPTION);
+    egui::CollapsingHeader::new(
+        RichText::new(format!("{verb} · {summary}"))
+            .font(font.clone())
+            .color(theme.muted),
+    )
+    .id_salt(id)
+    .default_open(false)
+    .show(ui, |ui| {
+        ui.add(egui::Label::new(RichText::new(text).font(font).color(theme.muted)).wrap());
+    });
 }
 
 fn notice(ui: &mut egui::Ui, theme: Theme, text: &str, retry: bool, actions: &mut Vec<Action>) {

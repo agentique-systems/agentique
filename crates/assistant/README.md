@@ -2,8 +2,9 @@
 
 The Assistant (ROADMAP §4.1, §4.10, part `Assistant` in
 `models/agentique/Agentique.sysml`): the AI agent the Operator works with in
-the Conversation. It depends on the System State and the language core only;
-it is the one place in Agentique that talks to the network.
+the Conversation. It depends on the System State, the language core and
+Providers (`agq-providers`), which talks to model providers through rig. Its
+hand-written Claude client still uses the network directly until W5.7.
 
 - `tools`: what the Assistant can do. `read_model`, `find_elements` and
   `get_problems` read the System State; `apply_changes` turns a request into
@@ -14,7 +15,12 @@ it is the one place in Agentique that talks to the network.
   and tries every operation on a copy of the model before the change is
   handed over (ROADMAP §4.2).
 - `turn`: the tool-use loop for one turn of the Conversation.
-- `claude`: the Claude API client.
+- `choice`: which model the Assistant uses (below).
+- `provider_model`: the model through `agq-providers` (DeepSeek, OpenAI,
+  OpenRouter; Anthropic through rig too, though the Studio still uses
+  `claude` for Anthropic until W5.7). A provider's reasoning is stored as a
+  `reasoning` block naming its provider and model, and sent back only to it.
+- `claude`: the hand-written Claude API client (retired in W5.7).
 - `skills`: the system prompt, compiled in from `skills/*.md`.
 - `conversation`: the per-project Conversation. The model's content blocks
   are stored as returned, so a conversation continues after a restart.
@@ -27,8 +33,8 @@ The Operator's message is added to the conversation, then `turn::run` (or
 `BackgroundTurn::start`, below) answers it:
 
 1. Send the skills, the tool definitions and the conversation to the model;
-   stream the reply (text, "thinking", tool calls starting, tool input, and
-   the tokens used).
+   stream the reply (text, thinking as it may be shown, tool calls starting,
+   tool input, the provider's id for a call, and the tokens used).
 2. Add the reply to the conversation. If it asks for tools, check each call's
    input against the tool's schema and hand valid calls to the executor, in
    order. Invalid input (unreadable JSON, unknown fields, wrong values) is
@@ -86,16 +92,22 @@ The UI thread calls `next_event()` every frame (it never blocks):
 a reply that is streaming in is abandoned within 50 ms, even while the
 network is silent, and a tool call waiting for the UI thread is given up.
 Changes made before the stop stay and can be undone. Dropping the
-`BackgroundTurn` stops the turn. Use a new `ClaudeModel::from_env()` for
+`BackgroundTurn` stops the turn. Use a new model (`ModelChoice::start`) for
 each turn.
 
 ## Configuration
 
+Until Settings exists (W5.8), `ModelChoice::from_env` picks the model:
+
 | Variable | Default | Meaning |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | none | The Claude API key. Without it, sending a message adds a notice saying so; the Surface works by hand as always. |
-| `AGENTIQUE_MODEL` | `claude-opus-5` | The model. An unknown or unavailable model is named in the error. |
-| `AGENTIQUE_EFFORT` | `high` | `low`, `medium`, `high`, `xhigh` or `max`: how much the model thinks. |
+| `ANTHROPIC_API_KEY`, `DEEPSEEK_API_KEY`, `OPENAI_API_KEY`, `OPENROUTER_API_KEY` | none | Provider keys. Without any, the Conversation says so; the Surface works by hand as always. |
+| `AGENTIQUE_PROVIDER` | the first provider with a key: Anthropic, DeepSeek, OpenAI, OpenRouter | `anthropic`, `deepseek`, `openai` or `openrouter`. |
+| `AGENTIQUE_MODEL` | the provider's default (`claude-opus-5`, `deepseek-flash`, ...) | The model id. An unknown or unavailable model is named in the error. |
+| `AGENTIQUE_EFFORT` | the model's default (`high`) | An effort level the model offers (`deepseek-flash`: `low`, `high`, `max`; Claude: `low` to `max`); another value falls back to the default. |
+
+With only `DEEPSEEK_API_KEY` set, the Assistant runs on `deepseek-flash` at
+effort `high` (C-35).
 
 Errors are explained for the Operator and never lose the Operator's message:
 a refused key (401), no permission (403), an unknown model (404), a
@@ -152,4 +164,8 @@ client, reading canned event streams and talking to a local server that
 answers like the API (`tests/claude.rs`).
 
 `cargo run -p agq-assistant --example smoke` runs one real turn against the
-Claude API when `ANTHROPIC_API_KEY` is set, and does nothing otherwise.
+configured model, and does nothing without a key. Live runs pass a spend guard
+(developer tooling in `examples/support/spend.rs`, not a product feature):
+set `AGENTIQUE_SPEND_LOG` to a JSON-lines file outside the repository and
+`AGENTIQUE_SPEND_STOP_USD` to a hard stop; every call is logged, and a run whose
+worst case would pass the stop refuses to start.

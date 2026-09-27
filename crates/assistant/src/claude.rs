@@ -98,12 +98,14 @@ impl ClaudeModel {
             "model": self.model,
             "max_tokens": MAX_TOKENS,
             "stream": true,
-            "thinking": { "type": "adaptive" },
+            // Readable summaries for the thinking row (R-31); on
+            // claude-opus-5 and newer the default display is omitted.
+            "thinking": { "type": "adaptive", "display": "summarized" },
             "output_config": { "effort": self.effort },
             "cache_control": { "type": "ephemeral" },
             "system": [{ "type": "text", "text": request.system, "cache_control": { "type": "ephemeral" } }],
             "tools": tools,
-            "messages": request.messages,
+            "messages": claude_messages(&request.messages),
         });
         if self.uses_fallbacks() {
             body["fallbacks"] = json!("default");
@@ -493,7 +495,9 @@ impl Stream {
                             on_event(StreamEvent::Text(text.to_string()));
                         }
                     }
-                    Some("thinking") | Some("redacted_thinking") => on_event(StreamEvent::Thinking),
+                    Some("thinking") | Some("redacted_thinking") => {
+                        on_event(StreamEvent::Thinking(String::new()))
+                    }
                     Some("tool_use") => {
                         self.inputs.insert(index, String::new());
                         on_event(StreamEvent::ToolCallStarted {
@@ -517,7 +521,11 @@ impl Stream {
                         append(block, "text", &text);
                         on_event(StreamEvent::Text(text));
                     }
-                    "thinking_delta" => append(block, "thinking", &piece("thinking")),
+                    "thinking_delta" => {
+                        let text = piece("thinking");
+                        append(block, "thinking", &text);
+                        on_event(StreamEvent::Thinking(text));
+                    }
                     "signature_delta" => append(block, "signature", &piece("signature")),
                     "input_json_delta" => {
                         let json = piece("partial_json");
@@ -606,6 +614,39 @@ impl Stream {
             stop_reason,
         })
     }
+}
+
+/// The conversation's messages without blocks other providers wrote (their
+/// `reasoning`), which the Messages API does not accept.
+fn claude_messages(messages: &[Value]) -> Vec<Value> {
+    const CLAUDE_BLOCKS: [&str; 6] = [
+        "text",
+        "thinking",
+        "redacted_thinking",
+        "tool_use",
+        "tool_result",
+        "image",
+    ];
+    messages
+        .iter()
+        .map(|message| {
+            let mut message = message.clone();
+            if let Some(blocks) = message["content"].as_array_mut() {
+                blocks.retain(|block| {
+                    block["type"]
+                        .as_str()
+                        .is_some_and(|kind| CLAUDE_BLOCKS.contains(&kind))
+                });
+            }
+            message
+        })
+        // A reply of reasoning only leaves nothing the API accepts.
+        .filter(|message| {
+            message["content"]
+                .as_array()
+                .is_none_or(|blocks| !blocks.is_empty())
+        })
+        .collect()
 }
 
 fn append(block: &mut Value, field: &str, text: &str) {

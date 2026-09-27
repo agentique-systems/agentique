@@ -42,9 +42,13 @@ The column on the right (`conversation.rs` for the state and tool calls,
 - **Saved per project** in the Studio's local data, next to the session file
   (`conversations/<folder>-<hash>.json`), never in the project folder, after
   every entry. "New conversation" starts again; the model is unaffected.
-- **Model**: `ClaudeModel::from_env()` (`ANTHROPIC_API_KEY`,
-  `AGENTIQUE_MODEL`, `AGENTIQUE_EFFORT`), named discreetly in the header.
-  Without a key the column says so and everything else works.
+- **Model**: `ModelChoice::from_env()` (a provider key such as
+  `DEEPSEEK_API_KEY` or `ANTHROPIC_API_KEY`, and optionally
+  `AGENTIQUE_PROVIDER`, `AGENTIQUE_MODEL`, `AGENTIQUE_EFFORT`; see the
+  Assistant's README), named discreetly in the header. Without a key the
+  column says which variable to set and everything else works.
+- **Thinking** shows as a collapsed row per step with its first line
+  (R-31): Claude's summaries, or the reasoning of models that show it.
 
 Tests (`cargo test -p agq-studio-native conversation`) drive the Conversation
 with a scripted model on a real project; the `a-assistant` journey does the
