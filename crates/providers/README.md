@@ -43,10 +43,26 @@ call.cancel(); // stops at once; the call ends with Finished(Err(Cancelled))
 - **Capabilities** (`capabilities(&model)`) and **prices** (`price(&model)`, a
   dated table, an estimate) are data. Code outside this crate asks them, never a
   provider's name (§8.7).
-- **Keys** come from `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `OPENROUTER_API_KEY`,
-  `DEEPSEEK_API_KEY` or `TYPESAFE_API_KEY` (the Credential Manager arrives with Settings, W5.8), or
-  from `with_key` (tests, and testing a key before saving it). A key leaves this
-  crate only in the request to its own provider.
+- **Keys** (module `keys`, R-25, C-36): a non-empty environment variable
+  (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `OPENROUTER_API_KEY`,
+  `DEEPSEEK_API_KEY`, `TYPESAFE_API_KEY`) wins; otherwise the key stored in the
+  Windows Credential Manager (a generic credential `agentique:<provider>`,
+  persistence Local, at most 2,560 bytes), written with `keys::store` and
+  removed with `keys::remove`; or an explicit `with_key` (tests, and testing a
+  key before saving it). One thread owns all credential access, with a
+  five-second timeout per call. Without a credential store there is no
+  plain-text fallback: only the environment. `keys::hint` gives what Settings
+  shows instead of a key (`sk-ant-…a1B2`). A key leaves this crate only in the
+  request to its own provider; an endpoint override never gets the
+  environment's or the stored key.
+- **Key test and models** (for Settings, E2): `check_key` calls an endpoint
+  that needs the key and runs no model (Anthropic and OpenAI `GET
+  /v1/models`, OpenRouter `GET /api/v1/key` (not verified live), DeepSeek `GET
+  /user/balance`, TypeSafe AI `GET /v1/models`) and answers works, refused,
+  no access, rate limited, cannot reach or missing; `list_models` returns the
+  provider's models with context window, the effort levels the provider
+  lists, the capability table's entry and the dated price. `cargo run -p
+  agq-providers --example keys` shows both for the configured keys (free).
 - **Errors** are written for the Operator: a missing or refused key names its
   variable; no access, unknown model, rate limits, unavailability and lost
   connections each say what to do. Rate limits, server errors and lost
