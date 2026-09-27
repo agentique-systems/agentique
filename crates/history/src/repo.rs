@@ -1,36 +1,27 @@
 //! Commits, the log, branches and reading any version, through libgit2.
-use crate::folder::{is_model_file, read_model_files, snapshot_from, text_of};
-use crate::{Error, GITIGNORE, History, Result, Snapshot};
+use crate::folder::{is_model_file, model_files, read_model_files, text_of};
+use crate::{Error, GITIGNORE, History, MODEL_FOLDER, ModelFiles, Result};
 use git2::{
     BranchType, Commit, ErrorCode, FileMode, ObjectType, Oid, TreeWalkMode, TreeWalkResult,
 };
 use std::collections::{BTreeMap, BTreeSet};
-use std::fmt;
 use std::path::Path;
 
-/// A git commit id.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-pub struct CommitId(Oid);
-
-impl fmt::Display for CommitId {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.0.fmt(f)
-    }
-}
-
-/// A commit that changed the model folder.
+/// A saved point in a project's history: a git commit that changed the model
+/// folder.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct CommitInfo {
-    pub id: CommitId,
+pub struct Checkpoint {
+    /// The commit id.
+    pub id: String,
     pub message: String,
     /// Seconds since the Unix epoch.
     pub time: i64,
 }
 
-impl CommitInfo {
+impl Checkpoint {
     fn of(commit: &Commit) -> Self {
-        CommitInfo {
-            id: CommitId(commit.id()),
+        Checkpoint {
+            id: commit.id().to_string(),
             message: commit.message().unwrap_or_default().trim_end().to_owned(),
             time: commit.time().seconds(),
         }
@@ -40,9 +31,10 @@ impl CommitInfo {
 impl History {
     /// Commits the model folder as saved on disk. Everything else in the
     /// repository, staged or not, is left as it is. Returns `None` when the
-    /// model folder is unchanged since the last commit.
-    pub fn commit(&mut self, message: &str) -> Result<Option<CommitInfo>> {
-        self.recover()?;
+    /// model folder is unchanged since the last commit. Refuses if a model
+    /// file was edited outside the app since it was loaded or saved.
+    pub fn commit(&mut self, message: &str) -> Result<Option<Checkpoint>> {
+        self.check_unchanged()?;
         let mut files: BTreeSet<String> = read_model_files(&self.dir)?.into_keys().collect();
         if self.dir.join(GITIGNORE).is_file() {
             files.insert(GITIGNORE.to_owned());
@@ -58,6 +50,8 @@ impl History {
         // Stage the model files so that `git status` agrees with the commit,
         // and build the commit's tree from HEAD's, replacing the model files.
         let mut index = self.repo.index()?;
+        // Start from the index on disk: git may have changed it since.
+        index.read(true)?;
         let mut update = git2::build::TreeUpdateBuilder::new();
         for path in self.files_in(&base)?.keys() {
             if !files.contains(path) {
@@ -92,12 +86,12 @@ impl History {
             &tree,
             &parents,
         )?;
-        Ok(Some(CommitInfo::of(&self.repo.find_commit(id)?)))
+        Ok(Some(Checkpoint::of(&self.repo.find_commit(id)?)))
     }
 
     /// Commits reachable from HEAD that changed the model folder, newest
     /// first.
-    pub fn log(&self) -> Result<Vec<CommitInfo>> {
+    pub fn log(&self) -> Result<Vec<Checkpoint>> {
         let mut out = Vec::new();
         if self.head_commit()?.is_none() {
             return Ok(out);
@@ -118,7 +112,7 @@ impl History {
                 changed
             };
             if changed {
-                out.push(CommitInfo::of(&commit));
+                out.push(Checkpoint::of(&commit));
             }
         }
         Ok(out)
@@ -126,9 +120,9 @@ impl History {
 
     /// The model folder at a commit (any git revision, e.g. a commit id or
     /// `refs/heads/main`).
-    pub fn load_commit(&self, revision: &str) -> Result<Snapshot> {
+    pub fn load_commit(&self, revision: &str) -> Result<ModelFiles> {
         let commit = self.repo.revparse_single(revision)?.peel_to_commit()?;
-        snapshot_from(&self.files_in(&commit.tree()?)?)
+        model_files(&self.files_in(&commit.tree()?)?)
     }
 
     /// Whether the saved model files differ from the last commit.
@@ -141,13 +135,13 @@ impl History {
         Ok(read_model_files(&self.dir)? != committed)
     }
 
-    /// The current branch, or `None` when HEAD is detached.
-    pub fn branch(&self) -> Result<Option<String>> {
+    /// The current branch.
+    pub fn branch(&self) -> Result<String> {
         let head = self.repo.find_reference("HEAD")?;
-        Ok(head
-            .symbolic_target()?
+        head.symbolic_target()?
             .and_then(|target| target.strip_prefix("refs/heads/"))
-            .map(str::to_owned))
+            .map(str::to_owned)
+            .ok_or(Error::Detached)
     }
 
     /// The repository's local branches, sorted by name.
@@ -173,7 +167,7 @@ impl History {
     /// Switches the whole repository to a branch and reads its model.
     /// Refuses when the model has changes that are not committed, and when
     /// the switch would overwrite other changed files.
-    pub fn switch_branch(&mut self, name: &str) -> Result<Snapshot> {
+    pub fn switch_branch(&mut self, name: &str) -> Result<ModelFiles> {
         if self.has_uncommitted_changes()? {
             return Err(Error::Uncommitted);
         }
@@ -205,18 +199,11 @@ impl History {
     }
 
     fn repo_path(&self, path: &str) -> String {
-        if self.prefix.is_empty() {
-            path.to_owned()
-        } else {
-            format!("{}/{path}", self.prefix)
-        }
+        format!("{MODEL_FOLDER}/{path}")
     }
 
     fn folder_tree(&self, commit: &Commit) -> Result<Option<Oid>> {
-        if self.prefix.is_empty() {
-            return Ok(Some(commit.tree_id()));
-        }
-        match commit.tree()?.get_path(Path::new(&self.prefix)) {
+        match commit.tree()?.get_path(Path::new(MODEL_FOLDER)) {
             Ok(entry) => Ok(Some(entry.id())),
             Err(e) if e.code() == ErrorCode::NotFound => Ok(None),
             Err(e) => Err(e.into()),
@@ -226,14 +213,10 @@ impl History {
     /// Model files of the model folder inside a commit's tree.
     fn files_in(&self, root: &git2::Tree) -> Result<BTreeMap<String, String>> {
         let mut files = BTreeMap::new();
-        let tree = if self.prefix.is_empty() {
-            root.clone()
-        } else {
-            match root.get_path(Path::new(&self.prefix)) {
-                Ok(entry) => entry.to_object(&self.repo)?.peel_to_tree()?,
-                Err(e) if e.code() == ErrorCode::NotFound => return Ok(files),
-                Err(e) => return Err(e.into()),
-            }
+        let tree = match root.get_path(Path::new(MODEL_FOLDER)) {
+            Ok(entry) => entry.to_object(&self.repo)?.peel_to_tree()?,
+            Err(e) if e.code() == ErrorCode::NotFound => return Ok(files),
+            Err(e) => return Err(e.into()),
         };
         let mut failure = None;
         tree.walk(TreeWalkMode::PreOrder, |dir, entry| {

@@ -7,7 +7,7 @@
 //! the journal is removed. Recovery, run before every load, save and commit,
 //! repeats the moves of a journal it finds (they are idempotent) and deletes
 //! temporary files that no journal names.
-use crate::{Error, FORMAT, History, IDENTITY_FILE, Identities, Result, Snapshot};
+use crate::{Error, FORMAT, History, IDENTITY_FILE, Identities, ModelFiles, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
@@ -28,47 +28,41 @@ struct Journal {
 impl History {
     /// Reads the working folder again, first finishing or discarding a save
     /// that was interrupted.
-    pub fn load(&mut self) -> Result<Snapshot> {
+    pub fn load(&mut self) -> Result<ModelFiles> {
         self.recover()?;
         let files = read_model_files(&self.dir)?;
-        let snapshot = snapshot_from(&files)?;
+        let model = model_files(&files)?;
         self.seen = files;
-        Ok(snapshot)
+        Ok(model)
     }
 
-    /// Saves a snapshot as the working files, atomically. Only changed files
-    /// are written. Refuses if any model file changed on disk since the last
-    /// load or save.
+    /// Saves the model files, atomically. Only changed files are written.
+    /// Refuses if any model file changed on disk since the last load or save.
     ///
     /// Once the save journal is durable the save has happened: if moving the
     /// files into place fails after that, the next load, save or commit
     /// finishes it.
-    pub fn save(&mut self, snapshot: &Snapshot) -> Result<()> {
-        self.save_steps(snapshot, usize::MAX).map(|_| ())
+    pub fn save(&mut self, files: &ModelFiles) -> Result<()> {
+        self.save_until(files, None).map(|_| ())
     }
 
-    /// Test hook for crash safety: performs at most `steps` file operations
-    /// of a save and then stops, as if the process had died there. Returns
-    /// whether the save completed.
-    #[doc(hidden)]
-    pub fn save_steps(&mut self, snapshot: &Snapshot, mut steps: usize) -> Result<bool> {
-        self.recover()?;
-        let disk = read_model_files(&self.dir)?;
-        let changed: BTreeSet<&String> = self
-            .seen
-            .keys()
-            .chain(disk.keys())
-            .filter(|path| self.seen.get(*path) != disk.get(*path))
-            .collect();
-        if !changed.is_empty() {
-            return Err(Error::ChangedOnDisk(changed.into_iter().cloned().collect()));
-        }
+    /// For crash tests: performs at most `steps` file operations of a save
+    /// and then stops, as if the process had died there. Returns whether the
+    /// save completed.
+    #[cfg(any(test, feature = "crash-test"))]
+    pub fn save_interrupted(&mut self, files: &ModelFiles, steps: usize) -> Result<bool> {
+        self.save_until(files, Some(steps))
+    }
+
+    /// Saves, stopping after `stop_after` file operations if given.
+    fn save_until(&mut self, files: &ModelFiles, mut stop_after: Option<usize>) -> Result<bool> {
+        self.check_unchanged()?;
         let mut next = BTreeMap::new();
-        for (path, text) in &snapshot.documents {
+        for (path, text) in &files.documents {
             check_path(path)?;
             next.insert(path.clone(), normalize(text));
         }
-        next.insert(IDENTITY_FILE.to_owned(), snapshot.identities.to_text());
+        next.insert(IDENTITY_FILE.to_owned(), files.identities.to_text());
         let journal = Journal {
             format: FORMAT,
             write: next
@@ -87,7 +81,7 @@ impl History {
             return Ok(true);
         }
         for path in &journal.write {
-            if !take(&mut steps) {
+            if !step(&mut stop_after) {
                 return Ok(false);
             }
             write_synced(
@@ -95,7 +89,7 @@ impl History {
                 next[path].as_bytes(),
             )?;
         }
-        if !take(&mut steps) {
+        if !step(&mut stop_after) {
             return Ok(false);
         }
         let pending = self.dir.join(format!("{JOURNAL}{TMP}"));
@@ -108,8 +102,26 @@ impl History {
         // The save has happened. If moving the files into place fails or
         // stops from here on, recovery finishes it.
         self.seen = next;
-        let moved = matches!(apply(&self.dir, &journal, &mut steps), Ok(true));
-        Ok(moved && take(&mut steps) && remove(&self.dir.join(JOURNAL)).is_ok())
+        let moved = matches!(apply(&self.dir, &journal, &mut stop_after), Ok(true));
+        Ok(moved && step(&mut stop_after) && remove(&self.dir.join(JOURNAL)).is_ok())
+    }
+
+    /// Finishes an interrupted save, then refuses if the model files differ
+    /// from what was last loaded or saved: they were edited outside the app.
+    pub(crate) fn check_unchanged(&self) -> Result<()> {
+        self.recover()?;
+        let disk = read_model_files(&self.dir)?;
+        let changed: BTreeSet<&String> = self
+            .seen
+            .keys()
+            .chain(disk.keys())
+            .filter(|path| self.seen.get(*path) != disk.get(*path))
+            .collect();
+        if changed.is_empty() {
+            Ok(())
+        } else {
+            Err(Error::ChangedOnDisk(changed.into_iter().cloned().collect()))
+        }
     }
 
     /// Finishes a save whose journal is durable; discards one whose journal
@@ -118,9 +130,8 @@ impl History {
         let journal_path = self.dir.join(JOURNAL);
         match fs::read_to_string(&journal_path) {
             Ok(text) => {
-                let mut unlimited = usize::MAX;
                 let journal = parse_journal(&text)?;
-                apply(&self.dir, &journal, &mut unlimited)?;
+                apply(&self.dir, &journal, &mut None)?;
                 remove(&journal_path)?;
             }
             Err(e) if e.kind() == ErrorKind::NotFound => {}
@@ -137,27 +148,32 @@ impl History {
     }
 }
 
-fn take(steps: &mut usize) -> bool {
-    if *steps == 0 {
-        return false;
+/// Counts one file operation against `stop_after`; false when none is left.
+fn step(stop_after: &mut Option<usize>) -> bool {
+    match stop_after {
+        None => true,
+        Some(0) => false,
+        Some(left) => {
+            *left -= 1;
+            true
+        }
     }
-    *steps -= 1;
-    true
 }
 
-fn apply(dir: &Path, journal: &Journal, steps: &mut usize) -> Result<bool> {
+/// Moves the journal's files into place and deletes the ones it names.
+fn apply(dir: &Path, journal: &Journal, stop_after: &mut Option<usize>) -> Result<bool> {
     for path in &journal.write {
         let tmp = dir.join(format!("{path}{TMP}"));
         // A missing temporary file was already moved into place.
         if tmp.exists() {
-            if !take(steps) {
+            if !step(stop_after) {
                 return Ok(false);
             }
             rename(&tmp, &dir.join(path))?;
         }
     }
     for path in &journal.delete {
-        if !take(steps) {
+        if !step(stop_after) {
             return Ok(false);
         }
         match remove(&dir.join(path)) {
@@ -165,7 +181,16 @@ fn apply(dir: &Path, journal: &Journal, steps: &mut usize) -> Result<bool> {
             _ => {}
         }
     }
-    sync_dir(dir)?;
+    // Every folder that had a file renamed or deleted in it.
+    let folders: BTreeSet<&str> = journal
+        .write
+        .iter()
+        .chain(&journal.delete)
+        .map(|path| path.rsplit_once('/').map_or("", |(folder, _)| folder))
+        .collect();
+    for folder in folders {
+        sync_dir(&dir.join(folder))?;
+    }
     Ok(true)
 }
 
@@ -195,7 +220,7 @@ pub(crate) fn is_model_file(path: &str) -> bool {
 
 /// Splits model files into documents and identities. Refuses files that a
 /// git merge left with conflict markers.
-pub(crate) fn snapshot_from(files: &BTreeMap<String, String>) -> Result<Snapshot> {
+pub(crate) fn model_files(files: &BTreeMap<String, String>) -> Result<ModelFiles> {
     for (path, text) in files {
         if has_conflict_markers(text) {
             return Err(Error::ConflictMarkers { path: path.clone() });
@@ -210,7 +235,7 @@ pub(crate) fn snapshot_from(files: &BTreeMap<String, String>) -> Result<Snapshot
         .filter(|(path, _)| path.as_str() != IDENTITY_FILE)
         .map(|(path, text)| (path.clone(), text.clone()))
         .collect();
-    Ok(Snapshot {
+    Ok(ModelFiles {
         documents,
         identities,
     })
@@ -329,12 +354,19 @@ fn is_transient(error: &io::Error) -> bool {
     matches!(error.raw_os_error(), Some(5 | 32 | 33))
 }
 
-/// Makes renames in `dir` durable. Windows offers no directory sync; NTFS
-/// journals renames in order.
+/// Makes renames and deletes in the folder `dir` durable.
 fn sync_dir(dir: &Path) -> Result<()> {
-    #[cfg(unix)]
+    #[cfg(windows)]
+    {
+        use std::os::windows::fs::OpenOptionsExt;
+        // FILE_FLAG_BACKUP_SEMANTICS: needed to open a folder.
+        let folder = fs::OpenOptions::new()
+            .write(true)
+            .custom_flags(0x0200_0000)
+            .open(dir)?;
+        folder.sync_all()?;
+    }
+    #[cfg(not(windows))]
     fs::File::open(dir)?.sync_all()?;
-    #[cfg(not(unix))]
-    let _ = dir;
     Ok(())
 }

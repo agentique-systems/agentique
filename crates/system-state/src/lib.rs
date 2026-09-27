@@ -26,7 +26,7 @@
 
 mod project;
 
-pub use project::{ApplyError, Checkpoint, Project, ProjectError};
+pub use project::{ApplyError, Checkpoint, HistoryError, Project, ProjectError};
 
 use agq_language::{
     Diagnostic, Direction, Element, ElementId, ElementKind, Literal, Multiplicity, Parent,

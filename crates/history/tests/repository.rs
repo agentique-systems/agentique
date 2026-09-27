@@ -1,16 +1,16 @@
 //! The model folder in git: where the repository is, what a commit holds,
 //! one writer at a time, edits made outside the app, and whole-repository
 //! branch switching.
-use agq_history::{Error, History, Identities, Snapshot};
+use agq_history::{Error, History, Identities, ModelFiles};
 use std::fs;
 use std::path::Path;
 
-fn model(text: &str) -> Snapshot {
+fn model(text: &str) -> ModelFiles {
     let mut identities = Identities::default();
     identities
         .elements
         .insert("1".into(), "package Shop".into());
-    Snapshot {
+    ModelFiles {
         documents: [("Shop.sysml".to_owned(), text.to_owned())].into(),
         identities,
     }
@@ -30,13 +30,13 @@ fn blob(repo: &git2::Repository, revision: &str, path: &str) -> Option<String> {
 fn a_project_folder_outside_any_repository_becomes_one() {
     let dir = tempfile::tempdir().unwrap();
     let (mut history, loaded) = History::create(dir.path()).unwrap();
-    assert_eq!(loaded, Snapshot::default());
+    assert_eq!(loaded, ModelFiles::default());
     history.save(&model("package Shop;\n")).unwrap();
     let first = history.commit("Create Shop").unwrap().unwrap();
     assert_eq!(first.message, "Create Shop");
 
     let repo = git2::Repository::open(dir.path()).unwrap();
-    assert_eq!(history.branch().unwrap().as_deref(), Some("main"));
+    assert_eq!(history.branch().unwrap(), "main");
     assert_eq!(history.branches().unwrap(), ["main"]);
     assert_eq!(
         blob(&repo, "HEAD", "model/Shop.sysml").as_deref(),
@@ -69,14 +69,19 @@ fn a_commit_contains_only_the_model_folder() {
 
     let (mut history, _) = History::create(dir.path()).unwrap();
     history.save(&model("package Shop;\n")).unwrap();
-    // Unrelated code work in progress: one unstaged edit, one staged file.
+    history.commit("Add the shop model").unwrap().unwrap();
+    // Unrelated code work in progress, as with the git command line: one
+    // unstaged edit, one staged file.
     fs::write(dir.path().join("src/main.rs"), "fn main() { todo!() }\n").unwrap();
     fs::write(dir.path().join("src/lib.rs"), "\n").unwrap();
     let mut index = repo.index().unwrap();
     index.add_path(Path::new("src/lib.rs")).unwrap();
     index.write().unwrap();
 
-    history.commit("Add the shop model").unwrap().unwrap();
+    for text in ["package Shop { part def A; }\n", "package Shop;\n"] {
+        history.save(&model(text)).unwrap();
+        history.commit("Change the shop model").unwrap().unwrap();
+    }
     assert!(!history.has_uncommitted_changes().unwrap());
     assert!(history.commit("Nothing changed").unwrap().is_none());
     assert_eq!(
@@ -91,8 +96,21 @@ fn a_commit_contains_only_the_model_folder() {
     assert_eq!(status("model/Shop.sysml"), git2::Status::CURRENT);
     // The log lists only commits that changed the model folder.
     let log = history.log().unwrap();
-    assert_eq!(log.len(), 1);
-    assert_eq!(log[0].message, "Add the shop model");
+    assert_eq!(log.len(), 3);
+    assert_eq!(log[2].message, "Add the shop model");
+}
+
+#[test]
+fn an_unrelated_repository_further_up_is_never_used() {
+    let dir = tempfile::tempdir().unwrap();
+    let home = git2::Repository::init(dir.path()).unwrap();
+    let project = dir.path().join("projects/shop");
+    let (mut history, _) = History::create(&project).unwrap();
+    history.save(&model("package Shop;\n")).unwrap();
+    history.commit("Create Shop").unwrap().unwrap();
+    let own = git2::Repository::open(&project).unwrap();
+    assert!(blob(&own, "HEAD", "model/Shop.sysml").is_some());
+    assert!(home.head().is_err(), "nothing was committed further up");
 }
 
 #[test]
@@ -116,6 +134,12 @@ fn an_edit_made_outside_the_app_is_never_overwritten() {
         other => panic!("expected ChangedOnDisk, got {other:?}"),
     }
     assert_eq!(fs::read_to_string(&path).unwrap(), "package Store;\n");
+    // Nor is the edit committed as if the app had saved it.
+    assert!(matches!(
+        history.commit("Checkpoint"),
+        Err(Error::ChangedOnDisk(_))
+    ));
+    assert!(history.log().unwrap().is_empty());
     // After reading the folder again, saving works.
     history.load().unwrap();
     history.save(&model("package Shop;\n")).unwrap();
@@ -157,13 +181,13 @@ fn switching_branch_switches_the_whole_repository() {
         history.switch_branch("idea"),
         Err(Error::WouldOverwrite)
     ));
-    assert_eq!(history.branch().unwrap().as_deref(), Some("main"));
+    assert_eq!(history.branch().unwrap(), "main");
     fs::write(&code, "main\n").unwrap();
 
     let idea = history.switch_branch("idea").unwrap();
     assert_eq!(idea, model("package Shop;\n"));
     assert!(!code.exists());
-    assert_eq!(history.branch().unwrap().as_deref(), Some("idea"));
+    assert_eq!(history.branch().unwrap(), "idea");
     assert_eq!(history.log().unwrap().len(), 1);
     let main = history.switch_branch("main").unwrap();
     assert_eq!(main, model("package Shop { part def A; }\n"));

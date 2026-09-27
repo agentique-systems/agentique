@@ -1,17 +1,18 @@
 //! Crash safety: an interrupted save leaves the old or the new state, never
 //! a mix, and never touches committed history.
-use agq_history::{Error, History, Identities, Snapshot};
+use crate::{Error, History, Identities, ModelFiles};
 use std::collections::BTreeSet;
 use std::fs;
 use std::path::Path;
 
-fn snapshot(documents: &[(&str, &str)], elements: &[(&str, &str)], locks: &[&str]) -> Snapshot {
-    Snapshot {
+fn model(documents: &[(&str, &str)], elements: &[(&str, &str)], locks: &[&str]) -> ModelFiles {
+    ModelFiles {
         documents: documents
             .iter()
             .map(|(path, text)| (path.to_string(), text.to_string()))
             .collect(),
         identities: Identities {
+            next: 5,
             elements: elements
                 .iter()
                 .map(|(id, locator)| (id.to_string(), locator.to_string()))
@@ -23,8 +24,8 @@ fn snapshot(documents: &[(&str, &str)], elements: &[(&str, &str)], locks: &[&str
 
 const SHOP: &str = "package Shop {\n    part def Store;\n}\n";
 
-fn old() -> Snapshot {
-    snapshot(
+fn old() -> ModelFiles {
+    model(
         &[("Shop.sysml", SHOP), ("Stats.sysml", "package Stats;\n")],
         &[
             ("1", "package Shop"),
@@ -37,8 +38,8 @@ fn old() -> Snapshot {
 
 /// Changes a document, deletes one, adds one in a subfolder and changes
 /// identities and locks.
-fn new() -> Snapshot {
-    snapshot(
+fn new() -> ModelFiles {
+    model(
         &[
             ("Shop.sysml", "package Shop {\n    part def LinkStore;\n}\n"),
             ("sub/Extra.sysml", "package Extra;\n"),
@@ -86,7 +87,7 @@ fn an_interrupted_save_leaves_the_old_or_the_new_state() {
     for steps in 0.. {
         let (mut history, _) = History::open(dir.path()).unwrap();
         history.save(&old).unwrap();
-        let finished = history.save_steps(&new, steps).unwrap();
+        let finished = history.save_interrupted(&new, steps).unwrap();
         drop(history); // the process dies here
 
         let (history, loaded) = History::open(dir.path()).unwrap();

@@ -189,12 +189,24 @@ fn a_hand_edited_name_is_reported_and_never_matched_by_name() {
     fs::write(&path, text).unwrap();
 
     let mut project = Project::open(&folder).unwrap();
+    // First the elements that got new ids, then the entries nothing took.
+    let unmatched = project.unmatched();
     assert_eq!(
-        project.unmatched(),
+        unmatched[..3],
         [
             "part def Shop::Warehouse",
             "attribute Shop::Warehouse::capacity",
             "part def Shop::Buffer"
+        ]
+    );
+    let mut lost = unmatched[3..].to_vec();
+    lost.sort();
+    assert_eq!(
+        lost,
+        [
+            "attribute Shop::Store::capacity",
+            "part def Shop::Cache",
+            "part def Shop::Store"
         ]
     );
     let warehouse = id(&project, "Shop::Warehouse");
@@ -244,12 +256,17 @@ fn an_edit_made_outside_while_the_project_is_open_is_not_overwritten() {
         matches!(&error, ApplyError::Project(ProjectError::ChangedOnDisk(paths)) if paths == &["Shop.sysml"]),
         "{error}"
     );
-    // The model is as it was, in the app and on disk.
+    // The model is as it was, in the app and on disk, and a checkpoint does
+    // not commit the outside edit as if the app had made it.
     assert_eq!(
         compare(&revision, project.state().tree()),
         Comparison::default()
     );
     assert_eq!(fs::read_to_string(&path).unwrap(), edited);
+    assert!(matches!(
+        project.checkpoint("Checkpoint"),
+        Err(ProjectError::ChangedOnDisk(_))
+    ));
 }
 
 #[test]
@@ -290,7 +307,7 @@ fn an_interrupted_save_opens_to_the_old_or_the_new_state() {
     for steps in 0.. {
         let (mut history, _) = History::open(&folder).unwrap();
         history.save(&old_files).unwrap();
-        let finished = history.save_steps(&new_files, steps).unwrap();
+        let finished = history.save_interrupted(&new_files, steps).unwrap();
         drop(history); // the app dies here
 
         let project = Project::open(&folder).unwrap();
@@ -398,6 +415,7 @@ fn branches_have_separate_histories() {
     assert_eq!(event.kind, EventKind::Loaded);
     assert_eq!(event.deleted, [store]);
     assert_eq!(project.current_branch().unwrap(), "idea");
+    assert!(!project.has_uncommitted_changes().unwrap());
     let cache = add(
         &mut project,
         shop,
@@ -479,4 +497,179 @@ fn a_hand_written_model_gets_identities_on_first_open() {
         compare(&before, project.state().tree()),
         Comparison::default()
     );
+}
+
+#[test]
+fn a_document_the_change_does_not_touch_keeps_its_text() {
+    let dir = tempfile::tempdir().unwrap();
+    let folder = dir.path().join("shop");
+    fs::create_dir_all(folder.join("model")).unwrap();
+    let stores = "package Stores {\n  // Hand formatting and notes survive.\n  part def Store;   part def Cache;\n}\n";
+    let web = "package Web {\n    // A note.\n    part def Api;\n}\n";
+    let system = "package System {\n    part store : Stores::Store;\n}\n";
+    for (file, text) in [
+        ("Stores.sysml", stores),
+        ("Web.sysml", web),
+        ("System.sysml", system),
+    ] {
+        fs::write(folder.join("model").join(file), text).unwrap();
+    }
+    let read = |file: &str| fs::read_to_string(folder.join("model").join(file)).unwrap();
+
+    let mut project = Project::open(&folder).unwrap();
+    let api = id(&project, "Web::Api");
+    change(
+        &mut project,
+        Operation::Rename {
+            element: api,
+            name: "Gateway".into(),
+        },
+    );
+    assert_eq!(read("Stores.sysml"), stores);
+    assert_eq!(read("System.sysml"), system);
+    assert!(read("Web.sysml").contains("part def Gateway;"));
+
+    // Renaming Store changes how System refers to it, so System is written too.
+    let store = id(&project, "Stores::Store");
+    change(
+        &mut project,
+        Operation::Rename {
+            element: store,
+            name: "LinkStore".into(),
+        },
+    );
+    assert!(read("System.sysml").contains("part store : Stores::LinkStore;"));
+    let before = project.state().tree().clone();
+    drop(project);
+    let project = Project::open(&folder).unwrap();
+    assert!(project.unmatched().is_empty(), "{:?}", project.unmatched());
+    assert_eq!(
+        compare(&before, project.state().tree()),
+        Comparison::default()
+    );
+}
+
+#[test]
+fn an_id_is_never_handed_out_twice() {
+    let (_dir, folder, mut project) = shop();
+    let shop = id(&project, "Shop");
+    let cache = add(
+        &mut project,
+        shop,
+        Element::named(ElementKind::PartDef, "Cache"),
+    );
+    let with_cache = project.checkpoint("Add Cache").unwrap();
+    change(&mut project, Operation::Delete { element: cache });
+    let without = project.checkpoint("Remove Cache").unwrap();
+    drop(project);
+
+    let mut project = Project::open(&folder).unwrap();
+    let queue = add(
+        &mut project,
+        shop,
+        Element::named(ElementKind::PartDef, "Queue"),
+    );
+    assert_ne!(queue, cache);
+    let what = compare(
+        &project.tree_at(&with_cache.id).unwrap(),
+        project.state().tree(),
+    );
+    assert_eq!((what.created, what.deleted), (vec![queue], vec![cache]));
+
+    // Nor after an undo: the undone element may be in a checkpoint.
+    let with_queue = project.checkpoint("Add Queue").unwrap();
+    project.undo().unwrap().unwrap();
+    let buffer = add(
+        &mut project,
+        shop,
+        Element::named(ElementKind::PartDef, "Buffer"),
+    );
+    assert_ne!(buffer, queue);
+    let what = compare(
+        &project.tree_at(&with_queue.id).unwrap(),
+        project.state().tree(),
+    );
+    assert_eq!((what.created, what.deleted), (vec![buffer], vec![queue]));
+    assert!(!project.tree_at(&without.id).unwrap().contains(cache));
+}
+
+#[test]
+fn a_reference_to_a_deleted_element_binds_again_by_name_as_after_reopening() {
+    let (_dir, folder, mut project) = shop();
+    let shop = id(&project, "Shop");
+    let store = id(&project, "Shop::Store");
+    let usage = id(&project, "Shop::System::store");
+    change(&mut project, Operation::Delete { element: store });
+    assert!(project.state().diagnostics_for(usage).next().is_some());
+    let new_store = add(
+        &mut project,
+        shop,
+        Element::named(ElementKind::PartDef, "Store"),
+    );
+    assert_ne!(new_store, store);
+    let tree = project.state().tree();
+    assert_eq!(tree[usage].typed_by[0].target(), Some(new_store));
+    assert!(project.state().diagnostics().is_empty());
+    let before = tree.clone();
+    drop(project);
+
+    let project = Project::open(&folder).unwrap();
+    assert_eq!(
+        compare(&before, project.state().tree()),
+        Comparison::default()
+    );
+    assert_eq!(
+        project.state().tree()[usage].typed_by[0].target(),
+        Some(new_store)
+    );
+}
+
+#[test]
+fn a_branch_whose_model_cannot_be_read_is_refused_before_switching() {
+    let dir = tempfile::tempdir().unwrap();
+    let folder = dir.path().join("shop");
+    let mut project = Project::create(&folder, "Shop").unwrap();
+    project.create_branch("broken").unwrap();
+    drop(project);
+    // Someone committed an identity file with a bad id on the other branch.
+    let (mut history, _) = History::open(&folder).unwrap();
+    let mut files = history.switch_branch("broken").unwrap();
+    files
+        .identities
+        .elements
+        .insert("x".into(), "package Other".into());
+    history.save(&files).unwrap();
+    history.commit("Break the identity file").unwrap().unwrap();
+    history.switch_branch("main").unwrap();
+    drop(history);
+
+    let mut project = Project::open(&folder).unwrap();
+    let text = fs::read_to_string(folder.join("model/agentique.json")).unwrap();
+    assert!(matches!(
+        project.switch_branch("broken"),
+        Err(ProjectError::Format(_))
+    ));
+    assert_eq!(project.current_branch().unwrap(), "main");
+    assert_eq!(
+        fs::read_to_string(folder.join("model/agentique.json")).unwrap(),
+        text
+    );
+    assert!(!project.has_uncommitted_changes().unwrap());
+}
+
+#[test]
+fn an_unnamed_element_inserted_by_hand_shifts_positions_and_is_reported() {
+    let (_dir, folder, project) = shop();
+    drop(project);
+    let path = model_file(&folder);
+    let text = fs::read_to_string(&path)
+        .unwrap()
+        .replace("doc /*", "doc /* Inserted by hand. */\n        doc /*");
+    fs::write(&path, text).unwrap();
+
+    let project = Project::open(&folder).unwrap();
+    // The inserted doc is first, so it takes the old doc's entry (a known
+    // limitation of matching by position); the old doc, now second, lost its
+    // entry and is reported.
+    assert_eq!(project.unmatched(), ["doc Shop::System::#2"]);
 }

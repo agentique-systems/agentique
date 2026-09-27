@@ -1,6 +1,7 @@
 //! The identity and lock file: which element id each element in the text
-//! carries, and which elements are locked. History stores both as strings;
-//! the System State decides what an id and a locator are.
+//! carries, the next id to hand out, and which elements are locked. History
+//! stores ids and locators as strings; the System State decides what they
+//! are.
 use crate::{Error, Result};
 use serde::Deserialize;
 use std::collections::{BTreeMap, BTreeSet};
@@ -13,6 +14,9 @@ pub const FORMAT: u64 = 1;
 /// Element identities and locks for one model folder.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Identities {
+    /// The id the next new element gets; ids below it were used before and
+    /// are never handed out again.
+    pub next: u64,
     /// Element id to locator: text written by the System State that finds
     /// the element in the documents, such as `part def Shop::Store`.
     pub elements: BTreeMap<String, String>,
@@ -25,6 +29,8 @@ pub struct Identities {
 struct FileV1 {
     #[allow(dead_code)]
     format: u64,
+    #[serde(default)]
+    next: u64,
     elements: BTreeMap<String, String>,
     #[serde(default)]
     locks: BTreeSet<String>,
@@ -51,6 +57,7 @@ impl Identities {
         }
         let file: FileV1 = serde_json::from_value(value).map_err(|e| invalid(e.to_string()))?;
         Ok(Self {
+            next: file.next,
             elements: file.elements,
             locks: file.locks,
         })
@@ -60,7 +67,10 @@ impl Identities {
     /// an element changes exactly its own line.
     pub fn to_text(&self) -> String {
         let quote = |s: &str| serde_json::to_string(s).expect("strings serialize");
-        let mut out = format!("{{\n  \"format\": {FORMAT},\n  \"elements\": ");
+        let mut out = format!(
+            "{{\n  \"format\": {FORMAT},\n  \"next\": {},\n  \"elements\": ",
+            self.next
+        );
         let elements = self
             .elements
             .iter()
@@ -93,7 +103,10 @@ mod tests {
 
     #[test]
     fn round_trips_one_entry_per_line() {
-        let mut ids = Identities::default();
+        let mut ids = Identities {
+            next: 3,
+            ..Identities::default()
+        };
         ids.elements
             .insert("b2".into(), "part def Shop::Api".into());
         ids.elements
@@ -102,13 +115,13 @@ mod tests {
         let text = ids.to_text();
         assert_eq!(
             text,
-            "{\n  \"format\": 1,\n  \"elements\": {\n    \"a1\": \"part def Shop::\\\"Store\\\"\",\n    \"b2\": \"part def Shop::Api\"\n  },\n  \"locks\": [\n    \"a1\"\n  ]\n}\n"
+            "{\n  \"format\": 1,\n  \"next\": 3,\n  \"elements\": {\n    \"a1\": \"part def Shop::\\\"Store\\\"\",\n    \"b2\": \"part def Shop::Api\"\n  },\n  \"locks\": [\n    \"a1\"\n  ]\n}\n"
         );
         assert_eq!(Identities::parse(&text).unwrap(), ids);
         let empty = Identities::default().to_text();
         assert_eq!(
             empty,
-            "{\n  \"format\": 1,\n  \"elements\": {},\n  \"locks\": []\n}\n"
+            "{\n  \"format\": 1,\n  \"next\": 0,\n  \"elements\": {},\n  \"locks\": []\n}\n"
         );
         assert_eq!(Identities::parse(&empty).unwrap(), Identities::default());
     }

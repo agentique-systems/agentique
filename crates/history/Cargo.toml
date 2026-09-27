@@ -5,6 +5,10 @@ edition.workspace = true
 license.workspace = true
 description = "History: a project's model folder as text files, with checkpoints and branches in git"
 
+[features]
+# Only for tests: History::save_interrupted stops a save part way.
+crash-test = []
+
 [dependencies]
 git2 = { version = "0.21.0", default-features = false, features = ["vendored-libgit2"] }
 serde.workspace = true

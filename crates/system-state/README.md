@@ -42,14 +42,21 @@ let what = compare(&before, project.state().tree()); // the "what changed" view
 
 - **Identity**: `agentique.json` maps each element id to a locator, its kind
   and path of names (`part def Shop::Store`; `#n` for the n-th unnamed
-  member, `name#2` for a repeated name). Renames and moves in the app keep
-  ids. An element renamed by hand in the text gets a new id on open and is
-  listed in `unmatched()`; it is never matched by name. New elements get ids
-  above every id in the identity file and at the tip of every branch.
+  member, `name#2` for a repeated name), and holds the next id, so no id is
+  handed out twice (also across branches and undo). Renames and moves in the
+  app keep ids. An element renamed by hand in the text gets a new id on open;
+  it and the entry nothing took are listed in `unmatched()`. Elements are
+  never matched by name or similarity. Limitation: unnamed elements are
+  matched by position, so one inserted by hand before another takes that
+  one's id, and the other is reported.
 - **Continuous save**: `apply`, `undo` and `redo` save before they return. A
-  change that cannot be saved is undone and reported. A crash loses at most
-  the change being saved, never mixes old and new.
+  change that cannot be saved is undone and reported. Only documents whose
+  content changed are written; the others keep their text, formatting and
+  `//` notes. A crash loses at most the change being saved, never mixes old
+  and new.
 - **Checkpoints and branches**: `checkpoint`, `checkpoints` (newest first),
   `tree_at`, `branches`, `create_branch`, `switch_branch` (refused with
-  `UncommittedChanges` while the model has changes since the last checkpoint).
+  `UncommittedChanges` while the model has changes since the last
+  checkpoint, and refused before switching if the branch's model cannot be
+  read).
 - **One window**: a second `open` of the same folder fails with `Locked`.

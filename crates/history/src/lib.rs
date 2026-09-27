@@ -3,8 +3,10 @@
 //!
 //! A project folder holds the model folder [`MODEL_FOLDER`]: SysML text files
 //! plus one identity and lock file ([`IDENTITY_FILE`]). The project folder is
-//! usually the project's code repository; a project folder outside any git
-//! repository becomes one.
+//! a git repository: usually the project's code repository. A project folder
+//! that is not the working folder of a repository becomes one, even inside
+//! another repository, so an unrelated repository further up (such as one
+//! for the home folder) is never used.
 //!
 //! History never reads SysML. The System State hands it printed documents and
 //! identity entries as strings; History saves them, commits them at
@@ -23,12 +25,14 @@
 //!   model has changes that are not committed.
 #![forbid(unsafe_code)]
 
+#[cfg(test)]
+mod crash_tests;
 mod folder;
 mod identity;
 mod repo;
 
 pub use identity::{FORMAT, IDENTITY_FILE, Identities};
-pub use repo::{CommitId, CommitInfo};
+pub use repo::Checkpoint;
 
 use std::collections::BTreeMap;
 use std::fs;
@@ -48,9 +52,9 @@ agentique.pending
 agentique.lock
 ";
 
-/// One version of a model folder.
+/// The files of one version of a model folder.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct Snapshot {
+pub struct ModelFiles {
     /// Relative path (with `/`, ending in `.sysml`) to SysML text.
     pub documents: BTreeMap<String, String>,
     pub identities: Identities,
@@ -58,7 +62,7 @@ pub struct Snapshot {
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
-    #[error(transparent)]
+    #[error("could not read or write the project files: {0}")]
     Io(#[from] std::io::Error),
     #[error("git: {}", .0.message())]
     Git(#[from] git2::Error),
@@ -72,9 +76,12 @@ pub enum Error {
          Agentique merges models element by element, not as text"
     )]
     ConflictMarkers { path: String },
-    #[error("model files were changed outside Agentique: {}", .0.join(", "))]
+    #[error(
+        "model files were changed outside Agentique while the project was open ({});          open the project again to load them",
+        .0.join(", ")
+    )]
     ChangedOnDisk(Vec<String>),
-    #[error("the model has changes that are not committed")]
+    #[error("the model has changes since the last checkpoint; make a checkpoint first")]
     Uncommitted,
     #[error(
         "switching branch would overwrite changed files outside the model folder; \
@@ -83,21 +90,23 @@ pub enum Error {
     WouldOverwrite,
     #[error("the project is already open in another Agentique window")]
     Locked,
-    #[error("there is no model folder at {}", .0.display())]
+    #[error("the repository is not on a branch (detached HEAD); switch to a branch with git")]
+    Detached,
+    #[error("not an Agentique project: there is no model folder at {}", .0.display())]
     NoModelFolder(PathBuf),
     #[error("{} already holds a model", .0.display())]
     Exists(PathBuf),
-    #[error("the repository has no working folder")]
-    Bare,
+    #[error("the project folder is not the working folder of its git repository")]
+    NotWorkingFolder,
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 /// An open model folder and the git repository that holds its history.
 pub struct History {
+    /// The repository whose working folder is the project folder.
     repo: git2::Repository,
-    /// The model folder relative to the repository's working folder, with `/`.
-    prefix: String,
+    /// The model folder.
     dir: PathBuf,
     /// Model files as last loaded or saved. Save refuses to overwrite
     /// anything that differs from this, so edits made outside the app are
@@ -110,7 +119,7 @@ pub struct History {
 impl History {
     /// Opens the model folder of an existing project and reads it, first
     /// finishing or discarding a save that was interrupted.
-    pub fn open(project: impl AsRef<Path>) -> Result<(Self, Snapshot)> {
+    pub fn open(project: impl AsRef<Path>) -> Result<(Self, ModelFiles)> {
         let project = project.as_ref();
         let folder = project.join(MODEL_FOLDER);
         if !folder.is_dir() {
@@ -118,7 +127,9 @@ impl History {
         }
         let dir = folder.canonicalize()?;
         let lock = lock(&dir)?;
-        let repo = match git2::Repository::discover(&dir) {
+        // Only a repository whose working folder is the project folder;
+        // opening never searches the folders above.
+        let repo = match git2::Repository::open(project) {
             Ok(repo) => repo,
             Err(e) if e.code() == git2::ErrorCode::NotFound => git2::Repository::init_opts(
                 project,
@@ -126,33 +137,27 @@ impl History {
             )?,
             Err(e) => return Err(e.into()),
         };
-        let workdir = repo.workdir().ok_or(Error::Bare)?.canonicalize()?;
-        let relative = dir.strip_prefix(&workdir).map_err(|_| Error::Invalid {
-            path: dir.display().to_string(),
-            message: "not inside the repository's working folder".into(),
-        })?;
-        let prefix = relative
-            .components()
-            .map(|c| c.as_os_str().to_string_lossy().into_owned())
-            .collect::<Vec<_>>()
-            .join("/");
+        if repo.workdir().map(Path::canonicalize).transpose()?
+            != dir.parent().map(Path::to_path_buf)
+        {
+            return Err(Error::NotWorkingFolder);
+        }
         if !dir.join(GITIGNORE).exists() {
             fs::write(dir.join(GITIGNORE), GITIGNORE_TEXT)?;
         }
         let mut history = Self {
             repo,
-            prefix,
             dir,
             seen: BTreeMap::new(),
             _lock: lock,
         };
-        let snapshot = history.load()?;
-        Ok((history, snapshot))
+        let files = history.load()?;
+        Ok((history, files))
     }
 
     /// Creates the model folder of a new project and opens it. Refuses a
     /// folder that already holds model files.
-    pub fn create(project: impl AsRef<Path>) -> Result<(Self, Snapshot)> {
+    pub fn create(project: impl AsRef<Path>) -> Result<(Self, ModelFiles)> {
         let folder = project.as_ref().join(MODEL_FOLDER);
         fs::create_dir_all(&folder)?;
         if !folder::read_model_files(&folder)?.is_empty() {

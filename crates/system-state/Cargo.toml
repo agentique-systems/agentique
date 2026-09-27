@@ -10,4 +10,5 @@ agq-history = { path = "../history" }
 agq-language = { path = "../language" }
 
 [dev-dependencies]
+agq-history = { path = "../history", features = ["crash-test"] }
 tempfile.workspace = true
