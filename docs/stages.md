@@ -39,13 +39,13 @@ Status: **provisionally complete, pending Operator acceptance.**
   retired tools (#25). Node is down to one dev dependency (R-17).
 - Native Studio joined the root Cargo workspace with no dependency version
   change. Its evidence-generating harnesses are deleted; the UI driver and the
-  pan/zoom stress run compile only with `--features automation` (#26). The
+  pan/zoom stress run compile only with `--features automation` (#27). The
   production binary lost 29% of its source lines.
 - `models/agentique/` rewritten as the realigned architecture in SysML, and
   `tools/check_architecture.py` fails CI when a crate dependency contradicts it
-  (R-15, #27).
+  (R-15, #28).
 - `AGENTS.md` and `README.md` rewritten; still-valid decisions from the retired
-  records carried into REALIGNMENT §6.6 (#28).
+  records carried into REALIGNMENT §6.6 (#26).
 - Local leftovers `target-phase2-frontend/` and `test-results/` deleted.
 
 **Measured**
@@ -55,6 +55,9 @@ Status: **provisionally complete, pending Operator acceptance.**
 - Workspace tests: 1,117 passed, 0 failed, 13 ignored after the removals
   (1,254 with Native Studio in the workspace). CI takes about 17 minutes, most
   of it the language crates' tests.
+
+- Not tried: building the archive tag (it needs about 15 GB of free disk,
+  which this machine did not have during the run).
 
 **Decided overnight** (see REALIGNMENT §6.7):
 
