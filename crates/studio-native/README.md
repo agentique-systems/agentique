@@ -78,6 +78,13 @@ motion commands change the same settings. Environment variables
 Anthropic key saved in Settings is not used until W5.7 moves Anthropic onto
 the provider layer.
 
+The `e-settings` journey (Scenario E without keys or the network) opens
+Settings with Ctrl+, shows each section, searches with a synonym and closes:
+
+```text
+target\debug\agq-studio-native.exe --no-restore --session %TEMP%\agq-e\session.json --scenario e-settings --project %TEMP%\agq-e\demo --gallery %TEMP%\agq-e\shots
+```
+
 ## Type, motion and screen readers
 
 - **Tokens** (`tokens.rs`, ROADMAP §3.2): every size, radius, duration and
