@@ -125,7 +125,7 @@ impl LayoutInput {
         let hierarchy = options.layout == LayoutKind::Hierarchy;
         let mut displayable = BTreeMap::new();
         let mut ordered: Vec<_> = input.nodes.iter().collect();
-        ordered.sort_by_key(|n| (depths[&n.id], n.id));
+        ordered.sort_by_cached_key(|n| (depths[&n.id], n.id));
         for n in ordered {
             let parent_shown = parents.get(&n.id).is_none_or(|p| {
                 displayable.get(p).copied().unwrap_or(false)
@@ -357,7 +357,7 @@ impl LayoutEngine for HierarchyLayout {
             .map(|n| n.id)
             .collect();
         let mut ordered: Vec<_> = input.nodes.iter().collect();
-        ordered.sort_by_key(|n| std::cmp::Reverse((input.depths[&n.id], n.id)));
+        ordered.sort_by_cached_key(|n| std::cmp::Reverse((input.depths[&n.id], n.id)));
         let mut sizes = BTreeMap::new();
         let mut offsets = BTreeMap::new();
         for n in &ordered {

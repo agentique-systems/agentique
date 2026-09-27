@@ -41,9 +41,24 @@ URL shortener.
 
 `LayoutMemory` is saved with the session, never with the model.
 
-`Scene::apply_diff(before, changed)` marks added, changed and removed cards,
-ports and edges against an earlier scene; removed ones stay as ghosts where
-they were.
+`Scene::comparison(before, after, changed, options, previous_memory)` marks
+added, changed and removed cards, ports and edges against an earlier input;
+removed ones stay as ghosts where they were.
+
+## Updates after an edit
+
+`scene.update(input, options, previous_memory)` makes the scene for an edited
+input from the current scene (S5.1, R-28). Cards are placed exactly as
+`Scene::build` places them with that memory: the layout is cheap (about 10 to
+20 ms at 10k elements) and keeps unrelated cards still. Routing is not cheap
+(about 2 s at 10k), so an edge keeps its earlier route when its ends and lane
+are unchanged and the route crosses neither the old nor the new place of a
+card that was added, removed, moved or resized. Every other edge is routed
+again. `Scene::routing()` says how many edges were routed and how many kept.
+
+One deliberate difference from a build: a kept route can keep a detour that a
+build would no longer choose, around a card that has since moved or gone.
+Routes stay put, like cards; a build routes them all again.
 
 ## Routing, hit testing and culling
 
@@ -59,9 +74,13 @@ tolerance should be `pixels / zoom`.
 
 ```powershell
 cargo test -p agq-studio-scene
+cargo test --release -p agq-studio-scene --test budgets -- --nocapture --test-threads=1
 cargo run --release -p agq-studio-scene --example scene_benchmark
+cargo run --release -p agq-studio-scene --example edit_benchmark
 cargo run --release -p agq-studio-scene --example layout_quality
 ```
 
 The benchmarks measure CPU work only (layout, routing, indexing, hits and
 culling); GPU upload and frame timing are measured by the Studio.
+`edit_benchmark` compares a full build with an update for five kinds of edit
+at 1k and 10k elements, in both layouts.

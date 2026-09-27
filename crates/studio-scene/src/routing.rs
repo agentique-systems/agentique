@@ -1,16 +1,19 @@
 use crate::{
-    DiffMark, InputEdge, InputEnd, Point, PortSide, Rect, SceneEdge, SceneNode, ScenePort,
+    DiffMark, InputEdge, InputEnd, Point, PortSide, Rect, Scene, SceneEdge, SceneNode, ScenePort,
     spatial::RectIndex,
 };
 use agq_language::ElementId;
-use std::collections::BTreeMap;
+use std::{
+    collections::{BTreeMap, HashMap},
+    hash::{BuildHasherDefault, Hasher},
+};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RouteQuality {
     Clear,
     Obstructed,
 }
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 struct Endpoint {
     element: ElementId,
     point: Point,
@@ -19,12 +22,45 @@ struct Endpoint {
     bounds: Rect,
     side: PortSide,
 }
-type Ports<'a> = BTreeMap<(ElementId, ElementId), &'a ScenePort>;
+/// What a route depends on besides the cards in its way: where it starts
+/// and ends, and its lane among parallel edges.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct RouteEnds {
+    source: Endpoint,
+    target: Endpoint,
+    lane: f32,
+}
+/// The Fx hash, as in rustc, for maps keyed by element ids. Routing looks
+/// cards and ports up several times per edge; at 10k elements, ordered maps
+/// made an update's routing about twice as slow.
+#[derive(Default)]
+struct FxHasher(u64);
+impl Hasher for FxHasher {
+    fn finish(&self) -> u64 {
+        self.0
+    }
+    fn write(&mut self, bytes: &[u8]) {
+        for chunk in bytes.chunks(8) {
+            let mut word = [0; 8];
+            word[..chunk.len()].copy_from_slice(chunk);
+            self.write_u64(u64::from_le_bytes(word));
+        }
+    }
+    fn write_u64(&mut self, word: u64) {
+        self.0 = (self.0.rotate_left(5) ^ word).wrapping_mul(0x51_7c_c1_b7_27_22_0a_95);
+    }
+    fn write_usize(&mut self, word: usize) {
+        self.write_u64(word as u64);
+    }
+}
+type Map<K, V> = HashMap<K, V, BuildHasherDefault<FxHasher>>;
+type Nodes<'a> = Map<ElementId, &'a SceneNode>;
+type Ports<'a> = Map<(ElementId, ElementId), &'a ScenePort>;
 /// Edge ends as shown: a hidden card is replaced by the shown card that
 /// contains it, and a port by that card's boundary port when it has one.
 fn shown_end(
     end: InputEnd,
-    nodes: &BTreeMap<ElementId, &SceneNode>,
+    nodes: &Nodes<'_>,
     ports: &Ports<'_>,
     hidden: &BTreeMap<ElementId, ElementId>,
 ) -> Option<InputEnd> {
@@ -38,20 +74,61 @@ fn shown_end(
         port: end.port.filter(|port| ports.contains_key(&(node, *port))),
     })
 }
+/// The area a card keeps clear of routes; containers are open unless collapsed.
+fn obstacle(node: &SceneNode) -> Option<Rect> {
+    (!node.is_container || node.collapsed).then(|| node.bounds.inflate(10.0))
+}
+/// Routes the edges between the placed cards, and returns them with the
+/// number routed. With an `earlier` scene, an edge keeps its earlier route
+/// when its ends and lane are the same and the route crosses neither the old
+/// nor the new place of a card that was added, removed, moved or resized.
+/// Every other edge is routed again.
 pub(crate) fn route_edges(
-    nodes: &[SceneNode],
+    scene_nodes: &[SceneNode],
     ports: &[ScenePort],
     edges: &[InputEdge],
     hidden: &BTreeMap<ElementId, ElementId>,
-) -> Vec<SceneEdge> {
-    let nodes: BTreeMap<_, _> = nodes.iter().map(|n| (n.id(), n)).collect();
+    earlier: Option<&Scene>,
+) -> (Vec<SceneEdge>, usize) {
+    let nodes: Nodes<'_> = scene_nodes.iter().map(|n| (n.id(), n)).collect();
     let ports: Ports<'_> = ports.iter().map(|p| ((p.owner, p.id), p)).collect();
     let mut obstacles = RectIndex::new(320.0);
-    for n in nodes.values().filter(|n| !n.is_container || n.collapsed) {
-        obstacles.insert(n.bounds.inflate(10.0), (n.id(), n.bounds.inflate(10.0)));
+    for n in scene_nodes {
+        if let Some(area) = obstacle(n) {
+            obstacles.insert(area, (n.id(), area));
+        }
     }
-    let mut parallel = BTreeMap::<(InputEnd, InputEnd), usize>::new();
-    let mut result = Vec::new();
+    let mut changed = RectIndex::new(320.0);
+    let mut changed_bounds = None::<Rect>;
+    let mut mark = |id: ElementId, area: Rect| {
+        changed.insert(area, (id, area));
+        changed_bounds = Some(changed_bounds.map_or(area, |r| r.union(area)));
+    };
+    let mut kept: &[SceneEdge] = &[];
+    if let Some(earlier) = earlier {
+        let mut before: Map<_, _> = earlier
+            .nodes
+            .iter()
+            .filter_map(|n| Some((n.id(), obstacle(n)?)))
+            .collect();
+        for n in scene_nodes {
+            let now = obstacle(n);
+            let then = before.remove(&n.id());
+            if now != then {
+                for area in [now, then].into_iter().flatten() {
+                    mark(n.id(), area);
+                }
+            }
+        }
+        for n in &earlier.nodes {
+            if let Some(area) = before.remove(&n.id()) {
+                mark(n.id(), area);
+            }
+        }
+        kept = &earlier.edges;
+    }
+    let mut parallel = Map::<(InputEnd, InputEnd), usize>::default();
+    let mut routed = 0;
     let mut shown: Vec<_> = edges
         .iter()
         .filter_map(|edge| {
@@ -62,6 +139,7 @@ pub(crate) fn route_edges(
         .collect();
     shown.sort_by(|a, b| a.0.id.cmp(&b.0.id));
     let attachments = node_attachments(&nodes, &ports, &shown);
+    let mut result = Vec::with_capacity(shown.len());
     for (edge, source_end, target_end) in shown {
         let Some(source_center) = center(source_end, &nodes, &ports) else {
             continue;
@@ -95,30 +173,56 @@ pub(crate) fn route_edges(
         let index = parallel.entry(pair).or_default();
         let lane = *index as f32 * 11.0;
         *index += 1;
-        let (points, quality) = route(source, target, lane, &obstacles);
-        let bounds = points
-            .iter()
-            .copied()
-            .map(|p| Rect::new(p.x, p.y, 0.0, 0.0))
-            .reduce(Rect::union)
-            .unwrap_or_default();
+        let ends = RouteEnds {
+            source,
+            target,
+            lane,
+        };
+        // Both lists are in edge order, so the earlier edge is found by
+        // walking forward.
+        while kept.first().is_some_and(|e| e.semantic.id < edge.id) {
+            kept = &kept[1..];
+        }
+        let earlier_route = kept.first().filter(|e| {
+            e.semantic.id == edge.id
+                && e.ends == ends
+                && changed_bounds.is_none_or(|area| {
+                    !e.bounds.intersects(area)
+                        || blockers(&e.points, source.owner, target.owner, &changed).is_empty()
+                })
+        });
+        let (points, bounds, quality) = match earlier_route {
+            Some(e) => (e.points.clone(), e.bounds, e.quality),
+            None => {
+                routed += 1;
+                let (points, quality) = route(source, target, lane, &obstacles);
+                let bounds = points
+                    .iter()
+                    .copied()
+                    .map(|p| Rect::new(p.x, p.y, 0.0, 0.0))
+                    .reduce(Rect::union)
+                    .unwrap_or_default();
+                (points, bounds, quality)
+            }
+        };
         result.push(SceneEdge {
             semantic: edge.clone(),
             points,
             bounds,
             quality,
             diff: DiffMark::Unchanged,
+            ends,
         });
     }
-    result
+    (result, routed)
 }
 /// Separate attachment lanes for edges that end on a card's boundary rather
 /// than at a port. Drawing geometry only; ports keep their exact position.
 fn node_attachments<'a>(
-    nodes: &BTreeMap<ElementId, &SceneNode>,
+    nodes: &Nodes<'_>,
     ports: &Ports<'_>,
     edges: &[(&'a InputEdge, InputEnd, InputEnd)],
-) -> BTreeMap<(&'a str, bool), (f32, f32)> {
+) -> Map<(&'a str, bool), (f32, f32)> {
     let mut sides = BTreeMap::<(ElementId, bool), Vec<(&str, bool, f32)>>::new();
     for (edge, source, target) in edges {
         for (end, other, is_source) in [(*source, *target, true), (*target, *source, false)] {
@@ -135,7 +239,7 @@ fn node_attachments<'a>(
                 .push((edge.id.as_str(), is_source, toward.y));
         }
     }
-    let mut attachments = BTreeMap::new();
+    let mut attachments = Map::default();
     for ((id, _), mut entries) in sides {
         // Neighbour order prevents avoidable local crossings; identity breaks ties.
         entries.sort_by(|a, b| {
@@ -158,11 +262,7 @@ fn node_attachments<'a>(
     }
     attachments
 }
-fn center(
-    end: InputEnd,
-    nodes: &BTreeMap<ElementId, &SceneNode>,
-    ports: &Ports<'_>,
-) -> Option<Point> {
+fn center(end: InputEnd, nodes: &Nodes<'_>, ports: &Ports<'_>) -> Option<Point> {
     end.port
         .and_then(|port| ports.get(&(end.node, port)))
         .map(|p| p.position)
@@ -172,7 +272,7 @@ fn endpoint(
     end: InputEnd,
     toward: Point,
     attachment: Option<&(f32, f32)>,
-    nodes: &BTreeMap<ElementId, &SceneNode>,
+    nodes: &Nodes<'_>,
     ports: &Ports<'_>,
 ) -> Option<Endpoint> {
     if let Some(p) = end.port.and_then(|port| ports.get(&(end.node, port))) {
@@ -542,7 +642,7 @@ mod owner_route_tests {
         )
     }
     fn route_all(nodes: &[SceneNode], ports: &[ScenePort], edges: &[InputEdge]) -> Vec<SceneEdge> {
-        route_edges(nodes, ports, edges, &BTreeMap::new())
+        route_edges(nodes, ports, edges, &BTreeMap::new(), None).0
     }
     fn assert_boundary_route(
         route: &SceneEdge,

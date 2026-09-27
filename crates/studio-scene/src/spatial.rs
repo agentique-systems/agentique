@@ -1,20 +1,38 @@
 use crate::{Point, Rect, Scene, SceneTarget, VisibleScene, segment_distance};
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 
 /// Uniform world grid with an overflow lane for long edges/large containers.
 /// Each object is inserted once per touched cell; queries deduplicate identities.
+///
+/// The cells are one array that grows to cover what is inserted: indexing a
+/// 10k scene touches about 1.5 million cells, and a map of cells took most
+/// of that time.
 #[derive(Clone, Debug)]
 pub(crate) struct RectIndex<T> {
     cell: f32,
-    cells: BTreeMap<(i32, i32), Vec<usize>>,
+    /// The cell at the grid's top left, and the grid's size in cells.
+    first: (i32, i32),
+    columns: i32,
+    rows: i32,
+    /// Item numbers, row by row.
+    cells: Vec<Vec<u32>>,
     large: Vec<usize>,
     items: Vec<(Rect, T)>,
+}
+/// The most cells the grid grows to; what does not fit goes to the overflow lane.
+const MAX_CELLS: i64 = 1 << 18;
+/// The number of cells from (x0, y0) to (x1, y1), inclusive.
+fn span(x0: i32, y0: i32, x1: i32, y1: i32) -> i128 {
+    (i128::from(x1) - i128::from(x0) + 1) * (i128::from(y1) - i128::from(y0) + 1)
 }
 impl<T> RectIndex<T> {
     pub fn new(cell: f32) -> Self {
         Self {
             cell,
-            cells: BTreeMap::new(),
+            first: (0, 0),
+            columns: 0,
+            rows: 0,
+            cells: Vec::new(),
             large: Vec::new(),
             items: Vec::new(),
         }
@@ -31,20 +49,90 @@ impl<T> RectIndex<T> {
         let id = self.items.len();
         self.items.push((r, item));
         let (x0, y0, x1, y1) = self.range(r);
-        if (i128::from(x1) - i128::from(x0) + 1) * (i128::from(y1) - i128::from(y0) + 1) > 128 {
+        if span(x0, y0, x1, y1) > 128 || !self.cover(x0, y0, x1, y1) {
             self.large.push(id);
             return;
         }
         for y in y0..=y1 {
+            let row = (y - self.first.1) as usize * self.columns as usize;
             for x in x0..=x1 {
-                self.cells.entry((x, y)).or_default().push(id);
+                self.cells[row + (x - self.first.0) as usize].push(id as u32);
             }
         }
+    }
+    /// Grows the grid to cover the cells from (x0, y0) to (x1, y1), at least
+    /// doubling each side that grows, so repeated growth stays cheap. False
+    /// when that would take more than [`MAX_CELLS`].
+    fn cover(&mut self, x0: i32, y0: i32, x1: i32, y1: i32) -> bool {
+        let (fx, fy) = (i64::from(self.first.0), i64::from(self.first.1));
+        let (columns, rows) = (i64::from(self.columns), i64::from(self.rows));
+        // Ends are exclusive from here on.
+        let (x0, y0, x1, y1) = (
+            i64::from(x0),
+            i64::from(y0),
+            i64::from(x1) + 1,
+            i64::from(y1) + 1,
+        );
+        if x0 >= fx && y0 >= fy && x1 <= fx + columns && y1 <= fy + rows {
+            return true;
+        }
+        let exact = if self.cells.is_empty() {
+            (x0, y0, x1, y1)
+        } else {
+            (
+                x0.min(fx),
+                y0.min(fy),
+                x1.max(fx + columns),
+                y1.max(fy + rows),
+            )
+        };
+        let doubled = if self.cells.is_empty() {
+            exact
+        } else {
+            (
+                if x0 < fx { x0.min(fx - columns) } else { fx },
+                if y0 < fy { y0.min(fy - rows) } else { fy },
+                if x1 > fx + columns {
+                    x1.max(fx + 2 * columns)
+                } else {
+                    fx + columns
+                },
+                if y1 > fy + rows {
+                    y1.max(fy + 2 * rows)
+                } else {
+                    fy + rows
+                },
+            )
+        };
+        let fits = |(a, b, c, d): (i64, i64, i64, i64)| {
+            (c - a) * (d - b) <= MAX_CELLS
+                && a >= i64::from(i32::MIN)
+                && c <= i64::from(i32::MAX)
+                && b >= i64::from(i32::MIN)
+                && d <= i64::from(i32::MAX)
+        };
+        let Some((nx0, ny0, nx1, ny1)) = [doubled, exact].into_iter().find(|e| fits(*e)) else {
+            return false;
+        };
+        let new_columns = (nx1 - nx0) as usize;
+        let mut cells = vec![Vec::new(); new_columns * (ny1 - ny0) as usize];
+        for row in 0..rows {
+            for column in 0..columns {
+                let old = (row * columns + column) as usize;
+                let new = (fy + row - ny0) as usize * new_columns + (fx + column - nx0) as usize;
+                cells[new] = std::mem::take(&mut self.cells[old]);
+            }
+        }
+        self.first = (nx0 as i32, ny0 as i32);
+        self.columns = (nx1 - nx0) as i32;
+        self.rows = (ny1 - ny0) as i32;
+        self.cells = cells;
+        true
     }
     /// Each intersecting item once, in insertion order, including overflow items.
     pub fn query(&self, r: Rect) -> Vec<&T> {
         let (x0, y0, x1, y1) = self.range(r);
-        if (i128::from(x1) - i128::from(x0) + 1) * (i128::from(y1) - i128::from(y0) + 1) > 4096 {
+        if span(x0, y0, x1, y1) > 4096 {
             return self
                 .items
                 .iter()
@@ -53,10 +141,24 @@ impl<T> RectIndex<T> {
                 .collect();
         }
         let mut ids = Vec::new();
-        for y in y0..=y1 {
-            for x in x0..=x1 {
-                if let Some(cell) = self.cells.get(&(x, y)) {
-                    ids.extend(cell.iter().copied());
+        // Only the part of the query inside the grid has cells.
+        let (x0, x1) = (
+            x0.max(self.first.0),
+            x1.min(self.first.0.saturating_add(self.columns - 1)),
+        );
+        let (y0, y1) = (
+            y0.max(self.first.1),
+            y1.min(self.first.1.saturating_add(self.rows - 1)),
+        );
+        if !self.cells.is_empty() {
+            for y in y0..=y1 {
+                let row = (y - self.first.1) as usize * self.columns as usize;
+                for x in x0..=x1 {
+                    ids.extend(
+                        self.cells[row + (x - self.first.0) as usize]
+                            .iter()
+                            .map(|id| *id as usize),
+                    );
                 }
             }
         }
@@ -280,5 +382,37 @@ impl SpatialIndex {
             }
         }
         visible
+    }
+}
+
+#[cfg(test)]
+mod grid_tests {
+    use super::*;
+
+    #[test]
+    fn the_grid_grows_in_every_direction_and_far_items_overflow() {
+        let mut index = RectIndex::new(100.0);
+        let places = [
+            (0.0, 0.0),
+            (-950.0, 20.0),
+            (30.0, -1_720.0),
+            (4_000.0, 3_100.0),
+            (-12.5, 7_777.0),
+            (1.0e9, -1.0e9),
+        ];
+        for (i, (x, y)) in places.iter().enumerate() {
+            index.insert(Rect::new(*x, *y, 40.0, 30.0), i);
+        }
+        assert!(index.cells.len() as i64 <= MAX_CELLS);
+        assert_eq!(index.large, vec![5]);
+        for (i, (x, y)) in places.iter().enumerate() {
+            let hits = index.query(Rect::new(*x + 10.0, *y + 10.0, 1.0, 1.0));
+            assert_eq!(hits, vec![&i], "item {i}");
+        }
+        assert!(
+            index
+                .query(Rect::new(2_000.0, 2_000.0, 5.0, 5.0))
+                .is_empty()
+        );
     }
 }

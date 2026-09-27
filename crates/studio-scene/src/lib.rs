@@ -127,6 +127,8 @@ pub struct SceneEdge {
     pub bounds: Rect,
     pub quality: RouteQuality,
     pub diff: DiffMark,
+    /// What the route was made from, so an update can keep it.
+    ends: RouteEnds,
 }
 #[derive(Clone, Debug)]
 pub struct SceneContainer {
@@ -145,6 +147,13 @@ pub enum LayoutKind {
     Graph,
     /// Requirements, what satisfies them and their subjects, in lanes.
     Requirements,
+}
+/// How many edges a scene routed, and how many it kept from the scene it was
+/// updated from ([`Scene::update`]). A built scene routes every edge.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Routing {
+    pub routed: usize,
+    pub kept: usize,
 }
 #[derive(Clone, Debug, Default)]
 pub struct SceneOptions {
@@ -177,30 +186,65 @@ pub struct Scene {
     pub warnings: Vec<String>,
     bounds: Rect,
     memory: LayoutMemory,
+    routing: Routing,
+}
+/// The layout `options` choose.
+fn layout_for(input: &SceneInput, options: &SceneOptions) -> Box<dyn LayoutEngine> {
+    match options.layout {
+        LayoutKind::Requirements => Box::new(RequirementsLayout::new(input)),
+        LayoutKind::Hierarchy => Box::new(HierarchyLayout::default()),
+        LayoutKind::Graph => Box::new(GraphLayout::default()),
+    }
 }
 impl Scene {
+    /// Lays out every card and routes every edge. Cards keep their places
+    /// from `previous` where they still fit.
     pub fn build(
         input: &SceneInput,
         options: &SceneOptions,
         previous: Option<&LayoutMemory>,
     ) -> Result<Self, SceneError> {
-        match options.layout {
-            LayoutKind::Requirements => {
-                Self::with_layout(input, options, previous, &RequirementsLayout::new(input))
-            }
-            LayoutKind::Hierarchy => {
-                Self::with_layout(input, options, previous, &HierarchyLayout::default())
-            }
-            LayoutKind::Graph => {
-                Self::with_layout(input, options, previous, &GraphLayout::default())
-            }
-        }
+        Self::with_layout(input, options, previous, &*layout_for(input, options))
+    }
+    /// The scene for `input` after a change, made from this one. Cards are
+    /// placed exactly as [`Scene::build`] places them with `previous`
+    /// (normally this scene's memory), which is cheap; routing is not, so
+    /// only the edges the change touches are routed again. An edge keeps
+    /// its route when its ends and lane are unchanged and the route crosses
+    /// neither the old nor the new place of a card that was added, removed,
+    /// moved or resized. [`Scene::routing`] says how many were kept.
+    ///
+    /// One deliberate difference from a build: a kept route may still go
+    /// around a card that has since moved away, where a build would now
+    /// find a shorter one. Routes stay put, like cards.
+    pub fn update(
+        &self,
+        input: &SceneInput,
+        options: &SceneOptions,
+        previous: Option<&LayoutMemory>,
+    ) -> Result<Self, SceneError> {
+        Self::lay_out(
+            input,
+            options,
+            previous,
+            &*layout_for(input, options),
+            Some(self),
+        )
     }
     pub fn with_layout(
         input: &SceneInput,
         options: &SceneOptions,
         previous: Option<&LayoutMemory>,
         layout: &dyn LayoutEngine,
+    ) -> Result<Self, SceneError> {
+        Self::lay_out(input, options, previous, layout, None)
+    }
+    fn lay_out(
+        input: &SceneInput,
+        options: &SceneOptions,
+        previous: Option<&LayoutMemory>,
+        layout: &dyn LayoutEngine,
+        earlier: Option<&Scene>,
     ) -> Result<Self, SceneError> {
         let mut seen = BTreeSet::new();
         for n in &input.nodes {
@@ -328,7 +372,12 @@ impl Scene {
                 collapsed: n.collapsed,
             })
             .collect();
-        let edges = route_edges(&nodes, &ports, &input.edges, &layout_input.hidden);
+        let (edges, routed) =
+            route_edges(&nodes, &ports, &input.edges, &layout_input.hidden, earlier);
+        let routing = Routing {
+            routed,
+            kept: edges.len() - routed,
+        };
         let bounds = nodes
             .iter()
             .map(|n| n.bounds)
@@ -356,10 +405,14 @@ impl Scene {
             warnings,
             bounds,
             memory,
+            routing,
         })
     }
     pub fn bounds(&self) -> Rect {
         self.bounds
+    }
+    pub fn routing(&self) -> Routing {
+        self.routing
     }
     /// The bounds of the structure: every card except packages and secondary
     /// definitions. The whole scene when there is no structure.
