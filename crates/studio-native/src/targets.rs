@@ -11,6 +11,8 @@ pub enum Target {
     Field(&'static str),
     /// A button, by its label.
     Button(&'static str),
+    /// An element link in the Conversation, by the element's raw id.
+    Link(u64),
 }
 
 #[cfg(any(test, feature = "automation"))]

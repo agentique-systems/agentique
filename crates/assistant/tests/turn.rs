@@ -278,7 +278,9 @@ fn a_turn_builds_an_architecture_and_ends() {
             .content
             .contains("No problems at the changed elements.")
     );
-    assert!(!applied.elements.is_empty());
+    let summary = applied.change.as_ref().unwrap();
+    assert!(!summary.created.is_empty());
+    assert_eq!(summary.problems, 0);
     assert_eq!(
         results(&run.conversation.entries[6])[0].content,
         "No problems."

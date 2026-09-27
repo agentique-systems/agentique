@@ -6,11 +6,14 @@ mod app;
 #[cfg(feature = "automation")]
 mod automation;
 mod commands;
+mod conversation;
+mod conversation_ui;
 mod edit;
 mod gpu;
 mod gpu_timing;
 mod history;
 mod inspector;
+mod markdown;
 mod navigation;
 mod palette_ui;
 mod panels;
@@ -59,9 +62,9 @@ pub struct Args {
     /// Start without reopening the last project.
     #[arg(long)]
     no_restore: bool,
-    /// Drive the UI through a scripted journey (a-build, a-crash, a-reopen) or the camera benchmark (stress).
+    /// Drive the UI through a scripted journey (a-build, a-crash, a-reopen, a-assistant) or the camera benchmark (stress).
     #[cfg(feature = "automation")]
-    #[arg(long, value_parser = ["a-build", "a-crash", "a-reopen", "stress"])]
+    #[arg(long, value_parser = ["a-build", "a-crash", "a-reopen", "a-assistant", "stress"])]
     scenario: Option<String>,
     /// Write the scenario report (JSON) to this path.
     #[cfg(feature = "automation")]
@@ -83,10 +86,11 @@ impl Args {
     fn scenario_running(&self) -> bool {
         false
     }
-    /// The `a-build` journey creates the project at `--project` through the UI.
+    /// The `a-build` and `a-assistant` journeys create the project at
+    /// `--project` through the UI.
     #[cfg(feature = "automation")]
     fn creates_project(&self) -> bool {
-        self.scenario.as_deref() == Some("a-build")
+        matches!(self.scenario.as_deref(), Some("a-build" | "a-assistant"))
     }
     #[cfg(not(feature = "automation"))]
     fn creates_project(&self) -> bool {

@@ -285,5 +285,74 @@ target\debug\agq-studio-native.exe --no-restore --session %TEMP%\agq-session --s
 
 ## Stage 3: the Assistant
 
-Status: **in progress** (the Assistant crate and the Claude client are being
-built on branches; nothing is merged until Stage 2 is).
+Status: **built, provisionally complete, pending Operator acceptance. The live
+Claude API has not been tried**: there is no API key on the build machine, so
+everything is tested with a scripted stand-in model. (Stage 3 work started on
+2026-09-27 while the last Stage 2 changes were being merged; nothing of it
+merged before Stage 2 did.)
+
+**Done**
+
+- The Assistant (#36, `crates/assistant`): tools over the System State
+  (`read_model`, `find_elements`, `get_problems`, `apply_changes`,
+  `ask_operator`). `apply_changes` resolves every name, tries every operation
+  on a copy of the model and hands the Studio one change (one undo step); the
+  Studio applies it exactly like an Operator edit, so locks ask first and the
+  Surface highlights the change. The Claude API client streams with adaptive
+  thinking, checks tool input itself, uses prompt caching and server-side
+  refusal fallbacks, explains errors plainly, retries only before any output,
+  and stops within about 50 ms. The tool-use loop runs on a background thread.
+  Skills: the SysML subset, the slop rules, mapping ideas onto the
+  architecture first, asking on major decisions, locks, using the tools.
+- The Conversation panel (#37): a column in the Studio (Ctrl+J) with streamed
+  Markdown replies (own renderer on `pulldown-cmark`, cached), element names
+  as links that select on the Surface, tool calls as live cards (spinner,
+  what changed, problems; expandable), questions as prompts with option
+  buttons, Stop, Retry, edit-and-resend, Insert selection (Ctrl+I), a
+  missing-key banner, and "Undo the Assistant's changes". The conversation is
+  saved per project and restored on reopen.
+- Tests without network: 49 Assistant tests (canned streams, a local HTTP
+  stand-in, the loop on a real System State with a scripted model), 7 Studio
+  conversation tests, and the `a-assistant` journey through the UI (19 steps):
+  a scripted Assistant builds part of the URL shortener, asks whether click
+  statistics is a separate part, an element link selects on the Surface,
+  "add expiring links" hits the locked API and asks the Operator, Stop, and
+  undoing the Assistant's changes.
+
+**Decided overnight** (REALIGNMENT §6.7, pending the Operator's confirmation):
+Q-9, the conversation is stored per project in the app's local data next to
+the session file, not in the code repository; the default model is
+`claude-opus-5` (`AGENTIQUE_MODEL`) at effort `high` (`AGENTIQUE_EFFORT`), with
+server-side refusal fallbacks on; "Undo the Assistant's changes" undoes every
+change since the turn started and is offered only while nothing has changed
+since the turn ended.
+
+**Not done or not tried**
+
+- The live Claude API, including the small A1–A2 smoke test
+  (`cargo run -p agq-assistant --example smoke` needs `ANTHROPIC_API_KEY`).
+  Whether the real model follows the skills (asks on major decisions, maps
+  "expiring links" onto the architecture first, keeps names plain) is
+  therefore untested.
+- The light theme; very long conversations; Markdown tables; text selection
+  in replies (copy buttons instead); a virtualised message list.
+
+**Operator: try this**
+
+1. Set `ANTHROPIC_API_KEY` (optionally `AGENTIQUE_MODEL`), run
+   `cargo run --release -p agq-studio-native` and create a new project.
+2. Open the Conversation (Ctrl+J) and describe the URL shortener in ordinary
+   words (A1). Watch the parts, ports, interfaces and requirements appear, each
+   action as a card (A2); answer its questions; press Stop mid-way and undo the
+   Assistant's changes.
+3. Adjust by hand and in conversation (A3); lock the parts you consider settled
+   (A4); ask for "expiring links" (A8) and check that it explains what would
+   change and asks before touching a locked part.
+4. Close and reopen (A9): model, locks, history and conversation as left.
+
+Without a key, the scripted journey shows the same flow:
+
+```text
+cargo build -p agq-studio-native --features automation
+target\debug\agq-studio-native.exe --no-restore --session %TEMP%\agq-session --scenario a-assistant --project %TEMP%\agq-assistant --gallery %TEMP%\agq-shots
+```

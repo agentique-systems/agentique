@@ -34,6 +34,10 @@ pub enum CommandId {
     Theme,
     Contrast,
     ReducedMotion,
+    AskAssistant,
+    InsertSelection,
+    NewConversation,
+    ShowConversation,
 }
 
 pub struct Command {
@@ -259,6 +263,34 @@ pub const COMMANDS: &[Command] = &[
         description: "Camera moves and highlights without animation",
         key: None,
     },
+    Command {
+        id: CommandId::AskAssistant,
+        label: "Ask the Assistant",
+        shortcut: "Ctrl+L",
+        description: "Write a message in the Conversation",
+        key: Some((COMMAND, Key::L)),
+    },
+    Command {
+        id: CommandId::InsertSelection,
+        label: "Insert selection into the message",
+        shortcut: "Ctrl+I",
+        description: "Refer to the selected elements in the Conversation",
+        key: Some((COMMAND, Key::I)),
+    },
+    Command {
+        id: CommandId::NewConversation,
+        label: "New conversation",
+        shortcut: "",
+        description: "Start a new conversation with the Assistant; the model is unaffected",
+        key: None,
+    },
+    Command {
+        id: CommandId::ShowConversation,
+        label: "Show or hide the conversation",
+        shortcut: "Ctrl+J",
+        description: "The Conversation column on the right",
+        key: Some((COMMAND, Key::J)),
+    },
 ];
 
 pub fn command(id: CommandId) -> &'static Command {
@@ -273,6 +305,8 @@ pub fn command(id: CommandId) -> &'static Command {
 pub struct CommandContext {
     /// A dialog is waiting for the Operator.
     pub busy: bool,
+    /// A project is open (the Conversation belongs to it).
+    pub project: bool,
     /// A project is open (fixtures are read-only).
     pub editable: bool,
     /// Something is selected.
@@ -314,6 +348,10 @@ pub fn unavailable(id: CommandId, context: &CommandContext) -> Option<&'static s
             Some("Select a card in the graph view")
         }
         LeaveFocus if !context.focused => Some("Nothing is focused"),
+        AskAssistant | InsertSelection | NewConversation | ShowConversation if !context.project => {
+            Some("Open or create a project to work with the Assistant")
+        }
+        InsertSelection if !context.selected => Some("Select an element first"),
         _ => None,
     }
 }

@@ -84,6 +84,16 @@ pub enum Dialog {
         base: Option<u64>,
     },
 }
+/// What became of a change given to [`StudioApp::apply_change`].
+pub enum Outcome {
+    Applied(ChangeEvent),
+    /// The Operator is asked to confirm a change to locked elements.
+    Asking,
+    /// Not applied: rejected, refused by the Operator, or not saved.
+    NotApplied(ApplyError),
+    NoProject,
+}
+
 impl Dialog {
     pub fn new_project() -> Self {
         let folder = std::env::var_os("USERPROFILE")
@@ -314,39 +324,66 @@ impl StudioApp {
             });
             return None;
         }
-        self.apply_change(change)
+        match self.apply_change(change) {
+            Outcome::Applied(event) => Some(event),
+            _ => None,
+        }
     }
 
-    /// Applies a change without asking about shared definitions.
-    fn apply_change(&mut self, change: Change) -> Option<ChangeEvent> {
-        let project = self.project.as_mut()?;
+    /// Applies a change without asking about shared definitions: the one
+    /// path for the Operator's and the Assistant's changes. A change to
+    /// locked elements opens the confirmation; the Operator's answer
+    /// ([`answer`](Self::answer)) decides.
+    pub fn apply_change(&mut self, change: Change) -> Outcome {
+        let Some(project) = self.project.as_mut() else {
+            return Outcome::NoProject;
+        };
         let revision = project.state().revision();
         match project.apply(change.clone()) {
             Ok(event) => {
                 self.saved = Ok(());
                 self.status = event.description.clone();
                 self.changed(&event);
-                Some(event)
+                Outcome::Applied(event)
             }
             Err(ApplyError::Rejection(Rejection::Locked { elements })) => {
-                let tree = self.tree()?;
+                let Some(tree) = self.tree() else {
+                    return Outcome::NoProject;
+                };
                 let names: Vec<String> = elements
                     .iter()
                     .map(|id| tree.effective_name(*id).unwrap_or("element").to_string())
                     .collect();
-                let question = format!(
-                    "{} {} locked. Change {} anyway?",
-                    names.join(", "),
-                    if names.len() == 1 { "is" } else { "are" },
-                    if names.len() == 1 { "it" } else { "them" },
-                );
+                let one = names.len() == 1;
+                let question = if change.actor == Actor::Assistant {
+                    format!(
+                        "The Assistant wants to change {}, which {} locked. Allow this change?",
+                        names.join(", "),
+                        if one { "is" } else { "are" },
+                    )
+                } else {
+                    format!(
+                        "{} {} locked. Change {} anyway?",
+                        names.join(", "),
+                        if one { "is" } else { "are" },
+                        if one { "it" } else { "them" },
+                    )
+                };
                 self.dialog = Some(Dialog::Confirm {
                     change,
                     question,
                     locked: elements,
                     base: Some(revision),
                 });
-                None
+                Outcome::Asking
+            }
+            Err(ApplyError::Rejection(rejection @ Rejection::Stale { .. }))
+                if change.actor == Actor::Assistant && change.confirmed.is_empty() =>
+            {
+                // The model changed after the Assistant prepared this change
+                // (for example in a dialog the Operator had open): it reads
+                // the model again rather than overwrite that edit.
+                Outcome::NotApplied(ApplyError::Rejection(rejection))
             }
             Err(ApplyError::Rejection(Rejection::Stale { .. })) => {
                 // The model changed while the Operator was deciding: ask again.
@@ -359,7 +396,7 @@ impl StudioApp {
             }
             Err(ApplyError::Rejection(rejection)) => {
                 self.status = format!("{} was not done: {}", change.description, plain(&rejection));
-                None
+                Outcome::NotApplied(ApplyError::Rejection(rejection))
             }
             Err(ApplyError::Project(error)) => {
                 // The project reverted the change because it could not be saved.
@@ -368,7 +405,7 @@ impl StudioApp {
                     "Not applied: could not save “{}”: {error}",
                     change.description
                 );
-                None
+                Outcome::NotApplied(ApplyError::Project(error))
             }
         }
     }
@@ -637,19 +674,30 @@ impl StudioApp {
     }
 
     /// Answers the open confirmation. Yes applies the change with the locks
-    /// confirmed, at the revision it was asked at; no leaves the model as it is.
+    /// confirmed, at the revision it was asked at; no leaves the model as it
+    /// is. For the Assistant's change, the outcome is its tool result.
     pub fn answer(&mut self, yes: bool) {
-        if let Some(Dialog::Confirm {
+        let Some(Dialog::Confirm {
             mut change,
             locked,
             base,
             ..
         }) = self.dialog.take()
-            && yes
-        {
+        else {
+            return;
+        };
+        let assistant = change.actor == Actor::Assistant;
+        let outcome = if yes {
             change.confirmed = locked;
             change.base = base;
-            self.apply_change(change);
+            self.apply_change(change)
+        } else {
+            Outcome::NotApplied(ApplyError::Rejection(Rejection::Locked {
+                elements: locked,
+            }))
+        };
+        if assistant {
+            self.assistant_change_done(outcome);
         }
     }
 
@@ -863,15 +911,18 @@ impl StudioApp {
                         record(ui.ctx(), Target::Button("Change it"), button.rect);
                         confirmed = button.clicked()
                             || ui.input_mut(|i| i.consume_key(Modifiers::NONE, Key::Enter));
-                        if ui.button("Cancel").clicked() {
+                        let cancel = ui.button("Cancel");
+                        record(ui.ctx(), Target::Button("Cancel"), cancel.rect);
+                        if cancel.clicked() {
                             keep = false;
                         }
                     });
                 });
                 let _ = (locked, base);
-                if confirmed {
+                if confirmed || !keep {
+                    // Cancel and Escape refuse the change.
                     self.dialog = Some(dialog);
-                    self.answer(true);
+                    self.answer(confirmed);
                     return;
                 }
             }
@@ -1015,13 +1066,13 @@ mod tests {
 }
 
 #[cfg(test)]
-mod app_tests {
+pub(crate) mod app_tests {
     use super::*;
     use crate::app::StudioApp;
     use clap::Parser;
     use eframe::App;
 
-    struct Folder(std::path::PathBuf);
+    pub(crate) struct Folder(pub(crate) std::path::PathBuf);
     impl Drop for Folder {
         fn drop(&mut self) {
             let _ = std::fs::remove_dir_all(&self.0);
@@ -1029,7 +1080,7 @@ mod app_tests {
     }
 
     /// A Studio with a new project open, driven without a window.
-    fn studio(name: &str) -> (StudioApp, egui::Context, Folder) {
+    pub(crate) fn studio(name: &str) -> (StudioApp, egui::Context, Folder) {
         let folder = std::env::temp_dir().join(format!("agq-studio-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&folder);
         std::fs::create_dir_all(&folder).unwrap();
@@ -1048,7 +1099,7 @@ mod app_tests {
         (app, context, Folder(folder))
     }
 
-    fn frame(app: &mut StudioApp, context: &egui::Context, events: Vec<egui::Event>) {
+    pub(crate) fn frame(app: &mut StudioApp, context: &egui::Context, events: Vec<egui::Event>) {
         let _ = context.run(
             egui::RawInput {
                 screen_rect: Some(egui::Rect::from_min_size(
