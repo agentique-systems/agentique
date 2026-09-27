@@ -11,6 +11,7 @@ mod automation;
 mod budgets;
 mod commands;
 mod conversation;
+mod cost;
 mod conversation_ui;
 mod edit;
 mod gallery;

@@ -49,6 +49,11 @@ The column on the right (`conversation.rs` for the state and tool calls,
   `AGENTIQUE_PROVIDER`, `AGENTIQUE_MODEL`, `AGENTIQUE_EFFORT`; see the
   Assistant's README), named discreetly in the header. Without a key the
   column says how to add one and everything else works.
+- **Cost** (R-42): beside the model, the running or last turn's estimated
+  cost and today's total (UTC day, kept in `usage.json` beside the session
+  file), from the dated list prices in `agq-providers`; an estimate, never a
+  bill, and nothing is capped (C-37). Settings › Assistant › "Show estimated
+  cost" hides it.
 - **Thinking** shows as a collapsed row per step with its first line
   (R-31): Claude's summaries, or the reasoning of models that show it.
 - **Selecting text** (`markdown.rs`): dragging over the messages selects

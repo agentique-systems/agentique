@@ -53,6 +53,28 @@ pub struct Usage {
     pub output_tokens: u64,
 }
 
+impl Usage {
+    pub fn add(&mut self, other: Usage) {
+        self.input_tokens += other.input_tokens;
+        self.cache_creation_input_tokens += other.cache_creation_input_tokens;
+        self.cache_read_input_tokens += other.cache_read_input_tokens;
+        self.output_tokens += other.output_tokens;
+    }
+
+    /// The estimated cost in US dollars at `model`'s list price, from the
+    /// dated price table; `None` when the price is not known (C-37, R-42).
+    pub fn cost_usd(&self, model: &agq_providers::ModelRef) -> Option<f64> {
+        agq_providers::Usage {
+            input_tokens: self.input_tokens,
+            cache_write_tokens: self.cache_creation_input_tokens,
+            cache_read_tokens: self.cache_read_input_tokens,
+            output_tokens: self.output_tokens,
+            reasoning_tokens: 0,
+        }
+        .cost_usd(model)
+    }
+}
+
 /// A complete reply.
 #[derive(Clone, Debug, PartialEq)]
 pub struct Reply {
@@ -166,5 +188,33 @@ impl Model for ScriptedModel {
             }
         }
         Ok(reply)
+    }
+}
+
+#[cfg(test)]
+mod cost_tests {
+    use super::*;
+    use agq_providers::{ModelRef, Provider};
+
+    #[test]
+    fn a_turn_costs_its_tokens_at_the_list_price() {
+        let usage = Usage {
+            input_tokens: 1_000_000,
+            cache_creation_input_tokens: 0,
+            cache_read_input_tokens: 1_000_000,
+            output_tokens: 1_000_000,
+        };
+        // DeepSeek at its peak-hour list price: 0.30 in, 0.006 cached, 1.20 out.
+        let deepseek = ModelRef::new(Provider::DeepSeek, "deepseek-flash");
+        let cost = usage.cost_usd(&deepseek).unwrap();
+        assert!((cost - 1.506).abs() < 1e-9, "{cost}");
+        assert_eq!(
+            usage.cost_usd(&ModelRef::new(Provider::OpenAi, "unknown")),
+            None
+        );
+        let mut total = Usage::default();
+        total.add(usage);
+        total.add(usage);
+        assert_eq!(total.output_tokens, 2_000_000);
     }
 }

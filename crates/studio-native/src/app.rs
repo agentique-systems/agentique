@@ -40,6 +40,8 @@ pub struct StudioApp {
     system_theme: Option<egui::Theme>,
     /// Settings, and the view that edits them (Ctrl+,).
     pub settings: crate::settings_ui::SettingsView,
+    /// Today's estimated cost of the Assistant (R-42).
+    pub daily_cost: crate::cost::DailyCost,
     pub theme: Theme,
     pub reduced_motion: bool,
     pub adapter: String,
@@ -119,6 +121,7 @@ impl StudioApp {
         // journeys away from the Operator's own.
         let settings =
             crate::settings_ui::SettingsView::load(session_path.with_file_name("settings.json"));
+        let daily_cost = crate::cost::DailyCost::load(&session_path);
         let mut settings = settings;
         let mut session = session;
         // Appearance lives in Settings; a session from Stage 4 gives its
@@ -211,6 +214,7 @@ impl StudioApp {
             conversation: crate::conversation::ConversationPanel::with_choice(
                 settings.model_choice(),
             ),
+            daily_cost,
             settings,
             system_theme: None,
             last_saved: Instant::now(),
