@@ -32,6 +32,7 @@ mod session;
 // Settings view that uses it is W5.8.
 #[allow(dead_code)]
 mod settings;
+mod settings_ui;
 #[cfg(feature = "automation")]
 mod stress_automation;
 mod surface_recovery;

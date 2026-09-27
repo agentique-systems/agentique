@@ -56,6 +56,21 @@ The column on the right (`conversation.rs` for the state and tool calls,
   outside the view (which are not laid out) and replies streaming in below.
   Ctrl+C copies it in order; a click clears it.
 
+## Settings
+
+Ctrl+, (or the Settings button) shows Settings in place of the Surface and
+the Panels (`settings_ui.rs`; the table and `settings.json` are in
+`settings.rs`). Sections: Providers (paste a key, Test, Save; the key goes to
+the Windows Credential Manager and only its hint is shown again; the model
+list with capabilities and list prices), Assistant (provider, model, effort),
+Appearance, Keyboard and About; the search box finds rows by label,
+description and synonyms. Choices apply at once and are saved to
+`settings.json` beside the session file. The theme, contrast and reduced
+motion commands change the same settings. Environment variables
+(`DEEPSEEK_API_KEY`, `AGENTIQUE_PROVIDER`, ...) win over Settings; an
+Anthropic key saved in Settings is not used until W5.7 moves Anthropic onto
+the provider layer.
+
 ## Type, motion and screen readers
 
 - **Tokens** (`tokens.rs`, ROADMAP §3.2): every size, radius, duration and

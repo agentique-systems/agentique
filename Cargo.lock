@@ -169,6 +169,7 @@ version = "0.1.0"
 dependencies = [
  "agq-assistant",
  "agq-language",
+ "agq-providers",
  "agq-studio-scene",
  "agq-system-state",
  "bytemuck",

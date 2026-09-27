@@ -126,7 +126,12 @@ pub enum WaitingFor {
 
 impl Default for ConversationPanel {
     fn default() -> Self {
-        let choice = ModelChoice::from_env();
+        ConversationPanel::with_choice(ModelChoice::from_env())
+    }
+}
+
+impl ConversationPanel {
+    pub fn with_choice(choice: ModelChoice) -> Self {
         ConversationPanel {
             conversation: Conversation::default(),
             path: None,
@@ -150,9 +155,15 @@ impl Default for ConversationPanel {
             view: Default::default(),
         }
     }
-}
 
-impl ConversationPanel {
+    /// The model the next turn uses (Settings changed it); a running turn
+    /// keeps its own.
+    pub fn use_choice(&mut self, choice: ModelChoice) {
+        self.model_name = choice.label();
+        self.key_missing = (!choice.has_key()).then(|| choice.missing_key_message());
+        self.new_model = Box::new(move || choice.start());
+    }
+
     pub fn running(&self) -> bool {
         self.turn.is_some()
     }

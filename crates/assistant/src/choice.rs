@@ -1,5 +1,5 @@
-//! Which model the Assistant uses. Until Settings exists (W5.8) it comes
-//! from the environment:
+//! Which model the Assistant uses: Settings' choice (W5.8), with these
+//! environment variables winning over it:
 //!
 //! - `AGENTIQUE_PROVIDER`: `anthropic`, `deepseek`, `openai` or `openrouter`.
 //!   Without it, the first provider with a key, in that order (C-27 keeps
@@ -46,13 +46,31 @@ pub struct ModelChoice {
 
 impl ModelChoice {
     pub fn from_env() -> ModelChoice {
+        ModelChoice::configured(None, None, None)
+    }
+
+    /// The model from Settings (provider, model, effort; `None` or empty for
+    /// "automatic"), with the environment variables winning over each, as a
+    /// key's variable wins over a stored key (R-25):
+    /// `AGENTIQUE_PROVIDER`, `AGENTIQUE_MODEL`, `AGENTIQUE_EFFORT`.
+    pub fn configured(
+        provider: Option<&str>,
+        model: Option<&str>,
+        effort: Option<&str>,
+    ) -> ModelChoice {
         let var = |name: &str| {
             std::env::var(name)
                 .ok()
                 .map(|value| value.trim().to_string())
                 .filter(|value| !value.is_empty())
         };
-        let chosen = var("AGENTIQUE_PROVIDER");
+        let setting = |value: Option<&str>| {
+            value
+                .map(str::trim)
+                .filter(|value| !value.is_empty())
+                .map(str::to_string)
+        };
+        let chosen = var("AGENTIQUE_PROVIDER").or_else(|| setting(provider));
         // A provider whose models cannot use tools (TypeSafe AI's Jev) is
         // never the Assistant's (§4.8).
         let named = chosen
@@ -68,17 +86,19 @@ impl ModelChoice {
                     .find(|provider| usable_key(*provider))
             })
             .unwrap_or(Provider::Anthropic);
-        // AGENTIQUE_MODEL names a model of the chosen provider: it applies
-        // when the provider is named too, or to Anthropic as in Stage 3, so a
+        // A model id names a model of the chosen provider: it applies when
+        // the provider is named too, or to Anthropic as in Stage 3, so a
         // Claude model id left in the environment never goes to DeepSeek.
         let model = var("AGENTIQUE_MODEL")
+            .or_else(|| setting(model))
             .filter(|_| named.is_some() || provider == Provider::Anthropic)
             .unwrap_or_else(|| provider.default_model().to_string());
-        let mut choice = ModelChoice::new(ModelRef::new(provider, model), var("AGENTIQUE_EFFORT"));
+        let effort = var("AGENTIQUE_EFFORT").or_else(|| setting(effort));
+        let mut choice = ModelChoice::new(ModelRef::new(provider, model), effort);
         choice.named = chosen.is_some();
         if let Some(id) = chosen.filter(|_| named.is_none()) {
             choice.problem = Some(format!(
-                "AGENTIQUE_PROVIDER is `{id}`, which is not a provider the Assistant can use (anthropic, deepseek, openai, openrouter)."
+                "The provider is set to `{id}`, which is not a provider the Assistant can use (anthropic, deepseek, openai, openrouter)."
             ));
         }
         choice
@@ -129,8 +149,16 @@ impl ModelChoice {
                 .collect();
             format!(" (or another provider's key: {})", others.join(", "))
         };
+        // A key saved in Settings does not count for Anthropic until W5.7
+        // (`usable_key`).
+        if self.model.provider == Provider::Anthropic {
+            return format!(
+                "{problem}No {} key is set. Set {variable}{alternatives} and restart Agentique, or add another provider's key in Settings (Ctrl+,), to work with the Assistant. Everything else works as usual.",
+                self.model.provider.name()
+            );
+        }
         format!(
-            "{problem}No {} key is set. Set {variable}{alternatives} and restart Agentique to work with the Assistant. Everything else works as usual.",
+            "{problem}No {} key is set. Add one in Settings (Ctrl+,) or set {variable}{alternatives} to work with the Assistant. Everything else works as usual.",
             self.model.provider.name()
         )
     }

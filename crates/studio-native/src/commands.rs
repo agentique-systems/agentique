@@ -38,6 +38,7 @@ pub enum CommandId {
     InsertSelection,
     NewConversation,
     ShowConversation,
+    Settings,
 }
 
 pub struct Command {
@@ -291,6 +292,13 @@ pub const COMMANDS: &[Command] = &[
         description: "The Conversation column on the right",
         key: Some((COMMAND, Key::J)),
     },
+    Command {
+        id: CommandId::Settings,
+        label: "Settings",
+        shortcut: "Ctrl+,",
+        description: "Keys, the Assistant's model and appearance",
+        key: Some((COMMAND, Key::Comma)),
+    },
 ];
 
 pub fn command(id: CommandId) -> &'static Command {
@@ -325,7 +333,9 @@ pub struct CommandContext {
 pub fn unavailable(id: CommandId, context: &CommandContext) -> Option<&'static str> {
     use CommandId::*;
     match id {
-        _ if context.busy && !matches!(id, Palette | Theme | Contrast | ReducedMotion) => {
+        _ if context.busy
+            && !matches!(id, Palette | Theme | Contrast | ReducedMotion | Settings) =>
+        {
             Some("Finish or cancel the open dialog first")
         }
         CreatePart | CreatePort | CreateItem | CreateAttribute | CreateInterface

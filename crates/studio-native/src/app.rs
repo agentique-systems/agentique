@@ -36,6 +36,8 @@ pub enum Panel {
 
 pub struct StudioApp {
     pub args: Args,
+    /// Settings, and the view that edits them (Ctrl+,).
+    pub settings: crate::settings_ui::SettingsView,
     pub theme: Theme,
     pub reduced_motion: bool,
     pub adapter: String,
@@ -109,13 +111,24 @@ impl StudioApp {
             dark: !args.light,
             ..Default::default()
         });
-        let theme = Theme::new(session.dark && !args.light, session.high_contrast);
+        // Settings sit beside the session, so `--session` keeps tests and
+        // journeys away from the Operator's own.
+        let settings =
+            crate::settings_ui::SettingsView::load(session_path.with_file_name("settings.json"));
+        // Until the Operator chooses an appearance in Settings, the session's
+        // (from the commands of Stage 3) holds.
+        let (dark, contrast, reduced) = if settings.appearance_chosen() {
+            appearance(&settings, &cc.egui_ctx)
+        } else {
+            (session.dark, session.high_contrast, session.reduced_motion)
+        };
+        let theme = Theme::new(dark && !args.light, contrast);
         theme.install(&cc.egui_ctx);
-        if let Some(scale) = args.ui_scale.filter(|scale| scale.is_finite()) {
-            cc.egui_ctx.set_zoom_factor(scale.clamp(0.5, 3.0));
+        if let Some(scale) = ui_scale(&args, &settings) {
+            cc.egui_ctx.set_zoom_factor(scale);
         }
         // Scripted journeys run without animation so positions are final.
-        let reduced_motion = session.reduced_motion || args.scenario_running();
+        let reduced_motion = reduced || args.scenario_running();
         // Both the dark and the light style, so switching theme keeps it.
         cc.egui_ctx.all_styles_mut(|style| {
             style.animation_time = if reduced_motion {
@@ -180,7 +193,10 @@ impl StudioApp {
             session_path,
             fit_pending: true,
             surface_size: None,
-            conversation: Default::default(),
+            conversation: crate::conversation::ConversationPanel::with_choice(
+                settings.model_choice(),
+            ),
+            settings,
             last_saved: Instant::now(),
             saved_layout: Default::default(),
         };
@@ -223,7 +239,7 @@ impl StudioApp {
             });
         let state = self.project.as_ref().map(Project::state);
         CommandContext {
-            busy: self.dialog.is_some(),
+            busy: self.dialog.is_some() || self.settings.open,
             project: self.project.is_some(),
             editable: self.editable(),
             selected: self.selection.primary.is_some(),
@@ -753,25 +769,36 @@ impl StudioApp {
                     folder: String::new(),
                 })
             }
+            // The appearance commands change the setting, so Settings shows
+            // it and it holds at the next start.
             Theme => {
-                self.theme = crate::theme::Theme::new(!self.theme.dark, self.theme.contrast);
-                self.theme.install(ctx);
-                self.batch_key = None;
+                let theme = if self.theme.dark { "light" } else { "dark" };
+                self.settings
+                    .set_value("appearance.theme", serde_json::json!(theme));
+                self.apply_appearance(ctx);
             }
             Contrast => {
-                self.theme = crate::theme::Theme::new(self.theme.dark, !self.theme.contrast);
-                self.theme.install(ctx);
-                self.batch_key = None;
+                let theme = match (self.theme.contrast, self.theme.dark) {
+                    (false, _) => "high-contrast",
+                    (true, true) => "dark",
+                    (true, false) => "light",
+                };
+                self.settings
+                    .set_value("appearance.theme", serde_json::json!(theme));
+                self.apply_appearance(ctx);
             }
             ReducedMotion => {
-                self.reduced_motion = !self.reduced_motion;
-                ctx.all_styles_mut(|style| {
-                    style.animation_time = if self.reduced_motion {
-                        0.0
-                    } else {
-                        crate::theme::HOVER_SECONDS
-                    };
-                });
+                let reduced = if self.reduced_motion { "off" } else { "on" };
+                self.settings
+                    .set_value("appearance.reducedMotion", serde_json::json!(reduced));
+                self.apply_appearance(ctx);
+            }
+            Settings => {
+                if self.settings.open {
+                    self.settings.open = false;
+                } else {
+                    self.settings.show(crate::settings_ui::Section::Providers);
+                }
             }
             CreatePart | CreatePort | CreateItem | CreateAttribute | CreateInterface
             | CreateRequirement | Rename | Delete | Connect | MoveTo | Lock | Undo | Redo
@@ -788,6 +815,13 @@ impl StudioApp {
 
     /// Runs the command bound to a key pressed on the Surface.
     fn keyboard(&mut self, ctx: &egui::Context) {
+        if self.settings.open {
+            // Settings takes the keyboard; Ctrl+, or Escape closes it.
+            if ctx.input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::Comma)) {
+                self.settings.open = false;
+            }
+            return;
+        }
         if ctx.egui_wants_keyboard_input() || self.palette || self.dialog.is_some() {
             return;
         }
@@ -1024,6 +1058,67 @@ impl eframe::App for StudioApp {
     fn clear_color(&self, _visuals: &egui::Visuals) -> [f32; 4] {
         self.theme.canvas.to_normalized_gamma_f32()
     }
+}
+
+impl StudioApp {
+    /// Applies what Settings changed: the appearance at once, the model
+    /// from the next turn.
+    pub fn apply_settings(&mut self, ctx: &egui::Context, changed: crate::settings_ui::Changed) {
+        if changed.appearance {
+            self.apply_appearance(ctx);
+        }
+        if changed.assistant {
+            self.conversation.use_choice(self.settings.model_choice());
+        }
+    }
+
+    fn apply_appearance(&mut self, ctx: &egui::Context) {
+        let (dark, contrast, reduced) = appearance(&self.settings, ctx);
+        self.theme = Theme::new(dark && !self.args.light, contrast);
+        self.theme.install(ctx);
+        self.batch_key = None;
+        self.reduced_motion = reduced || self.args.scenario_running();
+        let animation_time = if self.reduced_motion {
+            0.0
+        } else {
+            crate::theme::HOVER_SECONDS
+        };
+        ctx.all_styles_mut(|style| style.animation_time = animation_time);
+        if let Some(scale) = ui_scale(&self.args, &self.settings) {
+            ctx.set_zoom_factor(scale);
+        }
+    }
+}
+
+/// Dark, high contrast and reduced motion as Settings has them. "Follow
+/// Windows" follows its light or dark theme; egui does not report Windows'
+/// animation setting, so reduced motion is off unless chosen.
+fn appearance(
+    settings: &crate::settings_ui::SettingsView,
+    ctx: &egui::Context,
+) -> (bool, bool, bool) {
+    let system_dark = ctx.system_theme() != Some(egui::Theme::Light);
+    let (dark, contrast) = match settings.text("appearance.theme").as_str() {
+        "light" => (false, false),
+        "dark" => (true, false),
+        "high-contrast" => (system_dark, true),
+        _ => (system_dark, false),
+    };
+    let reduced = settings.text("appearance.reducedMotion") == "on";
+    (dark, contrast, reduced)
+}
+
+/// `--ui-scale` wins over the setting; `None` leaves egui's own.
+fn ui_scale(args: &Args, settings: &crate::settings_ui::SettingsView) -> Option<f32> {
+    if let Some(scale) = args.ui_scale.filter(|scale| scale.is_finite()) {
+        return Some(scale.clamp(0.5, 3.0));
+    }
+    settings
+        .settings
+        .changed("appearance.uiScale")
+        .then(|| settings.settings.get("appearance.uiScale").as_f64())
+        .flatten()
+        .map(|scale| (scale as f32).clamp(1.0, 2.0))
 }
 
 pub fn muted(text: impl Into<String>, theme: Theme) -> egui::RichText {
