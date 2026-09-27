@@ -53,8 +53,10 @@ pub enum Operation {
         parent: Parent,
         element: Box<Element>,
     },
-    /// Removes an element and everything it owns. References to it remain and
-    /// are reported as problems until they are changed.
+    /// Removes an element and everything it owns. References to it keep the
+    /// name they were written with and are linked again by that name, as when
+    /// the saved text is read back; if nothing has the name they are reported
+    /// as problems until they are changed.
     Delete { element: ElementId },
     /// Gives an element a new name. References to it stay bound to it.
     Rename { element: ElementId, name: String },
@@ -318,6 +320,7 @@ impl SystemState {
             }
         }
         locks.retain(|id| tree.contains(*id));
+        unlink_removed(&mut tree);
         link(&mut tree);
         let before = Snapshot {
             tree: std::mem::replace(&mut self.tree, tree),
@@ -374,8 +377,11 @@ impl SystemState {
     /// Installs `snapshot` as the current state and returns the state it
     /// replaced, labelled with the snapshot's actor and description.
     fn swap(&mut self, snapshot: Snapshot) -> Snapshot {
+        let mut tree = snapshot.tree;
+        // Ids handed out before the undo are not handed out again.
+        tree.reserve_ids(self.tree.next_id());
         Snapshot {
-            tree: std::mem::replace(&mut self.tree, snapshot.tree),
+            tree: std::mem::replace(&mut self.tree, tree),
             locks: std::mem::replace(&mut self.locks, snapshot.locks),
             actor: snapshot.actor,
             description: snapshot.description,
@@ -658,15 +664,14 @@ pub struct Comparison {
 /// events and of the "what changed" view between checkpoints.
 ///
 /// It compares what elements mean, so a model and the same model saved and
-/// read back compare equal: where an element was read from does not count;
-/// a linked reference is its target, whatever name it was written with; and
-/// a reference to an element that is gone is the name it is saved as.
+/// read back compare equal: where an element was read from does not count,
+/// and a linked reference is its target, whatever name it was written with.
 pub fn compare(before: &Tree, after: &Tree) -> Comparison {
     let mut comparison = Comparison::default();
     for id in after.walk() {
         match before.get(id) {
             None => comparison.created.push(id),
-            Some(old) if !same(before, old, after, &after[id]) => comparison.updated.push(id),
+            Some(old) if !same(old, &after[id]) => comparison.updated.push(id),
             Some(_) => {}
         }
     }
@@ -678,34 +683,60 @@ pub fn compare(before: &Tree, after: &Tree) -> Comparison {
     comparison
 }
 
-fn same(before: &Tree, a: &Element, after: &Tree, b: &Element) -> bool {
-    a == b || meaning(before, a) == meaning(after, b)
+fn same(a: &Element, b: &Element) -> bool {
+    a == b || meaning(a) == meaning(b)
 }
 
-/// An element without its source location, with each linked reference step
-/// reduced to its target, and each step whose target is gone reduced to its
-/// written name.
-fn meaning(tree: &Tree, element: &Element) -> Element {
+/// An element without its source location and without the written names of
+/// linked reference steps.
+fn meaning(element: &Element) -> Element {
     let mut element = element.clone();
     element.location = None;
-    let references = element
+    for reference in references_mut(&mut element) {
+        for step in &mut reference.steps {
+            if step.target.is_some() {
+                step.name = QualifiedName::default();
+            }
+        }
+    }
+    element
+}
+
+/// Unlinks every reference with a step whose target was removed, so that
+/// linking binds it again by its written names, exactly as reading the saved
+/// text back does.
+fn unlink_removed(tree: &mut Tree) {
+    let gone = |tree: &Tree, target: Option<ElementId>| {
+        target.is_some_and(|t| !tree.contains(t) && !library().contains(t))
+    };
+    let holders: Vec<ElementId> = tree
+        .walk()
+        .into_iter()
+        .filter(|id| {
+            let references = tree[*id].references();
+            references
+                .iter()
+                .any(|(_, r)| r.steps.iter().any(|s| gone(tree, s.target)))
+        })
+        .collect();
+    for id in holders {
+        let mut element = tree[id].clone();
+        for reference in references_mut(&mut element) {
+            if reference.steps.iter().any(|s| gone(tree, s.target)) {
+                reference.steps.iter_mut().for_each(|s| s.target = None);
+            }
+        }
+        *tree.get_mut(id).expect("walked element exists") = element;
+    }
+}
+
+fn references_mut(element: &mut Element) -> impl Iterator<Item = &mut Reference> {
+    element
         .typed_by
         .iter_mut()
         .chain(&mut element.specializes)
         .chain(&mut element.redefines)
         .chain(&mut element.ends)
         .chain(&mut element.target)
-        .chain(&mut element.by);
-    for reference in references {
-        for step in &mut reference.steps {
-            match step.target {
-                Some(target) if tree.contains(target) || library().contains(target) => {
-                    step.name = QualifiedName::default();
-                }
-                Some(_) => step.target = None,
-                None => {}
-            }
-        }
-    }
-    element
+        .chain(&mut element.by)
 }
