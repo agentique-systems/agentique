@@ -119,6 +119,13 @@ pub const INPUTS: ThemeInputs = ThemeInputs {
     contrast: 1.0,
 };
 
+/// The high-contrast theme: the same hues, every step further from the
+/// background.
+pub const HIGH_CONTRAST: ThemeInputs = ThemeInputs {
+    contrast: 1.25,
+    ..INPUTS
+};
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Mode {
     Dark,
@@ -127,7 +134,7 @@ pub enum Mode {
 
 /// A generated theme: the neutral scale and the five roles (§3.2).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub struct Palette {
+pub struct Colours {
     pub mode: Mode,
     pub neutral: Scale,
     /// Selection, focus.
@@ -148,11 +155,11 @@ const WARNING_HUE: f32 = 75.0;
 const DANGER_HUE: f32 = 25.0;
 const INFO_HUE: f32 = 300.0;
 
-impl Palette {
-    pub fn generate(inputs: ThemeInputs, mode: Mode) -> Palette {
+impl Colours {
+    pub fn generate(inputs: ThemeInputs, mode: Mode) -> Colours {
         let neutral = scale(inputs.base_hue, 0.012, 0.0, mode, inputs.contrast);
         let role = |hue: f32| scale(hue, 0.05, 0.14, mode, inputs.contrast);
-        Palette {
+        Colours {
             mode,
             neutral,
             accent: role(inputs.accent_hue),
@@ -165,12 +172,14 @@ impl Palette {
 }
 
 /// Lightness of each step, as Radix spaces its steps: close backgrounds,
-/// then borders, then the solid colour, then text. Dark first; light mirrors.
+/// then borders, then the solid colour, then text. Dark first; light mirrors,
+/// with its solid steps a little darker so lines on panel backgrounds keep
+/// 3:1 (§3.5).
 const DARK_L: [f32; 12] = [
     0.17, 0.19, 0.225, 0.25, 0.28, 0.32, 0.37, 0.45, 0.62, 0.66, 0.80, 0.95,
 ];
 const LIGHT_L: [f32; 12] = [
-    0.99, 0.975, 0.95, 0.925, 0.90, 0.865, 0.82, 0.74, 0.62, 0.58, 0.45, 0.22,
+    0.99, 0.975, 0.95, 0.925, 0.90, 0.865, 0.82, 0.74, 0.60, 0.58, 0.45, 0.22,
 ];
 
 /// One 12-step scale: chroma rises from `soft` in the backgrounds to `solid`
@@ -180,10 +189,11 @@ fn scale(hue: f32, soft: f32, solid: f32, mode: Mode, contrast: f32) -> Scale {
         Mode::Dark => DARK_L,
         Mode::Light => LIGHT_L,
     };
-    let middle = 0.5;
+    // Contrast widens every step's distance from the background (step 1).
+    let background = lightness[0];
     let mut steps = [Rgba(0, 0, 0, 255); 12];
     for (index, l) in lightness.iter().enumerate() {
-        let l = (middle + (l - middle) * contrast).clamp(0.0, 1.0);
+        let l = (background + (l - background) * contrast).clamp(0.0, 1.0);
         let chroma = match index {
             0..=4 => soft,
             5..=7 => soft + (solid.max(soft) - soft) * 0.4,
@@ -226,6 +236,18 @@ pub fn oklch(l: f32, c: f32, h_degrees: f32) -> Rgba {
     }
 }
 
+/// Text and icons on a scale's solid colour (steps 9 and 10): white or
+/// black, whichever reads better.
+pub fn on_solid(scale: Scale) -> Rgba {
+    const WHITE: Rgba = Rgba(255, 255, 255, 255);
+    const BLACK: Rgba = Rgba(0, 0, 0, 255);
+    if contrast(WHITE, scale.step(9)) >= contrast(BLACK, scale.step(9)) {
+        WHITE
+    } else {
+        BLACK
+    }
+}
+
 /// WCAG contrast ratio between two opaque colours.
 pub fn contrast(a: Rgba, b: Rgba) -> f32 {
     let luminance = |c: Rgba| {
@@ -243,47 +265,169 @@ pub fn contrast(a: Rgba, b: Rgba) -> f32 {
     (la.max(lb) + 0.05) / (la.min(lb) + 0.05)
 }
 
-/// The components the design system provides (§3.2), each shown in the
-/// gallery (`--fixture components`, W5.2) in every state and theme before it
-/// is used (§8.5 rule 2).
-pub const COMPONENTS: &[(&str, &[&str])] = &[
-    ("button", &["primary", "secondary", "ghost", "danger"]),
-    ("icon button", &[]),
-    ("text field", &[]),
-    ("text area", &[]),
-    ("select", &[]),
-    ("toggle", &[]),
-    ("checkbox", &[]),
-    ("radio", &[]),
-    ("chip", &[]),
-    ("badge", &[]),
-    ("key cap", &[]),
-    ("tooltip", &[]),
-    ("banner", &[]),
-    ("inline message", &[]),
-    ("toast", &[]),
-    ("dialog", &[]),
-    ("empty state", &[]),
-    ("skeleton", &[]),
-    ("spinner", &[]),
-    ("progress", &[]),
-    ("focus ring", &[]),
-    ("card", &["part", "requirement", "agent"]),
-    ("port", &["in", "out", "inout"]),
-    ("edge", &[]),
-    ("container", &["expanded", "collapsed"]),
-    ("tool card", &[]),
-    ("thinking row", &[]),
-    ("plan card", &[]),
-    ("question card", &[]),
-    ("lock card", &[]),
-    ("note card", &[]),
-    ("turn summary", &[]),
-    ("composer", &[]),
-    ("command palette", &[]),
-    ("context menu", &[]),
-    ("panel", &["docked", "collapsed"]),
-    ("status bar", &[]),
+/// One component of the design system (§3.2).
+#[derive(Clone, Copy, Debug)]
+pub struct Component {
+    /// Shell, Surface, Panels, Command, Conversation or Primitives.
+    pub group: &'static str,
+    pub name: &'static str,
+    /// Kinds or sizes shown side by side.
+    pub variants: &'static [&'static str],
+    /// States of its own, shown besides the shared ones (`STATES`).
+    pub states: &'static [&'static str],
+}
+
+const fn component(
+    group: &'static str,
+    name: &'static str,
+    variants: &'static [&'static str],
+    states: &'static [&'static str],
+) -> Component {
+    Component {
+        group,
+        name,
+        variants,
+        states,
+    }
+}
+
+/// Every component of §3.2, each shown in the gallery (`--fixture
+/// components`, W5.2) in every state and theme before it is used (§8.5
+/// rule 2). Plan, question, lock and note cards and queued messages arrive
+/// with Stage 6.
+pub const COMPONENTS: &[Component] = &[
+    // Shell.
+    component("Shell", "title area", &["project name", "branch"], &[]),
+    component("Shell", "toolbar", &[], &[]),
+    component(
+        "Shell",
+        "status bar",
+        &[
+            "save state",
+            "problems",
+            "locks",
+            "background work",
+            "frame time",
+        ],
+        &[],
+    ),
+    component("Shell", "panel", &["docked"], &["collapsed", "resizing"]),
+    component("Shell", "splitter", &[], &[]),
+    component("Shell", "focus mode", &[], &[]),
+    // Surface.
+    component("Surface", "dot grid", &[], &["faded by zoom"]),
+    component(
+        "Surface",
+        "card",
+        &["part", "item", "interface", "requirement"],
+        &[],
+    ),
+    component("Surface", "card badge", &["lock", "problem", "agent"], &[]),
+    component(
+        "Surface",
+        "port",
+        &["in", "out", "inout"],
+        &["unconnected", "connected"],
+    ),
+    component("Surface", "edge", &["arrowhead by kind"], &[]),
+    component("Surface", "edge label pill", &[], &[]),
+    component(
+        "Surface",
+        "container",
+        &[],
+        &["expanded", "collapsed with boundary ports"],
+    ),
+    component("Surface", "selection ring", &[], &[]),
+    component("Surface", "marquee", &[], &[]),
+    component("Surface", "alignment guide", &[], &[]),
+    component("Surface", "change mark", &["added", "changed"], &[]),
+    component("Surface", "removal ghost", &[], &[]),
+    component("Surface", "minimap", &[], &[]),
+    component("Surface", "zoom controls", &[], &[]),
+    component("Surface", "colour-by overlay", &["legend"], &[]),
+    component("Surface", "level-of-detail tiers", &[], &[]),
+    // Panels.
+    component("Panels", "outline", &[], &[]),
+    component(
+        "Panels",
+        "inspector row",
+        &["label and value"],
+        &["invalid"],
+    ),
+    component("Panels", "requirements", &[], &[]),
+    component("Panels", "problems", &[], &[]),
+    component("Panels", "history", &["checkpoints", "what changed"], &[]),
+    // Command.
+    component(
+        "Command",
+        "command palette",
+        &["groups", "keywords", "shortcuts", "recent items"],
+        &["empty", "loading"],
+    ),
+    component("Command", "context menu", &[], &[]),
+    component("Command", "go to element", &[], &[]),
+    component("Command", "shortcut help", &[], &[]),
+    // Conversation.
+    component("Conversation", "operator message", &[], &[]),
+    component(
+        "Conversation",
+        "assistant message",
+        &["element links"],
+        &["streaming"],
+    ),
+    component(
+        "Conversation",
+        "thinking row",
+        &[],
+        &["collapsed", "expanded"],
+    ),
+    component("Conversation", "tool card", &["by kind"], WORK_STATES),
+    component("Conversation", "change chip", &[], &[]),
+    component("Conversation", "plan card", &[], &[]),
+    component(
+        "Conversation",
+        "question card",
+        &["options", "preview"],
+        &[],
+    ),
+    component("Conversation", "lock card", &["before and after"], &[]),
+    component("Conversation", "note card", &[], &[]),
+    component("Conversation", "queued message", &[], &[]),
+    component("Conversation", "turn summary", &[], &[]),
+    component("Conversation", "compaction divider", &[], &[]),
+    component(
+        "Conversation",
+        "composer",
+        &["context chips", "autonomy mode", "model picker"],
+        &["running (Stop)"],
+    ),
+    // Primitives.
+    component(
+        "Primitives",
+        "button",
+        &["primary", "secondary", "ghost", "danger", "24", "28", "32"],
+        &[],
+    ),
+    component("Primitives", "icon button", &[], &[]),
+    component("Primitives", "text field", &[], &["invalid"]),
+    component("Primitives", "text area", &[], &[]),
+    component("Primitives", "select", &[], &["open"]),
+    component("Primitives", "toggle", &[], &["on", "off"]),
+    component("Primitives", "checkbox", &[], &["checked", "unchecked"]),
+    component("Primitives", "radio", &[], &["checked", "unchecked"]),
+    component("Primitives", "chip", &[], &[]),
+    component("Primitives", "badge", &[], &[]),
+    component("Primitives", "key cap", &[], &[]),
+    component("Primitives", "tooltip", &["with shortcut"], &[]),
+    component("Primitives", "banner", &[], &[]),
+    component("Primitives", "inline message", &[], &[]),
+    component("Primitives", "toast", &["background event"], &[]),
+    component("Primitives", "dialog", &[], &[]),
+    component("Primitives", "empty state", &[], &[]),
+    component("Primitives", "skeleton", &[], &[]),
+    component("Primitives", "spinner", &[], &[]),
+    component("Primitives", "progress", &[], &[]),
+    component("Primitives", "focus ring", &[], &[]),
 ];
 
 /// The states every component shows the same way (§3.2 principle 4, §8.5).
@@ -306,28 +450,29 @@ pub const WORK_STATES: &[&str] = &[
 mod tests {
     use super::*;
 
+    const THEMES: [(Mode, ThemeInputs); 4] = [
+        (Mode::Dark, INPUTS),
+        (Mode::Light, INPUTS),
+        (Mode::Dark, HIGH_CONTRAST),
+        (Mode::Light, HIGH_CONTRAST),
+    ];
+
+    fn scales(colours: &Colours) -> [Scale; 6] {
+        [
+            colours.neutral,
+            colours.accent,
+            colours.success,
+            colours.warning,
+            colours.danger,
+            colours.info,
+        ]
+    }
+
     #[test]
-    fn body_text_and_lines_meet_their_contrast_in_every_theme() {
-        for (mode, inputs) in [
-            (Mode::Dark, INPUTS),
-            (Mode::Light, INPUTS),
-            (
-                Mode::Dark,
-                ThemeInputs {
-                    contrast: 1.25,
-                    ..INPUTS
-                },
-            ),
-            (
-                Mode::Light,
-                ThemeInputs {
-                    contrast: 1.25,
-                    ..INPUTS
-                },
-            ),
-        ] {
-            let palette = Palette::generate(inputs, mode);
-            let n = palette.neutral;
+    fn body_text_lines_and_text_on_solids_meet_their_contrast_in_every_theme() {
+        for (mode, inputs) in THEMES {
+            let colours = Colours::generate(inputs, mode);
+            let n = colours.neutral;
             for background in 1..=3 {
                 // Body copy at step 11 or 12 on steps 1–3 (§3.5): 4.5:1.
                 assert!(
@@ -338,33 +483,45 @@ mod tests {
                     contrast(n.step(12), n.step(background)) >= 7.0,
                     "{mode:?} step 12 on {background}"
                 );
+                // Lines and focus rings at step 9 on every panel background:
+                // 3:1 (§3.2, §3.5).
+                for scale in scales(&colours) {
+                    assert!(
+                        contrast(scale.step(9), n.step(background)) >= 3.0,
+                        "{mode:?} {inputs:?} step 9 on {background}"
+                    );
+                }
             }
-            // Lines and focus rings at step 9 or above: 3:1 (§3.2, §3.5).
-            for role in [
-                palette.accent,
-                palette.danger,
-                palette.success,
-                palette.warning,
-                palette.info,
-            ] {
-                assert!(contrast(role.step(9), n.step(1)) >= 3.0, "{mode:?} step 9");
+            // Text on a solid colour: 4.5:1.
+            for scale in scales(&colours) {
+                assert!(
+                    contrast(on_solid(scale), scale.step(9)) >= 4.5,
+                    "{mode:?} on solid"
+                );
             }
         }
     }
 
     #[test]
-    fn steps_move_away_from_the_background() {
-        let dark = Palette::generate(INPUTS, Mode::Dark).neutral;
-        let light = Palette::generate(INPUTS, Mode::Light).neutral;
-        for step in 2..=12 {
-            assert!(
-                contrast(dark.step(step), dark.step(1))
-                    >= contrast(dark.step(step - 1), dark.step(1))
-            );
-            assert!(
-                contrast(light.step(step), light.step(1))
-                    >= contrast(light.step(step - 1), light.step(1))
-            );
+    fn every_step_moves_further_from_the_background_and_high_contrast_further_still() {
+        for (mode, inputs) in THEMES {
+            let colours = Colours::generate(inputs, mode);
+            let normal = Colours::generate(INPUTS, mode);
+            for (scale, normal_scale) in scales(&colours).into_iter().zip(scales(&normal)) {
+                let background = colours.neutral.step(1);
+                for step in 2..=12 {
+                    assert!(
+                        contrast(scale.step(step), background)
+                            > contrast(scale.step(step - 1), background),
+                        "{mode:?} {inputs:?} step {step}"
+                    );
+                    assert!(
+                        contrast(scale.step(step), background)
+                            >= contrast(normal_scale.step(step), normal.neutral.step(1)) - 0.01,
+                        "{mode:?} {inputs:?} step {step} loses contrast"
+                    );
+                }
+            }
         }
     }
 
@@ -381,5 +538,26 @@ mod tests {
     fn the_spacing_grid_is_on_four_pixels_after_the_half_steps() {
         assert!(space::GRID.iter().all(|value| value % 2.0 == 0.0));
         assert!(space::GRID[4..].iter().all(|value| value % 4.0 == 0.0));
+    }
+
+    #[test]
+    fn the_component_list_covers_every_group_once() {
+        for group in [
+            "Shell",
+            "Surface",
+            "Panels",
+            "Command",
+            "Conversation",
+            "Primitives",
+        ] {
+            assert!(COMPONENTS.iter().any(|c| c.group == group), "{group}");
+        }
+        let mut names: Vec<_> = COMPONENTS.iter().map(|c| c.name).collect();
+        names.sort_unstable();
+        let count = names.len();
+        names.dedup();
+        assert_eq!(names.len(), count, "a component is listed twice");
+        let tool_card = COMPONENTS.iter().find(|c| c.name == "tool card").unwrap();
+        assert_eq!(tool_card.states, WORK_STATES);
     }
 }

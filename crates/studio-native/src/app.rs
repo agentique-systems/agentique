@@ -427,6 +427,8 @@ impl StudioApp {
                     "stress1000" => fixtures::stress(1000, 2000),
                     "stress10000" => fixtures::stress(10000, 20000),
                     "diff" => fixtures::change().1,
+                    // The gallery shows no Surface.
+                    "components" => SceneInput::default(),
                     _ => fixtures::architecture(),
                 };
                 input.generation = self.generation;

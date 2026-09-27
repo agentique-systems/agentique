@@ -38,9 +38,11 @@ mod surface_recovery;
 mod targets;
 mod theme;
 mod timing;
-// Design tokens and the component list (interface 3 of ROADMAP §6.2); the
-// Studio's drawing moves onto them in W5.2.
-#[allow(dead_code)]
+// Design tokens and the component list (interface 3 of ROADMAP §6.2).
+#[allow(
+    dead_code,
+    reason = "the Studio's drawing moves onto the tokens in W5.2; the gallery shows them all now"
+)]
 mod tokens;
 mod viewport;
 mod zoom_input;

@@ -2,7 +2,8 @@
 //! depth and motion. The Studio's chrome, Surface and labels take their colours
 //! and sizes from here. Items still marked `allow(dead_code)` are not used yet.
 //!
-//! The file depends on `egui` only, so prototypes can include it unchanged.
+//! W5.2 moves these values onto `tokens.rs`; the camera's duration already
+//! comes from there.
 use eframe::egui::{
     self, Color32, CornerRadius, FontData, FontDefinitions, FontFamily, FontId, Margin, Painter,
     Pos2, Rect, RichText, Shadow, Stroke, Vec2,

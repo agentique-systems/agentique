@@ -150,6 +150,20 @@ impl StudioApp {
             egui::CentralPanel::default().show(root, |ui| self.start_screen(ui, ctx));
             return;
         }
+        // The component gallery takes the place of the Outline, the Surface
+        // and the Panels.
+        if self.fixture.as_deref() == Some("components") {
+            egui::CentralPanel::default()
+                .frame(
+                    egui::Frame::NONE
+                        .fill(theme.canvas)
+                        .inner_margin(egui::Margin::same(
+                            crate::tokens::space::PANEL_PADDING as i8,
+                        )),
+                )
+                .show(root, |ui| crate::gallery::show(ui, theme));
+            return;
+        }
         egui::Panel::left("outline")
             .default_size(250.0)
             .frame(
@@ -199,13 +213,7 @@ impl StudioApp {
             });
         egui::CentralPanel::default()
             .frame(egui::Frame::NONE.fill(theme.canvas))
-            .show(root, |ui| {
-                if self.fixture.as_deref() == Some("components") {
-                    crate::gallery::show(ui, theme);
-                } else {
-                    self.viewport(ui);
-                }
-            });
+            .show(root, |ui| self.viewport(ui));
     }
 
     /// The cards on the Surface as an indented list; click to select.
