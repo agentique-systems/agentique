@@ -63,7 +63,8 @@ impl Switch {
 
 /// rig's HTTP client for Anthropic: reqwest, with the `fallback` block's
 /// frames removed from streamed responses. Clones share what the latest
-/// streamed response said about a switch.
+/// streamed response said about a switch, so each call builds its own client
+/// (as `chat::call` does); a client shared between calls would mix them up.
 #[derive(Clone, Debug, Default)]
 pub(crate) struct HttpClient {
     inner: reqwest::Client,
@@ -217,7 +218,15 @@ impl Filter {
                 }
                 true
             }
-            Some("content_block_delta" | "content_block_stop") => {
+            Some("content_block_stop") => {
+                // A block's index is not reused after its stop.
+                if self.fallbacks.remove(&index) {
+                    return false;
+                }
+                self.empty_thinking.remove(&index);
+                true
+            }
+            Some("content_block_delta") => {
                 if self.fallbacks.contains(&index) {
                     return false;
                 }

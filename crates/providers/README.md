@@ -69,4 +69,6 @@ a retried rate limit, a missing key, a stop within 200 ms of a silent stream
 and a reply continued by a fallback model; the fallback filter is also tested
 on streams split into chunks of 1 to 97 bytes. Only DeepSeek has been tried
 live (§7.6, C-35); the Anthropic, OpenAI and OpenRouter paths are tested on
-canned streams only.
+canned streams only. The fallback filter assumes, untried live, that the
+declined model's last block ends before the `fallback` block starts, as
+Anthropic's documentation shows.
