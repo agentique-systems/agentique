@@ -616,17 +616,19 @@ mod name_tests {
             "VeryLongNamespaceWithoutWordBreaks".repeat(30)
         );
         for width in [214.0, 254.0, 380.0] {
-            let _ = ctx.run(egui::RawInput::default(), |ctx| {
-                egui::SidePanel::right("inspector-name")
-                    .exact_width(width)
+            ctx.run_ui(egui::RawInput::default(), |ui| {
+                egui::Panel::right("inspector-name")
+                    .exact_size(width)
                     .resizable(false)
                     .frame(egui::Frame::NONE)
-                    .show(ctx, |ui| {
+                    .show(ui, |ui| {
                         let response = inspector_name(ui, &name);
                         assert!(response.rect.width() <= width + 1.0);
                         assert!(response.rect.height() <= crate::theme::TITLE * 4.0);
                     });
-            });
+            })
+            .textures_delta
+            .clear();
         }
     }
 }

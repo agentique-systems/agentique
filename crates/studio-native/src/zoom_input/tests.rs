@@ -36,8 +36,8 @@ impl Harness {
             .unwrap()
             .native_pixels_per_point = Some(dpi);
         let ctx = self.ctx.clone();
-        let _ = ctx.run(input, |ctx| {
-            egui::CentralPanel::default().show(ctx, |ui| {
+        ctx.run_ui(input, |ui| {
+            egui::CentralPanel::default().show(ui, |ui| {
                 let (rect, response) =
                     ui.allocate_exact_size(ui.available_size(), Sense::click_and_drag());
                 self.viewport = rect;
@@ -58,7 +58,9 @@ impl Harness {
                     apply(ui, &response, &mut self.camera);
                 }
             });
-        });
+        })
+        .textures_delta
+        .clear();
     }
     fn world_at(&self, pointer: Pos2) -> Point {
         self.camera.screen_to_world(Point::new(
@@ -69,6 +71,7 @@ impl Harness {
 }
 fn wheel(delta: f32) -> Event {
     Event::MouseWheel {
+        phase: egui::TouchPhase::Move,
         unit: MouseWheelUnit::Point,
         delta: Vec2::new(0.0, delta),
         modifiers: Modifiers::NONE,

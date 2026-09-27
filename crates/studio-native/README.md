@@ -49,6 +49,28 @@ The column on the right (`conversation.rs` for the state and tool calls,
   column says which variable to set and everything else works.
 - **Thinking** shows as a collapsed row per step with its first line
   (R-31): Claude's summaries, or the reasoning of models that show it.
+- **Selecting text** (`markdown.rs`): dragging over the messages selects
+  across paragraphs, code blocks and messages; past the top or bottom of the
+  list it scrolls. The selection is kept by place in the text (message,
+  block, character), not by widget, so it survives scrolling, messages
+  outside the view (which are not laid out) and replies streaming in below.
+  Ctrl+C copies it in order; a click clears it.
+
+## Type, motion and screen readers
+
+- **Type**: Inter's variable font (`assets/fonts/InterVariable.ttf`, Inter
+  4.1, OFL) at `wght` 400, 500 and 600 (`theme.rs`), not synthetic bold.
+  `--ui-scale 1.5` scales the UI as display scaling does, for checking text
+  at 100%, 150% and 200% on one display.
+- **Motion** (`motion.rs`): a tween (a duration token along a Fluent 2
+  easing curve) and a critically damped spring. Fit view is a 300 ms tween;
+  following the selection uses springs, which keep their velocity when the
+  target changes. Reduced motion makes both instant.
+- **Screen readers** (`accessibility.rs`, AccessKit): every message is an
+  article named by who wrote it and its text, every tool card a group named
+  by its title and status; the Surface is a list whose items are the
+  selected elements and the card under the pointer, which the GPU draws
+  without widgets.
 
 Tests (`cargo test -p agq-studio-native conversation`) drive the Conversation
 with a scripted model on a real project; the `a-assistant` journey does the
@@ -57,4 +79,13 @@ same through the UI:
 ```text
 cargo build -p agq-studio-native --features automation
 target\debug\agq-studio-native.exe --no-restore --session %TEMP%\agq-a\session.json --scenario a-assistant --project %TEMP%\agq-a\demo --gallery %TEMP%\agq-a\shots
+```
+
+The Conversation benchmark (ROADMAP S4.1, gate G3) generates a
+200-message conversation in a new project, scrolls it and streams a reply
+into it at about 100 tokens a second, and reports frame times:
+
+```text
+cargo build --release -p agq-studio-native --features automation
+target\release\agq-studio-native.exe --no-restore --session %TEMP%\agq-chat\session.json --scenario chat --project %TEMP%\agq-chat\project --scenario-report %TEMP%\agq-chat\report.json
 ```

@@ -117,10 +117,9 @@ impl LayoutInput {
                     None => break,
                 }
             }
-            let mut depth = depths.get(&id).copied().map_or(0, |d| d + 1);
-            for id in path.into_iter().rev() {
+            let first = depths.get(&id).copied().map_or(0, |d| d + 1);
+            for (depth, id) in (first..).zip(path.into_iter().rev()) {
                 depths.insert(id, depth);
-                depth += 1;
             }
         }
         let hierarchy = options.layout == LayoutKind::Hierarchy;

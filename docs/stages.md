@@ -471,19 +471,29 @@ Decision by its rule: proceed with rig for every provider (C-34). Anthropic
 moves onto it in W5.7; P2 needs a live Anthropic key before the hand-written
 client is removed.
 
-**S4.1: toolkit** (in progress when this was written)
+**S4.1: toolkit** (provisional, pending the Operator: blind scoring and the
+gates that need a person)
 
-- Track A (egui 0.36.2 with wgpu 30, Inter's variable weights, a spring and
-  tween motion layer, selection across Conversation messages, screen-reader
-  names) is being built and its automated gates G1–G8 measured by a builder;
-  the results and the decision by the rule are added to this section when its
-  pull request opens. Its code, once reviewed, becomes W5.1 (§7.6).
-- Track B (GPUI): **not tried**: under 12 GB of disk was free while Track A
-  built; a switch to GPUI also needs the Operator to accept the governance
-  risk (§7.6), so tonight's decision can only be "stay with egui 0.36" or
-  "both fail a gate".
-- G6 (Narrator) and G7 (Japanese IME) need a person; blind scoring waits for
-  the Operator.
+| Gate | Track A: egui 0.36.2, wgpu 30 (#54) |
+|---|---|
+| G1 toolkit cost | 1k pan and zoom p95 6.26–6.40 ms (UI CPU p95 2.1–2.4 ms): within 8.3 ms; 10k camera-only toolkit cost estimated at about 1.4 ms of CPU (steady frames minus the Surface's own work): within 2 ms. The 30-second run with every panel open and chat streaming, and the maximum frame, were not tried. Partially measured |
+| G2 input to present | not measured; the proxy, input to next update, is 5.7 ms at 1k. Not tried |
+| G3 chat | 200 messages, 59,800 words: scroll p95 6.23 ms, streaming p95 6.25 ms, first frame after loading 25.8 ms (in memory, not from disk). Works |
+| G4 selection across messages | an automated journey drags across three messages while a reply streams in below and checks the copied text; a unit test checks the copy order. Works (automated); not tried by hand |
+| G5 real weights | Inter's variable font at 400, 500 and 600, checked at 100%, 150% and 200% by a test and screenshots. Works; at 150% and 200% a 1600×1000 window is narrower than the Studio's minimum width, so the top bar's buttons overlap |
+| G6 Narrator | needs the Operator; the automated proxy (seven AccessKit names and roles) passes |
+| G7 Japanese IME | needs the Operator |
+| G8 builds | clean release build 10 min 44 s; release rebuild 3 min 38 s; debug rebuild of the Studio 7–17 s; executable 29.9 MB (was 21.6 MB). Partially measured |
+
+Track B (GPUI): **not tried**: under 12 GB of disk was free while Track A
+built, and switching needs the Operator to accept the governance risk
+(§7.6). Provisional decision: **stay with egui 0.36**. The rule cannot settle it
+yet: G2, G6 and G7 were not tried for Track A and Track B was not tried at
+all. Track A failed no gate it was measured on, and without Track B there is
+nothing to switch to. Decided overnight 2026-09-28, pending the Operator's
+scoring of text and motion and the gates that need a person.
+Track A's code is kept as W5.1 (#54). egui 0.36 needs Rust 1.95, so the
+toolchain moved to 1.97.1.
 
 **Decided overnight** (ROADMAP §7.6 and §7.4, each pending the Operator's
 confirmation): S4.2's code kept as the start of W5.7; native-tls; Anthropic
@@ -491,7 +501,8 @@ stays on the hand-written client until W5.7; Q-10 (app data), Q-17 (Inter),
 Q-18 (a thin adapter); interim CI ceilings for budgets not met yet; conversation
 format 2 specified rather than coded, since W5.7 is not fanned out; the tokens
 interface moved to the start of Stage 5; Track B not tried (disk); the
-thinking row hides SysML lines of reasoning (C-4, #50).
+thinking row hides SysML lines of reasoning (C-4, #50); S4.1 stays with egui
+0.36 and keeps Track A as W5.1.
 
 **Not done or not tried**
 

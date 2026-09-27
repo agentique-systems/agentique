@@ -48,7 +48,7 @@ impl StudioApp {
             .min_width(WIDTH)
             .max_width(WIDTH)
             .frame(
-                egui::Frame::window(&ctx.style())
+                egui::Frame::window(&ctx.global_style())
                     .inner_margin(0)
                     .corner_radius(theme::RADIUS_XL),
             )
@@ -76,7 +76,7 @@ impl StudioApp {
                                         "Search commands, or type an element name to focus it…",
                                     )
                                     .font(theme::regular(theme::HEADING + 1.0))
-                                    .frame(false)
+                                    .frame(egui::Frame::NONE)
                                     .margin(Vec2::ZERO)
                                     .desired_width(f32::INFINITY),
                             )

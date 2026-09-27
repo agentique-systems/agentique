@@ -1000,7 +1000,7 @@ pub fn modal(
         .stroke(egui::Stroke::new(tokens::HAIRLINE, theme.border))
         .corner_radius(tokens::RADIUS_XL)
         .inner_margin(egui::Margin::same(tokens::SPACE_XL as i8))
-        .shadow(ctx.style().visuals.window_shadow);
+        .shadow(ctx.global_style().visuals.window_shadow);
     egui::Modal::new(egui::Id::new(("studio-dialog", title)))
         .frame(frame)
         .backdrop_color(theme.backdrop)
@@ -1099,8 +1099,13 @@ pub(crate) mod app_tests {
         (app, context, Folder(folder))
     }
 
-    pub(crate) fn frame(app: &mut StudioApp, context: &egui::Context, events: Vec<egui::Event>) {
-        let _ = context.run(
+    /// One frame of the Studio with `events`; what it asked of the platform.
+    pub(crate) fn frame(
+        app: &mut StudioApp,
+        context: &egui::Context,
+        events: Vec<egui::Event>,
+    ) -> egui::PlatformOutput {
+        let mut output = context.run_ui(
             egui::RawInput {
                 screen_rect: Some(egui::Rect::from_min_size(
                     egui::Pos2::ZERO,
@@ -1109,8 +1114,10 @@ pub(crate) mod app_tests {
                 events,
                 ..Default::default()
             },
-            |context| app.update(context, &mut eframe::Frame::_new_kittest()),
+            |ui| app.ui(ui, &mut eframe::Frame::_new_kittest()),
         );
+        output.textures_delta.clear();
+        output.platform_output
     }
 
     fn key(key: egui::Key) -> Vec<egui::Event> {

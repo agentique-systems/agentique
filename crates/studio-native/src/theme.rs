@@ -87,6 +87,9 @@ pub const GLOW_WIDTH: f32 = 14.0;
 /// egui's `animation_time` for hover and press transitions. The app applies
 /// it, or zero under reduced motion; `Theme::install` leaves it alone.
 pub const HOVER_SECONDS: f32 = 0.10;
+/// Camera moves: fit view and following the selection (Fluent 2
+/// `durationSlow`). Reduced motion makes them instant (`motion`).
+pub const CAMERA_SECONDS: f32 = 0.30;
 /// How long a changed element stays highlighted.
 pub const CHANGED_SECONDS: f32 = 1.5;
 /// How long the highlight takes to reach full strength.
@@ -109,15 +112,18 @@ pub fn changed_intensity(age: f32) -> f32 {
     rise * fall * fall
 }
 
-// Fonts: Inter 4.1 (https://github.com/rsms/inter/releases/tag/v4.1) and
-// JetBrains Mono NL 2.304 (https://github.com/JetBrains/JetBrainsMono/releases/tag/v2.304),
-// both under the SIL Open Font License 1.1; the licences sit beside the files.
-const INTER_REGULAR: &[u8] = include_bytes!("../assets/fonts/Inter-Regular.ttf");
-const INTER_MEDIUM: &[u8] = include_bytes!("../assets/fonts/Inter-Medium.ttf");
-const INTER_SEMIBOLD: &[u8] = include_bytes!("../assets/fonts/Inter-SemiBold.ttf");
+// Fonts: Inter 4.1's variable font (InterVariable.ttf from
+// https://github.com/rsms/inter/releases/tag/v4.1) and JetBrains Mono NL 2.304
+// (https://github.com/JetBrains/JetBrainsMono/releases/tag/v2.304), both under
+// the SIL Open Font License 1.1; the licences sit beside the files.
+const INTER: &[u8] = include_bytes!("../assets/fonts/InterVariable.ttf");
 const MONO_REGULAR: &[u8] = include_bytes!("../assets/fonts/JetBrainsMonoNL-Regular.ttf");
 const MEDIUM: &str = "Inter Medium";
 const SEMIBOLD: &str = "Inter SemiBold";
+/// The type scale's weights: values of the variable font's `wght` axis.
+pub const WEIGHT_REGULAR: f32 = 400.0;
+pub const WEIGHT_MEDIUM: f32 = 500.0;
+pub const WEIGHT_SEMIBOLD: f32 = 600.0;
 
 /// Regular UI text at `size`.
 pub fn regular(size: f32) -> FontId {
@@ -147,16 +153,26 @@ pub fn install_fonts(ctx: &egui::Context) {
 
 fn font_definitions() -> FontDefinitions {
     let mut fonts = FontDefinitions::default();
-    for (name, bytes) in [
-        ("Inter", INTER_REGULAR),
-        (MEDIUM, INTER_MEDIUM),
-        (SEMIBOLD, INTER_SEMIBOLD),
-        ("JetBrains Mono", MONO_REGULAR),
+    // One variable font at three weights: the bytes are shared, and each
+    // family reads the `wght` axis at its own value.
+    for (name, weight) in [
+        ("Inter", WEIGHT_REGULAR),
+        (MEDIUM, WEIGHT_MEDIUM),
+        (SEMIBOLD, WEIGHT_SEMIBOLD),
     ] {
-        fonts
-            .font_data
-            .insert(name.into(), Arc::new(FontData::from_static(bytes)));
+        let tweak = egui::FontTweak {
+            coords: egui::epaint::text::VariationCoords::new([(b"wght", weight)]),
+            ..Default::default()
+        };
+        fonts.font_data.insert(
+            name.into(),
+            Arc::new(FontData::from_static(INTER).tweak(tweak)),
+        );
     }
+    fonts.font_data.insert(
+        "JetBrains Mono".into(),
+        Arc::new(FontData::from_static(MONO_REGULAR)),
+    );
     let mut fallback = vec!["JetBrains Mono".to_owned()];
     for (name, paths) in [
         (
@@ -331,7 +347,7 @@ impl Theme {
         } else {
             egui::ThemePreference::Light
         });
-        let mut style = (*ctx.style()).clone();
+        let mut style = (*ctx.global_style()).clone();
         style.visuals = self.visuals();
         let spacing = &mut style.spacing;
         spacing.item_spacing = egui::vec2(SPACE, 6.0);
@@ -553,5 +569,45 @@ mod tests {
         assert!(changed_intensity(CHANGED_RISE_SECONDS) > 0.99);
         assert!(changed_intensity(0.75) < changed_intensity(0.3));
         assert_eq!(changed_intensity(CHANGED_SECONDS), 0.0);
+    }
+
+    #[test]
+    fn inter_weights_come_from_the_variable_font() {
+        let axes = FontData::from_static(INTER).variation_axes();
+        let weight = axes
+            .iter()
+            .find(|axis| axis.tag == "wght")
+            .expect("Inter's variable font has a weight axis");
+        for value in [WEIGHT_REGULAR, WEIGHT_MEDIUM, WEIGHT_SEMIBOLD] {
+            assert!(
+                weight.range.contains(value),
+                "{value} in {:?}",
+                weight.range
+            );
+        }
+        // Inter widens as it gets heavier, so the same text laid out at the
+        // three weights must measure three different widths, at every scale.
+        let ctx = egui::Context::default();
+        install_fonts(&ctx);
+        for scale in [1.0, 1.5, 2.0] {
+            ctx.set_pixels_per_point(scale);
+            let mut widths = Vec::new();
+            ctx.run_ui(egui::RawInput::default(), |ui| {
+                for font in [regular(BODY), medium(BODY), semibold(BODY)] {
+                    let galley = ui.painter().layout_no_wrap(
+                        "Agentique Studio: the Surface".into(),
+                        font,
+                        Color32::WHITE,
+                    );
+                    widths.push(galley.size().x);
+                }
+            })
+            .textures_delta
+            .clear();
+            assert!(
+                widths[0] < widths[1] && widths[1] < widths[2],
+                "at {scale}x: {widths:?}"
+            );
+        }
     }
 }

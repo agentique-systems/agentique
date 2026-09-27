@@ -46,15 +46,16 @@ pub enum ScenarioStatus {
 
 /// Called from `raw_input_hook`. Closes the window when the journey
 /// completes; exits with status 2 when a check fails.
-pub fn raw_input(app: &StudioApp, ctx: &egui::Context, input: &mut egui::RawInput) {
-    let Some(scenario) = &app.args.scenario else {
+pub fn raw_input(app: &mut StudioApp, ctx: &egui::Context, input: &mut egui::RawInput) {
+    let Some(scenario) = app.args.scenario.clone() else {
         return;
     };
-    let report = app.args.scenario_report.as_deref();
-    let outcome = if scenario == "stress" {
-        crate::stress_automation::drive(app, ctx, input, report)
-    } else {
-        drive(app, ctx, input, scenario, report)
+    let report = app.args.scenario_report.clone();
+    let report = report.as_deref();
+    let outcome = match scenario.as_str() {
+        "stress" => crate::stress_automation::drive(app, ctx, input, report),
+        "chat" => crate::stress_automation::drive_chat(app, ctx, input, report),
+        _ => drive(app, ctx, input, &scenario, report),
     };
     match outcome {
         Ok(ScenarioStatus::Running) => {}
@@ -888,7 +889,7 @@ impl Runner {
             .events
             .retain(|e| matches!(e, Event::Screenshot { .. } | Event::WindowFocused(_)));
         input.focused = true;
-        input.modifiers = Modifiers::NONE;
+        input.events.push(Event::ModifiersChanged(Modifiers::NONE));
         let origin = *self.time.get_or_insert(input.time.unwrap_or(0.0));
         input.time = Some(origin + self.frames as f64 / 60.0);
         input.predicted_dt = 1.0 / 60.0;
@@ -1041,7 +1042,7 @@ fn key(input: &mut egui::RawInput, key: Key, mut modifiers: Modifiers) {
         modifiers.ctrl = !cfg!(target_os = "macos");
         modifiers.mac_cmd = cfg!(target_os = "macos");
     }
-    input.modifiers = modifiers;
+    input.events.push(Event::ModifiersChanged(modifiers));
     for pressed in [true, false] {
         input.events.push(Event::Key {
             key,
