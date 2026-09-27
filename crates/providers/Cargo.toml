@@ -13,7 +13,12 @@ rig-core = { version = "=0.42.0", default-features = false, features = ["reqwest
 reqwest = { version = "0.13", default-features = false, features = ["json", "native-tls"] }
 tokio = { version = "1", features = ["rt-multi-thread", "time", "sync"] }
 futures = "0.3"
+# Keys in the Windows Credential Manager (R-25, C-36).
+keyring-core = "=1.0.0"
 # The byte chunks of rig's HTTP client trait, for the fallback adapter (Q-18).
 bytes = "1"
 serde.workspace = true
 serde_json.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-native-keyring-store = "=1.1.0"

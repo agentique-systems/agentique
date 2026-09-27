@@ -13,14 +13,21 @@
 //!   agents, C-35), through a thin client until rig releases one (C-34).
 //! - [`capabilities`] is the capability table (§4.8): code outside this crate
 //!   asks it, never a provider's name (§8.7).
-//! - [`key_status`] says where a provider's key comes from.
+//! - [`key_status`] says where a provider's key comes from: its environment
+//!   variable, else the Windows Credential Manager ([`keys`]);
+//!   [`Providers::check_key`] tests a key and [`Providers::list_models`]
+//!   lists a provider's models, for Settings.
 #![forbid(unsafe_code)]
 
 mod capabilities;
 mod chat;
 mod fallback;
 pub mod jev;
+pub mod keys;
+mod models;
 mod runtime;
+
+pub use models::{KeyCheck, ModelInfo, read_models};
 
 pub use capabilities::{Capabilities, Price, PromptCache, ReasoningText, capabilities, price};
 
@@ -126,25 +133,33 @@ impl ModelRef {
     }
 }
 
-/// Where a provider's key comes from. Stage 5 adds keys stored in the
-/// Windows Credential Manager (R-25).
+/// Where a provider's key comes from (R-25).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum KeyStatus {
     Missing,
-    /// Set by the named environment variable.
+    /// Set by the named environment variable, which wins over a stored key.
     FromEnvironment {
         variable: &'static str,
     },
+    /// Stored in the Windows Credential Manager.
+    Stored,
+    /// The credential store could not be read; the message says why.
+    Unavailable(String),
 }
 
 /// Where the key for `provider` comes from. The key itself never leaves this
 /// crate except in the request to its own provider (§8.7).
 pub fn key_status(provider: Provider) -> KeyStatus {
-    match environment_key(provider) {
-        Some(_) => KeyStatus::FromEnvironment {
+    if environment_key(provider).is_some() {
+        KeyStatus::FromEnvironment {
             variable: provider.key_variable(),
-        },
-        None => KeyStatus::Missing,
+        }
+    } else {
+        match keys::stored(provider) {
+            Ok(Some(_)) => KeyStatus::Stored,
+            Ok(None) => KeyStatus::Missing,
+            Err(error) => KeyStatus::Unavailable(error.0),
+        }
     }
 }
 
@@ -437,10 +452,20 @@ impl Drop for ChatHandle {
 /// The entry point: makes model calls with keys from the environment, or
 /// with explicit keys and endpoints (for testing a key before saving it, and
 /// for tests against a local server).
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Default)]
 pub struct Providers {
     keys: BTreeMap<Provider, String>,
     endpoints: BTreeMap<Provider, String>,
+}
+
+/// Never shows a key.
+impl std::fmt::Debug for Providers {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Providers")
+            .field("keys_for", &self.keys.keys().collect::<Vec<_>>())
+            .field("endpoints", &self.endpoints)
+            .finish()
+    }
 }
 
 impl Providers {
@@ -466,17 +491,42 @@ impl Providers {
         self.key(provider).is_some()
     }
 
-    /// An explicit key, or the environment's unless the provider's requests
-    /// go to another endpoint: a real key is sent only to its own provider
-    /// (§8.7).
+    /// An explicit key, or the environment's, or the stored one, unless the
+    /// provider's requests go to another endpoint: a real key is sent only to
+    /// its own provider (§8.7).
     fn key(&self, provider: Provider) -> Option<String> {
         self.keys.get(&provider).cloned().or_else(|| {
             if self.endpoints.contains_key(&provider) {
                 None
             } else {
-                environment_key(provider)
+                environment_key(provider).or_else(|| keys::stored(provider).ok().flatten())
             }
         })
+    }
+
+    /// Tests `key` (or, without one, the configured key) against an endpoint
+    /// that needs it and runs no model, so it costs nothing (R-25).
+    /// Blocking, for up to ten seconds: call it off the UI thread.
+    pub fn check_key(&self, provider: Provider, key: Option<&str>) -> KeyCheck {
+        let key = key
+            .map(|key| key.trim().to_string())
+            .filter(|key| !key.is_empty())
+            .or_else(|| self.key(provider));
+        models::check(
+            provider,
+            key,
+            self.endpoints.get(&provider).map(String::as_str),
+        )
+    }
+
+    /// The provider's models, with their capabilities and list prices.
+    /// Blocking, for up to ten seconds: call it off the UI thread.
+    pub fn list_models(&self, provider: Provider) -> Result<Vec<ModelInfo>, Error> {
+        models::list(
+            provider,
+            self.key(provider),
+            self.endpoints.get(&provider).map(String::as_str),
+        )
     }
 
     /// Asks Jev typed questions about a state and waits for the answers

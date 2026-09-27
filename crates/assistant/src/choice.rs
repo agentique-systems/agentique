@@ -21,6 +21,18 @@ const PREFERENCE: [Provider; 4] = [
     Provider::OpenRouter,
 ];
 
+/// Whether the Assistant can use `provider`'s key. The hand-written Claude
+/// client reads only `ANTHROPIC_API_KEY`, so until W5.7 moves Anthropic onto
+/// the provider layer a key stored in the Credential Manager does not count
+/// for Anthropic (a temporary exception to §8.7 rule 2).
+fn usable_key(provider: Provider) -> bool {
+    match key_status(provider) {
+        agq_providers::KeyStatus::FromEnvironment { .. } => true,
+        agq_providers::KeyStatus::Stored => provider != Provider::Anthropic,
+        _ => false,
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ModelChoice {
     pub model: ModelRef,
@@ -53,7 +65,7 @@ impl ModelChoice {
             .or_else(|| {
                 PREFERENCE
                     .into_iter()
-                    .find(|provider| key_status(*provider) != agq_providers::KeyStatus::Missing)
+                    .find(|provider| usable_key(*provider))
             })
             .unwrap_or(Provider::Anthropic);
         // AGENTIQUE_MODEL names a model of the chosen provider: it applies
@@ -96,7 +108,7 @@ impl ModelChoice {
     }
 
     pub fn has_key(&self) -> bool {
-        key_status(self.model.provider) != agq_providers::KeyStatus::Missing
+        usable_key(self.model.provider)
     }
 
     /// What the Operator reads when no key is set.
