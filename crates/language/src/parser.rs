@@ -414,14 +414,14 @@ impl<'a> Parser<'a> {
         let keyword = self.peek_text(0);
         let is_word = self.kind() == TokenKind::Word && lexer::is_keyword(keyword);
         let (definition, usage) = match keyword {
-            "part" => (ElementKind::PartDef, ElementKind::Part),
-            "port" => (ElementKind::PortDef, ElementKind::Port),
-            "item" => (ElementKind::ItemDef, ElementKind::Item),
-            "attribute" => (ElementKind::AttributeDef, ElementKind::Attribute),
-            "connection" => (ElementKind::ConnectionDef, ElementKind::Connection),
-            "interface" => (ElementKind::InterfaceDef, ElementKind::Interface),
-            "requirement" => (ElementKind::RequirementDef, ElementKind::Requirement),
-            "subject" => (ElementKind::Subject, ElementKind::Subject),
+            "part" => (Some(ElementKind::PartDef), ElementKind::Part),
+            "port" => (Some(ElementKind::PortDef), ElementKind::Port),
+            "item" => (Some(ElementKind::ItemDef), ElementKind::Item),
+            "attribute" => (Some(ElementKind::AttributeDef), ElementKind::Attribute),
+            "connection" => (Some(ElementKind::ConnectionDef), ElementKind::Connection),
+            "interface" => (Some(ElementKind::InterfaceDef), ElementKind::Interface),
+            "requirement" => (Some(ElementKind::RequirementDef), ElementKind::Requirement),
+            "subject" => (None, ElementKind::Subject),
             "connect" => {
                 // `connect a to b;`: an anonymous connection usage.
                 self.bump();
@@ -440,7 +440,7 @@ impl<'a> Parser<'a> {
             }
             // An interface definition's `end name : P;` is a port end.
             _ if element.is_end && owner == Some(ElementKind::InterfaceDef) => {
-                (ElementKind::Port, ElementKind::Port)
+                (None, ElementKind::Port)
             }
             _ if element.is_end => return self.syntax("`part`, `port` or `item` after `end`"),
             _ if self.name().is_some() => {
@@ -451,10 +451,15 @@ impl<'a> Parser<'a> {
         if is_word {
             self.bump();
         }
-        if self.eat("def") {
-            if element.direction.is_some() || element.is_end || definition == ElementKind::Subject {
-                return self.syntax("a usage (definitions take no direction, `end` or `subject`)");
+        if self.at("def") {
+            let Some(definition) = definition else {
+                return self.syntax("a name");
+            };
+            if element.direction.is_some() || element.is_end {
+                let message = "a definition cannot have a direction or be an `end`".to_string();
+                return Err((Failure::Syntax(message), self.pos));
             }
+            self.bump();
             element.kind = definition;
             element.name = Some(self.declared_identifier()?);
             while self.eat(":>") || self.eat("specializes") {

@@ -1,0 +1,15 @@
+# Deviations from KerML 1.0 / SysML 2.0 (R-9)
+
+Places where `crates/language` departs from the pinned standard, one line
+each with its reason. The subset itself is in [subset.md](subset.md).
+
+1. **Built-in library.** Only `ScalarValues` exists, built in, with the pinned qualified names; its types are `attribute def`s where the pinned KerML library declares `datatype`s. Reason: no runtime library bundle (R-4); the SysML equivalent of a data type is an attribute def.
+2. **No implied library specialisations.** A part def does not implicitly specialise `Parts::Part`, an attribute `Base::dataValues`, and so on; rules use element kinds directly. Reason: the kinds carry the same meaning for the subset without loading the Systems library.
+3. **`end port p` / `end part p`.** Accepted in connection and interface defs, and always printed with the keyword. Reason: the printed `OccurrenceUsagePrefix` omits `end`, but the specification's own examples (7.13.2, 7.15.1, 8.4.10.1) use it.
+4. **`satisfy R by x;` without `assert`.** Accepted; `assert` is accepted and not printed. Reason: the printed `SatisfyRequirementUsage` production lost its optionality markers (`'assert' ( isNegated ?= 'not' )`), while 7.21.4 describes and shows `satisfy R by x;`.
+5. **Lookup order.** Owned members hide inherited ones, and inherited ones hide imported ones; two different imported elements with one name are an ambiguity error; the same element imported twice counts once. Reason: KerML treats inherited and imported memberships alike and leaves import collisions underspecified (KERML11-75); a fixed order is simple and ambiguity stays an error.
+6. **Redefinition lookup.** `:>> x` searches only the features inherited by the owner, drops candidates redefined by another candidate, and reports several survivors as ambiguous; there is no fallback to enclosing scopes. Reason: KERML11-140 leaves this open; redefining something that is not inherited is almost always a mistake.
+7. **Hiding an inherited feature is an error.** An owned feature named like an inherited feature must redefine it (`duplicate-name`). Reason: KerML only requires names to be distinguishable (a warning in the pilot); silently hiding a feature makes models hard to read.
+8. **Port compatibility.** An untyped connection or interface between two ports requires every directed feature to meet a same-named feature of the opposite direction and the same type; a typed connection requires each end to have the definition end's port type with the same conjugation. Reason: SysML does not constrain this, but "connections fit" is the model-validity promise.
+9. **Part typing.** Every type of a part usage must be a part def (items: item or part defs). Reason: SysML allows extra non-part types beside one part def; the subset keeps one clear meaning.
+10. **Literal types.** An integer literal is typed by the most specific scalar type its value allows (`Positive`, `Natural` or `Integer`), a real literal by `Real`. Reason: KerML types every integer literal as `Integer`, which would reject `attribute n : Natural = 5`.
