@@ -107,13 +107,21 @@ impl GpuTiming {
             match &slot.state {
                 State::Mapping(done) => match done.load(Ordering::Acquire) {
                     1 => {
-                        let bytes = slot.buffer.slice(..).get_mapped_range();
-                        let start =
-                            u64::from_le_bytes(bytes[0..8].try_into().expect("timestamp size"));
-                        let end =
-                            u64::from_le_bytes(bytes[8..16].try_into().expect("timestamp size"));
-                        record_sample(stats, start, end, self.period_ns);
-                        drop(bytes);
+                        match slot.buffer.slice(..).get_mapped_range() {
+                            Ok(bytes) => {
+                                let start = u64::from_le_bytes(
+                                    bytes[0..8].try_into().expect("timestamp size"),
+                                );
+                                let end = u64::from_le_bytes(
+                                    bytes[8..16].try_into().expect("timestamp size"),
+                                );
+                                record_sample(stats, start, end, self.period_ns);
+                            }
+                            Err(_) => {
+                                stats.timestamp_errors += 1;
+                                stats.timestamp_diagnostics.map_errors += 1;
+                            }
+                        }
                         slot.buffer.unmap();
                         slot.state = State::Idle;
                     }

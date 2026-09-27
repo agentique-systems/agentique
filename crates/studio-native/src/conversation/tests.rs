@@ -601,3 +601,140 @@ fn a_change_that_waited_for_an_edited_dialog_goes_back_to_the_model() {
         "{stale:?}"
     );
 }
+
+fn shown(context: &egui::Context, target: Target) -> egui::Rect {
+    context
+        .data(|data| {
+            data.get_temp::<egui::Rect>(egui::Id::new(("native-interaction-target", target)))
+        })
+        .unwrap_or_else(|| panic!("{target:?} is not shown"))
+}
+
+fn pointer(at: egui::Pos2, pressed: Option<bool>) -> Vec<egui::Event> {
+    let mut events = vec![egui::Event::PointerMoved(at)];
+    if let Some(pressed) = pressed {
+        events.push(egui::Event::PointerButton {
+            pos: at,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::NONE,
+        });
+    }
+    events
+}
+
+fn copied(output: &egui::PlatformOutput) -> Option<&str> {
+    output.commands.iter().find_map(|command| match command {
+        egui::OutputCommand::CopyText(text) => Some(text.as_str()),
+        _ => None,
+    })
+}
+
+/// Gate G4: a drag from the first message into the third selects across
+/// all three; the selection outlives a reply streaming in below (the list
+/// follows it to the bottom), and Ctrl+C copies the text in order.
+#[test]
+fn text_is_selected_across_messages_and_copied_in_order() {
+    let (mut app, context, _folder) = assisted("assistant-select", Vec::new());
+    let entries = &mut app.conversation.conversation.entries;
+    entries.push(Entry::Operator {
+        text: "First message from you.".into(),
+    });
+    entries.push(Entry::Assistant {
+        content: vec![text("The **second** message.\n\n- one\n- two")],
+    });
+    entries.push(Entry::Operator {
+        text: "Third message here.".into(),
+    });
+    frame(&mut app, &context, Vec::new());
+    frame(&mut app, &context, Vec::new());
+    let first = shown(&context, Target::Message(0, 0));
+    let third = shown(&context, Target::Message(2, 0));
+    // From the first character of the first message to the end of the third.
+    let start = first.left_top() + egui::vec2(1.0, 4.0);
+    let end = egui::pos2(third.right() - 1.0, third.top() + 4.0);
+    frame(&mut app, &context, pointer(start, Some(true)));
+    for step in 1..=6 {
+        let at = start + (end - start) * (step as f32 / 6.0);
+        frame(&mut app, &context, pointer(at, None));
+    }
+    frame(&mut app, &context, pointer(end, Some(false)));
+    let selection = app.conversation.view.selection.expect("a selection");
+    assert!(!selection.dragging);
+    let (from, to) = selection.range();
+    assert_eq!((from.message, to.message), ((0, 0), (2, 0)));
+    // A reply streaming in below scrolls the list; the selection stays.
+    app.conversation
+        .live
+        .push(Live::Text("A new reply streams in.\n\n".repeat(40)));
+    for _ in 0..3 {
+        frame(&mut app, &context, Vec::new());
+    }
+    assert_eq!(app.conversation.view.selection, Some(selection));
+    let output = frame(&mut app, &context, vec![egui::Event::Copy]);
+    assert_eq!(
+        copied(&output),
+        Some(
+            "First message from you.\n\nThe second message.\n\n• one\n• two\n\nThird message here."
+        )
+    );
+    // A click clears it.
+    frame(&mut app, &context, pointer(start, Some(true)));
+    frame(&mut app, &context, pointer(start, Some(false)));
+    assert_eq!(app.conversation.view.selection, None);
+}
+
+/// Gate G6's automated proxy: messages, tool cards and the selected Surface
+/// card have screen-reader names and roles.
+#[test]
+fn messages_tool_cards_and_selected_cards_have_screen_reader_names() {
+    use eframe::egui::accesskit::Role;
+    let (mut app, context, _folder) = assisted(
+        "assistant-names",
+        vec![
+            reply(
+                vec![
+                    text("I'll add the API."),
+                    changes("t1", "Add the API", vec![create("api")]),
+                ],
+                "tool_use",
+            ),
+            reply(vec![text("Added `P::api`.")], "end_turn"),
+        ],
+    );
+    say(&mut app, "Add an API");
+    wait(&mut app, finished);
+    let api = find(&app, "P::api").unwrap();
+    app.selection
+        .select(agq_studio_scene::SceneTarget::Node(api), false);
+    context.enable_accesskit();
+    frame(&mut app, &context, Vec::new());
+    let labels = crate::accessibility::labels(&frame(&mut app, &context, Vec::new()));
+    let has = |role: Role, label: &str| labels.iter().any(|(r, l)| *r == role && l == label);
+    assert!(has(Role::Article, "You: Add an API"), "{labels:#?}");
+    assert!(
+        has(Role::Article, "Assistant: I'll add the API."),
+        "{labels:#?}"
+    );
+    assert!(
+        has(Role::Article, "Assistant: Added P::api."),
+        "{labels:#?}"
+    );
+    assert!(
+        has(Role::Group, "Tool call: Add the API, done"),
+        "{labels:#?}"
+    );
+    assert!(has(Role::Log, "Conversation"), "{labels:#?}");
+    let any = |role: Role, test: &dyn Fn(&str) -> bool| {
+        labels.iter().any(|(r, label)| *r == role && test(label))
+    };
+    assert!(
+        any(Role::ListItem, &|label| label.contains("api")
+            && label.ends_with(", selected")),
+        "{labels:#?}"
+    );
+    assert!(
+        any(Role::List, &|label| label.starts_with("Surface: ")),
+        "{labels:#?}"
+    );
+}

@@ -15,9 +15,9 @@ agq-system-state = { path = "../system-state" }
 agq-studio-scene = { path = "../studio-scene" }
 agq-assistant = { path = "../assistant" }
 pulldown-cmark = { version = "0.13.4", default-features = false }
-eframe = { version = "=0.33.3", default-features = false, features = ["default_fonts", "wgpu", "accesskit", "x11", "wayland"] }
-egui-wgpu = "=0.33.3"
-wgpu = { version = "=27.0.1", features = ["dx12", "metal", "vulkan", "wgsl"] }
+eframe = { version = "=0.36.2", default-features = false, features = ["default_fonts", "wgpu", "accesskit", "x11", "wayland"] }
+egui-wgpu = "=0.36.2"
+wgpu = { version = "=30.0.1", features = ["dx12", "metal", "vulkan", "wgsl"] }
 bytemuck = { version = "1.24", features = ["derive"] }
 serde.workspace = true
 serde_json.workspace = true

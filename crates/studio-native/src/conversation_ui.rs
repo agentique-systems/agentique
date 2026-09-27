@@ -2,15 +2,16 @@
 //! links, the Assistant's tool calls as compact live cards, its questions
 //! as answerable prompts, and the message input with Send and Stop.
 use crate::{
+    accessibility::{name_rect, name_ui},
     app::StudioApp,
     conversation::{ConversationPanel, Live, Undo, WaitingFor, plural},
-    markdown::{self, Block},
+    markdown::{self, Block, Selecting, TextSelection},
     targets::{Target, record},
     theme::{self, Theme},
 };
 use agq_assistant::{Entry, ToolResult, tools};
 use agq_language::{ElementId, ElementKind, Tree};
-use eframe::egui::{self, Key, Modifiers, RichText, Stroke, Vec2};
+use eframe::egui::{self, Key, Modifiers, RichText, Stroke, Vec2, accesskit::Role};
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::hash::{Hash, Hasher};
@@ -33,6 +34,12 @@ pub struct ViewCache {
     /// (`None`: the name is not unique).
     names: HashMap<String, Option<ElementId>>,
     names_revision: Option<u64>,
+    /// Text selected across messages; it outlives scrolling and streaming.
+    pub selection: Option<TextSelection>,
+    /// This frame's drawn text, for placing a drag.
+    selecting: Selecting,
+    /// The messages in the order shown this frame, by cache key.
+    order: Vec<((usize, usize), u64)>,
 }
 
 struct Message {
@@ -61,18 +68,18 @@ enum Action {
 
 impl StudioApp {
     /// The Conversation column, on the right of the Studio.
-    pub fn conversation_column(&mut self, ctx: &egui::Context) {
+    pub fn conversation_column(&mut self, root: &mut egui::Ui) {
         let theme = self.theme;
         let mut actions = Vec::new();
-        egui::SidePanel::right("conversation")
-            .default_width(360.0)
-            .min_width(260.0)
+        egui::Panel::right("conversation")
+            .default_size(360.0)
+            .min_size(260.0)
             .frame(
                 egui::Frame::NONE
                     .fill(theme.surface)
                     .inner_margin(egui::Margin::same(12)),
             )
-            .show(ctx, |ui| {
+            .show(root, |ui| {
                 ui.horizontal(|ui| {
                     ui.label(theme.overline("Conversation"));
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
@@ -106,16 +113,16 @@ impl StudioApp {
                     banner(ui, theme, error);
                 }
                 ui.add_space(theme::SPACE_S);
-                egui::TopBottomPanel::bottom("conversation-input")
+                egui::Panel::bottom("conversation-input")
                     .frame(egui::Frame::NONE.inner_margin(egui::Margin {
                         top: 8,
                         ..Default::default()
                     }))
                     .show_separator_line(false)
-                    .show_inside(ui, |ui| self.message_input(ui, &mut actions));
+                    .show(ui, |ui| self.message_input(ui, &mut actions));
                 egui::CentralPanel::default()
                     .frame(egui::Frame::NONE)
-                    .show_inside(ui, |ui| {
+                    .show(ui, |ui| {
                         let state = self.project.as_ref().map(|p| p.state());
                         // What the running turn waits for, if the Operator is to act.
                         let assistant_asks = matches!(
@@ -325,6 +332,9 @@ fn messages(
         }
     }
     view.used.clear();
+    view.order.clear();
+    view.selecting
+        .begin(view.selection.map(|selection| selection.range()));
     let entries = &panel.conversation.entries;
     let last_operator = entries
         .iter()
@@ -344,7 +354,7 @@ fn messages(
         .stick_to_bottom(true)
         // Pressing on a message is a click (a link, a button), never a scroll.
         .scroll_source(egui::scroll_area::ScrollSource {
-            drag: false,
+            drag: egui::scroll_area::DragScroll::Never,
             ..Default::default()
         })
         .auto_shrink([false, false])
@@ -352,6 +362,7 @@ fn messages(
             // Room for the floating scroll bar, so it never covers a card.
             ui.set_max_width(ui.available_width() - 10.0);
             ui.spacing_mut().item_spacing.y = theme::SPACE;
+            name_ui(ui, Role::Log, || "Conversation".into());
             if entries.is_empty() && panel.live.is_empty() {
                 ui.add_space(theme::SPACE_XL);
                 ui.label(
@@ -381,7 +392,8 @@ fn messages(
                                 Some("text") => {
                                     let text = block["text"].as_str().unwrap_or_default();
                                     let id = egui::Id::new(("message", index, slot));
-                                    if let Some(id) = markdown_message(ui, view, &ctx, id, text) {
+                                    let key = (index, slot);
+                                    if let Some(id) = markdown_message(ui, view, &ctx, id, key, ASSISTANT, text) {
                                         actions.push(Action::Reveal(id));
                                     }
                                 }
@@ -411,7 +423,8 @@ fn messages(
                 match live {
                     Live::Text(text) => {
                         let id = egui::Id::new(("live", slot));
-                        if let Some(id) = markdown_message(ui, view, &ctx, id, text) {
+                        let key = (entries.len(), slot);
+                        if let Some(id) = markdown_message(ui, view, &ctx, id, key, ASSISTANT, text) {
                             actions.push(Action::Reveal(id));
                         }
                     }
@@ -471,8 +484,70 @@ fn messages(
                     });
             }
             ui.add_space(theme::SPACE);
+            select_text(ui, view);
         });
     view.messages.retain(|key, _| view.used.contains(key));
+}
+
+/// Text selection across messages: a drag that starts on a message's text
+/// extends to wherever the pointer goes, scrolling when it leaves the list;
+/// a click clears it; Ctrl+C copies it, unless a text field has the focus.
+fn select_text(ui: &mut egui::Ui, view: &mut ViewCache) {
+    if let Some(pressed) = view.selecting.pressed.take() {
+        view.selection = Some(TextSelection {
+            anchor: pressed,
+            focus: pressed,
+            dragging: true,
+        });
+        // Ctrl+C now copies the selection, not the message being typed.
+        ui.memory_mut(|memory| memory.surrender_focus(egui::Id::new(INPUT)));
+    }
+    let (pointer, down, clicked) = ui.input(|i| {
+        (
+            i.pointer.interact_pos(),
+            i.pointer.primary_down(),
+            i.pointer.primary_clicked(),
+        )
+    });
+    match &mut view.selection {
+        Some(selection) if selection.dragging => {
+            if let Some(pos) = pointer
+                && let Some(point) = view.selecting.point_at(pos)
+            {
+                selection.focus = point;
+            }
+            if !down {
+                selection.dragging = false;
+            } else if let Some(pos) = pointer {
+                // Past the top or the bottom of the list: scroll towards the pointer.
+                let clip = ui.clip_rect();
+                let past = if pos.y < clip.top() {
+                    clip.top() - pos.y
+                } else if pos.y > clip.bottom() {
+                    clip.bottom() - pos.y
+                } else {
+                    0.0
+                };
+                if past != 0.0 {
+                    ui.scroll_with_delta(Vec2::new(0.0, (past * 0.5).clamp(-24.0, 24.0)));
+                    ui.request_repaint();
+                }
+            }
+        }
+        Some(_) if clicked => view.selection = None,
+        _ => {}
+    }
+    let copy = ui.input(|i| i.events.iter().any(|e| matches!(e, egui::Event::Copy)));
+    if copy
+        && !ui.egui_wants_keyboard_input()
+        && let Some(selection) = view.selection.filter(|s| !s.is_empty())
+    {
+        let messages = view
+            .order
+            .iter()
+            .filter_map(|(key, hash)| Some((*key, view.messages.get(hash)?.blocks.as_slice())));
+        ui.copy_text(markdown::selected_text(messages, selection.range()));
+    }
 }
 
 /// What a tool card needs to know.
@@ -504,9 +579,8 @@ fn operator_message(
         .inner_margin(egui::Margin::symmetric(10, 8))
         .show(ui, |ui| {
             ui.set_width(ui.available_width());
-            if let Some(id) =
-                markdown_message(ui, view, ctx, egui::Id::new(("message", index)), text)
-            {
+            let id = egui::Id::new(("message", index));
+            if let Some(id) = markdown_message(ui, view, ctx, id, (index, 0), OPERATOR, text) {
                 actions.push(Action::Reveal(id));
             }
         });
@@ -526,19 +600,27 @@ fn operator_message(
     }
 }
 
+/// Who wrote a message, as a screen reader says it.
+const OPERATOR: &str = "You";
+const ASSISTANT: &str = "Assistant";
+
 /// A message's text as Markdown, parsed once per text and model revision.
 /// A message outside the view takes its last height and is not laid out.
+/// `place` is its entry and slot, for selecting text.
 fn markdown_message(
     ui: &mut egui::Ui,
     view: &mut ViewCache,
     ctx: &Context,
     id: egui::Id,
+    place: (usize, usize),
+    speaker: &'static str,
     text: &str,
 ) -> Option<ElementId> {
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     (text, ctx.theme.dark, ctx.theme.contrast).hash(&mut hasher);
     let key = hasher.finish();
     view.used.insert(key);
+    view.order.push((place, key));
     let width = ui.available_width();
     let names = &view.names;
     let resolve = |name: &str| names.get(name).copied().flatten();
@@ -576,11 +658,26 @@ fn markdown_message(
         let rect = egui::Rect::from_min_size(ui.cursor().min, Vec2::new(width, height));
         if !ui.is_rect_visible(rect) {
             ui.allocate_space(Vec2::new(width, height));
+            // Still named, so a screen reader can reach it.
+            name_rect(ui, id.with("name"), rect, Role::Article, None, || {
+                format!("{speaker}: {}", markdown::plain_text(&message.blocks))
+            });
             return None;
         }
     }
-    let shown = ui.scope(|ui| markdown::show(ui, id, &message.blocks, ctx.theme));
+    let selecting = &mut view.selecting;
+    let shown = ui.scope(|ui| {
+        name_ui(ui, Role::Article, || {
+            format!("{speaker}: {}", markdown::plain_text(&message.blocks))
+        });
+        markdown::show(ui, id, place, &message.blocks, ctx.theme, selecting)
+    });
     message.height = Some((width, shown.response.rect.height()));
+    record(
+        ui.ctx(),
+        Target::Message(place.0, place.1),
+        shown.response.rect,
+    );
     shown.inner
 }
 
@@ -694,6 +791,23 @@ fn tool_card(
     };
     frame.show(ui, |ui| {
         ui.set_width(ui.available_width());
+        name_ui(ui, Role::Group, || {
+            let status = match result {
+                None if ctx.running => "running",
+                None => "not run",
+                Some(result)
+                    if result
+                        .change
+                        .as_ref()
+                        .is_some_and(|c| !c.refused.is_empty()) =>
+                {
+                    "kept unchanged by you"
+                }
+                Some(result) if result.is_error => "failed",
+                Some(_) => "done",
+            };
+            format!("Tool call: {}, {status}", title(name, input))
+        });
         ui.horizontal(|ui| {
             status_icon(ui, theme, result, ctx.running);
             let size = if read_only { theme::LABEL } else { theme::BODY };
@@ -919,6 +1033,9 @@ fn question_card(
         .inner_margin(egui::Margin::symmetric(12, 10))
         .show(ui, |ui| {
             ui.set_width(ui.available_width());
+            name_ui(ui, Role::Group, || {
+                format!("The Assistant asks: {question}")
+            });
             ui.label(theme.overline("The Assistant asks"));
             ui.label(
                 RichText::new(question)

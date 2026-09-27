@@ -11,15 +11,15 @@ use agq_studio_scene::{LockMark, NodeCategory, SceneTarget};
 use eframe::egui::{self, RichText, Vec2};
 
 impl StudioApp {
-    pub fn shell(&mut self, ctx: &egui::Context) {
+    pub fn shell(&mut self, root: &mut egui::Ui, ctx: &egui::Context) {
         let theme = self.theme;
-        egui::TopBottomPanel::top("top-bar")
+        egui::Panel::top("top-bar")
             .frame(
                 egui::Frame::NONE
                     .fill(theme.surface)
                     .inner_margin(egui::Margin::symmetric(14, 8)),
             )
-            .show(ctx, |ui| {
+            .show(root, |ui| {
                 ui.horizontal(|ui| {
                     ui.label(RichText::new("Agentique").font(theme::semibold(theme::HEADING)));
                     ui.add_space(6.0);
@@ -83,13 +83,13 @@ impl StudioApp {
                     });
                 });
             });
-        egui::TopBottomPanel::bottom("status-bar")
+        egui::Panel::bottom("status-bar")
             .frame(
                 egui::Frame::NONE
                     .fill(theme.surface)
                     .inner_margin(egui::Margin::symmetric(14, 5)),
             )
-            .show(ctx, |ui| {
+            .show(root, |ui| {
                 ui.horizontal(|ui| {
                     if self.fixture.is_some() {
                         ui.label(
@@ -147,17 +147,17 @@ impl StudioApp {
                 });
             });
         if self.project.is_none() && self.fixture.is_none() {
-            egui::CentralPanel::default().show(ctx, |ui| self.start_screen(ui, ctx));
+            egui::CentralPanel::default().show(root, |ui| self.start_screen(ui, ctx));
             return;
         }
-        egui::SidePanel::left("outline")
-            .default_width(250.0)
+        egui::Panel::left("outline")
+            .default_size(250.0)
             .frame(
                 egui::Frame::NONE
                     .fill(theme.surface)
                     .inner_margin(egui::Margin::same(12)),
             )
-            .show(ctx, |ui| {
+            .show(root, |ui| {
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     theme.section(ui, "OUTLINE");
                     self.outline(ui);
@@ -167,16 +167,16 @@ impl StudioApp {
                 });
             });
         if self.project.is_some() && self.conversation.shown {
-            self.conversation_column(ctx);
+            self.conversation_column(root);
         }
-        egui::SidePanel::right("panels")
-            .default_width(theme::PANEL_WIDTH + 40.0)
+        egui::Panel::right("panels")
+            .default_size(theme::PANEL_WIDTH + 40.0)
             .frame(
                 egui::Frame::NONE
                     .fill(theme.surface)
                     .inner_margin(egui::Margin::same(12)),
             )
-            .show(ctx, |ui| {
+            .show(root, |ui| {
                 ui.horizontal(|ui| {
                     for (panel, label) in [
                         (Panel::Inspector, "Inspector"),
@@ -199,7 +199,7 @@ impl StudioApp {
             });
         egui::CentralPanel::default()
             .frame(egui::Frame::NONE.fill(theme.canvas))
-            .show(ctx, |ui| self.viewport(ui));
+            .show(root, |ui| self.viewport(ui));
     }
 
     /// The cards on the Surface as an indented list; click to select.

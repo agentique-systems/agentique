@@ -51,6 +51,8 @@ pub struct StudioApp {
     pub generation: u64,
     pub camera: Camera2D,
     pub camera_target: Option<Camera2D>,
+    /// How the camera moves towards `camera_target`.
+    pub camera_move: Option<crate::motion::CameraMove>,
     pub lod: LodController,
     pub layouts: BTreeMap<SurfaceView, LayoutMemory>,
     pub collapsed: BTreeSet<ElementId>,
@@ -91,6 +93,8 @@ pub struct StudioApp {
     pub session: Session,
     pub session_path: PathBuf,
     pub fit_pending: bool,
+    /// The Surface's size in the last frame.
+    pub surface_size: Option<egui::Vec2>,
     /// The Conversation with the Assistant, for the open project.
     pub conversation: crate::conversation::ConversationPanel,
     last_saved: Instant,
@@ -107,6 +111,9 @@ impl StudioApp {
         });
         let theme = Theme::new(session.dark && !args.light, session.high_contrast);
         theme.install(&cc.egui_ctx);
+        if let Some(scale) = args.ui_scale {
+            cc.egui_ctx.set_zoom_factor(scale.clamp(0.5, 3.0));
+        }
         // Scripted journeys run without animation so positions are final.
         let reduced_motion = session.reduced_motion || args.scenario_running();
         // Both the dark and the light style, so switching theme keeps it.
@@ -140,6 +147,7 @@ impl StudioApp {
             generation: 0,
             camera: Camera2D::default(),
             camera_target: None,
+            camera_move: None,
             lod: LodController::default(),
             layouts: BTreeMap::new(),
             collapsed: BTreeSet::new(),
@@ -171,6 +179,7 @@ impl StudioApp {
             session,
             session_path,
             fit_pending: true,
+            surface_size: None,
             conversation: Default::default(),
             last_saved: Instant::now(),
             saved_layout: Default::default(),
@@ -609,8 +618,14 @@ impl StudioApp {
         if whole.max.y > bounds.max.y + 1.0 && bounds.height() < 2.0 * half {
             target.center.y = bounds.min.y - 42.0 / target.zoom + half;
         }
-        if self.frame_number > 2 && !self.reduced_motion {
+        // The first fit, while the window opens, is instant.
+        if self.frame_number > 4 && !self.reduced_motion {
             self.camera_target = Some(target);
+            self.camera_move = Some(crate::motion::CameraMove::tween(
+                self.camera,
+                crate::gpu::clock(),
+                self.reduced_motion,
+            ));
         } else {
             self.camera = target;
             self.camera_target = None;
@@ -625,33 +640,40 @@ impl StudioApp {
             camera.zoom = camera.zoom.clamp(0.4, 1.4);
             if self.reduced_motion {
                 self.camera = camera;
+                self.camera_target = None;
             } else {
+                self.camera_move = Some(crate::motion::CameraMove::follow(
+                    self.camera_move,
+                    self.camera,
+                ));
                 self.camera_target = Some(camera);
             }
         }
     }
 
     pub fn animate(&mut self, ctx: &egui::Context) {
-        if let Some(target) = self.camera_target {
-            let dt = ctx.input(|i| i.stable_dt).min(0.05);
-            let amount = if self.reduced_motion {
-                1.0
-            } else {
-                1.0 - (-dt * 16.0).exp()
-            };
-            self.camera.center.x += (target.center.x - self.camera.center.x) * amount;
-            self.camera.center.y += (target.center.y - self.camera.center.y) * amount;
-            self.camera.zoom += (target.zoom - self.camera.zoom) * amount;
-            if (target.zoom - self.camera.zoom).abs() < 0.001
-                && (target.center.x - self.camera.center.x).abs()
-                    + (target.center.y - self.camera.center.y).abs()
-                    < 0.2
-            {
-                self.camera = target;
-                self.camera_target = None;
-            } else {
-                ctx.request_repaint();
+        // Direct manipulation clears `camera_target`; the move goes with it.
+        match self.camera_target {
+            Some(target) => {
+                let dt = ctx.input(|i| i.stable_dt).min(0.05);
+                let camera = self.camera;
+                let motion = self
+                    .camera_move
+                    .get_or_insert_with(|| crate::motion::CameraMove::follow(None, camera));
+                if motion.step(
+                    &mut self.camera,
+                    target,
+                    crate::gpu::clock(),
+                    dt,
+                    self.reduced_motion,
+                ) {
+                    self.camera_target = None;
+                    self.camera_move = None;
+                } else {
+                    ctx.request_repaint();
+                }
             }
+            None => self.camera_move = None,
         }
         // Highlights fade on the GPU; the app only repaints while one lasts
         // and rebuilds the batch when one ends.
@@ -764,7 +786,7 @@ impl StudioApp {
 
     /// Runs the command bound to a key pressed on the Surface.
     fn keyboard(&mut self, ctx: &egui::Context) {
-        if ctx.wants_keyboard_input() || self.palette || self.dialog.is_some() {
+        if ctx.egui_wants_keyboard_input() || self.palette || self.dialog.is_some() {
             return;
         }
         if ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, egui::Key::Escape)) {
@@ -834,7 +856,12 @@ impl StudioApp {
     }
 
     pub fn capture(&mut self, ctx: &egui::Context) {
-        if self.args.screenshot.is_some() && !self.capture_requested && self.frame_number >= 20 {
+        // After the camera has settled, too (a fit view moves for 300 ms).
+        if self.args.screenshot.is_some()
+            && !self.capture_requested
+            && self.frame_number >= 20
+            && self.camera_target.is_none()
+        {
             self.capture_requested = true;
             ctx.send_viewport_cmd(egui::ViewportCommand::Screenshot(egui::UserData::default()));
         }
@@ -942,7 +969,8 @@ impl eframe::App for StudioApp {
         crate::automation::raw_input(self, _ctx, input);
         self.timing.raw_input(input);
     }
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn ui(&mut self, ui: &mut egui::Ui, _frame: &mut eframe::Frame) {
+        let ctx = &ui.ctx().clone();
         self.frame_number += 1;
         self.timing.frame();
         if let Some(message) = crate::surface_recovery::device_fault(ctx) {
@@ -953,7 +981,7 @@ impl eframe::App for StudioApp {
         }
         if let Some(message) = crate::surface_recovery::surface_fault(ctx) {
             self.graphics_fault(ctx, &message, false);
-            egui::CentralPanel::default().show(ctx, |ui| {
+            egui::CentralPanel::default().show(ui, |ui| {
                 ui.heading("Graphics surface unavailable");
                 ui.label(&self.status);
             });
@@ -970,7 +998,7 @@ impl eframe::App for StudioApp {
             ctx.request_repaint_after(Duration::from_millis(30));
         }
         self.keyboard(ctx);
-        self.shell(ctx);
+        self.shell(ui, ctx);
         self.dialogs(ctx);
         if self.palette {
             self.command_palette(ctx);

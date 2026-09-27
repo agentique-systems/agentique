@@ -1,5 +1,5 @@
 //! Bounded surface recovery through eframe's supported hook. Device replacement
-//! remains renderer-owned in eframe 0.33; a lost device is an explicit stop state.
+//! remains renderer-owned in eframe 0.36; a lost device is an explicit stop state.
 use eframe::egui;
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
@@ -75,6 +75,44 @@ struct State {
     device_lost: bool,
 }
 
+/// Why acquiring a frame failed: wgpu's `CurrentSurfaceTexture` without the
+/// texture, so it can be copied and tested.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SurfaceFailure {
+    Timeout,
+    /// The window is hidden (minimised or covered); not a failure.
+    Occluded,
+    Outdated,
+    Lost,
+    Validation,
+}
+
+impl SurfaceFailure {
+    fn from_status(status: &wgpu::CurrentSurfaceTexture) -> Option<Self> {
+        use wgpu::CurrentSurfaceTexture as Status;
+        match status {
+            Status::Success(_) | Status::Suboptimal(_) => None,
+            Status::Timeout => Some(Self::Timeout),
+            Status::Occluded => Some(Self::Occluded),
+            Status::Outdated => Some(Self::Outdated),
+            Status::Lost => Some(Self::Lost),
+            Status::Validation => Some(Self::Validation),
+        }
+    }
+}
+
+impl std::fmt::Display for SurfaceFailure {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::Timeout => "the frame timed out",
+            Self::Occluded => "the window is hidden",
+            Self::Outdated => "the surface is outdated",
+            Self::Lost => "the surface was lost",
+            Self::Validation => "a validation error",
+        })
+    }
+}
+
 struct Response {
     action: egui_wgpu::SurfaceErrorAction,
     retry: Option<Duration>,
@@ -82,7 +120,15 @@ struct Response {
 }
 
 impl State {
-    fn error(&mut self, error: &wgpu::SurfaceError) -> Response {
+    fn error(&mut self, error: SurfaceFailure) -> Response {
+        if error == SurfaceFailure::Occluded {
+            // A hidden window draws nothing; showing it again resumes.
+            return Response {
+                action: egui_wgpu::SurfaceErrorAction::SkipFrame,
+                retry: None,
+                message: None,
+            };
+        }
         self.epoch += 1;
         if self.device_lost {
             return Response {
@@ -94,7 +140,7 @@ impl State {
         self.failures += 1;
         let recoverable = matches!(
             error,
-            wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated | wgpu::SurfaceError::Timeout
+            SurfaceFailure::Lost | SurfaceFailure::Outdated | SurfaceFailure::Timeout
         );
         let retry = recoverable
             .then(|| [16, 50, 100, 250, 500].get(self.failures - 1).copied())
@@ -107,10 +153,7 @@ impl State {
         }
         Response {
             // eframe calls Surface::configure here; it does not replace a device.
-            action: if matches!(
-                error,
-                wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated
-            ) {
+            action: if matches!(error, SurfaceFailure::Lost | SurfaceFailure::Outdated) {
                 egui_wgpu::SurfaceErrorAction::RecreateSurface
             } else {
                 egui_wgpu::SurfaceErrorAction::SkipFrame
@@ -137,12 +180,25 @@ impl Recovery {
         });
     }
 
-    pub fn surface_error(
+    /// eframe's `on_surface_status` hook: called when a frame could not be
+    /// acquired.
+    pub fn surface_status(
         &self,
-        error: wgpu::SurfaceError,
+        status: &wgpu::CurrentSurfaceTexture,
         context: Option<&egui::Context>,
     ) -> egui_wgpu::SurfaceErrorAction {
-        let response = self.0.lock().expect("surface recovery state").error(&error);
+        match SurfaceFailure::from_status(status) {
+            Some(failure) => self.surface_error(failure, context),
+            None => egui_wgpu::SurfaceErrorAction::SkipFrame,
+        }
+    }
+
+    pub fn surface_error(
+        &self,
+        error: SurfaceFailure,
+        context: Option<&egui::Context>,
+    ) -> egui_wgpu::SurfaceErrorAction {
+        let response = self.0.lock().expect("surface recovery state").error(error);
         if let Some(message) = &response.message {
             eprintln!("{message}");
         }
@@ -271,36 +327,38 @@ mod tests {
     fn lost_surface_reconfigures_and_schedules_only_five_automatic_retries() {
         let mut state = State::default();
         for delay in [16, 50, 100, 250, 500] {
-            let response = state.error(&wgpu::SurfaceError::Lost);
+            let response = state.error(SurfaceFailure::Lost);
             assert!(matches!(
                 response.action,
                 egui_wgpu::SurfaceErrorAction::RecreateSurface
             ));
             assert_eq!(response.retry, Some(Duration::from_millis(delay)));
         }
-        assert!(state.error(&wgpu::SurfaceError::Lost).retry.is_none());
+        assert!(state.error(SurfaceFailure::Lost).retry.is_none());
         assert!(state.blocked.as_ref().unwrap().contains("resize"));
-        assert!(state.error(&wgpu::SurfaceError::Lost).message.is_none());
+        assert!(state.error(SurfaceFailure::Lost).message.is_none());
     }
     #[test]
-    fn timeout_skips_without_reconfigure_and_oom_never_auto_retries() {
-        let timeout = State::default().error(&wgpu::SurfaceError::Timeout);
+    fn timeout_skips_without_reconfigure_and_validation_never_auto_retries() {
+        let timeout = State::default().error(SurfaceFailure::Timeout);
         assert!(matches!(
             timeout.action,
             egui_wgpu::SurfaceErrorAction::SkipFrame
         ));
         assert!(timeout.retry.is_some());
-        let oom = State::default().error(&wgpu::SurfaceError::OutOfMemory);
+        let validation = State::default().error(SurfaceFailure::Validation);
         assert!(matches!(
-            oom.action,
+            validation.action,
             egui_wgpu::SurfaceErrorAction::SkipFrame
         ));
-        assert!(oom.retry.is_none());
+        assert!(validation.retry.is_none());
+        let hidden = State::default().error(SurfaceFailure::Occluded);
+        assert!(hidden.retry.is_none() && hidden.message.is_none());
     }
     #[test]
     fn surface_acquisition_resets_retry_budget_but_cannot_reset_a_lost_device() {
         let recovery = Recovery::default();
-        recovery.surface_error(wgpu::SurfaceError::Lost, None);
+        recovery.surface_error(SurfaceFailure::Lost, None);
         let epoch = recovery.epoch();
         recovery.acquired(&egui::Context::default());
         assert_eq!(recovery.0.lock().unwrap().failures, 0);
@@ -317,7 +375,7 @@ mod tests {
         recovery.acquired(&egui::Context::default());
         assert!(recovery.device_unavailable());
         assert!(matches!(
-            recovery.surface_error(wgpu::SurfaceError::Lost, None),
+            recovery.surface_error(SurfaceFailure::Lost, None),
             egui_wgpu::SurfaceErrorAction::SkipFrame
         ));
         let state = recovery.0.lock().unwrap();

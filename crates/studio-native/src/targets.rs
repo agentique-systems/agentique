@@ -13,6 +13,8 @@ pub enum Target {
     Button(&'static str),
     /// An element link in the Conversation, by the element's raw id.
     Link(u64),
+    /// A Conversation message's text, by its entry and slot.
+    Message(usize, usize),
 }
 
 #[cfg(any(test, feature = "automation"))]

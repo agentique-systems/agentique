@@ -80,7 +80,10 @@ impl StudioApp {
         ui.ctx()
             .data_mut(|d| d.insert_temp(egui::Id::new("studio-viewport-rect"), rect));
         self.camera.viewport = Size::new(rect.width(), rect.height());
-        if self.fit_pending {
+        // Fit once the Surface has kept its size for two frames: a window's
+        // first frame can report a size it never shows (with a UI scale).
+        let stable = self.surface_size.replace(rect.size()) == Some(rect.size());
+        if self.fit_pending && stable {
             self.frame_all();
         }
         if crate::zoom_input::apply(ui, &response, &mut self.camera) {
@@ -207,6 +210,7 @@ impl StudioApp {
         {
             response.clone().on_hover_text(text);
         }
+        self.name_for_screen_readers(ui, &response, rect, hovered.as_ref());
         if let Some(comparison) = &self.comparison {
             // A tag above the Surface's content, like a raised label.
             let text = format!(
@@ -480,6 +484,57 @@ impl StudioApp {
                 }
             }
             _ => {}
+        }
+    }
+
+    /// Screen-reader names (ROADMAP §3.5): the Surface, and as its items the
+    /// selected elements and the card under the pointer, which the GPU draws
+    /// without widgets.
+    fn name_for_screen_readers(
+        &self,
+        ui: &egui::Ui,
+        response: &egui::Response,
+        rect: egui::Rect,
+        hovered: Option<&SceneTarget>,
+    ) {
+        use egui::accesskit::Role;
+        if !crate::accessibility::enabled(ui) {
+            return;
+        }
+        let selected = self.selection.targets.len();
+        ui.ctx().accesskit_node_builder(response.id, |node| {
+            node.set_role(Role::List);
+            node.set_label(format!(
+                "Surface: {} elements, {selected} selected",
+                self.scene.nodes.len()
+            ));
+        });
+        let named = self
+            .selection
+            .targets
+            .iter()
+            .chain(hovered.filter(|target| !self.selection.targets.contains(*target)));
+        for target in named {
+            let Some(bounds) = self.scene.target_bounds(target) else {
+                continue;
+            };
+            let selected = self.selection.targets.contains(target);
+            crate::accessibility::name_rect(
+                ui,
+                response.id.with(("element", target)),
+                self.screen_bounds(rect, bounds),
+                Role::ListItem,
+                Some(selected),
+                || {
+                    let text = self.hover_text(target).unwrap_or_default();
+                    // One line: the hints after the first line are for sighted use.
+                    let mut label = text.lines().next().unwrap_or_default().to_string();
+                    if selected {
+                        label.push_str(", selected");
+                    }
+                    label
+                },
+            );
         }
     }
 

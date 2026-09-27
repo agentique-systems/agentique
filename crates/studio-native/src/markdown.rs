@@ -7,15 +7,20 @@
 //! [`parse`] runs once per message text (the Conversation caches the blocks);
 //! [`show`] lays them out at the panel's width, and egui reuses the layout
 //! while the text and width stay the same.
+//!
+//! Text is selected by dragging across blocks and messages
+//! ([`TextSelection`]); the selection is kept by place in the text, so it
+//! survives scrolling and streaming, and [`selected_text`] copies it.
 use crate::targets::{Target, record};
 use crate::theme::{self, Theme};
 use agq_language::ElementId;
 use eframe::egui::{
-    self, Color32, CornerRadius, Sense, Stroke, Vec2,
-    text::{CCursor, LayoutJob, TextFormat},
+    self, Color32, CornerRadius, Galley, Pos2, Sense, Stroke, Vec2,
+    text::{CCursor, CCursorRange, LayoutJob, TextFormat},
 };
 use pulldown_cmark::{CodeBlockKind, Event, HeadingLevel, Options, Parser, Tag, TagEnd};
 use std::ops::Range;
+use std::sync::Arc;
 
 /// One block of a message.
 pub enum Block {
@@ -44,6 +49,203 @@ pub struct TextBlock {
 
 const LIST_INDENT: f32 = 18.0;
 const QUOTE_INDENT: f32 = 12.0;
+
+/// A place in the Conversation's text: a message (its entry and slot, in the
+/// order shown), a block of it, and a character of that block.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct TextPoint {
+    pub message: (usize, usize),
+    pub block: usize,
+    pub char: usize,
+}
+
+type BlockKey = ((usize, usize), usize);
+
+impl TextPoint {
+    fn block_key(self) -> BlockKey {
+        (self.message, self.block)
+    }
+}
+
+/// Text selected across blocks and messages. It is kept by place in the
+/// text, not by widget, so it survives scrolling (a message outside the view
+/// is not laid out at all) and new text streaming in below it.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct TextSelection {
+    pub anchor: TextPoint,
+    pub focus: TextPoint,
+    /// The pointer that started it is still down.
+    pub dragging: bool,
+}
+
+impl TextSelection {
+    /// Its ends, first to last.
+    pub fn range(&self) -> (TextPoint, TextPoint) {
+        (self.anchor.min(self.focus), self.anchor.max(self.focus))
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.anchor == self.focus
+    }
+}
+
+/// One frame of selecting: the range to paint, where each text block was
+/// drawn (to place a drag), and a drag that started on one.
+#[derive(Default)]
+pub struct Selecting {
+    range: Option<(TextPoint, TextPoint)>,
+    drawn: Vec<Drawn>,
+    pub pressed: Option<TextPoint>,
+}
+
+struct Drawn {
+    key: BlockKey,
+    origin: Pos2,
+    galley: Arc<Galley>,
+}
+
+impl Selecting {
+    pub fn begin(&mut self, range: Option<(TextPoint, TextPoint)>) {
+        self.range = range;
+        self.drawn.clear();
+        self.pressed = None;
+    }
+
+    /// The place in the drawn text nearest `pos`: in the block under it,
+    /// else the start of the first block below it, else the end of the last.
+    pub fn point_at(&self, pos: Pos2) -> Option<TextPoint> {
+        let point = |drawn: &Drawn, char: usize| TextPoint {
+            message: drawn.key.0,
+            block: drawn.key.1,
+            char,
+        };
+        for drawn in &self.drawn {
+            let rect = egui::Rect::from_min_size(drawn.origin, drawn.galley.size());
+            if pos.y < rect.top() {
+                return Some(point(drawn, 0));
+            }
+            if pos.y <= rect.bottom() {
+                let cursor = drawn.galley.cursor_from_pos(pos - drawn.origin);
+                return Some(point(drawn, cursor.index.0));
+            }
+        }
+        let last = self.drawn.last()?;
+        Some(point(last, last.galley.text().chars().count()))
+    }
+
+    /// Notes a drag starting on a block, paints the block's part of the
+    /// selection, and records where the block was drawn.
+    fn block(
+        &mut self,
+        ui: &egui::Ui,
+        response: &egui::Response,
+        key: BlockKey,
+        origin: Pos2,
+        mut galley: Arc<Galley>,
+    ) -> Arc<Galley> {
+        if response.drag_started()
+            && let Some(press) = ui.input(|i| i.pointer.press_origin())
+        {
+            let cursor = galley.cursor_from_pos(press - origin);
+            self.pressed = Some(TextPoint {
+                message: key.0,
+                block: key.1,
+                char: cursor.index.0,
+            });
+        }
+        let length = galley.text().chars().count();
+        if let Some(range) = self.range
+            && let Some((start, end)) = block_range(range, key, length)
+        {
+            egui::text_selection::visuals::paint_text_selection(
+                &mut galley,
+                ui.visuals(),
+                &CCursorRange::two(CCursor::new(start), CCursor::new(end)),
+                None,
+            );
+        }
+        self.drawn.push(Drawn {
+            key,
+            origin,
+            galley: galley.clone(),
+        });
+        galley
+    }
+}
+
+/// The selected characters of block `key`, which has `length` characters.
+fn block_range(
+    (from, to): (TextPoint, TextPoint),
+    key: BlockKey,
+    length: usize,
+) -> Option<(usize, usize)> {
+    if key < from.block_key() || key > to.block_key() {
+        return None;
+    }
+    let start = if key == from.block_key() {
+        from.char
+    } else {
+        0
+    };
+    let end = if key == to.block_key() {
+        to.char.min(length)
+    } else {
+        length
+    };
+    (start < end).then_some((start, end))
+}
+
+/// A message's whole text, as [`selected_text`] copies it.
+pub fn plain_text(blocks: &[Block]) -> String {
+    let all = (
+        TextPoint::default(),
+        TextPoint {
+            message: (0, 0),
+            block: usize::MAX,
+            char: usize::MAX,
+        },
+    );
+    selected_text([((0, 0), blocks)], all)
+}
+
+/// The text of a selection, in order: blocks of a message are separated by
+/// a blank line (list items by a line break), messages by a blank line. A
+/// list item selected from its start keeps its bullet or number.
+pub fn selected_text<'a>(
+    messages: impl IntoIterator<Item = ((usize, usize), &'a [Block])>,
+    range: (TextPoint, TextPoint),
+) -> String {
+    let mut text = String::new();
+    let mut previous: Option<((usize, usize), bool)> = None;
+    for (message, blocks) in messages {
+        for (index, block) in blocks.iter().enumerate() {
+            let (content, marker) = match block {
+                Block::Text(block) => (block.job.text.as_str(), block.marker.as_deref()),
+                Block::Code { code, marker, .. } => (code.as_str(), marker.as_deref()),
+                Block::Rule => ("---", None),
+            };
+            let Some((start, end)) = block_range(range, (message, index), content.chars().count())
+            else {
+                continue;
+            };
+            let item = marker.is_some();
+            if let Some((last, last_item)) = previous {
+                text.push_str(if last == message && item && last_item {
+                    "\n"
+                } else {
+                    "\n\n"
+                });
+            }
+            if let Some(marker) = marker.filter(|_| start == 0) {
+                text.push_str(marker);
+                text.push(' ');
+            }
+            text.extend(content.chars().skip(start).take(end - start));
+            previous = Some((message, item));
+        }
+    }
+    text
+}
 
 /// Parses `text` into blocks. `resolve` names the element an inline code
 /// span refers to, if any.
@@ -268,8 +470,16 @@ impl Builder<'_> {
 
 /// Shows the blocks at the available width. Returns the element whose link
 /// was clicked. `id` names the message, so its links keep their identity
-/// when other messages above it change.
-pub fn show(ui: &mut egui::Ui, id: egui::Id, blocks: &[Block], theme: Theme) -> Option<ElementId> {
+/// when other messages above it change; `message` is its place in the
+/// Conversation, for selecting text.
+pub fn show(
+    ui: &mut egui::Ui,
+    id: egui::Id,
+    message: (usize, usize),
+    blocks: &[Block],
+    theme: Theme,
+    selecting: &mut Selecting,
+) -> Option<ElementId> {
     let width = ui.available_width();
     let mut clicked = None;
     let mut previous_item = false;
@@ -285,7 +495,12 @@ pub fn show(ui: &mut egui::Ui, id: egui::Id, blocks: &[Block], theme: Theme) -> 
         previous_item = item;
         match block {
             Block::Text(text) => {
-                if let Some(element) = text_block(ui, id.with(index), text, width, theme) {
+                let place = Place {
+                    id: id.with(index),
+                    key: (message, index),
+                    width,
+                };
+                if let Some(element) = text_block(ui, place, text, theme, selecting) {
                     clicked = Some(element);
                 }
             }
@@ -294,7 +509,20 @@ pub fn show(ui: &mut egui::Ui, id: egui::Id, blocks: &[Block], theme: Theme) -> 
                 code,
                 indent,
                 marker,
-            } => code_block(ui, language, code, *indent, marker.as_deref(), width, theme),
+            } => {
+                let place = Place {
+                    id: id.with(index),
+                    key: (message, index),
+                    width,
+                };
+                let block = CodeBlock {
+                    language,
+                    code,
+                    indent: *indent,
+                    marker: marker.as_deref(),
+                };
+                code_block(ui, place, block, theme, selecting);
+            }
             Block::Rule => {
                 let (rect, _) = ui.allocate_exact_size(Vec2::new(width, 9.0), Sense::hover());
                 ui.painter().hline(
@@ -308,24 +536,33 @@ pub fn show(ui: &mut egui::Ui, id: egui::Id, blocks: &[Block], theme: Theme) -> 
     clicked
 }
 
+/// Where a block is shown: its widget id, its place in the Conversation and
+/// the width it has.
+struct Place {
+    id: egui::Id,
+    key: BlockKey,
+    width: f32,
+}
+
 fn text_block(
     ui: &mut egui::Ui,
-    id: egui::Id,
+    place: Place,
     block: &TextBlock,
-    width: f32,
     theme: Theme,
+    selecting: &mut Selecting,
 ) -> Option<ElementId> {
+    let Place { id, key, width } = place;
     let mut job = block.job.clone();
     job.wrap.max_width = (width - block.indent).max(40.0);
     let galley = ui.painter().layout_job(job);
-    let (rect, response) =
-        ui.allocate_exact_size(Vec2::new(width, galley.size().y), Sense::hover());
-    let response = if block.links.is_empty() {
-        response
-    } else {
-        ui.interact(rect, id, Sense::click())
-    };
+    let (rect, _) = ui.allocate_exact_size(Vec2::new(width, galley.size().y), Sense::hover());
+    // Links are clicked; the text is selected by dragging.
+    let response = ui.interact(rect, id, Sense::click_and_drag());
+    if response.hovered() {
+        ui.ctx().set_cursor_icon(egui::CursorIcon::Text);
+    }
     let origin = rect.min + Vec2::new(block.indent, 0.0);
+    let galley = selecting.block(ui, &response, key, origin, galley);
 
     if let Some(marker) = &block.marker {
         let font = block
@@ -367,7 +604,7 @@ fn text_block(
         // nearest cursor position whose glyph box holds the pointer.
         let local = pointer - origin;
         let cursor = galley.cursor_from_pos(local);
-        let under = [cursor.index.saturating_sub(1), cursor.index]
+        let under = [cursor.index.0.saturating_sub(1), cursor.index.0]
             .into_iter()
             .find(|&index| {
                 let a = galley.pos_from_cursor(CCursor::new(index));
@@ -389,15 +626,27 @@ fn text_block(
     clicked
 }
 
+struct CodeBlock<'a> {
+    language: &'a str,
+    code: &'a str,
+    indent: f32,
+    marker: Option<&'a str>,
+}
+
 fn code_block(
     ui: &mut egui::Ui,
-    language: &str,
-    code: &str,
-    indent: f32,
-    marker: Option<&str>,
-    width: f32,
+    place: Place,
+    block: CodeBlock,
     theme: Theme,
+    selecting: &mut Selecting,
 ) {
+    let Place { id, key, width } = place;
+    let CodeBlock {
+        language,
+        code,
+        indent,
+        marker,
+    } = block;
     let padding = theme::SPACE;
     let mut job = LayoutJob::simple(
         code.to_string(),
@@ -455,11 +704,17 @@ fn code_block(
     if response.clicked() {
         ui.ctx().copy_text(code.to_string());
     }
-    ui.painter().galley(
-        rect.min + Vec2::new(padding, header + 2.0),
-        galley,
-        theme.text,
+    let origin = rect.min + Vec2::new(padding, header + 2.0);
+    let text = ui.interact(
+        egui::Rect::from_min_size(origin, galley.size()),
+        id,
+        Sense::click_and_drag(),
     );
+    if text.hovered() {
+        ui.ctx().set_cursor_icon(egui::CursorIcon::Text);
+    }
+    let galley = selecting.block(ui, &text, key, origin, galley);
+    ui.painter().galley(origin, galley, theme.text);
 }
 
 #[cfg(test)]
@@ -552,6 +807,71 @@ mod tests {
         ));
         assert!(matches!(&blocks[1], Block::Text(t) if t.marker.as_deref() == Some("•")));
         assert!(matches!(&blocks[2], Block::Text(t) if t.marker.is_none() && t.indent == 0.0));
+    }
+
+    #[test]
+    fn a_selection_across_messages_copies_in_order() {
+        let parse = |text| parse(text, Theme::default(), &|_| None);
+        let first = parse(
+            "Hello **world**.
+
+Second paragraph.",
+        );
+        let second = parse(
+            "- one
+- two
+
+```
+code here
+```",
+        );
+        let third = parse("Last message text.");
+        let messages = [
+            ((0, 0), first.as_slice()),
+            ((1, 0), second.as_slice()),
+            ((2, 1), third.as_slice()),
+        ];
+        let from = TextPoint {
+            message: (0, 0),
+            block: 0,
+            char: 6,
+        };
+        let to = TextPoint {
+            message: (2, 1),
+            block: 0,
+            char: 4,
+        };
+        // Dragged upwards: the ends come in either order.
+        let selection = TextSelection {
+            anchor: to,
+            focus: from,
+            dragging: false,
+        };
+        assert_eq!(
+            selected_text(messages, selection.range()),
+            "world.
+
+Second paragraph.
+
+• one
+• two
+
+code here
+
+Last"
+        );
+        // Inside one block, and nothing at all.
+        let within = (TextPoint { char: 0, ..from }, TextPoint { char: 5, ..from });
+        assert_eq!(selected_text(messages, within), "Hello");
+        assert_eq!(selected_text(messages, (from, from)), "");
+        assert_eq!(
+            plain_text(&second),
+            "• one
+• two
+
+code here",
+            "a whole message"
+        );
     }
 
     #[test]
