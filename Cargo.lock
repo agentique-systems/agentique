@@ -181,6 +181,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "agq-language"
+version = "0.1.0"
+
+[[package]]
 name = "agq-metamodel-gen"
 version = "0.1.0"
 dependencies = [
