@@ -1,7 +1,8 @@
-//! Model validity for the subset: names resolve, types have the right kind,
-//! redefinitions target inherited features, connections fit, requirements are
-//! satisfied by features of the subject's type, and unsupported or unreadable
-//! text is reported. Each run re-resolves the whole tree.
+//! Model validity for the subset: references lead somewhere, types have the
+//! right kind, redefinitions target inherited features, connections fit, parts
+//! compose, requirements are satisfied by features of the subject's type, and
+//! unsupported or unreadable text is reported. Linked references are followed
+//! by identity; unlinked ones are resolved by name on every run.
 
 use crate::library::library;
 use crate::resolve::{LookupError, Model};
@@ -49,13 +50,20 @@ impl Checker<'_> {
         });
     }
 
+    fn kind(&self, id: ElementId) -> ElementKind {
+        self.model.get(id).kind
+    }
+
+    fn name(&self, id: ElementId) -> String {
+        self.model.name(id).unwrap_or("?").to_string()
+    }
+
     fn lookup_error(&mut self, id: ElementId, what: &str, written: &str, error: LookupError) {
-        match error {
+        let (code, message) = match error {
             LookupError::NotFound(name) if name.is_empty() || name == written => {
-                self.report(id, "unresolved", format!("cannot find {what} `{written}`"))
+                ("unresolved", format!("cannot find {what} `{written}`"))
             }
-            LookupError::NotFound(name) => self.report(
-                id,
+            LookupError::NotFound(name) => (
                 "unresolved",
                 format!("cannot find `{name}` in {what} `{written}`"),
             ),
@@ -64,37 +72,66 @@ impl Checker<'_> {
                     .iter()
                     .map(|c| format!("`{}`", self.model.describe(*c)))
                     .collect();
-                self.report(
-                    id,
+                let names = names.join(" or ");
+                (
                     "ambiguous",
-                    format!(
-                        "{what} `{written}` is ambiguous: it could be {}",
-                        names.join(" or ")
-                    ),
-                );
+                    format!("{what} `{written}` is ambiguous: it could be {names}"),
+                )
             }
+            LookupError::Removed(name) => (
+                "removed-target",
+                format!("{what} `{written}` referred to `{name}`, which no longer exists"),
+            ),
             LookupError::Unsupported(construct) => {
-                self.report(id, "unsupported", format!("{construct} is not supported"))
+                ("unsupported", format!("{construct} is not supported"))
+            }
+        };
+        self.report(id, code, message);
+    }
+
+    /// Follows a reference held by `id` to the element it points at, or
+    /// reports why it does not lead to a supported element.
+    fn follow(
+        &mut self,
+        id: ElementId,
+        role: Role,
+        reference: &Reference,
+        what: &str,
+    ) -> Option<ElementId> {
+        let written = reference.to_string();
+        let steps = match self.model.resolve_reference(id, role, reference) {
+            Ok(steps) => steps,
+            Err(error) => {
+                self.lookup_error(id, what, &written, error);
+                return None;
+            }
+        };
+        // Linked chain steps keep their targets; each must still be a
+        // feature of the step before it.
+        for pair in steps.windows(2) {
+            let (outer, inner) = (pair[0], pair[1]);
+            let owned_by = self.model.get(inner).owner();
+            if !owned_by.is_some_and(|o| self.model.specializes(outer, o)) {
+                let message = format!(
+                    "in {what} `{written}`, `{}` is not a feature of `{}`",
+                    self.name(inner),
+                    self.name(outer)
+                );
+                self.report(id, "unresolved", message);
+                return None;
             }
         }
-    }
-
-    fn kind(&self, id: ElementId) -> ElementKind {
-        self.model.get(id).kind
-    }
-
-    /// Reports a reference to an unsupported element; returns true if it was one.
-    fn unsupported_target(&mut self, id: ElementId, target: ElementId, written: &str) -> bool {
-        if self.kind(target) != ElementKind::Unsupported {
-            return false;
+        let target = *steps.last().expect("a reference has steps");
+        if self.kind(target) == ElementKind::Unsupported {
+            let note = self.model.get(target).note.clone().unwrap_or_default();
+            self.report(
+                id,
+                "unsupported",
+                format!("`{written}` is an unsupported {note}, so this reference is not checked"),
+            );
+            return None;
         }
-        let note = self.model.get(target).note.clone().unwrap_or_default();
-        self.report(
-            id,
-            "unsupported",
-            format!("`{written}` is an unsupported {note}, so this reference is not checked"),
-        );
-        true
+        Some(target)
     }
 
     fn check(&mut self, id: ElementId) {
@@ -114,7 +151,7 @@ impl Checker<'_> {
             }
             ElementKind::Import => self.check_import(id),
             ElementKind::Satisfy => self.check_satisfy(id),
-            ElementKind::Package | ElementKind::Doc => {}
+            ElementKind::Package | ElementKind::Doc | ElementKind::Comment => {}
             kind if kind.is_definition() => self.check_definition(id),
             _ => self.check_usage(id),
         }
@@ -131,15 +168,11 @@ impl Checker<'_> {
                 .collect();
             let skip = if in_library { 0 } else { 1 };
             for &id in authored.iter().skip(skip) {
-                let name = self.model.tree[id]
-                    .effective_name()
-                    .unwrap_or("")
-                    .to_string();
+                let name = self.name(id);
                 let message = if in_library {
                     format!("`{name}` is also the name of a built-in library element")
                 } else {
-                    let first = authored[0];
-                    let at = self.model.tree[first]
+                    let at = self.model.tree[authored[0]]
                         .location
                         .map(|l| format!(" (at line {})", l.line))
                         .unwrap_or_default();
@@ -150,19 +183,17 @@ impl Checker<'_> {
         }
     }
 
-    /// An owned feature named like an inherited one must redefine it.
+    /// An owned feature named like an inherited one must redefine it
+    /// (explicitly, or implicitly as ends and subjects do).
     fn check_hides_inherited(&mut self, id: ElementId) {
         let element = &self.model.tree[id];
-        let (Some(name), Some(owner)) = (&element.name, element.owner) else {
+        let (Some(name), Some(owner)) = (&element.name, element.owner()) else {
             return;
         };
-        if !element.redefines.is_empty()
-            || !(element.kind.is_usage() || element.kind.is_definition())
-        {
+        if !(element.kind.is_usage() || element.kind.is_definition()) {
             return;
         }
-        let inherited = self.model.inherited_named(owner, name);
-        if let Some(first) = inherited.first() {
+        if let Some(first) = self.model.inherited(owner, name).first() {
             let message = format!(
                 "`{name}` has the same name as the inherited `{}`; redefine it with `:>> {name}` or rename it",
                 self.model.describe(*first)
@@ -173,40 +204,48 @@ impl Checker<'_> {
 
     fn check_import(&mut self, id: ElementId) {
         let element = &self.model.tree[id];
-        let written = element.target.clone().unwrap_or_default().to_string();
         let wildcard = element.wildcard;
-        match self.model.resolve_import(id) {
-            Err(error) => self.lookup_error(id, "the imported name", &written, error),
-            Ok(target) if wildcard && !self.kind(target).is_namespace() => {
-                let kind = self.kind(target).keyword();
-                self.report(
-                    id,
-                    "wrong-kind",
-                    format!("`{written}` is a {kind}, which has no members to import"),
-                );
-            }
-            Ok(_) => {}
+        let Some(reference) = element.target.clone() else {
+            return;
+        };
+        let Some(target) = self.follow(id, Role::Target, &reference, "the imported name") else {
+            return;
+        };
+        if wildcard && !self.kind(target).is_namespace() {
+            let kind = self.kind(target).keyword();
+            self.report(
+                id,
+                "wrong-kind",
+                format!("`{reference}` is a {kind}, which has no members to import"),
+            );
         }
     }
 
     fn check_definition(&mut self, id: ElementId) {
-        let element = &self.model.tree[id];
-        let kind = element.kind;
-        for general in element.specializes.clone() {
-            let written = general.to_string();
-            match self.model.resolve(element.owner, &general) {
-                Err(error) => self.lookup_error(id, "the specialised definition", &written, error),
-                Ok(target) if self.unsupported_target(id, target, &written) => {}
-                Ok(target) if !definition_fits(kind, self.kind(target)) => {
-                    let message = format!(
-                        "`{written}` is a {}; a {} can only specialise a {}",
-                        self.kind(target).keyword(),
-                        kind.keyword(),
-                        allowed_generals(kind)
-                    );
-                    self.report(id, "wrong-kind", message);
-                }
-                Ok(_) => {}
+        let kind = self.kind(id);
+        for general in self.model.tree[id].specializes.clone() {
+            let Some(target) = self.follow(
+                id,
+                Role::Specializes,
+                &general,
+                "the specialised definition",
+            ) else {
+                continue;
+            };
+            if target == id {
+                self.report(
+                    id,
+                    "specialization-cycle",
+                    "this definition specialises itself".into(),
+                );
+            } else if !definition_fits(kind, self.kind(target)) {
+                let message = format!(
+                    "`{general}` is a {}; a {} can only specialise a {}",
+                    self.kind(target).keyword(),
+                    kind.keyword(),
+                    allowed_generals(kind)
+                );
+                self.report(id, "wrong-kind", message);
             }
         }
         if self.model.in_cycle(id) {
@@ -228,7 +267,7 @@ impl Checker<'_> {
     fn check_usage(&mut self, id: ElementId) {
         let element = &self.model.tree[id];
         let kind = element.kind;
-        let owner_kind = element.owner.map(|o| self.kind(o));
+        let owner_kind = element.owner().map(|o| self.kind(o));
         if element.is_end
             && !matches!(
                 owner_kind,
@@ -279,7 +318,7 @@ impl Checker<'_> {
             self.check_value(id, &value);
         }
         if matches!(kind, ElementKind::Connection | ElementKind::Interface)
-            && !element.ends.is_empty()
+            && element.ends.len() == 2
         {
             self.check_connection(id);
         }
@@ -288,19 +327,11 @@ impl Checker<'_> {
 
     fn check_typing(&mut self, id: ElementId) {
         let element = &self.model.tree[id];
-        let kind = element.kind;
-        for type_ref in element.typed_by.clone() {
-            let written = type_ref.to_string();
-            let target = match self.model.resolve(element.owner, &type_ref.name) {
-                Err(error) => {
-                    self.lookup_error(id, "the type", &written, error);
-                    continue;
-                }
-                Ok(target) => target,
-            };
-            if self.unsupported_target(id, target, &written) {
+        let (kind, conjugated) = (element.kind, element.conjugated);
+        for reference in element.typed_by.clone() {
+            let Some(target) = self.follow(id, Role::TypedBy, &reference, "the type") else {
                 continue;
-            }
+            };
             let target_kind = self.kind(target);
             if !allowed_types(kind).contains(&target_kind) {
                 let expected = allowed_types(kind)
@@ -309,80 +340,93 @@ impl Checker<'_> {
                     .collect::<Vec<_>>()
                     .join(" or ");
                 let message = format!(
-                    "`{}` is a {}; a {} must be typed by a {expected}",
-                    type_ref.name,
+                    "`{reference}` is a {}; a {} must be typed by a {expected}",
                     target_kind.keyword(),
                     kind.keyword()
                 );
                 self.report(id, "wrong-type", message);
             }
-            if type_ref.conjugated && kind != ElementKind::Port {
-                self.report(
-                    id,
-                    "wrong-type",
-                    format!("only ports can have a conjugated type like `{written}`"),
-                );
-            }
+        }
+        if conjugated && kind != ElementKind::Port {
+            self.report(
+                id,
+                "wrong-type",
+                "only ports can have a conjugated type `~T`".into(),
+            );
         }
     }
 
     fn check_subsetting(&mut self, id: ElementId) {
-        let element = &self.model.tree[id];
-        let kind = element.kind;
-        for name in element.specializes.clone() {
-            let written = name.to_string();
-            match self.model.resolve(element.owner, &name) {
-                Err(error) => self.lookup_error(id, "the subsetted feature", &written, error),
-                Ok(target) if self.unsupported_target(id, target, &written) => {}
-                Ok(target) if !self.kind(target).is_usage() => {
-                    let message = format!(
-                        "`{written}` is a {}; `:>` on a {} names a feature it subsets (use `:` for its type)",
-                        self.kind(target).keyword(),
-                        kind.keyword()
-                    );
-                    self.report(id, "wrong-kind", message);
-                }
-                Ok(target) if !usage_fits(kind, self.kind(target)) => {
-                    let message = format!(
-                        "a {} cannot subset `{written}`, which is a {}",
-                        kind.keyword(),
-                        self.kind(target).keyword()
-                    );
-                    self.report(id, "wrong-kind", message);
-                }
-                Ok(_) => {}
+        let kind = self.kind(id);
+        for reference in self.model.tree[id].specializes.clone() {
+            let Some(target) =
+                self.follow(id, Role::Specializes, &reference, "the subsetted feature")
+            else {
+                continue;
+            };
+            let target_kind = self.kind(target);
+            if target == id {
+                self.report(
+                    id,
+                    "specialization-cycle",
+                    "this feature subsets itself".into(),
+                );
+            } else if !target_kind.is_usage() {
+                let message = format!(
+                    "`{reference}` is a {}; `:>` on a {} names a feature it subsets (use `:` for its type)",
+                    target_kind.keyword(),
+                    kind.keyword()
+                );
+                self.report(id, "wrong-kind", message);
+            } else if !usage_fits(kind, target_kind) {
+                let message = format!(
+                    "a {} cannot subset `{reference}`, which is a {}",
+                    kind.keyword(),
+                    target_kind.keyword()
+                );
+                self.report(id, "wrong-kind", message);
             }
         }
     }
 
     fn check_redefinition(&mut self, id: ElementId) {
         let element = &self.model.tree[id];
-        let kind = element.kind;
-        for name in element.redefines.clone() {
-            let written = name.to_string();
-            match self.model.resolve_redefined(id, &name) {
+        let (kind, owner) = (element.kind, element.owner());
+        for reference in element.redefines.clone() {
+            let owner_name = owner.map(|o| self.model.describe(o)).unwrap_or_default();
+            let not_inherited = |written: &str| {
+                format!(
+                    "`{written}` is not a feature that `{owner_name}` inherits; `:>>` can only redefine an inherited feature"
+                )
+            };
+            let target = match self.model.target(id, Role::Redefines, &reference) {
                 Err(LookupError::NotFound(_)) => {
-                    let owner = element
-                        .owner
-                        .map(|o| self.model.describe(o))
-                        .unwrap_or_default();
-                    let message = format!(
-                        "`{written}` is not a feature that `{owner}` inherits; `:>>` can only redefine an inherited feature"
+                    self.report(
+                        id,
+                        "redefines-unknown",
+                        not_inherited(&reference.to_string()),
                     );
-                    self.report(id, "redefines-unknown", message);
+                    continue;
                 }
-                Err(error) => self.lookup_error(id, "the redefined feature", &written, error),
-                Ok(target) if self.unsupported_target(id, target, &written) => {}
-                Ok(target) if !usage_fits(kind, self.kind(target)) => {
-                    let message = format!(
-                        "a {} cannot redefine `{}`, which is a {}",
-                        kind.keyword(),
-                        self.model.describe(target),
-                        self.kind(target).keyword()
-                    );
-                    self.report(id, "wrong-kind", message);
+                Err(_) => {
+                    self.follow(id, Role::Redefines, &reference, "the redefined feature");
+                    continue;
                 }
-                Ok(_) => {}
+                Ok(target) => target,
+            };
+            if !owner.is_some_and(|o| self.model.is_inherited(o, target)) {
+                let written = self.model.describe(target);
+                self.report(id, "redefines-unknown", not_inherited(&written));
+            } else if self.kind(target) == ElementKind::Unsupported {
+                self.follow(id, Role::Redefines, &reference, "the redefined feature");
+            } else if !usage_fits(kind, self.kind(target)) {
+                let message = format!(
+                    "a {} cannot redefine `{}`, which is a {}",
+                    kind.keyword(),
+                    self.model.describe(target),
+                    self.kind(target).keyword()
+                );
+                self.report(id, "wrong-kind", message);
             }
         }
     }
@@ -404,36 +448,27 @@ impl Checker<'_> {
             Literal::Integer(_) => "Positive",
         };
         let name = QualifiedName::new(["ScalarValues", literal_type]);
-        let Ok(literal_def) = self.model.resolve(None, &name) else {
+        let Ok(literal_def) = self.model.resolve_global(&name) else {
             return;
         };
         if !self.model.specializes(literal_def, declared) {
-            let declared_name = self.model.get(declared).name.clone().unwrap_or_default();
-            self.report(
-                id,
-                "wrong-value",
-                format!("`{value}` is not a valid {declared_name}"),
-            );
+            let message = format!("`{value}` is not a valid {}", self.name(declared));
+            self.report(id, "wrong-value", message);
         }
     }
 
     fn check_connection(&mut self, id: ElementId) {
         let element = &self.model.tree[id];
-        let (kind, scope) = (element.kind, element.owner);
+        let kind = element.kind;
         let mut ends = Vec::new();
-        for chain in element.ends.clone() {
-            let written = chain.to_string();
-            let feature = match self.model.resolve_chain(scope, &chain) {
-                Err(error) => {
-                    self.lookup_error(id, "the connection end", &written, error);
-                    return;
-                }
-                Ok(steps) => *steps.last().expect("a chain has steps"),
+        for reference in element.ends.clone() {
+            let Some(feature) = self.follow(id, Role::End, &reference, "the connection end") else {
+                return;
             };
             let feature_kind = self.kind(feature);
             if !feature_kind.is_usage() {
                 let message = format!(
-                    "the connection end `{written}` is a {}, not a feature",
+                    "the connection end `{reference}` is a {}, not a feature",
                     feature_kind.keyword()
                 );
                 self.report(id, "wrong-kind", message);
@@ -441,13 +476,13 @@ impl Checker<'_> {
             }
             if kind == ElementKind::Interface && feature_kind != ElementKind::Port {
                 let message = format!(
-                    "an interface connects ports, but `{written}` is a {}",
+                    "an interface connects ports, but `{reference}` is a {}",
                     feature_kind.keyword()
                 );
                 self.report(id, "wrong-kind", message);
                 return;
             }
-            ends.push((written, feature));
+            ends.push((reference.to_string(), feature, reference.steps.len()));
         }
         let definition = self
             .model
@@ -461,12 +496,7 @@ impl Checker<'_> {
                 )
             });
         if let Some(definition) = definition {
-            let def_ends: Vec<ElementId> = self
-                .model
-                .features(definition)
-                .into_iter()
-                .filter(|f| self.model.get(*f).is_end)
-                .collect();
+            let def_ends = self.model.ends(definition);
             let def_name = self.model.describe(definition);
             if def_ends.len() != ends.len() {
                 let message = format!(
@@ -477,32 +507,45 @@ impl Checker<'_> {
                 self.report(id, "incompatible-ends", message);
                 return;
             }
-            for ((written, feature), end) in ends.iter().zip(def_ends) {
+            for ((written, feature, _), end) in ends.iter().zip(def_ends) {
                 if !self.conforms(*feature, end) {
-                    let end_name = self
-                        .model
-                        .get(end)
-                        .effective_name()
-                        .unwrap_or("?")
-                        .to_string();
                     let message = format!(
-                        "`{written}` ({}) does not fit end `{end_name}` ({}) of `{def_name}`",
+                        "`{written}` ({}) does not fit end `{}` ({}) of `{def_name}`",
                         self.type_text(*feature),
+                        self.name(end),
                         self.type_text(end)
                     );
                     self.report(id, "incompatible-ends", message);
                 }
             }
-        } else if ends.iter().all(|(_, f)| self.kind(*f) == ElementKind::Port) {
-            let ((a_text, a), (b_text, b)) = (&ends[0], &ends[1]);
-            if let Some(problem) = self.port_mismatch(*a, *b) {
-                let message = format!(
-                    "`{a_text}` ({}) and `{b_text}` ({}) do not fit: {problem}",
-                    self.type_text(*a),
-                    self.type_text(*b)
-                );
-                self.report(id, "incompatible-ends", message);
-            }
+            return;
+        }
+        if !ends
+            .iter()
+            .all(|(_, f, _)| self.kind(*f) == ElementKind::Port)
+        {
+            return;
+        }
+        // A port of the owner itself (one step) connected to a port of an
+        // inner part (several steps) passes items on: same directions.
+        // Otherwise the two ports face each other: mirrored directions.
+        let (a, b) = (&ends[0], &ends[1]);
+        let delegation = (a.2 == 1) != (b.2 == 1);
+        let (outer, inner) = if a.2 == 1 { (a, b) } else { (b, a) };
+        let problem = if delegation {
+            self.port_mismatch(outer.1, inner.1, true)
+        } else {
+            self.port_mismatch(a.1, b.1, false)
+        };
+        if let Some(problem) = problem {
+            let message = format!(
+                "`{}` ({}) and `{}` ({}) do not fit: {problem}",
+                a.0,
+                self.type_text(a.1),
+                b.0,
+                self.type_text(b.1)
+            );
+            self.report(id, "incompatible-ends", message);
         }
     }
 
@@ -536,22 +579,22 @@ impl Checker<'_> {
         }
     }
 
-    /// The two port ends of an interface def must fit each other.
+    /// The two port ends of an interface def must face each other.
     fn check_interface_def_ends(&mut self, id: ElementId) {
         let ends: Vec<ElementId> = self.model.tree[id]
-            .children
+            .children()
             .iter()
             .copied()
             .filter(|c| self.model.tree[*c].is_end && self.kind(*c) == ElementKind::Port)
             .collect();
         if let [a, b] = ends[..]
-            && let Some(problem) = self.port_mismatch(a, b)
+            && let Some(problem) = self.port_mismatch(a, b, false)
         {
             let message = format!(
                 "its ends `{}` ({}) and `{}` ({}) do not fit: {problem}",
-                self.model.get(a).name.clone().unwrap_or_default(),
+                self.name(a),
                 self.type_text(a),
-                self.model.get(b).name.clone().unwrap_or_default(),
+                self.name(b),
                 self.type_text(b)
             );
             self.report(id, "incompatible-ends", message);
@@ -560,7 +603,7 @@ impl Checker<'_> {
 
     fn check_subjects(&mut self, id: ElementId) {
         let subjects = self.model.tree[id]
-            .children
+            .children()
             .iter()
             .filter(|c| self.model.tree[**c].kind == ElementKind::Subject)
             .count();
@@ -575,75 +618,55 @@ impl Checker<'_> {
 
     fn check_satisfy(&mut self, id: ElementId) {
         let element = &self.model.tree[id];
-        let scope = element.owner;
-        let requirement = element.target.clone().and_then(|target| {
-            let written = target.to_string();
-            match self.model.resolve(scope, &target) {
-                Err(error) => {
-                    self.lookup_error(id, "the requirement", &written, error);
-                    None
-                }
-                Ok(r) if self.unsupported_target(id, r, &written) => None,
-                Ok(r) if self.kind(r) != ElementKind::Requirement => {
-                    let hint = if self.kind(r) == ElementKind::RequirementDef {
-                        format!(" (declare `requirement x : {written};` and satisfy that)")
-                    } else {
-                        String::new()
-                    };
-                    let message = format!(
-                        "`{written}` is a {}; `satisfy` names a requirement{hint}",
-                        self.kind(r).keyword()
-                    );
-                    self.report(id, "wrong-kind", message);
-                    None
-                }
-                Ok(r) => Some(r),
+        let (target, by) = (element.target.clone(), element.by.clone());
+        let requirement = target.and_then(|reference| {
+            let r = self.follow(id, Role::Target, &reference, "the requirement")?;
+            if self.kind(r) == ElementKind::Requirement {
+                return Some(r);
             }
+            let hint = if self.kind(r) == ElementKind::RequirementDef {
+                format!(" (declare `requirement x : {reference};` and satisfy that)")
+            } else {
+                String::new()
+            };
+            let message = format!(
+                "`{reference}` is a {}; `satisfy` names a requirement{hint}",
+                self.kind(r).keyword()
+            );
+            self.report(id, "wrong-kind", message);
+            None
         });
-        let element = &self.model.tree[id];
-        let Some(by) = element.by.clone() else {
+        let Some(by) = by else {
             return;
         };
-        let written = by.to_string();
-        let feature = match self.model.resolve_chain(scope, &by) {
-            Err(error) => {
-                self.lookup_error(id, "the satisfying feature", &written, error);
-                return;
-            }
-            Ok(steps) => *steps.last().expect("a chain has steps"),
+        let Some(feature) = self.follow(id, Role::By, &by, "the satisfying feature") else {
+            return;
         };
         if !self.kind(feature).is_usage() {
             let message = format!(
-                "`{written}` is a {}, not a feature",
+                "`{by}` is a {}, not a feature",
                 self.kind(feature).keyword()
             );
             self.report(id, "wrong-kind", message);
             return;
         }
-        let Some(requirement) = requirement else {
+        let Some(subject) = requirement.and_then(|r| self.model.subject(r)) else {
             return;
         };
-        let subject = self
-            .model
-            .features(requirement)
-            .into_iter()
-            .find(|f| self.kind(*f) == ElementKind::Subject);
-        if let Some(subject) = subject {
-            let expected = self.model.types_of(subject);
-            let actual = self.model.types_of(feature);
-            let fits = expected
-                .iter()
-                .all(|(t, _)| actual.iter().any(|(a, _)| self.model.specializes(*a, *t)));
-            if !fits {
-                let message = format!(
-                    "`{written}` ({}) cannot be the subject of `{}`, whose subject `{}` is a {}",
-                    self.type_text(feature),
-                    self.model.describe(requirement),
-                    self.model.get(subject).name.clone().unwrap_or_default(),
-                    self.type_text(subject)
-                );
-                self.report(id, "wrong-subject", message);
-            }
+        let expected = self.model.types_of(subject);
+        let actual = self.model.types_of(feature);
+        let fits = expected
+            .iter()
+            .all(|(t, _)| actual.iter().any(|(a, _)| self.model.specializes(*a, *t)));
+        if !fits {
+            let message = format!(
+                "`{by}` ({}) cannot be the subject of `{}`, whose subject `{}` is a {}",
+                self.type_text(feature),
+                self.model.describe(requirement.expect("subject found")),
+                self.name(subject),
+                self.type_text(subject)
+            );
+            self.report(id, "wrong-subject", message);
         }
     }
 
@@ -658,30 +681,67 @@ impl Checker<'_> {
         })
     }
 
-    /// Why two ports cannot be connected, if they cannot: every directed
-    /// feature must meet a same-named feature of the opposite direction.
-    fn port_mismatch(&self, a: ElementId, b: ElementId) -> Option<String> {
+    /// Why two ports cannot be connected, if they cannot. Every directed
+    /// feature must meet a same-named feature: of the opposite direction
+    /// when the ports face each other, of the same direction when `a` passes
+    /// items on to an inner part's port `b` (`delegation`). What is sent must
+    /// be (a specialisation of) what is received.
+    fn port_mismatch(&self, a: ElementId, b: ElementId, delegation: bool) -> Option<String> {
         let (items_a, items_b) = (self.directed_features(a), self.directed_features(b));
         for (name, direction, ty) in &items_a {
             let Some((_, other_direction, other_ty)) = items_b.iter().find(|(n, _, _)| n == name)
             else {
                 return Some(format!("`{name}` has no counterpart on the other side"));
             };
-            if *other_direction != direction.flipped() {
+            let expected = if delegation {
+                *direction
+            } else {
+                direction.flipped()
+            };
+            if *other_direction != expected {
+                let rule = if delegation {
+                    "a port passed on to an inner part keeps its directions"
+                } else {
+                    "one side must send what the other receives"
+                };
                 return Some(format!(
-                    "`{name}` is `{}` on one side and `{}` on the other; one side must send what the other receives",
+                    "`{name}` is `{}` on one side and `{}` on the other; {rule}",
                     direction.keyword(),
                     other_direction.keyword()
                 ));
             }
-            if ty != other_ty {
-                return Some(format!("`{name}` carries different types on the two sides"));
+            // Items flow out of `a` when it sends (or, passed on, receives
+            // from outside); otherwise they flow into `a`.
+            let from_a = (*direction == Direction::Out) != delegation;
+            let fits = match direction {
+                Direction::InOut => self.carries(*ty, *other_ty) && self.carries(*other_ty, *ty),
+                _ if from_a => self.carries(*ty, *other_ty),
+                _ => self.carries(*other_ty, *ty),
+            };
+            if !fits {
+                return Some(format!(
+                    "`{name}` sends {} where {} is received",
+                    self.type_name(if from_a { *ty } else { *other_ty }),
+                    self.type_name(if from_a { *other_ty } else { *ty })
+                ));
             }
         }
         items_b
             .iter()
             .find(|(name, _, _)| !items_a.iter().any(|(n, _, _)| n == name))
             .map(|(name, _, _)| format!("`{name}` has no counterpart on the other side"))
+    }
+
+    /// Can items of type `sent` go where `received` is expected?
+    fn carries(&self, sent: Option<ElementId>, received: Option<ElementId>) -> bool {
+        match (sent, received) {
+            (Some(sent), Some(received)) => self.model.specializes(sent, received),
+            _ => true,
+        }
+    }
+
+    fn type_name(&self, ty: Option<ElementId>) -> String {
+        ty.map_or("an untyped item".into(), |t| format!("`{}`", self.name(t)))
     }
 
     /// (name, direction as seen from outside the port, type) of each directed
@@ -692,15 +752,14 @@ impl Checker<'_> {
             .features(port)
             .into_iter()
             .filter_map(|f| {
-                let element = self.model.get(f);
-                let direction = element.direction?;
+                let direction = self.model.get(f).direction?;
                 let direction = if conjugated {
                     direction.flipped()
                 } else {
                     direction
                 };
                 let ty = self.model.types_of(f).first().map(|(t, _)| *t);
-                Some((element.effective_name()?.to_string(), direction, ty))
+                Some((self.model.name(f)?.to_string(), direction, ty))
             })
             .collect()
     }
@@ -711,7 +770,7 @@ impl Checker<'_> {
             .types_of(feature)
             .iter()
             .map(|(t, conjugated)| {
-                let name = self.model.get(*t).name.clone().unwrap_or_default();
+                let name = self.name(*t);
                 if *conjugated {
                     format!("~{name}")
                 } else {
@@ -742,9 +801,13 @@ fn allowed_generals(kind: ElementKind) -> &'static str {
     }
 }
 
+/// Can a usage of kind `specific` subset or redefine one of kind `general`?
+/// A keyword-less reference usage fits any.
 fn usage_fits(specific: ElementKind, general: ElementKind) -> bool {
     use ElementKind::*;
     specific == general
+        || specific == Reference
+        || general == Reference
         || (specific, general) == (Part, Item)
         || (specific, general) == (Interface, Connection)
 }
@@ -752,6 +815,15 @@ fn usage_fits(specific: ElementKind, general: ElementKind) -> bool {
 /// The definition kinds a usage may be typed by.
 fn allowed_types(kind: ElementKind) -> &'static [ElementKind] {
     use ElementKind::*;
+    const ANY: &[ElementKind] = &[
+        PartDef,
+        ItemDef,
+        PortDef,
+        AttributeDef,
+        ConnectionDef,
+        InterfaceDef,
+        RequirementDef,
+    ];
     match kind {
         Part => &[PartDef],
         Item => &[ItemDef, PartDef],
@@ -760,15 +832,7 @@ fn allowed_types(kind: ElementKind) -> &'static [ElementKind] {
         Connection => &[ConnectionDef, InterfaceDef],
         Interface => &[InterfaceDef],
         Requirement => &[RequirementDef],
-        Subject => &[
-            PartDef,
-            ItemDef,
-            PortDef,
-            AttributeDef,
-            ConnectionDef,
-            InterfaceDef,
-            RequirementDef,
-        ],
+        Subject | Reference => ANY,
         _ => &[],
     }
 }

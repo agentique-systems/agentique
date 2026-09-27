@@ -61,46 +61,23 @@ fn the_deliberate_error_is_reported_at_the_connection() {
 }
 
 #[test]
-fn an_edit_keeps_identities_and_is_reported_where_it_breaks_references() {
+fn a_rename_keeps_every_reference_bound_to_the_renamed_element() {
     let mut tree = load(MODEL);
     let api = tree.find("UrlShortener::UrlShortenerService::api").unwrap();
     let ids_before = tree.walk();
-    tree.get_mut(api).name = Some("gateway".into());
+    let users_before = tree.references_to(api);
+    assert_eq!(users_before.len(), 4); // three connection ends and one satisfy
+
+    tree.get_mut(api).unwrap().name = Some("gateway".into());
     assert_eq!(tree.walk(), ids_before);
-
-    let diagnostics = validate(&tree);
-    let broken: Vec<(String, &str)> = diagnostics
-        .iter()
-        .map(|d| (tree.qualified_name(d.element), d.code))
-        .collect();
-    assert_eq!(
-        broken,
-        [
-            (
-                "UrlShortener::UrlShortenerService::storage".to_string(),
-                "unresolved"
-            ),
-            (
-                "UrlShortener::UrlShortenerService::clickReporting".to_string(),
-                "unresolved"
-            ),
-            (
-                "UrlShortener::UrlShortenerService::statsQuery".to_string(),
-                "unresolved"
-            ),
-            (
-                "UrlShortener::(satisfy fastRedirect)".to_string(),
-                "unresolved"
-            ),
-        ]
-    );
-    assert_eq!(
-        diagnostics[0].message,
-        "cannot find `api` in the connection end `api.storage`"
-    );
-
-    tree.get_mut(api).name = Some("api".into());
+    assert_eq!(tree.references_to(api), users_before);
     assert_eq!(validate(&tree), []);
+    let text = &print(&tree)[0].text;
+    assert!(
+        text.contains("interface storage : LinkStorage connect gateway.storage to store.links;")
+    );
+    assert!(text.contains("satisfy fastRedirect by shortener.gateway;"));
+    assert_eq!(validate(&parse(&print(&tree))), []);
 }
 
 #[test]
@@ -113,8 +90,8 @@ fn removing_a_definition_reports_its_users() {
         .iter()
         .map(|d| (tree.qualified_name(d.element), d.code))
         .collect();
-    assert!(codes.contains(&("UrlShortener::SqlLinkStore".into(), "unresolved")));
-    assert!(codes.contains(&("UrlShortener::UniqueCodes::store".into(), "unresolved")));
+    assert!(codes.contains(&("UrlShortener::SqlLinkStore".into(), "removed-target")));
+    assert!(codes.contains(&("UrlShortener::UniqueCodes::store".into(), "removed-target")));
     assert!(
         tree.walk()
             .iter()

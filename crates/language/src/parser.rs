@@ -3,7 +3,8 @@
 //! Every member either becomes an element of the subset or is kept verbatim as
 //! an `Unsupported` or `SyntaxError` element, so nothing is lost on print and
 //! every problem is reported at an element. Recovery skips to the end of the
-//! member (`;` or its closing `}`), never past the enclosing body.
+//! member (a `;` or its closing `}` outside nested braces), never past the
+//! enclosing body.
 
 use crate::lexer::{self, Token, TokenKind};
 use crate::tree::*;
@@ -24,11 +25,13 @@ impl Source {
     }
 }
 
-/// Parses documents into one tree. Problems become `Unsupported` or
-/// `SyntaxError` elements, which [`crate::validate`] reports.
+/// Parses documents into one tree and links its references (see
+/// [`crate::link`]). Problems become `Unsupported` or `SyntaxError`
+/// elements, which [`crate::validate`] reports.
 pub fn parse(sources: &[Source]) -> Tree {
     let mut tree = Tree::new();
     parse_into(&mut tree, sources);
+    crate::link(&mut tree);
     tree
 }
 
@@ -59,7 +62,9 @@ struct Node {
 }
 
 fn insert(tree: &mut Tree, parent: Parent, node: Node) {
-    let id = tree.add(parent, node.element);
+    let id = tree
+        .add(parent, node.element)
+        .expect("the parent was just added");
     for child in node.children {
         insert(tree, Parent::Element(id), child);
     }
@@ -189,12 +194,30 @@ impl<'a> Parser<'a> {
         self.tokens[(self.pos + ahead).min(self.tokens.len() - 1)].kind
     }
 
-    fn feature_chain(&mut self) -> Result<FeatureChain> {
-        let mut steps = vec![self.qualified_name()?];
+    /// A name reference `A::B`, not yet linked.
+    fn reference(&mut self) -> Result<Reference> {
+        let name = self.qualified_name()?;
+        Ok(Reference {
+            steps: vec![Step { name, target: None }],
+        })
+    }
+
+    /// A feature chain `a.b.c` (or a single name).
+    fn chain(&mut self) -> Result<Reference> {
+        let mut reference = self.reference()?;
         while self.eat(".") {
-            steps.push(self.qualified_name()?);
+            let name = self.qualified_name()?;
+            reference.steps.push(Step { name, target: None });
         }
-        Ok(FeatureChain { steps })
+        Ok(reference)
+    }
+
+    fn references(&mut self, into: &mut Vec<Reference>) -> Result<()> {
+        into.push(self.reference()?);
+        while self.eat(",") {
+            into.push(self.reference()?);
+        }
+        Ok(())
     }
 
     // ---- members ----
@@ -208,20 +231,22 @@ impl<'a> Parser<'a> {
         }
     }
 
+    /// Skips the failed member: up to a `;` outside braces, or its closing
+    /// `}`; a `}` that closes the enclosing body is left for the body.
     fn recover(&mut self, start: usize, failure: Failure, at: usize) -> Node {
         self.pos = start;
-        let mut depth = 0usize;
+        let mut braces = 0usize;
         loop {
             match self.peek_text(0) {
                 _ if self.kind() == TokenKind::End => break,
-                "{" | "(" | "[" => depth += 1,
-                "}" if depth == 0 && self.pos > start => break,
-                "}" if depth <= 1 => {
+                "{" => braces += 1,
+                "}" if braces == 0 && self.pos > start => break,
+                "}" if braces <= 1 => {
                     self.bump();
                     break;
                 }
-                "}" | ")" | "]" => depth = depth.saturating_sub(1),
-                ";" if depth == 0 => {
+                "}" => braces -= 1,
+                ";" if braces == 0 => {
                     self.bump();
                     break;
                 }
@@ -252,18 +277,37 @@ impl<'a> Parser<'a> {
         }
     }
 
-    /// The name an unsupported declaration introduces, when it is plain to
-    /// see: the first name after the keywords, followed by `:`, `;`, `{` etc.
+    /// The name an unsupported declaration introduces: the first name after
+    /// the keywords when the keyword before it declares something (`action
+    /// def X`, `perform action x`), or a leading name followed by a
+    /// declaration symbol (`x = 1 + 2;`). Forms such as `perform x;` or
+    /// `bind x = y;` only refer to names and introduce none.
     fn declared_name(&self, start: usize, end: usize) -> Option<String> {
+        #[rustfmt::skip]
+        const DECLARING: &[&str] = &[
+            "action", "actor", "alias", "allocation", "analysis", "attribute", "binding", "calc",
+            "case", "comment", "concern", "connection", "constraint", "def", "dependency", "enum",
+            "event", "flow", "individual", "interface", "item", "message", "metadata",
+            "objective", "occurrence", "package", "part", "port", "ref", "rendering",
+            "requirement", "snapshot", "stakeholder", "state", "subject", "succession",
+            "timeslice", "verification", "view", "viewpoint",
+        ];
         let tokens = &self.tokens[start..end];
         let first = tokens
             .iter()
             .position(|t| t.kind != TokenKind::Word || !lexer::is_keyword(self.text_of(*t)))?;
         let token = tokens[first];
-        let follows = tokens.get(first + 1).map_or("", |t| self.text_of(*t));
-        let is_name = matches!(token.kind, TokenKind::Word | TokenKind::QuotedName);
-        (is_name && matches!(follows, ":" | ";" | "{" | "[" | ":>" | ":>>" | "=" | ""))
-            .then(|| lexer::name_value(self.text_of(token)))
+        if !matches!(token.kind, TokenKind::Word | TokenKind::QuotedName) {
+            return None;
+        }
+        let declares = match first {
+            0 => {
+                let follows = tokens.get(1).map_or("", |t| self.text_of(*t));
+                matches!(follows, ":" | ";" | "{" | "[" | ":>" | ":>>" | "=")
+            }
+            _ => DECLARING.contains(&self.text_of(tokens[first - 1])),
+        };
+        declares.then(|| lexer::name_value(self.text_of(token)))
     }
 
     fn declaration(&mut self, owner: Option<ElementKind>) -> Result<Node> {
@@ -281,6 +325,15 @@ impl<'a> Parser<'a> {
         }
         let location = self.location();
         let mut node = match self.peek_text(0) {
+            _ if self.kind() == TokenKind::Comment => {
+                let token = self.bump();
+                let mut element = Element::new(ElementKind::Comment);
+                element.text = Some(comment_text(self.text_of(token)));
+                Node {
+                    element,
+                    children: Vec::new(),
+                }
+            }
             "package" => self.package()?,
             "import" => self.import()?,
             "doc" => self.doc()?,
@@ -334,7 +387,7 @@ impl<'a> Parser<'a> {
             return self.unsupported("`import all`");
         }
         let mut element = Element::new(ElementKind::Import);
-        element.target = Some(self.qualified_name()?);
+        element.target = Some(self.reference()?);
         if self.at("::") && self.peek_text(1) == "*" {
             self.pos += 2;
             element.wildcard = true;
@@ -384,7 +437,7 @@ impl<'a> Parser<'a> {
             return self.unsupported("`satisfy requirement` declaration");
         }
         let mut element = Element::new(ElementKind::Satisfy);
-        element.target = Some(self.qualified_name()?);
+        element.target = Some(self.reference()?);
         if self.at(".") {
             return self.unsupported("satisfying a feature chain");
         }
@@ -392,7 +445,7 @@ impl<'a> Parser<'a> {
             return self.unsupported("declaration part on `satisfy`");
         }
         if self.eat("by") {
-            element.by = Some(self.feature_chain()?);
+            element.by = Some(self.chain()?);
         }
         let children = self.body(ElementKind::Satisfy)?;
         Ok(Node { element, children })
@@ -422,6 +475,13 @@ impl<'a> Parser<'a> {
             "interface" => (Some(ElementKind::InterfaceDef), ElementKind::Interface),
             "requirement" => (Some(ElementKind::RequirementDef), ElementKind::Requirement),
             "subject" => (None, ElementKind::Subject),
+            // `ref x : T;` is the same reference usage as `x : T;`.
+            "ref"
+                if self.peek_kind(1) == TokenKind::QuotedName
+                    || !lexer::is_keyword(self.peek_text(1)) =>
+            {
+                (None, ElementKind::Reference)
+            }
             "connect" => {
                 // `connect a to b;`: an anonymous connection usage.
                 self.bump();
@@ -431,20 +491,21 @@ impl<'a> Parser<'a> {
                 return Ok(Node { element, children });
             }
             _ if is_word => {
-                let def = if self.peek_text(1) == "def" {
-                    " def"
-                } else {
-                    ""
+                let construct = match (keyword, self.peek_text(1)) {
+                    ("ref", next) | (_, next @ "def") => format!("`{keyword} {next}`"),
+                    _ => format!("`{keyword}`"),
                 };
-                return self.unsupported(format!("`{keyword}{def}`"));
+                return self.unsupported(construct);
             }
             // An interface definition's `end name : P;` is a port end.
             _ if element.is_end && owner == Some(ElementKind::InterfaceDef) => {
                 (None, ElementKind::Port)
             }
             _ if element.is_end => return self.syntax("`part`, `port` or `item` after `end`"),
-            _ if self.name().is_some() => {
-                return self.unsupported("reference usage without a kind keyword");
+            // A usage without a kind keyword: `x : T;`, `:>> x = 5;`.
+            ":>>" | "redefines" | ":>" | "subsets" => (None, ElementKind::Reference),
+            _ if matches!(self.kind(), TokenKind::Word | TokenKind::QuotedName) => {
+                (None, ElementKind::Reference)
             }
             _ => return self.syntax("a declaration"),
         };
@@ -463,10 +524,7 @@ impl<'a> Parser<'a> {
             element.kind = definition;
             element.name = Some(self.declared_identifier()?);
             while self.eat(":>") || self.eat("specializes") {
-                element.specializes.push(self.qualified_name()?);
-                while self.eat(",") {
-                    element.specializes.push(self.qualified_name()?);
-                }
+                self.references(&mut element.specializes)?;
             }
             if matches!(self.peek_text(0), ":" | ":>>" | "[" | "=") {
                 return self.unsupported(format!("`{}` on a definition", self.peek_text(0)));
@@ -502,17 +560,11 @@ impl<'a> Parser<'a> {
                 }
                 ":>" | "subsets" => {
                     self.bump();
-                    element.specializes.push(self.qualified_name()?);
-                    while self.eat(",") {
-                        element.specializes.push(self.qualified_name()?);
-                    }
+                    self.references(&mut element.specializes)?;
                 }
                 ":>>" | "redefines" => {
                     self.bump();
-                    element.redefines.push(self.qualified_name()?);
-                    while self.eat(",") {
-                        element.redefines.push(self.qualified_name()?);
-                    }
+                    self.references(&mut element.redefines)?;
                 }
                 "[" if element.multiplicity.is_none() => {
                     element.multiplicity = Some(self.multiplicity()?);
@@ -536,12 +588,16 @@ impl<'a> Parser<'a> {
 
     fn typings(&mut self, element: &mut Element) -> Result<()> {
         loop {
-            let conjugated = self.eat("~");
-            let name = self.qualified_name()?;
+            if self.eat("~") {
+                element.conjugated = true;
+            }
+            element.typed_by.push(self.reference()?);
             if self.at(".") {
                 return self.unsupported("typing by a feature chain");
             }
-            element.typed_by.push(TypeRef { name, conjugated });
+            if element.conjugated && element.typed_by.len() > 1 {
+                return self.unsupported("a conjugated port with several types");
+            }
             if !self.eat(",") {
                 return Ok(());
             }
@@ -613,14 +669,14 @@ impl<'a> Parser<'a> {
         Ok(())
     }
 
-    fn connector_end(&mut self) -> Result<FeatureChain> {
+    fn connector_end(&mut self) -> Result<Reference> {
         if self.at("[") {
             return self.unsupported("connection end multiplicity");
         }
         if matches!(self.peek_text(1), "::>" | "references") {
             return self.unsupported("named connection end");
         }
-        self.feature_chain()
+        self.chain()
     }
 }
 

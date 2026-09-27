@@ -194,11 +194,12 @@ fn names_multiplicities_and_values() {
 }
 
 #[test]
-fn a_package_named_like_the_library_makes_its_names_ambiguous() {
+fn a_package_named_like_the_library_is_reported_and_shadows_it() {
+    // The document's own `ScalarValues` is found before the library's.
     expect(
         "package ScalarValues { attribute def Text; }
          package P { attribute a : ScalarValues::String; }",
-        &[("ScalarValues", "duplicate-name"), ("P::a", "ambiguous")],
+        &[("ScalarValues", "duplicate-name"), ("P::a", "unresolved")],
     );
 }
 
@@ -251,5 +252,126 @@ fn a_part_def_cannot_require_itself() {
             ("P::Wheel", "composition-cycle"),
             ("P::Hub", "composition-cycle"),
         ],
+    );
+}
+
+#[test]
+fn import_cycles_end() {
+    expect(
+        "package A { public import A::*; part x : Nope; }
+         package B { public import C::*; part y : Nope; }
+         package C { public import B::*; part def Here; }
+         package D { import B::*; part z : Here; }",
+        // D sees `Here` because B re-exports C through its public import.
+        &[("A::x", "unresolved"), ("B::y", "unresolved")],
+    );
+}
+
+#[test]
+fn a_top_level_import_serves_its_own_document_only() {
+    let tree = parse(&[
+        Source::new("lib.sysml", "package Lib { part def Engine; }"),
+        Source::new(
+            "car.sysml",
+            "import Lib::*;
+package Car { part engine : Engine; }",
+        ),
+        Source::new("bike.sysml", "package Bike { part engine : Engine; }"),
+    ]);
+    let problems: Vec<(String, &str)> = validate(&tree)
+        .into_iter()
+        .map(|d| (tree.qualified_name(d.element), d.code))
+        .collect();
+    assert_eq!(problems, [("Bike::engine".to_string(), "unresolved")]);
+}
+
+#[test]
+fn protected_members_are_visible_to_specialisations_only() {
+    expect(
+        "package P {
+             part def Base { protected attribute q; protected part def Inner; }
+             part def Derived :> Base { attribute r :> q; part i : Inner; }
+             part def User { attribute u :> Derived::q; part j : Base::Inner; }
+         }",
+        &[("P::User::u", "unresolved"), ("P::User::j", "unresolved")],
+    );
+}
+
+#[test]
+fn specialising_oneself_is_a_cycle() {
+    expect(
+        "package P { part def A :> A; part def B { attribute x :> x; } }",
+        &[
+            ("P::A", "specialization-cycle"),
+            ("P::B::x", "specialization-cycle"),
+        ],
+    );
+}
+
+#[test]
+fn ends_and_subjects_redefine_implicitly() {
+    expect(
+        "package P {
+             item def M;
+             port def Pt { out item m : M; }
+             interface def I { end port a : Pt; end port b : ~Pt; }
+             interface def J :> I { end port c : Pt; end port d : ~Pt; }
+             interface def K :> I { end port a : Pt; end port b : ~Pt; }
+             part def S { port p : Pt; port q : ~Pt; }
+             part def Sys {
+                 part s1 : S;
+                 part s2 : S;
+                 interface j : J connect s1.p to s2.q;
+                 interface k : K connect s1.p to s2.q;
+                 interface bad : J connect s2.q to s1.p;
+             }
+             part def Special :> S;
+             requirement def R { subject s : S; }
+             requirement r : R { subject t : Special; }
+             requirement r2 : R { subject s : S; }
+         }",
+        // One problem per end that does not fit.
+        &[
+            ("P::Sys::bad", "incompatible-ends"),
+            ("P::Sys::bad", "incompatible-ends"),
+        ],
+    );
+}
+
+#[test]
+fn a_sender_may_send_a_specialisation_of_what_is_received() {
+    expect(
+        "package P {
+             item def M; item def M2 :> M;
+             port def SendsM2 { out item m : M2; }
+             port def SendsM { out item m : M; }
+             port def TakesM { in item m : M; }
+             port def TakesM2 { in item m : M2; }
+             part def A { port out2 : SendsM2; port out1 : SendsM; port in1 : TakesM; port in2 : TakesM2; }
+             part def Sys {
+                 part a : A; part b : A;
+                 connect a.out2 to b.in1;
+                 connection narrowing connect a.out1 to b.in2;
+             }
+         }",
+        &[("P::Sys::narrowing", "incompatible-ends")],
+    );
+}
+
+#[test]
+fn a_port_may_pass_items_on_to_an_inner_part() {
+    expect(
+        "package P {
+             item def M;
+             port def Takes { in item m : M; }
+             part def Inner { port p : Takes; port q : ~Takes; }
+             part def Outer {
+                 port p : Takes;
+                 part inner : Inner;
+                 connection passOn connect p to inner.p;
+                 connection reversed connect p to inner.q;
+             }
+         }",
+        &[("P::Outer::reversed", "incompatible-ends")],
     );
 }

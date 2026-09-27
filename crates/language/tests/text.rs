@@ -1,8 +1,6 @@
 //! Text in and out: unsupported constructs stay explicit and verbatim, syntax
 //! errors recover at the member, and printing is canonical.
-use agq_language::{
-    Element, ElementKind, Parent, QualifiedName, Source, Tree, TypeRef, parse, print, validate,
-};
+use agq_language::{Element, ElementKind, Parent, Reference, Source, Tree, parse, print, validate};
 
 fn load(text: &str) -> Tree {
     parse(&[Source::new("test.sysml", text)])
@@ -148,27 +146,150 @@ fn names_docs_and_values_print_canonically() {
 fn a_tree_built_in_code_prints_and_validates() {
     let mut tree = Tree::new();
     let doc = tree.add_document("built.sysml");
-    let package = tree.add(
-        Parent::Document(doc),
-        Element::named(ElementKind::Package, "P"),
-    );
-    tree.add(
-        Parent::Element(package),
-        Element::named(ElementKind::PortDef, "Plug"),
-    );
+    let package = tree
+        .add(
+            Parent::Document(doc),
+            Element::named(ElementKind::Package, "P"),
+        )
+        .unwrap();
+    let plug = tree
+        .add(
+            Parent::Element(package),
+            Element::named(ElementKind::PortDef, "Plug"),
+        )
+        .unwrap();
+    let device = tree
+        .add(
+            Parent::Element(package),
+            Element::named(ElementKind::PartDef, "Device"),
+        )
+        .unwrap();
     let mut socket = Element::named(ElementKind::Port, "socket");
-    socket.typed_by.push(TypeRef {
-        name: QualifiedName::new(["Plug"]),
-        conjugated: true,
-    });
-    let device = tree.add(
-        Parent::Element(package),
-        Element::named(ElementKind::PartDef, "Device"),
-    );
-    tree.add(Parent::Element(device), socket);
+    socket.typed_by.push(Reference::to(plug, "Plug"));
+    socket.conjugated = true;
+    let socket = tree.add(Parent::Element(device), socket).unwrap();
+    let mut doc = Element::new(ElementKind::Doc);
+    doc.text = Some("Plugs in.\nNever */ ends early.".into());
+    tree.insert(Parent::Element(device), 0, doc).unwrap();
+    assert_eq!(tree[device].children()[1], socket);
     assert_eq!(codes(&tree), []);
+    let text = &print(&tree)[0].text;
+    assert_eq!(
+        text,
+        "package P {
+    port def Plug;
+
+    part def Device {
+        doc /* Plugs in.
+             * Never * / ends early.
+             */
+        port socket : ~Plug;
+    }
+}
+"
+    );
+    assert_eq!(codes(&load(text)), []);
+}
+
+#[test]
+fn comments_are_elements_and_never_swallow_members() {
+    let text = "package P {
+    /* A note about A. */
+    part def A;
+
+    /* Two
+     * lines. */
+    part def B;
+}
+";
+    let tree = load(text);
+    assert_eq!(codes(&tree), []);
+    let kinds: Vec<ElementKind> = tree[tree.find("P").unwrap()]
+        .children()
+        .iter()
+        .map(|c| tree[*c].kind)
+        .collect();
+    use ElementKind::{Comment, PartDef};
+    assert_eq!(kinds, [Comment, PartDef, Comment, PartDef]);
     assert_eq!(
         print(&tree)[0].text,
-        "package P {\n    port def Plug;\n\n    part def Device {\n        port socket : ~Plug;\n    }\n}\n"
+        "package P {
+    /* A note about A. */
+
+    part def A;
+
+    /* Two
+     * lines.
+     */
+
+    part def B;
+}
+"
     );
+    round_trips(&tree);
+}
+
+#[test]
+fn recovery_stops_at_the_broken_member_despite_open_brackets() {
+    let tree = load("package P { part def A { part x : A[1 ; } part def B; }");
+    assert_eq!(
+        codes(&tree),
+        [("P::A::(syntax error)".to_string(), "syntax")]
+    );
+    assert!(tree.find("P::B").is_some());
+    let tree = load("package P { part def A { attribute v = f(1 ; } part def B; }");
+    assert_eq!(codes(&tree), [("P::A::v".to_string(), "unsupported")]);
+    assert!(tree.find("P::B").is_some());
+}
+
+#[test]
+fn keyword_less_usages_are_reference_usages() {
+    let text = "package P {
+    private import ScalarValues::*;
+
+    requirement def R {
+        attribute limit : Natural;
+    }
+
+    requirement r : R {
+        :>> limit = 5;
+    }
+
+    part def Q {
+        ref helper : R;
+        other : R;
+    }
+}
+";
+    let tree = load(text);
+    assert_eq!(codes(&tree), []);
+    let limit = tree.find("P::r::limit").unwrap();
+    assert_eq!(tree[limit].kind, ElementKind::Reference);
+    let printed = &print(&tree)[0].text;
+    assert!(printed.contains("        :>> limit = 5;\n"));
+    assert!(printed.contains("        helper : R;\n"));
+    round_trips(&tree);
+}
+
+#[test]
+fn unsupported_forms_that_only_refer_to_names_declare_none() {
+    let tree = load(
+        "package P { part def A { part x : A[0..1]; part y : A[0..1]; bind x = y; perform x; perform y; } }",
+    );
+    let codes = codes(&tree);
+    assert_eq!(codes.len(), 3, "{codes:?}");
+    assert!(
+        codes.iter().all(|(_, code)| *code == "unsupported"),
+        "{codes:?}"
+    );
+}
+
+#[test]
+fn an_escape_at_a_line_end_keeps_line_numbers() {
+    let tree = load("package P {\n    part def 'A\\\n    ;\n    part def B :> Missing;\n}\n");
+    let located: Vec<(&str, u32)> = validate(&tree)
+        .into_iter()
+        .map(|d| (d.code, d.location.unwrap().line))
+        .collect();
+    assert_eq!(located, [("syntax", 2), ("unresolved", 4)]);
 }

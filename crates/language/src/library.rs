@@ -4,7 +4,7 @@
 //! `datatype`s; here they are `attribute def`s, the SysML equivalent.
 
 use crate::parser::{Source, parse_into};
-use crate::tree::Tree;
+use crate::tree::{FIRST_LIBRARY_ID, Tree};
 use std::sync::OnceLock;
 
 pub const LIBRARY_TEXT: &str = "\
@@ -22,9 +22,6 @@ package ScalarValues {
     attribute def Positive :> Natural;
 }
 ";
-
-/// Library ids start here so they never collide with model ids.
-const FIRST_LIBRARY_ID: u64 = 1 << 48;
 
 /// The shared library tree.
 pub fn library() -> &'static Tree {

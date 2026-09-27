@@ -88,8 +88,10 @@ pub(crate) fn tokenize(source: &str) -> Vec<Token> {
         } else if c == b'\'' || c == b'"' {
             i += 1;
             let mut closed = false;
+            // Names and strings end at the line end; an escape never
+            // swallows the newline, so line numbers stay right.
             while i < bytes.len() && bytes[i] != b'\n' {
-                if bytes[i] == b'\\' {
+                if bytes[i] == b'\\' && bytes.get(i + 1).is_some_and(|b| *b != b'\n') {
                     i += 2;
                     continue;
                 }

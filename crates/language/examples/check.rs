@@ -74,7 +74,8 @@ fn main() -> ExitCode {
     }
 }
 
-/// Renames the first part usage, re-validates, renames it back, re-validates.
+/// Renames the first part usage, then re-validates and prints: references to
+/// it stay bound and print with the new name. Then renames it back.
 fn edit_timings(tree: &mut Tree) {
     let Some(part) = tree
         .walk()
@@ -85,21 +86,30 @@ fn edit_timings(tree: &mut Tree) {
     };
     let old = tree[part].name.clone().unwrap_or_default();
     let qualified = tree.qualified_name(part);
-    let ((), rename_time) = timed(|| tree.get_mut(part).name = Some(format!("{old}Renamed")));
+    let ((), rename_time) = timed(|| rename(tree, part, format!("{old}Renamed")));
     let (after, validate_time) = timed(|| validate(tree));
+    let (_, print_time) = timed(|| print(tree));
     println!(
-        "edit     rename part `{qualified}`: {} + re-validate {} -> {} problem(s)",
+        "edit     rename part `{qualified}` ({} uses): {} + re-validate {} + print {} -> {} problem(s)",
+        tree.references_to(part).len(),
         ms(rename_time),
         ms(validate_time),
+        ms(print_time),
         after.len()
     );
-    tree.get_mut(part).name = Some(old);
+    rename(tree, part, old);
     let (after, validate_time) = timed(|| validate(tree));
     println!(
         "undo     rename back: re-validate {} -> {} problem(s)",
         ms(validate_time),
         after.len()
     );
+}
+
+fn rename(tree: &mut Tree, id: agq_language::ElementId, name: String) {
+    if let Some(element) = tree.get_mut(id) {
+        element.name = Some(name);
+    }
 }
 
 fn collect(path: &Path, out: &mut Vec<PathBuf>) -> std::io::Result<()> {
