@@ -41,7 +41,14 @@ impl ModelChoice {
                 .filter(|value| !value.is_empty())
         };
         let chosen = var("AGENTIQUE_PROVIDER");
-        let named = chosen.as_deref().and_then(Provider::from_id);
+        // A provider whose models cannot use tools (TypeSafe AI's Jev) is
+        // never the Assistant's (§4.8).
+        let named = chosen
+            .as_deref()
+            .and_then(Provider::from_id)
+            .filter(|provider| {
+                capabilities(&ModelRef::new(*provider, provider.default_model())).tools
+            });
         let provider = named
             .or_else(|| {
                 PREFERENCE
@@ -59,7 +66,7 @@ impl ModelChoice {
         choice.named = chosen.is_some();
         if let Some(id) = chosen.filter(|_| named.is_none()) {
             choice.problem = Some(format!(
-                "AGENTIQUE_PROVIDER is `{id}`, which is not a provider Agentique knows (anthropic, deepseek, openai, openrouter)."
+                "AGENTIQUE_PROVIDER is `{id}`, which is not a provider the Assistant can use (anthropic, deepseek, openai, openrouter)."
             ));
         }
         choice

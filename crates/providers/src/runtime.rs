@@ -25,6 +25,32 @@ pub(crate) fn spawn(task: impl Future<Output = ()> + Send + 'static) -> AbortHan
     handle
 }
 
+/// Why [`run`] has no result.
+pub(crate) enum Failure {
+    TimedOut,
+    /// The task ended without a result (it panicked).
+    Crashed,
+}
+
+/// Runs `task` in the background and waits for its result for at most
+/// `timeout` (the task is then dropped). Blocking: never call it from a task
+/// on this runtime.
+pub(crate) fn run<T: Send + 'static>(
+    timeout: std::time::Duration,
+    task: impl Future<Output = T> + Send + 'static,
+) -> Result<T, Failure> {
+    let (sender, receiver) = std::sync::mpsc::channel();
+    let handle = spawn(async move {
+        let _ = sender.send(task.await);
+    });
+    let result = receiver.recv_timeout(timeout).map_err(|error| match error {
+        std::sync::mpsc::RecvTimeoutError::Timeout => Failure::TimedOut,
+        std::sync::mpsc::RecvTimeoutError::Disconnected => Failure::Crashed,
+    });
+    handle.abort();
+    result
+}
+
 /// Waits for `duration` (retry pauses).
 pub(crate) async fn sleep(duration: std::time::Duration) {
     tokio::time::sleep(duration).await;
