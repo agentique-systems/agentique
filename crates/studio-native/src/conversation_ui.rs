@@ -91,17 +91,47 @@ impl StudioApp {
                             actions.push(Action::NewConversation);
                         }
                         let usage = self.conversation.usage;
-                        ui.label(
-                            RichText::new(&self.conversation.model_name)
-                                .font(theme::regular(theme::CAPTION))
-                                .color(theme.muted),
-                        )
-                        .on_hover_text(format!(
+                        let mut label = self.conversation.model_name.clone();
+                        let mut hover = format!(
                             "Tokens this session: {} input, {} from cache, {} output",
                             usage.input_tokens + usage.cache_creation_input_tokens,
                             usage.cache_read_input_tokens,
                             usage.output_tokens
-                        ));
+                        );
+                        // Estimated cost per turn and per day (R-42), unless
+                        // turned off in Settings.
+                        let show_cost = self
+                            .settings
+                            .settings
+                            .get("assistant.showCost")
+                            .as_bool()
+                            .unwrap_or(true);
+                        if show_cost && let Some(model) = &self.conversation.turn_model {
+                            let turn = self.conversation.turn_usage.cost_usd(model);
+                            let today = crate::cost::dollars(self.daily_cost.today());
+                            match turn {
+                                Some(turn) => label.push_str(&format!(
+                                    " · {} this turn · {today} today",
+                                    crate::cost::dollars(turn)
+                                )),
+                                None => {
+                                    label.push_str(&format!(" · cost not known · {today} today"))
+                                }
+                            }
+                            let as_of = agq_providers::price(model).map_or_else(
+                                || "no list price is known for this model".to_string(),
+                                |price| format!("list prices read {}", price.as_of),
+                            );
+                            hover.push_str(&format!(
+                                "\nEstimated from {as_of}; not a bill. Today is the UTC day."
+                            ));
+                        }
+                        ui.label(
+                            RichText::new(label)
+                                .font(theme::regular(theme::CAPTION))
+                                .color(theme.muted),
+                        )
+                        .on_hover_text(hover);
                     });
                 });
                 if let Some(message) = &self.conversation.key_missing {

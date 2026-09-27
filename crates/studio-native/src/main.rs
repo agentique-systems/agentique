@@ -12,6 +12,7 @@ mod budgets;
 mod commands;
 mod conversation;
 mod conversation_ui;
+mod cost;
 mod edit;
 mod gallery;
 mod gpu;

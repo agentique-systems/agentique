@@ -56,6 +56,9 @@ pub struct ConversationPanel {
     pub thinking: bool,
     /// Tokens used in this session.
     pub usage: Usage,
+    /// The running or last turn's model and tokens, for its estimated cost.
+    pub turn_model: Option<agq_providers::ModelRef>,
+    pub turn_usage: Usage,
     /// The model and effort, shown discreetly in the panel.
     pub model_name: String,
     /// What to tell the Operator while no key is set for the model.
@@ -145,6 +148,8 @@ impl ConversationPanel {
             live: Vec::new(),
             thinking: false,
             usage: Usage::default(),
+            turn_model: None,
+            turn_usage: Usage::default(),
             model_name: choice.label(),
             key_missing: (!choice.has_key()).then(|| choice.missing_key_message()),
             new_model: Box::new(move || choice.start()),
@@ -406,6 +411,8 @@ impl StudioApp {
             failed: false,
         });
         let model = (panel.new_model)();
+        panel.turn_model = model.model();
+        panel.turn_usage = Usage::default();
         panel.turn = Some(BackgroundTurn::start(model, panel.conversation.clone()));
     }
 
@@ -486,10 +493,11 @@ impl StudioApp {
                     }
                 }
                 StreamEvent::Usage(usage) => {
-                    panel.usage.input_tokens += usage.input_tokens;
-                    panel.usage.cache_creation_input_tokens += usage.cache_creation_input_tokens;
-                    panel.usage.cache_read_input_tokens += usage.cache_read_input_tokens;
-                    panel.usage.output_tokens += usage.output_tokens;
+                    panel.usage.add(usage);
+                    panel.turn_usage.add(usage);
+                    if let Some(cost) = panel.turn_model.as_ref().and_then(|m| usage.cost_usd(m)) {
+                        self.daily_cost.add(cost);
+                    }
                 }
             },
             BackgroundEvent::Turn(TurnEvent::ToolFinished(result)) => {
