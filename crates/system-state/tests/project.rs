@@ -270,6 +270,37 @@ fn an_edit_made_outside_while_the_project_is_open_is_not_overwritten() {
 }
 
 #[test]
+fn a_change_that_could_not_be_saved_is_not_redoable() {
+    let (_dir, folder, mut project) = shop();
+    let undo_before = project.state().undo_description().map(str::to_string);
+    let path = model_file(&folder);
+    let edited = fs::read_to_string(&path).unwrap()
+        + "
+// edited outside
+";
+    fs::write(&path, &edited).unwrap();
+    let shop = id(&project, "Shop");
+    let result = project.apply(Change::new(
+        Actor::Operator,
+        "Add Cache",
+        vec![Operation::Create {
+            parent: Parent::Element(shop),
+            element: Box::new(Element::named(ElementKind::PartDef, "Cache")),
+        }],
+    ));
+    assert!(matches!(result, Err(ApplyError::Project(_))));
+    assert!(project.state().tree().find("Shop::Cache").is_none());
+    // Redo does not apply the change that was reported as not applied.
+    assert_eq!(project.state().redo_description(), None);
+    assert!(matches!(project.redo(), Ok(None)));
+    assert!(project.state().tree().find("Shop::Cache").is_none());
+    assert_eq!(
+        project.state().undo_description().map(str::to_string),
+        undo_before
+    );
+}
+
+#[test]
 fn an_interrupted_save_opens_to_the_old_or_the_new_state() {
     let (_dir, folder, project) = shop();
     let store = id(&project, "Shop::Store");
