@@ -16,6 +16,7 @@
 
 mod capabilities;
 mod chat;
+mod fallback;
 mod runtime;
 
 pub use capabilities::{Capabilities, Price, PromptCache, ReasoningText, capabilities, price};

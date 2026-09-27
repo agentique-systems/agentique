@@ -46,9 +46,13 @@ call.cancel(); // stops at once; the call ends with Finished(Err(Cancelled))
   that ends without the provider's final record is a lost connection, never a
   reply; a tool call whose input is not JSON stays in the reply with its raw
   text, so the turn answers it with an error.
-- **Not yet through rig**: Anthropic's server-side refusal fallbacks (the
-  Q-18 adapter) and explicit cache breakpoints; both are marked in the
-  capability table, and the Studio keeps the hand-written Claude client for
+- **Server-side refusal fallbacks** (C-27) on `claude-opus-5`, through a thin
+  adapter (Q-18, `src/fallback.rs`) until rig reads Anthropic's `fallback`
+  content block: rig's Anthropic client gets an HTTP client that removes the
+  block from the stream before rig parses it. After a switch, the declined
+  model's reasoning and tool calls are dropped from the reply; its text stays.
+- **Not yet through rig**: explicit cache breakpoints, marked in the
+  capability table; the Studio keeps the hand-written Claude client for
   Anthropic until W5.7.
 - **Async stays inside**: one background tokio runtime; the API is synchronous.
   Cancelling drops the request or stream, which closes the connection.
@@ -61,6 +65,10 @@ call.cancel(); // stops at once; the call ends with Finished(Err(Cancelled))
 `cargo test -p agq-providers` runs without the network: a local server answers
 like each provider with canned streams and records the requests (reasoning and
 effort parameters, the reasoning sent back, tool results), plus a refused key,
-a retried rate limit, a missing key and a stop within 200 ms of a silent
-stream. Only DeepSeek has been tried live (§7.6, C-35); the Anthropic, OpenAI
-and OpenRouter paths are tested on canned streams only.
+a retried rate limit, a missing key, a stop within 200 ms of a silent stream
+and a reply continued by a fallback model; the fallback filter is also tested
+on streams split into chunks of 1 to 97 bytes. Only DeepSeek has been tried
+live (§7.6, C-35); the Anthropic, OpenAI and OpenRouter paths are tested on
+canned streams only. The fallback filter assumes, untried live, that the
+declined model's last block ends before the `fallback` block starts, as
+Anthropic's documentation shows.

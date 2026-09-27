@@ -8,7 +8,7 @@
 
 use crate::{
     AssistantPart, ChatRequest, Error, ErrorKind, Event, Message, Provider, Reasoning,
-    ReasoningPart, Reply, StopReason, Usage, UserPart, capabilities, runtime,
+    ReasoningPart, Reply, StopReason, Usage, UserPart, capabilities, fallback, runtime,
 };
 use futures::StreamExt;
 use rig_core::client::CompletionClient;
@@ -75,12 +75,29 @@ async fn call(
                 builder = builder.base_url(url);
             }
             let client = builder.build().map_err(setup)?;
-            stream(client.completion_model(model), rig_request, request, sender).await
+            let model = client.completion_model(model);
+            stream(model, rig_request, request, sender, None).await
         }};
     }
     match provider {
         Provider::DeepSeek => stream_with!(deepseek::Client),
-        Provider::Anthropic => stream_with!(anthropic::Client),
+        // Through the fallback adapter (Q-18): the beta header, like
+        // `fallbacks` in the request, only for models that use them (C-27).
+        Provider::Anthropic => {
+            let http = fallback::HttpClient::default();
+            let mut builder = anthropic::Client::builder()
+                .api_key(anthropic::client::AnthropicKey::from(key))
+                .http_client(http.clone());
+            if capabilities(&request.model).refusal_fallbacks {
+                builder = builder.anthropic_beta(fallback::BETA);
+            }
+            if let Some(url) = endpoint {
+                builder = builder.base_url(url);
+            }
+            let client = builder.build().map_err(setup)?;
+            let model = client.completion_model(model);
+            stream(model, rig_request, request, sender, Some(&http)).await
+        }
         Provider::OpenAi => stream_with!(openai::Client),
         Provider::OpenRouter => stream_with!(openrouter::Client),
     }
@@ -164,11 +181,15 @@ fn additional_params(request: &ChatRequest) -> Option<Value> {
             }
             None => json!({ "thinking": { "type": "enabled" } }),
         }),
-        // Adaptive thinking with readable summaries (R-31) and effort.
+        // Adaptive thinking with readable summaries (R-31) and effort; a
+        // declined request continues on the model the API recommends (C-27).
         Provider::Anthropic => {
             let mut params = json!({ "thinking": { "type": "adaptive", "display": "summarized" } });
             if let Some(effort) = effort {
                 params["output_config"] = json!({ "effort": effort });
+            }
+            if capabilities.refusal_fallbacks {
+                params["fallbacks"] = json!("default");
             }
             Some(params)
         }
@@ -233,17 +254,28 @@ fn assistant_content(part: &AssistantPart) -> AssistantContent {
 }
 
 /// Streams one call, retrying a failure (rate limit, server error, lost
-/// connection) twice as long as nothing has been streamed yet.
+/// connection) twice as long as nothing has been streamed yet. `fallbacks`
+/// is the HTTP client of an Anthropic call, which reports a switch to a
+/// fallback model.
 async fn stream<M: CompletionModel>(
     model: M,
     rig_request: CompletionRequest,
     request: &ChatRequest,
     sender: &Sender<Event>,
+    fallbacks: Option<&fallback::HttpClient>,
 ) -> Result<Reply, Error> {
     let mut attempt = 0;
     loop {
         let mut streamed = false;
-        match stream_once(&model, rig_request.clone(), request, sender, &mut streamed).await {
+        let once = stream_once(
+            &model,
+            rig_request.clone(),
+            request,
+            sender,
+            fallbacks,
+            &mut streamed,
+        );
+        match once.await {
             Ok(reply) => return Ok(reply),
             Err(failure) => match failure.retry_after {
                 Some(seconds) if !streamed && attempt < RETRIES && seconds <= MAX_RETRY_WAIT => {
@@ -262,6 +294,7 @@ async fn stream_once<M: CompletionModel>(
     rig_request: CompletionRequest,
     request: &ChatRequest,
     sender: &Sender<Event>,
+    fallbacks: Option<&fallback::HttpClient>,
     streamed: &mut bool,
 ) -> Result<Reply, Failure> {
     let provider = request.model.provider;
@@ -269,6 +302,10 @@ async fn stream_once<M: CompletionModel>(
     let mut response = model.stream(rig_request).await.map_err(failed)?;
     // Tool calls by stream id: name and raw input so far.
     let mut calls: BTreeMap<String, (String, String)> = BTreeMap::new();
+    // Stream ids in the order the calls started, and the provider's id of
+    // each call that arrived complete.
+    let mut started: Vec<String> = Vec::new();
+    let mut provider_ids: BTreeMap<String, String> = BTreeMap::new();
     let mut unreadable = Vec::new();
     let mut thinking_shown = BTreeSet::new();
     let mut last = None;
@@ -319,6 +356,7 @@ async fn stream_once<M: CompletionModel>(
                     ToolCallDeltaContent::Name(name) => {
                         if call.0.is_empty() {
                             call.0 = name.clone();
+                            started.push(internal_call_id.clone());
                             send(Event::ToolCallStarted {
                                 stream_id: internal_call_id,
                                 name,
@@ -340,6 +378,7 @@ async fn stream_once<M: CompletionModel>(
             } => {
                 if !calls.contains_key(&internal_call_id) {
                     // The whole call arrived at once.
+                    started.push(internal_call_id.clone());
                     let json = tool_call.function.arguments.to_string();
                     send(Event::ToolCallStarted {
                         stream_id: internal_call_id.clone(),
@@ -351,9 +390,11 @@ async fn stream_once<M: CompletionModel>(
                     });
                 }
                 calls.remove(&internal_call_id);
+                let id = tool_call.wire_call_id().to_string();
+                provider_ids.insert(internal_call_id.clone(), id.clone());
                 send(Event::ToolCallId {
                     stream_id: internal_call_id,
-                    id: tool_call.wire_call_id().to_string(),
+                    id,
                 });
             }
             StreamedAssistantContent::Final(record) => last = Some(record),
@@ -385,6 +426,15 @@ async fn stream_once<M: CompletionModel>(
                 input: serde_json::Value::String(raw),
             });
         }
+    }
+    // After a switch to a fallback model, what the declined model wrote
+    // before it is not part of the reply, except its text (Q-18).
+    if let Some(switch) = fallbacks.and_then(fallback::HttpClient::switch) {
+        let calls_started: Vec<&str> = started
+            .iter()
+            .map(|stream_id| provider_ids.get(stream_id).unwrap_or(stream_id).as_str())
+            .collect();
+        switch.drop_declined(&mut content, &calls_started);
     }
     let has_calls = content
         .iter()
@@ -671,7 +721,10 @@ mod tests {
             additional_params(&request(Provider::Anthropic, "claude-opus-5", None)).unwrap();
         assert_eq!(params["thinking"]["display"], "summarized");
         assert_eq!(params["output_config"]["effort"], "high");
-        // No server-side fallbacks through rig until the Q-18 adapter.
+        // Server-side fallbacks on the default model only (C-27).
+        assert_eq!(params["fallbacks"], "default");
+        let params =
+            additional_params(&request(Provider::Anthropic, "claude-opus-5-5", None)).unwrap();
         assert!(params.get("fallbacks").is_none());
     }
 

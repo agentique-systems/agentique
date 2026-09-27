@@ -145,6 +145,7 @@ version = "0.1.0"
 name = "agq-providers"
 version = "0.1.0"
 dependencies = [
+ "bytes",
  "futures",
  "reqwest 0.13.5",
  "rig-core",
