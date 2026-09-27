@@ -1122,6 +1122,65 @@ mod app_tests {
     }
 
     #[test]
+    fn a_change_that_cannot_be_saved_is_reported_and_not_applied() {
+        let (mut app, context, _folder) = studio("save-failure");
+        let model = app.project.as_ref().unwrap().folder().join("model");
+        let file = std::fs::read_dir(&model)
+            .unwrap()
+            .map(|entry| entry.unwrap().path())
+            .find(|path| path.extension().is_some_and(|e| e == "sysml"))
+            .unwrap();
+        // An edit made outside Agentique: the project refuses to overwrite it.
+        let text = std::fs::read_to_string(&file).unwrap()
+            + "
+// edited outside
+";
+        std::fs::write(&file, text).unwrap();
+        let package = app
+            .project
+            .as_ref()
+            .unwrap()
+            .state()
+            .tree()
+            .find("P")
+            .unwrap();
+        app.create(CreateKind::Part, false, "api", Parent::Element(package));
+        assert!(
+            app.status.starts_with("Not applied: could not save"),
+            "{}",
+            app.status
+        );
+        assert!(app.saved.is_err(), "the status bar says Not saved");
+        let exists = |app: &StudioApp| {
+            app.project
+                .as_ref()
+                .unwrap()
+                .state()
+                .tree()
+                .find("P::api")
+                .is_some()
+        };
+        assert!(!exists(&app));
+        app.execute(CommandId::Redo, &context);
+        assert!(!exists(&app), "redo does not apply the refused change");
+        // Opening the open project reads it again, with the outside edit.
+        let folder = app.project.as_ref().unwrap().folder().to_path_buf();
+        app.open_project(&folder);
+        assert!(app.project.is_some(), "{}", app.status);
+        let package = app
+            .project
+            .as_ref()
+            .unwrap()
+            .state()
+            .tree()
+            .find("P")
+            .unwrap();
+        app.create(CreateKind::Part, false, "api", Parent::Element(package));
+        assert!(exists(&app), "{}", app.status);
+        assert_eq!(app.saved, Ok(()));
+    }
+
+    #[test]
     fn a_change_is_shown_and_highlighted_where_it_happens() {
         let (mut app, _context, _folder) = studio("highlight");
         let api = part(&mut app, "api");

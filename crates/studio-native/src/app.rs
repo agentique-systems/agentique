@@ -565,29 +565,32 @@ impl StudioApp {
     /// own nothing are below it.
     pub fn frame_all(&mut self) {
         let mut target = self.camera;
-        let bounds = if self.view == SurfaceView::Architecture && self.comparison.is_none() {
-            // The structure, with the title of the package around it.
-            let mut structure = self.scene.structure_bounds();
-            if let Some(top) = self
-                .scene
-                .nodes
-                .iter()
-                .filter(|n| n.category == agq_studio_scene::NodeCategory::Package)
-                .filter(|n| n.bounds.contains_rect(structure))
-                .map(|n| n.bounds.min.y)
-                .reduce(f32::max)
+        let has_secondary = self.scene.nodes.iter().any(|n| n.secondary);
+        let bounds =
+            if self.view == SurfaceView::Architecture && self.comparison.is_none() && has_secondary
             {
-                structure = agq_studio_scene::Rect::new(
-                    structure.min.x,
-                    top,
-                    structure.width(),
-                    structure.max.y - top,
-                );
-            }
-            structure
-        } else {
-            self.scene.bounds()
-        };
+                // The structure, with the title of the package around it.
+                let mut structure = self.scene.structure_bounds();
+                if let Some(top) = self
+                    .scene
+                    .nodes
+                    .iter()
+                    .filter(|n| n.category == agq_studio_scene::NodeCategory::Package)
+                    .filter(|n| n.bounds.contains_rect(structure))
+                    .map(|n| n.bounds.min.y)
+                    .reduce(f32::max)
+                {
+                    structure = agq_studio_scene::Rect::new(
+                        structure.min.x,
+                        top,
+                        structure.width(),
+                        structure.max.y - top,
+                    );
+                }
+                structure
+            } else {
+                self.scene.bounds()
+            };
         target.fit(bounds, 42.0);
         target.zoom = target.zoom.min(1.3);
         // When more follows below the structure, show the structure at the top.

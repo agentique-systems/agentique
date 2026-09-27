@@ -977,3 +977,52 @@ fn removed_cards_never_overlap_current_cards() {
         }
     }
 }
+
+#[test]
+fn a_container_is_sized_by_what_it_shows_now() {
+    let input = grid();
+    let first = Scene::build(&input, &SceneOptions::default(), None).unwrap();
+    let before = first.node(id(2)).unwrap().bounds;
+    let mut fewer = input.clone();
+    fewer
+        .nodes
+        .retain(|n| n.owner != Some(id(2)) || n.id == id(21));
+    fewer.edges.clear();
+    let after = Scene::build(&fewer, &SceneOptions::default(), Some(first.memory())).unwrap();
+    let shrunk = after.node(id(2)).unwrap().bounds;
+    assert!(
+        shrunk.height() < before.height(),
+        "{shrunk:?} vs {before:?}"
+    );
+    assert!(shrunk.contains_rect(after.node(id(21)).unwrap().bounds));
+}
+
+#[test]
+fn a_card_moved_into_an_owner_is_placed_anew_without_holes() {
+    let input = grid();
+    let first = Scene::build(&input, &SceneOptions::default(), None).unwrap();
+    // Move 31 (owned by 3) into 1; its remembered place lies outside 1.
+    let mut moved = input.clone();
+    for n in &mut moved.nodes {
+        if n.id == id(31) {
+            n.owner = Some(id(1));
+        }
+    }
+    moved.edges.clear();
+    let after = Scene::build(&moved, &SceneOptions::default(), Some(first.memory())).unwrap();
+    let owner = after.node(id(1)).unwrap().bounds;
+    let card = after.node(id(31)).unwrap().bounds;
+    assert!(owner.contains_rect(card));
+    // No hole: every card in 1 is at most one gap below the card above it.
+    let mut cards: Vec<_> = after
+        .nodes
+        .iter()
+        .filter(|n| n.semantic.owner == Some(id(1)))
+        .map(|n| n.bounds)
+        .collect();
+    cards.sort_by(|a, b| a.min.y.total_cmp(&b.min.y));
+    for pair in cards.windows(2) {
+        assert!(pair[1].min.y - pair[0].max.y <= 60.0, "{pair:?}");
+    }
+    assert!(owner.max.y - cards.last().unwrap().max.y <= 40.0);
+}

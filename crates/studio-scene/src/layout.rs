@@ -448,6 +448,36 @@ pub fn is_secondary(node: &InputNode, has_children: bool) -> bool {
 }
 
 impl HierarchyLayout {
+    /// Moves remembered cards up, in order from the top, until each sits one
+    /// gap below the card above it (or at the top), so removed or moved
+    /// cards leave no holes. Columns and order are kept.
+    fn compact(&self, placed: &mut BTreeMap<ElementId, Rect>, origin: Point) {
+        let mut order: Vec<ElementId> = placed.keys().copied().collect();
+        order.sort_by(|a, b| {
+            placed[a]
+                .min
+                .y
+                .total_cmp(&placed[b].min.y)
+                .then(placed[a].min.x.total_cmp(&placed[b].min.x))
+        });
+        let mut done: Vec<Rect> = Vec::new();
+        for id in order {
+            let rect = placed[&id];
+            let floor = done
+                .iter()
+                .filter(|above| above.min.x < rect.max.x && rect.min.x < above.max.x)
+                .map(|above| above.max.y + self.gap)
+                .fold(origin.y, f32::max);
+            let moved = if rect.min.y > floor {
+                rect.translate(Point::new(0.0, floor - rect.min.y))
+            } else {
+                rect
+            };
+            placed.insert(id, moved);
+            done.push(moved);
+        }
+    }
+
     /// Packs the structure first and the secondary cards in a band below it.
     fn pack_structure(
         &self,
@@ -538,6 +568,7 @@ impl HierarchyLayout {
                 }
             }
         }
+        self.compact(&mut result, origin);
         let mut columns = if children.len() > self.max_columns * 4 {
             (children.len() as f32).sqrt().ceil() as usize
         } else if parent != ElementId::from_raw(0) && children.len() <= 4 {

@@ -6,12 +6,19 @@
 //!   project dialog, builds part of the URL shortener by hand (parts, ports,
 //!   a connection, a rename, a type, a lock, a refused locked change) and
 //!   records a checkpoint.
-//! - `a-crash --project <same folder>`: makes one more edit and then kills
-//!   its own process without closing anything, like a crash.
+//! - `a-crash --project <same folder>`: makes one more edit, writes its
+//!   report, and ends the process at once with exit code 3: the project is
+//!   not closed, the session is not saved, nothing runs on exit.
 //! - `a-reopen --project <same folder>`: in a new process, checks that
-//!   everything is as it was left, including the lock, the checkpoints, the
-//!   "what changed" view and the edit made just before the crash (so at most
-//!   the edit in progress can be lost). Run a-build, a-crash, a-reopen.
+//!   everything is as it was left: the architecture, the lock, exactly two
+//!   checkpoints, nothing unmatched, and the edit made just before the
+//!   unclean exit, shown in the "what changed" view since the newest
+//!   checkpoint. Run a-build, a-crash, a-reopen.
+//!
+//! What this proves: an edit is on disk when it is shown, so ending the
+//! process uncleanly loses nothing that was shown. It does not interrupt a
+//! save half way; that (the old or the new state, never a mix) is covered by
+//! `agq-history`'s crash tests.
 //!
 //! Screenshots go only to the `--gallery` directory given on the command line.
 use crate::{
@@ -106,7 +113,9 @@ enum Check {
     Locked(&'static str),
     LockConfirmation,
     Checkpoints(usize),
-    Comparison,
+    /// The comparison lists exactly this element as created.
+    Comparison(&'static str),
+    NothingUnmatched,
     NothingSelected,
     MoveDialog,
     /// A card with this name shows a problem.
@@ -415,7 +424,7 @@ fn build(folder: &Path) -> Vec<Step> {
             ..step(
                 "Enter records the checkpoint",
                 Action::Key(Key::Enter, Modifiers::NONE),
-                Check::Checkpoints(1),
+                Check::Checkpoints(2),
             )
         },
     ]);
@@ -483,25 +492,30 @@ fn reopen() -> Vec<Step> {
             Action::Idle,
             Check::Exists("UrlShortener::crashEdit", ElementKind::Part),
         ),
+        step(
+            "every element matched its identity",
+            Action::Idle,
+            Check::NothingUnmatched,
+        ),
         step("no problems left", Action::Idle, Check::NoProblems),
         // The project's first checkpoint and the journey's.
         step("checkpoints", Action::Idle, Check::Checkpoints(2)),
         step(
             "History panel",
             Action::Click(Target::Button("History")),
-            Check::Checkpoints(1),
+            Check::Checkpoints(2),
         ),
         step(
-            "select the first checkpoint",
-            Action::Click(Target::Button(crate::history::HISTORY_ROWS[1])),
+            "select the newest checkpoint",
+            Action::Click(Target::Button(crate::history::HISTORY_ROWS[0])),
             Check::Checkpoints(2),
         ),
         Step {
             screenshot: Some("06-what-changed"),
             ..step(
-                "show what changed since then",
+                "what changed since then is the edit made before the exit",
                 Action::Click(Target::Button("Show changes")),
-                Check::Comparison,
+                Check::Comparison("crashEdit"),
             )
         },
     ]
@@ -526,6 +540,8 @@ struct Runner {
     point: Option<(Pos2, Pos2)>,
     capture: Option<(&'static str, u64)>,
     report: Report,
+    /// The journey asked to end the process now.
+    crash: bool,
 }
 
 fn drive(
@@ -556,6 +572,7 @@ fn drive(
                 time: None,
                 point: None,
                 capture: None,
+                crash: false,
                 report: Report {
                     scenario: scenario.into(),
                     passed: false,
@@ -567,6 +584,15 @@ fn drive(
         }
     };
     let result = runner.advance(app, ctx, input);
+    if runner.crash {
+        // Report first, then end without closing the project or saving.
+        runner.report.passed = true;
+        if let Some(path) = report_path {
+            let bytes = serde_json::to_vec_pretty(&runner.report).map_err(|e| e.to_string())?;
+            std::fs::write(path, bytes).map_err(|e| format!("Cannot write the report: {e}"))?;
+        }
+        std::process::exit(3);
+    }
     runner.report.passed = matches!(result, Ok(ScenarioStatus::Complete));
     if let Err(error) = &result {
         runner.report.failure = Some(error.clone());
@@ -677,7 +703,7 @@ impl Runner {
     ) -> Result<(), String> {
         match action {
             Action::Idle => {}
-            Action::Crash => std::process::abort(),
+            Action::Crash => self.crash = true,
             Action::Key(k, m) => key(input, *k, *m),
             Action::Text(text) => input.events.push(Event::Text((*text).into())),
             Action::Click(t) => {
@@ -929,17 +955,25 @@ fn check(check: &Check, app: &StudioApp) -> Result<(), String> {
         Check::Checkpoints(count) => {
             let project = app.project.as_ref().ok_or("no project is open")?;
             let found = project.checkpoints().map_err(|e| e.to_string())?.len();
-            if found < *count {
+            if found != *count {
                 return Err(format!("{found} checkpoint(s), expected {count}"));
             }
         }
-        Check::Comparison => match &app.comparison {
+        Check::Comparison(name) => match &app.comparison {
             None => return fail("no comparison is shown"),
-            Some(comparison) if comparison.created.is_empty() => {
-                return fail("the comparison lists no created elements");
+            Some(comparison) => {
+                let names: Vec<&str> = comparison.created.iter().map(|(_, n)| n.as_str()).collect();
+                if names.len() != 1 || !names[0].ends_with(name) {
+                    return Err(format!("created since the checkpoint: {names:?}"));
+                }
             }
-            Some(_) => {}
         },
+        Check::NothingUnmatched => {
+            let project = app.project.as_ref().ok_or("no project is open")?;
+            if !project.unmatched().is_empty() {
+                return Err(format!("unmatched: {:?}", project.unmatched()));
+            }
+        }
         Check::MoveDialog => {
             if !matches!(app.dialog, Some(Dialog::MoveTo { .. })) {
                 return fail("the Move to dialog is not open");

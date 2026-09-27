@@ -78,7 +78,7 @@ pub fn inspector_name(ui: &mut egui::Ui, name: &str) -> egui::Response {
     );
     title.wrap.max_width = ui.available_width();
     title.wrap.max_rows = 3;
-    title.wrap.break_anywhere = true;
+    title.wrap.break_anywhere = false;
     title.wrap.overflow_character = Some('…');
     ui.add(egui::Label::new(title).wrap()).on_hover_text(name)
 }
@@ -187,7 +187,13 @@ impl StudioApp {
                 .font(crate::theme::semibold(crate::theme::CAPTION))
                 .color(theme.accent),
         );
-        inspector_name(ui, &crate::edit::display_path(tree, element));
+        if let Some(owner) = e.owner() {
+            ui.label(crate::app::muted(
+                format!("in {}", crate::edit::display_path(tree, owner)),
+                theme,
+            ));
+        }
+        inspector_name(ui, &crate::edit::display_name(tree, element));
         if let Some(definition) = self.shared_definition() {
             ui.label(
                 RichText::new(format!(

@@ -543,7 +543,9 @@ impl StudioApp {
             let width = (bounds.width() - 2.0 * pad).max(10.0);
             let removed = node.diff == DiffMark::Removed;
             let text = if removed { theme.muted } else { theme.text };
-            let caption = (9.5 * scale).clamp(8.0, 13.0);
+            // No text is drawn below the caption size: rows that would need
+            // smaller text are left out at this zoom.
+            let caption = (9.5 * scale).clamp(theme::CAPTION, 13.0);
             let name_size =
                 ((if node.is_container { 17.0 } else { 16.0 }) * scale).clamp(11.0, 26.0);
             let mut y = bounds.top() + (8.0 * scale).clamp(3.0, 12.0);
@@ -621,7 +623,8 @@ impl StudioApp {
             if room < name_size {
                 continue;
             }
-            let rows = if room >= name_size * 2.6 && !node.is_container {
+            // Names wrap only between words; a single word is elided.
+            let rows = if room >= name_size * 2.6 && !node.is_container && label.contains(' ') {
                 2
             } else {
                 1
@@ -640,7 +643,7 @@ impl StudioApp {
                 + (node.bounds.height()
                     - agq_studio_scene::feature_block(node.semantic.features.len()))
                     * scale;
-            let small = (11.0 * scale).clamp(9.0, 16.0);
+            let small = (11.0 * scale).clamp(theme::CAPTION, 16.0);
             if self.lod.level() >= LodLevel::Features
                 && !node.semantic.detail.is_empty()
                 && y + small <= features_top.min(bounds.bottom() - 2.0)
@@ -656,8 +659,11 @@ impl StudioApp {
                 );
             }
             let line = agq_studio_scene::FEATURE_LINE * scale;
-            if self.lod.level() >= LodLevel::Features && !node.is_container && line >= 9.0 {
-                let size = (10.5 * scale).min(line * 0.8).clamp(8.0, 15.0);
+            if self.lod.level() >= LodLevel::Features
+                && !node.is_container
+                && line >= theme::CAPTION + 2.0
+            {
+                let size = (10.5 * scale).min(line * 0.8).clamp(theme::CAPTION, 15.0);
                 let shown = node
                     .semantic
                     .features
@@ -852,7 +858,7 @@ impl StudioApp {
             );
             job.wrap.max_width = (owner_width * 0.44).max(40.0);
             job.wrap.max_rows = 1;
-            job.wrap.break_anywhere = true;
+            job.wrap.break_anywhere = false;
             job.wrap.overflow_character = Some('…');
             let galley = painter.layout_job(job);
             let header = port.label_in_header && self.camera.zoom * 24.0 >= galley.size().y;
@@ -1215,7 +1221,7 @@ fn bounded_label(
     let mut job = egui::text::LayoutJob::simple_singleline(text.into(), font, color);
     job.wrap.max_width = width;
     job.wrap.max_rows = rows;
-    job.wrap.break_anywhere = true;
+    job.wrap.break_anywhere = false;
     job.wrap.overflow_character = Some('…');
     let galley = painter.layout_job(job);
     let drawn = egui::Rect::from_min_size(position, galley.size());
