@@ -9,7 +9,7 @@
 
 use agq_language::{
     Direction, Element, ElementId, ElementKind, Literal, Multiplicity, Parent, Reference, Tree,
-    print, print_element,
+    print_element,
 };
 use agq_system_state::{Actor, Change, ChangeEvent, Operation, Property, Rejection, SystemState};
 use serde_json::{Value, json};
@@ -19,6 +19,32 @@ pub const FIND_ELEMENTS: &str = "find_elements";
 pub const GET_PROBLEMS: &str = "get_problems";
 pub const APPLY_CHANGES: &str = "apply_changes";
 pub const ASK_OPERATOR: &str = "ask_operator";
+
+/// The longest tool result the model reads, in characters: about 8,000
+/// tokens (R-34). Longer results are cut with a note on narrowing the
+/// request.
+pub const RESULT_LIMIT: usize = 32_000;
+
+/// `text`, cut at a line boundary to [`RESULT_LIMIT`], with a note that says
+/// how to narrow the request.
+pub fn cap(text: String) -> String {
+    if text.len() <= RESULT_LIMIT {
+        return text;
+    }
+    let mut end = RESULT_LIMIT;
+    while !text.is_char_boundary(end) {
+        end -= 1;
+    }
+    let end = text[..end].rfind('\n').unwrap_or(end);
+    let rest = text[end..]
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .count();
+    format!(
+        "{}\n[Cut: {rest} more lines. Narrow the request: read one element by qualified name, or find elements by name or kind.]",
+        &text[..end]
+    )
+}
 
 /// The element kinds the Assistant may create, by their SysML keyword.
 const KINDS: &[ElementKind] = &[
@@ -85,7 +111,7 @@ pub fn definitions() -> Value {
     json!([
         {
             "name": READ_MODEL,
-            "description": "Read the current architecture as SysML text, with locked elements and the number of problems. Give an element's qualified name to read only that element.",
+            "description": "Without an element: an outline of the architecture, one line per element (name, kind, type, direction, ends), indented by owner, with locks and problem counts. With an element's qualified name: that element's full text. Read the outline first, then the elements you will change.",
             "input_schema": {
                 "type": "object",
                 "properties": { "element": name("Optional qualified name of one element.") },
@@ -296,11 +322,7 @@ fn read_model(state: &SystemState, input: &Value) -> Result<String, String> {
             let id = find(tree, name)?;
             print_element(tree, id).ok_or_else(|| format!("`{name}` cannot be printed"))?
         }
-        None => print(tree)
-            .into_iter()
-            .map(|source| format!("// {}\n{}", source.path, source.text))
-            .collect::<Vec<_>>()
-            .join("\n"),
+        None => outline(state),
     };
     let locked: Vec<String> = state
         .locks()
@@ -316,6 +338,107 @@ fn read_model(state: &SystemState, input: &Value) -> Result<String, String> {
         "{text}\n{locks}\nProblems: {}.",
         state.diagnostics().len()
     ))
+}
+
+/// The outline `read_model` returns without an element (R-34): one line per
+/// element, indented by owner, with its kind and what it refers to, its lock
+/// and its problems. Documentation, comments and imports are left out.
+fn outline(state: &SystemState) -> String {
+    let tree = state.tree();
+    let mut problems: std::collections::HashMap<ElementId, usize> = Default::default();
+    for diagnostic in state.diagnostics() {
+        *problems.entry(diagnostic.element).or_default() += 1;
+    }
+    let mut lines = vec![
+        "Outline (indented by owner; read an element by qualified name for its full text):"
+            .to_string(),
+    ];
+    let mut stack: Vec<(ElementId, usize)> = tree.roots().map(|root| (root, 0)).collect();
+    stack.reverse();
+    while let Some((id, depth)) = stack.pop() {
+        let element = &tree[id];
+        if matches!(
+            element.kind,
+            ElementKind::Doc | ElementKind::Comment | ElementKind::Import
+        ) {
+            continue;
+        }
+        let mut line = format!("{}{}", "  ".repeat(depth), outline_line(tree, id, element));
+        if state.locks().contains(&id) {
+            line.push_str(" [locked]");
+        }
+        match problems.get(&id) {
+            Some(1) => line.push_str(" — 1 problem"),
+            Some(count) => line.push_str(&format!(" — {count} problems")),
+            None => {}
+        }
+        lines.push(line);
+        for child in element.children().iter().rev() {
+            stack.push((*child, depth + 1));
+        }
+    }
+    lines.join("\n")
+}
+
+/// One element in the outline: `name (kind : Type [m] :> General, a.b to c.d)`.
+fn outline_line(tree: &Tree, id: ElementId, element: &Element) -> String {
+    let names = |references: &[Reference]| {
+        references
+            .iter()
+            .map(ToString::to_string)
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    match element.kind {
+        ElementKind::Satisfy => {
+            return match (&element.target, &element.by) {
+                (Some(target), Some(by)) => format!("satisfy {target} by {by}"),
+                (Some(target), None) => format!("satisfy {target}"),
+                _ => "satisfy".to_string(),
+            };
+        }
+        ElementKind::Unsupported => {
+            return format!(
+                "unsupported {}",
+                element.note.as_deref().unwrap_or("construct")
+            );
+        }
+        ElementKind::SyntaxError => return "text that could not be read".to_string(),
+        _ => {}
+    }
+    let name = tree.effective_name(id).unwrap_or("(unnamed)");
+    let mut detail = String::new();
+    if element.is_abstract {
+        detail.push_str("abstract ");
+    }
+    if element.is_end {
+        detail.push_str("end ");
+    }
+    if let Some(direction) = element.direction {
+        detail.push_str(direction.keyword());
+        detail.push(' ');
+    }
+    detail.push_str(element.kind.keyword());
+    if !element.typed_by.is_empty() {
+        let tilde = if element.conjugated { "~" } else { "" };
+        detail.push_str(&format!(" : {tilde}{}", names(&element.typed_by)));
+    }
+    if let Some(multiplicity) = element.multiplicity {
+        detail.push_str(&format!(" {multiplicity}"));
+    }
+    if !element.specializes.is_empty() {
+        detail.push_str(&format!(" :> {}", names(&element.specializes)));
+    }
+    if !element.redefines.is_empty() && element.name.is_some() {
+        detail.push_str(&format!(" :>> {}", names(&element.redefines)));
+    }
+    if let Some(value) = &element.value {
+        detail.push_str(&format!(" = {value}"));
+    }
+    if element.ends.len() == 2 {
+        detail.push_str(&format!(", {} to {}", element.ends[0], element.ends[1]));
+    }
+    format!("{name} ({detail})")
 }
 
 fn find_elements(tree: &Tree, input: &Value) -> Result<String, String> {

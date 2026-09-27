@@ -65,11 +65,12 @@ pub struct ChangeSummary {
 }
 
 impl ToolResult {
-    /// An answer: model text read, a question answered.
+    /// An answer: model text read, a question answered. Cut to
+    /// [`tools::RESULT_LIMIT`] with a note on narrowing the request (R-34).
     pub fn answer(content: impl Into<String>) -> Self {
         ToolResult {
             tool_use_id: String::new(),
-            content: content.into(),
+            content: tools::cap(content.into()),
             is_error: false,
             change: None,
         }
