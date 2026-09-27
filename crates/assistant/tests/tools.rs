@@ -1,0 +1,335 @@
+use agq_assistant::tools::{self, APPLY_CHANGES, ASK_OPERATOR, FIND_ELEMENTS, READ_MODEL};
+use agq_assistant::{Conversation, Entry, Prepared, ToolResult};
+use agq_language::{Source, parse, print};
+use agq_system_state::{Actor, Change, Operation, Rejection, SystemState};
+use serde_json::json;
+use std::collections::BTreeSet;
+
+fn state() -> SystemState {
+    let text = "package UrlShortener {
+    item def Link;
+    port def LinkStorePort { in item save : Link; out item found : Link; }
+    part def LinkStore { port links : LinkStorePort; }
+    part def HttpApi { port storage : ~LinkStorePort; }
+}";
+    SystemState::new(parse(&[Source::new("model.sysml", text)]), BTreeSet::new())
+}
+
+fn change(prepared: Prepared) -> Change {
+    match prepared {
+        Prepared::Change(change) => change,
+        other => panic!("expected a change, got {other:?}"),
+    }
+}
+
+#[test]
+fn every_tool_has_a_schema() {
+    let definitions = tools::definitions();
+    let names: Vec<&str> = definitions
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|tool| tool["name"].as_str().unwrap())
+        .collect();
+    assert_eq!(
+        names,
+        [
+            "read_model",
+            "find_elements",
+            "get_problems",
+            "apply_changes",
+            "ask_operator"
+        ]
+    );
+    for tool in definitions.as_array().unwrap() {
+        assert_eq!(tool["input_schema"]["type"], "object");
+    }
+}
+
+#[test]
+fn one_change_can_build_nested_parts_and_connect_them() {
+    let mut state = state();
+    let prepared = tools::prepare(
+        &state,
+        APPLY_CHANGES,
+        &json!({
+            "description": "Add the service with its API and store",
+            "operations": [
+                { "op": "create", "parent": "UrlShortener", "kind": "part def", "name": "Service",
+                  "doc": "The URL shortener service." },
+                { "op": "create", "parent": "UrlShortener::Service", "kind": "part", "name": "api", "type": "HttpApi" },
+                { "op": "create", "parent": "UrlShortener::Service", "kind": "part", "name": "store", "type": "LinkStore",
+                  "multiplicity": "1" },
+                { "op": "connect", "parent": "UrlShortener::Service", "name": "storage",
+                  "from": "api.storage", "to": "store.links" }
+            ]
+        }),
+    );
+    let event = state
+        .apply(change(prepared))
+        .expect("applies as one change");
+    assert_eq!(event.actor, Actor::Assistant);
+    assert!(state.diagnostics().is_empty(), "{:?}", state.diagnostics());
+    let text = &print(state.tree())[0].text;
+    assert!(text.contains("part store : LinkStore[1];"), "{text}");
+    assert!(
+        text.contains("connection storage connect api.storage to store.links;"),
+        "{text}"
+    );
+    assert!(text.contains("The URL shortener service."), "{text}");
+    let result = tools::describe_event(&state, &event);
+    assert!(
+        result.contains("Created: UrlShortener::Service (part def)"),
+        "{result}"
+    );
+    assert!(
+        result.contains("No problems at the changed elements."),
+        "{result}"
+    );
+    // One undo step removes all of it.
+    state.undo().unwrap();
+    assert!(state.tree().find("UrlShortener::Service").is_none());
+}
+
+#[test]
+fn a_bad_operation_is_explained_and_nothing_is_prepared() {
+    let state = state();
+    let prepared = tools::prepare(
+        &state,
+        APPLY_CHANGES,
+        &json!({
+            "description": "Rename something that does not exist",
+            "operations": [{ "op": "rename", "element": "UrlShortener::Nope", "name": "X" }]
+        }),
+    );
+    let Prepared::Invalid(message) = prepared else {
+        panic!("expected an explanation, got {prepared:?}");
+    };
+    assert!(message.contains("operation 1"), "{message}");
+    assert!(message.contains("UrlShortener::Nope"), "{message}");
+}
+
+#[test]
+fn a_locked_part_is_not_changed_without_the_operator() {
+    let mut state = state();
+    let store = state.tree().find("UrlShortener::LinkStore").unwrap();
+    state
+        .apply(Change::new(
+            Actor::Operator,
+            "Lock",
+            vec![Operation::Lock { element: store }],
+        ))
+        .unwrap();
+    let request = json!({
+        "description": "Rename the store's port",
+        "operations": [{ "op": "rename", "element": "UrlShortener::LinkStore::links", "name": "incoming" }]
+    });
+    let rejection = state
+        .apply(change(tools::prepare(&state, APPLY_CHANGES, &request)))
+        .unwrap_err();
+    assert_eq!(
+        rejection,
+        Rejection::Locked {
+            elements: vec![store]
+        }
+    );
+    let result = tools::describe_rejection(&state, &rejection);
+    assert!(result.contains("UrlShortener::LinkStore"), "{result}");
+    assert!(
+        state
+            .tree()
+            .find("UrlShortener::LinkStore::links")
+            .is_some()
+    );
+}
+
+#[test]
+fn a_change_prepared_on_an_older_model_is_stale() {
+    let mut state = state();
+    let request = json!({
+        "description": "Add a part def",
+        "operations": [{ "op": "create", "parent": "UrlShortener", "kind": "part def", "name": "Stats" }]
+    });
+    let prepared = change(tools::prepare(&state, APPLY_CHANGES, &request));
+    state
+        .apply(Change::new(
+            Actor::Operator,
+            "Meanwhile",
+            vec![Operation::Rename {
+                element: state.tree().find("UrlShortener::HttpApi").unwrap(),
+                name: "Api".into(),
+            }],
+        ))
+        .unwrap();
+    let rejection = state.apply(prepared).unwrap_err();
+    assert!(tools::describe_rejection(&state, &rejection).contains("Read the model again"));
+}
+
+#[test]
+fn reading_and_finding_and_asking() {
+    let state = state();
+    let Prepared::Answer(model) = tools::prepare(&state, READ_MODEL, &json!({})) else {
+        panic!()
+    };
+    assert!(model.contains("part def LinkStore"), "{model}");
+    assert!(model.contains("Locked: none."), "{model}");
+    let Prepared::Answer(found) =
+        tools::prepare(&state, FIND_ELEMENTS, &json!({ "name": "store" }))
+    else {
+        panic!()
+    };
+    assert!(
+        found.contains("UrlShortener::LinkStore (part def)"),
+        "{found}"
+    );
+    assert_eq!(
+        tools::prepare(
+            &state,
+            ASK_OPERATOR,
+            &json!({ "question": "Separate statistics service?", "options": ["Yes", "No"] })
+        ),
+        Prepared::Question {
+            question: "Separate statistics service?".into(),
+            options: vec!["Yes".into(), "No".into()]
+        }
+    );
+    assert!(matches!(
+        tools::prepare(&state, "delete_everything", &json!({})),
+        Prepared::Invalid(_)
+    ));
+}
+
+#[test]
+fn a_stopped_reply_still_forms_a_valid_exchange() {
+    let conversation = Conversation {
+        entries: vec![
+            Entry::Operator {
+                text: "Build it".into(),
+            },
+            Entry::Assistant {
+                content: vec![
+                    json!({ "type": "tool_use", "id": "t1", "name": "read_model", "input": {} }),
+                ],
+            },
+            Entry::Notice {
+                text: "Stopped.".into(),
+            },
+            Entry::Operator {
+                text: "Carry on".into(),
+            },
+        ],
+    };
+    // The error result and the Operator's next message form one user message.
+    let messages = conversation.api_messages();
+    assert_eq!(messages.len(), 3);
+    assert_eq!(messages[2]["role"], "user");
+    assert_eq!(messages[2]["content"][0]["tool_use_id"], "t1");
+    assert_eq!(messages[2]["content"][0]["is_error"], true);
+    assert_eq!(messages[2]["content"][1]["text"], "Carry on");
+
+    let answered = Conversation {
+        entries: vec![
+            Entry::Assistant {
+                content: vec![
+                    json!({ "type": "tool_use", "id": "t2", "name": "get_problems", "input": {} }),
+                ],
+            },
+            Entry::ToolResults {
+                results: vec![ToolResult {
+                    tool_use_id: "t2".into(),
+                    content: "No problems.".into(),
+                    is_error: false,
+                    elements: Vec::new(),
+                }],
+            },
+        ],
+    };
+    assert_eq!(answered.api_messages().len(), 2);
+}
+
+#[test]
+fn a_conversation_survives_saving() {
+    let folder = std::env::temp_dir().join(format!("agq-conversation-{}", std::process::id()));
+    std::fs::create_dir_all(&folder).unwrap();
+    let path = folder.join("conversation.json");
+    let conversation = Conversation {
+        entries: vec![
+            Entry::Operator {
+                text: "Hello".into(),
+            },
+            Entry::Notice {
+                text: "No API key".into(),
+            },
+        ],
+    };
+    conversation.save(&path).unwrap();
+    assert_eq!(Conversation::load(&path).unwrap(), conversation);
+    assert_eq!(
+        Conversation::load(&folder.join("missing.json")).unwrap(),
+        Conversation::default()
+    );
+    std::fs::remove_dir_all(folder).unwrap();
+}
+
+#[test]
+fn tool_input_is_checked_against_the_schema() {
+    let valid = [
+        (READ_MODEL, json!({})),
+        (READ_MODEL, json!({ "element": "UrlShortener" })),
+        (
+            FIND_ELEMENTS,
+            json!({ "name": "store", "kind": "part def" }),
+        ),
+        (
+            APPLY_CHANGES,
+            json!({ "description": "Add", "operations": [
+                { "op": "create", "kind": "attribute", "name": "limit", "value": 5, "end": false }
+            ] }),
+        ),
+        (
+            ASK_OPERATOR,
+            json!({ "question": "Separate?", "options": ["Yes", "No"] }),
+        ),
+    ];
+    for (tool, input) in valid {
+        assert_eq!(tools::check_input(tool, &input), Ok(()), "{tool} {input}");
+    }
+    let invalid = [
+        (READ_MODEL, json!([]), "`input` must be object"),
+        (
+            READ_MODEL,
+            json!({ "elementName": "X" }),
+            "no field `elementName`",
+        ),
+        (
+            FIND_ELEMENTS,
+            json!({ "kind": "partdef" }),
+            "`input.kind` must be one of",
+        ),
+        (
+            APPLY_CHANGES,
+            json!({ "description": "Add" }),
+            "`input.operations` is required",
+        ),
+        (
+            APPLY_CHANGES,
+            json!({ "description": "Add", "operations": [] }),
+            "at least 1",
+        ),
+        (
+            APPLY_CHANGES,
+            json!({ "description": "Add", "operations": [{ "op": "create", "value": [1] }] }),
+            "`input.operations[0].value` must be string or number or boolean",
+        ),
+        (
+            ASK_OPERATOR,
+            json!({ "question": "Q", "options": [1] }),
+            "`input.options[0]` must be string",
+        ),
+        ("delete_everything", json!({}), "no tool called"),
+    ];
+    for (tool, input, expected) in invalid {
+        let message = tools::check_input(tool, &input).unwrap_err();
+        assert!(message.contains(expected), "{tool} {input}: {message}");
+    }
+}

@@ -3,6 +3,7 @@ members = [
     "crates/language",
     "crates/system-state",
     "crates/history",
+    "crates/assistant",
     "crates/studio-scene",
     "crates/studio-native",
 ]

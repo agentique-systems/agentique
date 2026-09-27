@@ -1,0 +1,649 @@
+//! The Assistant's tools (REALIGNMENT §3.2).
+//!
+//! A tool either reads the System State or turns the Assistant's request into
+//! one System State [`Change`]. The Assistant never changes the model itself:
+//! the Studio applies the change through the same path as the Operator's own
+//! edits, which asks the Operator before a locked element changes. Tool input
+//! is untrusted: every name is resolved and every operation is tried on a copy
+//! of the model before the change is handed over.
+
+use agq_language::{
+    Direction, Element, ElementId, ElementKind, Literal, Multiplicity, Parent, Reference, Tree,
+    print, print_element,
+};
+use agq_system_state::{Actor, Change, ChangeEvent, Operation, Property, Rejection, SystemState};
+use serde_json::{Value, json};
+
+pub const READ_MODEL: &str = "read_model";
+pub const FIND_ELEMENTS: &str = "find_elements";
+pub const GET_PROBLEMS: &str = "get_problems";
+pub const APPLY_CHANGES: &str = "apply_changes";
+pub const ASK_OPERATOR: &str = "ask_operator";
+
+/// The element kinds the Assistant may create, by their SysML keyword.
+const KINDS: &[ElementKind] = &[
+    ElementKind::Package,
+    ElementKind::PartDef,
+    ElementKind::Part,
+    ElementKind::PortDef,
+    ElementKind::Port,
+    ElementKind::ItemDef,
+    ElementKind::Item,
+    ElementKind::AttributeDef,
+    ElementKind::Attribute,
+    ElementKind::InterfaceDef,
+    ElementKind::Interface,
+    ElementKind::ConnectionDef,
+    ElementKind::Connection,
+    ElementKind::RequirementDef,
+    ElementKind::Requirement,
+    ElementKind::Subject,
+    ElementKind::Satisfy,
+];
+
+/// What the Studio should do with a tool call.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Prepared {
+    /// A read-only answer: send it back as the tool result.
+    Answer(String),
+    /// A change to apply like any Operator edit (lock confirmation included),
+    /// then describe with [`describe_event`] or [`describe_rejection`].
+    Change(Change),
+    /// A question for the Operator; the answer is the tool result.
+    Question {
+        question: String,
+        options: Vec<String>,
+    },
+    /// The input cannot be used: send the message back as an error result.
+    Invalid(String),
+}
+
+/// The tool definitions sent to the model (JSON Schema per tool).
+pub fn definitions() -> Value {
+    let kinds: Vec<&str> = KINDS.iter().map(|kind| kind.keyword()).collect();
+    let name = |description: &str| json!({ "type": "string", "description": description });
+    let operation_fields = json!({
+        "op": { "type": "string", "enum": ["create", "delete", "rename", "move", "connect", "set"] },
+        "element": name("delete, rename, move, set: qualified name of the element, e.g. \"Shop::Store\"."),
+        "parent": name("create, move, connect: qualified name of the new owner. Omit for the top level of the model."),
+        "kind": { "type": "string", "enum": kinds, "description": "create: what to create." },
+        "name": name("create: the new element's name. rename: the new name."),
+        "type": name("create, set: the type of a usage, by qualified or visible name, e.g. \"LinkStore\" or \"ScalarValues::String\". Prefix with ~ for a conjugated port type."),
+        "specializes": { "type": "array", "items": { "type": "string" }, "description": "create, set: general definitions (:>) of a definition, or subsetted features of a usage." },
+        "redefines": { "type": "array", "items": { "type": "string" }, "description": "create, set: inherited features this usage redefines (:>>)." },
+        "multiplicity": name("create, set: e.g. \"1\", \"0..1\", \"1..*\", \"*\"."),
+        "direction": { "type": "string", "enum": ["in", "out", "inout"], "description": "create, set: direction of an item or port feature." },
+        "end": { "type": "boolean", "description": "create: true for an end of an interface or connection def, e.g. a port `client` with type \"~LinkStorePort\" becomes `end port client : ~LinkStorePort;`." },
+        "value": { "type": ["string", "number", "boolean"], "description": "create, set: the value of an attribute." },
+        "doc": name("create, set: documentation in plain words."),
+        "from": name("connect: the first end, a feature chain relative to the parent, e.g. \"api.storage\"."),
+        "to": name("connect: the second end, e.g. \"store.links\"."),
+        "definition": name("connect: the interface or connection definition that types it, e.g. \"LinkStorage\"."),
+        "requirement": name("create satisfy: the requirement being satisfied."),
+        "by": name("create satisfy: the feature that satisfies it, e.g. \"shortener.store\".")
+    });
+    json!([
+        {
+            "name": READ_MODEL,
+            "description": "Read the current architecture as SysML text, with locked elements and the number of problems. Give an element's qualified name to read only that element.",
+            "input_schema": {
+                "type": "object",
+                "properties": { "element": name("Optional qualified name of one element.") },
+                "additionalProperties": false
+            }
+        },
+        {
+            "name": FIND_ELEMENTS,
+            "description": "Find elements by part of their name and/or by kind. Returns qualified names, kinds and locks.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "name": name("Part of a name, matched without case."),
+                    "kind": { "type": "string", "enum": kinds }
+                },
+                "additionalProperties": false
+            }
+        },
+        {
+            "name": GET_PROBLEMS,
+            "description": "List every problem in the model (validation errors and unsupported constructs) with the element it is reported at.",
+            "input_schema": { "type": "object", "properties": {}, "additionalProperties": false }
+        },
+        {
+            "name": APPLY_CHANGES,
+            "description": "Change the architecture. All operations apply together as one change (one undo step) or not at all. Later operations can refer to elements created by earlier ones by qualified name. Changing a locked element asks the Operator first.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "description": name("What the change does, in plain words; shown in history and undo."),
+                    "operations": {
+                        "type": "array",
+                        "minItems": 1,
+                        "items": { "type": "object", "properties": operation_fields, "required": ["op"], "additionalProperties": false }
+                    }
+                },
+                "required": ["description", "operations"],
+                "additionalProperties": false
+            }
+        },
+        {
+            "name": ASK_OPERATOR,
+            "description": "Ask the Operator a question and wait for the answer. Use it for major decisions (for example whether statistics are a separate service) instead of guessing.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "question": name("The question, short and specific."),
+                    "options": { "type": "array", "items": { "type": "string" }, "description": "Suggested answers; the Operator may also answer freely." }
+                },
+                "required": ["question"],
+                "additionalProperties": false
+            }
+        }
+    ])
+}
+
+/// Turns one tool call into what the Studio should do. The input has been
+/// checked with [`check_input`] (the turn does that before the call reaches
+/// the Studio).
+pub fn prepare(state: &SystemState, tool: &str, input: &Value) -> Prepared {
+    let result = match tool {
+        READ_MODEL => read_model(state, input).map(Prepared::Answer),
+        FIND_ELEMENTS => find_elements(state.tree(), input).map(Prepared::Answer),
+        GET_PROBLEMS => Ok(Prepared::Answer(problems(state, None))),
+        APPLY_CHANGES => prepare_change(state, input).map(Prepared::Change),
+        ASK_OPERATOR => ask_operator(input),
+        other => Err(format!("there is no tool called `{other}`")),
+    };
+    result.unwrap_or_else(Prepared::Invalid)
+}
+
+/// Checks a tool call's input against the tool's input schema from
+/// [`definitions`]: field names, types, allowed values and required fields.
+/// The API does not check inputs that stream in as they are generated, so
+/// the input is checked here before anything runs.
+pub fn check_input(tool: &str, input: &Value) -> Result<(), String> {
+    let definitions = definitions();
+    let schema = definitions
+        .as_array()
+        .into_iter()
+        .flatten()
+        .find(|definition| definition["name"] == tool)
+        .map(|definition| &definition["input_schema"])
+        .ok_or_else(|| format!("there is no tool called `{tool}`"))?;
+    check(schema, input, "input")
+}
+
+/// Checks `value` (found at `at`) against the parts of JSON Schema the tool
+/// definitions use.
+fn check(schema: &Value, value: &Value, at: &str) -> Result<(), String> {
+    let types: Vec<&str> = match &schema["type"] {
+        Value::String(name) => vec![name.as_str()],
+        Value::Array(names) => names.iter().filter_map(Value::as_str).collect(),
+        _ => Vec::new(),
+    };
+    let fits = |name: &&str| match *name {
+        "object" => value.is_object(),
+        "array" => value.is_array(),
+        "string" => value.is_string(),
+        "number" => value.is_number(),
+        "boolean" => value.is_boolean(),
+        _ => false,
+    };
+    if !types.is_empty() && !types.iter().any(fits) {
+        return Err(format!("`{at}` must be {}", types.join(" or ")));
+    }
+    if let Value::Array(allowed) = &schema["enum"]
+        && !allowed.contains(value)
+    {
+        let names: Vec<String> = allowed.iter().map(Value::to_string).collect();
+        return Err(format!("`{at}` must be one of {}", names.join(", ")));
+    }
+    match value {
+        Value::Object(fields) => {
+            for name in schema["required"].as_array().into_iter().flatten() {
+                if let Some(name) = name.as_str()
+                    && !fields.contains_key(name)
+                {
+                    return Err(format!("`{at}.{name}` is required"));
+                }
+            }
+            for (name, field) in fields {
+                match schema["properties"].get(name) {
+                    Some(field_schema) => check(field_schema, field, &format!("{at}.{name}"))?,
+                    None if schema["additionalProperties"] == false => {
+                        return Err(format!("`{at}` has no field `{name}`"));
+                    }
+                    None => {}
+                }
+            }
+        }
+        Value::Array(items) => {
+            if let Some(least) = schema["minItems"].as_u64()
+                && (items.len() as u64) < least
+            {
+                return Err(format!("`{at}` needs at least {least} item(s)"));
+            }
+            for (index, item) in items.iter().enumerate() {
+                check(&schema["items"], item, &format!("{at}[{index}]"))?;
+            }
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
+/// The tool result after a change was applied: what changed and any problems
+/// at the changed elements.
+pub fn describe_event(state: &SystemState, event: &ChangeEvent) -> String {
+    let tree = state.tree();
+    let list = |ids: &[ElementId]| {
+        ids.iter()
+            .filter_map(|id| {
+                let element = tree.get(*id)?;
+                Some(format!(
+                    "{} ({})",
+                    tree.qualified_name(*id),
+                    element.kind.keyword()
+                ))
+            })
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    let mut lines = vec![format!("Applied: {}", event.description)];
+    if !event.created.is_empty() {
+        lines.push(format!("Created: {}", list(&event.created)));
+    }
+    if !event.updated.is_empty() {
+        lines.push(format!("Changed: {}", list(&event.updated)));
+    }
+    if !event.deleted.is_empty() {
+        lines.push(format!("Deleted {} element(s).", event.deleted.len()));
+    }
+    let touched: Vec<ElementId> = event
+        .created
+        .iter()
+        .chain(&event.updated)
+        .copied()
+        .collect();
+    lines.push(problems(state, Some(&touched)));
+    lines.join("\n")
+}
+
+/// The tool result after a change was not applied.
+pub fn describe_rejection(state: &SystemState, rejection: &Rejection) -> String {
+    match rejection {
+        Rejection::Locked { elements } => {
+            let names: Vec<String> = elements
+                .iter()
+                .map(|id| state.tree().qualified_name(*id))
+                .collect();
+            format!(
+                "Not applied: the Operator did not allow changes to the locked element(s) {}. Leave them as they are, or explain to the Operator why they must change.",
+                names.join(", ")
+            )
+        }
+        Rejection::Stale { .. } => {
+            "Not applied: the model changed while you were preparing this change. Read the model again and retry.".to_string()
+        }
+        other => format!("Not applied: {other}."),
+    }
+}
+
+fn read_model(state: &SystemState, input: &Value) -> Result<String, String> {
+    let tree = state.tree();
+    let text = match optional_str(input, "element")? {
+        Some(name) => {
+            let id = find(tree, name)?;
+            print_element(tree, id).ok_or_else(|| format!("`{name}` cannot be printed"))?
+        }
+        None => print(tree)
+            .into_iter()
+            .map(|source| format!("// {}\n{}", source.path, source.text))
+            .collect::<Vec<_>>()
+            .join("\n"),
+    };
+    let locked: Vec<String> = state
+        .locks()
+        .iter()
+        .map(|id| tree.qualified_name(*id))
+        .collect();
+    let locks = if locked.is_empty() {
+        "Locked: none.".to_string()
+    } else {
+        format!("Locked (ask before changing): {}.", locked.join(", "))
+    };
+    Ok(format!(
+        "{text}\n{locks}\nProblems: {}.",
+        state.diagnostics().len()
+    ))
+}
+
+fn find_elements(tree: &Tree, input: &Value) -> Result<String, String> {
+    let name = optional_str(input, "name")?.map(str::to_lowercase);
+    let kind = optional_str(input, "kind")?.map(kind_from).transpose()?;
+    let found: Vec<String> = tree
+        .walk()
+        .into_iter()
+        .filter(|id| kind.is_none_or(|kind| tree[*id].kind == kind))
+        .filter_map(|id| {
+            let element_name = tree.effective_name(id)?;
+            if let Some(name) = &name
+                && !element_name.to_lowercase().contains(name.as_str())
+            {
+                return None;
+            }
+            Some(format!(
+                "{} ({})",
+                tree.qualified_name(id),
+                tree[id].kind.keyword()
+            ))
+        })
+        .collect();
+    Ok(if found.is_empty() {
+        "No matching elements.".to_string()
+    } else {
+        found.join("\n")
+    })
+}
+
+/// Problems at `only` (or everywhere), one per line.
+fn problems(state: &SystemState, only: Option<&[ElementId]>) -> String {
+    let tree = state.tree();
+    let lines: Vec<String> = state
+        .diagnostics()
+        .iter()
+        .filter(|diagnostic| only.is_none_or(|ids| ids.contains(&diagnostic.element)))
+        .map(|diagnostic| {
+            format!(
+                "- {}: {} [{}]",
+                tree.qualified_name(diagnostic.element),
+                diagnostic.message,
+                diagnostic.code
+            )
+        })
+        .collect();
+    match (lines.is_empty(), only.is_some()) {
+        (true, true) => "No problems at the changed elements.".to_string(),
+        (true, false) => "No problems.".to_string(),
+        (false, _) => format!("Problems:\n{}", lines.join("\n")),
+    }
+}
+
+fn ask_operator(input: &Value) -> Result<Prepared, String> {
+    let question = required_str(input, "question")?.to_string();
+    let options = match input.get("options") {
+        None | Some(Value::Null) => Vec::new(),
+        Some(Value::Array(items)) => items
+            .iter()
+            .map(|item| {
+                item.as_str()
+                    .map(str::to_string)
+                    .ok_or("each option must be text")
+            })
+            .collect::<Result<_, _>>()?,
+        Some(_) => return Err("`options` must be a list of text".to_string()),
+    };
+    Ok(Prepared::Question { question, options })
+}
+
+/// Resolves every operation against a copy of the model, applying each one
+/// there so later operations can name elements created by earlier ones. New
+/// elements get the same ids when the change is applied to the real state,
+/// because the change is pinned to the current revision.
+fn prepare_change(state: &SystemState, input: &Value) -> Result<Change, String> {
+    let description = required_str(input, "description")?;
+    let items = match input.get("operations") {
+        Some(Value::Array(items)) if !items.is_empty() => items,
+        _ => return Err("`operations` must be a non-empty list".to_string()),
+    };
+    let mut copy = SystemState::new(state.tree().clone(), state.locks().clone());
+    let mut operations = Vec::new();
+    for (index, item) in items.iter().enumerate() {
+        let failed = |reason: String| format!("operation {}: {reason}", index + 1);
+        let mut steps = operations_of(copy.tree(), item).map_err(failed)?;
+        let event = try_on(&mut copy, description, &steps).map_err(failed)?;
+        // A new element's doc comment is set once the element exists.
+        if item.get("op").and_then(Value::as_str) == Some("create")
+            && let Some(doc) = optional_str(item, "doc").map_err(failed)?
+            && let Some(created) = event.created.first()
+        {
+            let set = Operation::Set {
+                element: *created,
+                property: Property::Doc(Some(doc.to_string())),
+            };
+            try_on(&mut copy, description, std::slice::from_ref(&set)).map_err(failed)?;
+            steps.push(set);
+        }
+        operations.extend(steps);
+    }
+    let mut change = Change::new(Actor::Assistant, description, operations);
+    change.base = Some(state.revision());
+    Ok(change)
+}
+
+/// Applies operations to the copy of the model; locks are the Operator's to
+/// confirm when the whole change is applied for real.
+fn try_on(
+    copy: &mut SystemState,
+    description: &str,
+    operations: &[Operation],
+) -> Result<ChangeEvent, String> {
+    let mut step = Change::new(Actor::Assistant, description, operations.to_vec());
+    step.confirmed = copy.locks().iter().copied().collect();
+    copy.apply(step).map_err(|rejection| rejection.to_string())
+}
+
+fn operations_of(tree: &Tree, item: &Value) -> Result<Vec<Operation>, String> {
+    let op = required_str(item, "op")?;
+    match op {
+        "create" => {
+            let parent = parent(tree, item)?;
+            let kind = kind_from(required_str(item, "kind")?)?;
+            let mut element = Element::new(kind);
+            element.name = optional_str(item, "name")?.map(str::to_string);
+            element.is_end = item.get("end") == Some(&Value::Bool(true));
+            if kind == ElementKind::Satisfy {
+                element.target = Some(Reference::new(required_str(item, "requirement")?));
+                element.by = optional_str(item, "by")?.map(Reference::new);
+            }
+            set_fields(&mut element, item)?;
+            Ok(vec![Operation::Create {
+                parent,
+                element: Box::new(element),
+            }])
+        }
+        "delete" => Ok(vec![Operation::Delete {
+            element: find(tree, required_str(item, "element")?)?,
+        }]),
+        "rename" => Ok(vec![Operation::Rename {
+            element: find(tree, required_str(item, "element")?)?,
+            name: required_str(item, "name")?.to_string(),
+        }]),
+        "move" => Ok(vec![Operation::Move {
+            element: find(tree, required_str(item, "element")?)?,
+            parent: parent(tree, item)?,
+        }]),
+        "connect" => {
+            let Parent::Element(parent) = parent(tree, item)? else {
+                return Err("a connection needs a parent part".to_string());
+            };
+            let kind = match optional_str(item, "kind")? {
+                None | Some("connection") => ElementKind::Connection,
+                Some("interface") => ElementKind::Interface,
+                Some(other) => {
+                    return Err(format!(
+                        "connect makes a connection or an interface, not a {other}"
+                    ));
+                }
+            };
+            Ok(vec![Operation::Connect {
+                parent,
+                kind,
+                name: optional_str(item, "name")?.map(str::to_string),
+                definition: optional_str(item, "definition")?.map(Reference::new),
+                from: Reference::new(required_str(item, "from")?),
+                to: Reference::new(required_str(item, "to")?),
+            }])
+        }
+        "set" => {
+            let element = find(tree, required_str(item, "element")?)?;
+            let mut changed = tree[element].clone();
+            set_fields(&mut changed, item)?;
+            let old = &tree[element];
+            let mut properties: Vec<Property> = Vec::new();
+            if changed.typed_by != old.typed_by || changed.conjugated != old.conjugated {
+                properties.push(Property::TypedBy(changed.typed_by.clone()));
+                properties.push(Property::Conjugated(changed.conjugated));
+            }
+            if changed.specializes != old.specializes {
+                properties.push(Property::Specializes(changed.specializes.clone()));
+            }
+            if changed.redefines != old.redefines {
+                properties.push(Property::Redefines(changed.redefines.clone()));
+            }
+            if changed.multiplicity != old.multiplicity {
+                properties.push(Property::Multiplicity(changed.multiplicity));
+            }
+            if changed.direction != old.direction {
+                properties.push(Property::Direction(changed.direction));
+            }
+            if changed.value != old.value {
+                properties.push(Property::Value(changed.value.clone()));
+            }
+            if let Some(doc) = optional_str(item, "doc")? {
+                properties.push(Property::Doc(Some(doc.to_string())));
+            }
+            if properties.is_empty() {
+                return Err("`set` needs at least one property to change".to_string());
+            }
+            Ok(properties
+                .into_iter()
+                .map(|property| Operation::Set { element, property })
+                .collect())
+        }
+        other => Err(format!("unknown operation `{other}`")),
+    }
+}
+
+/// Copies the optional property fields of a create or set operation.
+fn set_fields(element: &mut Element, item: &Value) -> Result<(), String> {
+    if let Some(ty) = optional_str(item, "type")? {
+        let (conjugated, name) = match ty.strip_prefix('~') {
+            Some(rest) => (true, rest.trim()),
+            None => (false, ty.trim()),
+        };
+        element.conjugated = conjugated;
+        element.typed_by = vec![Reference::new(name)];
+    }
+    if let Some(names) = optional_list(item, "specializes")? {
+        element.specializes = names.iter().map(|name| Reference::new(name)).collect();
+    }
+    if let Some(names) = optional_list(item, "redefines")? {
+        element.redefines = names.iter().map(|name| Reference::new(name)).collect();
+    }
+    if let Some(text) = optional_str(item, "multiplicity")? {
+        element.multiplicity = Some(multiplicity(text)?);
+    }
+    if let Some(text) = optional_str(item, "direction")? {
+        element.direction = Some(match text {
+            "in" => Direction::In,
+            "out" => Direction::Out,
+            "inout" => Direction::InOut,
+            other => return Err(format!("unknown direction `{other}`")),
+        });
+    }
+    if let Some(value) = item.get("value") {
+        element.value = Some(literal(value)?);
+    }
+    Ok(())
+}
+
+fn parent(tree: &Tree, item: &Value) -> Result<Parent, String> {
+    match optional_str(item, "parent")? {
+        Some(name) => Ok(Parent::Element(find(tree, name)?)),
+        None if !tree.documents().is_empty() => Ok(Parent::Document(0)),
+        None => Err("the model has no document to add to".to_string()),
+    }
+}
+
+fn find(tree: &Tree, name: &str) -> Result<ElementId, String> {
+    tree.find(name).ok_or_else(|| {
+        format!("there is no element `{name}`; use its qualified name, e.g. `Package::Part`")
+    })
+}
+
+fn kind_from(keyword: &str) -> Result<ElementKind, String> {
+    KINDS
+        .iter()
+        .copied()
+        .find(|kind| kind.keyword() == keyword)
+        .ok_or_else(|| format!("unknown kind `{keyword}`"))
+}
+
+fn multiplicity(text: &str) -> Result<Multiplicity, String> {
+    let number = |text: &str| {
+        text.trim()
+            .parse::<u64>()
+            .map_err(|_| format!("`{text}` is not a multiplicity; use e.g. 1, 0..1 or 1..*"))
+    };
+    let upper = |text: &str| match text.trim() {
+        "*" => Ok(None),
+        text => number(text).map(Some),
+    };
+    Ok(match text.split_once("..") {
+        Some((lower, high)) => Multiplicity {
+            lower: number(lower)?,
+            upper: upper(high)?,
+        },
+        None if text.trim() == "*" => Multiplicity {
+            lower: 0,
+            upper: None,
+        },
+        None => {
+            let exact = number(text)?;
+            Multiplicity {
+                lower: exact,
+                upper: Some(exact),
+            }
+        }
+    })
+}
+
+fn literal(value: &Value) -> Result<Literal, String> {
+    match value {
+        Value::Bool(value) => Ok(Literal::Boolean(*value)),
+        Value::Number(number) if number.is_i64() || number.is_u64() => {
+            Ok(Literal::Integer(number.to_string()))
+        }
+        Value::Number(number) => Ok(Literal::Real(number.to_string())),
+        Value::String(text) => Ok(Literal::String(text.clone())),
+        _ => Err("`value` must be text, a number or true/false".to_string()),
+    }
+}
+
+fn required_str<'a>(item: &'a Value, field: &str) -> Result<&'a str, String> {
+    optional_str(item, field)?.ok_or_else(|| format!("`{field}` is required"))
+}
+
+fn optional_str<'a>(item: &'a Value, field: &str) -> Result<Option<&'a str>, String> {
+    match item.get(field) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::String(text)) if !text.trim().is_empty() => Ok(Some(text)),
+        Some(_) => Err(format!("`{field}` must be non-empty text")),
+    }
+}
+
+fn optional_list<'a>(item: &'a Value, field: &str) -> Result<Option<Vec<&'a str>>, String> {
+    match item.get(field) {
+        None | Some(Value::Null) => Ok(None),
+        Some(Value::Array(items)) => items
+            .iter()
+            .map(|item| {
+                item.as_str()
+                    .ok_or_else(|| format!("`{field}` must be a list of names"))
+            })
+            .collect::<Result<_, _>>()
+            .map(Some),
+        Some(_) => Err(format!("`{field}` must be a list of names")),
+    }
+}
