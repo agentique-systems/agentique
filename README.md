@@ -60,6 +60,13 @@ the labelled visual fixture:
 cargo run --release -p agq-studio-native -- --fixture architecture --no-restore
 ```
 
+The design tokens, the generated themes and the components are shown in one
+place by the component gallery:
+
+```text
+cargo run --release -p agq-studio-native -- --fixture components --no-restore
+```
+
 ## Checks
 
 ```text

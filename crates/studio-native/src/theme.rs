@@ -2,7 +2,8 @@
 //! depth and motion. The Studio's chrome, Surface and labels take their colours
 //! and sizes from here. Items still marked `allow(dead_code)` are not used yet.
 //!
-//! The file depends on `egui` only, so prototypes can include it unchanged.
+//! W5.2 moves these values onto `tokens.rs`; the camera's duration already
+//! comes from there.
 use eframe::egui::{
     self, Color32, CornerRadius, FontData, FontDefinitions, FontFamily, FontId, Margin, Painter,
     Pos2, Rect, RichText, Shadow, Stroke, Vec2,
@@ -89,7 +90,7 @@ pub const GLOW_WIDTH: f32 = 14.0;
 pub const HOVER_SECONDS: f32 = 0.10;
 /// Camera moves: fit view and following the selection (Fluent 2
 /// `durationSlow`). Reduced motion makes them instant (`motion`).
-pub const CAMERA_SECONDS: f32 = 0.30;
+pub const CAMERA_SECONDS: f32 = crate::tokens::motion::CAMERA_MS as f32 / 1000.0;
 /// How long a changed element stays highlighted.
 pub const CHANGED_SECONDS: f32 = 1.5;
 /// How long the highlight takes to reach full strength.
