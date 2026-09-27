@@ -89,10 +89,14 @@ The check command on Windows 10 (single runs; parse includes linking):
 
 | | debug | release |
 |---|---|---|
-| URL shortener, 115 lines: parse | 1.1 ms | 0.29 ms |
-| validate | 0.95 ms | 0.18 ms |
-| print | 0.95 ms | 0.16 ms |
-| rename a part + re-validate + print | 2.0 ms | 0.30 ms |
-| 20 renamed copies, 2,300 lines: parse | 19 ms | 3.6 ms |
-| validate | 17 ms | 2.3 ms |
-| rename a part + re-validate + print | 32 ms | 4.7 ms |
+| URL shortener, 115 lines: parse | 1.1 ms | 0.30 ms |
+| validate | 1.4 ms | 0.32 ms |
+| print | 0.95 ms | 0.26 ms |
+| rename a part + re-validate + print | 2.7 ms | 0.73 ms |
+| 20 renamed copies, 2,300 lines: parse | 20 ms | 3.9 ms |
+| validate | 26 ms | 3.8 ms |
+| rename a part + re-validate + print | 42 ms | 6.0 ms |
+
+Validation includes checking that every linked reference still prints as a
+name that leads back to its target. Twenty packages that all import each
+other validate in a few milliseconds (a test guards this).

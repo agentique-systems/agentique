@@ -212,12 +212,17 @@ impl<'a> Parser<'a> {
         Ok(reference)
     }
 
+    /// `A, B::C` after `:>` or `:>>`.
     fn references(&mut self, into: &mut Vec<Reference>) -> Result<()> {
-        into.push(self.reference()?);
-        while self.eat(",") {
+        loop {
             into.push(self.reference()?);
+            if self.at(".") {
+                return self.unsupported("subsetting or redefining a feature chain");
+            }
+            if !self.eat(",") {
+                return Ok(());
+            }
         }
-        Ok(())
     }
 
     // ---- members ----
@@ -324,6 +329,9 @@ impl<'a> Parser<'a> {
             self.bump();
         }
         let location = self.location();
+        if matches!(self.peek_text(0), "#" | "@") {
+            return self.unsupported("metadata `#` / `@`");
+        }
         let mut node = match self.peek_text(0) {
             _ if self.kind() == TokenKind::Comment => {
                 let token = self.bump();
@@ -460,6 +468,7 @@ impl<'a> Parser<'a> {
                 "out" => element.direction = Some(Direction::Out),
                 "inout" => element.direction = Some(Direction::InOut),
                 "end" => element.is_end = true,
+                "#" => return self.unsupported("metadata `#`"),
                 _ => break,
             }
             self.bump();
@@ -501,7 +510,7 @@ impl<'a> Parser<'a> {
             _ if element.is_end && owner == Some(ElementKind::InterfaceDef) => {
                 (None, ElementKind::Port)
             }
-            _ if element.is_end => return self.syntax("`part`, `port` or `item` after `end`"),
+            _ if element.is_end => return self.unsupported("`end` feature without a kind keyword"),
             // A usage without a kind keyword: `x : T;`, `:>> x = 5;`.
             ":>>" | "redefines" | ":>" | "subsets" => (None, ElementKind::Reference),
             _ if matches!(self.kind(), TokenKind::Word | TokenKind::QuotedName) => {

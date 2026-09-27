@@ -16,7 +16,7 @@
 use crate::library::library;
 use crate::tree::*;
 use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::rc::Rc;
 
 #[derive(Clone, Debug, PartialEq)]
@@ -87,7 +87,6 @@ pub(crate) struct Model<'a> {
     redefining: RefCell<Vec<ElementId>>,
     inheriting: RefCell<Vec<ElementId>>,
     importing: RefCell<Vec<ElementId>>,
-    searching: RefCell<Vec<ElementId>>,
 }
 
 impl<'a> Model<'a> {
@@ -125,7 +124,6 @@ impl<'a> Model<'a> {
             redefining: RefCell::default(),
             inheriting: RefCell::default(),
             importing: RefCell::default(),
-            searching: RefCell::default(),
         }
     }
 
@@ -182,6 +180,9 @@ impl<'a> Model<'a> {
         role: Role,
         reference: &Reference,
     ) -> Result<Vec<ElementId>, LookupError> {
+        if reference.steps.is_empty() {
+            return Err(LookupError::NotFound(String::new()));
+        }
         if !reference.is_linked() {
             return self.resolve_by_name(holder, role, reference);
         }
@@ -202,8 +203,11 @@ impl<'a> Model<'a> {
         role: Role,
         reference: &Reference,
     ) -> Result<ElementId, LookupError> {
-        self.resolve_reference(holder, role, reference)
-            .map(|steps| *steps.last().expect("a reference has steps"))
+        let steps = self.resolve_reference(holder, role, reference)?;
+        steps
+            .last()
+            .copied()
+            .ok_or_else(|| LookupError::NotFound(String::new()))
     }
 
     /// What a reference's written names resolve to now, ignoring its links.
@@ -213,13 +217,16 @@ impl<'a> Model<'a> {
         role: Role,
         reference: &Reference,
     ) -> Result<Vec<ElementId>, LookupError> {
+        if reference.steps.is_empty() {
+            return Err(LookupError::NotFound(String::new()));
+        }
         let mut steps: Vec<ElementId> = Vec::with_capacity(reference.steps.len());
         for (i, step) in reference.steps.iter().enumerate() {
             let found = if i == 0 {
                 match (role, self.get(holder).kind) {
                     (Role::Redefines, _) => self.resolve_redefined(holder, &step.name)?,
                     (Role::Target, ElementKind::Import) => {
-                        self.resolve_import(holder, &step.name)?
+                        self.resolve_from(holder, &step.name, false)?
                     }
                     _ => self.resolve(holder, &step.name)?,
                 }
@@ -238,17 +245,24 @@ impl<'a> Model<'a> {
         Ok(steps)
     }
 
-    /// The text to print for a reference: as written if that still names
-    /// its targets, else the same path with the targets' current names, else
-    /// the first target's qualified name. Unlinked references print as written.
-    pub fn reference_text(&self, holder: ElementId, role: Role, reference: &Reference) -> String {
-        let Ok(targets) = self.resolve_reference(holder, role, reference) else {
-            return reference.to_string();
+    /// The text to print for a reference, and whether it leads back to the
+    /// reference's targets from where it is written. Tried in order: as
+    /// written, the same path with the targets' current names, the first
+    /// target's qualified name. It does not lead back when the target is
+    /// private, hidden by another element of the same name, or inside an
+    /// unnamed element. Unlinked references and removed targets print as
+    /// written.
+    pub fn name_for(&self, holder: ElementId, role: Role, reference: &Reference) -> (String, bool) {
+        let written = reference.to_string();
+        let targets = match self.resolve_reference(holder, role, reference) {
+            Ok(targets) if reference.is_linked() => targets,
+            _ => return (written, true),
         };
-        if !reference.is_linked()
-            || self.resolve_by_name(holder, role, reference).as_ref() == Ok(&targets)
-        {
-            return reference.to_string();
+        let leads_back = |candidate: &Reference| {
+            self.resolve_by_name(holder, role, candidate).as_ref() == Ok(&targets)
+        };
+        if leads_back(reference) {
+            return (written, true);
         }
         let mut renamed = reference.clone();
         for (step, target) in renamed.steps.iter_mut().zip(&targets) {
@@ -256,14 +270,14 @@ impl<'a> Model<'a> {
                 *last = name.to_string();
             }
         }
-        if self.resolve_by_name(holder, role, &renamed).as_ref() == Ok(&targets) {
-            return renamed.to_string();
+        if leads_back(&renamed) {
+            return (renamed.to_string(), true);
         }
-        let Some(path) = self.path(targets[0]) else {
-            return renamed.to_string();
-        };
-        renamed.steps[0].name = QualifiedName::new(path);
-        renamed.to_string()
+        if let Some(path) = self.path(targets[0]) {
+            renamed.steps[0].name = QualifiedName::new(path);
+        }
+        let ok = leads_back(&renamed);
+        (renamed.to_string(), ok)
     }
 
     /// Effective names from the top level down to `id`.
@@ -286,11 +300,23 @@ impl<'a> Model<'a> {
         holder: ElementId,
         name: &QualifiedName,
     ) -> Result<ElementId, LookupError> {
+        self.resolve_from(holder, name, true)
+    }
+
+    /// Like [`Model::resolve`]; without `own_imports` the imports of the
+    /// namespace holding `holder` are not searched. An import's own name is
+    /// resolved that way, so imports never depend on their siblings.
+    fn resolve_from(
+        &self,
+        holder: ElementId,
+        name: &QualifiedName,
+        own_imports: bool,
+    ) -> Result<ElementId, LookupError> {
         let (first, rest) = name
             .segments
             .split_first()
             .ok_or_else(|| LookupError::NotFound(String::new()))?;
-        let mut found = self.lexical(holder, first)?;
+        let mut found = self.lexical(holder, first, own_imports)?;
         for segment in rest {
             found = self.member(found, segment, holder)?;
         }
@@ -325,10 +351,20 @@ impl<'a> Model<'a> {
         self.one(segment, self.members_named(namespace, segment, access))
     }
 
-    fn lexical(&self, holder: ElementId, name: &str) -> Result<ElementId, LookupError> {
-        let mut current = self.get(holder).owner();
+    fn lexical(
+        &self,
+        holder: ElementId,
+        name: &str,
+        own_imports: bool,
+    ) -> Result<ElementId, LookupError> {
+        let first = self.get(holder).owner();
+        let mut current = first;
         while let Some(namespace) = current {
-            let found = self.members_named(namespace, name, Access::Inside);
+            let found = if current == first && !own_imports {
+                self.features_named(namespace, name, Access::Inside)
+            } else {
+                self.members_named(namespace, name, Access::Inside)
+            };
             if !found.is_empty() {
                 return self.one(name, found);
             }
@@ -344,10 +380,12 @@ impl<'a> Model<'a> {
             if !owned.is_empty() {
                 return self.one(name, owned);
             }
-            let members = self.tree.documents()[document].members();
-            let imported = self.imported_by(members, name, Access::Inside);
-            if !imported.is_empty() {
-                return self.one(name, imported);
+            if own_imports || first.is_some() {
+                let members = self.tree.documents()[document].members();
+                let imported = self.imported_by(members, None, name, Access::Inside);
+                if !imported.is_empty() {
+                    return self.one(name, imported);
+                }
             }
         }
         self.one(name, self.owned(None, name).to_vec())
@@ -459,73 +497,84 @@ impl<'a> Model<'a> {
     }
 
     fn imported_named(&self, namespace: ElementId, name: &str, access: Access) -> Vec<ElementId> {
-        if self.searching.borrow().contains(&namespace) {
-            return Vec::new(); // an import cycle leads back here
-        }
-        self.searching.borrow_mut().push(namespace);
-        let found = self.imported_by(self.get(namespace).children(), name, access);
-        self.searching.borrow_mut().pop();
-        found
+        self.imported_by(
+            self.get(namespace).children(),
+            Some(namespace),
+            name,
+            access,
+        )
     }
 
-    /// What the imports among `members` bring in under `name`.
-    fn imported_by(&self, members: &[ElementId], name: &str, access: Access) -> Vec<ElementId> {
+    /// What the imports among `members` (of namespace `origin`, if any)
+    /// bring in under `name`. Wildcard imports lead on through the public
+    /// imports of namespaces that have no such member themselves; each
+    /// namespace is searched once, so import cycles end and the search stays
+    /// linear.
+    fn imported_by(
+        &self,
+        members: &'a [ElementId],
+        origin: Option<ElementId>,
+        name: &str,
+        access: Access,
+    ) -> Vec<ElementId> {
         let mut found = Vec::new();
-        for &import in members {
-            let element = self.get(import);
-            if element.kind != ElementKind::Import
-                || (access != Access::Inside && element.visibility != Visibility::Public)
-            {
-                continue;
-            }
-            let Some(target) = self.import_target(import) else {
-                continue;
-            };
-            let brought = if element.wildcard {
-                self.members_named(target, name, Access::Outside)
-            } else if self.name(target) == Some(name) {
-                vec![target]
-            } else {
-                Vec::new()
-            };
-            for id in brought {
-                if !found.contains(&id) {
-                    found.push(id);
+        let mut searched: HashSet<ElementId> = origin.into_iter().collect();
+        let mut queue = VecDeque::from([(members, access)]);
+        while let Some((members, access)) = queue.pop_front() {
+            for &import in members {
+                let element = self.get(import);
+                if element.kind != ElementKind::Import
+                    || (access != Access::Inside && element.visibility != Visibility::Public)
+                {
+                    continue;
+                }
+                let Some(target) = self.import_target(import) else {
+                    continue;
+                };
+                let brought = if !element.wildcard {
+                    if self.name(target) == Some(name) {
+                        vec![target]
+                    } else {
+                        Vec::new()
+                    }
+                } else if searched.insert(target) {
+                    let features = self.features_named(target, name, Access::Outside);
+                    if features.is_empty() {
+                        queue.push_back((self.get(target).children(), Access::Outside));
+                    }
+                    features
+                } else {
+                    Vec::new()
+                };
+                for id in brought {
+                    if !found.contains(&id) {
+                        found.push(id);
+                    }
                 }
             }
         }
         found
     }
 
-    /// The namespace or element an import names, if it resolves.
+    /// The namespace or element an import names, if it resolves. Memoised;
+    /// an import met again while its own name is being resolved counts as
+    /// unresolved there.
     pub fn import_target(&self, import: ElementId) -> Option<ElementId> {
-        let reference = self.get(import).target.as_ref()?;
-        self.target(import, Role::Target, reference).ok()
-    }
-
-    /// Resolves an import's name. The import itself is skipped while its
-    /// own name is looked up.
-    fn resolve_import(
-        &self,
-        import: ElementId,
-        name: &QualifiedName,
-    ) -> Result<ElementId, LookupError> {
         if let Some(cached) = self.imports.borrow().get(&import) {
-            return cached.ok_or_else(|| LookupError::NotFound(name.to_string()));
+            return *cached;
         }
         if self.importing.borrow().contains(&import) {
-            return Err(LookupError::NotFound(name.to_string()));
+            return None;
         }
+        let reference = self.get(import).target.as_ref()?;
         let outermost = self.importing.borrow().is_empty();
         self.importing.borrow_mut().push(import);
-        let result = self.resolve(import, name);
+        let target = self.target(import, Role::Target, reference).ok();
         self.importing.borrow_mut().pop();
         if outermost {
-            self.imports
-                .borrow_mut()
-                .insert(import, result.clone().ok());
+            self.imports.borrow_mut().insert(import, target);
         }
-        result
+        target
     }
 
     // ---- generals and redefinition ----

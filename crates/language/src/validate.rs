@@ -60,6 +60,9 @@ impl Checker<'_> {
 
     fn lookup_error(&mut self, id: ElementId, what: &str, written: &str, error: LookupError) {
         let (code, message) = match error {
+            LookupError::NotFound(_) if written.is_empty() => {
+                ("unresolved", format!("{what} is missing its name"))
+            }
             LookupError::NotFound(name) if name.is_empty() || name == written => {
                 ("unresolved", format!("cannot find {what} `{written}`"))
             }
@@ -98,6 +101,19 @@ impl Checker<'_> {
         reference: &Reference,
         what: &str,
     ) -> Option<ElementId> {
+        self.follow_steps(id, role, reference, what)?
+            .last()
+            .copied()
+    }
+
+    /// Like [`Checker::follow`], returning the element of every chain step.
+    fn follow_steps(
+        &mut self,
+        id: ElementId,
+        role: Role,
+        reference: &Reference,
+        what: &str,
+    ) -> Option<Vec<ElementId>> {
         let written = reference.to_string();
         let steps = match self.model.resolve_reference(id, role, reference) {
             Ok(steps) => steps,
@@ -121,7 +137,7 @@ impl Checker<'_> {
                 return None;
             }
         }
-        let target = *steps.last().expect("a reference has steps");
+        let target = *steps.last()?;
         if self.kind(target) == ElementKind::Unsupported {
             let note = self.model.get(target).note.clone().unwrap_or_default();
             self.report(
@@ -131,7 +147,24 @@ impl Checker<'_> {
             );
             return None;
         }
-        Some(target)
+        Some(steps)
+    }
+
+    /// A linked reference must print as a name that leads back to its
+    /// target, so that saving and loading keeps it bound to the same element.
+    fn check_reachable(&mut self, id: ElementId) {
+        for (role, reference) in self.model.tree[id].references() {
+            let Ok(target) = self.model.target(id, role, reference) else {
+                continue;
+            };
+            if !self.model.name_for(id, role, reference).1 {
+                let message = format!(
+                    "no name written here leads to `{}` (it is private, hidden by another element with that name, or inside an unnamed element), so `{reference}` would not survive saving",
+                    self.model.describe(target)
+                );
+                self.report(id, "unreachable-target", message);
+            }
+        }
     }
 
     fn check(&mut self, id: ElementId) {
@@ -156,6 +189,7 @@ impl Checker<'_> {
             _ => self.check_usage(id),
         }
         self.check_hides_inherited(id);
+        self.check_reachable(id);
     }
 
     fn check_duplicates(&mut self) {
@@ -206,6 +240,11 @@ impl Checker<'_> {
         let element = &self.model.tree[id];
         let wildcard = element.wildcard;
         let Some(reference) = element.target.clone() else {
+            self.report(
+                id,
+                "missing-target",
+                "an import needs the name it imports".into(),
+            );
             return;
         };
         let Some(target) = self.follow(id, Role::Target, &reference, "the imported name") else {
@@ -317,10 +356,18 @@ impl Checker<'_> {
         if let Some(value) = element.value.clone() {
             self.check_value(id, &value);
         }
-        if matches!(kind, ElementKind::Connection | ElementKind::Interface)
-            && element.ends.len() == 2
-        {
-            self.check_connection(id);
+        if matches!(kind, ElementKind::Connection | ElementKind::Interface) {
+            match element.ends.len() {
+                0 => {}
+                2 => self.check_connection(id),
+                n => {
+                    let message = format!(
+                        "a {} connects two ends (`connect a to b`) or is written without them; this one has {n}",
+                        kind.keyword()
+                    );
+                    self.report(id, "wrong-end-count", message);
+                }
+            }
         }
         self.check_subjects(id);
     }
@@ -459,12 +506,14 @@ impl Checker<'_> {
 
     fn check_connection(&mut self, id: ElementId) {
         let element = &self.model.tree[id];
-        let kind = element.kind;
+        let (kind, owner) = (element.kind, element.owner());
         let mut ends = Vec::new();
         for reference in element.ends.clone() {
-            let Some(feature) = self.follow(id, Role::End, &reference, "the connection end") else {
+            let Some(steps) = self.follow_steps(id, Role::End, &reference, "the connection end")
+            else {
                 return;
             };
+            let feature = *steps.last().expect("follow_steps returns steps");
             let feature_kind = self.kind(feature);
             if !feature_kind.is_usage() {
                 let message = format!(
@@ -482,7 +531,7 @@ impl Checker<'_> {
                 self.report(id, "wrong-kind", message);
                 return;
             }
-            ends.push((reference.to_string(), feature, reference.steps.len()));
+            ends.push((reference.to_string(), feature, steps));
         }
         let definition = self
             .model
@@ -526,16 +575,14 @@ impl Checker<'_> {
         {
             return;
         }
-        // A port of the owner itself (one step) connected to a port of an
-        // inner part (several steps) passes items on: same directions.
-        // Otherwise the two ports face each other: mirrored directions.
+        // A port connected to a port of a part inside the first port's part
+        // passes items on (`p` to `inner.p`, `sub.i` to `sub.inner.i`): same
+        // directions. Otherwise the two ports face each other: mirrored.
         let (a, b) = (&ends[0], &ends[1]);
-        let delegation = (a.2 == 1) != (b.2 == 1);
-        let (outer, inner) = if a.2 == 1 { (a, b) } else { (b, a) };
-        let problem = if delegation {
-            self.port_mismatch(outer.1, inner.1, true)
-        } else {
-            self.port_mismatch(a.1, b.1, false)
+        let problem = match self.delegation(owner, &a.2, &b.2) {
+            Some(true) => self.port_mismatch(a.1, b.1, true),
+            Some(false) => self.port_mismatch(b.1, a.1, true),
+            None => self.port_mismatch(a.1, b.1, false),
         };
         if let Some(problem) = problem {
             let message = format!(
@@ -546,6 +593,37 @@ impl Checker<'_> {
                 self.type_text(b.1)
             );
             self.report(id, "incompatible-ends", message);
+        }
+    }
+
+    /// Is one end a port of the part that contains the other end's part?
+    /// `Some(true)` when `a` is that outer port, `Some(false)` when `b` is.
+    /// The part of an end is its chain minus the last step; an empty one is
+    /// the connection's owner, so the port must be one of the owner's.
+    fn delegation(
+        &self,
+        owner: Option<ElementId>,
+        a: &[ElementId],
+        b: &[ElementId],
+    ) -> Option<bool> {
+        let part = |steps: &[ElementId]| steps[..steps.len() - 1].to_vec();
+        let (part_a, part_b) = (part(a), part(b));
+        let outer_of = |outer: &[ElementId], port: ElementId, inner: &[ElementId]| {
+            outer.len() < inner.len()
+                && inner.starts_with(outer)
+                && (!outer.is_empty()
+                    || self
+                        .model
+                        .get(port)
+                        .owner()
+                        .is_some_and(|o| owner.is_some_and(|c| self.model.specializes(c, o))))
+        };
+        if outer_of(&part_a, a[a.len() - 1], &part_b) {
+            Some(true)
+        } else if outer_of(&part_b, b[b.len() - 1], &part_a) {
+            Some(false)
+        } else {
+            None
         }
     }
 
@@ -619,6 +697,13 @@ impl Checker<'_> {
     fn check_satisfy(&mut self, id: ElementId) {
         let element = &self.model.tree[id];
         let (target, by) = (element.target.clone(), element.by.clone());
+        if target.is_none() {
+            self.report(
+                id,
+                "missing-target",
+                "`satisfy` needs the requirement it satisfies".into(),
+            );
+        }
         let requirement = target.and_then(|reference| {
             let r = self.follow(id, Role::Target, &reference, "the requirement")?;
             if self.kind(r) == ElementKind::Requirement {
