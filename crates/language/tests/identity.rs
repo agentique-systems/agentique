@@ -326,6 +326,7 @@ fn the_public_api_does_not_panic_on_odd_input() {
         ]
     );
     print(&tree);
+}
 
 #[test]
 fn reserved_ids_are_never_handed_out() {
