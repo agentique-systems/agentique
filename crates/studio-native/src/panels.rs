@@ -286,6 +286,11 @@ impl StudioApp {
     }
 
     fn start_screen(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
+        // No project opened yet: the first run's welcome (R-46, E1).
+        if self.session.recent.is_empty() && self.fixture.is_none() {
+            self.welcome(ui, ctx);
+            return;
+        }
         let theme = self.theme;
         ui.vertical_centered(|ui| {
             ui.add_space(ui.available_height() * 0.22);
@@ -337,4 +342,95 @@ impl StudioApp {
             }
         });
     }
+
+    /// Three steps: what Agentique is, connect a provider (or skip), create
+    /// or open a project, with the URL shortener as a sample (R-46, E1).
+    fn welcome(&mut self, ui: &mut egui::Ui, ctx: &egui::Context) {
+        let theme = self.theme;
+        let width = (ui.available_width() - 2.0 * theme::SPACE_L).min(560.0);
+        ui.vertical_centered(|ui| {
+            ui.add_space(ui.available_height() * 0.14);
+            ui.label(RichText::new("Welcome to Agentique").font(theme::semibold(theme::DISPLAY)));
+            ui.add_space(theme::SPACE_L);
+            ui.allocate_ui(egui::vec2(width, 0.0), |ui| {
+                ui.set_width(width);
+                step(
+                    ui,
+                    theme,
+                    "1",
+                    "What it is",
+                    "Design a system's architecture with an AI Assistant: parts, ports, interfaces and requirements on the Surface, kept as SysML v2 text in git. Every change shows where it happens and can be undone.",
+                );
+                let key = if self.conversation.key_missing.is_none() {
+                    format!("A key is set: the Assistant uses {}.", self.conversation.model_name)
+                } else {
+                    "No key yet. You can skip this: everything but the Assistant works without one."
+                        .to_string()
+                };
+                step(ui, theme, "2", "Connect a model provider", &key);
+                ui.horizontal(|ui| {
+                    ui.add_space(theme::SPACE_L * 2.0);
+                    let settings = ui.button("Open Settings (Ctrl+,)");
+                    record(ui.ctx(), Target::Button("Open Settings"), settings.rect);
+                    if settings.clicked() {
+                        self.execute(CommandId::Settings, ctx);
+                    }
+                });
+                ui.add_space(theme::SPACE);
+                step(
+                    ui,
+                    theme,
+                    "3",
+                    "Create or open a project",
+                    "A project is a folder with its model in git. Start empty, open one, or start from the URL shortener of the walkthrough.",
+                );
+                ui.horizontal(|ui| {
+                    ui.add_space(theme::SPACE_L * 2.0);
+                    let new = ui.add(crate::edit::primary_button(theme, "New project…"));
+                    record(ui.ctx(), Target::Button("New project…"), new.rect);
+                    if new.clicked() {
+                        self.execute(CommandId::NewProject, ctx);
+                    }
+                    let open = ui.button("Open project…");
+                    record(ui.ctx(), Target::Button("Open project…"), open.rect);
+                    if open.clicked() {
+                        self.execute(CommandId::OpenProject, ctx);
+                    }
+                    let sample = ui.button("Start from the URL shortener");
+                    record(ui.ctx(), Target::Button("Start from the URL shortener"), sample.rect);
+                    if sample.clicked() {
+                        self.dialog = Some(crate::edit::Dialog::sample_project());
+                    }
+                });
+            });
+            if !self.status.is_empty() {
+                ui.add_space(12.0);
+                ui.label(RichText::new(&self.status).color(theme.amber));
+            }
+        });
+    }
+}
+
+/// One numbered step of the welcome.
+fn step(ui: &mut egui::Ui, theme: theme::Theme, number: &str, title: &str, text: &str) {
+    ui.add_space(theme::SPACE);
+    ui.horizontal_top(|ui| {
+        ui.add_sized(
+            [theme::SPACE_L * 2.0, 0.0],
+            egui::Label::new(
+                RichText::new(number)
+                    .font(theme::semibold(theme::HEADING))
+                    .color(theme.accent),
+            ),
+        );
+        ui.vertical(|ui| {
+            ui.label(
+                RichText::new(title)
+                    .font(theme::semibold(theme::HEADING))
+                    .color(theme.text),
+            );
+            ui.label(RichText::new(text).color(theme.text_secondary));
+        });
+    });
+    ui.add_space(theme::SPACE_S);
 }

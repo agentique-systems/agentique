@@ -356,6 +356,24 @@ impl StudioApp {
         }
     }
 
+    /// Creates a project holding the URL shortener sample (R-46): a new
+    /// project whose model is then replaced by the sample and read again.
+    pub fn create_sample(&mut self, folder: &Path, name: &str) {
+        self.create_project(folder, name);
+        let Some(project) = &self.project else { return };
+        let file = project.folder().join("model").join(format!("{name}.sysml"));
+        let text = SAMPLE.replace(
+            &format!("package {SAMPLE_NAME}"),
+            &format!("package {name}"),
+        );
+        if let Err(error) = std::fs::write(&file, text) {
+            self.status = format!("The sample could not be written: {error}");
+            return;
+        }
+        let folder = project.folder().to_path_buf();
+        self.open_project(&folder);
+    }
+
     pub fn create_project(&mut self, folder: &Path, name: &str) {
         match Project::create(folder, name) {
             Ok(project) => self.install_project(project),
@@ -1193,6 +1211,10 @@ fn consume_shifted(ctx: &egui::Context, physical: egui::Key) -> bool {
         found.map(|index| input.events.remove(index)).is_some()
     })
 }
+
+/// The URL shortener of Scenario A, offered on the first run (R-46).
+pub const SAMPLE: &str = include_str!("../../../models/url-shortener/UrlShortener.sysml");
+pub const SAMPLE_NAME: &str = "UrlShortener";
 
 pub fn muted(text: impl Into<String>, theme: Theme) -> egui::RichText {
     egui::RichText::new(text).color(theme.muted)

@@ -50,6 +50,8 @@ pub enum Dialog {
     NewProject {
         folder: String,
         name: String,
+        /// Start from the URL shortener sample (R-46).
+        sample: bool,
     },
     OpenProject {
         folder: String,
@@ -109,6 +111,23 @@ impl Dialog {
         Dialog::NewProject {
             folder,
             name: "NewSystem".into(),
+            sample: false,
+        }
+    }
+
+    /// The New project dialog for the URL shortener sample (R-46).
+    pub fn sample_project() -> Self {
+        let Dialog::NewProject { folder, .. } = Dialog::new_project() else {
+            unreachable!("new_project is the New project dialog")
+        };
+        let folder = std::path::Path::new(&folder)
+            .with_file_name(crate::app::SAMPLE_NAME)
+            .display()
+            .to_string();
+        Dialog::NewProject {
+            folder,
+            name: crate::app::SAMPLE_NAME.into(),
+            sample: true,
         }
     }
 }
@@ -711,12 +730,21 @@ impl StudioApp {
         let mut keep = !escape;
         let theme = self.theme;
         match &mut dialog {
-            Dialog::NewProject { folder, name } => {
+            Dialog::NewProject {
+                folder,
+                name,
+                sample,
+            } => {
                 if let Some(done) = crate::project_dialog::new_project(ctx, theme, folder, name) {
                     keep = false;
                     if done {
-                        let (folder, name) = (folder.clone(), name.clone());
-                        self.create_project(std::path::Path::new(folder.trim()), name.trim());
+                        let (folder, name, sample) = (folder.clone(), name.clone(), *sample);
+                        let folder = std::path::Path::new(folder.trim());
+                        if sample {
+                            self.create_sample(folder, name.trim());
+                        } else {
+                            self.create_project(folder, name.trim());
+                        }
                     }
                 }
             }
@@ -1304,6 +1332,17 @@ pub(crate) mod app_tests {
         );
         assert!(app.settings.open);
         assert_eq!(app.settings.section, crate::settings_ui::Section::Keyboard);
+    }
+
+    #[test]
+    fn the_first_run_can_start_from_the_url_shortener() {
+        let (mut app, _context, folder) = studio("sample");
+        app.create_sample(&folder.0.join("Sample"), crate::app::SAMPLE_NAME);
+        let project = app.project.as_ref().expect("the sample is open");
+        let state = project.state();
+        assert!(state.tree().find("UrlShortener::LinkStore").is_some());
+        assert!(state.diagnostics().is_empty(), "{:?}", state.diagnostics());
+        assert!(app.scene.nodes.len() > 5, "the sample is on the Surface");
     }
 
     fn part(app: &mut StudioApp, name: &str) -> ElementId {
