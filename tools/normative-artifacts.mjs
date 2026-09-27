@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import assert from "node:assert/strict";
-import { hash, safePath } from "./extract.mjs";
+import { hash, safePath } from "./files.mjs";
 
 export const normativeLockPath = "standards/normative/kerml-1.0/lock.json";
 

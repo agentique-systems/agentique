@@ -1,6 +1,6 @@
 // Explicit acquisition only; never imported by builds or tests.
 import fs from "node:fs";
-import { root, safePath } from "./extract.mjs";
+import { root, safePath } from "./files.mjs";
 import {
   readSysmlLock,
   librarySetPath,

@@ -1,4 +1,4 @@
-#[path = "../examples/support/publication_documents.rs"]
+#[path = "support/publication_documents.rs"]
 mod publication_documents;
 use agq_standard_libraries::VerifiedLibrarySet;
 use publication_documents::*;

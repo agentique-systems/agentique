@@ -1,4 +1,4 @@
-#[path = "../examples/support/publication_dependencies.rs"]
+#[path = "support/publication_dependencies.rs"]
 mod publication_dependencies;
 
 use agq_kerml::{BaselineProfile, classes as c, properties as p};
