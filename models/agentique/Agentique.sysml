@@ -150,6 +150,11 @@ package AgentiqueArchitecture {
     dependency from Simulation to LanguageCore;
     dependency from ImplementationLinks to SystemState;
 
+    dependency from Studio to Assistant {
+        doc /* The Conversation in the Studio sends the Operator's messages to the
+             * Assistant and shows its replies (refines R-14). */
+    }
+
     dependency from History to SystemState {
         doc /* Temporary: agq-modeling-repository uses revision and project types from
              * agq-modeling-workspace and, through it, LanguageCore crates. Stage 2
