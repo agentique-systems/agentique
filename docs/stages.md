@@ -356,3 +356,180 @@ Without a key, the scripted journey shows the same flow:
 cargo build -p agq-studio-native --features automation
 target\debug\agq-studio-native.exe --no-restore --session %TEMP%\agq-session --scenario a-assistant --project %TEMP%\agq-assistant --gallery %TEMP%\agq-shots
 ```
+
+## Stage 4: live proof and foundations
+
+Status: **provisionally complete, pending Operator acceptance.** Built
+overnight on 2026-09-27 under the Operator's overnight instructions (ROADMAP
+§7.6): the evidence each gate asks for was produced and kept outside the
+repository, and every choice that is the Operator's took ROADMAP's
+recommendation and is recorded as pending confirmation. Stages 0–3 still wait
+for the Operator's own live run (C-29, W4.4): nothing here says they were
+accepted.
+
+**Done** (PRs #39–#50)
+
+- **W4.1** (#39): `REALIGNMENT.md` retired; everything points at `ROADMAP.md`.
+  The Operator's amendments of 2026-09-27 are edited in: DeepSeek and Jev in
+  C-35 (Q-11 resolved), the Jev clarification of C-34, DeepSeek and Jev
+  columns in §4.8 with sources.
+- **W4.8** (#40): the Providers part in the self-model; the architecture check
+  fails when a crate outside Providers uses rig, tokio, reqwest or the
+  credential store (`reqwest` in `agq-assistant` is the one temporary
+  exception, until W5.7).
+- **S4.2, kept as the start of W5.7** (#41, §7.6): `agq-providers` on rig
+  0.42.0 (pinned exactly) for Anthropic, OpenAI (Responses API), OpenRouter
+  and DeepSeek, through one generic code path; no rig types in its API; a
+  synchronous handle that cancels at once; retries only before anything
+  streamed; plain errors; native-tls (schannel on Windows).
+- **The Assistant on the provider layer** (#42): with only `DEEPSEEK_API_KEY`
+  set it runs `deepseek-flash` at effort `high` (C-35); `AGENTIQUE_PROVIDER`,
+  `AGENTIQUE_MODEL` and `AGENTIQUE_EFFORT` choose otherwise. Anthropic keeps
+  the hand-written client until W5.7.
+- **W4.2** (#42, #43, #50): thinking shown as a collapsed row per step
+  (R-31; Claude asks for `display: summarized`, DeepSeek shows its reasoning,
+  with any quoted model text hidden, C-4);
+  `read_model` returns an outline, and every tool result is capped at about
+  8,000 tokens (R-34); the skills forbid showing SysML text (C-4).
+- **W4.3** (#44): the evaluation set, 24 Scenario A tasks graded on the System
+  State, with must-hold checks in every trial.
+- **W4.4, headless part** (#46): Scenario A steps A1–A4, A8 and A9 live
+  through the real turn loop on a project in git.
+- **W4.7** (#45): CPU-side budgets in CI (release builds), the start time in
+  the metrics report, budget assertions in the stress harness.
+- **Interfaces for Stage 5**: the provider API (1, #41), the settings table
+  and `settings.json` format 1 (2, #47), conversation format 2 as a
+  specification (4, #48), the event protocol (5, #42), the budget report
+  fields (6, #45). The tokens module and component list (3) wait for the
+  toolkit upgrade (W5.1) and are the first Stage 5 item, before any fan-out.
+
+**Live results** (DeepSeek `deepseek-flash`, effort `high`; reports and
+transcripts outside the repository)
+
+- **Evaluation set, final run** (24 tasks × 3 trials, after the review of the
+  graders): every task passes every check in all three trials (pass^3 24/24,
+  72 of 72 trials); must-hold failures 0; trials that did not run 0; about
+  $0.34. Two earlier full runs with looser graders gave pass^3 22/24 and 23/24;
+  every flag there was read by hand: three heuristic false positives of the
+  claim check and one scripted follow-up that invited a change. The claim
+  check remains a heuristic, and "asked before changing" is judged from tool
+  calls and replies ending in a question.
+- **Headless Scenario A** (A1–A4, A8, A9): 7 of 7 checks pass, $0.02. In A3
+  the "requirement added in words" check passed trivially: A1 had already
+  added the requirements. In A8 the one lock confirmation was refused; the
+  Assistant modelled expiry on unlocked items and said so.
+- **Seen live**: effort `high` accepted; reasoning streamed; tool round trips
+  with `reasoning_content` sent back accepted; cache reads reported (4,608 of
+  4,811 input tokens on a second call). Spend for the whole stage: about $1.05
+  of DeepSeek (1,183 calls, logged at peak-hour prices).
+
+**Measured** (reference run on this machine, release build of `main` at `4ceec616`, 2026-09-27
+23:10–23:20, while two builders compiled in the background, so frame numbers
+are pessimistic; raw reports outside the repository)
+
+| Budget (§3.3) | Target | Measured | |
+|---|---|---|---|
+| Pan and zoom, 1k: interval p95 | ≤ 8.3 ms | pan 6.38, zoom 6.41 ms (UI CPU p95 1.9 ms, GPU pass p95 0.16 ms) | met |
+| Input to next update, 1k: p95 | ≤ 8.3 ms | pan 5.75, zoom 5.87 ms | met |
+| Pan and zoom, 10k: interval p95 | ≤ 16.7 ms | pan 23.8, zoom 21.1 ms (UI CPU p95 14.1 ms, GPU 2.9 ms) | not met (W5.5) |
+| Input to next update, 10k: p95 | ≤ 16.7 ms | pan 25.3, zoom 19.6 ms | not met (W5.5) |
+| Start to first update, warm | ≤ 400 ms | 462 and 489 ms (791 ms right after a build) | not met |
+| Memory, start screen and 1k | ≤ 300 MB private | 351–373 MB | not met (R-44) |
+| Memory, 10k | ≤ 450 MB private | 504–527 MB | not met (R-44) |
+| Scene build (every edit), 1k / 10k | 50 / 100 ms | 105–130 ms / 2.56–3.34 s | not met (W5.5); CI guards regressions |
+| System State edit, 2k / 10k | — / its share of 100 ms | 7.6 ms / 49 ms | checked in CI |
+
+Journeys (release build with `automation`): `a-build`, `a-crash` (exits 3 by
+design after its save), `a-reopen` and `a-assistant` pass; screenshots in
+`overnight\shots\stage4\`.
+
+The reference run, as run here (PowerShell, from the repository root, after
+`cargo build --release -p agq-studio-native --features automation`):
+
+```text
+target\release\agq-studio-native.exe --no-restore --session %TEMP%\agq-ref.json --frames 2 --metrics <out>\start.json
+target\release\agq-studio-native.exe --no-restore --session %TEMP%\agq-ref.json --fixture stress1000 --scenario stress --gpu-timestamps --scenario-report <out>\stress-1k.json
+target\release\agq-studio-native.exe --no-restore --session %TEMP%\agq-ref.json --fixture stress10000 --scenario stress --gpu-timestamps --scenario-report <out>\stress-10k.json
+```
+
+The stress run exits 2 and names each budget it missed; at 10k it will until
+W5.5. Memory is read from the process counters (not in-process yet).
+
+**S4.2: rig parity** (decided overnight, pending the Operator's confirmation)
+
+| Item | Result |
+|---|---|
+| P1 loop, tool and conversation tests; `a-assistant` journey against the new layer | pass; the scripted model is unchanged; `agq-providers` has its own tests against canned streams and a local server for all four providers (the Claude client's tests stay while it does, until W5.7) |
+| P2 live on Anthropic | not tried: no key |
+| P3 live on OpenAI and OpenRouter | not tried: no keys |
+| P3a live on DeepSeek | works: the evaluation set and Scenario A above |
+| P4 build | native-tls chosen (no C crypto library on Windows); rig adds about 0.7 GB of debug artefacts; the Studio's release rebuild took 2 min 38 s with `automation` while other builds ran, so the 30% rule is not measured cleanly |
+| P5 no rig type in the public API | pass (reviewed) |
+| P6 server-side fallbacks (Q-18) | a thin adapter in `agq-providers` (#49) removes Anthropic's `fallback` block before rig reads it and drops the declined model's reasoning and tool calls, as the hand-written client does; tested on canned streams split at every chunk size, not tried live; the upstream contribution is written as a proposal outside the repository, not filed |
+
+Decision by its rule: proceed with rig for every provider (C-34). Anthropic
+moves onto it in W5.7; P2 needs a live Anthropic key before the hand-written
+client is removed.
+
+**S4.1: toolkit** (in progress when this was written)
+
+- Track A (egui 0.36.2 with wgpu 30, Inter's variable weights, a spring and
+  tween motion layer, selection across Conversation messages, screen-reader
+  names) is being built and its automated gates G1–G8 measured by a builder;
+  the results and the decision by the rule are added to this section when its
+  pull request opens. Its code, once reviewed, becomes W5.1 (§7.6).
+- Track B (GPUI): **not tried**: under 12 GB of disk was free while Track A
+  built; a switch to GPUI also needs the Operator to accept the governance
+  risk (§7.6), so tonight's decision can only be "stay with egui 0.36" or
+  "both fail a gate".
+- G6 (Narrator) and G7 (Japanese IME) need a person; blind scoring waits for
+  the Operator.
+
+**Decided overnight** (ROADMAP §7.6 and §7.4, each pending the Operator's
+confirmation): S4.2's code kept as the start of W5.7; native-tls; Anthropic
+stays on the hand-written client until W5.7; Q-10 (app data), Q-17 (Inter),
+Q-18 (a thin adapter); interim CI ceilings for budgets not met yet; conversation
+format 2 specified rather than coded, since W5.7 is not fanned out; the tokens
+interface moved to the start of Stage 5; Track B not tried (disk); the
+thinking row hides SysML lines of reasoning (C-4, #50).
+
+**Not done or not tried**
+
+- The Operator's live run of §2.2 (W4.4) and the acceptance of Stages 0–3.
+- The rubric grader for simplicity (R-19): it needs calibrating against the
+  Operator.
+- Live runs on Anthropic, OpenAI and OpenRouter.
+- The 10k Surface, start and memory budgets (W5.5, R-44).
+- The Jev thin client: C-35 names it, and W5.7 builds it with the key test of
+  Settings (E4); Stage 7 uses it.
+
+**Operator: try this** (the live acceptance of §2.2)
+
+1. Set the DeepSeek key for this PowerShell session only (Settings, with the
+   Credential Manager, is Stage 5), then start the Studio and create a fresh
+   project (L1); the Conversation header shows `deepseek-flash · high`:
+
+   ```text
+   $env:DEEPSEEK_API_KEY = "<your key>"
+   $env:AGENTIQUE_PROVIDER = "deepseek"
+   cargo run --release -p agq-studio-native
+   ```
+
+2. L2–L3: describe the URL shortener in ordinary words (Ctrl+J opens the
+   Conversation); watch parts appear, a collapsed thinking row between steps,
+   tool cards; adjust by hand and in words.
+3. L4: lock the settled parts (L), then "add expiring links"; refuse the lock
+   prompt once.
+4. L5: press Stop mid-turn, then "Undo the Assistant's changes".
+5. L6: close and reopen; kill the process after an edit and reopen.
+6. L7: the evaluation set on your key (about $0.35 a run at peak prices; the
+   spend guard refuses a run whose worst case passes your stop):
+
+   ```text
+   $env:AGENTIQUE_SPEND_LOG = "$HOME\agentique-spend.jsonl"
+   $env:AGENTIQUE_SPEND_STOP_USD = "2"
+   cargo run --release -p agq-assistant --example eval -- --out $HOME\agentique-eval
+   cargo run --release -p agq-assistant --example scenario_a -- $HOME\agentique-scenario-a
+   ```
+
+Then accept Stages 0–4 or list what fails (§2.2 L7).
