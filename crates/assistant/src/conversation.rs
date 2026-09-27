@@ -26,6 +26,25 @@ pub struct Conversation {
 /// The conversation file's format.
 pub const FORMAT: u64 = 2;
 
+/// Why a conversation file could not be read.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ParseError {
+    /// Not JSON, or not a conversation.
+    Unreadable(String),
+    /// A format this version does not read (a later version's).
+    LaterFormat(String),
+}
+
+impl std::fmt::Display for ParseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ParseError::Unreadable(message) | ParseError::LaterFormat(message) => {
+                f.write_str(message)
+            }
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(from = "Value", into = "Value")]
 pub enum Entry {
@@ -191,21 +210,26 @@ impl ToolResult {
 }
 
 impl Conversation {
-    /// The `messages` of a model request, as Claude API messages (the
-    /// Assistant's exchange with its model). The transcript and notices are
-    /// left out, reasoning is kept only where the model that wrote it is
-    /// `for_model`, a reply whose tool calls were never answered (for example
-    /// after a stop) gets error results so the exchange stays well formed,
-    /// and consecutive entries of one side form one message.
+    /// The `messages` of the exchange as Claude API messages, keeping every
+    /// model's reasoning; for inspecting the exchange (a request uses
+    /// [`messages_for`](Self::messages_for)).
     pub fn api_messages(&self) -> Vec<Value> {
         self.messages_for(None)
     }
 
-    /// As [`api_messages`](Self::api_messages), keeping reasoning only for
-    /// `model` (every provider ties reasoning to its own models).
+    /// The `messages` of a request to `model`, as Claude API messages (the
+    /// Assistant's exchange with its model). The transcript, notices and
+    /// entries of unknown kinds are left out; reasoning is kept only where
+    /// `model` wrote it (every provider ties reasoning to its own models;
+    /// `None` keeps all); a reply whose tool calls were never answered (for
+    /// example after a stop) gets error results, and results for calls that
+    /// are not there are dropped, so the exchange stays well formed;
+    /// consecutive entries of one side form one message.
     pub fn messages_for(&self, model: Option<&ModelRef>) -> Vec<Value> {
         let entries = &self.entries[self.transcript.min(self.entries.len())..];
         let mut messages = Vec::new();
+        // The calls of the last reply sent, which results may answer.
+        let mut calls: Vec<String> = Vec::new();
         for (index, entry) in entries.iter().enumerate() {
             match entry {
                 Entry::Operator { text } => {
@@ -230,7 +254,7 @@ impl Conversation {
                         }),
                         Some(Entry::ToolResults { .. })
                     );
-                    let calls = tool_use_ids(&blocks);
+                    calls = tool_use_ids(&blocks);
                     if !answered && !calls.is_empty() {
                         let results: Vec<Value> = calls
                             .iter()
@@ -240,11 +264,17 @@ impl Conversation {
                     }
                 }
                 Entry::ToolResults { results } => {
+                    // A reply this version cannot read (an unknown kind) is
+                    // left out; its results go with it.
                     let content: Vec<Value> = results
                         .iter()
+                        .filter(|result| calls.contains(&result.tool_use_id))
                         .map(|result| json!({ "type": "tool_result", "tool_use_id": result.tool_use_id, "content": result.content, "is_error": result.is_error }))
                         .collect();
-                    push(&mut messages, "user", content);
+                    calls.clear();
+                    if !content.is_empty() {
+                        push(&mut messages, "user", content);
+                    }
                 }
                 Entry::Notice { .. } | Entry::Other(_) => {}
             }
@@ -263,18 +293,27 @@ impl Conversation {
             }
             Err(error) => return Err(error),
         };
-        Conversation::parse(&text)
-            .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))
+        Conversation::parse(&text).map_err(|error| match error {
+            ParseError::Unreadable(message) => {
+                std::io::Error::new(std::io::ErrorKind::InvalidData, message)
+            }
+            // A later version's file: refused, and left as it is (§5.5).
+            ParseError::LaterFormat(message) => {
+                std::io::Error::new(std::io::ErrorKind::Unsupported, message)
+            }
+        })
     }
 
     /// Reads a conversation file's text; see [`load`](Self::load).
-    pub fn parse(text: &str) -> Result<Conversation, String> {
-        let value: Value = serde_json::from_str(text).map_err(|error| error.to_string())?;
-        match value.get("format").and_then(Value::as_u64) {
-            Some(FORMAT) => {
+    pub fn parse(text: &str) -> Result<Conversation, ParseError> {
+        let unreadable = |message: String| ParseError::Unreadable(message);
+        let value: Value =
+            serde_json::from_str(text).map_err(|error| unreadable(error.to_string()))?;
+        match value.get("format") {
+            Some(format) if format.as_u64() == Some(FORMAT) => {
                 let entries = value["entries"]
                     .as_array()
-                    .ok_or("a conversation without entries")?
+                    .ok_or_else(|| unreadable("a conversation without entries".into()))?
                     .iter()
                     .cloned()
                     .map(Entry::from)
@@ -284,11 +323,11 @@ impl Conversation {
                     transcript: value["transcript"].as_u64().unwrap_or(0) as usize,
                 })
             }
-            None if value["entries"].is_array() => Ok(Conversation::import_format_1(&value)),
-            Some(other) => Err(format!(
+            Some(other) => Err(ParseError::LaterFormat(format!(
                 "conversation format {other}, which this version does not read"
-            )),
-            None => Err("not a conversation".to_string()),
+            ))),
+            None if value["entries"].is_array() => Ok(Conversation::import_format_1(&value)),
+            None => Err(unreadable("not a conversation".into())),
         }
     }
 
@@ -333,14 +372,23 @@ impl Conversation {
         file.to_string()
     }
 
-    /// Writes the conversation atomically (temporary file, then rename).
+    /// Writes the conversation durably and atomically: a temporary file,
+    /// flushed to disk, then renamed over the old one (§5.5).
     pub fn save(&self, path: &Path) -> std::io::Result<()> {
+        use std::io::Write;
         if let Some(folder) = path.parent() {
             std::fs::create_dir_all(folder)?;
         }
         let temporary = path.with_extension("json.tmp");
-        std::fs::write(&temporary, self.to_text())?;
-        std::fs::rename(temporary, path)
+        let written = std::fs::File::create(&temporary).and_then(|mut file| {
+            file.write_all(self.to_text().as_bytes())?;
+            file.sync_all()
+        });
+        if let Err(error) = written.and_then(|()| std::fs::rename(&temporary, path)) {
+            let _ = std::fs::remove_file(&temporary);
+            return Err(error);
+        }
+        Ok(())
     }
 }
 
@@ -393,38 +441,45 @@ pub fn blocks_from_parts(
     let same_model = author.is_some() && (target.is_none() || author == target);
     parts
         .iter()
-        .filter_map(|part| match part {
-            AssistantPart::Text { text } => Some(json!({ "type": "text", "text": text })),
+        .flat_map(|part| match part {
+            AssistantPart::Text { text } => vec![json!({ "type": "text", "text": text })],
             AssistantPart::ToolCall { id, name, input } => {
-                Some(json!({ "type": "tool_use", "id": id, "name": name, "input": input }))
+                vec![json!({ "type": "tool_use", "id": id, "name": name, "input": input })]
             }
             AssistantPart::Reasoning(reasoning) if same_model => {
                 let author = author.expect("same_model has an author");
                 if author.provider == Provider::Anthropic {
-                    reasoning.parts.first().map(|first| match first {
-                        ReasoningPart::Redacted { data } => {
-                            json!({ "type": "redacted_thinking", "data": data })
-                        }
-                        _ => json!({
-                            "type": "thinking",
-                            "thinking": reasoning.text(),
-                            "signature": reasoning.parts.iter().find_map(|part| match part {
-                                ReasoningPart::Text { signature, .. } => signature.clone(),
-                                _ => None,
-                            }).unwrap_or_default(),
-                        }),
-                    })
+                    // One block per part, as the Messages API has them; a
+                    // part without a signature cannot go back.
+                    reasoning
+                        .parts
+                        .iter()
+                        .filter_map(|part| match part {
+                            ReasoningPart::Redacted { data } => {
+                                Some(json!({ "type": "redacted_thinking", "data": data }))
+                            }
+                            ReasoningPart::Text {
+                                text,
+                                signature: Some(signature),
+                            } => Some(json!({
+                                "type": "thinking",
+                                "thinking": text,
+                                "signature": signature,
+                            })),
+                            _ => None,
+                        })
+                        .collect()
                 } else {
-                    Some(json!({
+                    vec![json!({
                         "type": "reasoning",
                         "provider": author.provider.id(),
                         "model": author.model,
                         "text": reasoning.text(),
                         "reasoning": reasoning,
-                    }))
+                    })]
                 }
             }
-            AssistantPart::Reasoning(_) => None,
+            AssistantPart::Reasoning(_) => Vec::new(),
         })
         .collect()
 }

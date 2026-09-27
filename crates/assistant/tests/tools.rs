@@ -389,7 +389,40 @@ fn an_unknown_entry_is_kept_shown_and_never_sent_and_an_unknown_format_refused()
     assert_eq!(conversation.api_messages().len(), 1);
     let again: serde_json::Value = serde_json::from_str(&conversation.to_text()).unwrap();
     assert_eq!(again["entries"][1]["steps"][1], "two");
-    assert!(Conversation::parse(&json!({ "format": 3, "entries": [] }).to_string()).is_err());
+    assert!(matches!(
+        Conversation::parse(&json!({ "format": 3, "entries": [] }).to_string()),
+        Err(agq_assistant::conversation::ParseError::LaterFormat(_))
+    ));
+    assert!(Conversation::parse(&json!({ "format": "2", "entries": [] }).to_string()).is_err());
+}
+
+#[test]
+fn results_of_a_reply_this_version_cannot_read_are_left_out() {
+    let text = json!({
+        "format": 2,
+        "entries": [
+            { "type": "operator", "text": "Build it" },
+            { "type": "assistant", "parts": [{ "type": "hologram", "id": "x" }] },
+            { "type": "tool_results", "results": [
+                { "tool_use_id": "t9", "content": "done", "is_error": false, "change": null }
+            ] },
+            { "type": "operator", "text": "Carry on" }
+        ]
+    })
+    .to_string();
+    let conversation = Conversation::parse(&text).unwrap();
+    assert!(matches!(conversation.entries[1], Entry::Other(_)));
+    let messages = conversation.api_messages();
+    // Only the Operator's two messages, as one user message: no result
+    // without its call.
+    assert_eq!(messages.len(), 1, "{messages:#?}");
+    assert!(
+        messages[0]["content"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|block| block["type"] == "text")
+    );
 }
 
 #[test]

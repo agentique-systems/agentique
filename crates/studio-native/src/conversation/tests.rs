@@ -470,6 +470,28 @@ fn a_conversation_from_stage_4_is_shown_as_a_transcript_and_never_sent() {
 }
 
 #[test]
+fn a_later_versions_conversation_is_left_as_it_is() {
+    let (mut app, _context, _folder) = assisted(
+        "assistant-later-format",
+        vec![reply(vec![text("Hello.")], "end_turn")],
+    );
+    let project = app.project.as_ref().unwrap().folder().to_path_buf();
+    let path = conversation_path(&app.session_path, &project);
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+    let later =
+        json!({ "format": 3, "entries": [{ "type": "operator", "text": "Hi" }] }).to_string();
+    std::fs::write(&path, &later).unwrap();
+    app.open_project(&project);
+    assert!(app.conversation.read_error.is_some());
+    assert!(app.conversation.conversation.entries.is_empty());
+    // Working on does not write over it, and it is not renamed.
+    say(&mut app, "Hi");
+    wait(&mut app, finished);
+    assert_eq!(std::fs::read_to_string(&path).unwrap(), later);
+    assert!(!path.with_extension("unreadable.json").exists());
+}
+
+#[test]
 fn insert_selection_puts_the_selected_names_into_the_message() {
     let (mut app, context, _folder) = assisted("assistant-insert", Vec::new());
     let package = find(&app, "P").unwrap();

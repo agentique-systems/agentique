@@ -203,7 +203,6 @@ impl ConversationPanel {
         })
     }
 
-    /// Whether the last turn failed and can be sent again.
     /// The Operator's last message after the read-only transcript: the one
     /// that can be edited and sent again.
     pub fn last_operator(&self) -> Option<usize> {
@@ -215,6 +214,7 @@ impl ConversationPanel {
             .filter(|index| *index >= transcript)
     }
 
+    /// Whether the last turn failed and can be sent again.
     pub fn can_retry(&self) -> bool {
         self.turn.is_none() && self.last_turn.as_ref().is_some_and(|turn| turn.failed)
     }
@@ -234,6 +234,17 @@ fn earlier_conversation_path(session: &Path, folder: &Path) -> PathBuf {
     let name = data.file_name().unwrap_or_default().to_string_lossy();
     let directory = session.parent().unwrap_or(Path::new("."));
     directory.join("conversations").join(format!("{name}.json"))
+}
+
+/// `conversation.unreadable.json`, or with a number when that exists.
+fn unused_name(path: &Path) -> PathBuf {
+    (1..)
+        .map(|n| match n {
+            1 => path.with_extension("unreadable.json"),
+            n => path.with_extension(format!("unreadable-{n}.json")),
+        })
+        .find(|name| !name.exists())
+        .expect("some name is free")
 }
 
 /// The app's data for the project in `folder`.
@@ -273,15 +284,32 @@ impl StudioApp {
         } else {
             &path
         };
+        let read = read.clone();
         let panel = &mut self.conversation;
-        panel.conversation = match Conversation::load(read) {
+        panel.path = Some(path.clone());
+        panel.conversation = match Conversation::load(&read) {
             Ok(conversation) => conversation,
+            // A later version's file is left as it is, and this session
+            // saves nothing over it (§5.5).
+            Err(error) if error.kind() == std::io::ErrorKind::Unsupported => {
+                panel.path = None;
+                panel.read_error = Some(format!(
+                    "The saved conversation is from a later version of Agentique ({error}); it is left as it is at {}, and this conversation is not saved.",
+                    read.display()
+                ));
+                Conversation::default()
+            }
             Err(error) => {
-                // Keep the unreadable file; the new conversation saves beside it.
-                let kept = path.with_extension("unreadable.json");
-                let place = match std::fs::rename(&path, &kept) {
-                    Ok(()) => format!("It was kept as {}.", kept.display()),
-                    Err(_) => format!("It is at {}.", path.display()),
+                // Keep the unreadable file under a name nothing overwrites;
+                // a Stage 4 file stays where it is.
+                let place = if read == path {
+                    let kept = unused_name(&path);
+                    match std::fs::rename(&path, &kept) {
+                        Ok(()) => format!("It was kept as {}.", kept.display()),
+                        Err(_) => format!("It is at {}.", path.display()),
+                    }
+                } else {
+                    format!("It is at {}.", read.display())
                 };
                 panel.read_error = Some(format!(
                     "The saved conversation could not be read ({error}); a new one was started. {place}"
@@ -289,7 +317,6 @@ impl StudioApp {
                 Conversation::default()
             }
         };
-        panel.path = Some(path);
         panel.index_results();
     }
 
