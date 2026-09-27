@@ -25,6 +25,10 @@ mod relationship_labels;
 mod requirements;
 mod selection;
 mod session;
+// The settings table and settings.json (interface 2 of ROADMAP §6.2); the
+// Settings view that uses it is W5.8.
+#[allow(dead_code)]
+mod settings;
 #[cfg(feature = "automation")]
 mod stress_automation;
 mod surface_recovery;
