@@ -5,7 +5,6 @@ use crate::{
     commands::{self, CommandContext, CommandId},
     gpu::{Batch, GpuStats},
     navigation::SurfaceView,
-    project::Project,
     selection::{CanvasClicks, Selection},
     session::{ProjectView, Session},
     theme::Theme,
@@ -15,7 +14,7 @@ use agq_studio_scene::{
     Camera2D, EdgeKind, ElementId, LayoutKind, LayoutMemory, LodController, Scene, SceneInput,
     SceneLookup, SceneOptions, SceneTarget, SpatialIndex, fixtures,
 };
-use agq_system_state::ChangeEvent;
+use agq_system_state::{ChangeEvent, Project, ProjectError};
 use eframe::egui;
 use std::{
     collections::{BTreeMap, BTreeSet},
@@ -275,6 +274,9 @@ impl StudioApp {
     pub fn open_project(&mut self, folder: &Path) {
         match Project::open(folder) {
             Ok(project) => self.install_project(project),
+            Err(ProjectError::Locked) => {
+                self.status = format!("{} is open in another Agentique window", folder.display());
+            }
             Err(error) => {
                 self.status = format!("Could not open {}: {error}", folder.display());
                 self.session.recent.retain(|recent| recent != folder);
@@ -288,6 +290,9 @@ impl StudioApp {
     pub fn create_project(&mut self, folder: &Path, name: &str) {
         match Project::create(folder, name) {
             Ok(project) => self.install_project(project),
+            Err(ProjectError::Locked) => {
+                self.status = format!("{} is open in another Agentique window", folder.display())
+            }
             Err(error) => self.status = format!("Could not create the project: {error}"),
         }
     }
@@ -315,13 +320,21 @@ impl StudioApp {
         }
         self.camera_target = None;
         self.session.remember(&folder);
-        let unmatched = self.project.as_ref().map_or(0, |p| p.unmatched().len());
-        self.status = if unmatched == 0 {
+        let unmatched: Vec<String> = self
+            .project
+            .as_ref()
+            .map(|p| p.unmatched().to_vec())
+            .unwrap_or_default();
+        self.status = if unmatched.is_empty() {
             format!("Opened {}", folder.display())
         } else {
+            let listed: Vec<&str> = unmatched.iter().take(3).map(String::as_str).collect();
             format!(
-                "Opened {}; {unmatched} stored element(s) no longer match the text and were given new identities",
-                folder.display()
+                "Opened {}. The model text was edited outside Agentique: {} element(s) could not be matched to their saved identity and were treated as new ({}{}). Locks and history links on them were not carried over.",
+                folder.display(),
+                unmatched.len(),
+                listed.join(", "),
+                if unmatched.len() > 3 { ", …" } else { "" }
             )
         };
         self.refresh();

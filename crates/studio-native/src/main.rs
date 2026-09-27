@@ -14,7 +14,6 @@ mod inspector;
 mod navigation;
 mod palette_ui;
 mod panels;
-mod project;
 mod project_dialog;
 mod relationship_labels;
 mod requirements;
@@ -60,9 +59,9 @@ pub struct Args {
     /// Start without reopening the last project.
     #[arg(long)]
     no_restore: bool,
-    /// Drive the UI through a scripted journey (a-build, a-reopen) or the camera benchmark (stress).
+    /// Drive the UI through a scripted journey (a-build, a-crash, a-reopen) or the camera benchmark (stress).
     #[cfg(feature = "automation")]
-    #[arg(long, value_parser = ["a-build", "a-reopen", "stress"])]
+    #[arg(long, value_parser = ["a-build", "a-crash", "a-reopen", "stress"])]
     scenario: Option<String>,
     /// Write the scenario report (JSON) to this path.
     #[cfg(feature = "automation")]

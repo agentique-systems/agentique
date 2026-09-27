@@ -6,8 +6,12 @@
 //!   project dialog, builds part of the URL shortener by hand (parts, ports,
 //!   a connection, a rename, a type, a lock, a refused locked change) and
 //!   records a checkpoint.
+//! - `a-crash --project <same folder>`: makes one more edit and then kills
+//!   its own process without closing anything, like a crash.
 //! - `a-reopen --project <same folder>`: in a new process, checks that
-//!   everything is as it was left, including the lock and the checkpoint.
+//!   everything is as it was left, including the lock, the checkpoints, the
+//!   "what changed" view and the edit made just before the crash (so at most
+//!   the edit in progress can be lost). Run a-build, a-crash, a-reopen.
 //!
 //! Screenshots go only to the `--gallery` directory given on the command line.
 use crate::{
@@ -63,11 +67,13 @@ enum Action {
     ClickCard(&'static str),
     /// Drag from a port on a card to a port on another card: (card, port).
     DragPort((&'static str, &'static str), (&'static str, &'static str)),
+    /// End the process at once, as a crash would: nothing is closed or saved.
+    Crash,
 }
 impl Action {
     fn frames(&self) -> u64 {
         match self {
-            Self::Idle | Self::Key(..) | Self::Text(_) => 1,
+            Self::Idle | Self::Key(..) | Self::Text(_) | Self::Crash => 1,
             Self::Click(_) | Self::ClickCard(_) => 2,
             Self::Fill(..) => 5,
             Self::DragPort(..) => 12,
@@ -416,6 +422,25 @@ fn build(folder: &Path) -> Vec<Step> {
     steps
 }
 
+fn crash() -> Vec<Step> {
+    let mut steps = vec![
+        step("the project opens", Action::Idle, Check::ProjectOpen),
+        step(
+            "clear the selection",
+            Action::Key(Key::Escape, Modifiers::NONE),
+            Check::NothingSelected,
+        ),
+    ];
+    steps.extend(create(
+        Key::P,
+        "crashEdit",
+        "UrlShortener::crashEdit",
+        ElementKind::Part,
+    ));
+    steps.push(step("crash", Action::Crash, Check::ProjectOpen));
+    steps
+}
+
 fn reopen() -> Vec<Step> {
     vec![
         step("the project opens", Action::Idle, Check::ProjectOpen),
@@ -453,17 +478,23 @@ fn reopen() -> Vec<Step> {
             Action::Idle,
             Check::Exists("UrlShortener::store::cache", ElementKind::Part),
         ),
+        step(
+            "the edit made just before the crash is there",
+            Action::Idle,
+            Check::Exists("UrlShortener::crashEdit", ElementKind::Part),
+        ),
         step("no problems left", Action::Idle, Check::NoProblems),
-        step("checkpoint", Action::Idle, Check::Checkpoints(1)),
+        // The project's first checkpoint and the journey's.
+        step("checkpoints", Action::Idle, Check::Checkpoints(2)),
         step(
             "History panel",
             Action::Click(Target::Button("History")),
             Check::Checkpoints(1),
         ),
         step(
-            "select the checkpoint",
-            Action::Click(Target::Button(crate::history::HISTORY_ROWS[0])),
-            Check::Checkpoints(1),
+            "select the first checkpoint",
+            Action::Click(Target::Button(crate::history::HISTORY_ROWS[1])),
+            Check::Checkpoints(2),
         ),
         Step {
             screenshot: Some("06-what-changed"),
@@ -514,10 +545,10 @@ fn drive(
                 .clone()
                 .ok_or("the journeys need --project <folder>")?;
             Runner {
-                steps: if scenario == "a-build" {
-                    build(&folder)
-                } else {
-                    reopen()
+                steps: match scenario {
+                    "a-build" => build(&folder),
+                    "a-crash" => crash(),
+                    _ => reopen(),
                 },
                 index: 0,
                 age: 0,
@@ -646,6 +677,7 @@ impl Runner {
     ) -> Result<(), String> {
         match action {
             Action::Idle => {}
+            Action::Crash => std::process::abort(),
             Action::Key(k, m) => key(input, *k, *m),
             Action::Text(text) => input.events.push(Event::Text((*text).into())),
             Action::Click(t) => {
@@ -901,11 +933,13 @@ fn check(check: &Check, app: &StudioApp) -> Result<(), String> {
                 return Err(format!("{found} checkpoint(s), expected {count}"));
             }
         }
-        Check::Comparison => {
-            if app.comparison.is_none() {
-                return fail("no comparison is shown");
+        Check::Comparison => match &app.comparison {
+            None => return fail("no comparison is shown"),
+            Some(comparison) if comparison.created.is_empty() => {
+                return fail("the comparison lists no created elements");
             }
-        }
+            Some(_) => {}
+        },
         Check::MoveDialog => {
             if !matches!(app.dialog, Some(Dialog::MoveTo { .. })) {
                 return fail("the Move to dialog is not open");

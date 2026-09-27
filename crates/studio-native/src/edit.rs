@@ -4,12 +4,13 @@
 use crate::{
     app::StudioApp,
     commands::CommandId,
-    project::ApplyError,
     targets::{Target, record},
 };
 use agq_language::{Element, ElementId, ElementKind, Parent, QualifiedName, Reference, Step, Tree};
 use agq_studio_scene::SceneTarget;
-use agq_system_state::{Actor, Change, ChangeEvent, Operation, Property, Rejection};
+use agq_system_state::{
+    Actor, ApplyError, Change, ChangeEvent, Operation, ProjectError, Property, Rejection,
+};
 use eframe::egui::{self, Key, Modifiers};
 
 /// What the Operator can create by hand.
@@ -361,9 +362,12 @@ impl StudioApp {
                 None
             }
             Err(ApplyError::Project(error)) => {
+                // The project reverted the change because it could not be saved.
                 self.saved = Err(error.to_string());
-                self.status = format!("{} was applied but not saved: {error}", change.description);
-                self.refresh();
+                self.status = format!(
+                    "Not applied: could not save “{}”: {error}",
+                    change.description
+                );
                 None
             }
         }
@@ -595,7 +599,8 @@ impl StudioApp {
             Ok(None) => self.status = "Nothing to undo".into(),
             Err(error) => {
                 self.saved = Err(error.to_string());
-                self.status = format!("The project was not saved: {error}");
+                let verb = if undo { "undone" } else { "redone" };
+                self.status = format!("Not {verb}: could not save the project: {error}");
             }
         }
     }
@@ -615,8 +620,10 @@ impl StudioApp {
                 self.status = format!("Checkpoint: {}", checkpoint.message);
                 self.history.reload(project);
             }
+            Err(ProjectError::NoChanges) => {
+                self.status = "Nothing changed since the last checkpoint".into();
+            }
             Err(error) => {
-                self.saved = Err(error.to_string());
                 self.status = format!("The checkpoint was not recorded: {error}");
             }
         }
@@ -1053,6 +1060,28 @@ mod app_tests {
     fn name_of(app: &StudioApp, id: ElementId) -> String {
         let tree = app.project.as_ref().unwrap().state().tree();
         tree.effective_name(id).unwrap().to_string()
+    }
+
+    #[test]
+    fn a_project_open_in_another_window_says_so() {
+        let (app, _context, folder) = studio("second");
+        let project = app.project.as_ref().unwrap().folder().to_path_buf();
+        let args = crate::Args::parse_from([
+            "studio",
+            "--no-restore",
+            "--session",
+            folder.0.join("second.json").to_str().unwrap(),
+        ]);
+        let context = egui::Context::default();
+        let creation = eframe::CreationContext::_new_kittest(context);
+        let mut second = StudioApp::new(&creation, args);
+        second.open_project(&project);
+        assert!(second.project.is_none());
+        assert!(
+            second.status.contains("open in another Agentique window"),
+            "{}",
+            second.status
+        );
     }
 
     #[test]

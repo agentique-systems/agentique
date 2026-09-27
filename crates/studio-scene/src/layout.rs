@@ -400,17 +400,9 @@ impl LayoutEngine for HierarchyLayout {
                 .map(|r| r.max.y)
                 .fold(self.node_size.height, f32::max)
                 + self.inset;
-            // Keep an established containment envelope when a child disappears.
-            // Besides preserving the mental map, this reserves room for diff
-            // ghosts before neighboring containers are packed.
-            let old = previous.and_then(|memory| memory.bounds.get(&n.id));
-            sizes.insert(
-                n.id,
-                Size::new(
-                    old.map_or(width, |bounds| width.max(bounds.width())),
-                    old.map_or(height, |bounds| height.max(bounds.height())),
-                ),
-            );
+            // A container fits what it shows now. Removed cards in a "what
+            // changed" view are laid out with the others (`Scene::comparison`).
+            sizes.insert(n.id, Size::new(width, height));
             offsets.extend(placed.into_iter().map(|(id, r)| (id, r.min)));
         }
         let roots: Vec<_> = ids

@@ -2,12 +2,11 @@
 //! between two of them, or between one and now, shown on the Surface.
 use crate::{
     app::StudioApp,
-    project::{Checkpoint, Project},
     targets::{Target, record},
 };
 use agq_language::{ElementId, ElementKind, Tree, validate};
 use agq_studio_scene::{SceneInput, SceneTarget};
-use agq_system_state::compare;
+use agq_system_state::{Checkpoint, Project, compare};
 use eframe::egui::{self, RichText};
 use std::collections::{BTreeMap, BTreeSet};
 use std::time::SystemTime;
