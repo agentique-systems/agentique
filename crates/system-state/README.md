@@ -20,7 +20,7 @@ state.undo();
 - **Atomic changes**: a `Change` applies completely or is rejected
   (`Stale`, `Locked`, `Invalid`) and leaves the model and locks unchanged.
   `Invalid` covers what cannot be done or could not be saved as SysML text and
-  read back the same: an unknown element, a property the kind does not have
+  read back the same (`agq_language::writable`): an unknown element, a property the kind does not have
   (`Property::applies_to`), an empty name or one with a line break, a
   malformed value, a connection with three ends. A well-formed change that
   makes the model invalid (a missing type, ends that do not fit, a duplicate

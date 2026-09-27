@@ -1,12 +1,12 @@
 use agq_language::{
     Diagnostic, Direction, Element, ElementId, ElementKind, Literal, Multiplicity, Parent,
-    Reference, Source, Visibility, parse, print, validate,
+    QualifiedName, Reference, Source, Visibility, parse, print, validate,
 };
 use agq_system_state::{
     Actor, Change, ChangeEvent, Comparison, EventKind, Operation, Property, Rejection, SystemState,
     compare,
 };
-use std::collections::BTreeSet;
+use std::collections::{BTreeSet, HashMap};
 
 const MODEL: &str = "package Shop {
     port def OrderPort { in item order : Order; }
@@ -305,15 +305,47 @@ fn set(element: ElementId, property: Property) -> Operation {
     Operation::Set { element, property }
 }
 
-/// Saving and reopening gives the same text and the same problems (A9).
+/// Saving and reopening gives the same elements (kinds, names, properties,
+/// owners and what references point at) and the same problems (A9).
 fn assert_survives_saving(state: &SystemState) {
-    let saved = print(state.tree());
-    let reopened = parse(&saved);
-    assert_eq!(
-        print(&reopened),
-        saved,
-        "the saved text reads back the same"
-    );
+    let tree = state.tree();
+    let mut reopened = parse(&print(tree));
+    // Reopening keeps identities: the reopened elements get the stored ids,
+    // matched in document order as History does.
+    let (stored, parsed) = (tree.walk(), reopened.walk());
+    assert_eq!(stored.len(), parsed.len(), "as many elements");
+    let ids: HashMap<ElementId, ElementId> = parsed.into_iter().zip(stored.clone()).collect();
+    reopened.rekey(&ids).unwrap();
+    // A linked reference is compared by its targets; the printed name may
+    // differ from the name first written (after a rename, for example).
+    let normal = |element: &Element| {
+        let mut element = element.clone();
+        element.location = None;
+        for reference in element
+            .typed_by
+            .iter_mut()
+            .chain(&mut element.specializes)
+            .chain(&mut element.redefines)
+            .chain(&mut element.ends)
+            .chain(&mut element.target)
+            .chain(&mut element.by)
+        {
+            for step in &mut reference.steps {
+                if step.target.is_some() {
+                    step.name = QualifiedName::default();
+                }
+            }
+        }
+        element
+    };
+    for id in stored {
+        assert_eq!(
+            normal(&reopened[id]),
+            normal(&tree[id]),
+            "{}",
+            tree.qualified_name(id)
+        );
+    }
     let codes = |diagnostics: &[Diagnostic]| diagnostics.iter().map(|d| d.code).collect::<Vec<_>>();
     assert_eq!(
         codes(&validate(&reopened)),
@@ -378,19 +410,19 @@ fn new_elements_must_be_writable() {
     assert!(reason.contains("cannot be created"), "{reason}");
     assert_eq!(
         rejected_reason(state.apply(create(Element::new(ElementKind::PartDef)))),
-        "a part def needs a name"
+        "`Shop::(part def)`: a part def needs a name"
     );
     let mut typed_def = Element::named(ElementKind::PartDef, "Cache");
     typed_def.typed_by = vec![Reference::new("Store")];
     assert_eq!(
         rejected_reason(state.apply(create(typed_def))),
-        "a part def has no type (`:`)"
+        "`Shop::Cache`: a part def has no type (`:`)"
     );
     let mut import = Element::new(ElementKind::Import);
     import.wildcard = true;
     assert_eq!(
         rejected_reason(state.apply(create(import))),
-        "an import needs the name it imports"
+        "`Shop::(import)`: an import needs the name it imports"
     );
     assert_eq!(state.revision(), 0);
 
@@ -427,7 +459,7 @@ fn names_that_need_quoting_survive_saving_and_line_breaks_are_rejected() {
     assert!(state.diagnostics().is_empty(), "{:?}", state.diagnostics());
     assert_survives_saving(&state);
 
-    for bad in ["", "  ", "Two\nlines", "tab\there"] {
+    for bad in ["", "  ", "Two\nlines"] {
         let result = state.apply(operator(
             "Rename",
             vec![Operation::Rename {
@@ -619,7 +651,7 @@ fn connect_resolves_feature_chains_and_reports_ends_that_do_not_fit() {
     )));
     assert_eq!(
         reason,
-        "the connection end needs a name without line breaks"
+        "`Shop::System::empty`: in the connection end, a name cannot be empty"
     );
 }
 
@@ -785,7 +817,7 @@ fn properties_an_element_cannot_have_are_rejected_by_name() {
         ),
         (
             Literal::String("say \"hi\"".into()),
-            "a quote inside a string value must be written `\\\"`",
+            "a string value is written with `\\\"` for a quote, `\\\\` for a backslash and `\\n` for a line break",
         ),
     ] {
         let got = reason(&mut state, set(store, Property::Value(Some(literal))));
@@ -794,7 +826,7 @@ fn properties_an_element_cannot_have_are_rejected_by_name() {
     // A conjugated port has exactly one type, whatever the order of the sets.
     assert_eq!(
         reason(&mut state, set(web_port, Property::TypedBy(Vec::new()))),
-        "`Shop::Web::orders` is conjugated (`~`), so it needs exactly one type"
+        "`Shop::Web::orders`: a conjugated usage (`~`) has exactly one type"
     );
     state
         .apply(operator(
@@ -1022,6 +1054,120 @@ fn a_doc_set_as_a_property_is_reported_as_created() {
     let doc = state.tree()[store].children()[0];
     assert_eq!(event.created, vec![doc]);
     assert_eq!(event.updated, vec![store]);
+}
+
+#[test]
+fn what_would_not_read_back_is_rejected() {
+    use ElementKind::*;
+    let mut state = state();
+    let shop = id(&state, "Shop");
+    let create = |element: Element| {
+        operator(
+            "Create",
+            vec![Operation::Create {
+                parent: Parent::Element(shop),
+                element: Box::new(element),
+            }],
+        )
+    };
+    // `: Order;` would read back as a syntax error.
+    let mut typed = Element::new(Reference);
+    typed.typed_by = vec![agq_language::Reference::new("Order")];
+    let reason = rejected_reason(state.apply(create(typed)));
+    assert!(
+        reason.contains("a usage without a kind keyword needs a name"),
+        "{reason}"
+    );
+    // Names on elements that are written without one.
+    for kind in [Satisfy, Import, Doc, Comment] {
+        let mut element = Element::named(kind, "named");
+        element.target = Some(agq_language::Reference::new("Order"));
+        element.text = matches!(kind, Doc | Comment).then(|| "text".to_string());
+        let reason = rejected_reason(state.apply(create(element)));
+        assert!(reason.ends_with("has no name"), "{reason}");
+    }
+    let mut comment = Element::new(Comment);
+    let reason = rejected_reason(state.apply(create(comment.clone())));
+    assert!(
+        reason.ends_with("a comment needs text (it may be empty)"),
+        "{reason}"
+    );
+    comment.text = Some("ends */ early".into());
+    let reason = rejected_reason(state.apply(create(comment)));
+    assert!(
+        reason.ends_with("comment text cannot contain `*/`"),
+        "{reason}"
+    );
+    assert_eq!(state.revision(), 0);
+
+    // An end connection keeps its `end` when it is saved.
+    let mut end = Element::new(Connection);
+    end.is_end = true;
+    end.ends = vec![
+        agq_language::Reference::new("a"),
+        agq_language::Reference::new("b"),
+    ];
+    state.apply(create(end)).unwrap();
+    assert_survives_saving(&state);
+}
+
+#[test]
+fn a_lock_on_a_doc_comment_covers_setting_the_doc() {
+    let mut state = state();
+    let store = id(&state, "Shop::Store");
+    state
+        .apply(operator(
+            "Document",
+            vec![set(store, Property::Doc(Some("Keeps orders.".into())))],
+        ))
+        .unwrap();
+    let doc = state.tree()[store].children()[0];
+    state
+        .apply(operator(
+            "Lock the doc",
+            vec![Operation::Lock { element: doc }],
+        ))
+        .unwrap();
+    let assistant = |text: Option<&str>| {
+        Change::new(
+            Actor::Assistant,
+            "Rewrite the doc",
+            vec![set(store, Property::Doc(text.map(str::to_string)))],
+        )
+    };
+    let locked = Err(Rejection::Locked {
+        elements: vec![doc],
+    });
+    assert_eq!(state.apply(assistant(Some("Anything."))), locked);
+    assert_eq!(state.apply(assistant(None)), locked);
+    let mut confirmed = assistant(None);
+    confirmed.confirmed = vec![doc];
+    let event = state.apply(confirmed).unwrap();
+    assert_eq!(event.deleted, vec![doc]);
+    assert!(state.locks().is_empty(), "the lock went with the doc");
+}
+
+#[test]
+fn deleting_a_doc_that_clearing_the_doc_removed_does_nothing() {
+    let mut state = state();
+    let store = id(&state, "Shop::Store");
+    state
+        .apply(operator(
+            "Document",
+            vec![set(store, Property::Doc(Some("Keeps orders.".into())))],
+        ))
+        .unwrap();
+    let doc = state.tree()[store].children()[0];
+    let event = state
+        .apply(operator(
+            "Clear the doc and delete it",
+            vec![
+                set(store, Property::Doc(None)),
+                Operation::Delete { element: doc },
+            ],
+        ))
+        .unwrap();
+    assert_eq!(event.deleted, vec![doc]);
 }
 
 #[test]

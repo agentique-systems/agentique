@@ -10,9 +10,10 @@
 //!   ([`Rejection::Locked`]);
 //! - an operation cannot be carried out ([`Rejection::Invalid`]): the element
 //!   does not exist, the element cannot have the property (a part def has no
-//!   type), or the result could not be saved as SysML text and read back the
-//!   same (an empty name, a name with a line break, a string value with an
-//!   unescaped quote, a connection with three ends).
+//!   type), or an element it writes could not be saved as SysML text and read
+//!   back the same (an empty name, a name with a line break, a string value
+//!   with an unescaped quote, a connection with three ends), as
+//!   [`agq_language::writable`] decides.
 //!
 //! A change that is well formed but makes the model invalid (a type that does
 //! not exist, ports that do not fit, a part inside an attribute, a duplicate
@@ -33,8 +34,9 @@ mod project;
 pub use project::{ApplyError, Checkpoint, HistoryError, Project, ProjectError};
 
 use agq_language::{
-    Diagnostic, Direction, Element, ElementId, ElementKind, Literal, Multiplicity, Parent,
+    Diagnostic, Direction, Element, ElementId, ElementKind, Field, Literal, Multiplicity, Parent,
     QualifiedName, Reference, Step, Tree, TreeError, Visibility, link, printed_reference, validate,
+    writable,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt;
@@ -130,46 +132,36 @@ pub enum Property {
 }
 
 impl Property {
-    /// Whether elements of `kind` have this property: whether it can be
-    /// written for them in SysML text.
-    pub fn applies_to(&self, kind: ElementKind) -> bool {
-        use ElementKind::*;
-        let has_body = kind == Package || kind.is_definition() || kind.is_usage();
+    /// The part of the text form this property is; a doc comment is a
+    /// member of the element.
+    pub fn field(&self) -> Field {
         match self {
-            Property::Doc(_) => has_body || kind == Satisfy,
-            Property::Visibility(_) => has_body || matches!(kind, Import | Satisfy),
-            Property::Specializes(_) | Property::Abstract(_) => {
-                kind.is_definition() || kind.is_usage()
-            }
-            // `connection c = 1 connect a to b` cannot be read back.
-            Property::Value(_) => kind.is_usage() && !matches!(kind, Connection | Interface),
-            Property::TypedBy(_)
-            | Property::Conjugated(_)
-            | Property::Redefines(_)
-            | Property::Multiplicity(_)
-            | Property::Direction(_) => kind.is_usage(),
-            Property::Ends(_) => matches!(kind, Connection | Interface),
-            Property::Target(_) => matches!(kind, Import | Satisfy),
-            Property::By(_) => kind == Satisfy,
+            Property::TypedBy(_) => Field::TypedBy,
+            Property::Conjugated(_) => Field::Conjugated,
+            Property::Specializes(_) => Field::Specializes,
+            Property::Redefines(_) => Field::Redefines,
+            Property::Multiplicity(_) => Field::Multiplicity,
+            Property::Direction(_) => Field::Direction,
+            Property::Value(_) => Field::Value,
+            Property::Abstract(_) => Field::Abstract,
+            Property::Visibility(_) => Field::Visibility,
+            Property::Ends(_) => Field::Ends,
+            Property::Target(_) => Field::Target,
+            Property::By(_) => Field::By,
+            Property::Doc(_) => Field::Members,
         }
+    }
+
+    /// Whether elements of `kind` have this property in SysML text.
+    pub fn applies_to(&self, kind: ElementKind) -> bool {
+        self.field().fits(kind)
     }
 
     /// The property's name in messages.
     fn label(&self) -> &'static str {
         match self {
-            Property::TypedBy(_) => "type (`:`)",
-            Property::Conjugated(_) => "conjugated type (`~`)",
-            Property::Specializes(_) => "specialisation or subsetting (`:>`)",
-            Property::Redefines(_) => "redefinition (`:>>`)",
-            Property::Multiplicity(_) => "multiplicity",
-            Property::Direction(_) => "direction",
-            Property::Value(_) => "value (`=`)",
-            Property::Abstract(_) => "`abstract`",
-            Property::Visibility(_) => "visibility",
-            Property::Ends(_) => "connection end",
-            Property::Target(_) => "target",
-            Property::By(_) => "`by` feature",
             Property::Doc(_) => "doc comment",
+            other => other.field().label(),
         }
     }
 }
@@ -340,14 +332,7 @@ impl SystemState {
 
     /// The element carrying the lock that covers `element`, if any.
     pub fn lock_of(&self, element: ElementId) -> Option<ElementId> {
-        let mut current = Some(element);
-        while let Some(id) = current {
-            if self.locks.contains(&id) {
-                return Some(id);
-            }
-            current = self.tree.get(id).and_then(Element::owner);
-        }
-        None
+        lock_of(&self.tree, &self.locks, element)
     }
 
     /// The description of the change [`undo`](Self::undo) would revert.
@@ -577,8 +562,14 @@ fn touched(tree: &Tree, operation: &Operation, actor: Actor) -> Vec<(ElementId, 
     match operation {
         Operation::Create { parent: p, .. } => parent(p),
         Operation::Connect { parent: p, .. } => vec![(*p, false)],
-        Operation::Rename { element, .. } | Operation::Set { element, .. } => {
-            vec![(*element, false)]
+        Operation::Rename { element, .. } => vec![(*element, false)],
+        Operation::Set { element, property } => {
+            let mut ids = vec![(*element, false)];
+            // The doc comment is a member that can carry a lock of its own.
+            if let Property::Doc(_) = property {
+                ids.extend(doc_of(tree, *element).map(|doc| (doc, false)));
+            }
+            ids
         }
         Operation::Delete { element } => vec![(*element, true)],
         Operation::Move { element, parent: p } => {
@@ -607,8 +598,9 @@ struct Edit<'a> {
     locks: BTreeSet<ElementId>,
     /// Elements removed by earlier operations of the change.
     removed: BTreeSet<ElementId>,
-    /// Elements created or given properties, with the last operation that
-    /// did so: checked as a whole once all operations are done.
+    /// Elements created, renamed or given properties, with the last
+    /// operation that did so: checked with [`writable`] once all operations
+    /// are done, so that the order of operations does not matter.
     written: BTreeMap<ElementId, usize>,
 }
 
@@ -618,7 +610,15 @@ impl Edit<'_> {
         match operation {
             Operation::Create { parent, element } => {
                 self.check_parent(*parent)?;
-                check_new(element)?;
+                if matches!(
+                    element.kind,
+                    ElementKind::Unsupported | ElementKind::SyntaxError
+                ) {
+                    return Err(format!(
+                        "{} cannot be created; only elements of the supported SysML subset can",
+                        a(element.kind)
+                    ));
+                }
                 let mut element = (**element).clone();
                 element.location = None;
                 let id = self.tree.add(*parent, element).map_err(describe)?;
@@ -630,38 +630,28 @@ impl Edit<'_> {
                     return Ok(None);
                 }
                 self.existing(*element)?;
-                let removed = delete(&mut self.tree, &mut self.locks, *element);
-                self.removed.extend(removed);
+                self.remove(*element);
                 Ok(None)
             }
             Operation::Rename { element, name } => {
-                let kind = self.existing(*element)?.kind;
-                if !kind.is_namespace() {
-                    return Err(format!(
-                        "{} is {}, which has no name",
-                        self.name(*element),
-                        a(kind)
-                    ));
-                }
-                check_name(name)?;
+                self.existing(*element)?;
                 self.tree.get_mut(*element).expect("checked above").name = Some(name.clone());
+                self.written.insert(*element, index);
                 Ok(None)
             }
             Operation::Move { element, parent } => {
                 self.existing(*element)?;
                 self.check_parent(*parent)?;
-                if let Parent::Element(target) = parent
-                    && self.tree.descendants(*element).contains(target)
-                {
-                    return Err(format!(
-                        "{} cannot be moved into itself or into {}, which it owns",
-                        self.name(*element),
-                        self.name(*target)
-                    ));
-                }
                 self.tree
                     .move_to(*element, *parent, usize::MAX)
-                    .map_err(describe)?;
+                    .map_err(|error| match (error, parent) {
+                        (TreeError::IntoItself, Parent::Element(target)) => format!(
+                            "{} cannot be moved into itself or into {}, which it owns",
+                            self.name(*element),
+                            self.name(*target)
+                        ),
+                        (error, _) => describe(error),
+                    })?;
                 Ok(None)
             }
             Operation::Connect {
@@ -683,7 +673,6 @@ impl Edit<'_> {
                 element.name = name.clone();
                 element.typed_by = definition.iter().cloned().collect();
                 element.ends = vec![from.clone(), to.clone()];
-                check_new(&element)?;
                 let id = self
                     .tree
                     .add(Parent::Element(*parent), element)
@@ -693,10 +682,15 @@ impl Edit<'_> {
             }
             Operation::Set { element, property } => {
                 let kind = self.existing(*element)?.kind;
-                check_property(kind, property)
-                    .map_err(|reason| format!("{}: {reason}", self.name(*element)))?;
-                set_property(&mut self.tree, *element, property)?;
-                self.written.insert(*element, index);
+                if !property.applies_to(kind) {
+                    return Err(format!(
+                        "{}: {} has no {}",
+                        self.name(*element),
+                        a(kind),
+                        property.label()
+                    ));
+                }
+                self.set(*element, property, index);
                 Ok(None)
             }
             Operation::Lock { element } => {
@@ -706,27 +700,74 @@ impl Edit<'_> {
             }
             Operation::Unlock { element } => {
                 self.existing(*element)?;
-                if self.locks.remove(element) {
-                    return Ok(None);
-                }
-                let mut owner = self.tree[*element].owner();
-                while let Some(id) = owner {
-                    if self.locks.contains(&id) {
-                        return Err(format!(
-                            "{} has no lock of its own; it is covered by the lock on {}",
-                            self.name(*element),
-                            self.name(id)
-                        ));
+                match lock_of(&self.tree, &self.locks, *element) {
+                    Some(lock) if lock == *element => {
+                        self.locks.remove(element);
+                        Ok(None)
                     }
-                    owner = self.tree[id].owner();
+                    Some(lock) => Err(format!(
+                        "{} has no lock of its own; it is covered by the lock on {}",
+                        self.name(*element),
+                        self.name(lock)
+                    )),
+                    None => Err(format!("{} is not locked", self.name(*element))),
                 }
-                Err(format!("{} is not locked", self.name(*element)))
             }
         }
     }
 
-    /// Rules that hold for a whole element, checked once every operation of
-    /// the change is done so that the order of `Set`s does not matter.
+    /// Changes one property; its applicability is checked by the caller.
+    fn set(&mut self, element: ElementId, property: &Property, index: usize) {
+        self.written.insert(element, index);
+        if let Property::Doc(text) = property {
+            return self.set_doc(element, text.as_deref(), index);
+        }
+        let target = self.tree.get_mut(element).expect("checked by the caller");
+        match property.clone() {
+            Property::TypedBy(value) => target.typed_by = value,
+            Property::Conjugated(value) => target.conjugated = value,
+            Property::Specializes(value) => target.specializes = value,
+            Property::Redefines(value) => target.redefines = value,
+            Property::Multiplicity(value) => target.multiplicity = value,
+            Property::Direction(value) => target.direction = value,
+            Property::Value(value) => target.value = value,
+            Property::Abstract(value) => target.is_abstract = value,
+            Property::Visibility(value) => target.visibility = value,
+            Property::Ends(value) => target.ends = value,
+            Property::Target(value) => target.target = value,
+            Property::By(value) => target.by = value,
+            Property::Doc(_) => unreachable!("handled above"),
+        }
+    }
+
+    /// Sets, replaces or removes the element's first `doc` comment.
+    fn set_doc(&mut self, element: ElementId, text: Option<&str>, index: usize) {
+        match (doc_of(&self.tree, element), text) {
+            (Some(doc), Some(text)) => {
+                self.tree.get_mut(doc).expect("a child exists").text = Some(text.to_string());
+                self.written.insert(doc, index);
+            }
+            (Some(doc), None) => self.remove(doc),
+            (None, Some(text)) => {
+                let mut new = Element::new(ElementKind::Doc);
+                new.text = Some(text.to_string());
+                let doc = self
+                    .tree
+                    .insert(Parent::Element(element), 0, new)
+                    .expect("the element exists");
+                self.written.insert(doc, index);
+            }
+            (None, None) => {}
+        }
+    }
+
+    /// Removes an element and everything it owns, with their locks.
+    fn remove(&mut self, element: ElementId) {
+        let removed = delete(&mut self.tree, &mut self.locks, element);
+        self.removed.extend(removed);
+    }
+
+    /// Every written element must print and read back as it is.
     fn check_written(&self) -> Result<(), (usize, String)> {
         let mut written: Vec<(usize, ElementId)> = self
             .written
@@ -735,26 +776,9 @@ impl Edit<'_> {
             .collect();
         written.sort();
         for (index, id) in written {
-            let Some(e) = self.tree.get(id) else {
-                continue;
-            };
-            if e.conjugated && e.typed_by.len() != 1 {
-                let reason = format!(
-                    "{} is conjugated (`~`), so it needs exactly one type",
-                    self.name(id)
-                );
-                return Err((index, reason));
-            }
-            let declared = e.name.is_some()
-                || !e.typed_by.is_empty()
-                || !e.specializes.is_empty()
-                || !e.redefines.is_empty();
-            if e.kind == ElementKind::Reference && !declared {
-                let reason = format!(
-                    "{}: a usage without a kind keyword needs a name, a type, a subsetting or a redefinition",
-                    self.name(id)
-                );
-                return Err((index, reason));
+            if self.tree.contains(id) {
+                writable(&self.tree, id)
+                    .map_err(|reason| (index, format!("{}: {reason}", self.name(id))))?;
             }
         }
         Ok(())
@@ -781,7 +805,7 @@ impl Edit<'_> {
             Parent::Document(index) => Err(format!("document {index} does not exist")),
             Parent::Element(id) => {
                 let kind = self.existing(id)?.kind;
-                if kind.is_namespace() {
+                if Field::Members.fits(kind) {
                     Ok(())
                 } else {
                     Err(format!(
@@ -800,246 +824,26 @@ impl Edit<'_> {
     }
 }
 
-/// Checks a new element: a kind that can be created, a name where one is
-/// needed, and only properties its kind has, each well formed.
-fn check_new(element: &Element) -> Result<(), String> {
-    use ElementKind::*;
-    let kind = element.kind;
-    if matches!(kind, Unsupported | SyntaxError) {
-        return Err(format!(
-            "{} cannot be created; only elements of the supported SysML subset can",
-            a(kind)
-        ));
-    }
-    match &element.name {
-        Some(name) => check_name(name)?,
-        None if kind == Package || kind.is_definition() => {
-            return Err(format!("{} needs a name", a(kind)));
+/// The element carrying the lock that covers `element`: its own or that of
+/// an owner.
+fn lock_of(tree: &Tree, locks: &BTreeSet<ElementId>, element: ElementId) -> Option<ElementId> {
+    let mut current = Some(element);
+    while let Some(id) = current {
+        if locks.contains(&id) {
+            return Some(id);
         }
-        None => {}
+        current = tree.get(id).and_then(Element::owner);
     }
-    for property in carried(element) {
-        check_property(kind, &property)?;
-    }
-    if element.is_end && (!kind.is_usage() || kind == Reference) {
-        return Err(format!("{} cannot be an `end` feature", a(kind)));
-    }
-    if element.wildcard && kind != Import {
-        return Err(format!("{} cannot import all members (`::*`)", a(kind)));
-    }
-    if element.text.is_some() && !matches!(kind, Doc | Comment) {
-        return Err(format!("{} has no comment text", a(kind)));
-    }
-    if element.note.is_some() {
-        return Err("only unsupported text and syntax errors have a note".into());
-    }
-    Ok(())
+    None
 }
 
-/// The properties a new element carries, as `Set` would write them.
-fn carried(e: &Element) -> Vec<Property> {
-    let needs_target = matches!(e.kind, ElementKind::Import | ElementKind::Satisfy);
-    [
-        (
-            !e.typed_by.is_empty(),
-            Property::TypedBy(e.typed_by.clone()),
-        ),
-        (e.conjugated, Property::Conjugated(true)),
-        (
-            !e.specializes.is_empty(),
-            Property::Specializes(e.specializes.clone()),
-        ),
-        (
-            !e.redefines.is_empty(),
-            Property::Redefines(e.redefines.clone()),
-        ),
-        (
-            e.multiplicity.is_some(),
-            Property::Multiplicity(e.multiplicity),
-        ),
-        (e.direction.is_some(), Property::Direction(e.direction)),
-        (e.value.is_some(), Property::Value(e.value.clone())),
-        (e.is_abstract, Property::Abstract(true)),
-        (
-            e.visibility != Visibility::Public,
-            Property::Visibility(e.visibility),
-        ),
-        (!e.ends.is_empty(), Property::Ends(e.ends.clone())),
-        (
-            e.target.is_some() || needs_target,
-            Property::Target(e.target.clone()),
-        ),
-        (e.by.is_some(), Property::By(e.by.clone())),
-    ]
-    .into_iter()
-    .filter_map(|(present, property)| present.then_some(property))
-    .collect()
-}
-
-/// Checks that elements of `kind` have the property and that its value can
-/// be written as SysML text.
-fn check_property(kind: ElementKind, property: &Property) -> Result<(), String> {
-    let label = property.label();
-    if !property.applies_to(kind) {
-        return Err(format!("{} has no {label}", a(kind)));
-    }
-    let names = |references: &[Reference]| {
-        references
-            .iter()
-            .try_for_each(|r| check_reference(label, r, false))
-    };
-    match property {
-        Property::TypedBy(references)
-        | Property::Specializes(references)
-        | Property::Redefines(references) => names(references),
-        Property::Ends(ends) if !matches!(ends.len(), 0 | 2) => Err(format!(
-            "{} has two ends (or none), not {}",
-            a(kind),
-            ends.len()
-        )),
-        Property::Ends(ends) => ends
-            .iter()
-            .try_for_each(|r| check_reference(label, r, true)),
-        Property::Target(None) if kind == ElementKind::Import => {
-            Err("an import needs the name it imports".into())
-        }
-        Property::Target(None) => Err("a satisfy needs the requirement it satisfies".into()),
-        Property::Target(Some(reference)) => check_reference(label, reference, false),
-        Property::By(Some(reference)) => check_reference(label, reference, true),
-        Property::Value(Some(literal)) => check_literal(literal),
-        _ => Ok(()),
-    }
-}
-
-/// A reference names an element; only connection ends and `by` features
-/// may be feature chains (`a.b`).
-fn check_reference(label: &str, reference: &Reference, chain: bool) -> Result<(), String> {
-    let named = !reference.steps.is_empty()
-        && reference.steps.iter().all(|step| {
-            !step.name.segments.is_empty()
-                && step.name.segments.iter().all(|s| check_name(s).is_ok())
-        });
-    if !named {
-        return Err(format!("the {label} needs a name without line breaks"));
-    }
-    if !chain && reference.steps.len() > 1 {
-        return Err(format!(
-            "the {label} names an element, not a feature chain like `{reference}`"
-        ));
-    }
-    Ok(())
-}
-
-/// A literal is written back exactly as SysML text reads it.
-fn check_literal(literal: &Literal) -> Result<(), String> {
-    let digits = |text: &str| !text.is_empty() && text.bytes().all(|b| b.is_ascii_digit());
-    let unsigned = |text: &str| text.strip_prefix('-').unwrap_or(text).to_string();
-    match literal {
-        Literal::Boolean(_) => Ok(()),
-        Literal::Integer(text) if digits(&unsigned(text)) => Ok(()),
-        Literal::Integer(text) => Err(format!("`{text}` is not a whole number")),
-        Literal::Real(text) => {
-            let number = unsigned(text);
-            let (mantissa, exponent) = match number.split_once(['e', 'E']) {
-                Some((mantissa, exponent)) => (mantissa, Some(exponent)),
-                None => (number.as_str(), None),
-            };
-            let (whole, fraction) = match mantissa.split_once('.') {
-                Some((whole, fraction)) => (whole, Some(fraction)),
-                None => (mantissa, None),
-            };
-            let valid = digits(whole)
-                && fraction.is_none_or(digits)
-                && exponent.is_none_or(|e| digits(e.strip_prefix(['+', '-']).unwrap_or(e)))
-                && (fraction.is_some() || exponent.is_some());
-            if valid {
-                Ok(())
-            } else {
-                Err(format!(
-                    "`{text}` is not a real number such as `1.5` or `2e3`"
-                ))
-            }
-        }
-        Literal::String(text) => {
-            let mut chars = text.chars();
-            while let Some(c) = chars.next() {
-                match c {
-                    '\\' if chars.next().is_none() => {
-                        return Err("a string value cannot end with a single `\\`".into());
-                    }
-                    '\\' => {}
-                    '"' => {
-                        return Err("a quote inside a string value must be written `\\\"`".into());
-                    }
-                    c if c.is_control() => {
-                        return Err("a string value cannot contain line breaks or other control characters; write `\\n` for a line break".into());
-                    }
-                    _ => {}
-                }
-            }
-            Ok(())
-        }
-    }
-}
-
-fn set_property(tree: &mut Tree, element: ElementId, property: &Property) -> Result<(), String> {
-    if let Property::Doc(text) = property {
-        return set_doc(tree, element, text.as_deref());
-    }
-    let target = tree.get_mut(element).expect("checked by the caller");
-    match property.clone() {
-        Property::TypedBy(value) => target.typed_by = value,
-        Property::Conjugated(value) => target.conjugated = value,
-        Property::Specializes(value) => target.specializes = value,
-        Property::Redefines(value) => target.redefines = value,
-        Property::Multiplicity(value) => target.multiplicity = value,
-        Property::Direction(value) => target.direction = value,
-        Property::Value(value) => target.value = value,
-        Property::Abstract(value) => target.is_abstract = value,
-        Property::Visibility(value) => target.visibility = value,
-        Property::Ends(value) => target.ends = value,
-        Property::Target(value) => target.target = value,
-        Property::By(value) => target.by = value,
-        Property::Doc(_) => unreachable!("handled above"),
-    }
-    Ok(())
-}
-
-/// Sets, replaces or removes the element's first `doc` comment.
-fn set_doc(tree: &mut Tree, element: ElementId, text: Option<&str>) -> Result<(), String> {
-    let doc = tree[element]
+/// The element's first `doc` comment, which `Property::Doc` changes.
+fn doc_of(tree: &Tree, element: ElementId) -> Option<ElementId> {
+    tree.get(element)?
         .children()
         .iter()
         .copied()
-        .find(|id| tree[*id].kind == ElementKind::Doc);
-    match (doc, text) {
-        (Some(doc), Some(text)) => {
-            tree.get_mut(doc).expect("a child exists").text = Some(text.to_string())
-        }
-        (Some(doc), None) => {
-            tree.remove(doc);
-        }
-        (None, Some(text)) => {
-            let mut new = Element::new(ElementKind::Doc);
-            new.text = Some(text.to_string());
-            tree.insert(Parent::Element(element), 0, new)
-                .map_err(describe)?;
-        }
-        (None, None) => {}
-    }
-    Ok(())
-}
-
-/// A name is not empty and has no line breaks or other control characters,
-/// which could not be saved and read back.
-fn check_name(name: &str) -> Result<(), String> {
-    if name.trim().is_empty() {
-        Err("a name cannot be empty".to_string())
-    } else if name.chars().any(char::is_control) {
-        Err("a name cannot contain line breaks, tabs or other control characters".to_string())
-    } else {
-        Ok(())
-    }
+        .find(|id| tree[*id].kind == ElementKind::Doc)
 }
 
 /// `a part`, `an item def`: a kind with its article, for messages.
