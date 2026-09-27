@@ -15,8 +15,8 @@ the architecture changes, update the model first, in the same change.
   transitive, so a shortcut around the System State shows up in the model.
 - A dependency that exists only because of code due for retirement is marked
   temporary in its `doc`.
-- Simulation (Stage 7) and ImplementationLinks (Stage 8) are planned parts
-  without crates.
+- Providers (Stage 4, crate in W5.7 or earlier), Simulation (Stage 7) and
+  ImplementationLinks (Stage 8) are planned parts without crates.
 
 ## Check
 
@@ -29,7 +29,11 @@ one line per problem when:
   by the model;
 - LanguageCore depends on another part;
 - a LanguageCore, SystemState or History crate depends on a UI or network library
-  (the list is in the script).
+  (the list is in the script);
+- a crate outside Providers depends on rig, tokio, reqwest or the credential-store
+  crates (R-41, ROADMAP §8.7). Temporary exceptions are listed in the script with
+  the work item that removes each, and the part's `doc` says so (today: `reqwest`
+  in `agq-assistant` until W5.7).
 
 Dev-dependencies are ignored, so tests may use any crate. The check understands
 only the syntax this model uses and rejects anything else. CI runs it on every
