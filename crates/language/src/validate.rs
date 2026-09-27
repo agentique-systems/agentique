@@ -263,14 +263,14 @@ impl Checker<'_> {
         self.check_subsetting(id);
         self.check_redefinition(id);
         let element = &self.model.tree[id];
-        if let Some(m) = element.multiplicity {
-            if m.upper.is_some_and(|upper| upper < m.lower) {
-                self.report(
-                    id,
-                    "bad-multiplicity",
-                    format!("the lower bound of {m} is greater than its upper bound"),
-                );
-            }
+        if let Some(m) = element.multiplicity
+            && m.upper.is_some_and(|upper| upper < m.lower)
+        {
+            self.report(
+                id,
+                "bad-multiplicity",
+                format!("the lower bound of {m} is greater than its upper bound"),
+            );
         }
         if let Some(value) = element.value.clone() {
             self.check_value(id, &value);
@@ -511,17 +511,17 @@ impl Checker<'_> {
             .copied()
             .filter(|c| self.model.tree[*c].is_end && self.kind(*c) == ElementKind::Port)
             .collect();
-        if let [a, b] = ends[..] {
-            if let Some(problem) = self.port_mismatch(a, b) {
-                let message = format!(
-                    "its ends `{}` ({}) and `{}` ({}) do not fit: {problem}",
-                    self.model.get(a).name.clone().unwrap_or_default(),
-                    self.type_text(a),
-                    self.model.get(b).name.clone().unwrap_or_default(),
-                    self.type_text(b)
-                );
-                self.report(id, "incompatible-ends", message);
-            }
+        if let [a, b] = ends[..]
+            && let Some(problem) = self.port_mismatch(a, b)
+        {
+            let message = format!(
+                "its ends `{}` ({}) and `{}` ({}) do not fit: {problem}",
+                self.model.get(a).name.clone().unwrap_or_default(),
+                self.type_text(a),
+                self.model.get(b).name.clone().unwrap_or_default(),
+                self.type_text(b)
+            );
+            self.report(id, "incompatible-ends", message);
         }
     }
 

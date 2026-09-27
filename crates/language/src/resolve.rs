@@ -483,10 +483,10 @@ impl<'a> Model<'a> {
         let mut names: Vec<&str> = Vec::new();
         for id in self.all_generals(namespace) {
             for child in &self.get(id).children {
-                if let Some(name) = self.get(*child).effective_name() {
-                    if !names.contains(&name) {
-                        names.push(name);
-                    }
+                if let Some(name) = self.get(*child).effective_name()
+                    && !names.contains(&name)
+                {
+                    names.push(name);
                 }
             }
         }
