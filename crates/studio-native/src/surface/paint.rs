@@ -735,12 +735,14 @@ fn direction_mark(
 
 /// How far down a card its kind, name and type reach on screen, as
 /// `card_text` lays them out (text keeps a legible size as cards shrink).
-fn text_block(frame: &Frame, node: &SceneNode) -> f32 {
+pub(super) fn text_block(frame: &Frame, node: &SceneNode) -> f32 {
     let zoom = frame.camera.zoom;
     let floor = theme::text::XS * frame.ui_scale.max(1.0) * 0.9;
-    let caption = (10.0 * zoom).clamp(floor, 12.0);
-    let name_size = ((if node.is_container { 15.0 } else { 14.5 }) * zoom).clamp(floor + 1.0, 24.0);
-    let small = (11.0 * zoom).clamp(floor, 15.0);
+    let caption = (10.0 * zoom).min(12.0).max(floor);
+    let name_size = ((if node.is_container { 15.0 } else { 14.5 }) * zoom)
+        .min(24.0)
+        .max(floor + 1.0);
+    let small = (11.0 * zoom).min(15.0).max(floor);
     let detail = if node.semantic.detail.is_empty() {
         0.0
     } else {
@@ -766,8 +768,10 @@ fn card_text(frame: &Frame, screen: &Screen, node: &SceneNode, window: &mut Wind
     let inner = px(width - 2.0 * pad);
     let x = rect.origin.x + px(pad);
     let mut y = rect.origin.y + px((9.0 * zoom).clamp(3.0, 12.0));
-    let caption = (10.0 * zoom).clamp(floor, 12.0);
-    let name_size = ((if node.is_container { 15.0 } else { 14.5 }) * zoom).clamp(floor + 1.0, 24.0);
+    let caption = (10.0 * zoom).min(12.0).max(floor);
+    let name_size = ((if node.is_container { 15.0 } else { 14.5 }) * zoom)
+        .min(24.0)
+        .max(floor + 1.0);
     let text = if removed {
         theme.text_muted
     } else {
@@ -879,7 +883,7 @@ fn card_text(frame: &Frame, screen: &Screen, node: &SceneNode, window: &mut Wind
     let features = node.semantic.features.len();
     let features_top = rect.origin.y
         + px((node.bounds.height() - agq_studio_scene::feature_block(features)) * zoom);
-    let small = (11.0 * zoom).clamp(floor, 15.0);
+    let small = (11.0 * zoom).min(15.0).max(floor);
     if lod >= LodLevel::Summary
         && !node.semantic.detail.is_empty()
         && y + px(small) <= features_top.min(bottom - px(2.0))
@@ -915,7 +919,7 @@ fn card_text(frame: &Frame, screen: &Screen, node: &SceneNode, window: &mut Wind
             greek(window, point(x, top), w, h, theme.text_faint.opacity(0.4));
         }
     } else if lod >= LodLevel::Features && !node.is_container {
-        let size_pt = (10.5 * zoom).min(line * 0.78).clamp(floor, 14.0);
+        let size_pt = (10.5 * zoom).min(line * 0.78).min(14.0).max(floor);
         let shown = features.min(agq_studio_scene::MAX_FEATURE_LINES);
         let more = features - shown;
         for (index, feature) in node.semantic.features.iter().take(shown).enumerate() {

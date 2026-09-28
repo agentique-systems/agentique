@@ -128,3 +128,39 @@ fn a_selected_card_has_a_screen_reader_name() {
     assert_eq!(element_name(&app, &target, true), "part api, selected");
     assert_eq!(element_name(&app, &target, false), "part api");
 }
+
+/// Card text keeps a legible minimum that grows with the UI scale; at 150%
+/// and 200% that minimum is above the largest caption, and must win rather
+/// than fail.
+#[test]
+fn card_text_fits_at_every_ui_scale_and_zoom() {
+    let (app, _folder) = studio("surface-scale");
+    let node = app.scene.nodes.first().expect("a card");
+    for ui_scale in [1.0, 1.5, 2.0] {
+        for zoom in [0.05, 0.3, 1.0, 3.0] {
+            let mut camera = app.camera;
+            camera.zoom = zoom;
+            let frame = paint::Frame {
+                scene: app.scene.clone(),
+                spatial: app.spatial.clone(),
+                lookup: app.lookup.clone(),
+                camera,
+                lod: app.lod.level(),
+                selection: app.selection.clone(),
+                hovered: None,
+                inspected: None,
+                highlights: Default::default(),
+                gesture: None,
+                compatible: Default::default(),
+                reduced_motion: true,
+                theme: crate::ui::Theme::new(true, false),
+                ui_scale,
+            };
+            let block = paint::text_block(&frame, node);
+            assert!(
+                block.is_finite() && block > 0.0,
+                "{ui_scale} {zoom}: {block}"
+            );
+        }
+    }
+}
