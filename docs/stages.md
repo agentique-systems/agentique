@@ -480,7 +480,7 @@ gates that need a person)
 | G2 input to present | not measured; the proxy, input to next update, is 5.7 ms at 1k. Not tried |
 | G3 chat | 200 messages, 59,800 words: scroll p95 6.23 ms, streaming p95 6.25 ms, first frame after loading 25.8 ms (in memory, not from disk). Works |
 | G4 selection across messages | an automated journey drags across three messages while a reply streams in below and checks the copied text; a unit test checks the copy order. Works (automated); not tried by hand |
-| G5 real weights | Inter's variable font at 400, 500 and 600, checked at 100%, 150% and 200% by a test and screenshots. Works; at 150% and 200% a 1600×1000 window is narrower than the Studio's minimum width, so the top bar's buttons overlap |
+| G5 real weights | Inter's variable font at 400, 500 and 600, checked at 100%, 150% and 200% by a test and screenshots. Works; at 150% and 200% a 1600×1000 window is narrower than the Studio's minimum width, so the top bar's buttons overlapped (fixed in #82: the top bar drops what does not fit) |
 | G6 Narrator | needs the Operator; the automated proxy (seven AccessKit names and roles) passes |
 | G7 Japanese IME | needs the Operator |
 | G8 builds | clean release build 10 min 44 s; release rebuild 3 min 38 s; debug rebuild of the Studio 7–17 s; executable 29.9 MB (was 21.6 MB). Partially measured |
@@ -554,7 +554,7 @@ acceptance needs the Operator: a week of real use, Scenario E with real keys
 for every provider, and the side-by-side review (§3.1). Nothing here says the
 Operator accepted anything.
 
-**Done** (PRs #52–#79)
+**Done** (PRs #52–#82)
 
 - **W5.1 Toolkit** (#54): S4.1's Track A kept: egui and eframe 0.36.2 with
   wgpu 30, the Rust toolchain at 1.97.1, Inter's variable font at 400, 500
@@ -608,7 +608,10 @@ Operator accepted anything.
   are kept) and Advanced section (the settings file; a Danger zone whose
   "Reset all settings" asks first and keeps `settings.json.bak`); Ctrl+,
   reopens at the last section viewed; search marks its words; rows an
-  environment variable decides are shown disabled with "Set by …".
+  environment variable decides are shown disabled with "Set by …"; a key
+  that works lists its models at once (#81, E2).
+- **UI scale** (#82): at 150% and 200% the top bar keeps only what fits (the
+  rest is in the palette), so nothing overlaps (S4.1's G5 finding).
 - **W5.10 and W5.11, more** (#75, #76): the arrow keys move the selection
   between cards (the selection ring is the focus); the taskbar flashes when
   the Assistant stops while the window is in the background.
