@@ -104,6 +104,18 @@ impl StudioApp {
                         }
                     })
                     .collect();
+                // With nothing typed, the commands run last come first.
+                if self.palette_query.trim().is_empty() {
+                    let recent = |row: &Row| match row.action {
+                        Action::Command(id) => self
+                            .recent_commands
+                            .iter()
+                            .position(|recent| *recent == id)
+                            .unwrap_or(usize::MAX),
+                        Action::Focus(_) => usize::MAX,
+                    };
+                    rows.sort_by_key(recent);
+                }
                 let commands_found = rows.len();
                 let query = self.palette_query.trim().to_lowercase();
                 let query = query
@@ -213,7 +225,12 @@ impl StudioApp {
         if let Some(action) = chosen {
             self.palette = false;
             match action {
-                Action::Command(command) => self.execute(command, ctx),
+                Action::Command(command) => {
+                    self.recent_commands.retain(|recent| *recent != command);
+                    self.recent_commands.insert(0, command);
+                    self.recent_commands.truncate(5);
+                    self.execute(command, ctx);
+                }
                 Action::Focus(id) => {
                     self.select(SceneTarget::Node(id), false);
                     self.execute(CommandId::Focus, ctx);

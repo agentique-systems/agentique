@@ -327,7 +327,10 @@ impl StudioApp {
                 })
                 .unwrap_or(point);
             let target = self.spatial.hit_test(press, 6.0 / self.camera.zoom);
+            // Space held: the drag pans, even from a card (Figma, tldraw).
+            let space = ui.input(|i| i.key_down(egui::Key::Space));
             self.gesture = Some(match target {
+                _ if space => Gesture::Pan,
                 _ if modifiers.shift => Gesture::Marquee {
                     start: press,
                     end: point,
