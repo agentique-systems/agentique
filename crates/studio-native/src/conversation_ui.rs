@@ -65,7 +65,10 @@ enum Action {
     InsertSelection,
     CancelEdit,
     NewConversation,
+    /// The model picker chose a provider (empty: automatic).
+    ChooseProvider(String),
     OpenSettings,
+    OpenAssistantSettings,
 }
 
 impl StudioApp {
@@ -127,12 +130,47 @@ impl StudioApp {
                                 "\nEstimated from {as_of}; not a bill. Today is the UTC day."
                             ));
                         }
-                        ui.label(
-                            RichText::new(label)
-                                .font(theme::regular(theme::CAPTION))
-                                .color(theme.muted),
-                        )
-                        .on_hover_text(hover);
+                        // The model picker (§3.6): the label opens a menu of
+                        // the providers with a key; the choice is Settings'.
+                        let picker = ui
+                            .add(
+                                egui::Button::new(
+                                    RichText::new(format!("{label} ▾"))
+                                        .font(theme::regular(theme::CAPTION))
+                                        .color(theme.muted),
+                                )
+                                .frame(false),
+                            )
+                            .on_hover_text(hover);
+                        record(ui.ctx(), Target::Button(MODEL_PICKER), picker.rect);
+                        egui::Popup::menu(&picker).show(|ui| {
+                            if std::env::var_os("AGENTIQUE_PROVIDER").is_some() {
+                                ui.label(
+                                    RichText::new("Set by AGENTIQUE_PROVIDER")
+                                        .color(theme.text_secondary),
+                                );
+                                return;
+                            }
+                            let current = self.settings.text("assistant.provider");
+                            if ui
+                                .selectable_label(current.is_empty(), "Automatic")
+                                .clicked()
+                            {
+                                actions.push(Action::ChooseProvider(String::new()));
+                            }
+                            for provider in agq_assistant::ModelChoice::usable_providers() {
+                                let chosen = current == provider.id();
+                                let label =
+                                    format!("{} · {}", provider.name(), provider.default_model());
+                                if ui.selectable_label(chosen, label).clicked() {
+                                    actions.push(Action::ChooseProvider(provider.id().into()));
+                                }
+                            }
+                            ui.separator();
+                            if ui.button("More in Settings…").clicked() {
+                                actions.push(Action::OpenAssistantSettings);
+                            }
+                        });
                     });
                 });
                 if let Some(message) = &self.conversation.key_missing {
@@ -206,7 +244,11 @@ impl StudioApp {
                 Action::InsertSelection => self.insert_selection(),
                 Action::CancelEdit => self.cancel_edit(),
                 Action::NewConversation => self.new_conversation(),
+                Action::ChooseProvider(provider) => self.choose_provider(&provider),
                 Action::OpenSettings => self.settings.show(crate::settings_ui::Section::Providers),
+                Action::OpenAssistantSettings => {
+                    self.settings.show(crate::settings_ui::Section::Assistant)
+                }
             }
         }
     }
@@ -562,6 +604,23 @@ fn copy_reply(ui: &mut egui::Ui, theme: Theme, parts: &[AssistantPart]) {
             ui.ctx().copy_text(texts.join("\n\n"));
         }
     });
+}
+
+/// The model picker in the Conversation's header (for the journey driver).
+pub const MODEL_PICKER: &str = "Model";
+
+impl StudioApp {
+    /// The model picker's choice: Settings' provider, with its default model
+    /// and effort; the next turn uses it.
+    pub fn choose_provider(&mut self, provider: &str) {
+        self.settings
+            .set_value("assistant.provider", serde_json::json!(provider));
+        self.settings
+            .set_value("assistant.model", serde_json::json!(""));
+        self.settings
+            .set_value("assistant.effort", serde_json::json!(""));
+        self.conversation.use_choice(self.settings.model_choice());
+    }
 }
 
 /// The label of a reply's copy button (for the journey driver).
