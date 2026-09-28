@@ -1064,6 +1064,27 @@ mod studio_tests {
     }
 
     #[test]
+    fn the_model_picker_chooses_settings_provider_and_the_next_turns_model() {
+        let (mut app, context, _folder) = studio("model-picker");
+        frame(&mut app, &context, vec![]);
+        app.settings
+            .set_value("assistant.model", serde_json::json!("some-model"));
+        app.choose_provider("deepseek");
+        assert_eq!(app.settings.text("assistant.provider"), "deepseek");
+        // The provider's own defaults, not a model typed for another.
+        assert_eq!(app.settings.text("assistant.model"), "");
+        if std::env::var_os("AGENTIQUE_PROVIDER").is_none() {
+            assert!(
+                app.conversation.model_name.starts_with("deepseek-flash"),
+                "{}",
+                app.conversation.model_name
+            );
+        }
+        app.choose_provider("");
+        assert_eq!(app.settings.text("assistant.provider"), "");
+    }
+
+    #[test]
     fn the_ui_scale_applies_and_goes_back_to_100_percent() {
         let (mut app, context, _folder) = studio("settings-scale");
         app.settings

@@ -142,6 +142,12 @@ impl ModelChoice {
         }
     }
 
+    /// The providers the Assistant can use with the keys set now, in the
+    /// order it prefers them.
+    pub fn usable_providers() -> Vec<Provider> {
+        PREFERENCE.into_iter().filter(|p| usable_key(*p)).collect()
+    }
+
     pub fn has_key(&self) -> bool {
         usable_key(self.model.provider)
     }
