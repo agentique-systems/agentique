@@ -26,6 +26,11 @@
 //! save half way; that (the old or the new state, never a mix) is covered by
 //! `agq-history`'s crash tests.
 //!
+//! - `d-daily --project <new folder>`: Scenario D's daily paths on the URL
+//!   shortener sample, started from the first run's welcome: Shift+1 fits,
+//!   a card is selected and Shift+2 zooms to it, Ctrl+P goes to an element by
+//!   name, the three views, ? lists the shortcuts, Ctrl+S records a
+//!   checkpoint.
 //! - `e-settings --project <new folder>`: Scenario E without keys or the
 //!   network: Ctrl+, opens Settings in place of the Surface, each section is
 //!   shown, search finds the key rows by a synonym ("token"), Escape closes
@@ -79,6 +84,9 @@ const PACKAGE: &str = "UrlShortener";
 enum Action {
     Idle,
     Key(Key, Modifiers),
+    /// A key by what it types and by its place on the keyboard (Shift+1
+    /// types "!").
+    KeyAt(Key, Key, Modifiers),
     Text(&'static str),
     /// Click, select all, type.
     Fill(Target, String),
@@ -95,7 +103,7 @@ enum Action {
 impl Action {
     fn frames(&self) -> u64 {
         match self {
-            Self::Idle | Self::Key(..) | Self::Text(_) | Self::Crash => 1,
+            Self::Idle | Self::Key(..) | Self::KeyAt(..) | Self::Text(_) | Self::Crash => 1,
             Self::Click(_) | Self::ClickCard(_) | Self::ClickLink(_) => 2,
             Self::Fill(..) => 5,
             Self::DragPort(..) => 12,
@@ -155,6 +163,10 @@ enum Check {
     /// Settings are open, searching for this.
     SettingsSearch(&'static str),
     SettingsClosed,
+    /// The Surface shows this view (by its name).
+    View(&'static str),
+    /// The command palette is open with this search.
+    PaletteSearch(&'static str),
 }
 
 #[derive(Clone, Debug)]
@@ -223,6 +235,122 @@ fn new_project(folder: &Path) -> Vec<Step> {
             "Create project",
             Action::Click(Target::Button("Create project")),
             Check::ProjectOpen,
+        ),
+    ]
+}
+
+/// Scenario D's daily paths on the URL shortener sample (D1–D4, D9).
+fn daily(folder: &Path) -> Vec<Step> {
+    vec![
+        step("the welcome", Action::Idle, Check::StartScreen),
+        step(
+            "start from the URL shortener",
+            Action::Click(Target::Button("Start from the URL shortener")),
+            Check::ProjectName("UrlShortener"),
+        ),
+        step(
+            "project folder",
+            Action::Fill(
+                Target::Field("Project folder"),
+                folder.display().to_string(),
+            ),
+            Check::DialogNewProject,
+        ),
+        Step {
+            screenshot: Some("01-sample"),
+            settle: 6,
+            ..step(
+                "Create project opens the sample",
+                Action::Click(Target::Button("Create project")),
+                Check::Exists("UrlShortener::LinkStore", ElementKind::PartDef),
+            )
+        },
+        step(
+            "Shift+1 fits the view and stays in this view",
+            Action::KeyAt(Key::Exclamationmark, Key::Num1, Modifiers::SHIFT),
+            Check::View("Architecture"),
+        ),
+        step(
+            "select the store",
+            Action::ClickCard("UrlShortener::UrlShortenerService::store"),
+            Check::Selected("UrlShortener::UrlShortenerService::store"),
+        ),
+        Step {
+            screenshot: Some("02-zoom-to-selection"),
+            ..step(
+                "Shift+2 zooms to the selection",
+                Action::KeyAt(Key::Quote, Key::Num2, Modifiers::SHIFT),
+                Check::Selected("UrlShortener::UrlShortenerService::store"),
+            )
+        },
+        step(
+            "Ctrl+P goes to an element",
+            Action::Key(Key::P, Modifiers::COMMAND),
+            Check::PaletteSearch("focus: "),
+        ),
+        step(
+            "type its name",
+            Action::Text("ClickStats"),
+            Check::PaletteSearch("focus: ClickStats"),
+        ),
+        Step {
+            screenshot: Some("03-go-to-element"),
+            ..step(
+                "Enter shows it",
+                Action::Key(Key::Enter, Modifiers::NONE),
+                Check::Selected("UrlShortener::ClickStats"),
+            )
+        },
+        step(
+            "Backspace leaves the focus",
+            Action::Key(Key::Backspace, Modifiers::NONE),
+            Check::NoDialog,
+        ),
+        step(
+            "2 shows the Graph view",
+            Action::Key(Key::Num2, Modifiers::NONE),
+            Check::View("Graph"),
+        ),
+        Step {
+            screenshot: Some("04-requirements"),
+            ..step(
+                "3 shows the Requirements view",
+                Action::Key(Key::Num3, Modifiers::NONE),
+                Check::View("Requirements"),
+            )
+        },
+        step(
+            "1 goes back to the Architecture view",
+            Action::Key(Key::Num1, Modifiers::NONE),
+            Check::View("Architecture"),
+        ),
+        Step {
+            screenshot: Some("05-shortcuts"),
+            ..step(
+                "? lists every shortcut",
+                Action::KeyAt(Key::Questionmark, Key::Slash, Modifiers::SHIFT),
+                Check::SettingsSection("Keyboard"),
+            )
+        },
+        step(
+            "Escape closes Settings",
+            Action::Key(Key::Escape, Modifiers::NONE),
+            Check::SettingsClosed,
+        ),
+        step(
+            "Ctrl+S asks for a checkpoint message",
+            Action::Key(Key::S, Modifiers::COMMAND),
+            Check::CheckpointDialog,
+        ),
+        step(
+            "type the message",
+            Action::Text("Daily work"),
+            Check::CheckpointDialog,
+        ),
+        step(
+            "Enter records the checkpoint",
+            Action::Key(Key::Enter, Modifiers::NONE),
+            Check::Checkpoints(2),
         ),
     ]
 }
@@ -913,6 +1041,7 @@ fn drive(
                     "a-crash" => crash(),
                     "a-assistant" => assistant(&folder),
                     "e-settings" => settings(&folder),
+                    "d-daily" => daily(&folder),
                     _ => reopen(),
                 },
                 index: 0,
@@ -1054,6 +1183,7 @@ impl Runner {
             Action::Idle => {}
             Action::Crash => self.crash = true,
             Action::Key(k, m) => key(input, *k, *m),
+            Action::KeyAt(k, place, m) => key_at(input, *k, *place, *m),
             Action::Text(text) => input.events.push(Event::Text((*text).into())),
             Action::Click(t) => {
                 let p = target(ctx, *t)?.center();
@@ -1120,7 +1250,11 @@ impl Runner {
     }
 }
 
-fn key(input: &mut egui::RawInput, key: Key, mut modifiers: Modifiers) {
+fn key(input: &mut egui::RawInput, key: Key, modifiers: Modifiers) {
+    key_at(input, key, key, modifiers);
+}
+
+fn key_at(input: &mut egui::RawInput, key: Key, place: Key, mut modifiers: Modifiers) {
     if modifiers.command {
         modifiers.ctrl = !cfg!(target_os = "macos");
         modifiers.mac_cmd = cfg!(target_os = "macos");
@@ -1129,7 +1263,7 @@ fn key(input: &mut egui::RawInput, key: Key, mut modifiers: Modifiers) {
     for pressed in [true, false] {
         input.events.push(Event::Key {
             key,
-            physical_key: Some(key),
+            physical_key: Some(place),
             pressed,
             repeat: false,
             modifiers,
@@ -1391,6 +1525,16 @@ fn check(check: &Check, app: &StudioApp) -> Result<(), String> {
         Check::SettingsSearch(query) => {
             if !app.settings.open || app.settings.search != *query {
                 return fail(&format!("Settings are not searching for {query}"));
+            }
+        }
+        Check::View(name) => {
+            if format!("{:?}", app.view) != *name {
+                return fail(&format!("the Surface shows {:?}, not {name}", app.view));
+            }
+        }
+        Check::PaletteSearch(query) => {
+            if !app.palette || app.palette_query != *query {
+                return fail(&format!("the palette is not searching for {query:?}"));
             }
         }
         Check::SettingsClosed => {
