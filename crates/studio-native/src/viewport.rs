@@ -81,7 +81,12 @@ impl StudioApp {
         const MOST: usize = 600;
         let bounds = self.scene.bounds();
         let view = self.camera.visible_rect();
-        if self.scene.nodes.is_empty() || view.contains_rect(bounds) || !bounds.finite() {
+        // Not on a Surface too narrow for it beside the zoom control.
+        if self.scene.nodes.is_empty()
+            || view.contains_rect(bounds)
+            || !bounds.finite()
+            || rect.width() < SIZE.x + 260.0
+        {
             return;
         }
         let theme = self.theme;

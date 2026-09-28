@@ -20,6 +20,11 @@ impl StudioApp {
                     .inner_margin(egui::Margin::symmetric(14, 8)),
             )
             .show(root, |ui| {
+                // A narrow window (or a large UI scale) keeps only what fits:
+                // the project's name goes first, then New, Open, Undo, Redo and
+                // Checkpoint, which stay in the palette and on their keys.
+                let width = ui.available_width();
+                let compact = width < 1150.0;
                 ui.horizontal(|ui| {
                     ui.label(RichText::new("Agentique").font(theme::semibold(theme::HEADING)));
                     ui.add_space(6.0);
@@ -31,7 +36,9 @@ impl StudioApp {
                         (None, Some(name)) => format!("Example: {name} (read-only)"),
                         (None, None) => "No project".into(),
                     };
-                    ui.label(crate::app::muted(title, theme));
+                    if !compact {
+                        ui.label(crate::app::muted(title, theme));
+                    }
                     ui.add_space(18.0);
                     for view in SurfaceView::ALL {
                         let button =
@@ -50,6 +57,9 @@ impl StudioApp {
                             .clicked()
                         {
                             self.execute(CommandId::Settings, ctx);
+                        }
+                        if compact {
+                            return;
                         }
                         let context = self.context();
                         for (id, label) in [
