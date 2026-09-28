@@ -36,6 +36,13 @@ pub struct ProjectView {
     /// Focus mode: the Outline, the Panels and the Conversation hidden.
     #[serde(default)]
     pub panels_hidden: bool,
+    /// Single panels collapsed (Ctrl+B, Ctrl+Alt+B, Ctrl+J).
+    #[serde(default)]
+    pub outline_hidden: bool,
+    #[serde(default)]
+    pub inspector_hidden: bool,
+    #[serde(default)]
+    pub conversation_hidden: bool,
 }
 
 impl Session {
@@ -165,6 +172,7 @@ mod tests {
                 camera: Some(Camera2D::default()),
                 layouts: BTreeMap::new(),
                 panels_hidden: false,
+                ..Default::default()
             },
         );
         session.save(&path).unwrap();
@@ -218,6 +226,7 @@ mod safety_tests {
                 camera: Some(camera),
                 layouts: BTreeMap::new(),
                 panels_hidden: false,
+                ..Default::default()
             },
         );
         session.save(&file).unwrap();

@@ -1510,6 +1510,42 @@ pub(crate) mod app_tests {
     }
 
     #[test]
+    fn single_panels_collapse_by_key_and_are_remembered_per_project() {
+        let (mut app, context, folder) = studio("collapse-panels");
+        let first = app.project.as_ref().unwrap().folder().to_path_buf();
+        frame(&mut app, &context, vec![]);
+        let alt_b = press(
+            egui::Key::B,
+            egui::Key::B,
+            egui::Modifiers {
+                alt: true,
+                ..egui::Modifiers::COMMAND
+            },
+        );
+        frame(&mut app, &context, alt_b);
+        assert!(
+            app.inspector_hidden && !app.outline_hidden,
+            "Ctrl+Alt+B is not Ctrl+B"
+        );
+        frame(
+            &mut app,
+            &context,
+            press(egui::Key::B, egui::Key::B, egui::Modifiers::COMMAND),
+        );
+        assert!(app.outline_hidden);
+        frame(
+            &mut app,
+            &context,
+            press(egui::Key::J, egui::Key::J, egui::Modifiers::COMMAND),
+        );
+        assert!(!app.conversation.shown);
+        app.create_project(&folder.0.join("Q"), "Q");
+        assert!(!app.outline_hidden && !app.inspector_hidden && app.conversation.shown);
+        app.open_project(&first);
+        assert!(app.outline_hidden && app.inspector_hidden && !app.conversation.shown);
+    }
+
+    #[test]
     fn the_first_run_can_start_from_the_url_shortener() {
         let (mut app, _context, folder) = studio("sample");
         app.create_sample(&folder.0.join("Sample"), crate::app::SAMPLE_NAME);
