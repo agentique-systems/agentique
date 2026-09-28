@@ -87,6 +87,9 @@ pub struct StudioApp {
     pub recent_commands: Vec<CommandId>,
     /// Focus mode (Ctrl+\): the Surface takes the whole window.
     pub panels_hidden: bool,
+    /// The Outline (Ctrl+B) and the Inspector column (Ctrl+Alt+B) collapsed.
+    pub outline_hidden: bool,
+    pub inspector_hidden: bool,
     pub dialog: Option<crate::edit::Dialog>,
     pub panel: Panel,
     pub history: crate::history::HistoryPanel,
@@ -205,6 +208,8 @@ impl StudioApp {
             palette_focus: false,
             recent_commands: Vec::new(),
             panels_hidden: false,
+            outline_hidden: false,
+            inspector_hidden: false,
             dialog: None,
             panel: Panel::Inspector,
             history: Default::default(),
@@ -411,6 +416,9 @@ impl StudioApp {
         self.view = remembered.view;
         self.layouts = remembered.layouts;
         self.panels_hidden = remembered.panels_hidden;
+        self.outline_hidden = remembered.outline_hidden;
+        self.inspector_hidden = remembered.inspector_hidden;
+        self.conversation.shown = !remembered.conversation_hidden;
         self.collapsed.clear();
         self.focus = None;
         self.selection.clear();
@@ -880,6 +888,8 @@ impl StudioApp {
                 self.apply_appearance(ctx);
             }
             HidePanels => self.panels_hidden = !self.panels_hidden,
+            ShowOutline => self.outline_hidden = !self.outline_hidden,
+            ShowInspector => self.inspector_hidden = !self.inspector_hidden,
             Settings => {
                 if self.settings.open {
                     self.settings.close();
@@ -982,6 +992,9 @@ impl StudioApp {
                     camera: Some(self.camera_target.unwrap_or(self.camera)),
                     layouts: self.layouts.clone(),
                     panels_hidden: self.panels_hidden,
+                    outline_hidden: self.outline_hidden,
+                    inspector_hidden: self.inspector_hidden,
+                    conversation_hidden: !self.conversation.shown,
                 },
             );
         }

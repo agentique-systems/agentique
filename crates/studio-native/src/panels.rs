@@ -192,53 +192,57 @@ impl StudioApp {
                 .show(root, |ui| self.viewport(ui));
             return;
         }
-        egui::Panel::left("outline")
-            .default_size(250.0)
-            .frame(
-                egui::Frame::NONE
-                    .fill(theme.surface)
-                    .inner_margin(egui::Margin::same(12)),
-            )
-            .show(root, |ui| {
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    theme.section(ui, "OUTLINE");
-                    self.outline(ui);
-                    if self.project.is_some() {
-                        self.problems_list(ui);
-                    }
+        if !self.outline_hidden {
+            egui::Panel::left("outline")
+                .default_size(250.0)
+                .frame(
+                    egui::Frame::NONE
+                        .fill(theme.surface)
+                        .inner_margin(egui::Margin::same(12)),
+                )
+                .show(root, |ui| {
+                    egui::ScrollArea::vertical().show(ui, |ui| {
+                        theme.section(ui, "OUTLINE");
+                        self.outline(ui);
+                        if self.project.is_some() {
+                            self.problems_list(ui);
+                        }
+                    });
                 });
-            });
+        }
         if self.project.is_some() && self.conversation.shown {
             self.conversation_column(root);
         }
-        egui::Panel::right("panels")
-            .default_size(theme::PANEL_WIDTH + 40.0)
-            .frame(
-                egui::Frame::NONE
-                    .fill(theme.surface)
-                    .inner_margin(egui::Margin::same(12)),
-            )
-            .show(root, |ui| {
-                ui.horizontal(|ui| {
-                    for (panel, label) in [
-                        (Panel::Inspector, "Inspector"),
-                        (Panel::Requirements, "Requirements"),
-                        (Panel::History, "History"),
-                    ] {
-                        let tab = ui.add(egui::Button::selectable(self.panel == panel, label));
-                        record(ui.ctx(), Target::Button(label), tab.rect);
-                        if tab.clicked() {
-                            self.panel = panel;
+        if !self.inspector_hidden {
+            egui::Panel::right("panels")
+                .default_size(theme::PANEL_WIDTH + 40.0)
+                .frame(
+                    egui::Frame::NONE
+                        .fill(theme.surface)
+                        .inner_margin(egui::Margin::same(12)),
+                )
+                .show(root, |ui| {
+                    ui.horizontal(|ui| {
+                        for (panel, label) in [
+                            (Panel::Inspector, "Inspector"),
+                            (Panel::Requirements, "Requirements"),
+                            (Panel::History, "History"),
+                        ] {
+                            let tab = ui.add(egui::Button::selectable(self.panel == panel, label));
+                            record(ui.ctx(), Target::Button(label), tab.rect);
+                            if tab.clicked() {
+                                self.panel = panel;
+                            }
                         }
-                    }
+                    });
+                    ui.separator();
+                    egui::ScrollArea::vertical().show(ui, |ui| match self.panel {
+                        Panel::Inspector => self.inspector_panel(ui),
+                        Panel::Requirements => self.requirements_panel(ui),
+                        Panel::History => self.history_panel(ui),
+                    });
                 });
-                ui.separator();
-                egui::ScrollArea::vertical().show(ui, |ui| match self.panel {
-                    Panel::Inspector => self.inspector_panel(ui),
-                    Panel::Requirements => self.requirements_panel(ui),
-                    Panel::History => self.history_panel(ui),
-                });
-            });
+        }
         egui::CentralPanel::default()
             .frame(egui::Frame::NONE.fill(theme.canvas))
             .show(root, |ui| self.viewport(ui));

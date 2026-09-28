@@ -46,6 +46,8 @@ pub enum CommandId {
     ShowConversation,
     Settings,
     HidePanels,
+    ShowOutline,
+    ShowInspector,
 }
 
 pub struct Command {
@@ -59,6 +61,10 @@ pub struct Command {
 
 const NONE: Modifiers = Modifiers::NONE;
 const COMMAND: Modifiers = Modifiers::COMMAND;
+const COMMAND_ALT: Modifiers = Modifiers {
+    alt: true,
+    ..Modifiers::COMMAND
+};
 
 pub const COMMANDS: &[Command] = &[
     Command {
@@ -355,6 +361,21 @@ pub const COMMANDS: &[Command] = &[
         shortcut: "Ctrl+\\",
         description: "Focus mode: the Surface takes the whole window; remembered per project",
         key: Some((COMMAND, Key::Backslash)),
+    },
+    Command {
+        id: CommandId::ShowInspector,
+        label: "Show or hide the Inspector",
+        shortcut: "Ctrl+Alt+B",
+        description: "The Inspector, Requirements and History column; remembered per project",
+        // Before Ctrl+B: egui's matching ignores an extra Alt.
+        key: Some((COMMAND_ALT, Key::B)),
+    },
+    Command {
+        id: CommandId::ShowOutline,
+        label: "Show or hide the Outline",
+        shortcut: "Ctrl+B",
+        description: "The list of elements on the left; remembered per project",
+        key: Some((COMMAND, Key::B)),
     },
 ];
 
