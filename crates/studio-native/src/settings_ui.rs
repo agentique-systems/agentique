@@ -590,70 +590,75 @@ impl SettingsView {
             let automatic = self.text("assistant.provider").is_empty();
             let mut draft = self.drafts.remove(id).unwrap_or_else(|| current.clone());
             let mut typing = false;
-            let new_value = setting_row(
-                ui,
-                theme,
-                row.label,
-                row.description,
-                is_changed,
-                &default,
-                |ui, label| {
-                    match id {
-                        "assistant.provider" => {
-                            let mut value = current.clone();
-                            egui::ComboBox::from_id_salt(id)
-                                .selected_text(if value.is_empty() {
-                                    "Automatic".to_string()
-                                } else {
-                                    value.clone()
-                                })
-                                .show_ui(ui, |ui| {
+            let set_by = match id {
+                "assistant.provider" => "AGENTIQUE_PROVIDER",
+                "assistant.model" => "AGENTIQUE_MODEL",
+                "assistant.effort" => "AGENTIQUE_EFFORT",
+                _ => "",
+            };
+            let text = RowText {
+                label: row.label,
+                description: row.description,
+                query,
+                set_by: (!set_by.is_empty() && std::env::var_os(set_by).is_some())
+                    .then_some(set_by),
+            };
+            let new_value = setting_row(ui, theme, text, is_changed, &default, |ui, label| {
+                match id {
+                    "assistant.provider" => {
+                        let mut value = current.clone();
+                        egui::ComboBox::from_id_salt(id)
+                            .selected_text(if value.is_empty() {
+                                "Automatic".to_string()
+                            } else {
+                                value.clone()
+                            })
+                            .show_ui(ui, |ui| {
+                                ui.selectable_value(
+                                    &mut value,
+                                    String::new(),
+                                    "Automatic (first provider with a key)",
+                                );
+                                for provider in [
+                                    Provider::Anthropic,
+                                    Provider::DeepSeek,
+                                    Provider::OpenAi,
+                                    Provider::OpenRouter,
+                                ] {
                                     ui.selectable_value(
                                         &mut value,
-                                        String::new(),
-                                        "Automatic (first provider with a key)",
+                                        provider.id().to_string(),
+                                        provider.name(),
                                     );
-                                    for provider in [
-                                        Provider::Anthropic,
-                                        Provider::DeepSeek,
-                                        Provider::OpenAi,
-                                        Provider::OpenRouter,
-                                    ] {
-                                        ui.selectable_value(
-                                            &mut value,
-                                            provider.id().to_string(),
-                                            provider.name(),
-                                        );
-                                    }
-                                })
-                                .response
-                                .labelled_by(label);
-                            (value != current).then(|| json!(value))
-                        }
-                        "assistant.showCost" => {
-                            let mut on = self.settings.get(id).as_bool().unwrap_or(true);
-                            let before = on;
-                            ui.checkbox(&mut on, "").labelled_by(label);
-                            (on != before).then(|| json!(on))
-                        }
-                        _ => {
-                            let response = ui
-                                .add_enabled(
-                                    !automatic,
-                                    egui::TextEdit::singleline(&mut draft)
-                                        .hint_text("Default")
-                                        .desired_width(200.0),
-                                )
-                                .on_disabled_hover_text("Choose a provider first")
-                                .labelled_by(label);
-                            typing = response.has_focus();
-                            // Text commits on Enter or leaving the field (§3.7).
-                            (response.lost_focus() && draft.trim() != current)
-                                .then(|| json!(draft.trim()))
-                        }
+                                }
+                            })
+                            .response
+                            .labelled_by(label);
+                        (value != current).then(|| json!(value))
                     }
-                },
-            );
+                    "assistant.showCost" => {
+                        let mut on = self.settings.get(id).as_bool().unwrap_or(true);
+                        let before = on;
+                        ui.checkbox(&mut on, "").labelled_by(label);
+                        (on != before).then(|| json!(on))
+                    }
+                    _ => {
+                        let response = ui
+                            .add_enabled(
+                                !automatic,
+                                egui::TextEdit::singleline(&mut draft)
+                                    .hint_text("Default")
+                                    .desired_width(200.0),
+                            )
+                            .on_disabled_hover_text("Choose a provider first")
+                            .labelled_by(label);
+                        typing = response.has_focus();
+                        // Text commits on Enter or leaving the field (§3.7).
+                        (response.lost_focus() && draft.trim() != current)
+                            .then(|| json!(draft.trim()))
+                    }
+                }
+            });
             if typing {
                 self.drafts.insert(id, draft);
             }
@@ -682,11 +687,16 @@ impl SettingsView {
             let is_changed = self.settings.changed(id);
             let default = row.default.value();
             let value = self.settings.get(id);
+            let text = RowText {
+                label: row.label,
+                description: row.description,
+                query,
+                set_by: None,
+            };
             let new_value = setting_row(
                 ui,
                 theme,
-                row.label,
-                row.description,
+                text,
                 is_changed,
                 &default,
                 |ui, label| match row.allowed {
@@ -753,11 +763,16 @@ impl SettingsView {
         let current = self.text(id);
         let mut draft = self.drafts.remove(id).unwrap_or_else(|| current.clone());
         let mut typing = false;
+        let text = RowText {
+            label: row.label,
+            description: row.description,
+            query: None,
+            set_by: None,
+        };
         let new_value = setting_row(
             ui,
             theme,
-            row.label,
-            row.description,
+            text,
             self.settings.changed(id),
             &row.default.value(),
             |ui, label| {
@@ -1021,22 +1036,44 @@ fn notice(ui: &mut egui::Ui, theme: Theme, text: &str) {
 /// One row: the label and description on the left, the control on the
 /// right, a changed marker with a reset to the default (§3.7). Returns the
 /// new value when the Operator changed or reset it.
+/// What a row shows besides its control.
+struct RowText<'a> {
+    label: &'a str,
+    description: &'a str,
+    /// The search, whose words are highlighted (§3.7).
+    query: Option<&'a str>,
+    /// The environment variable that decides this row instead (§3.7: rows
+    /// that cannot be changed stay visible, disabled, with the reason).
+    set_by: Option<&'static str>,
+}
+
 fn setting_row(
     ui: &mut egui::Ui,
     theme: Theme,
-    label: &str,
-    description: &str,
+    text: RowText,
     is_changed: bool,
     default: &Value,
     control: impl FnOnce(&mut egui::Ui, egui::Id) -> Option<Value>,
 ) -> Option<Value> {
     let mut result = None;
     let mut label_id = egui::Id::NULL;
+    let RowText {
+        label,
+        description,
+        query,
+        set_by,
+    } = text;
+    let reason = set_by.map(|variable| format!("Set by {variable}."));
+    let description = match &reason {
+        Some(reason) => format!("{reason} {description}"),
+        None => description.to_string(),
+    };
     ui.horizontal(|ui| {
         ui.vertical(|ui| {
             ui.set_width((ui.available_width() - 260.0).max(200.0));
             ui.horizontal(|ui| {
-                label_id = ui.label(RichText::new(label).color(theme.text)).id;
+                let job = highlighted(label, query, theme::regular(theme::BODY), theme.text, theme);
+                label_id = ui.label(job).id;
                 if is_changed {
                     ui.label(
                         RichText::new("●")
@@ -1046,13 +1083,24 @@ fn setting_row(
                     .on_hover_text("Changed from the default");
                 }
             });
-            ui.label(
-                RichText::new(description)
-                    .font(theme::regular(theme::CAPTION))
-                    .color(theme.muted),
-            );
+            ui.label(highlighted(
+                &description,
+                query,
+                theme::regular(theme::CAPTION),
+                theme.muted,
+                theme,
+            ));
         });
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+            if set_by.is_some() {
+                // Shown as it is, not changeable here.
+                ui.add_enabled_ui(false, |ui| {
+                    let _ = control(ui, label_id);
+                })
+                .response
+                .on_disabled_hover_text(reason.unwrap_or_default());
+                return;
+            }
             if is_changed
                 && ui
                     .small_button("Reset")
@@ -1073,6 +1121,53 @@ fn setting_row(
     });
     ui.add_space(theme::SPACE);
     result
+}
+
+/// `text` with the words of `query` marked, as a search result shows them.
+fn highlighted(
+    text: &str,
+    query: Option<&str>,
+    font: egui::FontId,
+    color: egui::Color32,
+    theme: Theme,
+) -> egui::text::LayoutJob {
+    let mut marked = vec![false; text.len()];
+    // Case-folded search; only where folding keeps byte offsets (ASCII).
+    let lower = text.to_ascii_lowercase();
+    for word in query.unwrap_or_default().split_whitespace() {
+        let word = word.to_ascii_lowercase();
+        let mut from = 0;
+        while let Some(at) = lower[from..].find(&word) {
+            let start = from + at;
+            marked[start..start + word.len()]
+                .iter_mut()
+                .for_each(|m| *m = true);
+            from = start + word.len().max(1);
+        }
+    }
+    let mut job = egui::text::LayoutJob::default();
+    let format = |marked: bool| egui::text::TextFormat {
+        font_id: font.clone(),
+        color,
+        background: if marked {
+            theme.accent.gamma_multiply(0.25)
+        } else {
+            egui::Color32::TRANSPARENT
+        },
+        ..Default::default()
+    };
+    let mut start = 0;
+    for end in 1..=text.len() {
+        if !text.is_char_boundary(end) {
+            continue;
+        }
+        let boundary = end == text.len() || marked[end] != marked[start];
+        if boundary && text.is_char_boundary(start) {
+            job.append(&text[start..end], 0.0, format(marked[start]));
+            start = end;
+        }
+    }
+    job
 }
 
 fn describe_default(default: &Value) -> String {
@@ -1355,5 +1450,39 @@ mod studio_tests {
         assert_eq!(again.settings.text("appearance.theme"), "system");
         drop(again);
         let _ = std::fs::remove_dir_all(&folder);
+    }
+}
+
+#[cfg(test)]
+mod highlight_tests {
+    use super::*;
+
+    #[test]
+    fn search_words_are_marked_in_labels_and_descriptions() {
+        let theme = Theme::default();
+        let job = highlighted(
+            "Show tokens and estimated cost",
+            Some("cost token"),
+            theme::regular(theme::BODY),
+            theme.text,
+            theme,
+        );
+        let marked: Vec<&str> = job
+            .sections
+            .iter()
+            .filter(|section| section.format.background != egui::Color32::TRANSPARENT)
+            .map(|section| &job.text[section.byte_range.start.0..section.byte_range.end.0])
+            .collect();
+        assert_eq!(marked, ["token", "cost"]);
+        assert_eq!(job.text, "Show tokens and estimated cost");
+        // Nothing searched: nothing marked, text whole.
+        let plain = highlighted(
+            "Théme",
+            None,
+            theme::regular(theme::BODY),
+            theme.text,
+            theme,
+        );
+        assert_eq!(plain.text, "Théme");
     }
 }
