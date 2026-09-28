@@ -71,6 +71,85 @@ impl StudioApp {
             || self.highlights.contains_key(&port)
     }
 
+    /// The whole model in the Surface's bottom-left corner, with the part in
+    /// view outlined; a click or drag there moves the view (§3.2 Surface:
+    /// minimap; D7). Shown only when the model does not fit in the view. It
+    /// draws at most the top two levels of cards, fewer at 10k, so it stays
+    /// cheap.
+    fn minimap(&mut self, ui: &mut egui::Ui, rect: egui::Rect) {
+        const SIZE: Vec2 = Vec2::new(180.0, 120.0);
+        const MOST: usize = 600;
+        let bounds = self.scene.bounds();
+        let view = self.camera.visible_rect();
+        if self.scene.nodes.is_empty() || view.contains_rect(bounds) || !bounds.finite() {
+            return;
+        }
+        let theme = self.theme;
+        let scale = (SIZE.x / bounds.width().max(1.0)).min(SIZE.y / bounds.height().max(1.0));
+        let area =
+            egui::Rect::from_min_size(rect.left_bottom() + Vec2::new(12.0, -SIZE.y - 12.0), SIZE);
+        let to_map = |x: f32, y: f32| {
+            egui::pos2(
+                area.left() + (x - bounds.min.x) * scale,
+                area.top() + (y - bounds.min.y) * scale,
+            )
+        };
+        let response = ui.interact(area, ui.id().with("minimap"), Sense::click_and_drag());
+        let painter = ui.painter_at(area.expand(1.0));
+        painter.rect(
+            area,
+            crate::tokens::radius::CONTROL as u8,
+            theme.elevated.gamma_multiply(0.92),
+            Stroke::new(1.0, theme.border),
+            egui::StrokeKind::Inside,
+        );
+        // The top two levels, or only the outermost cards and the containers
+        // when those are too many to draw each frame.
+        let mut shown: Vec<_> = self
+            .scene
+            .nodes
+            .iter()
+            .filter(|node| node.depth <= 1)
+            .collect();
+        if shown.len() > MOST {
+            shown.retain(|node| node.depth == 0 || node.is_container);
+        }
+        for node in shown.into_iter().take(MOST) {
+            let r = node.bounds;
+            painter.rect_filled(
+                egui::Rect::from_min_max(to_map(r.min.x, r.min.y), to_map(r.max.x, r.max.y)),
+                1,
+                if node.is_container {
+                    theme.border.gamma_multiply(0.5)
+                } else {
+                    theme.border_strong
+                },
+            );
+        }
+        let seen = egui::Rect::from_min_max(
+            to_map(view.min.x, view.min.y),
+            to_map(view.max.x, view.max.y),
+        )
+        .intersect(area);
+        painter.rect_stroke(
+            seen,
+            1,
+            Stroke::new(1.5, theme.accent),
+            egui::StrokeKind::Inside,
+        );
+        if (response.clicked() || response.dragged())
+            && let Some(pos) = response.interact_pointer_pos()
+        {
+            self.camera.center = agq_studio_scene::Point::new(
+                bounds.min.x + (pos.x - area.left()) / scale,
+                bounds.min.y + (pos.y - area.top()) / scale,
+            );
+            self.camera_target = None;
+            self.camera_move = None;
+        }
+        response.on_hover_text("The whole model; click or drag to move the view");
+    }
+
     /// Zoom out, the zoom level (click: 100%), zoom in and fit, in the
     /// Surface's bottom-right corner (§3.2 Surface: zoom controls).
     fn zoom_control(&mut self, ui: &mut egui::Ui, rect: egui::Rect) {
@@ -259,6 +338,8 @@ impl StudioApp {
         self.port_labels(&painter, rect, &objects);
         self.timing.labels(labels.elapsed());
         self.gesture_overlay(&painter, rect);
+        // Over the scene and its labels.
+        self.minimap(ui, rect);
         if let Some(target) = &hovered
             && self.gesture.is_none()
             && let Some(text) = self.hover_text(target)
