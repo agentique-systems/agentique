@@ -471,8 +471,8 @@ Decision by its rule: proceed with rig for every provider (C-34). Anthropic
 moves onto it in W5.7; P2 needs a live Anthropic key before the hand-written
 client is removed.
 
-**S4.1: toolkit** (provisional, pending the Operator: blind scoring and the
-gates that need a person)
+**S4.1: toolkit** (superseded: the Operator chose GPUI, C-48, and waived the
+remaining gates; the record below is kept as it was)
 
 | Gate | Track A: egui 0.36.2, wgpu 30 (#54) |
 |---|---|
@@ -556,11 +556,24 @@ Operator accepted anything.
 
 **Done** (PRs #52–#82)
 
-- **W5.1 Toolkit** (#54): S4.1's Track A kept: egui and eframe 0.36.2 with
-  wgpu 30, the Rust toolchain at 1.97.1, Inter's variable font at 400, 500
-  and 600, a spring and tween motion layer, selection across Conversation
-  messages, screen-reader names for the Surface and the Conversation. The
-  S4.1 decision (stay with egui 0.36) is provisional (see S4.1 above).
+- **W5.1 Toolkit, on GPUI** (C-48, the Operator's decision; this replaces
+  #54, S4.1's Track A on egui 0.36): the Studio is rewritten on GPUI
+  (`gpui-pre =0.3.7` with the unstyled `gpui-base =0.7.0`) and its
+  presentation redesigned; egui, eframe and wgpu are gone. The state is one
+  toolkit-free entity (`studio.rs`) that views follow by what changed; the
+  Surface paints with GPUI's quads, paths and text by level of detail; the
+  Panels, Conversation, palette, dialogs, welcome and Settings are built on
+  one design system (`ui/`) with springs that reduced motion turns off;
+  `--fixture components` shows every token and component, the real Surface
+  and the real Conversation. Inter ships as three static weights instanced
+  from Inter Variable (GPUI's Windows text system does not select a variable
+  font's weights). Results on the reference machine (release, 165 Hz):
+  start to first paint 251 ms warm; 1k pan and zoom p95 6.3 and 6.2 ms; 10k
+  13.1 and 12.6–12.7 ms over two runs; the chat benchmark scrolls at
+  p95 6.3 ms and streams at 6.6 ms. All six journeys pass (`a-build`,
+  `a-crash` exits 3 by design, `a-reopen`, `a-assistant`, `d-daily`,
+  `e-settings`), in light and dark. Screen-reader names use GPUI's AccessKit
+  roles; with NVDA or Narrator: not tried. Waits for the Operator's use.
 - **Interface 3** (#55): `tokens.rs` (every size, radius, stroke, duration and
   curve of §3.2; colour scales generated in OKLCH from base hue, accent hue and
   contrast for dark, light and high contrast, tested for 4.5:1 body text, 3:1
