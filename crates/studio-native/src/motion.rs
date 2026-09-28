@@ -3,6 +3,33 @@
 //! target that may change while it moves, without overshoot. Under reduced
 //! motion both arrive at once. The camera's moves use both (`CameraMove`).
 use agq_studio_scene::{Camera2D, Point};
+use std::sync::OnceLock;
+use std::time::Instant;
+
+/// A camera move's duration (§3.2 motion tokens).
+pub const CAMERA_SECONDS: f32 = crate::tokens::motion::CAMERA_MS as f32 / 1000.0;
+/// How long a change stays highlighted on the Surface: it holds, then fades.
+pub const CHANGED_SECONDS: f32 =
+    (crate::tokens::motion::CHANGE_HOLD_MS + crate::tokens::motion::CHANGE_FADE_MS) as f32 / 1000.0;
+
+/// Seconds since the Studio started: the one clock for moves and highlights.
+pub fn clock() -> f32 {
+    static START: OnceLock<Instant> = OnceLock::new();
+    START.get_or_init(Instant::now).elapsed().as_secs_f32()
+}
+
+/// How strongly a change highlighted `age` seconds ago shows: it holds, then
+/// fades out along the decelerating curve; 0 once it is over.
+pub fn highlight(age: f32) -> f32 {
+    let hold = crate::tokens::motion::CHANGE_HOLD_MS as f32 / 1000.0;
+    if !(0.0..CHANGED_SECONDS).contains(&age) {
+        return 0.0;
+    }
+    if age <= hold {
+        return 1.0;
+    }
+    1.0 - Curve::EASY_EASE.at((age - hold) / (CHANGED_SECONDS - hold))
+}
 
 /// A cubic Bézier easing curve from (0, 0) to (1, 1), written as in CSS.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -159,7 +186,7 @@ impl CameraMove {
             from,
             tween: Tween::new(
                 now,
-                crate::theme::CAMERA_SECONDS,
+                CAMERA_SECONDS,
                 Curve::EASY_EASE,
                 reduced_motion,
             ),
@@ -172,7 +199,7 @@ impl CameraMove {
         match previous {
             Some(spring @ Self::Spring(_)) => spring,
             _ => {
-                let seconds = crate::theme::CAMERA_SECONDS;
+                let seconds = CAMERA_SECONDS;
                 Self::Spring([
                     Spring::new(camera.center.x, seconds),
                     Spring::new(camera.center.y, seconds),

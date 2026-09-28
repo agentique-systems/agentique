@@ -5,7 +5,7 @@
 //! A turn runs on a background thread ([`BackgroundTurn`]). Every frame the
 //! Studio takes its events: streamed text, tool calls starting and finishing,
 //! entries to add to the conversation (which is then saved), and tool calls
-//! to carry out here. A change goes through [`StudioApp::apply_change`], the
+//! to carry out here. A change goes through [`Studio::apply_change`], the
 //! path the Operator's own edits take: the Surface updates and highlights
 //! it, it is one undo step, and a change to a locked element opens the same
 //! confirmation, whose answer decides. A question from the Assistant waits
@@ -14,7 +14,7 @@
 //! The conversation is kept per project in the Studio's local data, next to
 //! the session file (never in the project folder), and saved after every
 //! entry.
-use crate::{app::StudioApp, edit::Outcome};
+use crate::{edit::Outcome, studio::Studio};
 use agq_assistant::{
     BackgroundEvent, BackgroundTurn, Conversation, Entry, Model, ModelChoice, Prepared,
     StreamEvent, ToolCall, ToolResult, TurnEvent, Usage, tools,
@@ -72,7 +72,13 @@ pub struct ConversationPanel {
     pub shown: bool,
     /// Move the keyboard focus to the message input on the next frame.
     pub focus_input: bool,
-    pub(crate) view: crate::conversation_ui::ViewCache,
+    /// Counts replacements of `input` by the Studio (an inserted selection,
+    /// a message taken back to edit), so the composer shows them.
+    pub input_set: u64,
+    /// Counts replacements of earlier entries (edit and resend, retry, a new
+    /// conversation, another project), after which the view forgets what it
+    /// kept about them, such as selected text.
+    pub epoch: u64,
 }
 
 /// Part of the reply that is streaming in.
@@ -157,7 +163,8 @@ impl ConversationPanel {
             save_error: None,
             shown: true,
             focus_input: false,
-            view: Default::default(),
+            input_set: 0,
+            epoch: 0,
         }
     }
 
@@ -275,7 +282,7 @@ fn project_data(session: &Path, folder: &Path) -> PathBuf {
         .join(format!("{name}-{hash:016x}"))
 }
 
-impl StudioApp {
+impl Studio {
     /// Shows the conversation of the project in `folder`, stopping any turn
     /// of the previous one.
     pub fn load_conversation(&mut self, folder: &Path) {
@@ -323,6 +330,7 @@ impl StudioApp {
             }
         };
         panel.index_results();
+        panel.epoch += 1;
     }
 
     /// Stops the turn and forgets everything that belongs to the open
@@ -351,8 +359,8 @@ impl StudioApp {
         panel.turn = None;
         panel.live.clear();
         panel.thinking = false;
-        // The selection names messages by position; the live ones are gone.
-        panel.view.selection = None;
+        // Views name messages by position; the live ones are gone.
+        panel.epoch += 1;
     }
 
     fn save_conversation(&mut self) {
@@ -381,6 +389,7 @@ impl StudioApp {
         }
         if self.answer_question(&text) {
             self.conversation.input.clear();
+            self.conversation.input_set += 1;
             return;
         }
         let panel = &mut self.conversation;
@@ -389,11 +398,13 @@ impl StudioApp {
         }
         if let Some((index, draft)) = panel.editing.take() {
             panel.conversation.entries.truncate(index);
-            panel.view.selection = None;
+            panel.epoch += 1;
             panel.index_results();
             panel.input = draft;
+            panel.input_set += 1;
         } else {
             panel.input.clear();
+            panel.input_set += 1;
         }
         self.add_entry(Entry::Operator { text });
         self.start_turn();
@@ -715,7 +726,7 @@ impl StudioApp {
         if !self.conversation.can_retry() {
             return;
         }
-        self.conversation.view.selection = None;
+        self.conversation.epoch += 1;
         let conversation = &mut self.conversation.conversation;
         // A read-only transcript is never removed.
         let floor = conversation.transcript;
@@ -754,6 +765,7 @@ impl StudioApp {
         };
         let draft = std::mem::replace(&mut panel.input, text.clone());
         panel.editing = Some((index, draft));
+        panel.input_set += 1;
         panel.focus_input = true;
     }
 
@@ -761,6 +773,7 @@ impl StudioApp {
         let panel = &mut self.conversation;
         if let Some((_, draft)) = panel.editing.take() {
             panel.input = draft;
+            panel.input_set += 1;
         }
     }
 
@@ -772,6 +785,7 @@ impl StudioApp {
         panel.editing = None;
         panel.conversation = Conversation::default();
         panel.results.clear();
+        panel.epoch += 1;
         panel.shown = true;
         panel.focus_input = true;
         self.save_conversation();
@@ -797,6 +811,7 @@ impl StudioApp {
         }
         input.push_str(&names.join(", "));
         input.push(' ');
+        self.conversation.input_set += 1;
         self.conversation.shown = true;
         self.conversation.focus_input = true;
     }
@@ -851,7 +866,7 @@ impl StudioApp {
         };
         self.select(target.clone(), false);
         self.inspected = inspected.map(|id| (self.selection.primary.clone(), id));
-        self.panel = crate::app::Panel::Inspector;
+        self.panel = crate::studio::Panel::Inspector;
         self.frame_target(&target);
     }
 }

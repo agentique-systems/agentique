@@ -3,11 +3,12 @@ name = "agq-studio-native"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "Agentique Studio: the Surface, Panels and direct manipulation of the System State"
+description = "Agentique Studio: the Surface, Panels, Conversation and Settings on GPUI"
 
 [features]
-# Scripted UI journeys (Scenario A) and the camera benchmark (`--scenario`).
-automation = []
+# Scripted UI journeys, the camera and Conversation benchmarks (`--scenario`)
+# and window screenshots (GPUI renders a frame to an image with test-support).
+automation = ["gpui/test-support", "gpui_platform/test-support"]
 
 [dependencies]
 agq-language = { path = "../language" }
@@ -16,12 +17,11 @@ agq-studio-scene = { path = "../studio-scene" }
 agq-assistant = { path = "../assistant" }
 agq-providers = { path = "../providers" }
 pulldown-cmark = { version = "0.13.4", default-features = false }
-eframe = { version = "=0.36.2", default-features = false, features = ["default_fonts", "wgpu", "accesskit", "x11", "wayland"] }
-egui-wgpu = "=0.36.2"
-# Cargo.lock resolves gpu-allocator's `windows` to 0.62.2; with 0.61 wgpu-hal
-# 30 does not build. A plain `cargo update` can undo that: check it after one.
-wgpu = { version = "=30.0.1", features = ["dx12", "metal", "vulkan", "wgsl"] }
-bytemuck = { version = "1.24", features = ["derive"] }
+# GPUI (C-48): a weekly snapshot of Zed's GPUI, pinned exactly, with the
+# unstyled primitives of gpui-base; the design system is the Studio's own.
+gpui = { package = "gpui-pre", version = "=0.3.7" }
+gpui_platform = { package = "gpui-pre-platform", version = "=0.3.7" }
+gpui-base = "=0.7.0"
 serde.workspace = true
 serde_json.workspace = true
 clap.workspace = true

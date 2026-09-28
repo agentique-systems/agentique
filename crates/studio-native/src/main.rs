@@ -1,9 +1,8 @@
 //! Agentique Studio: the Operator builds and changes an architecture on the
-//! Surface. Every model change goes through the System State's typed
-//! operations; the project saves it.
+//! Surface and with the Assistant. Every model change goes through the
+//! System State's typed operations; the project saves it. The Studio draws
+//! with GPUI (C-48).
 #![forbid(unsafe_code)]
-mod accessibility;
-mod app;
 #[cfg(feature = "automation")]
 mod automation;
 // Asserted by the stress harness (feature `automation`); its tests run in every build.
@@ -11,20 +10,16 @@ mod automation;
 mod budgets;
 mod commands;
 mod conversation;
-mod conversation_ui;
+mod conversation_view;
 mod cost;
+mod dialogs;
 mod edit;
 mod gallery;
-mod gpu;
-mod gpu_timing;
 mod history;
-mod inspector;
-mod markdown;
 mod motion;
 mod navigation;
-mod palette_ui;
+mod palette;
 mod panels;
-mod project_dialog;
 mod relationship_labels;
 mod requirements;
 mod selection;
@@ -35,23 +30,18 @@ mod session;
     reason = "Scope and the default path are for later settings and tools"
 )]
 mod settings;
-mod settings_ui;
-#[cfg(feature = "automation")]
-mod stress_automation;
-mod surface_recovery;
-mod targets;
-mod theme;
+mod settings_view;
+mod studio;
+mod surface;
 mod timing;
 // Design tokens and the component list (interface 3 of ROADMAP §6.2).
-#[allow(
-    dead_code,
-    reason = "the Studio's drawing moves onto the tokens in W5.2; the gallery shows them all now"
-)]
 mod tokens;
-mod viewport;
-mod zoom_input;
+mod ui;
+mod welcome;
+mod workspace;
 
 use clap::Parser;
+use gpui::{App, AppContext, Bounds, TitlebarOptions, WindowBounds, WindowOptions, px, size};
 use std::path::PathBuf;
 
 #[derive(Parser, Clone, Debug)]
@@ -74,9 +64,6 @@ pub struct Args {
     frames: Option<u64>,
     #[arg(long)]
     metrics: Option<PathBuf>,
-    /// Measure the Surface's GPU pass when the adapter supports timestamp queries.
-    #[arg(long)]
-    gpu_timestamps: bool,
     #[arg(long)]
     light: bool,
     /// Scale the UI, as display scaling does (1.5 is 150%); for checking
@@ -110,8 +97,8 @@ impl Args {
     fn scenario_running(&self) -> bool {
         false
     }
-    /// The `a-build`, `a-assistant` and `e-settings` journeys create the project at
-    /// `--project` through the UI.
+    /// The `a-build`, `a-assistant`, `d-daily`, `e-settings` and `chat`
+    /// journeys create the project at `--project` through the UI.
     #[cfg(feature = "automation")]
     fn creates_project(&self) -> bool {
         matches!(
@@ -123,54 +110,53 @@ impl Args {
     fn creates_project(&self) -> bool {
         false
     }
+    /// A run that measures: frames are never throttled while the window is
+    /// in the background.
+    pub(crate) fn measuring(&self) -> bool {
+        self.frames.is_some() || self.screenshot.is_some() || self.scenario_running()
+    }
 }
 
-fn main() -> eframe::Result {
+fn main() {
     timing::mark_process_start();
     let args = Args::parse();
-    let mut wgpu_setup = egui_wgpu::WgpuSetupCreateNew::without_display_handle();
-    if args.gpu_timestamps {
-        let original = wgpu_setup.device_descriptor.clone();
-        wgpu_setup.device_descriptor = std::sync::Arc::new(move |adapter| {
-            let mut descriptor = original(adapter);
-            if adapter.features().contains(gpu_timing::features()) {
-                descriptor.required_features |= gpu_timing::features();
+    gpui_platform::application()
+        .with_assets(ui::icon::Assets)
+        .run(move |cx: &mut App| {
+            if let Err(error) = cx.text_system().add_fonts(ui::icon::fonts()) {
+                eprintln!("The Studio's fonts could not be loaded: {error}");
             }
-            descriptor
+            gpui_base::init(cx);
+            commands::bind(cx);
+            ui::menu::bind(cx);
+            palette::bind(cx);
+            workspace::bind(cx);
+            let bounds = Bounds::centered(None, size(px(1600.0), px(1000.0)), cx);
+            let options = WindowOptions {
+                window_bounds: Some(WindowBounds::Windowed(bounds)),
+                titlebar: Some(TitlebarOptions {
+                    title: Some("Agentique Studio".into()),
+                    appears_transparent: true,
+                    traffic_light_position: None,
+                }),
+                window_min_size: Some(size(px(1080.0), px(720.0))),
+                app_id: Some("systems.agentique.studio".into()),
+                inactive_frame_interval: if args.measuring() {
+                    None
+                } else {
+                    WindowOptions::default().inactive_frame_interval
+                },
+                ..Default::default()
+            };
+            let args = args.clone();
+            let opened = cx.open_window(options, move |window, cx| {
+                let workspace = cx.new(|cx| workspace::Workspace::new(args, window, cx));
+                cx.new(|cx| gpui_base::Root::new(workspace, window, cx))
+            });
+            if let Err(error) = opened {
+                eprintln!("The Studio's window could not be opened: {error}");
+                cx.quit();
+            }
+            cx.activate(true);
         });
-    }
-    let recovery = surface_recovery::Recovery::default();
-    let surface_context = std::sync::Arc::new(std::sync::Mutex::new(None::<eframe::egui::Context>));
-    let error_context = surface_context.clone();
-    let error_recovery = recovery.clone();
-    let options = eframe::NativeOptions {
-        renderer: eframe::Renderer::Wgpu,
-        wgpu_options: egui_wgpu::WgpuConfiguration {
-            // eframe's own default since 0.35: one frame in flight.
-            surface: egui_wgpu::SurfaceConfig::LOW_LATENCY,
-            wgpu_setup: egui_wgpu::WgpuSetup::CreateNew(wgpu_setup),
-            on_surface_status: std::sync::Arc::new(move |status| {
-                let context = error_context.lock().expect("surface context").clone();
-                error_recovery.surface_status(status, context.as_ref())
-            }),
-        },
-        viewport: eframe::egui::ViewportBuilder::default()
-            .with_title("Agentique Studio")
-            .with_inner_size([1600.0, 1000.0])
-            .with_min_inner_size([1080.0, 720.0])
-            .with_app_id("systems.agentique.studio"),
-        ..Default::default()
-    };
-    eframe::run_native(
-        "Agentique Studio",
-        options,
-        Box::new(move |cc| {
-            *surface_context.lock().expect("surface context") = Some(cc.egui_ctx.clone());
-            if let Some(render_state) = &cc.wgpu_render_state {
-                recovery.attach(&cc.egui_ctx, &render_state.device);
-            }
-            gpu::install(cc, args.gpu_timestamps, recovery).map_err(std::io::Error::other)?;
-            Ok(Box::new(app::StudioApp::new(cc, args)))
-        }),
-    )
 }

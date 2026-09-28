@@ -44,12 +44,14 @@ pub mod space {
 }
 
 // ---- Radii (§3.2).
+// Tuned for the GPUI redesign (C-48): one step rounder than §3.2's starting
+// values, which read sharp at 150% and 200%.
 pub mod radius {
-    pub const TAG: f32 = 2.0;
-    pub const CONTROL: f32 = 4.0;
-    pub const CARD: f32 = 6.0;
-    pub const MENU: f32 = 8.0;
-    pub const DIALOG: f32 = 12.0;
+    pub const TAG: f32 = 4.0;
+    pub const CONTROL: f32 = 6.0;
+    pub const CARD: f32 = 8.0;
+    pub const MENU: f32 = 10.0;
+    pub const DIALOG: f32 = 14.0;
     /// Pills and ports: half the height.
     pub const FULL: f32 = f32::INFINITY;
 }
@@ -84,6 +86,12 @@ pub mod motion {
     pub const ACCELERATE: Curve = (1.0, 0.0, 1.0, 1.0);
     /// Fluent 2 `curveEasyEase`: things moving on screen.
     pub const EASY_EASE: Curve = (0.33, 0.0, 0.67, 1.0);
+    /// A critically damped spring (mass 1) for things that follow a choice
+    /// or the pointer (a switch, a sliding selection, a resized panel): it
+    /// settles in about 200 ms without overshoot and keeps its velocity
+    /// when the target changes.
+    pub const SPRING_STIFFNESS: f32 = 520.0;
+    pub const SPRING_DAMPING: f32 = 45.6;
 }
 
 /// An sRGB colour with alpha.

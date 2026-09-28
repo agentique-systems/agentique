@@ -344,9 +344,8 @@ the first run. Rarely used paths are clean and consistent but plain.
 - **A component gallery** (`--fixture components`) shows every token and
   component in both themes, so drift in the design system is visible in one
   place (R-26).
-- **Blind comparison** decides the toolkit (S4.1): the Operator scores text,
-  motion and "does not look like a widget toolkit" without knowing which build
-  is which.
+- **The toolkit** is GPUI, the Operator's choice (C-48); S4.1's blind
+  comparison was not run.
 - **What the Operator checks** on each review: nothing clipped or overlapping;
   one spacing grid; one type scale; states (hover, press, focus, disabled,
   selected, changed) look the same everywhere; motion is short and purposeful;
@@ -444,7 +443,10 @@ at `6fc90b78`, single runs unless noted (§5.2).
 "Frame time" means the p95 of frame intervals during the scripted pan and zoom,
 with no missed display frames, together with the CPU and GPU time per frame the
 harness reports. On a display faster than 120 Hz the interval is limited by the
-display, so the CPU and GPU times are checked too.
+display, so the CPU and GPU times are checked too. Since C-48 the Studio draws
+through GPUI, which exposes no GPU timestamps: the harness reports frame
+intervals and the UI's CPU time per frame, and the GPU pass is no longer
+measured.
 
 | Budget | Target | Baseline (measured unless marked) | How it is measured continuously |
 |---|---|---|---|
@@ -527,8 +529,9 @@ marks what the Studio already has.
 - **Screen readers:** every control, panel, Conversation message, tool card and
   selected Surface element has an accessible name and role through AccessKit.
   The target is 18 of 20 checklist items read correctly by Windows Narrator
-  (S4.1, gate G6). egui has no live regions yet [72]; announcements of streamed
-  replies are listed as a known limit until it has.
+  (S4.1, gate G6). GPUI carries AccessKit on Windows (`gpui-pre-windows`
+  0.3.7); where it falls short the Operator accepts the regression (C-48), and
+  the gap is listed in `docs/stages.md`.
 - **Contrast:** body text at Radix step 11 or 12 on steps 1–3; lines and focus
   rings at 3:1 or more [63].
 - **No colour-only meaning:** port direction is a shape, locks and problems
@@ -1263,8 +1266,8 @@ single runs unless noted; raw outputs are kept outside the repository.
 | Conversation format | **Replace** with format 2 (provider-neutral); format 1 conversations are imported read-only as transcripts | R-23 |
 | `crates/studio-native` | **Keep and restructure**: tokens and components, docked panels, Settings view, Conversation polish; journeys extended | C-32 |
 | `theme.rs` | **Replace** by the tokens module and generated themes | R-26 |
-| `markdown.rs` | **Keep and extend** (selection, tables), unless S4.1 decides otherwise | S4.1 |
-| `gpu.rs`, `scene.wgsl` | **Keep** | Not the bottleneck; carries over to any toolkit that can host it (S4.1) |
+| `markdown.rs` | **Rewrite** on GPUI (selection across messages, tables) | C-48 |
+| `gpu.rs`, `scene.wgsl` | **Replace**: GPUI draws the Surface with its own quads, paths and text in paint layers | GPUI cannot host wgpu output on Windows (C-48) |
 | `crates/studio-scene` | **Keep**; add incremental layout and routing, named level-of-detail tiers | R-28 |
 | Session file | **Simplify**: presentation state only; preferences move to `settings.json` | R-43 |
 | Automation journeys and stress run | **Keep** (feature `automation`); add budget assertions and journeys D, E, F | R-27 |
@@ -1355,8 +1358,9 @@ and 6 build on are merged. Performance budgets are measured continuously.
 - **W4.8 Self-model**: add the planned `Providers` part and its dependencies;
   extend the check (§4.6).
 
-**Spike S4.1: toolkit** (R-20). Ten working days, hard stop, throwaway
-branches only; nothing merges. Exception (§7.6, 2026-09-27): Track A's code may
+**Spike S4.1: toolkit** (R-20). *Superseded by the Operator's decision C-48
+(2026-09-28): the Studio moves to GPUI; Track B's gates were waived.* Ten
+working days, hard stop, throwaway branches only; nothing merges. Exception (§7.6, 2026-09-27): Track A's code may
 be kept and merged as W5.1 after review.
 
 - **Tracks.** (A) egui upgraded to 0.36, plus the four "to the bar" items:
@@ -1495,8 +1499,8 @@ selectable (C-34, C-35), and behaves as in Stage 3.
 
 **Work items**
 
-- **W5.1 Toolkit.** Apply S4.1's decision: upgrade egui to 0.36 and do the four
-  "to the bar" items, or migrate.
+- **W5.1 Toolkit.** Migrate the Studio to GPUI and redesign its presentation
+  (C-48), keeping its behaviour, journeys and budgets.
 - **W5.2 Design system.** Tokens and generated themes; components with every
   state in the gallery; one icon set after a licence check; typography decided
   side by side (Q-17); the literal-value check of §8.5 rule 1.
@@ -1741,6 +1745,7 @@ Confirmed in the interview of 2026-09-27:
 | C-45 | Agents first appear in the Studio with the agentic Assistant (Stage 6) |
 | C-46 | An agent in a designed system is implemented in the project's own code, linked and checked (provisional until Q-2) |
 | C-47 | `ROADMAP.md` replaces `REALIGNMENT.md` as the single governing text; `REALIGNMENT.md` is retired to git history |
+| C-48 | The Studio moves from egui to GPUI (a pinned snapshot of Zed's GPUI, `gpui-pre`, with the unstyled `gpui-base` primitives), with its presentation redesigned; the Operator accepts the governance risk and waives S4.1 Track B's gates. The Surface is drawn with GPUI's own primitives, since GPUI cannot show wgpu output on Windows |
 
 ### 7.2 Recommendations
 
@@ -1797,7 +1802,7 @@ Confirmed in the interview of 2026-09-27:
 | R-41 | Add the standard `dependency` relationship to the subset so that CI can validate `models/agentique/` with `agq-language`; `check_architecture.py` also forbids the rig crates, tokio, reqwest and the credential-store crates outside Providers (`reqwest` in `agq-assistant` is a temporary exception until W5.7) and tolerates model constructs it does not need | C-20; R-15 |
 | R-42 | Cost display per turn and per day, from provider usage and a dated local price table marked as an estimate, per provider in Settings | C-37; the Models API has no prices [16] |
 | R-43 | One per-project folder in the app's local data (`projects\<folder>-<hash>\`: conversation, notes, skills); existing conversations move there; the session file keeps only presentation state; preferences move to `settings.json` *(provisional for notes and skills, Q-10)* | C-26; one place per kind of data |
-| R-44 | Investigate the memory footprint in Stage 5 (wgpu backend on Windows, font atlas, buffers) before fixing the memory budgets | §5.2: 322 MB at rest, not understood |
+| R-44 | Investigate the memory footprint in Stage 5 (the renderer on Windows, font atlas, buffers) before fixing the memory budgets | §5.2: 322 MB at rest, not understood |
 | R-45 | The evaluation set also compares default models and effort (for example `claude-opus-5` at `high` against `claude-opus-5-5` at `medium` and `high`) and every Assistant provider (Anthropic, OpenAI, OpenRouter, DeepSeek) before any default changes | Q-19; C-27 |
 | R-46 | A three-step first run (what Agentique is; connect a provider or skip; create or open a project), with the URL shortener as a sample | Scenario E1 |
 
@@ -1809,7 +1814,7 @@ Confirmed in the interview of 2026-09-27:
 | A-2 | A small KerML/SysML subset is enough for Scenario A | Holds for the architecture steps; simulation extends it (Stage 7) |
 | A-3 | SysML text in git with an identity file preserves element identity well enough | Holds in the Stage 1–2 tests; unnamed elements are matched by position (a known limit) |
 | A-4 | The Claude API with tool use produces coherent architecture changes through typed tools | Open: tested live in Stage 4 (§2.2, R-19) |
-| A-5 | egui (with custom rendering) can reach the quality bar, including the Conversation | Open: S4.1 |
+| A-5 | egui (with custom rendering) can reach the quality bar, including the Conversation | Closed: the Operator chose GPUI (C-48) |
 | A-6 | Nothing in Generation 1 is used by anyone else | Held; retired with no reported cost |
 | A-7 | rig's churn can be contained in `agq-providers` and absorbed on our schedule | S4.2, then every rig upgrade |
 | A-8 | OpenAI, OpenRouter and DeepSeek models use the Assistant's tools and follow its skills well enough for daily work | Evaluation set per provider (Stages 4 and 6); DeepSeek live first (C-35) |
@@ -1827,7 +1832,7 @@ Confirmed in the interview of 2026-09-27:
 | Q-3 | What exactly counts as a "major decision" | Partly resolved: the autonomy modes (C-38) settle the levels; the definition lives in the `decisions` skill and is refined with the evaluation set |
 | Q-4 | Orchestrator design: which assistant roles, how they coordinate (multi-agent systems cost about 15 times the tokens of a chat [22]) | No (after Stage 8) |
 | Q-5 | What simulation semantics are needed to test contracts (message flows, states, actions, time?) | Blocks Stage 7 design (S7.1) |
-| Q-6 | Whether egui is the right toolkit for the quality bar | Reopened (C-28); decided by S4.1 |
+| Q-6 | Whether egui is the right toolkit for the quality bar | Decided by the Operator: GPUI (C-48) |
 | Q-7 | How to read an existing codebase into a model | No (Stage 10) |
 | Q-8 | Which parts of the SysML standard the Operator would miss under the subset | No (reviewed as it grows) |
 | Q-9 | Where conversation history is stored | Resolved (C-26) |
@@ -1893,6 +1898,7 @@ The ADRs named here are preserved at the tag `archive/pre-realignment`.
 | 2026-09-27 | S4.1 Track A built on a branch kept for W5.1 review: egui and eframe 0.36.2 with wgpu 30.0.1; the Rust toolchain moves from 1.92.0 to 1.97.1 (egui 0.36 needs 1.95; 1.97.1 was already installed); Inter's variable font replaces the three static weights; the Studio uses eframe's low-latency surface (one frame in flight), eframe's own default since 0.35. S4.1's provisional decision is to stay with egui 0.36 and keep Track A as W5.1: Track A failed no gate it was measured on (G1 partly, G3, G4, G5, G8 partly); G2, G6 and G7 and all of Track B were not tried, so the rule does not settle it yet (`docs/stages.md`). Decided overnight 2026-09-28, pending Operator confirmation | §7.6 exception for Track A (overnight instructions, point 3); egui's minimum Rust version |
 | 2026-09-28 | S5.1 decided by its rule: routing was 98% of a rebuild, so an edit lays out the cards in full with `LayoutMemory` and re-routes only edges whose ends or lane changed or whose route crosses the old or new place of a changed card (R-28 amended). The Surface half of an edit on the 10k fixture takes 71–86 ms (77.7 ms on CI), 5–7 ms at 1k; unrelated cards do not move. A kept route may keep a detour a full build would not choose, and routes then depend on the edit history (undo does not always restore earlier routes) until the next full build. With the Studio on `Scene::update`, an edit on a 10,204-element project reaches a built frame in 127 ms (median, CPU side, before presenting): the scene takes 17 ms, applying and saving the change and rebuilding the scene input about 95 ms. That is over C-33's 100 ms, so A-9's first half is not yet met; W5.5 continues with apply and save. The spike's code is kept and merged as the start of W5.5, a deviation from "throwaway" (§8.8). Decided overnight 2026-09-28, pending Operator confirmation | Criterion of S5.1; A-9 |
 | 2026-09-28 | Stage 5 details decided overnight: appearance (theme, contrast, reduced motion) lives in `settings.json`, and a Stage 4 session hands its values over once; "per day" costs (R-42) are UTC days, since the workspace has no date library and the local time zone needs a Windows call; the first run's welcome (R-46) shows until a first project is opened, and the URL shortener sample is created as a new project beside the default folder; Shift+1 and Shift+2 are read by the key's place on the keyboard. Decided overnight 2026-09-28, pending Operator confirmation | §3.7, R-42, R-46, Scenario D2 |
+| 2026-09-28 | **C-48, the Operator's decision:** the Studio moves from egui to GPUI and its presentation is redesigned (W5.1). The Operator accepts the governance risk (the official `gpui` crate has been frozen at 0.2.2 since 2025-10-22; the Studio pins the weekly snapshot `gpui-pre =0.3.7` with the unstyled `gpui-base =0.7.0`) and waives S4.1 Track B's gates; A-5 and Q-6 are closed. The Operator also accepts a screen-reader regression if GPUI falls short; `gpui-pre-windows` 0.3.7 carries AccessKit, so the §3.5 names are kept where it exposes them. The wgpu renderer (`gpu.rs`, `scene.wgsl`) is replaced by GPUI's quads, paths and text; GPU timestamps are no longer measured (§3.3). A probe on the reference machine drew the 10k stress fixture with every edge and label at frame interval p95 about 14 ms, and 1k at the display rate | The Operator's instruction in this session; GPUI's ceiling on text, motion and components (S4.1 "Why these two") |
 
 ### 7.7 The original requirements
 

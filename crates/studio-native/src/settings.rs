@@ -384,6 +384,147 @@ impl Settings {
     }
 }
 
+/// The sections of the Settings view (§3.7), in order.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Section {
+    Providers,
+    Assistant,
+    Appearance,
+    Keyboard,
+    Projects,
+    Advanced,
+    About,
+}
+
+impl Section {
+    pub const ALL: [Section; 7] = [
+        Section::Providers,
+        Section::Assistant,
+        Section::Appearance,
+        Section::Keyboard,
+        Section::Projects,
+        Section::Advanced,
+        Section::About,
+    ];
+
+    pub fn title(self) -> &'static str {
+        match self {
+            Section::Providers => "Providers",
+            Section::Assistant => "Assistant",
+            Section::Appearance => "Appearance",
+            Section::Keyboard => "Keyboard",
+            Section::Projects => "Projects",
+            Section::Advanced => "Advanced",
+            Section::About => "About",
+        }
+    }
+}
+
+/// The Studio's settings: the values, where they are saved and whether this
+/// version may write that file. What they change is applied by the Studio.
+pub struct SettingsStore {
+    pub settings: Settings,
+    /// False when the file is in a format this version does not write.
+    writable: bool,
+    path: PathBuf,
+    /// Why the last save failed.
+    pub save_error: Option<String>,
+}
+
+impl SettingsStore {
+    pub fn load(path: PathBuf) -> SettingsStore {
+        let (settings, writable) = Settings::load(&path);
+        SettingsStore {
+            settings,
+            writable,
+            path,
+            save_error: None,
+        }
+    }
+
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+
+    /// The Assistant's model: the provider, model and effort set here, with
+    /// the environment variables winning over them.
+    pub fn model_choice(&self) -> agq_assistant::ModelChoice {
+        let (provider, model, effort) = (
+            self.text("assistant.provider"),
+            self.text("assistant.model"),
+            self.text("assistant.effort"),
+        );
+        agq_assistant::ModelChoice::configured(Some(&provider), Some(&model), Some(&effort))
+    }
+
+    /// Takes the appearance a Stage 4 session remembered, once.
+    pub fn adopt_appearance(&mut self, dark: bool, contrast: bool, reduced_motion: bool) {
+        let theme = match (contrast, dark) {
+            (true, _) => "high-contrast",
+            (false, true) => "dark",
+            (false, false) => "light",
+        };
+        self.set("appearance.theme", Value::from(theme));
+        if reduced_motion {
+            self.set("appearance.reducedMotion", Value::from("on"));
+        }
+    }
+
+    /// A setting's value as text; empty for "not set".
+    pub fn text(&self, id: &str) -> String {
+        match self.settings.get(id) {
+            Value::String(text) => text,
+            other => other.to_string(),
+        }
+    }
+
+    pub fn get(&self, id: &str) -> Value {
+        self.settings.get(id)
+    }
+
+    pub fn changed(&self, id: &str) -> bool {
+        self.settings.changed(id)
+    }
+
+    /// Sets a value and saves it; a value the table does not allow is
+    /// refused with its message.
+    pub fn set(&mut self, id: &str, value: Value) -> Result<(), &'static str> {
+        self.settings.set(id, value)?;
+        self.save();
+        Ok(())
+    }
+
+    /// Resets every setting to its default, keeping `settings.json.bak`
+    /// first (§3.7 Danger zone). True when the settings were reset.
+    pub fn reset_all(&mut self) -> bool {
+        if self.path.exists()
+            && let Err(error) = std::fs::copy(&self.path, self.path.with_extension("json.bak"))
+        {
+            self.save_error = Some(format!(
+                "Nothing was reset: settings.json could not be copied first ({error})."
+            ));
+            return false;
+        }
+        self.settings.reset_all();
+        self.save();
+        true
+    }
+
+    fn save(&mut self) {
+        if !self.writable {
+            self.save_error = Some(
+                "settings.json is in a format this version does not write; changes last until Agentique closes.".into(),
+            );
+            return;
+        }
+        self.save_error = self
+            .settings
+            .save(&self.path)
+            .err()
+            .map(|error| format!("settings.json could not be saved ({error})."));
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

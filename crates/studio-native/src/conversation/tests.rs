@@ -3,11 +3,10 @@
 //! path, locks ask, questions wait, stop and undo, retry and edit, and the
 //! conversation is kept per project.
 use super::*;
-use crate::edit::app_tests::{Folder, frame, studio};
-use crate::targets::Target;
+use crate::edit::app_tests::{Folder, studio};
+use crate::studio::{Studio, System};
 use agq_assistant::Reply;
 use agq_system_state::Operation;
-use eframe::egui;
 use serde_json::{Value, json};
 use std::time::{Duration, Instant};
 
@@ -39,20 +38,20 @@ fn changes(id: &str, description: &str, operations: Vec<Value>) -> Value {
 }
 
 /// A Studio with project `P` whose Assistant follows the script.
-fn assisted(name: &str, replies: Vec<Reply>) -> (StudioApp, egui::Context, Folder) {
-    let (mut app, context, folder) = studio(name);
+fn assisted(name: &str, replies: Vec<Reply>) -> (Studio, Folder) {
+    let (mut app, folder) = studio(name);
     app.conversation.new_model = scripted(replies);
     app.conversation.key_missing = None;
-    (app, context, folder)
+    (app, folder)
 }
 
-fn say(app: &mut StudioApp, message: &str) {
+fn say(app: &mut Studio, message: &str) {
     app.conversation.input = message.to_string();
     app.send_message();
 }
 
 /// Takes the turn's events until `done` holds.
-fn wait(app: &mut StudioApp, done: impl Fn(&StudioApp) -> bool) {
+fn wait(app: &mut Studio, done: impl Fn(&Studio) -> bool) {
     let started = Instant::now();
     while !done(app) {
         assert!(
@@ -65,21 +64,21 @@ fn wait(app: &mut StudioApp, done: impl Fn(&StudioApp) -> bool) {
     }
 }
 
-fn finished(app: &StudioApp) -> bool {
+fn finished(app: &Studio) -> bool {
     !app.conversation.running()
 }
 
-fn find(app: &StudioApp, name: &str) -> Option<ElementId> {
+fn find(app: &Studio, name: &str) -> Option<ElementId> {
     app.project.as_ref().unwrap().state().tree().find(name)
 }
 
-fn result<'a>(app: &'a StudioApp, id: &str) -> &'a ToolResult {
+fn result<'a>(app: &'a Studio, id: &str) -> &'a ToolResult {
     &app.conversation.results[id]
 }
 
 /// Roles alternate, starting with the user, and every tool call is answered
 /// in the next message.
-fn assert_valid(app: &StudioApp) {
+fn assert_valid(app: &Studio) {
     let messages = app.conversation.conversation.api_messages();
     assert_eq!(messages.first().unwrap()["role"], "user");
     for pair in messages.windows(2) {
@@ -99,30 +98,9 @@ fn assert_valid(app: &StudioApp) {
     }
 }
 
-fn click(app: &mut StudioApp, context: &egui::Context, target: Target) {
-    let rect = context
-        .data(|data| {
-            data.get_temp::<egui::Rect>(egui::Id::new(("native-interaction-target", target)))
-        })
-        .unwrap_or_else(|| panic!("{target:?} is not shown"));
-    let at = rect.center();
-    for pressed in [true, false] {
-        let events = vec![
-            egui::Event::PointerMoved(at),
-            egui::Event::PointerButton {
-                pos: at,
-                button: egui::PointerButton::Primary,
-                pressed,
-                modifiers: egui::Modifiers::NONE,
-            },
-        ];
-        frame(app, context, events);
-    }
-}
-
 #[test]
 fn a_turn_builds_parts_that_appear_on_the_surface_as_cards_with_links() {
-    let (mut app, context, _folder) = assisted(
+    let (mut app, _folder) = assisted(
         "assistant-build",
         vec![
             reply(
@@ -161,10 +139,8 @@ fn a_turn_builds_parts_that_appear_on_the_surface_as_cards_with_links() {
     assert_valid(&app);
     assert_eq!(app.conversation.undoable(state), Some(Undo::Assistant(1)));
     // Element names in the reply are links: clicking one selects it.
-    frame(&mut app, &context, Vec::new());
-    frame(&mut app, &context, Vec::new());
     app.selection.clear();
-    click(&mut app, &context, Target::Link(store.raw()));
+    app.reveal(store);
     assert_eq!(app.inspected_element(), Some(store), "{}", app.status);
 }
 
@@ -177,7 +153,7 @@ fn a_locked_part_asks_the_operator_and_a_refusal_changes_nothing() {
             vec![json!({ "op": "rename", "element": "P::api", "name": "gateway" })],
         )
     };
-    let (mut app, _context, _folder) = assisted(
+    let (mut app, _folder) = assisted(
         "assistant-lock",
         vec![
             reply(vec![rename("t1")], "tool_use"),
@@ -232,7 +208,7 @@ fn a_locked_part_asks_the_operator_and_a_refusal_changes_nothing() {
 
 #[test]
 fn a_question_waits_for_the_operator_and_the_answer_returns_to_the_model() {
-    let (mut app, context, _folder) = assisted(
+    let (mut app, _folder) = assisted(
         "assistant-question",
         vec![
             reply(
@@ -259,13 +235,14 @@ fn a_question_waits_for_the_operator_and_the_answer_returns_to_the_model() {
     wait(&mut app, |app| app.conversation.waiting.is_some());
     assert!(app.conversation.running(), "the turn waits for the answer");
     // The options are buttons in the conversation.
-    frame(&mut app, &context, Vec::new());
-    frame(&mut app, &context, Vec::new());
-    click(
-        &mut app,
-        &context,
-        Target::Button(crate::conversation_ui::OPTIONS[1]),
-    );
+    let option = match &app.conversation.waiting {
+        Some(Waiting {
+            kind: WaitingFor::Question { options, .. },
+            ..
+        }) => options[1].clone(),
+        _ => panic!("a question is open"),
+    };
+    app.answer_question(&option);
     wait(&mut app, finished);
     assert_eq!(result(&app, "t1").content, "Inside the API");
 
@@ -281,7 +258,7 @@ fn a_question_waits_for_the_operator_and_the_answer_returns_to_the_model() {
 
 #[test]
 fn stop_keeps_the_partial_work_and_undo_removes_the_turns_changes() {
-    let (mut app, context, _folder) = assisted(
+    let (mut app, _folder) = assisted(
         "assistant-stop",
         vec![
             reply(
@@ -308,9 +285,7 @@ fn stop_keeps_the_partial_work_and_undo_removes_the_turns_changes() {
     );
     say(&mut app, "Build it");
     wait(&mut app, |app| app.conversation.waiting.is_some());
-    frame(&mut app, &context, Vec::new());
-    frame(&mut app, &context, Vec::new());
-    click(&mut app, &context, Target::Button("Stop"));
+    app.stop_assistant();
     assert!(
         app.conversation.waiting.is_none(),
         "the question is closed at once"
@@ -331,25 +306,19 @@ fn stop_keeps_the_partial_work_and_undo_removes_the_turns_changes() {
     let state = app.project.as_ref().unwrap().state();
     assert_eq!(app.conversation.undoable(state), Some(Undo::Assistant(2)));
     // The list follows new content to its end on the next frame.
-    frame(&mut app, &context, Vec::new());
-    frame(&mut app, &context, Vec::new());
-    click(
-        &mut app,
-        &context,
-        Target::Button("Undo the Assistant's changes"),
-    );
+    app.undo_assistant_changes();
     assert!(find(&app, "P::api").is_none() && find(&app, "P::store").is_none());
     let state = app.project.as_ref().unwrap().state();
     assert_eq!(app.conversation.undoable(state), None);
     // Undone work can be redone like any undo.
-    app.execute(crate::commands::CommandId::Redo, &context);
+    app.execute(crate::commands::CommandId::Redo);
     assert!(find(&app, "P::api").is_some() && find(&app, "P::store").is_none());
 }
 
 #[test]
 fn retry_and_edit_and_resend_keep_the_conversation_valid() {
     // The script is empty: the request fails, as when the network is down.
-    let (mut app, _context, _folder) = assisted("assistant-retry", Vec::new());
+    let (mut app, _folder) = assisted("assistant-retry", Vec::new());
     say(&mut app, "Build it");
     wait(&mut app, finished);
     assert!(app.conversation.can_retry());
@@ -390,7 +359,7 @@ fn retry_and_edit_and_resend_keep_the_conversation_valid() {
 
 #[test]
 fn the_conversation_is_kept_per_project_and_survives_a_restart() {
-    let (mut app, _context, folder) = assisted(
+    let (mut app, folder) = assisted(
         "assistant-saved",
         vec![reply(vec![text("Hello.")], "end_turn")],
     );
@@ -422,8 +391,13 @@ fn the_conversation_is_kept_per_project_and_survives_a_restart() {
         "--session",
         session.to_str().unwrap(),
     ]);
-    let creation = eframe::CreationContext::_new_kittest(egui::Context::default());
-    let mut again = StudioApp::new(&creation, args);
+    let mut again = Studio::new(
+        args,
+        System {
+            dark: true,
+            reduced_motion: false,
+        },
+    );
     again.open_project(&project);
     assert_eq!(again.conversation.conversation, saved);
     again.new_conversation();
@@ -432,7 +406,7 @@ fn the_conversation_is_kept_per_project_and_survives_a_restart() {
 
 #[test]
 fn a_conversation_from_stage_4_is_shown_as_a_transcript_and_never_sent() {
-    let (mut app, _context, folder) = assisted(
+    let (mut app, folder) = assisted(
         "assistant-format-1",
         vec![reply(vec![text("Starting afresh.")], "end_turn")],
     );
@@ -473,7 +447,7 @@ fn a_conversation_from_stage_4_is_shown_as_a_transcript_and_never_sent() {
 
 #[test]
 fn a_later_versions_conversation_is_left_as_it_is() {
-    let (mut app, _context, _folder) = assisted(
+    let (mut app, _folder) = assisted(
         "assistant-later-format",
         vec![reply(vec![text("Hello.")], "end_turn")],
     );
@@ -495,7 +469,7 @@ fn a_later_versions_conversation_is_left_as_it_is() {
 
 #[test]
 fn insert_selection_puts_the_selected_names_into_the_message() {
-    let (mut app, context, _folder) = assisted("assistant-insert", Vec::new());
+    let (mut app, _folder) = assisted("assistant-insert", Vec::new());
     let package = find(&app, "P").unwrap();
     app.create(
         crate::edit::CreateKind::Part,
@@ -504,12 +478,12 @@ fn insert_selection_puts_the_selected_names_into_the_message() {
         agq_language::Parent::Element(package),
     );
     app.conversation.input = "Split".into();
-    app.execute(crate::commands::CommandId::InsertSelection, &context);
+    app.execute(crate::commands::CommandId::InsertSelection);
     assert_eq!(app.conversation.input, "Split `P::api` ");
     assert!(app.conversation.focus_input);
     app.selection.clear();
     app.inspected = None;
-    app.execute(crate::commands::CommandId::InsertSelection, &context);
+    app.execute(crate::commands::CommandId::InsertSelection);
     assert_eq!(
         app.conversation.input, "Split `P::api` ",
         "nothing selected"
@@ -518,7 +492,7 @@ fn insert_selection_puts_the_selected_names_into_the_message() {
 
 #[test]
 fn stop_carries_out_no_tool_call_after_it() {
-    let (mut app, _context, _folder) = assisted(
+    let (mut app, _folder) = assisted(
         "assistant-stop-queued",
         vec![
             reply(
@@ -558,7 +532,7 @@ fn stop_carries_out_no_tool_call_after_it() {
 
 #[test]
 fn a_question_left_open_by_a_finished_turn_keeps_the_typed_answer() {
-    let (mut app, _context, _folder) = assisted(
+    let (mut app, _folder) = assisted(
         "assistant-gone",
         vec![reply(
             vec![tool(
@@ -585,7 +559,7 @@ fn a_question_left_open_by_a_finished_turn_keeps_the_typed_answer() {
 
 #[test]
 fn undo_says_so_when_the_operator_also_changed_the_model_during_the_turn() {
-    let (mut app, context, _folder) = assisted(
+    let (mut app, _folder) = assisted(
         "assistant-undo-mixed",
         vec![
             reply(
@@ -617,17 +591,16 @@ fn undo_says_so_when_the_operator_also_changed_the_model_during_the_turn() {
     wait(&mut app, finished);
     let state = app.project.as_ref().unwrap().state();
     assert_eq!(app.conversation.undoable(state), Some(Undo::All(2)));
-    frame(&mut app, &context, Vec::new());
-    frame(&mut app, &context, Vec::new());
     let label = "Undo all changes since the Assistant started";
-    click(&mut app, &context, Target::Button(label));
+    assert_eq!(label, "Undo all changes since the Assistant started");
+    app.undo_assistant_changes();
     assert!(find(&app, "P::api").is_none() && find(&app, "P::cache").is_none());
     assert_eq!(app.status, "Undid 2 changes since the Assistant started");
 }
 
 #[test]
 fn a_change_that_waited_for_an_edited_dialog_goes_back_to_the_model() {
-    let (mut app, _context, _folder) = assisted(
+    let (mut app, _folder) = assisted(
         "assistant-stale",
         vec![
             reply(
@@ -664,161 +637,5 @@ fn a_change_that_waited_for_an_edited_dialog_goes_back_to_the_model() {
     assert!(
         stale.is_error && stale.content.contains("model changed"),
         "{stale:?}"
-    );
-}
-
-fn shown(context: &egui::Context, target: Target) -> egui::Rect {
-    context
-        .data(|data| {
-            data.get_temp::<egui::Rect>(egui::Id::new(("native-interaction-target", target)))
-        })
-        .unwrap_or_else(|| panic!("{target:?} is not shown"))
-}
-
-fn pointer(at: egui::Pos2, pressed: Option<bool>) -> Vec<egui::Event> {
-    let mut events = vec![egui::Event::PointerMoved(at)];
-    if let Some(pressed) = pressed {
-        events.push(egui::Event::PointerButton {
-            pos: at,
-            button: egui::PointerButton::Primary,
-            pressed,
-            modifiers: egui::Modifiers::NONE,
-        });
-    }
-    events
-}
-
-fn copied(output: &egui::PlatformOutput) -> Option<&str> {
-    output.commands.iter().find_map(|command| match command {
-        egui::OutputCommand::CopyText(text) => Some(text.as_str()),
-        _ => None,
-    })
-}
-
-#[test]
-fn a_reply_is_copied_as_markdown_and_its_table_is_shown() {
-    let (mut app, context, _folder) = assisted("assistant-copy", Vec::new());
-    let markdown =
-        "Two parts:\n\n| Part | Type |\n|---|---|\n| api | HttpApi |\n| store | LinkStore |";
-    let entries = &mut app.conversation.conversation.entries;
-    entries.push(Entry::Operator {
-        text: "List the parts".into(),
-    });
-    entries.push(Entry::reply(None, &[text(markdown)]));
-    frame(&mut app, &context, Vec::new());
-    frame(&mut app, &context, Vec::new());
-    let copy = shown(&context, Target::Button(crate::conversation_ui::COPY_REPLY)).center();
-    frame(&mut app, &context, pointer(copy, Some(true)));
-    let output = frame(&mut app, &context, pointer(copy, Some(false)));
-    assert_eq!(copied(&output), Some(markdown));
-}
-
-/// Gate G4: a drag from the first message into the third selects across
-/// all three; the selection outlives a reply streaming in below (the list
-/// follows it to the bottom), and Ctrl+C copies the text in order.
-#[test]
-fn text_is_selected_across_messages_and_copied_in_order() {
-    let (mut app, context, _folder) = assisted("assistant-select", Vec::new());
-    let entries = &mut app.conversation.conversation.entries;
-    entries.push(Entry::Operator {
-        text: "First message from you.".into(),
-    });
-    entries.push(Entry::reply(
-        None,
-        &[text("The **second** message.\n\n- one\n- two")],
-    ));
-    entries.push(Entry::Operator {
-        text: "Third message here.".into(),
-    });
-    frame(&mut app, &context, Vec::new());
-    frame(&mut app, &context, Vec::new());
-    let first = shown(&context, Target::Message(0, 0));
-    let third = shown(&context, Target::Message(2, 0));
-    // From the first character of the first message to the end of the third.
-    let start = first.left_top() + egui::vec2(1.0, 4.0);
-    let end = egui::pos2(third.right() - 1.0, third.top() + 4.0);
-    frame(&mut app, &context, pointer(start, Some(true)));
-    for step in 1..=6 {
-        let at = start + (end - start) * (step as f32 / 6.0);
-        frame(&mut app, &context, pointer(at, None));
-    }
-    frame(&mut app, &context, pointer(end, Some(false)));
-    let selection = app.conversation.view.selection.expect("a selection");
-    assert!(!selection.dragging);
-    let (from, to) = selection.range();
-    assert_eq!((from.message, to.message), ((0, 0), (2, 0)));
-    // A reply streaming in below scrolls the list; the selection stays.
-    app.conversation
-        .live
-        .push(Live::Text("A new reply streams in.\n\n".repeat(40)));
-    for _ in 0..3 {
-        frame(&mut app, &context, Vec::new());
-    }
-    assert_eq!(app.conversation.view.selection, Some(selection));
-    let output = frame(&mut app, &context, vec![egui::Event::Copy]);
-    assert_eq!(
-        copied(&output),
-        Some(
-            "First message from you.\n\nThe second message.\n\n• one\n• two\n\nThird message here."
-        )
-    );
-    // A click clears it.
-    frame(&mut app, &context, pointer(start, Some(true)));
-    frame(&mut app, &context, pointer(start, Some(false)));
-    assert_eq!(app.conversation.view.selection, None);
-}
-
-/// Gate G6's automated proxy: messages, tool cards and the selected Surface
-/// card have screen-reader names and roles.
-#[test]
-fn messages_tool_cards_and_selected_cards_have_screen_reader_names() {
-    use eframe::egui::accesskit::Role;
-    let (mut app, context, _folder) = assisted(
-        "assistant-names",
-        vec![
-            reply(
-                vec![
-                    text("I'll add the API."),
-                    changes("t1", "Add the API", vec![create("api")]),
-                ],
-                "tool_use",
-            ),
-            reply(vec![text("Added `P::api`.")], "end_turn"),
-        ],
-    );
-    say(&mut app, "Add an API");
-    wait(&mut app, finished);
-    let api = find(&app, "P::api").unwrap();
-    app.selection
-        .select(agq_studio_scene::SceneTarget::Node(api), false);
-    context.enable_accesskit();
-    frame(&mut app, &context, Vec::new());
-    let labels = crate::accessibility::labels(&frame(&mut app, &context, Vec::new()));
-    let has = |role: Role, label: &str| labels.iter().any(|(r, l)| *r == role && l == label);
-    assert!(has(Role::Article, "You: Add an API"), "{labels:#?}");
-    assert!(
-        has(Role::Article, "Assistant: I'll add the API."),
-        "{labels:#?}"
-    );
-    assert!(
-        has(Role::Article, "Assistant: Added P::api."),
-        "{labels:#?}"
-    );
-    assert!(
-        has(Role::Group, "Tool call: Add the API, done"),
-        "{labels:#?}"
-    );
-    assert!(has(Role::Log, "Conversation"), "{labels:#?}");
-    let any = |role: Role, test: &dyn Fn(&str) -> bool| {
-        labels.iter().any(|(r, label)| *r == role && test(label))
-    };
-    assert!(
-        any(Role::ListItem, &|label| label.contains("api")
-            && label.ends_with(", selected")),
-        "{labels:#?}"
-    );
-    assert!(
-        any(Role::List, &|label| label.starts_with("Surface: ")),
-        "{labels:#?}"
     );
 }

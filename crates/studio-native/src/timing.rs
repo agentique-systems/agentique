@@ -95,7 +95,7 @@ pub struct FrameTiming {
     raw_input_to_next_update: Samples,
     ui_cpu: Samples,
     visibility: Samples,
-    batches: Samples,
+    surface_paint: Samples,
     labels: Samples,
     /// A change applied to the model, until the frame that shows it is
     /// built (edit to Surface, §3.3; CPU side, without presenting).
@@ -111,13 +111,9 @@ impl FrameTiming {
     pub fn visibility(&mut self, duration: Duration) {
         self.visibility.push(duration.as_secs_f64() * 1000.0);
     }
-    /// How many GPU batches were built.
-    #[cfg(test)]
-    pub fn batches_built(&self) -> usize {
-        self.batches.summary().total_samples
-    }
-    pub fn batch(&mut self, duration: Duration) {
-        self.batches.push(duration.as_secs_f64() * 1000.0);
+    /// The Surface's paint took this long (CPU).
+    pub fn surface_paint(&mut self, duration: Duration) {
+        self.surface_paint.push(duration.as_secs_f64() * 1000.0);
     }
     /// A change is being applied; the frame that shows it ends the timing.
     pub fn edit_started(&mut self) {
@@ -130,25 +126,14 @@ impl FrameTiming {
     pub fn labels(&mut self, duration: Duration) {
         self.labels.push(duration.as_secs_f64() * 1000.0);
     }
-    /// Software delivery at the eframe input hook. This excludes device and OS
-    /// queue latency; synthetic native scenarios use the same hook.
-    pub fn raw_input(&mut self, input: &eframe::egui::RawInput) {
-        if input.events.iter().any(|event| {
-            matches!(
-                event,
-                eframe::egui::Event::Key { .. }
-                    | eframe::egui::Event::Text(_)
-                    | eframe::egui::Event::PointerMoved(_)
-                    | eframe::egui::Event::PointerButton { .. }
-                    | eframe::egui::Event::MouseWheel { .. }
-                    | eframe::egui::Event::Zoom(_)
-            )
-        }) {
-            self.received_input.get_or_insert_with(Instant::now);
-        }
+    /// An input event reached the window (GPUI delivers platform input to the
+    /// Studio's handlers). This excludes device and OS queue latency;
+    /// scripted journeys enter through the same window dispatch.
+    pub fn input_received(&mut self) {
+        self.received_input.get_or_insert_with(Instant::now);
     }
 
-    /// UI shape construction has ended. Eframe submits and presents afterwards;
+    /// The Surface's paint has ended. GPUI submits and presents afterwards;
     /// neither this marker nor the next-update marker claims visible photons.
     pub fn ui_complete(&mut self) {
         let now = Instant::now();
@@ -178,11 +163,11 @@ impl FrameTiming {
             "raw_input_to_next_update_ms": self.raw_input_to_next_update.summary(),
             "ui_cpu_ms": self.ui_cpu.summary(),
             "visibility_lookup_cpu_ms": self.visibility.summary(),
-            "changed_batch_cpu_ms": self.batches.summary(),
+            "surface_paint_cpu_ms": self.surface_paint.summary(),
             "labels_accessibility_cpu_ms": self.labels.summary(),
             "frame_submission_ms": null,
             "presentation_ms": null,
-            "boundary": "eframe raw input hook -> UI shape construction complete -> following update; excludes OS delivery and GPU presentation",
+            "boundary": "GPUI window input -> Surface paint complete -> following update; excludes OS delivery and GPU presentation",
         })
     }
     /// Marks handling in the viewport. The next `frame` records elapsed CPU wall

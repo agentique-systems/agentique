@@ -1,111 +1,61 @@
-//! The Requirements Panel: each requirement with its subject, what satisfies
-//! it, and its problems.
-use crate::app::StudioApp;
+//! The Requirements Panel's content: each requirement with its subject, what
+//! satisfies it, and its problems.
+use crate::studio::Studio;
 use agq_language::{Element, ElementId, ElementKind, Parent, Reference};
 use agq_studio_scene::SceneTarget;
 use agq_system_state::Operation;
-use eframe::egui::{self, RichText};
 
 #[derive(Clone)]
 pub struct Row {
-    id: ElementId,
-    keyword: &'static str,
-    name: String,
-    doc: Option<String>,
-    subjects: Vec<String>,
-    satisfied_by: Vec<String>,
-    problems: Vec<String>,
+    pub id: ElementId,
+    pub keyword: &'static str,
+    pub name: String,
+    pub doc: Option<String>,
+    pub subjects: Vec<String>,
+    pub satisfied_by: Vec<String>,
+    pub problems: Vec<String>,
 }
 
-impl StudioApp {
-    pub fn requirements_panel(&mut self, ui: &mut egui::Ui) {
-        let theme = self.theme;
+impl Studio {
+    /// The Requirements Panel's rows for the current model, built once per
+    /// model version.
+    pub fn requirements(&mut self) -> Vec<Row> {
         let Some(project) = &self.project else {
-            ui.label(crate::app::muted(
-                "Open a project to see its requirements.",
-                theme,
-            ));
-            return;
+            return Vec::new();
         };
-        let state = project.state();
-        let tree = state.tree();
         if self
             .requirement_rows
             .as_ref()
             .is_none_or(|(generation, _)| *generation != self.generation)
         {
-            self.requirement_rows = Some((self.generation, rows(state)));
+            self.requirement_rows = Some((self.generation, rows(project.state())));
         }
-        let rows = self
-            .requirement_rows
+        self.requirement_rows
             .as_ref()
             .map(|(_, rows)| rows.clone())
-            .unwrap_or_default();
-        if rows.is_empty() {
-            ui.label(crate::app::muted(
-                "No requirements yet. R creates one.",
-                theme,
-            ));
-            return;
-        }
-        let selected_part = self.selected_card().filter(|id| {
+            .unwrap_or_default()
+    }
+
+    /// The selected part or item a requirement can be satisfied by.
+    pub fn satisfying_part(&self) -> Option<ElementId> {
+        let tree = self.project.as_ref()?.state().tree();
+        self.selected_card().filter(|id| {
             tree.get(*id)
                 .is_some_and(|e| matches!(e.kind, ElementKind::Part | ElementKind::Item))
-        });
-        let mut select = None;
-        let mut satisfy = None;
-        for row in &rows {
-            ui.add_space(6.0);
-            let title = ui.add(
-                egui::Button::new(RichText::new(format!("{}  {}", row.keyword, row.name)).strong())
-                    .frame(false),
-            );
-            if title.clicked() {
-                select = Some(row.id);
-            }
-            if let Some(doc) = &row.doc {
-                ui.label(crate::app::muted(doc, theme));
-            }
-            for subject in &row.subjects {
-                ui.label(format!("Subject: {subject}"));
-            }
-            if row.satisfied_by.is_empty() {
-                ui.label(RichText::new("Not satisfied by anything yet").color(theme.muted));
-            }
-            for by in &row.satisfied_by {
-                ui.label(RichText::new(format!("✓ Satisfied by {by}")).color(theme.green));
-            }
-            for problem in &row.problems {
-                ui.label(RichText::new(format!("• {problem}")).color(theme.amber));
-            }
-            if self.editable()
-                && row.keyword == "requirement"
-                && let Some(part) = selected_part
-                && ui
-                    .small_button(format!(
-                        "Satisfied by {}",
-                        tree.effective_name(part).unwrap_or("the selected part")
-                    ))
-                    .clicked()
-            {
-                satisfy = Some((row.id, part));
-            }
-            ui.separator();
-        }
-        if let Some(id) = select {
-            let target = SceneTarget::Node(id);
-            if self.scene.target_bounds(&target).is_some() {
-                self.select(target.clone(), false);
-                self.frame_target(&target);
-            }
-        }
-        if let Some((requirement, part)) = satisfy {
-            self.satisfy(requirement, part);
+        })
+    }
+
+    /// Selects an element that has a card and moves the camera to it.
+    pub fn show_element(&mut self, id: ElementId) {
+        let target = SceneTarget::Node(id);
+        if self.scene.target_bounds(&target).is_some() {
+            self.select(target.clone(), false);
+            self.frame_target(&target);
         }
     }
 
     /// Adds `satisfy requirement by part` next to the requirement.
-    fn satisfy(&mut self, requirement: ElementId, part: ElementId) {
+    pub fn satisfy(&mut self, requirement: ElementId, part: ElementId) {
         let Some(tree) = self.project.as_ref().map(|p| p.state().tree()) else {
             return;
         };

@@ -1,6 +1,7 @@
 //! Every Studio action, with its shortcut, for the menus, the command palette
-//! and the keyboard.
-use eframe::egui::{Key, Modifiers};
+//! and the keyboard. The keystrokes are GPUI's (`ctrl-z`, `shift-1`); they
+//! are bound in `bind` below.
+use gpui::{Action, App, KeyBinding};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CommandId {
@@ -55,16 +56,10 @@ pub struct Command {
     pub label: &'static str,
     pub shortcut: &'static str,
     pub description: &'static str,
-    /// The key that runs the command when no text field has focus.
-    pub key: Option<(Modifiers, Key)>,
+    /// The keystroke that runs the command when no text field has focus
+    /// (GPUI syntax).
+    pub key: Option<&'static str>,
 }
-
-const NONE: Modifiers = Modifiers::NONE;
-const COMMAND: Modifiers = Modifiers::COMMAND;
-const COMMAND_ALT: Modifiers = Modifiers {
-    alt: true,
-    ..Modifiers::COMMAND
-};
 
 pub const COMMANDS: &[Command] = &[
     Command {
@@ -72,197 +67,196 @@ pub const COMMANDS: &[Command] = &[
         label: "Create part",
         shortcut: "P",
         description: "Add a part inside the selected element, or at the top level",
-        key: Some((NONE, Key::P)),
+        key: Some("p"),
     },
     Command {
         id: CommandId::CreatePort,
         label: "Create port",
         shortcut: "O",
         description: "Add a port to the selected part or definition",
-        key: Some((NONE, Key::O)),
+        key: Some("o"),
     },
     Command {
         id: CommandId::CreateItem,
         label: "Create item",
         shortcut: "I",
         description: "Add an item: something that flows between parts",
-        key: Some((NONE, Key::I)),
+        key: Some("i"),
     },
     Command {
         id: CommandId::CreateAttribute,
         label: "Create attribute",
         shortcut: "A",
         description: "Add an attribute (a value) to the selected element",
-        key: Some((NONE, Key::A)),
+        key: Some("a"),
     },
     Command {
         id: CommandId::CreateInterface,
         label: "Create interface definition",
         shortcut: "N",
         description: "Add an interface definition with two port ends",
-        key: Some((NONE, Key::N)),
+        key: Some("n"),
     },
     Command {
         id: CommandId::CreateRequirement,
         label: "Create requirement",
         shortcut: "R",
         description: "Add a requirement inside the selected element, or at the top level",
-        key: Some((NONE, Key::R)),
+        key: Some("r"),
     },
     Command {
         id: CommandId::Rename,
         label: "Rename",
         shortcut: "F2",
         description: "Rename the selected element; references keep pointing at it",
-        key: Some((NONE, Key::F2)),
+        key: Some("f2"),
     },
     Command {
         id: CommandId::Delete,
         label: "Delete",
         shortcut: "Del",
         description: "Delete the selected elements and everything they own",
-        key: Some((NONE, Key::Delete)),
+        key: Some("delete"),
     },
     Command {
         id: CommandId::Connect,
         label: "Connect",
         shortcut: "C",
         description: "Connect the two selected ports or parts",
-        key: Some((NONE, Key::C)),
+        key: Some("c"),
     },
     Command {
         id: CommandId::MoveTo,
         label: "Move to…",
         shortcut: "M",
         description: "Move the selected element into another owner",
-        key: Some((NONE, Key::M)),
+        key: Some("m"),
     },
     Command {
         id: CommandId::Lock,
         label: "Lock or unlock",
         shortcut: "L",
         description: "A locked element changes only after you confirm",
-        key: Some((NONE, Key::L)),
+        key: Some("l"),
     },
     Command {
         id: CommandId::Undo,
         label: "Undo",
         shortcut: "Ctrl+Z",
         description: "Undo the last change",
-        key: Some((COMMAND, Key::Z)),
+        key: Some("ctrl-z"),
     },
     Command {
         id: CommandId::Redo,
         label: "Redo",
         shortcut: "Ctrl+Y",
         description: "Redo the last undone change",
-        key: Some((COMMAND, Key::Y)),
+        key: Some("ctrl-y"),
     },
     Command {
         id: CommandId::Checkpoint,
         label: "Checkpoint",
         shortcut: "Ctrl+S",
         description: "Record the current model in the history with a message",
-        key: Some((COMMAND, Key::S)),
+        key: Some("ctrl-s"),
     },
     Command {
         id: CommandId::History,
         label: "Show history",
         shortcut: "H",
         description: "Checkpoints, and what changed between them",
-        key: Some((NONE, Key::H)),
+        key: Some("h"),
     },
     Command {
         id: CommandId::Architecture,
         label: "Architecture view",
         shortcut: "1",
         description: "Containment, ports and connections",
-        key: Some((NONE, Key::Num1)),
+        key: Some("1"),
     },
     Command {
         id: CommandId::Graph,
         label: "Graph view",
         shortcut: "2",
         description: "Elements layered by their relationships",
-        key: Some((NONE, Key::Num2)),
+        key: Some("2"),
     },
     Command {
         id: CommandId::Requirements,
         label: "Requirements view",
         shortcut: "3",
         description: "Requirements, what satisfies them and their subjects",
-        key: Some((NONE, Key::Num3)),
+        key: Some("3"),
     },
     Command {
         id: CommandId::Fit,
         label: "Fit to view",
         shortcut: "Shift+1",
         description: "Show the whole model (also Home)",
-        // By its place on the keyboard: Shift+1 types "!" (`keyboard`).
-        key: None,
+        key: Some("shift-1"),
     },
     Command {
         id: CommandId::ZoomIn,
         label: "Zoom in",
         shortcut: "+",
         description: "Closer, around the middle of the Surface (also =)",
-        key: None,
+        key: Some("="),
     },
     Command {
         id: CommandId::ZoomOut,
         label: "Zoom out",
         shortcut: "-",
         description: "Further, around the middle of the Surface",
-        key: Some((NONE, Key::Minus)),
+        key: Some("-"),
     },
     Command {
         id: CommandId::ZoomReset,
         label: "Zoom to 100%",
         shortcut: "Shift+0",
         description: "Cards at their own size",
-        key: None,
+        key: Some("shift-0"),
     },
     Command {
         id: CommandId::ZoomToSelection,
         label: "Zoom to selection",
         shortcut: "Shift+2",
         description: "Move the camera to the selected element",
-        key: None,
+        key: Some("shift-2"),
     },
     Command {
         id: CommandId::GoToElement,
         label: "Go to element",
         shortcut: "Ctrl+P",
         description: "Find an element by name and show it",
-        key: Some((COMMAND, Key::P)),
+        key: Some("ctrl-p"),
     },
     Command {
         id: CommandId::ShortcutHelp,
         label: "Keyboard shortcuts",
         shortcut: "?",
         description: "Every command and its shortcut, in Settings",
-        key: Some((NONE, Key::Questionmark)),
+        key: Some("?"),
     },
     Command {
         id: CommandId::Focus,
         label: "Focus selection",
         shortcut: "F",
         description: "Show only the selected element and what it owns",
-        key: Some((NONE, Key::F)),
+        key: Some("f"),
     },
     Command {
         id: CommandId::LeaveFocus,
         label: "Leave focus",
         shortcut: "Backspace",
         description: "Show the whole model again",
-        key: Some((NONE, Key::Backspace)),
+        key: Some("backspace"),
     },
     Command {
         id: CommandId::Collapse,
         label: "Collapse or expand",
         shortcut: "X",
         description: "Hide or show what the selected container owns",
-        key: Some((NONE, Key::X)),
+        key: Some("x"),
     },
     Command {
         id: CommandId::Pin,
@@ -283,21 +277,21 @@ pub const COMMANDS: &[Command] = &[
         label: "New project…",
         shortcut: "Ctrl+N",
         description: "Create a project in a new folder",
-        key: Some((COMMAND, Key::N)),
+        key: Some("ctrl-n"),
     },
     Command {
         id: CommandId::OpenProject,
         label: "Open project…",
         shortcut: "Ctrl+O",
         description: "Open a project folder",
-        key: Some((COMMAND, Key::O)),
+        key: Some("ctrl-o"),
     },
     Command {
         id: CommandId::Palette,
         label: "Command palette",
         shortcut: "Ctrl+K",
         description: "Find any command or element",
-        key: Some((COMMAND, Key::K)),
+        key: Some("ctrl-k"),
     },
     Command {
         id: CommandId::Theme,
@@ -325,14 +319,14 @@ pub const COMMANDS: &[Command] = &[
         label: "Ask the Assistant",
         shortcut: "Ctrl+L",
         description: "Write a message in the Conversation",
-        key: Some((COMMAND, Key::L)),
+        key: Some("ctrl-l"),
     },
     Command {
         id: CommandId::InsertSelection,
         label: "Insert selection into the message",
         shortcut: "Ctrl+I",
         description: "Refer to the selected elements in the Conversation",
-        key: Some((COMMAND, Key::I)),
+        key: Some("ctrl-i"),
     },
     Command {
         id: CommandId::NewConversation,
@@ -346,38 +340,113 @@ pub const COMMANDS: &[Command] = &[
         label: "Show or hide the conversation",
         shortcut: "Ctrl+J",
         description: "The Conversation column on the right",
-        key: Some((COMMAND, Key::J)),
+        key: Some("ctrl-j"),
     },
     Command {
         id: CommandId::Settings,
         label: "Settings",
         shortcut: "Ctrl+,",
         description: "Keys, the Assistant's model and appearance",
-        key: Some((COMMAND, Key::Comma)),
+        key: Some("ctrl-,"),
     },
     Command {
         id: CommandId::HidePanels,
         label: "Show or hide the panels",
         shortcut: "Ctrl+\\",
         description: "Focus mode: the Surface takes the whole window; remembered per project",
-        key: Some((COMMAND, Key::Backslash)),
+        key: Some("ctrl-\\"),
     },
     Command {
         id: CommandId::ShowInspector,
         label: "Show or hide the Inspector",
         shortcut: "Ctrl+Alt+B",
         description: "The Inspector, Requirements and History column; remembered per project",
-        // Before Ctrl+B: egui's matching ignores an extra Alt.
-        key: Some((COMMAND_ALT, Key::B)),
+        key: Some("ctrl-alt-b"),
     },
     Command {
         id: CommandId::ShowOutline,
         label: "Show or hide the Outline",
         shortcut: "Ctrl+B",
         description: "The list of elements on the left; remembered per project",
-        key: Some((COMMAND, Key::B)),
+        key: Some("ctrl-b"),
     },
 ];
+
+/// Runs a command: the one action every shortcut, menu and palette row
+/// dispatches.
+#[derive(Clone, PartialEq, Action)]
+#[action(namespace = studio, no_json)]
+pub struct Run(pub CommandId);
+
+gpui::actions!(
+    studio,
+    [
+        /// Clears the selection on the Surface (Escape).
+        Deselect,
+        /// Selects the nearest card that way (the arrow keys).
+        SelectLeft,
+        SelectRight,
+        SelectUp,
+        SelectDown,
+    ]
+);
+
+/// Commands whose shortcut also works while a text field has the focus:
+/// they never take a key a text field needs.
+const WHILE_TYPING: &[CommandId] = &[
+    CommandId::Palette,
+    CommandId::GoToElement,
+    CommandId::Settings,
+    CommandId::ShowConversation,
+    CommandId::AskAssistant,
+    CommandId::InsertSelection,
+    CommandId::HidePanels,
+    CommandId::ShowOutline,
+    CommandId::ShowInspector,
+    CommandId::NewProject,
+    CommandId::OpenProject,
+    CommandId::Checkpoint,
+];
+
+/// Further keys for commands that have a shortcut of their own.
+const ALIASES: &[(&str, CommandId)] = &[
+    ("home", CommandId::Fit),
+    ("shift-=", CommandId::ZoomIn),
+    ("+", CommandId::ZoomIn),
+    ("ctrl-shift-z", CommandId::Redo),
+];
+
+/// Where the Studio's shortcuts apply: anywhere in the workspace, except
+/// while a text field has the focus (GPUI's `!Input` looks at the whole
+/// focus path).
+pub const SURFACE_KEYS: &str = "Workspace && !Input";
+pub const GLOBAL_KEYS: &str = "Workspace";
+
+/// Binds every shortcut.
+pub fn bind(cx: &mut App) {
+    let mut bindings = Vec::new();
+    for command in COMMANDS {
+        if let Some(key) = command.key {
+            let context = if WHILE_TYPING.contains(&command.id) {
+                GLOBAL_KEYS
+            } else {
+                SURFACE_KEYS
+            };
+            bindings.push(KeyBinding::new(key, Run(command.id), Some(context)));
+        }
+    }
+    for (key, id) in ALIASES {
+        bindings.push(KeyBinding::new(key, Run(*id), Some(SURFACE_KEYS)));
+    }
+    bindings.extend([
+        KeyBinding::new("escape", Deselect, Some(SURFACE_KEYS)),
+        KeyBinding::new("left", SelectLeft, Some(SURFACE_KEYS)),
+        KeyBinding::new("right", SelectRight, Some(SURFACE_KEYS)),
+        KeyBinding::new("up", SelectUp, Some(SURFACE_KEYS)),
+        KeyBinding::new("down", SelectDown, Some(SURFACE_KEYS)),
+    ]);
+    cx.bind_keys(bindings);
+}
 
 pub fn command(id: CommandId) -> &'static Command {
     COMMANDS
@@ -510,9 +579,26 @@ mod tests {
 
     #[test]
     fn every_shortcut_is_unique() {
-        let keys: Vec<_> = COMMANDS.iter().filter_map(|c| c.key).collect();
+        let keys: Vec<_> = COMMANDS
+            .iter()
+            .filter_map(|c| c.key)
+            .chain(ALIASES.iter().map(|(key, _)| *key))
+            .collect();
         for (i, a) in keys.iter().enumerate() {
             assert!(!keys[i + 1..].contains(a), "{a:?} is bound twice");
+        }
+    }
+
+    #[test]
+    fn every_shortcut_parses_and_single_keys_never_fire_while_typing() {
+        for command in COMMANDS {
+            let Some(key) = command.key else { continue };
+            assert!(gpui::Keystroke::parse(key).is_ok(), "{key}");
+            let plain = !key.contains("ctrl-") && !key.contains("alt-");
+            assert!(
+                !(plain && WHILE_TYPING.contains(&command.id)),
+                "{key} would take a key from a text field"
+            );
         }
     }
 }

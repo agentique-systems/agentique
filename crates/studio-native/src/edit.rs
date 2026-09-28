@@ -1,17 +1,12 @@
 //! Model edits by the Operator. Every edit is a typed System State change
 //! applied by the project, which saves it; nothing here changes the tree or
 //! writes files. A change to a locked element asks for confirmation first.
-use crate::{
-    app::StudioApp,
-    commands::CommandId,
-    targets::{Target, record},
-};
+use crate::{commands::CommandId, studio::Studio};
 use agq_language::{Element, ElementId, ElementKind, Parent, QualifiedName, Reference, Step, Tree};
 use agq_studio_scene::SceneTarget;
 use agq_system_state::{
     Actor, ApplyError, Change, ChangeEvent, Operation, ProjectError, Property, Rejection,
 };
-use eframe::egui::{self, Key, Modifiers};
 
 /// What the Operator can create by hand.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -86,7 +81,7 @@ pub enum Dialog {
         base: Option<u64>,
     },
 }
-/// What became of a change given to [`StudioApp::apply_change`].
+/// What became of a change given to [`Studio::apply_change`].
 pub enum Outcome {
     Applied(ChangeEvent),
     /// The Operator is asked to confirm a change to locked elements.
@@ -121,12 +116,12 @@ impl Dialog {
             unreachable!("new_project is the New project dialog")
         };
         let folder = std::path::Path::new(&folder)
-            .with_file_name(crate::app::SAMPLE_NAME)
+            .with_file_name(crate::studio::SAMPLE_NAME)
             .display()
             .to_string();
         Dialog::NewProject {
             folder,
-            name: crate::app::SAMPLE_NAME.into(),
+            name: crate::studio::SAMPLE_NAME.into(),
             sample: true,
         }
     }
@@ -253,7 +248,7 @@ fn unused_name(tree: &Tree, parent: Parent, base: &str) -> String {
         .expect("an unused name exists")
 }
 
-impl StudioApp {
+impl Studio {
     fn tree(&self) -> Option<&Tree> {
         self.project.as_ref().map(|p| p.state().tree())
     }
@@ -482,7 +477,7 @@ impl StudioApp {
                 // An attribute or item line on its owner's card.
                 self.inspected = Some((self.selection.primary.clone(), created));
             }
-            self.panel = crate::app::Panel::Inspector;
+            self.panel = crate::studio::Panel::Inspector;
         }
     }
 
@@ -721,248 +716,8 @@ impl StudioApp {
         }
     }
 
-    /// Shows the open dialog, if any.
-    pub fn dialogs(&mut self, ctx: &egui::Context) {
-        let Some(mut dialog) = self.dialog.take() else {
-            return;
-        };
-        let escape = ctx.input_mut(|i| i.consume_key(Modifiers::NONE, Key::Escape));
-        let mut keep = !escape;
-        let theme = self.theme;
-        match &mut dialog {
-            Dialog::NewProject {
-                folder,
-                name,
-                sample,
-            } => {
-                if let Some(done) = crate::project_dialog::new_project(ctx, theme, folder, name) {
-                    keep = false;
-                    if done {
-                        let (folder, name, sample) = (folder.clone(), name.clone(), *sample);
-                        let folder = std::path::Path::new(folder.trim());
-                        if sample {
-                            self.create_sample(folder, name.trim());
-                        } else {
-                            self.create_project(folder, name.trim());
-                        }
-                    }
-                }
-            }
-            Dialog::OpenProject { folder } => {
-                if let Some(chosen) =
-                    crate::project_dialog::open_project(ctx, theme, folder, &self.session.recent)
-                {
-                    keep = false;
-                    if let Some(chosen) = chosen {
-                        self.open_project(&chosen);
-                    }
-                }
-            }
-            Dialog::Create {
-                kind,
-                definition,
-                name,
-                parent,
-            } => {
-                let owner = match parent {
-                    Parent::Element(id) => self
-                        .tree()
-                        .and_then(|t| t.effective_name(*id))
-                        .unwrap_or("element")
-                        .to_string(),
-                    Parent::Document(_) => "the top level".into(),
-                };
-                let mut create = false;
-                modal(ctx, theme, "Create", |ui| {
-                    ui.label(crate::app::muted(format!("Inside {owner}"), theme));
-                    if kind.can_be_usage() {
-                        ui.horizontal(|ui| {
-                            ui.selectable_value(
-                                definition,
-                                false,
-                                kind.element_kind(false).keyword(),
-                            );
-                            ui.selectable_value(
-                                definition,
-                                true,
-                                kind.element_kind(true).keyword(),
-                            );
-                        });
-                    }
-                    let field = ui.add(
-                        egui::TextEdit::singleline(name)
-                            .margin(crate::theme::INPUT_MARGIN)
-                            .hint_text("Name (Enter for a default)")
-                            .desired_width(f32::INFINITY),
-                    );
-                    record(ui.ctx(), Target::Field("Name"), field.rect);
-                    if !field.has_focus() && !field.lost_focus() {
-                        field.request_focus();
-                    }
-                    let enter = field.lost_focus() && ui.input(|i| i.key_pressed(Key::Enter));
-                    ui.horizontal(|ui| {
-                        let button = ui.add(primary_button(theme, "Create"));
-                        record(ui.ctx(), Target::Button("Create"), button.rect);
-                        create = button.clicked() || enter;
-                        if ui.button("Cancel").clicked() {
-                            keep = false;
-                        }
-                    });
-                });
-                if create {
-                    keep = false;
-                    let (kind, definition, name, parent) =
-                        (*kind, *definition, name.clone(), *parent);
-                    self.create(kind, definition, &name, parent);
-                }
-            }
-            Dialog::Rename { element, name } => {
-                let element = *element;
-                let at = self.screen_rect_of(element, ctx);
-                let mut done = None;
-                egui::Area::new(egui::Id::new("rename-in-place"))
-                    .order(egui::Order::Foreground)
-                    .fixed_pos(at.min)
-                    .show(ctx, |ui| {
-                        egui::Frame::popup(ui.style()).show(ui, |ui| {
-                            let field = ui.add(
-                                egui::TextEdit::singleline(name)
-                                    .margin(crate::theme::INPUT_MARGIN)
-                                    .desired_width(at.width().max(180.0)),
-                            );
-                            record(ui.ctx(), Target::Field("Rename"), field.rect);
-                            if !field.has_focus() && !field.lost_focus() {
-                                field.request_focus();
-                            }
-                            if field.lost_focus() {
-                                done = Some(ui.input(|i| i.key_pressed(Key::Enter)));
-                            }
-                        });
-                    });
-                if let Some(apply) = done {
-                    keep = false;
-                    if apply {
-                        let name = name.clone();
-                        self.rename(element, &name);
-                    }
-                }
-            }
-            Dialog::Checkpoint { message } => {
-                let mut record_it = false;
-                modal(ctx, theme, "Checkpoint", |ui| {
-                    ui.label(crate::app::muted(
-                        "Record the current model in the history",
-                        theme,
-                    ));
-                    let field = ui.add(
-                        egui::TextEdit::singleline(message)
-                            .margin(crate::theme::INPUT_MARGIN)
-                            .hint_text("What changed?")
-                            .desired_width(f32::INFINITY),
-                    );
-                    record(ui.ctx(), Target::Field("Message"), field.rect);
-                    if !field.has_focus() && !field.lost_focus() {
-                        field.request_focus();
-                    }
-                    let enter = field.lost_focus() && ui.input(|i| i.key_pressed(Key::Enter));
-                    ui.horizontal(|ui| {
-                        record_it =
-                            ui.add(primary_button(theme, "Record checkpoint")).clicked() || enter;
-                        if ui.button("Cancel").clicked() {
-                            keep = false;
-                        }
-                    });
-                });
-                if record_it {
-                    keep = false;
-                    let message = message.clone();
-                    self.checkpoint(&message);
-                }
-            }
-            Dialog::MoveTo { element, query } => {
-                let element = *element;
-                let mut chosen = None;
-                let options = self.owner_options(element);
-                modal(ctx, theme, "Move to…", |ui| {
-                    let field = ui.add(
-                        egui::TextEdit::singleline(query)
-                            .margin(crate::theme::INPUT_MARGIN)
-                            .hint_text("Find the new owner")
-                            .desired_width(f32::INFINITY),
-                    );
-                    record(ui.ctx(), Target::Field("Owner"), field.rect);
-                    if !field.has_focus() && !field.lost_focus() {
-                        field.request_focus();
-                    }
-                    let mut matches: Vec<_> = options
-                        .iter()
-                        .filter_map(|(parent, label)| {
-                            crate::commands::fuzzy_score(query, label).map(|s| (s, parent, label))
-                        })
-                        .collect();
-                    matches.sort_by_key(|(score, _, _)| *score);
-                    let enter = field.lost_focus() && ui.input(|i| i.key_pressed(Key::Enter));
-                    if enter {
-                        chosen = matches.first().map(|(_, parent, _)| **parent);
-                    }
-                    egui::ScrollArea::vertical()
-                        .max_height(300.0)
-                        .show(ui, |ui| {
-                            for (_, parent, label) in matches.iter().take(40) {
-                                if ui.button(label.as_str()).clicked() {
-                                    chosen = Some(**parent);
-                                }
-                            }
-                        });
-                });
-                if let Some(parent) = chosen {
-                    keep = false;
-                    self.move_to(element, parent);
-                }
-            }
-            Dialog::Confirm {
-                change,
-                question,
-                locked,
-                base,
-            } => {
-                let mut confirmed = false;
-                let title = if locked.is_empty() {
-                    "Shared definition"
-                } else {
-                    "Locked"
-                };
-                modal(ctx, theme, title, |ui| {
-                    ui.label(question.as_str());
-                    ui.label(crate::app::muted(&change.description, theme));
-                    ui.horizontal(|ui| {
-                        let button = ui.add(primary_button(theme, "Change it"));
-                        record(ui.ctx(), Target::Button("Change it"), button.rect);
-                        confirmed = button.clicked()
-                            || ui.input_mut(|i| i.consume_key(Modifiers::NONE, Key::Enter));
-                        let cancel = ui.button("Cancel");
-                        record(ui.ctx(), Target::Button("Cancel"), cancel.rect);
-                        if cancel.clicked() {
-                            keep = false;
-                        }
-                    });
-                });
-                let _ = (locked, base);
-                if confirmed || !keep {
-                    // Cancel and Escape refuse the change.
-                    self.dialog = Some(dialog);
-                    self.answer(confirmed);
-                    return;
-                }
-            }
-        }
-        if keep && self.dialog.is_none() {
-            self.dialog = Some(dialog);
-        }
-    }
-
     /// Owners an element can move into: namespaces outside it, and the top level.
-    fn owner_options(&self, element: ElementId) -> Vec<(Parent, String)> {
+    pub fn owner_options(&self, element: ElementId) -> Vec<(Parent, String)> {
         let Some(tree) = self.tree() else {
             return Vec::new();
         };
@@ -984,71 +739,6 @@ impl StudioApp {
         }
         options
     }
-
-    /// Where an element is on the screen, for editing it in place.
-    fn screen_rect_of(&self, element: ElementId, ctx: &egui::Context) -> egui::Rect {
-        let viewport = ctx
-            .data(|d| d.get_temp::<egui::Rect>(egui::Id::new("studio-viewport-rect")))
-            .unwrap_or(egui::Rect::from_min_size(
-                egui::pos2(300.0, 200.0),
-                egui::vec2(400.0, 300.0),
-            ));
-        let bounds =
-            self.lookup
-                .node(&self.scene, element)
-                .map(|n| n.bounds)
-                .or_else(|| {
-                    self.scene.ports.iter().find(|p| p.id == element).map(|p| {
-                        agq_studio_scene::Rect::new(p.position.x, p.position.y, 180.0, 20.0)
-                    })
-                });
-        match bounds {
-            Some(bounds) => {
-                let a = self.camera.world_to_screen(bounds.min);
-                let b = self.camera.world_to_screen(bounds.max);
-                egui::Rect::from_min_max(
-                    viewport.min + egui::vec2(a.x + 8.0, a.y + 8.0),
-                    viewport.min + egui::vec2(b.x - 8.0, (a.y + 44.0).min(b.y)),
-                )
-            }
-            None => egui::Rect::from_center_size(viewport.center(), egui::vec2(240.0, 32.0)),
-        }
-    }
-}
-
-/// A centred dialog window.
-pub fn modal(
-    ctx: &egui::Context,
-    theme: crate::theme::Theme,
-    title: &str,
-    add: impl FnOnce(&mut egui::Ui),
-) {
-    use crate::theme::{self as tokens};
-    let frame = egui::Frame::new()
-        .fill(theme.elevated)
-        .stroke(egui::Stroke::new(tokens::HAIRLINE, theme.border))
-        .corner_radius(tokens::RADIUS_XL)
-        .inner_margin(egui::Margin::same(tokens::SPACE_XL as i8))
-        .shadow(ctx.global_style().visuals.window_shadow);
-    egui::Modal::new(egui::Id::new(("studio-dialog", title)))
-        .frame(frame)
-        .backdrop_color(theme.backdrop)
-        .show(ctx, |ui| {
-            ui.set_width(tokens::DIALOG_WIDTH);
-            ui.label(
-                egui::RichText::new(title)
-                    .font(tokens::semibold(tokens::HEADING))
-                    .color(theme.text),
-            );
-            ui.add_space(tokens::SPACE);
-            add(ui);
-        });
-}
-
-/// The dialog's main action: filled with the accent colour.
-pub fn primary_button(theme: crate::theme::Theme, label: &str) -> egui::Button<'static> {
-    egui::Button::new(egui::RichText::new(label.to_string()).color(theme.on_accent))
-        .fill(theme.accent)
 }
 
 /// A rejection in plain words.
@@ -1097,9 +787,8 @@ mod tests {
 #[cfg(test)]
 pub(crate) mod app_tests {
     use super::*;
-    use crate::app::StudioApp;
+    use crate::studio::{Studio, System};
     use clap::Parser;
-    use eframe::App;
 
     pub(crate) struct Folder(pub(crate) std::path::PathBuf);
     impl Drop for Folder {
@@ -1109,7 +798,7 @@ pub(crate) mod app_tests {
     }
 
     /// A Studio with a new project open, driven without a window.
-    pub(crate) fn studio(name: &str) -> (StudioApp, egui::Context, Folder) {
+    pub(crate) fn studio(name: &str) -> (Studio, Folder) {
         let folder = std::env::temp_dir().join(format!("agq-studio-{name}-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&folder);
         std::fs::create_dir_all(&folder).unwrap();
@@ -1120,46 +809,17 @@ pub(crate) mod app_tests {
             "--session",
             session.to_str().unwrap(),
         ]);
-        let context = egui::Context::default();
-        let creation = eframe::CreationContext::_new_kittest(context.clone());
-        let mut app = StudioApp::new(&creation, args);
+        let mut app = Studio::new(
+            args,
+            System {
+                dark: true,
+                reduced_motion: false,
+            },
+        );
+        app.camera.viewport = agq_studio_scene::Size::new(1200.0, 800.0);
         app.create_project(&folder.join("P"), "P");
         assert!(app.project.is_some(), "{}", app.status);
-        (app, context, Folder(folder))
-    }
-
-    /// One frame of the Studio with `events`; what it asked of the platform.
-    pub(crate) fn frame(
-        app: &mut StudioApp,
-        context: &egui::Context,
-        events: Vec<egui::Event>,
-    ) -> egui::PlatformOutput {
-        let mut output = context.run_ui(
-            egui::RawInput {
-                screen_rect: Some(egui::Rect::from_min_size(
-                    egui::Pos2::ZERO,
-                    egui::vec2(1400.0, 900.0),
-                )),
-                events,
-                ..Default::default()
-            },
-            |ui| app.ui(ui, &mut eframe::Frame::_new_kittest()),
-        );
-        output.textures_delta.clear();
-        output.platform_output
-    }
-
-    fn key(key: egui::Key) -> Vec<egui::Event> {
-        [true, false]
-            .into_iter()
-            .map(|pressed| egui::Event::Key {
-                key,
-                physical_key: Some(key),
-                pressed,
-                repeat: false,
-                modifiers: egui::Modifiers::NONE,
-            })
-            .collect()
+        (app, Folder(folder))
     }
 
     /// About twelve elements per component (as System State's performance
@@ -1209,19 +869,17 @@ pub(crate) mod app_tests {
     }
 
     /// Edit to Surface at 10k elements (§3.3, C-33, S5.1): a change applied
-    /// through the Studio's one path, until the frame that shows it is built
-    /// (CPU side; presenting it adds one display frame).
+    /// through the Studio's one path, until the scene that shows it is built
+    /// (CPU side; painting and presenting it add one display frame).
     #[test]
     #[cfg_attr(debug_assertions, ignore = "budgets are measured in release builds")]
     fn an_edit_on_ten_thousand_elements_reaches_the_surface() {
-        let (mut app, context, folder) = studio("edit-10k");
+        let (mut app, folder) = studio("edit-10k");
         let project = folder.0.join("P");
         std::fs::write(project.join("model").join("P.sysml"), large_model(850)).unwrap();
         app.open_project(&project);
         let elements = app.project.as_ref().unwrap().state().tree().len();
         assert!(elements >= 10_000, "{elements} elements");
-        frame(&mut app, &context, vec![]);
-        frame(&mut app, &context, vec![]);
         let system = app
             .project
             .as_ref()
@@ -1231,8 +889,6 @@ pub(crate) mod app_tests {
             .find("P::System")
             .unwrap();
         let mut times = Vec::new();
-        // Apply, save and rebuild the scene, before the frame.
-        let mut applied = Vec::new();
         for round in 0..5 {
             let started = std::time::Instant::now();
             app.create(
@@ -1241,17 +897,13 @@ pub(crate) mod app_tests {
                 &format!("added{round}"),
                 Parent::Element(system),
             );
-            applied.push(started.elapsed());
-            frame(&mut app, &context, vec![]);
             times.push(started.elapsed());
         }
-        applied.sort();
         times.sort();
         let median = times[times.len() / 2];
         println!(
-            "edit to Surface at {elements} elements: median {median:?}, best {:?}; apply, save and scene median {:?}; last scene {:.1} ms (layout and routing {:.1} ms, index {:.1} ms); edges routed {} of {}",
+            "edit to Surface at {elements} elements: median {median:?}, best {:?}; last scene {:.1} ms (layout and routing {:.1} ms, index {:.1} ms); edges routed {} of {}",
             times[0],
-            applied[applied.len() / 2],
             app.timing.scene_ms,
             app.timing.layout_ms,
             app.timing.index_ms,
@@ -1262,118 +914,53 @@ pub(crate) mod app_tests {
         assert!(median < std::time::Duration::from_millis(200), "{median:?}");
     }
 
-    fn press(key: egui::Key, physical: egui::Key, modifiers: egui::Modifiers) -> Vec<egui::Event> {
-        [true, false]
-            .into_iter()
-            .map(|pressed| egui::Event::Key {
-                key,
-                physical_key: Some(physical),
-                pressed,
-                repeat: false,
-                modifiers,
-            })
-            .collect()
-    }
-
     #[test]
-    fn the_standard_shortcuts_fit_zoom_find_and_list_shortcuts() {
-        let (mut app, context, _folder) = studio("shortcuts");
+    fn the_standard_commands_fit_zoom_find_and_list_shortcuts() {
+        let (mut app, _folder) = studio("shortcuts");
         let store = part(&mut app, "store");
-        for _ in 0..6 {
-            frame(&mut app, &context, vec![]);
-        }
+        app.frame_number = 10;
         app.set_view(crate::navigation::SurfaceView::Graph);
-        frame(&mut app, &context, vec![]);
-        // Shift+1 fits (it types "!"); it does not switch to the first view.
+        // Fit (Shift+1) moves the camera; it does not switch the view.
         let far = agq_studio_scene::Point::new(1.0e5, 1.0e5);
         app.camera.center = far;
         app.camera_target = None;
-        frame(
-            &mut app,
-            &context,
-            press(
-                egui::Key::Exclamationmark,
-                egui::Key::Num1,
-                egui::Modifiers::SHIFT,
-            ),
-        );
+        app.execute(CommandId::Fit);
         assert_eq!(app.view, crate::navigation::SurfaceView::Graph);
         let aimed = app
             .camera_target
             .map_or(app.camera.center, |target| target.center);
         assert!(aimed != far, "the camera was not fitted");
-        // Shift+2 moves the camera to the selection.
-        app.selection.primary = Some(agq_studio_scene::SceneTarget::Node(store));
+        // Zoom to selection (Shift+2) moves the camera to the selection.
+        app.selection.primary = Some(SceneTarget::Node(store));
         app.camera_target = None;
-        frame(
-            &mut app,
-            &context,
-            press(egui::Key::Quote, egui::Key::Num2, egui::Modifiers::SHIFT),
-        );
+        app.execute(CommandId::ZoomToSelection);
         assert!(app.camera_target.is_some() || app.reduced_motion);
         // Ctrl+P finds elements; ? lists every shortcut in Settings.
-        frame(
-            &mut app,
-            &context,
-            press(egui::Key::P, egui::Key::P, egui::Modifiers::COMMAND),
-        );
-        assert!(app.palette);
-        assert_eq!(app.palette_query, "focus: ");
-        app.palette = false;
-        frame(&mut app, &context, vec![]);
-        frame(
-            &mut app,
-            &context,
-            press(
-                egui::Key::Questionmark,
-                egui::Key::Slash,
-                egui::Modifiers::SHIFT,
-            ),
-        );
-        assert!(app.settings.open);
-        assert_eq!(app.settings.section, crate::settings_ui::Section::Keyboard);
+        app.execute(CommandId::GoToElement);
+        assert_eq!(app.palette, Some(crate::studio::PaletteMode::Elements));
+        app.palette = None;
+        app.execute(CommandId::ShortcutHelp);
+        assert!(app.settings_open);
+        assert_eq!(app.settings_section, crate::settings::Section::Keyboard);
     }
 
     #[test]
     fn plus_minus_and_shift_0_zoom_around_the_middle_at_once() {
-        let (mut app, context, _folder) = studio("zoom-keys");
-        for _ in 0..6 {
-            frame(&mut app, &context, vec![]);
-        }
+        let (mut app, _folder) = studio("zoom-keys");
         app.camera.zoom = 1.0;
         let center = app.camera.center;
-        frame(
-            &mut app,
-            &context,
-            press(egui::Key::Plus, egui::Key::Equals, egui::Modifiers::SHIFT),
-        );
+        app.execute(CommandId::ZoomIn);
         assert!((app.camera.zoom - 1.25).abs() < 1e-4, "{}", app.camera.zoom);
         assert!(
             app.camera_target.is_none(),
             "keyboard zoom does not animate"
         );
-        frame(
-            &mut app,
-            &context,
-            press(egui::Key::Minus, egui::Key::Minus, egui::Modifiers::NONE),
-        );
+        app.execute(CommandId::ZoomOut);
         assert!((app.camera.zoom - 1.0).abs() < 1e-4, "{}", app.camera.zoom);
-        frame(
-            &mut app,
-            &context,
-            press(egui::Key::Equals, egui::Key::Equals, egui::Modifiers::NONE),
-        );
-        frame(
-            &mut app,
-            &context,
-            press(egui::Key::Equals, egui::Key::Equals, egui::Modifiers::NONE),
-        );
+        app.execute(CommandId::ZoomIn);
+        app.execute(CommandId::ZoomIn);
         assert!(app.camera.zoom > 1.5);
-        frame(
-            &mut app,
-            &context,
-            press(egui::Key::Num0, egui::Key::Num0, egui::Modifiers::SHIFT),
-        );
+        app.execute(CommandId::ZoomReset);
         assert!((app.camera.zoom - 1.0).abs() < 1e-4, "{}", app.camera.zoom);
         // Around the middle: the center stays where it was.
         assert!((app.camera.center.x - center.x).abs() < 1e-3);
@@ -1381,128 +968,11 @@ pub(crate) mod app_tests {
     }
 
     #[test]
-    fn panning_within_the_margin_reuses_the_gpu_batch() {
-        let (mut app, context, _folder) = studio("batch-margin");
-        app.show_fixture("stress1000");
-        for _ in 0..6 {
-            frame(&mut app, &context, vec![]);
-        }
-        app.camera.zoom = 1.0;
-        app.camera_target = None;
-        frame(&mut app, &context, vec![]);
-        frame(&mut app, &context, vec![]);
-        let built = app.timing.batches_built();
-        // A small pan stays inside the margin: no new batch.
-        app.camera.center.x += 60.0;
-        frame(&mut app, &context, vec![]);
-        assert_eq!(app.timing.batches_built(), built);
-        // Far away, the view leaves it: one new batch.
-        app.camera.center.x += 100_000.0;
-        frame(&mut app, &context, vec![]);
-        assert_eq!(app.timing.batches_built(), built + 1);
-    }
-
-    #[test]
-    fn space_and_drag_pans_even_from_a_card() {
-        let (mut app, context, _folder) = studio("space-pan");
-        let api = part(&mut app, "api");
-        for _ in 0..6 {
-            frame(&mut app, &context, vec![]);
-        }
-        let viewport = context
-            .data(|data| {
-                data.get_temp::<egui::Rect>(egui::Id::new((
-                    "native-interaction-target",
-                    crate::targets::Target::Viewport,
-                )))
-            })
-            .expect("the Surface is shown");
-        let card = app
-            .scene
-            .nodes
-            .iter()
-            .find(|node| node.id() == api)
-            .expect("the card is on the Surface")
-            .bounds;
-        let at = app.camera.world_to_screen(card.center());
-        let start = viewport.min + egui::vec2(at.x, at.y);
-        let before = (app.camera.center, card);
-        let space = |pressed| egui::Event::Key {
-            key: egui::Key::Space,
-            physical_key: Some(egui::Key::Space),
-            pressed,
-            repeat: false,
-            modifiers: egui::Modifiers::NONE,
-        };
-        let button = |pos, pressed| egui::Event::PointerButton {
-            pos,
-            button: egui::PointerButton::Primary,
-            pressed,
-            modifiers: egui::Modifiers::NONE,
-        };
-        frame(
-            &mut app,
-            &context,
-            vec![space(true), egui::Event::PointerMoved(start)],
-        );
-        frame(&mut app, &context, vec![button(start, true)]);
-        for step in 1..=6 {
-            let pos = start + egui::vec2(20.0 * step as f32, 10.0 * step as f32);
-            frame(&mut app, &context, vec![egui::Event::PointerMoved(pos)]);
-        }
-        let end = start + egui::vec2(120.0, 60.0);
-        frame(&mut app, &context, vec![button(end, false), space(false)]);
-        let moved = app
-            .scene
-            .nodes
-            .iter()
-            .find(|node| node.id() == api)
-            .unwrap()
-            .bounds;
-        assert_eq!(moved, before.1, "the card stays where it was");
-        assert!(app.camera.center != before.0, "the camera panned");
-    }
-
-    #[test]
-    fn the_no_key_banner_opens_settings_at_providers() {
-        let (mut app, context, _folder) = studio("no-key-banner");
-        app.conversation.key_missing = Some("No DeepSeek key is set.".into());
-        frame(&mut app, &context, vec![]);
-        frame(&mut app, &context, vec![]);
-        let open = context
-            .data(|data| {
-                data.get_temp::<egui::Rect>(egui::Id::new((
-                    "native-interaction-target",
-                    crate::targets::Target::Button("Open Settings › Providers"),
-                )))
-            })
-            .expect("the banner offers Settings")
-            .center();
-        let button = |pressed| egui::Event::PointerButton {
-            pos: open,
-            button: egui::PointerButton::Primary,
-            pressed,
-            modifiers: egui::Modifiers::NONE,
-        };
-        frame(
-            &mut app,
-            &context,
-            vec![egui::Event::PointerMoved(open), button(true)],
-        );
-        frame(&mut app, &context, vec![button(false)]);
-        assert!(app.settings.open);
-        assert_eq!(app.settings.section, crate::settings_ui::Section::Providers);
-    }
-
-    #[test]
     fn the_arrow_keys_move_the_selection_to_the_next_card_that_way() {
-        let (mut app, context, _folder) = studio("arrows");
+        let (mut app, _folder) = studio("arrows");
         let names = ["a", "b", "c"];
         let ids: Vec<_> = names.iter().map(|name| part(&mut app, name)).collect();
-        for _ in 0..4 {
-            frame(&mut app, &context, vec![]);
-        }
-        let center = |app: &StudioApp, id| {
+        let center = |app: &Studio, id| {
             app.scene
                 .nodes
                 .iter()
@@ -1512,30 +982,18 @@ pub(crate) mod app_tests {
                 .center()
         };
         // Nothing selected: an arrow selects a card near the middle.
-        frame(
-            &mut app,
-            &context,
-            press(
-                egui::Key::ArrowRight,
-                egui::Key::ArrowRight,
-                egui::Modifiers::NONE,
-            ),
-        );
+        app.selection.clear();
+        app.select_neighbour((1.0, 0.0));
         let Some(SceneTarget::Node(first)) = app.selection.primary.clone() else {
             panic!("a card is selected")
         };
         // Every further arrow moves in its direction, or stays put at the edge.
         let mut moved = 0;
-        for (key, sign) in [
-            (egui::Key::ArrowRight, (1.0, 0.0)),
-            (egui::Key::ArrowLeft, (-1.0, 0.0)),
-            (egui::Key::ArrowDown, (0.0, 1.0)),
-            (egui::Key::ArrowUp, (0.0, -1.0)),
-        ] {
+        for sign in [(1.0, 0.0), (-1.0, 0.0), (0.0, 1.0), (0.0, -1.0)] {
             let Some(SceneTarget::Node(before)) = app.selection.primary.clone() else {
                 panic!()
             };
-            frame(&mut app, &context, press(key, key, egui::Modifiers::NONE));
+            app.select_neighbour(sign);
             let Some(SceneTarget::Node(after)) = app.selection.primary.clone() else {
                 panic!()
             };
@@ -1543,7 +1001,7 @@ pub(crate) mod app_tests {
                 moved += 1;
                 let (from, to) = (center(&app, before), center(&app, after));
                 let along = (to.x - from.x) * sign.0 + (to.y - from.y) * sign.1;
-                assert!(along > 0.0, "{key:?} moved the other way");
+                assert!(along > 0.0, "{sign:?} moved the other way");
             }
         }
         assert!(ids.contains(&first));
@@ -1552,12 +1010,10 @@ pub(crate) mod app_tests {
 
     #[test]
     fn focus_mode_hides_the_panels_and_is_remembered_per_project() {
-        let (mut app, context, folder) = studio("focus-mode");
+        let (mut app, folder) = studio("focus-mode");
         let first = app.project.as_ref().unwrap().folder().to_path_buf();
-        frame(&mut app, &context, vec![]);
-        app.execute(crate::commands::CommandId::HidePanels, &context);
+        app.execute(CommandId::HidePanels);
         assert!(app.panels_hidden);
-        frame(&mut app, &context, vec![]);
         // Another project has its own layout; the first keeps focus mode.
         app.create_project(&folder.0.join("Q"), "Q");
         assert!(!app.panels_hidden);
@@ -1566,45 +1022,28 @@ pub(crate) mod app_tests {
     }
 
     #[test]
-    fn single_panels_collapse_by_key_and_are_remembered_per_project() {
-        let (mut app, context, folder) = studio("collapse-panels");
+    fn single_panels_collapse_and_widths_are_remembered_per_project() {
+        let (mut app, folder) = studio("collapse-panels");
         let first = app.project.as_ref().unwrap().folder().to_path_buf();
-        frame(&mut app, &context, vec![]);
-        let alt_b = press(
-            egui::Key::B,
-            egui::Key::B,
-            egui::Modifiers {
-                alt: true,
-                ..egui::Modifiers::COMMAND
-            },
-        );
-        frame(&mut app, &context, alt_b);
-        assert!(
-            app.inspector_hidden && !app.outline_hidden,
-            "Ctrl+Alt+B is not Ctrl+B"
-        );
-        frame(
-            &mut app,
-            &context,
-            press(egui::Key::B, egui::Key::B, egui::Modifiers::COMMAND),
-        );
+        app.execute(CommandId::ShowInspector);
+        assert!(app.inspector_hidden && !app.outline_hidden);
+        app.execute(CommandId::ShowOutline);
         assert!(app.outline_hidden);
-        frame(
-            &mut app,
-            &context,
-            press(egui::Key::J, egui::Key::J, egui::Modifiers::COMMAND),
-        );
+        app.execute(CommandId::ShowConversation);
         assert!(!app.conversation.shown);
+        app.widths.conversation = 512.0;
         app.create_project(&folder.0.join("Q"), "Q");
         assert!(!app.outline_hidden && !app.inspector_hidden && app.conversation.shown);
+        assert_eq!(app.widths, crate::session::Widths::default());
         app.open_project(&first);
         assert!(app.outline_hidden && app.inspector_hidden && !app.conversation.shown);
+        assert_eq!(app.widths.conversation, 512.0);
     }
 
     #[test]
     fn the_first_run_can_start_from_the_url_shortener() {
-        let (mut app, _context, folder) = studio("sample");
-        app.create_sample(&folder.0.join("Sample"), crate::app::SAMPLE_NAME);
+        let (mut app, folder) = studio("sample");
+        app.create_sample(&folder.0.join("Sample"), crate::studio::SAMPLE_NAME);
         let project = app.project.as_ref().expect("the sample is open");
         let state = project.state();
         assert!(state.tree().find("UrlShortener::LinkStore").is_some());
@@ -1612,7 +1051,7 @@ pub(crate) mod app_tests {
         assert!(app.scene.nodes.len() > 5, "the sample is on the Surface");
     }
 
-    fn part(app: &mut StudioApp, name: &str) -> ElementId {
+    fn part(app: &mut Studio, name: &str) -> ElementId {
         let package = app
             .project
             .as_ref()
@@ -1631,14 +1070,14 @@ pub(crate) mod app_tests {
             .unwrap()
     }
 
-    fn name_of(app: &StudioApp, id: ElementId) -> String {
+    fn name_of(app: &Studio, id: ElementId) -> String {
         let tree = app.project.as_ref().unwrap().state().tree();
         tree.effective_name(id).unwrap().to_string()
     }
 
     #[test]
     fn a_project_open_in_another_window_says_so() {
-        let (app, _context, folder) = studio("second");
+        let (app, folder) = studio("second");
         let project = app.project.as_ref().unwrap().folder().to_path_buf();
         let args = crate::Args::parse_from([
             "studio",
@@ -1646,9 +1085,13 @@ pub(crate) mod app_tests {
             "--session",
             folder.0.join("second.json").to_str().unwrap(),
         ]);
-        let context = egui::Context::default();
-        let creation = eframe::CreationContext::_new_kittest(context);
-        let mut second = StudioApp::new(&creation, args);
+        let mut second = Studio::new(
+            args,
+            System {
+                dark: true,
+                reduced_motion: false,
+            },
+        );
         second.open_project(&project);
         assert!(second.project.is_none());
         assert!(
@@ -1660,7 +1103,7 @@ pub(crate) mod app_tests {
 
     #[test]
     fn a_change_that_cannot_be_saved_is_reported_and_not_applied() {
-        let (mut app, context, _folder) = studio("save-failure");
+        let (mut app, _folder) = studio("save-failure");
         let model = app.project.as_ref().unwrap().folder().join("model");
         let file = std::fs::read_dir(&model)
             .unwrap()
@@ -1688,7 +1131,7 @@ pub(crate) mod app_tests {
             app.status
         );
         assert!(app.saved.is_err(), "the status bar says Not saved");
-        let exists = |app: &StudioApp| {
+        let exists = |app: &Studio| {
             app.project
                 .as_ref()
                 .unwrap()
@@ -1698,7 +1141,7 @@ pub(crate) mod app_tests {
                 .is_some()
         };
         assert!(!exists(&app));
-        app.execute(CommandId::Redo, &context);
+        app.execute(CommandId::Redo);
         assert!(!exists(&app), "redo does not apply the refused change");
         // Opening the open project reads it again, with the outside edit.
         let folder = app.project.as_ref().unwrap().folder().to_path_buf();
@@ -1719,7 +1162,7 @@ pub(crate) mod app_tests {
 
     #[test]
     fn a_change_is_shown_and_highlighted_where_it_happens() {
-        let (mut app, _context, _folder) = studio("highlight");
+        let (mut app, _folder) = studio("highlight");
         let api = part(&mut app, "api");
         assert!(app.lookup.node(&app.scene, api).is_some());
         assert!(app.highlights.contains_key(&api));
@@ -1728,18 +1171,18 @@ pub(crate) mod app_tests {
 
     #[test]
     fn undo_and_redo_go_through_the_project_and_update_the_surface() {
-        let (mut app, context, _folder) = studio("undo");
+        let (mut app, _folder) = studio("undo");
         let api = part(&mut app, "api");
-        app.execute(CommandId::Undo, &context);
+        app.execute(CommandId::Undo);
         assert!(app.lookup.node(&app.scene, api).is_none());
-        app.execute(CommandId::Redo, &context);
+        app.execute(CommandId::Redo);
         assert!(app.lookup.node(&app.scene, api).is_some());
         assert!(app.status.starts_with("Redid"));
     }
 
     #[test]
     fn a_locked_change_asks_and_applies_only_when_confirmed() {
-        let (mut app, _context, _folder) = studio("lock");
+        let (mut app, _folder) = studio("lock");
         let api = part(&mut app, "api");
         app.operation("Lock api", Operation::Lock { element: api });
         app.rename(api, "gateway");
@@ -1758,7 +1201,7 @@ pub(crate) mod app_tests {
 
     #[test]
     fn a_confirmation_given_after_the_model_changed_is_asked_again() {
-        let (mut app, _context, _folder) = studio("stale");
+        let (mut app, _folder) = studio("stale");
         let api = part(&mut app, "api");
         app.operation("Lock api", Operation::Lock { element: api });
         app.rename(api, "gateway");
@@ -1784,33 +1227,40 @@ pub(crate) mod app_tests {
 
     #[test]
     fn dialogs_block_edits_until_answered() {
-        let (mut app, context, _folder) = studio("modal");
+        let (mut app, _folder) = studio("modal");
         let api = part(&mut app, "api");
         app.operation("Lock api", Operation::Lock { element: api });
         app.rename(api, "gateway");
         assert!(app.dialog.is_some());
-        app.execute(CommandId::CreatePart, &context);
+        app.execute(CommandId::CreatePart);
         assert!(matches!(app.dialog, Some(Dialog::Confirm { .. })));
         assert!(app.status.contains("dialog"));
     }
 
     #[test]
-    fn a_graphics_fault_blocks_edit_input() {
-        // Positive control: the same key opens the create dialog normally.
-        let (mut app, context, _folder) = studio("fault-control");
-        frame(&mut app, &context, Vec::new());
-        frame(&mut app, &context, key(egui::Key::P));
-        assert!(matches!(app.dialog, Some(Dialog::Create { .. })));
-
-        let (mut app, context, _folder) = studio("fault");
-        frame(&mut app, &context, Vec::new());
-        let recovery = crate::surface_recovery::Recovery::default();
-        context.data_mut(|data| {
-            data.insert_temp(egui::Id::new("native-surface-recovery"), recovery.clone())
-        });
-        recovery.device_lost(wgpu::DeviceLostReason::Unknown, "test", Some(&context));
-        frame(&mut app, &context, key(egui::Key::P));
-        assert!(app.dialog.is_none(), "no edit while the device is lost");
-        assert!(app.status.contains("Graphics device lost"));
+    fn edits_are_highlighted_in_the_colour_of_who_made_them() {
+        let (mut app, _folder) = studio("highlight-actor");
+        let api = part(&mut app, "api");
+        assert_eq!(app.highlights[&api].1, Actor::Operator);
+        let package = app
+            .project
+            .as_ref()
+            .unwrap()
+            .state()
+            .tree()
+            .find("P")
+            .unwrap();
+        let change = Change::new(
+            Actor::Assistant,
+            "Create store",
+            vec![Operation::Create {
+                parent: Parent::Element(package),
+                element: Box::new(Element::named(ElementKind::Part, "store")),
+            }],
+        );
+        let Outcome::Applied(event) = app.apply_change(change) else {
+            panic!("applied")
+        };
+        assert_eq!(app.highlights[&event.created[0]].1, Actor::Assistant);
     }
 }

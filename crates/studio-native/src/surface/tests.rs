@@ -1,0 +1,52 @@
+//! The Surface's direct manipulation, without a window.
+use super::*;
+use crate::edit::app_tests::studio;
+
+#[test]
+fn a_dragged_card_keeps_its_place_and_the_model_is_unchanged() {
+    let (mut app, _folder) = studio("surface-move");
+    let package = app.project.as_ref().unwrap().state().tree().find("P").unwrap();
+    app.create(crate::edit::CreateKind::Part, false, "api", Parent::Element(package));
+    let api = app.project.as_ref().unwrap().state().tree().find("P::api").unwrap();
+    let revision = app.project.as_ref().unwrap().state().revision();
+    let before = app.lookup.node(&app.scene, api).unwrap().bounds;
+    drop_card(&mut app, api, Point::new(0.0, 0.0), Point::new(120.0, 60.0), false, None);
+    let after = app.lookup.node(&app.scene, api).unwrap().bounds;
+    assert!((after.min.x - before.min.x - 120.0).abs() < 1.0, "{before:?} {after:?}");
+    assert_eq!(
+        app.project.as_ref().unwrap().state().revision(),
+        revision,
+        "moving a card is presentation only"
+    );
+}
+
+#[test]
+fn alt_drop_moves_the_element_into_the_container() {
+    let (mut app, _folder) = studio("surface-alt-drop");
+    let package = app.project.as_ref().unwrap().state().tree().find("P").unwrap();
+    app.create(crate::edit::CreateKind::Part, false, "api", Parent::Element(package));
+    app.create(crate::edit::CreateKind::Part, false, "service", Parent::Element(package));
+    let tree = app.project.as_ref().unwrap().state().tree();
+    let (api, service) = (tree.find("P::api").unwrap(), tree.find("P::service").unwrap());
+    drop_card(
+        &mut app,
+        api,
+        Point::default(),
+        Point::new(10.0, 10.0),
+        true,
+        Some(&SceneTarget::Node(service)),
+    );
+    let tree = app.project.as_ref().unwrap().state().tree();
+    assert!(tree.find("P::service::api").is_some(), "{}", app.status);
+}
+
+#[test]
+fn every_context_command_exists_and_edges_offer_only_delete() {
+    let edge = SceneTarget::Edge("e".into());
+    assert_eq!(context_commands(Some(&edge)), &[CommandId::Delete]);
+    for target in [None, Some(&edge)] {
+        for id in context_commands(target) {
+            let _ = commands::command(*id);
+        }
+    }
+}

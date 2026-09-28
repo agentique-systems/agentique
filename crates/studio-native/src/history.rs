@@ -1,13 +1,10 @@
-//! The History Panel: checkpoints, newest first, and a visual "what changed"
-//! between two of them, or between one and now, shown on the Surface.
-use crate::{
-    app::StudioApp,
-    targets::{Target, record},
-};
+//! The History Panel's content: checkpoints, newest first, and a visual
+//! "what changed" between two of them, or between one and now, shown on the
+//! Surface.
+use crate::studio::Studio;
 use agq_language::{ElementId, ElementKind, Tree, validate};
-use agq_studio_scene::{SceneInput, SceneTarget};
+use agq_studio_scene::SceneInput;
 use agq_system_state::{Checkpoint, Project, compare};
-use eframe::egui::{self, RichText};
 use std::collections::{BTreeMap, BTreeSet};
 use std::time::SystemTime;
 
@@ -128,7 +125,7 @@ impl Comparison {
 #[derive(Default)]
 pub struct HistoryPanel {
     pub checkpoints: Vec<Checkpoint>,
-    loaded: bool,
+    pub loaded: bool,
     /// Selected checkpoint ids, at most two.
     pub selected: Vec<String>,
     /// Why the checkpoints could not be read, if they could not.
@@ -154,9 +151,22 @@ impl HistoryPanel {
         let ids: BTreeSet<_> = self.checkpoints.iter().map(|c| c.id.clone()).collect();
         self.selected.retain(|id| ids.contains(id));
     }
+
+    /// Selects or deselects a checkpoint; at most two stay selected.
+    pub fn toggle(&mut self, id: &str) {
+        if let Some(position) = self.selected.iter().position(|s| s == id) {
+            self.selected.remove(position);
+        } else {
+            self.selected.push(id.to_string());
+            if self.selected.len() > 2 {
+                self.selected.remove(0);
+            }
+        }
+    }
 }
 
-fn ago(time: i64) -> String {
+/// How long ago a checkpoint was recorded, in words.
+pub fn ago(time: i64) -> String {
     let now = SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .map_or(0, |d| d.as_secs() as i64);
@@ -169,91 +179,18 @@ fn ago(time: i64) -> String {
     }
 }
 
-impl StudioApp {
-    pub fn history_panel(&mut self, ui: &mut egui::Ui) {
-        let theme = self.theme;
-        let Some(project) = &self.project else {
-            ui.label(crate::app::muted(
-                "Open a project to see its history.",
-                theme,
-            ));
-            return;
-        };
-        if !self.history.loaded {
+impl Studio {
+    /// Reads the checkpoints once a project is shown.
+    pub fn load_history(&mut self) {
+        if let Some(project) = &self.project
+            && !self.history.loaded
+        {
             self.history.reload(project);
         }
-        let uncommitted = self.history.uncommitted.unwrap_or(true);
-        ui.horizontal(|ui| {
-            let button = ui.button("Checkpoint…");
-            record(ui.ctx(), Target::Button("Checkpoint…"), button.rect);
-            if button.clicked() {
-                self.dialog = Some(crate::edit::Dialog::Checkpoint {
-                    message: String::new(),
-                });
-            }
-            ui.label(crate::app::muted("Ctrl+S", theme).small());
-        });
-        theme.section(ui, "CHECKPOINTS · NEWEST FIRST");
-        ui.label(if uncommitted {
-            RichText::new("●  Now · changes since the last checkpoint").color(theme.accent)
-        } else {
-            RichText::new("●  Now · same as the last checkpoint").color(theme.muted)
-        });
-        if let Some(error) = &self.history.error {
-            ui.label(
-                RichText::new(format!("The history could not be read: {error}")).color(theme.error),
-            );
-        } else if self.history.checkpoints.is_empty() {
-            ui.label(crate::app::muted(
-                "No checkpoints yet. Ctrl+S records one.",
-                theme,
-            ));
-        }
-        let mut toggled = None;
-        for (index, checkpoint) in self.history.checkpoints.iter().enumerate() {
-            let selected = self.history.selected.contains(&checkpoint.id);
-            let label = format!("{}\n{}", checkpoint.message, ago(checkpoint.time));
-            let response = ui.add(
-                egui::Button::selectable(selected, label)
-                    .min_size(egui::vec2(ui.available_width(), 40.0)),
-            );
-            if index < 8 {
-                record(ui.ctx(), Target::Button(HISTORY_ROWS[index]), response.rect);
-            }
-            if response.clicked() {
-                toggled = Some(checkpoint.id.clone());
-            }
-        }
-        if let Some(id) = toggled {
-            if let Some(position) = self.history.selected.iter().position(|s| *s == id) {
-                self.history.selected.remove(position);
-            } else {
-                self.history.selected.push(id);
-                if self.history.selected.len() > 2 {
-                    self.history.selected.remove(0);
-                }
-            }
-        }
-        ui.add_space(8.0);
-        ui.horizontal_wrapped(|ui| {
-            let label = match self.history.selected.len() {
-                1 => "Show changes since then",
-                _ => "Show changes between them",
-            };
-            let show = ui.add_enabled(!self.history.selected.is_empty(), egui::Button::new(label));
-            record(ui.ctx(), Target::Button("Show changes"), show.rect);
-            if show.clicked() {
-                self.compare_selected();
-            }
-            if self.comparison.is_some() && ui.button("Close comparison").clicked() {
-                self.comparison = None;
-                self.rebuild();
-            }
-        });
-        self.comparison_list(ui);
     }
 
-    fn compare_selected(&mut self) {
+    /// Shows what changed since the selected checkpoint, or between the two.
+    pub fn compare_selected(&mut self) {
         let Some(project) = &self.project else { return };
         // Checkpoints are listed newest first: the later index is older.
         let mut chosen: Vec<&Checkpoint> = self
@@ -306,72 +243,9 @@ impl StudioApp {
         }
     }
 
-    fn comparison_list(&mut self, ui: &mut egui::Ui) {
-        let theme = self.theme;
-        let Some(comparison) = &self.comparison else {
-            return;
-        };
-        theme.section(ui, "WHAT CHANGED");
-        if !comparison.after_is_now {
-            ui.label(crate::app::muted(
-                "The Surface shows the later checkpoint. Close the comparison to edit.",
-                theme,
-            ));
-        }
-        if comparison.created.is_empty()
-            && comparison.updated.is_empty()
-            && comparison.deleted.is_empty()
-        {
-            ui.label(crate::app::muted("No differences.", theme));
-        }
-        let mut focus = None;
-        for (id, name) in &comparison.created {
-            if ui
-                .add(
-                    egui::Button::new(RichText::new(format!("+  {name}")).color(theme.green))
-                        .frame(false),
-                )
-                .clicked()
-            {
-                focus = Some(*id);
-            }
-        }
-        for (id, name) in &comparison.updated {
-            if ui
-                .add(
-                    egui::Button::new(RichText::new(format!("~  {name}")).color(theme.violet))
-                        .frame(false),
-                )
-                .clicked()
-            {
-                focus = Some(*id);
-            }
-        }
-        for name in &comparison.deleted {
-            ui.label(
-                RichText::new(format!("−  {name}"))
-                    .color(theme.error)
-                    .strikethrough(),
-            );
-        }
-        if let Some(id) = focus {
-            let target = SceneTarget::Node(id);
-            if self.scene.target_bounds(&target).is_some() {
-                self.select(target.clone(), false);
-                self.frame_target(&target);
-            }
-        }
+    /// Ends the "what changed" comparison.
+    pub fn close_comparison(&mut self) {
+        self.comparison = None;
+        self.rebuild();
     }
 }
-
-/// Automation names for the first history rows.
-pub const HISTORY_ROWS: [&str; 8] = [
-    "History 1",
-    "History 2",
-    "History 3",
-    "History 4",
-    "History 5",
-    "History 6",
-    "History 7",
-    "History 8",
-];

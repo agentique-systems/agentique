@@ -19,6 +19,7 @@ MODEL_DIR = ROOT / "models" / "agentique"
 LANGUAGE_CORE = "LanguageCore"  # depends on no other part
 CORE_PARTS = ("LanguageCore", "SystemState", "History")  # no UI or network libraries
 DENIED_LIBRARIES = {
+    "gpui", "gpui-pre", "gpui-pre-platform", "gpui-base",
     "eframe", "egui", "egui-wgpu", "wgpu", "winit", "slint",
     "reqwest", "hyper", "axum", "tokio", "tower-http", "ureq",
 }

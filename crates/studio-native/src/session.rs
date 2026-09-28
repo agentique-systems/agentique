@@ -43,6 +43,48 @@ pub struct ProjectView {
     pub inspector_hidden: bool,
     #[serde(default)]
     pub conversation_hidden: bool,
+    /// The docked columns' widths (W5.3).
+    #[serde(default)]
+    pub widths: Widths,
+}
+
+/// Widths of the docked columns, in UI points (before the UI scale).
+#[derive(Clone, Copy, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Widths {
+    pub outline: f32,
+    pub inspector: f32,
+    pub conversation: f32,
+}
+
+impl Widths {
+    pub const MIN: f32 = 200.0;
+    pub const MAX: f32 = 720.0;
+
+    /// Each width within its limits (a hand-edited session cannot hide a column).
+    pub fn clamped(self) -> Widths {
+        let clamp = |width: f32| {
+            if width.is_finite() {
+                width.clamp(Self::MIN, Self::MAX)
+            } else {
+                Self::MIN
+            }
+        };
+        Widths {
+            outline: clamp(self.outline),
+            inspector: clamp(self.inspector),
+            conversation: clamp(self.conversation),
+        }
+    }
+}
+
+impl Default for Widths {
+    fn default() -> Widths {
+        Widths {
+            outline: 248.0,
+            inspector: 320.0,
+            conversation: 400.0,
+        }
+    }
 }
 
 impl Session {
@@ -56,6 +98,7 @@ impl Session {
         }
         for view in session.views.values_mut() {
             view.camera = view.camera.filter(valid_camera);
+            view.widths = view.widths.clamped();
             view.layouts
                 .retain(|_, layout| layout.bounds.values().all(|b| b.finite()));
         }
