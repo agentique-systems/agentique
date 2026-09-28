@@ -8,6 +8,9 @@ pub enum CommandId {
     Graph,
     Requirements,
     Fit,
+    ZoomIn,
+    ZoomOut,
+    ZoomReset,
     ZoomToSelection,
     GoToElement,
     ShortcutHelp,
@@ -190,6 +193,27 @@ pub const COMMANDS: &[Command] = &[
         shortcut: "Shift+1",
         description: "Show the whole model (also Home)",
         // By its place on the keyboard: Shift+1 types "!" (`keyboard`).
+        key: None,
+    },
+    Command {
+        id: CommandId::ZoomIn,
+        label: "Zoom in",
+        shortcut: "+",
+        description: "Closer, around the middle of the Surface (also =)",
+        key: None,
+    },
+    Command {
+        id: CommandId::ZoomOut,
+        label: "Zoom out",
+        shortcut: "-",
+        description: "Further, around the middle of the Surface",
+        key: Some((NONE, Key::Minus)),
+    },
+    Command {
+        id: CommandId::ZoomReset,
+        label: "Zoom to 100%",
+        shortcut: "Shift+0",
+        description: "Cards at their own size",
         key: None,
     },
     Command {

@@ -702,6 +702,18 @@ impl StudioApp {
         self.fit_pending = false;
     }
 
+    /// Zooms around the middle of the Surface at once, ending any camera
+    /// move.
+    pub fn zoom_by(&mut self, factor: f32) {
+        let middle = agq_studio_scene::Point::new(
+            self.camera.viewport.width * 0.5,
+            self.camera.viewport.height * 0.5,
+        );
+        self.camera.zoom_at(middle, factor);
+        self.camera_target = None;
+        self.camera_move = None;
+    }
+
     pub fn frame_target(&mut self, target: &SceneTarget) {
         if let Some(bounds) = self.scene.target_bounds(target) {
             let mut camera = self.camera;
@@ -773,6 +785,10 @@ impl StudioApp {
                 self.panel = Panel::Requirements;
             }
             Fit => self.frame_all(),
+            // Keyboard zoom is instant (§8.5 rule 5), around the middle.
+            ZoomIn => self.zoom_by(1.25),
+            ZoomOut => self.zoom_by(0.8),
+            ZoomReset => self.zoom_by(1.0 / self.camera.zoom),
             ZoomToSelection => {
                 if let Some(target) = self.selection.primary.clone() {
                     self.frame_target(&target);
@@ -904,6 +920,18 @@ impl StudioApp {
         }
         if consume_shifted(ctx, egui::Key::Num2) {
             self.execute(CommandId::ZoomToSelection, ctx);
+            return;
+        }
+        if consume_shifted(ctx, egui::Key::Num0) {
+            self.execute(CommandId::ZoomReset, ctx);
+            return;
+        }
+        // "+" is Shift+= on many layouts; = alone zooms in too.
+        if ctx.input_mut(|i| {
+            i.consume_key(egui::Modifiers::NONE, egui::Key::Plus)
+                || i.consume_key(egui::Modifiers::NONE, egui::Key::Equals)
+        }) {
+            self.execute(CommandId::ZoomIn, ctx);
             return;
         }
         // Redo also answers to Ctrl+Shift+Z.
