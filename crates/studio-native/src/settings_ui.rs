@@ -255,6 +255,17 @@ impl SettingsView {
             state.models.poll();
             if state.test.poll() {
                 let works = matches!(state.test, Background::Done(KeyCheck::Works));
+                // A key that works shows its models at once, listed with that
+                // key even before it is saved (E2).
+                if works && !state.models.running() {
+                    let key = state.tested.clone();
+                    state.models = Background::start(move || {
+                        Providers::new()
+                            .with_key(provider, key)
+                            .list_models(provider)
+                            .map_err(|error| error.message)
+                    });
+                }
                 if state.save_after_test {
                     state.save_after_test = false;
                     if works {
