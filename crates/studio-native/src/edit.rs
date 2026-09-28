@@ -1403,6 +1403,98 @@ pub(crate) mod app_tests {
     }
 
     #[test]
+    fn space_and_drag_pans_even_from_a_card() {
+        let (mut app, context, _folder) = studio("space-pan");
+        let api = part(&mut app, "api");
+        for _ in 0..6 {
+            frame(&mut app, &context, vec![]);
+        }
+        let viewport = context
+            .data(|data| {
+                data.get_temp::<egui::Rect>(egui::Id::new((
+                    "native-interaction-target",
+                    crate::targets::Target::Viewport,
+                )))
+            })
+            .expect("the Surface is shown");
+        let card = app
+            .scene
+            .nodes
+            .iter()
+            .find(|node| node.id() == api)
+            .expect("the card is on the Surface")
+            .bounds;
+        let at = app.camera.world_to_screen(card.center());
+        let start = viewport.min + egui::vec2(at.x, at.y);
+        let before = (app.camera.center, card);
+        let space = |pressed| egui::Event::Key {
+            key: egui::Key::Space,
+            physical_key: Some(egui::Key::Space),
+            pressed,
+            repeat: false,
+            modifiers: egui::Modifiers::NONE,
+        };
+        let button = |pos, pressed| egui::Event::PointerButton {
+            pos,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::NONE,
+        };
+        frame(
+            &mut app,
+            &context,
+            vec![space(true), egui::Event::PointerMoved(start)],
+        );
+        frame(&mut app, &context, vec![button(start, true)]);
+        for step in 1..=6 {
+            let pos = start + egui::vec2(20.0 * step as f32, 10.0 * step as f32);
+            frame(&mut app, &context, vec![egui::Event::PointerMoved(pos)]);
+        }
+        let end = start + egui::vec2(120.0, 60.0);
+        frame(&mut app, &context, vec![button(end, false), space(false)]);
+        let moved = app
+            .scene
+            .nodes
+            .iter()
+            .find(|node| node.id() == api)
+            .unwrap()
+            .bounds;
+        assert_eq!(moved, before.1, "the card stays where it was");
+        assert!(app.camera.center != before.0, "the camera panned");
+    }
+
+    #[test]
+    fn the_no_key_banner_opens_settings_at_providers() {
+        let (mut app, context, _folder) = studio("no-key-banner");
+        app.conversation.key_missing = Some("No DeepSeek key is set.".into());
+        frame(&mut app, &context, vec![]);
+        frame(&mut app, &context, vec![]);
+        let open = context
+            .data(|data| {
+                data.get_temp::<egui::Rect>(egui::Id::new((
+                    "native-interaction-target",
+                    crate::targets::Target::Button("Open Settings › Providers"),
+                )))
+            })
+            .expect("the banner offers Settings")
+            .center();
+        let button = |pressed| egui::Event::PointerButton {
+            pos: open,
+            button: egui::PointerButton::Primary,
+            pressed,
+            modifiers: egui::Modifiers::NONE,
+        };
+        frame(
+            &mut app,
+            &context,
+            vec![egui::Event::PointerMoved(open), button(true)],
+        );
+        frame(&mut app, &context, vec![button(false)]);
+        assert!(app.settings.open);
+        assert_eq!(app.settings.section, crate::settings_ui::Section::Providers);
+    }
+
+    #[test]
     fn focus_mode_hides_the_panels_and_is_remembered_per_project() {
         let (mut app, context, folder) = studio("focus-mode");
         let first = app.project.as_ref().unwrap().folder().to_path_buf();

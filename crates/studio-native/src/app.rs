@@ -83,6 +83,8 @@ pub struct StudioApp {
     pub palette: bool,
     pub palette_query: String,
     pub palette_focus: bool,
+    /// Commands run from the palette, most recent first (at most five).
+    pub recent_commands: Vec<CommandId>,
     /// Focus mode (Ctrl+\): the Surface takes the whole window.
     pub panels_hidden: bool,
     pub dialog: Option<crate::edit::Dialog>,
@@ -201,6 +203,7 @@ impl StudioApp {
             palette: false,
             palette_query: String::new(),
             palette_focus: false,
+            recent_commands: Vec::new(),
             panels_hidden: false,
             dialog: None,
             panel: Panel::Inspector,

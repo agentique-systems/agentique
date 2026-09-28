@@ -65,6 +65,7 @@ enum Action {
     InsertSelection,
     CancelEdit,
     NewConversation,
+    OpenSettings,
 }
 
 impl StudioApp {
@@ -136,6 +137,17 @@ impl StudioApp {
                 });
                 if let Some(message) = &self.conversation.key_missing {
                     banner(ui, theme, message);
+                    // The action that fixes it (§3.4: every error with the
+                    // action that fixes it).
+                    let open = ui.button("Open Settings › Providers");
+                    record(
+                        ui.ctx(),
+                        Target::Button("Open Settings › Providers"),
+                        open.rect,
+                    );
+                    if open.clicked() {
+                        actions.push(Action::OpenSettings);
+                    }
                 }
                 for error in [&self.conversation.read_error, &self.conversation.save_error]
                     .into_iter()
@@ -194,6 +206,7 @@ impl StudioApp {
                 Action::InsertSelection => self.insert_selection(),
                 Action::CancelEdit => self.cancel_edit(),
                 Action::NewConversation => self.new_conversation(),
+                Action::OpenSettings => self.settings.show(crate::settings_ui::Section::Providers),
             }
         }
     }
