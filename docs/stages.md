@@ -554,7 +554,7 @@ acceptance needs the Operator: a week of real use, Scenario E with real keys
 for every provider, and the side-by-side review (§3.1). Nothing here says the
 Operator accepted anything.
 
-**Done** (PRs #52–#72)
+**Done** (PRs #52–#79)
 
 - **W5.1 Toolkit** (#54): S4.1's Track A kept: egui and eframe 0.36.2 with
   wgpu 30, the Rust toolchain at 1.97.1, Inter's variable font at 400, 500
@@ -598,8 +598,20 @@ Operator accepted anything.
   and is reused while the view stays inside it, so panning and zooming in no
   longer rebuild 114,560 instances a frame at 10k: 10k pan and zoom now meet
   C-33.
-- **W5.6, part** (#69): Markdown tables in the Conversation (copied as
-  tab-separated text) and "Copy" under each reply.
+- **W5.6, part** (#69, #74): Markdown tables in the Conversation (copied as
+  tab-separated text), "Copy" under each reply, and a model picker in the
+  Conversation's header (the providers with a key; the choice is Settings').
+- **W5.4, more** (#79): a minimap in the Surface's corner when the model does
+  not fit in the view; click or drag it to move the view.
+- **W5.8, more** (#77, #78): Settings' Projects section (the folder for new
+  projects, recent projects with "Remove from the list", where conversations
+  are kept) and Advanced section (the settings file; a Danger zone whose
+  "Reset all settings" asks first and keeps `settings.json.bak`); Ctrl+,
+  reopens at the last section viewed; search marks its words; rows an
+  environment variable decides are shown disabled with "Set by …".
+- **W5.10 and W5.11, more** (#75, #76): the arrow keys move the selection
+  between cards (the selection ring is the focus); the taskbar flashes when
+  the Assistant stops while the window is in the background.
 - **W5.9, part** (#63): the first run's three-step welcome, with the URL
   shortener as a sample project.
 - **W5.12** (#61, #66): the `e-settings` journey (Scenario E without keys or
@@ -637,12 +649,13 @@ builds; single runs; raw reports outside the repository)
 | Edit to Surface, 10k (CPU, before presenting) | ≤ 100 ms | 127 ms median at 10,204 elements (scene 17 ms) | not met (W5.5) |
 | Edit, Surface half, 1k / 10k (CI) | 50 / 100 ms | 5–7 / 71–86 ms (77.7 ms on CI) | met |
 | Full scene build when a project opens, 1k / 10k | — / 1 s | 88 ms / 1.9 s | 10k not met |
-| Start to first update, warm | ≤ 400 ms | 482 ms (609 ms on the first start after the build) | not met |
+| Start to first update, warm | ≤ 400 ms | 484–500 ms (no change with the Credential Manager reads skipped) | not met |
 | Memory, start screen / 1k | ≤ 300 MB private | 379–414 / 424 MB between runs (Stage 4: 351–373 MB); DX12 instead of Vulkan: 384 MB | not met (R-44) |
 | Memory, 10k | ≤ 450 MB private | 479 MB (Stage 4: 504–527 MB) | not met (R-44) |
 
-The 10k pan and zoom rows are from #70's run; the stress harness now passes
-every budget at 1k and 10k. Journeys: `a-build`, `a-crash` (exits 3 by
+The final run on `main` at `8515d472` (end of the night) confirms the 10k
+rows: pan 6.26, zoom 6.28 ms p95, input to next update 4.94 and 4.99 ms; 1k
+pan 6.18, zoom 6.23 ms; the stress harness passes every budget at 1k and 10k. Journeys: `a-build`, `a-crash` (exits 3 by
 design), `a-reopen`, `a-assistant`, `d-daily` and `e-settings` pass (debug
 builds with `automation`).
 
@@ -662,22 +675,22 @@ need a Windows call); the welcome shows until a first project is opened.
 - **W5.3 Shell**: a docking API and panel widths remembered per project
   (egui keeps them for the session).
 - **W5.4 Surface**: new cards (sized to content, badges), arrowheads by kind,
-  label pills that never overlap containers, change marks by actor, named
-  level-of-detail tiers, the minimap (should). The dot grid, hollow and filled
-  ports and the selection ring exist from earlier stages.
+  label pills that never overlap containers, change marks by actor (a colour
+  decision: the "changed" magenta and the Assistant's violet are close),
+  named level-of-detail tiers. The dot grid, hollow and filled ports and the
+  selection ring exist from earlier stages.
 - **W5.5 Performance**: an edit on 10,204 elements takes 127 ms end to end
   (the scene 17 ms; applying and saving the change and rebuilding the scene
   input about 95 ms), over C-33's 100 ms; faster apply and save would touch
   the System State (the locked core, R-16): the Operator's call. The warm
   start (482 ms) and memory (R-44) miss their budgets; memory needs profiling.
-- **W5.6 Conversation**: new tool cards, the composer with context chips and a
-  model picker, the other message actions.
+- **W5.6 Conversation**: new tool cards, context chips in the composer, the
+  other message actions.
 - **W5.7**: Anthropic moves onto rig only after a live Anthropic run (P2); the
   hand-written client and the `reqwest` exception stay. OpenAI and OpenRouter
   not tried live (no keys).
-- **W5.8**: deep links from other errors (the no-key banner has one), the
-  Projects and Advanced sections (should), highlighted search matches, rows
-  an environment variable overrides shown as such.
+- **W5.8**: deep links from other errors (the no-key banner has one); search
+  does not reach the Projects row or the provider cards.
 - **W5.10 Accessibility**: Narrator (G6) and Japanese IME (G7) need the
   Operator; the §3.5 checklist is not worked through yet.
 - A shared build folder across git worktrees reused another worktree's build
@@ -697,8 +710,8 @@ need a Windows call); the welcome shows until a first project is opened.
    Conversation header then shows `deepseek-flash · high` and, after a turn,
    its estimated cost and today's total.
 2. Try "Start from the URL shortener", then Shift+1, Shift+2 on a selected
-   card, + and -, Space+drag, Ctrl+P and a name, ?, `Ctrl+\` (focus mode),
-   Ctrl+B and Ctrl+Alt+B.
+   card, + and -, Space+drag, the arrow keys, Ctrl+P and a name, ?,
+   `Ctrl+\` (focus mode), Ctrl+B and Ctrl+Alt+B, and the minimap.
 3. At 10k: `--fixture stress10000`, then pan and zoom (now within budget).
 4. The design tokens and generated themes: `--fixture components`.
 5. E4: test the Anthropic, OpenAI, OpenRouter and TypeSafe AI keys in
