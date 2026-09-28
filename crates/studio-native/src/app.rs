@@ -1154,7 +1154,19 @@ impl eframe::App for StudioApp {
         self.saved_layout = Default::default();
         self.follow_windows(ctx);
         self.animate(ctx);
+        let working = self.assistant_working();
         self.poll_conversation();
+        // A turn that ends or stops to ask while the window is in the
+        // background flashes the taskbar (§3.4).
+        if needs_attention(
+            working,
+            self.assistant_working(),
+            ctx.input(|i| i.viewport().focused),
+        ) {
+            ctx.send_viewport_cmd(egui::ViewportCommand::RequestUserAttention(
+                egui::UserAttentionType::Informational,
+            ));
+        }
         if self.conversation.running() && self.conversation.waiting.is_none() {
             // Streamed text and tool calls arrive from the Assistant's
             // thread; while it waits for the Operator, nothing arrives.
@@ -1258,6 +1270,19 @@ fn ui_scale(args: &Args, settings: &crate::settings_ui::SettingsView) -> Option<
     Some((scale as f32).clamp(1.0, 2.0))
 }
 
+impl StudioApp {
+    /// The Assistant is working without needing the Operator.
+    fn assistant_working(&self) -> bool {
+        self.conversation.running() && self.conversation.waiting.is_none() && self.dialog.is_none()
+    }
+}
+
+/// Whether to call the Operator back: the Assistant stopped working (the turn
+/// ended, or it waits for an answer) while the window was not focused.
+fn needs_attention(was_working: bool, working: bool, focused: Option<bool>) -> bool {
+    was_working && !working && focused == Some(false)
+}
+
 /// Takes a key pressed with Shift (and no other modifier) by its physical
 /// place, whatever character it types.
 fn consume_shifted(ctx: &egui::Context, physical: egui::Key) -> bool {
@@ -1279,4 +1304,21 @@ pub const SAMPLE_NAME: &str = "UrlShortener";
 
 pub fn muted(text: impl Into<String>, theme: Theme) -> egui::RichText {
     egui::RichText::new(text).color(theme.muted)
+}
+
+#[cfg(test)]
+mod attention_tests {
+    use super::needs_attention;
+
+    #[test]
+    fn the_operator_is_called_back_only_when_away_and_the_assistant_stops() {
+        assert!(needs_attention(true, false, Some(false)));
+        assert!(
+            !needs_attention(true, false, Some(true)),
+            "they are looking"
+        );
+        assert!(!needs_attention(true, true, Some(false)), "still working");
+        assert!(!needs_attention(false, false, Some(false)), "nothing ran");
+        assert!(!needs_attention(true, false, None), "focus not known");
+    }
 }
