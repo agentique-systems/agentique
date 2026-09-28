@@ -334,6 +334,57 @@ impl StudioApp {
         tree.get(*port)?.owner().filter(|owner| owner != card)
     }
 
+    /// Selects the nearest card in `direction` from the selected one (from
+    /// the middle of the view when nothing is selected), and brings it into
+    /// view at once (keyboard-invoked, §8.5 rule 5). The selection ring is
+    /// the focus ring (§3.5).
+    pub fn select_neighbour(&mut self, direction: (f32, f32)) {
+        let cards: Vec<_> = self
+            .scene
+            .nodes
+            .iter()
+            .filter(|node| node.category != agq_studio_scene::NodeCategory::Package)
+            .collect();
+        let from_card = self
+            .selection
+            .primary
+            .as_ref()
+            .and_then(|target| match target {
+                SceneTarget::Node(id) | SceneTarget::Container(id) => {
+                    cards.iter().find(|node| node.id() == *id)
+                }
+                _ => None,
+            });
+        let from = from_card.map_or(self.camera.center, |node| node.bounds.center());
+        let best = cards
+            .iter()
+            .filter(|node| from_card.is_none_or(|current| current.id() != node.id()))
+            .filter_map(|node| {
+                let center = node.bounds.center();
+                let (dx, dy) = (center.x - from.x, center.y - from.y);
+                let along = dx * direction.0 + dy * direction.1;
+                let across = (dx * direction.1 - dy * direction.0).abs();
+                // Ahead, and within 60 degrees of the direction.
+                (from_card.is_none() || (along > 0.0 && across <= along * 1.8))
+                    .then_some((along.abs() + 2.0 * across, *node))
+            })
+            .min_by(|a, b| a.0.total_cmp(&b.0))
+            .map(|(_, node)| node);
+        let Some(node) = best else { return };
+        let (id, bounds, container) = (node.id(), node.bounds, node.is_container);
+        let target = if container {
+            SceneTarget::Container(id)
+        } else {
+            SceneTarget::Node(id)
+        };
+        self.select(target, false);
+        if !self.camera.visible_rect().contains_rect(bounds) {
+            self.camera.center = bounds.center();
+            self.camera_target = None;
+            self.camera_move = None;
+        }
+    }
+
     pub fn select(&mut self, target: SceneTarget, extend: bool) {
         self.selection.select(target, extend);
         self.batch_key = None;
@@ -950,6 +1001,18 @@ impl StudioApp {
         }) {
             self.execute(CommandId::ZoomIn, ctx);
             return;
+        }
+        // The arrow keys move the selection to the nearest card that way.
+        for (key, direction) in [
+            (egui::Key::ArrowLeft, (-1.0, 0.0)),
+            (egui::Key::ArrowRight, (1.0, 0.0)),
+            (egui::Key::ArrowUp, (0.0, -1.0)),
+            (egui::Key::ArrowDown, (0.0, 1.0)),
+        ] {
+            if ctx.input_mut(|i| i.consume_key(egui::Modifiers::NONE, key)) {
+                self.select_neighbour(direction);
+                return;
+            }
         }
         // Redo also answers to Ctrl+Shift+Z.
         if ctx.input_mut(|i| {

@@ -1495,6 +1495,62 @@ pub(crate) mod app_tests {
     }
 
     #[test]
+    fn the_arrow_keys_move_the_selection_to_the_next_card_that_way() {
+        let (mut app, context, _folder) = studio("arrows");
+        let names = ["a", "b", "c"];
+        let ids: Vec<_> = names.iter().map(|name| part(&mut app, name)).collect();
+        for _ in 0..4 {
+            frame(&mut app, &context, vec![]);
+        }
+        let center = |app: &StudioApp, id| {
+            app.scene
+                .nodes
+                .iter()
+                .find(|node| node.id() == id)
+                .unwrap()
+                .bounds
+                .center()
+        };
+        // Nothing selected: an arrow selects a card near the middle.
+        frame(
+            &mut app,
+            &context,
+            press(
+                egui::Key::ArrowRight,
+                egui::Key::ArrowRight,
+                egui::Modifiers::NONE,
+            ),
+        );
+        let Some(SceneTarget::Node(first)) = app.selection.primary.clone() else {
+            panic!("a card is selected")
+        };
+        // Every further arrow moves in its direction, or stays put at the edge.
+        let mut moved = 0;
+        for (key, sign) in [
+            (egui::Key::ArrowRight, (1.0, 0.0)),
+            (egui::Key::ArrowLeft, (-1.0, 0.0)),
+            (egui::Key::ArrowDown, (0.0, 1.0)),
+            (egui::Key::ArrowUp, (0.0, -1.0)),
+        ] {
+            let Some(SceneTarget::Node(before)) = app.selection.primary.clone() else {
+                panic!()
+            };
+            frame(&mut app, &context, press(key, key, egui::Modifiers::NONE));
+            let Some(SceneTarget::Node(after)) = app.selection.primary.clone() else {
+                panic!()
+            };
+            if after != before {
+                moved += 1;
+                let (from, to) = (center(&app, before), center(&app, after));
+                let along = (to.x - from.x) * sign.0 + (to.y - from.y) * sign.1;
+                assert!(along > 0.0, "{key:?} moved the other way");
+            }
+        }
+        assert!(ids.contains(&first));
+        assert!(moved >= 1, "three cards, and no arrow reached another");
+    }
+
+    #[test]
     fn focus_mode_hides_the_panels_and_is_remembered_per_project() {
         let (mut app, context, folder) = studio("focus-mode");
         let first = app.project.as_ref().unwrap().folder().to_path_buf();
