@@ -846,6 +846,12 @@ pub fn script_assistant(app: &mut StudioApp) {
         "- `UrlShortener::UrlShortenerService::store` keeps the links; the `storage` interface joins it to the API.",
         "- `UrlShortener::UrlShortenerService::stats` counts clicks, as a *separate* part.",
         "",
+        "| Part | Serves |",
+        "|---|---|",
+        "| api | shorten, resolve |",
+        "| store | links |",
+        "| stats | clicks |",
+        "",
         "Nothing is locked yet: lock the parts you consider settled.",
     ]
     .join("\n");

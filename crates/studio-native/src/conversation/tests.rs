@@ -330,6 +330,8 @@ fn stop_keeps_the_partial_work_and_undo_removes_the_turns_changes() {
 
     let state = app.project.as_ref().unwrap().state();
     assert_eq!(app.conversation.undoable(state), Some(Undo::Assistant(2)));
+    // The list follows new content to its end on the next frame.
+    frame(&mut app, &context, Vec::new());
     frame(&mut app, &context, Vec::new());
     click(
         &mut app,
@@ -691,6 +693,24 @@ fn copied(output: &egui::PlatformOutput) -> Option<&str> {
         egui::OutputCommand::CopyText(text) => Some(text.as_str()),
         _ => None,
     })
+}
+
+#[test]
+fn a_reply_is_copied_as_markdown_and_its_table_is_shown() {
+    let (mut app, context, _folder) = assisted("assistant-copy", Vec::new());
+    let markdown =
+        "Two parts:\n\n| Part | Type |\n|---|---|\n| api | HttpApi |\n| store | LinkStore |";
+    let entries = &mut app.conversation.conversation.entries;
+    entries.push(Entry::Operator {
+        text: "List the parts".into(),
+    });
+    entries.push(Entry::reply(None, &[text(markdown)]));
+    frame(&mut app, &context, Vec::new());
+    frame(&mut app, &context, Vec::new());
+    let copy = shown(&context, Target::Button(crate::conversation_ui::COPY_REPLY)).center();
+    frame(&mut app, &context, pointer(copy, Some(true)));
+    let output = frame(&mut app, &context, pointer(copy, Some(false)));
+    assert_eq!(copied(&output), Some(markdown));
 }
 
 /// Gate G4: a drag from the first message into the third selects across
