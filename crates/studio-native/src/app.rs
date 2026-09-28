@@ -80,6 +80,8 @@ pub struct StudioApp {
     pub palette: bool,
     pub palette_query: String,
     pub palette_focus: bool,
+    /// Focus mode (Ctrl+\): the Surface takes the whole window.
+    pub panels_hidden: bool,
     pub dialog: Option<crate::edit::Dialog>,
     pub panel: Panel,
     pub history: crate::history::HistoryPanel,
@@ -195,6 +197,7 @@ impl StudioApp {
             palette: false,
             palette_query: String::new(),
             palette_focus: false,
+            panels_hidden: false,
             dialog: None,
             panel: Panel::Inspector,
             history: Default::default(),
@@ -400,6 +403,7 @@ impl StudioApp {
         self.project = Some(project);
         self.view = remembered.view;
         self.layouts = remembered.layouts;
+        self.panels_hidden = remembered.panels_hidden;
         self.collapsed.clear();
         self.focus = None;
         self.selection.clear();
@@ -852,6 +856,7 @@ impl StudioApp {
                     .set_value("appearance.reducedMotion", serde_json::json!(reduced));
                 self.apply_appearance(ctx);
             }
+            HidePanels => self.panels_hidden = !self.panels_hidden,
             Settings => {
                 if self.settings.open {
                     self.settings.close();
@@ -941,6 +946,7 @@ impl StudioApp {
                     view: self.view,
                     camera: Some(self.camera_target.unwrap_or(self.camera)),
                     layouts: self.layouts.clone(),
+                    panels_hidden: self.panels_hidden,
                 },
             );
         }

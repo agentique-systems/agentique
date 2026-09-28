@@ -1335,6 +1335,21 @@ pub(crate) mod app_tests {
     }
 
     #[test]
+    fn focus_mode_hides_the_panels_and_is_remembered_per_project() {
+        let (mut app, context, folder) = studio("focus-mode");
+        let first = app.project.as_ref().unwrap().folder().to_path_buf();
+        frame(&mut app, &context, vec![]);
+        app.execute(crate::commands::CommandId::HidePanels, &context);
+        assert!(app.panels_hidden);
+        frame(&mut app, &context, vec![]);
+        // Another project has its own layout; the first keeps focus mode.
+        app.create_project(&folder.0.join("Q"), "Q");
+        assert!(!app.panels_hidden);
+        app.open_project(&first);
+        assert!(app.panels_hidden);
+    }
+
+    #[test]
     fn the_first_run_can_start_from_the_url_shortener() {
         let (mut app, _context, folder) = studio("sample");
         app.create_sample(&folder.0.join("Sample"), crate::app::SAMPLE_NAME);
