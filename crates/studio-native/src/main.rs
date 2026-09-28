@@ -31,6 +31,8 @@ mod session;
 )]
 mod settings;
 mod settings_view;
+#[cfg(feature = "automation")]
+mod stress_automation;
 mod studio;
 mod surface;
 mod timing;
@@ -132,6 +134,7 @@ fn main() {
             palette::bind(cx);
             dialogs::bind(cx);
             conversation_view::bind(cx);
+            settings_view::bind(cx);
             workspace::bind(cx);
             let bounds = Bounds::centered(None, size(px(1600.0), px(1000.0)), cx);
             let options = WindowOptions {
@@ -153,6 +156,8 @@ fn main() {
             let args = args.clone();
             let opened = cx.open_window(options, move |window, cx| {
                 let workspace = cx.new(|cx| workspace::Workspace::new(args, window, cx));
+                #[cfg(feature = "automation")]
+                automation::start(workspace.clone(), window, cx);
                 cx.new(|cx| gpui_base::Root::new(workspace, window, cx))
             });
             if let Err(error) = opened {

@@ -7,7 +7,7 @@ use gpui::{
 };
 
 /// Inter's variable font (Inter 4.1), at the weights of the type scale.
-pub const SANS: &str = "Inter Variable";
+pub const SANS: &str = "Inter";
 /// Names, values and code.
 pub const MONO: &str = "JetBrains Mono NL";
 
@@ -64,7 +64,6 @@ impl Role {
 pub struct Theme {
     pub dark: bool,
     pub contrast: bool,
-    pub colours: Colours,
     /// The Surface, behind everything the model shows.
     pub canvas: Hsla,
     /// The window's chrome: title bar, status bar, docked panels.
@@ -125,7 +124,6 @@ impl Theme {
         Theme {
             dark,
             contrast,
-            colours,
             canvas,
             chrome,
             raised,
@@ -202,11 +200,13 @@ impl Theme {
     /// Shares the colours with gpui-base, whose text fields and scroll bars
     /// read its own theme.
     pub fn base_theme(&self) -> gpui_base::Theme {
-        let mut base = gpui_base::Theme::default();
-        base.appearance = if self.dark {
-            gpui_base::ThemeAppearance::Dark
-        } else {
-            gpui_base::ThemeAppearance::Light
+        let mut base = gpui_base::Theme {
+            appearance: if self.dark {
+                gpui_base::ThemeAppearance::Dark
+            } else {
+                gpui_base::ThemeAppearance::Light
+            },
+            ..gpui_base::Theme::default()
         };
         let colors = &mut base.tokens.colors;
         colors.background = self.chrome;
@@ -255,11 +255,6 @@ pub mod text {
 pub const REGULAR: FontWeight = FontWeight(crate::tokens::text::REGULAR as f32);
 pub const MEDIUM: FontWeight = FontWeight(crate::tokens::text::MEDIUM as f32);
 pub const SEMIBOLD: FontWeight = FontWeight(crate::tokens::text::SEMIBOLD as f32);
-
-/// Spacing on the 4-point grid, scaled with the UI.
-pub fn space(points: f32) -> Rems {
-    r(points)
-}
 
 /// A px value that does not scale with the UI (hairlines).
 pub fn hairline() -> Pixels {

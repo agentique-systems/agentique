@@ -42,7 +42,6 @@ pub enum Panel {
 pub struct Dirty(u16);
 
 impl Dirty {
-    pub const NONE: Dirty = Dirty(0);
     /// The camera moved (pan, zoom, a camera move running).
     pub const CAMERA: Dirty = Dirty(1);
     pub const SELECTION: Dirty = Dirty(1 << 1);
@@ -180,8 +179,6 @@ pub struct Studio {
     pub surface_size: Option<(f32, f32)>,
     /// The Conversation with the Assistant, for the open project.
     pub conversation: crate::conversation::ConversationPanel,
-    /// The first run's welcome (R-46) is shown until a project is opened.
-    pub welcome_step: usize,
     last_saved: Instant,
     /// What changed since the views last heard.
     dirty: Dirty,
@@ -219,7 +216,8 @@ impl Studio {
         let input = SceneInput::default();
         let scene = Scene::build(&input, &SceneOptions::default(), None)
             .expect("an empty scene always builds");
-        let conversation = crate::conversation::ConversationPanel::with_choice(settings.model_choice());
+        let conversation =
+            crate::conversation::ConversationPanel::with_choice(settings.model_choice());
         let mut studio = Self {
             spatial: Rc::new(SpatialIndex::build(&scene)),
             lookup: Rc::new(SceneLookup::build(&scene)),
@@ -274,7 +272,6 @@ impl Studio {
             fit_pending: true,
             surface_size: None,
             conversation,
-            welcome_step: 0,
             last_saved: Instant::now(),
             dirty: Dirty::ALL,
         };
@@ -974,7 +971,11 @@ impl Studio {
             // The appearance commands change the setting, so Settings shows
             // it and it holds at the next start.
             Theme => {
-                let theme = if self.appearance.dark { "light" } else { "dark" };
+                let theme = if self.appearance.dark {
+                    "light"
+                } else {
+                    "dark"
+                };
                 let _ = self
                     .settings
                     .set("appearance.theme", serde_json::json!(theme));

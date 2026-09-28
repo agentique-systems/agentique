@@ -41,15 +41,23 @@ impl RouteObstacles {
             return;
         };
         let bounds = Rect::from_points(a, b);
-        for x in (bounds.min.x / Self::CELL).floor() as i32..=(bounds.max.x / Self::CELL).floor() as i32 {
-            for y in (bounds.min.y / Self::CELL).floor() as i32..=(bounds.max.y / Self::CELL).floor() as i32 {
+        for x in
+            (bounds.min.x / Self::CELL).floor() as i32..=(bounds.max.x / Self::CELL).floor() as i32
+        {
+            for y in (bounds.min.y / Self::CELL).floor() as i32
+                ..=(bounds.max.y / Self::CELL).floor() as i32
+            {
                 self.cells.entry((x, y)).or_default().push([a, b]);
             }
         }
     }
     fn intersects(&self, bounds: Rect) -> bool {
-        for x in (bounds.min.x / Self::CELL).floor() as i32..=(bounds.max.x / Self::CELL).floor() as i32 {
-            for y in (bounds.min.y / Self::CELL).floor() as i32..=(bounds.max.y / Self::CELL).floor() as i32 {
+        for x in
+            (bounds.min.x / Self::CELL).floor() as i32..=(bounds.max.x / Self::CELL).floor() as i32
+        {
+            for y in (bounds.min.y / Self::CELL).floor() as i32
+                ..=(bounds.max.y / Self::CELL).floor() as i32
+            {
                 if self.cells.get(&(x, y)).is_some_and(|segments| {
                     segments
                         .iter()

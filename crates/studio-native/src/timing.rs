@@ -17,6 +17,31 @@ pub fn mark_process_start() {
 }
 const FRAME_WARMUP_INTERVALS: usize = 60;
 
+#[cfg(feature = "automation")]
+thread_local! {
+    static PAINT_END: std::cell::Cell<Option<Instant>> = const { std::cell::Cell::new(None) };
+}
+
+/// The window's last child: its paint records when the frame's paint ended,
+/// for the benchmarks (`--features automation`).
+#[cfg(feature = "automation")]
+pub fn paint_end_marker() -> gpui::AnyElement {
+    use gpui::{IntoElement, Styled};
+    gpui::canvas(
+        |_, _, _| {},
+        |_, _, _, _| PAINT_END.with(|end| end.set(Some(Instant::now()))),
+    )
+    .absolute()
+    .size_0()
+    .into_any_element()
+}
+
+/// When the last frame's paint ended.
+#[cfg(feature = "automation")]
+pub fn last_paint_end() -> Option<Instant> {
+    PAINT_END.with(|end| end.get())
+}
+
 #[derive(Clone, Copy)]
 pub enum InputKind {
     Pan,
@@ -133,15 +158,21 @@ impl FrameTiming {
         self.received_input.get_or_insert_with(Instant::now);
     }
 
+    /// The window's first frame has been painted, on any screen: the end of
+    /// the start budget (§3.3). GPUI submits and presents afterwards.
+    pub fn first_paint(&mut self) {
+        if self.start_to_first_update_ms.is_none()
+            && let Some(start) = PROCESS_START.get()
+        {
+            self.start_to_first_update_ms = Some(start.elapsed().as_secs_f64() * 1000.0);
+        }
+    }
+
     /// The Surface's paint has ended. GPUI submits and presents afterwards;
     /// neither this marker nor the next-update marker claims visible photons.
     pub fn ui_complete(&mut self) {
         let now = Instant::now();
-        if self.start_to_first_update_ms.is_none()
-            && let Some(start) = PROCESS_START.get()
-        {
-            self.start_to_first_update_ms = Some(now.duration_since(*start).as_secs_f64() * 1000.0);
-        }
+        self.first_paint();
         if let Some(started) = self.update_started.take() {
             self.ui_cpu
                 .push(now.duration_since(started).as_secs_f64() * 1000.0);

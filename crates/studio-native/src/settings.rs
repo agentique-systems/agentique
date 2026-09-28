@@ -464,9 +464,10 @@ impl SettingsStore {
             (false, true) => "dark",
             (false, false) => "light",
         };
-        self.set("appearance.theme", Value::from(theme));
+        // Both are values of the table's own choices, so neither is refused.
+        let _ = self.set("appearance.theme", Value::from(theme));
         if reduced_motion {
-            self.set("appearance.reducedMotion", Value::from("on"));
+            let _ = self.set("appearance.reducedMotion", Value::from("on"));
         }
     }
 

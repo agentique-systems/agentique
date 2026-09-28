@@ -99,7 +99,11 @@ impl Button {
 
     /// A square button showing only an icon; `label` names it for screen
     /// readers and in its tooltip.
-    pub fn icon_only(id: impl Into<ElementId>, name: IconName, label: impl Into<SharedString>) -> Button {
+    pub fn icon_only(
+        id: impl Into<ElementId>,
+        name: IconName,
+        label: impl Into<SharedString>,
+    ) -> Button {
         let label = label.into();
         Button {
             label: None,
@@ -160,11 +164,18 @@ impl Button {
         self
     }
     /// A tooltip with a title and an optional shortcut.
-    pub fn tooltip(mut self, title: impl Into<SharedString>, shortcut: Option<&'static str>) -> Self {
+    pub fn tooltip(
+        mut self,
+        title: impl Into<SharedString>,
+        shortcut: Option<&'static str>,
+    ) -> Self {
         self.tooltip = Some(crate::ui::tooltip::text(title.into(), shortcut));
         self
     }
-    pub fn on_click(mut self, handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static) -> Self {
+    pub fn on_click(
+        mut self,
+        handler: impl Fn(&ClickEvent, &mut Window, &mut App) + 'static,
+    ) -> Self {
         self.on_click = Some(Rc::new(handler));
         self
     }
@@ -274,13 +285,17 @@ impl RenderOnce for Button {
             .when_some(self.shortcut, |this, shortcut| {
                 this.child(KeyCaps::new(shortcut).on_solid(solid))
             });
+        let name = self.label_for_screen_readers.clone().or(self.label.clone());
         let mut button = gpui_base::Button::new(self.id)
             .group(group)
+            .relative()
             .disabled(self.disabled)
             .selected(self.selected)
             .h(r(height))
             .when(square, |this| this.w(r(height)))
-            .when(!square, |this| this.px(r(if self.size == Size::Small { 8.0 } else { 10.0 })))
+            .when(!square, |this| {
+                this.px(r(if self.size == Size::Small { 8.0 } else { 10.0 }))
+            })
             .when(self.full_width, |this| this.w_full())
             .rounded(radius)
             .bg(bg)
@@ -302,7 +317,10 @@ impl RenderOnce for Button {
                 ring.extend(shadows);
                 style.shadow(ring)
             })
-            .child(content);
+            .child(content)
+            .when_some(name, |this, name| {
+                this.child(crate::ui::target::target(name))
+            });
         if let Some(label) = self.label_for_screen_readers.or(self.label) {
             button = button.accessibility_label(label);
         }

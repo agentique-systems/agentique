@@ -119,12 +119,24 @@ impl TextSelection {
 }
 
 /// The selected bytes of block `key`, which has `length` bytes.
-pub fn block_range((from, to): (TextPoint, TextPoint), key: BlockKey, length: usize) -> Option<Range<usize>> {
+pub fn block_range(
+    (from, to): (TextPoint, TextPoint),
+    key: BlockKey,
+    length: usize,
+) -> Option<Range<usize>> {
     if key < from.block_key() || key > to.block_key() {
         return None;
     }
-    let start = if key == from.block_key() { from.offset.min(length) } else { 0 };
-    let end = if key == to.block_key() { to.offset.min(length) } else { length };
+    let start = if key == from.block_key() {
+        from.offset.min(length)
+    } else {
+        0
+    };
+    let end = if key == to.block_key() {
+        to.offset.min(length)
+    } else {
+        length
+    };
     (start < end).then_some(start..end)
 }
 
@@ -161,7 +173,11 @@ pub fn selected_text<'a>(
             let end = floor_boundary(&content, selected.end);
             let item = block.marker().is_some();
             if let Some((last, last_item)) = previous {
-                text.push_str(if last == message && item && last_item { "\n" } else { "\n\n" });
+                text.push_str(if last == message && item && last_item {
+                    "\n"
+                } else {
+                    "\n\n"
+                });
             }
             if let Some(marker) = block.marker().filter(|_| start == 0) {
                 text.push_str(marker);
@@ -429,25 +445,44 @@ mod tests {
     use super::*;
 
     fn blocks(text: &str) -> Vec<Block> {
-        parse(text, &|name| (name == "P::api").then(|| agq_language::ElementId::from_raw(7)))
+        parse(text, &|name| {
+            (name == "P::api").then(|| agq_language::ElementId::from_raw(7))
+        })
     }
 
     #[test]
     fn a_reply_parses_into_blocks_with_links_and_styles() {
-        let parsed = blocks("# Plan\n\nAdd **the API** as `P::api` and `other`.\n\n- one\n- two\n\n```rust\nfn main() {}\n```\n\n| a | b |\n|---|---|\n| 1 | 2 |\n");
+        let parsed = blocks(
+            "# Plan\n\nAdd **the API** as `P::api` and `other`.\n\n- one\n- two\n\n```rust\nfn main() {}\n```\n\n| a | b |\n|---|---|\n| 1 | 2 |\n",
+        );
         assert_eq!(parsed.len(), 6, "{parsed:#?}");
-        let Block::Text(heading) = &parsed[0] else { panic!() };
+        let Block::Text(heading) = &parsed[0] else {
+            panic!()
+        };
         assert_eq!(heading.heading, Some(1));
-        let Block::Text(paragraph) = &parsed[1] else { panic!() };
+        let Block::Text(paragraph) = &parsed[1] else {
+            panic!()
+        };
         assert_eq!(paragraph.links.len(), 1);
         let (range, id) = &paragraph.links[0];
         assert_eq!(&paragraph.text[range.clone()], "P::api");
         assert_eq!(id.raw(), 7);
-        assert!(paragraph.spans.iter().any(|(range, style)| style.bold && &paragraph.text[range.clone()] == "the API"));
-        let Block::Text(item) = &parsed[2] else { panic!() };
+        assert!(
+            paragraph
+                .spans
+                .iter()
+                .any(|(range, style)| style.bold && &paragraph.text[range.clone()] == "the API")
+        );
+        let Block::Text(item) = &parsed[2] else {
+            panic!()
+        };
         assert_eq!(item.marker.as_deref(), Some("•"));
-        assert!(matches!(&parsed[4], Block::Code { language, code, .. } if language == "rust" && code == "fn main() {}"));
-        assert!(matches!(&parsed[5], Block::Table { header, rows } if header == &["a", "b"] && rows == &[vec!["1".to_string(), "2".to_string()]]));
+        assert!(
+            matches!(&parsed[4], Block::Code { language, code, .. } if language == "rust" && code == "fn main() {}")
+        );
+        assert!(
+            matches!(&parsed[5], Block::Table { header, rows } if header == &["a", "b"] && rows == &[vec!["1".to_string(), "2".to_string()]])
+        );
     }
 
     #[test]
@@ -455,10 +490,22 @@ mod tests {
         let first = blocks("First message from you.");
         let second = blocks("The second message.\n\n- one\n- two");
         let third = blocks("Third message here.");
-        let all = [((0, 0), first.as_slice()), ((1, 0), second.as_slice()), ((2, 0), third.as_slice())];
+        let all = [
+            ((0, 0), first.as_slice()),
+            ((1, 0), second.as_slice()),
+            ((2, 0), third.as_slice()),
+        ];
         let range = (
-            TextPoint { message: (0, 0), block: 0, offset: 0 },
-            TextPoint { message: (2, 0), block: 0, offset: 19 },
+            TextPoint {
+                message: (0, 0),
+                block: 0,
+                offset: 0,
+            },
+            TextPoint {
+                message: (2, 0),
+                block: 0,
+                offset: 19,
+            },
         );
         assert_eq!(
             selected_text(all, range),
@@ -473,7 +520,11 @@ mod tests {
         let text = blocks("Größe");
         let range = (
             TextPoint::default(),
-            TextPoint { message: (0, 0), block: 0, offset: 3 },
+            TextPoint {
+                message: (0, 0),
+                block: 0,
+                offset: 3,
+            },
         );
         assert_eq!(selected_text([((0, 0), text.as_slice())], range), "Gr");
     }

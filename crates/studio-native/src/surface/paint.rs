@@ -11,8 +11,9 @@ use crate::{
     ui::{Theme, theme},
 };
 use agq_studio_scene::{
-    Camera2D, DiffMark, EdgeKind, ElementId, LockMark, LodLevel, NodeCategory, Point, PortDirection,
-    PortSide, Rect, Scene, SceneLookup, SceneNode, SceneTarget, SpatialIndex, VisibleScene,
+    Camera2D, DiffMark, EdgeKind, ElementId, LockMark, LodLevel, NodeCategory, Point,
+    PortDirection, PortSide, Rect, Scene, SceneLookup, SceneNode, SceneTarget, SpatialIndex,
+    VisibleScene,
 };
 use agq_system_state::Actor;
 use gpui::{
@@ -47,6 +48,11 @@ pub struct Frame {
 /// What the paint measured, for the metrics report.
 pub struct Painted {
     pub visible_nodes: usize,
+    /// Finding what is in view.
+    pub visibility: std::time::Duration,
+    /// Laying out and drawing the text (labels; their accessible names are
+    /// the Surface's overlay nodes).
+    pub labels: std::time::Duration,
     /// Highlights still fading: the Surface asks for another frame.
     pub animating: bool,
 }
@@ -66,7 +72,7 @@ impl Screen {
     }
 }
 
-fn category_colour(category: NodeCategory, theme: &Theme) -> Hsla {
+pub(super) fn category_colour(category: NodeCategory, theme: &Theme) -> Hsla {
     match category {
         NodeCategory::Requirement => theme.warning.text,
         NodeCategory::Definition => theme.info.text,
@@ -139,7 +145,10 @@ fn grid(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window) {
     if fade <= 0.02 {
         return;
     }
-    let dot = frame.theme.dots.opacity(frame.theme.dots.a * (0.35 + 0.65 * fade));
+    let dot = frame
+        .theme
+        .dots
+        .opacity(frame.theme.dots.a * (0.35 + 0.65 * fade));
     let origin = frame.camera.world_to_screen(Point::default());
     let size_px = px(1.5);
     window.paint_layer(bounds, |window| {
@@ -151,7 +160,10 @@ fn grid(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window) {
             while x < width {
                 window.paint_quad(fill(
                     Bounds::new(
-                        point(bounds.origin.x + px(x) - size_px * 0.5, bounds.origin.y + px(y) - size_px * 0.5),
+                        point(
+                            bounds.origin.x + px(x) - size_px * 0.5,
+                            bounds.origin.y + px(y) - size_px * 0.5,
+                        ),
                         size(size_px, size_px),
                     ),
                     dot,
@@ -174,7 +186,10 @@ pub fn paint(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window, cx: &mu
     window.paint_quad(fill(bounds, theme.canvas));
     grid(frame, bounds, window);
     let view = frame.camera.visible_rect().inflate(24.0 / zoom);
+    let looked_up = std::time::Instant::now();
     let objects = frame.spatial.visible_scene(&frame.scene, view);
+    let visibility = looked_up.elapsed();
+    let mut labels = std::time::Duration::ZERO;
     let now = motion::clock();
     let mut animating = false;
     let highlight = |id: ElementId| -> Option<(f32, Hsla)> {
@@ -187,9 +202,7 @@ pub fn paint(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window, cx: &mu
         (strength > 0.0).then(|| (strength, theme.actor(*actor)))
     };
     let selected_card = |id: ElementId| frame.selection.contains(id);
-    let hovered_card = |id: ElementId| {
-        matches!(&frame.hovered, Some(SceneTarget::Node(h) | SceneTarget::Container(h)) if *h == id)
-    };
+    let hovered_card = |id: ElementId| matches!(&frame.hovered, Some(SceneTarget::Node(h) | SceneTarget::Container(h)) if *h == id);
     let radius = |node: &SceneNode| -> Pixels {
         let base = match node.category {
             NodeCategory::Requirement => 4.0,
@@ -215,11 +228,22 @@ pub fn paint(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window, cx: &mu
                 DiffMark::Removed => (theme.danger.solid, BorderStyle::Dashed),
                 DiffMark::Added => (theme.success.solid, BorderStyle::Solid),
                 DiffMark::Changed => (theme.info.solid, BorderStyle::Solid),
-                DiffMark::Unchanged if selected_card(node.id()) => (theme.accent.solid, BorderStyle::Solid),
-                DiffMark::Unchanged if hovered_card(node.id()) => (theme.border_strong, BorderStyle::Solid),
+                DiffMark::Unchanged if selected_card(node.id()) => {
+                    (theme.accent.solid, BorderStyle::Solid)
+                }
+                DiffMark::Unchanged if hovered_card(node.id()) => {
+                    (theme.border_strong, BorderStyle::Solid)
+                }
                 DiffMark::Unchanged => (theme.border, BorderStyle::Solid),
             };
-            window.paint_quad(quad(rect, radius(node), fill_colour, px(1.0), border, style));
+            window.paint_quad(quad(
+                rect,
+                radius(node),
+                fill_colour,
+                px(1.0),
+                border,
+                style,
+            ));
             // The title strip.
             let header = (58.0 * zoom).min(f32::from(rect.size.height));
             if header >= 6.0 {
@@ -253,9 +277,15 @@ pub fn paint(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window, cx: &mu
                 || matches!(&frame.hovered, Some(SceneTarget::Edge(h)) if *h == semantic.id);
             let incident = frame.selection.contains(semantic.source.node)
                 || frame.selection.contains(semantic.target.node)
-                || semantic.source.port.is_some_and(|p| frame.selection.contains(p))
-                || semantic.target.port.is_some_and(|p| frame.selection.contains(p));
-            let glow = semantic.element.and_then(|e| highlight(e));
+                || semantic
+                    .source
+                    .port
+                    .is_some_and(|p| frame.selection.contains(p))
+                || semantic
+                    .target
+                    .port
+                    .is_some_and(|p| frame.selection.contains(p));
+            let glow = semantic.element.and_then(highlight);
             let mut colour = match semantic.kind {
                 EdgeKind::Satisfy => theme.warning.solid.opacity(0.75),
                 EdgeKind::Typing | EdgeKind::Specialization => theme.text_faint.opacity(0.7),
@@ -288,12 +318,43 @@ pub fn paint(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window, cx: &mu
                 semantic.kind,
                 EdgeKind::Typing | EdgeKind::Specialization | EdgeKind::Satisfy
             ) || edge.diff == DiffMark::Removed;
-            let points: Vec<_> = edge.points.iter().map(|p| screen.point(*p)).collect();
-            for pair in points.windows(2) {
-                segment(window, pair[0], pair[1], px(width), colour, dashed && !crowded);
+            // Each point is placed once, with no list per edge: at 10k
+            // cards there are 20k edges a frame.
+            let mut last: Option<gpui::Point<Pixels>> = None;
+            let mut before_last = None;
+            // In a crowded view, a jog under a pixel is not drawn.
+            let least = if crowded && !(selected || incident) {
+                1.0
+            } else {
+                0.35
+            };
+            for p in &edge.points {
+                let point = screen.point(*p);
+                if let Some(previous) = last {
+                    let (dx, dy) = (
+                        f32::from(point.x - previous.x).abs(),
+                        f32::from(point.y - previous.y).abs(),
+                    );
+                    if dx >= least || dy >= least {
+                        segment(
+                            window,
+                            previous,
+                            point,
+                            px(width),
+                            colour,
+                            dashed && !crowded,
+                        );
+                    }
+                }
+                before_last = last;
+                last = Some(point);
             }
-            if semantic.directed && points.len() >= 2 && zoom >= 0.35 && !crowded {
-                arrowhead(window, points[points.len() - 2], points[points.len() - 1], colour, zoom);
+            if let (Some(a), Some(b)) = (before_last, last)
+                && semantic.directed
+                && zoom >= 0.35
+                && !crowded
+            {
+                arrowhead(window, a, b, colour, zoom);
             }
         }
     });
@@ -304,7 +365,6 @@ pub fn paint(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window, cx: &mu
         for node in objects.nodes.iter().filter(|n| !n.is_container) {
             let rect = screen.rect(node.bounds);
             let id = node.id();
-            let selected = selected_card(id);
             let hovered = hovered_card(id);
             let radius = radius(node);
             if let Some((strength, colour)) = highlight(id) {
@@ -327,9 +387,7 @@ pub fn paint(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window, cx: &mu
                 DiffMark::Changed => (theme.raised, theme.info.solid, BorderStyle::Solid),
                 DiffMark::Unchanged => (
                     theme.raised,
-                    if hovered {
-                        theme.border_strong
-                    } else if node.semantic.lock == LockMark::Own {
+                    if hovered || node.semantic.lock == LockMark::Own {
                         theme.border_strong
                     } else {
                         theme.border
@@ -346,7 +404,7 @@ pub fn paint(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window, cx: &mu
                 border,
                 style,
             ));
-            if tiny || lod == LodLevel::Overview {
+            if tiny {
                 continue;
             }
             // A slim category mark along the top edge.
@@ -367,6 +425,23 @@ pub fn paint(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window, cx: &mu
                 gpui::transparent_black(),
                 BorderStyle::Solid,
             ));
+            // Far out, the name is a bar the size of the name ("greeked"):
+            // the model's shape reads without text too small to read.
+            if lod == LodLevel::Overview && frame.selection.targets.is_empty() {
+                let pad = (12.0 * zoom).max(2.0);
+                let h = (14.5 * zoom * 0.5).max(1.5);
+                let w = (node.semantic.name.chars().count() as f32 * 7.6 * zoom)
+                    .min(f32::from(rect.size.width) - 2.0 * pad);
+                if w > 2.0 && f32::from(rect.size.height) > 12.0 * zoom + h {
+                    greek(
+                        window,
+                        point(rect.origin.x + px(pad), rect.origin.y + px(12.0 * zoom)),
+                        w,
+                        h,
+                        theme.text_faint.opacity(0.55),
+                    );
+                }
+            }
             // A problem bar along the card's left edge.
             if node.semantic.problems > 0 {
                 window.paint_quad(quad(
@@ -400,12 +475,14 @@ pub fn paint(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window, cx: &mu
     // Text: cards, containers, ports, edge labels.
     let text_layer = lod >= LodLevel::Summary || !frame.selection.targets.is_empty();
     if text_layer {
+        let started = std::time::Instant::now();
         window.paint_layer(bounds, |window| {
             for node in &objects.nodes {
                 card_text(frame, &screen, node, window, cx);
             }
         });
         edge_labels(frame, &screen, &objects, bounds, window, cx);
+        labels += started.elapsed();
     }
 
     // Ports, above the cards they sit on.
@@ -420,11 +497,15 @@ pub fn paint(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window, cx: &mu
             if !port_visible(frame, port.owner, port.id) {
                 continue;
             }
-            let selected = frame.selection.targets.contains(&SceneTarget::Port(port.owner, port.id));
+            let selected = frame
+                .selection
+                .targets
+                .contains(&SceneTarget::Port(port.owner, port.id));
             let hovered = frame.hovered == Some(SceneTarget::Port(port.owner, port.id));
             let compatible = frame.compatible.contains(&(port.owner, port.id));
             let glow = highlight(port.id);
-            let diameter = (9.0 * zoom).clamp(6.0, 11.0) + if selected || hovered { 2.0 } else { 0.0 };
+            let diameter =
+                (9.0 * zoom).clamp(6.0, 11.0) + if selected || hovered { 2.0 } else { 0.0 };
             let centre = screen.point(port.position);
             let bounds = Bounds::new(
                 point(centre.x - px(diameter * 0.5), centre.y - px(diameter * 0.5)),
@@ -467,12 +548,25 @@ pub fn paint(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window, cx: &mu
                 BorderStyle::Solid,
             ));
             if zoom >= 0.8 && diameter >= 8.0 {
-                direction_mark(window, centre, port.side, port.direction, diameter, ring, filled, theme);
+                direction_mark(
+                    window,
+                    centre,
+                    port.side,
+                    port.direction,
+                    diameter,
+                    ring,
+                    filled,
+                    theme,
+                );
             }
         }
     });
     if text_layer {
-        window.paint_layer(bounds, |window| port_labels(frame, &screen, &objects, window, cx));
+        let started = std::time::Instant::now();
+        window.paint_layer(bounds, |window| {
+            port_labels(frame, &screen, &objects, window, cx)
+        });
+        labels += started.elapsed();
     }
 
     // Selection rings, outside the card (§3.2), and the gesture.
@@ -504,6 +598,8 @@ pub fn paint(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window, cx: &mu
     });
     Painted {
         visible_nodes: objects.nodes.len(),
+        visibility,
+        labels,
         animating,
     }
 }
@@ -527,6 +623,10 @@ fn segment(
     colour: Hsla,
     dashed: bool,
 ) {
+    // Shorter than a third of a pixel: nothing to see.
+    if (a.x - b.x).abs() < px(0.35) && (a.y - b.y).abs() < px(0.35) {
+        return;
+    }
     let axis = (a.x - b.x).abs() < px(0.5) || (a.y - b.y).abs() < px(0.5);
     if !axis {
         let mut path = PathBuilder::stroke(width);
@@ -553,8 +653,14 @@ fn segment(
     let mut at = 0.0;
     while at < length {
         let end = (at + dash).min(length);
-        let from = point(a.x + (b.x - a.x) * (at / length), a.y + (b.y - a.y) * (at / length));
-        let to = point(a.x + (b.x - a.x) * (end / length), a.y + (b.y - a.y) * (end / length));
+        let from = point(
+            a.x + (b.x - a.x) * (at / length),
+            a.y + (b.y - a.y) * (at / length),
+        );
+        let to = point(
+            a.x + (b.x - a.x) * (end / length),
+            a.y + (b.y - a.y) * (end / length),
+        );
         window.paint_quad(fill(rect(from, to), colour));
         at += dash + gap;
     }
@@ -627,6 +733,22 @@ fn direction_mark(
     }
 }
 
+/// How far down a card its kind, name and type reach on screen, as
+/// `card_text` lays them out (text keeps a legible size as cards shrink).
+fn text_block(frame: &Frame, node: &SceneNode) -> f32 {
+    let zoom = frame.camera.zoom;
+    let floor = theme::text::XS * frame.ui_scale.max(1.0) * 0.9;
+    let caption = (10.0 * zoom).clamp(floor, 12.0);
+    let name_size = ((if node.is_container { 15.0 } else { 14.5 }) * zoom).clamp(floor + 1.0, 24.0);
+    let small = (11.0 * zoom).clamp(floor, 15.0);
+    let detail = if node.semantic.detail.is_empty() {
+        0.0
+    } else {
+        small * 1.25
+    };
+    (9.0 * zoom).clamp(3.0, 12.0) + caption + 5.0 * zoom.clamp(0.5, 1.4) + name_size * 1.3 + detail
+}
+
 /// Card text laid out top to bottom so nothing overlaps at any zoom: the
 /// kind and marks, the name, the type, then the attribute and item lines.
 /// A row that would need text below the smallest size is left out.
@@ -646,9 +768,13 @@ fn card_text(frame: &Frame, screen: &Screen, node: &SceneNode, window: &mut Wind
     let mut y = rect.origin.y + px((9.0 * zoom).clamp(3.0, 12.0));
     let caption = (10.0 * zoom).clamp(floor, 12.0);
     let name_size = ((if node.is_container { 15.0 } else { 14.5 }) * zoom).clamp(floor + 1.0, 24.0);
-    let text = if removed { theme.text_muted } else { theme.text };
+    let text = if removed {
+        theme.text_muted
+    } else {
+        theme.text
+    };
     let lod = frame.lod;
-    let marks_row = height >= caption + name_size + 2.0 * pad && lod >= LodLevel::Features;
+    let marks_row = height >= caption + name_size + 2.0 * pad && lod >= LodLevel::Summary;
     if marks_row {
         // Right-aligned marks: change, problems, lock.
         let mut right = rect.origin.x + rect.size.width - px(pad);
@@ -660,7 +786,17 @@ fn card_text(frame: &Frame, screen: &Screen, node: &SceneNode, window: &mut Wind
                 _ => ("CHANGED", theme.info.text),
             };
             let w = measure(window, badge, text_size(caption), theme::SEMIBOLD);
-            label(window, cx, badge, point(right - w, y), text_size(caption), theme::SEMIBOLD, theme::SANS, colour, w + px(1.0));
+            label(
+                window,
+                cx,
+                badge,
+                point(right - w, y),
+                text_size(caption),
+                theme::SEMIBOLD,
+                theme::SANS,
+                colour,
+                w + px(1.0),
+            );
             right -= w + px(caption * 0.6);
         }
         if node.semantic.problems > 0 {
@@ -668,13 +804,37 @@ fn card_text(frame: &Frame, screen: &Screen, node: &SceneNode, window: &mut Wind
             let d = px(caption * 1.35);
             let pill = measure(window, &count, text_size(caption * 0.9), theme::SEMIBOLD) + d * 0.7;
             let pill_bounds = Bounds::new(point(right - pill, middle - d * 0.5), size(pill, d));
-            window.paint_quad(quad(pill_bounds, d * 0.5, theme.warning.soft, px(1.0), theme.warning.border, BorderStyle::Solid));
-            label(window, cx, &count, point(pill_bounds.origin.x + d * 0.35, middle - px(caption * 0.55)), text_size(caption * 0.9), theme::SEMIBOLD, theme::SANS, theme.warning.text, pill);
+            window.paint_quad(quad(
+                pill_bounds,
+                d * 0.5,
+                theme.warning.soft,
+                px(1.0),
+                theme.warning.border,
+                BorderStyle::Solid,
+            ));
+            label(
+                window,
+                cx,
+                &count,
+                point(pill_bounds.origin.x + d * 0.35, middle - px(caption * 0.55)),
+                text_size(caption * 0.9),
+                theme::SEMIBOLD,
+                theme::SANS,
+                theme.warning.text,
+                pill,
+            );
             right -= pill + px(caption * 0.5);
         }
         if node.semantic.lock.locked() {
             let s = px(caption * 1.25);
-            lock_icon(window, cx, point(right - s, middle - s * 0.5), s, node.semantic.lock, theme);
+            lock_icon(
+                window,
+                cx,
+                point(right - s, middle - s * 0.5),
+                s,
+                node.semantic.lock,
+                theme,
+            );
             right -= s + px(caption * 0.5);
         }
         let kind = node.semantic.keyword.to_uppercase();
@@ -704,20 +864,57 @@ fn card_text(frame: &Frame, screen: &Screen, node: &SceneNode, window: &mut Wind
     if bottom - y < px(name_size) {
         return;
     }
-    label(window, cx, &name, point(x, y), text_size(name_size), theme::MEDIUM, theme::SANS, text, inner);
+    label(
+        window,
+        cx,
+        &name,
+        point(x, y),
+        text_size(name_size),
+        theme::MEDIUM,
+        theme::SANS,
+        text,
+        inner,
+    );
     y += px(name_size * 1.3);
     let features = node.semantic.features.len();
     let features_top = rect.origin.y
         + px((node.bounds.height() - agq_studio_scene::feature_block(features)) * zoom);
     let small = (11.0 * zoom).clamp(floor, 15.0);
-    if lod >= LodLevel::Features
+    if lod >= LodLevel::Summary
         && !node.semantic.detail.is_empty()
         && y + px(small) <= features_top.min(bottom - px(2.0))
     {
-        label(window, cx, &node.semantic.detail, point(x, y), text_size(small), theme::REGULAR, theme::MONO, theme.text_muted, inner);
+        label(
+            window,
+            cx,
+            &node.semantic.detail,
+            point(x, y),
+            text_size(small),
+            theme::REGULAR,
+            theme::MONO,
+            theme.text_muted,
+            inner,
+        );
     }
     let line = agq_studio_scene::FEATURE_LINE * zoom;
-    if lod >= LodLevel::Features && !node.is_container && line >= floor + 2.0 {
+    if !node.is_container && (lod < LodLevel::Features || line < floor + 2.0) {
+        // Lines too small to read are bars their length.
+        let h = (line * 0.34).max(1.5);
+        for (index, feature) in node
+            .semantic
+            .features
+            .iter()
+            .take(agq_studio_scene::MAX_FEATURE_LINES)
+            .enumerate()
+        {
+            let top = features_top + px(index as f32 * line + (line - h) * 0.4);
+            if top < y || top + px(h) > bottom {
+                continue;
+            }
+            let w = (feature.text.chars().count() as f32 * 6.0 * zoom).min(f32::from(inner));
+            greek(window, point(x, top), w, h, theme.text_faint.opacity(0.4));
+        }
+    } else if lod >= LodLevel::Features && !node.is_container {
         let size_pt = (10.5 * zoom).min(line * 0.78).clamp(floor, 14.0);
         let shown = features.min(agq_studio_scene::MAX_FEATURE_LINES);
         let more = features - shown;
@@ -741,7 +938,10 @@ fn card_text(frame: &Frame, screen: &Screen, node: &SceneNode, window: &mut Wind
             };
             if frame.inspected == Some(feature.id) && !last {
                 window.paint_quad(quad(
-                    Bounds::new(point(rect.origin.x + px(3.0), top - px(line * 0.12)), size(rect.size.width - px(6.0), px(line * 0.95))),
+                    Bounds::new(
+                        point(rect.origin.x + px(3.0), top - px(line * 0.12)),
+                        size(rect.size.width - px(6.0), px(line * 0.95)),
+                    ),
                     px(4.0),
                     theme.accent.soft,
                     px(0.0),
@@ -749,14 +949,50 @@ fn card_text(frame: &Frame, screen: &Screen, node: &SceneNode, window: &mut Wind
                     BorderStyle::Solid,
                 ));
             }
-            let lock_room = if feature.lock.locked() { size_pt * 1.6 } else { 0.0 };
-            label(window, cx, &content, point(x, top), text_size(size_pt), theme::REGULAR, theme::MONO, colour, inner - px(lock_room));
+            let lock_room = if feature.lock.locked() {
+                size_pt * 1.6
+            } else {
+                0.0
+            };
+            label(
+                window,
+                cx,
+                &content,
+                point(x, top),
+                text_size(size_pt),
+                theme::REGULAR,
+                theme::MONO,
+                colour,
+                inner - px(lock_room),
+            );
             if feature.lock.locked() && !last {
                 let s = px(size_pt * 1.1);
-                lock_icon(window, cx, point(x + inner - s, top + px(size_pt * 0.1)), s, feature.lock, theme);
+                lock_icon(
+                    window,
+                    cx,
+                    point(x + inner - s, top + px(size_pt * 0.1)),
+                    s,
+                    feature.lock,
+                    theme,
+                );
             }
         }
     }
+}
+
+/// A rounded bar standing in for text too small to read.
+fn greek(window: &mut Window, origin: gpui::Point<Pixels>, width: f32, height: f32, colour: Hsla) {
+    if width <= 1.0 {
+        return;
+    }
+    window.paint_quad(quad(
+        Bounds::new(origin, size(px(width), px(height))),
+        px(height * 0.5),
+        colour,
+        px(0.0),
+        gpui::transparent_black(),
+        BorderStyle::Solid,
+    ));
 }
 
 fn measure(window: &mut Window, text: &str, size: Pixels, weight: FontWeight) -> Pixels {
@@ -818,7 +1054,10 @@ fn port_labels(
         if !port_visible(frame, port.owner, port.id) {
             continue;
         }
-        let selected = frame.selection.targets.contains(&SceneTarget::Port(port.owner, port.id));
+        let selected = frame
+            .selection
+            .targets
+            .contains(&SceneTarget::Port(port.owner, port.id));
         let hovered = frame.hovered == Some(SceneTarget::Port(port.owner, port.id));
         if !(frame.lod >= LodLevel::Relationships
             || selected
@@ -830,6 +1069,17 @@ fn port_labels(
         }
         let position = screen.point(port.position);
         let owner = frame.lookup.node(&frame.scene, port.owner);
+        // A label that would run into the card's own text is left out; the
+        // port still shows, and its name is in its tooltip.
+        if let Some(node) = owner
+            && !port.label_in_header
+        {
+            let top = screen.point(node.bounds.min).y;
+            let half = text_size(theme::text::XS * frame.ui_scale.max(1.0)) * 0.625;
+            if position.y - half < top + px(text_block(frame, node)) {
+                continue;
+            }
+        }
         let expanded = owner.is_some_and(|n| n.is_container && !n.collapsed);
         let owner_width = owner.map_or(200.0, |n| n.bounds.width() * zoom);
         let colour = if selected || hovered {
@@ -844,18 +1094,27 @@ fn port_labels(
         let header = port.label_in_header && zoom * 24.0 >= f32::from(height);
         let offset = |dx: f32, dy: Pixels| point(position.x + px(dx), position.y + dy);
         let origin = match (expanded, header, port.side) {
-            (true, true, PortSide::Left) | (false, _, PortSide::Left) => offset(10.0, -height * 0.5),
+            (true, true, PortSide::Left) | (false, _, PortSide::Left) => {
+                offset(10.0, -height * 0.5)
+            }
             (true, true, PortSide::Right) | (false, _, PortSide::Right) => {
                 point(position.x - px(10.0) - natural, position.y - height * 0.5)
             }
-            (true, false, PortSide::Left) => point(position.x - px(10.0) - natural, position.y - height * 0.5),
+            (true, false, PortSide::Left) => {
+                point(position.x - px(10.0) - natural, position.y - height * 0.5)
+            }
             (true, false, PortSide::Right) => offset(10.0, -height * 0.5),
-            (_, _, PortSide::Top) => point(position.x - natural * 0.5, position.y - px(10.0) - height),
+            (_, _, PortSide::Top) => {
+                point(position.x - natural * 0.5, position.y - px(10.0) - height)
+            }
             (_, _, PortSide::Bottom) => point(position.x - natural * 0.5, position.y + px(10.0)),
         };
         if expanded && !header {
             window.paint_quad(quad(
-                Bounds::new(point(origin.x - px(3.0), origin.y - px(1.0)), size(natural + px(6.0), height + px(2.0))),
+                Bounds::new(
+                    point(origin.x - px(3.0), origin.y - px(1.0)),
+                    size(natural + px(6.0), height + px(2.0)),
+                ),
                 px(3.0),
                 theme.canvas,
                 px(0.0),
@@ -863,7 +1122,17 @@ fn port_labels(
                 BorderStyle::Solid,
             ));
         }
-        label(window, cx, &port.name, origin, size_px, theme::MEDIUM, theme::SANS, colour, max);
+        label(
+            window,
+            cx,
+            &port.name,
+            origin,
+            size_px,
+            theme::MEDIUM,
+            theme::SANS,
+            colour,
+            max,
+        );
         if port.lock.locked() {
             let s = px(11.0);
             let x = if origin.x >= position.x {
@@ -871,7 +1140,14 @@ fn port_labels(
             } else {
                 origin.x - s - px(4.0)
             };
-            lock_icon(window, cx, point(x, origin.y + (height - s) * 0.5), s, port.lock, theme);
+            lock_icon(
+                window,
+                cx,
+                point(x, origin.y + (height - s) * 0.5),
+                s,
+                port.lock,
+                theme,
+            );
         }
     }
 }
@@ -891,8 +1167,18 @@ fn edge_labels(
     if frame.lod < LodLevel::Features && frame.selection.targets.is_empty() {
         return;
     }
-    let local = |p: gpui::Point<Pixels>| Point::new(f32::from(p.x - bounds.origin.x), f32::from(p.y - bounds.origin.y));
-    let viewport = Rect::new(0.0, 0.0, f32::from(bounds.size.width), f32::from(bounds.size.height));
+    let local = |p: gpui::Point<Pixels>| {
+        Point::new(
+            f32::from(p.x - bounds.origin.x),
+            f32::from(p.y - bounds.origin.y),
+        )
+    };
+    let viewport = Rect::new(
+        0.0,
+        0.0,
+        f32::from(bounds.size.width),
+        f32::from(bounds.size.height),
+    );
     let obstacles: Vec<Rect> = objects
         .nodes
         .iter()
@@ -908,7 +1194,11 @@ fn edge_labels(
     let mut routes = RouteObstacles::default();
     for edge in &objects.edges {
         for pair in edge.points.windows(2) {
-            routes.insert(local(screen.point(pair[0])), local(screen.point(pair[1])), viewport);
+            routes.insert(
+                local(screen.point(pair[0])),
+                local(screen.point(pair[1])),
+                viewport,
+            );
         }
     }
     let size_px = text_size(theme::text::XS * frame.ui_scale.max(1.0));
@@ -918,10 +1208,13 @@ fn edge_labels(
         for edge in &objects.edges {
             let semantic = &edge.semantic;
             let target = SceneTarget::Edge(semantic.id.clone());
-            let explicit = frame.selection.targets.contains(&target) || frame.hovered.as_ref() == Some(&target);
+            let explicit = frame.selection.targets.contains(&target)
+                || frame.hovered.as_ref() == Some(&target);
             let incident = frame.selection.contains(semantic.source.node)
                 || frame.selection.contains(semantic.target.node)
-                || semantic.element.is_some_and(|e| frame.highlights.contains_key(&e));
+                || semantic
+                    .element
+                    .is_some_and(|e| frame.highlights.contains_key(&e));
             let shown = explicit
                 || semantic.lock.locked()
                 || (incident && objects.edges.len() <= 40)
@@ -930,18 +1223,28 @@ fn edge_labels(
                 continue;
             }
             let max_text = (f32::from(bounds.size.width) * 0.3).clamp(80.0, 280.0);
-            let natural = f32::from(measure(window, &semantic.label, size_px, theme::MEDIUM)).min(max_text);
+            let natural =
+                f32::from(measure(window, &semantic.label, size_px, theme::MEDIUM)).min(max_text);
             let lock_room = if semantic.lock.locked() { 16.0 } else { 0.0 };
             let pill = agq_studio_scene::Size::new(
                 natural + 2.0 * PADDING.width + lock_room,
                 f32::from(size_px) * 1.25 + 2.0 * PADDING.height,
             );
-            let route: Vec<Point> = edge.points.iter().map(|p| local(screen.point(*p))).collect();
-            let Some(placement) = place(&route, pill, viewport, &obstacles, &placed, explicit, &routes) else {
+            let route: Vec<Point> = edge
+                .points
+                .iter()
+                .map(|p| local(screen.point(*p)))
+                .collect();
+            let Some(placement) = place(
+                &route, pill, viewport, &obstacles, &placed, explicit, &routes,
+            ) else {
                 continue;
             };
             let to_window = |p: Point| point(bounds.origin.x + px(p.x), bounds.origin.y + px(p.y));
-            let rect = Bounds::from_corners(to_window(placement.bounds.min), to_window(placement.bounds.max));
+            let rect = Bounds::from_corners(
+                to_window(placement.bounds.min),
+                to_window(placement.bounds.max),
+            );
             let anchor = to_window(placement.anchor);
             let (line, text) = if explicit {
                 (theme.accent.solid, theme.text)
@@ -949,32 +1252,50 @@ fn edge_labels(
                 (theme.border_strong, theme.text_secondary)
             };
             let end = point(
-                anchor.x.clamp(rect.origin.x, rect.origin.x + rect.size.width),
-                anchor.y.clamp(rect.origin.y, rect.origin.y + rect.size.height),
+                anchor
+                    .x
+                    .clamp(rect.origin.x, rect.origin.x + rect.size.width),
+                anchor
+                    .y
+                    .clamp(rect.origin.y, rect.origin.y + rect.size.height),
             );
             segment(window, anchor, end, px(1.0), line, false);
             window.paint_quad(quad(
-                Bounds::new(point(anchor.x - px(2.5), anchor.y - px(2.5)), size(px(5.0), px(5.0))),
+                Bounds::new(
+                    point(anchor.x - px(2.5), anchor.y - px(2.5)),
+                    size(px(5.0), px(5.0)),
+                ),
                 px(2.5),
                 line,
                 px(0.0),
                 gpui::transparent_black(),
                 BorderStyle::Solid,
             ));
-            window.paint_drop_shadows(rect, Corners::all(rect.size.height * 0.5), &theme.shadow_small());
+            window.paint_drop_shadows(
+                rect,
+                Corners::all(rect.size.height * 0.5),
+                &theme.shadow_small(),
+            );
             window.paint_quad(quad(
                 rect,
                 rect.size.height * 0.5,
                 theme.raised,
                 px(1.0),
-                if explicit { theme.accent.solid } else { theme.border },
+                if explicit {
+                    theme.accent.solid
+                } else {
+                    theme.border
+                },
                 BorderStyle::Solid,
             ));
             label(
                 window,
                 cx,
                 &semantic.label,
-                point(rect.origin.x + px(PADDING.width), rect.origin.y + px(PADDING.height)),
+                point(
+                    rect.origin.x + px(PADDING.width),
+                    rect.origin.y + px(PADDING.height),
+                ),
                 size_px,
                 theme::MEDIUM,
                 theme::SANS,
@@ -983,7 +1304,17 @@ fn edge_labels(
             );
             if semantic.lock.locked() {
                 let s = px(11.0);
-                lock_icon(window, cx, point(rect.origin.x + rect.size.width - px(PADDING.width) - s, rect.origin.y + (rect.size.height - s) * 0.5), s, semantic.lock, theme);
+                lock_icon(
+                    window,
+                    cx,
+                    point(
+                        rect.origin.x + rect.size.width - px(PADDING.width) - s,
+                        rect.origin.y + (rect.size.height - s) * 0.5,
+                    ),
+                    s,
+                    semantic.lock,
+                    theme,
+                );
             }
             placed.push(placement.bounds);
             automatic += usize::from(!explicit);
@@ -997,17 +1328,39 @@ fn gesture(frame: &Frame, screen: &Screen, window: &mut Window) {
         Some(Gesture::Marquee { start, end }) => {
             let area = Bounds::from_corners(screen.point(*start), screen.point(*end));
             let area = Bounds::from_corners(
-                point(area.origin.x.min(area.bottom_right().x), area.origin.y.min(area.bottom_right().y)),
-                point(area.origin.x.max(area.bottom_right().x), area.origin.y.max(area.bottom_right().y)),
+                point(
+                    area.origin.x.min(area.bottom_right().x),
+                    area.origin.y.min(area.bottom_right().y),
+                ),
+                point(
+                    area.origin.x.max(area.bottom_right().x),
+                    area.origin.y.max(area.bottom_right().y),
+                ),
             );
-            window.paint_quad(quad(area, px(2.0), theme.accent.solid.opacity(0.08), px(1.0), theme.accent.solid, BorderStyle::Solid));
+            window.paint_quad(quad(
+                area,
+                px(2.0),
+                theme.accent.solid.opacity(0.08),
+                px(1.0),
+                theme.accent.solid,
+                BorderStyle::Solid,
+            ));
         }
         Some(Gesture::Move { card, start, now }) => {
             if let Some(node) = frame.lookup.node(&frame.scene, *card) {
-                let moved = node.bounds.translate(Point::new(now.x - start.x, now.y - start.y));
+                let moved = node
+                    .bounds
+                    .translate(Point::new(now.x - start.x, now.y - start.y));
                 let rect = screen.rect(moved);
                 window.paint_drop_shadows(rect, Corners::all(px(8.0)), &theme.shadow_overlay());
-                window.paint_quad(quad(rect, px(8.0), theme.raised.opacity(0.85), px(1.5), theme.accent.solid, BorderStyle::Solid));
+                window.paint_quad(quad(
+                    rect,
+                    px(8.0),
+                    theme.raised.opacity(0.85),
+                    px(1.5),
+                    theme.accent.solid,
+                    BorderStyle::Solid,
+                ));
             }
         }
         Some(Gesture::Connect { card, port, now }) => {

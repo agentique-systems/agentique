@@ -14,7 +14,10 @@ use gpui::{
 pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
     let theme = cx.theme().clone();
     if studio.read(cx).project.is_none() {
-        return div().p(r(16.0)).child(super::note("Open a project to see its history.", cx)).into_any_element();
+        return div()
+            .p(r(16.0))
+            .child(super::note("Open a project to see its history.", cx))
+            .into_any_element();
     }
     studio.update(cx, |studio, _| studio.load_history());
     let state = studio.read(cx);
@@ -24,14 +27,27 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
     let checkpoints: Vec<(String, String, String, bool)> = history
         .checkpoints
         .iter()
-        .map(|c| (c.id.clone(), c.message.clone(), ago(c.time), history.selected.contains(&c.id)))
+        .map(|c| {
+            (
+                c.id.clone(),
+                c.message.clone(),
+                ago(c.time),
+                history.selected.contains(&c.id),
+            )
+        })
         .collect();
     let selected = history.selected.len();
     let comparison = state.comparison.as_ref().map(|c| {
         (
             c.after_is_now,
-            c.created.iter().map(|(id, name)| (*id, name.clone())).collect::<Vec<_>>(),
-            c.updated.iter().map(|(id, name)| (*id, name.clone())).collect::<Vec<_>>(),
+            c.created
+                .iter()
+                .map(|(id, name)| (*id, name.clone()))
+                .collect::<Vec<_>>(),
+            c.updated
+                .iter()
+                .map(|(id, name)| (*id, name.clone()))
+                .collect::<Vec<_>>(),
             c.deleted.clone(),
         )
     });
@@ -57,7 +73,9 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
                         .small()
                         .icon(IconName::Checkpoint)
                         .on_click(move |_: &ClickEvent, _, cx| {
-                            checkpoint.act(cx, |studio| studio.execute(crate::commands::CommandId::Checkpoint))
+                            checkpoint.act(cx, |studio| {
+                                studio.execute(crate::commands::CommandId::Checkpoint)
+                            })
                         }),
                 )
                 .child(KeyCaps::new("Ctrl+S")),
@@ -66,7 +84,12 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
         // The timeline: now, then each checkpoint on a thread.
         .child(timeline_row(
             None,
-            if uncommitted { "Now · changes since the last checkpoint" } else { "Now · same as the last checkpoint" }.into(),
+            if uncommitted {
+                "Now · changes since the last checkpoint"
+            } else {
+                "Now · same as the last checkpoint"
+            }
+            .into(),
             None,
             false,
             uncommitted,
@@ -74,29 +97,42 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
             cx,
         ))
         .when_some(error, |this, error| {
-            this.child(ui::inline_message(Tone::Danger, format!("The history could not be read: {error}"), cx))
+            this.child(ui::inline_message(
+                Tone::Danger,
+                format!("The history could not be read: {error}"),
+                cx,
+            ))
         })
         .when(checkpoints.is_empty(), |this| {
-            this.child(div().pl(r(22.0)).pt(r(4.0)).child(super::note("No checkpoints yet. Ctrl+S records one.", cx)))
-        })
-        .children(checkpoints.into_iter().enumerate().map(|(index, (id, message, when, chosen))| {
-            let studio = studio.clone();
-            timeline_row(
-                Some(index),
-                message.into(),
-                Some(when.into()),
-                chosen,
-                false,
-                Some(Box::new(move |_: &ClickEvent, _: &mut gpui::Window, cx: &mut App| {
-                    let id = id.clone();
-                    studio.act(cx, |studio| {
-                        studio.history.toggle(&id);
-                        studio.mark(Dirty::LAYOUT);
-                    })
-                })),
-                cx,
+            this.child(
+                div()
+                    .pl(r(22.0))
+                    .pt(r(4.0))
+                    .child(super::note("No checkpoints yet. Ctrl+S records one.", cx)),
             )
-        }))
+        })
+        .children(checkpoints.into_iter().enumerate().map(
+            |(index, (id, message, when, chosen))| {
+                let studio = studio.clone();
+                timeline_row(
+                    Some(index),
+                    message.into(),
+                    Some(when.into()),
+                    chosen,
+                    false,
+                    Some(Box::new(
+                        move |_: &ClickEvent, _: &mut gpui::Window, cx: &mut App| {
+                            let id = id.clone();
+                            studio.act(cx, |studio| {
+                                studio.history.toggle(&id);
+                                studio.mark(Dirty::LAYOUT);
+                            })
+                        },
+                    )),
+                    cx,
+                )
+            },
+        ))
         .child(
             div()
                 .pt(r(10.0))
@@ -106,36 +142,58 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
                 .child(
                     Button::new(
                         "show-changes",
-                        if selected == 1 { "Show changes since then" } else { "Show changes between them" },
+                        if selected == 1 {
+                            "Show changes since then"
+                        } else {
+                            "Show changes between them"
+                        },
                     )
                     .small()
                     .primary()
                     .icon(IconName::Compare)
                     .disabled(selected == 0)
-                    .on_click(move |_: &ClickEvent, _, cx| compare.act(cx, |studio| studio.compare_selected())),
+                    .on_click(move |_: &ClickEvent, _, cx| {
+                        compare.act(cx, |studio| studio.compare_selected())
+                    }),
                 )
                 .when(comparison.is_some(), |this| {
                     this.child(
                         Button::new("close-comparison-panel", "Close comparison")
                             .small()
                             .ghost()
-                            .on_click(move |_: &ClickEvent, _, cx| close.act(cx, |studio| studio.close_comparison())),
+                            .on_click(move |_: &ClickEvent, _, cx| {
+                                close.act(cx, |studio| studio.close_comparison())
+                            }),
                     )
                 }),
         )
-        .when_some(comparison, |this, (after_is_now, created, updated, deleted)| {
-            let studio = studio.clone();
-            this.child(super::group("What changed", None, cx))
-                .when(!after_is_now, |this| {
-                    this.child(ui::inline_message(Tone::Info, "The Surface shows the later checkpoint. Close the comparison to edit.", cx))
-                })
-                .when(created.is_empty() && updated.is_empty() && deleted.is_empty(), |this| {
-                    this.child(super::note("No differences.", cx))
-                })
-                .children(created.into_iter().map(|(id, name)| change_row(&studio, Some(id), "+", name, theme.success.text, false, cx)))
-                .children(updated.into_iter().map(|(id, name)| change_row(&studio, Some(id), "~", name, theme.info.text, false, cx)))
-                .children(deleted.into_iter().map(|name| change_row(&studio, None, "−", name, theme.danger.text, true, cx)))
-        })
+        .when_some(
+            comparison,
+            |this, (after_is_now, created, updated, deleted)| {
+                let studio = studio.clone();
+                this.child(super::group("What changed", None, cx))
+                    .when(!after_is_now, |this| {
+                        this.child(ui::inline_message(
+                            Tone::Info,
+                            "The Surface shows the later checkpoint. Close the comparison to edit.",
+                            cx,
+                        ))
+                    })
+                    .when(
+                        created.is_empty() && updated.is_empty() && deleted.is_empty(),
+                        |this| this.child(super::note("No differences.", cx)),
+                    )
+                    .children(created.into_iter().map(|(id, name)| {
+                        change_row(&studio, Some(id), "+", name, theme.success.text, false, cx)
+                    }))
+                    .children(updated.into_iter().map(|(id, name)| {
+                        change_row(&studio, Some(id), "~", name, theme.info.text, false, cx)
+                    }))
+                    .children(deleted.into_iter().map(|name| {
+                        change_row(&studio, None, "−", name, theme.danger.text, true, cx)
+                    }))
+            },
+        )
         .into_any_element()
 }
 
@@ -154,7 +212,11 @@ fn timeline_row(
     let theme = cx.theme();
     let now = index.is_none();
     let dot = if now {
-        if now_changed { theme.accent.solid } else { theme.text_faint }
+        if now_changed {
+            theme.accent.solid
+        } else {
+            theme.text_faint
+        }
     } else if chosen {
         theme.accent.solid
     } else {
@@ -173,6 +235,10 @@ fn timeline_row(
         .mx(r(-6.0))
         .rounded(r(crate::tokens::radius::CONTROL + 2.0))
         .when(chosen, |this| this.bg(theme.accent.soft))
+        .relative()
+        .when_some(index, |this, index| {
+            this.child(ui::target::target(format!("History {}", index + 1)))
+        })
         .when_some(on_click, |this, on_click| {
             this.cursor_pointer()
                 .hover(|style| style.bg(theme.hover))
@@ -186,7 +252,11 @@ fn timeline_row(
                 .flex()
                 .flex_col()
                 .items_center()
-                .child(div().w(gpui::px(1.0)).h(r(12.0)).bg(if now { gpui::transparent_black() } else { theme.separator }))
+                .child(div().w(gpui::px(1.0)).h(r(12.0)).bg(if now {
+                    gpui::transparent_black()
+                } else {
+                    theme.separator
+                }))
                 .child(
                     div()
                         .size(r(9.0))
@@ -195,11 +265,18 @@ fn timeline_row(
                         .border_color(dot)
                         .when(chosen || (now && now_changed), |this| this.bg(dot)),
                 )
-                .child(div().w(gpui::px(1.0)).flex_1().bg(theme.separator)),
+                .child(
+                    div()
+                        .w(gpui::px(1.0))
+                        .flex_1()
+                        .min_w_0()
+                        .bg(theme.separator),
+                ),
         )
         .child(
             div()
                 .flex_1()
+                .min_w_0()
                 .py(r(7.0))
                 .flex()
                 .flex_col()
@@ -212,7 +289,12 @@ fn timeline_row(
                         .child(title),
                 )
                 .when_some(when, |this, when| {
-                    this.child(div().text_size(r(theme::text::XS)).text_color(theme.text_faint).child(when))
+                    this.child(
+                        div()
+                            .text_size(r(theme::text::XS))
+                            .text_color(theme.text_faint)
+                            .child(when),
+                    )
                 }),
         )
 }
@@ -241,10 +323,18 @@ fn change_row(
         .when_some(id, |this, id| {
             this.cursor_pointer()
                 .hover(|style| style.bg(theme.hover))
-                .on_click(move |_: &ClickEvent, _, cx| studio.act(cx, |studio| studio.show_element(id)))
+                .on_click(move |_: &ClickEvent, _, cx| {
+                    studio.act(cx, |studio| studio.show_element(id))
+                })
         })
         .child(div().w(r(10.0)).child(mark))
         .child(name)
-        .child(div().flex_1())
-        .when(id.is_some(), |this| this.child(icon(IconName::ArrowRight).size(12.0).color(theme.text_faint)))
+        .child(div().flex_1().min_w_0())
+        .when(id.is_some(), |this| {
+            this.child(
+                icon(IconName::ArrowRight)
+                    .size(12.0)
+                    .color(theme.text_faint),
+            )
+        })
 }

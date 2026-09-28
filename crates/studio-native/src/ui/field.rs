@@ -6,8 +6,8 @@ use crate::ui::{
     theme::{self, ActiveTheme, r},
 };
 use gpui::{
-    AnyElement, App, Entity, Focusable, InteractiveElement, IntoElement, ParentElement, RenderOnce, Styled,
-    Window, div, prelude::FluentBuilder, px,
+    AnyElement, App, Entity, Focusable, InteractiveElement, IntoElement, ParentElement, RenderOnce,
+    SharedString, Styled, Window, div, prelude::FluentBuilder, px,
 };
 use gpui_base::input::{Input, InputState, Textarea, TextareaState};
 
@@ -58,6 +58,7 @@ pub struct TextField {
     trailing: Option<AnyElement>,
     height: f32,
     mono: bool,
+    name: Option<SharedString>,
 }
 
 impl TextField {
@@ -69,7 +70,13 @@ impl TextField {
             trailing: None,
             height: crate::tokens::space::CONTROL,
             mono: false,
+            name: None,
         }
+    }
+    /// The field's name for the scripted journeys.
+    pub fn target(mut self, name: impl Into<SharedString>) -> TextField {
+        self.name = Some(name.into());
+        self
     }
     pub fn invalid(mut self, invalid: bool) -> TextField {
         self.invalid = invalid;
@@ -102,6 +109,10 @@ impl RenderOnce for TextField {
         frame(focused, self.invalid, cx)
             .h(r(self.height))
             .w_full()
+            .relative()
+            .when_some(self.name, |this, name| {
+                this.child(crate::ui::target::target(name))
+            })
             .when(self.mono, |this| this.font_family(theme::MONO))
             .cursor_text()
             .on_mouse_down(gpui::MouseButton::Left, move |_, window, cx| {
@@ -121,6 +132,7 @@ pub struct TextArea {
     state: Entity<TextareaState>,
     invalid: bool,
     borderless: bool,
+    name: Option<SharedString>,
 }
 
 impl TextArea {
@@ -129,7 +141,13 @@ impl TextArea {
             state: state.clone(),
             invalid: false,
             borderless: false,
+            name: None,
         }
+    }
+    /// The field's name for the scripted journeys.
+    pub fn target(mut self, name: impl Into<SharedString>) -> TextArea {
+        self.name = Some(name.into());
+        self
     }
     pub fn invalid(mut self, invalid: bool) -> TextArea {
         self.invalid = invalid;
@@ -145,7 +163,13 @@ impl TextArea {
 impl RenderOnce for TextArea {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let focused = self.state.read(cx).focus_handle(cx).is_focused(window);
-        let area = div().w_full().child(Textarea::new(&self.state));
+        let area = div()
+            .w_full()
+            .relative()
+            .child(Textarea::new(&self.state))
+            .when_some(self.name, |this, name| {
+                this.child(crate::ui::target::target(name))
+            });
         if self.borderless {
             return div()
                 .w_full()

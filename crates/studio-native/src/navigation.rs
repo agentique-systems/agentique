@@ -14,7 +14,6 @@ pub enum SurfaceView {
     Requirements,
 }
 impl SurfaceView {
-    pub const ALL: [SurfaceView; 3] = [Self::Architecture, Self::Graph, Self::Requirements];
     pub fn title(self) -> &'static str {
         match self {
             Self::Architecture => "Architecture",

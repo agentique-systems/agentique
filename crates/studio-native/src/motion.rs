@@ -184,12 +184,7 @@ impl CameraMove {
     pub fn tween(from: Camera2D, now: f32, reduced_motion: bool) -> Self {
         Self::Tween {
             from,
-            tween: Tween::new(
-                now,
-                CAMERA_SECONDS,
-                Curve::EASY_EASE,
-                reduced_motion,
-            ),
+            tween: Tween::new(now, CAMERA_SECONDS, Curve::EASY_EASE, reduced_motion),
         }
     }
 

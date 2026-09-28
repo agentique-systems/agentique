@@ -3,8 +3,8 @@
 use agq_studio_scene::{ElementId, Scene, SceneTarget};
 use std::collections::BTreeSet;
 
-/// The Surface is one widget; egui's click counting cannot tell two quick
-/// clicks on different elements apart, so double clicks are checked here.
+/// The Surface is one element; the window's click count cannot tell two
+/// quick clicks on different cards apart, so double clicks are checked here.
 #[derive(Default)]
 pub struct CanvasClicks {
     last: Option<(u64, SceneTarget, [f32; 2], f64)>,

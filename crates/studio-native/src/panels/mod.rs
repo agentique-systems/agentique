@@ -11,7 +11,7 @@ pub use outline::OutlineView;
 
 use crate::{
     studio::{Dirty, Panel, Studio, StudioEvent},
-    ui::{self, ActiveTheme, IconName, icon, r, theme},
+    ui::{self, ActiveTheme, IconName, r, theme},
     workspace::StudioExt,
 };
 use agq_language::ElementId;
@@ -32,7 +32,14 @@ pub struct InspectorColumn {
 impl InspectorColumn {
     pub fn new(studio: Entity<Studio>, window: &mut Window, cx: &mut Context<Self>) -> Self {
         let subscription = cx.subscribe(&studio, |_, _, event: &StudioEvent, cx| {
-            if event.0.intersects(Dirty::MODEL | Dirty::SELECTION | Dirty::APPEARANCE | Dirty::LAYOUT | Dirty::STATUS | Dirty::OVERLAY) {
+            if event.0.intersects(
+                Dirty::MODEL
+                    | Dirty::SELECTION
+                    | Dirty::APPEARANCE
+                    | Dirty::LAYOUT
+                    | Dirty::STATUS
+                    | Dirty::OVERLAY,
+            ) {
                 cx.notify();
             }
         });
@@ -84,7 +91,7 @@ impl Render for InspectorColumn {
                     .border_b_1()
                     .border_color(theme.separator)
                     .role(gpui::Role::TabList)
-                    .children(TABS.iter().enumerate().map(|(i, (tab, label, glyph))| {
+                    .children(TABS.iter().enumerate().map(|(i, (tab, label, _))| {
                         let chosen = *tab == panel;
                         let studio = self.studio.clone();
                         let tab = *tab;
@@ -94,6 +101,7 @@ impl Render for InspectorColumn {
                             .aria_selected(chosen)
                             .aria_label(*label)
                             .flex_1()
+                            .min_w_0()
                             .flex()
                             .items_center()
                             .justify_center()
@@ -109,10 +117,15 @@ impl Render for InspectorColumn {
                                     studio.mark(Dirty::LAYOUT);
                                 })
                             })
-                            .child(icon(*glyph).size(13.0).color(if chosen { theme.text_secondary } else { theme.text_faint }))
+                            .relative()
+                            .overflow_hidden()
+                            .whitespace_nowrap()
                             .child(*label)
+                            .child(ui::target::target(*label))
                             .when(tab == Panel::Problems && problems > 0, |this| {
-                                this.child(ui::Badge::new(problems.to_string()).tone(ui::Tone::Warning))
+                                this.child(
+                                    ui::Badge::new(problems.to_string()).tone(ui::Tone::Warning),
+                                )
                             })
                     }))
                     // The sliding mark under the chosen tab.
@@ -124,12 +137,14 @@ impl Render for InspectorColumn {
                             .w(relative(0.25))
                             .px(r(10.0))
                             .child(div().size_full().rounded_full().bg(theme.accent.solid))
-                            .with_spring("panel-tab-mark", ui::primitives::spring().to(index as f32), |this, at: f32| {
-                                this.left(relative(at * 0.25))
-                            }),
+                            .with_spring(
+                                "panel-tab-mark",
+                                ui::primitives::spring().to(index as f32),
+                                |this, at: f32| this.left(relative(at * 0.25)),
+                            ),
                     ),
             )
-            .child(div().flex_1().min_h_0().child(body))
+            .child(div().flex_1().min_w_0().min_h_0().child(body))
     }
 }
 

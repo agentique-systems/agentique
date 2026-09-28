@@ -342,7 +342,19 @@ impl SpatialIndex {
         if scene.generation != self.generation {
             return VisibleScene::default();
         }
+        // Much of the model in view (it is seen whole, or nearly): walking the
+        // index's own slots, with the same checks and in the same order, is
+        // cheaper than the grid, whose cells then hold nearly every segment.
+        let whole = scene.bounds();
+        let seen = (bounds.max.x.min(whole.max.x) - bounds.min.x.max(whole.min.x)).max(0.0)
+            * (bounds.max.y.min(whole.max.y) - bounds.min.y.max(whole.min.y)).max(0.0);
         let mut visible = VisibleScene::default();
+        if seen >= whole.width() * whole.height() * 0.25 {
+            for slot in 0..self.targets.len() {
+                self.borrow(scene, slot, Some(bounds), &mut visible);
+            }
+            return visible;
+        }
         let mut previous = None;
         // Grid hits are in insertion order. All segments of an edge are
         // inserted together, so target slots are ordered and duplicates are
@@ -352,38 +364,60 @@ impl SpatialIndex {
                 continue;
             }
             previous = Some(hit.target);
-            let target = &self.targets[hit.target];
-            match &target.identity {
-                SceneTarget::Node(id) | SceneTarget::Container(id) => {
-                    if let Some(node) = scene.nodes.get(target.scene_index).filter(|node| {
-                        node.id() == *id
-                            && node.is_container
-                                == matches!(&target.identity, SceneTarget::Container(_))
-                    }) {
-                        visible.nodes.push(node);
-                    }
+            self.borrow(scene, hit.target, None, &mut visible);
+        }
+        visible
+    }
+
+    /// Borrows the record in `slot` when its identity still matches, and,
+    /// given bounds, when it lies in them.
+    fn borrow<'scene>(
+        &self,
+        scene: &'scene Scene,
+        slot: usize,
+        within: Option<Rect>,
+        visible: &mut VisibleScene<'scene>,
+    ) {
+        let target = &self.targets[slot];
+        let inside = |rect: Rect| within.is_none_or(|bounds| rect.intersects(bounds));
+        match &target.identity {
+            SceneTarget::Node(id) | SceneTarget::Container(id) => {
+                if let Some(node) = scene.nodes.get(target.scene_index).filter(|node| {
+                    node.id() == *id
+                        && node.is_container
+                            == matches!(&target.identity, SceneTarget::Container(_))
+                        && inside(node.bounds)
+                }) {
+                    visible.nodes.push(node);
                 }
-                SceneTarget::Port(owner, id) => {
-                    if let Some(port) = scene
-                        .ports
-                        .get(target.scene_index)
-                        .filter(|port| port.id == *id && port.owner == *owner)
-                    {
-                        visible.ports.push(port);
-                    }
+            }
+            SceneTarget::Port(owner, id) => {
+                if let Some(port) = scene.ports.get(target.scene_index).filter(|port| {
+                    port.id == *id
+                        && port.owner == *owner
+                        && inside(Rect::new(
+                            port.position.x - 7.0,
+                            port.position.y - 7.0,
+                            14.0,
+                            14.0,
+                        ))
+                }) {
+                    visible.ports.push(port);
                 }
-                SceneTarget::Edge(id) => {
-                    if let Some(edge) = scene
-                        .edges
-                        .get(target.scene_index)
-                        .filter(|edge| edge.semantic.id == *id)
-                    {
-                        visible.edges.push(edge);
-                    }
+            }
+            SceneTarget::Edge(id) => {
+                if let Some(edge) = scene.edges.get(target.scene_index).filter(|edge| {
+                    edge.semantic.id == *id
+                        && (within.is_none()
+                            || edge
+                                .points
+                                .windows(2)
+                                .any(|pair| inside(Rect::from_points(pair[0], pair[1]))))
+                }) {
+                    visible.edges.push(edge);
                 }
             }
         }
-        visible
     }
 }
 

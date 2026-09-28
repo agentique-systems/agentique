@@ -23,7 +23,9 @@ pub struct Welcome {
 impl Welcome {
     pub fn new(studio: Entity<Studio>, cx: &mut Context<Self>) -> Self {
         let subscription = cx.subscribe(&studio, |_, _, event: &StudioEvent, cx| {
-            if event.0.intersects(Dirty::STATUS | Dirty::APPEARANCE | Dirty::OVERLAY | Dirty::CONVERSATION) {
+            if event.0.intersects(
+                Dirty::STATUS | Dirty::APPEARANCE | Dirty::OVERLAY | Dirty::CONVERSATION,
+            ) {
                 cx.notify();
             }
         });
@@ -39,7 +41,14 @@ fn run(id: CommandId) -> impl Fn(&ClickEvent, &mut Window, &mut App) + 'static {
 }
 
 /// One numbered step of the welcome.
-fn step(number: &'static str, title: &'static str, body: SharedString, actions: Vec<gpui::AnyElement>, done: bool, cx: &App) -> impl IntoElement {
+fn step(
+    number: &'static str,
+    title: &'static str,
+    body: SharedString,
+    actions: Vec<gpui::AnyElement>,
+    done: bool,
+    cx: &App,
+) -> impl IntoElement {
     let theme = cx.theme();
     div()
         .flex()
@@ -57,12 +66,23 @@ fn step(number: &'static str, title: &'static str, body: SharedString, actions: 
                 .flex()
                 .items_center()
                 .justify_center()
-                .bg(if done { theme.success.soft } else { theme.accent.soft })
-                .text_color(if done { theme.success.text } else { theme.accent.text })
+                .bg(if done {
+                    theme.success.soft
+                } else {
+                    theme.accent.soft
+                })
+                .text_color(if done {
+                    theme.success.text
+                } else {
+                    theme.accent.text
+                })
                 .text_size(r(theme::text::SM))
                 .font_weight(theme::SEMIBOLD)
                 .child(if done {
-                    icon(IconName::Check).size(14.0).color(theme.success.text).into_any_element()
+                    icon(IconName::Check)
+                        .size(14.0)
+                        .color(theme.success.text)
+                        .into_any_element()
                 } else {
                     number.into_any_element()
                 }),
@@ -70,10 +90,16 @@ fn step(number: &'static str, title: &'static str, body: SharedString, actions: 
         .child(
             div()
                 .flex_1()
+                .min_w_0()
                 .flex()
                 .flex_col()
                 .gap(r(4.0))
-                .child(div().text_size(r(theme::text::PROSE)).font_weight(theme::SEMIBOLD).child(title))
+                .child(
+                    div()
+                        .text_size(r(theme::text::PROSE))
+                        .font_weight(theme::SEMIBOLD)
+                        .child(title),
+                )
                 .child(
                     div()
                         .text_size(r(theme::text::SM))
@@ -82,7 +108,14 @@ fn step(number: &'static str, title: &'static str, body: SharedString, actions: 
                         .child(body),
                 )
                 .when(!actions.is_empty(), |this| {
-                    this.child(div().pt(r(8.0)).flex().flex_wrap().gap(r(8.0)).children(actions))
+                    this.child(
+                        div()
+                            .pt(r(8.0))
+                            .flex()
+                            .flex_wrap()
+                            .gap(r(8.0))
+                            .children(actions),
+                    )
                 }),
         )
 }
@@ -107,7 +140,9 @@ impl Render for Welcome {
         };
         let example = {
             let studio = self.studio.clone();
-            move |_: &ClickEvent, _: &mut Window, cx: &mut App| studio.act(cx, |studio| studio.show_fixture("architecture"))
+            move |_: &ClickEvent, _: &mut Window, cx: &mut App| {
+                studio.act(cx, |studio| studio.show_fixture("architecture"))
+            }
         };
         let content = if first_run {
             div()
@@ -156,8 +191,21 @@ impl Render for Welcome {
                     div()
                         .flex()
                         .gap(r(8.0))
-                        .child(Button::new("start-new", "New project…").primary().large().icon(IconName::FolderPlus).shortcut("Ctrl+N").on_click(run(CommandId::NewProject)))
-                        .child(Button::new("start-open", "Open project…").large().icon(IconName::FolderOpen).shortcut("Ctrl+O").on_click(run(CommandId::OpenProject))),
+                        .child(
+                            Button::new("start-new", "New project…")
+                                .primary()
+                                .large()
+                                .icon(IconName::FolderPlus)
+                                .shortcut("Ctrl+N")
+                                .on_click(run(CommandId::NewProject)),
+                        )
+                        .child(
+                            Button::new("start-open", "Open project…")
+                                .large()
+                                .icon(IconName::FolderOpen)
+                                .shortcut("Ctrl+O")
+                                .on_click(run(CommandId::OpenProject)),
+                        ),
                 )
                 .child(
                     div()
@@ -166,7 +214,10 @@ impl Render for Welcome {
                         .child(ui::section_header("Recent projects", cx))
                         .children(recent.into_iter().enumerate().map(|(index, folder)| {
                             let studio = self.studio.clone();
-                            let name = folder.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+                            let name = folder
+                                .file_name()
+                                .map(|n| n.to_string_lossy().into_owned())
+                                .unwrap_or_default();
                             let path = folder.display().to_string();
                             div()
                                 .id(("start-recent", index))
@@ -196,7 +247,11 @@ impl Render for Welcome {
                                         .flex()
                                         .items_center()
                                         .justify_center()
-                                        .child(icon(IconName::Folder).size(14.0).color(theme.text_muted)),
+                                        .child(
+                                            icon(IconName::Folder)
+                                                .size(14.0)
+                                                .color(theme.text_muted),
+                                        ),
                                 )
                                 .child(
                                     div()
@@ -216,7 +271,11 @@ impl Render for Welcome {
                                                 .child(path),
                                         ),
                                 )
-                                .child(icon(IconName::ArrowRight).size(14.0).color(theme.text_faint))
+                                .child(
+                                    icon(IconName::ArrowRight)
+                                        .size(14.0)
+                                        .color(theme.text_faint),
+                                )
                         })),
                 )
                 .into_any_element()

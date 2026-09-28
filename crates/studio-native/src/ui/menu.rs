@@ -196,94 +196,110 @@ impl Render for Menu {
             .text_size(r(theme::text::BASE))
             .flex()
             .flex_col()
-            .children(self.items.iter().enumerate().map(|(index, item)| match item {
-                MenuItem::Separator => div()
-                    .my(r(4.0))
-                    .mx(r(-4.0))
-                    .h(theme::hairline())
-                    .bg(theme.separator)
-                    .into_any_element(),
-                MenuItem::Header(title) => div()
-                    .px(r(8.0))
-                    .pt(r(6.0))
-                    .pb(r(2.0))
-                    .text_size(r(theme::text::XS))
-                    .font_weight(theme::SEMIBOLD)
-                    .text_color(theme.text_muted)
-                    .child(title.to_uppercase())
-                    .into_any_element(),
-                MenuItem::Note(text) => div()
-                    .px(r(8.0))
-                    .py(r(4.0))
-                    .text_size(r(theme::text::SM))
-                    .text_color(theme.text_muted)
-                    .child(text.clone())
-                    .into_any_element(),
-                MenuItem::Action {
-                    label,
-                    icon: glyph,
-                    shortcut,
-                    checked,
-                    disabled,
-                    danger,
-                    ..
-                } => {
-                    let highlighted = selected == Some(index);
-                    let enabled = disabled.is_none();
-                    let text = if !enabled {
-                        theme.text_faint
-                    } else if *danger {
-                        theme.danger.text
-                    } else {
-                        theme.text
-                    };
-                    div()
-                        .id(ElementId::NamedInteger("menu-item".into(), index as u64))
-                        .role(gpui::Role::MenuItem)
-                        .aria_label(label.clone())
-                        .h(r(28.0))
+            .children(self.items.iter().enumerate().map(|(index, item)| {
+                match item {
+                    MenuItem::Separator => div()
+                        .my(r(4.0))
+                        .mx(r(-4.0))
+                        .h(theme::hairline())
+                        .bg(theme.separator)
+                        .into_any_element(),
+                    MenuItem::Header(title) => div()
                         .px(r(8.0))
-                        .flex()
-                        .items_center()
-                        .gap(r(8.0))
-                        .rounded(r(crate::tokens::radius::CONTROL))
-                        .text_color(text)
-                        .when(highlighted && enabled, |this| this.bg(theme.hover))
-                        .when(enabled, |this| {
-                            this.cursor_pointer()
-                                .hover(|style| style.bg(theme.hover))
-                                .on_click(cx.listener(move |menu, _: &ClickEvent, window, cx| {
-                                    menu.run(index, window, cx)
-                                }))
-                        })
-                        .when_some(*disabled, |this, reason| {
-                            let tooltip = crate::ui::tooltip::text(reason, None);
-                            this.tooltip(move |window, cx| tooltip(window, cx))
-                        })
-                        .child(
-                            div()
-                                .w(r(16.0))
-                                .flex()
-                                .justify_center()
-                                .when_some(*glyph, |this, name| {
-                                    this.child(icon(name).size(14.0).color(if enabled {
-                                        theme.text_muted
-                                    } else {
-                                        theme.text_faint
-                                    }))
-                                })
-                                .when(*checked && glyph.is_none(), |this| {
-                                    this.child(icon(IconName::Check).size(14.0).color(theme.accent.text))
-                                }),
-                        )
-                        .child(div().flex_1().whitespace_nowrap().child(label.clone()))
-                        .when(*checked && glyph.is_some(), |this| {
-                            this.child(icon(IconName::Check).size(14.0).color(theme.accent.text))
-                        })
-                        .when_some(*shortcut, |this, keys| {
-                            this.child(div().pl(px(12.0)).child(KeyCaps::new(keys)))
-                        })
-                        .into_any_element()
+                        .pt(r(6.0))
+                        .pb(r(2.0))
+                        .text_size(r(theme::text::XS))
+                        .font_weight(theme::SEMIBOLD)
+                        .text_color(theme.text_muted)
+                        .child(title.to_uppercase())
+                        .into_any_element(),
+                    MenuItem::Note(text) => div()
+                        .px(r(8.0))
+                        .py(r(4.0))
+                        .text_size(r(theme::text::SM))
+                        .text_color(theme.text_muted)
+                        .child(text.clone())
+                        .into_any_element(),
+                    MenuItem::Action {
+                        label,
+                        icon: glyph,
+                        shortcut,
+                        checked,
+                        disabled,
+                        danger,
+                        ..
+                    } => {
+                        let highlighted = selected == Some(index);
+                        let enabled = disabled.is_none();
+                        let text = if !enabled {
+                            theme.text_faint
+                        } else if *danger {
+                            theme.danger.text
+                        } else {
+                            theme.text
+                        };
+                        div()
+                            .id(ElementId::NamedInteger("menu-item".into(), index as u64))
+                            .role(gpui::Role::MenuItem)
+                            .aria_label(label.clone())
+                            .h(r(28.0))
+                            .px(r(8.0))
+                            .flex()
+                            .items_center()
+                            .gap(r(8.0))
+                            .rounded(r(crate::tokens::radius::CONTROL))
+                            .text_color(text)
+                            .when(highlighted && enabled, |this| this.bg(theme.hover))
+                            .when(enabled, |this| {
+                                this.cursor_pointer()
+                                    .hover(|style| style.bg(theme.hover))
+                                    .on_click(cx.listener(
+                                        move |menu, _: &ClickEvent, window, cx| {
+                                            menu.run(index, window, cx)
+                                        },
+                                    ))
+                            })
+                            .when_some(*disabled, |this, reason| {
+                                let tooltip = crate::ui::tooltip::text(reason, None);
+                                this.tooltip(move |window, cx| tooltip(window, cx))
+                            })
+                            .child(
+                                div()
+                                    .w(r(16.0))
+                                    .flex()
+                                    .justify_center()
+                                    .when_some(*glyph, |this, name| {
+                                        this.child(icon(name).size(14.0).color(if enabled {
+                                            theme.text_muted
+                                        } else {
+                                            theme.text_faint
+                                        }))
+                                    })
+                                    .when(*checked && glyph.is_none(), |this| {
+                                        this.child(
+                                            icon(IconName::Check)
+                                                .size(14.0)
+                                                .color(theme.accent.text),
+                                        )
+                                    }),
+                            )
+                            .child(
+                                div()
+                                    .flex_1()
+                                    .min_w_0()
+                                    .whitespace_nowrap()
+                                    .child(label.clone()),
+                            )
+                            .when(*checked && glyph.is_some(), |this| {
+                                this.child(
+                                    icon(IconName::Check).size(14.0).color(theme.accent.text),
+                                )
+                            })
+                            .when_some(*shortcut, |this, keys| {
+                                this.child(div().pl(px(12.0)).child(KeyCaps::new(keys)))
+                            })
+                            .into_any_element()
+                    }
                 }
             }))
     }

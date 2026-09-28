@@ -14,7 +14,10 @@ use gpui::{
 pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
     let theme = cx.theme().clone();
     if studio.read(cx).project.is_none() {
-        return div().p(r(16.0)).child(super::note("Open a project to see its requirements.", cx)).into_any_element();
+        return div()
+            .p(r(16.0))
+            .child(super::note("Open a project to see its requirements.", cx))
+            .into_any_element();
     }
     let rows = studio.update(cx, |studio, _| studio.requirements());
     let studio_ref = studio.read(cx);
@@ -34,12 +37,19 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
             .justify_center()
             .p(r(20.0))
             .child(
-                ui::EmptyState::new(IconName::Requirements, "No requirements yet", "A requirement says what the system must do; parts satisfy it.")
-                    .hint("R", "create a requirement"),
+                ui::EmptyState::new(
+                    IconName::Requirements,
+                    "No requirements yet",
+                    "A requirement says what the system must do; parts satisfy it.",
+                )
+                .hint("R", "create a requirement"),
             )
             .into_any_element();
     }
-    let satisfied = rows.iter().filter(|row| !row.satisfied_by.is_empty()).count();
+    let satisfied = rows
+        .iter()
+        .filter(|row| !row.satisfied_by.is_empty())
+        .count();
     let total = rows.len();
     div()
         .id("requirements")
@@ -59,7 +69,10 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
                 .text_size(r(theme::text::SM))
                 .text_color(theme.text_muted)
                 .child(format!("{satisfied} of {total} satisfied"))
-                .child(div().flex_1().child(ui::primitives::progress(Some(satisfied as f32 / total.max(1) as f32), cx))),
+                .child(div().flex_1().min_w_0().child(ui::primitives::progress(
+                    Some(satisfied as f32 / total.max(1) as f32),
+                    cx,
+                ))),
         )
         .children(rows.into_iter().enumerate().map(|(index, row)| {
             let studio_show = studio.clone();
@@ -87,7 +100,11 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
                         .on_click(move |_: &ClickEvent, _, cx| {
                             studio_show.act(cx, |studio| studio.show_element(id))
                         })
-                        .child(icon(IconName::Requirement).size(14.0).color(theme.warning.text))
+                        .child(
+                            icon(IconName::Requirement)
+                                .size(14.0)
+                                .color(theme.warning.text),
+                        )
                         .child(
                             div()
                                 .flex_1()
@@ -120,11 +137,16 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
                             .text_size(r(theme::text::XS))
                             .text_color(theme.text_muted)
                             .child("Subject")
-                            .children(row.subjects.iter().map(|subject| Chip::new(subject.clone()).mono())),
+                            .children(
+                                row.subjects
+                                    .iter()
+                                    .map(|subject| Chip::new(subject.clone()).mono()),
+                            ),
                     )
                 })
                 .child(if unsatisfied {
-                    ui::inline_message(Tone::Warning, "Not satisfied by anything yet", cx).into_any_element()
+                    ui::inline_message(Tone::Warning, "Not satisfied by anything yet", cx)
+                        .into_any_element()
                 } else {
                     div()
                         .flex()
@@ -133,14 +155,31 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
                         .items_center()
                         .text_size(r(theme::text::XS))
                         .text_color(theme.success.text)
-                        .child(icon(IconName::CircleCheck).size(12.0).color(theme.success.text))
+                        .child(
+                            icon(IconName::CircleCheck)
+                                .size(12.0)
+                                .color(theme.success.text),
+                        )
                         .child("Satisfied by")
-                        .children(row.satisfied_by.iter().map(|by| Chip::new(by.clone()).mono().tone(Tone::Success)))
+                        .children(
+                            row.satisfied_by
+                                .iter()
+                                .map(|by| Chip::new(by.clone()).mono().tone(Tone::Success)),
+                        )
                         .into_any_element()
                 })
-                .children(row.problems.iter().map(|problem| ui::inline_message(Tone::Warning, problem.clone(), cx)))
+                .children(
+                    row.problems
+                        .iter()
+                        .map(|problem| ui::inline_message(Tone::Warning, problem.clone(), cx)),
+                )
                 .when(can_satisfy, |this| {
-                    let label = format!("Satisfied by {}", part_name.clone().unwrap_or_else(|| "the selected part".into()));
+                    let label = format!(
+                        "Satisfied by {}",
+                        part_name
+                            .clone()
+                            .unwrap_or_else(|| "the selected part".into())
+                    );
                     this.child(
                         div().child(
                             Button::new(("satisfy", index), label)

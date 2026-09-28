@@ -8,7 +8,7 @@
 //! double-click renames in place. The wheel and a pinch zoom around the
 //! pointer; Shift+wheel pans across.
 mod minimap;
-mod paint;
+pub(crate) mod paint;
 
 use crate::{
     commands::{self, CommandId, Deselect, SelectDown, SelectLeft, SelectRight, SelectUp},
@@ -20,11 +20,11 @@ use crate::{
 use agq_language::Parent;
 use agq_studio_scene::{ElementId, LockMark, Point, Rect, SceneTarget, Size};
 use gpui::{
-    App, AppContext, Bounds, Context, Entity, EventEmitter, FocusHandle, Focusable, InteractiveElement,
-    IntoElement, KeyDownEvent, KeyUpEvent, Modifiers, MouseButton, MouseDownEvent, MouseMoveEvent,
-    MouseUpEvent, ParentElement, PinchEvent, Pixels, Render, ScrollDelta, ScrollWheelEvent,
-    SharedString, StatefulInteractiveElement, Styled, Subscription, Task, Window, canvas, div,
-    point, prelude::FluentBuilder, px,
+    App, AppContext, Bounds, Context, Entity, EventEmitter, FocusHandle, Focusable,
+    InteractiveElement, IntoElement, KeyDownEvent, KeyUpEvent, Modifiers, MouseButton,
+    MouseDownEvent, MouseMoveEvent, MouseUpEvent, ParentElement, PinchEvent, Pixels, Render,
+    ScrollDelta, ScrollWheelEvent, SharedString, StatefulInteractiveElement, Styled, Subscription,
+    Task, Window, canvas, div, point, prelude::FluentBuilder, px,
 };
 use gpui_base::input::{InputEvent, InputState};
 use std::{
@@ -149,7 +149,8 @@ impl SurfaceView {
             hit = Some(SceneTarget::Node(card));
         }
         let elapsed = started.elapsed();
-        self.studio.update(cx, |studio, _| studio.timing.hit(elapsed));
+        self.studio
+            .update(cx, |studio, _| studio.timing.hit(elapsed));
         hit
     }
 
@@ -170,7 +171,8 @@ impl SurfaceView {
 
     fn mouse_down(&mut self, event: &MouseDownEvent, window: &mut Window, cx: &mut Context<Self>) {
         window.focus(&self.focus, cx);
-        self.studio.update(cx, |studio, _| studio.timing.input_received());
+        self.studio
+            .update(cx, |studio, _| studio.timing.input_received());
         if self.studio.read(cx).dialog.is_some() {
             return;
         }
@@ -219,13 +221,23 @@ impl SurfaceView {
                 studio.gesture = Some(match target {
                     _ if space => Gesture::Pan,
                     _ if modifiers.shift => Gesture::Marquee { start, end: world },
-                    Some(SceneTarget::Port(card, port)) if editable && port_visible(studio, card, port) => {
-                        Gesture::Connect { card, port, now: world }
+                    Some(SceneTarget::Port(card, port))
+                        if editable && port_visible(studio, card, port) =>
+                    {
+                        Gesture::Connect {
+                            card,
+                            port,
+                            now: world,
+                        }
                     }
                     Some(SceneTarget::Node(card) | SceneTarget::Container(card))
                         if studio.view != View::Requirements =>
                     {
-                        Gesture::Move { card, start, now: world }
+                        Gesture::Move {
+                            card,
+                            start,
+                            now: world,
+                        }
                     }
                     _ => Gesture::Pan,
                 });
@@ -278,7 +290,9 @@ impl SurfaceView {
                     Some(SceneTarget::Port(other_card, other)) if *other != port => {
                         studio.connect((card, Some(port)), (*other_card, Some(*other)))
                     }
-                    Some(SceneTarget::Node(other) | SceneTarget::Container(other)) if *other != card => {
+                    Some(SceneTarget::Node(other) | SceneTarget::Container(other))
+                        if *other != card =>
+                    {
                         studio.connect((card, Some(port)), (*other, None))
                     }
                     _ => studio.status = "Drop on another port to connect".into(),
@@ -416,8 +430,10 @@ impl SurfaceView {
             (Some((element, name)), _) => {
                 let state = cx.new(|cx| InputState::new(window, cx).default_value(name));
                 let studio = self.studio.clone();
-                let subscription = cx.subscribe_in(&state, window, move |this, state, event: &InputEvent, window, cx| {
-                    match event {
+                let subscription = cx.subscribe_in(
+                    &state,
+                    window,
+                    move |this, state, event: &InputEvent, window, cx| match event {
                         InputEvent::PressEnter { .. } => {
                             let name = state.read(cx).value().to_string();
                             studio.act(cx, |studio| {
@@ -429,15 +445,16 @@ impl SurfaceView {
                         }
                         InputEvent::Blur => {
                             studio.act(cx, |studio| {
-                                if matches!(studio.dialog, Some(crate::edit::Dialog::Rename { .. })) {
+                                if matches!(studio.dialog, Some(crate::edit::Dialog::Rename { .. }))
+                                {
                                     studio.dialog = None;
                                 }
                             });
                             this.rename = None;
                         }
                         _ => {}
-                    }
-                });
+                    },
+                );
                 let focus = state.read(cx).focus_handle(cx);
                 state.update(cx, |state, cx| state.select_all(window, cx));
                 window.defer(cx, move |window, cx| window.focus(&focus, cx));
@@ -525,7 +542,9 @@ pub fn drop_card(
             _ => None,
         };
         match into {
-            Some(container) if studio.editable() => studio.move_to(card, Parent::Element(container)),
+            Some(container) if studio.editable() => {
+                studio.move_to(card, Parent::Element(container))
+            }
             _ => studio.status = "Hold Alt and drop onto a container to move into it".into(),
         }
         return;
@@ -562,6 +581,17 @@ pub fn drop_card(
         }
     }
     studio.rebuild();
+}
+
+/// An element's name in the Surface's list for screen readers: its first
+/// line of details, and whether it is selected.
+pub fn element_name(studio: &Studio, target: &SceneTarget, selected: bool) -> String {
+    let text = hover_text(studio, target).unwrap_or_default();
+    let mut label = text.lines().next().unwrap_or_default().to_string();
+    if selected {
+        label.push_str(", selected");
+    }
+    label
 }
 
 /// What an element is, in a few lines: for its details on hover and its
@@ -618,7 +648,14 @@ pub fn hover_text(studio: &Studio, target: &SceneTarget) -> Option<String> {
 pub fn context_commands(target: Option<&SceneTarget>) -> &'static [CommandId] {
     use CommandId::*;
     match target {
-        None => &[CreatePart, CreateRequirement, Fit, Architecture, Graph, Requirements],
+        None => &[
+            CreatePart,
+            CreateRequirement,
+            Fit,
+            Architecture,
+            Graph,
+            Requirements,
+        ],
         Some(SceneTarget::Port(..)) => &[Rename, Connect, Delete, Lock],
         Some(SceneTarget::Edge(_)) => &[Delete],
         Some(SceneTarget::Node(_) | SceneTarget::Container(_)) => &[
@@ -681,11 +718,7 @@ impl Render for SurfaceView {
                 let bounds = studio.scene.target_bounds(&target)?;
                 let a = studio.camera.world_to_screen(bounds.min);
                 let b = studio.camera.world_to_screen(bounds.max);
-                let text = hover_text(studio, &target).unwrap_or_default();
-                let mut label = text.lines().next().unwrap_or_default().to_string();
-                if selected {
-                    label.push_str(", selected");
-                }
+                let label = element_name(studio, &target, selected);
                 Some((
                     target,
                     selected,
@@ -695,8 +728,13 @@ impl Render for SurfaceView {
             })
             .take(24)
             .collect();
-        let rename = self.rename.as_ref().map(|(element, state, _)| (*element, state.clone()));
-        let rename_rect = rename.as_ref().map(|(element, _)| self.name_rect(*element, cx));
+        let rename = self
+            .rename
+            .as_ref()
+            .map(|(element, state, _)| (*element, state.clone()));
+        let rename_rect = rename
+            .as_ref()
+            .map(|(element, _)| self.name_rect(*element, cx));
         let bounds_cell = self.bounds.clone();
         let studio_entity = self.studio.clone();
         let studio_after = self.studio.clone();
@@ -758,6 +796,7 @@ impl Render for SurfaceView {
                 canvas(
                     move |bounds, window, cx| {
                         bounds_cell.set(bounds);
+                        ui::target::record("Viewport", bounds);
                         let scale = f32::from(window.rem_size()) / 16.0;
                         studio_entity.update(cx, |studio, cx| {
                             studio.frame_number += 1;
@@ -802,6 +841,8 @@ impl Render for SurfaceView {
                         }
                         studio_after.update(cx, |studio, _| {
                             studio.timing.surface_paint(elapsed);
+                            studio.timing.visibility(painted.visibility);
+                            studio.timing.labels(painted.labels);
                             studio.timing.visible_nodes = painted.visible_nodes;
                             studio.timing.total_nodes = total;
                             studio.timing.ui_complete();
@@ -965,7 +1006,13 @@ fn zoom_control(zoom: f32, studio: Entity<Studio>, cx: &App) -> impl IntoElement
                 .tooltip("Zoom in", Some(shortcut(CommandId::ZoomIn)))
                 .on_click(run(CommandId::ZoomIn)),
         )
-        .child(div().w(theme::hairline()).h(r(16.0)).mx(r(2.0)).bg(theme.separator))
+        .child(
+            div()
+                .w(theme::hairline())
+                .h(r(16.0))
+                .mx(r(2.0))
+                .bg(theme.separator),
+        )
         .child(
             Button::icon_only("zoom-fit", IconName::Fit, "Fit to view")
                 .small()
@@ -975,7 +1022,12 @@ fn zoom_control(zoom: f32, studio: Entity<Studio>, cx: &App) -> impl IntoElement
 }
 
 /// A tag above the Surface's content while it shows what changed.
-fn comparison_tag(before: String, after: String, studio: Entity<Studio>, cx: &App) -> impl IntoElement {
+fn comparison_tag(
+    before: String,
+    after: String,
+    studio: Entity<Studio>,
+    cx: &App,
+) -> impl IntoElement {
     let theme = cx.theme();
     div()
         .absolute()
@@ -999,7 +1051,11 @@ fn comparison_tag(before: String, after: String, studio: Entity<Studio>, cx: &Ap
                 .border_color(theme.border)
                 .shadow(theme.shadow_overlay())
                 .text_size(r(theme::text::SM))
-                .child(ui::icon(IconName::Compare).size(14.0).color(theme.text_muted))
+                .child(
+                    ui::icon(IconName::Compare)
+                        .size(14.0)
+                        .color(theme.text_muted),
+                )
                 .child(
                     div()
                         .text_color(theme.text)
@@ -1014,7 +1070,9 @@ fn comparison_tag(before: String, after: String, studio: Entity<Studio>, cx: &Ap
                         .small()
                         .ghost()
                         .icon(IconName::Close)
-                        .on_click(move |_, _, cx| studio.act(cx, |studio| studio.close_comparison())),
+                        .on_click(move |_, _, cx| {
+                            studio.act(cx, |studio| studio.close_comparison())
+                        }),
                 ),
         )
 }

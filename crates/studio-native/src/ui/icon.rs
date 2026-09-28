@@ -18,6 +18,9 @@ macro_rules! icons {
         }
 
         impl IconName {
+            /// Every icon, in the order of the set.
+            pub const ALL: &'static [IconName] = &[$(IconName::$variant),*];
+
             pub fn path(self) -> &'static str {
                 match self {
                     $(IconName::$variant => concat!("icons/", $file, ".svg")),*
@@ -149,7 +152,12 @@ impl AssetSource for Assets {
 /// The fonts of the type scale, compiled in (§3.2 Type).
 pub fn fonts() -> Vec<Cow<'static, [u8]>> {
     vec![
-        Cow::Borrowed(include_bytes!("../../assets/fonts/InterVariable.ttf").as_slice()),
+        // Inter at the three weights the tokens use, instanced from Inter
+        // Variable: GPUI's text system on Windows does not select weights of
+        // a variable font.
+        Cow::Borrowed(include_bytes!("../../assets/fonts/Inter-Regular.ttf").as_slice()),
+        Cow::Borrowed(include_bytes!("../../assets/fonts/Inter-Medium.ttf").as_slice()),
+        Cow::Borrowed(include_bytes!("../../assets/fonts/Inter-SemiBold.ttf").as_slice()),
         Cow::Borrowed(include_bytes!("../../assets/fonts/JetBrainsMonoNL-Regular.ttf").as_slice()),
     ]
 }
@@ -205,7 +213,9 @@ impl RenderOnce for Icon {
             .flex_none()
             .text_color(color);
         match self.hover {
-            Some((group, hover)) => element.group_hover(group, move |style| style.text_color(hover)),
+            Some((group, hover)) => {
+                element.group_hover(group, move |style| style.text_color(hover))
+            }
             None => element,
         }
     }

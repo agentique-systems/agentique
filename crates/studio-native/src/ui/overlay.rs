@@ -4,7 +4,8 @@
 use crate::ui::theme::{self, ActiveTheme, r};
 use gpui::{
     Animation, AnimationExt, AnyElement, App, ElementId, InteractiveElement, IntoElement,
-    ParentElement, RenderOnce, SharedString, StatefulInteractiveElement, Styled, Window, div, prelude::FluentBuilder, px,
+    ParentElement, RenderOnce, SharedString, StatefulInteractiveElement, Styled, Window, div,
+    prelude::FluentBuilder, px,
 };
 use std::time::Duration;
 
@@ -19,7 +20,11 @@ pub fn entrance<E: IntoElement + Styled + 'static>(
             crate::tokens::motion::PRESS_MS,
         )))
         .with_easing(gpui::ease_out_quint()),
-        |element, delta| element.opacity(0.35 + 0.65 * delta).mt(px(4.0 * (1.0 - delta))),
+        |element, delta| {
+            element
+                .opacity(0.35 + 0.65 * delta)
+                .mt(px(4.0 * (1.0 - delta)))
+        },
     )
 }
 
@@ -33,6 +38,7 @@ pub struct Dialog {
     body: Vec<AnyElement>,
     footer: Vec<AnyElement>,
     width: f32,
+    top: f32,
 }
 
 impl Dialog {
@@ -44,10 +50,17 @@ impl Dialog {
             body: Vec::new(),
             footer: Vec::new(),
             width: 440.0,
+            // About a sixth of a Studio window down.
+            top: 150.0,
         }
     }
     pub fn description(mut self, text: impl Into<SharedString>) -> Dialog {
         self.description = Some(text.into());
+        self
+    }
+    /// Room above the dialog (the gallery shows one in a short frame).
+    pub fn top(mut self, top: f32) -> Dialog {
+        self.top = top;
         self
     }
     pub fn width(mut self, width: f32) -> Dialog {
@@ -140,7 +153,7 @@ impl RenderOnce for Dialog {
             .bg(theme.backdrop)
             .flex()
             .justify_center()
-            .pt(gpui::relative(0.16))
+            .pt(r(self.top))
             .child(entrance(
                 ElementId::Name(format!("{:?}-entrance", self.id).into()),
                 div().child(panel),

@@ -13,7 +13,10 @@ use std::rc::Rc;
 pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
     let state = studio.read(cx);
     let Some(project) = &state.project else {
-        return div().p(r(16.0)).child(super::note("Open a project to see its problems.", cx)).into_any_element();
+        return div()
+            .p(r(16.0))
+            .child(super::note("Open a project to see its problems.", cx))
+            .into_any_element();
     };
     let system = project.state();
     let tree = system.tree();
@@ -22,10 +25,14 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
             .diagnostics()
             .iter()
             .map(|diagnostic| {
-                let path = tree
-                    .get(diagnostic.element)
-                    .map_or_else(String::new, |_| crate::edit::display_path(tree, diagnostic.element));
-                (diagnostic.element, path.into(), diagnostic.message.clone().into())
+                let path = tree.get(diagnostic.element).map_or_else(String::new, |_| {
+                    crate::edit::display_path(tree, diagnostic.element)
+                });
+                (
+                    diagnostic.element,
+                    path.into(),
+                    diagnostic.message.clone().into(),
+                )
             })
             .collect(),
     );
@@ -36,7 +43,11 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
             .items_center()
             .justify_center()
             .p(r(20.0))
-            .child(ui::EmptyState::new(IconName::CircleCheck, "No problems", "Every element is valid. Problems appear here, and at the element, as they happen."))
+            .child(ui::EmptyState::new(
+                IconName::CircleCheck,
+                "No problems",
+                "Every element is valid. Problems appear here, and at the element, as they happen.",
+            ))
             .into_any_element();
     }
     let count = rows.len();
@@ -62,7 +73,11 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
                     .role(gpui::Role::Button)
                     .aria_label(SharedString::from(format!("{path}: {message}")))
                     .on_click(move |_: &ClickEvent, _, cx| super::show(&studio, id, cx))
-                    .child(div().pt(r(1.0)).child(icon(IconName::Warning).size(14.0).color(theme.warning.text)))
+                    .child(
+                        div()
+                            .pt(r(1.0))
+                            .child(icon(IconName::Warning).size(14.0).color(theme.warning.text)),
+                    )
                     .child(
                         div()
                             .flex_1()

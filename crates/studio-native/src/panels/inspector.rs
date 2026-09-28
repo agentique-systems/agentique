@@ -7,10 +7,15 @@ use super::InspectorColumn;
 use crate::{
     palette::kind_icon,
     studio::{Dirty, Studio},
-    ui::{self, ActiveTheme, Button, Chip, IconName, Segmented, TextArea, TextField, Tone, icon, r, theme},
+    ui::{
+        self, ActiveTheme, Button, Chip, IconName, Segmented, TextArea, TextField, Tone, icon, r,
+        theme,
+    },
     workspace::StudioExt,
 };
-use agq_language::{Direction, ElementId, ElementKind, Literal, Multiplicity, Reference, Tree, library};
+use agq_language::{
+    Direction, ElementId, ElementKind, Literal, Multiplicity, Reference, Tree, library,
+};
 use agq_studio_scene::SceneTarget;
 use agq_system_state::Property;
 use gpui::{
@@ -60,14 +65,22 @@ pub fn type_options(tree: &Tree) -> Vec<(ElementKind, String, Reference)> {
             && let Some(name) = library.effective_name(id)
         {
             let qualified = library.qualified_name(id);
-            out.push((library[id].kind, name.to_string(), Reference::new(&qualified)));
+            out.push((
+                library[id].kind,
+                name.to_string(),
+                Reference::new(&qualified),
+            ));
         }
     }
     out
 }
 
 pub fn parse_multiplicity(text: &str) -> Result<Option<Multiplicity>, String> {
-    let text = text.trim().trim_start_matches('[').trim_end_matches(']').trim();
+    let text = text
+        .trim()
+        .trim_start_matches('[')
+        .trim_end_matches(']')
+        .trim();
     if text.is_empty() {
         return Ok(None);
     }
@@ -103,7 +116,11 @@ pub fn parse_value(text: &str) -> Option<Literal> {
         "false" => Literal::Boolean(false),
         _ if text.parse::<i64>().is_ok() => Literal::Integer(text.into()),
         _ if text.parse::<f64>().is_ok() && text.contains('.') => Literal::Real(text.into()),
-        _ => Literal::String(text.trim_start_matches('"').trim_end_matches('"').replace('"', "'")),
+        _ => Literal::String(
+            text.trim_start_matches('"')
+                .trim_end_matches('"')
+                .replace('"', "'"),
+        ),
     })
 }
 
@@ -138,11 +155,23 @@ fn current(tree: &Tree, element: ElementId, field: Field) -> String {
     match field {
         Field::Name => tree.effective_name(element).unwrap_or("").to_string(),
         Field::Type => {
-            let references = if e.kind.is_usage() { &e.typed_by } else { &e.specializes };
-            references.iter().map(ToString::to_string).collect::<Vec<_>>().join(", ")
+            let references = if e.kind.is_usage() {
+                &e.typed_by
+            } else {
+                &e.specializes
+            };
+            references
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>()
+                .join(", ")
         }
         Field::Multiplicity => e.multiplicity.map(|m| m.to_string()).unwrap_or_default(),
-        Field::Value => e.value.as_ref().map(ToString::to_string).unwrap_or_default(),
+        Field::Value => e
+            .value
+            .as_ref()
+            .map(ToString::to_string)
+            .unwrap_or_default(),
         Field::Doc => e
             .children()
             .iter()
@@ -153,10 +182,15 @@ fn current(tree: &Tree, element: ElementId, field: Field) -> String {
 }
 
 impl Fields {
-    pub fn new(studio: Entity<Studio>, window: &mut Window, cx: &mut Context<InspectorColumn>) -> Fields {
-        let input = |placeholder: &'static str, window: &mut Window, cx: &mut Context<InspectorColumn>| {
-            cx.new(|cx| InputState::new(window, cx).placeholder(placeholder))
-        };
+    pub fn new(
+        studio: Entity<Studio>,
+        window: &mut Window,
+        cx: &mut Context<InspectorColumn>,
+    ) -> Fields {
+        let input =
+            |placeholder: &'static str, window: &mut Window, cx: &mut Context<InspectorColumn>| {
+                cx.new(|cx| InputState::new(window, cx).placeholder(placeholder))
+            };
         let name = input("Name", window, cx);
         let type_query = input("Type to find a definition", window, cx);
         let multiplicity = input("1, 0..1, 0..*", window, cx);
@@ -173,19 +207,27 @@ impl Fields {
             (&multiplicity, Field::Multiplicity),
             (&value, Field::Value),
         ] {
-            subscriptions.push(cx.subscribe_in(state, window, move |column, _, event: &InputEvent, window, cx| {
-                match event {
-                    InputEvent::PressEnter { .. } | InputEvent::Blur => column.inspector.commit(field, window, cx),
+            subscriptions.push(cx.subscribe_in(
+                state,
+                window,
+                move |column, _, event: &InputEvent, window, cx| match event {
+                    InputEvent::PressEnter { .. } | InputEvent::Blur => {
+                        column.inspector.commit(field, window, cx)
+                    }
                     InputEvent::Change if field == Field::Type => cx.notify(),
                     _ => {}
-                }
-            }));
+                },
+            ));
         }
-        subscriptions.push(cx.subscribe_in(&doc, window, |column, _, event: &InputEvent, window, cx| {
-            if matches!(event, InputEvent::Blur) {
-                column.inspector.commit(Field::Doc, window, cx);
-            }
-        }));
+        subscriptions.push(cx.subscribe_in(
+            &doc,
+            window,
+            |column, _, event: &InputEvent, window, cx| {
+                if matches!(event, InputEvent::Blur) {
+                    column.inspector.commit(Field::Doc, window, cx);
+                }
+            },
+        ));
         Fields {
             studio,
             name,
@@ -214,7 +256,11 @@ impl Fields {
         match field {
             Field::Name => self.name.read(cx).focus_handle(cx).is_focused(window),
             Field::Type => self.type_query.read(cx).focus_handle(cx).is_focused(window),
-            Field::Multiplicity => self.multiplicity.read(cx).focus_handle(cx).is_focused(window),
+            Field::Multiplicity => self
+                .multiplicity
+                .read(cx)
+                .focus_handle(cx)
+                .is_focused(window),
             Field::Value => self.value.read(cx).focus_handle(cx).is_focused(window),
             Field::Doc => self.doc.read(cx).focus_handle(cx).is_focused(window),
         }
@@ -223,8 +269,12 @@ impl Fields {
     fn set(&self, field: Field, text: String, window: &mut Window, cx: &mut gpui::App) {
         match field {
             Field::Name => self.name.update(cx, |s, cx| s.set_value(text, window, cx)),
-            Field::Type => self.type_query.update(cx, |s, cx| s.set_value(text, window, cx)),
-            Field::Multiplicity => self.multiplicity.update(cx, |s, cx| s.set_value(text, window, cx)),
+            Field::Type => self
+                .type_query
+                .update(cx, |s, cx| s.set_value(text, window, cx)),
+            Field::Multiplicity => self
+                .multiplicity
+                .update(cx, |s, cx| s.set_value(text, window, cx)),
             Field::Value => self.value.update(cx, |s, cx| s.set_value(text, window, cx)),
             Field::Doc => self.doc.update(cx, |s, cx| s.set_value(text, window, cx)),
         }
@@ -234,17 +284,25 @@ impl Fields {
     /// fields not being typed in after a change of the model.
     fn sync(&mut self, element: ElementId, window: &mut Window, cx: &mut Context<InspectorColumn>) {
         let studio = self.studio.read(cx);
-        let Some(project) = &studio.project else { return };
+        let Some(project) = &studio.project else {
+            return;
+        };
         let revision = project.state().revision();
         let tree = project.state().tree();
         if self.loaded == Some((element, revision)) || !tree.contains(element) {
             return;
         }
         let other = self.loaded.is_none_or(|(loaded, _)| loaded != element);
-        let values: Vec<(Field, String)> = [Field::Name, Field::Type, Field::Multiplicity, Field::Value, Field::Doc]
-            .into_iter()
-            .map(|field| (field, current(tree, element, field)))
-            .collect();
+        let values: Vec<(Field, String)> = [
+            Field::Name,
+            Field::Type,
+            Field::Multiplicity,
+            Field::Value,
+            Field::Doc,
+        ]
+        .into_iter()
+        .map(|field| (field, current(tree, element, field)))
+        .collect();
         for (field, text) in values {
             if other || !self.focused(field, window, cx) {
                 self.set(field, text, window, cx);
@@ -259,10 +317,14 @@ impl Fields {
 
     /// Applies what the Operator typed in a field, if it changed.
     fn commit(&mut self, field: Field, window: &mut Window, cx: &mut Context<InspectorColumn>) {
-        let Some((element, _)) = self.loaded else { return };
+        let Some((element, _)) = self.loaded else {
+            return;
+        };
         let text = self.text(field, cx);
         let studio = self.studio.read(cx);
-        let Some(project) = &studio.project else { return };
+        let Some(project) = &studio.project else {
+            return;
+        };
         let tree = project.state().tree();
         if !tree.contains(element) || !studio.editable() || studio.dialog.is_some() {
             return;
@@ -310,7 +372,9 @@ impl Fields {
                 let chosen = if text.trim().is_empty() {
                     Some(Vec::new())
                 } else {
-                    self.matches(element, &text, cx).first().map(|(_, reference)| vec![reference.clone()])
+                    self.matches(element, &text, cx)
+                        .first()
+                        .map(|(_, reference)| vec![reference.clone()])
                 };
                 match chosen {
                     Some(references) => {
@@ -327,19 +391,33 @@ impl Fields {
         let _ = window;
     }
 
-    fn choose_type(&mut self, element: ElementId, references: Vec<Reference>, usage: bool, cx: &mut Context<InspectorColumn>) {
+    fn choose_type(
+        &mut self,
+        element: ElementId,
+        references: Vec<Reference>,
+        usage: bool,
+        cx: &mut Context<InspectorColumn>,
+    ) {
         let (property, what) = if usage {
             (Property::TypedBy(references), "type")
         } else {
             (Property::Specializes(references), "specialisation")
         };
-        self.studio.act(cx, |studio| studio.set_property(element, property, what));
+        self.studio
+            .act(cx, |studio| studio.set_property(element, property, what));
     }
 
     /// Definitions matching the type field, best first.
-    fn matches(&self, element: ElementId, query: &str, cx: &mut Context<InspectorColumn>) -> Vec<(String, Reference)> {
+    fn matches(
+        &self,
+        element: ElementId,
+        query: &str,
+        cx: &mut Context<InspectorColumn>,
+    ) -> Vec<(String, Reference)> {
         self.studio.update(cx, |studio, _| {
-            let Some(project) = &studio.project else { return Vec::new() };
+            let Some(project) = &studio.project else {
+                return Vec::new();
+            };
             let tree = project.state().tree();
             let kinds = type_kinds(tree[element].kind);
             if studio
@@ -356,17 +434,25 @@ impl Fields {
                     all.iter()
                         .filter(|(kind, _, _)| kinds.contains(kind))
                         .filter_map(|(_, name, reference)| {
-                            crate::commands::fuzzy_score(query, name).map(|score| (score, name.clone(), reference.clone()))
+                            crate::commands::fuzzy_score(query, name)
+                                .map(|score| (score, name.clone(), reference.clone()))
                         })
                         .collect()
                 })
                 .unwrap_or_default();
             matches.sort_by_key(|(score, name, _)| (*score, name.len()));
-            matches.into_iter().map(|(_, name, reference)| (name, reference)).collect()
+            matches
+                .into_iter()
+                .map(|(_, name, reference)| (name, reference))
+                .collect()
         })
     }
 
-    pub fn render(&mut self, window: &mut Window, cx: &mut Context<InspectorColumn>) -> impl IntoElement {
+    pub fn render(
+        &mut self,
+        window: &mut Window,
+        cx: &mut Context<InspectorColumn>,
+    ) -> impl IntoElement {
         let theme = cx.theme().clone();
         let studio = self.studio.read(cx);
         let Some(project) = &studio.project else {
@@ -399,15 +485,24 @@ impl Fields {
         let e = &tree[element];
         let kind = e.kind;
         let editable = studio.editable() && studio.dialog.is_none();
-        let owner = e.owner().map(|owner| crate::edit::display_path(tree, owner));
+        let owner = e
+            .owner()
+            .map(|owner| crate::edit::display_path(tree, owner));
         let name = crate::edit::display_name(tree, element);
-        let shared = studio.shared_definition().map(|d| crate::edit::display_name(tree, d));
-        let lock = state.lock_of(element).map(|lock| (lock == element, tree.qualified_name(lock)));
+        let shared = studio
+            .shared_definition()
+            .map(|d| crate::edit::display_name(tree, d));
+        let lock = state
+            .lock_of(element)
+            .map(|lock| (lock == element, tree.qualified_name(lock)));
         let locked_here = state.locks().contains(&element);
         let kinds = type_kinds(kind);
         let usage = kind.is_usage();
         let has_multiplicity = usage && kind != ElementKind::Subject;
-        let has_direction = matches!(kind, ElementKind::Port | ElementKind::Item | ElementKind::Attribute);
+        let has_direction = matches!(
+            kind,
+            ElementKind::Port | ElementKind::Item | ElementKind::Attribute
+        );
         let direction = e.direction;
         let has_value = matches!(kind, ElementKind::Attribute | ElementKind::Reference);
         let namespace = kind.is_namespace();
@@ -428,14 +523,18 @@ impl Fields {
                 (
                     *c,
                     tree[*c].kind,
-                    tree.effective_name(*c).map_or_else(|| tree.qualified_name(*c), str::to_string),
+                    tree.effective_name(*c)
+                        .map_or_else(|| tree.qualified_name(*c), str::to_string),
                 )
             })
             .collect();
         let type_focused = self.focused(Field::Type, window, cx);
         let type_matches = if type_focused && !kinds.is_empty() {
             let query = self.text(Field::Type, cx);
-            self.matches(element, &query, cx).into_iter().take(8).collect::<Vec<_>>()
+            self.matches(element, &query, cx)
+                .into_iter()
+                .take(8)
+                .collect::<Vec<_>>()
         } else {
             Vec::new()
         };
@@ -506,7 +605,7 @@ impl Fields {
                     .flex()
                     .flex_col()
                     .gap(r(8.0))
-                    .when(namespace, |this| this.child(row("Name", TextField::new(&self.name).mono(), cx)))
+                    .when(namespace, |this| this.child(row("Name", TextField::new(&self.name), cx)))
                     .when(!kinds.is_empty(), |this| {
                         let column = column.clone();
                         this.child(row(
@@ -515,7 +614,7 @@ impl Fields {
                                 .flex()
                                 .flex_col()
                                 .gap(r(4.0))
-                                .child(TextField::new(&self.type_query).mono().invalid(self.type_error.is_some()))
+                                .child(TextField::new(&self.type_query).invalid(self.type_error.is_some()).target("Type"))
                                 .when_some(self.type_error.clone(), |this, error| {
                                     this.child(ui::inline_message(Tone::Danger, error, cx))
                                 })
@@ -657,7 +756,7 @@ impl Fields {
                             .line_height(r(18.0))
                             .text_color(theme.text_secondary)
                             .child(div().pt(r(2.0)).child(icon(IconName::Warning).size(13.0).color(theme.warning.text)))
-                            .child(div().flex_1().child(problem))
+                            .child(div().flex_1().min_w_0().child(problem))
                     }))
                     .into_any_element()
             })
@@ -696,7 +795,7 @@ impl Fields {
                             })
                             .child(icon(kind_icon(kind)).size(13.0).color(theme.text_muted))
                             .child(div().text_color(theme.text_muted).child(kind.keyword()))
-                            .child(div().flex_1().font_family(theme::MONO).text_color(theme.text_secondary).child(label))
+                            .child(div().flex_1().min_w_0().font_family(theme::MONO).text_color(theme.text_secondary).child(label))
                     })),
                 )
             })
@@ -728,7 +827,9 @@ fn fixture_inspector(studio: &Entity<Studio>, cx: &gpui::App) -> impl IntoElemen
     let theme = cx.theme();
     let studio = studio.read(cx);
     let node = match &studio.selection.primary {
-        Some(SceneTarget::Node(id) | SceneTarget::Container(id)) => studio.lookup.node(&studio.scene, *id),
+        Some(SceneTarget::Node(id) | SceneTarget::Container(id)) => {
+            studio.lookup.node(&studio.scene, *id)
+        }
         _ => None,
     };
     div()
@@ -736,7 +837,10 @@ fn fixture_inspector(studio: &Entity<Studio>, cx: &gpui::App) -> impl IntoElemen
         .flex()
         .flex_col()
         .gap(r(8.0))
-        .child(ui::Banner::new(Tone::Neutral, "An example, opened read-only. Create or open a project to edit."))
+        .child(ui::Banner::new(
+            Tone::Neutral,
+            "An example, opened read-only. Create or open a project to edit.",
+        ))
         .when_some(node, |this, node| {
             this.child(Chip::new(node.semantic.keyword))
                 .child(
@@ -774,11 +878,17 @@ mod tests {
     fn multiplicities_and_values_parse_as_written() {
         assert_eq!(
             parse_multiplicity("1").unwrap(),
-            Some(Multiplicity { lower: 1, upper: Some(1) })
+            Some(Multiplicity {
+                lower: 1,
+                upper: Some(1)
+            })
         );
         assert_eq!(
             parse_multiplicity("[0..*]").unwrap(),
-            Some(Multiplicity { lower: 0, upper: None })
+            Some(Multiplicity {
+                lower: 0,
+                upper: None
+            })
         );
         assert_eq!(parse_multiplicity("").unwrap(), None);
         assert!(parse_multiplicity("5..2").is_err());

@@ -35,28 +35,16 @@ impl Tooltip {
     }
 }
 
+/// What `.tooltip(...)` takes.
+pub type Builder = Rc<dyn Fn(&mut Window, &mut App) -> AnyView>;
+
 /// A tooltip builder for `.tooltip(...)`.
-pub fn text(
-    title: impl Into<SharedString>,
-    shortcut: Option<&'static str>,
-) -> Rc<dyn Fn(&mut Window, &mut App) -> AnyView> {
+pub fn text(title: impl Into<SharedString>, shortcut: Option<&'static str>) -> Builder {
     let title = title.into();
     Rc::new(move |_, cx| {
         cx.new(|_| Tooltip::new(title.clone()).shortcut(shortcut))
             .into()
     })
-}
-
-/// A tooltip with a detail line, for `.tooltip(...)`.
-pub fn with_detail(
-    title: impl Into<SharedString>,
-    detail: impl Into<SharedString>,
-) -> impl Fn(&mut Window, &mut App) -> AnyView + 'static {
-    let (title, detail) = (title.into(), detail.into());
-    move |_, cx| {
-        cx.new(|_| Tooltip::new(title.clone()).detail(detail.clone()))
-            .into()
-    }
 }
 
 impl Render for Tooltip {

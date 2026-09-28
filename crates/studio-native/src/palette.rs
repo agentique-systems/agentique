@@ -11,10 +11,10 @@ use crate::{
 };
 use agq_language::{ElementId, ElementKind};
 use gpui::{
-    App, AppContext, ClickEvent, Context, DismissEvent, ElementId as GpuiId, Entity, EventEmitter, FocusHandle,
-    Focusable, InteractiveElement, IntoElement, KeyBinding, ParentElement, Render, ScrollStrategy,
-    SharedString, StatefulInteractiveElement, Styled, Subscription, UniformListScrollHandle, Window,
-    actions, div, prelude::FluentBuilder, uniform_list,
+    App, AppContext, ClickEvent, Context, DismissEvent, ElementId as GpuiId, Entity, EventEmitter,
+    FocusHandle, Focusable, InteractiveElement, IntoElement, KeyBinding, ParentElement, Render,
+    ScrollStrategy, SharedString, StatefulInteractiveElement, Styled, Subscription,
+    UniformListScrollHandle, Window, actions, div, prelude::FluentBuilder, uniform_list,
 };
 use gpui_base::input::{Input, InputEvent, InputState};
 use std::rc::Rc;
@@ -90,18 +90,30 @@ pub fn kind_icon(kind: ElementKind) -> IconName {
 }
 
 impl Palette {
-    pub fn new(studio: Entity<Studio>, mode: PaletteMode, window: &mut Window, cx: &mut Context<Palette>) -> Palette {
+    /// The mode and what is typed (the scripted journeys).
+    #[cfg(feature = "automation")]
+    pub fn query(&self, cx: &App) -> (PaletteMode, String) {
+        (self.mode, self.input.read(cx).value().to_string())
+    }
+
+    pub fn new(
+        studio: Entity<Studio>,
+        mode: PaletteMode,
+        window: &mut Window,
+        cx: &mut Context<Palette>,
+    ) -> Palette {
         let input = cx.new(|cx| {
             InputState::new(window, cx).placeholder(match mode {
                 PaletteMode::Commands => "Search commands and elements",
                 PaletteMode::Elements => "Go to an element by name",
             })
         });
-        let subscription = cx.subscribe_in(&input, window, |palette, _, event: &InputEvent, _, cx| {
-            if matches!(event, InputEvent::Change) {
-                palette.search(cx);
-            }
-        });
+        let subscription =
+            cx.subscribe_in(&input, window, |palette, _, event: &InputEvent, _, cx| {
+                if matches!(event, InputEvent::Change) {
+                    palette.search(cx);
+                }
+            });
         let mut palette = Palette {
             studio,
             mode,
@@ -138,7 +150,10 @@ impl Palette {
             let mut found: Vec<_> = commands::search(&query)
                 .map(|command| {
                     let reason = commands::unavailable(command.id, &context);
-                    let recent = studio.recent_commands.iter().position(|recent| *recent == command.id);
+                    let recent = studio
+                        .recent_commands
+                        .iter()
+                        .position(|recent| *recent == command.id);
                     (recent, command, reason)
                 })
                 .collect();
@@ -170,7 +185,9 @@ impl Palette {
             let tree = project.state().tree();
             let mut matches: Vec<(usize, ElementId, String, ElementKind)> = Vec::new();
             for id in tree.walk() {
-                let Some(name) = tree.effective_name(id) else { continue };
+                let Some(name) = tree.effective_name(id) else {
+                    continue;
+                };
                 let element = &tree[id];
                 if matches!(element.kind, ElementKind::Doc | ElementKind::Comment) {
                     continue;
@@ -187,9 +204,17 @@ impl Palette {
             if matches.is_empty() && !query.is_empty() {
                 nearest = nearest_names(&query, tree);
             }
-            let limit = if self.mode == PaletteMode::Elements { 2000 } else { 40 };
+            let limit = if self.mode == PaletteMode::Elements {
+                2000
+            } else {
+                40
+            };
             for (_, id, qualified, kind) in matches.into_iter().take(limit) {
-                let short = qualified.rsplit("::").next().unwrap_or(&qualified).to_string();
+                let short = qualified
+                    .rsplit("::")
+                    .next()
+                    .unwrap_or(&qualified)
+                    .to_string();
                 rows.push(Row {
                     action: Action::Element(id),
                     title: short.into(),
@@ -206,7 +231,9 @@ impl Palette {
                 .scene
                 .nodes
                 .iter()
-                .filter_map(|node| commands::fuzzy_score(&query, &node.semantic.name).map(|s| (s, node)))
+                .filter_map(|node| {
+                    commands::fuzzy_score(&query, &node.semantic.name).map(|s| (s, node))
+                })
                 .collect();
             matches.sort_by_key(|(score, _)| *score);
             for (_, node) in matches.into_iter().take(40) {
@@ -221,10 +248,14 @@ impl Palette {
                 });
             }
         }
-        self.selected = rows.iter().position(|row| row.reason.is_none()).unwrap_or(0);
+        self.selected = rows
+            .iter()
+            .position(|row| row.reason.is_none())
+            .unwrap_or(0);
         self.rows = Rc::new(rows);
         self.nearest = nearest.into_iter().map(SharedString::from).collect();
-        self.scroll.scroll_to_item(self.selected, ScrollStrategy::Top);
+        self.scroll
+            .scroll_to_item(self.selected, ScrollStrategy::Top);
         cx.notify();
     }
 
@@ -238,13 +269,17 @@ impl Palette {
         if enabled.is_empty() {
             return;
         }
-        let current = enabled.iter().position(|row| *row == self.selected).unwrap_or(0);
+        let current = enabled
+            .iter()
+            .position(|row| *row == self.selected)
+            .unwrap_or(0);
         self.selected = enabled[if forward {
             (current + 1) % enabled.len()
         } else {
             (current + enabled.len() - 1) % enabled.len()
         }];
-        self.scroll.scroll_to_item(self.selected, ScrollStrategy::Nearest);
+        self.scroll
+            .scroll_to_item(self.selected, ScrollStrategy::Nearest);
         cx.notify();
     }
 
@@ -290,7 +325,9 @@ fn nearest_names(query: &str, tree: &agq_language::Tree) -> Vec<String> {
             row[0] = i + 1;
             for (j, cb) in b.iter().enumerate() {
                 let current = row[j + 1];
-                row[j + 1] = (current + 1).min(row[j] + 1).min(previous + usize::from(ca != *cb));
+                row[j + 1] = (current + 1)
+                    .min(row[j] + 1)
+                    .min(previous + usize::from(ca != *cb));
                 previous = current;
             }
         }
@@ -315,7 +352,9 @@ impl Render for Palette {
         let count = rows.len();
         let entity = cx.entity();
         let mode_chip = (self.mode == PaletteMode::Elements).then(|| {
-            ui::Chip::new("Elements").icon(IconName::Search).tone(ui::Tone::Accent)
+            ui::Chip::new("Elements")
+                .icon(IconName::Search)
+                .tone(ui::Tone::Accent)
         });
         let list_height = (count as f32 * ROW).min(LIST) + 8.0;
         let nearest = self.nearest.clone();
@@ -335,7 +374,9 @@ impl Render for Palette {
             .overflow_hidden()
             .on_action(cx.listener(|palette, _: &Next, _, cx| palette.step(true, cx)))
             .on_action(cx.listener(|palette, _: &Previous, _, cx| palette.step(false, cx)))
-            .on_action(cx.listener(|palette, _: &Choose, _, cx| palette.choose(palette.selected, cx)))
+            .on_action(
+                cx.listener(|palette, _: &Choose, _, cx| palette.choose(palette.selected, cx)),
+            )
             .on_action(cx.listener(|_, _: &Close, _, cx| cx.emit(DismissEvent)))
             .on_mouse_down_out(cx.listener(|_, _, _, cx| cx.emit(DismissEvent)))
             .child(
@@ -347,7 +388,7 @@ impl Render for Palette {
                     .gap(r(10.0))
                     .text_size(r(theme::text::LG))
                     .child(icon(IconName::Search).size(16.0).color(theme.text_muted))
-                    .child(div().flex_1().child(Input::new(&self.input)))
+                    .child(div().flex_1().min_w_0().child(Input::new(&self.input)))
                     .when_some(mode_chip, |this, chip| this.child(chip)),
             )
             .child(ui::divider(cx))
@@ -368,7 +409,9 @@ impl Render for Palette {
                                 .gap(r(6.0))
                                 .text_size(r(theme::text::SM))
                                 .child("Nearest names:")
-                                .children(nearest.into_iter().map(|name| ui::Chip::new(name).mono())),
+                                .children(
+                                    nearest.into_iter().map(|name| ui::Chip::new(name).mono()),
+                                ),
                         )
                     })
                     .into_any_element()
@@ -385,10 +428,14 @@ impl Render for Palette {
                                     let row = &rows[index];
                                     let current = index == selected;
                                     let enabled = row.reason.is_none();
-                                    let first_of_group = index == 0 || rows[index - 1].group != row.group;
+                                    let first_of_group =
+                                        index == 0 || rows[index - 1].group != row.group;
                                     let entity = entity.clone();
                                     div()
-                                        .id(GpuiId::NamedInteger("palette-row".into(), index as u64))
+                                        .id(GpuiId::NamedInteger(
+                                            "palette-row".into(),
+                                            index as u64,
+                                        ))
                                         .role(gpui::Role::ListBoxOption)
                                         .aria_selected(current)
                                         .aria_label(row.title.clone())
@@ -399,11 +446,17 @@ impl Render for Palette {
                                         .gap(r(10.0))
                                         .rounded(r(crate::tokens::radius::CONTROL + 2.0))
                                         .when(current && enabled, |this| this.bg(theme.accent.soft))
-                                        .when(enabled && !current, |this| this.hover(|style| style.bg(theme.hover)))
+                                        .when(enabled && !current, |this| {
+                                            this.hover(|style| style.bg(theme.hover))
+                                        })
                                         .when(enabled, |this| {
-                                            this.cursor_pointer().on_click(move |_: &ClickEvent, _, cx| {
-                                                entity.update(cx, |palette, cx| palette.choose(index, cx))
-                                            })
+                                            this.cursor_pointer().on_click(
+                                                move |_: &ClickEvent, _, cx| {
+                                                    entity.update(cx, |palette, cx| {
+                                                        palette.choose(index, cx)
+                                                    })
+                                                },
+                                            )
                                         })
                                         .child(
                                             div()
@@ -413,15 +466,25 @@ impl Render for Palette {
                                                 .flex()
                                                 .items_center()
                                                 .justify_center()
-                                                .bg(if current { theme.raised } else { theme.hover.opacity(0.6) })
+                                                .bg(if current {
+                                                    theme.raised
+                                                } else {
+                                                    theme.hover.opacity(0.6)
+                                                })
                                                 .border_1()
                                                 .border_color(theme.separator)
                                                 .when_some(row.icon, |this, glyph| {
-                                                    this.child(icon(glyph).size(14.0).color(if enabled {
-                                                        if current { theme.accent.text } else { theme.text_secondary }
-                                                    } else {
-                                                        theme.text_faint
-                                                    }))
+                                                    this.child(icon(glyph).size(14.0).color(
+                                                        if enabled {
+                                                            if current {
+                                                                theme.accent.text
+                                                            } else {
+                                                                theme.text_secondary
+                                                            }
+                                                        } else {
+                                                            theme.text_faint
+                                                        },
+                                                    ))
                                                 }),
                                         )
                                         .child(
@@ -436,7 +499,11 @@ impl Render for Palette {
                                                         .flex_none()
                                                         .text_size(r(theme::text::BASE))
                                                         .font_weight(theme::MEDIUM)
-                                                        .text_color(if enabled { theme.text } else { theme.text_faint })
+                                                        .text_color(if enabled {
+                                                            theme.text
+                                                        } else {
+                                                            theme.text_faint
+                                                        })
                                                         .child(row.title.clone()),
                                                 )
                                                 .child(
@@ -458,7 +525,9 @@ impl Render for Palette {
                                                     .child(row.group),
                                             )
                                         })
-                                        .when(!row.shortcut.is_empty(), |this| this.child(KeyCaps::new(row.shortcut)))
+                                        .when(!row.shortcut.is_empty(), |this| {
+                                            this.child(KeyCaps::new(row.shortcut))
+                                        })
                                 })
                                 .collect()
                         })
@@ -477,17 +546,19 @@ impl Render for Palette {
                     .gap(r(14.0))
                     .text_size(r(theme::text::XS))
                     .text_color(theme.text_muted)
-                    .children([("↑ ↓", "move"), ("Enter", "run"), ("Esc", "close")].into_iter().map(
-                        |(keys, what)| {
-                            div()
-                                .flex()
-                                .items_center()
-                                .gap(r(6.0))
-                                .child(KeyCaps::new(keys))
-                                .child(what)
-                        },
-                    ))
-                    .child(div().flex_1())
+                    .children(
+                        [("↑ ↓", "move"), ("Enter", "run"), ("Esc", "close")]
+                            .into_iter()
+                            .map(|(keys, what)| {
+                                div()
+                                    .flex()
+                                    .items_center()
+                                    .gap(r(6.0))
+                                    .child(KeyCaps::new(keys))
+                                    .child(what)
+                            }),
+                    )
+                    .child(div().flex_1().min_w_0())
                     .child(match self.mode {
                         PaletteMode::Commands => "Commands and elements",
                         PaletteMode::Elements => "Elements, by qualified name",
@@ -499,7 +570,10 @@ impl Render for Palette {
             .flex()
             .justify_center()
             .pt(gpui::relative(0.12))
-            .child(ui::overlay::entrance("palette-entrance", div().child(panel)))
+            .child(ui::overlay::entrance(
+                "palette-entrance",
+                div().child(panel),
+            ))
     }
 }
 
@@ -511,6 +585,10 @@ mod tests {
     fn a_name_with_no_match_offers_the_nearest_names() {
         let tree = agq_studio_scene::fixtures::tree(agq_studio_scene::fixtures::URL_SHORTENER);
         let nearest = nearest_names("linkstor", &tree);
-        assert_eq!(nearest.first().map(String::as_str), Some("LinkStore"), "{nearest:?}");
+        assert_eq!(
+            nearest.first().map(String::as_str),
+            Some("LinkStore"),
+            "{nearest:?}"
+        );
     }
 }

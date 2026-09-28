@@ -1,15 +1,42 @@
 # agq-studio-native
 
 The Studio (ROADMAP §4.6, part `Studio` in `models/agentique/Agentique.sysml`):
-the Surface, the Panels (Inspector, Requirements, History) and the
-Conversation with the Assistant, on egui and wgpu. Every model change is a
-System State change applied through one path (`StudioApp::apply_change` in
-`edit.rs`), whoever makes it; the project saves it.
+the Surface, the Panels (Outline, Inspector, Requirements, History, Problems)
+and the Conversation with the Assistant, drawn with GPUI (C-48: the pinned
+snapshot `gpui-pre`, with the unstyled `gpui-base` primitives for text fields
+and focus). Every model change is a System State change applied through one
+path (`Studio::apply_change` in `edit.rs`), whoever makes it; the project
+saves it.
+
+## How it is built
+
+- **One state, many views.** `studio.rs` holds everything the Studio knows
+  (the project, the scene and camera, the selection, the Conversation,
+  Settings) without the toolkit; it is a GPUI entity. A change goes through
+  `StudioExt::act` (`workspace.rs`), which says what it touched (`Dirty`:
+  camera, selection, model, conversation, layout, appearance, status,
+  overlay); each view listens only for what it draws. The docked columns are
+  cached, so a Surface frame does not draw them again.
+- **Views**: `workspace.rs` (title bar, docks and splitters, status bar,
+  overlays, the frame ticker), `surface/` (input, gestures, overlays;
+  `paint.rs` draws a frame with GPUI's quads, paths and shaped text in paint
+  layers, only what is in view, by level of detail; `minimap.rs`),
+  `panels/` (Outline, Inspector and its fields, Requirements, History,
+  Problems), `conversation_view/` (the list, cards, Markdown and selection),
+  `palette.rs`, `dialogs.rs`, `welcome.rs`, `settings_view.rs`, `gallery.rs`.
+- **Keys** (`commands.rs`): every command has its GPUI keystroke; shortcuts
+  that type letters apply in the workspace except while a text field has the
+  keyboard (`Workspace && !Input`), the Ctrl shortcuts everywhere.
+- **The design system** (`ui/`): theme roles derived from the tokens, Lucide
+  icons, buttons, fields, menus, dialogs, tooltips, chips, badges, key caps,
+  switches and a segmented control, banners and empty states. Views take their
+  controls from here; their own rows use the same theme roles.
 
 ## Conversation
 
 The column on the right (`conversation.rs` for the state and tool calls,
-`conversation_ui.rs` for drawing, `markdown.rs` for rendering messages).
+`conversation_view/` for drawing: `mod.rs` the list and composer, `cards.rs`
+the tool, question and thinking cards, `markdown.rs` the messages).
 
 - **Sending.** Enter sends, Shift+Enter is a new line; Ctrl+L focuses the
   input, Ctrl+I (or "Insert selection") puts the selected elements' qualified
@@ -56,7 +83,7 @@ The column on the right (`conversation.rs` for the state and tool calls,
   cost" hides it.
 - **Thinking** shows as a collapsed row per step with its first line
   (R-31): Claude's summaries, or the reasoning of models that show it.
-- **Selecting text** (`markdown.rs`): dragging over the messages selects
+- **Selecting text** (`conversation_view/markdown.rs`): dragging over the messages selects
   across paragraphs, code blocks and messages; past the top or bottom of the
   list it scrolls. The selection is kept by place in the text (message,
   block, character), not by widget, so it survives scrolling, messages
@@ -66,7 +93,7 @@ The column on the right (`conversation.rs` for the state and tool calls,
 ## Settings
 
 Ctrl+, (or the Settings button) shows Settings in place of the Surface and
-the Panels (`settings_ui.rs`; the table and `settings.json` are in
+the Panels (`settings_view.rs`; the table and `settings.json` are in
 `settings.rs`). Sections: Providers (paste a key, Test, Save; the key goes to
 the Windows Credential Manager and only its hint is shown again; the model
 list with capabilities and list prices), Assistant (provider, model, effort),
@@ -99,22 +126,25 @@ target\debug\agq-studio-native.exe --no-restore --session %TEMP%\agq-e\session.j
 - **Tokens** (`tokens.rs`, ROADMAP §3.2): every size, radius, duration and
   easing curve, and the colour scales generated in OKLCH from three inputs
   (base hue, accent hue, contrast), with the component list and the states
-  every component shows. `--fixture components` shows them all
-  (`gallery.rs`); `theme.rs` moves onto the generated colours in W5.2.
+  every component shows. `ui/theme.rs` turns them into roles. `--fixture
+  components` shows every token and component, the Surface's own drawing
+  and a real Conversation (`gallery.rs`).
 
-- **Type**: Inter's variable font (`assets/fonts/InterVariable.ttf`, Inter
-  4.1, OFL) at `wght` 400, 500 and 600 (`theme.rs`), not synthetic bold.
+- **Type**: Inter 4.1 (OFL) at 400, 500 and 600, as three static fonts
+  (`assets/fonts/Inter-*.ttf`) instanced from Inter Variable at text optical
+  size, because GPUI's Windows text system does not select a variable font's
+  weights; JetBrains Mono NL for names and values.
   `--ui-scale 1.5` scales the UI as display scaling does, for checking text
   at 100%, 150% and 200% on one display.
-- **Motion** (`motion.rs`): a tween (a duration token along a Fluent 2
-  easing curve) and a critically damped spring. Fit view is a 300 ms tween;
-  following the selection uses springs, which keep their velocity when the
-  target changes. Reduced motion makes both instant.
-- **Screen readers** (`accessibility.rs`, AccessKit): every message is an
-  article named by who wrote it and its text, every tool card a group named
-  by its title and status; the Surface is a list whose items are the
-  selected elements and the card under the pointer, which the GPU draws
-  without widgets.
+- **Motion** (`motion.rs`, `ui/primitives.rs`): the camera's 300 ms tween,
+  change highlights that hold and fade, and critically damped springs for
+  switches, sliding selections and docks opening. Reduced motion (Windows'
+  "Animation effects", or Settings) makes them instant.
+- **Screen readers** (GPUI's AccessKit roles): every message is an article
+  named by who wrote it and its text, every tool card a group named by its
+  title and status; the Surface is a list whose items are the selected
+  elements and the card under the pointer, which the Surface paints without
+  elements of their own.
 
 Tests (`cargo test -p agq-studio-native conversation`) drive the Conversation
 with a scripted model on a real project; the `a-assistant` journey does the
@@ -133,3 +163,24 @@ into it at about 100 tokens a second, and reports frame times:
 cargo build --release -p agq-studio-native --features automation
 target\release\agq-studio-native.exe --no-restore --session %TEMP%\agq-chat\session.json --scenario chat --project %TEMP%\agq-chat\project --scenario-report %TEMP%\agq-chat\report.json
 ```
+
+## Journeys, screenshots and benchmarks
+
+With `--features automation` the Studio can drive itself: a journey runs one
+step at the start of every frame, through the window's own input dispatch
+(pointer, keys, typed text), and checks the Studio's state
+(`automation.rs`); the camera and Conversation benchmarks do the same
+(`stress_automation.rs`). Controls record where they are drawn only in this
+build (`ui/target.rs`). `--screenshot` and `--gallery` save frames with
+GPUI's frame capture, which needs the same feature.
+
+```text
+cargo build --release -p agq-studio-native --features automation
+target\release\agq-studio-native.exe --no-restore --session %TEMP%\agq-ref.json --frames 2 --metrics <out>\start.json
+target\release\agq-studio-native.exe --no-restore --session %TEMP%\agq-ref.json --fixture stress1000 --scenario stress --scenario-report <out>\stress-1k.json
+target\release\agq-studio-native.exe --no-restore --session %TEMP%\agq-ref.json --fixture stress10000 --scenario stress --scenario-report <out>\stress-10k.json
+```
+
+A journey's settings file sits beside its `--session` file, so a journey
+never touches the Operator's own; a `settings.json` there with
+`{ "format": 1, "appearance.theme": "dark" }` runs it in the dark theme.

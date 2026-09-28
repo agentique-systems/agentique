@@ -103,7 +103,9 @@ impl RenderOnce for Chip {
             .text_size(r(theme::text::XS))
             .font_weight(theme::MEDIUM)
             .when(self.mono, |this| this.font_family(theme::MONO))
-            .when_some(self.icon, |this, name| this.child(icon(name).size(12.0).color(fg)))
+            .when_some(self.icon, |this, name| {
+                this.child(icon(name).size(12.0).color(fg))
+            })
             .child(div().whitespace_nowrap().child(self.label))
     }
 }
@@ -185,7 +187,11 @@ impl RenderOnce for Switch {
     fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
         let theme = cx.theme().clone();
         let on = self.on;
-        let track = if on { theme.accent.solid } else { theme.pressed };
+        let track = if on {
+            theme.accent.solid
+        } else {
+            theme.pressed
+        };
         let knob_id = ElementId::Name(format!("{:?}-knob", self.id).into());
         let mut button = gpui_base::Button::new(self.id)
             .role(gpui::Role::Switch)
@@ -200,27 +206,28 @@ impl RenderOnce for Switch {
             .border_color(if on { track } else { theme.border })
             .when(!self.disabled, |this| this.cursor_pointer())
             .when(self.disabled, |this| this.opacity(0.45))
-            .focus_visible(move |style| style.shadow(crate::ui::button::focus_ring(theme.accent.solid)))
+            .focus_visible(move |style| {
+                style.shadow(crate::ui::button::focus_ring(theme.accent.solid))
+            })
             .child(
-                div()
-                    .size_full()
-                    .relative()
-                    .child(
-                        div()
-                            .absolute()
-                            .top_0()
-                            .size(r(12.0))
-                            .rounded_full()
-                            .bg(if on {
-                                theme.accent.on_solid
-                            } else {
-                                theme.text_secondary
-                            })
-                            .shadow(theme.shadow_small())
-                            .with_spring(knob_id, spring().to(if on { 1.0 } else { 0.0 }), |knob, t: f32| {
-                                knob.left(relative(t * 0.52))
-                            }),
-                    ),
+                div().size_full().relative().child(
+                    div()
+                        .absolute()
+                        .top_0()
+                        .size(r(12.0))
+                        .rounded_full()
+                        .bg(if on {
+                            theme.accent.on_solid
+                        } else {
+                            theme.text_secondary
+                        })
+                        .shadow(theme.shadow_small())
+                        .with_spring(
+                            knob_id,
+                            spring().to(if on { 1.0 } else { 0.0 }),
+                            |knob, t: f32| knob.left(relative(t * 0.52)),
+                        ),
+                ),
             );
         if let Some(toggle) = self.on_toggle {
             button = button.on_click(move |_, window, cx| toggle(!on, window, cx));
@@ -257,13 +264,20 @@ impl Segmented {
         self
     }
     /// The last choice's tooltip, with its shortcut.
-    pub fn tooltip(mut self, title: impl Into<SharedString>, shortcut: Option<&'static str>) -> Segmented {
+    pub fn tooltip(
+        mut self,
+        title: impl Into<SharedString>,
+        shortcut: Option<&'static str>,
+    ) -> Segmented {
         if let Some(last) = self.tooltips.last_mut() {
             *last = Some((title.into(), shortcut));
         }
         self
     }
-    pub fn on_choose(mut self, handler: impl Fn(usize, &mut Window, &mut App) + 'static) -> Segmented {
+    pub fn on_choose(
+        mut self,
+        handler: impl Fn(usize, &mut Window, &mut App) + 'static,
+    ) -> Segmented {
         self.on_choose = Some(Rc::new(handler));
         self
     }
@@ -303,49 +317,61 @@ impl RenderOnce for Segmented {
                             .border_color(theme.border)
                             .shadow(theme.shadow_small()),
                     )
-                    .with_spring(indicator, spring().to(selected as f32), move |this, at: f32| {
-                        this.left(relative(at / count))
+                    .with_spring(
+                        indicator,
+                        spring().to(selected as f32),
+                        move |this, at: f32| this.left(relative(at / count)),
+                    ),
+            )
+            .children(
+                self.choices
+                    .into_iter()
+                    .enumerate()
+                    .map(|(index, (glyph, label))| {
+                        let chosen = index == selected;
+                        let on_choose = self.on_choose.clone();
+                        let tooltip = self.tooltips.get(index).cloned().flatten();
+                        div()
+                            .id(ElementId::NamedInteger("segment".into(), index as u64))
+                            .role(gpui::Role::Tab)
+                            .aria_selected(chosen)
+                            .aria_label(label.clone())
+                            .relative()
+                            .flex_1()
+                            .min_w_0()
+                            .h_full()
+                            .px(r(10.0))
+                            .flex()
+                            .items_center()
+                            .justify_center()
+                            .gap(r(6.0))
+                            .rounded(r(crate::tokens::radius::CONTROL))
+                            .text_size(r(theme::text::SM))
+                            .font_weight(theme::MEDIUM)
+                            .text_color(if chosen { theme.text } else { theme.text_muted })
+                            .cursor_pointer()
+                            .when(!chosen, |this| {
+                                this.hover(|style| style.text_color(theme.text_secondary))
+                            })
+                            .when_some(glyph, |this, name| {
+                                this.child(icon(name).size(14.0).color(if chosen {
+                                    theme.text
+                                } else {
+                                    theme.text_muted
+                                }))
+                            })
+                            .child(div().whitespace_nowrap().child(label))
+                            .when_some(tooltip, |this, (title, shortcut)| {
+                                let tooltip = crate::ui::tooltip::text(title, shortcut);
+                                this.tooltip(move |window, cx| tooltip(window, cx))
+                            })
+                            .when_some(on_choose, |this, on_choose| {
+                                this.on_click(move |_: &ClickEvent, window, cx| {
+                                    on_choose(index, window, cx)
+                                })
+                            })
                     }),
             )
-            .children(self.choices.into_iter().enumerate().map(|(index, (glyph, label))| {
-                let chosen = index == selected;
-                let on_choose = self.on_choose.clone();
-                let tooltip = self.tooltips.get(index).cloned().flatten();
-                div()
-                    .id(ElementId::NamedInteger("segment".into(), index as u64))
-                    .role(gpui::Role::Tab)
-                    .aria_selected(chosen)
-                    .aria_label(label.clone())
-                    .relative()
-                    .flex_1()
-                    .h_full()
-                    .px(r(10.0))
-                    .flex()
-                    .items_center()
-                    .justify_center()
-                    .gap(r(6.0))
-                    .rounded(r(crate::tokens::radius::CONTROL))
-                    .text_size(r(theme::text::SM))
-                    .font_weight(theme::MEDIUM)
-                    .text_color(if chosen { theme.text } else { theme.text_muted })
-                    .cursor_pointer()
-                    .when(!chosen, |this| this.hover(|style| style.text_color(theme.text_secondary)))
-                    .when_some(glyph, |this, name| {
-                        this.child(icon(name).size(14.0).color(if chosen {
-                            theme.text
-                        } else {
-                            theme.text_muted
-                        }))
-                    })
-                    .child(div().whitespace_nowrap().child(label))
-                    .when_some(tooltip, |this, (title, shortcut)| {
-                        let tooltip = crate::ui::tooltip::text(title, shortcut);
-                        this.tooltip(move |window, cx| tooltip(window, cx))
-                    })
-                    .when_some(on_choose, |this, on_choose| {
-                        this.on_click(move |_: &ClickEvent, window, cx| on_choose(index, window, cx))
-                    })
-            }))
     }
 }
 
@@ -366,7 +392,11 @@ pub fn spinner(id: impl Into<ElementId>, size: f32, color: Hsla) -> impl IntoEle
 
 /// A placeholder bar while content loads: it breathes gently, and stays
 /// still under reduced motion.
-pub fn skeleton(id: impl Into<ElementId>, width: gpui::DefiniteLength, cx: &App) -> impl IntoElement {
+pub fn skeleton(
+    id: impl Into<ElementId>,
+    width: gpui::DefiniteLength,
+    cx: &App,
+) -> impl IntoElement {
     let theme = cx.theme();
     div()
         .h(r(10.0))
@@ -448,10 +478,15 @@ impl RenderOnce for Banner {
                     .flex()
                     .items_start()
                     .gap(r(8.0))
-                    .child(div().pt(px(1.0)).child(icon(self.icon).size(14.0).color(fg)))
+                    .child(
+                        div()
+                            .pt(px(1.0))
+                            .child(icon(self.icon).size(14.0).color(fg)),
+                    )
                     .child(
                         div()
                             .flex_1()
+                            .min_w_0()
                             .text_size(r(theme::text::SM))
                             .line_height(r(18.0))
                             .text_color(theme.text_secondary)
@@ -496,7 +531,11 @@ pub struct EmptyState {
 }
 
 impl EmptyState {
-    pub fn new(icon: IconName, title: impl Into<SharedString>, body: impl Into<SharedString>) -> EmptyState {
+    pub fn new(
+        icon: IconName,
+        title: impl Into<SharedString>,
+        body: impl Into<SharedString>,
+    ) -> EmptyState {
         EmptyState {
             icon,
             title: title.into(),
@@ -524,7 +563,9 @@ impl RenderOnce for EmptyState {
             .flex_col()
             .items_center()
             .gap(r(12.0))
+            .w_full()
             .max_w(r(360.0))
+            .px(r(16.0))
             .child(
                 div()
                     .size(r(40.0))
@@ -540,6 +581,7 @@ impl RenderOnce for EmptyState {
             )
             .child(
                 div()
+                    .w_full()
                     .flex()
                     .flex_col()
                     .items_center()
@@ -555,6 +597,7 @@ impl RenderOnce for EmptyState {
                         div()
                             .text_size(r(theme::text::SM))
                             .line_height(r(18.0))
+                            .w_full()
                             .text_color(theme.text_muted)
                             .text_center()
                             .child(self.body),
@@ -604,9 +647,4 @@ pub fn section_header(title: impl Into<SharedString>, cx: &App) -> gpui::Div {
 /// A hairline between regions.
 pub fn divider(cx: &App) -> gpui::Div {
     div().h(theme::hairline()).w_full().bg(cx.theme().separator)
-}
-
-/// A vertical hairline.
-pub fn divider_vertical(cx: &App) -> gpui::Div {
-    div().w(theme::hairline()).h_full().bg(cx.theme().separator)
 }

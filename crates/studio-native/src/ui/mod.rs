@@ -8,18 +8,19 @@ pub mod keycap;
 pub mod menu;
 pub mod overlay;
 pub mod primitives;
+pub mod target;
 pub mod theme;
 pub mod tooltip;
 
 pub use button::{Button, Variant};
 pub use field::{TextArea, TextField};
-pub use icon::{Icon, IconName, icon};
+pub use icon::{IconName, icon};
 pub use keycap::KeyCaps;
 pub use menu::{Menu, MenuItem};
 pub use overlay::Dialog;
 pub use primitives::{
-    Badge, Banner, Chip, EmptyState, Segmented, Switch, Tone, divider, divider_vertical,
-    inline_message, section_header, spinner,
+    Badge, Banner, Chip, EmptyState, Segmented, Switch, Tone, divider, inline_message,
+    section_header, spinner,
 };
 pub use theme::{ActiveTheme, Theme, r};
 

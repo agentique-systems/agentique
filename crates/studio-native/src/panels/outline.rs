@@ -44,7 +44,10 @@ impl OutlineView {
         let filter = cx.new(|cx| InputState::new(window, cx).placeholder("Filter elements"));
         let subscriptions = vec![
             cx.subscribe(&studio, |_, _, event: &StudioEvent, cx| {
-                if event.0.intersects(Dirty::MODEL | Dirty::SELECTION | Dirty::APPEARANCE) {
+                if event
+                    .0
+                    .intersects(Dirty::MODEL | Dirty::SELECTION | Dirty::APPEARANCE)
+                {
                     cx.notify();
                 }
             }),
@@ -90,10 +93,17 @@ impl OutlineView {
         let rows = order
             .into_iter()
             .map(|index| &studio.scene.nodes[index])
-            .filter(|node| query.is_empty() || crate::commands::fuzzy_score(&query, &node.semantic.name).is_some())
+            .filter(|node| {
+                query.is_empty()
+                    || crate::commands::fuzzy_score(&query, &node.semantic.name).is_some()
+            })
             .map(|node| Row {
                 id: node.id(),
-                depth: if query.is_empty() { node.depth.min(8) } else { 0 },
+                depth: if query.is_empty() {
+                    node.depth.min(8)
+                } else {
+                    0
+                },
                 name: node.semantic.name.clone().into(),
                 keyword: node.semantic.keyword,
                 category: node.category,
@@ -164,7 +174,10 @@ impl Render for OutlineView {
             .child(if empty {
                 div()
                     .p(r(16.0))
-                    .child(crate::panels::note("The model is empty. Cards appear here as you create them.", cx))
+                    .child(crate::panels::note(
+                        "The model is empty. Cards appear here as you create them.",
+                        cx,
+                    ))
                     .into_any_element()
             } else {
                 uniform_list("outline-rows", count, move |range, _, cx| {
@@ -188,7 +201,10 @@ impl Render for OutlineView {
                                 .id(("outline-row", index))
                                 .role(gpui::Role::TreeItem)
                                 .aria_selected(selected)
-                                .aria_label(SharedString::from(format!("{} {}", row.keyword, row.name)))
+                                .aria_label(SharedString::from(format!(
+                                    "{} {}",
+                                    row.keyword, row.name
+                                )))
                                 .h(r(26.0))
                                 .mx(r(6.0))
                                 .pl(r(6.0 + 14.0 * row.depth as f32))
@@ -199,9 +215,12 @@ impl Render for OutlineView {
                                 .rounded(r(crate::tokens::radius::CONTROL))
                                 .text_size(r(theme::text::SM))
                                 .cursor_pointer()
-                                .when(selected, |this| this.bg(theme.accent.soft).text_color(theme.text))
+                                .when(selected, |this| {
+                                    this.bg(theme.accent.soft).text_color(theme.text)
+                                })
                                 .when(!selected, |this| {
-                                    this.text_color(theme.text_secondary).hover(|style| style.bg(theme.hover))
+                                    this.text_color(theme.text_secondary)
+                                        .hover(|style| style.bg(theme.hover))
                                 })
                                 .on_click(move |_: &ClickEvent, _, cx| {
                                     studio.act(cx, |studio| {
@@ -213,7 +232,8 @@ impl Render for OutlineView {
                                         studio.select(target.clone(), false);
                                         studio.panel = crate::studio::Panel::Inspector;
                                         studio.frame_target(&target);
-                                        studio.mark(Dirty::SELECTION | Dirty::CAMERA | Dirty::LAYOUT);
+                                        studio
+                                            .mark(Dirty::SELECTION | Dirty::CAMERA | Dirty::LAYOUT);
                                     })
                                 })
                                 .child(
@@ -224,9 +244,13 @@ impl Render for OutlineView {
                                         .when(container, |this| {
                                             this.cursor_pointer()
                                                 .child(
-                                                    icon(if row.collapsed { IconName::ChevronRight } else { IconName::ChevronDown })
-                                                        .size(12.0)
-                                                        .color(theme.text_faint),
+                                                    icon(if row.collapsed {
+                                                        IconName::ChevronRight
+                                                    } else {
+                                                        IconName::ChevronDown
+                                                    })
+                                                    .size(12.0)
+                                                    .color(theme.text_faint),
                                                 )
                                                 .on_click(move |_: &ClickEvent, _, cx| {
                                                     cx.stop_propagation();
@@ -250,19 +274,25 @@ impl Render for OutlineView {
                                         .child(row.name.clone()),
                                 )
                                 .when(row.lock.locked(), |this| {
-                                    this.child(icon(IconName::Lock).size(12.0).color(if row.lock == LockMark::Own {
-                                        theme.warning.text
-                                    } else {
-                                        theme.warning.text.opacity(0.45)
-                                    }))
+                                    this.child(icon(IconName::Lock).size(12.0).color(
+                                        if row.lock == LockMark::Own {
+                                            theme.warning.text
+                                        } else {
+                                            theme.warning.text.opacity(0.45)
+                                        },
+                                    ))
                                 })
                                 .when(row.problems > 0, |this| {
-                                    this.child(ui::Badge::new(row.problems.to_string()).tone(ui::Tone::Warning))
+                                    this.child(
+                                        ui::Badge::new(row.problems.to_string())
+                                            .tone(ui::Tone::Warning),
+                                    )
                                 })
                         })
                         .collect()
                 })
                 .flex_1()
+                .min_w_0()
                 .pb(r(8.0))
                 .into_any_element()
             })

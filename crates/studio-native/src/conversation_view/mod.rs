@@ -15,10 +15,13 @@ use crate::{
     conversation::{Live, Undo, WaitingFor},
     settings::Section,
     studio::{Dirty, Studio, StudioEvent},
-    ui::{self, ActiveTheme, Button, IconName, KeyCaps, Menu, MenuItem, TextArea, Tone, icon, r, theme},
+    ui::{
+        self, ActiveTheme, Button, IconName, KeyCaps, Menu, MenuItem, TextArea, Tone, icon, r,
+        theme,
+    },
     workspace::StudioExt,
 };
-use agq_assistant::{Entry, tools};
+use agq_assistant::Entry;
 use agq_language::{ElementId, ElementKind};
 use agq_providers::AssistantPart;
 use cards::{Outcome, Tool};
@@ -27,8 +30,8 @@ use gpui::{
     FocusHandle, Focusable, Font, FontStyle, FontWeight, InteractiveElement, InteractiveText,
     IntoElement, KeyBinding, ListAlignment, ListState, MouseButton, MouseDownEvent, MouseMoveEvent,
     MouseUpEvent, ParentElement, Pixels, Render, SharedString, StatefulInteractiveElement,
-    StrikethroughStyle, StyledText, Styled, Subscription, TextLayout, TextRun, UnderlineStyle,
-    Window, actions, anchored, deferred, div, font, list, prelude::FluentBuilder, px,
+    StrikethroughStyle, Styled, StyledText, Subscription, TextLayout, TextRun, Window, actions,
+    anchored, deferred, div, font, list, prelude::FluentBuilder, px,
 };
 use gpui_base::input::{InputEvent, TextareaState};
 use markdown::{Block, BlockKey, TextPoint, TextSelection};
@@ -42,7 +45,11 @@ use std::{
 actions!(conversation, [CopySelection]);
 
 pub fn bind(cx: &mut App) {
-    cx.bind_keys([KeyBinding::new("ctrl-c", CopySelection, Some("Conversation && !Input"))]);
+    cx.bind_keys([KeyBinding::new(
+        "ctrl-c",
+        CopySelection,
+        Some("Conversation && !Input"),
+    )]);
 }
 
 /// A text block drawn this frame, for placing a drag.
@@ -80,7 +87,7 @@ enum Item {
         text: String,
         live: bool,
     },
-    Tool(Tool),
+    Tool(Box<Tool>),
     Notice {
         text: String,
         retry: bool,
@@ -95,12 +102,24 @@ impl Item {
         let mut hasher = std::collections::hash_map::DefaultHasher::new();
         match self {
             Item::Empty => 0u8.hash(&mut hasher),
-            Item::Operator { place, blocks, editable } => {
-                (1u8, place, Rc::as_ptr(blocks) as usize, editable).hash(&mut hasher)
-            }
-            Item::Assistant { place, blocks, copy, streaming } => {
-                (2u8, place, Rc::as_ptr(blocks) as usize, copy.is_some(), streaming).hash(&mut hasher)
-            }
+            Item::Operator {
+                place,
+                blocks,
+                editable,
+            } => (1u8, place, Rc::as_ptr(blocks) as usize, editable).hash(&mut hasher),
+            Item::Assistant {
+                place,
+                blocks,
+                copy,
+                streaming,
+            } => (
+                2u8,
+                place,
+                Rc::as_ptr(blocks) as usize,
+                copy.is_some(),
+                streaming,
+            )
+                .hash(&mut hasher),
             Item::Thinking { key, text, live } => {
                 (3u8, key, text.len(), live, expanded.contains(key)).hash(&mut hasher)
             }
@@ -110,7 +129,9 @@ impl Item {
                 tool.status(),
                 tool.input.to_string().len(),
                 tool.options.is_some(),
-                tool.outcome.as_ref().map(|o| (o.created.len(), o.changed.len(), o.gone, o.problems)),
+                tool.outcome
+                    .as_ref()
+                    .map(|o| (o.created.len(), o.changed.len(), o.gone, o.problems)),
                 expanded.contains(&tool.id),
             )
                 .hash(&mut hasher),
@@ -169,22 +190,42 @@ impl ConversationView {
         });
         let subscriptions = vec![
             cx.subscribe(&studio, |this, _, event: &StudioEvent, cx| {
-                if event.0.intersects(Dirty::CONVERSATION | Dirty::MODEL | Dirty::APPEARANCE | Dirty::OVERLAY | Dirty::SELECTION) {
-                    if event.0.intersects(Dirty::CONVERSATION | Dirty::MODEL | Dirty::APPEARANCE) {
+                if event.0.intersects(
+                    Dirty::CONVERSATION
+                        | Dirty::MODEL
+                        | Dirty::APPEARANCE
+                        | Dirty::OVERLAY
+                        | Dirty::SELECTION,
+                ) {
+                    if event
+                        .0
+                        .intersects(Dirty::CONVERSATION | Dirty::MODEL | Dirty::APPEARANCE)
+                    {
                         this.dirty_items = true;
                     }
                     cx.notify();
                 }
             }),
-            cx.subscribe_in(&composer, window, |this, composer, event: &InputEvent, window, cx| match event {
-                InputEvent::Change => {
-                    let text = composer.read(cx).value().to_string();
-                    this.studio.update(cx, |studio, _| studio.conversation.input = text);
-                    cx.notify();
-                }
-                InputEvent::PressEnter { shift: false, .. } => this.send(window, cx),
-                _ => {}
-            }),
+            cx.subscribe_in(
+                &composer,
+                window,
+                |this, composer, event: &InputEvent, window, cx| match event {
+                    InputEvent::Change => {
+                        // A message the Studio set (sent, inserted, taken back to
+                        // edit) and the view has not shown yet wins.
+                        let set = this.input_set;
+                        let text = composer.read(cx).value().to_string();
+                        this.studio.update(cx, |studio, _| {
+                            if studio.conversation.input_set == set {
+                                studio.conversation.input = text;
+                            }
+                        });
+                        cx.notify();
+                    }
+                    InputEvent::PressEnter { shift: false, .. } => this.send(window, cx),
+                    _ => {}
+                },
+            ),
         ];
         let list = ListState::new(0, ListAlignment::Bottom, px(600.0));
         list.set_follow_mode(gpui::FollowMode::Tail);
@@ -213,7 +254,8 @@ impl ConversationView {
     pub fn focus_input(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let focus = self.composer.read(cx).focus_handle(cx);
         window.focus(&focus, cx);
-        self.studio.update(cx, |studio, _| studio.conversation.focus_input = false);
+        self.studio
+            .update(cx, |studio, _| studio.conversation.focus_input = false);
     }
 
     fn send(&mut self, _: &mut Window, cx: &mut Context<Self>) {
@@ -227,7 +269,11 @@ impl ConversationView {
     /// selection, a message taken back to edit, a sent message.
     fn sync_composer(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         let studio = self.studio.read(cx);
-        let (input_set, epoch, focus) = (studio.conversation.input_set, studio.conversation.epoch, studio.conversation.focus_input);
+        let (input_set, epoch, focus) = (
+            studio.conversation.input_set,
+            studio.conversation.epoch,
+            studio.conversation.focus_input,
+        );
         if epoch != self.epoch {
             self.epoch = epoch;
             // Messages are named by position; earlier ones were replaced.
@@ -259,7 +305,11 @@ impl ConversationView {
         if let Some(parsed) = self.parsed.get_mut(&key) {
             if parsed.checked != revision {
                 parsed.checked = revision;
-                if parsed.links.iter().any(|(name, element)| resolve(name) != *element) {
+                if parsed
+                    .links
+                    .iter()
+                    .any(|(name, element)| resolve(name) != *element)
+                {
                     let links = RefCell::new(Vec::new());
                     parsed.blocks = Rc::new(markdown::parse(text, &|name| {
                         let element = resolve(name);
@@ -331,7 +381,9 @@ impl ConversationView {
         let editing = panel.editing.is_some();
         let question = match &panel.waiting {
             Some(waiting) => match &waiting.kind {
-                WaitingFor::Question { options, .. } => Some((waiting.call.id.clone(), options.clone())),
+                WaitingFor::Question { options, .. } => {
+                    Some((waiting.call.id.clone(), options.clone()))
+                }
                 _ => None,
             },
             None => None,
@@ -341,7 +393,9 @@ impl ConversationView {
             Some(crate::edit::Dialog::Confirm { change, .. }) if change.actor == agq_system_state::Actor::Assistant
         );
         let waiting_text = match panel.waiting.as_ref().map(|w| &w.kind) {
-            Some(WaitingFor::Confirmation) if assistant_asks => Some("Waiting for your answer about the locked element"),
+            Some(WaitingFor::Confirmation) if assistant_asks => {
+                Some("Waiting for your answer about the locked element")
+            }
             Some(WaitingFor::Dialog(_)) => Some("Waiting until you close the open dialog"),
             _ => None,
         };
@@ -352,7 +406,9 @@ impl ConversationView {
         let outcome = |result: &agq_assistant::ToolResult| -> Option<Outcome> {
             let change = result.change.as_ref()?;
             let tree = tree.as_ref();
-            let ids = |raw: &[u64]| -> Vec<ElementId> { raw.iter().map(|r| ElementId::from_raw(*r)).collect() };
+            let ids = |raw: &[u64]| -> Vec<ElementId> {
+                raw.iter().map(|r| ElementId::from_raw(*r)).collect()
+            };
             let owner = |id: &ElementId| tree.and_then(|t| t.get(*id)).and_then(|e| e.owner());
             let comment = |id: &ElementId| {
                 tree.and_then(|t| t.get(*id))
@@ -360,11 +416,18 @@ impl ConversationView {
             };
             let name = |id: ElementId| -> Option<(ElementId, Option<String>, String)> {
                 let tree = tree?;
-                tree.contains(id).then(|| (id, Some(tree.qualified_name(id)), crate::edit::display_name(tree, id)))
+                tree.contains(id).then(|| {
+                    (
+                        id,
+                        Some(tree.qualified_name(id)),
+                        crate::edit::display_name(tree, id),
+                    )
+                })
             };
             let created = ids(&change.created);
             let owners: HashSet<ElementId> = created.iter().filter_map(owner).collect();
-            let gone = !created.is_empty() && tree.is_none_or(|t| created.iter().all(|id| !t.contains(*id)));
+            let gone = !created.is_empty()
+                && tree.is_none_or(|t| created.iter().all(|id| !t.contains(*id)));
             Some(Outcome {
                 created: created
                     .iter()
@@ -392,7 +455,10 @@ impl ConversationView {
             result: results.get(id).cloned(),
             running,
             outcome: results.get(id).and_then(outcome),
-            options: question.as_ref().filter(|(call, _)| call == id).map(|(_, options)| options.clone()),
+            options: question
+                .as_ref()
+                .filter(|(call, _)| call == id)
+                .map(|(_, options)| options.clone()),
         };
         if entries.is_empty() && live.is_empty() {
             items.push(Item::Empty);
@@ -408,13 +474,7 @@ impl ConversationView {
                     });
                 }
                 Entry::Assistant { parts, .. } => {
-                    let texts: Vec<&str> = parts
-                        .iter()
-                        .filter_map(|part| match part {
-                            AssistantPart::Text { text } if !text.trim().is_empty() => Some(text.as_str()),
-                            _ => None,
-                        })
-                        .collect();
+                    let markdown = reply_markdown(parts);
                     let last_text = parts.iter().rposition(|part| matches!(part, AssistantPart::Text { text } if !text.trim().is_empty()));
                     for (slot, part) in parts.iter().enumerate() {
                         match part {
@@ -423,11 +483,13 @@ impl ConversationView {
                                 items.push(Item::Assistant {
                                     place: (index, slot),
                                     blocks,
-                                    copy: (Some(slot) == last_text).then(|| texts.join("\n\n")),
+                                    copy: (Some(slot) == last_text).then(|| markdown.clone()),
                                     streaming: false,
                                 });
                             }
-                            AssistantPart::ToolCall { id, name, input } => items.push(Item::Tool(tool(id, name, input.clone()))),
+                            AssistantPart::ToolCall { id, name, input } => {
+                                items.push(Item::Tool(Box::new(tool(id, name, input.clone()))))
+                            }
                             AssistantPart::Reasoning(reasoning) => items.push(Item::Thinking {
                                 key: format!("thinking-{index}-{slot}"),
                                 text: reasoning.text(),
@@ -455,7 +517,9 @@ impl ConversationView {
         for (slot, part) in live.into_iter().enumerate() {
             match part {
                 Live::Text(text) => {
-                    let blocks = Rc::new(markdown::parse(&text, &|name| self.names.get(name).copied().flatten()));
+                    let blocks = Rc::new(markdown::parse(&text, &|name| {
+                        self.names.get(name).copied().flatten()
+                    }));
                     items.push(Item::Assistant {
                         place: (entries.len(), slot),
                         blocks,
@@ -465,7 +529,7 @@ impl ConversationView {
                 }
                 Live::Tool { id, name, input } => {
                     let input = serde_json::from_str(&input).unwrap_or(serde_json::Value::Null);
-                    items.push(Item::Tool(tool(&id, &name, input)));
+                    items.push(Item::Tool(Box::new(tool(&id, &name, input))));
                 }
                 Live::Thinking(text) => items.push(Item::Thinking {
                     key: format!("live-thinking-{slot}"),
@@ -488,9 +552,15 @@ impl ConversationView {
         }
         // Tell the list what changed: everything from the first difference.
         let keys: Vec<u64> = items.iter().map(|item| item.key(&self.expanded)).collect();
-        let common = self.keys.iter().zip(&keys).take_while(|(a, b)| a == b).count();
+        let common = self
+            .keys
+            .iter()
+            .zip(&keys)
+            .take_while(|(a, b)| a == b)
+            .count();
         if common != keys.len() || keys.len() != self.keys.len() {
-            self.list.splice(common..self.keys.len(), keys.len() - common);
+            self.list
+                .splice(common..self.keys.len(), keys.len() - common);
         }
         self.keys = keys;
         self.items = Rc::new(items);
@@ -500,11 +570,14 @@ impl ConversationView {
                 .items
                 .iter()
                 .filter_map(|item| match item {
-                    Item::Operator { blocks, .. } | Item::Assistant { blocks, .. } => Some(Rc::as_ptr(blocks) as usize),
+                    Item::Operator { blocks, .. } | Item::Assistant { blocks, .. } => {
+                        Some(Rc::as_ptr(blocks) as usize)
+                    }
                     _ => None,
                 })
                 .collect();
-            self.parsed.retain(|_, parsed| live.contains(&(Rc::as_ptr(&parsed.blocks) as usize)));
+            self.parsed
+                .retain(|_, parsed| live.contains(&(Rc::as_ptr(&parsed.blocks) as usize)));
         }
     }
 
@@ -516,13 +589,21 @@ impl ConversationView {
         for block in &ordered {
             let bounds = block.layout.bounds();
             if position.y < bounds.top() {
-                return Some(TextPoint { message: block.key.0, block: block.key.1, offset: 0 });
+                return Some(TextPoint {
+                    message: block.key.0,
+                    block: block.key.1,
+                    offset: 0,
+                });
             }
             if position.y <= bounds.bottom() {
                 let offset = match block.layout.index_for_position(position) {
                     Ok(index) | Err(index) => index,
                 };
-                return Some(TextPoint { message: block.key.0, block: block.key.1, offset });
+                return Some(TextPoint {
+                    message: block.key.0,
+                    block: block.key.1,
+                    offset,
+                });
             }
         }
         ordered.last().map(|block| TextPoint {
@@ -533,7 +614,11 @@ impl ConversationView {
     }
 
     fn mouse_down(&mut self, event: &MouseDownEvent, window: &mut Window, cx: &mut Context<Self>) {
-        let over_text = self.drawn.borrow().iter().any(|d| d.layout.bounds().contains(&event.position));
+        let over_text = self
+            .drawn
+            .borrow()
+            .iter()
+            .any(|d| d.layout.bounds().contains(&event.position));
         if !over_text {
             if self.selection.take().is_some() {
                 cx.notify();
@@ -556,7 +641,10 @@ impl ConversationView {
             return;
         };
         if event.pressed_button != Some(MouseButton::Left) {
-            self.selection = Some(TextSelection { dragging: false, ..selection });
+            self.selection = Some(TextSelection {
+                dragging: false,
+                ..selection
+            });
             return;
         }
         // Past the top or the bottom of the list: scroll towards the pointer.
@@ -572,14 +660,20 @@ impl ConversationView {
             self.list.scroll_by(past.clamp(px(-24.0), px(24.0)));
         }
         if let Some(point) = self.point_at(event.position) {
-            self.selection = Some(TextSelection { focus: point, ..selection });
+            self.selection = Some(TextSelection {
+                focus: point,
+                ..selection
+            });
             cx.notify();
         }
     }
 
     fn mouse_up(&mut self, _: &MouseUpEvent, _: &mut Window, cx: &mut Context<Self>) {
         if let Some(selection) = self.selection {
-            self.selection = (!selection.is_empty()).then_some(TextSelection { dragging: false, ..selection });
+            self.selection = (!selection.is_empty()).then_some(TextSelection {
+                dragging: false,
+                ..selection
+            });
             cx.notify();
         }
     }
@@ -588,7 +682,9 @@ impl ConversationView {
     pub fn selected_text(&self) -> Option<String> {
         let selection = self.selection.filter(|s| !s.is_empty())?;
         let messages = self.items.iter().filter_map(|item| match item {
-            Item::Operator { place, blocks, .. } | Item::Assistant { place, blocks, .. } => Some((*place, blocks.as_slice())),
+            Item::Operator { place, blocks, .. } | Item::Assistant { place, blocks, .. } => {
+                Some((*place, blocks.as_slice()))
+            }
             _ => None,
         });
         Some(markdown::selected_text(messages, selection.range()))
@@ -610,17 +706,22 @@ impl ConversationView {
             items.push(MenuItem::Header("Model".into()));
             let studio_entity = self.studio.clone();
             items.push(
-                MenuItem::action("Automatic", move |_, cx| studio_entity.act(cx, |studio| studio.choose_provider("")))
-                    .checked(current.is_empty()),
+                MenuItem::action("Automatic", move |_, cx| {
+                    studio_entity.act(cx, |studio| studio.choose_provider(""))
+                })
+                .checked(current.is_empty()),
             );
             for provider in agq_assistant::ModelChoice::usable_providers() {
                 let studio_entity = self.studio.clone();
                 let id = provider.id().to_string();
                 items.push(
-                    MenuItem::action(format!("{} · {}", provider.name(), provider.default_model()), move |_, cx| {
-                        let id = id.clone();
-                        studio_entity.act(cx, |studio| studio.choose_provider(&id))
-                    })
+                    MenuItem::action(
+                        format!("{} · {}", provider.name(), provider.default_model()),
+                        move |_, cx| {
+                            let id = id.clone();
+                            studio_entity.act(cx, |studio| studio.choose_provider(&id))
+                        },
+                    )
                     .checked(current == provider.id()),
                 );
             }
@@ -645,9 +746,35 @@ impl ConversationView {
     }
 }
 
+/// A reply as Markdown, its texts in order: what "Copy" puts on the
+/// clipboard.
+fn reply_markdown(parts: &[AssistantPart]) -> String {
+    parts
+        .iter()
+        .filter_map(|part| match part {
+            AssistantPart::Text { text } if !text.trim().is_empty() => Some(text.as_str()),
+            _ => None,
+        })
+        .collect::<Vec<_>>()
+        .join("\n\n")
+}
+
+/// What a screen reader says for a message: who, then its plain text.
+fn message_name(who: &str, blocks: &[Block]) -> String {
+    format!("{who}: {}", markdown::plain_text(blocks))
+}
+
 /// The runs of a text block: its styles, its links, and the selection.
-fn runs(block: &markdown::TextBlock, selected: Option<std::ops::Range<usize>>, theme: &ui::Theme) -> Vec<TextRun> {
-    let base = if block.quote { theme.text_secondary } else { theme.text };
+fn runs(
+    block: &markdown::TextBlock,
+    selected: Option<std::ops::Range<usize>>,
+    theme: &ui::Theme,
+) -> Vec<TextRun> {
+    let base = if block.quote {
+        theme.text_secondary
+    } else {
+        theme.text
+    };
     let mut cuts: Vec<usize> = vec![0, block.text.len()];
     for (range, _) in &block.spans {
         cuts.push(range.start);
@@ -671,26 +798,36 @@ fn runs(block: &markdown::TextBlock, selected: Option<std::ops::Range<usize>>, t
         .filter(|pair| pair[1] > pair[0])
         .map(|pair| {
             let style = style_at(pair[0]);
-            let in_selection = selected.as_ref().is_some_and(|s| s.start <= pair[0] && pair[0] < s.end);
+            let in_selection = selected
+                .as_ref()
+                .is_some_and(|s| s.start <= pair[0] && pair[0] < s.end);
             let mut run_font: Font = font(if style.code { theme::MONO } else { theme::SANS });
-            run_font.weight = if style.bold { FontWeight(crate::tokens::text::SEMIBOLD as f32) } else { FontWeight(crate::tokens::text::REGULAR as f32) };
-            run_font.style = if style.italic { FontStyle::Italic } else { FontStyle::Normal };
+            run_font.weight = if style.bold {
+                FontWeight(crate::tokens::text::SEMIBOLD as f32)
+            } else {
+                FontWeight(crate::tokens::text::REGULAR as f32)
+            };
+            run_font.style = if style.italic {
+                FontStyle::Italic
+            } else {
+                FontStyle::Normal
+            };
             TextRun {
                 len: pair[1] - pair[0],
                 font: run_font,
                 color: if style.link { theme.accent.text } else { base },
+                // An element link is a soft accent chip; other code a soft
+                // grey one.
                 background_color: if in_selection {
                     Some(theme.accent.solid.opacity(0.28))
+                } else if style.link {
+                    Some(theme.accent.soft)
                 } else if style.code {
                     Some(theme.hover)
                 } else {
                     None
                 },
-                underline: style.link.then(|| UnderlineStyle {
-                    thickness: px(1.0),
-                    color: Some(theme.accent.text.opacity(0.5)),
-                    wavy: false,
-                }),
+                underline: None,
                 strikethrough: style.strike.then(|| StrikethroughStyle {
                     thickness: px(1.0),
                     color: Some(base),
@@ -701,7 +838,13 @@ fn runs(block: &markdown::TextBlock, selected: Option<std::ops::Range<usize>>, t
 }
 
 /// A plain run over `text`, with the selection.
-fn plain_runs(text: &str, family: &'static str, colour: gpui::Hsla, selected: Option<std::ops::Range<usize>>, theme: &ui::Theme) -> Vec<TextRun> {
+fn plain_runs(
+    text: &str,
+    family: &'static str,
+    colour: gpui::Hsla,
+    selected: Option<std::ops::Range<usize>>,
+    theme: &ui::Theme,
+) -> Vec<TextRun> {
     let run = |len: usize, selected: bool| TextRun {
         len,
         font: font(family),
@@ -716,11 +859,15 @@ fn plain_runs(text: &str, family: &'static str, colour: gpui::Hsla, selected: Op
                 markdown::floor_boundary(text, range.start),
                 markdown::floor_boundary(text, range.end),
             );
-            [(start, false), (end - start, true), (text.len() - end, false)]
-                .into_iter()
-                .filter(|(len, _)| *len > 0)
-                .map(|(len, selected)| run(len, selected))
-                .collect()
+            [
+                (start, false),
+                (end - start, true),
+                (text.len() - end, false),
+            ]
+            .into_iter()
+            .filter(|(len, _)| *len > 0)
+            .map(|(len, selected)| run(len, selected))
+            .collect()
         }
         _ => vec![run(text.len(), false)],
     }
@@ -728,26 +875,62 @@ fn plain_runs(text: &str, family: &'static str, colour: gpui::Hsla, selected: Op
 
 /// A block's text as a selectable, link-clickable element, registered for
 /// placing a drag once it is laid out.
-fn text_element(ctx: &Rc<Ctx>, key: BlockKey, text: SharedString, text_runs: Vec<TextRun>, links: Vec<(std::ops::Range<usize>, ElementId)>) -> AnyElement {
+fn text_element(
+    ctx: &Rc<Ctx>,
+    key: BlockKey,
+    text: SharedString,
+    text_runs: Vec<TextRun>,
+    links: Vec<(std::ops::Range<usize>, ElementId)>,
+) -> AnyElement {
     let styled = StyledText::new(text).with_runs(text_runs);
     let layout = styled.layout().clone();
     let drawn = ctx.drawn.clone();
+    // Where each link starts, for the scripted journeys.
+    #[cfg(feature = "automation")]
+    let drawn = {
+        let layout = layout.clone();
+        let starts: Vec<(usize, u64)> = links
+            .iter()
+            .map(|(range, id)| (range.start, id.raw()))
+            .collect();
+        let registry = drawn;
+        move || {
+            for (start, raw) in &starts {
+                if let Some(at) = layout.position_for_index(*start) {
+                    let height = layout.line_height();
+                    let bounds = gpui::Bounds::new(at, gpui::size(gpui::px(8.0), height));
+                    ui::target::record(&format!("Link {raw}"), bounds);
+                }
+            }
+            registry.clone()
+        }
+    };
+    #[cfg(not(feature = "automation"))]
+    let drawn = move || drawn.clone();
     let element = if links.is_empty() {
         styled.into_any_element()
     } else {
         let studio = ctx.studio.clone();
         let ranges: Vec<_> = links.iter().map(|(range, _)| range.clone()).collect();
         let ids: Vec<ElementId> = links.iter().map(|(_, id)| *id).collect();
-        InteractiveText::new(SharedString::from(format!("text-{}-{}-{}", key.0 .0, key.0 .1, key.1)), styled)
-            .on_click(ranges, move |index, _, cx| {
-                let id = ids[index];
-                studio.act(cx, |studio| studio.reveal(id));
-            })
-            .into_any_element()
+        InteractiveText::new(
+            SharedString::from(format!("text-{}-{}-{}", key.0.0, key.0.1, key.1)),
+            styled,
+        )
+        .on_click(ranges, move |index, _, cx| {
+            let id = ids[index];
+            studio.act(cx, |studio| studio.reveal(id));
+        })
+        .into_any_element()
     };
     div()
         .w_full()
-        .on_children_prepainted(move |_, _, _| drawn.borrow_mut().push(Drawn { key, layout: layout.clone() }))
+        .on_children_prepainted(move |_, _, _| {
+            drawn().borrow_mut().push(Drawn {
+                key,
+                layout: layout.clone(),
+            })
+        })
         .child(element)
         .into_any_element()
 }
@@ -763,7 +946,10 @@ fn message(ctx: &Rc<Ctx>, place: (usize, usize), blocks: &[Block], cx: &App) -> 
         .line_height(r(22.0))
         .children(blocks.iter().enumerate().map(|(index, block)| {
             let key = (place, index);
-            let selected = |length: usize| ctx.selection.and_then(|range| markdown::block_range(range, key, length));
+            let selected = |length: usize| {
+                ctx.selection
+                    .and_then(|range| markdown::block_range(range, key, length))
+            };
             match block {
                 Block::Text(text) => {
                     let (size, line) = match text.heading {
@@ -781,11 +967,17 @@ fn message(ctx: &Rc<Ctx>, place: (usize, usize), blocks: &[Block], cx: &App) -> 
                     div()
                         .flex()
                         .gap(r(8.0))
-                        .pl(r(16.0 * text.indent.saturating_sub(usize::from(text.marker.is_some())) as f32))
+                        .pl(r(16.0
+                            * text
+                                .indent
+                                .saturating_sub(usize::from(text.marker.is_some()))
+                                as f32))
                         .text_size(r(size))
                         .line_height(r(line))
                         .when(text.heading.is_some(), |this| this.pt(r(4.0)))
-                        .when(text.quote, |this| this.pl(r(12.0)).border_l_2().border_color(theme.border))
+                        .when(text.quote, |this| {
+                            this.pl(r(12.0)).border_l_2().border_color(theme.border)
+                        })
                         .when_some(text.marker.clone(), |this, marker| {
                             this.child(
                                 div()
@@ -798,7 +990,12 @@ fn message(ctx: &Rc<Ctx>, place: (usize, usize), blocks: &[Block], cx: &App) -> 
                         .child(div().flex_1().min_w_0().child(element))
                         .into_any_element()
                 }
-                Block::Code { language, code, marker, .. } => {
+                Block::Code {
+                    language,
+                    code,
+                    marker,
+                    indent,
+                } => {
                     let copy = code.clone();
                     let element = text_element(
                         ctx,
@@ -810,7 +1007,12 @@ fn message(ctx: &Rc<Ctx>, place: (usize, usize), blocks: &[Block], cx: &App) -> 
                     div()
                         .flex()
                         .gap(r(8.0))
-                        .when_some(marker.clone(), |this, marker| this.child(div().text_color(theme.text_muted).child(marker)))
+                        .pl(r(16.0
+                            * indent.saturating_sub(usize::from(marker.is_some()))
+                                as f32))
+                        .when_some(marker.clone(), |this, marker| {
+                            this.child(div().text_color(theme.text_muted).child(marker))
+                        })
                         .child(
                             div()
                                 .flex_1()
@@ -830,15 +1032,31 @@ fn message(ctx: &Rc<Ctx>, place: (usize, usize), blocks: &[Block], cx: &App) -> 
                                         .border_color(theme.separator)
                                         .text_size(r(theme::text::XS))
                                         .text_color(theme.text_muted)
-                                        .child(div().flex_1().child(if language.is_empty() { "code".to_string() } else { language.clone() }))
+                                        .child(div().flex_1().min_w_0().child(
+                                            if language.is_empty() {
+                                                "code".to_string()
+                                            } else {
+                                                language.clone()
+                                            },
+                                        ))
                                         .child(
-                                            Button::new(SharedString::from(format!("copy-code-{}-{}-{index}", place.0, place.1)), "Copy")
-                                                .small()
-                                                .variant(ui::Variant::Subtle)
-                                                .icon(IconName::Copy)
-                                                .on_click(move |_: &ClickEvent, _, cx| {
-                                                    cx.write_to_clipboard(ClipboardItem::new_string(copy.clone()))
-                                                }),
+                                            Button::new(
+                                                SharedString::from(format!(
+                                                    "copy-code-{}-{}-{index}",
+                                                    place.0, place.1
+                                                )),
+                                                "Copy",
+                                            )
+                                            .small()
+                                            .variant(ui::Variant::Subtle)
+                                            .icon(IconName::Copy)
+                                            .on_click(
+                                                move |_: &ClickEvent, _, cx| {
+                                                    cx.write_to_clipboard(
+                                                        ClipboardItem::new_string(copy.clone()),
+                                                    )
+                                                },
+                                            ),
                                         ),
                                 )
                                 .child(
@@ -861,7 +1079,10 @@ fn message(ctx: &Rc<Ctx>, place: (usize, usize), blocks: &[Block], cx: &App) -> 
 
 fn table(header: &[String], rows: &[Vec<String>], cx: &App) -> AnyElement {
     let theme = cx.theme();
-    let columns = header.len().max(rows.iter().map(Vec::len).max().unwrap_or(0)).max(1);
+    let columns = header
+        .len()
+        .max(rows.iter().map(Vec::len).max().unwrap_or(0))
+        .max(1);
     let row = |cells: &[String], head: bool| {
         div()
             .flex()
@@ -910,7 +1131,6 @@ fn render_item(ctx: &Rc<Ctx>, item: &Item, cx: &App) -> AnyElement {
             .into_any_element(),
         Item::Operator { place, blocks, editable } => {
             let studio = ctx.studio.clone();
-            let text = markdown::plain_text(blocks);
             div()
                 .flex()
                 .flex_col()
@@ -918,7 +1138,7 @@ fn render_item(ctx: &Rc<Ctx>, item: &Item, cx: &App) -> AnyElement {
                 .gap(r(4.0))
                 .id(SharedString::from(format!("operator-{}", place.0)))
                 .role(gpui::Role::Article)
-                .aria_label(SharedString::from(format!("You: {text}")))
+                .aria_label(SharedString::from(message_name("You", blocks)))
                 .child(
                     div()
                         .max_w(gpui::relative(0.92))
@@ -943,14 +1163,13 @@ fn render_item(ctx: &Rc<Ctx>, item: &Item, cx: &App) -> AnyElement {
                 .into_any_element()
         }
         Item::Assistant { place, blocks, copy, streaming } => {
-            let text = markdown::plain_text(blocks);
             div()
                 .flex()
                 .flex_col()
                 .gap(r(4.0))
                 .id(SharedString::from(format!("assistant-{}-{}", place.0, place.1)))
                 .role(gpui::Role::Article)
-                .aria_label(SharedString::from(format!("Assistant: {text}")))
+                .aria_label(SharedString::from(message_name("Assistant", blocks)))
                 .child(message(ctx, *place, blocks, cx))
                 .when(*streaming, |this| {
                     this.child(
@@ -968,10 +1187,10 @@ fn render_item(ctx: &Rc<Ctx>, item: &Item, cx: &App) -> AnyElement {
                 })
                 .when_some(copy.clone(), |this, copy| {
                     this.child(
-                        div().child(
+                        div().flex().child(
                             Button::new(SharedString::from(format!("copy-reply-{}", place.0)), "Copy")
                                 .small()
-                                .variant(ui::Variant::Subtle)
+                                .ghost()
                                 .icon(IconName::Copy)
                                 .tooltip("Copy this reply as Markdown", None)
                                 .on_click(move |_: &ClickEvent, _, cx| cx.write_to_clipboard(ClipboardItem::new_string(copy.clone()))),
@@ -982,7 +1201,7 @@ fn render_item(ctx: &Rc<Ctx>, item: &Item, cx: &App) -> AnyElement {
         }
         Item::Thinking { key, text, live } => cards::thinking_row(ctx, key.clone(), text, *live, cx),
         Item::Tool(tool) => cards::tool_card(ctx, tool, cx),
-        Item::Notice { text, retry } => cards::notice(ctx, text.clone(), *retry, cx),
+        Item::Notice { text, retry } => cards::notice(ctx, text.clone(), *retry),
         Item::Working(text) => div()
             .flex()
             .items_center()
@@ -1011,11 +1230,20 @@ impl Render for ConversationView {
         let studio = self.studio.read(cx);
         let panel = &studio.conversation;
         let running = panel.running();
-        let question = matches!(panel.waiting.as_ref().map(|w| &w.kind), Some(WaitingFor::Question { .. }));
+        let asked = match panel.waiting.as_ref().map(|w| &w.kind) {
+            Some(WaitingFor::Question { question, .. }) => Some(question.clone()),
+            _ => None,
+        };
+        let question = asked.is_some();
         let editing = panel.editing.is_some();
         let key_missing = panel.key_missing.clone();
-        let errors: Vec<String> = [&panel.read_error, &panel.save_error].into_iter().flatten().cloned().collect();
-        let can_send = !panel.input.trim().is_empty() && (question || (!running && key_missing.is_none()));
+        let errors: Vec<String> = [&panel.read_error, &panel.save_error]
+            .into_iter()
+            .flatten()
+            .cloned()
+            .collect();
+        let can_send =
+            !panel.input.trim().is_empty() && (question || (!running && key_missing.is_none()));
         let usage = panel.usage;
         let mut model = panel.model_name.clone();
         let mut hover = format!(
@@ -1024,7 +1252,11 @@ impl Render for ConversationView {
             usage.cache_read_input_tokens,
             usage.output_tokens
         );
-        let show_cost = studio.settings.get("assistant.showCost").as_bool().unwrap_or(true);
+        let show_cost = studio
+            .settings
+            .get("assistant.showCost")
+            .as_bool()
+            .unwrap_or(true);
         let cost = if show_cost && let Some(turn_model) = &panel.turn_model {
             let turn = panel.turn_usage.cost_usd(turn_model);
             let today = crate::cost::dollars(studio.daily_cost.today());
@@ -1032,7 +1264,9 @@ impl Render for ConversationView {
                 || "no list price is known for this model".to_string(),
                 |price| format!("list prices read {}", price.as_of),
             );
-            hover.push_str(&format!("\nEstimated from {as_of}; not a bill. Today is the UTC day."));
+            hover.push_str(&format!(
+                "\nEstimated from {as_of}; not a bill. Today is the UTC day."
+            ));
             Some(match turn {
                 Some(turn) => format!("{} this turn · {today} today", crate::cost::dollars(turn)),
                 None => format!("cost not known · {today} today"),
@@ -1040,17 +1274,18 @@ impl Render for ConversationView {
         } else {
             None
         };
-        model.push_str(" ");
-        let selection_names: Vec<String> = studio.project.as_ref().map_or_else(Vec::new, |project| {
-            let tree = project.state().tree();
-            studio
-                .working_elements()
-                .into_iter()
-                .filter(|id| tree.contains(*id))
-                .take(3)
-                .map(|id| crate::edit::display_name(tree, id))
-                .collect()
-        });
+        model.push(' ');
+        let selection_names: Vec<String> =
+            studio.project.as_ref().map_or_else(Vec::new, |project| {
+                let tree = project.state().tree();
+                studio
+                    .working_elements()
+                    .into_iter()
+                    .filter(|id| tree.contains(*id))
+                    .take(3)
+                    .map(|id| crate::edit::display_name(tree, id))
+                    .collect()
+            });
         let ctx = Rc::new(Ctx {
             studio: self.studio.clone(),
             view: cx.entity(),
@@ -1087,7 +1322,7 @@ impl Render for ConversationView {
                     .border_color(theme.separator)
                     .child(icon(IconName::Conversation).size(13.0).color(theme.text_faint))
                     .child(div().text_size(r(theme::text::SM)).font_weight(theme::MEDIUM).child("Conversation"))
-                    .child(div().flex_1())
+                    .child(div().flex_1().min_w_0())
                     .child(
                         div()
                             .id("model-picker")
@@ -1144,7 +1379,7 @@ impl Render for ConversationView {
             .child(
                 div()
                     .id("conversation-list")
-                    .flex_1()
+                    .flex_1().min_w_0()
                     .min_h_0()
                     .pt(r(12.0))
                     .role(gpui::Role::Log)
@@ -1187,15 +1422,19 @@ impl Render for ConversationView {
                                         .text_size(r(theme::text::XS))
                                         .text_color(theme.text_muted)
                                         .child(icon(IconName::Pencil).size(12.0).color(theme.text_muted))
-                                        .child(div().flex_1().child("Editing your last message; it and what followed are replaced"))
+                                        .child(div().flex_1().min_w_0().child("Editing your last message; it and what followed are replaced"))
                                         .child(Button::new("cancel-edit", "Cancel").small().ghost().on_click(move |_: &ClickEvent, _, cx| {
                                             studio.act(cx, |studio| studio.cancel_edit())
                                         })),
                                 )
                             })
-                            .when(question && !editing, |this| {
+                            .when_some(asked.filter(|_| !editing), |this, asked| {
+                                // Screen readers hear the question itself.
                                 this.child(
                                     div()
+                                        .id("question-hint")
+                                        .role(gpui::Role::Status)
+                                        .aria_label(SharedString::from(format!("The Assistant asks: {asked} Type an answer, or pick an option above.")))
                                         .px(r(12.0))
                                         .pt(r(8.0))
                                         .text_size(r(theme::text::XS))
@@ -1203,7 +1442,7 @@ impl Render for ConversationView {
                                         .child("Type an answer to the Assistant's question, or pick an option above"),
                                 )
                             })
-                            .child(div().px(r(12.0)).pt(r(10.0)).pb(r(4.0)).child(TextArea::new(&self.composer).borderless()))
+                            .child(div().px(r(12.0)).pt(r(10.0)).pb(r(4.0)).child(TextArea::new(&self.composer).borderless().target("Message")))
                             .child(
                                 div()
                                     .px(r(8.0))
@@ -1237,7 +1476,7 @@ impl Render for ConversationView {
                                                 .child(KeyCaps::new("Ctrl+I")),
                                         )
                                     })
-                                    .child(div().flex_1())
+                                    .child(div().flex_1().min_w_0())
                                     .child(if running && !question {
                                         Button::new("stop", "Stop")
                                             .small()
@@ -1270,3 +1509,6 @@ impl Render for ConversationView {
             )
     }
 }
+
+#[cfg(test)]
+mod tests;
