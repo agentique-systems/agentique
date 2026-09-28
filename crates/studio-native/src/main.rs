@@ -130,6 +130,8 @@ fn main() {
             commands::bind(cx);
             ui::menu::bind(cx);
             palette::bind(cx);
+            dialogs::bind(cx);
+            conversation_view::bind(cx);
             workspace::bind(cx);
             let bounds = Bounds::centered(None, size(px(1600.0), px(1000.0)), cx);
             let options = WindowOptions {
