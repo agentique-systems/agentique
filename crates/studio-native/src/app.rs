@@ -372,6 +372,13 @@ impl StudioApp {
         }
         let folder = project.folder().to_path_buf();
         self.open_project(&folder);
+        if self.project.is_some() {
+            // The camera remembered for the empty project does not fit it.
+            self.fit_pending = true;
+            // The sample's elements are new to the project: nothing was
+            // edited outside Agentique, whatever reading it again reported.
+            self.status = "Started from the URL shortener sample; checkpoint it (Ctrl+S) to keep it in the history.".into();
+        }
     }
 
     pub fn create_project(&mut self, folder: &Path, name: &str) {

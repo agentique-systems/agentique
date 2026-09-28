@@ -78,6 +78,15 @@ motion commands change the same settings. Environment variables
 Anthropic key saved in Settings is not used until W5.7 moves Anthropic onto
 the provider layer.
 
+The `d-daily` journey (Scenario D) starts from the first run's welcome with
+the URL shortener sample, fits (Shift+1), zooms to a selected card (Shift+2),
+goes to an element (Ctrl+P), visits the three views, lists the shortcuts (?)
+and records a checkpoint (Ctrl+S):
+
+```text
+target\debug\agq-studio-native.exe --no-restore --session %TEMP%\agq-d\session.json --scenario d-daily --project %TEMP%\agq-d\demo --gallery %TEMP%\agq-d\shots
+```
+
 The `e-settings` journey (Scenario E without keys or the network) opens
 Settings with Ctrl+, shows each section, searches with a synonym and closes:
 

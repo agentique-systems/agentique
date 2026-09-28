@@ -86,9 +86,9 @@ pub struct Args {
     /// Start without reopening the last project.
     #[arg(long)]
     no_restore: bool,
-    /// Drive the UI through a scripted journey (a-build, a-crash, a-reopen, a-assistant, e-settings), the camera benchmark (stress) or the Conversation benchmark (chat, in a new project at `--project`).
+    /// Drive the UI through a scripted journey (a-build, a-crash, a-reopen, a-assistant, d-daily, e-settings), the camera benchmark (stress) or the Conversation benchmark (chat, in a new project at `--project`).
     #[cfg(feature = "automation")]
-    #[arg(long, value_parser = ["a-build", "a-crash", "a-reopen", "a-assistant", "e-settings", "stress", "chat"])]
+    #[arg(long, value_parser = ["a-build", "a-crash", "a-reopen", "a-assistant", "d-daily", "e-settings", "stress", "chat"])]
     scenario: Option<String>,
     /// Write the scenario report (JSON) to this path.
     #[cfg(feature = "automation")]
@@ -116,7 +116,7 @@ impl Args {
     fn creates_project(&self) -> bool {
         matches!(
             self.scenario.as_deref(),
-            Some("a-build" | "a-assistant" | "e-settings" | "chat")
+            Some("a-build" | "a-assistant" | "d-daily" | "e-settings" | "chat")
         )
     }
     #[cfg(not(feature = "automation"))]

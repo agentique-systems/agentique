@@ -105,7 +105,15 @@ impl StudioApp {
                                 .color(theme.muted),
                         );
                     }
-                    ui.label(crate::app::muted(&self.status, theme).small());
+                    // A long status is cut to its share of the bar, never
+                    // over the counts on the right; the whole text is on hover.
+                    ui.scope(|ui| {
+                        ui.set_max_width(ui.available_width() * 0.5);
+                        ui.add(
+                            egui::Label::new(crate::app::muted(&self.status, theme).small())
+                                .truncate(),
+                        );
+                    });
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         if let Some(project) = &self.project {
                             let state = project.state();
