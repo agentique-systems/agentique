@@ -20,14 +20,17 @@ Progress per stage is in [docs/stages.md](docs/stages.md).
 
 ## Current stage
 
-Stage 4 (live proof and foundations, ROADMAP §6.2) is built, provisionally
-complete and pending the Operator's acceptance; Stages 0–3 wait for the
-Operator's live run of Scenario A (C-29). The Assistant runs through the
-provider layer on rig: with only `DEEPSEEK_API_KEY` set it uses
-`deepseek-flash` (C-35); Anthropic, OpenAI and OpenRouter keys also work (only
-DeepSeek has been tried live). See [docs/stages.md](docs/stages.md) for what
-works, what was measured and what to try. The language core can also be tried
-on its own:
+Stage 5 (the daily-use Studio and Settings, ROADMAP §6.3) is in progress:
+egui 0.36, the design tokens and the component gallery, Settings (Ctrl+,)
+with keys in the Windows Credential Manager, conversation format 2,
+incremental Surface updates, cost per turn and per day, the first run's
+welcome and the standard shortcuts are in; the design system, the docked
+shell, the new Surface and the Conversation's components are not yet. Stage 4
+is provisionally complete and Stages 0–3 wait for the Operator's live run of
+Scenario A (C-29). With only a DeepSeek key (saved in Settings, or
+`DEEPSEEK_API_KEY`) the Assistant uses `deepseek-flash` (C-35). See
+[docs/stages.md](docs/stages.md) for what works, what was measured and what to
+try. The language core can also be tried on its own:
 
 ```text
 cargo run -p agq-language --example check -- models/url-shortener
