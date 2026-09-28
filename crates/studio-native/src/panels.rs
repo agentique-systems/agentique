@@ -163,7 +163,7 @@ impl StudioApp {
             });
         // Settings take the place of the Surface and the Panels (§3.7).
         if self.settings.open {
-            let changed = self.settings.ui(root, theme);
+            let changed = self.settings.ui(root, theme, &self.session.recent);
             self.apply_settings(ctx, changed);
             return;
         }

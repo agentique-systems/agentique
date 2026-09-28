@@ -203,6 +203,16 @@ pub const SETTINGS: &[Setting] = &[
         allowed: Allowed::Toggle,
         invalid: "Choose on or off.",
     },
+    Setting {
+        id: "projects.defaultFolder",
+        label: "Folder for new projects",
+        description: "Where New project suggests a folder; empty: Agentique in your user folder.",
+        synonyms: &["location", "directory", "path", "workspace"],
+        default: DefaultValue::Text(""),
+        scope: Scope::App,
+        allowed: Allowed::Text,
+        invalid: "Enter a folder, or leave it empty.",
+    },
 ];
 
 /// The row for `id`.
@@ -240,6 +250,12 @@ impl Settings {
     /// The default location: `%APPDATA%\Agentique\settings.json`.
     pub fn default_path() -> PathBuf {
         crate::session::Session::default_path().with_file_name("settings.json")
+    }
+
+    /// Every setting back to its default (entries this version does not
+    /// know are kept, as always).
+    pub fn reset_all(&mut self) {
+        self.values.clear();
     }
 
     pub fn empty() -> Settings {
