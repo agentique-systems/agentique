@@ -544,3 +544,146 @@ thinking row hides SysML lines of reasoning (C-4, #50); S4.1 stays with egui
    ```
 
 Then accept Stages 0–4 or list what fails (§2.2 L7).
+
+## Stage 5: the daily-use Studio and Settings
+
+Status: **in progress.** Built overnight on 2026-09-27/28 under the Operator's
+overnight instructions (ROADMAP §7.6), after Stage 4 was recorded as
+provisionally complete. Several work items have not started (below), and the
+acceptance needs the Operator: a week of real use, Scenario E with real keys
+for every provider, and the side-by-side review (§3.1). Nothing here says the
+Operator accepted anything.
+
+**Done** (PRs #52–#64)
+
+- **W5.1 Toolkit** (#54): S4.1's Track A kept: egui and eframe 0.36.2 with
+  wgpu 30, the Rust toolchain at 1.97.1, Inter's variable font at 400, 500
+  and 600, a spring and tween motion layer, selection across Conversation
+  messages, screen-reader names for the Surface and the Conversation. The
+  S4.1 decision (stay with egui 0.36) is provisional (see S4.1 above).
+- **Interface 3** (#55): `tokens.rs` (every size, radius, stroke, duration and
+  curve of §3.2; colour scales generated in OKLCH from base hue, accent hue and
+  contrast for dark, light and high contrast, tested for 4.5:1 body text, 3:1
+  lines on panel backgrounds and 4.5:1 text on solid colours), the component
+  list of §3.2 with variants and states, and the gallery
+  (`--fixture components`). The Studio's drawing moves onto the tokens in W5.2.
+- **S5.1 and W5.5, first part** (#57, #59): an edit lays out the cards again
+  with the layout memory and routes only the edges it touches
+  (`Scene::update`); the Studio uses it. The spatial index is a growing dense
+  grid.
+- **W5.7 Providers, part** (#52, #58): TypeSafe AI's Jev through a thin
+  client in `agq-providers` (typed decisions, prices, a key test); conversation
+  format 2 (provider-neutral entries, each reply with its model; reasoning goes
+  back only to the model that wrote it; unknown entry kinds kept and never
+  sent), per project at `%APPDATA%\Agentique\projects\<folder>-<hash>\`, a
+  Stage 4 conversation read once as a read-only transcript and left in place.
+- **W5.8 Settings** (#53, #56, #60): keys in the Windows Credential Manager
+  (tested before saving, never shown again, only a hint), key tests that run
+  no model, model lists with capabilities and list prices; the Settings view
+  (Ctrl+,) in place of the Surface with Providers, Assistant, Appearance,
+  Keyboard and About, and search over synonyms; the Assistant's model from
+  Settings (environment variables win); appearance lives in `settings.json`
+  (a Stage 4 session hands its theme over once) and "Follow Windows" follows
+  the Windows theme; estimated cost per turn and per day beside the model.
+- **W5.4 and W5.11, part** (#62): Shift+1 fits, Shift+2 zooms to the
+  selection (by the key's place, whatever it types), Ctrl+P goes to an element,
+  ? lists every shortcut.
+- **W5.9, part** (#63): the first run's three-step welcome, with the URL
+  shortener as a sample project.
+- **W5.12, part** (#61): the `e-settings` journey (Scenario E without keys or
+  the network).
+- **W5.10, part** (#64): Settings' choices are labelled by their rows for
+  screen readers.
+
+**Live results** (DeepSeek `deepseek-flash`, effort `high`; reports outside
+the repository)
+
+- **Evaluation set** (24 tasks × 3 trials) after this stage's changes
+  (conversation format 2, Settings, the model from Settings): pass@3 24/24,
+  pass^3 24/24, must-hold failures 0, trials not run 0, about $0.34.
+- **Headless Scenario A** on conversation format 2 (A1–A4, A8, A9, which
+  saves, reopens and compares the conversation): 7 of 7 checks pass, twice
+  (before and after the review fixes), about $0.02 each; the saved file is
+  format 2 and every reply names `deepseek/deepseek-flash`.
+- **Jev**: one live call, 349 ms, $0.000016 (#52).
+- **Keys**: the DeepSeek key test answered "works" with no model run (#53).
+- Spend for the night so far: about $1.44 of DeepSeek logged (at peak-hour prices; hard stop $16) and $0.000016 of Jev (hard stop $0.50).
+
+**Measured** (reference machine: Windows 10, RTX 3060 Ti, Vulkan; release
+builds; single runs; raw reports outside the repository)
+
+| Budget (§3.3) | Target | Measured | |
+|---|---|---|---|
+| Pan and zoom, 1k: interval p95 | ≤ 8.3 ms | pan 6.18, zoom 6.22 ms (UI CPU p95 1.9 ms) | met |
+| Input to next update, 1k: p95 | ≤ 8.3 ms | pan 5.57, zoom 5.59 ms | met |
+| Pan and zoom, 10k: interval p95 | ≤ 16.7 ms | pan 20.2, zoom 19.0 ms (UI CPU p95 12.1 ms, GPU 2.4 ms) | not met (W5.5) |
+| Input to next update, 10k: p95 | ≤ 16.7 ms | pan 18.8, zoom 17.5 ms | not met (W5.5) |
+| Edit to Surface, 10k (CPU, before presenting) | ≤ 100 ms | 127 ms median at 10,204 elements (scene 17 ms) | not met (W5.5) |
+| Edit, Surface half, 1k / 10k (CI) | 50 / 100 ms | 5–7 / 71–86 ms (77.7 ms on CI) | met |
+| Full scene build when a project opens, 1k / 10k | — / 1 s | 88 ms / 1.9 s | 10k not met |
+| Start to first update, warm | ≤ 400 ms | 482 ms (609 ms on the first start after the build) | not met |
+| Memory, start screen / 1k | ≤ 300 MB private | 414 / 424 MB (Stage 4: 351–373 MB) | not met, and worse (R-44) |
+| Memory, 10k | ≤ 450 MB private | 479 MB (Stage 4: 504–527 MB) | not met (R-44) |
+
+The stress runs are from `main` at the end of the night; the frame path did
+not change with S5.1 (before and after within noise, #57). Journeys:
+`a-build`, `a-crash` (exits 3 by design), `a-reopen`, `a-assistant` and
+`e-settings` pass (debug builds with `automation`).
+
+**Decided overnight** (ROADMAP §7.6, each pending the Operator's
+confirmation): S4.1 stays with egui 0.36 and Track A becomes W5.1; S5.1's
+design (full layout, incremental routing, kept detours until a full build)
+and the R-28 amendment; the spike's code kept as the start of W5.5;
+appearance moves from the session to `settings.json`, handed over once;
+"per day" costs use the UTC day (no date library; the local time zone would
+need a Windows call); the welcome shows until a first project is opened.
+
+**Not done or not tried**
+
+- **W5.2 Design system**: the Studio still draws with `theme.rs`, not the
+  generated colours; no icon set (the licence check waits); typography side
+  by side (Q-17 kept Inter); the literal-value check of §8.5 rule 1.
+- **W5.3 Shell**: docked, resizable, collapsible panels with a docking API,
+  focus mode, layout per project.
+- **W5.4 Surface**: dot grid, new cards, ports by direction, arrowheads,
+  label pills, selection ring outside the card, change marks by actor, named
+  level-of-detail tiers, minimap, zoom controls.
+- **W5.5 Performance**: an edit on 10,204 elements takes 127 ms end to end
+  (the scene 17 ms; applying and saving the change and rebuilding the scene
+  input about 95 ms), over C-33's 100 ms; label layout caching and CPU culling
+  (10k pan and zoom still miss 16.7 ms); memory (R-44). Faster apply and save
+  would touch the System State (the locked core, R-16): the Operator's call.
+- **W5.6 Conversation**: virtualised list, tables, message actions, new tool
+  cards, composer with context chips and a model picker.
+- **W5.7**: Anthropic moves onto rig only after a live Anthropic run (P2); the
+  hand-written client and the `reqwest` exception stay. OpenAI and OpenRouter
+  not tried live (no keys).
+- **W5.8**: deep links from errors into a Settings section (the messages name
+  Ctrl+,), the Projects and Advanced sections (should), highlighted search
+  matches, rows an environment variable overrides shown as such.
+- **W5.10 Accessibility**: Narrator (G6) and Japanese IME (G7) need the
+  Operator; the §3.5 checklist is not worked through yet.
+- **W5.12**: `d-daily` is not written.
+- A shared build folder across git worktrees reused another worktree's build
+  once tonight (Cargo judges freshness by file times); the S5.1 measurement
+  was redone after touching the sources.
+
+**Operator: try this**
+
+1. See the first run, then add a key in Settings (E1–E3). A fresh session file
+   shows the welcome:
+
+   ```text
+   cargo run --release -p agq-studio-native -- --session $env:TEMP\agq-fresh\session.json
+   ```
+
+   Press Ctrl+, › Providers › DeepSeek: paste the key, Test, Save. The
+   Conversation header then shows `deepseek-flash · high` and, after a turn,
+   its estimated cost and today's total.
+2. Try "Start from the URL shortener", then Shift+1, Shift+2 on a selected
+   card, Ctrl+P and a name, and ?.
+3. The design tokens and generated themes: `--fixture components`.
+4. E4: test the Anthropic, OpenAI, OpenRouter and TypeSafe AI keys in
+   Settings. An Anthropic key saved there is not used by the Assistant until
+   W5.7 (set `ANTHROPIC_API_KEY` for now).
+5. Confirm or change the overnight decisions above (§7.6).
