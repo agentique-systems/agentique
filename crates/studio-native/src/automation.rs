@@ -34,7 +34,7 @@
 //! - `e-settings --project <new folder>`: Scenario E without keys or the
 //!   network: Ctrl+, opens Settings in place of the Surface, each section is
 //!   shown, search finds the key rows by a synonym ("token"), Escape closes
-//!   Settings. Keys are never pasted, tested or saved here: the journey runs
+//!   Settings and Ctrl+, reopens them at the last section viewed. Keys are never pasted, tested or saved here: the journey runs
 //!   against the Operator's own Credential Manager.
 //!
 //! Screenshots go only to the `--gallery` directory given on the command line.
@@ -415,6 +415,22 @@ fn settings(folder: &Path) -> Vec<Step> {
             )
         },
         Step {
+            screenshot: Some("05b-projects"),
+            ..step(
+                "the Projects section",
+                Action::Click(Target::Button("Projects")),
+                Check::SettingsSection("Projects"),
+            )
+        },
+        Step {
+            screenshot: Some("05c-advanced"),
+            ..step(
+                "the Advanced section",
+                Action::Click(Target::Button("Advanced")),
+                Check::SettingsSection("Advanced"),
+            )
+        },
+        Step {
             screenshot: Some("06-about"),
             ..step(
                 "the About section",
@@ -428,9 +444,9 @@ fn settings(folder: &Path) -> Vec<Step> {
             Check::SettingsClosed,
         ),
         step(
-            "Ctrl+, opens them again",
+            "Ctrl+, opens them again at the last section viewed",
             Action::Key(Key::Comma, Modifiers::COMMAND),
-            Check::SettingsSection("Providers"),
+            Check::SettingsSection("About"),
         ),
         step(
             "Close",

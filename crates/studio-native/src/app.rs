@@ -908,7 +908,20 @@ impl StudioApp {
                 self.palette_focus = true;
                 self.palette_query.clear();
             }
-            NewProject => self.dialog = Some(crate::edit::Dialog::new_project()),
+            NewProject => {
+                let mut dialog = crate::edit::Dialog::new_project();
+                // Settings' folder for new projects, when set.
+                let base = self.settings.text("projects.defaultFolder");
+                if let crate::edit::Dialog::NewProject { folder, .. } = &mut dialog
+                    && !base.trim().is_empty()
+                {
+                    *folder = std::path::Path::new(base.trim())
+                        .join("NewSystem")
+                        .display()
+                        .to_string();
+                }
+                self.dialog = Some(dialog);
+            }
             OpenProject => {
                 self.dialog = Some(crate::edit::Dialog::OpenProject {
                     folder: String::new(),
@@ -945,7 +958,8 @@ impl StudioApp {
                 if self.settings.open {
                     self.settings.close();
                 } else {
-                    self.settings.show(crate::settings_ui::Section::Providers);
+                    // The last section viewed (§3.7).
+                    self.settings.show(self.settings.section);
                 }
             }
             CreatePart | CreatePort | CreateItem | CreateAttribute | CreateInterface
@@ -1271,6 +1285,10 @@ impl StudioApp {
         }
         if changed.assistant {
             self.conversation.use_choice(self.settings.model_choice());
+        }
+        if let Some(folder) = changed.remove_recent {
+            self.session.recent.retain(|recent| *recent != folder);
+            self.save_session();
         }
     }
 

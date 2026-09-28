@@ -23,14 +23,18 @@ pub enum Section {
     Assistant,
     Appearance,
     Keyboard,
+    Projects,
+    Advanced,
     About,
 }
 
-const SECTIONS: [(Section, &str); 5] = [
+const SECTIONS: [(Section, &str); 7] = [
     (Section::Providers, "Providers"),
     (Section::Assistant, "Assistant"),
     (Section::Appearance, "Appearance"),
     (Section::Keyboard, "Keyboard"),
+    (Section::Projects, "Projects"),
+    (Section::Advanced, "Advanced"),
     (Section::About, "About"),
 ];
 
@@ -38,10 +42,12 @@ const SECTIONS: [(Section, &str); 5] = [
 const COLUMN: f32 = 720.0;
 
 /// What Settings changed that the Studio applies.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Changed {
     pub appearance: bool,
     pub assistant: bool,
+    /// A project to take off the recent list.
+    pub remove_recent: Option<PathBuf>,
 }
 
 enum Background<T> {
@@ -130,6 +136,9 @@ pub struct SettingsView {
     save_error: Option<String>,
     /// Text being typed into a text row; committed on Enter or leaving it.
     drafts: BTreeMap<&'static str, String>,
+    /// "Reset all settings" asks first, with Cancel focused once.
+    confirm_reset: bool,
+    focus_cancel_reset: bool,
     focus_search: bool,
 }
 
@@ -146,6 +155,8 @@ impl SettingsView {
             providers: BTreeMap::new(),
             save_error: None,
             drafts: BTreeMap::new(),
+            confirm_reset: false,
+            focus_cancel_reset: false,
             focus_search: false,
         }
     }
@@ -235,7 +246,7 @@ impl SettingsView {
 
     /// Draws the view in place of the Surface; returns what the Studio must
     /// apply.
-    pub fn ui(&mut self, ui: &mut egui::Ui, theme: Theme) -> Changed {
+    pub fn ui(&mut self, ui: &mut egui::Ui, theme: Theme, recent: &[PathBuf]) -> Changed {
         let ctx = ui.ctx().clone();
         let mut changed = Changed::default();
         // Finished background work.
@@ -333,6 +344,8 @@ impl SettingsView {
                                 changed.appearance |= self.appearance_ui(ui, theme, None)
                             }
                             Section::Keyboard => keyboard_ui(ui, theme, None),
+                            Section::Projects => self.projects_ui(ui, theme, recent, &mut changed),
+                            Section::Advanced => self.advanced_ui(ui, theme, &mut changed),
                             Section::About => self.about_ui(ui, theme),
                         }
                     } else {
@@ -726,6 +739,140 @@ impl SettingsView {
         changed
     }
 
+    /// Where new projects go, and the recent projects (§3.7 Projects).
+    fn projects_ui(
+        &mut self,
+        ui: &mut egui::Ui,
+        theme: Theme,
+        recent: &[PathBuf],
+        changed: &mut Changed,
+    ) {
+        section_title(ui, theme, "Projects");
+        let id = "projects.defaultFolder";
+        let row = settings::setting(id).expect("a setting");
+        let current = self.text(id);
+        let mut draft = self.drafts.remove(id).unwrap_or_else(|| current.clone());
+        let mut typing = false;
+        let new_value = setting_row(
+            ui,
+            theme,
+            row.label,
+            row.description,
+            self.settings.changed(id),
+            &row.default.value(),
+            |ui, label| {
+                let response = ui
+                    .add(
+                        egui::TextEdit::singleline(&mut draft)
+                            .hint_text("Agentique in your user folder")
+                            .desired_width(260.0),
+                    )
+                    .labelled_by(label);
+                typing = response.has_focus();
+                (response.lost_focus() && draft.trim() != current).then(|| json!(draft.trim()))
+            },
+        );
+        if typing {
+            self.drafts.insert(id, draft);
+        }
+        if let Some(value) = new_value {
+            self.set(id, value);
+        }
+        ui.add_space(theme::SPACE);
+        ui.label(RichText::new("Recent projects").color(theme.text));
+        if recent.is_empty() {
+            ui.label(RichText::new("None yet.").color(theme.muted));
+        }
+        for folder in recent {
+            ui.horizontal(|ui| {
+                ui.label(RichText::new(folder.display().to_string()).color(theme.text_secondary));
+                if ui.small_button("Remove from the list").clicked() {
+                    changed.remove_recent = Some(folder.clone());
+                }
+            });
+        }
+        ui.add_space(theme::SPACE);
+        let data = self.path.with_file_name("projects");
+        ui.horizontal(|ui| {
+            ui.label(
+                RichText::new(format!(
+                    "Each project's conversation is kept in {}.",
+                    data.display()
+                ))
+                .color(theme.muted),
+            );
+            if ui.small_button("Open folder").clicked() {
+                open_in_explorer(&data);
+            }
+        });
+    }
+
+    /// The settings file, and resetting everything (§3.7 Advanced, with its
+    /// Danger zone).
+    fn advanced_ui(&mut self, ui: &mut egui::Ui, theme: Theme, changed: &mut Changed) {
+        section_title(ui, theme, "Advanced");
+        ui.horizontal(|ui| {
+            ui.label(
+                RichText::new(format!("Settings file: {}", self.path.display()))
+                    .color(theme.text_secondary),
+            );
+            if ui.small_button("Show in Explorer").clicked() {
+                open_in_explorer(&self.path);
+            }
+        });
+        ui.add_space(theme::SPACE_L);
+        egui::Frame::new()
+            .stroke(Stroke::new(theme::HAIRLINE, theme.error))
+            .corner_radius(theme::RADIUS)
+            .inner_margin(egui::Margin::same(12))
+            .show(ui, |ui| {
+                ui.set_width(ui.available_width());
+                ui.label(RichText::new("Danger zone").font(theme::semibold(theme::BODY)).color(theme.text));
+                ui.label(
+                    RichText::new("Every setting goes back to its default. Saved keys stay; remove them in Providers. A copy of the file is kept as settings.json.bak.")
+                        .color(theme.text_secondary),
+                );
+                if self.confirm_reset {
+                    ui.horizontal(|ui| {
+                        let cancel = ui.button("Cancel");
+                        if std::mem::take(&mut self.focus_cancel_reset) {
+                            cancel.request_focus();
+                        }
+                        if cancel.clicked() {
+                            self.confirm_reset = false;
+                        }
+                        if ui.button(RichText::new("Reset all settings").color(theme.error)).clicked() {
+                            self.confirm_reset = false;
+                            if self.reset_all() {
+                                changed.appearance = true;
+                                changed.assistant = true;
+                            }
+                        }
+                    });
+                } else if ui.button("Reset all settings…").clicked() {
+                    self.confirm_reset = true;
+                    self.focus_cancel_reset = true;
+                }
+            });
+    }
+
+    /// Resets every setting after keeping a copy of the file; false when the
+    /// copy could not be made (then nothing is reset).
+    pub fn reset_all(&mut self) -> bool {
+        if self.path.exists()
+            && let Err(error) = std::fs::copy(&self.path, self.path.with_extension("json.bak"))
+        {
+            self.save_error = Some(format!(
+                "Nothing was reset: settings.json could not be copied first ({error})."
+            ));
+            return false;
+        }
+        self.settings.reset_all();
+        self.drafts.clear();
+        self.save();
+        true
+    }
+
     fn about_ui(&mut self, ui: &mut egui::Ui, theme: Theme) {
         section_title(ui, theme, "About");
         ui.label(format!("Agentique Studio {}", env!("CARGO_PKG_VERSION")));
@@ -739,6 +886,17 @@ impl SettingsView {
                 .color(theme.muted),
         );
     }
+}
+
+/// Opens a folder, or shows a file, in Windows Explorer.
+fn open_in_explorer(path: &std::path::Path) {
+    let mut command = std::process::Command::new("explorer");
+    if path.is_file() {
+        command.arg(format!("/select,{}", path.display()));
+    } else {
+        command.arg(path);
+    }
+    let _ = command.spawn();
 }
 
 /// What a key test found, in plain words (§2.4 E2), and whether it works.
@@ -1085,6 +1243,51 @@ mod studio_tests {
     }
 
     #[test]
+    fn projects_and_advanced_reset_remove_recent_and_suggest_the_folder() {
+        let (mut app, context, folder) = studio("settings-projects");
+        frame(&mut app, &context, vec![]);
+        // The folder for new projects is what New project suggests.
+        let base = folder.0.join("Work");
+        app.settings.set_value(
+            "projects.defaultFolder",
+            serde_json::json!(base.display().to_string()),
+        );
+        app.execute(CommandId::NewProject, &context);
+        let Some(crate::edit::Dialog::NewProject {
+            folder: suggested, ..
+        }) = &app.dialog
+        else {
+            panic!("the New project dialog is open")
+        };
+        assert!(
+            std::path::Path::new(suggested).starts_with(&base),
+            "{suggested}"
+        );
+        app.dialog = None;
+        // A project comes off the recent list.
+        let recent = app.session.recent[0].clone();
+        app.apply_settings(
+            &context,
+            super::Changed {
+                remove_recent: Some(recent.clone()),
+                ..Default::default()
+            },
+        );
+        assert!(!app.session.recent.contains(&recent));
+        // Resetting keeps a copy of the file first.
+        app.settings
+            .set_value("appearance.theme", serde_json::json!("dark"));
+        assert!(app.settings.reset_all());
+        assert_eq!(app.settings.text("appearance.theme"), "system");
+        assert!(folder.0.join("settings.json.bak").exists());
+        // Ctrl+, opens at the last section viewed.
+        app.settings.show(super::Section::Advanced);
+        app.settings.close();
+        app.execute(CommandId::Settings, &context);
+        assert_eq!(app.settings.section, super::Section::Advanced);
+    }
+
+    #[test]
     fn the_ui_scale_applies_and_goes_back_to_100_percent() {
         let (mut app, context, _folder) = studio("settings-scale");
         app.settings
@@ -1093,7 +1296,7 @@ mod studio_tests {
             &context,
             super::Changed {
                 appearance: true,
-                assistant: false,
+                ..Default::default()
             },
         );
         frame(&mut app, &context, vec![]);
@@ -1105,7 +1308,7 @@ mod studio_tests {
             &context,
             super::Changed {
                 appearance: true,
-                assistant: false,
+                ..Default::default()
             },
         );
         frame(&mut app, &context, vec![]);
