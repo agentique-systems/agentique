@@ -1335,6 +1335,52 @@ pub(crate) mod app_tests {
     }
 
     #[test]
+    fn plus_minus_and_shift_0_zoom_around_the_middle_at_once() {
+        let (mut app, context, _folder) = studio("zoom-keys");
+        for _ in 0..6 {
+            frame(&mut app, &context, vec![]);
+        }
+        app.camera.zoom = 1.0;
+        let center = app.camera.center;
+        frame(
+            &mut app,
+            &context,
+            press(egui::Key::Plus, egui::Key::Equals, egui::Modifiers::SHIFT),
+        );
+        assert!((app.camera.zoom - 1.25).abs() < 1e-4, "{}", app.camera.zoom);
+        assert!(
+            app.camera_target.is_none(),
+            "keyboard zoom does not animate"
+        );
+        frame(
+            &mut app,
+            &context,
+            press(egui::Key::Minus, egui::Key::Minus, egui::Modifiers::NONE),
+        );
+        assert!((app.camera.zoom - 1.0).abs() < 1e-4, "{}", app.camera.zoom);
+        frame(
+            &mut app,
+            &context,
+            press(egui::Key::Equals, egui::Key::Equals, egui::Modifiers::NONE),
+        );
+        frame(
+            &mut app,
+            &context,
+            press(egui::Key::Equals, egui::Key::Equals, egui::Modifiers::NONE),
+        );
+        assert!(app.camera.zoom > 1.5);
+        frame(
+            &mut app,
+            &context,
+            press(egui::Key::Num0, egui::Key::Num0, egui::Modifiers::SHIFT),
+        );
+        assert!((app.camera.zoom - 1.0).abs() < 1e-4, "{}", app.camera.zoom);
+        // Around the middle: the center stays where it was.
+        assert!((app.camera.center.x - center.x).abs() < 1e-3);
+        assert!((app.camera.center.y - center.y).abs() < 1e-3);
+    }
+
+    #[test]
     fn focus_mode_hides_the_panels_and_is_remembered_per_project() {
         let (mut app, context, folder) = studio("focus-mode");
         let first = app.project.as_ref().unwrap().folder().to_path_buf();

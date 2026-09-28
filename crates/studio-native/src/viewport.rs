@@ -71,6 +71,53 @@ impl StudioApp {
             || self.highlights.contains_key(&port)
     }
 
+    /// Zoom out, the zoom level (click: 100%), zoom in and fit, in the
+    /// Surface's bottom-right corner (§3.2 Surface: zoom controls).
+    fn zoom_control(&mut self, ui: &mut egui::Ui, rect: egui::Rect) {
+        let theme = self.theme;
+        let mut chosen = None;
+        egui::Area::new(egui::Id::new("zoom-control"))
+            .fixed_pos(rect.right_bottom() - Vec2::new(212.0, 44.0))
+            .order(egui::Order::Middle)
+            .show(ui.ctx(), |ui| {
+                egui::Frame::new()
+                    .fill(theme.elevated)
+                    .stroke(egui::Stroke::new(1.0, theme.border))
+                    .corner_radius(crate::tokens::radius::MENU as u8)
+                    .inner_margin(egui::Margin::same(4))
+                    .show(ui, |ui| {
+                        ui.horizontal(|ui| {
+                            let percent = format!("{:.0}%", self.camera.zoom * 100.0);
+                            for (label, command, hover) in [
+                                ("−", CommandId::ZoomOut, "Zoom out (-)"),
+                                (
+                                    percent.as_str(),
+                                    CommandId::ZoomReset,
+                                    "Zoom to 100% (Shift+0)",
+                                ),
+                                ("+", CommandId::ZoomIn, "Zoom in (+)"),
+                                ("Fit", CommandId::Fit, "Fit to view (Shift+1)"),
+                            ] {
+                                if ui
+                                    .add(
+                                        egui::Button::new(label)
+                                            .frame(false)
+                                            .min_size(Vec2::new(32.0, 24.0)),
+                                    )
+                                    .on_hover_text(hover)
+                                    .clicked()
+                                {
+                                    chosen = Some(command);
+                                }
+                            }
+                        });
+                    });
+            });
+        if let Some(command) = chosen {
+            self.execute(command, ui.ctx());
+        }
+    }
+
     pub fn viewport(&mut self, ui: &mut egui::Ui) {
         let (rect, response) = ui.allocate_exact_size(
             ui.available_size().max(Vec2::splat(1.0)),
@@ -139,6 +186,7 @@ impl StudioApp {
                 }
             }
         });
+        self.zoom_control(ui, rect);
         let painter = ui.painter_at(rect);
         let theme = self.theme;
         // A dot grid follows the camera and disappears when too dense.
