@@ -23,9 +23,10 @@ Progress per stage is in [docs/stages.md](docs/stages.md).
 Stage 5 (the daily-use Studio and Settings, ROADMAP §6.3) is in progress:
 egui 0.36, the design tokens and the component gallery, Settings (Ctrl+,)
 with keys in the Windows Credential Manager, conversation format 2,
-incremental Surface updates, cost per turn and per day, the first run's
-welcome and the standard shortcuts are in; the design system, the docked
-shell, the new Surface and the Conversation's components are not yet. Stage 4
+incremental Surface updates (10k pan and zoom within budget), cost per turn
+and per day, the first run's welcome, focus mode and collapsible panels, and
+the standard shortcuts are in; the design system, the new Surface drawing and
+the Conversation's new components are not yet. Stage 4
 is provisionally complete and Stages 0–3 wait for the Operator's live run of
 Scenario A (C-29). With only a DeepSeek key (saved in Settings, or
 `DEEPSEEK_API_KEY`) the Assistant uses `deepseek-flash` (C-35). See
