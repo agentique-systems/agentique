@@ -33,6 +33,9 @@ pub struct ProjectView {
     pub camera: Option<Camera2D>,
     #[serde(default)]
     pub layouts: BTreeMap<SurfaceView, LayoutMemory>,
+    /// Focus mode: the Outline, the Panels and the Conversation hidden.
+    #[serde(default)]
+    pub panels_hidden: bool,
 }
 
 impl Session {
@@ -161,6 +164,7 @@ mod tests {
                 view: SurfaceView::Graph,
                 camera: Some(Camera2D::default()),
                 layouts: BTreeMap::new(),
+                panels_hidden: false,
             },
         );
         session.save(&path).unwrap();
@@ -213,6 +217,7 @@ mod safety_tests {
                 view: SurfaceView::Graph,
                 camera: Some(camera),
                 layouts: BTreeMap::new(),
+                panels_hidden: false,
             },
         );
         session.save(&file).unwrap();

@@ -167,6 +167,8 @@ enum Check {
     View(&'static str),
     /// The command palette is open with this search.
     PaletteSearch(&'static str),
+    /// Focus mode is on (true) or off.
+    PanelsHidden(bool),
 }
 
 #[derive(Clone, Debug)]
@@ -336,6 +338,19 @@ fn daily(folder: &Path) -> Vec<Step> {
             "Escape closes Settings",
             Action::Key(Key::Escape, Modifiers::NONE),
             Check::SettingsClosed,
+        ),
+        Step {
+            screenshot: Some("06-focus-mode"),
+            ..step(
+                "Ctrl+\\ hides the panels",
+                Action::Key(Key::Backslash, Modifiers::COMMAND),
+                Check::PanelsHidden(true),
+            )
+        },
+        step(
+            "and shows them again",
+            Action::Key(Key::Backslash, Modifiers::COMMAND),
+            Check::PanelsHidden(false),
         ),
         step(
             "Ctrl+S asks for a checkpoint message",
@@ -1530,6 +1545,14 @@ fn check(check: &Check, app: &StudioApp) -> Result<(), String> {
         Check::View(name) => {
             if format!("{:?}", app.view) != *name {
                 return fail(&format!("the Surface shows {:?}, not {name}", app.view));
+            }
+        }
+        Check::PanelsHidden(hidden) => {
+            if app.panels_hidden != *hidden {
+                return fail(&format!(
+                    "the panels are not {}",
+                    if *hidden { "hidden" } else { "shown" }
+                ));
             }
         }
         Check::PaletteSearch(query) => {

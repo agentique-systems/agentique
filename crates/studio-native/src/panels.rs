@@ -185,6 +185,13 @@ impl StudioApp {
                 .show(root, |ui| crate::gallery::show(ui, theme));
             return;
         }
+        // Focus mode: only the Surface, between the top and status bars.
+        if self.panels_hidden {
+            egui::CentralPanel::default()
+                .frame(egui::Frame::NONE.fill(theme.canvas))
+                .show(root, |ui| self.viewport(ui));
+            return;
+        }
         egui::Panel::left("outline")
             .default_size(250.0)
             .frame(

@@ -42,6 +42,7 @@ pub enum CommandId {
     NewConversation,
     ShowConversation,
     Settings,
+    HidePanels,
 }
 
 pub struct Command {
@@ -323,6 +324,13 @@ pub const COMMANDS: &[Command] = &[
         shortcut: "Ctrl+,",
         description: "Keys, the Assistant's model and appearance",
         key: Some((COMMAND, Key::Comma)),
+    },
+    Command {
+        id: CommandId::HidePanels,
+        label: "Show or hide the panels",
+        shortcut: "Ctrl+\\",
+        description: "Focus mode: the Surface takes the whole window; remembered per project",
+        key: Some((COMMAND, Key::Backslash)),
     },
 ];
 
