@@ -435,6 +435,7 @@ fn messages(
                                 }
                             }
                         }
+                        copy_reply(ui, theme, parts);
                     }
                     Entry::ToolResults { .. } => {}
                     Entry::Notice { text } => {
@@ -518,6 +519,40 @@ fn messages(
         });
     view.messages.retain(|key, _| view.used.contains(key));
 }
+
+/// "Copy" under a reply with text: its Markdown, as written (a message
+/// action, §3.6).
+fn copy_reply(ui: &mut egui::Ui, theme: Theme, parts: &[AssistantPart]) {
+    let texts: Vec<&str> = parts
+        .iter()
+        .filter_map(|part| match part {
+            AssistantPart::Text { text } if !text.trim().is_empty() => Some(text.as_str()),
+            _ => None,
+        })
+        .collect();
+    if texts.is_empty() {
+        return;
+    }
+    ui.horizontal(|ui| {
+        let copy = ui
+            .add(
+                egui::Button::new(
+                    RichText::new("Copy")
+                        .font(theme::regular(theme::CAPTION))
+                        .color(theme.muted),
+                )
+                .frame(false),
+            )
+            .on_hover_text("Copy this reply as Markdown");
+        record(ui.ctx(), Target::Button(COPY_REPLY), copy.rect);
+        if copy.clicked() {
+            ui.ctx().copy_text(texts.join("\n\n"));
+        }
+    });
+}
+
+/// The label of a reply's copy button (for the journey driver).
+pub const COPY_REPLY: &str = "Copy reply";
 
 /// Text selection across messages: a drag that starts on a message's text
 /// extends to wherever the pointer goes, scrolling when it leaves the list;

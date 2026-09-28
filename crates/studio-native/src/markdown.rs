@@ -1,7 +1,7 @@
 //! Markdown in the Conversation: a small renderer on `pulldown-cmark` that
 //! turns a message into egui text layouts (paragraphs, headings, bold and
 //! italic with real font weights, inline code, fenced code blocks with a copy
-//! button, lists and quotes). An inline code span that names an element of
+//! button, lists, quotes and tables). An inline code span that names an element of
 //! the model is a link: clicking it selects the element.
 //!
 //! [`parse`] runs once per message text (the Conversation caches the blocks);
@@ -33,6 +33,32 @@ pub enum Block {
         marker: Option<String>,
     },
     Rule,
+    /// A table: its header and rows of plain cell text.
+    Table {
+        header: Vec<String>,
+        rows: Vec<Vec<String>>,
+    },
+}
+
+impl Block {
+    /// A table as text: cells separated by tabs, rows by lines, so it pastes
+    /// into a spreadsheet.
+    fn table_text(header: &[String], rows: &[Vec<String>]) -> String {
+        std::iter::once(header)
+            .chain(rows.iter().map(Vec::as_slice))
+            .map(|row| row.join("\t"))
+            .collect::<Vec<_>>()
+            .join("\n")
+    }
+}
+
+/// A table being read.
+#[derive(Default)]
+struct Table {
+    header: Vec<String>,
+    rows: Vec<Vec<String>>,
+    row: Vec<String>,
+    cell: String,
 }
 
 /// A paragraph, heading or list item.
@@ -219,10 +245,15 @@ pub fn selected_text<'a>(
     let mut previous: Option<((usize, usize), bool)> = None;
     for (message, blocks) in messages {
         for (index, block) in blocks.iter().enumerate() {
+            let table;
             let (content, marker) = match block {
                 Block::Text(block) => (block.job.text.as_str(), block.marker.as_deref()),
                 Block::Code { code, marker, .. } => (code.as_str(), marker.as_deref()),
                 Block::Rule => ("---", None),
+                Block::Table { header, rows } => {
+                    table = Block::table_text(header, rows);
+                    (table.as_str(), None)
+                }
             };
             let Some((start, end)) = block_range(range, (message, index), content.chars().count())
             else {
@@ -263,8 +294,9 @@ pub fn parse(text: &str, theme: Theme, resolve: &dyn Fn(&str) -> Option<ElementI
         lists: Vec::new(),
         quote: 0,
         code: None,
+        table: None,
     };
-    for event in Parser::new_ext(text, Options::ENABLE_STRIKETHROUGH) {
+    for event in Parser::new_ext(text, Options::ENABLE_STRIKETHROUGH | Options::ENABLE_TABLES) {
         builder.event(event);
     }
     builder.flush();
@@ -287,6 +319,7 @@ struct Builder<'a> {
     quote: usize,
     /// The code block being read.
     code: Option<Block>,
+    table: Option<Table>,
 }
 
 impl Builder<'_> {
@@ -307,8 +340,38 @@ impl Builder<'_> {
             }
             return;
         }
+        if let Some(table) = &mut self.table {
+            match event {
+                Event::Text(text) => table.cell.push_str(&text),
+                Event::Code(code) => table.cell.push_str(&code),
+                Event::SoftBreak | Event::HardBreak => table.cell.push(' '),
+                Event::Start(Tag::TableRow) => table.row.clear(),
+                Event::End(TagEnd::TableCell) => {
+                    let cell = std::mem::take(&mut table.cell);
+                    table.row.push(cell.trim().to_string());
+                }
+                Event::End(TagEnd::TableHead) => table.header = std::mem::take(&mut table.row),
+                Event::End(TagEnd::TableRow) => {
+                    let row = std::mem::take(&mut table.row);
+                    table.rows.push(row);
+                }
+                Event::End(TagEnd::Table) => {
+                    let table = self.table.take().expect("inside a table");
+                    self.blocks.push(Block::Table {
+                        header: table.header,
+                        rows: table.rows,
+                    });
+                }
+                _ => {}
+            }
+            return;
+        }
         match event {
             Event::Start(tag) => match tag {
+                Tag::Table(_) => {
+                    self.flush();
+                    self.table = Some(Table::default());
+                }
                 Tag::Heading { level, .. } => {
                     self.flush();
                     self.heading = Some(level);
@@ -531,9 +594,42 @@ pub fn show(
                     Stroke::new(theme::HAIRLINE, theme.border),
                 );
             }
+            Block::Table { header, rows } => table(ui, id.with(index), header, rows, theme),
         }
     }
     clicked
+}
+
+/// A table: a bold header and striped rows, scrolling sideways when wider
+/// than the column.
+fn table(ui: &mut egui::Ui, id: egui::Id, header: &[String], rows: &[Vec<String>], theme: Theme) {
+    egui::Frame::new()
+        .stroke(Stroke::new(theme::HAIRLINE, theme.border))
+        .corner_radius(theme::RADIUS)
+        .inner_margin(egui::Margin::symmetric(8, 6))
+        .show(ui, |ui| {
+            egui::ScrollArea::horizontal().id_salt(id).show(ui, |ui| {
+                egui::Grid::new(id.with("grid"))
+                    .striped(true)
+                    .spacing(Vec2::new(theme::SPACE_L, theme::SPACE_S))
+                    .show(ui, |ui| {
+                        for cell in header {
+                            ui.label(
+                                egui::RichText::new(cell)
+                                    .font(theme::semibold(theme::BODY))
+                                    .color(theme.text),
+                            );
+                        }
+                        ui.end_row();
+                        for row in rows {
+                            for cell in row {
+                                ui.label(egui::RichText::new(cell).color(theme.text));
+                            }
+                            ui.end_row();
+                        }
+                    });
+            });
+        });
 }
 
 /// Where a block is shown: its widget id, its place in the Conversation and
@@ -727,7 +823,36 @@ mod tests {
             Block::Text(text) => &text.job.text,
             Block::Code { code, .. } => code,
             Block::Rule => "---",
+            Block::Table { .. } => "table",
         }
+    }
+
+    #[test]
+    fn a_table_is_a_block_with_its_header_and_rows_and_copies_as_tab_separated_text() {
+        let blocks = parse(
+            "Parts:\n\n| Part | Type |\n|---|---|\n| `api` | HttpApi |\n| store | **LinkStore** |\n\nDone.",
+            Theme::default(),
+            &|_| None,
+        );
+        assert_eq!(blocks.len(), 3);
+        let Block::Table { header, rows } = &blocks[1] else {
+            panic!("not a table")
+        };
+        assert_eq!(header, &["Part", "Type"]);
+        assert_eq!(rows, &[vec!["api", "HttpApi"], vec!["store", "LinkStore"]]);
+        let everything = (
+            TextPoint::default(),
+            TextPoint {
+                message: (0, 0),
+                block: 2,
+                char: 5,
+            },
+        );
+        let copied = selected_text([((0, 0), blocks.as_slice())], everything);
+        assert!(
+            copied.contains("Part\tType\napi\tHttpApi\nstore\tLinkStore"),
+            "{copied}"
+        );
     }
 
     #[test]
