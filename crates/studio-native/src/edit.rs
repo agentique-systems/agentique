@@ -1381,6 +1381,28 @@ pub(crate) mod app_tests {
     }
 
     #[test]
+    fn panning_within_the_margin_reuses_the_gpu_batch() {
+        let (mut app, context, _folder) = studio("batch-margin");
+        app.show_fixture("stress1000");
+        for _ in 0..6 {
+            frame(&mut app, &context, vec![]);
+        }
+        app.camera.zoom = 1.0;
+        app.camera_target = None;
+        frame(&mut app, &context, vec![]);
+        frame(&mut app, &context, vec![]);
+        let built = app.timing.batches_built();
+        // A small pan stays inside the margin: no new batch.
+        app.camera.center.x += 60.0;
+        frame(&mut app, &context, vec![]);
+        assert_eq!(app.timing.batches_built(), built);
+        // Far away, the view leaves it: one new batch.
+        app.camera.center.x += 100_000.0;
+        frame(&mut app, &context, vec![]);
+        assert_eq!(app.timing.batches_built(), built + 1);
+    }
+
+    #[test]
     fn focus_mode_hides_the_panels_and_is_remembered_per_project() {
         let (mut app, context, folder) = studio("focus-mode");
         let first = app.project.as_ref().unwrap().folder().to_path_buf();

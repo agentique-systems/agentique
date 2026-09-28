@@ -204,16 +204,17 @@ impl StudioApp {
             }
         }
         let visibility = Instant::now();
-        let objects = self.spatial.visible_scene(
-            &self.scene,
-            self.camera.visible_rect().inflate(20.0 / self.camera.zoom),
-        );
+        let view = self.camera.visible_rect().inflate(20.0 / self.camera.zoom);
+        let objects = self.spatial.visible_scene(&self.scene, view);
+        // The batch is in world coordinates and depends on the camera only
+        // through the level of detail, so it is built for the view with a
+        // margin of half its size on each side and reused while the view
+        // stays inside: panning and zooming in do not rebuild it (W5.5).
         let mut hasher = DefaultHasher::new();
         self.scene.generation.hash(&mut hasher);
         self.theme.dark.hash(&mut hasher);
         self.theme.contrast.hash(&mut hasher);
         (self.lod.level() as u8).hash(&mut hasher);
-        objects.hash(&mut hasher);
         self.selection.targets.hash(&mut hasher);
         for (id, started) in &self.highlights {
             id.hash(&mut hasher);
@@ -221,10 +222,16 @@ impl StudioApp {
         }
         let key = hasher.finish();
         self.timing.visibility(visibility.elapsed());
-        if self.batch_key != Some(key) {
+        let covered = self
+            .batch_region
+            .is_some_and(|region| region.contains_rect(view));
+        if self.batch_key != Some(key) || !covered {
             let started = Instant::now();
-            self.batch = Arc::new(self.make_batch(key, &objects));
+            let region = view.inflate(0.5 * view.width().max(view.height()));
+            let wide = self.spatial.visible_scene(&self.scene, region);
+            self.batch = Arc::new(self.make_batch(key, &wide));
             self.batch_key = Some(key);
+            self.batch_region = Some(region);
             self.timing.batch(started.elapsed());
         }
         painter.add(egui_wgpu::Callback::new_paint_callback(

@@ -76,6 +76,9 @@ pub struct StudioApp {
     pub gesture: Option<crate::viewport::Gesture>,
     pub batch: Arc<Batch>,
     pub batch_key: Option<u64>,
+    /// The part of the Surface the GPU batch covers: the view with a margin,
+    /// so panning and zooming in within it reuse the batch (W5.5).
+    pub batch_region: Option<agq_studio_scene::Rect>,
     pub gpu_stats: Arc<Mutex<GpuStats>>,
     pub palette: bool,
     pub palette_query: String,
@@ -193,6 +196,7 @@ impl StudioApp {
             gesture: None,
             batch: Arc::new(Batch::default()),
             batch_key: None,
+            batch_region: None,
             gpu_stats: Arc::new(Mutex::new(GpuStats::default())),
             palette: false,
             palette_query: String::new(),

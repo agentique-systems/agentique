@@ -111,6 +111,11 @@ impl FrameTiming {
     pub fn visibility(&mut self, duration: Duration) {
         self.visibility.push(duration.as_secs_f64() * 1000.0);
     }
+    /// How many GPU batches were built.
+    #[cfg(test)]
+    pub fn batches_built(&self) -> usize {
+        self.batches.summary().total_samples
+    }
     pub fn batch(&mut self, duration: Duration) {
         self.batches.push(duration.as_secs_f64() * 1000.0);
     }
