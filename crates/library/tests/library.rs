@@ -379,7 +379,37 @@ fn values_override_inherited_attributes_in_the_usage_only() {
     else {
         panic!("refused")
     };
-    assert!(reason.contains("no attribute `backend`"), "{reason}");
+    assert!(
+        reason.contains("`backend` is a port, not an attribute"),
+        "{reason}"
+    );
+    request.values = vec![("nothing".into(), Literal::Integer("1".into()))];
+    let Err(PlanError::Invalid(reason)) = library.plan_use(&state, &request, Actor::Operator)
+    else {
+        panic!("refused")
+    };
+    assert!(reason.contains("no attribute `nothing`"), "{reason}");
+    // Attributes of inner parts are reached by their path, and share the
+    // redefinition of the part.
+    let mut nested = Use::new(
+        built("Library::Storage::CachedStore"),
+        Parent::Element(system),
+    );
+    nested.name = Some("pages".into());
+    nested.values = vec![
+        ("cache.ttlSeconds".into(), Literal::Integer("30".into())),
+        ("cache.maxEntries".into(), Literal::Integer("1000".into())),
+    ];
+    let plan = library.plan_use(&state, &nested, Actor::Operator).unwrap();
+    apply(&mut state, plan.change);
+    let saved = text(&state);
+    assert!(saved.contains("part :>> cache {"), "{saved}");
+    assert_eq!(saved.matches("part :>> cache").count(), 1, "{saved}");
+    assert!(saved.contains("attribute :>> ttlSeconds = 30;"), "{saved}");
+    assert!(
+        saved.contains("attribute :>> maxEntries = 1000;"),
+        "{saved}"
+    );
 }
 
 #[test]

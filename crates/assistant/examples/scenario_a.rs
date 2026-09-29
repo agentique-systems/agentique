@@ -22,6 +22,7 @@ use agq_assistant::{
     Conversation, Entry, ModelChoice, StreamEvent, ToolCall, ToolResult, TurnEvent, turn,
 };
 use agq_language::{ElementId, ElementKind, print};
+use agq_library::Library;
 use agq_system_state::{Actor, ApplyError, Change, Operation, Project, Rejection};
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
@@ -315,7 +316,12 @@ fn execute(
     operator: &Operator,
     call: &ToolCall,
 ) -> ToolResult {
-    match tools::prepare(project.state(), &call.name, &call.input) {
+    match tools::prepare(
+        project.state(),
+        &Library::built_in_only(),
+        &call.name,
+        &call.input,
+    ) {
         Prepared::Answer(text) => ToolResult::answer(text),
         Prepared::Invalid(message) => ToolResult::error(message),
         Prepared::Question { question, options } => {
@@ -332,6 +338,9 @@ fn execute(
             };
             record.questions.push(question);
             ToolResult::answer(answer)
+        }
+        Prepared::SaveToLibrary { .. } => {
+            ToolResult::error("Not saved: this run keeps no My Library.")
         }
         Prepared::Change(mut change) => match project.apply(change.clone()) {
             Ok(event) => {

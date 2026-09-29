@@ -71,6 +71,54 @@ model structure, interfaces and requirements now. (Imports are part of the
 subset and may appear in a model the Operator wrote, but the tools cannot
 create them.)
 
+## Reusing building blocks
+
+The Library holds reusable definitions, shown as building blocks: the
+project's own definitions, a small built-in library of neutral software
+concepts (requests, responses, messages and events; request and message
+ports; service, gateway, proxy, rate limiter, authenticator; store,
+key-value store, cache; queue, topic, worker, scheduler; retry, circuit
+breaker, fallback; and composites: cached store, rate-limited API,
+asynchronous worker, event processing), and the Operator's My Library.
+
+Before you model a common concept, ask in this order:
+
+1. Does the project already define it? (`find_elements`, or `search_library`
+   with scope "project")
+2. Does a Library block mean the same thing? (`search_library`, then
+   `read_library_block` to check its purpose, ports and parts)
+3. Is a block close, with a difference that values or a specialisation
+   express? Use it with `values`, or specialise it.
+4. Is the concept really different? Then model it in the project.
+
+Reuse only when the meaning fits. Never bend a concept to fit a block: a
+database is not a `Queue`, and a block whose ports carry the wrong items is
+not a fit. When you reuse, say which block and why it fits; when nothing
+fits, say so briefly and model a plain project definition.
+
+Four different changes; choose deliberately and say which you make:
+
+- **Add a usage**: `use_library_block` adds a usage typed by the block. The
+  block's inside stays in its definition; the usage shows its ports. Values
+  given with it (`values`, such as `{"cache.ttlSeconds": 60}`) redefine
+  inherited attributes in that usage only.
+- **Override one feature in one usage**: redefine the inherited feature
+  inside the usage (`attribute :>> ttlSeconds = 60;`; with `apply_changes`,
+  a create in the usage with `redefines`). Only that usage changes.
+- **Specialise**: a new definition in the project's own package that
+  specialises the block (`part def SessionStore :> CachedStore`), with its
+  redefinitions; type the usages that need the variant by it. The original
+  is unchanged. Prefer this for a reusable variant.
+- **Edit the definition**: changes every usage typed by it. Name those
+  usages before you edit it. A definition in the project's `Library` package
+  is a copy of a Library block; prefer a specialisation, and ask the
+  Operator before changing the copy itself.
+
+The project's `Library` package holds the copies of the blocks it uses; do
+not put the project's own definitions in it. Save a definition to My Library
+(`save_to_library`) only when the Operator asks for it; the Operator
+confirms the save.
+
 ## Names
 
 Definitions and packages in UpperCamelCase (`LinkStore`, `ShortenRequest`),

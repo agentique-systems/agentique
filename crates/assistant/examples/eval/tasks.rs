@@ -1,4 +1,5 @@
-//! The evaluation set's tasks (R-19): Scenario A steps A1–A4 and A8, each
+//! The evaluation set's tasks (R-19): Scenario A steps A1–A4 and A8, and
+//! Scenario H8 (reusing building blocks when they fit, and only then), each
 //! with a starting model, the Operator's messages, scripted answers and the
 //! checks that grade the resulting System State. Task definitions are code
 //! and are committed; results never are (§8.3).
@@ -131,6 +132,53 @@ fn no_new_problems(run: &Run) -> bool {
 fn asked(run: &Run) -> bool {
     run.asked()
 }
+
+/// A usage typed by the project's copy of the Library block `name`.
+fn uses_block(run: &Run, name: &str) -> bool {
+    let tree = run.state().tree();
+    tree.walk().into_iter().any(|id| {
+        tree[id].kind.is_usage()
+            && tree[id].typed_by.iter().any(|r| {
+                r.target().is_some_and(|t| {
+                    tree.qualified_name(t).starts_with("Library::")
+                        && tree.effective_name(t) == Some(name)
+                })
+            })
+    })
+}
+/// Any definition was copied from the Library into the project.
+fn copied_blocks(run: &Run) -> bool {
+    run.state().tree().find("Library").is_some()
+}
+fn searched_library(run: &Run) -> bool {
+    run.library_calls.iter().any(|c| c == "search_library")
+}
+/// Blocks of the storage, messaging and resilience kinds were not bent to
+/// fit something they are not.
+fn no_unrelated_blocks(run: &Run) -> bool {
+    let tree = run.state().tree();
+    [
+        "Library::Messaging",
+        "Library::Storage",
+        "Library::Resilience",
+    ]
+    .iter()
+    .all(|package| tree.find(package).is_none())
+}
+
+/// A small service to build inside.
+const THUMBNAILS: &str = r#"package Thumbnails {
+    doc /* A service that makes thumbnails of uploaded images. */
+    part def ThumbnailService {
+        doc /* Accepts image uploads and makes their thumbnails. */
+    }
+}"#;
+
+/// A shop with an empty system.
+const SHOP: &str = r#"package Shop {
+    doc /* An online shop. */
+    part def System;
+}"#;
 
 pub fn all() -> Vec<Task> {
     vec![
@@ -573,6 +621,112 @@ pub fn all() -> Vec<Task> {
             answers: &[],
             lock_policy: LockPolicy::Allow,
             checks: vec![("nothing changed", unchanged)],
+            follow_up: false,
+        },
+        // H8: reusing building blocks when they fit, and only then (C-49).
+        Task {
+            id: "h8-reuse-async-worker",
+            start: THUMBNAILS,
+            locked: &[],
+            messages: &[
+                "Uploads should return at once: put thumbnail jobs on a queue and have a background worker make the thumbnails, with failed jobs tried again. Model that inside ThumbnailService.",
+            ],
+            answers: &[],
+            lock_policy: LockPolicy::Allow,
+            checks: vec![
+                ("searched the Library", searched_library),
+                (
+                    "reused the asynchronous worker, or a queue and a worker",
+                    |r| {
+                        uses_block(r, "AsyncWorker")
+                            || (uses_block(r, "Queue") && uses_block(r, "Worker"))
+                    },
+                ),
+                ("no problems", no_problems),
+            ],
+            follow_up: true,
+        },
+        Task {
+            id: "h8-reuse-rate-limit-with-a-value",
+            start: SHOP,
+            locked: &[],
+            messages: &[
+                "Give System a public API that lets each client make at most 100 requests per minute, in front of a backend service that handles the requests.",
+            ],
+            answers: &[],
+            lock_policy: LockPolicy::Allow,
+            checks: vec![
+                ("searched the Library", searched_library),
+                ("reused the rate limiter", |r| {
+                    uses_block(r, "RateLimitedApi") || uses_block(r, "RateLimiter")
+                }),
+                ("the limit is 100", |r| {
+                    r.text().contains("limitPerMinute = 100")
+                }),
+                ("no problems", no_problems),
+            ],
+            follow_up: true,
+        },
+        Task {
+            id: "h8-no-block-fits",
+            start: FULL,
+            locked: &[],
+            messages: &[
+                "Add a QR code generator that turns a short link into a QR code image, used by the API.",
+            ],
+            answers: &[],
+            lock_policy: LockPolicy::Allow,
+            checks: vec![
+                ("a QR code generator in the project", |r| {
+                    let tree = r.state().tree();
+                    tree.walk().into_iter().any(|id| {
+                        tree[id].kind == Kind::PartDef
+                            && !tree.qualified_name(id).starts_with("Library::")
+                            && tree
+                                .effective_name(id)
+                                .is_some_and(|n| n.to_lowercase().contains("qr"))
+                    })
+                }),
+                ("no unrelated block bent to fit", no_unrelated_blocks),
+                ("no new problems", no_new_problems),
+            ],
+            follow_up: true,
+        },
+        Task {
+            id: "h8-project-concept-first",
+            start: CORE,
+            locked: &[],
+            messages: &[
+                "Store the links in a relational database with an index on the short code.",
+            ],
+            answers: &[],
+            lock_policy: LockPolicy::Allow,
+            checks: vec![
+                ("the project's link store is kept", |r| {
+                    r.state().tree().find("UrlShortener::LinkStore").is_some()
+                }),
+                ("no Library block copied for it", |r| !copied_blocks(r)),
+                ("the database is modelled", |r| {
+                    r.has(None, &["sql", "relational", "database"])
+                        || r.text().to_lowercase().contains("relational")
+                }),
+                ("no new problems", no_new_problems),
+            ],
+            follow_up: true,
+        },
+        Task {
+            id: "h8-save-when-asked",
+            start: FULL,
+            locked: &[],
+            messages: &[
+                "Save the LinkStore definition to My Library so I can use it in my other projects.",
+            ],
+            answers: &[],
+            lock_policy: LockPolicy::Allow,
+            checks: vec![
+                ("saved once", |r| r.saves == 1),
+                ("the model is unchanged", unchanged),
+            ],
             follow_up: false,
         },
     ]

@@ -10,6 +10,7 @@ use agq_assistant::{
     Request, ScriptedModel, StreamEvent, ToolCall, ToolResult, TurnEvent, system_prompt,
 };
 use agq_language::{Source, parse, print};
+use agq_library::Library;
 use agq_system_state::{Actor, Change, Operation, Rejection, SystemState};
 use serde_json::{Value, json};
 use std::collections::BTreeSet;
@@ -57,6 +58,10 @@ struct Studio {
     answer: String,
     /// Every call that reached the executor.
     calls: Vec<ToolCall>,
+    /// The Library, with a My Library kept in memory.
+    library: Library,
+    /// Saves to My Library the Operator allowed.
+    saves: Vec<String>,
 }
 
 impl Studio {
@@ -66,15 +71,22 @@ impl Studio {
             allow_locked: false,
             answer: String::new(),
             calls: Vec::new(),
+            library: Library::built_in_only(),
+            saves: Vec::new(),
         }
     }
 
     fn execute(&mut self, call: &ToolCall) -> ToolResult {
         self.calls.push(call.clone());
-        match tools::prepare(&self.state, &call.name, &call.input) {
+        match tools::prepare(&self.state, &self.library, &call.name, &call.input) {
             Prepared::Answer(text) => ToolResult::answer(text),
             Prepared::Invalid(message) => ToolResult::error(message),
             Prepared::Question { .. } => ToolResult::answer(self.answer.clone()),
+            Prepared::SaveToLibrary { plan, saved, .. } => {
+                self.saves.push(plan.block.to_string());
+                self.library.save(*plan).expect("saved in memory");
+                ToolResult::answer(saved)
+            }
             Prepared::Change(mut change) => loop {
                 assert_eq!(change.actor, Actor::Assistant);
                 match self.state.apply(change.clone()) {

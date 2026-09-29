@@ -311,31 +311,72 @@ impl Library {
             parent: request.parent,
             element,
         });
-        // Values redefine inherited attributes inside the usage.
+        // Values redefine inherited attributes inside the usage; a dotted
+        // name (`cache.ttlSeconds`) reaches an attribute of an inner part
+        // through a redefinition of that part, shared by its values.
         if !request.values.is_empty() {
             let semantics = Semantics::new(located.tree);
-            let features = semantics.features(located.element);
-            for (feature_name, value) in &request.values {
-                let feature = features
-                    .iter()
-                    .copied()
-                    .find(|f| located.tree.effective_name(*f) == Some(feature_name.as_str()))
-                    .filter(|f| {
-                        semantics.element(*f).map(|e| e.kind) == Some(ElementKind::Attribute)
-                    })
-                    .ok_or_else(|| {
-                        invalid(format!(
-                            "`{block_name}` has no attribute `{feature_name}` to give a value"
-                        ))
-                    })?;
-                let target = if copied { map[&feature] } else { feature };
-                let mut redefinition = Element::new(ElementKind::Attribute);
-                redefinition.redefines = vec![Reference::to(target, feature_name)];
-                redefinition.value = Some(value.clone());
-                creations.push(Creation {
-                    parent: Parent::Element(usage),
-                    element: redefinition,
-                });
+            let base_id = tree.next_id().raw();
+            // Redefinitions created so far: (source feature path) -> new id.
+            let mut made: Vec<(Vec<ElementId>, ElementId)> = Vec::new();
+            for (path_name, value) in &request.values {
+                let mut owner = located.element;
+                let mut container = usage;
+                let mut path: Vec<ElementId> = Vec::new();
+                let steps: Vec<&str> = path_name.split('.').map(str::trim).collect();
+                for (depth, step) in steps.iter().enumerate() {
+                    let last = depth + 1 == steps.len();
+                    let feature = semantics
+                        .features(owner)
+                        .into_iter()
+                        .find(|f| located.tree.effective_name(*f) == Some(*step))
+                        .ok_or_else(|| {
+                            invalid(format!(
+                                "`{block_name}` has no {} `{path_name}` to give a value",
+                                if steps.len() > 1 {
+                                    "feature"
+                                } else {
+                                    "attribute"
+                                }
+                            ))
+                        })?;
+                    let kind = semantics
+                        .element(feature)
+                        .map(|e| e.kind)
+                        .unwrap_or(ElementKind::Attribute);
+                    if last && kind != ElementKind::Attribute {
+                        return Err(invalid(format!(
+                            "`{path_name}` is a {}, not an attribute; only attributes take values",
+                            kind.keyword()
+                        )));
+                    }
+                    path.push(feature);
+                    let target = if copied { map[&feature] } else { feature };
+                    if !last {
+                        if let Some((_, id)) = made.iter().find(|(p, _)| *p == path) {
+                            container = *id;
+                        } else {
+                            let mut redefinition = Element::new(kind);
+                            redefinition.redefines = vec![Reference::to(target, step)];
+                            let id = ElementId::from_raw(base_id + creations.len() as u64);
+                            creations.push(Creation {
+                                parent: Parent::Element(container),
+                                element: redefinition,
+                            });
+                            made.push((path.clone(), id));
+                            container = id;
+                        }
+                        owner = feature;
+                        continue;
+                    }
+                    let mut redefinition = Element::new(ElementKind::Attribute);
+                    redefinition.redefines = vec![Reference::to(target, step)];
+                    redefinition.value = Some(value.clone());
+                    creations.push(Creation {
+                        parent: Parent::Element(container),
+                        element: redefinition,
+                    });
+                }
             }
         }
         let count = creations.len();
@@ -811,7 +852,7 @@ impl Library {
 }
 
 /// A planned change to My Library.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct SavePlan {
     /// My Library as it will be.
     pub tree: Tree,

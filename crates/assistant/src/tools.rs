@@ -6,11 +6,18 @@
 //! edits, which asks the Operator before a locked element changes. Tool input
 //! is untrusted: every name is resolved and every operation is tried on a copy
 //! of the model before the change is handed over.
+//!
+//! The Library tools (`library`) find, read and use building blocks through
+//! the same Library service the Operator's Studio uses (C-49); saving to My
+//! Library waits for the Operator's confirmation.
+
+mod library;
 
 use agq_language::{
     Direction, Element, ElementId, ElementKind, Literal, Multiplicity, Parent, Reference, Tree,
     print_element,
 };
+use agq_library::Library;
 use agq_system_state::{Actor, Change, ChangeEvent, Operation, Property, Rejection, SystemState};
 use serde_json::{Value, json};
 
@@ -19,6 +26,10 @@ pub const FIND_ELEMENTS: &str = "find_elements";
 pub const GET_PROBLEMS: &str = "get_problems";
 pub const APPLY_CHANGES: &str = "apply_changes";
 pub const ASK_OPERATOR: &str = "ask_operator";
+pub const SEARCH_LIBRARY: &str = "search_library";
+pub const READ_LIBRARY_BLOCK: &str = "read_library_block";
+pub const USE_LIBRARY_BLOCK: &str = "use_library_block";
+pub const SAVE_TO_LIBRARY: &str = "save_to_library";
 
 /// The longest tool result the model reads, in characters: about 8,000
 /// tokens (R-34). Longer results are cut with a note on narrowing the
@@ -80,6 +91,14 @@ pub enum Prepared {
         question: String,
         options: Vec<String>,
     },
+    /// Saving to My Library, which changes the Operator's own library for
+    /// every project: shown as a question with Save and Don't save. Only on
+    /// Save does the Studio save `plan`, and `saved` is the tool result.
+    SaveToLibrary {
+        plan: Box<agq_library::SavePlan>,
+        question: String,
+        saved: String,
+    },
     /// The input cannot be used: send the message back as an error result.
     Invalid(String),
 }
@@ -87,6 +106,7 @@ pub enum Prepared {
 /// The tool definitions sent to the model (JSON Schema per tool).
 pub fn definitions() -> Value {
     let kinds: Vec<&str> = KINDS.iter().map(|kind| kind.keyword()).collect();
+    let library_kinds: Vec<&str> = library::KINDS.iter().map(|kind| kind.keyword()).collect();
     let name = |description: &str| json!({ "type": "string", "description": description });
     let operation_fields = json!({
         "op": { "type": "string", "enum": ["create", "delete", "rename", "move", "connect", "set"] },
@@ -164,20 +184,82 @@ pub fn definitions() -> Value {
                 "required": ["question"],
                 "additionalProperties": false
             }
+        },
+        {
+            "name": SEARCH_LIBRARY,
+            "description": "Search the Library of building blocks: reusable definitions from the built-in library (neutral software concepts such as services, gateways, stores, caches, queues, workers, retries), the project's own definitions and the Operator's My Library. Use it before modelling a common concept by hand. With fits_port, only blocks with a port that can connect to that port by the model's rules. Returns one line per block: its reference, kind, source, purpose and ports.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "query": name("Words to find, matched against names, purposes and ports, e.g. \"rate limit\" or \"cache\". Empty lists blocks by category."),
+                    "kind": { "type": "string", "enum": library_kinds, "description": "Only this kind of definition." },
+                    "scope": { "type": "string", "enum": ["all", "built-in", "project", "mine"], "description": "Only the built-in library, the project's definitions or My Library. Default all." },
+                    "fits_port": name("A port as a feature chain from its owner's qualified name, e.g. \"Shop::System::front.backend\": only blocks that can connect to it."),
+                    "limit": { "type": "number", "description": "At most this many results (default 12, at most 40)." }
+                },
+                "additionalProperties": false
+            }
+        },
+        {
+            "name": READ_LIBRARY_BLOCK,
+            "description": "Read one building block in words: its purpose, ports and the items they carry, parts, connections, attributes and inner attributes you can give values, requirements, the definitions it needs, and whether the project already has it. Read a block before using it, to check that its meaning fits.",
+            "input_schema": {
+                "type": "object",
+                "properties": { "block": name("The block's reference from search_library, e.g. \"built-in:Library::Storage::CachedStore\", or its qualified name.") },
+                "required": ["block"],
+                "additionalProperties": false
+            }
+        },
+        {
+            "name": USE_LIBRARY_BLOCK,
+            "description": "Use a building block, as one change (one undo step): copies the definitions it needs into the project's Library package (identical copies already there are reused; a different definition with the same name is reported, never overwritten) and adds a usage typed by it inside parent. Optionally gives inherited attributes values and connects one of its ports. The usage shows the block's ports; its inside stays in the definition. Changing a locked element asks the Operator first.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "block": name("The block's reference or qualified name."),
+                    "parent": name("Qualified name of the part or part def that gets the usage, e.g. \"Shop::System\"."),
+                    "name": name("The usage's name in lowerCamelCase; defaults to the block's name."),
+                    "values": { "type": "object", "description": "Inherited attributes to give values in this usage, e.g. {\"ttlSeconds\": 60}.", "additionalProperties": { "type": ["string", "number", "boolean"] } },
+                    "connect_to": name("A port to connect the new usage to, as a feature chain from parent, e.g. \"front.backend\"; the first of the block's ports that fits is used."),
+                    "connect_with": name("With connect_to: the block's port to connect, by name."),
+                    "if_exists": { "type": "string", "enum": ["ask", "use_existing", "copy_renamed"], "description": "When the project has a different definition with the same name: stop and report (ask, the default), use the project's, or copy the block's under another name." }
+                },
+                "required": ["block", "parent"],
+                "additionalProperties": false
+            }
+        },
+        {
+            "name": SAVE_TO_LIBRARY,
+            "description": "Save a project definition, with what it needs, to the Operator's My Library for use in other projects. Only when the Operator asked for it: the Operator sees and confirms the save. It changes no project.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "definition": name("Qualified name of the definition to save."),
+                    "category": name("The package it is filed under in My Library, e.g. \"Payments\"; defaults to its package's name."),
+                    "replace": { "type": "boolean", "description": "Replace a different block of the same name in My Library (only when the Operator agreed)." }
+                },
+                "required": ["definition"],
+                "additionalProperties": false
+            }
         }
     ])
 }
 
 /// Turns one tool call into what the Studio should do. The input has been
 /// checked with [`check_input`] (the turn does that before the call reaches
-/// the Studio).
-pub fn prepare(state: &SystemState, tool: &str, input: &Value) -> Prepared {
+/// the Studio). `library` is the Library of building blocks (the built-in
+/// blocks and the Operator's My Library).
+pub fn prepare(state: &SystemState, library: &Library, tool: &str, input: &Value) -> Prepared {
     let result = match tool {
         READ_MODEL => read_model(state, input).map(Prepared::Answer),
         FIND_ELEMENTS => find_elements(state.tree(), input).map(Prepared::Answer),
         GET_PROBLEMS => Ok(Prepared::Answer(problems(state, None))),
         APPLY_CHANGES => prepare_change(state, input).map(Prepared::Change),
         ASK_OPERATOR => ask_operator(input),
+        SEARCH_LIBRARY => library::search(state, library, input).map(Prepared::Answer),
+        READ_LIBRARY_BLOCK => library::read(state, library, input).map(Prepared::Answer),
+        USE_LIBRARY_BLOCK => library::use_block(state, library, input).map(Prepared::Change),
+        SAVE_TO_LIBRARY => library::save(state, library, input),
         other => Err(format!("there is no tool called `{other}`")),
     };
     result.unwrap_or_else(Prepared::Invalid)
@@ -259,7 +341,9 @@ fn check(schema: &Value, value: &Value, at: &str) -> Result<(), String> {
 }
 
 /// The tool result after a change was applied: what changed and any problems
-/// at the changed elements.
+/// at the changed elements. Of the new elements, those inside a new
+/// definition or usage are counted, not listed (a copied building block
+/// brings many), and documentation is left out.
 pub fn describe_event(state: &SystemState, event: &ChangeEvent) -> String {
     let tree = state.tree();
     let list = |ids: &[ElementId]| {
@@ -277,7 +361,34 @@ pub fn describe_event(state: &SystemState, event: &ChangeEvent) -> String {
     };
     let mut lines = vec![format!("Applied: {}", event.description)];
     if !event.created.is_empty() {
-        lines.push(format!("Created: {}", list(&event.created)));
+        let inside_new = |id: &ElementId| {
+            tree.get(*id).and_then(Element::owner).is_some_and(|owner| {
+                event.created.contains(&owner) && tree[owner].kind != ElementKind::Package
+            })
+        };
+        let shown: Vec<ElementId> = event
+            .created
+            .iter()
+            .copied()
+            .filter(|id| {
+                !inside_new(id)
+                    && tree
+                        .get(*id)
+                        .is_some_and(|e| !matches!(e.kind, ElementKind::Doc | ElementKind::Comment))
+            })
+            .collect();
+        let members = event
+            .created
+            .iter()
+            .filter(|id| {
+                inside_new(id) && tree.get(**id).is_some_and(|e| e.kind != ElementKind::Doc)
+            })
+            .count();
+        let mut line = format!("Created: {}", list(&shown));
+        if members > 0 {
+            line.push_str(&format!(" (with {members} member(s) inside them)"));
+        }
+        lines.push(line);
     }
     if !event.updated.is_empty() {
         lines.push(format!("Changed: {}", list(&event.updated)));
