@@ -182,6 +182,7 @@ decisions named in each row.
 | Local models and Gemini | Not in this phase (C-35); the provider layer keeps the door open (Q-12) |
 | Typed fast-decision APIs other than Jev | Not in this phase; Jev is a model provider for fast agents (C-35, Q-11) |
 | Spending limits | Not in this phase; costs are shown, not capped (C-37) |
+| A marketplace, cloud registry, package manager or vendor catalogue of building blocks | Not a goal; the Library is local, and a project keeps its own copies of what it uses (C-49) |
 
 ---
 
@@ -322,6 +323,26 @@ This is also the proof that Agentique can take on an existing, messy codebase:
 reading an existing codebase into a model before switching to "model as
 contract" (Q-7).
 
+### 2.9 Scenario H: reusing building blocks (Stage 5, C-49)
+
+The Operator builds with reusable definitions instead of modelling common
+structure from scratch. A building block is an ordinary definition (§4.13);
+the Library finds it in the built-in library, the project and My Library.
+
+| Step | What the Operator does | Observable success | Failure and recovery behaviour |
+|---|---|---|---|
+| H1 | Opens the Library beside the Outline (Ctrl+Shift+L) and types "cache". | Results change with each key (within one frame at 5,000 blocks, §3.3), each showing its kind, source, purpose and public ports; the arrow keys move through them; a preview shows the selected block's ports, inner parts and connections. | No match shows the nearest names. |
+| H2 | Inserts `CachedStore` into a part: Enter, "Insert from Library…" in the palette, or dragging it onto the Surface. | One card appears, typed by the block and showing its ports; the definitions it needs are copied into the project's `Library` package in the same change; the new card is selected with its name ready to edit. History says "Add cachedStore : CachedStore from the Library". | Inside a locked part the lock prompt asks first; Ctrl+Z removes all of it in one step. |
+| H3 | On a port, chooses "What can connect here?", then inserts and connects a block. | Only blocks with a port that fits by the model's own rule are offered; the usage and its connection arrive in one change. | A block that does not fit is not offered; a refused connection says why. |
+| H4 | Opens the usage's definition (Enter or double-click) and goes back (Backspace or Alt+←). | The Surface shows the definition's inside under a breadcrumb; Back returns to the usage where it was. | — |
+| H5 | Changes a port or attribute shown on the usage through its type. | The Studio asks whether to change the definition (naming every usage it changes), override it in this usage only, or create a specialisation; the definition changes only when chosen. | Cancel leaves everything as it was. |
+| H6 | Selects connected parts and chooses "Create building block from selection". | A preview lists the new definition's ports and the connections that will pass through them; one undoable change replaces the parts with a usage of the new definition, and the parts keep their identity. | A connection that reaches a part without a port is named, and nothing changes until it is fixed. |
+| H7 | Saves a definition to My Library, opens another project and inserts it there. | The other project gets its own copies: it validates without My Library, and changing My Library later changes no project. | A different definition with the same name is never overwritten: the Operator uses the project's, copies under another name, or cancels. |
+| H8 | Asks the Assistant for a cached store, and later for something no block fits. | For the first, the Assistant searches and reads the Library and uses the block in one visible, undoable change; for the second, it models a plain project definition instead of forcing a block. | Saving to My Library needs the Operator's request and a visible confirmation. |
+
+**Stage mapping.** H1–H8 are W5.13 (§6.3). The journey `h-library` covers
+them without the network, with a scripted stand-in for H8 (R-47).
+
 ---
 
 ## 3. Quality bar
@@ -414,8 +435,11 @@ licence check.
   change marks and removal ghosts; minimap; zoom controls; "Colour by…" overlay
   with legend (IcePanel tags [59]); named level-of-detail tiers with explicit
   zoom thresholds (Unreal's graph LOD, ComfyUI's low-detail threshold [57][58]).
-- **Panels:** Outline; Inspector (label and value rows, inline validation);
-  Requirements; Problems; History (checkpoints and "what changed").
+- **Panels:** Outline; Inspector (label and value rows, inline validation;
+  definition, usages, overrides and specialisations of a building block);
+  Requirements; Problems; History (checkpoints and "what changed"); Library
+  (search with marked matches, scope and kind filters, result rows, a
+  structural preview, a drag ghost; C-49).
 - **Command:** command palette with groups, keywords, shortcuts, recent items,
   empty and loading states (Raycast's action panel: Enter runs the primary
   action, every action lists its shortcut [53]); context menu with the same
@@ -458,6 +482,7 @@ measured.
 | Edit to Surface | ≤ 16.7 ms at Scenario A size; ≤ 50 ms at 1k; ≤ 100 ms at 10k (C-33) | derived: about 11 ms; about 120 ms; about 2.7 s (apply and save 5 ms, plus a full scene rebuild: 0.1 ms, 114 ms, 2,662 ms, plus one frame) | A journey step timing from apply to the first frame that shows it; CI ceilings on apply plus scene update |
 | Send to first visible response | ≤ 100 ms to show the message and a "working" status; model output as it streams | not measured | Conversation journey timing |
 | Conversation rendering | p95 frame ≤ 8.3 ms while streaming at 100 tokens per second; first paint of a reopened 200-message conversation ≤ 150 ms | a normal conversation rendered in under 0.5 ms per frame (Stage 2 prototype, `docs/stages.md`) | Conversation fixture in the harness (shared with S4.1, G3) |
+| Library search | ≤ 8 ms per keystroke at 5,000 blocks (CPU) | 2.4 ms (release, W5.13) | CI test ceiling in a release build (`agq-library`) |
 | Memory | ≤ 300 MB private at Scenario A size; ≤ 450 MB at 10k; no growth over a 30-minute soak *(provisional until R-44)* | 351–353 MB private (322–325 MB working set) on the start screen and with URL shortener projects; 508–525 MB private at 10k | Harness reports peak private bytes; soak run at stage ends |
 
 Feedback within 100 ms and a visible status for anything that takes more than
@@ -467,7 +492,7 @@ about 400 ms follow common responsiveness guidance [67].
 
 - **CI (every pull request):** CPU-side work only, because the CI runner has no
   GPU: System State apply at 2k and 10k elements, scene update at 1k and 10k,
-  layout and routing, label layout. Ceilings are set at about twice the target
+  layout and routing, label layout, Library search at 5,000 blocks. Ceilings are set at about twice the target
   so noise does not fail builds, and tightened as the numbers settle. A budget
   not met yet (the full scene build when a 10k project opens: 1.9 s after
   S5.1, against 1 s) has an interim ceiling at about three times today's
@@ -621,6 +646,7 @@ interfaces studied (R-24):
 | **Assistant** (later the Orchestrator) | Turning intent into changes to the System State through typed tools; mapping new ideas onto the architecture first; showing its plan; asking about major decisions (in the default mode); proposing notes; later, simulation and implementation | Silently changing locked parts; acting outside its tools; claiming results it did not observe; remembering anything the Operator has not approved |
 | **Language core** | Meaning and validity of the System State under the chosen KerML/SysML subset, including the built-in `Agents` library (§4.11) | UI, AI transport, persistence format |
 | **System State service** | Holding the live state; applying changes atomically; enforcing locks; publishing change events | Deciding intent |
+| **Library** (C-49) | Finding, describing and searching reusable definitions (the built-in blocks, the project's, My Library); working out what a block needs; planning its use, specialisation, overrides, extraction and saving as ordinary System State changes (§4.13) | Meaning and validity (the language core); applying changes and locks (the System State); drawing (the Studio) |
 | **History (git)** | Durable checkpoints, branches and past states | Live editing state |
 | **Providers** (new) | Talking to model providers through rig; keys in the OS credential store; model lists and capabilities; usage and cost figures | Control over the System State; the Assistant's policy; being required for manual work |
 | **Model providers** (Anthropic, OpenAI, OpenRouter, DeepSeek; TypeSafe AI's Jev for fast agents only) | Language reasoning behind the Assistant and, later, behind live evaluations of agents; Jev answers typed questions for fast agents and never serves the Assistant | Anything else |
@@ -745,6 +771,7 @@ cut across parts start there**, in the same change, and the check stays green.
 | Stage 5 (W5.7) | Map `part 'agq-providers' : Crate;` into `Providers`; remove `reqwest` from `agq-assistant` | The crate exists |
 | Stage 6 (W6.10) | Model the Assistant as the first agent: `part def Assistant :> Agents::Agent`, with ports for its tools towards the System State and requirements for its guardrails (locks need confirmation; output is untrusted; every change is visible and undoable) and no `fallback` part: when the Assistant fails, the Operator carries on by hand, which a requirement states (a failed provider never blocks manual work) (C-44) | Dogfooding (C-13, C-20); a real example of the concept |
 | Stage 6 (W6.10) | Add the standard `dependency` relationship to the subset (a recorded locked-core decision) so that CI can validate `models/agentique/` with `agq-language`; `check_architecture.py` ignores constructs it does not need instead of rejecting them | Our own language core checks our own model (R-41) |
+| Stage 5 (W5.13) | Add `part def Library` with the crate `agq-library`: "finds, describes and searches reusable definitions and plans their use as System State changes" (C-49). Add `dependency from Library to SystemState`, `from Library to LanguageCore`, `from Studio to Library` and `from Assistant to Library`; the check keeps UI and network libraries out of it | One service used alike by the Surface, the palette and the Assistant; it is neither the System State's job (the live state and its changes) nor the Assistant's (the AI turn loop) |
 | Stage 7 | `Simulation` gets its crate; if live evaluations of agents need providers, add `dependency from Simulation to Providers` or a separate part (Q-20) | Decided with the simulation design |
 | Stage 8 | `ImplementationLinks` gets its crate | — |
 
@@ -752,8 +779,9 @@ cut across parts start there**, in the same change, and the check stays green.
 listed; not transitive):
 
 ```text
-Studio → SystemState, Studio → Assistant, Studio → LanguageCore, Studio → Providers
-Assistant → SystemState, Assistant → LanguageCore, Assistant → Providers
+Studio → SystemState, Studio → Assistant, Studio → LanguageCore, Studio → Providers, Studio → Library
+Assistant → SystemState, Assistant → LanguageCore, Assistant → Providers, Assistant → Library
+Library → SystemState, Library → LanguageCore
 SystemState → LanguageCore, SystemState → History
 Simulation → LanguageCore            (Stage 7 may add → SystemState, → Providers)
 ImplementationLinks → SystemState
@@ -768,7 +796,10 @@ This phase needs three such decisions, all in Stage 6: adding `enum def` and
 enumeration values to the subset; adding the built-in `Agents` library (C-42
 approves the approach; the exact text is confirmed at W6.9); and adding the
 standard `dependency` relationship to the subset, so that our own core can
-validate our own model (R-41).
+validate our own model (R-41). C-49 (Stage 5) adds a smaller one: the language
+core exposes its existing lookup and port rule as a read-only query
+(`Semantics`), so the Library keeps no second copy of a rule; no construct,
+rule or meaning changes (§4.13).
 
 ### 4.7 Where rig sits and what it may touch (C-34)
 
@@ -895,6 +926,7 @@ asks the table, never the provider's name. When a capability is missing:
 | Session (last project, cameras, layouts) | `%APPDATA%\Agentique\studio-session.json` (exists) | JSON; theme, contrast and reduced motion move to settings | Studio |
 | Per-project data | `%APPDATA%\Agentique\projects\<folder>-<hash>\` | `conversation.json` (format 2, R-23; today's `conversations\` files move here in W5.7), `notes.md`, `skills\<name>\SKILL.md` *(provisional for notes and skills, Q-10)* | Studio and Assistant |
 | App-wide notes and skills | `%APPDATA%\Agentique\notes.md`, `%APPDATA%\Agentique\skills\<name>\SKILL.md` | Markdown; one note per `- ` line; skills in the Agent Skills format [21] | Assistant |
+| My Library (the Operator's building blocks, C-49) | `%APPDATA%\Agentique\library\My Library.sysml` (beside the session file) | SysML text under the package `Library`, read with the language core, written atomically; no project refers to it, since using a block copies it (§4.13) | Library |
 | The model | `<project>/model/` in git | Locked persistence format (§4.5) | History |
 
 **Key handling contract** (R-25):
@@ -950,8 +982,10 @@ converge on [18][19]:
 6. After the turn: a turn summary (changes, problems before and after, tokens,
    estimated cost); compaction if the conversation is long (R-33).
 
-**Tools.** Five exist; three are added. None but `apply_changes` changes the
-System State.
+**Tools.** Five exist; three are added in Stage 6 and four Library tools in
+Stage 5 (C-49). None but `apply_changes` and `use_library_block` changes the
+System State; `save_to_library` changes only My Library, after the Operator
+confirms.
 
 | Tool | Purpose | Status |
 |---|---|---|
@@ -963,6 +997,10 @@ System State.
 | `update_plan` | The plan card: 3–7 steps of a few words, statuses pending, running, done; one running. Used for tasks of three or more steps; re-sent after compaction (after Codex's `update_plan` [29]) | Stage 6 |
 | `read_skill` | Read the body of a skill listed by name and description (progressive disclosure [21]) | Stage 6 |
 | `propose_note` | Propose a short note (project or app-wide) for the Operator to accept, edit or reject | Stage 6 |
+| `search_library` | Find building blocks by words, kind, scope and fit with a port; concise results (§4.13) | Stage 5 (W5.13) |
+| `read_library_block` | One block in words: purpose, identity, ports and what they carry, parts, connections, settings, requirements, what it needs, whether the project has it | Stage 5 (W5.13) |
+| `use_library_block` | One change: copy what the block needs into the project, add a usage (with values and an optional connection) | Stage 5 (W5.13) |
+| `save_to_library` | Save a project definition to My Library, only when the Operator asked, after a visible confirmation | Stage 5 (W5.13) |
 
 Every tool result is capped at about 8,000 tokens, with a message that says how
 to narrow the request (Anthropic's guidance on tool results, which notes that
@@ -1186,6 +1224,63 @@ evaluation's pass rate meets the agent's requirement. A failing check is drift.
 - **Performance is part of correctness.** Budgets (§3.3) are checked
   continuously; a regression is a failing check, not a note.
 
+### 4.13 The Library: reusable building blocks (C-49)
+
+The Operator and the Assistant build with reusable definitions instead of
+modelling common structure from scratch. A **building block** is not a new
+kind of element: it is any reusable definition (part, port, item,
+attribute, interface, connection or requirement definition). A composite
+block is a part definition with its own parts and connections behind its
+ports. Using a block creates a usage typed by the definition, never a copy
+of its inside: inherited features stay lookup (D-1).
+
+**Three scopes, one experience** (R-47):
+
+| Scope | What | How it is used |
+|---|---|---|
+| Built-in | About 30 neutral software definitions in `crates/library/blocks/Library.sysml`: requests, responses, messages and events; request and message ports and interfaces; service, gateway, proxy, rate limiter, authenticator; store, key-value store, cache; queue, topic, worker, scheduler; retry, circuit breaker, fallback; the composites cached store, rate-limited API, asynchronous worker and event processing. Also the standard `ScalarValues` | Copied into the project on use; standard definitions are referred to |
+| Project | Every definition of the open project, where it is | Used directly, without a copy |
+| My Library | The Operator's own blocks, saved from any project (§4.9) | Copied into the project on use |
+
+- **Projects stay self-contained.** Using a built-in or My Library block
+  copies its dependency closure (the definitions it refers to, transitively,
+  except the standard library) into the project's own `Library` package,
+  under the same qualified names, in the same change as the usage. An
+  identical copy already there is reused. A different definition with the
+  same name is never overwritten: the Operator uses the project's, copies
+  under another name, or cancels. Changing My Library or upgrading Agentique
+  never changes a project.
+- **What a block says about itself comes from the model.** Name, category
+  (package), purpose (`doc`), kind, ports, parts, requirements and
+  relationships are read from the definitions. Where a project definition
+  came from is derived: the same qualified name as a built-in or My Library
+  block, with the same content or changed. Nothing else is stored.
+- **One rule engine.** Which blocks fit a port is decided by the language
+  core's own rule (`Semantics::ports_fit`, the `incompatible-ends` rule),
+  with candidates copied into a scratch copy of the project first.
+- **One operation path.** The Library plans each action (use, specialise,
+  override, create a block from a selection) as one ordinary System State
+  change, tried on a copy first; the Surface, the palette and the Assistant
+  apply it like any other change: locks ask, undo reverts it in one step,
+  history describes it in words.
+- **Customising safely.** Changing a definition shared by usages names them
+  first (the shared-definition confirmation, extended). A variant is a
+  specialisation (`:>`), created beside the Operator's own definitions,
+  never inside the copied `Library` package; a local change is a
+  redefinition (`:>>`) inside the usage. The Studio calls these "Edit
+  definition", "Specialise" and "Override here" and never shows the syntax.
+- **The Assistant uses the same service** through four tools (§4.10). Its
+  modelling skill asks, before inventing a common concept: does the project
+  have it; does a Library block fit; should one be specialised; or is the
+  concept different? It reuses only when the meaning fits.
+- **Not in scope:** a marketplace, cloud sync, accounts, ratings, remote
+  repositories, vendor catalogues, scripting or plug-ins. An "update from
+  the Library" command waits for a need; the derived origin makes it
+  possible (show the difference, apply deliberately, never in the
+  background).
+- **The `Agents` library** (§4.11) joins the same browser when it arrives in
+  Stage 6, as standard definitions that are referred to, not copied.
+
 ---
 
 ## 5. Current-state alignment
@@ -1258,6 +1353,7 @@ single runs unless noted; raw outputs are kept outside the repository.
 | Area | Disposition | Reason |
 |---|---|---|
 | `crates/language` | **Keep** (locked core); in Stage 6 add `enum def` and the `Agents` library with recorded decisions | C-23, C-42, R-16 |
+| `crates/library` | **New** (C-49): the Library service and the built-in blocks | §4.13 |
 | `crates/system-state` | **Keep** (locked operations); previews reuse "try on a copy" and the "what changed" comparison | C-25, R-29 |
 | `crates/history` | **Keep** (locked format) | C-24 |
 | `crates/assistant`: turn loop, tools, conversation, tests | **Keep and extend** (plan, notes, skills, steering, compaction, autonomy modes) | R-21 |
@@ -1529,6 +1625,14 @@ selectable (C-34, C-35), and behaves as in Stage 3.
 - **W5.10 Accessibility** (§3.5).
 - **W5.11 Quality-of-life "must" items** (§3.4).
 - **W5.12 Journeys** `d-daily` and `e-settings`; existing journeys updated.
+- **W5.13 Library** (C-49, §4.13, Scenario H): the `agq-library` crate and its
+  built-in blocks; the Library panel beside the Outline with search, scopes,
+  kinds and a structural preview; insertion by keyboard, palette, context
+  menu and drag; "What can connect here?"; opening a definition and going
+  back; Edit definition, Specialise and Override here; creating a block from
+  a selection; My Library; the Assistant's Library tools and skill;
+  evaluation tasks that tell appropriate reuse from blind reuse; the journey
+  `h-library`.
 
 **Spike S5.1: incremental layout** (two days, before W5.5 fans out). Decide how a
 change maps to the containers and edges it affects, keeping unrelated cards
@@ -1548,8 +1652,8 @@ drawing parameters from tokens; the settings table's first rows; the
   are green.
 - The Operator performs Scenario E with real keys for every supported
   provider.
-- Journeys `a-build`, `a-crash`, `a-reopen`, `a-assistant`, `d-daily` and
-  `e-settings` pass.
+- Journeys `a-build`, `a-crash`, `a-reopen`, `a-assistant`, `d-daily`,
+  `e-settings` and `h-library` pass.
 
 **Depends on:** Stage 4. **Waits:** plan, steering, notes, skill files,
 compaction, autonomy modes, agents.
@@ -1746,6 +1850,7 @@ Confirmed in the interview of 2026-09-27:
 | C-46 | An agent in a designed system is implemented in the project's own code, linked and checked (provisional until Q-2) |
 | C-47 | `ROADMAP.md` replaces `REALIGNMENT.md` as the single governing text; `REALIGNMENT.md` is retired to git history |
 | C-48 | The Studio moves from egui to GPUI (a pinned snapshot of Zed's GPUI, `gpui-pre`, with the unstyled `gpui-base` primitives), with its presentation redesigned; the Operator accepts the governance risk and waives S4.1 Track B's gates. The Surface is drawn with GPUI's own primitives, since GPUI cannot show wgpu output on Windows |
+| C-49 | Agentique has a **Library** of reusable building blocks: reusable KerML/SysML definitions from a small built-in library, the project and My Library, found, previewed, inserted, connected, specialised, overridden and created from existing architecture by the Operator and the Assistant alike. Using a block creates a usage typed by the definition, and a project keeps its own copies of what it uses; there is no parallel component model, marketplace or remote registry (the Operator's decision, 2026-09-29) |
 
 ### 7.2 Recommendations
 
@@ -1805,6 +1910,7 @@ Confirmed in the interview of 2026-09-27:
 | R-44 | Investigate the memory footprint in Stage 5 (the renderer on Windows, font atlas, buffers) before fixing the memory budgets | §5.2: 322 MB at rest, not understood |
 | R-45 | The evaluation set also compares default models and effort (for example `claude-opus-5` at `high` against `claude-opus-5-5` at `medium` and `high`) and every Assistant provider (Anthropic, OpenAI, OpenRouter, DeepSeek) before any default changes | Q-19; C-27 |
 | R-46 | A three-step first run (what Agentique is; connect a provider or skip; create or open a project), with the URL shortener as a sample | Scenario E1 |
+| R-47 | The Library as in §4.13: a new part Library (crate `agq-library`) above the language core and the System State; blocks copied with their dependency closure into the project's `Library` package, identical copies reused and conflicts never overwritten; origin derived from qualified names and content, never stored; fit with a port decided by the language's own rule through the read-only `Semantics` query (the one locked-core addition); My Library as one SysML file in the app's local data; four Assistant tools, saving to My Library only at the Operator's request and after a confirmation; the journey `h-library` with a scripted stand-in | C-49; §8.1 rules 4–6; D-1 |
 
 ### 7.3 Assumptions
 
@@ -1900,6 +2006,9 @@ The ADRs named here are preserved at the tag `archive/pre-realignment`.
 | 2026-09-28 | Stage 5 details decided overnight: appearance (theme, contrast, reduced motion) lives in `settings.json`, and a Stage 4 session hands its values over once; "per day" costs (R-42) are UTC days, since the workspace has no date library and the local time zone needs a Windows call; the first run's welcome (R-46) shows until a first project is opened, and the URL shortener sample is created as a new project beside the default folder; Shift+1 and Shift+2 are read by the key's place on the keyboard. Decided overnight 2026-09-28, pending Operator confirmation | §3.7, R-42, R-46, Scenario D2 |
 | 2026-09-28 | **C-48, the Operator's decision:** the Studio moves from egui to GPUI and its presentation is redesigned (W5.1). The Operator accepts the governance risk (the official `gpui` crate has been frozen at 0.2.2 since 2025-10-22; the Studio pins the weekly snapshot `gpui-pre =0.3.7` with the unstyled `gpui-base =0.7.0`) and waives S4.1 Track B's gates; A-5 and Q-6 are closed. The Operator also accepts a screen-reader regression if GPUI falls short; `gpui-pre-windows` 0.3.7 carries AccessKit, so the §3.5 names are kept where it exposes them. The wgpu renderer (`gpu.rs`, `scene.wgsl`) is replaced by GPUI's quads, paths and text; GPU timestamps are no longer measured (§3.3). A probe on the reference machine drew the 10k stress fixture with every edge and label at frame interval p95 about 14 ms, and 1k at the display rate | The Operator's instruction in this session; GPUI's ceiling on text, motion and components (S4.1 "Why these two") |
 | 2026-09-28 | W5.1 on GPUI, results: egui, eframe and wgpu are gone from the Studio; the Surface, Panels, Conversation, palette, dialogs, welcome and Settings are redrawn on one design system (`ui/`: theme roles from the tokens, Lucide icons, buttons, fields, menus, dialogs, tooltips, chips, switches, a segmented control) with springs that reduced motion turns off, and `--fixture components` shows every token and component, the real Surface and the real Conversation. All six journeys pass through GPUI's own input dispatch (`a-build` 74 steps, `a-crash` exits 3 by design, `a-reopen` 15, `a-assistant` 19, `d-daily` 20, `e-settings` 16), in the light and dark themes. Reference run (release, 165 Hz display): start to first paint 251 ms warm (budget 400); 1k pan and zoom frame interval p95 6.3 and 6.2 ms (8.3); 10k 13.1 and 12.6–12.7 ms over two runs (16.7); chat, 200 messages, scroll p95 6.3 ms and streaming 6.6 ms. Decided on the way: Inter ships as three static instances (400, 500, 600) made from Inter Variable, because GPUI's Windows text system does not select a variable font's weights (with the variable file every weight drew as one face); in a view with more than 6,000 edges, route jogs under a pixel are not drawn, and a Surface query that covers a quarter of the model or more walks the scene instead of the grid (same content and order); below Features, lines too small to read are drawn as bars ("greeked") and a port label that would run into its card's text is left out (the port and its hover details stay). Screen-reader names are kept through GPUI's AccessKit roles; the three egui UI tests became tests of the functions the views draw with. Decided in this session under the Operator's instruction, pending the Operator's use and acceptance (§8.3) | C-48; W5.1; §3.3 budgets; §3.2 |
+| 2026-09-29 | **C-49, the Operator's decision:** a Library of reusable building blocks (§4.13, Scenario H), built in Stage 5 as W5.13 | The Operator's instruction in this session: build with reusable KerML/SysML definitions instead of assembling every system from individual elements |
+| 2026-09-29 | Locked core, under C-49: `agq-language` exposes its existing lookup (features, types, generals, specialisation) and its port rule (`incompatible-ends`, deviation 8) as the read-only query `Semantics`. No construct, rule or meaning changes; the System State operations and the persistence format are unchanged | The Library must use the model's own rules, not a copy of them (C-49) |
+| 2026-09-29 | R-47 adopted with C-49: the part Library and its crate in the self-model with its dependencies; My Library's location (§4.9); four Assistant tools (§4.10); a Library search budget (§3.3) with a CI ceiling; glossary entries for Library, building block and My Library | §8.1 rules 5 and 6; §8.4 |
 
 ### 7.7 The original requirements
 
@@ -2001,7 +2110,8 @@ on `main` at `6fc90b78`; its retained content is in this document (§4.2, §4.5,
   "receipt", "frontier", "authority", "fabric" or "rematerialization".
 - **Product nouns** are fixed here: Studio, Surface, Panels, Conversation,
   Assistant, Orchestrator (later), System State, Settings, lock, scenario,
-  simulation, implementation link, drift, agent, autonomy mode.
+  simulation, implementation link, drift, agent, autonomy mode, Library,
+  building block, My Library (C-49).
 - A new product term needs a reason that no standard term fits, and an entry in
   the glossary (§9).
 
@@ -2089,6 +2199,9 @@ on `main` at `6fc90b78`; its retained content is in this document (§4.2, §4.5,
 | **Scenario (simulation)** | A defined sequence of interactions run against the architecture |
 | **Implementation link** | A link from a model element to code, tests or a running service |
 | **Drift** | A detected difference between the model and a linked implementation |
+| **Library** | The Studio's collection of reusable definitions, shown as building blocks: the built-in blocks, the project's own definitions and My Library (§4.13) |
+| **Building block** | A reusable definition as the Library shows it: atomic (one definition) or composite (a part definition with its own parts, ports and connections) |
+| **My Library** | The Operator's own building blocks, kept in the app's local data for use in any project; using one copies it into the project |
 | **Archive tag** | `archive/pre-realignment`, the preserved state before Stage 0 |
 
 ---

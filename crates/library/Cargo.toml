@@ -1,0 +1,13 @@
+[package]
+name = "agq-library"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "The Library: reusable definitions (building blocks) found, described and used through ordinary System State changes"
+
+[dependencies]
+agq-language = { path = "../language" }
+agq-system-state = { path = "../system-state" }
+
+[dev-dependencies]
+tempfile.workspace = true

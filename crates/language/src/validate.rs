@@ -20,10 +20,7 @@ pub struct Diagnostic {
 
 /// Validates the whole tree. Diagnostics come in document order.
 pub fn validate(tree: &Tree) -> Vec<Diagnostic> {
-    let mut checker = Checker {
-        model: Model::new(tree, library()),
-        out: Vec::new(),
-    };
+    let mut checker = Checker::new(tree);
     checker.check_duplicates();
     let order = tree.walk();
     for &id in &order {
@@ -35,12 +32,20 @@ pub fn validate(tree: &Tree) -> Vec<Diagnostic> {
     checker.out
 }
 
-struct Checker<'a> {
-    model: Model<'a>,
+pub(crate) struct Checker<'a> {
+    pub(crate) model: Model<'a>,
     out: Vec<Diagnostic>,
 }
 
-impl Checker<'_> {
+impl<'a> Checker<'a> {
+    /// A checker that reports nothing yet, for queries (`Semantics`).
+    pub(crate) fn new(tree: &'a Tree) -> Self {
+        Checker {
+            model: Model::new(tree, library()),
+            out: Vec::new(),
+        }
+    }
+
     fn report(&mut self, id: ElementId, code: &'static str, message: String) {
         self.out.push(Diagnostic {
             element: id,
@@ -771,7 +776,12 @@ impl Checker<'_> {
     /// when the ports face each other, of the same direction when `a` passes
     /// items on to an inner part's port `b` (`delegation`). What is sent must
     /// be (a specialisation of) what is received.
-    fn port_mismatch(&self, a: ElementId, b: ElementId, delegation: bool) -> Option<String> {
+    pub(crate) fn port_mismatch(
+        &self,
+        a: ElementId,
+        b: ElementId,
+        delegation: bool,
+    ) -> Option<String> {
         let (items_a, items_b) = (self.directed_features(a), self.directed_features(b));
         for (name, direction, ty) in &items_a {
             let Some((_, other_direction, other_ty)) = items_b.iter().find(|(n, _, _)| n == name)

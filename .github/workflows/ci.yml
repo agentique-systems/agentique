@@ -34,3 +34,4 @@ jobs:
         run: |
           cargo test --locked --release -p agq-system-state --test performance -- --nocapture --test-threads=1
           cargo test --locked --release -p agq-studio-scene --test budgets -- --nocapture --test-threads=1
+          cargo test --locked --release -p agq-library --test library search_stays_fast -- --nocapture --test-threads=1

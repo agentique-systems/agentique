@@ -137,6 +137,15 @@ name = "agq-language"
 version = "0.1.0"
 
 [[package]]
+name = "agq-library"
+version = "0.1.0"
+dependencies = [
+ "agq-language",
+ "agq-system-state",
+ "tempfile",
+]
+
+[[package]]
 name = "agq-providers"
 version = "0.1.0"
 dependencies = [
