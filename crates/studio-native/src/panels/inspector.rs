@@ -478,6 +478,11 @@ impl Fields {
                 .into_any_element();
         };
         self.sync(element, window, cx);
+        let can_edit = {
+            let studio = self.studio.read(cx);
+            studio.editable() && studio.dialog.is_none()
+        };
+        let reuse = super::reuse::section(&self.studio, element, can_edit, cx);
         let studio = self.studio.read(cx);
         let project = studio.project.as_ref().expect("checked above");
         let state = project.state();
@@ -524,7 +529,7 @@ impl Fields {
                     *c,
                     tree[*c].kind,
                     tree.effective_name(*c)
-                        .map_or_else(|| tree.qualified_name(*c), str::to_string),
+                        .map_or_else(|| crate::edit::display_name(tree, *c), str::to_string),
                 )
             })
             .collect();
@@ -731,6 +736,7 @@ impl Fields {
                         }),
                 ),
             )
+            .children(reuse)
             .child(super::group("Problems", Some(problems.len()), cx))
             .child(if problems.is_empty() {
                 div()
@@ -795,7 +801,7 @@ impl Fields {
                             })
                             .child(icon(kind_icon(kind)).size(13.0).color(theme.text_muted))
                             .child(div().text_color(theme.text_muted).child(kind.keyword()))
-                            .child(div().flex_1().min_w_0().font_family(theme::MONO).text_color(theme.text_secondary).child(label))
+                            .child(div().flex_1().min_w_0().overflow_hidden().text_ellipsis().whitespace_nowrap().font_family(theme::MONO).text_color(theme.text_secondary).child(label))
                     })),
                 )
             })

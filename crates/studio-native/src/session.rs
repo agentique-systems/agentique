@@ -75,6 +75,46 @@ impl Widths {
             conversation: clamp(self.conversation),
         }
     }
+
+    /// The widths drawn in a window `room` points wide with the columns
+    /// `shown` (Outline, Inspector, Conversation): the Surface keeps at least
+    /// a quarter of the window, so at 150% and 200% the columns narrow
+    /// instead of covering it. They give up their width above `MIN` first, in
+    /// proportion, and share what is left equally only when that is not
+    /// enough. The widths kept are unchanged.
+    pub fn fitted(self, shown: [bool; 3], room: f32) -> Widths {
+        let mut widths = [self.outline, self.inspector, self.conversation];
+        let shown_widths = || {
+            widths
+                .iter()
+                .zip(shown)
+                .filter(|(_, s)| *s)
+                .map(|(w, _)| *w)
+        };
+        let total: f32 = shown_widths().sum();
+        let count = shown.iter().filter(|s| **s).count() as f32;
+        let most = room * 0.75;
+        if total <= most || count == 0.0 {
+            return self;
+        }
+        let spare: f32 = shown_widths().map(|w| (w - Self::MIN).max(0.0)).sum();
+        let over = total - most;
+        for (width, shown) in widths.iter_mut().zip(shown) {
+            if !shown {
+                continue;
+            }
+            *width = if over <= spare {
+                Self::MIN.min(*width) + (*width - Self::MIN).max(0.0) * (1.0 - over / spare)
+            } else {
+                most / count
+            };
+        }
+        Widths {
+            outline: widths[0],
+            inspector: widths[1],
+            conversation: widths[2],
+        }
+    }
 }
 
 impl Default for Widths {
@@ -194,6 +234,31 @@ pub fn write_presentation(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn columns_narrow_to_leave_the_surface_a_quarter_of_the_window() {
+        let widths = Widths::default();
+        let all = [true, true, true];
+        let total = |w: Widths| w.outline + w.inspector + w.conversation;
+        // 100% on a 1600-point window: as they are.
+        assert_eq!(widths.fitted(all, 1600.0), widths);
+        // 150% (1067 points): they give up width above the minimum, in
+        // proportion, and keep their order.
+        let fitted = widths.fitted(all, 1600.0 / 1.5);
+        assert!((total(fitted) - 1600.0 / 1.5 * 0.75).abs() < 0.01);
+        assert!(fitted.outline >= Widths::MIN && fitted.outline < widths.outline);
+        assert!(fitted.outline < fitted.inspector && fitted.inspector < fitted.conversation);
+        // 200% (800 points): each at the minimum; narrower windows share.
+        let fitted = widths.fitted(all, 800.0);
+        assert!((fitted.outline - Widths::MIN).abs() < 0.01);
+        assert!((fitted.conversation - Widths::MIN).abs() < 0.01);
+        assert!((total(widths.fitted(all, 600.0)) - 450.0).abs() < 0.01);
+        // Only the columns shown count, and the others keep their widths.
+        assert_eq!(widths.fitted([true, false, false], 800.0), widths);
+        let two = widths.fitted([true, true, false], 700.0);
+        assert_eq!(two.conversation, widths.conversation);
+        assert!((two.outline + two.inspector - 525.0).abs() < 0.01);
+    }
 
     #[test]
     fn a_session_round_trips_and_remembers_recent_projects() {

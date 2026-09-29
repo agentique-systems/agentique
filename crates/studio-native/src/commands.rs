@@ -49,6 +49,14 @@ pub enum CommandId {
     HidePanels,
     ShowOutline,
     ShowInspector,
+    ShowLibrary,
+    InsertFromLibrary,
+    ConnectFromLibrary,
+    OpenDefinition,
+    FindUsages,
+    Specialize,
+    CreateBlock,
+    SaveToLibrary,
 }
 
 pub struct Command {
@@ -246,9 +254,9 @@ pub const COMMANDS: &[Command] = &[
     },
     Command {
         id: CommandId::LeaveFocus,
-        label: "Leave focus",
+        label: "Back",
         shortcut: "Backspace",
-        description: "Show the whole model again",
+        description: "Back to what the Surface showed before a definition was opened or an element focused (also Alt+Left)",
         key: Some("backspace"),
     },
     Command {
@@ -370,6 +378,62 @@ pub const COMMANDS: &[Command] = &[
         description: "The list of elements on the left; remembered per project",
         key: Some("ctrl-b"),
     },
+    Command {
+        id: CommandId::ShowLibrary,
+        label: "Library",
+        shortcut: "Ctrl+Shift+L",
+        description: "Reusable building blocks: search them, preview them and add them",
+        key: Some("ctrl-shift-l"),
+    },
+    Command {
+        id: CommandId::InsertFromLibrary,
+        label: "Insert from Library…",
+        shortcut: "Shift+A",
+        description: "Find a building block and add a usage of it to the selected part",
+        key: Some("shift-a"),
+    },
+    Command {
+        id: CommandId::ConnectFromLibrary,
+        label: "What can connect here?",
+        shortcut: "",
+        description: "Building blocks with a port that fits the selected port; add one and connect it",
+        key: None,
+    },
+    Command {
+        id: CommandId::OpenDefinition,
+        label: "Open definition",
+        shortcut: "Enter",
+        description: "Show the inside of the selected usage's definition; Backspace goes back (also F12)",
+        key: Some("enter"),
+    },
+    Command {
+        id: CommandId::FindUsages,
+        label: "Find usages",
+        shortcut: "Shift+F12",
+        description: "Every usage and specialisation of the selected definition",
+        key: Some("shift-f12"),
+    },
+    Command {
+        id: CommandId::Specialize,
+        label: "Specialise…",
+        shortcut: "",
+        description: "A new definition that specialises the selected one, for a variant; the original stays as it is",
+        key: None,
+    },
+    Command {
+        id: CommandId::CreateBlock,
+        label: "Create building block from selection…",
+        shortcut: "",
+        description: "Turn the selected parts into a reusable definition and one usage of it",
+        key: None,
+    },
+    Command {
+        id: CommandId::SaveToLibrary,
+        label: "Save to My Library…",
+        shortcut: "",
+        description: "Keep the selected definition for use in other projects",
+        key: None,
+    },
 ];
 
 /// Runs a command: the one action every shortcut, menu and palette row
@@ -406,6 +470,7 @@ const WHILE_TYPING: &[CommandId] = &[
     CommandId::NewProject,
     CommandId::OpenProject,
     CommandId::Checkpoint,
+    CommandId::ShowLibrary,
 ];
 
 /// Further keys for commands that have a shortcut of their own.
@@ -414,6 +479,8 @@ const ALIASES: &[(&str, CommandId)] = &[
     ("shift-=", CommandId::ZoomIn),
     ("+", CommandId::ZoomIn),
     ("ctrl-shift-z", CommandId::Redo),
+    ("alt-left", CommandId::LeaveFocus),
+    ("f12", CommandId::OpenDefinition),
 ];
 
 /// Where the Studio's shortcuts apply: anywhere in the workspace, except
@@ -474,6 +541,12 @@ pub struct CommandContext {
     pub can_redo: bool,
     pub graph_view: bool,
     pub focused: bool,
+    /// A port is selected.
+    pub port: bool,
+    /// The selection is a definition, or a usage typed by one.
+    pub definition: bool,
+    /// One or more parts are selected, and nothing else.
+    pub parts: bool,
 }
 
 /// Why a command cannot run now, in plain words; `None` when it can.
@@ -487,7 +560,7 @@ pub fn unavailable(id: CommandId, context: &CommandContext) -> Option<&'static s
         }
         CreatePart | CreatePort | CreateItem | CreateAttribute | CreateInterface
         | CreateRequirement | Rename | Delete | Connect | MoveTo | Lock | Undo | Redo
-        | Checkpoint
+        | Checkpoint | InsertFromLibrary | ConnectFromLibrary | Specialize | CreateBlock
             if !context.editable =>
         {
             Some("Open or create a project to edit")
@@ -505,7 +578,13 @@ pub fn unavailable(id: CommandId, context: &CommandContext) -> Option<&'static s
         Pin | Unpin if !context.graph_view || !context.selected => {
             Some("Select a card in the graph view")
         }
-        LeaveFocus if !context.focused => Some("Nothing is focused"),
+        LeaveFocus if !context.focused => Some("Nothing is open or focused"),
+        ConnectFromLibrary if !context.port => Some("Select a port first"),
+        OpenDefinition | FindUsages | Specialize | SaveToLibrary if !context.definition => {
+            Some("Select a definition, or a usage of one")
+        }
+        SaveToLibrary if !context.project => Some("Open a project first"),
+        CreateBlock if !context.parts => Some("Select one or more parts that share an owner"),
         AskAssistant | InsertSelection | NewConversation | ShowConversation if !context.project => {
             Some("Open or create a project to work with the Assistant")
         }

@@ -134,6 +134,7 @@ icons! {
     Help => "circle-question-mark",
     Save => "save",
     Loader => "loader-circle",
+    Library => "library",
 }
 
 /// Serves the icons and the fonts to GPUI.

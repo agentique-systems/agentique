@@ -114,6 +114,7 @@ name = "agq-assistant"
 version = "0.1.0"
 dependencies = [
  "agq-language",
+ "agq-library",
  "agq-providers",
  "agq-system-state",
  "reqwest 0.12.28",
@@ -166,6 +167,7 @@ version = "0.1.0"
 dependencies = [
  "agq-assistant",
  "agq-language",
+ "agq-library",
  "agq-providers",
  "agq-studio-scene",
  "agq-system-state",

@@ -5,8 +5,12 @@
 //! selects an area), Space+drag pans from anywhere, drag a card to move it
 //! (layout only), Alt+drag a card onto a container to move it into that
 //! container, drag from a port to a port or card to connect them,
-//! double-click renames in place. The wheel and a pinch zoom around the
-//! pointer; Shift+wheel pans across.
+//! double-click renames in place (or opens a composite's definition; Enter
+//! opens it too, Backspace goes back along the breadcrumb). A building block
+//! dragged from the Library (C-49) shows where it would go and which ports
+//! it would fit; dropped on a card it goes inside, dropped on a fitting port
+//! it goes beside that port's part, connected to it. The wheel and a pinch
+//! zoom around the pointer; Shift+wheel pans across.
 mod minimap;
 pub(crate) mod paint;
 
@@ -52,6 +56,16 @@ pub enum Gesture {
         card: ElementId,
         port: ElementId,
         now: Point,
+    },
+    /// A building block dragged from the Library: the card it would go
+    /// into and whether that card can hold it, a fitting port it would be
+    /// connected to, and every port in view one of its ports fits.
+    Insert {
+        block: agq_library::BlockRef,
+        now: Point,
+        target: Option<(ElementId, bool)>,
+        port: Option<(ElementId, ElementId)>,
+        fitting: std::collections::BTreeSet<(ElementId, ElementId)>,
     },
 }
 
@@ -266,6 +280,7 @@ impl SurfaceView {
                     *now = world;
                     studio.mark(Dirty::CAMERA);
                 }
+                Some(Gesture::Insert { .. }) => {}
             }
         });
     }
@@ -323,7 +338,17 @@ impl SurfaceView {
                     }
                     studio.panel = crate::studio::Panel::Inspector;
                     if double {
-                        let id = if studio.editable() {
+                        // A usage of a composite opens its definition.
+                        let composite = studio
+                            .project
+                            .as_ref()
+                            .zip(target.element_id())
+                            .is_some_and(|(p, e)| {
+                                crate::library::is_composite_usage(p.state().tree(), e)
+                            });
+                        let id = if composite {
+                            CommandId::OpenDefinition
+                        } else if studio.editable() {
                             CommandId::Rename
                         } else {
                             CommandId::Focus
@@ -343,6 +368,99 @@ impl SurfaceView {
         if rename {
             window.focus(&self.focus, cx);
         }
+    }
+
+    /// A block from the Library moves over the Surface: where it would go
+    /// and what it would fit are drawn.
+    fn drag_block(
+        &mut self,
+        event: &gpui::DragMoveEvent<crate::panels::library::LibraryDrag>,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let position = event.event.position;
+        if !self.bounds.get().contains(&position) {
+            if matches!(self.studio.read(cx).gesture, Some(Gesture::Insert { .. })) {
+                self.studio.act(cx, |studio| {
+                    studio.gesture = None;
+                    studio.mark(Dirty::CAMERA);
+                });
+            }
+            return;
+        }
+        let drag = event.drag(cx).clone();
+        let world = self.world(position, cx);
+        let hovered = self.hit(world, cx);
+        self.pointer = Some(position);
+        self.studio.act(cx, |studio| {
+            let fitting = match &studio.gesture {
+                Some(Gesture::Insert { block, fitting, .. }) if *block == drag.block => {
+                    fitting.clone()
+                }
+                _ => fitting_on_surface(studio, &drag.block),
+            };
+            let port = match &hovered {
+                Some(SceneTarget::Port(card, port)) if fitting.contains(&(*card, *port)) => {
+                    Some((*card, *port))
+                }
+                _ => None,
+            };
+            let target = drop_target(studio, hovered.as_ref(), drag.kind);
+            studio.gesture = Some(Gesture::Insert {
+                block: drag.block.clone(),
+                now: world,
+                target,
+                port,
+                fitting,
+            });
+            studio.mark(Dirty::CAMERA);
+        });
+    }
+
+    /// A block from the Library is dropped on the Surface.
+    fn drop_block(
+        &mut self,
+        drag: &crate::panels::library::LibraryDrag,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        let drag = drag.clone();
+        self.studio.act(cx, |studio| {
+            let gesture = studio.gesture.take();
+            let (target, port) = match gesture {
+                Some(Gesture::Insert { target, port, .. }) => (target, port),
+                _ => (None, None),
+            };
+            let tree = studio.project.as_ref().map(|p| p.state().tree());
+            let (parent, connect) = match (port, target) {
+                (Some((card, port)), _) => (
+                    tree.and_then(|t| t.get(card))
+                        .and_then(|e| e.owner())
+                        .map(Parent::Element),
+                    Some(agq_library::ConnectTo {
+                        card,
+                        port,
+                        with: None,
+                    }),
+                ),
+                (None, Some((card, true))) => (Some(Parent::Element(card)), None),
+                (None, Some((card, false))) => {
+                    let name = tree
+                        .and_then(|t| t.effective_name(card))
+                        .unwrap_or("that element");
+                    studio.status = format!(
+                        "{} cannot hold a {}: drop it on a part or on the Surface",
+                        name,
+                        agq_library::usage_kind(drag.kind).map_or("block", |k| k.keyword())
+                    );
+                    studio.mark(Dirty::CAMERA | Dirty::STATUS);
+                    return;
+                }
+                (None, None) => (Some(studio.model_package()), None),
+            };
+            studio.insert_block(drag.block.clone(), parent, connect);
+        });
+        window.focus(&self.focus, cx);
     }
 
     fn right_down(&mut self, event: &MouseDownEvent, window: &mut Window, cx: &mut Context<Self>) {
@@ -650,20 +768,34 @@ pub fn context_commands(target: Option<&SceneTarget>) -> &'static [CommandId] {
     match target {
         None => &[
             CreatePart,
+            InsertFromLibrary,
             CreateRequirement,
             Fit,
             Architecture,
             Graph,
             Requirements,
         ],
-        Some(SceneTarget::Port(..)) => &[Rename, Connect, Delete, Lock],
+        Some(SceneTarget::Port(..)) => &[
+            ConnectFromLibrary,
+            Rename,
+            Connect,
+            OpenDefinition,
+            Delete,
+            Lock,
+        ],
         Some(SceneTarget::Edge(_)) => &[Delete],
         Some(SceneTarget::Node(_) | SceneTarget::Container(_)) => &[
             Rename,
             CreatePart,
+            InsertFromLibrary,
             CreatePort,
             CreateAttribute,
             Connect,
+            OpenDefinition,
+            FindUsages,
+            Specialize,
+            CreateBlock,
+            SaveToLibrary,
             MoveTo,
             Lock,
             Delete,
@@ -673,6 +805,74 @@ pub fn context_commands(target: Option<&SceneTarget>) -> &'static [CommandId] {
             Unpin,
         ],
     }
+}
+
+/// The ports in view that one of a block's ports would fit, by the model's
+/// own rule: marked while the block is dragged (at most 300 ports).
+fn fitting_on_surface(
+    studio: &mut Studio,
+    block: &agq_library::BlockRef,
+) -> std::collections::BTreeSet<(ElementId, ElementId)> {
+    let view = studio.camera.visible_rect();
+    let shown: Vec<(ElementId, ElementId)> = studio
+        .scene
+        .ports
+        .iter()
+        .filter(|p| view.contains(p.position))
+        .take(300)
+        .map(|p| (p.owner, p.id))
+        .collect();
+    if shown.is_empty() {
+        return Default::default();
+    }
+    studio.library_index();
+    let Some(tree) = studio.project.as_ref().map(|p| p.state().tree()) else {
+        return Default::default();
+    };
+    let Some(index) = studio.library.index.position(block) else {
+        return Default::default();
+    };
+    let ids: Vec<ElementId> = shown.iter().map(|(_, id)| *id).collect();
+    let fits = studio
+        .library
+        .source
+        .fitting_ports(&studio.library.index, index, tree, &ids);
+    shown
+        .into_iter()
+        .filter(|(_, id)| fits.contains(id))
+        .collect()
+}
+
+/// The card a dragged block would go into, and whether that card can hold
+/// a usage of it.
+fn drop_target(
+    studio: &Studio,
+    hovered: Option<&SceneTarget>,
+    kind: agq_language::ElementKind,
+) -> Option<(ElementId, bool)> {
+    use agq_language::ElementKind::*;
+    let card = match hovered? {
+        SceneTarget::Node(id) | SceneTarget::Container(id) => *id,
+        SceneTarget::Port(card, _) => *card,
+        SceneTarget::Edge(_) => return None,
+    };
+    let tree = studio.project.as_ref()?.state().tree();
+    let owner = tree.get(card)?.kind;
+    let fits = match kind {
+        PartDef => matches!(owner, Package | PartDef | Part),
+        PortDef => matches!(owner, PartDef | Part | PortDef | Port),
+        ItemDef => matches!(
+            owner,
+            Package | PartDef | Part | ItemDef | Item | PortDef | Port
+        ),
+        AttributeDef => owner.is_definition() || owner.is_usage(),
+        RequirementDef => matches!(
+            owner,
+            Package | PartDef | Part | RequirementDef | Requirement
+        ),
+        _ => false,
+    };
+    Some((card, fits))
 }
 
 impl Render for SurfaceView {
@@ -743,6 +943,11 @@ impl Render for SurfaceView {
         let dt = last_frame.map_or(1.0 / 60.0, |last| last.elapsed().as_secs_f32());
         let compatible_hovered = hovered.clone();
         let studio_for_minimap = self.studio.clone();
+        let crumbs = if studio.drill.is_empty() {
+            Vec::new()
+        } else {
+            studio.breadcrumbs()
+        };
 
         div()
             .id("surface")
@@ -760,6 +965,8 @@ impl Render for SurfaceView {
             } else {
                 gpui::CursorStyle::Arrow
             })
+            .on_drag_move(cx.listener(Self::drag_block))
+            .on_drop(cx.listener(Self::drop_block))
             .on_mouse_down(MouseButton::Left, cx.listener(Self::mouse_down))
             .on_mouse_down(MouseButton::Right, cx.listener(Self::right_down))
             .on_mouse_move(cx.listener(Self::mouse_move))
@@ -892,6 +1099,9 @@ impl Render for SurfaceView {
             .when_some(comparison, |this, (before, after)| {
                 this.child(comparison_tag(before, after, self.studio.clone(), cx))
             })
+            .when(!crumbs.is_empty(), |this| {
+                this.child(breadcrumb(crumbs, self.studio.clone(), cx))
+            })
             .when(!empty, |this| {
                 this.child(zoom_control(zoom, self.studio.clone(), cx))
                     .child(minimap::Minimap::new(studio_for_minimap))
@@ -904,6 +1114,20 @@ impl Render for SurfaceView {
                         .top(rect.origin.y)
                         .w(rect.size.width.min(px(420.0)))
                         .occlude()
+                        // Escape keeps the name as it was.
+                        .on_key_down(cx.listener(|this, event: &KeyDownEvent, window, cx| {
+                            if event.keystroke.key == "escape" {
+                                cx.stop_propagation();
+                                this.rename = None;
+                                this.studio.act(cx, |studio| {
+                                    if matches!(studio.dialog, Some(crate::edit::Dialog::Rename { .. })) {
+                                        studio.dialog = None;
+                                    }
+                                    studio.mark(Dirty::OVERLAY);
+                                });
+                                window.focus(&this.focus, cx);
+                            }
+                        }))
                         .rounded(r(crate::tokens::radius::CONTROL))
                         .shadow(theme.shadow_overlay())
                         .child(TextField::new(&state).mono()),
@@ -938,11 +1162,15 @@ impl Render for SurfaceView {
     }
 }
 
-/// The ports a drag from a port can connect to, marked while dragging (D3).
+/// The ports a drag from a port can connect to, marked while dragging (D3);
+/// while a building block is dragged, the ports it would fit.
 fn compatible_ports(
     studio: &Studio,
     _hovered: Option<&SceneTarget>,
 ) -> std::collections::BTreeSet<(ElementId, ElementId)> {
+    if let Some(Gesture::Insert { fitting, .. }) = &studio.gesture {
+        return fitting.clone();
+    }
     let mut ports = std::collections::BTreeSet::new();
     if let Some(Gesture::Connect { card, port, .. }) = &studio.gesture {
         let view = studio.camera.visible_rect();
@@ -1019,6 +1247,70 @@ fn zoom_control(zoom: f32, studio: Entity<Studio>, cx: &App) -> impl IntoElement
                 .tooltip("Fit to view", Some(shortcut(CommandId::Fit)))
                 .on_click(run(CommandId::Fit)),
         )
+}
+
+/// Where the Surface is: the whole model, then each definition opened;
+/// a crumb goes back to it, and Back one step (Backspace, Alt+Left).
+pub(crate) fn breadcrumb(
+    crumbs: Vec<String>,
+    studio: Entity<Studio>,
+    cx: &App,
+) -> impl IntoElement {
+    let theme = cx.theme();
+    let last = crumbs.len().saturating_sub(1);
+    let back = studio.clone();
+    div()
+        .id("breadcrumb")
+        .absolute()
+        .top(r(12.0))
+        .left(r(12.0))
+        .max_w(gpui::relative(0.7))
+        .occlude()
+        .role(gpui::Role::Navigation)
+        .aria_label("Where you are: the whole model, then each definition opened")
+        .flex()
+        .items_center()
+        .gap(r(2.0))
+        .p(r(3.0))
+        .rounded(r(crate::tokens::radius::MENU))
+        .bg(theme.overlay.opacity(0.94))
+        .border_1()
+        .border_color(theme.border)
+        .shadow(theme.shadow_small())
+        .child(
+            Button::icon_only("breadcrumb-back", IconName::ChevronLeft, "Back")
+                .small()
+                .tooltip("Back", Some("Backspace"))
+                .on_click(move |_, _, cx| back.act(cx, |studio| studio.back())),
+        )
+        .children(crumbs.into_iter().enumerate().flat_map(|(depth, crumb)| {
+            let studio = studio.clone();
+            let separator = (depth > 0).then(|| {
+                div()
+                    .text_size(r(theme::text::SM))
+                    .text_color(theme.text_faint)
+                    .child("›")
+                    .into_any_element()
+            });
+            let item = if depth == last {
+                div()
+                    .px(r(6.0))
+                    .text_size(r(theme::text::SM))
+                    .font_weight(theme::SEMIBOLD)
+                    .font_family(theme::MONO)
+                    .text_color(theme.text)
+                    .whitespace_nowrap()
+                    .child(crumb)
+                    .into_any_element()
+            } else {
+                Button::new(("crumb", depth), crumb)
+                    .small()
+                    .ghost()
+                    .on_click(move |_, _, cx| studio.act(cx, |studio| studio.back_to(depth)))
+                    .into_any_element()
+            };
+            separator.into_iter().chain(std::iter::once(item))
+        }))
 }
 
 /// A tag above the Surface's content while it shows what changed.

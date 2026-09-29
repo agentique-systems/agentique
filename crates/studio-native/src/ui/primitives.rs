@@ -360,7 +360,14 @@ impl RenderOnce for Segmented {
                                     theme.text_muted
                                 }))
                             })
-                            .child(div().whitespace_nowrap().child(label))
+                            .child(
+                                div()
+                                    .min_w_0()
+                                    .overflow_hidden()
+                                    .text_ellipsis()
+                                    .whitespace_nowrap()
+                                    .child(label),
+                            )
                             .when_some(tooltip, |this, (title, shortcut)| {
                                 let tooltip = crate::ui::tooltip::text(title, shortcut);
                                 this.tooltip(move |window, cx| tooltip(window, cx))

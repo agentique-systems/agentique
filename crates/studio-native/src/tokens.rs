@@ -354,6 +354,13 @@ pub const COMPONENTS: &[Component] = &[
     component("Surface", "zoom controls", &[], &[]),
     component("Surface", "colour-by overlay", &["legend"], &[]),
     component("Surface", "level-of-detail tiers", &[], &[]),
+    component(
+        "Surface",
+        "card origin",
+        &["own", "inherited", "override"],
+        &[],
+    ),
+    component("Surface", "breadcrumb", &["Back"], &[]),
     // Panels.
     component("Panels", "outline", &[], &[]),
     component(
@@ -365,6 +372,37 @@ pub const COMPONENTS: &[Component] = &[
     component("Panels", "requirements", &[], &[]),
     component("Panels", "problems", &[], &[]),
     component("Panels", "history", &["checkpoints", "what changed"], &[]),
+    component(
+        "Panels",
+        "library",
+        &["search", "scopes", "kind filters", "fits filter"],
+        &["no results"],
+    ),
+    component(
+        "Panels",
+        "block row",
+        &["matched letters", "source"],
+        &["selected", "dragged"],
+    ),
+    component(
+        "Panels",
+        "block preview",
+        &["composite", "atomic", "requirement"],
+        &[],
+    ),
+    component("Panels", "drag ghost", &[], &[]),
+    component(
+        "Panels",
+        "definition section",
+        &["usage", "copied block", "definition"],
+        &[],
+    ),
+    component(
+        "Panels",
+        "inherited value",
+        &[],
+        &["inherited", "overridden"],
+    ),
     // Command.
     component(
         "Command",
@@ -380,7 +418,7 @@ pub const COMPONENTS: &[Component] = &[
     component(
         "Conversation",
         "assistant message",
-        &["element links"],
+        &["element links", "block links"],
         &["streaming"],
     ),
     component(

@@ -72,6 +72,8 @@ pub struct TextBlock {
     pub spans: Vec<(Range<usize>, Style)>,
     /// Element links, as byte ranges of `text`.
     pub links: Vec<(Range<usize>, ElementId)>,
+    /// Links to building blocks of the Library (`built-in:Library::…`).
+    pub blocks: Vec<(Range<usize>, agq_library::BlockRef)>,
     /// Nesting of lists and quotes.
     pub indent: usize,
     /// A list item's bullet or number.
@@ -428,14 +430,21 @@ impl Builder<'_> {
 
     fn code_span(&mut self, code: &str) {
         let element = (self.resolve)(code.trim());
+        // A building block named with its scope, as the Library tools write it.
+        let block = element
+            .is_none()
+            .then(|| agq_library::BlockRef::parse(code.trim()))
+            .flatten();
         let style = Style {
             code: true,
-            link: element.is_some(),
+            link: element.is_some() || block.is_some(),
             ..self.style()
         };
         let range = self.push(code, style);
         if let Some(id) = element {
             self.block().links.push((range, id));
+        } else if let Some(block) = block {
+            self.block().blocks.push((range, block));
         }
     }
 }

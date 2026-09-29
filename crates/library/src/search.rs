@@ -207,11 +207,23 @@ impl Index {
         }
         let blocks = self.blocks();
         if words.is_empty() {
+            // Browsing: composites first, then the other components, then
+            // the vocabulary they are built from (ports, items), then
+            // requirements and value types.
+            let rank = |b: &crate::Block| match b.kind {
+                ElementKind::PartDef if b.composite() => 0,
+                ElementKind::PartDef => 1,
+                ElementKind::PortDef | ElementKind::InterfaceDef | ElementKind::ConnectionDef => 2,
+                ElementKind::ItemDef => 3,
+                ElementKind::RequirementDef => 4,
+                _ => 5,
+            };
             hits.sort_by(|a, b| {
                 let (a, b) = (&blocks[a.block], &blocks[b.block]);
-                (a.reference.scope, a.standard, &a.category, &a.name).cmp(&(
+                (a.reference.scope, a.standard, rank(a), &a.category, &a.name).cmp(&(
                     b.reference.scope,
                     b.standard,
+                    rank(b),
                     &b.category,
                     &b.name,
                 ))

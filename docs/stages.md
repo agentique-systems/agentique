@@ -638,6 +638,47 @@ Operator accepted anything.
   Agentique", and a long status ran over the status bar's counts.
 - **W5.10, part** (#64): Settings' choices are labelled by their rows for
   screen readers.
+- **W5.13 Library** (C-49, Scenario H; branch `stage5/library`): reusable
+  building blocks that are ordinary KerML/SysML definitions. `agq-library`
+  holds 30 built-in definitions in six packages (messages, interfaces,
+  services, storage, messaging, resilience), indexes them with the project's
+  own definitions and My Library (`library\My Library.sysml` beside the
+  session file), searches them (fuzzy names, then qualified names and doc
+  words) and plans their use as one System State change: a usage typed by the
+  block, and a copy of what it needs in the project's `Library` package at the
+  same qualified names, reusing identical definitions and never overwriting
+  different ones (use the project's, or copy under another name), so a project
+  stands alone. Where a copy came from is derived, never stored. "What can
+  connect here?" uses the language's own port rule, exposed with its lookup as
+  the read-only `Semantics` (the one locked-core addition, recorded in §7.6).
+  The Studio has the Library tab beside the Outline (Ctrl+Shift+L: search,
+  scopes, kinds, a structural preview), insertion by Enter, double-click, drag
+  (onto a port it connects), Shift+A and the context menu; opening a
+  definition with a breadcrumb and Back, inherited parts dashed and overrides
+  marked; Find usages; the Inspector's Definition section with Override and
+  Reset per inherited value; Specialise; the shared-definition question
+  offering "Specialise instead"; Create building block from selection (ports
+  where connections cross); Save to My Library. The Assistant has
+  `search_library`, `read_library_block`, `use_library_block` and
+  `save_to_library` (only when asked, after the Operator confirms), a skill
+  section on reuse, block links in its replies, and five evaluation tasks that
+  tell appropriate reuse from blind reuse (h8-*; "never saves to My Library
+  unasked" is a must-hold). Tests: 26 in `agq-library` (search, closure, reuse
+  of identical copies, conflicts, nested composites, specialisation,
+  overrides, My Library, malformed and missing entries, locks, undo and redo,
+  5,000-block search), 6 tool tests, 2 Conversation tests and 9 Studio tests.
+  The `h-library` journey (75 steps: H1–H8, including a second project, the
+  scripted Assistant reusing a block and modelling a plain definition when
+  none fits, and undoing its changes) passes at 100%, 150% and 200% UI scale
+  with reduced motion; the gallery shows the Library panel, previews, drag
+  ghost, breadcrumb, inherited values and inherited and override cards. All
+  journeys pass on debug builds with `automation` (`a-build`, `a-crash` exits
+  3 by design, `a-reopen`, `a-assistant`, `d-daily`, `e-settings`; `d-daily`
+  also at 150% and 200%). Library search measured 2.4 ms per keystroke at
+  5,000 blocks (release; budget 8 ms). The reference budget run (§8.6: start,
+  1k and 10k pan and zoom, chat, before and after) has not been run: the
+  release build was stopped because the machine ran low on memory. Waits for
+  the Operator's use.
 
 **Live results** (DeepSeek `deepseek-flash`, effort `high`; reports outside
 the repository)
@@ -709,6 +750,25 @@ need a Windows call); the welcome shows until a first project is opened.
   does not reach the Projects row or the provider cards.
 - **W5.10 Accessibility**: Narrator (G6) and Japanese IME (G7) need the
   Operator; the §3.5 checklist is not worked through yet.
+- **W5.13**: the five h8 evaluation tasks have not run live (no spend was
+  agreed for this work); screen readers on the Library (NVDA, Narrator) not
+  tried; the Library's search and preview have not been judged by the
+  Operator. Journeys that start from the welcome (`d-daily`, `h-library`)
+  now scroll its buttons into view, so they also run at 150% and 200%.
+- At 200% on a 1600-pixel window the three docked columns were wider than
+  the window and the Surface was 0 pixels wide (at 150% it was 148 pixels).
+  The columns now narrow so the Surface keeps a quarter of the window: first
+  each gives up its width above the 200-point minimum, in proportion, then
+  they share equally (at 100% on that window nothing changes; the widths
+  kept for each project are unchanged). Tabs, segmented choices and the
+  composer's selection chip now end in an ellipsis instead of overlapping
+  when narrow. Dragging a splitter while the columns are narrowed sets the
+  kept width, so the splitter does not follow the pointer exactly until
+  there is room. Decided in this session (§7.6), pending the Operator.
+- `--screenshot` and `--frames` runs now end the process once their image
+  and report are written: GPUI's quit waited for an empty message queue,
+  which the gallery (redrawn every tick in a debug build) delayed for a
+  minute while saving the image again each tick.
 - A shared build folder across git worktrees reused another worktree's build
   once tonight (Cargo judges freshness by file times); the S5.1 measurement
   was redone after touching the sources.
@@ -734,3 +794,15 @@ need a Windows call); the welcome shows until a first project is opened.
    Settings. An Anthropic key saved there is not used by the Assistant until
    W5.7 (set `ANTHROPIC_API_KEY` for now).
 6. Confirm or change the overnight decisions above (§7.6).
+7. The Library (Scenario H): open the URL shortener sample, press
+   Ctrl+Shift+L, type "cache", look at CachedStore's preview and press Enter;
+   select a port and use "What can connect here?"; press Enter on a composite
+   usage to open its definition and Backspace to return; specialise it and
+   override a value in the Inspector; select two parts and "Create building
+   block from selection"; "Save to My Library…", then use it in another
+   project. The scripted run:
+
+   ```text
+   cargo build -p agq-studio-native --features automation
+   target\debug\agq-studio-native.exe --no-restore --session %TEMP%\agq-h\session.json --scenario h-library --project %TEMP%\agq-h\demo --gallery %TEMP%\agq-h\shots
+   ```

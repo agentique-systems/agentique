@@ -56,6 +56,20 @@ pub struct InputFeature {
     pub problems: usize,
 }
 
+/// Where a card's element stands in its definition: its own, found
+/// through a general (inherited), or a redefinition of an inherited one
+/// (an override). Shown by the card's edge, never by colour (§8.5 rule 4).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum NodeOrigin {
+    #[default]
+    Own,
+    /// Owned by a general of the card that shows it: drawn inside a
+    /// definition opened on the Surface, where the general is not shown.
+    Inherited,
+    /// Overrides an inherited feature in this definition or usage only.
+    Override,
+}
+
 /// One card.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct InputNode {
@@ -76,6 +90,7 @@ pub struct InputNode {
     /// Problems reported at this element or at elements it owns that have no
     /// card of their own.
     pub problems: usize,
+    pub origin: NodeOrigin,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -287,6 +302,8 @@ impl SceneInput {
                 .chain(&element.specializes)
                 .filter_map(Reference::target)
                 .collect();
+            // An override has the ports of the feature it redefines.
+            pending.extend(element.redefines.iter().filter_map(Reference::target));
             while let Some(general) = pending.pop() {
                 if !visited.insert(general) || visited.len() > 32 {
                     continue;
@@ -294,6 +311,17 @@ impl SceneInput {
                 let Some(definition) = tree.get(general) else {
                     continue;
                 };
+                if definition.kind.is_usage() {
+                    // A redefined feature: through its own types and redefinitions.
+                    pending.extend(
+                        definition
+                            .typed_by
+                            .iter()
+                            .chain(&definition.redefines)
+                            .filter_map(Reference::target),
+                    );
+                    continue;
+                }
                 for port in own_ports(general) {
                     if seen_names.insert(name(port)) {
                         ports.push(port);
@@ -301,12 +329,35 @@ impl SceneInput {
                 }
                 pending.extend(definition.specializes.iter().filter_map(Reference::target));
             }
+            let origin = if element.kind.is_usage() && !element.redefines.is_empty() {
+                NodeOrigin::Override
+            } else {
+                NodeOrigin::Own
+            };
+            let mut shown_detail = detail(element);
+            if origin == NodeOrigin::Override {
+                // Its type is the redefined feature's unless it gives one.
+                if element.typed_by.is_empty()
+                    && let Some(redefined) = element
+                        .redefines
+                        .first()
+                        .and_then(Reference::target)
+                        .and_then(|t| tree.get(t))
+                {
+                    let inherited = detail(redefined);
+                    shown_detail = format!("{inherited} {shown_detail}").trim().to_string();
+                }
+                shown_detail = format!("{shown_detail} · override")
+                    .trim_start_matches(" · ")
+                    .to_string();
+            }
             nodes.push(InputNode {
                 id,
                 kind: category(element.kind).expect("shown elements have a category"),
                 keyword: element.kind.keyword(),
                 name: name(id),
-                detail: detail(element),
+                detail: shown_detail,
+                origin,
                 owner: element.owner().and_then(card_of),
                 ports: ports
                     .into_iter()

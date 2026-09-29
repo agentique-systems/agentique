@@ -6,6 +6,10 @@
 //! Surface and the Conversation samples are the real views, not copies.
 use crate::{
     conversation_view::ConversationView,
+    panels::{
+        block_preview::{self, BlockPreview},
+        library::{DragGhost, LibraryDrag, LibraryView},
+    },
     studio::{Dirty, Studio},
     surface::paint,
     tokens::{self, Colours, HIGH_CONTRAST, INPUTS, Mode, Rgba, Scale},
@@ -81,6 +85,10 @@ pub struct Gallery {
     area_invalid: Entity<TextareaState>,
     menu: Entity<Menu>,
     conversation: Entity<ConversationView>,
+    library: Entity<LibraryView>,
+    ghost: Entity<DragGhost>,
+    /// Block previews with their captions.
+    previews: Vec<(&'static str, Rc<agq_library::Preview>)>,
     samples: Vec<(&'static str, Rc<Sample>)>,
     switch_on: bool,
     segment: usize,
@@ -134,6 +142,40 @@ impl Gallery {
         });
         studio.update(cx, |studio, _| sample_conversation(studio));
         let conversation = cx.new(|cx| ConversationView::new(studio.clone(), window, cx));
+        let library = cx.new(|cx| LibraryView::new(studio.clone(), window, cx));
+        let ghost = cx.new(|_| {
+            DragGhost::new(LibraryDrag {
+                block: agq_library::BlockRef::parse("built-in:Library::Storage::CachedStore")
+                    .expect("a block reference"),
+                name: "CachedStore".into(),
+                kind: agq_language::ElementKind::PartDef,
+                composite: true,
+            })
+        });
+        let previews = studio.update(cx, |studio, _| {
+            studio.library_index();
+            let library = &studio.library;
+            [
+                (
+                    "A composite: its boundary ports, its parts and their connections",
+                    "built-in:Library::Storage::CachedStore",
+                ),
+                (
+                    "An atomic block: its ports and values",
+                    "built-in:Library::Messaging::Queue",
+                ),
+                ("A requirement", "built-in:Library::Services::FairUse"),
+            ]
+            .into_iter()
+            .filter_map(|(caption, reference)| {
+                let block = library
+                    .index
+                    .position(&agq_library::BlockRef::parse(reference)?)?;
+                let preview = library.source.preview(&library.index, block, None)?;
+                Some((caption, Rc::new(preview)))
+            })
+            .collect()
+        });
         Gallery {
             studio,
             field,
@@ -144,6 +186,9 @@ impl Gallery {
             area_invalid,
             menu,
             conversation,
+            library,
+            ghost,
+            previews,
             samples: samples(),
             switch_on: true,
             segment: 0,
@@ -167,6 +212,27 @@ fn samples() -> Vec<(&'static str, Rc<Sample>)> {
         samples.push((
             "Cards, ports, connections and a container; a selected card, and one the Assistant just changed",
             Rc::new(Sample::new(scene, "UrlShortenerService", Some("store"), Some("api"))),
+        ));
+    }
+    // Inside a definition opened from a specialisation: one part inherited
+    // from the general, one overriding what it inherits.
+    let mut opened = architecture(fixtures::architecture());
+    for node in &mut opened.nodes {
+        let (origin, note) = match node.name.as_str() {
+            "store" => (
+                agq_studio_scene::NodeOrigin::Inherited,
+                "· from LinkService",
+            ),
+            "api" => (agq_studio_scene::NodeOrigin::Override, "· override"),
+            _ => continue,
+        };
+        node.origin = origin;
+        node.detail = format!("{} {note}", node.detail);
+    }
+    if let Ok(scene) = Scene::build(&opened, &options, None) {
+        samples.push((
+            "Inside an opened specialisation: an inherited part (dashed, dimmed) and an override (accent edge)",
+            Rc::new(Sample::new(scene, "UrlShortenerService", None, None)),
         ));
     }
     let (before, after) = fixtures::change_trees();
@@ -1167,6 +1233,115 @@ impl Gallery {
         )
     }
 
+    fn library(&self, cx: &App) -> AnyElement {
+        let theme = cx.theme().clone();
+        let caption = |text: &'static str| {
+            div()
+                .text_size(r(theme::text::XS))
+                .text_color(theme.text_faint)
+                .child(text)
+        };
+        let panel = div()
+            .w(r(280.0))
+            .flex()
+            .flex_col()
+            .gap(r(6.0))
+            .child(
+                div()
+                    .w(r(280.0))
+                    .h(r(660.0))
+                    .flex_none()
+                    .rounded(r(tokens::radius::CARD + 2.0))
+                    .overflow_hidden()
+                    .border_1()
+                    .border_color(theme.separator)
+                    .bg(theme.chrome)
+                    .child(self.library.clone()),
+            )
+            .child(caption(
+                "The Library panel: search, scopes, kinds, results and the selected block",
+            ));
+        let previews =
+            div()
+                .flex()
+                .flex_col()
+                .gap(r(12.0))
+                .children(
+                    self.previews
+                        .iter()
+                        .enumerate()
+                        .map(|(index, (text, preview))| {
+                            div()
+                                .w(r(260.0))
+                                .flex()
+                                .flex_col()
+                                .gap(r(6.0))
+                                .child(
+                                    BlockPreview::new(
+                                        SharedString::from(format!("g-preview-{index}")),
+                                        preview.clone(),
+                                    )
+                                    .height(block_preview::height(preview)),
+                                )
+                                .child(caption(text))
+                                .into_any_element()
+                        }),
+                );
+        let crumbs = stage(cx)
+            .relative()
+            .h(r(64.0))
+            .w(r(360.0))
+            .child(crate::surface::breadcrumb(
+                vec!["demo".into(), "sessions : CachedStore".into()],
+                self.studio.clone(),
+                cx,
+            ));
+        let values = stage(cx)
+            .w(r(320.0))
+            .child(crate::panels::reuse_sample(&self.studio, cx));
+        let others = div()
+            .flex()
+            .flex_col()
+            .gap(r(16.0))
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap(r(6.0))
+                    .child(stage(cx).child(div().flex().child(self.ghost.clone())))
+                    .child(caption("What follows the pointer while a block is dragged")),
+            )
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap(r(6.0))
+                    .child(crumbs)
+                    .child(caption("Where the Surface is: Back, the whole model, each definition opened")),
+            )
+            .child(
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap(r(6.0))
+                    .child(values)
+                    .child(caption("Inherited values in the Inspector: overridden here, and from the definition")),
+            );
+        section(
+            "Library",
+            Some(
+                "Building blocks (C-49): the real Library panel on the built-in blocks, structural previews, the drag ghost, the breadcrumb and inherited values.",
+            ),
+            row()
+                .gap(r(24.0))
+                .items_start()
+                .child(panel)
+                .child(previews)
+                .child(others),
+            cx,
+        )
+    }
+
     fn coverage(&self, cx: &App) -> AnyElement {
         let theme = cx.theme().clone();
         let mut groups: Vec<(&str, Vec<&tokens::Component>)> = Vec::new();
@@ -1254,6 +1429,7 @@ impl Render for Gallery {
         let icons = self.icons(cx);
         let surface = self.surface(cx);
         let conversation = self.conversation(cx);
+        let library = self.library(cx);
         let coverage = self.coverage(cx);
         div()
             .id("gallery")
@@ -1274,6 +1450,7 @@ impl Render for Gallery {
                     .child(icons)
                     .child(surface)
                     .child(conversation)
+                    .child(library)
                     .child(coverage)
                     .child(div().h(r(48.0))),
             )

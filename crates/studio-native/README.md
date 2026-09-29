@@ -21,8 +21,8 @@ saves it.
   overlays, the frame ticker), `surface/` (input, gestures, overlays;
   `paint.rs` draws a frame with GPUI's quads, paths and shaped text in paint
   layers, only what is in view, by level of detail; `minimap.rs`),
-  `panels/` (Outline, Inspector and its fields, Requirements, History,
-  Problems), `conversation_view/` (the list, cards, Markdown and selection),
+  `panels/` (Outline, Library, Inspector and its fields, Requirements,
+  History, Problems), `conversation_view/` (the list, cards, Markdown and selection),
   `palette.rs`, `dialogs.rs`, `welcome.rs`, `settings_view.rs`, `gallery.rs`.
 - **Keys** (`commands.rs`): every command has its GPUI keystroke; shortcuts
   that type letters apply in the workspace except while a text field has the
@@ -90,6 +90,41 @@ the tool, question and thinking cards, `markdown.rs` the messages).
   outside the view (which are not laid out) and replies streaming in below.
   Ctrl+C copies it in order; a click clears it.
 
+## Library
+
+Building blocks (C-49, ROADMAP §4.13; the blocks and the copying are in
+`agq-library`, the Studio's side is `library.rs`, `panels/library.rs`,
+`panels/block_preview.rs` and `panels/reuse.rs`). A block is an ordinary
+definition; using one adds a usage typed by it and copies the definitions it
+needs into the project's `Library` package (collapsed on the Surface until
+expanded), so the project stands alone.
+
+- **Finding.** Ctrl+Shift+L shows the Library tab beside the Outline: type to
+  search (names first, then qualified names and words from the docs; the
+  matched letters are marked), filter by scope (Built-in, Project, Mine) and
+  kind, and see the selected block's preview (its boundary ports, its parts
+  in columns and their connections), doc, ports, values and usages. The
+  arrows move through the results, Enter inserts.
+- **Using.** Enter, a double-click or dragging onto the Surface or a container
+  inserts a block (a drag onto a card's port connects it too); Shift+A opens
+  "Insert from Library…" in the palette. With a port selected, "What can
+  connect here?" lists only the blocks whose ports fit it, by the language's
+  own rule, and inserting one connects it. A name the project already uses
+  for something different asks: use the project's, or copy under another name.
+- **Inside a block.** Enter or a double-click on a composite usage opens its
+  definition on the Surface, with a breadcrumb and Back (Backspace,
+  Alt+Left); inherited parts are dashed, overrides have an accent edge.
+  Shift+F12 finds usages. The Inspector's Definition section says what
+  changing the definition changes, and lists the values the element takes
+  from its definition, each with Override (a value here only) or Reset.
+  "Specialise…" makes a variant that leaves the original as it is; changing a
+  definition with several usages asks first and offers to specialise instead.
+- **Making blocks.** "Create building block from selection" turns selected
+  parts into a definition and one usage of it, with ports where connections
+  cross the boundary (one change, one undo). "Save to My Library…" keeps a
+  definition and what it needs in `library\My Library.sysml` beside the
+  session file; nothing is published anywhere.
+
 ## Settings
 
 Ctrl+, (or the Settings button) shows Settings in place of the Surface and
@@ -119,6 +154,18 @@ Settings with Ctrl+, shows each section, searches with a synonym and closes:
 
 ```text
 target\debug\agq-studio-native.exe --no-restore --session %TEMP%\agq-e\session.json --scenario e-settings --project %TEMP%\agq-e\demo --gallery %TEMP%\agq-e\shots
+```
+
+The `h-library` journey (Scenario H) starts from the URL shortener sample,
+searches the Library, previews and inserts a composite, connects a block by
+"What can connect here?", drags one onto the Surface, opens a definition and
+comes back, specialises and overrides a value (the original stays), finds
+usages, creates a block from a selection, saves it to My Library, uses it in
+a second project, has the scripted Assistant reuse a block and model a plain
+definition when none fits, and undoes the Assistant's changes:
+
+```text
+target\debug\agq-studio-native.exe --no-restore --session %TEMP%\agq-h\session.json --scenario h-library --project %TEMP%\agq-h\demo --gallery %TEMP%\agq-h\shots
 ```
 
 ## Type, motion and screen readers

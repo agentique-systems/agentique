@@ -29,6 +29,11 @@ pub struct Outcome {
     pub kept: Vec<String>,
     /// Everything the change created is gone (undone or deleted since).
     pub gone: bool,
+    /// For a building block used: the definitions copied into the project,
+    /// the usages added and the connections made.
+    pub imported: Vec<(ElementId, Option<String>, String)>,
+    pub added: Vec<(ElementId, Option<String>, String)>,
+    pub connected: Vec<(ElementId, Option<String>, String)>,
 }
 
 /// A tool call, as the card shows it.
@@ -57,7 +62,11 @@ impl Tool {
     fn read_only(&self) -> bool {
         matches!(
             self.name.as_str(),
-            tools::READ_MODEL | tools::FIND_ELEMENTS | tools::GET_PROBLEMS
+            tools::READ_MODEL
+                | tools::FIND_ELEMENTS
+                | tools::GET_PROBLEMS
+                | tools::SEARCH_LIBRARY
+                | tools::READ_LIBRARY_BLOCK
         )
     }
 
@@ -98,7 +107,41 @@ pub fn title(name: &str, input: &Value) -> String {
             .unwrap_or("Change the model")
             .to_string(),
         tools::ASK_OPERATOR => "Question".into(),
+        tools::SEARCH_LIBRARY => match text("query").filter(|q| !q.trim().is_empty()) {
+            Some(query) => format!("Search the Library for “{query}”"),
+            None if text("fits_port").is_some() => "Find blocks that fit a port".into(),
+            None => "Browse the Library".into(),
+        },
+        tools::READ_LIBRARY_BLOCK => format!("Read {}", short(text("block").unwrap_or("a block"))),
+        tools::USE_LIBRARY_BLOCK => {
+            let block = short(text("block").unwrap_or("a block"));
+            match text("name") {
+                Some(name) => format!("Use {block} as {name}"),
+                None => format!("Use {block}"),
+            }
+        }
+        tools::SAVE_TO_LIBRARY => format!(
+            "Save {} to My Library",
+            short(text("definition").unwrap_or("a definition"))
+        ),
         other => other.to_string(),
+    }
+}
+
+/// The last name of a block reference or qualified name: `CachedStore`.
+fn short(name: &str) -> &str {
+    name.rsplit("::").next().unwrap_or(name)
+}
+
+/// A search's result in a few words: "6 blocks found".
+fn found(result: &ToolResult) -> Option<String> {
+    let first = result.content.lines().next()?;
+    let count = first.split_whitespace().next()?;
+    match count.parse::<usize>() {
+        Ok(1) => Some("1 block found".into()),
+        Ok(n) => Some(format!("{n} blocks found")),
+        Err(_) if first.starts_with("No ") => Some("no blocks found".into()),
+        Err(_) => None,
     }
 }
 
@@ -162,13 +205,18 @@ pub fn element_link(
 }
 
 pub fn tool_card(ctx: &Rc<Ctx>, tool: &Tool, cx: &App) -> AnyElement {
-    if tool.name == tools::ASK_OPERATOR {
+    if tool.name == tools::ASK_OPERATOR || tool.name == tools::SAVE_TO_LIBRARY {
         return question_card(ctx, tool, cx);
     }
     let theme = cx.theme().clone();
     let open = ctx.expanded.contains(&tool.id);
     let read_only = tool.read_only();
-    let label = title(&tool.name, &tool.input);
+    let mut label = title(&tool.name, &tool.input);
+    if tool.name == tools::SEARCH_LIBRARY
+        && let Some(found) = tool.result.as_ref().and_then(found)
+    {
+        label = format!("{label} · {found}");
+    }
     let id = tool.id.clone();
     let view = ctx.view.clone();
     let status = tool.status();
@@ -350,6 +398,9 @@ fn summary(ctx: &Rc<Ctx>, tool: &Tool, cx: &App) -> Option<AnyElement> {
                 }))
         })
     };
+    if tool.name == tools::USE_LIBRARY_BLOCK {
+        return Some(block_summary(ctx, outcome, cx));
+    }
     Some(
         div()
             .pt(r(6.0))
@@ -381,6 +432,86 @@ fn summary(ctx: &Rc<Ctx>, tool: &Tool, cx: &App) -> Option<AnyElement> {
             })
             .into_any_element(),
     )
+}
+
+/// What using a building block did: the usage added, the definitions
+/// copied from the Library, the connection made.
+fn block_summary(ctx: &Rc<Ctx>, outcome: &Outcome, cx: &App) -> AnyElement {
+    let theme = cx.theme();
+    let label = |text: &'static str| {
+        div()
+            .w(r(64.0))
+            .text_size(r(theme::text::XS))
+            .text_color(theme.text_muted)
+            .child(text)
+    };
+    let links = |items: &[(ElementId, Option<String>, String)], most: usize| {
+        let mut shown: Vec<AnyElement> = items
+            .iter()
+            .take(most)
+            .map(|(id, qualified, name)| {
+                element_link(ctx, *id, name.clone(), qualified.clone(), cx)
+            })
+            .collect();
+        if items.len() > most {
+            shown.push(
+                div()
+                    .text_size(r(theme::text::XS))
+                    .text_color(theme.text_muted)
+                    .child(format!("+{} more", items.len() - most))
+                    .into_any_element(),
+            );
+        }
+        shown
+    };
+    let row = |text: &'static str, items: &[(ElementId, Option<String>, String)], most: usize| {
+        (!items.is_empty()).then(|| {
+            div()
+                .flex()
+                .flex_wrap()
+                .items_center()
+                .gap(r(4.0))
+                .child(label(text))
+                .children(links(items, most))
+        })
+    };
+    div()
+        .pt(r(6.0))
+        .flex()
+        .flex_col()
+        .gap(r(4.0))
+        .children(row("Added", &outcome.added, 4))
+        .children((!outcome.imported.is_empty()).then(|| {
+            div()
+                .flex()
+                .flex_wrap()
+                .items_center()
+                .gap(r(4.0))
+                .child(label("Imported"))
+                .child(
+                    div()
+                        .text_size(r(theme::text::XS))
+                        .text_color(theme.text_secondary)
+                        .child(plural(
+                            outcome.imported.len(),
+                            "definition from the Library",
+                            "definitions from the Library",
+                        )),
+                )
+                .children(links(&outcome.imported, 3))
+        }))
+        .children(row("Connected", &outcome.connected, 3))
+        .when(outcome.problems > 0, |this| {
+            this.child(ui::inline_message(
+                Tone::Warning,
+                format!(
+                    "{} at the changed elements",
+                    plural(outcome.problems, "problem", "problems")
+                ),
+                cx,
+            ))
+        })
+        .into_any_element()
 }
 
 fn detail(label: &'static str, text: String, cx: &App) -> impl IntoElement {
@@ -417,14 +548,33 @@ fn detail(label: &'static str, text: String, cx: &App) -> impl IntoElement {
 /// then the answer.
 fn question_card(ctx: &Rc<Ctx>, tool: &Tool, cx: &App) -> AnyElement {
     let theme = cx.theme().clone();
-    let question = tool
-        .input
-        .get("question")
-        .and_then(Value::as_str)
-        .unwrap_or("The Assistant has a question")
-        .to_string();
+    let saving = tool.name == tools::SAVE_TO_LIBRARY;
+    let question = if saving {
+        let text = |field: &str| tool.input.get(field).and_then(Value::as_str);
+        format!(
+            "Save {} to My Library{}? It will be offered in every project; a project that uses it gets its own copy.",
+            text("definition").unwrap_or("this definition"),
+            text("category")
+                .map(|c| format!(" under {c}"))
+                .unwrap_or_default()
+        )
+    } else {
+        tool.input
+            .get("question")
+            .and_then(Value::as_str)
+            .unwrap_or("The Assistant has a question")
+            .to_string()
+    };
     let open = tool.options.is_some();
     let answer = match &tool.result {
+        Some(result) if saving => Some(
+            result
+                .content
+                .lines()
+                .next()
+                .unwrap_or_default()
+                .to_string(),
+        ),
         Some(result) if !result.is_error => Some(format!("Your answer: {}", result.content)),
         Some(_) => Some("Not answered: the Assistant was stopped.".to_string()),
         None if tool.running && !open => Some("Waiting…".to_string()),
@@ -475,7 +625,11 @@ fn question_card(ctx: &Rc<Ctx>, tool: &Tool, cx: &App) -> AnyElement {
                 } else {
                     theme.text_muted
                 }))
-                .child("THE ASSISTANT ASKS"),
+                .child(if saving {
+                    "SAVE TO MY LIBRARY"
+                } else {
+                    "THE ASSISTANT ASKS"
+                }),
         )
         .child(
             div()

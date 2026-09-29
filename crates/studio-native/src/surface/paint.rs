@@ -11,7 +11,7 @@ use crate::{
     ui::{Theme, theme},
 };
 use agq_studio_scene::{
-    Camera2D, DiffMark, EdgeKind, ElementId, LockMark, LodLevel, NodeCategory, Point,
+    Camera2D, DiffMark, EdgeKind, ElementId, LockMark, LodLevel, NodeCategory, NodeOrigin, Point,
     PortDirection, PortSide, Rect, Scene, SceneLookup, SceneNode, SceneTarget, SpatialIndex,
     VisibleScene,
 };
@@ -72,7 +72,7 @@ impl Screen {
     }
 }
 
-pub(super) fn category_colour(category: NodeCategory, theme: &Theme) -> Hsla {
+pub(crate) fn category_colour(category: NodeCategory, theme: &Theme) -> Hsla {
     match category {
         NodeCategory::Requirement => theme.warning.text,
         NodeCategory::Definition => theme.info.text,
@@ -89,7 +89,7 @@ fn text_size(points: f32) -> Pixels {
 
 /// One line of text within `width`, elided with "…" when it does not fit.
 #[allow(clippy::too_many_arguments)]
-fn label(
+pub(crate) fn label(
     window: &mut Window,
     cx: &mut App,
     text: &str,
@@ -385,6 +385,16 @@ pub fn paint(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window, cx: &mu
                 DiffMark::Removed => (theme.canvas, theme.danger.solid, BorderStyle::Dashed),
                 DiffMark::Added => (theme.raised, theme.success.solid, BorderStyle::Solid),
                 DiffMark::Changed => (theme.raised, theme.info.solid, BorderStyle::Solid),
+                // Inherited from a general: a dashed edge; an override: an
+                // accent edge (§8.5 rule 4: shape and edge, not colour, for kind).
+                DiffMark::Unchanged if node.semantic.origin == NodeOrigin::Inherited => (
+                    theme.raised.opacity(0.72),
+                    theme.border_strong,
+                    BorderStyle::Dashed,
+                ),
+                DiffMark::Unchanged if node.semantic.origin == NodeOrigin::Override => {
+                    (theme.raised, theme.accent.border, BorderStyle::Solid)
+                }
                 DiffMark::Unchanged => (
                     theme.raised,
                     if hovered || node.semantic.lock == LockMark::Own {
@@ -1365,6 +1375,42 @@ fn gesture(frame: &Frame, screen: &Screen, window: &mut Window) {
                     theme.accent.solid,
                     BorderStyle::Solid,
                 ));
+            }
+        }
+        Some(Gesture::Insert {
+            target, port, now, ..
+        }) => {
+            // The card it would go into: accent when it can hold it.
+            if let Some((card, fits)) = target
+                && port.is_none()
+                && let Some(node) = frame.lookup.node(&frame.scene, *card)
+            {
+                let colour = if *fits {
+                    theme.accent.solid
+                } else {
+                    theme.danger.solid
+                };
+                window.paint_quad(quad(
+                    screen.rect(node.bounds),
+                    px(8.0),
+                    colour.opacity(0.08),
+                    px(2.0),
+                    colour,
+                    BorderStyle::Solid,
+                ));
+            }
+            // Dropped on a fitting port it is connected there.
+            if let Some((card, port)) = port
+                && let Some(to) = frame.lookup.port(&frame.scene, *card, *port)
+            {
+                let a = screen.point(to.position);
+                let b = screen.point(*now);
+                let mut path = PathBuilder::stroke(px(2.0));
+                path.move_to(a);
+                path.line_to(b);
+                if let Ok(path) = path.build() {
+                    window.paint_path(path, theme.accent.solid);
+                }
             }
         }
         Some(Gesture::Connect { card, port, now }) => {

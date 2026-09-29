@@ -12,7 +12,14 @@ hand-written Claude client still uses the network directly until W5.7.
   note on narrowing the request (R-34); `apply_changes` turns a request into
   one System State `Change` (one undo step) that the Studio applies exactly
   like an Operator edit, so locks ask the Operator first; `ask_operator` puts
-  a question to the Operator. Tool input is untrusted: the turn checks it
+  a question to the Operator. The Library's tools (C-49, `tools/library.rs`,
+  through `agq-library`): `search_library` finds building blocks (optionally
+  only those whose ports fit a given port), `read_library_block` shows one
+  with its ports, parts, values and what it needs, `use_library_block` adds a
+  usage typed by a block (with values, and connected to a port) and copies
+  what it needs into the project as one change, and `save_to_library` saves a
+  project definition to My Library, only when the Operator asked and after
+  the Operator confirms. Tool input is untrusted: the turn checks it
   against the tool's schema (`check_input`), then `prepare` resolves names
   and tries every operation on a copy of the model before the change is
   handed over (ROADMAP §4.2).
@@ -55,10 +62,12 @@ call it does what the Operator's own edits do, and returns a `ToolResult`
 (the turn fills in its id):
 
 ```rust
-match tools::prepare(project.state(), &call.name, &call.input) {
+match tools::prepare(project.state(), &library, &call.name, &call.input) {
     Prepared::Answer(text) => ToolResult::answer(text),
     Prepared::Invalid(message) => ToolResult::error(message),
     Prepared::Question { question, options } => ToolResult::answer(/* the Operator's answer */),
+    // Ask the Operator; save only on "Save to My Library".
+    Prepared::SaveToLibrary { plan, question, saved } => ToolResult::answer(/* saved or not */),
     Prepared::Change(mut change) => match project.apply(change.clone()) {
         Ok(event) => ToolResult::applied(project.state(), &event),
         // Ask the Operator to confirm this change to the locked elements; if

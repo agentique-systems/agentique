@@ -1,6 +1,8 @@
 //! The Studio's dialogs over the workspace: New project and Open project
-//! (with the folder picker of Windows), Create, Checkpoint, Move to and the
-//! confirmation of a change to locked elements or a shared definition.
+//! (with the folder picker of Windows), Create, Checkpoint, Move to, the
+//! confirmation of a change to locked elements or a shared definition, and
+//! the Library's (C-49): Specialise, Create building block from selection,
+//! Save to My Library, Override here, and a conflict when using a block.
 //! Enter confirms, Escape cancels; the first field has the keyboard. Rename
 //! is done in place on the Surface.
 use crate::{
@@ -38,6 +40,11 @@ enum Kind {
     Checkpoint,
     MoveTo,
     Confirm,
+    Specialize,
+    ExtractBlock,
+    SaveToLibrary,
+    Override,
+    LibraryConflict,
 }
 
 fn kind_of(dialog: &Dialog) -> Option<Kind> {
@@ -48,6 +55,11 @@ fn kind_of(dialog: &Dialog) -> Option<Kind> {
         Dialog::Checkpoint { .. } => Kind::Checkpoint,
         Dialog::MoveTo { .. } => Kind::MoveTo,
         Dialog::Confirm { .. } => Kind::Confirm,
+        Dialog::Specialize { .. } => Kind::Specialize,
+        Dialog::ExtractBlock { .. } => Kind::ExtractBlock,
+        Dialog::SaveToLibrary { .. } => Kind::SaveToLibrary,
+        Dialog::Override { .. } => Kind::Override,
+        Dialog::LibraryConflict { .. } => Kind::LibraryConflict,
         Dialog::Rename { .. } => return None,
     })
 }
@@ -150,6 +162,12 @@ impl DialogsView {
             Some(Dialog::Create { name, .. }) => Some((name.clone(), None)),
             Some(Dialog::Checkpoint { message }) => Some((message.clone(), None)),
             Some(Dialog::MoveTo { query, .. }) => Some((query.clone(), None)),
+            Some(Dialog::Specialize { name, .. }) => Some((name.clone(), None)),
+            Some(Dialog::ExtractBlock {
+                definition, usage, ..
+            }) => Some((definition.clone(), Some(usage.clone()))),
+            Some(Dialog::SaveToLibrary { category, .. }) => Some((category.clone(), None)),
+            Some(Dialog::Override { value, .. }) => Some((value.clone(), None)),
             _ => None,
         };
         if let Some((first, second)) = values {
@@ -159,6 +177,10 @@ impl DialogsView {
                 Some(Kind::Create) => "Name (Enter for a default)",
                 Some(Kind::Checkpoint) => "What changed?",
                 Some(Kind::MoveTo) => "Find the new owner",
+                Some(Kind::Specialize) => "SessionStore",
+                Some(Kind::ExtractBlock) => "Backend",
+                Some(Kind::SaveToLibrary) => "Storage",
+                Some(Kind::Override) => "60",
                 _ => "",
             };
             let first = self.input(&first, placeholder, window, cx);
@@ -166,7 +188,12 @@ impl DialogsView {
             window.defer(cx, move |window, cx| window.focus(&focus, cx));
             self.first = Some(first);
             if let Some(second) = second {
-                self.second = Some(self.input(&second, "Folder", window, cx));
+                let placeholder = if wanted == Some(Kind::ExtractBlock) {
+                    "backend (Enter for a default)"
+                } else {
+                    "Folder"
+                };
+                self.second = Some(self.input(&second, placeholder, window, cx));
             }
         } else if wanted.is_some() {
             let focus = self.focus.clone();
@@ -236,6 +263,64 @@ impl DialogsView {
                 dialog @ Dialog::Confirm { .. } => {
                     studio.dialog = Some(dialog);
                     studio.answer(true);
+                }
+                Dialog::Specialize {
+                    definition, usage, ..
+                } => {
+                    if first.is_empty() {
+                        studio.dialog = Some(dialog);
+                        return;
+                    }
+                    studio.specialize(definition, &first, usage);
+                }
+                Dialog::ExtractBlock { ref extraction, .. } => {
+                    if first.is_empty() || !extraction.blockers.is_empty() {
+                        studio.dialog = Some(dialog);
+                        return;
+                    }
+                    let extraction = extraction.clone();
+                    if !studio.extract(&extraction, &first, &second) {
+                        studio.dialog = Some(Dialog::ExtractBlock {
+                            extraction,
+                            definition: first,
+                            usage: second,
+                        });
+                    }
+                }
+                Dialog::SaveToLibrary {
+                    definition,
+                    conflicts,
+                    ..
+                } => {
+                    if first.is_empty() {
+                        studio.dialog = Some(Dialog::SaveToLibrary {
+                            definition,
+                            category: first,
+                            conflicts,
+                        });
+                        return;
+                    }
+                    if let Err(conflicts) =
+                        studio.save_to_library(definition, &first, !conflicts.is_empty())
+                    {
+                        studio.dialog = Some(Dialog::SaveToLibrary {
+                            definition,
+                            category: first,
+                            conflicts,
+                        });
+                    }
+                }
+                Dialog::Override {
+                    owner, ref path, ..
+                } => match crate::panels::parse_value(&first) {
+                    Some(value) => {
+                        let path = path.clone();
+                        studio.override_feature(owner, &path, agq_library::Override::Value(value));
+                    }
+                    None => studio.dialog = Some(dialog),
+                },
+                Dialog::LibraryConflict { request, .. } => {
+                    studio.resolve_conflict(request, agq_library::Resolution::Rename)
                 }
                 dialog @ Dialog::Rename { .. } => studio.dialog = Some(dialog),
             }
@@ -545,6 +630,7 @@ impl Render for DialogsView {
                 change,
                 question,
                 locked,
+                shared,
                 ..
             } => {
                 let title = if locked.is_empty() {
@@ -608,7 +694,227 @@ impl Render for DialogsView {
                                     .child(change.description.clone()),
                             )
                             .footer(cancel_button)
-                            .footer(confirm_button("Change it", true)),
+                            .when_some(*shared, |this, (_, usage)| {
+                                let studio = self.studio.clone();
+                                this.footer(
+                                    Button::new("confirm-specialize", "Specialise instead")
+                                        .on_click(move |_: &ClickEvent, _, cx| {
+                                            studio.act(cx, |studio| {
+                                                studio.dialog = None;
+                                                studio.start_specialize(usage);
+                                                studio.mark(Dirty::ALL);
+                                            })
+                                        }),
+                                )
+                            })
+                            .footer(confirm_button(
+                                if shared.is_some() {
+                                    "Change the definition"
+                                } else {
+                                    "Change it"
+                                },
+                                true,
+                            )),
+                    )
+                    .into_any_element()
+            }
+            Dialog::Specialize {
+                definition, usage, ..
+            } => {
+                let tree = studio.project.as_ref().map(|p| p.state().tree());
+                let name = |id: agq_language::ElementId| {
+                    tree.and_then(|t| t.effective_name(id).map(str::to_string))
+                        .unwrap_or_default()
+                };
+                let general = name(*definition);
+                let mut description = format!(
+                    "A new definition that specialises {general}: it has everything {general} has, and you can override or add to it without changing {general} or its other usages."
+                );
+                if let Some(usage) = usage {
+                    description.push_str(&format!(" {} will use it.", name(*usage)));
+                }
+                let ready = !Self::text(&self.first, cx).is_empty();
+                ui::Dialog::new("specialize", format!("Specialise {general}"))
+                    .width(480.0)
+                    .description(description)
+                    .child(field(
+                        "Name",
+                        self.first.as_ref().map(|s| {
+                            TextField::new(s)
+                                .target("Specialisation name")
+                                .into_any_element()
+                        }),
+                        cx,
+                    ))
+                    .footer(cancel_button)
+                    .footer(confirm_button("Specialise", ready))
+                    .into_any_element()
+            }
+            Dialog::ExtractBlock { extraction, .. } => {
+                let tree = studio.project.as_ref().map(|p| p.state().tree());
+                let name = |id: agq_language::ElementId| {
+                    tree.and_then(|t| t.effective_name(id).map(str::to_string))
+                        .unwrap_or_default()
+                };
+                let parts: Vec<String> = extraction.parts.iter().map(|p| name(*p)).collect();
+                let blocked = !extraction.blockers.is_empty();
+                let ready = !Self::text(&self.first, cx).is_empty() && !blocked;
+                ui::Dialog::new("extract", "Create building block from selection")
+                    .width(560.0)
+                    .description(format!(
+                        "The selected parts become a reusable definition, and one usage of it takes their place in {}. They keep their identity; connections from outside pass through the new definition's ports. One change: undo reverts it.",
+                        name(extraction.owner)
+                    ))
+                    .child(block_list("Parts", parts, IconName::Part, cx))
+                    .child(block_list(
+                        "Ports it will expose",
+                        extraction
+                            .boundary
+                            .iter()
+                            .map(|b| {
+                                format!(
+                                    "{} → {}.{} ({} connection{})",
+                                    b.name,
+                                    name(b.part),
+                                    name(b.port),
+                                    b.connections.len(),
+                                    if b.connections.len() == 1 { "" } else { "s" }
+                                )
+                            })
+                            .collect(),
+                        IconName::Port,
+                        cx,
+                    ))
+                    .when(!extraction.internal.is_empty(), |this| {
+                        this.child(ui::inline_message(
+                            ui::Tone::Neutral,
+                            format!(
+                                "{} connection(s) between the parts move inside with them.",
+                                extraction.internal.len()
+                            ),
+                            cx,
+                        ))
+                    })
+                    .children(extraction.blockers.iter().map(|blocker| {
+                        ui::inline_message(ui::Tone::Warning, blocker.clone(), cx)
+                    }))
+                    .child(field(
+                        "Definition name",
+                        self.first
+                            .as_ref()
+                            .map(|s| TextField::new(s).target("Block name").into_any_element()),
+                        cx,
+                    ))
+                    .child(field(
+                        "Usage name",
+                        self.second
+                            .as_ref()
+                            .map(|s| TextField::new(s).target("Usage name").into_any_element()),
+                        cx,
+                    ))
+                    .footer(cancel_button)
+                    .footer(confirm_button("Create building block", ready))
+                    .into_any_element()
+            }
+            Dialog::SaveToLibrary {
+                definition,
+                conflicts,
+                ..
+            } => {
+                let tree = studio.project.as_ref().map(|p| p.state().tree());
+                let title = tree
+                    .and_then(|t| t.effective_name(*definition).map(str::to_string))
+                    .unwrap_or_default();
+                let replacing = !conflicts.is_empty();
+                ui::Dialog::new("save-to-library", format!("Save {title} to My Library"))
+                    .width(500.0)
+                    .description("My Library keeps it, with the definitions it needs, for use in any project. A project that uses it gets its own copy, so changing My Library later changes no project.")
+                    .child(field(
+                        "Category",
+                        self.first
+                            .as_ref()
+                            .map(|s| TextField::new(s).target("Category").into_any_element()),
+                        cx,
+                    ))
+                    .children(conflicts.iter().map(|conflict| {
+                        ui::inline_message(ui::Tone::Warning, format!("My Library: {conflict}"), cx)
+                    }))
+                    .footer(cancel_button)
+                    .footer(confirm_button(
+                        if replacing { "Replace in My Library" } else { "Save" },
+                        true,
+                    ))
+                    .into_any_element()
+            }
+            Dialog::Override { owner, path, .. } => {
+                let tree = studio.project.as_ref().map(|p| p.state().tree());
+                let name = |id: agq_language::ElementId| {
+                    tree.and_then(|t| t.effective_name(id).map(str::to_string))
+                        .unwrap_or_default()
+                };
+                let feature: Vec<String> = path.iter().map(|f| name(*f)).collect();
+                let valid = crate::panels::parse_value(&Self::text(&self.first, cx)).is_some();
+                ui::Dialog::new("override", format!("Override {}", feature.join(".")))
+                    .width(460.0)
+                    .description(format!(
+                        "A value for {} in {} only: the definition and its other usages keep theirs.",
+                        feature.join("."),
+                        name(*owner)
+                    ))
+                    .child(field(
+                        "Value",
+                        self.first
+                            .as_ref()
+                            .map(|s| TextField::new(s).mono().target("Override value").into_any_element()),
+                        cx,
+                    ))
+                    .footer(cancel_button)
+                    .footer(confirm_button("Override", valid))
+                    .into_any_element()
+            }
+            Dialog::LibraryConflict { conflicts, .. } => {
+                let use_existing = {
+                    let studio = self.studio.clone();
+                    Button::new("conflict-use-existing", "Use the project's").on_click(
+                        move |_: &ClickEvent, _, cx| {
+                            studio.act(cx, |studio| {
+                                if let Some(Dialog::LibraryConflict { request, .. }) =
+                                    studio.dialog.take()
+                                {
+                                    studio.resolve_conflict(
+                                        request,
+                                        agq_library::Resolution::UseExisting,
+                                    );
+                                }
+                                studio.mark(Dirty::ALL);
+                            })
+                        },
+                    )
+                };
+                div()
+                    .key_context("Dialog")
+                    .track_focus(&self.focus)
+                    .size_full()
+                    .child(
+                        ui::Dialog::new("library-conflict", "Already in the project")
+                            .width(540.0)
+                            .description("The project already has definitions with these names, with other content. Nothing is overwritten.")
+                            .children(conflicts.iter().map(|conflict| {
+                                div()
+                                    .flex()
+                                    .flex_col()
+                                    .gap(r(4.0))
+                                    .child(ui::Chip::new(SharedString::from(conflict.qualified_name.clone())).mono().tone(ui::Tone::Warning))
+                                    .child(
+                                        div()
+                                            .text_size(r(theme::text::SM))
+                                            .text_color(theme.text_secondary)
+                                            .child(conflict.difference.clone()),
+                                    )
+                            }))
+                            .footer(cancel_button)
+                            .footer(use_existing)
+                            .footer(confirm_button("Copy under another name", true)),
                     )
                     .into_any_element()
             }
@@ -632,6 +938,45 @@ impl Render for DialogsView {
             .child(body)
             .into_any_element()
     }
+}
+
+/// A short labelled list in a dialog, one row per entry.
+fn block_list(
+    label: &'static str,
+    rows: Vec<String>,
+    glyph: IconName,
+    cx: &App,
+) -> impl IntoElement {
+    let theme = cx.theme();
+    div()
+        .flex()
+        .flex_col()
+        .gap(r(4.0))
+        .child(
+            div()
+                .text_size(r(theme::text::SM))
+                .font_weight(theme::MEDIUM)
+                .text_color(theme.text_secondary)
+                .child(label),
+        )
+        .when(rows.is_empty(), |this| {
+            this.child(
+                div()
+                    .text_size(r(theme::text::SM))
+                    .text_color(theme.text_faint)
+                    .child("None"),
+            )
+        })
+        .children(rows.into_iter().map(|row| {
+            div()
+                .flex()
+                .items_center()
+                .gap(r(6.0))
+                .text_size(r(theme::text::SM))
+                .font_family(theme::MONO)
+                .child(icon(glyph).size(12.0).color(theme.text_muted))
+                .child(row)
+        }))
 }
 
 /// A labelled field of a dialog.

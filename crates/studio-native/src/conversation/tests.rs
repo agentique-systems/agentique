@@ -639,3 +639,163 @@ fn a_change_that_waited_for_an_edited_dialog_goes_back_to_the_model() {
         "{stale:?}"
     );
 }
+
+// The Library (C-49): the Assistant searches, reads and uses building blocks
+// through the Studio's one change path, and saves to My Library only after
+// the Operator says so.
+
+#[test]
+fn the_assistant_uses_a_library_block_as_one_visible_undoable_change() {
+    let (mut app, _folder) = assisted(
+        "assistant-library",
+        vec![
+            reply(
+                vec![
+                    text("Let me check the Library first."),
+                    tool(
+                        "t1",
+                        tools::SEARCH_LIBRARY,
+                        json!({ "query": "cached store" }),
+                    ),
+                ],
+                "tool_use",
+            ),
+            reply(
+                vec![tool(
+                    "t2",
+                    tools::READ_LIBRARY_BLOCK,
+                    json!({ "block": "built-in:Library::Storage::CachedStore" }),
+                )],
+                "tool_use",
+            ),
+            reply(
+                vec![changes(
+                    "t3",
+                    "Add the system",
+                    vec![
+                        json!({ "op": "create", "parent": "P", "kind": "part def", "name": "System" }),
+                    ],
+                )],
+                "tool_use",
+            ),
+            reply(
+                vec![tool(
+                    "t4",
+                    tools::USE_LIBRARY_BLOCK,
+                    json!({ "block": "built-in:Library::Storage::CachedStore", "parent": "P::System",
+                             "name": "sessions", "values": { "cache.ttlSeconds": 60 } }),
+                )],
+                "tool_use",
+            ),
+            reply(
+                vec![text(
+                    "`built-in:Library::Storage::CachedStore` fits: I used it as `P::System::sessions`.",
+                )],
+                "end_turn",
+            ),
+        ],
+    );
+    say(
+        &mut app,
+        "Keep sessions in a store with a cache in front of it.",
+    );
+    wait(&mut app, finished);
+    assert!(
+        result(&app, "t1").content.contains("CachedStore"),
+        "{}",
+        result(&app, "t1").content
+    );
+    assert!(
+        result(&app, "t2")
+            .content
+            .contains("Purpose: A store with a cache")
+    );
+    let sessions = find(&app, "P::System::sessions").expect("the block was used");
+    let definition = find(&app, "Library::Storage::CachedStore").unwrap();
+    let state = app.project.as_ref().unwrap().state();
+    assert_eq!(
+        state.tree()[sessions].typed_by[0].target(),
+        Some(definition)
+    );
+    assert!(state.diagnostics().is_empty(), "{:?}", state.diagnostics());
+    assert_eq!(
+        state.undo_description(),
+        Some("Add sessions : CachedStore from the Library")
+    );
+    // On the Surface like any edit, and highlighted as the Assistant's.
+    assert!(app.lookup.node(&app.scene, sessions).is_some());
+    assert_eq!(
+        app.highlights[&sessions].1,
+        agq_system_state::Actor::Assistant
+    );
+    let change = result(&app, "t4").change.clone().unwrap();
+    assert!(change.created.contains(&sessions.raw()));
+    assert_valid(&app);
+    // "Undo the Assistant's changes" takes it all back.
+    assert_eq!(app.conversation.undoable(state), Some(Undo::Assistant(2)));
+    app.undo_assistant_changes();
+    assert!(find(&app, "P::System").is_none());
+    assert!(find(&app, "Library").is_none());
+}
+
+#[test]
+fn saving_to_my_library_waits_for_the_operator() {
+    let save = |id: &str| {
+        tool(
+            id,
+            tools::SAVE_TO_LIBRARY,
+            json!({ "definition": "P::Checkout", "category": "Payments" }),
+        )
+    };
+    let (mut app, _folder) = assisted(
+        "assistant-save",
+        vec![
+            reply(
+                vec![changes(
+                    "t0",
+                    "Add checkout",
+                    vec![
+                        json!({ "op": "create", "parent": "P", "kind": "part def", "name": "Checkout" }),
+                    ],
+                )],
+                "tool_use",
+            ),
+            reply(vec![save("t1")], "tool_use"),
+            reply(vec![text("Not saved, as you chose.")], "end_turn"),
+            reply(vec![save("t2")], "tool_use"),
+            reply(vec![text("Saved.")], "end_turn"),
+        ],
+    );
+    say(&mut app, "Add a checkout and save it to My Library.");
+    wait(&mut app, |app| {
+        matches!(
+            app.conversation.waiting,
+            Some(Waiting {
+                kind: WaitingFor::SaveToLibrary { .. },
+                ..
+            })
+        )
+    });
+    // Nothing is saved while the Operator decides.
+    let mine = app.library.source.mine_path().unwrap().to_path_buf();
+    assert!(!mine.exists());
+    assert!(app.answer_question("Don't save"));
+    wait(&mut app, finished);
+    assert!(!mine.exists());
+    assert!(result(&app, "t1").content.starts_with("Not saved"));
+    say(&mut app, "Save it after all.");
+    wait(&mut app, |app| app.conversation.waiting.is_some());
+    assert!(app.answer_question(crate::conversation::SAVE_OPTIONS[0]));
+    wait(&mut app, finished);
+    assert!(
+        std::fs::read_to_string(&mine)
+            .unwrap()
+            .contains("part def Checkout")
+    );
+    assert!(
+        result(&app, "t2")
+            .content
+            .contains("mine:Library::Payments::Checkout")
+    );
+    assert_valid(&app);
+}

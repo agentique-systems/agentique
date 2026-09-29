@@ -37,6 +37,7 @@ pub fn input(tree: &Tree) -> SceneInput {
 /// A hand-made card.
 pub fn node(value: u64, name: &str, kind: NodeCategory, owner: Option<u64>) -> InputNode {
     InputNode {
+        origin: crate::NodeOrigin::Own,
         id: id(value),
         kind,
         keyword: match kind {

@@ -13,6 +13,7 @@ automation = ["gpui/test-support", "gpui_platform/test-support"]
 [dependencies]
 agq-language = { path = "../language" }
 agq-system-state = { path = "../system-state" }
+agq-library = { path = "../library" }
 agq-studio-scene = { path = "../studio-scene" }
 agq-assistant = { path = "../assistant" }
 agq-providers = { path = "../providers" }

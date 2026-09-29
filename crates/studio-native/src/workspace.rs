@@ -11,7 +11,7 @@ use crate::{
     dialogs::DialogsView,
     navigation::SurfaceView as View,
     palette::Palette,
-    panels::{InspectorColumn, OutlineView},
+    panels::{InspectorColumn, LeftColumn},
     session::Widths,
     settings_view::SettingsView,
     studio::{Dirty, Studio, StudioEvent, System},
@@ -65,7 +65,7 @@ pub struct Workspace {
     studio: Entity<Studio>,
     focus: FocusHandle,
     surface: Entity<SurfaceView>,
-    outline: Entity<OutlineView>,
+    outline: Entity<LeftColumn>,
     inspector: Entity<InspectorColumn>,
     conversation: Entity<ConversationView>,
     settings: Entity<SettingsView>,
@@ -101,7 +101,7 @@ impl Workspace {
         let gallery = args.fixture.as_deref() == Some("components");
         let studio = cx.new(|_| Studio::new(args, system));
         let surface = cx.new(|cx| SurfaceView::new(studio.clone(), cx));
-        let outline = cx.new(|cx| OutlineView::new(studio.clone(), window, cx));
+        let outline = cx.new(|cx| LeftColumn::new(studio.clone(), window, cx));
         let inspector = cx.new(|cx| InspectorColumn::new(studio.clone(), window, cx));
         let conversation = cx.new(|cx| ConversationView::new(studio.clone(), window, cx));
         let settings = cx.new(|cx| SettingsView::new(studio.clone(), window, cx));
@@ -254,6 +254,11 @@ impl Workspace {
         }
         println!("{report}");
         cx.quit();
+        // GPUI's quit on Windows waits for the message queue to empty, which
+        // a window that redraws every tick (the gallery, in a debug build)
+        // can put off for a minute, saving the image again each tick. The
+        // run's work is written; nothing else is saved in these runs.
+        std::process::exit(0);
     }
 
     fn studio_changed(&mut self, dirty: Dirty, window: &mut Window, cx: &mut Context<Self>) {
@@ -348,6 +353,10 @@ impl Workspace {
                 self.conversation
                     .update(cx, |view, cx| view.focus_input(window, cx));
             }
+            CommandId::ShowLibrary => {
+                // The Library's search takes the keyboard when it is drawn.
+                cx.notify();
+            }
             CommandId::Settings | CommandId::ShortcutHelp => {
                 if self.studio.read(cx).settings_open {
                     self.settings.update(cx, |view, cx| view.focus(window, cx));
@@ -366,15 +375,28 @@ impl Workspace {
         match (wanted, &self.palette) {
             (Some(mode), None) => {
                 let palette = cx.new(|cx| Palette::new(self.studio.clone(), mode, window, cx));
-                let subscription =
-                    cx.subscribe_in(&palette, window, |this, _, _: &DismissEvent, window, cx| {
+                let subscription = cx.subscribe_in(
+                    &palette,
+                    window,
+                    |this, palette, _: &DismissEvent, window, cx| {
+                        // A row may open the palette again in another mode
+                        // ("What can connect here?", "Find usages"): only
+                        // this palette's own mode closes.
+                        let mode = palette.read(cx).mode();
                         this.palette = None;
                         this.studio.act(cx, |studio| {
-                            studio.palette = None;
+                            if studio.palette == Some(mode) {
+                                studio.palette = None;
+                            }
                             studio.mark(Dirty::OVERLAY);
                         });
-                        this.focus_center(window, cx);
-                    });
+                        if this.studio.read(cx).palette.is_some() {
+                            this.sync_palette(window, cx);
+                        } else {
+                            this.focus_center(window, cx);
+                        }
+                    },
+                );
                 palette.update(cx, |palette, cx| palette.focus(window, cx));
                 self.palette = Some((palette, subscription));
                 cx.notify();
@@ -489,6 +511,7 @@ impl Workspace {
                 .palette
                 .as_ref()
                 .map(|(palette, _)| palette.read(cx).query(cx)),
+            library_search: self.outline.read(cx).library().read(cx).query(cx),
         }
     }
 }
@@ -551,8 +574,15 @@ pub fn command_icon(id: CommandId) -> Option<IconName> {
         HidePanels => IconName::Maximize,
         ShowOutline => IconName::PanelLeft,
         ShowInspector => IconName::PanelRight,
-        LeaveFocus => IconName::Minimize,
+        LeaveFocus => IconName::ChevronLeft,
         ZoomReset => IconName::Search,
+        ShowLibrary | InsertFromLibrary => IconName::Library,
+        ConnectFromLibrary => IconName::Port,
+        OpenDefinition => IconName::Definition,
+        FindUsages => IconName::Search,
+        Specialize => IconName::Branch,
+        CreateBlock => IconName::Component,
+        SaveToLibrary => IconName::Save,
     })
 }
 
@@ -603,6 +633,8 @@ impl Render for Workspace {
             && gallery.is_none();
         let show_conversation =
             !focus_mode && studio.conversation.shown && has_project && !settings_open;
+        let room = f32::from(window.viewport_size().width) / (f32::from(window.rem_size()) / 16.0);
+        let widths = widths.fitted([show_outline, show_inspector, show_conversation], room);
         // Columns shown at start are simply there; one opened later slides in.
         let animate = self.ticks > 30 && !studio.reduced_motion;
         let context_menu = self
