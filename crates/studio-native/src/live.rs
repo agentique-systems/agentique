@@ -18,20 +18,16 @@ pub struct ProviderLive {
     model: ModelRef,
 }
 
-/// The provider for a model id, by the ids the providers use.
+/// The provider that serves a model id, as the provider layer's own table
+/// knows it (its default model, or a model it prices); never guessed from
+/// the id (§8.7). TypeSafe's models make typed decisions, not chat.
 pub fn provider_for(model: &str) -> Option<Provider> {
-    let model = model.to_ascii_lowercase();
-    Some(if model.starts_with("deepseek") {
-        Provider::DeepSeek
-    } else if model.starts_with("claude") {
-        Provider::Anthropic
-    } else if model.starts_with("gpt") || model.starts_with("o3") || model.starts_with("o4") {
-        Provider::OpenAi
-    } else if model.contains('/') {
-        Provider::OpenRouter
-    } else {
-        return None;
-    })
+    Provider::ALL
+        .into_iter()
+        .filter(|p| *p != Provider::TypeSafe)
+        .find(|p| {
+            p.default_model() == model || agq_providers::price(&ModelRef::new(*p, model)).is_some()
+        })
 }
 
 /// The live model for the selected scenario's agent: the agent's `model`
@@ -104,9 +100,13 @@ impl LiveModel for ProviderLive {
             answer_template(&request.output)
         );
         // The agent's mode, as the provider's reasoning effort: a fast agent
-        // asks for little reasoning; a deliberate one uses the model's own.
+        // asks for the least reasoning the model offers (its capability
+        // table, lowest first); a deliberate one uses the model's own.
         let effort = match request.mode.as_deref() {
-            Some("fast") => Some("low".to_string()),
+            Some("fast") => agq_providers::capabilities(&self.model)
+                .efforts
+                .first()
+                .map(|e| e.to_string()),
             _ => None,
         };
         let chat = ChatRequest {
@@ -312,10 +312,6 @@ mod tests {
     fn providers_come_from_model_ids_and_json_from_replies() {
         assert_eq!(provider_for("deepseek-flash"), Some(Provider::DeepSeek));
         assert_eq!(provider_for("claude-haiku-4-5"), Some(Provider::Anthropic));
-        assert_eq!(
-            provider_for("anthropic/claude-opus-5"),
-            Some(Provider::OpenRouter)
-        );
         assert_eq!(provider_for("mystery"), None);
         assert_eq!(
             json_in("```json\n{\"decision\": \"allow\"}\n```"),
