@@ -22,6 +22,7 @@ use agq_assistant::{
     Conversation, Entry, ModelChoice, StreamEvent, ToolCall, ToolResult, TurnEvent, turn,
 };
 use agq_language::{Source, parse, print};
+use agq_library::Library;
 use agq_system_state::SystemState;
 use std::collections::BTreeSet;
 use std::io::Write;
@@ -92,12 +93,15 @@ fn main() {
 }
 
 fn execute(state: &mut SystemState, call: &ToolCall) -> ToolResult {
-    match tools::prepare(state, &call.name, &call.input) {
+    match tools::prepare(state, &Library::built_in_only(), &call.name, &call.input) {
         Prepared::Answer(text) => ToolResult::answer(text),
         Prepared::Invalid(message) => ToolResult::error(message),
         Prepared::Question { question, .. } => {
             println!("\n[question] {question}\n[answer] Decide as you think best.");
             ToolResult::answer("Decide as you think best.")
+        }
+        Prepared::SaveToLibrary { .. } => {
+            ToolResult::error("Not saved: this run keeps no My Library.")
         }
         Prepared::Change(change) => match state.apply(change) {
             Ok(event) => ToolResult::applied(state, &event),

@@ -384,6 +384,13 @@ impl ConversationView {
                 WaitingFor::Question { options, .. } => {
                     Some((waiting.call.id.clone(), options.clone()))
                 }
+                WaitingFor::SaveToLibrary { .. } => Some((
+                    waiting.call.id.clone(),
+                    crate::conversation::SAVE_OPTIONS
+                        .iter()
+                        .map(|option| option.to_string())
+                        .collect(),
+                )),
                 _ => None,
             },
             None => None,
@@ -426,12 +433,46 @@ impl ConversationView {
             };
             let created = ids(&change.created);
             let owners: HashSet<ElementId> = created.iter().filter_map(owner).collect();
+            let kind = |id: &ElementId| tree.and_then(|t| t.get(*id)).map(|e| e.kind);
+            let created_package = |id: &ElementId| {
+                owner(id)
+                    .is_some_and(|o| created.contains(&o) && kind(&o) == Some(ElementKind::Package))
+            };
             let gone = !created.is_empty()
                 && tree.is_none_or(|t| created.iter().all(|id| !t.contains(*id)));
             Some(Outcome {
                 created: created
                     .iter()
                     .filter(|id| !comment(id) && owner(id).is_none_or(|o| !created.contains(&o)))
+                    .filter_map(|id| name(*id))
+                    .collect(),
+                imported: created
+                    .iter()
+                    .filter(|id| {
+                        kind(id).is_some_and(|k| k.is_definition())
+                            && (owner(id).is_none_or(|o| !created.contains(&o))
+                                || created_package(id))
+                    })
+                    .filter_map(|id| name(*id))
+                    .collect(),
+                added: created
+                    .iter()
+                    .filter(|id| {
+                        kind(id).is_some_and(|k| {
+                            k.is_usage()
+                                && !matches!(k, ElementKind::Connection | ElementKind::Interface)
+                        }) && owner(id).is_none_or(|o| !created.contains(&o))
+                    })
+                    .filter_map(|id| name(*id))
+                    .collect(),
+                connected: created
+                    .iter()
+                    .filter(|id| {
+                        matches!(
+                            kind(id),
+                            Some(ElementKind::Connection | ElementKind::Interface)
+                        ) && owner(id).is_none_or(|o| !created.contains(&o))
+                    })
                     .filter_map(|id| name(*id))
                     .collect(),
                 changed: ids(&change.changed)
@@ -881,25 +922,40 @@ fn text_element(
     text: SharedString,
     text_runs: Vec<TextRun>,
     links: Vec<(std::ops::Range<usize>, ElementId)>,
+    blocks: Vec<(std::ops::Range<usize>, agq_library::BlockRef)>,
 ) -> AnyElement {
+    // Where each link ends, for the scripted journeys: its last character is
+    // on the link even when it wraps, and in view once the reply is.
+    #[cfg(feature = "automation")]
+    let last = |range: &std::ops::Range<usize>| {
+        text[..range.end]
+            .char_indices()
+            .last()
+            .map_or(range.start, |(i, _)| i)
+    };
+    #[cfg(feature = "automation")]
+    let starts: Vec<(usize, String)> = links
+        .iter()
+        .map(|(range, id)| (last(range), format!("Link {}", id.raw())))
+        .chain(
+            blocks
+                .iter()
+                .map(|(range, block)| (last(range), format!("Block {block}"))),
+        )
+        .collect();
     let styled = StyledText::new(text).with_runs(text_runs);
     let layout = styled.layout().clone();
     let drawn = ctx.drawn.clone();
-    // Where each link starts, for the scripted journeys.
     #[cfg(feature = "automation")]
     let drawn = {
         let layout = layout.clone();
-        let starts: Vec<(usize, u64)> = links
-            .iter()
-            .map(|(range, id)| (range.start, id.raw()))
-            .collect();
         let registry = drawn;
         move || {
-            for (start, raw) in &starts {
+            for (start, name) in &starts {
                 if let Some(at) = layout.position_for_index(*start) {
                     let height = layout.line_height();
                     let bounds = gpui::Bounds::new(at, gpui::size(gpui::px(8.0), height));
-                    ui::target::record(&format!("Link {raw}"), bounds);
+                    ui::target::record(name, bounds);
                 }
             }
             registry.clone()
@@ -907,19 +963,31 @@ fn text_element(
     };
     #[cfg(not(feature = "automation"))]
     let drawn = move || drawn.clone();
-    let element = if links.is_empty() {
+    let element = if links.is_empty() && blocks.is_empty() {
         styled.into_any_element()
     } else {
         let studio = ctx.studio.clone();
-        let ranges: Vec<_> = links.iter().map(|(range, _)| range.clone()).collect();
+        let ranges: Vec<_> = links
+            .iter()
+            .map(|(range, _)| range.clone())
+            .chain(blocks.iter().map(|(range, _)| range.clone()))
+            .collect();
         let ids: Vec<ElementId> = links.iter().map(|(_, id)| *id).collect();
+        let blocks: Vec<agq_library::BlockRef> =
+            blocks.into_iter().map(|(_, block)| block).collect();
         InteractiveText::new(
             SharedString::from(format!("text-{}-{}-{}", key.0.0, key.0.1, key.1)),
             styled,
         )
-        .on_click(ranges, move |index, _, cx| {
-            let id = ids[index];
-            studio.act(cx, |studio| studio.reveal(id));
+        .on_click(ranges, move |index, _, cx| match ids.get(index) {
+            Some(id) => {
+                let id = *id;
+                studio.act(cx, |studio| studio.reveal(id));
+            }
+            None => {
+                let block = blocks[index - ids.len()].clone();
+                studio.act(cx, |studio| studio.show_block(block));
+            }
         })
         .into_any_element()
     };
@@ -963,6 +1031,7 @@ fn message(ctx: &Rc<Ctx>, place: (usize, usize), blocks: &[Block], cx: &App) -> 
                         SharedString::from(text.text.clone()),
                         runs(text, selected(text.text.len()), &theme),
                         text.links.clone(),
+                        text.blocks.clone(),
                     );
                     div()
                         .flex()
@@ -1002,6 +1071,7 @@ fn message(ctx: &Rc<Ctx>, place: (usize, usize), blocks: &[Block], cx: &App) -> 
                         key,
                         SharedString::from(code.clone()),
                         plain_runs(code, theme::MONO, theme.text, selected(code.len()), &theme),
+                        Vec::new(),
                         Vec::new(),
                     );
                     div()
@@ -1231,7 +1301,9 @@ impl Render for ConversationView {
         let panel = &studio.conversation;
         let running = panel.running();
         let asked = match panel.waiting.as_ref().map(|w| &w.kind) {
-            Some(WaitingFor::Question { question, .. }) => Some(question.clone()),
+            Some(
+                WaitingFor::Question { question, .. } | WaitingFor::SaveToLibrary { question, .. },
+            ) => Some(question.clone()),
             _ => None,
         };
         let question = asked.is_some();
@@ -1456,6 +1528,8 @@ impl Render for ConversationView {
                                         this.child(
                                             div()
                                                 .id("insert-selection")
+                                                .min_w_0()
+                                                .overflow_hidden()
                                                 .flex()
                                                 .items_center()
                                                 .gap(r(4.0))
@@ -1472,8 +1546,8 @@ impl Render for ConversationView {
                                                 .aria_label("Insert selection")
                                                 .on_click(move |_: &ClickEvent, _, cx| studio.act(cx, |studio| studio.insert_selection()))
                                                 .child(icon(IconName::Plus).size(11.0).color(theme.text_faint))
-                                                .child(div().font_family(theme::MONO).child(selection_names.join(", ")))
-                                                .child(KeyCaps::new("Ctrl+I")),
+                                                .child(div().min_w_0().overflow_hidden().text_ellipsis().whitespace_nowrap().font_family(theme::MONO).child(selection_names.join(", ")))
+                                                .child(div().flex_none().child(KeyCaps::new("Ctrl+I"))),
                                         )
                                     })
                                     .child(div().flex_1().min_w_0())

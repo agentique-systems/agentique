@@ -28,8 +28,8 @@ one line per problem when:
 - a crate's normal or build dependency on another workspace crate is not allowed
   by the model;
 - LanguageCore depends on another part;
-- a LanguageCore, SystemState or History crate depends on a UI or network library
-  (the list is in the script);
+- a LanguageCore, SystemState, History or Library crate depends on a UI or network
+  library (the list is in the script);
 - a crate outside Providers depends on rig, tokio, reqwest or the credential-store
   crates (R-41, ROADMAP §8.7). Temporary exceptions are listed in the script with
   the work item that removes each, and the part's `doc` says so (today: `reqwest`

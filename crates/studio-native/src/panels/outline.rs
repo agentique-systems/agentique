@@ -126,6 +126,7 @@ impl Render for OutlineView {
         let rows = self.rows.clone();
         let count = rows.len();
         let studio = self.studio.clone();
+        let _ = &count;
         let selection = self.studio.read(cx).selection.clone();
         let empty = self.studio.read(cx).scene.nodes.is_empty();
         div()
@@ -136,33 +137,6 @@ impl Render for OutlineView {
             .bg(theme.chrome)
             .role(gpui::Role::Navigation)
             .aria_label("Outline")
-            .child(
-                div()
-                    .flex_none()
-                    .h(r(36.0))
-                    .px(r(12.0))
-                    .flex()
-                    .items_center()
-                    .justify_between()
-                    .border_b_1()
-                    .border_color(theme.separator)
-                    .child(
-                        div()
-                            .flex()
-                            .items_center()
-                            .gap(r(6.0))
-                            .text_size(r(theme::text::SM))
-                            .font_weight(theme::MEDIUM)
-                            .child(icon(IconName::Outline).size(13.0).color(theme.text_faint))
-                            .child("Outline"),
-                    )
-                    .child(
-                        div()
-                            .text_size(r(theme::text::XS))
-                            .text_color(theme.text_faint)
-                            .child(format!("{count}")),
-                    ),
-            )
             .child(
                 div()
                     .flex_none()

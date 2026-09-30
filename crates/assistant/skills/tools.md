@@ -21,6 +21,16 @@
   - wiring: `{"op": "connect", "parent": "UrlShortener::UrlShortenerService", "kind": "interface", "name": "storage", "definition": "LinkStorage", "from": "api.storage", "to": "store.links"}`
   - subject: `{"op": "create", "parent": "UrlShortener::UniqueCodes", "kind": "subject", "name": "store", "type": "LinkStore"}`
   - satisfy: `{"op": "create", "parent": "UrlShortener", "kind": "satisfy", "requirement": "uniqueCodes", "by": "shortener.store"}`
+- The Library of building blocks: `search_library` finds blocks by words,
+  kind, scope or fit with a port (`fits_port`); `read_library_block`
+  describes one in words (read it before you use it); `use_library_block`
+  uses one in a single change: it copies what the block needs into the
+  project's `Library` package and adds a usage, with optional `values` and a
+  connection (`connect_to`, a port as a feature chain from `parent`).
+  Example: `{"block": "built-in:Library::Storage::Cache", "parent": "Shop::System", "name": "sessions", "values": {"ttlSeconds": 60}, "connect_to": "front.backend"}`.
+  A reported conflict changed nothing: ask the Operator, then pass
+  `if_exists`. `save_to_library` saves to My Library, only when the Operator
+  asked.
 - Each change result lists the problems at the changed elements. Fix them in
   the next step; before you finish, check `get_problems` and leave the model
   without problems you caused. Say so if one remains and why.

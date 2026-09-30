@@ -79,6 +79,47 @@ pub enum Dialog {
         /// The revision when the question was asked; the change is applied
         /// only if the model has not changed since.
         base: Option<u64>,
+        /// The id the model would give its next new element when the
+        /// question was asked: a change that refers to elements it creates
+        /// itself cannot be applied to a model that changed since.
+        next: Option<ElementId>,
+        /// A shared definition and the usage it is changed from: the
+        /// Operator may specialise instead.
+        shared: Option<(ElementId, ElementId)>,
+    },
+    /// "Specialise…": the name of a new definition that specialises
+    /// `definition`; `usage`, if any, is typed by it instead.
+    Specialize {
+        definition: ElementId,
+        usage: Option<ElementId>,
+        name: String,
+    },
+    /// "Create building block from selection…": the proposed block, shown
+    /// before anything changes, and the names of the new definition and
+    /// its usage.
+    ExtractBlock {
+        extraction: Box<agq_library::Extraction>,
+        definition: String,
+        usage: String,
+    },
+    /// "Save to My Library…": the category; conflicts found by an earlier
+    /// try, which confirming again replaces in My Library.
+    SaveToLibrary {
+        definition: ElementId,
+        category: String,
+        conflicts: Vec<agq_library::Conflict>,
+    },
+    /// "Override here": a value for an inherited attribute, in `owner` only.
+    Override {
+        owner: ElementId,
+        path: Vec<ElementId>,
+        value: String,
+    },
+    /// Using a block met definitions of the same names with other content:
+    /// use the project's, or copy the block's under another name.
+    LibraryConflict {
+        request: agq_library::Use,
+        conflicts: Vec<agq_library::Conflict>,
     },
 }
 /// What became of a change given to [`Studio::apply_change`].
@@ -255,7 +296,7 @@ impl Studio {
 
     /// Where new elements go: inside the selected card, else inside the
     /// project's top-level package, else at the top of the first document.
-    fn create_parent(&self) -> Parent {
+    pub(crate) fn create_parent(&self) -> Parent {
         if let Some(card) = self.selected_card() {
             return Parent::Element(card);
         }
@@ -322,19 +363,31 @@ impl Studio {
             && let Some(port) = self.inspected_element()
             && touches(&change, port)
         {
+            let usages = self.usages_of(definition);
             let tree = self.tree()?;
             let name = |id| tree.effective_name(id).unwrap_or("element").to_string();
+            let listed: Vec<String> = usages.iter().take(6).map(|u| name(*u)).collect();
+            let more = usages.len().saturating_sub(listed.len());
             let question = format!(
-                "{} is defined in {}. This changes {} and every part typed by it. Continue?",
+                "{} is defined in {}. Changing it changes {} and every usage of it: {}{}. Change the definition, or specialise it for this usage only?",
                 name(port),
                 name(definition),
-                name(definition)
+                name(definition),
+                listed.join(", "),
+                if more > 0 {
+                    format!(" and {more} more")
+                } else {
+                    String::new()
+                }
             );
+            let usage = self.selected_card();
             self.dialog = Some(Dialog::Confirm {
                 change,
                 question,
                 locked: Vec::new(),
                 base: None,
+                next: None,
+                shared: usage.map(|usage| (definition, usage)),
             });
             return None;
         }
@@ -354,6 +407,7 @@ impl Studio {
         };
         self.timing.edit_started();
         let revision = project.state().revision();
+        let next = project.state().tree().next_id();
         match project.apply(change.clone()) {
             Ok(event) => {
                 self.saved = Ok(());
@@ -389,6 +443,8 @@ impl Studio {
                     question,
                     locked: elements,
                     base: Some(revision),
+                    next: Some(next),
+                    shared: None,
                 });
                 Outcome::Asking
             }
@@ -696,13 +752,30 @@ impl Studio {
             mut change,
             locked,
             base,
+            next,
             ..
         }) = self.dialog.take()
         else {
             return;
         };
         let assistant = change.actor == Actor::Assistant;
-        let outcome = if yes {
+        let current = self.project.as_ref().map(|p| p.state().revision());
+        // A change that refers to elements it creates itself was planned
+        // for the ids the model handed out then; after another change it
+        // must be planned again, never applied to the changed model.
+        let replan = yes
+            && base.is_some()
+            && base != current
+            && next.is_some_and(|next| refers_to_new(&change, next));
+        let outcome = if replan {
+            self.status =
+                "The model changed while you were deciding; nothing was changed. Please do it again."
+                    .into();
+            Outcome::NotApplied(ApplyError::Rejection(Rejection::Stale {
+                base: base.unwrap_or_default(),
+                current: current.unwrap_or_default(),
+            }))
+        } else if yes {
             change.confirmed = locked;
             change.base = base;
             self.apply_change(change)
@@ -739,6 +812,49 @@ impl Studio {
         }
         options
     }
+}
+
+/// Whether a change refers to an element with an id from `next` up: one it
+/// creates itself.
+fn refers_to_new(change: &Change, next: ElementId) -> bool {
+    let new = |id: &ElementId| id.raw() >= next.raw();
+    let in_reference = |r: &Reference| r.steps.iter().filter_map(|s| s.target).any(|t| new(&t));
+    let in_element = |e: &Element| e.references().into_iter().any(|(_, r)| in_reference(r));
+    change.operations.iter().any(|operation| match operation {
+        Operation::Create { parent, element } => {
+            matches!(parent, Parent::Element(id) if new(id)) || in_element(element)
+        }
+        Operation::Connect {
+            parent,
+            definition,
+            from,
+            to,
+            ..
+        } => {
+            new(parent)
+                || definition.as_ref().is_some_and(in_reference)
+                || in_reference(from)
+                || in_reference(to)
+        }
+        Operation::Move { element, parent } => {
+            new(element) || matches!(parent, Parent::Element(id) if new(id))
+        }
+        Operation::Set { element, property } => {
+            new(element)
+                || match property {
+                    Property::TypedBy(refs)
+                    | Property::Specializes(refs)
+                    | Property::Redefines(refs)
+                    | Property::Ends(refs) => refs.iter().any(in_reference),
+                    Property::Target(r) | Property::By(r) => r.as_ref().is_some_and(in_reference),
+                    _ => false,
+                }
+        }
+        Operation::Delete { element }
+        | Operation::Rename { element, .. }
+        | Operation::Lock { element }
+        | Operation::Unlock { element } => new(element),
+    })
 }
 
 /// A rejection in plain words.

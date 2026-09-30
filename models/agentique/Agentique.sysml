@@ -41,6 +41,15 @@ package AgentiqueArchitecture {
         }
     }
 
+    part def Library {
+        doc /* The Library of building blocks (C-49, ROADMAP §4.13): finds, describes and
+             * searches reusable definitions (the built-in blocks, the project's own, My
+             * Library), works out what a block needs, and plans its use, specialisation,
+             * overrides and extraction as ordinary System State changes, the same for the
+             * Studio and the Assistant. Meaning and validity stay in LanguageCore. */
+        part 'agq-library' : Crate;
+    }
+
     part def Studio {
         doc /* The application shell the Operator works in: the Surface (spatial
              * rendering and direct manipulation), the Panels (inspector, requirements,
@@ -84,6 +93,7 @@ package AgentiqueArchitecture {
         part languageCore : LanguageCore;
         part systemState : SystemState;
         part history : History;
+        part library : Library;
         part studio : Studio;
         part assistant : Assistant;
         part providers : Providers;
@@ -105,12 +115,24 @@ package AgentiqueArchitecture {
     dependency from Studio to Providers {
         doc /* Settings tests keys and lists models. */
     }
+    dependency from Studio to Library {
+        doc /* The Library panel, insertion, previews and My Library. */
+    }
     dependency from Assistant to SystemState;
     dependency from Assistant to LanguageCore {
         doc /* Element identities and model types in tool calls. */
     }
     dependency from Assistant to Providers {
         doc /* Model calls: requests, streamed replies, usage. */
+    }
+    dependency from Assistant to Library {
+        doc /* The Library tools: search, read and use building blocks. */
+    }
+    dependency from Library to SystemState {
+        doc /* Plans are System State changes, tried on a copy of the state. */
+    }
+    dependency from Library to LanguageCore {
+        doc /* Blocks are definitions; their features and fit come from Semantics. */
     }
     dependency from SystemState to LanguageCore;
     dependency from SystemState to History;

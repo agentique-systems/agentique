@@ -131,7 +131,17 @@ pub enum WaitingFor {
     /// A change that waits until the Operator closes the dialog they have
     /// open, so it never replaces it.
     Dialog(agq_system_state::Change),
+    /// `save_to_library`: shown as a question with Save and Don't save
+    /// ([`SAVE_OPTIONS`]); only Save changes My Library (C-49).
+    SaveToLibrary {
+        plan: Box<agq_library::SavePlan>,
+        question: String,
+        saved: String,
+    },
 }
+
+/// The answers to the Assistant's request to save to My Library.
+pub const SAVE_OPTIONS: [&str; 2] = ["Save to My Library", "Don't save"];
 
 impl Default for ConversationPanel {
     fn default() -> Self {
@@ -560,9 +570,31 @@ impl Studio {
         let answer = |result| {
             let _ = reply.send(result);
         };
-        match tools::prepare(project.state(), &call.name, &call.input) {
+        match tools::prepare(
+            project.state(),
+            &self.library.source,
+            &call.name,
+            &call.input,
+        ) {
             Prepared::Answer(text) => answer(ToolResult::answer(text)),
             Prepared::Invalid(message) => answer(ToolResult::error(message)),
+            Prepared::SaveToLibrary {
+                plan,
+                question,
+                saved,
+            } => {
+                let panel = &mut self.conversation;
+                panel.waiting = Some(Waiting {
+                    call,
+                    reply,
+                    kind: WaitingFor::SaveToLibrary {
+                        plan,
+                        question,
+                        saved,
+                    },
+                });
+                panel.shown = true;
+            }
             Prepared::Question { question, options } => {
                 let panel = &mut self.conversation;
                 panel.waiting = Some(Waiting {
@@ -643,18 +675,42 @@ impl Studio {
     /// is open or the turn that asked it is gone.
     pub fn answer_question(&mut self, answer: &str) -> bool {
         let panel = &mut self.conversation;
-        let Some(Waiting {
-            kind: WaitingFor::Question { .. },
-            ..
-        }) = &panel.waiting
-        else {
+        if !matches!(
+            &panel.waiting,
+            Some(Waiting {
+                kind: WaitingFor::Question { .. } | WaitingFor::SaveToLibrary { .. },
+                ..
+            })
+        ) {
             return false;
-        };
+        }
         let waiting = panel.waiting.take().expect("checked above");
-        waiting
-            .reply
-            .send(ToolResult::answer(answer.trim()))
-            .is_ok()
+        let result = match waiting.kind {
+            WaitingFor::SaveToLibrary { plan, saved, .. } => {
+                let yes = matches!(
+                    answer.trim().to_lowercase().as_str(),
+                    "save to my library" | "save" | "yes"
+                );
+                if yes {
+                    match self.library.source.save(*plan) {
+                        Ok(()) => {
+                            self.status = "Saved to My Library".into();
+                            self.mark(crate::studio::Dirty::ALL);
+                            ToolResult::answer(saved)
+                        }
+                        Err(error) => ToolResult::error(format!(
+                            "Not saved: My Library could not be written: {error}"
+                        )),
+                    }
+                } else {
+                    ToolResult::answer(
+                        "Not saved: the Operator chose not to save it to My Library.",
+                    )
+                }
+            }
+            _ => ToolResult::answer(answer.trim()),
+        };
+        waiting.reply.send(result).is_ok()
     }
 
     /// Stops the Assistant at once: no further model or tool call starts, a

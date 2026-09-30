@@ -89,6 +89,19 @@ pub enum PaletteMode {
     Commands,
     /// Elements only (Ctrl+P, "go to element").
     Elements,
+    /// Building blocks to insert ("Insert from Library…", Shift+A); with
+    /// `fit`, only those that fit the Library's chosen port, connected to it.
+    Library { fit: bool },
+    /// The usages and specialisations of a definition ("Find usages").
+    Usages(agq_language::ElementId),
+}
+
+/// What the left column shows.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum LeftTab {
+    #[default]
+    Outline,
+    Library,
 }
 
 /// The theme the Studio shows: dark or light, and high contrast.
@@ -159,6 +172,12 @@ pub struct Studio {
     pub widths: crate::session::Widths,
     pub dialog: Option<crate::edit::Dialog>,
     pub panel: Panel,
+    /// The left column: the Outline or the Library.
+    pub left: LeftTab,
+    /// The Library of building blocks (C-49).
+    pub library: crate::library::LibraryState,
+    /// Definitions opened and elements focused, to go back to (breadcrumb).
+    pub drill: Vec<crate::library::Drill>,
     pub history: crate::history::HistoryPanel,
     pub status: String,
     /// Whether the last change was saved, with the reason when it was not.
@@ -198,6 +217,12 @@ impl Studio {
         // journeys away from the Operator's own.
         let mut settings = SettingsStore::load(session_path.with_file_name("settings.json"));
         let daily_cost = crate::cost::DailyCost::load(&session_path);
+        // My Library beside the session too.
+        let library = crate::library::LibraryState::new(
+            session_path
+                .with_file_name("library")
+                .join("My Library.sysml"),
+        );
         // Appearance lives in Settings; a session from Stage 4 gives its
         // theme, contrast and reduced motion to Settings once.
         if !session.appearance_in_settings {
@@ -259,6 +284,9 @@ impl Studio {
             widths: Default::default(),
             dialog: None,
             panel: Panel::Inspector,
+            left: LeftTab::Outline,
+            library,
+            drill: Vec::new(),
             history: Default::default(),
             status: String::new(),
             saved: Ok(()),
@@ -279,6 +307,10 @@ impl Studio {
         #[cfg(feature = "automation")]
         if studio.args.scenario.as_deref() == Some("a-assistant") {
             crate::automation::script_assistant(&mut studio);
+        }
+        #[cfg(feature = "automation")]
+        if studio.args.scenario.as_deref() == Some("h-library") {
+            crate::automation::script_library_assistant(&mut studio);
         }
         if let Some(name) = studio.args.fixture.clone() {
             studio.show_fixture(&name);
@@ -330,7 +362,23 @@ impl Studio {
                 )
             });
         let state = self.project.as_ref().map(Project::state);
+        let tree = state.map(|s| s.tree());
+        let element = self.inspected_element();
+        let definition = tree
+            .zip(element)
+            .is_some_and(|(tree, e)| crate::library::definition_of(tree, e).is_some());
+        let elements = self.selection.elements(&self.scene);
+        let parts = !elements.is_empty()
+            && tree.is_some_and(|tree| {
+                elements.iter().all(|e| {
+                    tree.get(*e)
+                        .is_some_and(|e| e.kind == agq_language::ElementKind::Part)
+                })
+            });
         CommandContext {
+            port: matches!(self.selection.primary, Some(SceneTarget::Port(..))),
+            definition,
+            parts,
             busy: self.dialog.is_some() || self.settings_open,
             project: self.project.is_some(),
             editable: self.editable(),
@@ -340,7 +388,7 @@ impl Studio {
             can_undo: state.is_some_and(|s| s.undo_description().is_some()),
             can_redo: state.is_some_and(|s| s.redo_description().is_some()),
             graph_view: self.view == SurfaceView::Graph,
-            focused: self.focus.is_some(),
+            focused: self.focus.is_some() || !self.drill.is_empty(),
         }
     }
 
@@ -528,7 +576,10 @@ impl Studio {
         self.widths = remembered.widths;
         self.conversation.shown = !remembered.conversation_hidden;
         self.collapsed.clear();
+        self.collapse_library();
         self.focus = None;
+        self.drill.clear();
+        self.library.fit = None;
         self.selection.clear();
         self.comparison = None;
         self.highlights.clear();
@@ -684,10 +735,80 @@ impl Studio {
             SurfaceView::Architecture => {
                 let mut input = input.clone();
                 input.retain_edges(&[EdgeKind::Connection, EdgeKind::Interface, EdgeKind::Satisfy]);
+                self.show_inherited(&mut input);
                 input
             }
             SurfaceView::Graph => input.clone(),
             SurfaceView::Requirements => input.requirements_view(),
+        }
+    }
+
+    /// Inside a definition opened on the Surface (C-49), what it inherits
+    /// is shown too: the general's parts inside it (dashed), and the
+    /// general's connections between them, ending at its overrides where it
+    /// redefines a part. Its own members and overrides are as they are.
+    fn show_inherited(&self, input: &mut SceneInput) {
+        let (Some(focus), Some(project)) = (self.focus, self.project.as_ref()) else {
+            return;
+        };
+        let tree = project.state().tree();
+        if !tree.get(focus).is_some_and(|e| e.kind.is_definition()) {
+            return;
+        }
+        let semantics = agq_language::Semantics::new(tree);
+        let generals: BTreeSet<ElementId> = {
+            let mut all = vec![focus];
+            let mut i = 0;
+            while i < all.len() {
+                for g in semantics.generals(all[i]) {
+                    if !all.contains(&g) {
+                        all.push(g);
+                    }
+                }
+                i += 1;
+            }
+            all.into_iter().filter(|g| *g != focus).collect()
+        };
+        if generals.is_empty() {
+            return;
+        }
+        // Inherited parts move inside the opened definition; redefined ones
+        // are stood for by their overrides.
+        let mut stands_for: BTreeMap<ElementId, ElementId> =
+            generals.iter().map(|g| (*g, focus)).collect();
+        for feature in semantics.features(focus) {
+            let Some(element) = tree.get(feature) else {
+                continue;
+            };
+            if semantics.is_inherited(focus, feature) {
+                if element.kind == agq_language::ElementKind::Part
+                    && let Some(node) = input.nodes.iter_mut().find(|n| n.id == feature)
+                {
+                    let from = element
+                        .owner()
+                        .and_then(|o| tree.effective_name(o))
+                        .unwrap_or("its general")
+                        .to_string();
+                    node.owner = Some(focus);
+                    node.origin = agq_studio_scene::NodeOrigin::Inherited;
+                    node.detail = format!("{} · from {from}", node.detail)
+                        .trim_start_matches(" · ")
+                        .to_string();
+                }
+            } else {
+                for general in semantics.generals(feature) {
+                    if tree.get(general).is_some_and(|g| g.kind.is_usage()) {
+                        stands_for.insert(general, feature);
+                    }
+                }
+            }
+        }
+        for edge in &mut input.edges {
+            for end in [&mut edge.source, &mut edge.target] {
+                if let Some(other) = stands_for.get(&end.node) {
+                    end.node = *other;
+                }
+            }
         }
     }
 
@@ -705,9 +826,35 @@ impl Studio {
         }
     }
 
+    /// The project's copies of Library blocks (the top-level `Library`
+    /// package) start collapsed on the Surface: the model's own structure
+    /// leads, and the copies are one card until expanded (X, or the
+    /// Outline's arrow).
+    fn collapse_library(&mut self) {
+        let Some(tree) = self.project.as_ref().map(|p| p.state().tree()) else {
+            return;
+        };
+        if let Some(library) = tree.roots().find(|r| {
+            tree[*r].kind == agq_language::ElementKind::Package
+                && tree.effective_name(*r) == Some(agq_library::ROOT)
+        }) {
+            self.collapsed.insert(library);
+        }
+    }
+
     /// Updates the Surface after a change, undo or redo, and highlights what
     /// was created or changed where it is, in the colour of who changed it.
     pub fn changed(&mut self, event: &ChangeEvent) {
+        // A Library package the change created starts collapsed.
+        if let Some(tree) = self.project.as_ref().map(|p| p.state().tree())
+            && event.created.iter().any(|id| {
+                tree.get(*id).is_some_and(|e| {
+                    e.kind == agq_language::ElementKind::Package && e.owner().is_none()
+                })
+            })
+        {
+            self.collapse_library();
+        }
         self.refresh();
         let now = crate::motion::clock();
         let tree = self.project.as_ref().map(|p| p.state().tree());
@@ -914,16 +1061,53 @@ impl Studio {
             ShortcutHelp => self.show_settings(Section::Keyboard),
             Focus => {
                 if let Some(card) = self.selected_card() {
-                    self.view = SurfaceView::Architecture;
-                    self.focus = Some(card);
-                    self.rebuild();
-                    self.frame_all();
+                    let label = self
+                        .project
+                        .as_ref()
+                        .and_then(|p| p.state().tree().effective_name(card).map(str::to_string))
+                        .or_else(|| {
+                            self.lookup
+                                .node(&self.scene, card)
+                                .map(|n| n.semantic.name.clone())
+                        })
+                        .unwrap_or_else(|| "Focus".into());
+                    self.drill_into(card, label);
                 }
             }
-            LeaveFocus => {
-                self.focus = None;
-                self.rebuild();
-                self.frame_all();
+            LeaveFocus => self.back(),
+            ShowLibrary => self.show_library(),
+            InsertFromLibrary => {
+                self.library.fit = None;
+                self.palette = Some(PaletteMode::Library { fit: false });
+            }
+            ConnectFromLibrary => {
+                self.fit_selected_port();
+                if self.library.fit.is_some() {
+                    // The palette takes the keyboard, not the Library's search.
+                    self.library.focus_search = false;
+                    self.palette = Some(PaletteMode::Library { fit: true });
+                }
+            }
+            OpenDefinition => {
+                if let Some(element) = self.inspected_element() {
+                    self.open_definition(element)
+                }
+            }
+            FindUsages => {
+                if let Some(element) = self.inspected_element() {
+                    self.find_usages(element)
+                }
+            }
+            Specialize => {
+                if let Some(element) = self.inspected_element() {
+                    self.start_specialize(element)
+                }
+            }
+            CreateBlock => self.start_extract(),
+            SaveToLibrary => {
+                if let Some(element) = self.inspected_element() {
+                    self.start_save(element)
+                }
             }
             Collapse => {
                 if let Some(card) = self.selected_card() {

@@ -2,7 +2,10 @@
 //! shortcut, recent ones first, and every element of the model by qualified
 //! name, in one keyboard-driven list. Ctrl+K opens both; Ctrl+P ("go to
 //! element") opens the elements. Enter runs the highlighted row; a command
-//! that cannot run now stays listed with the reason.
+//! that cannot run now stays listed with the reason. The same list inserts
+//! building blocks ("Insert from Library…", Shift+A; "What can connect
+//! here?"), with the Library's own search, and lists a definition's usages
+//! ("Find usages").
 use crate::{
     commands::{self, CommandId},
     studio::{Dirty, PaletteMode, Studio},
@@ -34,6 +37,7 @@ pub fn bind(cx: &mut App) {
 enum Action {
     Command(CommandId),
     Element(ElementId),
+    Block(agq_library::BlockRef),
 }
 
 #[derive(Clone)]
@@ -90,6 +94,11 @@ pub fn kind_icon(kind: ElementKind) -> IconName {
 }
 
 impl Palette {
+    /// What the palette lists.
+    pub fn mode(&self) -> PaletteMode {
+        self.mode
+    }
+
     /// The mode and what is typed (the scripted journeys).
     #[cfg(feature = "automation")]
     pub fn query(&self, cx: &App) -> (PaletteMode, String) {
@@ -106,6 +115,9 @@ impl Palette {
             InputState::new(window, cx).placeholder(match mode {
                 PaletteMode::Commands => "Search commands and elements",
                 PaletteMode::Elements => "Go to an element by name",
+                PaletteMode::Library { fit: false } => "Insert a building block",
+                PaletteMode::Library { fit: true } => "Insert a building block that fits",
+                PaletteMode::Usages(_) => "Filter the usages",
             })
         });
         let subscription =
@@ -143,6 +155,17 @@ impl Palette {
 
     fn search(&mut self, cx: &mut Context<Palette>) {
         let query = self.input.read(cx).value().trim().to_string();
+        if let PaletteMode::Library { fit } = self.mode {
+            self.studio.update(cx, |studio, _| {
+                studio.library_index();
+            });
+            let rows = library_rows(self.studio.read(cx), &query, fit);
+            return self.show(rows, Vec::new(), cx);
+        }
+        if let PaletteMode::Usages(definition) = self.mode {
+            let rows = usage_rows(self.studio.read(cx), definition, &query);
+            return self.show(rows, Vec::new(), cx);
+        }
         let studio = self.studio.read(cx);
         let mut rows = Vec::new();
         if self.mode == PaletteMode::Commands {
@@ -248,6 +271,10 @@ impl Palette {
                 });
             }
         }
+        self.show(rows, nearest, cx);
+    }
+
+    fn show(&mut self, rows: Vec<Row>, nearest: Vec<String>, cx: &mut Context<Palette>) {
         self.selected = rows
             .iter()
             .position(|row| row.reason.is_none())
@@ -291,10 +318,17 @@ impl Palette {
             return;
         }
         cx.emit(DismissEvent);
+        let fit = matches!(self.mode, PaletteMode::Library { fit: true });
         self.studio.act(cx, |studio| {
             studio.palette = None;
             studio.mark(Dirty::OVERLAY);
             match row.action {
+                Action::Block(block) => {
+                    if !fit {
+                        studio.library.fit = None;
+                    }
+                    crate::panels::library::insert(studio, block);
+                }
                 Action::Command(command) => {
                     studio.recent_commands.retain(|recent| *recent != command);
                     studio.recent_commands.insert(0, command);
@@ -311,6 +345,101 @@ impl Palette {
             }
         });
     }
+}
+
+/// Building blocks for the Library modes: the Library's own search (recent
+/// blocks first when nothing is typed); with `fit`, only those that fit the
+/// chosen port.
+fn library_rows(studio: &Studio, query: &str, fit: bool) -> Vec<Row> {
+    let library = &studio.library;
+    let index = &library.index;
+    let only: Option<Vec<usize>> = fit
+        .then_some(library.fit.as_ref())
+        .flatten()
+        .map(|filter| filter.fits.iter().map(|f| f.block).collect());
+    if fit && only.is_none() {
+        return Vec::new();
+    }
+    let hits = index.search(&agq_library::Query {
+        text: query,
+        scope: None,
+        kinds: &[],
+        only: only.as_deref(),
+        limit: 200,
+    });
+    let mut rows: Vec<(bool, Row)> = hits
+        .into_iter()
+        .filter_map(|hit| {
+            let block = index.get(hit.block)?;
+            agq_library::usage_kind(block.kind)?;
+            let recent = query.is_empty() && library.recent.contains(&block.reference);
+            let mut detail = block.kind_label();
+            if block.composite() {
+                detail.push_str(", composite");
+            }
+            detail.push_str(&format!(" · {}", block.source_label()));
+            if let Some(filter) = library.fit.as_ref().filter(|_| fit)
+                && let Some(ports) = filter.fits.iter().find(|f| f.block == hit.block)
+            {
+                detail.push_str(&format!(" · fits with {}", ports.ports.join(", ")));
+            } else if !block.summary.is_empty() {
+                detail.push_str(&format!(" · {}", block.summary));
+            }
+            Some((
+                recent,
+                Row {
+                    action: Action::Block(block.reference.clone()),
+                    title: block.name.clone().into(),
+                    detail: detail.into(),
+                    icon: Some(kind_icon(block.kind)),
+                    shortcut: "",
+                    reason: None,
+                    group: if recent {
+                        "Recent"
+                    } else {
+                        block.reference.scope.label()
+                    },
+                },
+            ))
+        })
+        .collect();
+    // Recent blocks first, in the order they were used.
+    rows.sort_by_key(|(recent, row)| {
+        let at = match &row.action {
+            Action::Block(block) => library.recent.iter().position(|r| r == block),
+            _ => None,
+        };
+        (!recent, at.unwrap_or(usize::MAX))
+    });
+    rows.into_iter().map(|(_, row)| row).collect()
+}
+
+/// The usages and specialisations of a definition.
+fn usage_rows(studio: &Studio, definition: ElementId, query: &str) -> Vec<Row> {
+    let Some(tree) = studio.project.as_ref().map(|p| p.state().tree()) else {
+        return Vec::new();
+    };
+    studio
+        .usages_of(definition)
+        .into_iter()
+        .filter_map(|id| {
+            let element = tree.get(id)?;
+            let qualified = tree.qualified_name(id);
+            (query.is_empty() || agq_library::fuzzy(query, &qualified).is_some()).then(|| Row {
+                action: Action::Element(id),
+                title: crate::edit::display_name(tree, id).into(),
+                detail: format!("{} · {qualified}", element.kind.keyword()).into(),
+                icon: Some(kind_icon(element.kind)),
+                shortcut: "",
+                reason: None,
+                group: if element.kind.is_definition() {
+                    "Specialisations"
+                } else {
+                    "Usages"
+                },
+            })
+        })
+        .collect()
 }
 
 /// The element names closest to a query that matched nothing, by edit
@@ -351,11 +480,37 @@ impl Render for Palette {
         let selected = self.selected;
         let count = rows.len();
         let entity = cx.entity();
-        let mode_chip = (self.mode == PaletteMode::Elements).then(|| {
-            ui::Chip::new("Elements")
-                .icon(IconName::Search)
-                .tone(ui::Tone::Accent)
-        });
+        let mode_chip = match self.mode {
+            PaletteMode::Elements => Some(
+                ui::Chip::new("Elements")
+                    .icon(IconName::Search)
+                    .tone(ui::Tone::Accent),
+            ),
+            PaletteMode::Library { .. } => Some(
+                ui::Chip::new("Library")
+                    .icon(IconName::Library)
+                    .tone(ui::Tone::Accent),
+            ),
+            PaletteMode::Usages(_) => Some(
+                ui::Chip::new("Usages")
+                    .icon(IconName::Definition)
+                    .tone(ui::Tone::Accent),
+            ),
+            PaletteMode::Commands => None,
+        };
+        let fit_label = self
+            .studio
+            .read(cx)
+            .library
+            .fit
+            .as_ref()
+            .map(|fit| fit.label.clone());
+        let empty_text = match self.mode {
+            PaletteMode::Library { fit: true } => "No building block fits this port",
+            PaletteMode::Library { fit: false } => "No building block matches",
+            PaletteMode::Usages(_) => "Nothing uses this definition yet",
+            _ => "No command or element matches",
+        };
         let list_height = (count as f32 * ROW).min(LIST) + 8.0;
         let nearest = self.nearest.clone();
         let panel = div()
@@ -400,7 +555,7 @@ impl Render for Palette {
                     .items_center()
                     .gap(r(8.0))
                     .text_color(theme.text_muted)
-                    .child("No command or element matches")
+                    .child(empty_text)
                     .when(!nearest.is_empty(), |this| {
                         this.child(
                             div()
@@ -560,8 +715,17 @@ impl Render for Palette {
                     )
                     .child(div().flex_1().min_w_0())
                     .child(match self.mode {
-                        PaletteMode::Commands => "Commands and elements",
-                        PaletteMode::Elements => "Elements, by qualified name",
+                        PaletteMode::Commands => SharedString::from("Commands and elements"),
+                        PaletteMode::Elements => "Elements, by qualified name".into(),
+                        PaletteMode::Library { fit: true } => format!(
+                            "Enter inserts it and connects it to {}",
+                            fit_label.unwrap_or_default()
+                        )
+                        .into(),
+                        PaletteMode::Library { fit: false } => {
+                            "Enter inserts it into the selected part".into()
+                        }
+                        PaletteMode::Usages(_) => "Usages and specialisations".into(),
                     }),
             );
         div()

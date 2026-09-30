@@ -17,7 +17,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 MODEL_DIR = ROOT / "models" / "agentique"
 LANGUAGE_CORE = "LanguageCore"  # depends on no other part
-CORE_PARTS = ("LanguageCore", "SystemState", "History")  # no UI or network libraries
+CORE_PARTS = ("LanguageCore", "SystemState", "History")  # locked core (R-16)
+# Parts that must not use UI or network libraries: the locked core, and the Library
+# (C-49), which plans System State changes and is used by the Studio and the Assistant.
+PLAIN_PARTS = CORE_PARTS + ("Library",)
 DENIED_LIBRARIES = {
     "gpui", "gpui-pre", "gpui-pre-platform", "gpui-base",
     "eframe", "egui", "egui-wgpu", "wgpu", "winit", "slint",
@@ -143,7 +146,7 @@ def check(parts, dependencies, crates):
                 problems.append(
                     f"{crate} ({part}) depends on {used} ({part_of[used]}), "
                     f"but the model has no dependency from {part} to {part_of[used]}")
-            elif part in CORE_PARTS and used in DENIED_LIBRARIES:
+            elif part in PLAIN_PARTS and used in DENIED_LIBRARIES:
                 problems.append(f"{crate} ({part}) depends on {used}, a UI or network library")
             elif (provider_library(used) and part != PROVIDERS
                   and (crate, used) not in TEMPORARY_LIBRARY_USES):

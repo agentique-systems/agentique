@@ -1,6 +1,10 @@
-use agq_assistant::tools::{self, APPLY_CHANGES, ASK_OPERATOR, FIND_ELEMENTS, READ_MODEL};
+use agq_assistant::tools::{
+    self, APPLY_CHANGES, ASK_OPERATOR, FIND_ELEMENTS, READ_LIBRARY_BLOCK, READ_MODEL,
+    SAVE_TO_LIBRARY, SEARCH_LIBRARY, USE_LIBRARY_BLOCK,
+};
 use agq_assistant::{Conversation, Entry, Prepared, ToolResult};
 use agq_language::{Source, parse, print};
+use agq_library::Library;
 use agq_providers::{AssistantPart, ModelRef, Provider, Reasoning, ReasoningPart};
 use agq_system_state::{Actor, Change, Operation, Rejection, SystemState};
 use serde_json::json;
@@ -39,7 +43,11 @@ fn every_tool_has_a_schema() {
             "find_elements",
             "get_problems",
             "apply_changes",
-            "ask_operator"
+            "ask_operator",
+            "search_library",
+            "read_library_block",
+            "use_library_block",
+            "save_to_library"
         ]
     );
     for tool in definitions.as_array().unwrap() {
@@ -52,6 +60,7 @@ fn one_change_can_build_nested_parts_and_connect_them() {
     let mut state = state();
     let prepared = tools::prepare(
         &state,
+        &Library::built_in_only(),
         APPLY_CHANGES,
         &json!({
             "description": "Add the service with its API and store",
@@ -97,6 +106,7 @@ fn a_bad_operation_is_explained_and_nothing_is_prepared() {
     let state = state();
     let prepared = tools::prepare(
         &state,
+        &Library::built_in_only(),
         APPLY_CHANGES,
         &json!({
             "description": "Rename something that does not exist",
@@ -126,7 +136,12 @@ fn a_locked_part_is_not_changed_without_the_operator() {
         "operations": [{ "op": "rename", "element": "UrlShortener::LinkStore::links", "name": "incoming" }]
     });
     let rejection = state
-        .apply(change(tools::prepare(&state, APPLY_CHANGES, &request)))
+        .apply(change(tools::prepare(
+            &state,
+            &Library::built_in_only(),
+            APPLY_CHANGES,
+            &request,
+        )))
         .unwrap_err();
     assert_eq!(
         rejection,
@@ -151,7 +166,12 @@ fn a_change_prepared_on_an_older_model_is_stale() {
         "description": "Add a part def",
         "operations": [{ "op": "create", "parent": "UrlShortener", "kind": "part def", "name": "Stats" }]
     });
-    let prepared = change(tools::prepare(&state, APPLY_CHANGES, &request));
+    let prepared = change(tools::prepare(
+        &state,
+        &Library::built_in_only(),
+        APPLY_CHANGES,
+        &request,
+    ));
     state
         .apply(Change::new(
             Actor::Operator,
@@ -169,7 +189,9 @@ fn a_change_prepared_on_an_older_model_is_stale() {
 #[test]
 fn reading_and_finding_and_asking() {
     let state = state();
-    let Prepared::Answer(model) = tools::prepare(&state, READ_MODEL, &json!({})) else {
+    let Prepared::Answer(model) =
+        tools::prepare(&state, &Library::built_in_only(), READ_MODEL, &json!({}))
+    else {
         panic!()
     };
     // Without an element: an outline, not the whole text (R-34).
@@ -188,15 +210,19 @@ fn reading_and_finding_and_asking() {
     // With an element: its full text.
     let Prepared::Answer(store) = tools::prepare(
         &state,
+        &Library::built_in_only(),
         READ_MODEL,
         &json!({ "element": "UrlShortener::LinkStore" }),
     ) else {
         panic!()
     };
     assert!(store.contains("part def LinkStore"), "{store}");
-    let Prepared::Answer(found) =
-        tools::prepare(&state, FIND_ELEMENTS, &json!({ "name": "store" }))
-    else {
+    let Prepared::Answer(found) = tools::prepare(
+        &state,
+        &Library::built_in_only(),
+        FIND_ELEMENTS,
+        &json!({ "name": "store" }),
+    ) else {
         panic!()
     };
     assert!(
@@ -206,6 +232,7 @@ fn reading_and_finding_and_asking() {
     assert_eq!(
         tools::prepare(
             &state,
+            &Library::built_in_only(),
             ASK_OPERATOR,
             &json!({ "question": "Separate statistics service?", "options": ["Yes", "No"] })
         ),
@@ -215,7 +242,12 @@ fn reading_and_finding_and_asking() {
         }
     );
     assert!(matches!(
-        tools::prepare(&state, "delete_everything", &json!({})),
+        tools::prepare(
+            &state,
+            &Library::built_in_only(),
+            "delete_everything",
+            &json!({})
+        ),
         Prepared::Invalid(_)
     ));
 }
@@ -509,5 +541,265 @@ fn a_long_tool_result_is_cut_with_a_way_to_narrow_it() {
         result
             .content
             .contains("read one element by qualified name")
+    );
+}
+
+// The Library tools (C-49).
+
+fn shop() -> SystemState {
+    let text = "package Shop {
+    part def System;
+    part def Checkout { doc /* Takes payment for an order. */ }
+}";
+    SystemState::new(parse(&[Source::new("Shop.sysml", text)]), BTreeSet::new())
+}
+
+fn answer(prepared: Prepared) -> String {
+    match prepared {
+        Prepared::Answer(text) => text,
+        other => panic!("expected an answer, got {other:?}"),
+    }
+}
+
+#[test]
+fn search_library_lists_blocks_with_what_they_are_and_expose() {
+    let state = shop();
+    let library = Library::built_in_only();
+    let found = answer(tools::prepare(
+        &state,
+        &library,
+        SEARCH_LIBRARY,
+        &json!({ "query": "cache" }),
+    ));
+    assert!(found.contains("building blocks for \"cache\":"), "{found}");
+    assert!(
+        found.contains("- `built-in:Library::Storage::Cache` — part def, Built-in (Storage): Answers repeated reads"),
+        "{found}"
+    );
+    assert!(
+        found.contains("Ports: access : RequestPort, backend : ~RequestPort."),
+        "{found}"
+    );
+    assert!(
+        found.contains("`built-in:Library::Storage::CachedStore` — part def, composite"),
+        "{found}"
+    );
+    // The project's own definitions are blocks too.
+    let own = answer(tools::prepare(
+        &state,
+        &library,
+        SEARCH_LIBRARY,
+        &json!({ "query": "payment", "scope": "project" }),
+    ));
+    assert!(own.contains("`project:Shop::Checkout`"), "{own}");
+    // Kinds narrow it; nothing found says what to do.
+    let ports = answer(tools::prepare(
+        &state,
+        &library,
+        SEARCH_LIBRARY,
+        &json!({ "kind": "port def" }),
+    ));
+    assert!(
+        ports.starts_with("2 building blocks in the Library:"),
+        "{ports}"
+    );
+    let none = answer(tools::prepare(
+        &state,
+        &library,
+        SEARCH_LIBRARY,
+        &json!({ "query": "spaceship" }),
+    ));
+    assert!(none.contains("model the concept in the project"), "{none}");
+}
+
+#[test]
+fn read_library_block_describes_a_block_in_words() {
+    let state = shop();
+    let text = answer(tools::prepare(
+        &state,
+        &Library::built_in_only(),
+        READ_LIBRARY_BLOCK,
+        &json!({ "block": "CachedStore" }),
+    ));
+    assert!(text.contains("Purpose: A store with a cache"), "{text}");
+    assert!(
+        text.contains("Inner attributes: cache.ttlSeconds"),
+        "{text}"
+    );
+    assert!(!text.contains('{'), "no SysML text: {text}");
+    let Prepared::Invalid(message) = tools::prepare(
+        &state,
+        &Library::built_in_only(),
+        READ_LIBRARY_BLOCK,
+        &json!({ "block": "Spaceship" }),
+    ) else {
+        panic!("unknown block")
+    };
+    assert!(message.contains("search_library"), "{message}");
+}
+
+#[test]
+fn use_library_block_is_one_undoable_change_through_the_system_state() {
+    let mut state = shop();
+    let library = Library::built_in_only();
+    let prepared = tools::prepare(
+        &state,
+        &library,
+        USE_LIBRARY_BLOCK,
+        &json!({
+            "block": "built-in:Library::Storage::CachedStore",
+            "parent": "Shop::System",
+            "name": "sessions",
+            "values": {}
+        }),
+    );
+    let first = change(prepared);
+    assert_eq!(first.actor, Actor::Assistant);
+    assert_eq!(
+        first.description,
+        "Add sessions : CachedStore from the Library"
+    );
+    let event = state.apply(first).expect("applies as one change");
+    assert!(state.diagnostics().is_empty(), "{:?}", state.diagnostics());
+    let result = tools::describe_event(&state, &event);
+    assert!(
+        result.contains("Library::Storage::CachedStore (part def)"),
+        "{result}"
+    );
+    assert!(result.contains("Shop::System::sessions (part)"), "{result}");
+    assert!(result.contains("member(s) inside them"), "{result}");
+    assert!(!result.contains("(doc)"), "{result}");
+    state.undo().unwrap();
+    assert!(state.tree().find("Library").is_none());
+    // Values and a connection in the same call.
+    let prepared = tools::prepare(
+        &state,
+        &library,
+        USE_LIBRARY_BLOCK,
+        &json!({ "block": "Gateway", "parent": "Shop::System", "name": "front" }),
+    );
+    state.apply(change(prepared)).unwrap();
+    let prepared = tools::prepare(
+        &state,
+        &library,
+        USE_LIBRARY_BLOCK,
+        &json!({
+            "block": "Cache",
+            "parent": "Shop::System",
+            "values": { "ttlSeconds": 60 },
+            "connect_to": "front.backend"
+        }),
+    );
+    let cache = change(prepared);
+    assert!(
+        cache.description.ends_with("connected to front.backend"),
+        "{}",
+        cache.description
+    );
+    state.apply(cache).unwrap();
+    assert!(state.diagnostics().is_empty(), "{:?}", state.diagnostics());
+    let text = &print(state.tree())[0].text;
+    assert!(text.contains("attribute :>> ttlSeconds = 60;"), "{text}");
+    assert!(
+        text.contains("interface connect front.backend to cache.access;"),
+        "{text}"
+    );
+}
+
+#[test]
+fn use_library_block_reports_conflicts_and_never_overwrites() {
+    let text = "package Shop { part def System; }
+package Library { package Storage { part def Cache { doc /* Ours. */ } } }";
+    let state = SystemState::new(parse(&[Source::new("Shop.sysml", text)]), BTreeSet::new());
+    let library = Library::built_in_only();
+    let Prepared::Invalid(message) = tools::prepare(
+        &state,
+        &library,
+        USE_LIBRARY_BLOCK,
+        &json!({ "block": "built-in:Library::Storage::Cache", "parent": "Shop::System" }),
+    ) else {
+        panic!("a conflict is reported")
+    };
+    assert!(
+        message.contains("already exists with different content"),
+        "{message}"
+    );
+    assert!(message.contains("if_exists"), "{message}");
+    let renamed = change(tools::prepare(
+        &state,
+        &library,
+        USE_LIBRARY_BLOCK,
+        &json!({ "block": "built-in:Library::Storage::Cache", "parent": "Shop::System",
+                 "if_exists": "copy_renamed" }),
+    ));
+    let mut state = state;
+    state.apply(renamed).unwrap();
+    assert!(state.tree().find("Library::Storage::Cache2").is_some());
+    assert!(print(state.tree())[0].text.contains("Ours."));
+}
+
+#[test]
+fn save_to_library_waits_for_the_operator() {
+    let state = shop();
+    let prepared = tools::prepare(
+        &state,
+        &Library::built_in_only(),
+        SAVE_TO_LIBRARY,
+        &json!({ "definition": "Shop::Checkout", "category": "Payments" }),
+    );
+    let Prepared::SaveToLibrary {
+        plan,
+        question,
+        saved,
+    } = prepared
+    else {
+        panic!("a confirmation, got {prepared:?}")
+    };
+    assert!(
+        question.contains("Save `Shop::Checkout` to My Library as `Library::Payments::Checkout`?"),
+        "{question}"
+    );
+    assert!(
+        saved.contains("mine:Library::Payments::Checkout"),
+        "{saved}"
+    );
+    assert_eq!(plan.added, ["Library::Payments::Checkout"]);
+}
+
+#[test]
+fn library_tool_inputs_are_checked_against_their_schemas() {
+    assert!(
+        tools::check_input(USE_LIBRARY_BLOCK, &json!({ "block": "Cache" })).is_err(),
+        "parent is required"
+    );
+    let error = tools::check_input(
+        USE_LIBRARY_BLOCK,
+        &json!({ "block": "Cache", "parent": "Shop::System", "if_exists": "overwrite" }),
+    )
+    .unwrap_err();
+    assert!(error.contains("if_exists"), "{error}");
+    assert!(
+        tools::check_input(
+            USE_LIBRARY_BLOCK,
+            &json!({ "block": "Cache", "parent": "P", "values": 5 })
+        )
+        .is_err()
+    );
+    assert!(tools::check_input(SEARCH_LIBRARY, &json!({ "scope": "cloud" })).is_err());
+    assert!(tools::check_input(SEARCH_LIBRARY, &json!({ "query": "cache", "extra": 1 })).is_err());
+    assert!(
+        tools::check_input(
+            SAVE_TO_LIBRARY,
+            &json!({ "definition": "Shop::X", "replace": "yes" })
+        )
+        .is_err()
+    );
+    assert!(tools::check_input(READ_LIBRARY_BLOCK, &json!({})).is_err());
+    assert!(
+        tools::check_input(
+            SEARCH_LIBRARY,
+            &json!({ "query": "cache", "fits_port": "Shop::System::front.backend" })
+        )
+        .is_ok()
     );
 }

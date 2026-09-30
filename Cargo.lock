@@ -114,6 +114,7 @@ name = "agq-assistant"
 version = "0.1.0"
 dependencies = [
  "agq-language",
+ "agq-library",
  "agq-providers",
  "agq-system-state",
  "reqwest 0.12.28",
@@ -137,6 +138,15 @@ name = "agq-language"
 version = "0.1.0"
 
 [[package]]
+name = "agq-library"
+version = "0.1.0"
+dependencies = [
+ "agq-language",
+ "agq-system-state",
+ "tempfile",
+]
+
+[[package]]
 name = "agq-providers"
 version = "0.1.0"
 dependencies = [
@@ -157,6 +167,7 @@ version = "0.1.0"
 dependencies = [
  "agq-assistant",
  "agq-language",
+ "agq-library",
  "agq-providers",
  "agq-studio-scene",
  "agq-system-state",

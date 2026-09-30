@@ -15,6 +15,9 @@
 //!   the wrong kind of subject.
 //! - [`writable`] checks that an element built or changed in code can be
 //!   printed and read back as the same element.
+//! - [`Semantics`] answers questions with the same lookup and rules as
+//!   `validate`: a definition's features (owned and inherited), types,
+//!   generals, and whether two ports fit.
 //!
 //! Names are never identity. Inheritance is lookup: inherited features are
 //! found through the generals, never copied. The supported subset is listed
@@ -35,6 +38,7 @@ mod library;
 mod parser;
 mod printer;
 mod resolve;
+mod semantics;
 mod tree;
 mod validate;
 mod writable;
@@ -43,6 +47,7 @@ pub use library::{LIBRARY_TEXT, library};
 pub use parser::{Source, parse};
 pub use printer::{print, print_element, printed_reference};
 pub use resolve::link;
+pub use semantics::Semantics;
 pub use tree::{
     Direction, Document, Element, ElementId, ElementKind, Literal, Location, Multiplicity, Parent,
     QualifiedName, Reference, Role, Step, Tree, TreeError, Visibility,

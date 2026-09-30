@@ -36,6 +36,14 @@ def problems(model=MODEL, **changes):
 
 
 class CheckTest(unittest.TestCase):
+    def test_the_library_uses_no_ui_or_network_library(self):
+        model = MODEL.rstrip()[:-1] + (
+            "    part def Library { part 'blocks' : Crate; }\n"
+            "    dependency from Library to SystemState;\n}\n")
+        self.assertEqual(problems(model, blocks=["state"]), [])
+        self.assertEqual(problems(model, blocks=["state", "gpui"]),
+                         ["blocks (Library) depends on gpui, a UI or network library"])
+
     def test_allowed_graph_passes(self):
         # eframe is fine outside the core parts.
         self.assertEqual(problems(), [])

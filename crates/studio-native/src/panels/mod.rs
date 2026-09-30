@@ -1,26 +1,166 @@
-//! The docked Panels (§3.2 Panels): the Outline on the left, and on the right
-//! a column with the Inspector, the Requirements, the History and the
-//! Problems under one tab bar.
+//! The docked Panels (§3.2 Panels): on the left a column with the Outline
+//! and the Library (C-49) under one tab bar, and on the right a column with
+//! the Inspector, the Requirements, the History and the Problems.
+pub mod block_preview;
 mod history;
 mod inspector;
+pub mod library;
 mod outline;
 mod problems;
 mod requirements;
+mod reuse;
 
+pub use inspector::parse_value;
 pub use outline::OutlineView;
+pub use reuse::sample as reuse_sample;
 
 use crate::{
-    studio::{Dirty, Panel, Studio, StudioEvent},
+    studio::{Dirty, LeftTab, Panel, Studio, StudioEvent},
     ui::{self, ActiveTheme, IconName, r, theme},
     workspace::StudioExt,
 };
 use agq_language::ElementId;
 use agq_studio_scene::SceneTarget;
 use gpui::{
-    AnimationExt, App, ClickEvent, Context, Entity, InteractiveElement, IntoElement, ParentElement,
-    Render, SharedString, StatefulInteractiveElement, Styled, Subscription, Window, div,
-    prelude::FluentBuilder, relative,
+    AnimationExt, App, AppContext, ClickEvent, Context, Entity, InteractiveElement, IntoElement,
+    ParentElement, Render, SharedString, StatefulInteractiveElement, Styled, Subscription, Window,
+    div, prelude::FluentBuilder, relative,
 };
+
+/// The left-hand column: the Outline and the Library.
+pub struct LeftColumn {
+    studio: Entity<Studio>,
+    outline: Entity<OutlineView>,
+    library: Entity<library::LibraryView>,
+    _subscription: Subscription,
+}
+
+impl LeftColumn {
+    pub fn new(studio: Entity<Studio>, window: &mut Window, cx: &mut Context<Self>) -> Self {
+        let subscription = cx.subscribe(&studio, |_, _, event: &StudioEvent, cx| {
+            if event.0.intersects(Dirty::LAYOUT | Dirty::APPEARANCE) {
+                cx.notify();
+            }
+        });
+        LeftColumn {
+            outline: cx.new(|cx| OutlineView::new(studio.clone(), window, cx)),
+            library: cx.new(|cx| library::LibraryView::new(studio.clone(), window, cx)),
+            studio,
+            _subscription: subscription,
+        }
+    }
+
+    /// The Library panel (the scripted journeys read its search).
+    #[cfg(feature = "automation")]
+    pub fn library(&self) -> &Entity<library::LibraryView> {
+        &self.library
+    }
+}
+
+const LEFT_TABS: [(LeftTab, &str, IconName); 2] = [
+    (LeftTab::Outline, "Outline", IconName::Outline),
+    (LeftTab::Library, "Library", IconName::Library),
+];
+
+impl Render for LeftColumn {
+    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let theme = cx.theme().clone();
+        let tab = self.studio.read(cx).left;
+        let index = LEFT_TABS
+            .iter()
+            .position(|(t, _, _)| *t == tab)
+            .unwrap_or(0);
+        let body: gpui::AnyView = match tab {
+            LeftTab::Outline => self.outline.clone().into(),
+            LeftTab::Library => self.library.clone().into(),
+        };
+        div()
+            .id("left-column")
+            .size_full()
+            .flex()
+            .flex_col()
+            .bg(theme.chrome)
+            .role(gpui::Role::Complementary)
+            .aria_label("Outline and Library")
+            .child(
+                div()
+                    .id("left-tabs")
+                    .flex_none()
+                    .h(r(36.0))
+                    .px(r(6.0))
+                    .relative()
+                    .flex()
+                    .items_stretch()
+                    .border_b_1()
+                    .border_color(theme.separator)
+                    .role(gpui::Role::TabList)
+                    .children(
+                        LEFT_TABS
+                            .iter()
+                            .enumerate()
+                            .map(|(i, (choice, label, glyph))| {
+                                let chosen = *choice == tab;
+                                let studio = self.studio.clone();
+                                let choice = *choice;
+                                div()
+                                    .id(("left-tab", i))
+                                    .role(gpui::Role::Tab)
+                                    .aria_selected(chosen)
+                                    .aria_label(*label)
+                                    .flex_1()
+                                    .min_w_0()
+                                    .flex()
+                                    .items_center()
+                                    .justify_center()
+                                    .gap(r(6.0))
+                                    .text_size(r(theme::text::SM))
+                                    .font_weight(theme::MEDIUM)
+                                    .text_color(if chosen { theme.text } else { theme.text_muted })
+                                    .cursor_pointer()
+                                    .hover(|style| style.text_color(theme.text))
+                                    .on_click(move |_: &ClickEvent, _, cx| {
+                                        studio.act(cx, |studio| {
+                                            studio.left = choice;
+                                            if choice == LeftTab::Library {
+                                                studio.library.focus_search = true;
+                                            }
+                                            studio.mark(Dirty::LAYOUT);
+                                        })
+                                    })
+                                    .relative()
+                                    .child(ui::icon(*glyph).size(13.0).color(if chosen {
+                                        theme.text_secondary
+                                    } else {
+                                        theme.text_faint
+                                    }))
+                                    .child(*label)
+                                    .child(ui::target::target(*label))
+                            }),
+                    )
+                    .child(
+                        div()
+                            .absolute()
+                            .bottom_0()
+                            .h(gpui::px(2.0))
+                            .w(relative(0.5))
+                            .px(r(10.0))
+                            .child(div().size_full().rounded_full().bg(theme.accent.solid))
+                            .with_spring(
+                                "left-tab-mark",
+                                ui::primitives::spring().to(index as f32),
+                                |this, at: f32| this.left(relative(at * 0.5)),
+                            ),
+                    ),
+            )
+            .child(
+                div()
+                    .flex_1()
+                    .min_w_0()
+                    .min_h_0()
+                    .child(body.cached(gpui::StyleRefinement::default().size_full())),
+            )
+    }
+}
 
 /// The right-hand column of Panels.
 pub struct InspectorColumn {
@@ -120,7 +260,13 @@ impl Render for InspectorColumn {
                             .relative()
                             .overflow_hidden()
                             .whitespace_nowrap()
-                            .child(*label)
+                            .child(
+                                div()
+                                    .min_w_0()
+                                    .overflow_hidden()
+                                    .text_ellipsis()
+                                    .child(*label),
+                            )
                             .child(ui::target::target(*label))
                             .when(tab == Panel::Problems && problems > 0, |this| {
                                 this.child(
