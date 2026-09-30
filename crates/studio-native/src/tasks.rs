@@ -169,6 +169,108 @@ impl Studio {
         job.detail["base"] = serde_json::json!(worktree.base.clone());
         job.detail["repository"] = serde_json::json!(repository.display().to_string());
         let _ = store.set_state(&mut job, JobState::Running, None);
+        self.run_worker_in(job, element, worktree, repository, tree, links, brief, &[])
+    }
+
+    /// Continues a task that was interrupted, stopped or reviewed, in the
+    /// worktree it already has: the worktree is not made again (the job's
+    /// journal says it was), and what the worker wrote is where it left it.
+    pub fn resume_task(&mut self, job: &str) -> Result<String, String> {
+        if self.implementation.task.is_some() {
+            return Err("A task is in progress; one at a time.".into());
+        }
+        let store = self.job_store().ok_or("No project is open.")?;
+        let mut found = store.load(job).ok_or("There is no such task.")?;
+        if !matches!(
+            found.state,
+            JobState::Interrupted | JobState::WaitingForYou | JobState::Failed
+        ) {
+            return Err(format!(
+                "A {} task cannot be continued.",
+                found.state.label()
+            ));
+        }
+        if found.completed("worktree").is_none() {
+            return Err("The task has no worktree to continue in; start a new one.".into());
+        }
+        let path = PathBuf::from(found.detail["worktree"].as_str().unwrap_or_default());
+        if !path.is_dir() {
+            return Err(format!(
+                "The worktree {} is gone; start a new task.",
+                path.display()
+            ));
+        }
+        if let Some(why) = self.task_blocker() {
+            return Err(why);
+        }
+        let element = ElementId::from_raw(found.detail["element"].as_u64().unwrap_or_default());
+        let project = self.project.as_ref().ok_or("No project is open.")?;
+        let tree = project.state().tree().clone();
+        if !tree.contains(element) {
+            return Err("The element is no longer in the model.".into());
+        }
+        let links = self.implementation_links()?;
+        let instructions = format!(
+            "{}\n\nThis continues an earlier attempt: the repository already has its work. Read it before you change anything, then finish what is left.",
+            found.detail["instructions"].as_str().unwrap_or_default()
+        );
+        let mut brief = brief(&tree, &links, element, &instructions)?;
+        let repository = PathBuf::from(found.detail["repository"].as_str().unwrap_or_default());
+        if let (Ok(code), Ok(model)) = (
+            repository.canonicalize(),
+            project.folder().join("model").canonicalize(),
+        ) && let Ok(inside) = model.strip_prefix(&code)
+        {
+            brief
+                .protected
+                .push(inside.to_string_lossy().replace('\\', "/"));
+        }
+        let carried: Vec<Link> =
+            serde_json::from_value::<TaskOutcome>(found.detail["outcome"].clone())
+                .map(|o| o.proposed)
+                .unwrap_or_default();
+        let worktree = git::Worktree {
+            path,
+            branch: found.detail["branch"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string(),
+            base: found.detail["base"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string(),
+        };
+        let seq = store
+            .begin(
+                &mut found,
+                "resume",
+                "Continue the worker in the same worktree",
+                false,
+            )
+            .map_err(|e| e.to_string())?;
+        let _ = store.end(&mut found, seq, true, None);
+        let _ = store.set_state(&mut found, JobState::Running, Some("continued".into()));
+        self.run_worker_in(
+            found, element, worktree, repository, tree, links, brief, &carried,
+        )
+    }
+
+    /// Runs the worker for `job` in `worktree`, and the Studio's own
+    /// verification after it.
+    #[allow(clippy::too_many_arguments)]
+    fn run_worker_in(
+        &mut self,
+        job: Job,
+        element: ElementId,
+        worktree: git::Worktree,
+        repository: PathBuf,
+        tree: agq_language::Tree,
+        links: agq_implementation::Links,
+        brief: agq_implementation::task::Brief,
+        carried: &[Link],
+    ) -> Result<String, String> {
+        let project = self.project.as_ref().ok_or("No project is open.")?;
+        let data = crate::conversation::project_data(&self.session_path, project.folder());
         let choice = self.execution_choice();
         let target = data.join("targets").join(&job.id);
         let make_executor = {
@@ -184,6 +286,7 @@ impl Studio {
             }
         };
         let executor = make_executor()?;
+        let carried = carried.to_vec();
         let mut model = (self.conversation.new_model)();
         let cancel = Arc::new(AtomicBool::new(false));
         let flag = cancel.clone();
@@ -202,6 +305,8 @@ impl Studio {
             .spawn(move || {
                 let mut worker =
                     Worker::new(tree.clone(), links, brief.clone(), executor, flag.clone());
+                // Links an earlier attempt proposed stay proposed.
+                worker.proposed = carried;
                 let progress = sender.clone();
                 let mut on_event = |event| {
                     if let agq_assistant::TurnEvent::ToolFinished(result) = event {
@@ -694,6 +799,45 @@ mod tests {
         assert!(app.status.contains("interrupted"), "{}", app.status);
         app.review_task(&job);
         let (_, outcome) = app.task_outcome(&job).expect("what it wrote is there");
+        assert!(
+            outcome.files.iter().any(|f| f.0 == "src/store.rs"),
+            "{:?}",
+            outcome.files
+        );
+        app.dialog = None;
+        // Continue it: the same worktree, and the worktree is not made again.
+        app.conversation.new_model = crate::conversation::scripted(vec![
+            reply(vec![tool(
+                "b",
+                "read_code",
+                json!({ "path": "src/store.rs" }),
+            )]),
+            reply(vec![tool(
+                "c",
+                "finish_implementation",
+                json!({ "summary": "Continued." }),
+            )]),
+            reply(vec![json!({ "type": "text", "text": "Done." })]),
+        ]);
+        app.resume_task(&job).expect("continued");
+        let started = Instant::now();
+        while app.implementation.task.is_some() {
+            app.poll_task();
+            assert!(started.elapsed() < Duration::from_secs(300));
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        let continued = jobs.load(&job).unwrap();
+        assert_eq!(
+            continued
+                .steps
+                .iter()
+                .filter(|s| s.key == "worktree")
+                .count(),
+            1
+        );
+        assert!(continued.steps.iter().any(|s| s.key == "resume"));
+        let (_, outcome) = app.task_outcome(&job).unwrap();
+        assert_eq!(outcome.summary.as_deref(), Some("Continued."));
         assert!(
             outcome.files.iter().any(|f| f.0 == "src/store.rs"),
             "{:?}",

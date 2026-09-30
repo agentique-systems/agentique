@@ -1261,6 +1261,23 @@ impl Render for DialogsView {
                 };
                 let verification = &outcome.verification;
                 let failures = verification.failures();
+                // The model elements whose code the patch changes, by the
+                // links (the ones it proposes included).
+                let touched: Vec<String> = {
+                    let mut links = studio
+                        .implementation_links()
+                        .map(|l| l.links)
+                        .unwrap_or_default();
+                    links.extend(outcome.proposed.iter().cloned());
+                    let mut names: Vec<String> = links
+                        .iter()
+                        .filter(|l| outcome.files.iter().any(|f| f.0 == l.path))
+                        .map(|l| format!("{} ({} in {})", l.name, l.kind.label(), l.path))
+                        .collect();
+                    names.sort();
+                    names.dedup();
+                    names
+                };
                 let discard = {
                     let studio = self.studio.clone();
                     let job = job.clone();
@@ -1322,6 +1339,14 @@ impl Render for DialogsView {
                                             "It asks you to change the model",
                                             outcome.contract_requests.clone(),
                                             IconName::Warning,
+                                            cx,
+                                        ))
+                                    })
+                                    .when(!touched.is_empty(), |this| {
+                                        this.child(plain_list(
+                                            "Model elements whose code it changes",
+                                            touched.clone(),
+                                            IconName::Part,
                                             cx,
                                         ))
                                     })

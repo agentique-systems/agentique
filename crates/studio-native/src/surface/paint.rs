@@ -901,6 +901,33 @@ fn card_text(frame: &Frame, screen: &Screen, node: &SceneNode, window: &mut Wind
             );
             right -= w + px(caption * 0.6);
         }
+        // What kind of part it is beyond its keyword: an agent and its mode.
+        if let Some(badge) = &node.semantic.badge {
+            let text = badge.to_uppercase();
+            let d = px(caption * 1.35);
+            let w = measure(window, &text, text_size(caption * 0.85), theme::SEMIBOLD) + d * 0.8;
+            let pill = Bounds::new(point(right - w, middle - d * 0.5), size(w, d));
+            window.paint_quad(quad(
+                pill,
+                d * 0.5,
+                theme.accent.soft,
+                px(1.0),
+                theme.accent.border,
+                BorderStyle::Solid,
+            ));
+            label(
+                window,
+                cx,
+                &text,
+                point(pill.origin.x + d * 0.4, middle - px(caption * 0.52)),
+                text_size(caption * 0.85),
+                theme::SEMIBOLD,
+                theme::SANS,
+                theme.accent.text,
+                w,
+            );
+            right -= w + px(caption * 0.5);
+        }
         if node.semantic.problems > 0 {
             let count = node.semantic.problems.to_string();
             let d = px(caption * 1.35);

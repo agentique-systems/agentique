@@ -82,13 +82,38 @@ pub(crate) fn unit_of(tree: &Tree, mut id: ElementId) -> ElementId {
 
 /// The units a block needs besides the standard library: the block's own
 /// unit and, transitively, every unit its elements refer to, in the order
-/// found. References that lead nowhere are reported.
+/// found; and the scenarios that come with a definition it copies (the
+/// verification defs whose subject it types), with what they need. A block
+/// carries its behaviour and the scenarios that show it (C-50). References
+/// that lead nowhere are reported.
 pub fn closure(tree: &Tree, block: ElementId) -> Result<Vec<ElementId>, Vec<Missing>> {
+    // Each definition's scenarios, by the type of their subject.
+    let mut scenarios: HashMap<ElementId, Vec<ElementId>> = HashMap::new();
+    for id in tree.walk() {
+        if tree[id].kind != ElementKind::VerificationDef {
+            continue;
+        }
+        let subject = tree[id]
+            .children()
+            .iter()
+            .find(|c| tree[**c].kind == ElementKind::Subject)
+            .and_then(|s| tree[*s].typed_by.first())
+            .and_then(Reference::target);
+        if let Some(subject) = subject {
+            scenarios.entry(subject).or_default().push(id);
+        }
+    }
     let mut units = vec![unit_of(tree, block)];
     let mut missing = Vec::new();
     let mut i = 0;
     while i < units.len() {
         let unit = units[i];
+        for scenario in scenarios.get(&unit).into_iter().flatten() {
+            let needed = unit_of(tree, *scenario);
+            if !units.contains(&needed) {
+                units.push(needed);
+            }
+        }
         for id in tree.descendants(unit) {
             for (_, reference) in tree[id].references() {
                 for step in &reference.steps {
@@ -488,7 +513,8 @@ pub(crate) fn plan_copy(
                 if let Some(name) = renames.get(&original) {
                     element.name = Some(name.clone());
                 }
-                for reference in references_mut(&mut element) {
+                // Every reference, those in expressions and `via` included.
+                for reference in element.references_mut() {
                     retarget(reference, &map, &renamed_to);
                 }
                 element
@@ -525,17 +551,6 @@ fn retarget(
             }
         }
     }
-}
-
-fn references_mut(element: &mut Element) -> impl Iterator<Item = &mut Reference> {
-    element
-        .typed_by
-        .iter_mut()
-        .chain(&mut element.specializes)
-        .chain(&mut element.redefines)
-        .chain(&mut element.ends)
-        .chain(&mut element.target)
-        .chain(&mut element.by)
 }
 
 /// Maps a unit onto an identical one: members pair up in order.

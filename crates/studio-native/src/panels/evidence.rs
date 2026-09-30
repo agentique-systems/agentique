@@ -724,6 +724,23 @@ fn implementation(
                             )
                         }),
                 )
+                .when(reviewable && editable && active.is_none(), |this| {
+                    let resume = studio.clone();
+                    let id = id.clone();
+                    this.child(
+                        Button::new(("task-continue", index), "Continue")
+                            .small()
+                            .tooltip("Continue the worker in the same worktree", None)
+                            .on_click(move |_: &ClickEvent, _, cx| {
+                                let id = id.clone();
+                                resume.act(cx, |studio| {
+                                    if let Err(why) = studio.resume_task(&id) {
+                                        studio.status = why;
+                                    }
+                                })
+                            }),
+                    )
+                })
                 .when(reviewable, |this| {
                     this.child(Button::new(("task-review", index), "Review").small().primary().on_click(move |_: &ClickEvent, _, cx| {
                         let id = id.clone();

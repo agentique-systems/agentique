@@ -201,5 +201,180 @@ package Library {
             doc /* A proxy that asks secondary instead whenever outbound fails. */
             port secondary : ~Interfaces::RequestPort;
         }
+        item def Job {
+            doc /* Work to do, by id. */
+            attribute id : ScalarValues::String;
+        }
+        item def JobResult {
+            doc /* How a job ended: done or failed, after how many attempts. */
+            attribute id : ScalarValues::String;
+            attribute ok : ScalarValues::Boolean;
+            attribute attempts : ScalarValues::Natural;
+        }
+        item def Attempt {
+            doc /* One try at a job. */
+            attribute id : ScalarValues::String;
+            attribute attempt : ScalarValues::Positive;
+        }
+        item def AttemptResult {
+            doc /* Whether one try worked. */
+            attribute id : ScalarValues::String;
+            attribute ok : ScalarValues::Boolean;
+        }
+        port def JobPort {
+            doc /* Where jobs come in and their results go out. */
+            in item job : Job;
+            out item result : JobResult;
+        }
+        port def AttemptPort {
+            doc /* Where tries go out to what does the work, and their results come
+                 * back. */
+            out item attempt : Attempt;
+            in item result : AttemptResult;
+        }
+        part def RetryingWorker {
+            doc /* Takes each job at jobs and tries it through target; a failed try
+                 * is tried again, up to maxAttempts times, waiting backoffMs longer
+                 * each time. The result says whether the job was done and after
+                 * how many attempts. Its behaviour runs in scenarios. */
+            port jobs : JobPort;
+            port target : AttemptPort;
+            attribute maxAttempts : ScalarValues::Positive = 3;
+            attribute backoffMs : ScalarValues::Natural = 200;
+            attribute attempts : ScalarValues::Natural = 0;
+            attribute current : ScalarValues::String = "";
+            exhibit state working {
+                entry;
+                then idle;
+                state idle;
+                state trying;
+                state waiting;
+                transition first idle accept job : Job via jobs do action {
+                    assign current := job.id;
+                    then assign attempts := 1;
+                    then send new Attempt(id = job.id, attempt = 1) via target;
+                } then trying;
+                transition first trying accept r : AttemptResult via target if r.ok do send new JobResult(id = current, ok = true, attempts = attempts) via jobs then idle;
+                transition first trying accept r : AttemptResult via target if not r.ok and attempts < maxAttempts then waiting;
+                transition first trying accept r : AttemptResult via target if not r.ok and attempts >= maxAttempts do send new JobResult(id = current, ok = false, attempts = attempts) via jobs then idle;
+                transition first waiting accept after backoffMs * attempts do action {
+                    assign attempts := attempts + 1;
+                    then send new Attempt(id = current, attempt = attempts) via target;
+                } then trying;
+            }
+        }
+        verification def RetryThenDone {
+            doc /* Two tries fail and the third works: the job is done after three
+                 * attempts. */
+            subject worker : RetryingWorker;
+            send new Job(id = "j1") via worker.jobs;
+            then accept firstTry : Attempt via worker.target;
+            then send new AttemptResult(id = "j1", ok = false) via worker.target;
+            then accept secondTry : Attempt via worker.target;
+            then send new AttemptResult(id = "j1", ok = false) via worker.target;
+            then accept thirdTry : Attempt via worker.target;
+            then send new AttemptResult(id = "j1", ok = true) via worker.target;
+            then accept result : JobResult via worker.jobs;
+            then assert constraint doneAfterThree {
+                result.ok and result.attempts == 3 and thirdTry.attempt == 3
+            }
+        }
+        verification def GiveUp {
+            doc /* Every try fails: after maxAttempts the job is reported failed. */
+            subject worker : RetryingWorker;
+            send new Job(id = "j2") via worker.jobs;
+            then accept firstTry : Attempt via worker.target;
+            then send new AttemptResult(id = "j2", ok = false) via worker.target;
+            then accept secondTry : Attempt via worker.target;
+            then send new AttemptResult(id = "j2", ok = false) via worker.target;
+            then accept thirdTry : Attempt via worker.target;
+            then send new AttemptResult(id = "j2", ok = false) via worker.target;
+            then accept result : JobResult via worker.jobs;
+            then assert constraint failedAfterThree {
+                not result.ok and result.attempts == 3
+            }
+        }
+    }
+
+    package Moderation {
+        doc /* Checking what people submit with an AI agent, and a deterministic
+             * path for when the agent cannot answer well enough. */
+        enum def ModerationDecision {
+            doc /* What may happen to a submission: published, reviewed by a person,
+                 * or rejected. */
+            enum publish;
+            enum review;
+            enum reject;
+        }
+        item def Submission {
+            doc /* Something submitted to be checked: its text. */
+            attribute text : ScalarValues::String;
+        }
+        item def ModerationVerdict :> Agents::AgentOutput {
+            doc /* What the check decided, and why. */
+            attribute decision : ModerationDecision;
+            attribute reason : ScalarValues::String [0..1];
+        }
+        port def ModerationPort {
+            doc /* Where submissions come in and verdicts go out. */
+            in item submission : Submission;
+            out item verdict : ModerationVerdict;
+        }
+        abstract part def Moderator {
+            doc /* The moderation contract, shared by the agent and its fallback. */
+            port check : ModerationPort;
+        }
+        part def ModerationAgent :> Moderator, Agents::Agent {
+            doc /* Decides whether a submission may be published. Answer publish for
+                 * ordinary content, review when unsure, and reject for clear
+                 * abuse. Give a confidence between 0 and 1 and a short reason. */
+            :>> mode = Agents::AgentMode::fast;
+            :>> minConfidence = 0.8;
+            :>> maxLatencyMs = 1000;
+            part : HoldForReview :>> fallback;
+        }
+        part def HoldForReview :> Moderator {
+            doc /* The deterministic path: every submission waits for a person. */
+            exhibit state holding {
+                entry;
+                then ready;
+                state ready;
+                transition first ready accept s : Submission via check do send new ModerationVerdict(decision = ModerationDecision::review, confidence = 1.0, reason = "held for a person") via check then ready;
+            }
+        }
+        part def ModeratedInbox {
+            doc /* Where submissions arrive, each checked by the moderation agent. */
+            port submissions : ModerationPort;
+            part moderator : ModerationAgent;
+            connection connect submissions to moderator.check;
+        }
+        verification def ConfidentPublish {
+            doc /* The agent is sure: its verdict stands. */
+            subject inbox : ModeratedInbox;
+            part sure : Scenarios::StandIn {
+                :>> target = inbox.moderator;
+                :>> outcome = Scenarios::Outcome::answer;
+                :>> latencyMs = 200;
+                :>> output = new ModerationVerdict(decision = ModerationDecision::publish, confidence = 0.95);
+            }
+            send new Submission(text = "hello") via inbox.submissions;
+            then accept verdict : ModerationVerdict via inbox.submissions;
+            then assert constraint published {
+                verdict.decision == ModerationDecision::publish
+            }
+        }
+        verification def AgentFailsToReview {
+            doc /* The agent does not answer in time: a person reviews it. */
+            subject inbox : ModeratedInbox;
+            part slow : Scenarios::StandIn {
+                :>> target = inbox.moderator;
+                :>> outcome = Scenarios::Outcome::timeout;
+            }
+            send new Submission(text = "hello") via inbox.submissions;
+            then accept verdict : ModerationVerdict via inbox.submissions;
+            then assert constraint heldForReview {
+                verdict.decision == ModerationDecision::review
+            }
+        }
     }
 }

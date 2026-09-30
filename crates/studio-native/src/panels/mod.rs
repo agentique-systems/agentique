@@ -121,7 +121,7 @@ impl Render for LeftColumn {
                                     .flex()
                                     .items_center()
                                     .justify_center()
-                                    .gap(r(6.0))
+                                    .gap(r(4.0))
                                     .text_size(r(theme::text::SM))
                                     .font_weight(theme::MEDIUM)
                                     .text_color(if chosen { theme.text } else { theme.text_muted })
@@ -139,7 +139,7 @@ impl Render for LeftColumn {
                                     .relative()
                                     .overflow_hidden()
                                     .whitespace_nowrap()
-                                    .px(r(4.0))
+                                    .px(r(2.0))
                                     .child(div().flex_none().child(
                                         ui::icon(*glyph).size(13.0).color(if chosen {
                                             theme.text_secondary

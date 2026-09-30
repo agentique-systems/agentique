@@ -45,9 +45,9 @@ impl CheckKind {
     pub fn coverage(self) -> &'static str {
         match self {
             CheckKind::DependencyBoundaries => {
-                "Which linked modules or crates refer to which, against the model's dependencies. \
-                 It does not see references through macros or unlinked modules, and it says \
-                 nothing about behaviour at run time."
+                "Which linked modules or crates refer to which, against the model's dependencies \
+                 (and a part def's use of its own parts). It does not see references through \
+                 macros or unlinked modules, and it says nothing about behaviour at run time."
             }
             CheckKind::ContractShape => {
                 "Field and variant names and simple types of the linked Rust type against the item \
@@ -127,6 +127,20 @@ fn model_dependencies(
         };
         if let (Some(client), Some(supplier)) = (end(0), end(1)) {
             out.entry(client).or_default().insert(supplier);
+        }
+    }
+    // A whole may use its parts: the definitions of a part def's own parts.
+    for id in tree.walk() {
+        if tree[id].kind != ElementKind::PartDef {
+            continue;
+        }
+        for feature in semantics.features(id) {
+            if semantics.element(feature).map(|e| e.kind) != Some(ElementKind::Part) {
+                continue;
+            }
+            for (ty, _) in semantics.types_of(feature) {
+                out.entry(id).or_default().insert(ty);
+            }
         }
     }
     out

@@ -1529,6 +1529,53 @@ mod tests {
     }
 
     #[test]
+    fn library_blocks_carry_their_behaviour_and_scenarios() {
+        let (mut app, _folder) = studio("runs-library");
+        let tree = app.project.as_ref().unwrap().state().tree();
+        let package = tree
+            .walk()
+            .into_iter()
+            .find(|id| tree[*id].kind == ElementKind::Package);
+        let parent = package.map_or(Parent::Document(0), Parent::Element);
+        for block in [
+            "Library::Resilience::RetryingWorker",
+            "Library::Moderation::ModeratedInbox",
+        ] {
+            let used = app.use_block(agq_library::Use::new(
+                agq_library::BlockRef::new(agq_library::Scope::BuiltIn, block),
+                parent,
+            ));
+            assert!(used.is_some(), "{block}: {}", app.status);
+        }
+        let problems = app.project.as_ref().unwrap().state().diagnostics().to_vec();
+        assert!(problems.is_empty(), "{problems:?}");
+        // The blocks' scenarios came with them, and pass against the model.
+        let rows = app.scenario_rows();
+        let mut names: Vec<&str> = rows.iter().map(|r| r.name.as_str()).collect();
+        names.sort();
+        assert_eq!(
+            names,
+            [
+                "AgentFailsToReview",
+                "ConfidentPublish",
+                "GiveUp",
+                "RetryThenDone"
+            ]
+        );
+        for row in rows {
+            app.select_scenario(row.id);
+            let result = run(&mut app, Mode::Model);
+            assert!(
+                result.all_passed(),
+                "{}: {:?} {:?}",
+                row.name,
+                result.stop,
+                result.checks
+            );
+        }
+    }
+
+    #[test]
     fn scenarios_are_written_through_controls_and_run() {
         let (mut app, _folder) = screening("runs-authoring");
         let tree = app.project.as_ref().unwrap().state().tree();

@@ -1,0 +1,9 @@
+[package]
+name = "url-shortener"
+version = "0.1.0"
+edition = "2021"
+description = "The URL shortener with AI screening, implemented from its model (Scenario I)."
+publish = false
+
+# Its own workspace: it is built and run apart from Agentique.
+[workspace]
