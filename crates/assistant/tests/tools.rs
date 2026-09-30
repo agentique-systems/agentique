@@ -608,7 +608,7 @@ fn search_library_lists_blocks_with_what_they_are_and_expose() {
         &json!({ "kind": "port def" }),
     ));
     assert!(
-        ports.starts_with("2 building blocks in the Library:"),
+        ports.starts_with("5 building blocks in the Library:"),
         "{ports}"
     );
     let none = answer(tools::prepare(

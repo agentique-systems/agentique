@@ -20,7 +20,13 @@ Progress per stage is in [docs/stages.md](docs/stages.md).
 
 ## Current stage
 
-Stage 5 (the daily-use Studio and Settings, ROADMAP §6.3) is in progress:
+Stages 7–8 (the factory loop, C-50, ROADMAP §6.5) are in progress: agents
+in the model, scenarios that run against the model, recordings, a live model
+or the real code, implementation links and checks, and a supervised
+implementation loop in which the Assistant writes code in a worktree for the
+Operator to review. Built and tested; nothing is accepted yet. To try it,
+start from the URL shortener "And its code" (below). Stage 5 (the daily-use
+Studio and Settings, ROADMAP §6.3) is also still in progress:
 the Studio on GPUI with a redesigned presentation (C-48), the design tokens
 and the component gallery, Settings (Ctrl+,)
 with keys in the Windows Credential Manager, conversation format 2,
@@ -66,6 +72,25 @@ the labelled visual fixture:
 cargo run --release -p agq-studio-native -- --fixture architecture --no-restore
 ```
 
+The factory loop (Scenario I, ROADMAP §2.10): on the start screen choose
+"Start from the URL shortener", then "With AI screening" or "And its code"
+(the second also writes its Rust code beside the project, committed and
+linked). Then:
+
+- Ctrl+Shift+R shows the scenarios; choose one and press F5 to run it in the
+  chosen mode (model, replay, code, live, walkthrough). The Run panel keeps
+  the result, its checks and their reasons, and a trace to step through
+  (`[`, `]`, `\`) that the Surface follows. A result that no longer
+  describes the model says so and is not drawn.
+- The Run panel writes scenarios without SysML: add what goes in, what to
+  wait for, stand-ins for the parts they replace, checks and time.
+- Code runs only after "Trusted-local execution" is allowed for the project
+  (the Run panel asks). The Inspector's Implementation section shows the
+  linked code and drift, checks the implementation, and starts "Implement
+  with the Assistant…": a worker writes code in a worktree, the Studio checks
+  it, and you review the patch before integrating it.
+- A live evaluation costs money and always asks first.
+
 The design tokens, the generated themes and the components are shown in one
 place by the component gallery:
 
@@ -97,10 +122,16 @@ pull request.
 | `crates/language` | The language core: the SysML subset as an element tree (parse, print, validate) |
 | `crates/system-state` | The System State: typed operations, locks, undo, change events; `Project` ties it to History |
 | `crates/history` | The model folder in git: crash-safe saves, checkpoints, branches |
-| `crates/assistant` | The Assistant: tools over the System State, the turn loop, skills, the conversation, the evaluation set |
+| `crates/assistant` | The Assistant: tools over the System State, the turn loop, skills, the conversation, the evaluation set, the implementation worker |
+| `crates/library` | The Library of building blocks: built-in blocks (with behaviour and scenarios), the project's definitions and My Library |
+| `crates/simulation` | Scenarios run: compiling, the model engine with stand-ins, recordings and live agents, results, traces and freshness |
+| `crates/implementation` | Implementation links, the supported checks and drift, the harness runner, task briefs and verification |
+| `crates/execution` | The executor every process goes through: scopes, trusted-local execution, git worktrees and patches, jobs |
 | `crates/providers` | Providers: model providers through rig, capabilities, keys, usage |
 | `crates/studio-native`, `crates/studio-scene` | The Studio application (Surface, Panels, Conversation) and its Surface layout and rendering |
 | `models/url-shortener/` | The Scenario A architecture, used by tests and the language check |
+| `models/link-screening/` | Scenario I: the URL shortener with AI screening and its scenarios; its code is a fixture in `crates/implementation/tests/fixtures/url-shortener` |
+| `models/notifications/` | Scenario I's second example, a retrying notification dispatcher |
 | `docs/` | `stages.md` (progress), `subset.md` (supported SysML), `deviations.md` (departures from the standard) |
 | `standards/` | Pinned KerML 1.0 / SysML 2.0 artifacts, libraries and grammar, kept as the reference (never edited) |
 | `tools/` | The architecture check and the (rarely run) standards pinning tools |

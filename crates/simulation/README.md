@@ -43,10 +43,14 @@ store.save(&result)?;                                        // app data, never 
   95% Wilson interval, failure categories, cost and provenance). The contract
   is checked the same way for each: the answer's type and values, a
   confidence between 0 and 1, `minConfidence` and `maxLatencyMs`; a failure
-  goes to the fallback, with the reason in the trace.
+  goes to the fallback, with the reason in the trace. A live sample may take
+  minutes (a model run, ten seconds); a live result keeps its answers, to be
+  kept as recordings.
 - **`result`** keeps the five claims apart (valid, executable, completed,
-  check passed, implementation agrees) and the six verdicts; **`digest`**
-  and **`freshness`** work out whether a result still describes the model.
+  check passed, implementation agrees) and the six verdicts;
+  `RunResult::describe` says it in plain words (for the Assistant);
+  **`digest`** and **`freshness`** work out whether a result still describes
+  the model.
 - **`runner::BackgroundRun`** runs on its own thread; the Studio polls it.
 
 Tests: `model.rs` (the retrying dispatcher of `models/notifications`),

@@ -15,9 +15,10 @@ let finished = executor.run(&Program::cargo(&["test", "--offline"]), "", timeout
 - **Scope.** Paths are relative to the root and canonicalised. Absolute
   paths, drive and UNC prefixes, `..`, alternate data streams, reserved
   device names and anything a link leads out of are refused. Writes go only
-  under the allowed paths and never under protected ones (contract tests,
-  scenarios, evaluation cases), so a task cannot make a failing check pass
-  by weakening it.
+  under the allowed paths (an empty entry: anywhere in the root, as for a
+  task's worktree) and never under protected ones (contract tests,
+  scenarios, evaluation cases, the model folder), so a task cannot make a
+  failing check pass by weakening it.
 - **Commands.** Cargo only, and only `build`, `check`, `test`, `run`,
   `metadata`; no `--config`, toolchain overrides or manifest redirection.
   The environment is rebuilt from a short list (PATH, temporary folders,

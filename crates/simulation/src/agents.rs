@@ -35,10 +35,28 @@ pub struct AgentRequest {
 }
 
 impl AgentRequest {
-    /// The canonical text of the request: sorted keys, no spaces.
+    /// The canonical text of the request: sorted keys, no spaces. The keys
+    /// are sorted here, whatever `serde_json` was built with: another crate
+    /// in the same build may turn on its `preserve_order`, and a recording's
+    /// key must not depend on the build that made it.
     pub fn canonical(&self) -> String {
-        serde_json::to_string(&serde_json::to_value(self).expect("a request is JSON"))
-            .expect("JSON prints")
+        fn sorted(value: &Json) -> Json {
+            match value {
+                Json::Object(map) => {
+                    let mut keys: Vec<&String> = map.keys().collect();
+                    keys.sort();
+                    let mut out = serde_json::Map::new();
+                    for key in keys {
+                        out.insert(key.clone(), sorted(&map[key]));
+                    }
+                    Json::Object(out)
+                }
+                Json::Array(items) => Json::Array(items.iter().map(sorted).collect()),
+                other => other.clone(),
+            }
+        }
+        let value = serde_json::to_value(self).expect("a request is JSON");
+        serde_json::to_string(&sorted(&value)).expect("JSON prints")
     }
 
     /// The recording key.

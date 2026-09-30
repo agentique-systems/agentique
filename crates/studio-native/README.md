@@ -21,8 +21,10 @@ saves it.
   overlays, the frame ticker), `surface/` (input, gestures, overlays;
   `paint.rs` draws a frame with GPUI's quads, paths and shaped text in paint
   layers, only what is in view, by level of detail; `minimap.rs`),
-  `panels/` (Outline, Library, Inspector and its fields, Requirements,
-  History, Problems), `conversation_view/` (the list, cards, Markdown and selection),
+  `panels/` (Outline, Library, Scenarios, Inspector and its fields with the
+  Behaviour, Stand-in, Agent, Evidence and Implementation sections in
+  `evidence.rs`, Run, Requirements, History, Problems), `conversation_view/`
+  (the list, cards, Markdown and selection),
   `palette.rs`, `dialogs.rs`, `welcome.rs`, `settings_view.rs`, `gallery.rs`.
 - **Keys** (`commands.rs`): every command has its GPUI keystroke; shortcuts
   that type letters apply in the workspace except while a text field has the
@@ -31,6 +33,24 @@ saves it.
   icons, buttons, fields, menus, dialogs, tooltips, chips, badges, key caps,
   switches and a segmented control, banners and empty states. Views take their
   controls from here; their own rows use the same theme roles.
+
+## Scenarios, runs and code (C-50)
+
+- `runs.rs`: the project's scenarios, runs on background threads (model,
+  replay, walkthrough, code through the harness, live after the Operator
+  confirms), results kept in the project's app data with their freshness
+  (worked out again on every model change, undo included), the playback
+  cursor and the marks the Surface draws (only for a current result), and
+  writing scenarios through controls; the Assistant's run and result
+  requests.
+- `implementation.rs`: links, the per-project trusted-local choice, the
+  executor, rounds of implementation checks, drift, opening linked code.
+- `tasks.rs`: implementation tasks: a job and a git worktree each, the
+  worker on its own thread, the Studio's own verification, the review with
+  the patch, integration (only if the repository has not moved) or discard,
+  continuing a task in its worktree, and interrupted tasks found on open.
+- `live.rs`: the live model client for agents, through `agq-providers`.
+- Journeys `i-scenarios` and `i-code` (`--features automation`).
 
 ## Conversation
 
