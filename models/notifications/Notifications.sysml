@@ -1,4 +1,4 @@
-package Dispatch {
+package Notifications {
     doc /* A notification service whose dispatcher retries a failing SMS
          * gateway: the second, smaller example of Scenario I (C-50).
          */
@@ -124,6 +124,31 @@ package Dispatch {
         then accept receipt : Receipt via service.notifications;
         then assert constraint deliveredOnThirdAttempt {
             receipt.status == DeliveryStatus::delivered and receipt.attempts == 3
+        }
+    }
+
+    verification def GiveUpAfterThreeAttempts {
+        doc /* The gateway keeps failing: after maxAttempts the notification ends
+             * as failed, and the gateway is not called again.
+             */
+        subject service : NotificationService;
+        objective {
+            verify deliveredOnce;
+        }
+        part alwaysFail : Scenarios::StandIn {
+            :>> target = service.gateway;
+            :>> outcome = Scenarios::Outcome::answer;
+            :>> latencyMs = 50;
+            :>> output = new SendResult(id = "n2", ok = false);
+        }
+        send new Notification(id = "n2", text = "hello again") via service.notifications;
+        then accept receipt : Receipt via service.notifications;
+        then assert constraint endsAsFailed {
+            receipt.status == DeliveryStatus::failed and receipt.attempts == 3
+        }
+        then accept after 5000;
+        then assert constraint dispatcherIsIdle {
+            service.dispatcher.attempts == 3
         }
     }
 }

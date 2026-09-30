@@ -25,7 +25,7 @@ fn round_trips(tree: &Tree) {
     assert_eq!(print(&again), printed);
 }
 
-pub const DISPATCH: &str = include_str!("fixtures/Dispatch.sysml");
+pub const DISPATCH: &str = include_str!("../../../models/notifications/Notifications.sysml");
 
 #[test]
 fn a_retrying_dispatcher_reads_prints_and_validates() {
@@ -37,7 +37,7 @@ fn a_retrying_dispatcher_reads_prints_and_validates() {
         "the fixture is written canonically"
     );
     round_trips(&tree);
-    let machine = tree.find("Dispatch::Dispatcher::dispatching").unwrap();
+    let machine = tree.find("Notifications::Dispatcher::dispatching").unwrap();
     assert_eq!(tree[machine].kind, ElementKind::State);
     assert!(tree[machine].exhibit);
     let transitions = tree[machine]
@@ -46,14 +46,14 @@ fn a_retrying_dispatcher_reads_prints_and_validates() {
         .filter(|c| tree[**c].kind == ElementKind::Transition)
         .count();
     assert_eq!(transitions, 5);
-    let scenario = tree.find("Dispatch::RetryThenDeliver").unwrap();
+    let scenario = tree.find("Notifications::RetryThenDeliver").unwrap();
     assert_eq!(tree[scenario].kind, ElementKind::VerificationDef);
 }
 
 #[test]
 fn names_in_expressions_follow_renames() {
     let mut tree = load(DISPATCH);
-    let attempts = tree.find("Dispatch::Dispatcher::attempts").unwrap();
+    let attempts = tree.find("Notifications::Dispatcher::attempts").unwrap();
     let before = tree.references_to(attempts).len();
     assert!(
         before >= 5,
@@ -70,7 +70,7 @@ fn names_in_expressions_follow_renames() {
     assert!(text.contains("assign tries := tries + 1;"), "{text}");
     assert!(!text.contains("attempts := "), "{text}");
     // A named argument names the feature of the item it makes.
-    let item_attempts = tree.find("Dispatch::Receipt::attempts").unwrap();
+    let item_attempts = tree.find("Notifications::Receipt::attempts").unwrap();
     tree.get_mut(item_attempts).unwrap().name = Some("tryCount".into());
     let text = print(&tree)[0].text.clone();
     assert!(text.contains("tryCount = tries"), "{text}");
@@ -279,13 +279,16 @@ fn every_name_in_an_expression_is_a_linked_reference() {
     assert!(values > 20, "{values}");
     // `new T(a = …)` holds its argument as the chain `T.a`.
     let scenario = tree
-        .find("Dispatch::RetryThenDeliver::failFirst::output")
+        .find("Notifications::RetryThenDeliver::failFirst::output")
         .unwrap();
     let Some(Expression::New { arguments, .. }) = &tree[scenario].expression else {
         panic!("a new expression");
     };
     let feature = arguments[0].feature.target().unwrap();
-    assert_eq!(tree.qualified_name(feature), "Dispatch::SendResult::id");
+    assert_eq!(
+        tree.qualified_name(feature),
+        "Notifications::SendResult::id"
+    );
 }
 
 #[test]
