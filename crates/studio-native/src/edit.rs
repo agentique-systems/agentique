@@ -132,6 +132,20 @@ pub enum Dialog {
     /// A live evaluation: the provider, the model, the samples and what it
     /// may cost, before anything is sent.
     ConfirmLive,
+    /// "Implement with the Assistant…": what the worker is asked, and what
+    /// it may do, before a task starts.
+    Implement {
+        element: ElementId,
+        instructions: String,
+    },
+    /// A finished task's patch, checks and proposals, to integrate or
+    /// discard; `problem` says why integrating failed.
+    ReviewTask {
+        job: String,
+        problem: Option<String>,
+        /// The patch as text, read when the review opened.
+        diff: String,
+    },
     /// "Link code…": a file, and optionally a symbol in it, for an element;
     /// `kind` indexes `LinkKind::ALL`.
     LinkCode {

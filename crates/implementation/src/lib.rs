@@ -10,6 +10,8 @@
 //!   project's harness, with the same step interpreter and checks as model
 //!   execution.
 //! - [`rust`]: just enough reading of Rust source for those checks.
+//! - [`task`]: an implementation task's brief, from the model, and the
+//!   verification of a working copy the worker and the Studio both run.
 //! - [`CheckReport`]: a set of check results with the code and model they
 //!   saw, kept with the run results in the app's data.
 //!
@@ -20,6 +22,7 @@ pub mod checks;
 pub mod harness;
 pub mod links;
 pub mod rust;
+pub mod task;
 
 pub use checks::{CheckKind, ImplementationCheck, drift};
 pub use harness::{HarnessTarget, run_implementation};

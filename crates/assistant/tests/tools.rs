@@ -51,6 +51,7 @@ fn every_tool_has_a_schema() {
             "read_run",
             "read_code_links",
             "check_implementation",
+            "propose_implementation",
             "search_library",
             "read_library_block",
             "use_library_block",

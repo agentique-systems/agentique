@@ -14,6 +14,8 @@
 //!   content blocks it consists of.
 //! - [`model`]: the language model interface, with a scripted stand-in for
 //!   tests.
+//! - [`worker`]: an implementation worker, the same loop with code tools
+//!   in one worktree (C-50).
 #![forbid(unsafe_code)]
 
 pub mod choice;
@@ -25,6 +27,7 @@ pub mod skills;
 pub mod sysml_text;
 pub mod tools;
 pub mod turn;
+pub mod worker;
 
 pub use choice::ModelChoice;
 pub use claude::ClaudeModel;

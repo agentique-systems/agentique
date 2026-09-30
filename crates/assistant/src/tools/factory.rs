@@ -27,6 +27,12 @@ pub enum StudioRequest {
     ReadCodeLinks { element: Option<ElementId> },
     /// Run the implementation checks and answer when they end.
     CheckImplementation,
+    /// Ask the Operator to start an implementation task; answer when the
+    /// Operator has decided.
+    Implement {
+        element: ElementId,
+        instructions: String,
+    },
 }
 
 /// The agent settings `inspect_behaviour` lists, as the Agents library
@@ -432,6 +438,22 @@ pub(super) fn studio_request(
             scenario: scenario()?,
             mode: mode(Mode::Model)?,
         },
+        super::PROPOSE_IMPLEMENTATION => {
+            let element = find(tree, required_str(input, "element")?)?;
+            if !matches!(tree[element].kind, ElementKind::PartDef | ElementKind::Part) {
+                return Err(format!(
+                    "`{}` is a {}; a task implements a part def or part",
+                    tree.qualified_name(element),
+                    tree[element].kind.keyword()
+                ));
+            }
+            StudioRequest::Implement {
+                element,
+                instructions: optional_str(input, "instructions")?
+                    .unwrap_or_default()
+                    .to_string(),
+            }
+        }
         super::READ_CODE_LINKS => StudioRequest::ReadCodeLinks {
             element: optional_str(input, "element")?
                 .map(|name| find(tree, name))
@@ -490,5 +512,6 @@ pub fn carry_out_headless(tree: &Tree, request: &StudioRequest) -> Result<String
         StudioRequest::ReadRun { .. } => Err("No results are kept here; run the scenario.".into()),
         StudioRequest::ReadCodeLinks { .. } => Ok("No code is linked here.".into()),
         StudioRequest::CheckImplementation => Err("Not run: there is no code here.".into()),
+        StudioRequest::Implement { .. } => Err("Not started: there is no code folder here.".into()),
     }
 }

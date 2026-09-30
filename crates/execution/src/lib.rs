@@ -96,7 +96,8 @@ impl Scope {
         })
     }
 
-    /// A scope that may write under `writable` and never under `protected`.
+    /// A scope that may write under `writable` (an empty entry: anywhere
+    /// in the root) and never under `protected`.
     pub fn writable(root: &Path, writable: &[&str], protected: &[&str]) -> Result<Scope, Refusal> {
         let mut scope = Scope::read_only(root)?;
         scope.writable = writable.iter().map(|p| normalise(p)).collect();
@@ -162,7 +163,7 @@ impl Scope {
         if !self
             .writable
             .iter()
-            .any(|w| normal == *w || normal.starts_with(&format!("{w}/")))
+            .any(|w| w.is_empty() || normal == *w || normal.starts_with(&format!("{w}/")))
         {
             return Err(Refusal::NotWritable(normal));
         }
@@ -493,6 +494,12 @@ mod tests {
             files,
             ["src/deep/mod.rs", "src/lib.rs", "tests/contract.rs"]
         );
+        // A whole worktree: anywhere in it but the protected paths.
+        let whole =
+            Executor::new(Scope::writable(dir.path(), &[""], &["tests/contract.rs"]).unwrap());
+        whole.write("README.md", "x").unwrap();
+        assert!(whole.write("tests/contract.rs", "x").is_err());
+        assert!(whole.write("../escape.rs", "x").is_err());
     }
 
     #[test]

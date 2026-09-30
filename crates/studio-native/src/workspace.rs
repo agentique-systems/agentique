@@ -217,9 +217,13 @@ impl Workspace {
         }
         // Runs and implementation checks on their threads, and playback.
         let studio = self.studio.read(cx);
-        if studio.runs.running() || studio.runs.playing || studio.implementation.checking() {
+        if studio.runs.running()
+            || studio.runs.playing
+            || studio.implementation.checking()
+            || studio.implementation.task.is_some()
+        {
             self.studio.act(cx, |studio| {
-                let finished = studio.poll_runs() | studio.poll_checks();
+                let finished = studio.poll_runs() | studio.poll_checks() | studio.poll_task();
                 let moved = studio.playback_tick();
                 if finished || moved {
                     studio.mark(Dirty::MODEL | Dirty::LAYOUT | Dirty::STATUS);

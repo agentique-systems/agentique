@@ -5,28 +5,7 @@
 //! expressions and checks itself, with the same interpreter as model
 //! execution. It never replays expected answers.
 //!
-//! **Protocol** (one JSON object per line; the harness answers each command
-//! with any number of `output` and `log` lines, then `{"ready": true}`, or
-//! with `{"error": "..."}`):
-//!
-//! | Runner sends | Meaning |
-//! |---|---|
-//! | `{"start": {"scenario": Q, "subject": T, "standIns": [...]}}` | Build the system for subject type `T` with these stand-ins in place of the parts they name |
-//! | `{"send": {"port": "api.shorten", "value": V}}` | Put `V` into the subject through that port |
-//! | `{"wait": ms}` | Let `ms` of the implementation's time pass (a harness with no clock of its own just answers) |
-//! | `{"finish": true}` | Let everything pending finish; report what else came out |
-//!
-//! | Harness answers | Meaning |
-//! |---|---|
-//! | `{"output": {"port": "api.shorten", "value": V}}` | `V` came out of the subject through that port |
-//! | `{"log": "text"}` | A line for the trace |
-//! | `{"ready": true}` | Done with the command |
-//! | `{"error": "text"}` | It cannot go on (the run stops with `harness-failed`) |
-//!
-//! A stand-in is `{"target": "screening", "call": 1 | null, "outcome":
-//! "answer" | "timeout" | "invalidOutput" | "refusal" | "toolUnavailable",
-//! "latencyMs": n, "output": V | null}`. Values are items as `{"type": T,
-//! "fields": {...}}`, enum values by name, scalars as JSON.
+//! The protocol the harness speaks is [`PROTOCOL`].
 
 use crate::links::Links;
 use agq_execution::{Executor, Interactive, Program as Command, git};
@@ -43,6 +22,31 @@ use agq_simulation::{
 use serde_json::{Value as Json, json};
 use std::collections::HashMap;
 use std::path::Path;
+
+/// The harness protocol, as the harness's author (or the worker) reads it.
+pub const PROTOCOL: &str = r#"**Protocol** (one JSON object per line; the harness answers each command
+with any number of `output` and `log` lines, then `{"ready": true}`, or
+with `{"error": "..."}`):
+
+| Runner sends | Meaning |
+|---|---|
+| `{"start": {"scenario": Q, "subject": T, "standIns": [...]}}` | Build the system for subject type `T` with these stand-ins in place of the parts they name |
+| `{"send": {"port": "api.shorten", "value": V}}` | Put `V` into the subject through that port |
+| `{"wait": ms}` | Let `ms` of the implementation's time pass (a harness with no clock of its own just answers) |
+| `{"finish": true}` | Let everything pending finish; report what else came out |
+
+| Harness answers | Meaning |
+|---|---|
+| `{"output": {"port": "api.shorten", "value": V}}` | `V` came out of the subject through that port |
+| `{"log": "text"}` | A line for the trace |
+| `{"ready": true}` | Done with the command |
+| `{"error": "text"}` | It cannot go on (the run stops with `harness-failed`) |
+
+A stand-in is `{"target": "screening", "call": 1 | null, "outcome":
+"answer" | "timeout" | "invalidOutput" | "refusal" | "toolUnavailable",
+"latencyMs": n, "output": V | null}`. Values are items as `{"type": T,
+"fields": {...}}`, enum values by name, scalars as JSON."#;
+
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::time::{Duration, Instant};

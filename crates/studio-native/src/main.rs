@@ -39,6 +39,7 @@ mod settings_view;
 mod stress_automation;
 mod studio;
 mod surface;
+mod tasks;
 mod timing;
 // Design tokens and the component list (interface 3 of ROADMAP §6.2).
 mod tokens;

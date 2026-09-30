@@ -400,7 +400,9 @@ impl Studio {
             graph_view: self.view == SurfaceView::Graph,
             focused: self.focus.is_some() || !self.drill.is_empty(),
             scenario: self.runs.selected.is_some(),
-            running: self.runs.running() || self.implementation.checking(),
+            running: self.runs.running()
+                || self.implementation.checking()
+                || self.implementation.task.is_some(),
             trace: self
                 .runs
                 .result
@@ -1229,6 +1231,7 @@ impl Studio {
             StopRun => {
                 self.stop_run();
                 self.stop_checks();
+                self.stop_task();
             }
             TraceFirst => {
                 self.runs.playing = false;

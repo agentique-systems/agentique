@@ -500,6 +500,36 @@ fn implementation(
     );
     let link_entity = studio.clone();
     let check_entity = studio.clone();
+    let implementable = state.project.as_ref().is_some_and(|p| {
+        matches!(
+            p.state().tree()[element].kind,
+            ElementKind::PartDef | ElementKind::Part
+        )
+    });
+    let tasks = if implementable {
+        state.tasks_for(element)
+    } else {
+        Vec::new()
+    };
+    let active = state
+        .implementation
+        .task
+        .as_ref()
+        .filter(|t| t.element == element)
+        .map(|t| {
+            (
+                t.job.clone(),
+                t.started.elapsed().as_secs(),
+                t.progress
+                    .iter()
+                    .rev()
+                    .take(4)
+                    .rev()
+                    .cloned()
+                    .collect::<Vec<_>>(),
+            )
+        });
+    let implement_entity = studio.clone();
     div()
         .flex()
         .flex_col()
@@ -619,12 +649,110 @@ fn implementation(
                 cx,
             ))
         })
+        .when_some(active.clone(), |this, (_, seconds, progress)| {
+            let stop = studio.clone();
+            this.child(
+                div()
+                    .pt(r(8.0))
+                    .flex()
+                    .flex_col()
+                    .gap(r(4.0))
+                    .child(
+                        div()
+                            .flex()
+                            .items_center()
+                            .gap(r(6.0))
+                            .child(ui::primitives::spinner("task-spinner", 12.0, theme.info.solid))
+                            .child(
+                                div()
+                                    .flex_1()
+                                    .text_size(r(theme::text::SM))
+                                    .child(format!("The worker is working · {}:{:02}", seconds / 60, seconds % 60)),
+                            )
+                            .child(Button::new("task-stop", "Stop").small().on_click(move |_: &ClickEvent, _, cx| {
+                                stop.act(cx, |studio| studio.stop_task())
+                            })),
+                    )
+                    .children(progress.into_iter().map(|line| {
+                        div()
+                            .text_size(r(theme::text::XS))
+                            .font_family(theme::MONO)
+                            .text_color(theme.text_muted)
+                            .overflow_hidden()
+                            .text_ellipsis()
+                            .whitespace_nowrap()
+                            .child(line)
+                    })),
+            )
+        })
+        .children(tasks.into_iter().take(4).enumerate().filter(|(_, job)| active.as_ref().is_none_or(|(id, ..)| *id != job.id)).map(|(index, job)| {
+            let review = studio.clone();
+            let id = job.id.clone();
+            let reviewable = matches!(
+                job.state,
+                agq_execution::jobs::JobState::WaitingForYou | agq_execution::jobs::JobState::Interrupted
+            );
+            div()
+                .pt(r(6.0))
+                .flex()
+                .items_center()
+                .gap(r(6.0))
+                .child(icon(IconName::Patch).size(13.0).color(theme.text_muted))
+                .child(
+                    div()
+                        .flex_1()
+                        .min_w_0()
+                        .flex()
+                        .flex_col()
+                        .child(
+                            div()
+                                .text_size(r(theme::text::SM))
+                                .child(format!("{} · {}", job.title, match job.state {
+                                    agq_execution::jobs::JobState::WaitingForYou => "ready for review",
+                                    other => other.label(),
+                                })),
+                        )
+                        .when_some(job.outcome.clone(), |this, outcome| {
+                            this.child(
+                                div()
+                                    .text_size(r(theme::text::XS))
+                                    .text_color(theme.text_muted)
+                                    .overflow_hidden()
+                                    .text_ellipsis()
+                                    .whitespace_nowrap()
+                                    .child(outcome),
+                            )
+                        }),
+                )
+                .when(reviewable, |this| {
+                    this.child(Button::new(("task-review", index), "Review").small().primary().on_click(move |_: &ClickEvent, _, cx| {
+                        let id = id.clone();
+                        review.act(cx, |studio| studio.review_task(&id))
+                    }))
+                })
+        }))
         .child(
             div()
                 .pt(r(8.0))
                 .flex()
                 .flex_wrap()
                 .gap(r(6.0))
+                .when(editable && implementable && active.is_none(), |this| {
+                    this.child(
+                        Button::new("implement", "Implement with the Assistant…")
+                            .small()
+                            .icon(IconName::Patch)
+                            .on_click(move |_: &ClickEvent, _, cx| {
+                                implement_entity.act(cx, |studio| {
+                                    studio.dialog = Some(crate::edit::Dialog::Implement {
+                                        element,
+                                        instructions: String::new(),
+                                    });
+                                    studio.mark(Dirty::OVERLAY);
+                                })
+                            }),
+                    )
+                })
                 .when(editable, |this| {
                     this.child(
                         Button::new("link-code", "Link code…")

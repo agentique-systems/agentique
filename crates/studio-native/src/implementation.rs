@@ -39,6 +39,10 @@ pub struct ImplementationState {
     code: Option<Freshness>,
     /// The Assistant waits for the checks in progress.
     pub(crate) assistant: Option<std::sync::mpsc::Sender<agq_assistant::ToolResult>>,
+    /// The implementation task in progress (one at a time).
+    pub task: Option<crate::tasks::ActiveTask>,
+    /// The Assistant waits for the Operator to start or decline a task.
+    pub(crate) proposal: Option<std::sync::mpsc::Sender<agq_assistant::ToolResult>>,
     active: Option<(Receiver<CheckReport>, Arc<AtomicBool>, Instant)>,
 }
 
@@ -320,11 +324,13 @@ impl Studio {
         ))
     }
 
-    /// Loads the newest round of checks when a project opens.
+    /// Loads the newest round of checks when a project opens, and finds
+    /// tasks the app did not see end.
     pub fn load_checks(&mut self) {
         self.implementation = ImplementationState::default();
         self.implementation.report = self.check_store().and_then(|s| s.latest());
         self.refresh_check_freshness();
+        self.recover_tasks();
     }
 
     /// Works out whether the shown checks still describe the model and the

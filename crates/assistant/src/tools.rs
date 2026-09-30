@@ -45,6 +45,7 @@ pub const STOP_RUN: &str = "stop_run";
 pub const READ_RUN: &str = "read_run";
 pub const READ_CODE_LINKS: &str = "read_code_links";
 pub const CHECK_IMPLEMENTATION: &str = "check_implementation";
+pub const PROPOSE_IMPLEMENTATION: &str = "propose_implementation";
 
 /// The longest tool result the model reads, in characters: about 8,000
 /// tokens (R-34). Longer results are cut with a note on narrowing the
@@ -296,6 +297,19 @@ pub fn definitions() -> Value {
             "input_schema": { "type": "object", "properties": {}, "additionalProperties": false }
         },
         {
+            "name": PROPOSE_IMPLEMENTATION,
+            "description": "Propose that a worker implements a part from the model, in a worktree of the code folder. The Operator sees what will happen and starts or declines it; the Operator reviews the patch before anything reaches the code. Answers when the Operator has decided (the task itself runs on).",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "element": name("Qualified name of the part def (or part) to implement."),
+                    "instructions": name("What the worker should know beyond the model, in plain words.")
+                },
+                "required": ["element"],
+                "additionalProperties": false
+            }
+        },
+        {
             "name": SEARCH_LIBRARY,
             "description": "Search the Library of building blocks: reusable definitions from the built-in library (neutral software concepts such as services, gateways, stores, caches, queues, workers, retries), the project's own definitions and the Operator's My Library. Use it before modelling a common concept by hand. With fits_port, only blocks with a port that can connect to that port by the model's rules. Returns one line per block: its reference, kind, source, purpose and ports.",
             "input_schema": {
@@ -372,7 +386,12 @@ pub fn prepare(state: &SystemState, library: &Library, tool: &str, input: &Value
         SAVE_TO_LIBRARY => library::save(state, library, input),
         INSPECT_BEHAVIOUR => factory::inspect_behaviour(state.tree(), input).map(Prepared::Answer),
         LIST_SCENARIOS => Ok(Prepared::Answer(factory::list_scenarios(state.tree()))),
-        RUN_SCENARIO | STOP_RUN | READ_RUN | READ_CODE_LINKS | CHECK_IMPLEMENTATION => {
+        RUN_SCENARIO
+        | STOP_RUN
+        | READ_RUN
+        | READ_CODE_LINKS
+        | CHECK_IMPLEMENTATION
+        | PROPOSE_IMPLEMENTATION => {
             factory::studio_request(state.tree(), tool, input).map(Prepared::Studio)
         }
         other => Err(format!("there is no tool called `{other}`")),
@@ -385,7 +404,11 @@ pub fn prepare(state: &SystemState, library: &Library, tool: &str, input: &Value
 /// The API does not check inputs that stream in as they are generated, so
 /// the input is checked here before anything runs.
 pub fn check_input(tool: &str, input: &Value) -> Result<(), String> {
-    let definitions = definitions();
+    check_input_against(&definitions(), tool, input)
+}
+
+/// [`check_input`] against another set of tool definitions (a worker's).
+pub fn check_input_against(definitions: &Value, tool: &str, input: &Value) -> Result<(), String> {
     let schema = definitions
         .as_array()
         .into_iter()

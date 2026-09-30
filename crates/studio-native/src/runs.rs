@@ -797,6 +797,27 @@ impl Studio {
                     Err(error) => ToolResult::error(error),
                 });
             }
+            StudioRequest::Implement {
+                element,
+                instructions,
+            } => {
+                if let Some(why) = self.task_blocker() {
+                    let _ = reply.send(ToolResult::error(format!("Not started: {why}")));
+                    return;
+                }
+                if self.dialog.is_some() {
+                    let _ = reply.send(ToolResult::error(
+                        "Not started: the Operator is busy with a dialog; propose it again later.",
+                    ));
+                    return;
+                }
+                self.implementation.proposal = Some(reply);
+                self.dialog = Some(crate::edit::Dialog::Implement {
+                    element,
+                    instructions,
+                });
+                self.mark(Dirty::OVERLAY);
+            }
             StudioRequest::CheckImplementation => {
                 if self.implementation.checking() {
                     let _ = reply.send(ToolResult::error("The checks are already running."));
