@@ -862,6 +862,22 @@ impl Render for DialogsView {
                         "The selected parts become a reusable definition, and one usage of it takes their place in {}. They keep their identity; connections from outside pass through the new definition's ports. One change: undo reverts it.",
                         name(extraction.owner)
                     ))
+                    // The names first: what is typed stays in view when the
+                    // lists below make the dialog scroll.
+                    .child(field(
+                        "Definition name",
+                        self.first
+                            .as_ref()
+                            .map(|s| TextField::new(s).target("Block name").into_any_element()),
+                        cx,
+                    ))
+                    .child(field(
+                        "Usage name",
+                        self.second
+                            .as_ref()
+                            .map(|s| TextField::new(s).target("Usage name").into_any_element()),
+                        cx,
+                    ))
                     .child(block_list("Parts", parts, IconName::Part, cx))
                     .child(block_list(
                         "Ports it will expose",
@@ -895,20 +911,6 @@ impl Render for DialogsView {
                     .children(extraction.blockers.iter().map(|blocker| {
                         ui::inline_message(ui::Tone::Warning, blocker.clone(), cx)
                     }))
-                    .child(field(
-                        "Definition name",
-                        self.first
-                            .as_ref()
-                            .map(|s| TextField::new(s).target("Block name").into_any_element()),
-                        cx,
-                    ))
-                    .child(field(
-                        "Usage name",
-                        self.second
-                            .as_ref()
-                            .map(|s| TextField::new(s).target("Usage name").into_any_element()),
-                        cx,
-                    ))
                     .footer(cancel_button)
                     .footer(confirm_button("Create building block", ready))
                     .into_any_element()

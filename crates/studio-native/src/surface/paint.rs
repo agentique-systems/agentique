@@ -205,6 +205,9 @@ pub fn paint(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window, cx: &mu
         (strength > 0.0).then(|| (strength, theme.actor(*actor)))
     };
     let selected_card = |id: ElementId| frame.selection.contains(id);
+    // Most frames have no run or drift marks: skip the lookups (30k a frame
+    // at 10k cards and 20k edges).
+    let marked = !frame.marks.is_empty();
     let hovered_card = |id: ElementId| matches!(&frame.hovered, Some(SceneTarget::Node(h) | SceneTarget::Container(h)) if *h == id);
     let radius = |node: &SceneNode| -> Pixels {
         let base = match node.category {
@@ -247,7 +250,7 @@ pub fn paint(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window, cx: &mu
                 border,
                 style,
             ));
-            if let Some(mark) = frame.marks.get(&node.id()) {
+            if marked && let Some(mark) = frame.marks.get(&node.id()) {
                 paint_mark(window, rect, radius(node), *mark, theme);
             }
             // The title strip.
@@ -313,7 +316,11 @@ pub fn paint(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window, cx: &mu
                 colour = actor.opacity(0.35 + 0.65 * strength);
                 animating = true;
             }
-            let mark = semantic.element.and_then(|e| frame.marks.get(&e)).copied();
+            let mark = semantic
+                .element
+                .filter(|_| marked)
+                .and_then(|e| frame.marks.get(&e))
+                .copied();
             match mark {
                 Some(Mark::Current) => colour = theme.accent.solid,
                 Some(Mark::Visited) => colour = theme.info.solid.opacity(0.7),
@@ -428,7 +435,7 @@ pub fn paint(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window, cx: &mu
                 border,
                 style,
             ));
-            if let Some(mark) = frame.marks.get(&id) {
+            if marked && let Some(mark) = frame.marks.get(&id) {
                 paint_mark(window, rect, radius, *mark, theme);
             }
             if tiny {
@@ -638,7 +645,7 @@ pub fn port_visible(frame: &Frame, card: ElementId, port: ElementId) -> bool {
         || frame.selection.contains(port)
         || frame.selection.contains(card)
         || frame.highlights.contains_key(&port)
-        || frame.marks.contains_key(&port)
+        || (!frame.marks.is_empty() && frame.marks.contains_key(&port))
 }
 
 /// A ring around a card for a run's trace or for drift. Shape carries the

@@ -89,6 +89,10 @@ impl RenderOnce for Dialog {
             .occlude()
             .w(r(self.width))
             .max_w_full()
+            // Never taller than the window: the body scrolls and the
+            // footer's buttons stay in view (200% on a small window).
+            .max_h_full()
+            .min_h_0()
             .rounded(r(crate::tokens::radius::DIALOG))
             .bg(theme.overlay)
             .border_1()
@@ -101,6 +105,7 @@ impl RenderOnce for Dialog {
             .flex_col()
             .child(
                 div()
+                    .flex_none()
                     .px(r(20.0))
                     .pt(r(18.0))
                     .pb(r(12.0))
@@ -125,6 +130,10 @@ impl RenderOnce for Dialog {
             )
             .child(
                 div()
+                    .id(ElementId::Name(format!("{:?}-body", self.id).into()))
+                    .flex_1()
+                    .min_h_0()
+                    .overflow_y_scroll()
                     .px(r(20.0))
                     .pb(r(16.0))
                     .flex()
@@ -135,6 +144,7 @@ impl RenderOnce for Dialog {
             .when(!self.footer.is_empty(), |this| {
                 this.child(
                     div()
+                        .flex_none()
                         .px(r(16.0))
                         .py(r(12.0))
                         .flex()
@@ -154,9 +164,10 @@ impl RenderOnce for Dialog {
             .flex()
             .justify_center()
             .pt(r(self.top))
+            .pb(r(24.0))
             .child(entrance(
                 ElementId::Name(format!("{:?}-entrance", self.id).into()),
-                div().child(panel),
+                div().max_h_full().min_h_0().flex().flex_col().child(panel),
             ))
     }
 }
