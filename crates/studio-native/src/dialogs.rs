@@ -1331,10 +1331,12 @@ impl Render for DialogsView {
                         ui::Dialog::new("review-task", format!("Review: {}", found.title))
                             .width(760.0)
                             .description(format!(
-                                "{} file(s) changed in {}; the worker took {} round(s) of checks.",
+                                "{} file(s) changed in {}; the worker ({}) took {} round(s) of checks; its calls cost {}.",
                                 outcome.files.len(),
                                 outcome.worktree,
-                                outcome.rounds
+                                outcome.model.clone().unwrap_or_else(|| "its model".into()),
+                                outcome.rounds,
+                                outcome.cost_usd.map_or("an unknown amount".into(), |c| format!("about ${c:.3}"))
                             ))
                             .child(
                                 div()

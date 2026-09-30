@@ -40,6 +40,12 @@ pub struct TaskOutcome {
     pub files: Vec<(String, String, usize, usize)>,
     /// Why it ended early, if it did.
     pub notice: Option<String>,
+    /// The worker's model and what its calls cost, estimated from the
+    /// provider's usage (None when the price is not known).
+    #[serde(default)]
+    pub model: Option<String>,
+    #[serde(default)]
+    pub cost_usd: Option<f64>,
 }
 
 /// A task in progress.
@@ -308,19 +314,66 @@ impl Studio {
                 // Links an earlier attempt proposed stay proposed.
                 worker.proposed = carried;
                 let progress = sender.clone();
-                let mut on_event = |event| {
-                    if let agq_assistant::TurnEvent::ToolFinished(result) = event {
-                        let first = result.content.lines().next().unwrap_or("").to_string();
-                        let line = if result.is_error {
-                            format!("✗ {first}")
-                        } else {
-                            format!("✓ {first}")
-                        };
-                        let _ = progress.send(TaskEvent::Progress(line));
+                let author = model.model();
+                let mut usage = agq_assistant::Usage::default();
+                // Each call by its tool and what it was about, as it ends.
+                let mut calls: std::collections::HashMap<String, (String, String)> =
+                    std::collections::HashMap::new();
+                let mut on_event = |event| match event {
+                    agq_assistant::TurnEvent::Stream(
+                        agq_assistant::StreamEvent::ToolCallStarted { id, name },
+                    ) => {
+                        calls.insert(id, (name, String::new()));
                     }
+                    agq_assistant::TurnEvent::Stream(agq_assistant::StreamEvent::ToolInput {
+                        id,
+                        json,
+                    }) => {
+                        if let Some(call) = calls.get_mut(&id) {
+                            call.1.push_str(&json);
+                        }
+                    }
+                    agq_assistant::TurnEvent::Stream(agq_assistant::StreamEvent::ToolCallId {
+                        stream_id,
+                        id,
+                    }) => {
+                        if let Some(call) = calls.remove(&stream_id) {
+                            calls.insert(id, call);
+                        }
+                    }
+                    agq_assistant::TurnEvent::Stream(agq_assistant::StreamEvent::Usage(u)) => {
+                        usage.add(u)
+                    }
+                    agq_assistant::TurnEvent::ToolFinished(result) => {
+                        let (name, input) = calls.remove(&result.tool_use_id).unwrap_or_default();
+                        let path = serde_json::from_str::<serde_json::Value>(&input)
+                            .ok()
+                            .and_then(|v| {
+                                v["path"]
+                                    .as_str()
+                                    .or(v["element"].as_str())
+                                    .map(str::to_string)
+                            })
+                            .unwrap_or_default();
+                        let lines: Vec<&str> = result.content.lines().collect();
+                        let what = match name.as_str() {
+                            "read_code" | "list_files" => path,
+                            "run_checks" => format!(
+                                "{} {}",
+                                lines.first().unwrap_or(&""),
+                                lines.last().unwrap_or(&"")
+                            ),
+                            _ => lines.first().unwrap_or(&"").to_string(),
+                        };
+                        let mark = if result.is_error { "✗" } else { "✓" };
+                        let _ = progress.send(TaskEvent::Progress(format!("{mark} {name} {what}")));
+                    }
+                    _ => {}
                 };
                 let conversation =
                     worker::run_worker(model.as_mut(), &mut worker, &mut on_event, &flag);
+                let cost_usd = author.as_ref().and_then(|m| usage.cost_usd(m));
+                let model_name = author.map(|m| format!("{}/{}", m.provider.id(), m.model));
                 let notice = conversation.entries.iter().rev().find_map(|e| match e {
                     agq_assistant::Entry::Notice { text } => Some(text.clone()),
                     _ => None,
@@ -359,6 +412,8 @@ impl Studio {
                     } else {
                         notice
                     },
+                    model: model_name,
+                    cost_usd,
                     ..outcome_base
                 };
                 let _ = sender.send(TaskEvent::Done(Box::new(outcome)));
@@ -433,6 +488,10 @@ impl Studio {
             return changed;
         };
         let task = self.implementation.task.take().expect("checked above");
+        // The worker's spend counts in the day's total, as the Assistant's.
+        if let Some(cost) = outcome.cost_usd {
+            self.daily_cost.add(cost);
+        }
         if let Some(store) = self.job_store()
             && let Some(mut job) = store.load(&task.job)
         {
@@ -846,5 +905,120 @@ mod tests {
         app.discard_task(&job);
         assert_eq!(jobs.load(&job).unwrap().state, JobState::Cancelled);
         let _ = folder;
+    }
+
+    /// I4 for real: a worker on a real model implements the link store of
+    /// the URL shortener from its model, in a worktree; the Studio checks
+    /// it, the patch is integrated, and the scenarios run against the code.
+    /// It spends money, so it runs only when asked: `AGQ_LIVE=1 cargo test
+    /// -p agq-studio-native live_worker -- --ignored --nocapture`, with a
+    /// provider key set (the Assistant's model choice).
+    #[test]
+    #[ignore = "calls a real model"]
+    fn live_worker_implements_the_link_store() {
+        if std::env::var("AGQ_LIVE").as_deref() != Ok("1") {
+            eprintln!("Set AGQ_LIVE=1 to run the live worker.");
+            return;
+        }
+        let (mut app, folder) = studio("task-live");
+        app.create_sample(
+            &folder.0.join("Shortener"),
+            "Shortener",
+            Sample::ScreeningWithCode,
+        );
+        let code = folder.0.join("Shortener-code");
+        // The link store is still to be written: the base does not build.
+        std::fs::write(
+            code.join("src/store.rs"),
+            "//! Shortener::LinkStore: to be implemented from the model.\n",
+        )
+        .unwrap();
+        git::init_and_commit(&code, "The link store is still to be written").unwrap();
+        let mut choice = app.execution_choice();
+        choice.trusted = true;
+        app.set_execution_choice(choice);
+        let model_choice = agq_assistant::ModelChoice::from_env();
+        assert!(
+            model_choice.has_key(),
+            "{}",
+            model_choice.missing_key_message()
+        );
+        println!("MODEL {}", model_choice.label());
+        app.conversation.new_model = Box::new(move || model_choice.start());
+        app.conversation.key_missing = None;
+        let store = app
+            .project
+            .as_ref()
+            .unwrap()
+            .state()
+            .tree()
+            .find("Shortener::LinkStore")
+            .unwrap();
+        let started = Instant::now();
+        let job = app
+            .start_implementation(
+                store,
+                "Keep it small; the rest of the crate already exists.",
+            )
+            .expect("started");
+        let mut shown = 0;
+        while app.implementation.task.is_some() {
+            app.poll_task();
+            if let Some(task) = &app.implementation.task
+                && task.progress.len() > shown
+            {
+                for line in &task.progress[shown..] {
+                    println!("  {line}");
+                }
+                shown = task.progress.len();
+            }
+            assert!(
+                started.elapsed() < Duration::from_secs(1800),
+                "the task ends"
+            );
+            std::thread::sleep(Duration::from_millis(200));
+        }
+        let (_, outcome) = app.task_outcome(&job).expect("an outcome");
+        println!("TOOK {:.0} s", started.elapsed().as_secs_f64());
+        println!("ROUNDS {}", outcome.rounds);
+        println!("COST {:?} on {:?}", outcome.cost_usd, outcome.model);
+        println!("SUMMARY {:?}", outcome.summary);
+        println!("NOTICE {:?}", outcome.notice);
+        println!("CONTRACT REQUESTS {:?}", outcome.contract_requests);
+        println!("FILES {:?}", outcome.files);
+        println!("PROPOSED {}", outcome.proposed.len());
+        println!("STUDIO CHECK\n{}", outcome.verification.describe());
+        if outcome.verification.failures() > 0 {
+            println!("NOT INTEGRATED: the Studio's check failed");
+            return;
+        }
+        let commit = app.integrate_task(&job).expect("integrated");
+        println!("INTEGRATED {commit}");
+        let tree = app.project.as_ref().unwrap().state().tree();
+        let scenarios: Vec<ElementId> = tree
+            .walk()
+            .into_iter()
+            .filter(|id| tree[*id].kind == agq_language::ElementKind::VerificationDef)
+            .collect();
+        for scenario in scenarios {
+            app.select_scenario(scenario);
+            app.start_run(agq_simulation::Mode::Implementation);
+            let started = Instant::now();
+            while !app.poll_runs() {
+                assert!(started.elapsed() < Duration::from_secs(600));
+                std::thread::sleep(Duration::from_millis(20));
+            }
+            let result = app.runs.result.clone().unwrap();
+            println!(
+                "RUN {}: {}{}",
+                result.scenario_name,
+                result.status.label(),
+                if result.all_passed() {
+                    ", every check passed"
+                } else {
+                    ""
+                }
+            );
+        }
     }
 }
