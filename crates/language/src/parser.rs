@@ -55,6 +55,31 @@ pub(crate) fn parse_into(tree: &mut Tree, sources: &[Source]) {
     }
 }
 
+/// One expression as it is written in a feature value, a guard or a check
+/// (`a.b == 3`, `new T(x = 1)`), for the controls and tools that write
+/// expressions without writing SysML text. Its names are not linked yet:
+/// setting it on an element links them where it is placed.
+pub fn parse_expression(text: &str) -> std::result::Result<Expression, String> {
+    let mut parser = Parser {
+        text,
+        tokens: lexer::tokenize(text),
+        pos: 0,
+        document: 0,
+    };
+    let failure = |failure: Failure| match failure {
+        Failure::Unsupported(what) => format!("{what} is not supported"),
+        Failure::Syntax(message) => message,
+    };
+    let expression = parser.expression().map_err(|(f, _)| failure(f))?;
+    if parser.kind() != TokenKind::End {
+        return Err(format!(
+            "unexpected `{}` after the expression",
+            parser.text_of(parser.token())
+        ));
+    }
+    Ok(expression)
+}
+
 /// An element with its children, built before ids are assigned so a failed
 /// declaration leaves no trace in the tree.
 struct Node {

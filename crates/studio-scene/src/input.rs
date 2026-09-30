@@ -245,10 +245,22 @@ impl SceneInput {
                     .owner()
                     .is_some_and(|owner| tree[owner].kind != ElementKind::Package)
         };
+        // What a scenario sets up (its stand-ins) is shown with the
+        // scenario, not as architecture (C-50).
+        let in_scenario = |id: ElementId| {
+            let mut current = tree.get(id).and_then(Element::owner);
+            while let Some(owner) = current {
+                if tree[owner].kind == ElementKind::VerificationDef {
+                    return true;
+                }
+                current = tree.get(owner).and_then(Element::owner);
+            }
+            false
+        };
         let shown: BTreeSet<ElementId> = order
             .iter()
             .copied()
-            .filter(|id| category(tree[*id].kind).is_some() && !line(*id))
+            .filter(|id| category(tree[*id].kind).is_some() && !line(*id) && !in_scenario(*id))
             .collect();
         // The nearest shown element at or above each element.
         let card_of = |mut id: ElementId| -> Option<ElementId> {
@@ -659,5 +671,24 @@ mod tests {
         assert_eq!(edge.label, "a.p → b.q");
         assert_eq!(edge.lock, LockMark::Covered);
         assert_eq!(edge.source.port, Some(a.ports[0].id));
+    }
+
+    #[test]
+    fn what_a_scenario_sets_up_is_not_architecture() {
+        let tree = fixtures::tree(
+            "package P {
+    part def S { part worker; }
+    verification def Works {
+        subject s : S;
+        part slow : S;
+    }
+}",
+        );
+        let input = SceneInput::from_tree(&tree, &BTreeSet::new(), &BTreeMap::new(), 1);
+        assert!(input.nodes.iter().any(|n| n.name == "worker"));
+        assert!(
+            input.nodes.iter().all(|n| n.name != "slow"),
+            "the scenario's part is not a card"
+        );
     }
 }

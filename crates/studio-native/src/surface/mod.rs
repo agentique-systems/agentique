@@ -1035,6 +1035,7 @@ impl Render for SurfaceView {
                                 reduced_motion: studio.reduced_motion,
                                 theme: cx.theme().clone(),
                                 ui_scale: scale,
+                                marks: std::rc::Rc::new(studio.surface_marks()),
                             };
                             (frame, moving)
                         })

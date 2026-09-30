@@ -155,6 +155,7 @@ fn card_text_fits_at_every_ui_scale_and_zoom() {
                 reduced_motion: true,
                 theme: crate::ui::Theme::new(true, false),
                 ui_scale,
+                marks: Default::default(),
             };
             let block = paint::text_block(&frame, node);
             assert!(

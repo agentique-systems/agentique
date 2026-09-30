@@ -1,7 +1,9 @@
-//! The docked Panels (§3.2 Panels): on the left a column with the Outline
-//! and the Library (C-49) under one tab bar, and on the right a column with
-//! the Inspector, the Requirements, the History and the Problems.
+//! The docked Panels (§3.2 Panels): on the left a column with the Outline,
+//! the Library (C-49) and the Scenarios (C-50) under one tab bar, and on the
+//! right a column with the Inspector, the Run (C-50), the Requirements, the
+//! History and the Problems.
 pub mod block_preview;
+mod evidence;
 mod history;
 mod inspector;
 pub mod library;
@@ -9,6 +11,8 @@ mod outline;
 mod problems;
 mod requirements;
 mod reuse;
+pub mod run;
+pub mod scenarios;
 
 pub use inspector::parse_value;
 pub use outline::OutlineView;
@@ -32,6 +36,7 @@ pub struct LeftColumn {
     studio: Entity<Studio>,
     outline: Entity<OutlineView>,
     library: Entity<library::LibraryView>,
+    scenarios: Entity<scenarios::ScenariosView>,
     _subscription: Subscription,
 }
 
@@ -45,6 +50,7 @@ impl LeftColumn {
         LeftColumn {
             outline: cx.new(|cx| OutlineView::new(studio.clone(), window, cx)),
             library: cx.new(|cx| library::LibraryView::new(studio.clone(), window, cx)),
+            scenarios: cx.new(|cx| scenarios::ScenariosView::new(studio.clone(), cx)),
             studio,
             _subscription: subscription,
         }
@@ -57,10 +63,12 @@ impl LeftColumn {
     }
 }
 
-const LEFT_TABS: [(LeftTab, &str, IconName); 2] = [
+const LEFT_TABS: [(LeftTab, &str, IconName); 3] = [
     (LeftTab::Outline, "Outline", IconName::Outline),
     (LeftTab::Library, "Library", IconName::Library),
+    (LeftTab::Scenarios, "Scenarios", IconName::Scenario),
 ];
+const LEFT_SHARE: f32 = 1.0 / LEFT_TABS.len() as f32;
 
 impl Render for LeftColumn {
     fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
@@ -73,6 +81,7 @@ impl Render for LeftColumn {
         let body: gpui::AnyView = match tab {
             LeftTab::Outline => self.outline.clone().into(),
             LeftTab::Library => self.library.clone().into(),
+            LeftTab::Scenarios => self.scenarios.clone().into(),
         };
         div()
             .id("left-column")
@@ -81,7 +90,7 @@ impl Render for LeftColumn {
             .flex_col()
             .bg(theme.chrome)
             .role(gpui::Role::Complementary)
-            .aria_label("Outline and Library")
+            .aria_label("Outline, Library and Scenarios")
             .child(
                 div()
                     .id("left-tabs")
@@ -128,12 +137,23 @@ impl Render for LeftColumn {
                                         })
                                     })
                                     .relative()
-                                    .child(ui::icon(*glyph).size(13.0).color(if chosen {
-                                        theme.text_secondary
-                                    } else {
-                                        theme.text_faint
-                                    }))
-                                    .child(*label)
+                                    .overflow_hidden()
+                                    .whitespace_nowrap()
+                                    .px(r(4.0))
+                                    .child(div().flex_none().child(
+                                        ui::icon(*glyph).size(13.0).color(if chosen {
+                                            theme.text_secondary
+                                        } else {
+                                            theme.text_faint
+                                        }),
+                                    ))
+                                    .child(
+                                        div()
+                                            .min_w_0()
+                                            .overflow_hidden()
+                                            .text_ellipsis()
+                                            .child(*label),
+                                    )
                                     .child(ui::target::target(*label))
                             }),
                     )
@@ -142,13 +162,13 @@ impl Render for LeftColumn {
                             .absolute()
                             .bottom_0()
                             .h(gpui::px(2.0))
-                            .w(relative(0.5))
+                            .w(relative(LEFT_SHARE))
                             .px(r(10.0))
                             .child(div().size_full().rounded_full().bg(theme.accent.solid))
                             .with_spring(
                                 "left-tab-mark",
                                 ui::primitives::spring().to(index as f32),
-                                |this, at: f32| this.left(relative(at * 0.5)),
+                                |this, at: f32| this.left(relative(at * LEFT_SHARE)),
                             ),
                     ),
             )
@@ -191,22 +211,31 @@ impl InspectorColumn {
     }
 }
 
-const TABS: [(Panel, &str, IconName); 4] = [
+const TABS: [(Panel, &str, IconName); 5] = [
     (Panel::Inspector, "Inspector", IconName::Sliders),
+    (Panel::Run, "Run", IconName::Play),
     (Panel::Requirements, "Requirements", IconName::Requirements),
     (Panel::History, "History", IconName::Clock),
     (Panel::Problems, "Problems", IconName::Warning),
 ];
+const TAB_SHARE: f32 = 1.0 / TABS.len() as f32;
+/// Below this width per tab (in unscaled pixels) a tab shows its icon, with
+/// its name as the tooltip and accessible name.
+const TAB_LABEL_MIN: f32 = 76.0;
 
 impl Render for InspectorColumn {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = cx.theme().clone();
         let studio = self.studio.read(cx);
         let panel = studio.panel;
-        let problems: usize = studio.problems.values().map(Vec::len).sum();
+        let problems: usize = studio.problems.values().map(Vec::len).sum::<usize>()
+            + studio.drift().values().map(Vec::len).sum::<usize>();
         let index = TABS.iter().position(|(p, _, _)| *p == panel).unwrap_or(0);
+        let icons_only = studio.widths.inspector / (TABS.len() as f32) < TAB_LABEL_MIN;
+        let running = studio.runs.running();
         let body = match panel {
             Panel::Inspector => self.inspector.render(window, cx).into_any_element(),
+            Panel::Run => run::render(&self.studio, cx).into_any_element(),
             Panel::Requirements => requirements::render(&self.studio, cx).into_any_element(),
             Panel::History => history::render(&self.studio, cx).into_any_element(),
             Panel::Problems => problems::render(&self.studio, cx).into_any_element(),
@@ -231,7 +260,7 @@ impl Render for InspectorColumn {
                     .border_b_1()
                     .border_color(theme.separator)
                     .role(gpui::Role::TabList)
-                    .children(TABS.iter().enumerate().map(|(i, (tab, label, _))| {
+                    .children(TABS.iter().enumerate().map(|(i, (tab, label, glyph))| {
                         let chosen = *tab == panel;
                         let studio = self.studio.clone();
                         let tab = *tab;
@@ -260,14 +289,33 @@ impl Render for InspectorColumn {
                             .relative()
                             .overflow_hidden()
                             .whitespace_nowrap()
-                            .child(
-                                div()
-                                    .min_w_0()
-                                    .overflow_hidden()
-                                    .text_ellipsis()
-                                    .child(*label),
-                            )
+                            .when(icons_only, |this| {
+                                this.child(ui::icon(*glyph).size(14.0).color(if chosen {
+                                    theme.text_secondary
+                                } else {
+                                    theme.text_faint
+                                }))
+                                .tooltip(move |window, cx| {
+                                    ui::tooltip::text(*label, None)(window, cx)
+                                })
+                            })
+                            .when(!icons_only, |this| {
+                                this.child(
+                                    div()
+                                        .min_w_0()
+                                        .overflow_hidden()
+                                        .text_ellipsis()
+                                        .child(*label),
+                                )
+                            })
                             .child(ui::target::target(*label))
+                            .when(tab == Panel::Run && running, |this| {
+                                this.child(ui::primitives::spinner(
+                                    "run-tab-spinner",
+                                    10.0,
+                                    theme.info.solid,
+                                ))
+                            })
                             .when(tab == Panel::Problems && problems > 0, |this| {
                                 this.child(
                                     ui::Badge::new(problems.to_string()).tone(ui::Tone::Warning),
@@ -280,13 +328,13 @@ impl Render for InspectorColumn {
                             .absolute()
                             .bottom_0()
                             .h(gpui::px(2.0))
-                            .w(relative(0.25))
+                            .w(relative(TAB_SHARE))
                             .px(r(10.0))
                             .child(div().size_full().rounded_full().bg(theme.accent.solid))
                             .with_spring(
                                 "panel-tab-mark",
                                 ui::primitives::spring().to(index as f32),
-                                |this, at: f32| this.left(relative(at * 0.25)),
+                                |this, at: f32| this.left(relative(at * TAB_SHARE)),
                             ),
                     ),
             )

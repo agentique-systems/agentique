@@ -135,6 +135,16 @@ icons! {
     Save => "save",
     Loader => "loader-circle",
     Library => "library",
+    Play => "play",
+    Pause => "pause",
+    SkipForward => "skip-forward",
+    SkipBack => "skip-back",
+    Scenario => "flask-conical",
+    Agent => "bot",
+    Trace => "activity",
+    Patch => "git-pull-request",
+    Drift => "unlink",
+    Terminal => "terminal",
 }
 
 /// Serves the icons and the fonts to GPUI.

@@ -363,6 +363,7 @@ fn live(
     let mut completed = 0;
     let mut trace = Trace::default();
     let mut instructions = String::new();
+    let mut answers: Vec<Recording> = Vec::new();
     for sample in 1..=samples {
         if cancel.load(Ordering::SeqCst) {
             result.status = RunStatus::Cancelled;
@@ -384,6 +385,22 @@ fn live(
         result.logical_ms = result.logical_ms.max(logical);
         result.events_processed += events;
         for call in &calls {
+            if let Some(agents::AnswerOutput::Json(output)) = &call.answer.output
+                && !answers
+                    .iter()
+                    .any(|r: &Recording| r.digest == call.request.digest())
+            {
+                answers.push(Recording {
+                    digest: call.request.digest(),
+                    request: call.request.clone(),
+                    outcome: call.answer.outcome,
+                    output: Some(output.clone()),
+                    latency_ms: call.answer.latency_ms,
+                    answered_by: label.clone(),
+                    recorded_at: result::utc_now(),
+                    run: Some(result.id.clone()),
+                });
+            }
             if instructions.is_empty() {
                 instructions = call.request.instructions.clone();
             }
@@ -474,6 +491,7 @@ fn live(
         failures,
         cost_usd: costed.then_some(cost),
         latency_ms_median: latencies.get(latencies.len() / 2).copied(),
+        answers,
     });
     let (provider, model_name) = label
         .split_once('/')

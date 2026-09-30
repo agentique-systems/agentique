@@ -318,6 +318,9 @@ pub struct LiveSummary {
     pub failures: Vec<(String, u32)>,
     pub cost_usd: Option<f64>,
     pub latency_ms_median: Option<u64>,
+    /// The model's answers, ready to keep as recordings for replay.
+    #[serde(default)]
+    pub answers: Vec<crate::agents::Recording>,
 }
 
 /// Everything a run produced.

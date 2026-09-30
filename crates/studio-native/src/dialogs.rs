@@ -45,6 +45,10 @@ enum Kind {
     SaveToLibrary,
     Override,
     LibraryConflict,
+    NewScenario,
+    TrustLocal,
+    ConfirmLive,
+    LinkCode,
 }
 
 fn kind_of(dialog: &Dialog) -> Option<Kind> {
@@ -60,6 +64,10 @@ fn kind_of(dialog: &Dialog) -> Option<Kind> {
         Dialog::SaveToLibrary { .. } => Kind::SaveToLibrary,
         Dialog::Override { .. } => Kind::Override,
         Dialog::LibraryConflict { .. } => Kind::LibraryConflict,
+        Dialog::NewScenario { .. } => Kind::NewScenario,
+        Dialog::TrustLocal => Kind::TrustLocal,
+        Dialog::ConfirmLive => Kind::ConfirmLive,
+        Dialog::LinkCode { .. } => Kind::LinkCode,
         Dialog::Rename { .. } => return None,
     })
 }
@@ -168,6 +176,10 @@ impl DialogsView {
             }) => Some((definition.clone(), Some(usage.clone()))),
             Some(Dialog::SaveToLibrary { category, .. }) => Some((category.clone(), None)),
             Some(Dialog::Override { value, .. }) => Some((value.clone(), None)),
+            Some(Dialog::NewScenario { name, .. }) => Some((name.clone(), None)),
+            Some(Dialog::LinkCode { path, symbol, .. }) => {
+                Some((path.clone(), Some(symbol.clone())))
+            }
             _ => None,
         };
         if let Some((first, second)) = values {
@@ -181,6 +193,8 @@ impl DialogsView {
                 Some(Kind::ExtractBlock) => "Backend",
                 Some(Kind::SaveToLibrary) => "Storage",
                 Some(Kind::Override) => "60",
+                Some(Kind::NewScenario) => "ShortenAllowed",
+                Some(Kind::LinkCode) => "src/store.rs",
                 _ => "",
             };
             let first = self.input(&first, placeholder, window, cx);
@@ -188,10 +202,10 @@ impl DialogsView {
             window.defer(cx, move |window, cx| window.focus(&focus, cx));
             self.first = Some(first);
             if let Some(second) = second {
-                let placeholder = if wanted == Some(Kind::ExtractBlock) {
-                    "backend (Enter for a default)"
-                } else {
-                    "Folder"
+                let placeholder = match wanted {
+                    Some(Kind::ExtractBlock) => "backend (Enter for a default)",
+                    Some(Kind::LinkCode) => "LinkStore (optional)",
+                    _ => "Folder",
                 };
                 self.second = Some(self.input(&second, placeholder, window, cx));
             }
@@ -236,8 +250,8 @@ impl DialogsView {
                         return;
                     }
                     let folder = PathBuf::from(&second);
-                    if sample {
-                        studio.create_sample(&folder, &first);
+                    if let Some(sample) = sample {
+                        studio.create_sample(&folder, &first, sample);
                     } else {
                         studio.create_project(&folder, &first);
                     }
@@ -321,6 +335,31 @@ impl DialogsView {
                 },
                 Dialog::LibraryConflict { request, .. } => {
                     studio.resolve_conflict(request, agq_library::Resolution::Rename)
+                }
+                Dialog::NewScenario { subject, .. } => {
+                    if first.is_empty() {
+                        studio.dialog = Some(dialog);
+                        return;
+                    }
+                    studio.create_scenario(subject, &first);
+                }
+                Dialog::TrustLocal => {
+                    let mut choice = studio.execution_choice();
+                    choice.trusted = true;
+                    studio.set_execution_choice(choice);
+                }
+                Dialog::ConfirmLive => {
+                    studio.runs.confirm_live = false;
+                    studio.start_run(agq_simulation::Mode::Live);
+                }
+                Dialog::LinkCode { element, kind, .. } => {
+                    if first.is_empty() {
+                        studio.dialog = Some(dialog);
+                        return;
+                    }
+                    let kind = agq_implementation::LinkKind::ALL[kind.min(8)];
+                    let symbol = (!second.is_empty()).then_some(second.as_str());
+                    studio.link_code(element, kind, &first, symbol);
                 }
                 dialog @ Dialog::Rename { .. } => studio.dialog = Some(dialog),
             }
@@ -410,8 +449,26 @@ impl Render for DialogsView {
                 let ready = !Self::text(&self.first, cx).is_empty()
                     && !Self::text(&self.second, cx).is_empty();
                 let entity = entity.clone();
-                ui::Dialog::new("new-project", if *sample { "Start from the URL shortener" } else { "New project" })
+                let sample = *sample;
+                let chooser = self.studio.clone();
+                ui::Dialog::new("new-project", if sample.is_some() { "Start from the URL shortener" } else { "New project" })
                     .description("A project is a folder; the model is saved in it as SysML text, with its history in git.")
+                    .when_some(sample, |this, sample| {
+                        use crate::studio::Sample;
+                        this.child(
+                            Segmented::new("sample-kind", usize::from(sample == Sample::Screening))
+                                .choice(None, "The URL shortener")
+                                .choice(None, "With AI screening and scenarios")
+                                .on_choose(move |index, _, cx| {
+                                    chooser.act(cx, |studio| {
+                                        if let Some(Dialog::NewProject { sample, .. }) = &mut studio.dialog {
+                                            *sample = Some(if index == 1 { Sample::Screening } else { Sample::UrlShortener });
+                                        }
+                                        studio.mark(Dirty::OVERLAY);
+                                    })
+                                }),
+                        )
+                    })
                     .child(field("Name", self.first.as_ref().map(|s| TextField::new(s).target("Project name").into_any_element()), cx))
                     .child(field(
                         "Folder",
@@ -918,6 +975,211 @@ impl Render for DialogsView {
                     )
                     .into_any_element()
             }
+            Dialog::NewScenario { subject, .. } => {
+                let subject = studio
+                    .project
+                    .as_ref()
+                    .and_then(|p| {
+                        p.state()
+                            .tree()
+                            .effective_name(*subject)
+                            .map(str::to_string)
+                    })
+                    .unwrap_or_default();
+                let ready = !Self::text(&self.first, cx).is_empty();
+                ui::Dialog::new("new-scenario", "New scenario")
+                    .width(460.0)
+                    .description(format!(
+                        "A scenario about {subject}: what goes in, how its parts or agents answer, and what must come out. Add those in the Run panel."
+                    ))
+                    .child(field(
+                        "Name",
+                        self.first.as_ref().map(|s| {
+                            TextField::new(s).target("Scenario name").into_any_element()
+                        }),
+                        cx,
+                    ))
+                    .footer(cancel_button)
+                    .footer(confirm_button("Create scenario", ready))
+                    .into_any_element()
+            }
+            Dialog::TrustLocal => {
+                let choice = studio.implementation.choice.unwrap_or_default();
+                let isolation = studio.isolation();
+                let studio_entity = self.studio.clone();
+                let off = self.studio.clone();
+                div()
+                    .key_context("Dialog")
+                    .track_focus(&self.focus)
+                    .size_full()
+                    .child(
+                        ui::Dialog::new("trust-local", "Trusted-local execution")
+                            .width(520.0)
+                            .description("Runs the project's builds, tests and harness on this computer, as you.")
+                            .child(plain_list(
+                                "What Agentique does",
+                                vec![
+                                    "Runs only Cargo: build, check, test, run, metadata".into(),
+                                    "In the code folder, each copy with its own target folder".into(),
+                                    "Without API keys, tokens or passwords in the environment".into(),
+                                    "Offline, unless you allow the network below".into(),
+                                    "Stops a process tree at its time limit or when you stop it".into(),
+                                ],
+                                IconName::CircleCheck,
+                                cx,
+                            ))
+                            .child(
+                                div()
+                                    .p(r(10.0))
+                                    .rounded(r(crate::tokens::radius::CONTROL + 2.0))
+                                    .bg(theme.inset)
+                                    .border_1()
+                                    .border_color(theme.separator)
+                                    .text_size(r(theme::text::SM))
+                                    .line_height(r(18.0))
+                                    .text_color(theme.text_secondary)
+                                    .child(format!("{isolation} Code that runs can do anything your account can: turn this on only for code you trust.")),
+                            )
+                            .child(
+                                ui::Switch::new("trust-network", choice.network, "Allow Cargo to use the network (to fetch dependencies)")
+                                    .on_toggle(move |on, _, cx| {
+                                        studio_entity.act(cx, |studio| {
+                                            let mut choice = studio.execution_choice();
+                                            choice.network = on;
+                                            studio.implementation.choice = Some(choice);
+                                            studio.mark(Dirty::OVERLAY);
+                                        })
+                                    }),
+                            )
+                            .footer(cancel_button)
+                            .when(choice.trusted, |this| {
+                                this.footer(Button::new("trust-off", "Turn off").on_click(
+                                    move |_: &ClickEvent, _, cx| {
+                                        off.act(cx, |studio| {
+                                            studio.dialog = None;
+                                            let mut choice = studio.execution_choice();
+                                            choice.trusted = false;
+                                            studio.set_execution_choice(choice);
+                                            studio.mark(Dirty::ALL);
+                                        })
+                                    },
+                                ))
+                            })
+                            .footer(confirm_button(
+                                if choice.trusted { "Keep it on" } else { "Allow on this computer" },
+                                true,
+                            )),
+                    )
+                    .into_any_element()
+            }
+            Dialog::ConfirmLive => {
+                let choice = crate::live::live_choice(studio);
+                let has_key = crate::live::live_model(studio).is_some();
+                let calls = studio.runs.selected.and_then(|scenario| {
+                    let store = studio.run_store()?;
+                    let result = store.latest(scenario.raw(), agq_simulation::Mode::Model)?;
+                    Some(
+                        result
+                            .trace
+                            .iter()
+                            .filter(|e| e.kind == agq_simulation::EventKind::AgentCalled)
+                            .count(),
+                    )
+                });
+                let samples = agq_simulation::Request::new(agq_simulation::Mode::Live)
+                    .samples
+                    .max(5);
+                let model = choice
+                    .as_ref()
+                    .map(|(p, m)| format!("{}/{m}", p.id()))
+                    .unwrap_or_else(|| "no model".into());
+                let calls_line = match calls {
+                    Some(n) => format!(
+                        "About {} model call(s): {samples} samples × {n} agent call(s) in the model run",
+                        samples as usize * n.max(1)
+                    ),
+                    None => format!(
+                        "{samples} samples; run the scenario in model mode first to see how many calls each makes"
+                    ),
+                };
+                div()
+                    .key_context("Dialog")
+                    .track_focus(&self.focus)
+                    .size_full()
+                    .child(
+                        ui::Dialog::new("confirm-live", "Evaluate live")
+                            .width(500.0)
+                            .description("Agents answer from a real model instead of the scenario's stand-ins. Each call is sent to the provider and costs money.")
+                            .child(plain_list(
+                                "What will be sent",
+                                vec![
+                                    format!("Model: {model}"),
+                                    calls_line,
+                                    "Each agent's instructions and the item it is asked about".into(),
+                                    "The cost is estimated from the provider's usage; it is shown with the result".into(),
+                                ],
+                                IconName::Agent,
+                                cx,
+                            ))
+                            .when(!has_key, |this| {
+                                this.child(ui::inline_message(
+                                    ui::Tone::Warning,
+                                    "No key is set for this provider: add one in Settings › Providers.",
+                                    cx,
+                                ))
+                            })
+                            .footer(cancel_button)
+                            .footer(confirm_button("Evaluate live", has_key)),
+                    )
+                    .into_any_element()
+            }
+            Dialog::LinkCode { element, kind, .. } => {
+                let name = studio
+                    .project
+                    .as_ref()
+                    .and_then(|p| {
+                        p.state()
+                            .tree()
+                            .effective_name(*element)
+                            .map(str::to_string)
+                    })
+                    .unwrap_or_default();
+                let chosen = *kind;
+                let chooser = self.studio.clone();
+                let mut kinds = Segmented::new("link-kind", chosen);
+                for k in agq_implementation::LinkKind::ALL.iter().take(5) {
+                    kinds = kinds.choice(None, k.label());
+                }
+                let ready = !Self::text(&self.first, cx).is_empty();
+                ui::Dialog::new("link-code", format!("Link code to {name}"))
+                    .width(520.0)
+                    .description("A path in the code folder, and optionally a type, function or test in it. Links are kept with the model in model/links.json.")
+                    .child(kinds.on_choose(move |index, _, cx| {
+                        chooser.act(cx, |studio| {
+                            if let Some(Dialog::LinkCode { kind, .. }) = &mut studio.dialog {
+                                *kind = index;
+                            }
+                            studio.mark(Dirty::OVERLAY);
+                        })
+                    }))
+                    .child(field(
+                        "Path",
+                        self.first.as_ref().map(|s| {
+                            TextField::new(s).mono().target("Link path").into_any_element()
+                        }),
+                        cx,
+                    ))
+                    .child(field(
+                        "Symbol",
+                        self.second.as_ref().map(|s| {
+                            TextField::new(s).mono().target("Link symbol").into_any_element()
+                        }),
+                        cx,
+                    ))
+                    .footer(cancel_button)
+                    .footer(confirm_button("Link", ready))
+                    .into_any_element()
+            }
             Dialog::Rename { .. } => div().into_any_element(),
         };
         div()
@@ -976,6 +1238,41 @@ fn block_list(
                 .font_family(theme::MONO)
                 .child(icon(glyph).size(12.0).color(theme.text_muted))
                 .child(row)
+        }))
+}
+
+/// A short labelled list of sentences in a dialog, wrapping.
+fn plain_list(
+    label: &'static str,
+    rows: Vec<String>,
+    glyph: IconName,
+    cx: &App,
+) -> impl IntoElement {
+    let theme = cx.theme();
+    div()
+        .flex()
+        .flex_col()
+        .gap(r(6.0))
+        .child(
+            div()
+                .text_size(r(theme::text::SM))
+                .font_weight(theme::MEDIUM)
+                .text_color(theme.text_secondary)
+                .child(label),
+        )
+        .children(rows.into_iter().map(|row| {
+            div()
+                .flex()
+                .items_start()
+                .gap(r(8.0))
+                .text_size(r(theme::text::SM))
+                .line_height(r(18.0))
+                .child(
+                    div()
+                        .pt(r(3.0))
+                        .child(icon(glyph).size(12.0).color(theme.text_muted)),
+                )
+                .child(div().flex_1().min_w_0().child(row))
         }))
 }
 

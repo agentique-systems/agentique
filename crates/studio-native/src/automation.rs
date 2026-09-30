@@ -28,6 +28,13 @@
 //!   from a selection, My Library into a second project (beside the first,
 //!   `<folder>-other`), and the Assistant (a scripted stand-in) reusing a
 //!   block where one fits, modelling plainly where none does, and undone.
+//! - `i-scenarios --project <new folder>`: Scenario I (C-50) in the Studio,
+//!   on the URL shortener with AI screening: the scenarios, a model run and
+//!   its trace on the Surface, a changed agent setting that outdates the
+//!   result and makes the check fail, undone; a scenario written through
+//!   controls and run; a walkthrough; the code mode asking for trusted-local
+//!   execution; and a live evaluation that asks first and is cancelled, so
+//!   no provider is called.
 //!
 //! Screenshots go only to the `--gallery` directory given on the command line.
 use crate::{
@@ -174,6 +181,21 @@ enum Check {
     SelfContained,
     /// The last turn called these tools.
     AssistantUsed(&'static [&'static str]),
+    /// The left column shows this tab ("Outline", "Library", "Scenarios").
+    LeftTab(&'static str),
+    /// The Run panel shows this scenario.
+    ScenarioChosen(&'static str),
+    /// No run is in progress, and the Run panel's result is this: "passed",
+    /// "failed", "stopped", "walkthrough", "outdated" or "none".
+    Result(&'static str),
+    /// The Surface marks where the trace is.
+    TraceOnSurface,
+    /// The chosen scenario has this many steps.
+    Steps(usize),
+    /// A control with this name is shown.
+    Shown(&'static str),
+    /// The Inspector shows an element of this kind ("send", "assert constraint").
+    Inspecting(&'static str),
 }
 
 #[derive(Clone, Debug)]
@@ -931,6 +953,268 @@ pub fn script_assistant(app: &mut Studio) {
 }
 
 /// Scenario H, the Library (C-49), from the URL shortener sample.
+/// Scenario I in the Studio (C-50).
+fn scenarios(folder: &Path) -> Vec<Step> {
+    const SCREENING: &str = "UrlShortener::LinkScreening";
+    let settle = |step: Step| Step { settle: 12, ..step };
+    vec![
+        step("the welcome", Action::Idle, Check::StartScreen),
+        step(
+            "start from the URL shortener",
+            Action::Click("Start from the URL shortener"),
+            Check::ProjectName("UrlShortener"),
+        ),
+        step(
+            "choose the one with AI screening",
+            Action::Click("With AI screening and scenarios"),
+            Check::DialogNewProject,
+        ),
+        step(
+            "project folder",
+            Action::Fill("Project folder", folder.display().to_string()),
+            Check::DialogNewProject,
+        ),
+        step(
+            "Create project opens it",
+            Action::Click("Create project"),
+            Check::Exists(SCREENING, ElementKind::PartDef),
+        ),
+        // I1: the scenarios, and a model run with its trace on the Surface.
+        shot(
+            "01-scenarios",
+            step(
+                "Ctrl+Shift+R shows the scenarios",
+                Action::Key("ctrl-shift-r"),
+                Check::LeftTab("Scenarios"),
+            ),
+        ),
+        step(
+            "choose ShortenAllowed",
+            Action::Click("Scenario ShortenAllowed"),
+            Check::ScenarioChosen("ShortenAllowed"),
+        ),
+        step("not run yet", Action::Idle, Check::Result("none")),
+        shot(
+            "02-model-run",
+            settle(step(
+                "F5 runs it",
+                Action::Key("f5"),
+                Check::Result("passed"),
+            )),
+        ),
+        step(
+            "step back in the trace",
+            Action::Key("["),
+            Check::TraceOnSurface,
+        ),
+        shot(
+            "03-trace",
+            step("and back again", Action::Key("["), Check::TraceOnSurface),
+        ),
+        step(
+            "play it from the start",
+            Action::Click("Play"),
+            Check::TraceOnSurface,
+        ),
+        // I2: a changed agent setting outdates the result; the check fails.
+        step(
+            "choose ReviewRequired",
+            Action::Click("Scenario ReviewRequired"),
+            Check::ScenarioChosen("ReviewRequired"),
+        ),
+        settle(step("run it", Action::Key("f5"), Check::Result("passed"))),
+        step(
+            "go to the agent",
+            Action::Key("ctrl-p"),
+            Check::PaletteSearch(""),
+        ),
+        step(
+            "type its name",
+            Action::Text("LinkScreening"),
+            Check::PaletteSearch("LinkScreening"),
+        ),
+        step(
+            "Enter shows it",
+            Action::Key("enter"),
+            Check::Shown("minConfidence"),
+        ),
+        settle(step(
+            "its minimum confidence",
+            Action::Click("minConfidence"),
+            Check::Inspecting("ref"),
+        )),
+        step(
+            "lower it to 0.5",
+            Action::Fill("Value", "0.5".into()),
+            Check::Shown("Value"),
+        ),
+        step("Enter applies it", Action::Key("enter"), Check::NoDialog),
+        step(
+            "back to the scenario",
+            Action::Click("Scenario ReviewRequired"),
+            Check::Result("outdated"),
+        ),
+        shot(
+            "04-outdated-then-failed",
+            settle(step(
+                "run it again: an unsure allow now activates the link",
+                Action::Key("f5"),
+                Check::Result("failed"),
+            )),
+        ),
+        step(
+            "undo the change",
+            Action::Key("ctrl-z"),
+            Check::Result("outdated"),
+        ),
+        settle(step(
+            "run again",
+            Action::Key("f5"),
+            Check::Result("passed"),
+        )),
+        // I3: a scenario written through controls.
+        step(
+            "select the shortener",
+            Action::ClickCard("UrlShortener::shortener"),
+            Check::Selected("UrlShortener::shortener"),
+        ),
+        step(
+            "New scenario",
+            Action::Click("New scenario"),
+            Check::DialogOpen("NewScenario"),
+        ),
+        step(
+            "name it",
+            Action::Fill("Scenario name", "TimeoutHoldsTheLink".into()),
+            Check::DialogOpen("NewScenario"),
+        ),
+        step(
+            "create it",
+            Action::Click("Create scenario"),
+            Check::ScenarioChosen("TimeoutHoldsTheLink"),
+        ),
+        step(
+            "add a stand-in",
+            Action::Click("Add: Stand-in"),
+            Check::Steps(0),
+        ),
+        step(
+            "for the screening agent",
+            Action::Click("Add urlShortenerService.screening"),
+            Check::Steps(1),
+        ),
+        step("add an input", Action::Click("Add: Send"), Check::Steps(1)),
+        step(
+            "a shorten request",
+            Action::Click("Add ShortenRequest → urlShortenerService.shorten"),
+            Check::Steps(2),
+        ),
+        step(
+            "wait for the answer",
+            Action::Click("Add: Wait for"),
+            Check::Steps(2),
+        ),
+        step(
+            "the short link",
+            Action::Click("Add ShortLink ← urlShortenerService.shorten"),
+            Check::Steps(3),
+        ),
+        step("add a check", Action::Click("Add: Check"), Check::Steps(3)),
+        settle(step(
+            "a condition",
+            Action::Click("Add A condition on what came out (write it in the Inspector)"),
+            Check::Inspecting("assert constraint"),
+        )),
+        step(
+            "the link is held",
+            Action::Fill("Value", "shortLink.status == LinkStatus::held".into()),
+            Check::Shown("Value"),
+        ),
+        step("Enter applies it", Action::Key("enter"), Check::NoProblems),
+        step(
+            "back to the scenario",
+            Action::Click("Back to TimeoutHoldsTheLink"),
+            Check::ScenarioChosen("TimeoutHoldsTheLink"),
+        ),
+        settle(step(
+            "the stand-in",
+            Action::Click("Step Stand-in"),
+            Check::Inspecting("part"),
+        )),
+        step("times out", Action::Click("timeout"), Check::NoProblems),
+        step(
+            "back again",
+            Action::Click("Back to TimeoutHoldsTheLink"),
+            Check::ScenarioChosen("TimeoutHoldsTheLink"),
+        ),
+        settle(step(
+            "the request",
+            Action::Click("Step Send"),
+            Check::Inspecting("send"),
+        )),
+        step(
+            "what it sends",
+            Action::Fill(
+                "Value",
+                "new ShortenRequest(longUrl = \"https://example.org/a\", host = \"example.org\")"
+                    .into(),
+            ),
+            Check::Shown("Value"),
+        ),
+        step("Enter applies it", Action::Key("enter"), Check::NoProblems),
+        step(
+            "back to it",
+            Action::Click("Back to TimeoutHoldsTheLink"),
+            Check::ScenarioChosen("TimeoutHoldsTheLink"),
+        ),
+        shot(
+            "05-written-and-run",
+            settle(step(
+                "run it: the fallback holds the link",
+                Action::Key("f5"),
+                Check::Result("passed"),
+            )),
+        ),
+        // I4: a walkthrough verifies nothing; code needs trust; live asks.
+        step(
+            "walkthrough",
+            Action::Click("Mode: Walkthrough"),
+            Check::Result("none"),
+        ),
+        settle(step(
+            "shows the steps",
+            Action::Click("Show the steps"),
+            Check::Result("walkthrough"),
+        )),
+        shot(
+            "06-code-needs-trust",
+            step(
+                "the code mode",
+                Action::Click("Mode: Code"),
+                Check::Shown("Turn on…"),
+            ),
+        ),
+        step(
+            "the live mode",
+            Action::Click("Mode: Live"),
+            Check::Result("none"),
+        ),
+        shot(
+            "07-live-asks-first",
+            step(
+                "Evaluate live asks first",
+                Action::Click("Evaluate live…"),
+                Check::DialogOpen("ConfirmLive"),
+            ),
+        ),
+        step(
+            "Escape cancels: nothing is sent",
+            Action::Key("escape"),
+            Check::Result("none"),
+        ),
+    ]
+}
+
 fn library(folder: &Path) -> Vec<Step> {
     const SERVICE: &str = "UrlShortener::UrlShortenerService";
     let other = folder.with_file_name(format!(
@@ -1663,6 +1947,7 @@ impl Journey {
                 "e-settings" => settings(&folder),
                 "d-daily" => daily(&folder),
                 "h-library" => library(&folder),
+                "i-scenarios" => scenarios(&folder),
                 "a-reopen" => reopen(),
                 other => return Err(format!("no journey is called {other}")),
             },
@@ -2485,8 +2770,75 @@ fn check(check: &Check, app: &Studio, views: &Views) -> Result<(), String> {
                 return Err(format!("the palette shows {open:?}, not {mode}"));
             }
         }
+        Check::LeftTab(tab) => {
+            let shown = format!("{:?}", app.left);
+            if shown != *tab || app.outline_hidden || app.panels_hidden {
+                return Err(format!("the left column shows {shown}"));
+            }
+        }
+        Check::ScenarioChosen(name) => {
+            let tree = tree(app)?;
+            let chosen = app.runs.selected.and_then(|id| tree.effective_name(id));
+            if chosen != Some(*name) || app.panel != crate::studio::Panel::Run {
+                return Err(format!("the Run panel shows {chosen:?} ({:?})", app.panel));
+            }
+        }
+        Check::Result(expected) => {
+            if app.runs.running() {
+                return fail("the run is still going");
+            }
+            let shown = match (&app.runs.result, &app.runs.freshness) {
+                (None, _) => "none",
+                (Some(_), Some(agq_simulation::Freshness::Outdated(_))) => "outdated",
+                (Some(r), _) => match r.status {
+                    agq_simulation::RunStatus::Completed if r.all_passed() => "passed",
+                    agq_simulation::RunStatus::Completed => "failed",
+                    agq_simulation::RunStatus::Walkthrough => "walkthrough",
+                    agq_simulation::RunStatus::Blocked => "blocked",
+                    _ => "stopped",
+                },
+            };
+            if shown != *expected {
+                return Err(format!("the result is {shown} ({})", app.status));
+            }
+        }
+        Check::TraceOnSurface => {
+            if !app
+                .surface_marks()
+                .values()
+                .any(|m| *m == crate::runs::Mark::Current)
+            {
+                return fail("the Surface does not mark the trace");
+            }
+        }
+        Check::Steps(count) => {
+            let tree = tree(app)?;
+            let scenario = app.runs.selected.ok_or("no scenario is chosen")?;
+            let steps = crate::panels::run::step_rows(tree, scenario).len();
+            if steps != *count {
+                return Err(format!("the scenario has {steps} steps"));
+            }
+        }
+        Check::Inspecting(keyword) => {
+            let tree = tree(app)?;
+            let shown = app
+                .inspected_element()
+                .filter(|id| tree.contains(*id))
+                .map(|id| tree[id].kind.keyword());
+            if shown != Some(*keyword) || app.panel != crate::studio::Panel::Inspector {
+                return Err(format!("the Inspector shows {shown:?}"));
+            }
+        }
+        Check::Shown(name) => {
+            if target::find(name).is_none() {
+                return Err(format!("{name} is not shown"));
+            }
+        }
         Check::DialogOpen(kind) => {
             let open = match &app.dialog {
+                Some(Dialog::NewScenario { .. }) => "NewScenario",
+                Some(Dialog::ConfirmLive) => "ConfirmLive",
+                Some(Dialog::TrustLocal) => "TrustLocal",
                 Some(Dialog::Specialize { .. }) => "Specialize",
                 Some(Dialog::ExtractBlock { .. }) => "Extract",
                 Some(Dialog::SaveToLibrary { .. }) => "Save",

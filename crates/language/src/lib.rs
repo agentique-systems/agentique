@@ -46,7 +46,7 @@ mod writable;
 
 pub use expression::{Argument, BinaryOp, Expression, UnaryOp};
 pub use library::{LIBRARY_TEXT, library};
-pub use parser::{Source, parse};
+pub use parser::{Source, parse, parse_expression};
 pub use printer::{print, print_element, print_expression, printed_reference};
 pub use resolve::link;
 pub use semantics::Semantics;

@@ -45,8 +45,9 @@ pub enum Dialog {
     NewProject {
         folder: String,
         name: String,
-        /// Start from the URL shortener sample (R-46).
-        sample: bool,
+        /// Start from a sample: the URL shortener (R-46), or with AI
+        /// screening (C-50).
+        sample: Option<crate::studio::Sample>,
     },
     OpenProject {
         folder: String,
@@ -121,6 +122,24 @@ pub enum Dialog {
         request: agq_library::Use,
         conflicts: Vec<agq_library::Conflict>,
     },
+    /// "New scenario…": its name; the subject is the selected definition.
+    NewScenario {
+        subject: ElementId,
+        name: String,
+    },
+    /// Trusted-local execution for this project: what it allows, on or off.
+    TrustLocal,
+    /// A live evaluation: the provider, the model, the samples and what it
+    /// may cost, before anything is sent.
+    ConfirmLive,
+    /// "Link code…": a file, and optionally a symbol in it, for an element;
+    /// `kind` indexes `LinkKind::ALL`.
+    LinkCode {
+        element: ElementId,
+        kind: usize,
+        path: String,
+        symbol: String,
+    },
 }
 /// What became of a change given to [`Studio::apply_change`].
 pub enum Outcome {
@@ -147,7 +166,7 @@ impl Dialog {
         Dialog::NewProject {
             folder,
             name: "NewSystem".into(),
-            sample: false,
+            sample: None,
         }
     }
 
@@ -163,7 +182,7 @@ impl Dialog {
         Dialog::NewProject {
             folder,
             name: crate::studio::SAMPLE_NAME.into(),
-            sample: true,
+            sample: Some(crate::studio::Sample::UrlShortener),
         }
     }
 }
@@ -1159,7 +1178,11 @@ pub(crate) mod app_tests {
     #[test]
     fn the_first_run_can_start_from_the_url_shortener() {
         let (mut app, folder) = studio("sample");
-        app.create_sample(&folder.0.join("Sample"), crate::studio::SAMPLE_NAME);
+        app.create_sample(
+            &folder.0.join("Sample"),
+            crate::studio::SAMPLE_NAME,
+            crate::studio::Sample::UrlShortener,
+        );
         let project = app.project.as_ref().expect("the sample is open");
         let state = project.state();
         assert!(state.tree().find("UrlShortener::LinkStore").is_some());

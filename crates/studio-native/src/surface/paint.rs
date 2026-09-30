@@ -7,6 +7,7 @@
 use super::Gesture;
 use crate::{
     motion,
+    runs::Mark,
     selection::Selection,
     ui::{Theme, theme},
 };
@@ -43,6 +44,8 @@ pub struct Frame {
     pub theme: Theme,
     /// Points per UI point: labels keep a legible minimum at any UI scale.
     pub ui_scale: f32,
+    /// Where a current run's trace is, and where the code drifted (C-50).
+    pub marks: Rc<BTreeMap<ElementId, Mark>>,
 }
 
 /// What the paint measured, for the metrics report.
@@ -244,6 +247,9 @@ pub fn paint(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window, cx: &mu
                 border,
                 style,
             ));
+            if let Some(mark) = frame.marks.get(&node.id()) {
+                paint_mark(window, rect, radius(node), *mark, theme);
+            }
             // The title strip.
             let header = (58.0 * zoom).min(f32::from(rect.size.height));
             if header >= 6.0 {
@@ -307,9 +313,17 @@ pub fn paint(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window, cx: &mu
                 colour = actor.opacity(0.35 + 0.65 * strength);
                 animating = true;
             }
-            let width = if selected {
-                2.25
-            } else if incident || glow.is_some() {
+            let mark = semantic.element.and_then(|e| frame.marks.get(&e)).copied();
+            match mark {
+                Some(Mark::Current) => colour = theme.accent.solid,
+                Some(Mark::Visited) => colour = theme.info.solid.opacity(0.7),
+                Some(Mark::Failed) => colour = theme.danger.solid,
+                Some(Mark::Drift) => colour = theme.warning.solid,
+                None => {}
+            }
+            let width = if selected || mark == Some(Mark::Current) {
+                2.5
+            } else if incident || glow.is_some() || mark.is_some() {
                 1.75
             } else {
                 1.25
@@ -414,6 +428,9 @@ pub fn paint(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window, cx: &mu
                 border,
                 style,
             ));
+            if let Some(mark) = frame.marks.get(&id) {
+                paint_mark(window, rect, radius, *mark, theme);
+            }
             if tiny {
                 continue;
             }
@@ -615,12 +632,83 @@ pub fn paint(frame: &Frame, bounds: Bounds<Pixels>, window: &mut Window, cx: &mu
 }
 
 /// Whether a port is drawn: from the summary tier on, and always when it or
-/// its card is selected, or it just changed.
+/// its card is selected, it just changed, or a run's trace is at it.
 pub fn port_visible(frame: &Frame, card: ElementId, port: ElementId) -> bool {
     frame.lod >= LodLevel::Summary
         || frame.selection.contains(port)
         || frame.selection.contains(card)
         || frame.highlights.contains_key(&port)
+        || frame.marks.contains_key(&port)
+}
+
+/// A ring around a card for a run's trace or for drift. Shape carries the
+/// meaning as well as colour (§8.5 rule 4): where the trace is now is a
+/// solid ring; where it has been, a thin one; where it failed, a dashed ring
+/// with a dot; drift, a dashed ring. Nothing moves, so reduced motion needs
+/// no other form.
+fn paint_mark(
+    window: &mut Window,
+    rect: Bounds<Pixels>,
+    radius: Pixels,
+    mark: Mark,
+    theme: &Theme,
+) {
+    let (gap, width, colour, style) = match mark {
+        Mark::Current => (px(4.0), px(2.0), theme.accent.solid, BorderStyle::Solid),
+        Mark::Visited => (
+            px(3.0),
+            px(1.0),
+            theme.info.solid.opacity(0.6),
+            BorderStyle::Solid,
+        ),
+        Mark::Failed => (px(4.0), px(2.0), theme.danger.solid, BorderStyle::Dashed),
+        Mark::Drift => (px(4.0), px(1.5), theme.warning.solid, BorderStyle::Dashed),
+    };
+    let ring = Bounds::from_corners(
+        point(rect.origin.x - gap, rect.origin.y - gap),
+        point(
+            rect.origin.x + rect.size.width + gap,
+            rect.origin.y + rect.size.height + gap,
+        ),
+    );
+    if mark == Mark::Current {
+        window.paint_drop_shadows(
+            ring,
+            Corners::all(radius + gap),
+            &[gpui::BoxShadow {
+                color: colour.opacity(0.25),
+                offset: point(px(0.0), px(0.0)),
+                blur_radius: px(12.0),
+                spread_radius: px(1.0),
+                inset: false,
+            }],
+        );
+    }
+    window.paint_quad(quad(
+        ring,
+        radius + gap,
+        gpui::transparent_black(),
+        width,
+        colour,
+        style,
+    ));
+    if matches!(mark, Mark::Failed | Mark::Drift) {
+        let dot = px(8.0);
+        window.paint_quad(quad(
+            Bounds::new(
+                point(
+                    ring.origin.x + ring.size.width - dot * 0.75,
+                    ring.origin.y - dot * 0.25,
+                ),
+                size(dot, dot),
+            ),
+            dot * 0.5,
+            colour,
+            px(0.0),
+            gpui::transparent_black(),
+            BorderStyle::Solid,
+        ));
+    }
 }
 
 /// One segment of a route: axis-aligned segments are quads; any other is a

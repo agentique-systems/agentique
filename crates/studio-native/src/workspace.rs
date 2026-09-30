@@ -80,6 +80,10 @@ pub struct Workspace {
     applied: Option<(bool, bool, bool, f32)>,
     /// Whether an overlay was open and the Surface shown, when last seen.
     overlay: Option<(bool, bool)>,
+    /// The right column's panel last drawn: when another replaces it, a
+    /// field that had the keyboard is gone, and the keyboard goes back to
+    /// the middle.
+    panel: Option<crate::studio::Panel>,
     was_working: bool,
     /// Ticks since the window opened: the frame count of screens without
     /// the Surface.
@@ -168,6 +172,7 @@ impl Workspace {
             _subscriptions: subscriptions,
             applied: None,
             overlay: None,
+            panel: None,
             was_working: false,
             ticks: 0,
         };
@@ -209,6 +214,19 @@ impl Workspace {
                 window.request_attention();
             }
             self.was_working = now_working;
+        }
+        // Runs and implementation checks on their threads, and playback.
+        let studio = self.studio.read(cx);
+        if studio.runs.running() || studio.runs.playing || studio.implementation.checking() {
+            self.studio.act(cx, |studio| {
+                let finished = studio.poll_runs() | studio.poll_checks();
+                let moved = studio.playback_tick();
+                if finished || moved {
+                    studio.mark(Dirty::MODEL | Dirty::LAYOUT | Dirty::STATUS);
+                } else {
+                    studio.mark(Dirty::STATUS);
+                }
+            });
         }
         self.studio
             .update(cx, |studio, _| studio.save_session_now_and_then());
@@ -295,10 +313,13 @@ impl Workspace {
             || studio.palette.is_some()
             || studio.settings_open;
         let center = self.surface_shown(cx);
+        let panel = studio.panel;
         let was = self.overlay.replace((overlay, center));
+        let panel_changed = self.panel.replace(panel).is_some_and(|was| was != panel);
         if !overlay
             && (was.is_some_and(|(was_overlay, _)| was_overlay)
-                || was.is_some_and(|(_, was_center)| was_center != center))
+                || was.is_some_and(|(_, was_center)| was_center != center)
+                || panel_changed)
             || window.focused(cx).is_none()
         {
             self.focus_center(window, cx);
@@ -583,6 +604,15 @@ pub fn command_icon(id: CommandId) -> Option<IconName> {
         Specialize => IconName::Branch,
         CreateBlock => IconName::Component,
         SaveToLibrary => IconName::Save,
+        ShowScenarios | NewScenario => IconName::Scenario,
+        RunScenario | TracePlay => IconName::Play,
+        StopRun => IconName::Stop,
+        TraceFirst => IconName::SkipBack,
+        TraceBack => IconName::ChevronLeft,
+        TraceForward => IconName::ChevronRight,
+        TraceLast => IconName::SkipForward,
+        CheckImplementation => IconName::Drift,
+        TrustLocal => IconName::Terminal,
     })
 }
 

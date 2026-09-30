@@ -115,6 +115,13 @@ impl Button {
         }
     }
 
+    /// A fuller name for screen readers (and the journeys) than the
+    /// visible label, where the label alone is ambiguous ("Send").
+    pub fn accessible_label(mut self, label: impl Into<SharedString>) -> Self {
+        self.label_for_screen_readers = Some(label.into());
+        self
+    }
+
     pub fn variant(mut self, variant: Variant) -> Self {
         self.variant = variant;
         self

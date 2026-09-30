@@ -57,6 +57,17 @@ pub enum CommandId {
     Specialize,
     CreateBlock,
     SaveToLibrary,
+    ShowScenarios,
+    NewScenario,
+    RunScenario,
+    StopRun,
+    TraceFirst,
+    TraceBack,
+    TracePlay,
+    TraceForward,
+    TraceLast,
+    CheckImplementation,
+    TrustLocal,
 }
 
 pub struct Command {
@@ -434,6 +445,83 @@ pub const COMMANDS: &[Command] = &[
         description: "Keep the selected definition for use in other projects",
         key: None,
     },
+    Command {
+        id: CommandId::ShowScenarios,
+        label: "Scenarios",
+        shortcut: "Ctrl+Shift+R",
+        description: "The project's scenarios and their newest results",
+        key: Some("ctrl-shift-r"),
+    },
+    Command {
+        id: CommandId::NewScenario,
+        label: "New scenario…",
+        shortcut: "",
+        description: "A scenario for the selected part: what goes in, how its parts answer, what must come out",
+        key: None,
+    },
+    Command {
+        id: CommandId::RunScenario,
+        label: "Run scenario",
+        shortcut: "F5",
+        description: "Run the chosen scenario in the chosen mode",
+        key: Some("f5"),
+    },
+    Command {
+        id: CommandId::StopRun,
+        label: "Stop run",
+        shortcut: "Shift+F5",
+        description: "Stop the run in progress; it ends as cancelled",
+        key: Some("shift-f5"),
+    },
+    Command {
+        id: CommandId::TraceFirst,
+        label: "Trace: first event",
+        shortcut: "",
+        description: "Show the first event of the trace",
+        key: None,
+    },
+    Command {
+        id: CommandId::TraceBack,
+        label: "Trace: step back",
+        shortcut: "[",
+        description: "Show the event before; it undoes nothing the run did",
+        key: Some("["),
+    },
+    Command {
+        id: CommandId::TracePlay,
+        label: "Trace: play or pause",
+        shortcut: "\\",
+        description: "Play the trace on the Surface, one event at a time",
+        key: Some("\\"),
+    },
+    Command {
+        id: CommandId::TraceForward,
+        label: "Trace: step forward",
+        shortcut: "]",
+        description: "Show the next event of the trace",
+        key: Some("]"),
+    },
+    Command {
+        id: CommandId::TraceLast,
+        label: "Trace: last event",
+        shortcut: "",
+        description: "Show where the run ended",
+        key: None,
+    },
+    Command {
+        id: CommandId::CheckImplementation,
+        label: "Check the implementation",
+        shortcut: "",
+        description: "Module boundaries, contract shapes and linked tests against the model",
+        key: None,
+    },
+    Command {
+        id: CommandId::TrustLocal,
+        label: "Trusted-local execution…",
+        shortcut: "",
+        description: "Allow or stop builds, tests and the harness running on this computer for this project",
+        key: None,
+    },
 ];
 
 /// Runs a command: the one action every shortcut, menu and palette row
@@ -471,6 +559,9 @@ const WHILE_TYPING: &[CommandId] = &[
     CommandId::OpenProject,
     CommandId::Checkpoint,
     CommandId::ShowLibrary,
+    CommandId::ShowScenarios,
+    CommandId::RunScenario,
+    CommandId::StopRun,
 ];
 
 /// Further keys for commands that have a shortcut of their own.
@@ -547,6 +638,12 @@ pub struct CommandContext {
     pub definition: bool,
     /// One or more parts are selected, and nothing else.
     pub parts: bool,
+    /// A scenario is chosen.
+    pub scenario: bool,
+    /// A run is in progress.
+    pub running: bool,
+    /// A result with a trace is shown.
+    pub trace: bool,
 }
 
 /// Why a command cannot run now, in plain words; `None` when it can.
@@ -589,6 +686,16 @@ pub fn unavailable(id: CommandId, context: &CommandContext) -> Option<&'static s
             Some("Open or create a project to work with the Assistant")
         }
         InsertSelection if !context.selected => Some("Select an element first"),
+        NewScenario if !context.editable => Some("Open or create a project to edit"),
+        ShowScenarios | CheckImplementation | TrustLocal if !context.project => {
+            Some("Open a project first")
+        }
+        RunScenario if !context.scenario => Some("Choose a scenario in the Scenarios tab"),
+        RunScenario if context.running => Some("A run is in progress"),
+        StopRun if !context.running => Some("Nothing is running"),
+        TraceFirst | TraceBack | TracePlay | TraceForward | TraceLast if !context.trace => {
+            Some("Run a scenario first")
+        }
         _ => None,
     }
 }
@@ -673,7 +780,12 @@ mod tests {
         for command in COMMANDS {
             let Some(key) = command.key else { continue };
             assert!(gpui::Keystroke::parse(key).is_ok(), "{key}");
-            let plain = !key.contains("ctrl-") && !key.contains("alt-");
+            // A function key types nothing, so it may work while typing.
+            let base = key.rsplit('-').next().unwrap_or(key);
+            let function_key = base.len() > 1
+                && base.starts_with('f')
+                && base[1..].chars().all(|c| c.is_ascii_digit());
+            let plain = !key.contains("ctrl-") && !key.contains("alt-") && !function_key;
             assert!(
                 !(plain && WHILE_TYPING.contains(&command.id)),
                 "{key} would take a key from a text field"
