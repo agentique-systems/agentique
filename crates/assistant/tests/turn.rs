@@ -81,6 +81,12 @@ impl Studio {
         match tools::prepare(&self.state, &self.library, &call.name, &call.input) {
             Prepared::Answer(text) => ToolResult::answer(text),
             Prepared::Invalid(message) => ToolResult::error(message),
+            Prepared::Studio(request) => {
+                match tools::carry_out_headless(self.state.tree(), &request) {
+                    Ok(text) => ToolResult::answer(text),
+                    Err(message) => ToolResult::error(message),
+                }
+            }
             Prepared::Question { .. } => ToolResult::answer(self.answer.clone()),
             Prepared::SaveToLibrary { plan, saved, .. } => {
                 self.saves.push(plan.block.to_string());

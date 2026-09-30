@@ -365,6 +365,80 @@ impl RunResult {
             && self.checks.iter().all(|c| c.verdict == Verdict::Passed)
     }
 
+    /// The result in plain words, for the Assistant and for reports: how it
+    /// ended, each check with its verdict and why, and the events that led
+    /// to where it stopped (at most `events` of them). `current` says
+    /// whether it still describes the model.
+    pub fn describe(&self, current: Option<&str>, events: usize) -> String {
+        let mut lines = vec![format!(
+            "{} in {} ({}): {}, {} logical ms, {} events.",
+            self.scenario_qualified_name,
+            self.mode.label().to_lowercase(),
+            self.started,
+            self.status.label(),
+            self.logical_ms,
+            self.events_processed
+        )];
+        match current {
+            None => lines.push("It describes the model as it is now.".into()),
+            Some(why) => lines.push(format!(
+                "Outdated: {why}. Run it again before relying on it."
+            )),
+        }
+        if let Some(stop) = &self.stop {
+            lines.push(format!(
+                "Stopped ({}): {}",
+                stop.reason.code(),
+                stop.message
+            ));
+        }
+        for (_, message) in &self.blockers {
+            lines.push(format!("Cannot start: {message}"));
+        }
+        for check in &self.checks {
+            let mut line = format!(
+                "- check {}: {}. {}",
+                check.name,
+                check.verdict.label(),
+                check.message
+            );
+            if let Some(s) = &check.samples {
+                line.push_str(&format!(
+                    " ({}/{} samples passed; 95% interval {:.2}-{:.2})",
+                    s.passed, s.samples, s.interval.0, s.interval.1
+                ));
+            }
+            lines.push(line);
+        }
+        if let Some(live) = &self.live {
+            lines.push(format!(
+                "Live: {} samples, {} completed; cost {}.",
+                live.samples,
+                live.completed,
+                live.cost_usd
+                    .map_or("unknown".into(), |c| format!("${c:.4}"))
+            ));
+        }
+        let end = self
+            .trace
+            .iter()
+            .rposition(|e| e.kind == EventKind::Stopped)
+            .map_or(self.trace.len(), |i| i + 1);
+        let start = end.saturating_sub(events);
+        if start < end {
+            lines.push(format!(
+                "Trace, events {}-{} of {}:",
+                start + 1,
+                end,
+                self.trace.len()
+            ));
+            for event in &self.trace[start..end] {
+                lines.push(format!("  {} ms: {}", event.time_ms, event.text));
+            }
+        }
+        lines.join("\n")
+    }
+
     /// The counts of each verdict.
     pub fn tally(&self) -> Vec<(Verdict, usize)> {
         let mut out: Vec<(Verdict, usize)> = Vec::new();

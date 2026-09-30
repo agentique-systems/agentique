@@ -157,6 +157,8 @@ pub struct RunsState {
     pub confirm_live: bool,
     /// Which kind of step the Run panel's "Add" offers.
     pub adding: usize,
+    /// The Assistant waits for the run in progress (`run_scenario`).
+    assistant: Option<std::sync::mpsc::Sender<agq_assistant::ToolResult>>,
 }
 
 impl RunsState {
@@ -427,6 +429,14 @@ impl Studio {
         request: Request,
     ) -> Result<Work, String> {
         let links = self.implementation_links().map_err(|e| e.to_string())?;
+        if links.harness.is_empty() {
+            return Err("No harness is linked: model/links.json names the command that runs the code for scenarios (`harness`).".into());
+        }
+        let trusted = self.implementation.choice.is_some_and(|c| c.trusted)
+            || self.execution_file_choice().trusted;
+        if !trusted {
+            return Err("Running the real code needs trusted-local execution, which is off for this project; the Run panel turns it on.".into());
+        }
         let repository = self
             .implementation_repository()
             .ok_or("The project has no implementation repository linked.")?;
@@ -480,6 +490,9 @@ impl Studio {
             && let Err(error) = store.save(&result)
         {
             self.status = format!("The result could not be saved: {error}");
+        }
+        if let Some(reply) = self.runs.assistant.take() {
+            let _ = reply.send(agq_assistant::ToolResult::answer(result.describe(None, 12)));
         }
         self.runs.saved_generation += 1;
         self.status = describe_result(&result);
@@ -710,6 +723,95 @@ pub fn doc_of(tree: &Tree, id: ElementId) -> Option<String> {
         .iter()
         .find(|c| tree[**c].kind == ElementKind::Doc)
         .and_then(|d| tree[*d].text.clone())
+}
+
+// ---- the Assistant's requests (W8.3: the same services) ----
+
+impl Studio {
+    /// Carries out a factory tool the Assistant called; the reply goes out
+    /// when the run or the checks end.
+    pub fn carry_out_request(
+        &mut self,
+        request: agq_assistant::tools::StudioRequest,
+        reply: std::sync::mpsc::Sender<agq_assistant::ToolResult>,
+    ) {
+        use agq_assistant::{ToolResult, tools::StudioRequest};
+        match request {
+            StudioRequest::Run { scenario, mode } => {
+                if self.runs.active.is_some() {
+                    let _ = reply.send(ToolResult::error(
+                        "Not run: a run is in progress. Wait for it, or stop it with stop_run.",
+                    ));
+                    return;
+                }
+                if !self.editable() {
+                    let _ = reply.send(ToolResult::error(
+                        "Not run: the Operator is looking at an earlier checkpoint.",
+                    ));
+                    return;
+                }
+                // The Operator sees the run in the Run panel.
+                self.select_scenario(scenario);
+                self.runs.assistant = Some(reply);
+                let before = self.runs.saved_generation;
+                self.start_run(mode);
+                // It could not start (no trust for code, say): say why.
+                if self.runs.active.is_none()
+                    && self.runs.saved_generation == before
+                    && let Some(reply) = self.runs.assistant.take()
+                {
+                    let _ = reply.send(ToolResult::error(format!("Not run: {}", self.status)));
+                }
+            }
+            StudioRequest::StopRun => {
+                let text = if self.runs.running() {
+                    self.stop_run();
+                    "Stopping the run; its result comes back as cancelled."
+                } else {
+                    "Nothing is running."
+                };
+                let _ = reply.send(ToolResult::answer(text));
+            }
+            StudioRequest::ReadRun { scenario, mode } => {
+                let result = self
+                    .run_store()
+                    .and_then(|s| s.latest(scenario.raw(), mode));
+                let answer = match (result, &self.project) {
+                    (Some(result), Some(project)) => {
+                        let why = match freshness(&result, project.state().tree()) {
+                            Freshness::Current => None,
+                            Freshness::Outdated(why) => Some(why),
+                        };
+                        ToolResult::answer(result.describe(why.as_deref(), 12))
+                    }
+                    _ => ToolResult::answer(format!(
+                        "Not run in {} yet.",
+                        mode.label().to_lowercase()
+                    )),
+                };
+                let _ = reply.send(answer);
+            }
+            StudioRequest::ReadCodeLinks { element } => {
+                let _ = reply.send(match self.describe_links(element) {
+                    Ok(text) => ToolResult::answer(text),
+                    Err(error) => ToolResult::error(error),
+                });
+            }
+            StudioRequest::CheckImplementation => {
+                if self.implementation.checking() {
+                    let _ = reply.send(ToolResult::error("The checks are already running."));
+                    return;
+                }
+                self.start_checks();
+                if self.implementation.checking() {
+                    self.implementation.assistant = Some(reply);
+                } else {
+                    let _ = reply.send(ToolResult::error(format!("Not run: {}", self.status)));
+                }
+            }
+        }
+        self.mark(Dirty::LAYOUT | Dirty::STATUS | Dirty::MODEL);
+    }
 }
 
 // ---- writing scenarios (C-50: through controls, never SysML text) ----
@@ -1349,6 +1451,60 @@ mod tests {
             Some(StopReason::MissingRecording)
         );
         assert!(!result.all_passed());
+    }
+
+    #[test]
+    fn the_assistant_runs_scenarios_through_the_studio() {
+        use agq_assistant::tools::StudioRequest;
+        let (mut app, _folder) = screening("runs-assistant");
+        let blocked = scenario(&app, "ShortenBlocked");
+        let (reply, answers) = std::sync::mpsc::channel();
+        app.carry_out_request(
+            StudioRequest::Run {
+                scenario: blocked,
+                mode: Mode::Model,
+            },
+            reply,
+        );
+        // The Operator sees the run the Assistant started.
+        assert_eq!(app.runs.selected, Some(blocked));
+        assert!(app.runs.running());
+        let started = Instant::now();
+        while !app.poll_runs() {
+            assert!(started.elapsed() < Duration::from_secs(20));
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        let answer = answers.try_recv().expect("the Assistant has its answer");
+        assert!(!answer.is_error, "{}", answer.content);
+        assert!(answer.content.contains("completed"), "{}", answer.content);
+        // The result is kept: reading it gives the same.
+        let (reply, answers) = std::sync::mpsc::channel();
+        app.carry_out_request(
+            StudioRequest::ReadRun {
+                scenario: blocked,
+                mode: Mode::Model,
+            },
+            reply,
+        );
+        let read = answers.try_recv().unwrap();
+        assert!(
+            read.content
+                .contains("It describes the model as it is now."),
+            "{}",
+            read.content
+        );
+        // Code does not run without the Operator's trust: the reply says why.
+        let (reply, answers) = std::sync::mpsc::channel();
+        app.carry_out_request(
+            StudioRequest::Run {
+                scenario: blocked,
+                mode: Mode::Implementation,
+            },
+            reply,
+        );
+        let refused = answers.try_recv().expect("answered at once");
+        assert!(refused.is_error, "{}", refused.content);
+        assert!(!app.runs.running());
     }
 
     #[test]

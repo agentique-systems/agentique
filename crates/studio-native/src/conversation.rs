@@ -578,6 +578,7 @@ impl Studio {
         ) {
             Prepared::Answer(text) => answer(ToolResult::answer(text)),
             Prepared::Invalid(message) => answer(ToolResult::error(message)),
+            Prepared::Studio(request) => self.carry_out_request(request, reply),
             Prepared::SaveToLibrary {
                 plan,
                 question,

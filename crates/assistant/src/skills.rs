@@ -21,5 +21,8 @@ pub fn system_prompt() -> &'static str {
         include_str!("../skills/locks.md"),
         "\n",
         include_str!("../skills/tools.md"),
+        "
+",
+        include_str!("../skills/scenarios.md"),
     )
 }

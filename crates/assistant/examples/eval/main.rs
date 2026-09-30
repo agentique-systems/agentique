@@ -493,6 +493,10 @@ fn execute(
             }
         }
         Prepared::Answer(text) => ToolResult::answer(text),
+        Prepared::Studio(request) => match tools::carry_out_headless(state.tree(), &request) {
+            Ok(text) => ToolResult::answer(text),
+            Err(message) => ToolResult::error(message),
+        },
         Prepared::Invalid(message) => {
             run.failed_changes += 1;
             ToolResult::error(message)

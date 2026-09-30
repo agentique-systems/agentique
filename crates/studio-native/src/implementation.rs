@@ -37,6 +37,8 @@ pub struct ImplementationState {
     /// Whether the code is still what the checks read: worked out when they
     /// load or finish, since it reads the repository.
     code: Option<Freshness>,
+    /// The Assistant waits for the checks in progress.
+    pub(crate) assistant: Option<std::sync::mpsc::Sender<agq_assistant::ToolResult>>,
     active: Option<(Receiver<CheckReport>, Arc<AtomicBool>, Instant)>,
 }
 
@@ -60,13 +62,17 @@ impl Studio {
         if let Some(choice) = self.implementation.choice {
             return choice;
         }
-        let choice = self
-            .execution_file()
-            .and_then(|path| std::fs::read_to_string(path).ok())
-            .and_then(|text| serde_json::from_str(&text).ok())
-            .unwrap_or_default();
+        let choice = self.execution_file_choice();
         self.implementation.choice = Some(choice);
         choice
+    }
+
+    /// What the Operator allowed, as saved (nothing when never chosen).
+    pub fn execution_file_choice(&self) -> ExecutionChoice {
+        self.execution_file()
+            .and_then(|path| std::fs::read_to_string(path).ok())
+            .and_then(|text| serde_json::from_str(&text).ok())
+            .unwrap_or_default()
     }
 
     /// Turns trusted-local execution on or off for this project.
@@ -170,12 +176,10 @@ impl Studio {
         repository: &Path,
         _writable: bool,
     ) -> Result<Executor, String> {
-        let choice = self.implementation.choice.unwrap_or_else(|| {
-            self.execution_file()
-                .and_then(|path| std::fs::read_to_string(path).ok())
-                .and_then(|text| serde_json::from_str(&text).ok())
-                .unwrap_or_default()
-        });
+        let choice = self
+            .implementation
+            .choice
+            .unwrap_or_else(|| self.execution_file_choice());
         let project = self.project.as_ref().ok_or("No project is open.")?;
         let copy = repository
             .file_name()
@@ -272,6 +276,9 @@ impl Studio {
             Err(TryRecvError::Disconnected) => {
                 self.implementation.active = None;
                 self.status = "The checks stopped without a result.".into();
+                if let Some(reply) = self.implementation.assistant.take() {
+                    let _ = reply.send(agq_assistant::ToolResult::error(self.status.clone()));
+                }
                 return true;
             }
         };
@@ -296,6 +303,9 @@ impl Studio {
             && let Err(error) = store.save(&report)
         {
             self.status = format!("The checks could not be saved: {error}");
+        }
+        if let Some(reply) = self.implementation.assistant.take() {
+            let _ = reply.send(agq_assistant::ToolResult::answer(describe_report(&report)));
         }
         self.implementation.report = Some(report);
         self.refresh_check_freshness();
@@ -424,6 +434,89 @@ impl Studio {
             self.status = format!("Opened {relative} in the editor.");
         }
         self.mark(Dirty::STATUS);
+    }
+}
+
+/// A round of checks in plain words, for the Assistant.
+pub fn describe_report(report: &CheckReport) -> String {
+    let mut lines = vec![format!(
+        "Implementation checks on {} at {}{}:",
+        report.repository,
+        &report.commit[..report.commit.len().min(10)],
+        if report.dirty {
+            " (with uncommitted changes)"
+        } else {
+            ""
+        }
+    )];
+    for check in &report.checks {
+        lines.push(format!(
+            "- {} ({}): {}. {}",
+            check.name,
+            check.kind.label(),
+            check.verdict.label(),
+            check.message
+        ));
+        for detail in check.details.iter().take(6) {
+            lines.push(format!("    {detail}"));
+        }
+    }
+    lines.join("\n")
+}
+
+impl Studio {
+    /// The code links, for one element or all, with the newest checks.
+    pub fn describe_links(&self, element: Option<ElementId>) -> Result<String, String> {
+        let links = self.implementation_links()?;
+        let tree = self
+            .project
+            .as_ref()
+            .ok_or("No project is open.")?
+            .state()
+            .tree();
+        let shown: Vec<&agq_implementation::Link> = match element {
+            Some(element) => links.for_element(element),
+            None => links.links.iter().collect(),
+        };
+        let mut lines = vec![format!(
+            "Code folder: {} ({}); trusted-local execution is {}.",
+            links.repository,
+            links.language,
+            if self.implementation.choice.is_some_and(|c| c.trusted) {
+                "on"
+            } else {
+                "off"
+            }
+        )];
+        if shown.is_empty() {
+            lines.push("No code is linked here.".into());
+        }
+        for link in shown {
+            let name = if tree.contains(link.element()) {
+                tree.qualified_name(link.element())
+            } else {
+                format!("{} (no longer in the model)", link.name)
+            };
+            lines.push(format!(
+                "- {name}: {} {}{}",
+                link.kind.label(),
+                link.path,
+                link.symbol
+                    .as_ref()
+                    .map(|s| format!("#{s}"))
+                    .unwrap_or_default()
+            ));
+        }
+        if let Some(report) = &self.implementation.report {
+            match &self.implementation.freshness {
+                Some(Freshness::Outdated(why)) => {
+                    lines.push(format!("The newest checks are outdated: {why}."))
+                }
+                _ => lines.push("The newest checks:".into()),
+            }
+            lines.push(describe_report(report));
+        }
+        Ok(lines.join("\n"))
     }
 }
 
