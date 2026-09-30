@@ -490,9 +490,31 @@ fn implementation(
     let theme = cx.theme().clone();
     let state = studio.read(cx);
     let links = state.implementation_links().unwrap_or_default();
-    let linked: Vec<agq_implementation::Link> =
-        links.for_element(element).into_iter().cloned().collect();
-    let drift = state.drift().remove(&element).unwrap_or_default();
+    // A usage shows its definition's code too: the code implements the
+    // definition, and the usage is where the Operator looks.
+    let definition = state.project.as_ref().and_then(|p| {
+        let tree = p.state().tree();
+        (tree[element].kind == ElementKind::Part)
+            .then(|| {
+                Semantics::new(tree)
+                    .types_of(element)
+                    .first()
+                    .map(|(t, _)| *t)
+            })
+            .flatten()
+            .filter(|t| tree.contains(*t))
+    });
+    let linked: Vec<agq_implementation::Link> = links
+        .for_element(element)
+        .into_iter()
+        .chain(definition.map(|d| links.for_element(d)).unwrap_or_default())
+        .cloned()
+        .collect();
+    let mut all_drift = state.drift();
+    let mut drift = all_drift.remove(&element).unwrap_or_default();
+    if let Some(definition) = definition {
+        drift.extend(all_drift.remove(&definition).unwrap_or_default());
+    }
     let checking = state.implementation.checking();
     let outdated = matches!(
         state.implementation.freshness,

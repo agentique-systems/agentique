@@ -67,9 +67,15 @@ pub struct Request {
 
 impl Request {
     pub fn new(mode: Mode) -> Request {
+        let mut limits = Limits::default();
+        // A live sample waits for a real model's answers: minutes, not the
+        // seconds a model run is allowed.
+        if mode == Mode::Live {
+            limits.max_wall = std::time::Duration::from_secs(300);
+        }
         Request {
             mode,
-            limits: Limits::default(),
+            limits,
             seed: 0,
             model_revision: 0,
             samples: 1,

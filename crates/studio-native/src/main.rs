@@ -80,9 +80,9 @@ pub struct Args {
     /// Start without reopening the last project.
     #[arg(long)]
     no_restore: bool,
-    /// Drive the UI through a scripted journey (a-build, a-crash, a-reopen, a-assistant, d-daily, e-settings, h-library, i-scenarios), the camera benchmark (stress) or the Conversation benchmark (chat, in a new project at `--project`).
+    /// Drive the UI through a scripted journey (a-build, a-crash, a-reopen, a-assistant, d-daily, e-settings, h-library, i-scenarios, i-code), the camera benchmark (stress) or the Conversation benchmark (chat, in a new project at `--project`).
     #[cfg(feature = "automation")]
-    #[arg(long, value_parser = ["a-build", "a-crash", "a-reopen", "a-assistant", "d-daily", "e-settings", "h-library", "i-scenarios", "stress", "chat"])]
+    #[arg(long, value_parser = ["a-build", "a-crash", "a-reopen", "a-assistant", "d-daily", "e-settings", "h-library", "i-scenarios", "i-code", "stress", "chat"])]
     scenario: Option<String>,
     /// Write the scenario report (JSON) to this path.
     #[cfg(feature = "automation")]
@@ -118,6 +118,7 @@ impl Args {
                     | "e-settings"
                     | "h-library"
                     | "i-scenarios"
+                    | "i-code"
                     | "chat"
             )
         )

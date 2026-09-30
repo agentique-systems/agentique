@@ -183,7 +183,16 @@ fn the_same_scenarios_run_against_the_real_dispatcher() {
     );
     let provenance = result.provenance.implementation.clone().unwrap();
     assert_eq!(provenance.commit, git::head(&repo.path).unwrap().commit);
-    assert!(!provenance.dirty);
+    // Recorded once the harness is built: the build's lock file is there,
+    // not committed, and the result says so.
+    assert_eq!(
+        provenance.dirty,
+        !git::changed_files(&repo.path).unwrap().is_empty()
+    );
+    assert_eq!(
+        provenance.tree_digest,
+        git::tree_digest(&repo.path).unwrap()
+    );
     assert!(provenance.harness.contains("agentique-harness"));
     // A check that reads internal state is not evaluated here, and says so.
     let result = repo.run("GiveUpAfterThreeAttempts");

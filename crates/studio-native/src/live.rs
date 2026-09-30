@@ -99,13 +99,19 @@ impl LiveModel for ProviderLive {
 
     fn answer(&self, request: &AgentRequest, cancel: &AtomicBool) -> LiveAnswer {
         let system = format!(
-            "{}\n\nYou are one component of a larger system. Answer every request with exactly one JSON object and nothing else, in this form:\n{}\nUse only the values listed for a field that lists values. confidence is a number between 0 and 1.",
+            "{}\n\nYou are one component of a larger system. The user message is the input, as JSON. Answer with exactly one JSON object and nothing else, with these fields:\n{}",
             request.instructions,
-            serde_json::to_string_pretty(&request.output).unwrap_or_default()
+            answer_template(&request.output)
         );
+        // The agent's mode, as the provider's reasoning effort: a fast agent
+        // asks for little reasoning; a deliberate one uses the model's own.
+        let effort = match request.mode.as_deref() {
+            Some("fast") => Some("low".to_string()),
+            _ => None,
+        };
         let chat = ChatRequest {
             model: self.model.clone(),
-            effort: None,
+            effort,
             max_output_tokens: 1_024,
             system,
             tools: Vec::new(),
@@ -182,6 +188,48 @@ impl LiveModel for ProviderLive {
     }
 }
 
+/// The answer an agent gives, as a template the model fills in: one line
+/// per field with what it may hold, from the output item's shape (never a
+/// schema to copy).
+fn answer_template(shape: &serde_json::Value) -> String {
+    fn field_line(field: &serde_json::Value, indent: &str) -> String {
+        let name = field["name"].as_str().unwrap_or("?");
+        let what = if let Some(values) = field["values"].as_array() {
+            let values: Vec<&str> = values.iter().filter_map(|v| v.as_str()).collect();
+            format!("one of {}", values.join(", "))
+        } else if let Some(fields) = field["fields"].as_array() {
+            let inner: Vec<String> = fields
+                .iter()
+                .map(|f| field_line(f, &format!("{indent}  ")))
+                .collect();
+            format!("an object with:\n{}", inner.join("\n"))
+        } else {
+            match field["type"].as_str().unwrap_or("") {
+                "String" => "text".to_string(),
+                "Boolean" => "true or false".to_string(),
+                "Real" | "Rational" | "Number" | "Complex" => "a number".to_string(),
+                "Integer" | "Natural" | "Positive" => "a whole number".to_string(),
+                other => other.to_string(),
+            }
+        };
+        let optional = if field["required"].as_bool() == Some(false) {
+            " (may be left out)"
+        } else {
+            ""
+        };
+        format!("{indent}- \"{name}\": {what}{optional}")
+    }
+    let lines: Vec<String> = shape["fields"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .map(|f| field_line(f, ""))
+        .collect();
+    let mut text = lines.join("\n");
+    text.push_str("\n\"confidence\" is your own confidence in the answer, between 0 and 1.");
+    text
+}
+
 /// The JSON object in a reply, with or without a code fence.
 fn json_in(text: &str) -> Option<serde_json::Value> {
     let start = text.find('{')?;
@@ -192,6 +240,73 @@ fn json_in(text: &str) -> Option<serde_json::Value> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// I3 for real: the screening agent's evaluation cases on DeepSeek, five
+    /// samples each, kept as recordings and replayed. It spends money, so it
+    /// runs only when asked: `AGQ_LIVE=1 cargo test -p agq-studio-native
+    /// live_evaluation -- --ignored --nocapture`, with `DEEPSEEK_API_KEY` set.
+    #[test]
+    #[ignore = "calls a real model"]
+    fn live_evaluation_of_the_screening_agent() {
+        if std::env::var("AGQ_LIVE").as_deref() != Ok("1") {
+            eprintln!("Set AGQ_LIVE=1 to run the live evaluation.");
+            return;
+        }
+        // AGQ_LIVE_MAX_LATENCY_MS evaluates a changed latency limit (I7).
+        let text = match std::env::var("AGQ_LIVE_MAX_LATENCY_MS") {
+            Ok(ms) => crate::studio::SCREENING_SAMPLE.replace(
+                ":>> maxLatencyMs = 500;",
+                &format!(":>> maxLatencyMs = {ms};"),
+            ),
+            Err(_) => crate::studio::SCREENING_SAMPLE.to_string(),
+        };
+        let tree = agq_language::parse(&[agq_language::Source::new("UrlShortener.sysml", &text)]);
+        let cases = tree.find("UrlShortener::ScreeningCases").unwrap();
+        let program = agq_simulation::compile(&tree, cases).unwrap();
+        let digest = agq_simulation::digest::model_digest(&tree, cases);
+        let live: Arc<dyn LiveModel> = Arc::new(ProviderLive {
+            providers: Providers::new(),
+            model: ModelRef::new(Provider::DeepSeek, "deepseek-flash"),
+        });
+        let mut request = agq_simulation::Request::new(agq_simulation::Mode::Live);
+        request.samples = 5;
+        let result = agq_simulation::run(
+            &program,
+            digest.clone(),
+            &request,
+            agq_simulation::Answers::Live(live),
+            Arc::new(AtomicBool::new(false)),
+        );
+        println!("LIVE\n{}", result.describe(None, 0));
+        for event in result.trace.iter().filter(|e| {
+            matches!(
+                e.kind,
+                agq_simulation::EventKind::AgentFailed | agq_simulation::EventKind::AgentAnswered
+            )
+        }) {
+            println!("  {}", event.text);
+        }
+        let answers = result
+            .live
+            .as_ref()
+            .map(|l| l.answers.clone())
+            .unwrap_or_default();
+        let folder = std::env::temp_dir().join(format!("agq-live-{}", std::process::id()));
+        let kept = agq_simulation::Recordings::keep(&folder, &answers).unwrap();
+        println!("KEPT {kept} recording(s)");
+        let replay = agq_simulation::run(
+            &program,
+            digest,
+            &agq_simulation::Request::new(agq_simulation::Mode::Replay),
+            agq_simulation::Answers::Recordings(Arc::new(agq_simulation::Recordings::read(
+                &folder,
+            ))),
+            Arc::new(AtomicBool::new(false)),
+        );
+        println!("REPLAY\n{}", replay.describe(None, 0));
+        let _ = std::fs::remove_dir_all(&folder);
+        assert!(result.live.is_some());
+    }
 
     #[test]
     fn providers_come_from_model_ids_and_json_from_replies() {
@@ -207,5 +322,28 @@ mod tests {
             Some(serde_json::json!({"decision": "allow"}))
         );
         assert_eq!(json_in("no"), None);
+    }
+
+    #[test]
+    fn the_answer_template_lists_fields_not_a_schema() {
+        let shape = serde_json::json!({
+            "type": "Verdict",
+            "fields": [
+                { "name": "decision", "required": true, "type": "Decision", "values": ["allow", "review", "block"] },
+                { "name": "reason", "required": false, "type": "String" },
+                { "name": "confidence", "required": false, "type": "Real" }
+            ]
+        });
+        let text = answer_template(&shape);
+        assert!(
+            text.contains("- \"decision\": one of allow, review, block"),
+            "{text}"
+        );
+        assert!(
+            text.contains("- \"reason\": text (may be left out)"),
+            "{text}"
+        );
+        assert!(text.contains("- \"confidence\": a number"), "{text}");
+        assert!(!text.contains("\"fields\""), "{text}");
     }
 }

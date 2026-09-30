@@ -484,17 +484,29 @@ impl Render for DialogsView {
                     .when_some(sample, |this, sample| {
                         use crate::studio::Sample;
                         this.child(
-                            Segmented::new("sample-kind", usize::from(sample == Sample::Screening))
-                                .choice(None, "The URL shortener")
-                                .choice(None, "With AI screening and scenarios")
-                                .on_choose(move |index, _, cx| {
-                                    chooser.act(cx, |studio| {
-                                        if let Some(Dialog::NewProject { sample, .. }) = &mut studio.dialog {
-                                            *sample = Some(if index == 1 { Sample::Screening } else { Sample::UrlShortener });
-                                        }
-                                        studio.mark(Dirty::OVERLAY);
-                                    })
-                                }),
+                            Segmented::new(
+                                "sample-kind",
+                                match sample {
+                                    Sample::UrlShortener => 0,
+                                    Sample::Screening => 1,
+                                    Sample::ScreeningWithCode => 2,
+                                },
+                            )
+                            .choice(None, "The URL shortener")
+                            .choice(None, "With AI screening")
+                            .choice(None, "And its code")
+                            .on_choose(move |index, _, cx| {
+                                chooser.act(cx, |studio| {
+                                    if let Some(Dialog::NewProject { sample, .. }) = &mut studio.dialog {
+                                        *sample = Some(match index {
+                                            0 => Sample::UrlShortener,
+                                            1 => Sample::Screening,
+                                            _ => Sample::ScreeningWithCode,
+                                        });
+                                    }
+                                    studio.mark(Dirty::OVERLAY);
+                                })
+                            }),
                         )
                     })
                     .child(field("Name", self.first.as_ref().map(|s| TextField::new(s).target("Project name").into_any_element()), cx))
@@ -1069,6 +1081,17 @@ impl Render for DialogsView {
                                     .child(format!("{isolation} Code that runs can do anything your account can: turn this on only for code you trust.")),
                             )
                             .child(
+                                div()
+                                    .flex()
+                                    .items_center()
+                                    .justify_between()
+                                    .gap(r(12.0))
+                                    .child(
+                                        div()
+                                            .text_size(r(theme::text::SM))
+                                            .child("Allow Cargo to use the network (to fetch dependencies)"),
+                                    )
+                                    .child(
                                 ui::Switch::new("trust-network", choice.network, "Allow Cargo to use the network (to fetch dependencies)")
                                     .on_toggle(move |on, _, cx| {
                                         studio_entity.act(cx, |studio| {
@@ -1078,6 +1101,7 @@ impl Render for DialogsView {
                                             studio.mark(Dirty::OVERLAY);
                                         })
                                     }),
+                                    ),
                             )
                             .footer(cancel_button)
                             .when(choice.trusted, |this| {

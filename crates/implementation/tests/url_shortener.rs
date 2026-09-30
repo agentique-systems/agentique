@@ -39,8 +39,10 @@ fn copy(from: &Path, to: &Path) {
     }
 }
 
-/// The links a person (or a worker) would keep in `model/links.json`.
+/// The links a person (or a worker) would keep in `model/links.json`: the
+/// fixture's table, by name.
 pub fn links(tree: &Tree) -> Links {
+    const TABLE: &[(&str, &str, &str, Option<&str>)] = include!("fixtures/url-shortener/links.in");
     let mut links = Links {
         language: "Rust".into(),
         harness: [
@@ -56,54 +58,13 @@ pub fn links(tree: &Tree) -> Links {
         protected: vec!["tests/behaviour.rs".into()],
         ..Links::default()
     };
-    let id = |name: &str| tree.find(&format!("UrlShortener::{name}")).unwrap();
-    for (part, path) in [
-        ("LinkApi", "src/api.rs"),
-        ("LinkStore", "src/store.rs"),
-        ("LinkScreening", "src/screening.rs"),
-        ("BlocklistScreening", "src/screening.rs"),
-        ("UrlShortenerService", "src/service.rs"),
-    ] {
-        links.add(tree, id(part), LinkKind::Module, path, None);
-    }
-    for ty in [
-        "LinkStatus",
-        "Decision",
-        "ResolveOutcome",
-        "ShortenRequest",
-        "ShortLink",
-        "ResolveRequest",
-        "Resolution",
-        "ReviewDecision",
-        "LinkQuery",
-        "StatusChange",
-        "LinkRecord",
-        "LinkCandidate",
-        "Verdict",
-    ] {
-        links.add(tree, id(ty), LinkKind::Type, "src/model.rs", Some(ty));
-    }
-    for port in ["LinkStorePort", "ScreeningPort"] {
-        links.add(tree, id(port), LinkKind::Schema, "src/ports.rs", Some(port));
-    }
-    for (element, test) in [
-        ("UrlShortenerService", "a_confident_allow_redirects"),
-        (
-            "reviewBeforeActivation",
-            "a_failed_or_unsure_screening_holds_the_link_until_approved",
-        ),
-        (
-            "screenedLinks",
-            "a_block_stores_nothing_and_the_blocklist_blocks_when_the_agent_refuses",
-        ),
-    ] {
-        links.add(
-            tree,
-            id(element),
-            LinkKind::Test,
-            "tests/behaviour.rs",
-            Some(test),
-        );
+    for (element, kind, path, symbol) in TABLE {
+        let id = tree.find(&format!("UrlShortener::{element}")).unwrap();
+        let kind = LinkKind::ALL
+            .into_iter()
+            .find(|k| k.key() == *kind)
+            .unwrap();
+        links.add(tree, id, kind, path, *symbol);
     }
     links
 }

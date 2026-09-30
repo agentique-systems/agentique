@@ -411,10 +411,21 @@ impl RunResult {
             lines.push(line);
         }
         if let Some(live) = &self.live {
+            let failures = if live.failures.is_empty() {
+                "none".to_string()
+            } else {
+                live.failures
+                    .iter()
+                    .map(|(what, n)| format!("{what} {n}"))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            };
             lines.push(format!(
-                "Live: {} samples, {} completed; cost {}.",
+                "Live: {} samples, {} completed; agent failures: {failures}; median latency {}; cost {}.",
                 live.samples,
                 live.completed,
+                live.latency_ms_median
+                    .map_or("unknown".into(), |ms| format!("{ms} ms")),
                 live.cost_usd
                     .map_or("unknown".into(), |c| format!("${c:.4}"))
             ));

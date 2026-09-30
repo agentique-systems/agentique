@@ -28,6 +28,10 @@
 //!   from a selection, My Library into a second project (beside the first,
 //!   `<folder>-other`), and the Assistant (a scripted stand-in) reusing a
 //!   block where one fits, modelling plainly where none does, and undone.
+//! - `i-code --project <new folder>`: Scenario I against real code: the
+//!   URL shortener sample with its code beside it (built by Cargo, offline),
+//!   trusted-local execution turned on in its dialog, a scenario run through
+//!   the code's harness, and the implementation checks with no drift.
 //! - `i-scenarios --project <new folder>`: Scenario I (C-50) in the Studio,
 //!   on the URL shortener with AI screening: the scenarios, a model run and
 //!   its trace on the Surface, a changed agent setting that outdates the
@@ -196,6 +200,8 @@ enum Check {
     Shown(&'static str),
     /// The Inspector shows an element of this kind ("send", "assert constraint").
     Inspecting(&'static str),
+    /// Current implementation checks ran and found no drift.
+    NoDrift,
 }
 
 #[derive(Clone, Debug)]
@@ -206,6 +212,8 @@ struct Step {
     /// Ticks to wait after the action before checking.
     settle: u64,
     screenshot: Option<&'static str>,
+    /// How long the check may keep failing (a build takes longer).
+    patience: Duration,
 }
 
 fn step(name: &'static str, action: Action, check: Check) -> Step {
@@ -215,6 +223,7 @@ fn step(name: &'static str, action: Action, check: Check) -> Step {
         check,
         settle: 4,
         screenshot: None,
+        patience: CHECK_PATIENCE,
     }
 }
 
@@ -953,6 +962,99 @@ pub fn script_assistant(app: &mut Studio) {
 }
 
 /// Scenario H, the Library (C-49), from the URL shortener sample.
+/// A step whose check may take a build's time.
+fn slow(step: Step) -> Step {
+    Step {
+        patience: Duration::from_secs(600),
+        settle: step.settle.max(12),
+        ..step
+    }
+}
+
+/// Scenario I against real code (C-50, W8.4).
+fn code(folder: &Path) -> Vec<Step> {
+    vec![
+        step("the welcome", Action::Idle, Check::StartScreen),
+        step(
+            "start from the URL shortener",
+            Action::Click("Start from the URL shortener"),
+            Check::ProjectName("UrlShortener"),
+        ),
+        step(
+            "with its code",
+            Action::Click("And its code"),
+            Check::DialogNewProject,
+        ),
+        step(
+            "project folder",
+            Action::Fill("Project folder", folder.display().to_string()),
+            Check::DialogNewProject,
+        ),
+        step(
+            "Create project writes the model and the code",
+            Action::Click("Create project"),
+            Check::Exists("UrlShortener::LinkScreening", ElementKind::PartDef),
+        ),
+        step(
+            "the scenarios",
+            Action::Key("ctrl-shift-r"),
+            Check::LeftTab("Scenarios"),
+        ),
+        step(
+            "choose ReviewRequired",
+            Action::Click("Scenario ReviewRequired"),
+            Check::ScenarioChosen("ReviewRequired"),
+        ),
+        shot(
+            "01-code-needs-trust",
+            step(
+                "the code mode",
+                Action::Click("Mode: Code"),
+                Check::Shown("Turn on…"),
+            ),
+        ),
+        step(
+            "turn trusted-local execution on",
+            Action::Click("Turn on…"),
+            Check::DialogOpen("TrustLocal"),
+        ),
+        shot(
+            "02-trust-dialog",
+            step(
+                "it says what it allows",
+                Action::Idle,
+                Check::DialogOpen("TrustLocal"),
+            ),
+        ),
+        step(
+            "allow it",
+            Action::Click("Allow on this computer"),
+            Check::NoDialog,
+        ),
+        shot(
+            "03-code-run",
+            slow(step(
+                "F5 builds the harness and runs the scenario against the code",
+                Action::Key("f5"),
+                Check::Result("passed"),
+            )),
+        ),
+        step(
+            "select the api",
+            Action::ClickCard("UrlShortener::UrlShortenerService::api"),
+            Check::Selected("UrlShortener::UrlShortenerService::api"),
+        ),
+        shot(
+            "04-checks",
+            slow(step(
+                "check the implementation",
+                Action::Click("Check the implementation"),
+                Check::NoDrift,
+            )),
+        ),
+    ]
+}
+
 /// Scenario I in the Studio (C-50).
 fn scenarios(folder: &Path) -> Vec<Step> {
     const SCREENING: &str = "UrlShortener::LinkScreening";
@@ -966,7 +1068,7 @@ fn scenarios(folder: &Path) -> Vec<Step> {
         ),
         step(
             "choose the one with AI screening",
-            Action::Click("With AI screening and scenarios"),
+            Action::Click("With AI screening"),
             Check::DialogNewProject,
         ),
         step(
@@ -1948,6 +2050,7 @@ impl Journey {
                 "d-daily" => daily(&folder),
                 "h-library" => library(&folder),
                 "i-scenarios" => scenarios(&folder),
+                "i-code" => code(&folder),
                 "a-reopen" => reopen(),
                 other => return Err(format!("no journey is called {other}")),
             },
@@ -2116,7 +2219,7 @@ impl Journey {
                     }
                     return Ok(Outcome::Running);
                 }
-                Err(reason) if checking.elapsed() > CHECK_PATIENCE => {
+                Err(reason) if checking.elapsed() > step.patience => {
                     return Err(format!(
                         "step {} “{}”: {reason} (status: {})",
                         self.index + 1,
@@ -2817,6 +2920,23 @@ fn check(check: &Check, app: &Studio, views: &Views) -> Result<(), String> {
             let steps = crate::panels::run::step_rows(tree, scenario).len();
             if steps != *count {
                 return Err(format!("the scenario has {steps} steps"));
+            }
+        }
+        Check::NoDrift => {
+            if app.implementation.checking() {
+                return fail("the checks are still running");
+            }
+            let current = app
+                .implementation
+                .freshness
+                .as_ref()
+                .is_some_and(agq_simulation::Freshness::is_current);
+            if app.implementation.report.is_none() || !current {
+                return fail("no current implementation checks");
+            }
+            let drift = app.drift();
+            if !drift.is_empty() {
+                return Err(format!("drift at {} element(s)", drift.len()));
             }
         }
         Check::Inspecting(keyword) => {

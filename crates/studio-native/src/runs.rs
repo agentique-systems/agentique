@@ -1529,6 +1529,72 @@ mod tests {
     }
 
     #[test]
+    fn the_sample_with_its_code_runs_its_scenarios_against_the_code() {
+        let (mut app, folder) = studio("runs-code");
+        app.create_sample(
+            &folder.0.join("Shortener"),
+            "Shortener",
+            Sample::ScreeningWithCode,
+        );
+        assert!(
+            folder.0.join("Shortener-code/src/api.rs").exists(),
+            "{}",
+            app.status
+        );
+        let links = app.implementation_links().unwrap();
+        assert_eq!(links.links.len(), 23);
+        assert!(
+            links
+                .dangling(app.project.as_ref().unwrap().state().tree())
+                .is_empty()
+        );
+        // Not without trust.
+        let allowed = app
+            .project
+            .as_ref()
+            .unwrap()
+            .state()
+            .tree()
+            .find("Shortener::ShortenAllowed")
+            .unwrap();
+        app.select_scenario(allowed);
+        app.start_run(Mode::Implementation);
+        assert!(!app.runs.running());
+        assert!(app.status.contains("trusted-local"), "{}", app.status);
+        let mut choice = app.execution_choice();
+        choice.trusted = true;
+        app.set_execution_choice(choice);
+        let started = Instant::now();
+        app.start_run(Mode::Implementation);
+        while !app.poll_runs() {
+            assert!(started.elapsed() < Duration::from_secs(600), "the run ends");
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        let result = app.runs.result.clone().unwrap();
+        assert_eq!(result.mode, Mode::Implementation);
+        assert!(result.all_passed(), "{:?} {:?}", result.stop, result.checks);
+        assert!(app.result_is_current());
+        // The implementation checks find no drift.
+        app.start_checks();
+        let started = Instant::now();
+        while app.implementation.checking() {
+            app.poll_checks();
+            assert!(started.elapsed() < Duration::from_secs(600));
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        let report = app.implementation.report.clone().expect("a report");
+        assert!(
+            report
+                .checks
+                .iter()
+                .all(|c| c.verdict == agq_simulation::Verdict::Passed),
+            "{:#?}",
+            report.checks
+        );
+        assert!(app.drift().is_empty());
+    }
+
+    #[test]
     fn library_blocks_carry_their_behaviour_and_scenarios() {
         let (mut app, _folder) = studio("runs-library");
         let tree = app.project.as_ref().unwrap().state().tree();

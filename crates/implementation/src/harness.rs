@@ -347,19 +347,27 @@ pub fn run_implementation(
         ));
         return result;
     };
-    let head = git::head(repository).ok();
-    let changed = git::changed_files(repository).unwrap_or_default();
-    result.provenance.implementation = Some(ImplementationProvenance {
+    // What ran: the code as it is once the harness has been built (a build
+    // may write files, such as Cargo's lock file).
+    let provenance = |repository: &Path| ImplementationProvenance {
         repository: repository.to_string_lossy().into_owned(),
-        commit: head.map(|h| h.commit).unwrap_or_else(|| "unknown".into()),
-        dirty: !changed.is_empty(),
+        commit: git::head(repository)
+            .map(|h| h.commit)
+            .unwrap_or_else(|_| "unknown".into()),
+        dirty: !git::changed_files(repository)
+            .unwrap_or_default()
+            .is_empty(),
         tree_digest: git::tree_digest(repository).unwrap_or_default(),
         harness: command.display(),
-    });
+    };
     let mut trace = Trace::default();
     let outcome = match HarnessTarget::start(executor, &command, "", program, &mut trace) {
-        Ok(mut target) => run_steps(program, &mut target, &mut trace, &cancel),
+        Ok(mut target) => {
+            result.provenance.implementation = Some(provenance(repository));
+            run_steps(program, &mut target, &mut trace, &cancel)
+        }
         Err(stop) => {
+            result.provenance.implementation = Some(provenance(repository));
             trace.push(
                 0,
                 EventKind::Stopped,

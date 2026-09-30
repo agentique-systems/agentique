@@ -185,13 +185,12 @@ impl Studio {
             .choice
             .unwrap_or_else(|| self.execution_file_choice());
         let project = self.project.as_ref().ok_or("No project is open.")?;
-        let copy = repository
-            .file_name()
-            .map(|n| n.to_string_lossy().into_owned())
-            .unwrap_or_else(|| "main".into());
+        // The project's own copy of its code builds in `targets/main` (task
+        // worktrees in `targets/<job>`): short, since Windows' linker still
+        // fails on paths longer than 260 characters.
         let target = crate::conversation::project_data(&self.session_path, project.folder())
             .join("targets")
-            .join(copy);
+            .join("main");
         let scope = Scope::read_only(repository).map_err(|e| e.to_string())?;
         Ok(Executor::new(scope)
             .trusted(choice.trusted)
