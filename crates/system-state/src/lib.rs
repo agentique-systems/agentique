@@ -34,9 +34,9 @@ mod project;
 pub use project::{ApplyError, Checkpoint, HistoryError, Project, ProjectError};
 
 use agq_language::{
-    Diagnostic, Direction, Element, ElementId, ElementKind, Field, Literal, Multiplicity, Parent,
-    QualifiedName, Reference, Step, Tree, TreeError, Visibility, link, printed_reference, validate,
-    writable,
+    Diagnostic, Direction, Element, ElementId, ElementKind, Expression, Field, Literal,
+    Multiplicity, Parent, QualifiedName, Reference, StateAction, Step, Tree, TreeError, Visibility,
+    link, printed_reference, validate, writable,
 };
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt;
@@ -129,6 +129,20 @@ pub enum Property {
     By(Option<Reference>),
     /// The element's documentation comment.
     Doc(Option<String>),
+    /// A value that is not a single literal (`= Mode::fast`), the payload of
+    /// a `send`, the value of an `assign`, the condition of an `if`, the
+    /// duration of `accept after`, or the constraint of a check (C-50).
+    Expression(Option<Expression>),
+    /// A transition's guard.
+    Guard(Option<Expression>),
+    /// The port of a `send` or an `accept`.
+    Via(Option<Reference>),
+    /// `exhibit state`: the behaviour its part performs.
+    Exhibit(bool),
+    /// `entry`, `do` or `exit` before an action of a state.
+    StateAction(Option<StateAction>),
+    /// `accept after`: a time trigger.
+    After(bool),
 }
 
 impl Property {
@@ -149,6 +163,12 @@ impl Property {
             Property::Target(_) => Field::Target,
             Property::By(_) => Field::By,
             Property::Doc(_) => Field::Members,
+            Property::Expression(_) => Field::Expression,
+            Property::Guard(_) => Field::Guard,
+            Property::Via(_) => Field::Via,
+            Property::Exhibit(_) => Field::Exhibit,
+            Property::StateAction(_) => Field::StateAction,
+            Property::After(_) => Field::After,
         }
     }
 
@@ -747,6 +767,12 @@ impl Edit<'_> {
             Property::Ends(value) => target.ends = value,
             Property::Target(value) => target.target = value,
             Property::By(value) => target.by = value,
+            Property::Expression(value) => target.expression = value,
+            Property::Guard(value) => target.guard = value,
+            Property::Via(value) => target.via = value,
+            Property::Exhibit(value) => target.exhibit = value,
+            Property::StateAction(value) => target.state_action = value,
+            Property::After(value) => target.after = value,
             Property::Doc(_) => unreachable!("handled above"),
         }
     }
@@ -988,7 +1014,7 @@ fn same(a: &Element, b: &Element) -> bool {
 fn meaning(element: &Element) -> Element {
     let mut element = element.clone();
     element.location = None;
-    for reference in references_mut(&mut element) {
+    for reference in element.references_mut() {
         for step in &mut reference.steps {
             if step.target.is_some() {
                 step.name = QualifiedName::default();
@@ -1027,20 +1053,11 @@ fn delete(tree: &mut Tree, locks: &mut BTreeSet<ElementId>, element: ElementId) 
             .iter_mut()
             .for_each(|step| step.target = None);
         let holder = tree.get_mut(holder).expect("a holder is not removed");
-        *references_mut(holder)
+        *holder
+            .references_mut()
+            .into_iter()
             .nth(index)
             .expect("the order of Element::references") = reference;
     }
     removed
-}
-
-fn references_mut(element: &mut Element) -> impl Iterator<Item = &mut Reference> {
-    element
-        .typed_by
-        .iter_mut()
-        .chain(&mut element.specializes)
-        .chain(&mut element.redefines)
-        .chain(&mut element.ends)
-        .chain(&mut element.target)
-        .chain(&mut element.by)
 }

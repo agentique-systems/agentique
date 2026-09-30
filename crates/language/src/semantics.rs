@@ -8,7 +8,10 @@
 //! Build one [`Semantics`] for a tree and ask it many questions; it
 //! remembers what it works out, so build a new one after the tree changes.
 
-use crate::tree::{Element, ElementId, ElementKind, Tree};
+use crate::resolve::LookupError;
+use crate::tree::{
+    Direction, Element, ElementId, ElementKind, QualifiedName, Reference, Role, Tree,
+};
 use crate::validate::Checker;
 
 /// Questions about one tree (and the built-in library).
@@ -75,6 +78,74 @@ impl<'a> Semantics<'a> {
     /// has it by inheritance rather than owning it.
     pub fn is_inherited(&self, owner: ElementId, feature: ElementId) -> bool {
         self.checker.model.exists(feature) && self.checker.model.is_inherited(owner, feature)
+    }
+
+    /// The element a qualified name from the top level names, in the tree or
+    /// in the built-in library, such as `Agents::Agent`.
+    pub fn resolve(&self, qualified: &str) -> Option<ElementId> {
+        let name = QualifiedName::new(qualified.split("::"));
+        self.checker.model.resolve_global(&name).ok()
+    }
+
+    /// The elements each step of a reference held by `holder` points at: its
+    /// linked targets, or what its names resolve to now. `Err` says why not,
+    /// in plain words.
+    pub fn steps(
+        &self,
+        holder: ElementId,
+        role: Role,
+        reference: &Reference,
+    ) -> Result<Vec<ElementId>, String> {
+        if !self.checker.model.exists(holder) {
+            return Err(format!("{holder} does not exist"));
+        }
+        self.checker
+            .model
+            .resolve_reference(holder, role, reference)
+            .map_err(|error| match error {
+                LookupError::NotFound(name) => format!("cannot find `{name}`"),
+                LookupError::Ambiguous(name, _) => format!("`{name}` is ambiguous"),
+                LookupError::Removed(name) => format!("`{name}` no longer exists"),
+                LookupError::Unsupported(what) => format!("{what} is not supported"),
+            })
+    }
+
+    /// The features `feature` redefines: its `:>>` targets or, without any,
+    /// the implied ones.
+    pub fn redefined(&self, feature: ElementId) -> Vec<ElementId> {
+        if !self.checker.model.exists(feature) {
+            return Vec::new();
+        }
+        self.checker.model.redefined(feature).to_vec()
+    }
+
+    /// The directed features of a port as seen from outside it, with its
+    /// conjugation applied: (name, direction, type).
+    pub fn directed_features(
+        &self,
+        port: ElementId,
+    ) -> Vec<(String, Direction, Option<ElementId>)> {
+        if !self.checker.model.exists(port) {
+            return Vec::new();
+        }
+        self.checker.directed_features(port)
+    }
+
+    /// The effective name of an element, in the tree or the library.
+    pub fn name(&self, id: ElementId) -> Option<&'a str> {
+        self.checker
+            .model
+            .exists(id)
+            .then(|| self.checker.model.name(id))
+            .flatten()
+    }
+
+    /// `Package::Definition::feature`, for messages, in the tree or the library.
+    pub fn qualified_name(&self, id: ElementId) -> String {
+        if !self.checker.model.exists(id) {
+            return id.to_string();
+        }
+        self.checker.model.describe(id)
     }
 
     /// Whether ports `a` and `b` can be connected, by the rule `validate`

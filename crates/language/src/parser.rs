@@ -6,6 +6,7 @@
 //! member (a `;` or its closing `}` outside nested braces), never past the
 //! enclosing body.
 
+use crate::expression::Argument;
 use crate::lexer::{self, Token, TokenKind};
 use crate::tree::*;
 
@@ -345,7 +346,24 @@ impl<'a> Parser<'a> {
             "package" => self.package()?,
             "import" => self.import()?,
             "doc" => self.doc()?,
+            "assert" if self.peek_text(1) == "constraint" => self.assert_constraint()?,
             "assert" | "satisfy" => self.satisfy()?,
+            "dependency" => self.dependency()?,
+            "exhibit" => self.exhibit()?,
+            "state" if self.peek_text(1) != "def" => self.state()?,
+            "transition" => self.transition()?,
+            "entry" => self.state_action(StateAction::Entry)?,
+            "exit" => self.state_action(StateAction::Exit)?,
+            "do" => self.state_action(StateAction::Do)?,
+            "then" => return self.then(owner),
+            "action" if self.peek_text(1) != "def" => self.action()?,
+            "send" => self.send()?,
+            "assign" => self.assign()?,
+            "if" => self.if_node()?,
+            "accept" => self.accept_node()?,
+            "verification" if self.peek_text(1) == "def" => self.verification_def()?,
+            "objective" => self.objective()?,
+            "verify" => self.verify()?,
             _ => self.definition_or_usage(owner)?,
         };
         node.element.visibility = visibility;
@@ -483,6 +501,7 @@ impl<'a> Parser<'a> {
             "connection" => (Some(ElementKind::ConnectionDef), ElementKind::Connection),
             "interface" => (Some(ElementKind::InterfaceDef), ElementKind::Interface),
             "requirement" => (Some(ElementKind::RequirementDef), ElementKind::Requirement),
+            "enum" => (Some(ElementKind::EnumDef), ElementKind::Enum),
             "subject" => (None, ElementKind::Subject),
             // `ref x : T;` is the same reference usage as `x : T;`.
             "ref"
@@ -511,6 +530,12 @@ impl<'a> Parser<'a> {
                 (None, ElementKind::Port)
             }
             _ if element.is_end => return self.unsupported("`end` feature without a kind keyword"),
+            // In an enum def, `a;` is an enumeration value (`enum` is optional).
+            _ if owner == Some(ElementKind::EnumDef)
+                && matches!(self.kind(), TokenKind::Word | TokenKind::QuotedName) =>
+            {
+                (None, ElementKind::Enum)
+            }
             // A usage without a kind keyword: `x : T;`, `:>> x = 5;`.
             ":>>" | "redefines" | ":>" | "subsets" => (None, ElementKind::Reference),
             _ if matches!(self.kind(), TokenKind::Word | TokenKind::QuotedName) => {
@@ -587,7 +612,15 @@ impl<'a> Parser<'a> {
         match self.peek_text(0) {
             "=" => {
                 self.bump();
-                element.value = Some(self.literal()?);
+                // A single literal keeps the literal form; anything else is
+                // an expression (C-50).
+                match self.expression()? {
+                    Expression::Literal(literal) => element.value = Some(literal),
+                    expression => element.expression = Some(expression),
+                }
+                if !matches!(self.peek_text(0), ";" | "{") {
+                    return self.unsupported("feature value expression");
+                }
             }
             ":=" | "default" => return self.unsupported("initial or default value"),
             _ => {}
@@ -646,25 +679,513 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn literal(&mut self) -> Result<Literal> {
-        let negative = self.eat("-");
-        let token = self.token();
-        let text = self.text_of(token);
-        let sign = if negative { "-" } else { "" };
-        let literal = match token.kind {
-            TokenKind::Integer => Literal::Integer(format!("{sign}{text}")),
-            TokenKind::Real => Literal::Real(format!("{sign}{text}")),
-            TokenKind::String if !negative => Literal::String(text[1..text.len() - 1].to_string()),
-            TokenKind::Word if !negative && (text == "true" || text == "false") => {
-                Literal::Boolean(text == "true")
+    // ---- expressions (C-50) ----
+
+    /// An expression: KerML's operators from `if ? else` (loosest) to the
+    /// unary operators, over literals, names, feature chains and `new`.
+    pub(crate) fn expression(&mut self) -> Result<Expression> {
+        self.binary_expression(0)
+    }
+
+    /// Operators binding tighter than `min`, all associating to the left.
+    fn binary_expression(&mut self, min: u8) -> Result<Expression> {
+        let mut left = self.prefix_expression()?;
+        loop {
+            let symbol = self.peek_text(0);
+            if matches!(symbol, "|" | "&" | "===" | "!==" | "^" | "**" | "??" | "..") {
+                return self.unsupported(format!("the operator `{symbol}`"));
             }
-            _ => return self.unsupported("feature value expression"),
-        };
-        self.bump();
-        if !matches!(self.peek_text(0), ";" | "{") {
-            return self.unsupported("feature value expression");
+            if matches!(symbol, "istype" | "hastype" | "as" | "meta" | "@") {
+                return self.unsupported(format!("`{symbol}` in an expression"));
+            }
+            let Some(op) = BinaryOp::from_symbol(symbol) else {
+                return Ok(left);
+            };
+            if op.precedence() <= min {
+                return Ok(left);
+            }
+            self.bump();
+            let right = self.binary_expression(op.precedence())?;
+            left = Expression::binary(op, left, right);
         }
-        Ok(literal)
+    }
+
+    fn prefix_expression(&mut self) -> Result<Expression> {
+        match self.peek_text(0) {
+            "if" => {
+                self.bump();
+                let condition = self.expression()?;
+                self.expect("?")?;
+                let then = self.expression()?;
+                self.expect("else")?;
+                let otherwise = self.expression()?;
+                Ok(Expression::Conditional(
+                    Box::new(condition),
+                    Box::new(then),
+                    Box::new(otherwise),
+                ))
+            }
+            "not" => {
+                self.bump();
+                let operand = self.prefix_expression()?;
+                Ok(Expression::Unary(UnaryOp::Not, Box::new(operand)))
+            }
+            "-" => {
+                self.bump();
+                // `-3` stays one literal, as feature values have always read it.
+                let token = self.token();
+                let text = self.text_of(token);
+                match token.kind {
+                    TokenKind::Integer => {
+                        self.bump();
+                        Ok(Expression::Literal(Literal::Integer(format!("-{text}"))))
+                    }
+                    TokenKind::Real => {
+                        self.bump();
+                        Ok(Expression::Literal(Literal::Real(format!("-{text}"))))
+                    }
+                    _ => {
+                        let operand = self.prefix_expression()?;
+                        Ok(Expression::Unary(UnaryOp::Negate, Box::new(operand)))
+                    }
+                }
+            }
+            "(" => {
+                self.bump();
+                if self.at(")") {
+                    self.bump();
+                    return Ok(Expression::Null);
+                }
+                let inner = self.expression()?;
+                if self.at(",") {
+                    return self.unsupported("a sequence expression `(a, b)`");
+                }
+                self.expect(")")?;
+                Ok(inner)
+            }
+            "null" => {
+                self.bump();
+                Ok(Expression::Null)
+            }
+            "true" | "false" => {
+                let value = self.at("true");
+                self.bump();
+                Ok(Expression::Literal(Literal::Boolean(value)))
+            }
+            "new" => self.new_expression(),
+            "all" | "meta" | "{" => {
+                self.unsupported(format!("`{}` in an expression", self.peek_text(0)))
+            }
+            _ => {
+                let token = self.token();
+                let text = self.text_of(token);
+                let literal = match token.kind {
+                    TokenKind::Integer => Some(Literal::Integer(text.to_string())),
+                    TokenKind::Real => Some(Literal::Real(text.to_string())),
+                    TokenKind::String => Some(Literal::String(text[1..text.len() - 1].to_string())),
+                    _ => None,
+                };
+                if let Some(literal) = literal {
+                    self.bump();
+                    return Ok(Expression::Literal(literal));
+                }
+                if self.kind() == TokenKind::Word && lexer::is_keyword(text) {
+                    return self.syntax("a value");
+                }
+                let name = self.chain()?;
+                match self.peek_text(0) {
+                    "(" => self.unsupported("calling a function or type `f(x)`"),
+                    "->" => self.unsupported("`->` function calls"),
+                    "#" | "[" => self.unsupported("indexing `#(i)` or `[i]`"),
+                    ".?" => self.unsupported("`.?` selection"),
+                    _ => Ok(Expression::Name(name)),
+                }
+            }
+        }
+    }
+
+    /// `new T(a = value, ...)`: named arguments only.
+    fn new_expression(&mut self) -> Result<Expression> {
+        self.bump();
+        let ty = self.reference()?;
+        if self.at(".") {
+            return self.unsupported("`new` with a feature chain");
+        }
+        self.expect("(")?;
+        let mut arguments = Vec::new();
+        if !self.eat(")") {
+            loop {
+                let is_named = matches!(self.kind(), TokenKind::Word | TokenKind::QuotedName)
+                    && self.peek_text(1) == "=";
+                if !is_named {
+                    return self.unsupported("positional arguments of `new`");
+                }
+                let Some(name) = self.name() else {
+                    return self.syntax("an argument name");
+                };
+                self.expect("=")?;
+                let value = self.expression()?;
+                arguments.push(Argument {
+                    feature: crate::expression::argument_feature(&ty, &name),
+                    value,
+                });
+                if self.eat(")") {
+                    break;
+                }
+                self.expect(",")?;
+            }
+        }
+        Ok(Expression::New { ty, arguments })
+    }
+
+    // ---- relationships and behaviour (C-50) ----
+
+    /// `dependency [name from] A to B;` (one client, one supplier).
+    fn dependency(&mut self) -> Result<Node> {
+        self.bump();
+        let mut element = Element::new(ElementKind::Dependency);
+        if !self.eat("from") {
+            element.name = Some(self.declared_identifier()?);
+            self.expect("from")?;
+        }
+        let client = self.reference()?;
+        if self.at(",") {
+            return self.unsupported("a dependency with several clients");
+        }
+        self.expect("to")?;
+        let supplier = self.reference()?;
+        if self.at(",") {
+            return self.unsupported("a dependency with several suppliers");
+        }
+        element.ends = vec![client, supplier];
+        let children = self.body(ElementKind::Dependency)?;
+        Ok(Node { element, children })
+    }
+
+    /// `exhibit state name { ... }`: the behaviour a part performs.
+    fn exhibit(&mut self) -> Result<Node> {
+        self.bump();
+        if !self.at("state") {
+            return self.unsupported("`exhibit` of a state defined elsewhere");
+        }
+        let mut node = self.state()?;
+        node.element.exhibit = true;
+        Ok(node)
+    }
+
+    /// `state name { ... }` or `state name;`.
+    fn state(&mut self) -> Result<Node> {
+        self.bump();
+        let mut element = Element::new(ElementKind::State);
+        self.usage_declaration(&mut element)?;
+        if !element.typed_by.is_empty()
+            || !element.specializes.is_empty()
+            || element.multiplicity.is_some()
+            || element.value.is_some()
+            || element.expression.is_some()
+        {
+            return self.unsupported("a typed state (state defs are not supported)");
+        }
+        if self.at("parallel") {
+            return self.unsupported("parallel states");
+        }
+        let children = self.body(ElementKind::State)?;
+        Ok(Node { element, children })
+    }
+
+    /// `transition [name first] S [accept trigger] [if guard] [do effect] then T;`
+    fn transition(&mut self) -> Result<Node> {
+        self.bump();
+        let mut element = Element::new(ElementKind::Transition);
+        if !self.eat("first") && self.peek_text(1) == "first" {
+            element.name = self.name();
+            if element.name.is_none() {
+                return self.syntax("a transition name");
+            }
+            self.expect("first")?;
+        }
+        let source = self.chain()?;
+        let mut children = Vec::new();
+        if self.eat("accept") {
+            children.push(self.trigger()?);
+        }
+        if self.eat("if") {
+            element.guard = Some(self.expression()?);
+        }
+        if self.eat("do") {
+            children.push(self.effect()?);
+        }
+        self.expect("then")?;
+        let target = self.chain()?;
+        element.ends = vec![source, target];
+        children.extend(self.body(ElementKind::Transition)?);
+        Ok(Node { element, children })
+    }
+
+    /// What follows `accept`: `after duration`, or a payload `[name :] T via port`.
+    fn trigger(&mut self) -> Result<Node> {
+        let location = self.location();
+        let mut element = Element::new(ElementKind::Accept);
+        match self.peek_text(0) {
+            "after" => {
+                self.bump();
+                element.after = true;
+                element.expression = Some(self.expression()?);
+            }
+            "at" | "when" => {
+                return self.unsupported(format!("`accept {}`", self.peek_text(0)));
+            }
+            _ => {
+                if self.peek_text(1) == ":" {
+                    element.name = self.name();
+                    self.expect(":")?;
+                }
+                element.typed_by.push(self.reference()?);
+                if self.at(".") {
+                    return self.unsupported("a payload typed by a feature chain");
+                }
+                if self.eat("via") {
+                    element.via = Some(self.chain()?);
+                }
+            }
+        }
+        element.location = Some(location);
+        Ok(Node {
+            element,
+            children: Vec::new(),
+        })
+    }
+
+    /// A transition's `do` effect: one `send`, `assign` or `action { ... }`.
+    fn effect(&mut self) -> Result<Node> {
+        let location = self.location();
+        let mut node = match self.peek_text(0) {
+            "send" => self.send_node(false)?,
+            "assign" => self.assign_node(false)?,
+            "action" => self.action()?,
+            other => return self.unsupported(format!("`do {other}` as a transition effect")),
+        };
+        node.element.location = Some(location);
+        Ok(node)
+    }
+
+    /// `entry`, `do` or `exit`, then `;` or one action node.
+    fn state_action(&mut self, which: StateAction) -> Result<Node> {
+        self.bump();
+        let mut node = if self.eat(";") {
+            Node {
+                element: Element::new(ElementKind::Action),
+                children: Vec::new(),
+            }
+        } else {
+            match self.peek_text(0) {
+                "action" => self.action()?,
+                "send" => self.send()?,
+                "assign" => self.assign()?,
+                other => {
+                    return self.unsupported(format!("`{} {other}`", which.keyword()));
+                }
+            }
+        };
+        node.element.state_action = Some(which);
+        Ok(node)
+    }
+
+    /// `then S;` after an entry action (the state entered first), or
+    /// `then` before the next step of an action body.
+    fn then(&mut self, owner: Option<ElementKind>) -> Result<Node> {
+        if matches!(
+            self.peek_text(1),
+            "send" | "assign" | "if" | "accept" | "action" | "assert"
+        ) {
+            self.bump();
+            return self.declaration(owner);
+        }
+        let location = self.location();
+        self.bump();
+        let mut element = Element::new(ElementKind::Succession);
+        element.target = Some(self.chain()?);
+        element.location = Some(location);
+        let children = self.body(ElementKind::Succession)?;
+        Ok(Node { element, children })
+    }
+
+    /// `action [name] { ... }`: members run in the order written.
+    fn action(&mut self) -> Result<Node> {
+        self.bump();
+        let mut element = Element::new(ElementKind::Action);
+        if self.at("<") {
+            return self.unsupported("short name `<...>`");
+        }
+        element.name = self.name();
+        if matches!(self.peek_text(0), ":" | ":>" | ":>>" | "[" | "=") {
+            return self.unsupported("an action typed by an action def");
+        }
+        let children = self.body(ElementKind::Action)?;
+        Ok(Node { element, children })
+    }
+
+    fn send(&mut self) -> Result<Node> {
+        self.send_node(true)
+    }
+
+    /// `send expression via port`, with a body when `body` (not as an effect).
+    fn send_node(&mut self, body: bool) -> Result<Node> {
+        self.bump();
+        let mut element = Element::new(ElementKind::Send);
+        element.expression = Some(self.expression()?);
+        if self.eat("via") {
+            element.via = Some(self.chain()?);
+        }
+        if self.at("to") {
+            return self.unsupported("`send ... to` a receiver");
+        }
+        let children = if body {
+            self.body(ElementKind::Send)?
+        } else {
+            Vec::new()
+        };
+        Ok(Node { element, children })
+    }
+
+    fn assign(&mut self) -> Result<Node> {
+        self.assign_node(true)
+    }
+
+    /// `assign feature := expression`.
+    fn assign_node(&mut self, body: bool) -> Result<Node> {
+        self.bump();
+        let mut element = Element::new(ElementKind::Assign);
+        element.target = Some(self.chain()?);
+        self.expect(":=")?;
+        element.expression = Some(self.expression()?);
+        let children = if body {
+            self.body(ElementKind::Assign)?
+        } else {
+            Vec::new()
+        };
+        Ok(Node { element, children })
+    }
+
+    /// `if condition { ... } [else { ... } | else if ...]`
+    fn if_node(&mut self) -> Result<Node> {
+        self.bump();
+        let mut element = Element::new(ElementKind::If);
+        element.expression = Some(self.expression()?);
+        let mut children = vec![self.branch()?];
+        if self.eat("else") {
+            if self.at("if") {
+                let location = self.location();
+                let mut nested = self.if_node()?;
+                nested.element.location = Some(location);
+                children.push(nested);
+            } else {
+                children.push(self.branch()?);
+            }
+        }
+        Ok(Node { element, children })
+    }
+
+    /// One branch of an `if`: `{ ... }`, as an unnamed action.
+    fn branch(&mut self) -> Result<Node> {
+        let location = self.location();
+        if !self.at("{") {
+            return match self.peek_text(0) {
+                "action" => self.unsupported("a named action as a branch of `if`"),
+                _ => self.syntax("`{`"),
+            };
+        }
+        let mut element = Element::new(ElementKind::Action);
+        element.location = Some(location);
+        let children = self.body(ElementKind::Action)?;
+        Ok(Node { element, children })
+    }
+
+    /// `accept [name :] T via port;` or `accept after duration;` as a step.
+    fn accept_node(&mut self) -> Result<Node> {
+        self.bump();
+        let mut node = self.trigger()?;
+        if matches!(self.peek_text(0), "then" | "if" | "do") {
+            return self.unsupported("a transition written as `accept ... then`; use `transition`");
+        }
+        node.children = self.body(ElementKind::Accept)?;
+        Ok(node)
+    }
+
+    /// `verification def Name { ... }`: a scenario.
+    fn verification_def(&mut self) -> Result<Node> {
+        self.bump();
+        self.bump();
+        let mut element = Element::new(ElementKind::VerificationDef);
+        element.name = Some(self.declared_identifier()?);
+        while self.eat(":>") || self.eat("specializes") {
+            self.references(&mut element.specializes)?;
+        }
+        let children = self.body(ElementKind::VerificationDef)?;
+        Ok(Node { element, children })
+    }
+
+    /// `objective [name] { verify r; ... }`
+    fn objective(&mut self) -> Result<Node> {
+        self.bump();
+        let mut element = Element::new(ElementKind::Objective);
+        element.name = self.name();
+        if matches!(self.peek_text(0), ":" | ":>" | ":>>" | "[" | "=") {
+            return self.unsupported("a typed objective");
+        }
+        let children = self.body(ElementKind::Objective)?;
+        Ok(Node { element, children })
+    }
+
+    /// `verify r;`
+    fn verify(&mut self) -> Result<Node> {
+        self.bump();
+        if self.at("requirement") {
+            return self.unsupported("`verify requirement` declaration");
+        }
+        let mut element = Element::new(ElementKind::Verify);
+        element.target = Some(self.reference()?);
+        if self.at(".") {
+            return self.unsupported("verifying a feature chain");
+        }
+        let children = self.body(ElementKind::Verify)?;
+        Ok(Node { element, children })
+    }
+
+    /// `assert constraint [name] { [doc] expression }`
+    fn assert_constraint(&mut self) -> Result<Node> {
+        self.bump();
+        self.bump();
+        let mut element = Element::new(ElementKind::AssertConstraint);
+        element.name = self.name();
+        if matches!(self.peek_text(0), ":" | ":>" | ":>>" | "[" | "=") {
+            return self.unsupported("a typed constraint");
+        }
+        self.expect("{")?;
+        let mut children = Vec::new();
+        loop {
+            match self.peek_text(0) {
+                _ if self.kind() == TokenKind::Comment => {
+                    let token = self.bump();
+                    let mut comment = Element::new(ElementKind::Comment);
+                    comment.text = Some(comment_text(self.text_of(token)));
+                    children.push(Node {
+                        element: comment,
+                        children: Vec::new(),
+                    });
+                }
+                "doc" => {
+                    let location = self.location();
+                    let mut doc = self.doc()?;
+                    doc.element.location = Some(location);
+                    children.push(doc);
+                }
+                _ => break,
+            }
+        }
+        element.expression = Some(self.expression()?);
+        self.expect("}")?;
+        Ok(Node { element, children })
     }
 
     /// `a.b to c.d` after `connect`.

@@ -190,11 +190,489 @@ impl<'a> Checker<'a> {
             ElementKind::Import => self.check_import(id),
             ElementKind::Satisfy => self.check_satisfy(id),
             ElementKind::Package | ElementKind::Doc | ElementKind::Comment => {}
+            ElementKind::Dependency => self.check_dependency(id),
+            kind if kind.is_behavior() => self.check_behavior(id),
             kind if kind.is_definition() => self.check_definition(id),
             _ => self.check_usage(id),
         }
+        self.check_expressions(id);
         self.check_hides_inherited(id);
         self.check_reachable(id);
+    }
+
+    // ---- dependencies, expressions, behaviour, scenarios and agents (C-50) ----
+
+    fn check_dependency(&mut self, id: ElementId) {
+        let ends = self.model.tree[id].ends.clone();
+        for (reference, what) in ends.iter().zip(["the client", "the supplier"]) {
+            self.follow(id, Role::End, reference, what);
+        }
+    }
+
+    /// Every name in the element's expressions leads to a feature, a value
+    /// of an enum def, or (after `new`) a definition with those features.
+    fn check_expressions(&mut self, id: ElementId) {
+        let element = &self.model.tree[id];
+        let expressions: Vec<Expression> = element
+            .expression
+            .iter()
+            .chain(&element.guard)
+            .cloned()
+            .collect();
+        for expression in &expressions {
+            let mut names = Vec::new();
+            let mut news = Vec::new();
+            expression.walk(&mut |e| match e {
+                Expression::Name(reference) => names.push(reference.clone()),
+                Expression::New { ty, arguments } => news.push((ty.clone(), arguments.clone())),
+                _ => {}
+            });
+            for reference in names {
+                let Some(target) = self.follow(id, Role::Value, &reference, "the name") else {
+                    continue;
+                };
+                let kind = self.kind(target);
+                if !(kind.is_usage() || kind == ElementKind::Accept) {
+                    let message = format!(
+                        "`{reference}` is a {}; a name in an expression stands for a feature or a value",
+                        kind.keyword()
+                    );
+                    self.report(id, "wrong-kind", message);
+                }
+            }
+            for (ty, arguments) in news {
+                let Some(target) = self.follow(id, Role::Value, &ty, "the type after `new`") else {
+                    continue;
+                };
+                if !matches!(
+                    self.kind(target),
+                    ElementKind::ItemDef | ElementKind::PartDef | ElementKind::AttributeDef
+                ) {
+                    let message = format!(
+                        "`{ty}` is a {}; `new` makes an item, part or attribute value",
+                        self.kind(target).keyword()
+                    );
+                    self.report(id, "wrong-type", message);
+                    continue;
+                }
+                for argument in arguments {
+                    self.follow(id, Role::Value, &argument.feature, "the argument");
+                }
+            }
+        }
+        // A value of an enum def is written `E::v`; a literal is no such value.
+        if element.kind.is_usage() && (element.value.is_some() || element.expression.is_some()) {
+            self.check_enum_value(id);
+        }
+    }
+
+    fn check_enum_value(&mut self, id: ElementId) {
+        let Some(&(declared, _)) = self.model.types_of(id).first() else {
+            return;
+        };
+        if self.kind(declared) != ElementKind::EnumDef {
+            return;
+        }
+        let element = &self.model.tree[id];
+        let value = match (&element.value, &element.expression) {
+            (Some(literal), _) => {
+                let message = format!(
+                    "`{literal}` is not a value of `{}`; write one of its values, such as `{}::…`",
+                    self.name(declared),
+                    self.name(declared)
+                );
+                self.report(id, "wrong-value", message);
+                return;
+            }
+            (None, Some(Expression::Name(reference))) => reference.clone(),
+            _ => return,
+        };
+        let Ok(target) = self.model.target(id, Role::Value, &value) else {
+            return;
+        };
+        let fits = self.kind(target) == ElementKind::Enum
+            && self
+                .model
+                .get(target)
+                .owner()
+                .is_some_and(|owner| self.model.specializes(owner, declared));
+        if !fits {
+            let message = format!(
+                "`{value}` is not a value of `{}`",
+                self.model.describe(declared)
+            );
+            self.report(id, "wrong-value", message);
+        }
+    }
+
+    fn check_behavior(&mut self, id: ElementId) {
+        let element = &self.model.tree[id];
+        let kind = element.kind;
+        let owner = element.owner();
+        let owner_kind = owner.map(|o| self.kind(o));
+        let misplaced = |this: &mut Self, message: &str| {
+            this.report(id, "misplaced-behaviour", message.to_string());
+        };
+        match kind {
+            ElementKind::State => {
+                if element.exhibit {
+                    if !matches!(owner_kind, Some(ElementKind::PartDef | ElementKind::Part)) {
+                        misplaced(self, "`exhibit state` belongs in a part def or a part");
+                    }
+                } else if owner_kind != Some(ElementKind::State) {
+                    misplaced(
+                        self,
+                        "a state belongs in the exhibit state of a part (or in another state)",
+                    );
+                }
+                self.check_redefinition(id);
+                self.check_initial_state(id);
+            }
+            ElementKind::Transition => {
+                if owner_kind != Some(ElementKind::State) {
+                    misplaced(self, "a transition belongs in a state machine");
+                }
+                let ends = element.ends.clone();
+                for (reference, what) in ends.iter().zip(["the source state", "the target state"]) {
+                    self.check_sibling_state(id, reference, what);
+                }
+            }
+            ElementKind::Succession => {
+                if owner_kind != Some(ElementKind::State) {
+                    misplaced(
+                        self,
+                        "`then` a state belongs in a state machine, after `entry`",
+                    );
+                    return;
+                }
+                let siblings = self.model.tree[owner.expect("owner")].children().to_vec();
+                let position = siblings.iter().position(|c| *c == id).unwrap_or(0);
+                let after_entry = position > 0
+                    && self.model.tree[siblings[position - 1]].state_action
+                        == Some(StateAction::Entry);
+                if !after_entry {
+                    self.report(
+                        id,
+                        "unsupported",
+                        "`then` a state after something other than `entry` is a transition written in short; write it as `transition first … then …`".into(),
+                    );
+                }
+                if let Some(target) = element.target.clone() {
+                    self.check_sibling_state(id, &target, "the first state");
+                }
+            }
+            ElementKind::Objective => {
+                if owner_kind != Some(ElementKind::VerificationDef) {
+                    misplaced(
+                        self,
+                        "an objective belongs in a verification def (a scenario)",
+                    );
+                }
+            }
+            ElementKind::Verify => {
+                if owner_kind != Some(ElementKind::Objective) {
+                    misplaced(self, "`verify` belongs in the objective of a scenario");
+                }
+                if let Some(target) = element.target.clone()
+                    && let Some(requirement) =
+                        self.follow(id, Role::Target, &target, "the verified requirement")
+                    && self.kind(requirement) != ElementKind::Requirement
+                {
+                    let hint = if self.kind(requirement) == ElementKind::RequirementDef {
+                        format!(" (declare `requirement x : {target};` and verify that)")
+                    } else {
+                        String::new()
+                    };
+                    let message = format!(
+                        "`{target}` is a {}; `verify` names a requirement{hint}",
+                        self.kind(requirement).keyword()
+                    );
+                    self.report(id, "wrong-kind", message);
+                }
+            }
+            ElementKind::AssertConstraint => {
+                if self.scenario_of(id).is_none() {
+                    misplaced(self, "a check (`assert constraint`) belongs in a scenario");
+                }
+            }
+            ElementKind::Assign => {
+                self.check_step_place(id);
+                if let Some(target) = element.target.clone()
+                    && let Some(feature) =
+                        self.follow(id, Role::Target, &target, "the assigned feature")
+                    && !matches!(
+                        self.kind(feature),
+                        ElementKind::Attribute | ElementKind::Reference | ElementKind::Item
+                    )
+                {
+                    let message = format!(
+                        "`{target}` is a {}; `assign` sets an attribute",
+                        self.kind(feature).keyword()
+                    );
+                    self.report(id, "wrong-kind", message);
+                }
+            }
+            ElementKind::Send => {
+                self.check_step_place(id);
+                self.check_port_flow(id, true);
+            }
+            ElementKind::Accept => {
+                if owner_kind != Some(ElementKind::Transition) {
+                    self.check_step_place(id);
+                }
+                if !element.after {
+                    self.check_typing(id);
+                    self.check_port_flow(id, false);
+                }
+            }
+            ElementKind::Action | ElementKind::If => self.check_step_place(id),
+            _ => {}
+        }
+    }
+
+    /// The scenario (verification def) an element is a step of, if any.
+    fn scenario_of(&self, id: ElementId) -> Option<ElementId> {
+        let mut current = self.model.get(id).owner();
+        while let Some(owner) = current {
+            match self.kind(owner) {
+                ElementKind::VerificationDef => return Some(owner),
+                ElementKind::Action | ElementKind::If => current = self.model.get(owner).owner(),
+                _ => return None,
+            }
+        }
+        None
+    }
+
+    /// An action node belongs in a state (as its entry, do or exit action),
+    /// a transition (as its effect), an action or `if` branch, or a scenario.
+    fn check_step_place(&mut self, id: ElementId) {
+        let element = &self.model.tree[id];
+        let owner_kind = element.owner().map(|o| self.kind(o));
+        let fits = match (element.state_action, owner_kind) {
+            (Some(_), Some(ElementKind::State)) => true,
+            (Some(_), _) => false,
+            (None, Some(kind)) => matches!(
+                kind,
+                ElementKind::Transition
+                    | ElementKind::Action
+                    | ElementKind::If
+                    | ElementKind::VerificationDef
+            ),
+            (None, None) => false,
+        };
+        if !fits {
+            let message = if element.state_action.is_some() {
+                "`entry`, `do` and `exit` actions belong in a state"
+            } else {
+                "an action step belongs in a state's action, a transition, an action or a scenario"
+            };
+            self.report(id, "misplaced-behaviour", message.into());
+        }
+    }
+
+    /// A transition's source or target, or the first state, is a state of
+    /// the same state machine.
+    fn check_sibling_state(&mut self, id: ElementId, reference: &Reference, what: &str) {
+        let Some(state) = self.follow(id, Role::End, reference, what) else {
+            return;
+        };
+        let machine = self.model.get(id).owner();
+        if self.kind(state) != ElementKind::State || self.model.get(state).owner() != machine {
+            let message = format!(
+                "{what} `{reference}` is not a state of `{}`",
+                machine.map(|m| self.model.describe(m)).unwrap_or_default()
+            );
+            self.report(id, "wrong-kind", message);
+        }
+    }
+
+    /// A state with states inside says which comes first: `entry; then S;`.
+    fn check_initial_state(&mut self, id: ElementId) {
+        let children = self.model.tree[id].children().to_vec();
+        let has_states = children
+            .iter()
+            .any(|c| self.model.tree[*c].kind == ElementKind::State);
+        let initials = children
+            .iter()
+            .filter(|c| self.model.tree[**c].kind == ElementKind::Succession)
+            .count();
+        if has_states && initials == 0 {
+            self.report(
+                id,
+                "initial-state",
+                "it has states but does not say which comes first; add `entry; then` the first state".into(),
+            );
+        } else if initials > 1 {
+            self.report(
+                id,
+                "initial-state",
+                format!("it says {initials} states come first; keep one `entry; then …`"),
+            );
+        }
+    }
+
+    /// Items cross a port the way its directed features allow. `sending`: a
+    /// `send` (else an `accept`). Inside a part the part sends through `out`
+    /// features and receives through `in` features; a scenario stands outside
+    /// its subject, so there it is the other way round.
+    fn check_port_flow(&mut self, id: ElementId, sending: bool) {
+        let element = &self.model.tree[id];
+        let Some(via) = element.via.clone() else {
+            if sending {
+                self.report(
+                    id,
+                    "missing-port",
+                    "`send` needs the port it sends through: `via port`".into(),
+                );
+            } else if self.kind(element.owner().unwrap_or(id)) != ElementKind::Transition
+                || element.typed_by.is_empty()
+            {
+                self.report(
+                    id,
+                    "missing-port",
+                    "`accept` needs the port it accepts from: `via port`".into(),
+                );
+            }
+            return;
+        };
+        let Some(port) = self.follow(id, Role::Via, &via, "the port") else {
+            return;
+        };
+        if self.kind(port) != ElementKind::Port {
+            let message = format!(
+                "`{via}` is a {}; `via` names a port",
+                self.kind(port).keyword()
+            );
+            self.report(id, "wrong-kind", message);
+            return;
+        }
+        // The item's type: the payload's declared type, or what `new` makes,
+        // or the type of a sent feature.
+        let item = if sending {
+            match &element.expression {
+                Some(Expression::New { ty, .. }) => self.model.target(id, Role::Value, ty).ok(),
+                Some(Expression::Name(reference)) => self
+                    .model
+                    .target(id, Role::Value, reference)
+                    .ok()
+                    .and_then(|f| self.model.types_of(f).first().map(|(t, _)| *t)),
+                _ => None,
+            }
+        } else {
+            element
+                .typed_by
+                .first()
+                .and_then(|r| self.model.target(id, Role::TypedBy, r).ok())
+        };
+        let Some(item) = item else {
+            return;
+        };
+        let outside = self.scenario_of(id).is_some();
+        let wanted = if sending != outside {
+            Direction::Out
+        } else {
+            Direction::In
+        };
+        let carried = self
+            .directed_features(port)
+            .into_iter()
+            .any(|(_, direction, ty)| {
+                (direction == wanted || direction == Direction::InOut)
+                    && ty.is_none_or(|ty| {
+                        self.model.specializes(item, ty) || self.model.specializes(ty, item)
+                    })
+            });
+        if !carried {
+            let (code, verb) = if sending {
+                ("incompatible-send", "sends")
+            } else {
+                ("incompatible-trigger", "receives")
+            };
+            let message = format!(
+                "`{via}` ({}) has no `{}` item for `{}`, so nothing {verb} it through this port",
+                self.type_text(port),
+                wanted.keyword(),
+                self.name(item)
+            );
+            self.report(id, code, message);
+        }
+    }
+
+    /// An agent's fallback shares its contract and is not itself an agent
+    /// (`wrong-fallback`, `agent-fallback`; ROADMAP §4.11).
+    fn check_agent(&mut self, id: ElementId) {
+        let agent_name = QualifiedName::new(["Agents", "Agent"]);
+        let Ok(agent) = self.model.resolve_global(&agent_name) else {
+            return;
+        };
+        if id == agent || !self.model.specializes(id, agent) {
+            return;
+        }
+        let fallback_name = QualifiedName::new(["Agents", "Agent", "fallback"]);
+        let Ok(fallback) = self.model.resolve_global(&fallback_name) else {
+            return;
+        };
+        let Some(feature) = self
+            .model
+            .features(id)
+            .into_iter()
+            .find(|f| *f == fallback || self.redefines_feature(*f, fallback))
+        else {
+            return;
+        };
+        let at = if self.model.tree.contains(feature) && self.model.get(feature).owner() == Some(id)
+        {
+            feature
+        } else {
+            id
+        };
+        for (ty, _) in self.model.types_of(feature) {
+            if self.model.specializes(ty, agent) {
+                let message = format!(
+                    "the fallback `{}` is itself an agent; a fallback is a deterministic part that takes over when the agent fails",
+                    self.name(ty)
+                );
+                self.report(at, "agent-fallback", message);
+                continue;
+            }
+            let contracts: Vec<ElementId> = self
+                .model
+                .generals(id)
+                .iter()
+                .copied()
+                .filter(|g| *g != agent && !self.model.specializes(*g, agent))
+                .filter(|g| self.kind(*g) == ElementKind::PartDef)
+                .collect();
+            for contract in contracts {
+                if !self.model.specializes(ty, contract) {
+                    let message = format!(
+                        "the fallback `{}` does not share the agent's contract `{}`; it must specialise it too",
+                        self.name(ty),
+                        self.model.describe(contract)
+                    );
+                    self.report(at, "wrong-fallback", message);
+                }
+            }
+        }
+    }
+
+    /// Does `feature` redefine `target`, directly or through other redefinitions?
+    fn redefines_feature(&self, feature: ElementId, target: ElementId) -> bool {
+        let mut stack = vec![feature];
+        let mut seen = Vec::new();
+        while let Some(next) = stack.pop() {
+            if seen.contains(&next) {
+                continue;
+            }
+            seen.push(next);
+            for redefined in self.model.redefined(next).iter() {
+                if *redefined == target {
+                    return true;
+                }
+                stack.push(*redefined);
+            }
+        }
+        false
     }
 
     fn check_duplicates(&mut self) {
@@ -304,6 +782,7 @@ impl<'a> Checker<'a> {
         }
         if kind == ElementKind::PartDef {
             self.check_composition(id);
+            self.check_agent(id);
         }
         self.check_subjects(id);
     }
@@ -336,13 +815,17 @@ impl<'a> Checker<'a> {
         if kind == ElementKind::Subject
             && !matches!(
                 owner_kind,
-                Some(ElementKind::RequirementDef | ElementKind::Requirement)
+                Some(
+                    ElementKind::RequirementDef
+                        | ElementKind::Requirement
+                        | ElementKind::VerificationDef
+                )
             )
         {
             self.report(
                 id,
                 "misplaced-subject",
-                "a subject belongs in a requirement".into(),
+                "a subject belongs in a requirement or a scenario".into(),
             );
         }
         self.check_typing(id);
@@ -360,6 +843,18 @@ impl<'a> Checker<'a> {
         }
         if let Some(value) = element.value.clone() {
             self.check_value(id, &value);
+        }
+        if kind == ElementKind::Enum
+            && self.model.tree[id].owner().map(|o| self.kind(o)) == Some(ElementKind::EnumDef)
+            && (!self.model.tree[id].typed_by.is_empty()
+                || self.model.tree[id].value.is_some()
+                || self.model.tree[id].expression.is_some())
+        {
+            self.report(
+                id,
+                "wrong-value",
+                "a value of an enum def has no type or value of its own".into(),
+            );
         }
         if matches!(kind, ElementKind::Connection | ElementKind::Interface) {
             match element.ends.len() {
@@ -841,7 +1336,10 @@ impl<'a> Checker<'a> {
 
     /// (name, direction as seen from outside the port, type) of each directed
     /// feature of a port, with conjugation applied.
-    fn directed_features(&self, port: ElementId) -> Vec<(String, Direction, Option<ElementId>)> {
+    pub(crate) fn directed_features(
+        &self,
+        port: ElementId,
+    ) -> Vec<(String, Direction, Option<ElementId>)> {
         let conjugated = self.model.types_of(port).first().is_some_and(|(_, c)| *c);
         self.model
             .features(port)
@@ -918,12 +1416,16 @@ fn allowed_types(kind: ElementKind) -> &'static [ElementKind] {
         ConnectionDef,
         InterfaceDef,
         RequirementDef,
+        EnumDef,
     ];
     match kind {
         Part => &[PartDef],
         Item => &[ItemDef, PartDef],
         Port => &[PortDef],
-        Attribute => &[AttributeDef],
+        Attribute => &[AttributeDef, EnumDef],
+        Enum => &[EnumDef],
+        // What an `accept` takes in: an item, a part or a value.
+        Accept => &[ItemDef, PartDef, AttributeDef, EnumDef],
         Connection => &[ConnectionDef, InterfaceDef],
         Interface => &[InterfaceDef],
         Requirement => &[RequirementDef],

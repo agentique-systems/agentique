@@ -29,8 +29,8 @@ pub(crate) struct Token {
     pub column: u32,
 }
 
-const SYMBOLS: [&str; 11] = [
-    ":>>", "::>", "::", ":>", ":=", "..", "**", "=>", "->", "==", "!=",
+const SYMBOLS: [&str; 13] = [
+    ":>>", "::>", "::", ":>", ":=", "..", "**", "=>", "->", "==", "!=", "<=", ">=",
 ];
 
 pub(crate) fn tokenize(source: &str) -> Vec<Token> {

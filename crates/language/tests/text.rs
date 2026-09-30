@@ -28,11 +28,11 @@ fn unsupported_constructs_are_reported_and_kept_verbatim() {
     let text = "package P {
     action def Brake { action a; }
 
-    enum def Color { enum red; }
+    calc def Color { }
 
     part def Car {
         attribute color : Color;
-        attribute speed = 1 + 2;
+        attribute speed = wheels->size();
         perform action brake;
     }
 }
@@ -62,12 +62,12 @@ fn unsupported_constructs_are_reported_and_kept_verbatim() {
         "`action def` is not supported; it is kept as text and not validated"
     );
     assert!(
-        messages[2].contains("`Color` is an unsupported `enum def`"),
+        messages[2].contains("`Color` is an unsupported `calc def`"),
         "{}",
         messages[2]
     );
     assert!(
-        messages[3].starts_with("feature value expression"),
+        messages[3].starts_with("`->` function calls"),
         "{}",
         messages[3]
     );

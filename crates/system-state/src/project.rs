@@ -46,6 +46,9 @@ pub struct Project {
     /// Each document as printed from the model when it was last read or
     /// saved. A document whose print is unchanged keeps its saved text.
     printed: BTreeMap<String, String>,
+    /// The text of `model/links.json` (C-50): the implementation links,
+    /// owned by the Implementation part and saved here with the model.
+    links: Option<String>,
 }
 
 /// Why a project operation failed. The System State is unchanged.
@@ -172,6 +175,7 @@ impl Project {
             unmatched: Vec::new(),
             saved: BTreeMap::new(),
             printed: BTreeMap::new(),
+            links: None,
         };
         project.save()?;
         project.checkpoint(&format!("Create {name}"))?;
@@ -193,6 +197,7 @@ impl Project {
             unmatched: model.unmatched,
             saved: BTreeMap::new(),
             printed: BTreeMap::new(),
+            links: None,
         };
         project.adopt(files)?;
         Ok(project)
@@ -323,6 +328,24 @@ impl Project {
         Ok(event)
     }
 
+    /// The text of `model/links.json`, the project's implementation links
+    /// (C-50), if it has any. The Implementation part reads and writes it.
+    pub fn links(&self) -> Option<&str> {
+        self.links.as_deref()
+    }
+
+    /// Replaces `model/links.json` (or removes it with `None`) and saves it
+    /// with the model files, atomically. The model itself is unchanged, and
+    /// links are not part of model undo: they are saved as given.
+    pub fn save_links(&mut self, links: Option<String>) -> Result<(), ProjectError> {
+        let previous = std::mem::replace(&mut self.links, links);
+        if let Err(error) = self.save() {
+            self.links = previous;
+            return Err(error);
+        }
+        Ok(())
+    }
+
     /// Whether the model changed since the last checkpoint.
     pub fn has_uncommitted_changes(&self) -> Result<bool, ProjectError> {
         Ok(self.history.has_uncommitted_changes()?)
@@ -347,6 +370,7 @@ impl Project {
         let files = ModelFiles {
             documents,
             identities: identities(tree, self.state.locks()),
+            links: self.links.clone(),
         };
         self.history.save(&files)?;
         self.saved = files.documents;
@@ -361,12 +385,14 @@ impl Project {
         let identities = identities(self.state.tree(), self.state.locks());
         self.printed = print_documents(self.state.tree());
         self.saved = files.documents;
+        self.links = files.links;
         if (&identities.elements, &identities.locks)
             != (&files.identities.elements, &files.identities.locks)
         {
             self.history.save(&ModelFiles {
                 documents: self.saved.clone(),
                 identities,
+                links: self.links.clone(),
             })?;
         }
         Ok(())

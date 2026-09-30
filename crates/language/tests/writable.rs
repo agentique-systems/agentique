@@ -1,8 +1,8 @@
 //! `writable` agrees with the printer and the parser: an element it accepts
 //! prints and reads back as the same element, and one it refuses does not.
 use agq_language::{
-    Direction, Element, ElementId, ElementKind, Field, Literal, Multiplicity, Parent, Reference,
-    Tree, Visibility, parse, print, writable,
+    BinaryOp, Direction, Element, ElementId, ElementKind, Expression, Field, Literal, Multiplicity,
+    Parent, Reference, StateAction, Tree, Visibility, parse, print, writable,
 };
 
 const KINDS: [ElementKind; 21] = {
@@ -32,7 +32,7 @@ const KINDS: [ElementKind; 21] = {
     ]
 };
 
-const FIELDS: [Field; 17] = [
+const FIELDS: [Field; 23] = [
     Field::Name,
     Field::Visibility,
     Field::Abstract,
@@ -50,6 +50,12 @@ const FIELDS: [Field; 17] = [
     Field::By,
     Field::Text,
     Field::Members,
+    Field::Expression,
+    Field::Guard,
+    Field::Via,
+    Field::Exhibit,
+    Field::StateAction,
+    Field::After,
 ];
 
 fn named(text: &str) -> Reference {
@@ -97,6 +103,18 @@ fn with(mut e: Element, field: Field) -> Element {
         Field::By => e.by = Some(named("x")),
         Field::Text => e.text = Some("text".into()),
         Field::Members => {}
+        Field::Expression => {
+            e.expression = Some(Expression::binary(
+                BinaryOp::Add,
+                Expression::name("a"),
+                Expression::Literal(Literal::Integer("1".into())),
+            ))
+        }
+        Field::Guard => e.guard = Some(Expression::name("ready")),
+        Field::Via => e.via = Some(named("p")),
+        Field::Exhibit => e.exhibit = true,
+        Field::StateAction => e.state_action = Some(StateAction::Entry),
+        Field::After => e.after = true,
     }
     e
 }
@@ -124,15 +142,7 @@ fn reads_back(tree: &Tree) -> bool {
             .map(|id| {
                 let mut e = tree[id].clone();
                 e.location = None;
-                for reference in e
-                    .typed_by
-                    .iter_mut()
-                    .chain(&mut e.specializes)
-                    .chain(&mut e.redefines)
-                    .chain(&mut e.ends)
-                    .chain(&mut e.target)
-                    .chain(&mut e.by)
-                {
+                for reference in e.references_mut() {
                     reference.steps.iter_mut().for_each(|s| s.target = None);
                 }
                 (id, e)

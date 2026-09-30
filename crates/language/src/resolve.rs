@@ -240,6 +240,7 @@ impl<'a> Model<'a> {
                     (Role::Target, ElementKind::Import) => {
                         self.resolve_from(holder, &step.name, false)?
                     }
+                    (Role::Value, _) => self.resolve_value(holder, &step.name)?,
                     _ => self.resolve(holder, &step.name)?,
                 }
             } else if step.name.segments.len() > 1 {
@@ -339,6 +340,29 @@ impl<'a> Model<'a> {
             .split_first()
             .ok_or_else(|| LookupError::NotFound(String::new()))?;
         let mut found = self.lexical(holder, first, own_imports)?;
+        for segment in rest {
+            found = self.member(found, segment, holder)?;
+        }
+        Ok(found)
+    }
+
+    /// Resolves a name inside an expression held by `holder`: first among
+    /// the holder's own members (a transition's accepted payload), then as
+    /// any other name written there.
+    fn resolve_value(
+        &self,
+        holder: ElementId,
+        name: &QualifiedName,
+    ) -> Result<ElementId, LookupError> {
+        let (first, rest) = name
+            .segments
+            .split_first()
+            .ok_or_else(|| LookupError::NotFound(String::new()))?;
+        let own = self.owned(Some(holder), first);
+        if own.is_empty() {
+            return self.resolve(holder, name);
+        }
+        let mut found = self.one(first, own.to_vec())?;
         for segment in rest {
             found = self.member(found, segment, holder)?;
         }
@@ -477,9 +501,9 @@ impl<'a> Model<'a> {
     /// Outsiders see only public members; specialisations also protected ones.
     fn inherited_named(&self, namespace: ElementId, name: &str, access: Access) -> Vec<ElementId> {
         let kind = self.get(namespace).kind;
-        if !(kind.is_definition() || kind.is_usage())
-            || self.inheriting.borrow().contains(&namespace)
-        {
+        // An accepted payload has the features of its type (`job.code`).
+        let typed = kind.is_definition() || kind.is_usage() || kind == ElementKind::Accept;
+        if !typed || self.inheriting.borrow().contains(&namespace) {
             return Vec::new();
         }
         self.inheriting.borrow_mut().push(namespace);

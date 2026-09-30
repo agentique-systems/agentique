@@ -40,6 +40,10 @@ use std::path::{Path, PathBuf};
 
 /// The model folder inside a project folder.
 pub const MODEL_FOLDER: &str = "model";
+/// The implementation links and the harness binding of a project (C-50,
+/// ROADMAP §4.5 item 7): optional, saved and committed with the model files.
+/// History stores its text and never reads it.
+pub const LINKS_FILE: &str = "links.json";
 /// Held locked while a project is open; never committed.
 const LOCK_FILE: &str = "agentique.lock";
 /// Keeps files that exist only while saving or while the project is open out
@@ -58,6 +62,8 @@ pub struct ModelFiles {
     /// Relative path (with `/`, ending in `.sysml`) to SysML text.
     pub documents: BTreeMap<String, String>,
     pub identities: Identities,
+    /// The text of [`LINKS_FILE`], when the project has one; `None` removes it.
+    pub links: Option<String>,
 }
 
 #[derive(Debug, thiserror::Error)]
