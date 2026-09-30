@@ -85,6 +85,10 @@ package Notifications {
         connect dispatcher.gateway to gateway.requests;
     }
 
+    dependency from Dispatcher to SmsGateway {
+        doc /* The dispatcher sends through the gateway's contract. */
+    }
+
     requirement def DeliveredOnce {
         doc /* Every accepted notification is delivered at most once, and a
              * notification the gateway keeps refusing ends as failed.

@@ -133,8 +133,54 @@ pub fn run(
     cancel: Arc<AtomicBool>,
 ) -> RunResult {
     let started = Instant::now();
+    let mut result = begin(program, model_digest, request, &answers);
     let scenario = &program.scenario;
-    let mut result = RunResult {
+    match request.mode {
+        Mode::Walkthrough => walkthrough(program, &mut result),
+        Mode::Implementation => {
+            result.status = RunStatus::Blocked;
+            result.blockers.push((
+                scenario.element.raw(),
+                "an implementation run needs the project's harness; start it from the Implementation part".into(),
+            ));
+        }
+        Mode::Live => {
+            let label = match &answers {
+                Answers::Live(model) => model.label(),
+                _ => {
+                    result.status = RunStatus::Blocked;
+                    result.blockers.push((
+                        scenario.element.raw(),
+                        "a live evaluation needs a live model client, started explicitly by the Operator".into(),
+                    ));
+                    return result;
+                }
+            };
+            live(program, request, answers, &cancel, &mut result, label);
+        }
+        Mode::Model | Mode::Replay => {
+            let mut trace = Trace::default();
+            let (outcome, _calls, logical, events) =
+                once(program, request, answers, &cancel, &mut trace);
+            finish(&mut result, outcome, &mut trace);
+            result.logical_ms = logical;
+            result.events_processed = events;
+        }
+    }
+    result.wall_ms = started.elapsed().as_millis() as u64;
+    result
+}
+
+/// A result for `program`, not yet run: its identity, mode and provenance.
+/// Runners in other parts (the implementation runner) start from it.
+pub fn begin(
+    program: &Program,
+    model_digest: String,
+    request: &Request,
+    answers: &Answers,
+) -> RunResult {
+    let scenario = &program.scenario;
+    RunResult {
         format: result::FORMAT,
         id: new_run_id(),
         scenario: scenario.element.raw(),
@@ -162,48 +208,54 @@ pub fn run(
             seed: request.seed,
             implementation: None,
             live: None,
-            recordings: match &answers {
+            recordings: match answers {
                 Answers::Recordings(recordings) => Some(recordings.digest.clone()),
                 _ => None,
             },
         },
         live: None,
-    };
-    match request.mode {
-        Mode::Walkthrough => walkthrough(program, &mut result),
-        Mode::Implementation => {
-            result.status = RunStatus::Blocked;
-            result.blockers.push((
-                scenario.element.raw(),
-                "an implementation run needs the project's harness; start it from the Implementation part".into(),
-            ));
-        }
-        Mode::Live => {
-            let label = match &answers {
-                Answers::Live(model) => model.label(),
-                _ => {
-                    result.status = RunStatus::Blocked;
-                    result.blockers.push((
-                        scenario.element.raw(),
-                        "a live evaluation needs a live model client, started explicitly by the Operator".into(),
-                    ));
-                    return result;
-                }
-            };
-            live(program, request, answers, &cancel, &mut result, label);
-        }
-        Mode::Model | Mode::Replay => {
-            let mut trace = Trace::default();
-            let (outcome, calls, logical, events) =
-                once(program, request, answers, &cancel, &mut trace);
-            apply(&mut result, outcome, &mut trace);
-            result.logical_ms = logical;
-            result.events_processed = events;
-            let _ = calls;
-        }
     }
-    result.wall_ms = started.elapsed().as_millis() as u64;
-    result
+}
+
+/// Every check of the scenario as not run, for a run that stopped first.
+pub fn not_run_checks(program: &Program) -> Vec<CheckResult> {
+    program
+        .scenario
+        .steps
+        .iter()
+        .filter_map(|step| match step {
+            compile::Step::Check {
+                element,
+                name,
+                text,
+                ..
+            } => Some(CheckResult {
+                element: element.raw(),
+                name: name.clone(),
+                expression: text.clone(),
+                verdict: Verdict::NotRun,
+                message: "the run stopped before this check".into(),
+                deterministic: true,
+                samples: None,
+                implicit: false,
+            }),
+            _ => None,
+        })
+        .collect()
+}
+
+/// Puts the steps' outcome and the trace into the result.
+pub fn finish(result: &mut RunResult, outcome: script::Outcome, trace: &mut Trace) {
+    result.checks = outcome.checks;
+    if let Some(stop) = outcome.stop {
+        result.status = if stop.reason == StopReason::Cancelled {
+            RunStatus::Cancelled
+        } else {
+            RunStatus::Stopped
+        };
+        result.stop = Some(stop);
+    }
+    result.trace = std::mem::take(&mut trace.events);
 }
 
 /// One pass of the steps against the model engine.
@@ -224,29 +276,7 @@ fn once(
         }
         Err(stop) => {
             // Nothing ran: every check is not run.
-            let checks = program
-                .scenario
-                .steps
-                .iter()
-                .filter_map(|step| match step {
-                    compile::Step::Check {
-                        element,
-                        name,
-                        text,
-                        ..
-                    } => Some(CheckResult {
-                        element: element.raw(),
-                        name: name.clone(),
-                        expression: text.clone(),
-                        verdict: Verdict::NotRun,
-                        message: "the run stopped before this check".into(),
-                        deterministic: true,
-                        samples: None,
-                        implicit: false,
-                    }),
-                    _ => None,
-                })
-                .collect();
+            let checks = not_run_checks(program);
             trace.push(
                 0,
                 EventKind::Stopped,
@@ -265,19 +295,6 @@ fn once(
             )
         }
     }
-}
-
-fn apply(result: &mut RunResult, outcome: script::Outcome, trace: &mut Trace) {
-    result.checks = outcome.checks;
-    if let Some(stop) = outcome.stop {
-        result.status = if stop.reason == StopReason::Cancelled {
-            RunStatus::Cancelled
-        } else {
-            RunStatus::Stopped
-        };
-        result.stop = Some(stop);
-    }
-    result.trace = std::mem::take(&mut trace.events);
 }
 
 fn walkthrough(program: &Program, result: &mut RunResult) {

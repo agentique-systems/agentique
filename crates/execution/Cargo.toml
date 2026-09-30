@@ -8,6 +8,9 @@ description = "Execution: controlled side effects outside the System State, as j
 [dependencies]
 serde.workspace = true
 serde_json.workspace = true
+# Worktrees, patches and integration without a git install (the same embedded
+# git as History, without network features).
+git2 = { version = "0.21.0", default-features = false, features = ["vendored-libgit2"] }
 
 [dev-dependencies]
 tempfile.workspace = true

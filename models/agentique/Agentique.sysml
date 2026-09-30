@@ -111,7 +111,7 @@ package AgentiqueArchitecture {
         part languageCore : LanguageCore;
         part systemState : SystemState;
         part history : History;
-        part library : Library;
+        part 'library' : Library;
         part studio : Studio;
         part assistant : Assistant;
         part providers : Providers;
