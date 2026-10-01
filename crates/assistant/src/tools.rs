@@ -10,8 +10,16 @@
 //! The Library tools (`library`) find, read and use building blocks through
 //! the same Library service the Operator's Studio uses (C-49); saving to My
 //! Library waits for the Operator's confirmation.
+//!
+//! The factory tools (`factory`, C-50) read behaviour and scenarios, and
+//! ask the Studio to run scenarios, read their results, read the code
+//! links and check the implementation, through the services the Operator
+//! uses. Scenarios and state machines are written with `apply_changes`.
 
+mod factory;
 mod library;
+
+pub use factory::{StudioRequest, carry_out_headless};
 
 use agq_language::{
     Direction, Element, ElementId, ElementKind, Literal, Multiplicity, Parent, Reference, Tree,
@@ -30,6 +38,14 @@ pub const SEARCH_LIBRARY: &str = "search_library";
 pub const READ_LIBRARY_BLOCK: &str = "read_library_block";
 pub const USE_LIBRARY_BLOCK: &str = "use_library_block";
 pub const SAVE_TO_LIBRARY: &str = "save_to_library";
+pub const INSPECT_BEHAVIOUR: &str = "inspect_behaviour";
+pub const LIST_SCENARIOS: &str = "list_scenarios";
+pub const RUN_SCENARIO: &str = "run_scenario";
+pub const STOP_RUN: &str = "stop_run";
+pub const READ_RUN: &str = "read_run";
+pub const READ_CODE_LINKS: &str = "read_code_links";
+pub const CHECK_IMPLEMENTATION: &str = "check_implementation";
+pub const PROPOSE_IMPLEMENTATION: &str = "propose_implementation";
 
 /// The longest tool result the model reads, in characters: about 8,000
 /// tokens (R-34). Longer results are cut with a note on narrowing the
@@ -76,6 +92,16 @@ const KINDS: &[ElementKind] = &[
     ElementKind::Requirement,
     ElementKind::Subject,
     ElementKind::Satisfy,
+    ElementKind::EnumDef,
+    ElementKind::Enum,
+    // Behaviour and scenarios (C-50).
+    ElementKind::State,
+    ElementKind::Transition,
+    ElementKind::VerificationDef,
+    ElementKind::Send,
+    ElementKind::Accept,
+    ElementKind::AssertConstraint,
+    ElementKind::Reference,
 ];
 
 /// What the Studio should do with a tool call.
@@ -99,6 +125,9 @@ pub enum Prepared {
         question: String,
         saved: String,
     },
+    /// Something only the Studio can do with its own services (C-50): run
+    /// a scenario, read a result, read the code links, check the code.
+    Studio(StudioRequest),
     /// The input cannot be used: send the message back as an error result.
     Invalid(String),
 }
@@ -126,7 +155,29 @@ pub fn definitions() -> Value {
         "to": name("connect: the second end, e.g. \"store.links\"."),
         "definition": name("connect: the interface or connection definition that types it, e.g. \"LinkStorage\"."),
         "requirement": name("create satisfy: the requirement being satisfied."),
-        "by": name("create satisfy: the feature that satisfies it, e.g. \"shortener.store\".")
+        "by": name("create satisfy: the feature that satisfies it, e.g. \"shortener.store\"."),
+        "expression": name("create, set: an expression, as KerML writes it. send: what is sent, e.g. \"new ShortenRequest(longUrl = \\\"https://a.example/x\\\", host = \\\"a.example\\\")\"; accept with after: the time in ms; assert constraint: the condition, e.g. \"link.status == LinkStatus::held\"; ref or attribute: a value that is not a plain literal, e.g. \"service.screening\"."),
+        "via": name("create send or accept: the port, as a feature chain from the scenario or the part, e.g. \"service.shorten\"."),
+        "after": { "type": "boolean", "description": "create accept: wait for the time in `expression` to pass instead of for an item." },
+        "guard": name("create or set transition: the condition, e.g. \"attempts < 3\"."),
+        "exhibit": { "type": "boolean", "description": "create state: the state machine the owning part or part def exhibits (one per owner)." },
+        "initial": name("create exhibited state: the state it enters first (created with `then`)."),
+        "trigger": {
+            "type": "object",
+            "description": "create transition: what fires it, an item arriving (`type` and `via`, optionally a `name` for the guard and effect to use) or time passing (`after`, an expression in ms).",
+            "properties": { "name": name("The payload's name."), "type": name("The item type."), "via": name("The port."), "after": name("Milliseconds, as an expression.") },
+            "additionalProperties": false
+        },
+        "effect": {
+            "type": "object",
+            "description": "create transition: what it does, a `send` (an expression, with `via`) or an `assign` (a feature and its new `value` expression).",
+            "properties": { "send": name("What to send."), "via": name("The port."), "assign": name("The feature to set."), "value": name("Its new value.") },
+            "additionalProperties": false
+        },
+        "subject": name("create verification def: the type of the scenario's subject, e.g. \"UrlShortenerService\"; the subject is named after it (urlShortenerService) unless `subject_name` says otherwise."),
+        "subject_name": name("create verification def: the subject's name, e.g. \"service\"."),
+        "verifies": { "type": "array", "items": { "type": "string" }, "description": "create verification def: requirements (usages) it verifies." },
+        "features": { "type": "object", "description": "create part, create or set any usage: inherited features it redefines with values (:>>), e.g. a stand-in {\"target\": \"service.screening\", \"outcome\": \"Scenarios::Outcome::timeout\", \"latencyMs\": 50} or an agent's {\"minConfidence\": 0.8}. A number or true/false is a value; text is an expression (write text values in quotes).", "additionalProperties": { "type": ["string", "number", "boolean"] } }
     });
     json!([
         {
@@ -182,6 +233,79 @@ pub fn definitions() -> Value {
                     "options": { "type": "array", "items": { "type": "string" }, "description": "Suggested answers; the Operator may also answer freely." }
                 },
                 "required": ["question"],
+                "additionalProperties": false
+            }
+        },
+        {
+            "name": INSPECT_BEHAVIOUR,
+            "description": "How a part or part def behaves: what may go in and come out of each port (seen from outside), its state machine (states and transitions with their triggers, guards and effects), its agent settings if it is an agent, and the parts inside it a scenario may stand in for. Read it before writing a scenario or a state machine.",
+            "input_schema": {
+                "type": "object",
+                "properties": { "element": name("Qualified name of a part def or part usage.") },
+                "required": ["element"],
+                "additionalProperties": false
+            }
+        },
+        {
+            "name": LIST_SCENARIOS,
+            "description": "The model's scenarios (verification defs): subject, the requirements they verify, stand-ins and steps, one block per scenario.",
+            "input_schema": { "type": "object", "properties": {}, "additionalProperties": false }
+        },
+        {
+            "name": RUN_SCENARIO,
+            "description": "Run a scenario and wait for its result: model (the model's own behaviour with the scenario's stand-ins; deterministic, offline), replay (agents answer from kept recordings; stops at a missing one), walkthrough (shows the steps; verifies nothing) or implementation (the real code through the project's harness; only when the Operator allowed trusted-local execution). Live evaluation costs money and is started only by the Operator. The result says how it ended and why each check passed or failed.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "scenario": name("Qualified name of the verification def."),
+                    "mode": { "type": "string", "enum": ["model", "replay", "walkthrough", "implementation"], "description": "Default model." }
+                },
+                "required": ["scenario"],
+                "additionalProperties": false
+            }
+        },
+        {
+            "name": STOP_RUN,
+            "description": "Stop the scenario run in progress; it ends as cancelled.",
+            "input_schema": { "type": "object", "properties": {}, "additionalProperties": false }
+        },
+        {
+            "name": READ_RUN,
+            "description": "The newest result of a scenario in a mode, with whether it still describes the model, each check's verdict and reason, and the events before it ended.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "scenario": name("Qualified name of the verification def."),
+                    "mode": { "type": "string", "enum": ["model", "replay", "walkthrough", "implementation", "live"], "description": "Default model." }
+                },
+                "required": ["scenario"],
+                "additionalProperties": false
+            }
+        },
+        {
+            "name": READ_CODE_LINKS,
+            "description": "The code linked to the model (model/links.json): for an element, or all of them. Each link says which file (and symbol) implements, defines or tests the element. Also the newest implementation checks and the drift they found, if any.",
+            "input_schema": {
+                "type": "object",
+                "properties": { "element": name("Optional qualified name of one element.") },
+                "additionalProperties": false
+            }
+        },
+        {
+            "name": CHECK_IMPLEMENTATION,
+            "description": "Run the implementation checks and wait for them: module boundaries against the model's dependencies, contract shapes (Rust types against item and enum defs) and the linked tests. Builds and tests run only when the Operator allowed trusted-local execution; otherwise the tests are reported as not run.",
+            "input_schema": { "type": "object", "properties": {}, "additionalProperties": false }
+        },
+        {
+            "name": PROPOSE_IMPLEMENTATION,
+            "description": "Propose that a worker implements a part from the model, in a worktree of the code folder. The Operator sees what will happen and starts or declines it; the Operator reviews the patch before anything reaches the code. Answers when the Operator has decided (the task itself runs on).",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "element": name("Qualified name of the part def (or part) to implement."),
+                    "instructions": name("What the worker should know beyond the model, in plain words.")
+                },
+                "required": ["element"],
                 "additionalProperties": false
             }
         },
@@ -260,6 +384,16 @@ pub fn prepare(state: &SystemState, library: &Library, tool: &str, input: &Value
         READ_LIBRARY_BLOCK => library::read(state, library, input).map(Prepared::Answer),
         USE_LIBRARY_BLOCK => library::use_block(state, library, input).map(Prepared::Change),
         SAVE_TO_LIBRARY => library::save(state, library, input),
+        INSPECT_BEHAVIOUR => factory::inspect_behaviour(state.tree(), input).map(Prepared::Answer),
+        LIST_SCENARIOS => Ok(Prepared::Answer(factory::list_scenarios(state.tree()))),
+        RUN_SCENARIO
+        | STOP_RUN
+        | READ_RUN
+        | READ_CODE_LINKS
+        | CHECK_IMPLEMENTATION
+        | PROPOSE_IMPLEMENTATION => {
+            factory::studio_request(state.tree(), tool, input).map(Prepared::Studio)
+        }
         other => Err(format!("there is no tool called `{other}`")),
     };
     result.unwrap_or_else(Prepared::Invalid)
@@ -270,7 +404,11 @@ pub fn prepare(state: &SystemState, library: &Library, tool: &str, input: &Value
 /// The API does not check inputs that stream in as they are generated, so
 /// the input is checked here before anything runs.
 pub fn check_input(tool: &str, input: &Value) -> Result<(), String> {
-    let definitions = definitions();
+    check_input_against(&definitions(), tool, input)
+}
+
+/// [`check_input`] against another set of tool definitions (a worker's).
+pub fn check_input_against(definitions: &Value, tool: &str, input: &Value) -> Result<(), String> {
     let schema = definitions
         .as_array()
         .into_iter()
@@ -681,10 +819,16 @@ fn operations_of(tree: &Tree, item: &Value) -> Result<Vec<Operation>, String> {
                 element.by = optional_str(item, "by")?.map(Reference::new);
             }
             set_fields(&mut element, item)?;
-            Ok(vec![Operation::Create {
+            factory::behaviour_fields(&mut element, item)?;
+            let mut operations = vec![Operation::Create {
                 parent,
                 element: Box::new(element),
-            }])
+            }];
+            // What goes inside it: a subject and objective, a state
+            // machine's start, a transition's trigger and effect,
+            // redefined features.
+            operations.extend(factory::members(tree, tree.next_id(), kind, item)?);
+            Ok(operations)
         }
         "delete" => Ok(vec![Operation::Delete {
             element: find(tree, required_str(item, "element")?)?,
@@ -743,6 +887,24 @@ fn operations_of(tree: &Tree, item: &Value) -> Result<Vec<Operation>, String> {
             }
             if changed.value != old.value {
                 properties.push(Property::Value(changed.value.clone()));
+            }
+            if let Some(text) = optional_str(item, "expression")? {
+                properties.push(Property::Expression(Some(factory::expression(text)?)));
+            }
+            if let Some(text) = optional_str(item, "guard")? {
+                properties.push(Property::Guard(Some(factory::expression(text)?)));
+            }
+            if item.get("features").is_some() {
+                let features = factory::set_features(tree, element, item)?;
+                if properties.is_empty() && optional_str(item, "doc")?.is_none() {
+                    return Ok(features);
+                }
+                let mut operations: Vec<Operation> = properties
+                    .into_iter()
+                    .map(|property| Operation::Set { element, property })
+                    .collect();
+                operations.extend(features);
+                return Ok(operations);
             }
             if let Some(doc) = optional_str(item, "doc")? {
                 properties.push(Property::Doc(Some(doc.to_string())));

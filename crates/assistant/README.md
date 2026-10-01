@@ -23,7 +23,23 @@ hand-written Claude client still uses the network directly until W5.7.
   against the tool's schema (`check_input`), then `prepare` resolves names
   and tries every operation on a copy of the model before the change is
   handed over (ROADMAP §4.2).
-- `turn`: the tool-use loop for one turn of the Conversation.
+  The factory tools (C-50, `tools/factory.rs`): `apply_changes` also
+  writes behaviour and scenarios (verification defs with a subject and what
+  they verify, stand-ins and other redefined features, send, accept, time,
+  checks, state machines with transitions); `inspect_behaviour` and
+  `list_scenarios` read them; `run_scenario`, `stop_run`, `read_run`,
+  `read_code_links`, `check_implementation` and `propose_implementation`
+  are carried out by the Studio with its own services (`Prepared::Studio`).
+  A live evaluation is the Operator's to start; code runs only with
+  trusted-local execution.
+- `turn`: the tool-use loop for one turn of the Conversation, with a
+  `Toolset` (system prompt and tools).
+- `worker`: an implementation worker (W8.4): the same loop with code tools
+  (`list_files`, `read_code`, `write_code`, `run_checks`, `link_code`,
+  `request_contract_change`, `finish_implementation`) in one worktree,
+  never its protected paths; repair is bounded (6 rounds, stop after 3
+  without progress); its links wait for the Operator, and a wrong contract
+  goes back to the Operator.
 - `choice`: which model the Assistant uses (below).
 - `provider_model`: the model through `agq-providers` (DeepSeek, OpenAI,
   OpenRouter; Anthropic through rig too, though the Studio still uses

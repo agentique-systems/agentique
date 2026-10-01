@@ -287,6 +287,51 @@ impl Library {
                 .collect();
             lines.push(format!("Requirements: {}", requirements.join("; ")));
         }
+        // Behaviour it runs, and the scenarios that come with it (C-50).
+        let machine = semantics
+            .features(located.element)
+            .into_iter()
+            .chain(tree[located.element].children().iter().copied())
+            .find(|f| {
+                semantics
+                    .element(*f)
+                    .is_some_and(|e| e.kind == ElementKind::State && e.exhibit)
+            });
+        if let Some(machine) = machine {
+            let states = tree
+                .get(machine)
+                .map(|m| {
+                    m.children()
+                        .iter()
+                        .filter(|c| tree[**c].kind == ElementKind::State)
+                        .filter_map(|c| tree.effective_name(*c))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                })
+                .unwrap_or_default();
+            lines.push(format!(
+                "Behaviour: a state machine that runs in scenarios (states {states})."
+            ));
+        }
+        let scenarios: Vec<&str> = tree
+            .walk()
+            .into_iter()
+            .filter(|id| tree[*id].kind == ElementKind::VerificationDef)
+            .filter(|id| {
+                tree[*id].children().iter().any(|c| {
+                    tree[*c].kind == ElementKind::Subject
+                        && tree[*c].typed_by.first().and_then(|r| r.target())
+                            == Some(located.element)
+                })
+            })
+            .filter_map(|id| tree.effective_name(id))
+            .collect();
+        if !scenarios.is_empty() {
+            lines.push(format!(
+                "Scenarios that come with it: {}.",
+                scenarios.join(", ")
+            ));
+        }
         if summary.reference.scope != Scope::Project && !located.standard {
             match closure(tree, located.element) {
                 Ok(units) => {

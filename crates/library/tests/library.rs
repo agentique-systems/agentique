@@ -54,7 +54,8 @@ const SHOP: &str = "package Shop {
 
 #[test]
 fn the_built_in_library_is_valid_small_and_explained() {
-    assert!(validate(built_in()).is_empty());
+    let problems = validate(built_in());
+    assert!(problems.is_empty(), "{problems:#?}");
     let index = Index::build(&Library::built_in_only(), None);
     let blocks: Vec<_> = index
         .blocks()
@@ -62,7 +63,7 @@ fn the_built_in_library_is_valid_small_and_explained() {
         .filter(|b| b.reference.scope == Scope::BuiltIn && !b.standard)
         .collect();
     assert!(
-        (20..=40).contains(&blocks.len()),
+        (20..=60).contains(&blocks.len()),
         "a small curated library, not {} blocks",
         blocks.len()
     );
@@ -145,7 +146,7 @@ fn search_finds_blocks_by_name_purpose_and_ports() {
             .iter()
             .all(|h| index.blocks()[h.block].kind == ElementKind::PortDef)
     );
-    assert_eq!(ports.len(), 2);
+    assert_eq!(ports.len(), 5);
     let mine = index.search(&Query {
         scope: Some(Scope::Mine),
         ..Default::default()

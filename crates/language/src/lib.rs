@@ -33,6 +33,7 @@
 //! ```
 #![forbid(unsafe_code)]
 
+mod expression;
 mod lexer;
 mod library;
 mod parser;
@@ -43,14 +44,15 @@ mod tree;
 mod validate;
 mod writable;
 
+pub use expression::{Argument, BinaryOp, Expression, UnaryOp};
 pub use library::{LIBRARY_TEXT, library};
-pub use parser::{Source, parse};
-pub use printer::{print, print_element, printed_reference};
+pub use parser::{Source, parse, parse_expression};
+pub use printer::{print, print_element, print_expression, printed_reference};
 pub use resolve::link;
 pub use semantics::Semantics;
 pub use tree::{
     Direction, Document, Element, ElementId, ElementKind, Literal, Location, Multiplicity, Parent,
-    QualifiedName, Reference, Role, Step, Tree, TreeError, Visibility,
+    QualifiedName, Reference, Role, StateAction, Step, Tree, TreeError, Visibility,
 };
 pub use validate::{Diagnostic, validate};
 pub use writable::{Field, writable};

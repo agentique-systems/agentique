@@ -904,15 +904,10 @@ fn remove_keeping_names(tree: &mut Tree, element: ElementId) {
     }
 }
 
+/// The references of `Element::references`, in its order (expressions and
+/// `via` included), to change them.
 fn references_mut(element: &mut Element) -> impl Iterator<Item = &mut Reference> {
-    element
-        .typed_by
-        .iter_mut()
-        .chain(&mut element.specializes)
-        .chain(&mut element.redefines)
-        .chain(&mut element.ends)
-        .chain(&mut element.target)
-        .chain(&mut element.by)
+    element.references_mut().into_iter()
 }
 
 /// What an override sets.

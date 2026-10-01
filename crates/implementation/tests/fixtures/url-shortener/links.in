@@ -1,0 +1,28 @@
+// The links from the model `UrlShortener` to this repository, by element:
+// (qualified name without the package, kind, path, symbol). Included by the
+// proof test and by the Studio's sample "with its code".
+&[
+    ("LinkApi", "module", "src/api.rs", None),
+    ("LinkStore", "module", "src/store.rs", None),
+    ("LinkScreening", "module", "src/screening.rs", None),
+    ("BlocklistScreening", "module", "src/screening.rs", None),
+    ("UrlShortenerService", "module", "src/service.rs", None),
+    ("LinkStatus", "type", "src/model.rs", Some("LinkStatus")),
+    ("Decision", "type", "src/model.rs", Some("Decision")),
+    ("ResolveOutcome", "type", "src/model.rs", Some("ResolveOutcome")),
+    ("ShortenRequest", "type", "src/model.rs", Some("ShortenRequest")),
+    ("ShortLink", "type", "src/model.rs", Some("ShortLink")),
+    ("ResolveRequest", "type", "src/model.rs", Some("ResolveRequest")),
+    ("Resolution", "type", "src/model.rs", Some("Resolution")),
+    ("ReviewDecision", "type", "src/model.rs", Some("ReviewDecision")),
+    ("LinkQuery", "type", "src/model.rs", Some("LinkQuery")),
+    ("StatusChange", "type", "src/model.rs", Some("StatusChange")),
+    ("LinkRecord", "type", "src/model.rs", Some("LinkRecord")),
+    ("LinkCandidate", "type", "src/model.rs", Some("LinkCandidate")),
+    ("Verdict", "type", "src/model.rs", Some("Verdict")),
+    ("LinkStorePort", "schema", "src/ports.rs", Some("LinkStorePort")),
+    ("ScreeningPort", "schema", "src/ports.rs", Some("ScreeningPort")),
+    ("UrlShortenerService", "test", "tests/behaviour.rs", Some("a_confident_allow_redirects")),
+    ("reviewBeforeActivation", "test", "tests/behaviour.rs", Some("a_failed_or_unsure_screening_holds_the_link_until_approved")),
+    ("screenedLinks", "test", "tests/behaviour.rs", Some("a_block_stores_nothing_and_the_blocklist_blocks_when_the_agent_refuses")),
+]

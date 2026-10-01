@@ -1,5 +1,6 @@
 //! The Problems panel (§3.4): every problem in the model in plain words, at
-//! its element; a click selects the element's card and moves there.
+//! its element, then the drift current implementation checks found (C-50);
+//! a click selects the element's card and moves there.
 use crate::{
     studio::Studio,
     ui::{self, ActiveTheme, IconName, icon, r, theme},
@@ -20,22 +21,33 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
     };
     let system = project.state();
     let tree = system.tree();
-    let rows: Rc<Vec<(agq_language::ElementId, SharedString, SharedString)>> = Rc::new(
-        system
-            .diagnostics()
-            .iter()
-            .map(|diagnostic| {
-                let path = tree.get(diagnostic.element).map_or_else(String::new, |_| {
-                    crate::edit::display_path(tree, diagnostic.element)
-                });
-                (
-                    diagnostic.element,
-                    path.into(),
-                    diagnostic.message.clone().into(),
-                )
-            })
-            .collect(),
-    );
+    let path_of = |element| {
+        tree.get(element)
+            .map_or_else(String::new, |_| crate::edit::display_path(tree, element))
+    };
+    let mut all: Vec<(agq_language::ElementId, SharedString, SharedString, bool)> = system
+        .diagnostics()
+        .iter()
+        .map(|diagnostic| {
+            (
+                diagnostic.element,
+                path_of(diagnostic.element).into(),
+                diagnostic.message.clone().into(),
+                false,
+            )
+        })
+        .collect();
+    for (element, checks) in state.drift() {
+        for check in checks {
+            all.push((
+                element,
+                path_of(element).into(),
+                format!("Drift: {}", check.message).into(),
+                true,
+            ));
+        }
+    }
+    let rows = Rc::new(all);
     if rows.is_empty() {
         return div()
             .size_full()
@@ -56,7 +68,7 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
         let theme = cx.theme().clone();
         range
             .map(|index| {
-                let (id, path, message) = rows[index].clone();
+                let (id, path, message, drift) = rows[index].clone();
                 let studio = studio.clone();
                 div()
                     .id(("problem", index))
@@ -74,9 +86,15 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
                     .aria_label(SharedString::from(format!("{path}: {message}")))
                     .on_click(move |_: &ClickEvent, _, cx| super::show(&studio, id, cx))
                     .child(
-                        div()
-                            .pt(r(1.0))
-                            .child(icon(IconName::Warning).size(14.0).color(theme.warning.text)),
+                        div().pt(r(1.0)).child(
+                            icon(if drift {
+                                IconName::Drift
+                            } else {
+                                IconName::Warning
+                            })
+                            .size(14.0)
+                            .color(theme.warning.text),
+                        ),
                     )
                     .child(
                         div()

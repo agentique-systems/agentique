@@ -10,6 +10,9 @@ agq-language = { path = "../language" }
 agq-system-state = { path = "../system-state" }
 agq-library = { path = "../library" }
 agq-providers = { path = "../providers" }
+agq-simulation = { path = "../simulation" }
+agq-implementation = { path = "../implementation" }
+agq-execution = { path = "../execution" }
 serde.workspace = true
 serde_json.workspace = true
 # The Claude API client: blocking HTTPS with rustls, the response body read as it streams in.

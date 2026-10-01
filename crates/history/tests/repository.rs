@@ -13,6 +13,7 @@ fn model(text: &str) -> ModelFiles {
     ModelFiles {
         documents: [("Shop.sysml".to_owned(), text.to_owned())].into(),
         identities,
+        links: None,
     }
 }
 

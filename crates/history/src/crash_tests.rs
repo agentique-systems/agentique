@@ -21,6 +21,7 @@ fn model(documents: &[(&str, &str)], elements: &[(&str, &str)], locks: &[&str]) 
                 .collect(),
             locks: locks.iter().map(|id| id.to_string()).collect(),
         },
+        links: None,
     }
 }
 

@@ -1,0 +1,16 @@
+[package]
+name = "agq-implementation"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Implementation: implementation links, the implementation runner and the supported checks"
+
+[dependencies]
+agq-language = { path = "../language" }
+agq-simulation = { path = "../simulation" }
+agq-execution = { path = "../execution" }
+serde.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

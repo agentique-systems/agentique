@@ -23,9 +23,12 @@ state.apply(plan.change)?;                              // the Studio applies it
 - **Search** (`search.rs`): a fuzzy matcher that prefers word starts and runs
   and returns the matched characters; filters by scope, kind and a set of
   blocks (such as those that fit a port).
-- **Copy** (`copy.rs`): a block's dependency closure; the comparison that
-  finds identical copies; the plan of new elements with references pointing
-  at their targets by identity. Conflicts are reported, never overwritten.
+- **Copy** (`copy.rs`): a block's dependency closure, with the scenarios
+  whose subject a copied definition types (a block carries its behaviour and
+  the scenarios that show it, C-50); the comparison that finds identical
+  copies; the plan of new elements with every reference, those in
+  expressions and `via` included, pointing at its target by identity.
+  Conflicts are reported, never overwritten.
 - **Plans** (`plan.rs`): using a block (copy, usage, values, connection),
   specialising, overriding by redefinition, extracting a block from a
   selection, saving to and removing from My Library. Each project change is
@@ -36,4 +39,5 @@ state.apply(plan.change)?;                              // the Studio applies it
   the structural preview the Studio draws.
 
 The built-in blocks are validated by the tests; keep them few, neutral and
-documented (§1.3).
+documented (§1.3). `Resilience::RetryingWorker` and `Moderation` (an agent
+with a deterministic fallback) carry state machines and scenarios that run.

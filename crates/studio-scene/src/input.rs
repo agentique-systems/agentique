@@ -91,6 +91,9 @@ pub struct InputNode {
     /// card of their own.
     pub problems: usize,
     pub origin: NodeOrigin,
+    /// A short mark of what the element is beyond its keyword, from the
+    /// model: `agent · fast` for a part that specialises `Agents::Agent`.
+    pub badge: Option<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -214,6 +217,40 @@ pub fn detail(element: &Element) -> String {
     out.trim().to_string()
 }
 
+/// `agent · <mode>` for a part def that specialises `Agents::Agent`, or a
+/// part typed by one; from the model, never from a name.
+fn agent_badge(
+    tree: &Tree,
+    semantics: &agq_language::Semantics,
+    agent: Option<ElementId>,
+    id: ElementId,
+) -> Option<String> {
+    let agent = agent?;
+    let element = tree.get(id)?;
+    let definition = match element.kind {
+        ElementKind::PartDef => id,
+        ElementKind::Part => semantics.types_of(id).first()?.0,
+        _ => return None,
+    };
+    if definition == agent || !semantics.specializes(definition, agent) {
+        return None;
+    }
+    let mode = semantics
+        .features(definition)
+        .into_iter()
+        .filter_map(|f| semantics.element(f))
+        .find(|e| e.redefines.iter().any(|r| r.last_name() == "mode"))
+        .and_then(|e| e.expression.as_ref())
+        .and_then(|x| match x {
+            agq_language::Expression::Name(reference) => Some(reference.last_name().to_string()),
+            _ => None,
+        });
+    Some(match mode {
+        Some(mode) => format!("agent · {mode}"),
+        None => "agent".to_string(),
+    })
+}
+
 impl SceneInput {
     /// Builds the input from a tree. `locks` are the elements that carry a
     /// lock; `problems` counts the problems reported at each element.
@@ -224,6 +261,8 @@ impl SceneInput {
         generation: u64,
     ) -> Self {
         let order = tree.walk();
+        let semantics = agq_language::Semantics::new(tree);
+        let agent = semantics.resolve("Agents::Agent");
         let lock = |id: ElementId| {
             if locks.contains(&id) {
                 return LockMark::Own;
@@ -245,10 +284,22 @@ impl SceneInput {
                     .owner()
                     .is_some_and(|owner| tree[owner].kind != ElementKind::Package)
         };
+        // What a scenario sets up (its stand-ins) is shown with the
+        // scenario, not as architecture (C-50).
+        let in_scenario = |id: ElementId| {
+            let mut current = tree.get(id).and_then(Element::owner);
+            while let Some(owner) = current {
+                if tree[owner].kind == ElementKind::VerificationDef {
+                    return true;
+                }
+                current = tree.get(owner).and_then(Element::owner);
+            }
+            false
+        };
         let shown: BTreeSet<ElementId> = order
             .iter()
             .copied()
-            .filter(|id| category(tree[*id].kind).is_some() && !line(*id))
+            .filter(|id| category(tree[*id].kind).is_some() && !line(*id) && !in_scenario(*id))
             .collect();
         // The nearest shown element at or above each element.
         let card_of = |mut id: ElementId| -> Option<ElementId> {
@@ -352,6 +403,7 @@ impl SceneInput {
                     .to_string();
             }
             nodes.push(InputNode {
+                badge: agent_badge(tree, &semantics, agent, id),
                 id,
                 kind: category(element.kind).expect("shown elements have a category"),
                 keyword: element.kind.keyword(),
@@ -659,5 +711,48 @@ mod tests {
         assert_eq!(edge.label, "a.p → b.q");
         assert_eq!(edge.lock, LockMark::Covered);
         assert_eq!(edge.source.port, Some(a.ports[0].id));
+    }
+
+    #[test]
+    fn an_agent_is_marked_with_its_mode() {
+        let tree = fixtures::tree(
+            "package P {
+    part def Checker :> Agents::Agent { :>> mode = Agents::AgentMode::fast; }
+    part def Plain;
+    part def S { part checker : Checker; part plain : Plain; }
+}",
+        );
+        let input = SceneInput::from_tree(&tree, &BTreeSet::new(), &BTreeMap::new(), 1);
+        let badge = |name: &str| {
+            input
+                .nodes
+                .iter()
+                .find(|n| n.name == name)
+                .unwrap()
+                .badge
+                .clone()
+        };
+        assert_eq!(badge("Checker").as_deref(), Some("agent · fast"));
+        assert_eq!(badge("checker").as_deref(), Some("agent · fast"));
+        assert_eq!(badge("plain"), None);
+    }
+
+    #[test]
+    fn what_a_scenario_sets_up_is_not_architecture() {
+        let tree = fixtures::tree(
+            "package P {
+    part def S { part worker; }
+    verification def Works {
+        subject s : S;
+        part slow : S;
+    }
+}",
+        );
+        let input = SceneInput::from_tree(&tree, &BTreeSet::new(), &BTreeMap::new(), 1);
+        assert!(input.nodes.iter().any(|n| n.name == "worker"));
+        assert!(
+            input.nodes.iter().all(|n| n.name != "slow"),
+            "the scenario's part is not a card"
+        );
     }
 }

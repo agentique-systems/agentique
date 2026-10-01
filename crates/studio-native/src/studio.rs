@@ -31,6 +31,8 @@ pub type TypeOptions = Vec<(agq_language::ElementKind, String, agq_language::Ref
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Panel {
     Inspector,
+    /// The selected scenario, its runs and its trace (C-50).
+    Run,
     Requirements,
     History,
     Problems,
@@ -102,6 +104,8 @@ pub enum LeftTab {
     #[default]
     Outline,
     Library,
+    /// The project's scenarios (C-50).
+    Scenarios,
 }
 
 /// The theme the Studio shows: dark or light, and high contrast.
@@ -198,6 +202,10 @@ pub struct Studio {
     pub surface_size: Option<(f32, f32)>,
     /// The Conversation with the Assistant, for the open project.
     pub conversation: crate::conversation::ConversationPanel,
+    /// Scenarios, runs and their traces (C-50).
+    pub runs: crate::runs::RunsState,
+    /// Implementation links, checks and drift (C-50).
+    pub implementation: crate::implementation::ImplementationState,
     last_saved: Instant,
     /// What changed since the views last heard.
     dirty: Dirty,
@@ -300,6 +308,8 @@ impl Studio {
             fit_pending: true,
             surface_size: None,
             conversation,
+            runs: Default::default(),
+            implementation: Default::default(),
             last_saved: Instant::now(),
             dirty: Dirty::ALL,
         };
@@ -389,6 +399,15 @@ impl Studio {
             can_redo: state.is_some_and(|s| s.redo_description().is_some()),
             graph_view: self.view == SurfaceView::Graph,
             focused: self.focus.is_some() || !self.drill.is_empty(),
+            scenario: self.runs.selected.is_some(),
+            running: self.runs.running()
+                || self.implementation.checking()
+                || self.implementation.task.is_some(),
+            trace: self
+                .runs
+                .result
+                .as_ref()
+                .is_some_and(|r| !r.trace.is_empty()),
         }
     }
 
@@ -528,11 +547,11 @@ impl Studio {
 
     /// Creates a project holding the URL shortener sample (R-46): a new
     /// project whose model is then replaced by the sample and read again.
-    pub fn create_sample(&mut self, folder: &Path, name: &str) {
+    pub fn create_sample(&mut self, folder: &Path, name: &str, sample: Sample) {
         self.create_project(folder, name);
         let Some(project) = &self.project else { return };
         let file = project.folder().join("model").join(format!("{name}.sysml"));
-        let text = SAMPLE.replace(
+        let text = sample.text().replace(
             &format!("package {SAMPLE_NAME}"),
             &format!("package {name}"),
         );
@@ -542,6 +561,13 @@ impl Studio {
         }
         let folder = project.folder().to_path_buf();
         self.open_project(&folder);
+        if sample == Sample::ScreeningWithCode
+            && self.project.is_some()
+            && let Err(why) = self.create_sample_code(name)
+        {
+            self.status = format!("The sample's code could not be written: {why}");
+            return;
+        }
         if self.project.is_some() {
             // The camera remembered for the empty project does not fit it.
             self.fit_pending = true;
@@ -584,6 +610,7 @@ impl Studio {
         self.comparison = None;
         self.highlights.clear();
         self.history = Default::default();
+        self.runs = Default::default();
         match remembered.camera {
             Some(camera) => {
                 self.camera = camera;
@@ -611,6 +638,7 @@ impl Studio {
             )
         };
         self.refresh();
+        self.load_checks();
         self.save_session();
     }
 
@@ -682,6 +710,12 @@ impl Studio {
             && comparison.after_is_now
         {
             comparison.update_now(project.state().tree(), &self.input);
+        }
+        // Results and checks describe a version of the model: say so when
+        // it changed, or changed back (undo).
+        if self.project.is_some() {
+            self.refresh_run_freshness();
+            self.refresh_check_freshness_for_model();
         }
         self.rebuild();
     }
@@ -1186,6 +1220,47 @@ impl Studio {
             HidePanels => self.panels_hidden = !self.panels_hidden,
             ShowOutline => self.outline_hidden = !self.outline_hidden,
             ShowInspector => self.inspector_hidden = !self.inspector_hidden,
+            ShowScenarios => {
+                self.left = LeftTab::Scenarios;
+                self.outline_hidden = false;
+                self.panels_hidden = false;
+            }
+            NewScenario => self.start_new_scenario(),
+            RunScenario => {
+                let mode = self.runs.mode();
+                if mode == agq_simulation::Mode::Live {
+                    self.runs.confirm_live = true;
+                    self.dialog = Some(crate::edit::Dialog::ConfirmLive);
+                } else {
+                    self.start_run(mode);
+                }
+            }
+            StopRun => {
+                self.stop_run();
+                self.stop_checks();
+                self.stop_task();
+            }
+            TraceFirst => {
+                self.runs.playing = false;
+                let first = self.runs.visible_events().first().copied();
+                self.set_cursor(first);
+            }
+            TraceBack => {
+                self.runs.playing = false;
+                self.step_cursor(false);
+            }
+            TracePlay => self.toggle_playback(),
+            TraceForward => {
+                self.runs.playing = false;
+                self.step_cursor(true);
+            }
+            TraceLast => {
+                self.runs.playing = false;
+                let last = self.runs.visible_events().last().copied();
+                self.set_cursor(last);
+            }
+            CheckImplementation => self.start_checks(),
+            TrustLocal => self.dialog = Some(crate::edit::Dialog::TrustLocal),
             Settings => {
                 if self.settings_open {
                     self.settings_open = false;
@@ -1366,7 +1441,149 @@ pub fn needs_attention(was_working: bool, working: bool, focused: Option<bool>) 
 
 /// The URL shortener of Scenario A, offered on the first run (R-46).
 pub const SAMPLE: &str = include_str!("../../../models/url-shortener/UrlShortener.sysml");
+/// The URL shortener whose links an AI agent screens, with its scenarios:
+/// Scenario I (C-50).
+pub const SCREENING_SAMPLE: &str =
+    include_str!("../../../models/link-screening/UrlShortener.sysml");
 pub const SAMPLE_NAME: &str = "UrlShortener";
+
+/// The samples a project can start from.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Sample {
+    /// Scenario A's URL shortener (R-46).
+    UrlShortener,
+    /// The URL shortener with AI screening and its scenarios (C-50).
+    Screening,
+    /// The same, with its code in a repository beside the project, linked
+    /// and with a harness, so its scenarios run against real code (C-50).
+    ScreeningWithCode,
+}
+
+impl Sample {
+    pub fn text(self) -> &'static str {
+        match self {
+            Sample::UrlShortener => SAMPLE,
+            Sample::Screening | Sample::ScreeningWithCode => SCREENING_SAMPLE,
+        }
+    }
+}
+
+/// The URL shortener's code (the implementation fixture), file by file.
+const SAMPLE_CODE: &[(&str, &str)] = &[
+    (
+        "Cargo.toml",
+        include_str!("../../implementation/tests/fixtures/url-shortener/Cargo.toml"),
+    ),
+    (
+        "src/lib.rs",
+        include_str!("../../implementation/tests/fixtures/url-shortener/src/lib.rs"),
+    ),
+    (
+        "src/api.rs",
+        include_str!("../../implementation/tests/fixtures/url-shortener/src/api.rs"),
+    ),
+    (
+        "src/json.rs",
+        include_str!("../../implementation/tests/fixtures/url-shortener/src/json.rs"),
+    ),
+    (
+        "src/model.rs",
+        include_str!("../../implementation/tests/fixtures/url-shortener/src/model.rs"),
+    ),
+    (
+        "src/ports.rs",
+        include_str!("../../implementation/tests/fixtures/url-shortener/src/ports.rs"),
+    ),
+    (
+        "src/screening.rs",
+        include_str!("../../implementation/tests/fixtures/url-shortener/src/screening.rs"),
+    ),
+    (
+        "src/service.rs",
+        include_str!("../../implementation/tests/fixtures/url-shortener/src/service.rs"),
+    ),
+    (
+        "src/store.rs",
+        include_str!("../../implementation/tests/fixtures/url-shortener/src/store.rs"),
+    ),
+    (
+        "src/bin/agentique-harness.rs",
+        include_str!(
+            "../../implementation/tests/fixtures/url-shortener/src/bin/agentique-harness.rs"
+        ),
+    ),
+    (
+        "tests/behaviour.rs",
+        include_str!("../../implementation/tests/fixtures/url-shortener/tests/behaviour.rs"),
+    ),
+];
+
+/// Its links to the model, by name.
+const SAMPLE_LINKS: &[(&str, &str, &str, Option<&str>)] =
+    include!("../../implementation/tests/fixtures/url-shortener/links.in");
+
+impl Studio {
+    /// Writes the sample's code beside the project (`<name>-code`), commits
+    /// it, and links it to the model.
+    fn create_sample_code(&mut self, name: &str) -> Result<(), String> {
+        let project = self.project.as_ref().ok_or("No project is open.")?;
+        let folder = project.folder().to_path_buf();
+        let code_name = format!("{name}-code");
+        let code = folder.with_file_name(&code_name);
+        if code.exists() {
+            return Err(format!(
+                "{} already exists; the code was not written.",
+                code.display()
+            ));
+        }
+        for (path, text) in SAMPLE_CODE {
+            let file = code.join(path);
+            std::fs::create_dir_all(file.parent().expect("a file has a folder"))
+                .map_err(|e| e.to_string())?;
+            std::fs::write(&file, text).map_err(|e| e.to_string())?;
+        }
+        std::fs::write(code.join(".gitignore"), "/target\n").map_err(|e| e.to_string())?;
+        agq_execution::git::init_and_commit(&code, "The URL shortener, implemented from its model")
+            .map_err(|e| e.to_string())?;
+        let tree = project.state().tree();
+        let package = tree
+            .documents()
+            .first()
+            .and_then(|d| d.members().first().copied());
+        let package = package
+            .and_then(|p| tree.effective_name(p))
+            .unwrap_or(SAMPLE_NAME)
+            .to_string();
+        let mut links = agq_implementation::Links {
+            repository: format!("../{code_name}"),
+            language: "Rust".into(),
+            harness: [
+                "cargo",
+                "run",
+                "--quiet",
+                "--offline",
+                "--bin",
+                "agentique-harness",
+            ]
+            .map(String::from)
+            .to_vec(),
+            protected: vec!["tests/behaviour.rs".into()],
+            ..Default::default()
+        };
+        for (element, kind, path, symbol) in SAMPLE_LINKS {
+            let Some(id) = tree.find(&format!("{package}::{element}")) else {
+                continue;
+            };
+            if let Some(kind) = agq_implementation::LinkKind::ALL
+                .into_iter()
+                .find(|k| k.key() == *kind)
+            {
+                links.add(tree, id, kind, path, *symbol);
+            }
+        }
+        self.save_implementation_links(&links)
+    }
+}
 
 #[cfg(test)]
 mod attention_tests {

@@ -113,13 +113,26 @@ dependencies = [
 name = "agq-assistant"
 version = "0.1.0"
 dependencies = [
+ "agq-execution",
+ "agq-implementation",
  "agq-language",
  "agq-library",
  "agq-providers",
+ "agq-simulation",
  "agq-system-state",
  "reqwest 0.12.28",
  "serde",
  "serde_json",
+]
+
+[[package]]
+name = "agq-execution"
+version = "0.1.0"
+dependencies = [
+ "git2",
+ "serde",
+ "serde_json",
+ "tempfile",
 ]
 
 [[package]]
@@ -131,6 +144,18 @@ dependencies = [
  "serde_json",
  "tempfile",
  "thiserror 2.0.20",
+]
+
+[[package]]
+name = "agq-implementation"
+version = "0.1.0"
+dependencies = [
+ "agq-execution",
+ "agq-language",
+ "agq-simulation",
+ "serde",
+ "serde_json",
+ "tempfile",
 ]
 
 [[package]]
@@ -162,13 +187,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "agq-simulation"
+version = "0.1.0"
+dependencies = [
+ "agq-language",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+]
+
+[[package]]
 name = "agq-studio-native"
 version = "0.1.0"
 dependencies = [
  "agq-assistant",
+ "agq-execution",
+ "agq-implementation",
  "agq-language",
  "agq-library",
  "agq-providers",
+ "agq-simulation",
  "agq-studio-scene",
  "agq-system-state",
  "clap",

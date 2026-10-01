@@ -79,13 +79,31 @@ package AgentiqueArchitecture {
     }
 
     part def Simulation {
-        doc /* Stage 7: scenarios run over the architecture, with runs, traces and
-             * separate check verdicts. No crate yet. */
+        doc /* Runs scenarios (C-50, ROADMAP §4.14): compiles a scenario and a fixed model
+             * snapshot into disposable runtime structures and executes them with
+             * stand-ins, recordings or a live model client it is given; records traces,
+             * check verdicts and results with provenance, and works out freshness. It
+             * never changes the System State and never reaches a provider or any other
+             * service by itself. */
+        part 'agq-simulation' : Crate;
     }
 
-    part def ImplementationLinks {
-        doc /* Stage 8: links from model elements to code and tests, and drift checks.
-             * No crate yet. */
+    part def Implementation {
+        doc /* What the model says about code (C-50, ROADMAP §4.15): implementation links,
+             * code-to-model lookup, the implementation runner that drives real code
+             * through the project's harness, and the supported checks (dependency
+             * boundaries, mapped contract shapes, linked tests), whose failures are
+             * drift. Its processes run through Execution. */
+        part 'agq-implementation' : Crate;
+    }
+
+    part def Execution {
+        doc /* Controlled side effects outside the System State (C-50, ROADMAP §4.15):
+             * repository reads, scoped writes in a worktree, allow-listed commands with
+             * scrubbed environments, worktrees and integration, as jobs with journals
+             * that can be cancelled and resumed without repeating a completed side
+             * effect. It reports the isolation the host really offers. */
+        part 'agq-execution' : Crate;
     }
 
     part def Agentique {
@@ -93,12 +111,13 @@ package AgentiqueArchitecture {
         part languageCore : LanguageCore;
         part systemState : SystemState;
         part history : History;
-        part library : Library;
+        part 'library' : Library;
         part studio : Studio;
         part assistant : Assistant;
         part providers : Providers;
         part simulation : Simulation;
-        part implementationLinks : ImplementationLinks;
+        part implementation : Implementation;
+        part execution : Execution;
     }
 
     // Allowed dependencies, client to supplier. A crate may use crates of its own part
@@ -128,6 +147,25 @@ package AgentiqueArchitecture {
     dependency from Assistant to Library {
         doc /* The Library tools: search, read and use building blocks. */
     }
+    dependency from Studio to Simulation {
+        doc /* The Scenarios tab, run controls, traces and results (C-50). */
+    }
+    dependency from Studio to Implementation {
+        doc /* Implementation links, checks, drift and patch review (C-50). */
+    }
+    dependency from Studio to Execution {
+        doc /* Jobs the Studio starts, cancels and resumes; trusted-local mode (C-50). */
+    }
+    dependency from Assistant to Simulation {
+        doc /* The run tools prepare typed run requests and read results (C-50). */
+    }
+    dependency from Assistant to Implementation {
+        doc /* The code-link tools and the implementation task context (C-50). */
+    }
+    dependency from Assistant to Execution {
+        doc /* The implementation tools prepare typed operations; the Studio carries
+             * them out (C-50). */
+    }
     dependency from Library to SystemState {
         doc /* Plans are System State changes, tried on a copy of the state. */
     }
@@ -136,6 +174,19 @@ package AgentiqueArchitecture {
     }
     dependency from SystemState to LanguageCore;
     dependency from SystemState to History;
-    dependency from Simulation to LanguageCore;
-    dependency from ImplementationLinks to SystemState;
+    dependency from Simulation to LanguageCore {
+        doc /* Scenarios, behaviour and expressions are model elements; runs read a
+             * snapshot of the tree. */
+    }
+    dependency from Implementation to LanguageCore {
+        doc /* Links name elements by identity; contract shapes come from item and enum
+             * definitions. */
+    }
+    dependency from Implementation to Simulation {
+        doc /* The implementation runner shares the run contract, the step interpreter
+             * and the check evaluator with model execution. */
+    }
+    dependency from Implementation to Execution {
+        doc /* Builds, tests and the harness run as controlled processes. */
+    }
 }

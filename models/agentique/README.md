@@ -15,8 +15,8 @@ the architecture changes, update the model first, in the same change.
   transitive, so a shortcut around the System State shows up in the model.
 - A dependency that exists only because of code due for retirement is marked
   temporary in its `doc`.
-- Simulation (Stage 7) and ImplementationLinks (Stage 8) are planned parts
-  without crates.
+- Simulation, Implementation and Execution (C-50, Stages 7–8) have crates;
+  every part now has at least one.
 
 ## Check
 

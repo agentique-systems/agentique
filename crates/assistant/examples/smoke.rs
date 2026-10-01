@@ -96,6 +96,10 @@ fn execute(state: &mut SystemState, call: &ToolCall) -> ToolResult {
     match tools::prepare(state, &Library::built_in_only(), &call.name, &call.input) {
         Prepared::Answer(text) => ToolResult::answer(text),
         Prepared::Invalid(message) => ToolResult::error(message),
+        Prepared::Studio(request) => match tools::carry_out_headless(state.tree(), &request) {
+            Ok(text) => ToolResult::answer(text),
+            Err(message) => ToolResult::error(message),
+        },
         Prepared::Question { question, .. } => {
             println!("\n[question] {question}\n[answer] Decide as you think best.");
             ToolResult::answer("Decide as you think best.")

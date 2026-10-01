@@ -324,6 +324,12 @@ fn execute(
     ) {
         Prepared::Answer(text) => ToolResult::answer(text),
         Prepared::Invalid(message) => ToolResult::error(message),
+        Prepared::Studio(request) => {
+            match tools::carry_out_headless(project.state().tree(), &request) {
+                Ok(text) => ToolResult::answer(text),
+                Err(message) => ToolResult::error(message),
+            }
+        }
         Prepared::Question { question, options } => {
             let answer = if question.to_lowercase().contains("statistic") {
                 options

@@ -41,6 +41,8 @@ struct Sample {
     changed: Option<agq_studio_scene::ElementId>,
     /// What the sample frames: a container, or the whole model.
     framed: agq_studio_scene::Rect,
+    /// Run and drift marks (C-50).
+    marks: BTreeMap<agq_studio_scene::ElementId, crate::runs::Mark>,
 }
 
 impl Sample {
@@ -71,7 +73,15 @@ impl Sample {
             scene: Rc::new(scene),
             selected,
             changed,
+            marks: BTreeMap::new(),
         }
+    }
+
+    /// The same sample with each mark on the next card, in order.
+    fn marked(mut self, marks: &[crate::runs::Mark]) -> Sample {
+        let cards = self.scene.nodes.iter().filter(|n| !n.is_container);
+        self.marks = cards.map(|n| n.id()).zip(marks.iter().copied()).collect();
+        self
     }
 }
 
@@ -254,6 +264,20 @@ fn samples() -> Vec<(&'static str, Rc<Sample>)> {
         samples.push((
             "What changed: added, changed and removed",
             Rc::new(Sample::new(scene, "UrlShortenerService", None, None)),
+        ));
+    }
+    if let Ok(scene) = Scene::build(&architecture(fixtures::architecture()), &options, None) {
+        use crate::runs::Mark;
+        samples.push((
+            "A run and drift: visited (thin ring), where the trace is (solid), where it failed (dashed, dot), drift (dashed amber, dot)",
+            Rc::new(
+                Sample::new(scene, "UrlShortenerService", None, None).marked(&[
+                    Mark::Visited,
+                    Mark::Current,
+                    Mark::Failed,
+                    Mark::Drift,
+                ]),
+            ),
         ));
     }
     samples
@@ -1187,6 +1211,7 @@ impl Gallery {
                                             reduced_motion: true,
                                             theme: theme.clone(),
                                             ui_scale: f32::from(window.rem_size()) / 16.0,
+                                            marks: Rc::new(sample.marks.clone()),
                                         }
                                     },
                                     |bounds, frame, window, cx| {

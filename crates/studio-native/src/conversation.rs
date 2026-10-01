@@ -270,7 +270,7 @@ fn unused_name(path: &Path) -> PathBuf {
 }
 
 /// The app's data for the project in `folder`.
-fn project_data(session: &Path, folder: &Path) -> PathBuf {
+pub(crate) fn project_data(session: &Path, folder: &Path) -> PathBuf {
     let folder = std::fs::canonicalize(folder).unwrap_or_else(|_| folder.to_path_buf());
     // FNV-1a: stable across runs and Rust versions.
     let hash = folder
@@ -578,6 +578,7 @@ impl Studio {
         ) {
             Prepared::Answer(text) => answer(ToolResult::answer(text)),
             Prepared::Invalid(message) => answer(ToolResult::error(message)),
+            Prepared::Studio(request) => self.carry_out_request(request, reply),
             Prepared::SaveToLibrary {
                 plan,
                 question,

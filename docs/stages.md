@@ -806,3 +806,213 @@ need a Windows call); the welcome shows until a first project is opened.
    cargo build -p agq-studio-native --features automation
    target\debug\agq-studio-native.exe --no-restore --session %TEMP%\agq-h\session.json --scenario h-library --project %TEMP%\agq-h\demo --gallery %TEMP%\agq-h\shots
    ```
+
+## Stages 7–8: the factory loop, with agents (C-50)
+
+Status: **in progress.** Built on 2026-09-30 and 2026-10-01 in one session
+under the Operator's direction of 2026-09-30 (C-50), on the branch
+`stage7-8/factory-loop` (not merged). The milestones M1–M4 work end to end in
+the tests, the journeys and two live runs; nothing here says the Operator
+accepted anything. The decisions taken while building are in ROADMAP §7.6
+(2026-09-30 and 2026-10-01), each pending the Operator.
+
+**Built**, by work item
+
+- **W6.9 Agents in the language** (`491c819a`): `enum def` and values, the
+  built-in `Agents` library (`AgentMode`, `AgentOutput`, `Agent` with mode,
+  model, `minConfidence`, `maxLatencyMs`, `maxCostPerCallUsd`, `fallback`),
+  `wrong-fallback` and `agent-fallback`, deviation 12, the subset manifest.
+- **W6.10, part**: agents are marked `agent · <mode>` on the Surface; the
+  Inspector's Agent section lists the settings with what is inherited, and
+  says what counts as a failure. The self-model validates under our own core
+  and its crates are checked against it (`tests/dogfood.rs`).
+- **W7.1** (`491c819a`): expressions as identity-linked references, the
+  behaviour subset (exhibited state machines, transitions with triggers,
+  guards and effects, send, assign, if, accept, time), verification defs as
+  scenarios, the `Scenarios` library (`Outcome`, `StandIn`), System State
+  properties for each new field; `parse_expression` for the controls and
+  tools that write expressions.
+- **W7.2** (`b0f898e0`, `4f167a9f`): `agq-simulation` compiles a scenario
+  into disposable structures and runs it in logical milliseconds, with
+  limits, cancellation, a trace, checks with reasons and results that keep
+  completion, verdicts (passed, failed, not run, unsupported, blocked,
+  inconclusive), provenance and freshness apart. The Library's blocks gain
+  behaviour: `Resilience::RetryingWorker` and `Moderation` (an agent with a
+  deterministic fallback), each with scenarios that come with the block
+  when it is used, and pass.
+- **W7.3** (`b0f898e0`, `241b06fb`): stand-ins with injected failures
+  (timeout, invalid output, refusal, tool unavailable), the agent's contract
+  (type, values, confidence in [0, 1], `minConfidence`, `maxLatencyMs`) with
+  the fallback on failure; recordings keyed by the SHA-256 of the canonical
+  request (keys sorted whatever the build), replay that stops at
+  `missing-recording` and never calls a model; live evaluation through an
+  explicit model client after the Operator confirms provider, model, calls
+  and cost: samples, per-check counts with 95% Wilson intervals, failure
+  categories, median latency, cost and provenance; "Keep as recordings".
+- **W7.4** (`acbef1d8`): the Scenarios tab (Ctrl+Shift+R) with the newest
+  result per mode and whether it is current; the Run panel: modes, Run (F5)
+  and Stop (Shift+F5), what happened apart from the checks, verdicts with
+  icon and colour, live and code provenance, a virtualised trace with
+  filters, stepping (`[`, `]`), playback (`\`) and follow; results that no
+  longer describe the model (worked out again on every change, undo
+  included) are marked outdated and never drawn. The Surface marks where the
+  trace is, where it has been and where it failed, and drift, by shape as
+  well as colour. Scenarios are written through controls (what goes in,
+  what to wait for, stand-ins, checks, time) and the Inspector (values may
+  be expressions; guards; the Behaviour, Stand-in, Agent, Evidence and
+  Implementation sections). Stand-ins are not architecture cards.
+- **W8.1** (`a60ed049`): `agq-execution`: scopes (canonical paths; `..`,
+  absolute, drive, UNC, streams and device names refused; writable and
+  protected paths), Cargo-only commands (build, check, test, run,
+  metadata), an environment without keys, tokens or secrets, offline unless
+  allowed, process-tree kill, git worktrees, patches and integration, jobs
+  with journals and recovery. Nothing runs until the Operator allows
+  trusted-local execution for the project, in a dialog that says it is not
+  a sandbox.
+- **W8.2** (`a60ed049`, `4f167a9f`): `model/links.json` by element identity;
+  checks with their coverage: module boundaries (the model's dependencies
+  and a part def's own parts), crate boundaries (dogfood), contract shapes,
+  linked tests; failing checks are drift at the elements, in the Inspector
+  and Problems; the harness protocol and the implementation runner (the code
+  is recorded once the harness is built).
+- **W8.3** (`df0c4388`, `6860feb8`): the Assistant writes behaviour and
+  scenarios with `apply_changes`, reads them (`inspect_behaviour`,
+  `list_scenarios`) and asks the Studio to run them and read results, code
+  links and checks, or to start an implementation task
+  (`propose_implementation`, which the Operator starts or declines). The
+  supervised loop: a brief from the model, a worker (the Assistant's loop
+  with code tools) in its own worktree, protected paths, bounded repair
+  (6 rounds, stop after 3 without progress), contract changes back to the
+  Operator, the Studio's own verification, a review with the patch, the
+  elements it touches, the proposed links, the worker's words and its cost;
+  integration only if the repository has not moved; continuing a task in
+  its worktree; interrupted tasks found on open.
+- **W8.4** (`4f167a9f`, `241b06fb`, `87e98c32`): the URL shortener with AI
+  screening implemented from its model in a repository of its own (a
+  fixture, also the sample "And its code"); the proof test: boundaries, 13
+  contract shapes and 3 linked tests pass, the six scenarios with stand-ins
+  pass against the code, the agent's evaluation cases stop honestly (the
+  harness calls no model), a held link going live is caught by the three
+  scenarios that guard review and as drift at `reviewBeforeActivation`, and
+  repaired, and a module boundary the model does not allow is found at
+  `LinkApi`. The second example (the retrying dispatcher) runs the same
+  runner and adapter, with its model and implementation each broken on
+  purpose. The dogfood check runs on this repository.
+
+**Checks** (on the branch at the commit of this record; debug builds)
+
+- `cargo fmt --all -- --check`: clean. `cargo clippy --workspace
+  --all-targets -- -D warnings`: clean, also for the Studio with
+  `automation`. `python tools/check_architecture.py`: OK, 11 crates in 10
+  parts, 23 allowed dependencies.
+- `cargo test --workspace`: 503 pass, none fail; 8 ignored (6 budget and
+  performance tests that run in release builds, and the 2 live tests).
+- Journeys (debug, `automation`): `i-scenarios` (53 steps: scenarios, a model
+  run and its trace on the Surface, a changed setting that outdates the
+  result and makes its check fail, undone; a scenario written through
+  controls; a walkthrough; code asking for trust; live asking first and
+  cancelled) and `i-code` (14 steps: the sample with its code, trust in its
+  dialog, a scenario through the real code, checks without drift), each at
+  100%, 150% and 200% and with reduced motion. `a-build`, `a-crash` (exits
+  3 by design), `a-reopen`, `a-assistant`, `d-daily` (also at 200%),
+  `e-settings` and `h-library` (100%, 150%, 200%) pass. The 200% runs found
+  that a dialog taller than the window hid its buttons: dialogs now fit the
+  window and their body scrolls; "Create building block" asks for its names
+  before its lists.
+
+**Measured** (reference machine, release builds with `automation`, raw
+reports outside the repository)
+
+| Budget (§3.3) | Target | This branch | `main` at `68d529ea` (before) |
+|---|---|---|---|
+| Start to first update, warm | ≤ 400 ms | 276, 246 ms | — |
+| Pan and zoom, 1k: interval p95 | ≤ 8.3 ms | pan 6.22–6.29, zoom 6.22 ms | — |
+| Input to next update, 1k: p95 | ≤ 8.3 ms | 0.59–0.65 ms | — |
+| Pan and zoom, 10k: interval p95 | ≤ 16.7 ms | pan 13.2–15.7, zoom 12.3–13.3 ms | pan 13.2–13.6, zoom 12.4–13.0 ms |
+| UI CPU p95 / Surface paint median, 10k | — | 8.7–9.3 / 7.5–7.7 ms | 8.7–8.8 / 7.3–7.5 ms |
+
+Every budget is met. The branch is within about 3% of `main` in paint time
+at 10k, about the spread between runs; skipping the Surface's run and drift
+marks when there are none changed nothing measurable. At 10k both are about
+twice Stage 5's recorded 6.3 ms: that change is on `main` already (the
+Library's merge, never measured, or the machine today), not in this branch;
+it waits for W5.5. Memory was not measured.
+
+**Live results** (DeepSeek `deepseek-flash`; reports outside the repository)
+
+- **I3, evaluation of the screening agent** (`ScreeningCases`, 4 cases × 5
+  samples, as modelled, `maxLatencyMs` 500): every answer took 0.9–5 s
+  (median about 1.8 s), so every call was a timeout and the fallback
+  decided: the scam and lookalike cases pass 5/5 (held), the encyclopedia
+  and documentation cases fail 0/5 (held instead of allowed). With
+  `maxLatencyMs` 5000 (in the test only, as I7 would): the scam and
+  lookalike cases blocked 5/5 with confidences 0.90–0.99, the benign cases
+  allowed 4/5 each (one timeout each), inconclusive (interval 0.38–0.96).
+  Kept as recordings, replayed deterministically. The first runs found two
+  bugs, fixed before these: the model copied the output's schema (every
+  answer invalid) and samples were cut at 10 seconds.
+- **I4, a worker on a real model**: in the sample with its code, with the
+  link store emptied, the worker implemented `LinkStore` from the model
+  twice (25 s and 29 s; one round of checks each; $0.0091 for the second,
+  the first not metered), with tests of its own; the Studio's verification
+  passed (build, boundaries, 15 contracts, 7 tests, 6 scenarios); after
+  integration the six scenarios pass against the code.
+- Spend: about $0.08 in all.
+
+**Needs the Operator**
+
+- `LinkScreening`'s `maxLatencyMs = 500` (§2.10) is not met by
+  `deepseek-flash` from this machine: raise it, choose a faster model, or
+  accept that every link waits for review (ROADMAP §7.6).
+- The decisions of 2026-10-01 in §7.6.
+- Walking Scenario I (I1–I8) in the Studio, with the Assistant on a real
+  provider for I4 and I6 and a live evaluation for I3 (C-15).
+
+**Not done or not tried**
+
+- W6.10: the Assistant modelled as an agent in the self-model (C-44).
+- I1 by the Library: the screening agent and its fallback are not a Library
+  block of their own (`Moderation` shows the pattern); I1 is walked with the
+  sample.
+- W8.3's grouped approvals: the Operator starts each task, and reviews each
+  patch; the worker's own steps are not approved one by one.
+- The model and implementation breaks of the second example run in tests,
+  not in a journey.
+- The component gallery shows the Surface's run and drift marks, not the
+  Run panel or the Scenarios tab.
+- Screen readers on the new panels: not tried. Anthropic, OpenAI and
+  OpenRouter as the live client or the worker's model: not tried (no keys).
+- No evaluation-set tasks for the new tools yet (they would run live).
+- Implementation checks are for Rust only (§6.5 "Waits").
+- Memory against its budgets: not measured this time.
+
+**Operator: try this**
+
+1. Start from the URL shortener "And its code" (the start screen; with a
+   fresh session file it is on the welcome), then Ctrl+Shift+R, choose
+   `ReviewRequired`, press F5, step through the trace with `[` and `]`, and
+   play it with `\`.
+2. In the Inspector, lower `LinkScreening`'s `minConfidence` to 0.5: the
+   result turns outdated; run it again: its check fails at the element;
+   undo.
+3. Choose Code in the Run panel, allow trusted-local execution, and run a
+   scenario against the real code; select `api` and "Check the
+   implementation".
+4. Write a scenario: select the service, "New scenario", then Add: a
+   stand-in, what to send, what to wait for, a check; run it.
+5. With a key: "Implement with the Assistant…" on a part (empty a file in
+   the code folder first to give it work), review the patch, integrate.
+   Live: Mode Live, "Evaluate live…" (about a cent).
+6. The scripted runs:
+
+   ```text
+   cargo build -p agq-studio-native --features automation
+   target\debug\agq-studio-native.exe --no-restore --session %TEMP%\agq-i\session.json --scenario i-scenarios --project %TEMP%\agq-i\UrlShortener --gallery %TEMP%\agq-i\shots
+   target\debug\agq-studio-native.exe --no-restore --session %TEMP%\agq-c\s.json --scenario i-code --project %TEMP%\agq-c\UrlShortener --gallery %TEMP%\agq-c\shots
+   ```
+
+   The live runs (they spend money):
+
+   ```text
+   $env:AGQ_LIVE=1; cargo test -p agq-studio-native live_ -- --ignored --nocapture
+   ```

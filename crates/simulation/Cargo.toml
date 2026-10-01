@@ -1,0 +1,16 @@
+[package]
+name = "agq-simulation"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Simulation: scenarios run over a fixed model snapshot, with stand-ins, recordings or a live model client, and results with provenance"
+
+[dependencies]
+agq-language = { path = "../language" }
+serde.workspace = true
+serde_json.workspace = true
+# Provenance digests of model slices and recording keys (ROADMAP §4.14).
+sha2 = "0.10.9"
+
+[dev-dependencies]
+tempfile.workspace = true

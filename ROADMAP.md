@@ -159,6 +159,21 @@ and makes it about what its name promises: **agentic systems**.
 The phase also **completes Scenario A**: simulation (Stage 7) and implementation
 links (Stage 8) close the first proof (C-19).
 
+**The factory loop (C-50, 2026-09-30).** The Operator directed that agents in
+the model, simulation and implementation are built as **one continuous loop**,
+not three features: intent → architecture → scenarios → execution →
+implementation → checks → informed change. The Operator works at the level of
+structure, contracts, behaviour and outcomes; Agentique and its Assistant take
+on more of the implementation while keeping that structure visible and
+protected. Its long-term direction is an architecture-led software factory; this
+phase delivers the **first complete, inspectable loop** (§6.5, Scenario I in
+§2.10), not the whole platform. The promise it serves: the Operator can
+understand what the system is supposed to do, explore how it behaves, produce
+an implementation, and see where the implementation no longer agrees with the
+design. The model (intent), the implementation (actual code) and run results
+(observations under stated conditions) stay three separate things; none is
+silently changed to agree with another (§4.14, §4.15).
+
 **Ambition in the outcome, simplicity in the mechanism.** Every item in this
 document names the scenario step, decision or recommendation it serves (§8.1).
 The discipline of §1.3 applies to Agentique's own design first.
@@ -183,6 +198,8 @@ decisions named in each row.
 | Typed fast-decision APIs other than Jev | Not in this phase; Jev is a model provider for fast agents (C-35, Q-11) |
 | Spending limits | Not in this phase; costs are shown, not capped (C-37) |
 | A marketplace, cloud registry, package manager or vendor catalogue of building blocks | Not a goal; the Library is local, and a project keeps its own copies of what it uses (C-49) |
+| Unattended production deployment, destructive migrations or irreversible external actions; remote worker fleets; a security sandbox Agentique does not have | Not in this phase; implementation work is supervised and local, and the isolation the host really offers is reported as it is (C-50) |
+| General physical or numerical simulation, broad language support for implementation, a general-purpose workflow language | Not in this phase; the run contract stays open to them (C-50, §4.14) |
 
 ---
 
@@ -342,6 +359,52 @@ the Library finds it in the built-in library, the project and My Library.
 
 **Stage mapping.** H1–H8 are W5.13 (§6.3). The journey `h-library` covers
 them without the network, with a scripted stand-in for H8 (R-47).
+
+### 2.10 Scenario I: the factory loop, end to end (C-50)
+
+The URL shortener gains an AI-driven link-screening component with a
+deterministic recovery path and a rule for links that need review. Its
+**acceptance behaviour is fixed here, before any implementation is generated**:
+
+1. A shortened link is first screened by the agent `LinkScreening` (fast mode,
+   `minConfidence` 0.8, `maxLatencyMs` 500), which answers a verdict: `allow`,
+   `review` or `block`, with a confidence and a reason.
+2. `allow` at or above `minConfidence` stores the link **active**; the answer
+   carries its code and status `active`.
+3. `review`, or any answer below `minConfidence`, stores the link **held for
+   review** (status `held`); `block` stores nothing (status `blocked`, no code).
+4. When the agent fails (timeout, invalid output, refusal, a tool it cannot
+   reach) or is below `minConfidence`, its deterministic fallback
+   `BlocklistScreening` decides: a host on the blocklist is blocked, anything
+   else is held for review. The service never activates a link without either
+   a confident `allow` or a reviewer's approval.
+5. Resolving a code redirects only for an active link; a held or unknown code
+   does not redirect.
+6. A reviewer's approval of a held link makes it active; a rejection blocks it.
+7. The public API (the `api` part's ports and the items they carry) is locked.
+   The guardrail requirement `ReviewBeforeActivation` ("a link that needs
+   review is never activated without an approval") has the API as subject.
+
+| Step | What the Operator does | Observable success | Failure and recovery behaviour |
+|---|---|---|---|
+| I1 | **Design.** Assembles the system with Library blocks (a gateway API, a store, the screening contract, an agent and its fallback), sets the agent's configuration and locks the public API. | The agent card shows its badge and mode; the Inspector shows its contract (what it may observe and do, what output is acceptable, what happens when it cannot answer), configuration and fallback. | A fallback that does not share the agent's contract, or that is itself an agent, is a validation error at the agent. |
+| I2 | **Exercise the model.** Runs the successful, blocked, timed-out, invalid-output and review-required scenarios with deterministic stand-ins. | Each run steps through the parts on the Surface from recorded events; the trace says what happened where and why it stopped; checks are listed apart from run completion as passed, failed, not run, unsupported, blocked or inconclusive. | A missing behaviour, stand-in or recording stops the run with that reason at the element concerned; nothing is guessed. |
+| I3 | **Evaluate the agent.** Replays recorded cases without the network; then explicitly requests a live evaluation on a chosen provider and model. | Replay is deterministic and says which recording answered. The live evaluation reports per case and per check the sample count, outcomes, failure categories and an uncertainty interval, with the provider, model, instructions and case versions; a good run can be kept as recordings. | A missing recording stops the replay with `missing-recording`; it never falls through to a live call. A live evaluation not run is shown as not run. |
+| I4 | **Implement.** Asks the Assistant to implement the system in a separate repository. | The Assistant shows a plan and its scope, works in an isolated worktree, builds, runs the checks, repairs within scope, and presents a patch beside the affected parts and contracts. After integration the code is linked to the model and the contract scenarios run against the real code. | A contract change the implementation seems to need returns to the Operator as an architecture decision, never inside a patch. |
+| I5 | **Detect a contradiction.** Deliberately breaks the implementation so that a held link becomes active. | The protected check fails in the implementation run, is shown as drift at the part, and links to the step, the trace and the code. | — |
+| I6 | **Repair safely.** Asks the Assistant to fix it. | The Assistant inspects the failure, proposes a bounded repair, applies it in the worktree and reruns the check; the requirement, the protected tests and the public API are unchanged. | Repeated failure or no progress ends the attempt with a report of what blocks it. |
+| I7 | **Handle changed intent.** Changes an approved setting (for example `minConfidence`). | The results that depend on it are marked outdated at once; the Assistant updates the implementation deliberately; new runs produce current results. | An old passing result is never shown as current evidence. |
+| I8 | **Recover.** Cancels a running job, reopens the project and resumes. | Earlier results and the job's history are there; resuming never repeats a side effect that completed. | A job interrupted by a crash is shown as interrupted, with what completed and what did not. |
+
+A second, smaller conventional example (a retrying notification dispatcher,
+with other names and configuration) runs through the same model runner and
+implementation adapter. For one scenario the model and the implementation are
+each broken on purpose, and each break is caught by its own execution path. A
+supported implementation-link check (crate dependencies against the self-model)
+runs on Agentique's own repository.
+
+**Stage mapping.** Scenario I is Stages 7–8 (§6.5). It takes over A5–A7 and
+G4–G9; G1–G3 (agents in the model) move from Stage 6 into it.
 
 ---
 
@@ -648,6 +711,9 @@ interfaces studied (R-24):
 | **System State service** | Holding the live state; applying changes atomically; enforcing locks; publishing change events | Deciding intent |
 | **Library** (C-49) | Finding, describing and searching reusable definitions (the built-in blocks, the project's, My Library); working out what a block needs; planning its use, specialisation, overrides, extraction and saving as ordinary System State changes (§4.13) | Meaning and validity (the language core); applying changes and locks (the System State); drawing (the Studio) |
 | **History (git)** | Durable checkpoints, branches and past states | Live editing state |
+| **Simulation** (C-50) | Compiling a scenario and a fixed model snapshot into disposable runtime structures; model execution with stand-ins, replay of recordings and live evaluation through a model client it is given; traces, check verdicts, results with provenance and freshness (§4.14) | Changing the System State; calling providers or other services by itself; deciding what a block means from its name |
+| **Implementation** (C-50) | Implementation links; code-to-model lookup; the implementation runner (scenarios against real code through the project's harness); the supported checks (dependency boundaries, mapped contract shapes, linked tests) and drift (§4.15) | Writing code (the Assistant, through Execution); calling a check a proof beyond its stated coverage |
+| **Execution** (C-50) | Controlled side effects outside the System State: repository reads, scoped writes in a worktree, builds, tests and approved external operations, as jobs that can be cancelled and resumed; reporting the isolation the host really offers (§4.15) | Deciding what to change; claiming isolation it does not have |
 | **Providers** (new) | Talking to model providers through rig; keys in the OS credential store; model lists and capabilities; usage and cost figures | Control over the System State; the Assistant's policy; being required for manual work |
 | **Model providers** (Anthropic, OpenAI, OpenRouter, DeepSeek; TypeSafe AI's Jev for fast agents only) | Language reasoning behind the Assistant and, later, behind live evaluations of agents; Jev answers typed questions for fast agents and never serves the Assistant | Anything else |
 
@@ -683,8 +749,13 @@ interfaces studied (R-24):
   not instructions. Notes the model proposes are stored only after the Operator
   accepts them (C-40).
 - **Side effects outside the System State** (files and commands in a linked
-  repository) arrive with implementation in Stage 8. How the autonomy modes
-  extend to them is decided there (Q-15).
+  repository) go through the Execution service, never through the model
+  change boundary: a model edit is not permission to run code (C-50, Q-15). In
+  every autonomy mode, implementation work is grouped into one approval per
+  scoped task (what may be written, what may run, whether the network is
+  allowed), and integrating a patch into the Operator's working tree always
+  asks. Locks still ask for every model change. Model undo never pretends to
+  undo an external action (§4.15).
 
 ### 4.3 The role of KerML/SysML (C-4, C-20)
 
@@ -693,10 +764,15 @@ interfaces studied (R-24):
   language. Don't read the specification as gospel or chase completeness.
 - **A deliberate subset, grown by need.** `docs/subset.md` lists what is
   supported, partial and excluded, each with a reason (R-8). Add a construct
-  only when a scenario needs it. This phase adds `enum def`, `enum` and
-  enumeration values such as `AgentMode::fast` as feature values (for an
-  agent's mode, Stage 6; today values are literals only), and the behaviour
-  constructs simulation needs (Stage 7, Q-5).
+  only when a scenario needs it. C-50 adds, for Scenario I: `enum def`, `enum`
+  and enumeration values such as `AgentMode::fast`; the standard `dependency`
+  relationship; a small expression language (literals, feature chains,
+  arithmetic, comparison, logic, `if ? else`, `new T(a = …)`); the behaviour
+  constructs model execution needs (`exhibit state`, states, transitions with
+  `accept … via`, `accept after`, guards and effects; `send`, `assign`, `if`
+  and composite actions); and verification cases as scenarios (`verification
+  def` with `subject`, `objective { verify … }`, steps and `assert
+  constraint`). Each is listed in §4.14 and the manifest (Q-5).
 - **Standard terms, standard meaning.** Deviations are recorded in one line
   each with the reason in `docs/deviations.md` (R-9). There are eleven today;
   this phase adds one for the built-in `Agents` library (§4.11).
@@ -725,6 +801,9 @@ Three claims stay apart:
   Agentique proposes how to reconcile them.
 - **Linking to deployed systems** is a later, separate kind of link:
   observation, not authoring.
+- **This phase's checks** (C-50, Q-2) are listed in §4.15, each with its
+  coverage and limits: a dependency check is not a proof of runtime behaviour,
+  and a file existing at a linked path is not conformance.
 
 ### 4.5 History and persistence (C-24)
 
@@ -752,8 +831,17 @@ Confirmed on 2026-09-27 as built in Stage 2:
 6. Deleting an element unbinds references to it by name, exactly as after
    reopening.
 
-The persistence format is locked core (R-16). Nothing in this phase changes it.
-Settings, keys, conversations, notes and skills are stored elsewhere (§4.9).
+7. *(C-50)* One optional file joins the model folder: `model/links.json`,
+   `{"format": 1, "repository": ..., "harness": ..., "links": [...],
+   "protected": [...]}`, holding the implementation links (by element id, with
+   the qualified name at the time of saving) and the implementation runner's
+   binding (§4.15). History saves it atomically with the model files and
+   commits it at checkpoints; a project without it opens unchanged, and older
+   versions of Agentique ignore it.
+
+The persistence format is locked core (R-16). C-50 makes exactly one additive
+change to it (item 7). Settings, keys, conversations, notes, skills, run
+results and job journals are stored elsewhere (§4.9).
 
 ### 4.6 Agentique designed by its own principles; the self-model first
 
@@ -772,8 +860,11 @@ cut across parts start there**, in the same change, and the check stays green.
 | Stage 6 (W6.10) | Model the Assistant as the first agent: `part def Assistant :> Agents::Agent`, with ports for its tools towards the System State and requirements for its guardrails (locks need confirmation; output is untrusted; every change is visible and undoable) and no `fallback` part: when the Assistant fails, the Operator carries on by hand, which a requirement states (a failed provider never blocks manual work) (C-44) | Dogfooding (C-13, C-20); a real example of the concept |
 | Stage 6 (W6.10) | Add the standard `dependency` relationship to the subset (a recorded locked-core decision) so that CI can validate `models/agentique/` with `agq-language`; `check_architecture.py` ignores constructs it does not need instead of rejecting them | Our own language core checks our own model (R-41) |
 | Stage 5 (W5.13) | Add `part def Library` with the crate `agq-library`: "finds, describes and searches reusable definitions and plans their use as System State changes" (C-49). Add `dependency from Library to SystemState`, `from Library to LanguageCore`, `from Studio to Library` and `from Assistant to Library`; the check keeps UI and network libraries out of it | One service used alike by the Surface, the palette and the Assistant; it is neither the System State's job (the live state and its changes) nor the Assistant's (the AI turn loop) |
-| Stage 7 | `Simulation` gets its crate; if live evaluations of agents need providers, add `dependency from Simulation to Providers` or a separate part (Q-20) | Decided with the simulation design |
-| Stage 8 | `ImplementationLinks` gets its crate | — |
+| Stages 7–8 (C-50) | `Simulation` gets the crate `agq-simulation`, depending on LanguageCore only: live evaluation reaches a provider through a model client the Studio gives it, so Simulation never depends on Providers or the network (Q-20) | Runs stay isolated and offline by construction |
+| Stages 7–8 (C-50) | `ImplementationLinks` becomes `Implementation` with the crate `agq-implementation` (links, the implementation runner, checks), depending on LanguageCore, Simulation and Execution | One part owns what the model says about code |
+| Stages 7–8 (C-50) | New part `Execution` with the crate `agq-execution`: controlled side effects (repository reads, scoped writes in worktrees, builds, tests, jobs); it depends on no other part | A model edit is not permission to run code; one place decides what may run |
+| Stages 7–8 (C-50) | Studio → Simulation, Implementation, Execution; Assistant → Simulation, Implementation, Execution (typed requests only: the Studio carries them out, as it applies changes) | The Surface and the Assistant use the same services |
+| Stages 7–8 (C-50, moved from W6.10) | `dependency` in the subset; `tools/check_architecture.py` tolerates model constructs it does not need; the crate-dependency check also runs as an implementation check of `agq-implementation` on this repository (dogfood) | R-41; Scenario I |
 
 **Allowed dependencies after this phase** (arrows point inward; every edge
 listed; not transitive):
@@ -781,10 +872,13 @@ listed; not transitive):
 ```text
 Studio → SystemState, Studio → Assistant, Studio → LanguageCore, Studio → Providers, Studio → Library
 Assistant → SystemState, Assistant → LanguageCore, Assistant → Providers, Assistant → Library
+Studio → Simulation, Studio → Implementation, Studio → Execution
+Assistant → Simulation, Assistant → Implementation, Assistant → Execution
 Library → SystemState, Library → LanguageCore
 SystemState → LanguageCore, SystemState → History
-Simulation → LanguageCore            (Stage 7 may add → SystemState, → Providers)
-ImplementationLinks → SystemState
+Simulation → LanguageCore
+Implementation → LanguageCore, Implementation → Simulation, Implementation → Execution
+Execution → (nothing in Agentique)
 Providers → (nothing in Agentique)
 LanguageCore → (nothing). No UI, network, async or AI types in LanguageCore,
 SystemState or History.
@@ -799,7 +893,12 @@ standard `dependency` relationship to the subset, so that our own core can
 validate our own model (R-41). C-49 (Stage 5) adds a smaller one: the language
 core exposes its existing lookup and port rule as a read-only query
 (`Semantics`), so the Library keeps no second copy of a rule; no construct,
-rule or meaning changes (§4.13).
+rule or meaning changes (§4.13). C-50 (Stages 7–8) authorises the minimum
+additive extensions Scenario I needs, each named in §7.6 before it is built:
+the three above (brought forward from Stage 6), expressions, the behaviour
+subset, verification cases as scenarios, the built-in `Scenarios` library, the
+System State properties that edit them, and the optional `model/links.json`
+(§4.5). Existing constructs, identities, meanings and projects are unchanged.
 
 ### 4.7 Where rig sits and what it may touch (C-34)
 
@@ -928,6 +1027,10 @@ asks the table, never the provider's name. When a capability is missing:
 | App-wide notes and skills | `%APPDATA%\Agentique\notes.md`, `%APPDATA%\Agentique\skills\<name>\SKILL.md` | Markdown; one note per `- ` line; skills in the Agent Skills format [21] | Assistant |
 | My Library (the Operator's building blocks, C-49) | `%APPDATA%\Agentique\library\My Library.sysml` (beside the session file) | SysML text under the package `Library`, read with the language core, written atomically; no project refers to it, since using a block copies it (§4.13) | Library |
 | The model | `<project>/model/` in git | Locked persistence format (§4.5) | History |
+| Implementation links and the harness binding (C-50) | `<project>/model/links.json` in git | JSON with `"format": 1` (§4.5 item 7, §4.15) | Implementation, saved through History |
+| Run results and traces (C-50) | `%APPDATA%\Agentique\projects\<folder>-<hash>\runs\` | One JSON file per run with its provenance; never committed | Simulation |
+| Job journals (C-50) | `%APPDATA%\Agentique\projects\<folder>-<hash>\jobs\` | One JSON file per job: states and side effects before and after | Execution |
+| Kept recordings of agent answers (C-50, Q-16) | `<project>/recordings/<agent>.jsonl` | One answer per line, keyed by request digest | Simulation; committed only if the Operator chooses |
 
 **Key handling contract** (R-25):
 
@@ -982,10 +1085,12 @@ converge on [18][19]:
 6. After the turn: a turn summary (changes, problems before and after, tokens,
    estimated cost); compaction if the conversation is long (R-33).
 
-**Tools.** Five exist; three are added in Stage 6 and four Library tools in
-Stage 5 (C-49). None but `apply_changes` and `use_library_block` changes the
+**Tools.** Five exist; three are added in Stage 6, four Library tools in
+Stage 5 (C-49) and the run and implementation tools in Stages 7–8 (C-50). None
+but `apply_changes`, `use_library_block` and `write_scenario` changes the
 System State; `save_to_library` changes only My Library, after the Operator
-confirms.
+confirms; `start_run` and the implementation tools return typed requests that
+the Studio carries out through Simulation, Implementation and Execution.
 
 | Tool | Purpose | Status |
 |---|---|---|
@@ -1001,6 +1106,14 @@ confirms.
 | `read_library_block` | One block in words: purpose, identity, ports and what they carry, parts, connections, settings, requirements, what it needs, whether the project has it | Stage 5 (W5.13) |
 | `use_library_block` | One change: copy what the block needs into the project, add a usage (with values and an optional connection) | Stage 5 (W5.13) |
 | `save_to_library` | Save a project definition to My Library, only when the Operator asked, after a visible confirmation | Stage 5 (W5.13) |
+| `inspect_behaviour` | A part's effective behaviour in words (states, transitions, the configuration values its usage sees) and what, if anything, stops it from running | Stages 7–8 (C-50) |
+| `list_scenarios` | The scenarios that exercise an element or the whole model, the execution modes each can run in, and their latest results with freshness | Stages 7–8 (C-50) |
+| `write_scenario` | Create or replace one scenario (subject, verified requirements, stand-ins, steps, checks) as one System State change | Stages 7–8 (C-50) |
+| `start_run` / `stop_run` | One run API for every mode: model execution, replay, implementation, and live evaluation (which always asks the Operator first, with the provider, model and estimated cost) | Stages 7–8 (C-50) |
+| `read_run` | A run's summary and checks, or a filtered segment of its trace, with stable references to events | Stages 7–8 (C-50) |
+| `read_code_links` | Implementation links of an element or a file, both ways, with drift and the checks that cover them | Stages 7–8 (C-50) |
+| `propose_implementation` | Propose an implementation task (scope, goal, plan, what may be written and run) for the Operator's approval | Stages 7–8 (C-50) |
+| `read_code`, `write_code`, `run_checks`, `link_code`, `finish_implementation` | Only inside an approved implementation task: read and write within its scope in its worktree, run its checks, link what it wrote, and report the result | Stages 7–8 (C-50) |
 
 Every tool result is capped at about 8,000 tokens, with a message that says how
 to narrow the request (Anthropic's guidance on tool results, which notes that
@@ -1075,7 +1188,9 @@ software components, organisations or users (SysML 7.11.1 [82]); a kind gets
 its meaning by specialising a library definition (SysML 7.6.8 [82]). So an
 agent is a part definition that specialises a built-in library definition.
 
-**The built-in library** (Stage 6, W6.9; exact text confirmed then under R-16):
+**The built-in library** (moved from W6.9 into Stages 7–8 by C-50; recorded
+under R-16 in §7.6). `AgentOutput` was added in C-50 so that the runtime reads
+an answer's confidence by identity, never by a feature's name:
 
 ```sysml
 package Agents {
@@ -1087,14 +1202,22 @@ package Agents {
         enum fast;
         enum deliberate;
     }
+    abstract item def AgentOutput {
+        doc /* An answer of an agent's model, with the model's own confidence
+             * between 0 and 1. The confidence is the model's claim, not a
+             * measured reliability. */
+        attribute confidence : ScalarValues::Real [0..1];
+    }
     abstract part def Agent {
         doc /* A part whose behaviour is produced by an AI model. Its inputs and
              * outputs are ports; the tools it may use are ports connected to the
              * parts that provide them; its guardrails are requirements whose
              * subject is the agent or its contract. model is the provider's
-             * model id. Below minConfidence an answer goes to the fallback or
-             * to a person. fallback is redefined by a deterministic part that
-             * shares the agent's contract. */
+             * model id. When the model fails (no answer within maxLatencyMs, an
+             * answer that breaks the contract, a refusal, a tool it cannot
+             * reach) or answers below minConfidence, the call goes to fallback:
+             * a deterministic part that shares the agent's contract. Without a
+             * fallback the failure stands and no outcome is guessed. */
         attribute mode : AgentMode;
         attribute model : ScalarValues::String [0..1];
         attribute minConfidence : ScalarValues::Real [0..1];
@@ -1194,7 +1317,17 @@ agent's outputs come from, and the trace records which:
 
 Live evaluations are not simulation: they have external effects and are not
 deterministic, so they run separately and never inside a simulation run
-(§5.5).
+(§5.5). Since C-50 all three run the same scenarios through one run contract,
+as the modes `model`, `replay` and `live` of §4.14: a scenario whose subject is
+the agent is its set of evaluation cases. A stand-in is declared in the
+scenario (`Scenarios::StandIn`), a recording is chosen by the run, and a live
+answer comes only from a model client the Studio hands to a live evaluation
+the Operator started explicitly. The runtime enforces the contract the same way
+in each: the answer must be an item of the output port's type with valid
+values; a timeout, invalid output, refusal, unreachable tool or an answer below
+`minConfidence` goes to the fallback, and the trace says why (Q-13 stays open:
+escalation to a deliberate agent is two agents and a routing part, never a
+disguised fallback).
 
 **Implementation of agents** (Stage 8, C-46, R-40) *(provisional until Q-2)*: an
 agent is ordinary code in the project's repository, using any provider SDK.
@@ -1202,6 +1335,12 @@ Agentique links the agent to its code, its instructions and its recordings, and
 checks: the code's input and output types match the agent's ports; the fallback
 path exists; guardrail tests pass on the recordings; the latest live
 evaluation's pass rate meets the agent's requirement. A failing check is drift.
+C-50 settles which of these this phase builds (§4.15): mapped contract shapes
+(the item types of the agent's ports against the linked code types) and the
+agent's scenarios run against the real code with its model client replaced by
+the scenario's stand-ins, which exercises the fallback path in the code. A
+pass-rate requirement (Q-14) waits: a live evaluation reports its numbers and
+the Operator judges them.
 
 ### 4.12 Quality expectations for the code
 
@@ -1280,6 +1419,177 @@ of its inside: inherited features stay lookup (D-1).
   background).
 - **The `Agents` library** (§4.11) joins the same browser when it arrives in
   Stage 6, as standard definitions that are referred to, not copied.
+- **Behaviour and scenarios travel with blocks** (C-50). A block's behaviour
+  is part of its definition, so a usage runs it with the usage's own values.
+  The dependency closure follows the references inside expressions and
+  behaviour, and saving a block to My Library also saves the scenarios whose
+  subject is the block. Nothing else of the project comes along.
+
+### 4.14 Scenarios, runs and results (C-50)
+
+**A scenario is a verification case.** It is written as a standard
+`verification def` (SysML 7.22): `subject` names the system or subsystem under
+examination; `objective { verify r; }` names the requirements it gives evidence
+for; its steps, in order, send inputs through the subject's ports (`send new
+ShortenRequest(longUrl = "…") via service.api.shorten;`), wait (`accept after
+500;`), and accept outputs (`accept link : ShortLink via service.api.shorten;`);
+its `assert constraint` members are its **checks**, evaluated where they stand
+in the steps. Relevant failures and environment assumptions are **stand-ins**:
+usages of the built-in `Scenarios::StandIn` that answer calls to one part of the
+subject (an agent's model, or any dependency) with an outcome (`answer`,
+`timeout`, `invalidOutput`, `refusal`, `toolUnavailable`), an optional output
+item, a latency and the call it applies to. A scenario says what happens, not
+where it runs: the same scenario runs in every mode below. The Operator authors
+it with structured controls and the Assistant with `write_scenario`; neither
+writes SysML.
+
+**Behaviour is explicit.** A part runs only the behaviour its definition (or a
+redefinition in its usage) declares: one `exhibit state` machine with an entry
+transition, states with entry and exit actions, and transitions with an `accept`
+trigger on a port (or `accept after` a duration), a guard and an effect.
+Effects and actions are `send … via port`, `assign feature := value`, `if`
+and composite actions run in the order written. Values come from the usage's
+effective configuration: a redefinition in the usage wins over the definition.
+Nothing is derived from a name, an icon or documentation: a part named `Queue`
+has no queue behaviour unless its definition says so. An agent's output comes
+from its stand-in, a recording or a live model, checked against its contract
+(§4.11).
+
+**Execution modes** (the run contract's `mode`, shown on every result):
+
+| Mode | What runs | Deterministic | May cause external effects |
+|---|---|---|---|
+| Model execution (`model`) | The explicit behaviour of the model snapshot, with the scenario's stand-ins | Yes | No |
+| Recorded replay (`replay`) | The model, with agents answered from recordings matched by the digest of the canonical request | Yes | No |
+| Implementation (`implementation`) | Real code through the project's harness, with the dependencies the scenario stands in for replaced by controlled stand-ins | As the code is | Only within the approved task scope (§4.15) |
+| Live evaluation (`live`) | The model, with agents answered by a real provider, several samples per scenario | No | Provider calls and their cost, started explicitly by the Operator |
+| Walkthrough (`walkthrough`) | Nothing runs: the steps are shown in order for explanation | — | No; never counted as verification |
+
+**Runner contract.** A runner declares its capabilities (which step kinds and
+check kinds it can evaluate, whether it sees internal state), takes a run
+request (scenario, model snapshot, mode, options, limits), can be cancelled, and
+produces observations and a result. A runner that cannot evaluate a scenario or
+a check says so (`unsupported`); it never approximates success. Specialised
+runners add their own data (a model trace, a process log).
+
+**Model execution semantics** (the smallest set Scenario I needs; recorded in
+`docs/subset.md`):
+
+- **Snapshot and isolation.** A run compiles the model as it was when the run
+  started into disposable runtime structures (instances per part usage, port
+  routes from connections and interfaces, state machines, attribute slots). Its
+  state is its own; editing the model during a run changes nothing under it.
+- **Logical time** in milliseconds, separate from wall-clock time: a simulated
+  timeout is not a measured latency. Delivering a message takes no logical time.
+- **Ordering.** Events are processed in order of logical time, then of the
+  order they were scheduled. A state machine handles one event at a time to
+  completion. When two transitions are enabled for one event the run stops with
+  `ambiguous-transition`; a message no transition accepts stops it with
+  `unhandled-message`, at the element concerned.
+- **Randomness.** None in this subset; the seed field of the run request is
+  recorded for later stochastic workloads.
+- **Termination.** A run completes when its steps are done and no events are
+  pending. It stops early on a limit (events, logical time, completion depth,
+  wall-clock time) or cancellation, or with an explicit reason:
+  `missing-behaviour`, `missing-stand-in`, `missing-recording`,
+  `agent-failed-without-fallback`, `awaited-output-missing`,
+  `evaluation-error`, `unsupported`.
+- **Traces** record, per event, the logical time, the element, what happened
+  (message sent or received, state entered, value assigned, timer, agent answer
+  and its source, fallback and why, check), the inputs and outputs, and why the
+  run stopped. They are processed away from drawing and stored with the result.
+
+**What a result may claim.** Five claims stay apart and are never merged:
+*structurally valid* (validation), *behaviour executable* (the runner compiled
+it), *scenario completed* (the run ended normally), *check passed* (an assert
+held in that run), and *implementation agrees within the checked scope*
+(§4.15). Checks are shown as **passed, failed, not run, unsupported, blocked or
+inconclusive**. A requirement linked to a part is not a tested requirement; a
+requirement shows the scenarios that verify it and their current verdicts.
+Probabilistic results (live evaluation) report samples, outcomes, failure
+categories and a 95% Wilson interval, and say whether each check is
+deterministic or judged.
+
+**Provenance and freshness.** Every result records the scenario, mode and
+runner version, a digest of the model slice it depended on (the subject's
+definitions and everything they reference, the scenario and its stand-ins),
+the implementation commit and tree state for implementation runs, and the
+provider, model, instructions and case versions for live evaluations.
+Freshness is computed, never stored: when any recorded digest differs from the
+current one the result is **outdated**, and the Studio shows it as such. An
+outdated result that belongs to an older model revision opens with that
+revision's snapshot, never overlaid on today's geometry.
+
+**Where things live.** Scenarios and stand-ins are model elements (versioned
+with the model). Recordings the Operator keeps are fixtures in the project folder
+(`recordings/`, committed or not as the Operator chooses; Q-16). Run results,
+traces and job journals are machine-generated observations in the app's
+per-project data (§4.9) and are never committed (§8.3).
+
+### 4.15 Implementation: links, checks, execution and the supervised loop (C-50)
+
+**Implementation links** relate model elements to code: modules, symbols, entry
+points, schemas, tests, configuration, instructions and the harness, many to
+many, stored in `model/links.json` by element identity (§4.5). The Studio
+navigates model to code (and opens a file in the external editor) and code to
+model within the mapped files. Adopting an existing codebase means adding links
+where they help; nothing requires a complete reverse-engineering step.
+
+**Supported checks** (one fully working path: Rust with Cargo), each with its
+coverage stated beside its result:
+
+| Check | What it covers | What it does not |
+|---|---|---|
+| Dependency boundaries | The crate (or module) dependencies of linked code against the allowed dependencies of the model; the self-model check runs this way on Agentique itself | Runtime behaviour; dependencies hidden behind dynamic loading |
+| Mapped contract shapes | Linked Rust structs and enums against the item and enum definitions they implement: fields, simple types, enum values | Semantics of the values; code paths |
+| Linked tests | The tests linked to an element, run and reported per test | Anything the tests do not exercise |
+| Scenarios against the implementation | The scenario's steps and checks through the harness, with stand-ins for the dependencies the scenario names | Internal state the harness does not expose (such checks are `unsupported`) |
+
+A failing check on linked code is **drift** at the elements it covers. A file
+existing at a linked path is never reported as conformance.
+
+**The harness** is a small program in the implementation repository, linked as
+the scenario entry point. The implementation runner starts it and exchanges one
+JSON line per step: the runner sends inputs and stand-in answers, the harness
+calls the real code and reports what the system sends out. The runner evaluates
+the scenario's expressions and checks itself, with the same evaluator as model
+execution; it never replays expected answers. Generated systems run without
+Agentique.
+
+**The Execution service** carries out every side effect outside the System
+State as typed operations: read and list files in the repository, write and
+delete files inside a task's worktree, run allow-listed commands (Cargo, the
+harness) with a timeout, create and remove worktrees, and integrate a reviewed
+patch. Paths are canonicalised and any path escaping the scope is refused.
+Commands run with a scrubbed environment (no provider keys, tokens or other
+secrets) and, by default, Cargo offline. On this host there is no process,
+filesystem or network sandbox, so execution runs only in an explicit
+**trusted-local** mode the Operator turns on per project, and the Studio says
+what that means: a worktree isolates edits, not processes, and build scripts
+and tests run with the Operator's rights. Jobs have stable ids and states
+(pending, running, waiting for you, done, failed, refused, cancelled,
+interrupted), a journal that records each side effect before and after it
+happens, cancellation that ends the whole process tree, and recovery that
+never repeats a completed side effect. Nothing claims atomicity across the
+model, the repository and processes: a partly completed operation is shown with
+what completed and how to reconcile.
+
+**The supervised implementation loop.** One worker (the Assistant with the
+implementation tools) takes one approved task through: inspect the model and
+code → identify scope → propose a plan → implement → run checks → inspect
+failures → repair within scope → present the result. Its context is derived
+from the model each time (the parts in scope with their contracts,
+dependencies, requirements, protected boundaries, code locations, base
+revisions and acceptance scenarios), never a hand-kept second specification.
+It writes only in the task's worktree and scope; protected tests, accepted
+requirements, scenarios and evaluation policy are outside its write scope, so
+it cannot make a failing check pass by weakening it. A contract change it
+thinks it needs ends the task with that request for the Operator. Repair rounds
+are bounded, and the same failures twice in a row end the task with a blocker
+report. The result is a runnable implementation with observed check results,
+reviewed beside the affected parts and contracts before the Operator integrates
+it; integration checks the base revision again and never touches the
+Operator's uncommitted work.
 
 ---
 
@@ -1658,11 +1968,11 @@ drawing parameters from tokens; the settings table's first rows; the
 **Depends on:** Stage 4. **Waits:** plan, steering, notes, skill files,
 compaction, autonomy modes, agents.
 
-### 6.4 Stage 6: the agentic Assistant and agents in the model
+### 6.4 Stage 6: the agentic Assistant
 
-**Outcome.** Scenario F works on at least two providers, and Scenario G steps
-G1–G3: the Operator designs agents, and sees Agentique's own Assistant as an
-agent in its self-model.
+**Outcome.** Scenario F works on at least two providers. (Scenario G steps
+G1–G3, agents in the model, moved to Stages 7–8 with W6.9 and W6.10 under
+C-50; the items keep their numbers there.)
 
 **Work items**
 
@@ -1677,106 +1987,99 @@ agent in its self-model.
 - **W6.7 Notes** with `propose_note`; Settings › Assistant › Notes (R-35).
 - **W6.8 Turn summary and review:** changes grouped per turn, problems before and
   after, cost; per-change Keep or Undo and Follow mode (should).
-- **W6.9 Agents in the language:** `enum def` and enumeration values in the subset, the built-in
-  `Agents` library, the validity rules, deviation 12, the subset manifest
-  updated (both locked-core changes recorded in §7.6 first, R-16, R-37).
-- **W6.10 Agents in the Studio and the self-model:** the agent badge and the
-  Inspector section (R-38); a `designing-agents` skill; the Assistant modelled
-  as an agent; `dependency` added to the subset and the self-model validated
-  in CI (R-41).
-- **W6.11 Evaluation set extended:** long tasks, the three modes, steering,
-  designing agents; run on each provider to confirm the capability table (A-8).
+- *(W6.9 and W6.10 moved to Stages 7–8, C-50.)*
+- **W6.11 Evaluation set extended:** long tasks, the three modes, steering;
+  run on each provider to confirm the capability table (A-8).
 - **W6.12 Journey** `f-long-task`.
-
-**Spike S6.1: agent modelling** (three days, before W6.9). Model three agents:
-link screening (fast, with a blocklist fallback), support triage (fast, with a
-deliberate agent for hard cases), and Agentique's Assistant (deliberate). Judge
-with the Operator how they read on the Surface and in the Inspector. Decide the
-validity rules and whether escalation needs anything beyond two agents and a
-routing part (Q-13).
 
 **Interfaces to merge first:** schemas of `update_plan`, `read_skill`,
 `propose_note` and `ask_operator.preview`; the skill loader's contract; the
-notes store; the autonomy mode and its effect on the executor; the `Agents`
-library text and validity codes; the event protocol and conversation entries
-for plans, queued and delivered messages, previews, note proposals and
-compaction summaries.
+notes store; the autonomy mode and its effect on the executor; the event
+protocol and conversation entries for plans, queued and delivered messages,
+previews, note proposals and compaction summaries.
 
 **Acceptance evidence**
 
 - The Operator runs Scenario F with a task of at least about twenty tool calls,
   in each autonomy mode, on at least two providers: steers, stops and sends,
   refuses a lock change, undoes a turn, accepts and rejects notes, adds a skill.
-- The Operator runs G1–G3.
 - Must-hold behaviours pass in every trial of the evaluation set: never claims
   an unconfirmed change; never changes a lock without confirmation; asks on major
   decisions in the default mode; never shows SysML text.
 
-**Depends on:** Stage 5. **Waits:** simulation and implementation of agents; the
-Orchestrator.
+**Depends on:** Stage 5. **Waits:** the Orchestrator.
 
-### 6.5 Stage 7: simulation, with agents
+### 6.5 Stages 7–8: the factory loop, with agents (C-50)
 
-**Outcome.** Scenario A step A5 and Scenario G steps G4–G6. Scenarios built from
-Agentique's own parts run over the architecture and report whether it can carry
-them out and whether requirements hold (C-16); agents run as stubs or
-recordings, and live evaluations run apart (C-43).
+The Operator's direction of 2026-09-30 (C-50) builds agents in the model
+(W6.9, W6.10), simulation (Stage 7) and implementation links (Stage 8) as one
+bounded cross-stage phase: **one continuous loop**, delivered as working
+vertical slices, while Stage 5's open items and Stage 6's Assistant items wait
+their turn. It replaces the separate Stage 7 and Stage 8 plans and their spikes
+S7.1 and S8.1, whose questions (Q-5, Q-2) the design of §4.14–§4.15 answers,
+pending the Operator.
 
-**Work items**
+**Outcome.** Scenario I (§2.10), which completes Scenario A (A5–A7, C-19) and
+Scenario G (G1–G9): the Operator designs a system with agents, exercises its
+behaviour, has it implemented, inspects the results, sees a disagreement and
+changes the system safely, in one experience at the Studio's quality bar.
 
-- **W7.1 Spike S7.1: simulation semantics** (Q-5): what "simulate a contract"
-  means for message and interface flows, and the minimal state and action
-  semantics needed. Decision criteria: the URL shortener's three main scenarios
-  and the link-screening scenario can be written, run and explained on the
-  Surface, and a broken interface is caught. The subset extension is recorded in
-  the manifest. The spike also settles how a requirement states an agent's
-  required pass rate (Q-14).
-- **W7.2** Scenarios, runs and traces with the disciplines of §5.5; step-through
-  playback on the Surface (after IcePanel's flows [59]).
-- **W7.3** Agent stand-ins with injected failures; recordings keyed by request
-  digest; `missing-recording` as a stop reason (R-39).
-- **W7.4** Live evaluation runs of agents: samples, pass rates, cost; keeping a
-  good run as recordings (R-39).
-- **W7.5** The `Simulation` crate and its place in the self-model (Q-20).
+**Milestones** (each buildable, visible in the Studio and covered by tests):
 
-**Interfaces to merge first:** the scenario format, the trace format, the
-recording format and location (Q-16), the evaluation report (never committed).
-
-**Acceptance evidence.** The Operator simulates the URL shortener's main
-scenarios and sees a deliberately broken interface caught before any code
-exists, then fixes it. The Operator simulates link screening with injected
-failures and sees the fallback path, then runs a live evaluation and keeps a
-run as recordings.
-
-**Depends on:** Stage 6.
-
-### 6.6 Stage 8: implementation links, with agents
-
-**Outcome.** Scenario A steps A6–A7 (**Scenario A complete**, C-19) and
-Scenario G steps G7–G9.
+| Milestone | Observable outcome |
+|---|---|
+| M1 Executable architecture | A conventional subsystem has explicit behaviour and scenarios that genuinely run, with useful traces and failing checks |
+| M2 Agentic components | An agent uses the same model and Library concepts, with deterministic stand-ins, replay, failure handling and an explicit live-evaluation path |
+| M3 Real implementation | The Assistant produces or changes runnable code, links it to the model, and runs the relevant scenarios and checks against it |
+| M4 Closed-loop change | Agentique detects a deliberate contradiction, explains it in context, guides a bounded repair, and keeps the intended requirements |
 
 **Work items**
 
-- **W8.1 Spike S8.1: checks** (Q-2): which model-to-code checks give real
-  protection (interface signatures, dependency direction, required tests, test
-  results), for ordinary parts and for agents (C-46). Decision criterion: each
-  kept check catches a deliberate contradiction in the URL shortener with no
-  false alarm on the correct code.
-- **W8.2** The Assistant's code tools, and how the autonomy modes extend to side
-  effects outside the System State (Q-15).
-- **W8.3** Implementation links, drift and per-part status on the Surface; model
-  and code sharing commits (C-24).
-- **W8.4** Agent checks: ports against code types, fallback path, guardrail
-  tests on recordings, live pass rate against the requirement (R-40).
+- **W6.9 Agents in the language:** `enum def` and enumeration values, the
+  built-in `Agents` library, the validity rules `wrong-fallback` and
+  `agent-fallback`, deviation 12, the subset manifest (R-37).
+- **W6.10 Agents in the Studio and the self-model:** the agent badge and the
+  Inspector's Agent section (R-38); `dependency` in the subset and the
+  self-model validated by our own core (R-41); the Assistant modelled as an
+  agent (C-44).
+- **W7.1 Behaviour and scenarios in the language:** expressions, the behaviour
+  subset, verification cases, the `Scenarios` library, System State properties,
+  the manifest and deviations (§4.14).
+- **W7.2 Simulation:** the crate, the run contract, model execution, traces,
+  checks, results with provenance and freshness; the Library's blocks gain
+  explicit behaviour where it earns its place (a retrying worker, a queue, an
+  agent with a recovery path).
+- **W7.3 Agents at run time:** stand-ins with injected failures, recordings
+  keyed by request digest with `missing-recording`, live evaluation through an
+  explicit model client with samples, intervals, failure categories and
+  provenance, and keeping a good run as recordings (R-39).
+- **W7.4 Studio, runs:** the Scenarios tab, structured scenario authoring, the
+  run controls (Run, Pause, Step, Stop, playback), the trace timeline with
+  filters, check verdicts and freshness, highlights of active elements from
+  recorded events, the Behaviour and Evidence sections of the Inspector.
+- **W8.1 Execution:** the typed executor, scopes, trusted-local mode, jobs with
+  journals, cancellation and recovery (§4.15).
+- **W8.2 Implementation:** links, code-to-model lookup, the harness protocol
+  and implementation runner, the supported checks and drift (§4.15).
+- **W8.3 The supervised implementation loop** and the Assistant's run and code
+  tools (§4.10), with grouped approvals, patch review beside the affected parts,
+  and integration that checks the base revision again.
+- **W8.4 Proof:** Scenario I end to end on the URL shortener with link
+  screening, the second example (a retrying notification dispatcher), the
+  deliberate model and implementation breaks, and the dogfood check on this
+  repository; journeys, gallery entries and budgets for the new paths.
 
-**Acceptance evidence.** **The Operator runs the complete Scenario A**,
-including trying the generated system and the "expiring links" change with a
-locked part refusing silent change; implements link screening and sees a
-deliberate drift.
+**Acceptance evidence.** The Operator walks through Scenario I (I1–I8) in the
+Studio, with the Assistant on a real provider for I4 and I6 and an explicit
+live evaluation for I3, and accepts it (C-15). Automated tests, journeys and
+the reference budget run support the acceptance and never replace it.
 
-**Depends on:** Stage 7.
+**Depends on:** Stage 5's Studio and Library (built, pending acceptance).
+**Waits:** Stage 5's open items, Stage 6's Assistant items, remote workers,
+unattended deployment, languages other than Rust for implementation checks,
+stochastic and numerical simulation.
 
-### 6.7 Later stages (order to be confirmed when reached)
+### 6.6 Later stages (order to be confirmed when reached)
 
 - **Stage 9. Scenario B (larger system):** readable overviews at scale,
   grouping, branches in the UI, merging by identity, keeping concepts general.
@@ -1851,6 +2154,7 @@ Confirmed in the interview of 2026-09-27:
 | C-47 | `ROADMAP.md` replaces `REALIGNMENT.md` as the single governing text; `REALIGNMENT.md` is retired to git history |
 | C-48 | The Studio moves from egui to GPUI (a pinned snapshot of Zed's GPUI, `gpui-pre`, with the unstyled `gpui-base` primitives), with its presentation redesigned; the Operator accepts the governance risk and waives S4.1 Track B's gates. The Surface is drawn with GPUI's own primitives, since GPUI cannot show wgpu output on Windows |
 | C-49 | Agentique has a **Library** of reusable building blocks: reusable KerML/SysML definitions from a small built-in library, the project and My Library, found, previewed, inserted, connected, specialised, overridden and created from existing architecture by the Operator and the Assistant alike. Using a block creates a usage typed by the definition, and a project keeps its own copies of what it uses; there is no parallel component model, marketplace or remote registry (the Operator's decision, 2026-09-29) |
+| C-50 | **The factory loop.** Agents in the model, simulation and implementation are built as one bounded cross-stage phase and one continuous loop (intent → architecture → scenarios → execution → implementation → checks → informed change), delivered as working vertical slices with the URL shortener's link screening as the proof (Scenario I). The model (intent), the implementation (actual code) and run results (observations) stay separate; scenarios are the shared anchor; runs are labelled by what actually ran; a runner that cannot evaluate something says so; code execution goes through a controlled executor, never the model change boundary. The minimum additive language and persistence extensions its proving journeys need are authorised, each named and justified in §7.6 before it is built (the Operator's direction, 2026-09-30) |
 
 ### 7.2 Recommendations
 
@@ -1911,6 +2215,10 @@ Confirmed in the interview of 2026-09-27:
 | R-45 | The evaluation set also compares default models and effort (for example `claude-opus-5` at `high` against `claude-opus-5-5` at `medium` and `high`) and every Assistant provider (Anthropic, OpenAI, OpenRouter, DeepSeek) before any default changes | Q-19; C-27 |
 | R-46 | A three-step first run (what Agentique is; connect a provider or skip; create or open a project), with the URL shortener as a sample | Scenario E1 |
 | R-47 | The Library as in §4.13: a new part Library (crate `agq-library`) above the language core and the System State; blocks copied with their dependency closure into the project's `Library` package, identical copies reused and conflicts never overwritten; origin derived from qualified names and content, never stored; fit with a port decided by the language's own rule through the read-only `Semantics` query (the one locked-core addition); My Library as one SysML file in the app's local data; four Assistant tools, saving to My Library only at the Operator's request and after a confirmation; the journey `h-library` with a scripted stand-in | C-49; §8.1 rules 4–6; D-1 |
+| R-48 | Scenarios are standard verification cases (subject, objective with `verify`, steps, `assert constraint` checks); stand-ins are usages of the built-in `Scenarios::StandIn`; the same scenario runs in the modes `model`, `replay`, `implementation`, `live` and `walkthrough` of one run contract *(decided in this session under C-50, pending the Operator)* | C-50; SysML 7.22; §4.14 |
+| R-49 | Model execution semantics as in §4.14: fixed snapshot, logical milliseconds, ordering by time then scheduling order, run to completion, `ambiguous-transition` and `unhandled-message` as stop reasons, explicit limits and stop reasons, no randomness yet *(decided in this session under C-50, pending the Operator)* | C-50; §5.5; Q-5 |
+| R-50 | Results carry provenance digests; freshness is computed, never stored; checks are passed, failed, not run, unsupported, blocked or inconclusive; five claims stay apart (§4.14) | C-50; §8.3 |
+| R-51 | Implementation as in §4.15: links in `model/links.json`; one path (Rust with Cargo); four checks with stated coverage; a harness speaking one JSON line per step; the Execution service with trusted-local mode, scrubbed environments, scoped writes, jobs with journals; one supervised worker with bounded repair and protected checks *(decided in this session under C-50, pending the Operator)* | C-50; Q-2; Q-15 |
 
 ### 7.3 Assumptions
 
@@ -1934,10 +2242,10 @@ Confirmed in the interview of 2026-09-27:
 | ID | Question | Blocking? |
 |---|---|---|
 | Q-1 | What "Agentic" reference the Operator mentioned as inspiration in the first interview | No |
-| Q-2 | Which model-to-code checks are feasible and worthwhile, for parts and for agents | Blocks Stage 8 design (S8.1) |
+| Q-2 | Which model-to-code checks are feasible and worthwhile, for parts and for agents | Decided in this session under C-50, pending the Operator: the four checks of §4.15, each with its stated coverage (R-51) |
 | Q-3 | What exactly counts as a "major decision" | Partly resolved: the autonomy modes (C-38) settle the levels; the definition lives in the `decisions` skill and is refined with the evaluation set |
 | Q-4 | Orchestrator design: which assistant roles, how they coordinate (multi-agent systems cost about 15 times the tokens of a chat [22]) | No (after Stage 8) |
-| Q-5 | What simulation semantics are needed to test contracts (message flows, states, actions, time?) | Blocks Stage 7 design (S7.1) |
+| Q-5 | What simulation semantics are needed to test contracts (message flows, states, actions, time?) | Decided in this session under C-50, pending the Operator: §4.14 (R-49) |
 | Q-6 | Whether egui is the right toolkit for the quality bar | Decided by the Operator: GPUI (C-48) |
 | Q-7 | How to read an existing codebase into a model | No (Stage 10) |
 | Q-8 | Which parts of the SysML standard the Operator would miss under the subset | No (reviewed as it grows) |
@@ -1945,14 +2253,14 @@ Confirmed in the interview of 2026-09-27:
 | Q-10 | Should per-project skills and notes live in the project folder, versioned with the code, instead of the app's local data? | Decided overnight 2026-09-27, pending Operator confirmation: the app's local data, as in R-43 |
 | Q-11 | Should Jev or another typed fast-decision API become an agent's model provider, once rig releases `rig-typesafeai` [9]? | Resolved by the Operator (C-35): Jev is a model provider for fast agents now, through a thin client until rig releases it (C-34) |
 | Q-12 | When do local models and Gemini arrive? | No; after Stage 8 unless the Operator pulls them earlier |
-| Q-13 | How is escalation from a fast agent to a deliberate one modelled: two agents and a routing part, or a state machine? | S6.1 and Stage 7 |
-| Q-14 | How does a requirement state an agent's required pass rate (needs constraint expressions or a convention on attributes)? | Stage 7 |
-| Q-15 | Which code tools does the Assistant get for implementation, and how do the autonomy modes extend to side effects outside the System State? | Stage 8 (W8.2) |
-| Q-16 | Where are recordings of agent answers stored (project folder or app data), and are they committed? | Stage 7 |
+| Q-13 | How is escalation from a fast agent to a deliberate one modelled: two agents and a routing part, or a state machine? | Open; C-50 keeps it out of the fallback: a fallback is never an agent, and escalation is modelled explicitly when a scenario needs it |
+| Q-14 | How does a requirement state an agent's required pass rate (needs constraint expressions or a convention on attributes)? | Open; a live evaluation reports its numbers with an interval and the Operator judges them (C-50) |
+| Q-15 | Which code tools does the Assistant get for implementation, and how do the autonomy modes extend to side effects outside the System State? | Decided in this session under C-50, pending the Operator: §4.2, §4.10, §4.15 (R-51) |
+| Q-16 | Where are recordings of agent answers stored (project folder or app data), and are they committed? | Decided in this session under C-50, pending the Operator: kept recordings are fixtures in `<project>/recordings/`, committed only if the Operator chooses (§4.9) |
 | Q-17 | Inter or Segoe UI Variable for the interface font, judged side by side at 100% and 125% scaling | Decided overnight 2026-09-27, pending Operator confirmation: keep Inter; the side-by-side judgment stays with the Operator (W5.2) |
 | Q-18 | Server-side safety fallbacks under rig: an upstream contribution, a thin adapter, or none with "Retry with another model" | Decided overnight 2026-09-27, pending Operator confirmation: keep C-27 with a thin adapter in `agq-providers` for the `fallback` content block; the upstream contribution is written as a proposal, not filed |
 | Q-19 | Should the default model move from `claude-opus-5` at `high` to `claude-opus-5-5` (cheaper; its default effort is `medium` per Anthropic's model documentation, not re-checked against the live page [10][12])? Newer models also tie thinking blocks to their model and conversation (S4.2, P2) | No; the evaluation set informs the Operator (R-45) |
-| Q-20 | Do live evaluations of agents belong to the Simulation part (with a dependency on Providers) or to a separate part? | Stage 7 |
+| Q-20 | Do live evaluations of agents belong to the Simulation part (with a dependency on Providers) or to a separate part? | Decided in this session under C-50, pending the Operator: Simulation runs them through a model client the Studio gives it, so it never depends on Providers (§4.6) |
 
 ### 7.5 Decisions carried forward from the retired records
 
@@ -2011,6 +2319,23 @@ The ADRs named here are preserved at the tag `archive/pre-realignment`.
 | 2026-09-29 | R-47 adopted with C-49: the part Library and its crate in the self-model with its dependencies; My Library's location (§4.9); four Assistant tools (§4.10); a Library search budget (§3.3) with a CI ceiling; glossary entries for Library, building block and My Library | §8.1 rules 5 and 6; §8.4 |
 | 2026-09-29 | W5.13 in the Studio, results: the Library tab beside the Outline (search, scopes, kinds, structural preview), insertion by keyboard, palette, context menu and drag, "What can connect here?", opening definitions with a breadcrumb and Back, the Inspector's Definition section with Override and Reset, Specialise, Create building block from selection, Save to My Library, block links in the Conversation, and the Library in the component gallery. Journeys pass on debug builds: `h-library` (75 steps) at 100%, 150% and 200% UI scale with reduced motion, and the six earlier journeys (`a-crash` exits 3 by design); 420 tests pass. Library search 2.4 ms per keystroke at 5,000 blocks (release; budget 8 ms). Not done: the reference budget run of §8.6 (the release build was stopped when the machine ran low on memory), the h8 evaluation tasks live, screen readers. Pending the Operator's use and acceptance (§8.3) | C-49; W5.13; §8.6 |
 | 2026-09-29 | Decided in this session, pending the Operator: when the docked columns would leave the Surface less than a quarter of the window (150% and 200% UI scale), they narrow for display, first giving up their width above the 200-point minimum in proportion, then sharing equally; the widths kept per project do not change. At 200% on a 1600-pixel window the Surface had been 0 pixels wide. Narrow tabs, segmented choices and the composer's selection chip end in an ellipsis | Found by running `h-library` and `d-daily` at 200%; the smallest rule that keeps every column and the Surface usable; W5.3 may replace it with a docking API |
+| 2026-09-30 | **C-50, the Operator's decision:** the factory loop, a bounded cross-stage phase (§1.5, §2.10, §6.5). Stages 7 and 8 become one stage, "Stages 7–8", with milestones M1–M4 and work items W6.9, W6.10, W7.1–W7.4 and W8.1–W8.4; S7.1 and S8.1 are replaced by the design of §4.14–§4.15; Stage 6 keeps the Assistant's items. Stage 5 stays in progress; its open items and Stage 6's wait | The Operator's direction in this session |
+| 2026-09-30 | Locked core, under C-50 (language), named before it is built: **(1)** `enum def`, `enum` values and enumeration values as feature values, for an agent's mode and for decisions and statuses in designed systems; **(2)** the standard `dependency` relationship, so our own core validates the self-model (R-41) and the dependency check runs on this repository; **(3)** the built-in `Agents` library of §4.11 (C-42) with `AgentOutput`, so the runtime reads confidence by identity; **(4)** expressions (KerML's literals, `null`, feature references and chains, unary `-` and `not`, `* / % + -`, comparisons, `== !=`, `and or xor implies`, `if ? else`, `new T(name = value)`, parentheses) as feature values, guards, effects and checks; references inside expressions are references like any other: linked by identity, printed by a name that leads back, unbound by name when their target is deleted; **(5)** the behaviour subset: `exhibit state`, `state`, `entry` and `exit` actions, `entry; then S;`, `transition [name first] S accept [x : T via p | after d] if g do effect then T;`, and the action nodes `send e via p`, `assign x := e`, `if e { } else { }`, `accept x : T via p`, `accept after d` and composite `action { }` run in written order; **(6)** scenarios as `verification def` with `subject`, `objective { verify r; }`, steps and `assert constraint`; **(7)** the built-in `Scenarios` library (`Outcome`, `StandIn`). New element kinds and fields are added to the tree; no existing construct, rule, meaning or identity changes; unsupported forms stay unsupported and are reported | Scenario I needs executable, checkable behaviour in standard terms (§4.14); C-50 authorises the minimum additive extensions |
+| 2026-09-30 | Locked core, under C-50 (System State operations): `Property` gains variants for the new fields (an expression value, a guard, a trigger, a port for `via`, a transition's source and target, a state action's place); `Operation` is unchanged. Deleting an element unbinds references inside expressions exactly as other references | Model-facing edits of behaviour and scenarios go through the one typed change path, with locks, validation, history and undo |
+| 2026-09-30 | Locked core, under C-50 (persistence): one optional file, `model/links.json` (§4.5 item 7), saved and committed by History with the model files; nothing else in the format changes | Implementation links must be versioned with the model and linked by identity (§4.15) |
+| 2026-09-30 | Self-model under C-50: parts `Simulation` (crate `agq-simulation`), `Implementation` (renamed from `ImplementationLinks`; crate `agq-implementation`) and `Execution` (crate `agq-execution`), with the dependencies of §4.6; Q-20 decided: Simulation reaches providers only through a model client it is given | §8.1 rules 5 and 6: a distinct responsibility each, and one place that decides what may run |
+| 2026-09-30 | Product terms under C-50 (§8.4, §9): run, trace, check, execution mode, implementation task, job, trusted-local execution; stand-in widened from an agent's model to any part a scenario replaces | A new term each where no standard one fits; "scenario", "simulation", "implementation link", "drift", "stand-in" and "recording" already exist |
+| 2026-10-01 | Stages 7–8, built in one session (pending the Operator): the Studio's Scenarios tab and Run panel (modes, F5 and Shift+F5, verdicts apart from completion, a trace to step and play back with `[`, `]` and `\`, marks on the Surface only for a current result), scenarios written through controls, and the Inspector's Behaviour, Stand-in, Agent, Evidence and Implementation sections; what a scenario sets up (its stand-ins) is shown with the scenario, not as architecture cards | Scenario I's I2 and the Operator never writing SysML (C-4); stand-ins are test fixtures, not parts of the system |
+| 2026-10-01 | The Assistant writes behaviour and scenarios with `apply_changes` (new kinds and fields: expression, via, after, guard, exhibit, initial, trigger, effect, subject, verifies, features) rather than a separate scenario tool; `inspect_behaviour`, `list_scenarios`, `run_scenario`, `stop_run`, `read_run`, `read_code_links`, `check_implementation` and `propose_implementation` are carried out by the Studio with its own services; a live evaluation is the Operator's to start, refused by the schema and again when prepared | One change path for every model edit (§1.3: generalise); the Assistant is a first-class user of the same services; spending money is the Operator's decision |
+| 2026-10-01 | The supervised implementation loop: a task's brief comes from the model; the worker is the Assistant's loop with code tools in one git worktree per task; repair is bounded (6 rounds; stop after 3 without fewer failures); the Studio verifies the worktree itself and never takes the worker's word; the Operator reviews the patch, integration is refused if the repository moved, proposed links are applied only then; a wrong contract goes back to the Operator; one task at a time; the model folder is protected when the code shares the project's folder; a task continues in the same worktree without making it again | §4.15 and I4, I6, I8 with the smallest set of parts; bounded, reviewable autonomy |
+| 2026-10-01 | Module boundaries allow a part def to use the definitions of its own parts, besides `dependency` | A whole composes its parts; without it no composing module could pass. From the model's structure, never from names |
+| 2026-10-01 | An implementation run records the code once its harness is built | The build writes files (Cargo's lock file), which made a fresh result outdated at once |
+| 2026-10-01 | Live evaluation: the model is shown a flat answer template (field, what it may hold) built from the output item, never the item's schema; a `fast` agent asks for the lowest effort its model lists; a live sample may run for 5 minutes (a model run, 10 seconds); the provider of an agent's model is the one whose own table knows the model id (§8.7) | Found in the first live runs: the model copied the schema's `fields` array (every answer invalid) and samples were cut at 10 seconds |
+| 2026-10-01 | A recording's key sorts the request's keys itself | In the whole workspace's build another crate turns on `serde_json`'s `preserve_order`, so the key depended on the build that made it |
+| 2026-10-01 | Library: `Resilience::RetryingWorker` and `Moderation` (an agent with a deterministic fallback) carry state machines and scenarios; using a block brings the scenarios whose subject it types; copies and plans remap every reference, expressions and `via` included (a fix); the curated library's cap rises from 40 to 60 blocks | §4.13 and C-50: blocks carry behaviour where it earns its place; each behaviour block needs its own items and ports |
+| 2026-10-01 | Samples: "Start from the URL shortener" offers "With AI screening" (Scenario I's model) and "And its code" (its Rust code beside the project, committed and linked, with its harness), from one fixture shared with the proof test | The Operator can walk Scenario I, code included, without setting anything up |
+| 2026-10-01 | Dialogs never grow taller than the window: their body scrolls and the buttons stay in view; "Create building block from selection" asks for its names before its lists | Found at 200% UI scale, where the trusted-local dialog's buttons fell below a 1000-pixel window |
+| 2026-10-01 | Finding, for the Operator: `LinkScreening`'s `maxLatencyMs = 500` (fixed in §2.10) is not met by `deepseek-flash` from the reference machine (answers took 0.9–5 s, median about 1.8 s), so in a live evaluation the fallback decides every case and the benign cases fail; with 5000 ms, abuse was blocked 5/5 and benign links allowed 4/5. Not changed: §2.10 is the Operator's | A live evaluation's purpose: evidence about the agent's contract, reported as it is |
 
 ### 7.7 The original requirements
 
@@ -2093,6 +2418,13 @@ on `main` at `6fc90b78`; its retained content is in this document (§4.2, §4.5,
 - **Report honestly.** "Works", "partially works", "not tried" and "failed" are
   different statements. A run completing is not a check passing. Never state
   that something works because a lot of code or evidence exists.
+- **Claims about systems built with Agentique stay apart** (C-50, §4.14):
+  structurally valid, behaviour executable, scenario completed, check passed,
+  and implementation agrees within the checked scope. A result says which mode
+  produced it and whether it is current; an outdated result is never shown as
+  current evidence, and a live evaluation not run is never reported as passing.
+  Deliberately introduced defects (in the model and in the code) show that a
+  check detects what it claims to.
 - **CI is green on a healthy tree.** A known failure is fixed, or the test is
   removed with a recorded reason. It is never left permanently red.
 - **Do not commit** generated logs, screenshots, screenshot hashes, budget
@@ -2113,7 +2445,9 @@ on `main` at `6fc90b78`; its retained content is in this document (§4.2, §4.5,
 - **Product nouns** are fixed here: Studio, Surface, Panels, Conversation,
   Assistant, Orchestrator (later), System State, Settings, lock, scenario,
   simulation, implementation link, drift, agent, autonomy mode, Library,
-  building block, My Library (C-49).
+  building block, My Library (C-49), run, trace, check, execution mode,
+  stand-in, recording, implementation task, job, trusted-local execution
+  (C-50).
 - A new product term needs a reason that no standard term fits, and an entry in
   the glossary (§9).
 
@@ -2186,7 +2520,7 @@ on `main` at `6fc90b78`; its retained content is in this document (§4.2, §4.5,
 | **Compaction** | Summarising earlier conversation so the Assistant's context stays within limits |
 | **Agent** | A part whose behaviour is produced by an AI model, in fast or deliberate mode; in the model, a part definition specialising `Agents::Agent`. The Assistant is Agentique's own agent. An agent's fast mode is unrelated to Anthropic's "fast mode", a faster serving option |
 | **Fallback** | The deterministic part that takes over when an agent fails |
-| **Stand-in** | A deterministic replacement for a model, in tests or simulation |
+| **Stand-in** | A deterministic replacement, declared in a scenario, for an agent's model or for any part of the subject: it answers calls with a stated outcome (answer, timeout, invalid output, refusal, unreachable tool) instead of the real behaviour (C-50) |
 | **Recording** | A stored real answer of an agent's model, replayed in simulation |
 | **Live evaluation** | Running an agent or the Assistant against a real model on several samples to measure a pass rate, apart from simulation |
 | **Evaluation set** | The tasks used to measure the Assistant's behaviour against real models |
@@ -2198,9 +2532,17 @@ on `main` at `6fc90b78`; its retained content is in this document (§4.2, §4.5,
 | **Reference machine** | The Operator's Windows machine, where frame, latency, start and memory budgets are measured |
 | **Subset manifest** | The list of supported, partial and excluded KerML/SysML constructs, with reasons |
 | **Deviation** | A recorded place where Agentique intentionally departs from the standard |
-| **Scenario (simulation)** | A defined sequence of interactions run against the architecture |
+| **Scenario** | A verification case: a subject, the requirements it verifies, stand-ins, steps and checks; it runs unchanged in every execution mode (C-50) |
+| **Run** | One execution of a scenario in one execution mode against a fixed model snapshot (and, for implementation runs, a fixed code revision), with its trace, check verdicts and provenance |
+| **Execution mode** | What a run actually exercised: model execution, recorded replay, implementation, live evaluation, or walkthrough (which verifies nothing) |
+| **Trace** | The ordered, recorded events of a run: what happened, where, with which inputs and outputs, and why it stopped |
+| **Check** | An `assert constraint` of a scenario, or an implementation check; its verdict is passed, failed, not run, unsupported, blocked or inconclusive, and it may be outdated |
+| **Implementation task** | One approved piece of implementation work with a scope, a plan, a worktree, checks and a patch for review |
+| **Job** | A long-running piece of work with side effects (an implementation task, an implementation run, a live evaluation), with a stable id, a state and a journal |
+| **Trusted-local execution** | The per-project mode in which Agentique may run builds, tests and harnesses on this machine with the Operator's rights, because no sandbox is available |
+| **Harness** | The small program in an implementation repository that lets the implementation runner drive the real code through a scenario's steps |
 | **Implementation link** | A link from a model element to code, tests or a running service |
-| **Drift** | A detected difference between the model and a linked implementation |
+| **Drift** | A failing check on linked code, shown at the model elements it covers: a detected difference between the model and a linked implementation |
 | **Library** | The Studio's collection of reusable definitions, shown as building blocks: the built-in blocks, the project's own definitions and My Library (§4.13) |
 | **Building block** | A reusable definition as the Library shows it: atomic (one definition) or composite (a part definition with its own parts, ports and connections) |
 | **My Library** | The Operator's own building blocks, kept in the app's local data for use in any project; using one copies it into the project |

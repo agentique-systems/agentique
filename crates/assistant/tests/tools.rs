@@ -44,6 +44,14 @@ fn every_tool_has_a_schema() {
             "get_problems",
             "apply_changes",
             "ask_operator",
+            "inspect_behaviour",
+            "list_scenarios",
+            "run_scenario",
+            "stop_run",
+            "read_run",
+            "read_code_links",
+            "check_implementation",
+            "propose_implementation",
             "search_library",
             "read_library_block",
             "use_library_block",
@@ -600,7 +608,7 @@ fn search_library_lists_blocks_with_what_they_are_and_expose() {
         &json!({ "kind": "port def" }),
     ));
     assert!(
-        ports.starts_with("2 building blocks in the Library:"),
+        ports.starts_with("5 building blocks in the Library:"),
         "{ports}"
     );
     let none = answer(tools::prepare(

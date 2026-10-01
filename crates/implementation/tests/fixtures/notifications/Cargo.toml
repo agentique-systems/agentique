@@ -1,0 +1,12 @@
+[package]
+name = "notifications"
+version = "0.1.0"
+edition = "2021"
+description = "A notification dispatcher that retries a failing SMS gateway (Agentique's second example)"
+
+# Its own workspace: this fixture is not part of Agentique's.
+[workspace]
+
+[[bin]]
+name = "agentique-harness"
+path = "src/bin/agentique-harness.rs"

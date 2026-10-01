@@ -34,6 +34,25 @@ const STOPPED: &str = "Stopped by the Operator. Changes made so far stay and can
 /// flag.
 const POLL: Duration = Duration::from_millis(20);
 
+/// What a turn works with: the system prompt and the tools it may call.
+/// The Conversation's Assistant has the architecture tools; an
+/// implementation worker has the code tools (C-50).
+#[derive(Clone, Debug, PartialEq)]
+pub struct Toolset {
+    pub system: String,
+    pub definitions: Value,
+}
+
+impl Toolset {
+    /// The Conversation's Assistant.
+    pub fn assistant() -> Toolset {
+        Toolset {
+            system: skills::system_prompt().to_string(),
+            definitions: tools::definitions(),
+        }
+    }
+}
+
 /// A tool call whose input matches the tool's schema.
 #[derive(Clone, Debug, PartialEq)]
 pub struct ToolCall {
@@ -73,7 +92,28 @@ pub fn run(
     on_event: &mut dyn FnMut(TurnEvent),
     stop: &AtomicBool,
 ) {
-    for _ in 0..MAX_MODEL_CALLS {
+    run_with(
+        model,
+        conversation,
+        &Toolset::assistant(),
+        MAX_MODEL_CALLS,
+        execute,
+        on_event,
+        stop,
+    )
+}
+
+/// [`run`] with another toolset and limit on model calls.
+pub fn run_with(
+    model: &mut dyn Model,
+    conversation: &mut Conversation,
+    toolset: &Toolset,
+    max_calls: usize,
+    execute: &mut dyn FnMut(&ToolCall) -> ToolResult,
+    on_event: &mut dyn FnMut(TurnEvent),
+    stop: &AtomicBool,
+) {
+    for _ in 0..max_calls {
         if stop.load(Ordering::SeqCst) {
             add(conversation, on_event, notice(STOPPED));
             return;
@@ -92,8 +132,8 @@ pub fn run(
             return;
         }
         let request = Request {
-            system: skills::system_prompt().to_string(),
-            tools: tools::definitions(),
+            system: toolset.system.clone(),
+            tools: toolset.definitions.clone(),
             messages,
         };
         let mut partial = String::new();
@@ -197,7 +237,9 @@ pub fn run(
                         "Not run: the input is not a valid JSON object. The input received was: {raw}"
                     ),
                 )
-            } else if let Err(message) = tools::check_input(&call.name, &call.input) {
+            } else if let Err(message) =
+                tools::check_input_against(&toolset.definitions, &call.name, &call.input)
+            {
                 not_run(&call.id, &format!("Not run: {message}."))
             } else {
                 ToolResult {
@@ -214,7 +256,7 @@ pub fn run(
         conversation,
         on_event,
         notice(&format!(
-            "Paused after {MAX_MODEL_CALLS} steps in one turn. Send a message to let the Assistant continue."
+            "Paused after {max_calls} steps in one turn. Send a message to let the Assistant continue."
         )),
     );
 }

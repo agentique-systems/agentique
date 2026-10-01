@@ -45,6 +45,12 @@ enum Kind {
     SaveToLibrary,
     Override,
     LibraryConflict,
+    NewScenario,
+    TrustLocal,
+    ConfirmLive,
+    LinkCode,
+    Implement,
+    ReviewTask,
 }
 
 fn kind_of(dialog: &Dialog) -> Option<Kind> {
@@ -60,6 +66,12 @@ fn kind_of(dialog: &Dialog) -> Option<Kind> {
         Dialog::SaveToLibrary { .. } => Kind::SaveToLibrary,
         Dialog::Override { .. } => Kind::Override,
         Dialog::LibraryConflict { .. } => Kind::LibraryConflict,
+        Dialog::NewScenario { .. } => Kind::NewScenario,
+        Dialog::TrustLocal => Kind::TrustLocal,
+        Dialog::ConfirmLive => Kind::ConfirmLive,
+        Dialog::LinkCode { .. } => Kind::LinkCode,
+        Dialog::Implement { .. } => Kind::Implement,
+        Dialog::ReviewTask { .. } => Kind::ReviewTask,
         Dialog::Rename { .. } => return None,
     })
 }
@@ -168,6 +180,11 @@ impl DialogsView {
             }) => Some((definition.clone(), Some(usage.clone()))),
             Some(Dialog::SaveToLibrary { category, .. }) => Some((category.clone(), None)),
             Some(Dialog::Override { value, .. }) => Some((value.clone(), None)),
+            Some(Dialog::NewScenario { name, .. }) => Some((name.clone(), None)),
+            Some(Dialog::LinkCode { path, symbol, .. }) => {
+                Some((path.clone(), Some(symbol.clone())))
+            }
+            Some(Dialog::Implement { instructions, .. }) => Some((instructions.clone(), None)),
             _ => None,
         };
         if let Some((first, second)) = values {
@@ -181,6 +198,9 @@ impl DialogsView {
                 Some(Kind::ExtractBlock) => "Backend",
                 Some(Kind::SaveToLibrary) => "Storage",
                 Some(Kind::Override) => "60",
+                Some(Kind::NewScenario) => "ShortenAllowed",
+                Some(Kind::LinkCode) => "src/store.rs",
+                Some(Kind::Implement) => "Anything else the worker should know (optional)",
                 _ => "",
             };
             let first = self.input(&first, placeholder, window, cx);
@@ -188,10 +208,10 @@ impl DialogsView {
             window.defer(cx, move |window, cx| window.focus(&focus, cx));
             self.first = Some(first);
             if let Some(second) = second {
-                let placeholder = if wanted == Some(Kind::ExtractBlock) {
-                    "backend (Enter for a default)"
-                } else {
-                    "Folder"
+                let placeholder = match wanted {
+                    Some(Kind::ExtractBlock) => "backend (Enter for a default)",
+                    Some(Kind::LinkCode) => "LinkStore (optional)",
+                    _ => "Folder",
                 };
                 self.second = Some(self.input(&second, placeholder, window, cx));
             }
@@ -213,6 +233,9 @@ impl DialogsView {
             if matches!(studio.dialog, Some(Dialog::Confirm { .. })) {
                 // Cancel and Escape refuse the change.
                 studio.answer(false);
+            } else if matches!(studio.dialog, Some(Dialog::Implement { .. })) {
+                studio.dialog = None;
+                studio.answer_proposal(Err("The Operator did not start the task.".into()));
             } else {
                 studio.dialog = None;
             }
@@ -236,8 +259,8 @@ impl DialogsView {
                         return;
                     }
                     let folder = PathBuf::from(&second);
-                    if sample {
-                        studio.create_sample(&folder, &first);
+                    if let Some(sample) = sample {
+                        studio.create_sample(&folder, &first, sample);
                     } else {
                         studio.create_project(&folder, &first);
                     }
@@ -321,6 +344,50 @@ impl DialogsView {
                 },
                 Dialog::LibraryConflict { request, .. } => {
                     studio.resolve_conflict(request, agq_library::Resolution::Rename)
+                }
+                Dialog::NewScenario { subject, .. } => {
+                    if first.is_empty() {
+                        studio.dialog = Some(dialog);
+                        return;
+                    }
+                    studio.create_scenario(subject, &first);
+                }
+                Dialog::TrustLocal => {
+                    let mut choice = studio.execution_choice();
+                    choice.trusted = true;
+                    studio.set_execution_choice(choice);
+                }
+                Dialog::ConfirmLive => {
+                    studio.runs.confirm_live = false;
+                    studio.start_run(agq_simulation::Mode::Live);
+                }
+                Dialog::Implement { element, .. } => {
+                    let started = studio.start_implementation(element, &first);
+                    if let Err(why) = &started {
+                        studio.status = why.clone();
+                    }
+                    studio.answer_proposal(started);
+                }
+                Dialog::ReviewTask {
+                    ref job, ref diff, ..
+                } => {
+                    let (job, diff) = (job.clone(), diff.clone());
+                    if let Err(problem) = studio.integrate_task(&job) {
+                        studio.dialog = Some(Dialog::ReviewTask {
+                            job,
+                            problem: Some(problem),
+                            diff,
+                        });
+                    }
+                }
+                Dialog::LinkCode { element, kind, .. } => {
+                    if first.is_empty() {
+                        studio.dialog = Some(dialog);
+                        return;
+                    }
+                    let kind = agq_implementation::LinkKind::ALL[kind.min(8)];
+                    let symbol = (!second.is_empty()).then_some(second.as_str());
+                    studio.link_code(element, kind, &first, symbol);
                 }
                 dialog @ Dialog::Rename { .. } => studio.dialog = Some(dialog),
             }
@@ -410,8 +477,38 @@ impl Render for DialogsView {
                 let ready = !Self::text(&self.first, cx).is_empty()
                     && !Self::text(&self.second, cx).is_empty();
                 let entity = entity.clone();
-                ui::Dialog::new("new-project", if *sample { "Start from the URL shortener" } else { "New project" })
+                let sample = *sample;
+                let chooser = self.studio.clone();
+                ui::Dialog::new("new-project", if sample.is_some() { "Start from the URL shortener" } else { "New project" })
                     .description("A project is a folder; the model is saved in it as SysML text, with its history in git.")
+                    .when_some(sample, |this, sample| {
+                        use crate::studio::Sample;
+                        this.child(
+                            Segmented::new(
+                                "sample-kind",
+                                match sample {
+                                    Sample::UrlShortener => 0,
+                                    Sample::Screening => 1,
+                                    Sample::ScreeningWithCode => 2,
+                                },
+                            )
+                            .choice(None, "The URL shortener")
+                            .choice(None, "With AI screening")
+                            .choice(None, "And its code")
+                            .on_choose(move |index, _, cx| {
+                                chooser.act(cx, |studio| {
+                                    if let Some(Dialog::NewProject { sample, .. }) = &mut studio.dialog {
+                                        *sample = Some(match index {
+                                            0 => Sample::UrlShortener,
+                                            1 => Sample::Screening,
+                                            _ => Sample::ScreeningWithCode,
+                                        });
+                                    }
+                                    studio.mark(Dirty::OVERLAY);
+                                })
+                            }),
+                        )
+                    })
                     .child(field("Name", self.first.as_ref().map(|s| TextField::new(s).target("Project name").into_any_element()), cx))
                     .child(field(
                         "Folder",
@@ -765,6 +862,22 @@ impl Render for DialogsView {
                         "The selected parts become a reusable definition, and one usage of it takes their place in {}. They keep their identity; connections from outside pass through the new definition's ports. One change: undo reverts it.",
                         name(extraction.owner)
                     ))
+                    // The names first: what is typed stays in view when the
+                    // lists below make the dialog scroll.
+                    .child(field(
+                        "Definition name",
+                        self.first
+                            .as_ref()
+                            .map(|s| TextField::new(s).target("Block name").into_any_element()),
+                        cx,
+                    ))
+                    .child(field(
+                        "Usage name",
+                        self.second
+                            .as_ref()
+                            .map(|s| TextField::new(s).target("Usage name").into_any_element()),
+                        cx,
+                    ))
                     .child(block_list("Parts", parts, IconName::Part, cx))
                     .child(block_list(
                         "Ports it will expose",
@@ -798,20 +911,6 @@ impl Render for DialogsView {
                     .children(extraction.blockers.iter().map(|blocker| {
                         ui::inline_message(ui::Tone::Warning, blocker.clone(), cx)
                     }))
-                    .child(field(
-                        "Definition name",
-                        self.first
-                            .as_ref()
-                            .map(|s| TextField::new(s).target("Block name").into_any_element()),
-                        cx,
-                    ))
-                    .child(field(
-                        "Usage name",
-                        self.second
-                            .as_ref()
-                            .map(|s| TextField::new(s).target("Usage name").into_any_element()),
-                        cx,
-                    ))
                     .footer(cancel_button)
                     .footer(confirm_button("Create building block", ready))
                     .into_any_element()
@@ -918,6 +1017,426 @@ impl Render for DialogsView {
                     )
                     .into_any_element()
             }
+            Dialog::NewScenario { subject, .. } => {
+                let subject = studio
+                    .project
+                    .as_ref()
+                    .and_then(|p| {
+                        p.state()
+                            .tree()
+                            .effective_name(*subject)
+                            .map(str::to_string)
+                    })
+                    .unwrap_or_default();
+                let ready = !Self::text(&self.first, cx).is_empty();
+                ui::Dialog::new("new-scenario", "New scenario")
+                    .width(460.0)
+                    .description(format!(
+                        "A scenario about {subject}: what goes in, how its parts or agents answer, and what must come out. Add those in the Run panel."
+                    ))
+                    .child(field(
+                        "Name",
+                        self.first.as_ref().map(|s| {
+                            TextField::new(s).target("Scenario name").into_any_element()
+                        }),
+                        cx,
+                    ))
+                    .footer(cancel_button)
+                    .footer(confirm_button("Create scenario", ready))
+                    .into_any_element()
+            }
+            Dialog::TrustLocal => {
+                let choice = studio.implementation.choice.unwrap_or_default();
+                let isolation = studio.isolation();
+                let studio_entity = self.studio.clone();
+                let off = self.studio.clone();
+                div()
+                    .key_context("Dialog")
+                    .track_focus(&self.focus)
+                    .size_full()
+                    .child(
+                        ui::Dialog::new("trust-local", "Trusted-local execution")
+                            .width(520.0)
+                            .description("Runs the project's builds, tests and harness on this computer, as you.")
+                            .child(plain_list(
+                                "What Agentique does",
+                                vec![
+                                    "Runs only Cargo: build, check, test, run, metadata".into(),
+                                    "In the code folder, each copy with its own target folder".into(),
+                                    "Without API keys, tokens or passwords in the environment".into(),
+                                    "Offline, unless you allow the network below".into(),
+                                    "Stops a process tree at its time limit or when you stop it".into(),
+                                ],
+                                IconName::CircleCheck,
+                                cx,
+                            ))
+                            .child(
+                                div()
+                                    .p(r(10.0))
+                                    .rounded(r(crate::tokens::radius::CONTROL + 2.0))
+                                    .bg(theme.inset)
+                                    .border_1()
+                                    .border_color(theme.separator)
+                                    .text_size(r(theme::text::SM))
+                                    .line_height(r(18.0))
+                                    .text_color(theme.text_secondary)
+                                    .child(format!("{isolation} Code that runs can do anything your account can: turn this on only for code you trust.")),
+                            )
+                            .child(
+                                div()
+                                    .flex()
+                                    .items_center()
+                                    .justify_between()
+                                    .gap(r(12.0))
+                                    .child(
+                                        div()
+                                            .text_size(r(theme::text::SM))
+                                            .child("Allow Cargo to use the network (to fetch dependencies)"),
+                                    )
+                                    .child(
+                                ui::Switch::new("trust-network", choice.network, "Allow Cargo to use the network (to fetch dependencies)")
+                                    .on_toggle(move |on, _, cx| {
+                                        studio_entity.act(cx, |studio| {
+                                            let mut choice = studio.execution_choice();
+                                            choice.network = on;
+                                            studio.implementation.choice = Some(choice);
+                                            studio.mark(Dirty::OVERLAY);
+                                        })
+                                    }),
+                                    ),
+                            )
+                            .footer(cancel_button)
+                            .when(choice.trusted, |this| {
+                                this.footer(Button::new("trust-off", "Turn off").on_click(
+                                    move |_: &ClickEvent, _, cx| {
+                                        off.act(cx, |studio| {
+                                            studio.dialog = None;
+                                            let mut choice = studio.execution_choice();
+                                            choice.trusted = false;
+                                            studio.set_execution_choice(choice);
+                                            studio.mark(Dirty::ALL);
+                                        })
+                                    },
+                                ))
+                            })
+                            .footer(confirm_button(
+                                if choice.trusted { "Keep it on" } else { "Allow on this computer" },
+                                true,
+                            )),
+                    )
+                    .into_any_element()
+            }
+            Dialog::ConfirmLive => {
+                let choice = crate::live::live_choice(studio);
+                let has_key = crate::live::live_model(studio).is_some();
+                let calls = studio.runs.selected.and_then(|scenario| {
+                    let store = studio.run_store()?;
+                    let result = store.latest(scenario.raw(), agq_simulation::Mode::Model)?;
+                    Some(
+                        result
+                            .trace
+                            .iter()
+                            .filter(|e| e.kind == agq_simulation::EventKind::AgentCalled)
+                            .count(),
+                    )
+                });
+                let samples = agq_simulation::Request::new(agq_simulation::Mode::Live)
+                    .samples
+                    .max(5);
+                let model = choice
+                    .as_ref()
+                    .map(|(p, m)| format!("{}/{m}", p.id()))
+                    .unwrap_or_else(|| "no model".into());
+                let calls_line = match calls {
+                    Some(n) => format!(
+                        "About {} model call(s): {samples} samples × {n} agent call(s) in the model run",
+                        samples as usize * n.max(1)
+                    ),
+                    None => format!(
+                        "{samples} samples; run the scenario in model mode first to see how many calls each makes"
+                    ),
+                };
+                div()
+                    .key_context("Dialog")
+                    .track_focus(&self.focus)
+                    .size_full()
+                    .child(
+                        ui::Dialog::new("confirm-live", "Evaluate live")
+                            .width(500.0)
+                            .description("Agents answer from a real model instead of the scenario's stand-ins. Each call is sent to the provider and costs money.")
+                            .child(plain_list(
+                                "What will be sent",
+                                vec![
+                                    format!("Model: {model}"),
+                                    calls_line,
+                                    "Each agent's instructions and the item it is asked about".into(),
+                                    "The cost is estimated from the provider's usage; it is shown with the result".into(),
+                                ],
+                                IconName::Agent,
+                                cx,
+                            ))
+                            .when(!has_key, |this| {
+                                this.child(ui::inline_message(
+                                    ui::Tone::Warning,
+                                    "No key is set for this provider: add one in Settings › Providers.",
+                                    cx,
+                                ))
+                            })
+                            .footer(cancel_button)
+                            .footer(confirm_button("Evaluate live", has_key)),
+                    )
+                    .into_any_element()
+            }
+            Dialog::LinkCode { element, kind, .. } => {
+                let name = studio
+                    .project
+                    .as_ref()
+                    .and_then(|p| {
+                        p.state()
+                            .tree()
+                            .effective_name(*element)
+                            .map(str::to_string)
+                    })
+                    .unwrap_or_default();
+                let chosen = *kind;
+                let chooser = self.studio.clone();
+                let mut kinds = Segmented::new("link-kind", chosen);
+                for k in agq_implementation::LinkKind::ALL.iter().take(5) {
+                    kinds = kinds.choice(None, k.label());
+                }
+                let ready = !Self::text(&self.first, cx).is_empty();
+                ui::Dialog::new("link-code", format!("Link code to {name}"))
+                    .width(520.0)
+                    .description("A path in the code folder, and optionally a type, function or test in it. Links are kept with the model in model/links.json.")
+                    .child(kinds.on_choose(move |index, _, cx| {
+                        chooser.act(cx, |studio| {
+                            if let Some(Dialog::LinkCode { kind, .. }) = &mut studio.dialog {
+                                *kind = index;
+                            }
+                            studio.mark(Dirty::OVERLAY);
+                        })
+                    }))
+                    .child(field(
+                        "Path",
+                        self.first.as_ref().map(|s| {
+                            TextField::new(s).mono().target("Link path").into_any_element()
+                        }),
+                        cx,
+                    ))
+                    .child(field(
+                        "Symbol",
+                        self.second.as_ref().map(|s| {
+                            TextField::new(s).mono().target("Link symbol").into_any_element()
+                        }),
+                        cx,
+                    ))
+                    .footer(cancel_button)
+                    .footer(confirm_button("Link", ready))
+                    .into_any_element()
+            }
+            Dialog::Implement { element, .. } => {
+                let name = studio
+                    .project
+                    .as_ref()
+                    .and_then(|p| {
+                        p.state()
+                            .tree()
+                            .effective_name(*element)
+                            .map(str::to_string)
+                    })
+                    .unwrap_or_default();
+                let blocker = studio.task_blocker();
+                let model = studio.conversation.model_name.clone();
+                let repository = studio
+                    .implementation_repository()
+                    .map(|r| r.display().to_string())
+                    .unwrap_or_else(|| "no code folder".into());
+                ui::Dialog::new("implement", format!("Implement {name} with the Assistant"))
+                    .width(560.0)
+                    .description("A worker implements it from the model in a worktree of its own. Nothing reaches your code until you review the patch and integrate it.")
+                    .child(plain_list(
+                        "What happens",
+                        vec![
+                            format!("A worktree of {repository} on a new branch; your working copy is left alone"),
+                            "The worker reads the model's contracts and scenarios, writes code there and links it".into(),
+                            format!("It builds and checks at most {} times, and stops sooner when it makes no progress", agq_assistant::worker::MAX_ROUNDS),
+                            "If the model is wrong or not enough, it asks you instead of working around it".into(),
+                            "The Studio then checks the worktree itself and shows you the patch".into(),
+                            format!("Model: {model}; it costs what its calls cost"),
+                        ],
+                        IconName::Patch,
+                        cx,
+                    ))
+                    .child(field(
+                        "Instructions",
+                        self.first.as_ref().map(|s| {
+                            TextField::new(s).target("Task instructions").into_any_element()
+                        }),
+                        cx,
+                    ))
+                    .when_some(blocker.clone(), |this, why| {
+                        this.child(ui::inline_message(ui::Tone::Warning, why, cx))
+                    })
+                    .footer(cancel_button)
+                    .footer(confirm_button("Start the task", blocker.is_none()))
+                    .into_any_element()
+            }
+            Dialog::ReviewTask { job, problem, diff } => {
+                let Some((found, outcome)) = studio.task_outcome(job) else {
+                    return div().into_any_element();
+                };
+                let verification = &outcome.verification;
+                let failures = verification.failures();
+                // The model elements whose code the patch changes, by the
+                // links (the ones it proposes included).
+                let touched: Vec<String> = {
+                    let mut links = studio
+                        .implementation_links()
+                        .map(|l| l.links)
+                        .unwrap_or_default();
+                    links.extend(outcome.proposed.iter().cloned());
+                    let mut names: Vec<String> = links
+                        .iter()
+                        .filter(|l| outcome.files.iter().any(|f| f.0 == l.path))
+                        .map(|l| format!("{} ({} in {})", l.name, l.kind.label(), l.path))
+                        .collect();
+                    names.sort();
+                    names.dedup();
+                    names
+                };
+                let discard = {
+                    let studio = self.studio.clone();
+                    let job = job.clone();
+                    Button::new("task-discard", "Discard").danger().on_click(
+                        move |_: &ClickEvent, _, cx| {
+                            let job = job.clone();
+                            studio.act(cx, |studio| {
+                                studio.dialog = None;
+                                studio.discard_task(&job);
+                                studio.mark(Dirty::ALL);
+                            })
+                        },
+                    )
+                };
+                let later = Button::new("task-later", "Later").on_click({
+                    let entity = entity.clone();
+                    move |_: &ClickEvent, window, cx| {
+                        entity.update(cx, |this, cx| this.cancel(window, cx))
+                    }
+                });
+                let theme = theme.clone();
+                div()
+                    .key_context("Dialog")
+                    .track_focus(&self.focus)
+                    .size_full()
+                    .child(
+                        ui::Dialog::new("review-task", format!("Review: {}", found.title))
+                            .width(760.0)
+                            .description(format!(
+                                "{} file(s) changed in {}; the worker ({}) took {} round(s) of checks; its calls cost {}.",
+                                outcome.files.len(),
+                                outcome.worktree,
+                                outcome.model.clone().unwrap_or_else(|| "its model".into()),
+                                outcome.rounds,
+                                outcome.cost_usd.map_or("an unknown amount".into(), |c| format!("about ${c:.3}"))
+                            ))
+                            .child(
+                                div()
+                                    .id("review-body")
+                                    .max_h(r(460.0))
+                                    .overflow_y_scroll()
+                                    .flex()
+                                    .flex_col()
+                                    .gap(r(12.0))
+                                    .child(ui::Banner::new(
+                                        if failures == 0 { ui::Tone::Success } else { ui::Tone::Warning },
+                                        if failures == 0 {
+                                            "The Studio checked the worktree itself: it builds and nothing it checked fails.".to_string()
+                                        } else {
+                                            format!("The Studio checked the worktree itself: {failures} failing or not verified.")
+                                        },
+                                    ))
+                                    .when_some(outcome.notice.clone(), |this, notice| {
+                                        this.child(ui::inline_message(ui::Tone::Neutral, notice, cx))
+                                    })
+                                    .when_some(outcome.summary.clone(), |this, summary| {
+                                        this.child(plain_list("The worker says (its own words)", vec![summary], IconName::Agent, cx))
+                                    })
+                                    .when(!outcome.contract_requests.is_empty(), |this| {
+                                        this.child(plain_list(
+                                            "It asks you to change the model",
+                                            outcome.contract_requests.clone(),
+                                            IconName::Warning,
+                                            cx,
+                                        ))
+                                    })
+                                    .when(!touched.is_empty(), |this| {
+                                        this.child(plain_list(
+                                            "Model elements whose code it changes",
+                                            touched.clone(),
+                                            IconName::Part,
+                                            cx,
+                                        ))
+                                    })
+                                    .child(plain_list(
+                                        "What the Studio checked",
+                                        verification.describe().lines().map(str::to_string).collect(),
+                                        IconName::Requirement,
+                                        cx,
+                                    ))
+                                    .when(!outcome.proposed.is_empty(), |this| {
+                                        this.child(plain_list(
+                                            "Links it proposes (added to the model when you integrate)",
+                                            outcome
+                                                .proposed
+                                                .iter()
+                                                .map(|l| format!("{}: {} {}{}", l.name, l.kind.label(), l.path, l.symbol.as_ref().map(|s| format!("#{s}")).unwrap_or_default()))
+                                                .collect(),
+                                            IconName::Connection,
+                                            cx,
+                                        ))
+                                    })
+                                    .child(plain_list(
+                                        "Files",
+                                        outcome
+                                            .files
+                                            .iter()
+                                            .map(|(path, status, added, removed)| format!("{path} ({status}, +{added} −{removed})"))
+                                            .collect(),
+                                        IconName::Patch,
+                                        cx,
+                                    ))
+                                    .child(
+                                        div()
+                                            .p(r(10.0))
+                                            .rounded(r(crate::tokens::radius::CONTROL + 2.0))
+                                            .bg(theme.inset)
+                                            .border_1()
+                                            .border_color(theme.separator)
+                                            .font_family(theme::MONO)
+                                            .text_size(r(theme::text::XS))
+                                            .line_height(r(16.0))
+                                            .text_color(theme.text_secondary)
+                                            .whitespace_normal()
+                                            .children(diff.lines().map(|line| {
+                                                let colour = match line.chars().next() {
+                                                    Some('+') => theme.success.text,
+                                                    Some('-') => theme.danger.text,
+                                                    _ => theme.text_secondary,
+                                                };
+                                                div().text_color(colour).child(line.to_string())
+                                            })),
+                                    ),
+                            )
+                            .when_some(problem.clone(), |this, problem| {
+                                this.child(ui::inline_message(ui::Tone::Danger, problem, cx))
+                            })
+                            .footer(discard)
+                            .footer(later)
+                            .footer(confirm_button("Integrate", !outcome.files.is_empty())),
+                    )
+                    .into_any_element()
+            }
             Dialog::Rename { .. } => div().into_any_element(),
         };
         div()
@@ -976,6 +1495,41 @@ fn block_list(
                 .font_family(theme::MONO)
                 .child(icon(glyph).size(12.0).color(theme.text_muted))
                 .child(row)
+        }))
+}
+
+/// A short labelled list of sentences in a dialog, wrapping.
+fn plain_list(
+    label: &'static str,
+    rows: Vec<String>,
+    glyph: IconName,
+    cx: &App,
+) -> impl IntoElement {
+    let theme = cx.theme();
+    div()
+        .flex()
+        .flex_col()
+        .gap(r(6.0))
+        .child(
+            div()
+                .text_size(r(theme::text::SM))
+                .font_weight(theme::MEDIUM)
+                .text_color(theme.text_secondary)
+                .child(label),
+        )
+        .children(rows.into_iter().map(|row| {
+            div()
+                .flex()
+                .items_start()
+                .gap(r(8.0))
+                .text_size(r(theme::text::SM))
+                .line_height(r(18.0))
+                .child(
+                    div()
+                        .pt(r(3.0))
+                        .child(icon(glyph).size(12.0).color(theme.text_muted)),
+                )
+                .child(div().flex_1().min_w_0().child(row))
         }))
 }
 

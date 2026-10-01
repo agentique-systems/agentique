@@ -129,8 +129,28 @@ enum Field {
     Name,
     Type,
     Multiplicity,
+    /// A literal or an expression (C-50): a feature's value, what a step
+    /// sends, a check's condition, a wait's time.
     Value,
+    /// A transition's condition (C-50).
+    Guard,
     Doc,
+}
+
+/// What the Value row is called for an element, if it has one.
+fn value_label(e: &agq_language::Element) -> Option<&'static str> {
+    Some(match e.kind {
+        ElementKind::Attribute | ElementKind::Reference => "Value",
+        ElementKind::Send => "Sends",
+        ElementKind::AssertConstraint => "Check",
+        ElementKind::Accept if e.after => "After (ms)",
+        _ => return None,
+    })
+}
+
+/// Whether a feature's value may be a literal (else only an expression).
+fn holds_literal(kind: ElementKind) -> bool {
+    matches!(kind, ElementKind::Attribute | ElementKind::Reference)
 }
 
 /// The Inspector's fields, kept by the Panels' column.
@@ -140,11 +160,15 @@ pub struct Fields {
     type_query: Entity<InputState>,
     multiplicity: Entity<InputState>,
     value: Entity<InputState>,
+    guard: Entity<InputState>,
     doc: Entity<TextareaState>,
     /// The element and model revision the fields show.
     loaded: Option<(ElementId, u64)>,
     /// Why the multiplicity typed could not be used (inline validation).
     multiplicity_error: Option<String>,
+    /// Why the value or guard typed could not be used.
+    value_error: Option<String>,
+    guard_error: Option<String>,
     type_error: Option<String>,
     _subscriptions: Vec<Subscription>,
 }
@@ -167,10 +191,15 @@ fn current(tree: &Tree, element: ElementId, field: Field) -> String {
                 .join(", ")
         }
         Field::Multiplicity => e.multiplicity.map(|m| m.to_string()).unwrap_or_default(),
-        Field::Value => e
-            .value
+        Field::Value => match (&e.value, &e.expression) {
+            (Some(literal), _) => literal.to_string(),
+            (None, Some(expression)) => agq_language::print_expression(tree, element, expression),
+            _ => String::new(),
+        },
+        Field::Guard => e
+            .guard
             .as_ref()
-            .map(ToString::to_string)
+            .map(|g| agq_language::print_expression(tree, element, g))
             .unwrap_or_default(),
         Field::Doc => e
             .children()
@@ -194,7 +223,8 @@ impl Fields {
         let name = input("Name", window, cx);
         let type_query = input("Type to find a definition", window, cx);
         let multiplicity = input("1, 0..1, 0..*", window, cx);
-        let value = input("A number, true, false or text", window, cx);
+        let value = input("A number, true, false, text or an expression", window, cx);
+        let guard = input("A condition, such as attempts < 3", window, cx);
         let doc = cx.new(|cx| {
             let mut state = TextareaState::new(window, cx).placeholder("What this element is for");
             state.set_auto_grow(2, 8, cx);
@@ -206,6 +236,7 @@ impl Fields {
             (&type_query, Field::Type),
             (&multiplicity, Field::Multiplicity),
             (&value, Field::Value),
+            (&guard, Field::Guard),
         ] {
             subscriptions.push(cx.subscribe_in(
                 state,
@@ -234,9 +265,12 @@ impl Fields {
             type_query,
             multiplicity,
             value,
+            guard,
             doc,
             loaded: None,
             multiplicity_error: None,
+            value_error: None,
+            guard_error: None,
             type_error: None,
             _subscriptions: subscriptions,
         }
@@ -248,6 +282,7 @@ impl Fields {
             Field::Type => self.type_query.read(cx).value().to_string(),
             Field::Multiplicity => self.multiplicity.read(cx).value().to_string(),
             Field::Value => self.value.read(cx).value().to_string(),
+            Field::Guard => self.guard.read(cx).value().to_string(),
             Field::Doc => self.doc.read(cx).value().to_string(),
         }
     }
@@ -262,6 +297,7 @@ impl Fields {
                 .focus_handle(cx)
                 .is_focused(window),
             Field::Value => self.value.read(cx).focus_handle(cx).is_focused(window),
+            Field::Guard => self.guard.read(cx).focus_handle(cx).is_focused(window),
             Field::Doc => self.doc.read(cx).focus_handle(cx).is_focused(window),
         }
     }
@@ -276,6 +312,7 @@ impl Fields {
                 .multiplicity
                 .update(cx, |s, cx| s.set_value(text, window, cx)),
             Field::Value => self.value.update(cx, |s, cx| s.set_value(text, window, cx)),
+            Field::Guard => self.guard.update(cx, |s, cx| s.set_value(text, window, cx)),
             Field::Doc => self.doc.update(cx, |s, cx| s.set_value(text, window, cx)),
         }
     }
@@ -298,6 +335,7 @@ impl Fields {
             Field::Type,
             Field::Multiplicity,
             Field::Value,
+            Field::Guard,
             Field::Doc,
         ]
         .into_iter()
@@ -311,6 +349,8 @@ impl Fields {
         if other {
             self.multiplicity_error = None;
             self.type_error = None;
+            self.value_error = None;
+            self.guard_error = None;
         }
         self.loaded = Some((element, revision));
     }
@@ -354,9 +394,85 @@ impl Fields {
                 }
             },
             Field::Value => {
-                self.studio.act(cx, |studio| {
-                    studio.set_property(element, Property::Value(parse_value(&text)), "value")
+                let e = &tree[element];
+                let kind = e.kind;
+                let had_expression = e.expression.is_some();
+                let had_literal = e.value.is_some();
+                let text = text.trim().to_string();
+                // A number, true, false or quoted text is a value; anything
+                // else is an expression (a name, `new T(...)`, `a + 1`).
+                let literal = parse_value(&text).filter(|l| {
+                    holds_literal(kind)
+                        && (!matches!(l, Literal::String(_)) || text.starts_with('"'))
                 });
+                let mut properties = Vec::new();
+                if text.is_empty() {
+                    if had_literal {
+                        properties.push(Property::Value(None));
+                    }
+                    if had_expression {
+                        properties.push(Property::Expression(None));
+                    }
+                } else if literal.is_some()
+                    || (holds_literal(kind)
+                        && !had_expression
+                        && agq_language::parse_expression(&text).is_err())
+                {
+                    properties.push(Property::Value(literal.or_else(|| parse_value(&text))));
+                    if had_expression {
+                        properties.push(Property::Expression(None));
+                    }
+                } else {
+                    match agq_language::parse_expression(&text) {
+                        Ok(expression) => {
+                            properties.push(Property::Expression(Some(expression)));
+                            if had_literal {
+                                properties.push(Property::Value(None));
+                            }
+                        }
+                        Err(reason) => {
+                            self.value_error = Some(format!("Not applied: {reason}"));
+                            cx.notify();
+                            return;
+                        }
+                    }
+                }
+                self.value_error = None;
+                let name = tree
+                    .effective_name(element)
+                    .unwrap_or("element")
+                    .to_string();
+                let operations = properties
+                    .into_iter()
+                    .map(|property| agq_system_state::Operation::Set { element, property })
+                    .collect();
+                self.studio.act(cx, |studio| {
+                    studio.submit(agq_system_state::Change::new(
+                        agq_system_state::Actor::Operator,
+                        &format!("Set the value of {name}"),
+                        operations,
+                    ));
+                });
+            }
+            Field::Guard => {
+                let text = text.trim().to_string();
+                let parsed = if text.is_empty() {
+                    Ok(None)
+                } else {
+                    agq_language::parse_expression(&text).map(Some)
+                };
+                match parsed {
+                    Ok(guard) => {
+                        self.guard_error = None;
+                        self.studio.act(cx, |studio| {
+                            studio.set_property(element, Property::Guard(guard), "guard")
+                        });
+                    }
+                    Err(reason) => {
+                        self.guard_error = Some(format!("Not applied: {reason}"));
+                        cx.notify();
+                    }
+                }
             }
             Field::Doc => {
                 let text = text.trim();
@@ -483,6 +599,7 @@ impl Fields {
             studio.editable() && studio.dialog.is_none()
         };
         let reuse = super::reuse::section(&self.studio, element, can_edit, cx);
+        let factory = super::evidence::sections(&self.studio, element, can_edit, cx);
         let studio = self.studio.read(cx);
         let project = studio.project.as_ref().expect("checked above");
         let state = project.state();
@@ -509,7 +626,9 @@ impl Fields {
             ElementKind::Port | ElementKind::Item | ElementKind::Attribute
         );
         let direction = e.direction;
-        let has_value = matches!(kind, ElementKind::Attribute | ElementKind::Reference);
+        let value_row = value_label(e);
+        let has_guard = kind == ElementKind::Transition;
+        let via = e.via.as_ref().map(ToString::to_string);
         let namespace = kind.is_namespace();
         // Problems at the element and at what it owns without a card.
         let mut problems: Vec<String> = Vec::new();
@@ -703,7 +822,46 @@ impl Fields {
                             cx,
                         ))
                     })
-                    .when(has_value, |this| this.child(row("Value", TextField::new(&self.value).mono(), cx)))
+                    .when_some(value_row, |this, label| {
+                        this.child(row(
+                            label,
+                            div()
+                                .flex()
+                                .flex_col()
+                                .gap(r(4.0))
+                                .child(TextField::new(&self.value).mono().invalid(self.value_error.is_some()).target("Value"))
+                                .when_some(self.value_error.clone(), |this, error| {
+                                    this.child(ui::inline_message(Tone::Danger, error, cx))
+                                }),
+                            cx,
+                        ))
+                    })
+                    .when(has_guard, |this| {
+                        this.child(row(
+                            "Guard",
+                            div()
+                                .flex()
+                                .flex_col()
+                                .gap(r(4.0))
+                                .child(TextField::new(&self.guard).mono().invalid(self.guard_error.is_some()).target("Guard"))
+                                .when_some(self.guard_error.clone(), |this, error| {
+                                    this.child(ui::inline_message(Tone::Danger, error, cx))
+                                }),
+                            cx,
+                        ))
+                    })
+                    .when_some(via, |this, via| {
+                        this.child(row(
+                            "Via",
+                            div()
+                                .pt(r(6.0))
+                                .font_family(theme::MONO)
+                                .text_size(r(theme::text::SM))
+                                .text_color(theme.text_secondary)
+                                .child(via),
+                            cx,
+                        ))
+                    })
                     .when(namespace, |this| {
                         this.child(row("Docs", TextArea::new(&self.doc), cx))
                     }),
@@ -737,6 +895,7 @@ impl Fields {
                 ),
             )
             .children(reuse)
+            .children(factory)
             .child(super::group("Problems", Some(problems.len()), cx))
             .child(if problems.is_empty() {
                 div()

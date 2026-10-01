@@ -360,6 +360,7 @@ impl RenderOnce for Segmented {
                                     theme.text_muted
                                 }))
                             })
+                            .child(crate::ui::target::target(label.clone()))
                             .child(
                                 div()
                                     .min_w_0()

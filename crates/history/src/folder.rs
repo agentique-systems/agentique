@@ -7,7 +7,7 @@
 //! the journal is removed. Recovery, run before every load, save and commit,
 //! repeats the moves of a journal it finds (they are idempotent) and deletes
 //! temporary files that no journal names.
-use crate::{Error, FORMAT, History, IDENTITY_FILE, Identities, ModelFiles, Result};
+use crate::{Error, FORMAT, History, IDENTITY_FILE, Identities, LINKS_FILE, ModelFiles, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
@@ -63,6 +63,9 @@ impl History {
             next.insert(path.clone(), normalize(text));
         }
         next.insert(IDENTITY_FILE.to_owned(), files.identities.to_text());
+        if let Some(links) = &files.links {
+            next.insert(LINKS_FILE.to_owned(), normalize(links));
+        }
         let journal = Journal {
             format: FORMAT,
             write: next
@@ -212,7 +215,7 @@ fn parse_journal(text: &str) -> Result<Journal> {
         });
     }
     for path in journal.write.iter().chain(&journal.delete) {
-        if path != IDENTITY_FILE {
+        if path != IDENTITY_FILE && path != LINKS_FILE {
             check_path(path)?;
         }
     }
@@ -220,7 +223,7 @@ fn parse_journal(text: &str) -> Result<Journal> {
 }
 
 pub(crate) fn is_model_file(path: &str) -> bool {
-    path == IDENTITY_FILE || path.ends_with(".sysml")
+    path == IDENTITY_FILE || path == LINKS_FILE || path.ends_with(".sysml")
 }
 
 /// Splits model files into documents and identities. Refuses files that a
@@ -237,12 +240,13 @@ pub(crate) fn model_files(files: &BTreeMap<String, String>) -> Result<ModelFiles
     };
     let documents = files
         .iter()
-        .filter(|(path, _)| path.as_str() != IDENTITY_FILE)
+        .filter(|(path, _)| path.as_str() != IDENTITY_FILE && path.as_str() != LINKS_FILE)
         .map(|(path, text)| (path.clone(), text.clone()))
         .collect();
     Ok(ModelFiles {
         documents,
         identities,
+        links: files.get(LINKS_FILE).cloned(),
     })
 }
 

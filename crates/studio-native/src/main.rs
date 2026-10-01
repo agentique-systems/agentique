@@ -16,13 +16,16 @@ mod dialogs;
 mod edit;
 mod gallery;
 mod history;
+mod implementation;
 mod library;
+mod live;
 mod motion;
 mod navigation;
 mod palette;
 mod panels;
 mod relationship_labels;
 mod requirements;
+mod runs;
 mod selection;
 mod session;
 // The settings table and settings.json (interface 2 of ROADMAP §6.2).
@@ -36,6 +39,7 @@ mod settings_view;
 mod stress_automation;
 mod studio;
 mod surface;
+mod tasks;
 mod timing;
 // Design tokens and the component list (interface 3 of ROADMAP §6.2).
 mod tokens;
@@ -76,9 +80,9 @@ pub struct Args {
     /// Start without reopening the last project.
     #[arg(long)]
     no_restore: bool,
-    /// Drive the UI through a scripted journey (a-build, a-crash, a-reopen, a-assistant, d-daily, e-settings, h-library), the camera benchmark (stress) or the Conversation benchmark (chat, in a new project at `--project`).
+    /// Drive the UI through a scripted journey (a-build, a-crash, a-reopen, a-assistant, d-daily, e-settings, h-library, i-scenarios, i-code), the camera benchmark (stress) or the Conversation benchmark (chat, in a new project at `--project`).
     #[cfg(feature = "automation")]
-    #[arg(long, value_parser = ["a-build", "a-crash", "a-reopen", "a-assistant", "d-daily", "e-settings", "h-library", "stress", "chat"])]
+    #[arg(long, value_parser = ["a-build", "a-crash", "a-reopen", "a-assistant", "d-daily", "e-settings", "h-library", "i-scenarios", "i-code", "stress", "chat"])]
     scenario: Option<String>,
     /// Write the scenario report (JSON) to this path.
     #[cfg(feature = "automation")]
@@ -100,13 +104,23 @@ impl Args {
     fn scenario_running(&self) -> bool {
         false
     }
-    /// The `a-build`, `a-assistant`, `d-daily`, `e-settings` and `chat`
-    /// journeys create the project at `--project` through the UI.
+    /// The `a-build`, `a-assistant`, `d-daily`, `e-settings`, `h-library`,
+    /// `i-scenarios` and `chat` journeys create the project at `--project`
+    /// through the UI.
     #[cfg(feature = "automation")]
     fn creates_project(&self) -> bool {
         matches!(
             self.scenario.as_deref(),
-            Some("a-build" | "a-assistant" | "d-daily" | "e-settings" | "h-library" | "chat")
+            Some(
+                "a-build"
+                    | "a-assistant"
+                    | "d-daily"
+                    | "e-settings"
+                    | "h-library"
+                    | "i-scenarios"
+                    | "i-code"
+                    | "chat"
+            )
         )
     }
     #[cfg(not(feature = "automation"))]

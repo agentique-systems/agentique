@@ -18,9 +18,11 @@ ROOT = Path(__file__).resolve().parent.parent
 MODEL_DIR = ROOT / "models" / "agentique"
 LANGUAGE_CORE = "LanguageCore"  # depends on no other part
 CORE_PARTS = ("LanguageCore", "SystemState", "History")  # locked core (R-16)
-# Parts that must not use UI or network libraries: the locked core, and the Library
-# (C-49), which plans System State changes and is used by the Studio and the Assistant.
-PLAIN_PARTS = CORE_PARTS + ("Library",)
+# Parts that must not use UI or network libraries: the locked core; the Library (C-49),
+# which plans System State changes for the Studio and the Assistant; and the parts of
+# the factory loop (C-50): runs stay offline by construction, and processes and live
+# model calls are reached only through what the Studio gives them.
+PLAIN_PARTS = CORE_PARTS + ("Library", "Simulation", "Implementation", "Execution")
 DENIED_LIBRARIES = {
     "gpui", "gpui-pre", "gpui-pre-platform", "gpui-base",
     "eframe", "egui", "egui-wgpu", "wgpu", "winit", "slint",

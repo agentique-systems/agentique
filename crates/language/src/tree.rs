@@ -69,6 +69,44 @@ pub enum ElementKind {
     Doc,
     /// A bare `/* text */` comment.
     Comment,
+    /// `enum def E { enum a; enum b; }` (C-50).
+    EnumDef,
+    /// `enum a;`: one value of an enum def, written `E::a` elsewhere.
+    Enum,
+    /// `dependency from A to B;`: `ends` are the client and the supplier.
+    Dependency,
+    /// `state s { ... }`, or `exhibit state s { ... }` (`exhibit`) for the
+    /// behaviour a part performs (C-50).
+    State,
+    /// `transition [name first] S accept ... if guard do effect then T;`:
+    /// `ends` are the source and target states, `guard` the guard; its
+    /// trigger is an `Accept` member and its effect an action member.
+    Transition,
+    /// `then S;` after an `entry` action: the state entered first. `target`
+    /// is the state.
+    Succession,
+    /// `action [name] { ... }`: a composite action whose members run in the
+    /// order written; also `entry;` / `entry action { ... }` / `exit ...`
+    /// (`state_action`) and a transition's effect.
+    Action,
+    /// `send expression via port;`
+    Send,
+    /// `assign feature := expression;`: `target` is the feature.
+    Assign,
+    /// `if expression { ... } else { ... }`: members are the `then` action
+    /// and, optionally, the `else` action or a nested `If`.
+    If,
+    /// `accept name : T via port;` (a payload, `typed_by` and `via`), or
+    /// `accept after duration;` (`after`, with the duration in `expression`).
+    Accept,
+    /// `verification def`: a scenario (C-50).
+    VerificationDef,
+    /// `objective { verify r; }` of a verification case.
+    Objective,
+    /// `verify r;`: `target` is the requirement verified.
+    Verify,
+    /// `assert constraint name { expression }`: a check.
+    AssertConstraint,
     /// A construct outside the subset, kept as verbatim text (`text`) and
     /// reported as unsupported. `note` names the construct.
     Unsupported,
@@ -103,6 +141,21 @@ impl ElementKind {
             Import => "import",
             Doc => "doc",
             Comment => "comment",
+            EnumDef => "enum def",
+            Enum => "enum",
+            Dependency => "dependency",
+            State => "state",
+            Transition => "transition",
+            Succession => "then",
+            Action => "action",
+            Send => "send",
+            Assign => "assign",
+            If => "if",
+            Accept => "accept",
+            VerificationDef => "verification def",
+            Objective => "objective",
+            Verify => "verify",
+            AssertConstraint => "assert constraint",
             Unsupported => "unsupported",
             SyntaxError => "syntax error",
         }
@@ -119,6 +172,8 @@ impl ElementKind {
                 | ConnectionDef
                 | InterfaceDef
                 | RequirementDef
+                | EnumDef
+                | VerificationDef
         )
     }
 
@@ -135,12 +190,43 @@ impl ElementKind {
                 | Requirement
                 | Subject
                 | Reference
+                | Enum
         )
+    }
+
+    /// Behaviour and scenario steps (C-50): states, transitions and action
+    /// nodes. They own members and are looked up by name like usages, but
+    /// have no types of their own, except that an accepted payload is typed.
+    pub fn is_behavior(self) -> bool {
+        use ElementKind::*;
+        matches!(
+            self,
+            State
+                | Transition
+                | Succession
+                | Action
+                | Send
+                | Assign
+                | If
+                | Accept
+                | Objective
+                | Verify
+                | AssertConstraint
+        )
+    }
+
+    /// Action nodes: what runs, in order, in an action body or as a step.
+    pub fn is_action_node(self) -> bool {
+        use ElementKind::*;
+        matches!(self, Action | Send | Assign | If | Accept)
     }
 
     /// Kinds whose members can be named from outside (`A::b`).
     pub fn is_namespace(self) -> bool {
-        self == ElementKind::Package || self.is_definition() || self.is_usage()
+        self == ElementKind::Package
+            || self.is_definition()
+            || self.is_usage()
+            || self.is_behavior()
     }
 }
 
@@ -288,6 +374,11 @@ pub enum Role {
     Target,
     /// `satisfy R by x`
     By,
+    /// `send x via p`, `accept x : T via p`: the port
+    Via,
+    /// A name inside an expression: a value, guard, payload, condition,
+    /// duration or check (C-50)
+    Value,
 }
 
 /// `[lower..upper]`; `upper: None` is `*`.
@@ -327,6 +418,27 @@ impl fmt::Display for Literal {
         }
     }
 }
+
+/// Where an action of a state runs: on entering it, while in it, or on
+/// leaving it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum StateAction {
+    Entry,
+    Do,
+    Exit,
+}
+
+impl StateAction {
+    pub fn keyword(self) -> &'static str {
+        match self {
+            StateAction::Entry => "entry",
+            StateAction::Do => "do",
+            StateAction::Exit => "exit",
+        }
+    }
+}
+
+pub use crate::expression::{BinaryOp, Expression, UnaryOp};
 
 /// Where an element was read from. `document` indexes [`Tree::documents`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -373,6 +485,20 @@ pub struct Element {
     pub text: Option<String>,
     /// Unsupported: the construct. SyntaxError: the message.
     pub note: Option<String>,
+    /// `exhibit state`: the behaviour its owning part performs (C-50).
+    pub exhibit: bool,
+    /// `entry`, `do` or `exit`: an action of the state that owns it.
+    pub state_action: Option<StateAction>,
+    /// A value that is not a single literal (`= Mode::fast`); the payload of
+    /// a `send`, the value of an `assign`, the condition of an `if`, the
+    /// duration of `accept after` and the constraint of an `assert` (C-50).
+    pub expression: Option<Expression>,
+    /// A transition's guard: `if expression`.
+    pub guard: Option<Expression>,
+    /// The port of a `send` or `accept`: `via port`.
+    pub via: Option<Reference>,
+    /// `accept after expression`: a time trigger instead of a payload.
+    pub after: bool,
 }
 
 impl Element {
@@ -399,6 +525,12 @@ impl Element {
             by: None,
             text: None,
             note: None,
+            exhibit: false,
+            state_action: None,
+            expression: None,
+            guard: None,
+            via: None,
+            after: false,
         }
     }
 
@@ -416,7 +548,8 @@ impl Element {
         &self.children
     }
 
-    /// Every reference this element holds, with the property it fills.
+    /// Every reference this element holds, with the property it fills:
+    /// the names inside its expressions too, in the order written.
     pub fn references(&self) -> Vec<(Role, &Reference)> {
         let mut out = Vec::new();
         out.extend(self.typed_by.iter().map(|r| (Role::TypedBy, r)));
@@ -425,10 +558,21 @@ impl Element {
         out.extend(self.ends.iter().map(|r| (Role::End, r)));
         out.extend(self.target.iter().map(|r| (Role::Target, r)));
         out.extend(self.by.iter().map(|r| (Role::By, r)));
+        out.extend(self.via.iter().map(|r| (Role::Via, r)));
+        for expression in self.expression.iter().chain(&self.guard) {
+            out.extend(
+                expression
+                    .references()
+                    .into_iter()
+                    .map(|r| (Role::Value, r)),
+            );
+        }
         out
     }
 
-    pub(crate) fn references_mut(&mut self) -> Vec<&mut Reference> {
+    /// The references of [`Element::references`], in the same order, to
+    /// change them.
+    pub fn references_mut(&mut self) -> Vec<&mut Reference> {
         let mut out: Vec<&mut Reference> = Vec::new();
         out.extend(self.typed_by.iter_mut());
         out.extend(self.specializes.iter_mut());
@@ -436,6 +580,10 @@ impl Element {
         out.extend(self.ends.iter_mut());
         out.extend(self.target.iter_mut());
         out.extend(self.by.iter_mut());
+        out.extend(self.via.iter_mut());
+        for expression in self.expression.iter_mut().chain(&mut self.guard) {
+            out.extend(expression.references_mut());
+        }
         out
     }
 }
@@ -827,6 +975,21 @@ impl Tree {
             (ElementKind::Connection | ElementKind::Interface, _) if e.ends.len() == 2 => {
                 format!("connect {} to {}", e.ends[0], e.ends[1])
             }
+            (ElementKind::Dependency, _) if e.ends.len() == 2 => {
+                format!("dependency from {} to {}", e.ends[0], e.ends[1])
+            }
+            (ElementKind::Transition, _) if e.ends.len() == 2 => {
+                format!("transition {} to {}", e.ends[0], e.ends[1])
+            }
+            (ElementKind::Succession | ElementKind::Verify, Some(target)) => {
+                format!("{} {target}", e.kind.keyword())
+            }
+            (ElementKind::Accept, _) if e.after => "accept after".into(),
+            (kind, _) if e.state_action.is_some() => format!(
+                "{} {}",
+                e.state_action.map_or("", StateAction::keyword),
+                kind.keyword()
+            ),
             (kind, _) => kind.keyword().into(),
         }
     }
