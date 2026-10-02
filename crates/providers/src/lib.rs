@@ -1,5 +1,5 @@
 //! Providers (ROADMAP §4.7, §4.8; part `Providers` in
-//! `models/agentique/Agentique.sysml`): talks to model providers through rig,
+//! `model/Agentique.sysml`): talks to model providers through rig,
 //! reads keys, knows each model's capabilities and reports usage.
 //!
 //! This is the only crate that depends on rig, tokio or reqwest (R-21, R-41).
@@ -161,6 +161,41 @@ pub fn key_status(provider: Provider) -> KeyStatus {
             Err(error) => KeyStatus::Unavailable(error.0),
         }
     }
+}
+
+/// A key on its way to the one place that may hold it; never printed.
+pub struct Secret(String);
+
+impl Secret {
+    /// A key given directly (tests, a key the Operator just typed).
+    pub fn new(key: impl Into<String>) -> Secret {
+        Secret(key.into())
+    }
+
+    /// The key itself, for the environment of the process it is for.
+    pub fn expose(&self) -> &str {
+        &self.0
+    }
+}
+
+impl std::fmt::Debug for Secret {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("Secret(…)")
+    }
+}
+
+/// The Anthropic key for the Claude Agent runtime's process (ROADMAP §4.7):
+/// the one recorded exception to §8.7 rule 4 (§7.6, 2026-10-01). The SDK in
+/// that process sends it to Anthropic and nowhere else; the Assistant puts it
+/// into that process's environment and nowhere else. The environment
+/// variable wins over the stored key, as for every provider (R-25).
+pub fn claude_agent_key() -> Result<Option<Secret>, String> {
+    if let Some(key) = environment_key(Provider::Anthropic) {
+        return Ok(Some(Secret(key)));
+    }
+    keys::stored(Provider::Anthropic)
+        .map(|key| key.map(Secret))
+        .map_err(|error| error.0)
 }
 
 fn environment_key(provider: Provider) -> Option<String> {

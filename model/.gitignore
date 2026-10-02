@@ -1,0 +1,4 @@
+# Written by Agentique while saving or while the project is open.
+*.tmp
+agentique.pending
+agentique.lock

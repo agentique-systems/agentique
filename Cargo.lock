@@ -123,6 +123,7 @@ dependencies = [
  "reqwest 0.12.28",
  "serde",
  "serde_json",
+ "tempfile",
 ]
 
 [[package]]
@@ -161,6 +162,16 @@ dependencies = [
 [[package]]
 name = "agq-language"
 version = "0.1.0"
+
+[[package]]
+name = "agq-launcher"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+]
 
 [[package]]
 name = "agq-library"
@@ -205,6 +216,7 @@ dependencies = [
  "agq-execution",
  "agq-implementation",
  "agq-language",
+ "agq-launcher",
  "agq-library",
  "agq-providers",
  "agq-simulation",

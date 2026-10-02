@@ -1,0 +1,19 @@
+[package]
+name = "agq-launcher"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "The launcher: the installed builds of Agentique, which one starts, and the last known good one to fall back to"
+
+[[bin]]
+name = "agentique-launcher"
+path = "src/main.rs"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+# The digest of each build's executables, as the build's manifest records it.
+sha2 = "0.10.9"
+
+[dev-dependencies]
+tempfile.workspace = true

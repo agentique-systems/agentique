@@ -1,5 +1,5 @@
 //! History: a project's model folder on disk and its history in git
-//! (ROADMAP §4.5, R-6; part `History` in `models/agentique/Agentique.sysml`).
+//! (ROADMAP §4.5, R-6; part `History` in `model/Agentique.sysml`).
 //!
 //! A project folder holds the model folder [`MODEL_FOLDER`]: SysML text files
 //! plus one identity and lock file ([`IDENTITY_FILE`]). The project folder is

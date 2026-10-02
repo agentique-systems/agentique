@@ -25,6 +25,8 @@ pub enum StudioRequest {
     ReadRun { scenario: ElementId, mode: Mode },
     /// The code links, for one element or all.
     ReadCodeLinks { element: Option<ElementId> },
+    /// A part explained from the model and its links.
+    Explain { element: ElementId },
     /// Run the implementation checks and answer when they end.
     CheckImplementation,
     /// Ask the Operator to start an implementation task; answer when the
@@ -454,6 +456,17 @@ pub(super) fn studio_request(
                     .to_string(),
             }
         }
+        super::EXPLAIN_ELEMENT => {
+            let element = find(tree, required_str(input, "element")?)?;
+            if !matches!(tree[element].kind, ElementKind::PartDef | ElementKind::Part) {
+                return Err(format!(
+                    "`{}` is a {}; explain_element explains a part def or a part",
+                    tree.qualified_name(element),
+                    tree[element].kind.keyword()
+                ));
+            }
+            StudioRequest::Explain { element }
+        }
         super::READ_CODE_LINKS => StudioRequest::ReadCodeLinks {
             element: optional_str(input, "element")?
                 .map(|name| find(tree, name))
@@ -511,6 +524,14 @@ pub fn carry_out_headless(tree: &Tree, request: &StudioRequest) -> Result<String
         StudioRequest::StopRun => Ok("Nothing is running.".into()),
         StudioRequest::ReadRun { .. } => Err("No results are kept here; run the scenario.".into()),
         StudioRequest::ReadCodeLinks { .. } => Ok("No code is linked here.".into()),
+        StudioRequest::Explain { element } => agq_implementation::responsibility::responsibility(
+            tree,
+            &agq_implementation::Links::default(),
+            &[],
+            *element,
+        )
+        .map(|r| r.describe(tree))
+        .ok_or_else(|| "Only a part def or a part can be explained.".into()),
         StudioRequest::CheckImplementation => Err("Not run: there is no code here.".into()),
         StudioRequest::Implement { .. } => Err("Not started: there is no code folder here.".into()),
     }

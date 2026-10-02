@@ -61,6 +61,37 @@ impl Studio {
         )
     }
 
+    fn project_checks_file(&self) -> Option<PathBuf> {
+        let project = self.project.as_ref()?;
+        Some(
+            crate::conversation::project_data(&self.session_path, project.folder())
+                .join("checks.json"),
+        )
+    }
+
+    /// The project's required check commands (`checks.json` in its app
+    /// data, ROADMAP §4.9): the Operator's, never a worker's. None when the
+    /// file is missing or cannot be read (a later format is never guessed).
+    pub fn project_checks(&self) -> agq_implementation::task::ProjectChecks {
+        self.project_checks_file()
+            .and_then(|path| std::fs::read_to_string(path).ok())
+            .and_then(|text| {
+                serde_json::from_str::<agq_implementation::task::ProjectChecks>(&text).ok()
+            })
+            .filter(|checks| checks.format == agq_implementation::task::ProjectChecks::FORMAT)
+            .unwrap_or_default()
+    }
+
+    /// Saves the project's required check commands, atomically.
+    pub fn save_project_checks(
+        &mut self,
+        checks: &agq_implementation::task::ProjectChecks,
+    ) -> Result<(), String> {
+        let path = self.project_checks_file().ok_or("No project is open.")?;
+        let text = serde_json::to_string_pretty(checks).map_err(|e| e.to_string())?;
+        crate::session::write_presentation(&path, text.as_bytes()).map_err(|e| e.to_string())
+    }
+
     /// What the Operator allowed for this project.
     pub fn execution_choice(&mut self) -> ExecutionChoice {
         if let Some(choice) = self.implementation.choice {
@@ -95,6 +126,26 @@ impl Studio {
             "Trusted-local execution is off for this project: no code runs.".into()
         };
         self.mark(Dirty::STATUS | Dirty::LAYOUT);
+    }
+
+    /// A part as C1 asks about it (ROADMAP §2.8): from the model, its links
+    /// and its locks; the Inspector and the Assistant read the same answer.
+    pub fn responsibility(
+        &self,
+        element: ElementId,
+    ) -> Option<agq_implementation::responsibility::Responsibility> {
+        let project = self.project.as_ref()?;
+        let state = project.state();
+        let links = self.implementation_links().unwrap_or_default();
+        let locks: Vec<ElementId> = state.locks().iter().copied().collect();
+        agq_implementation::responsibility::responsibility(state.tree(), &links, &locks, element)
+    }
+
+    /// [`Studio::responsibility`] in words, for the Assistant.
+    pub fn explain(&self, element: ElementId) -> Option<String> {
+        let project = self.project.as_ref()?;
+        self.responsibility(element)
+            .map(|r| r.describe(project.state().tree()))
     }
 
     /// The implementation links of the project (none when it has no file).
@@ -286,21 +337,30 @@ impl Studio {
             }
         };
         self.implementation.active = None;
-        let failed = report
-            .checks
-            .iter()
-            .filter(|c| c.verdict == Verdict::Failed)
-            .count();
-        self.status = if failed == 0 {
-            format!(
-                "{} implementation check(s): none failed",
+        let count = |verdict: Verdict| {
+            report
+                .checks
+                .iter()
+                .filter(|c| c.verdict == verdict)
+                .count()
+        };
+        let (passed, failed) = (count(Verdict::Passed), count(Verdict::Failed));
+        // The one summary (ROADMAP §5.6 item 8): a check that did not run is
+        // never counted as passing.
+        self.status = match agq_simulation::summary(report.checks.iter().map(|c| c.verdict)) {
+            Verdict::Passed => format!(
+                "{} implementation check(s): every one passed",
                 report.checks.len()
-            )
-        } else {
-            format!(
+            ),
+            Verdict::Failed => format!(
                 "{failed} of {} implementation check(s) failed: drift is shown at the elements",
                 report.checks.len()
-            )
+            ),
+            verdict => format!(
+                "{passed} of {} implementation check(s) passed; none failed, but not every one could be decided ({})",
+                report.checks.len(),
+                verdict.label()
+            ),
         };
         if let Some(store) = self.check_store()
             && let Err(error) = store.save(&report)

@@ -1,12 +1,17 @@
 # agq-studio-native
 
-The Studio (ROADMAP §4.6, part `Studio` in `models/agentique/Agentique.sysml`):
+The Studio (ROADMAP §4.6, part `Studio` in `model/Agentique.sysml`):
 the Surface, the Panels (Outline, Inspector, Requirements, History, Problems)
 and the Conversation with the Assistant, drawn with GPUI (C-48: the pinned
 snapshot `gpui-pre`, with the unstyled `gpui-base` primitives for text fields
-and focus). Every model change is a System State change applied through one
-path (`Studio::apply_change` in `edit.rs`), whoever makes it; the project
-saves it.
+and focus). Every model change is a System State change. The Operator's
+edits, the Assistant's and the Library's go through one Studio path
+(`Studio::apply_change` in `edit.rs`), so locks ask and each is one undo
+step; undo, redo and opening go through `Project` directly; the project
+saves each before it returns. Two writes into the model folder are not
+changes, and say so: implementation links (`model/links.json`, outside undo,
+C-50) and the URL shortener sample, whose text is written before the project
+is first opened.
 
 ## How it is built
 

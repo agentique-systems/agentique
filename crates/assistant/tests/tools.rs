@@ -50,6 +50,7 @@ fn every_tool_has_a_schema() {
             "stop_run",
             "read_run",
             "read_code_links",
+            "explain_element",
             "check_implementation",
             "propose_implementation",
             "search_library",

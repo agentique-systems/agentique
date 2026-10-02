@@ -956,7 +956,7 @@ pub fn script_assistant(app: &mut Studio) {
             "tool_use",
         ),
     ];
-    app.conversation.new_model = crate::conversation::scripted(replies);
+    app.conversation.new_runtime = crate::conversation::scripted(replies);
     app.conversation.key_missing = None;
     app.conversation.model_name = "scripted stand-in (no network)".into();
 }
@@ -1843,7 +1843,7 @@ pub fn script_library_assistant(app: &mut Studio) {
             "end_turn",
         ),
     ];
-    app.conversation.new_model = crate::conversation::scripted(replies);
+    app.conversation.new_runtime = crate::conversation::scripted(replies);
     app.conversation.key_missing = None;
     app.conversation.model_name = "scripted stand-in (no network)".into();
 }
@@ -1865,6 +1865,95 @@ fn crash() -> Vec<Step> {
     ));
     steps.push(step("crash", Action::Crash, Check::ProjectOpen));
     steps
+}
+
+/// C1 and C2 (ROADMAP §2.8, Gate A support): Agentique's own model,
+/// understood from the top down. A part says what it is for, what it owns,
+/// its contract, what it may use and what depends on it, where it is
+/// implemented and what checks it; a dependency leads to the other part and
+/// back; the development task's workflow runs in model execution. The
+/// project is a copy of the repository's `model/` (`copy_self_model`), so
+/// the journey never opens the repository itself.
+fn understand() -> Vec<Step> {
+    let settle = |step: Step| Step { settle: 12, ..step };
+    vec![
+        step(
+            "Agentique's own model opens",
+            Action::Idle,
+            Check::Exists("AgentiqueArchitecture::Execution", ElementKind::PartDef),
+        ),
+        step(
+            "select the execution part",
+            Action::ClickCard("AgentiqueArchitecture::Agentique::execution"),
+            Check::Selected("AgentiqueArchitecture::Agentique::execution"),
+        ),
+        shot(
+            "01-about-execution",
+            settle(step(
+                "the Inspector says what it is, owns, uses and what depends on it",
+                Action::Idle,
+                Check::Shown("depends on it"),
+            )),
+        ),
+        step(
+            "a dependent part leads to its own answer",
+            Action::Click("depends on it"),
+            Check::Inspecting("part def"),
+        ),
+        shot(
+            "02-about-the-dependent",
+            settle(step(
+                "and back",
+                Action::Click("Back to execution"),
+                Check::Inspecting("part"),
+            )),
+        ),
+        step(
+            "back on the Surface",
+            Action::ClickCard("AgentiqueArchitecture::Agentique::execution"),
+            Check::Selected("AgentiqueArchitecture::Agentique::execution"),
+        ),
+        step(
+            "the workflows",
+            Action::Key("ctrl-shift-r"),
+            Check::LeftTab("Scenarios"),
+        ),
+        step(
+            "choose the development task",
+            Action::Click("Scenario ADevelopmentTask"),
+            Check::ScenarioChosen("ADevelopmentTask"),
+        ),
+        shot(
+            "03-development-task",
+            settle(step(
+                "F5 runs it in the model",
+                Action::Key("f5"),
+                Check::Result("passed"),
+            )),
+        ),
+    ]
+}
+
+/// The project for `c-understand`: a copy of the repository's self-model
+/// (its model folder, without the lock and temporary files).
+pub fn copy_self_model(folder: &Path) -> Result<(), String> {
+    let source = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../model");
+    let target = folder.join("model");
+    std::fs::create_dir_all(&target).map_err(|e| e.to_string())?;
+    for entry in std::fs::read_dir(&source)
+        .map_err(|e| e.to_string())?
+        .flatten()
+    {
+        let name = entry.file_name().to_string_lossy().into_owned();
+        if entry.path().is_file()
+            && !name.ends_with(".lock")
+            && !name.ends_with(".tmp")
+            && name != "agentique.pending"
+        {
+            std::fs::copy(entry.path(), target.join(&name)).map_err(|e| e.to_string())?;
+        }
+    }
+    Ok(())
 }
 
 fn reopen() -> Vec<Step> {
@@ -2052,6 +2141,7 @@ impl Journey {
                 "i-scenarios" => scenarios(&folder),
                 "i-code" => code(&folder),
                 "a-reopen" => reopen(),
+                "c-understand" => understand(),
                 other => return Err(format!("no journey is called {other}")),
             },
             index: 0,

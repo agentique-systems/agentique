@@ -63,7 +63,7 @@ pub fn sections(
 }
 
 /// A clickable row that shows `target` in the Inspector.
-fn inspect_row(
+pub(crate) fn inspect_row(
     studio: &Entity<Studio>,
     id: impl Into<SharedString>,
     target: Option<ElementId>,
@@ -542,6 +542,7 @@ fn implementation(
             (
                 t.job.clone(),
                 t.started.elapsed().as_secs(),
+                t.phase,
                 t.progress
                     .iter()
                     .rev()
@@ -671,7 +672,7 @@ fn implementation(
                 cx,
             ))
         })
-        .when_some(active.clone(), |this, (_, seconds, progress)| {
+        .when_some(active.clone(), |this, (_, seconds, phase, progress)| {
             let stop = studio.clone();
             this.child(
                 div()
@@ -689,7 +690,7 @@ fn implementation(
                                 div()
                                     .flex_1()
                                     .text_size(r(theme::text::SM))
-                                    .child(format!("The worker is working · {}:{:02}", seconds / 60, seconds % 60)),
+                                    .child(format!("The worker: {phase} · {}:{:02}", seconds / 60, seconds % 60)),
                             )
                             .child(Button::new("task-stop", "Stop").small().on_click(move |_: &ClickEvent, _, cx| {
                                 stop.act(cx, |studio| studio.stop_task())

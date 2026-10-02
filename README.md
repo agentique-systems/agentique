@@ -108,7 +108,7 @@ python tools/check_architecture.py
 ```
 
 `tools/check_architecture.py` compares the crate dependency graph with the
-architecture model in `models/agentique/` (R-15). CI runs all four on every
+architecture model in `model/` (R-15). CI runs all four on every
 pull request.
 
 ## Repository layout
@@ -118,7 +118,7 @@ pull request.
 | `ROADMAP.md` | Governing direction, decisions and stage plan |
 | `AGENTS.md` | Short working rules for AI agents |
 | `docs/stages.md` | Progress record, one section per stage |
-| `models/agentique/` | Agentique's own architecture in SysML, checked against the crates |
+| `model/` | Agentique's own architecture: the repository's project model (parts, contracts, the workflows as scenarios, links to code and tests), checked against the crates |
 | `crates/language` | The language core: the SysML subset as an element tree (parse, print, validate) |
 | `crates/system-state` | The System State: typed operations, locks, undo, change events; `Project` ties it to History |
 | `crates/history` | The model folder in git: crash-safe saves, checkpoints, branches |

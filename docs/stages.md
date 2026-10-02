@@ -1016,3 +1016,62 @@ it waits for W5.5. Memory was not measured.
    ```text
    $env:AGQ_LIVE=1; cargo test -p agq-studio-native live_ -- --ignored --nocapture
    ```
+
+## Stage 10: Agentique builds Agentique (C-51)
+
+Status: **in progress.** Started on 2026-10-01 under the Operator's direction
+(C-51, ROADMAP §6.6), on the branch `stage10/self-hosting`. Nothing here says
+the Operator accepted anything; gates A–E are the Operator's.
+
+**Baseline** (`main` at `f3d0dae2`, untouched, debug builds with lean
+settings): `cargo fmt --all -- --check` clean; `python
+tools/check_architecture.py` OK (11 crates in 10 parts, 23 allowed
+dependencies); `cargo test --workspace` passes, none failing; `cargo clippy
+--workspace --all-targets -- -D warnings` clean.
+
+**Foundation review** (read-only, recorded in ROADMAP §5.6): three workflows
+traced through the code (rename a part, the Assistant changing the model, an
+implementation task), who owns which state, and the corrections by priority.
+Confirmed defect: a task's verification counted a check only when it failed.
+
+**Built** (uncommitted on the branch; decisions pending the Operator are in
+ROADMAP §7.6)
+
+| Item | State |
+|---|---|
+| W10.1 Foundation corrections | Done, each with a regression test written first and seen failing: a check that did not pass counted as a pass; integration of exactly the task commit (not a re-applied patch), leaving the Operator's staged work alone; protected paths whatever their case or spelling; one verdict summary (`agq_simulation::summary`) for runs, tasks and checks; a test found by its whole name only |
+| W10.2 The self-model | Done: `model/Agentique.sysml` (12 parts with purposes, owned information and contracts; item and port defs; connections; 5 requirements; 8 workflows with failure paths that run in model execution); 101 links to code and tests; "Develop Agentique" (Welcome and palette); the Inspector's "About this part" and the Assistant's `explain_element` from the same function; `model/README.md` reads it top down |
+| W10.3 Runtimes | Built: `Runtime` (the loop, or the Claude Agent runtime); the companion (`claude-agent/`), protocol 1, policy, setup and health in Settings › Assistant; streaming, tool activity, questions, stop, errors, usage and a visible phase in the Conversation; sessions resumed (each turn forks the session it continues) or handed over |
+| W10.4 Tasks | Built: required checks fixed at approval, each with an explicit outcome; the coding tools (search, ranged reads, exact edits, allowed programs); the worker on either runtime; the task commit; the worker's model changes in its worktree's model through System State operations, verified against that model, listed by element in the review, checked again and read back at integration; code of locked parts asks at integration. Agentique never pushes |
+| W10.5 Builds | Built: a release build of one commit in a detached worktree, with a manifest and the registry; "Try" as a test instance; "Use this build" (digests, commit, data formats, backup, handover to the launcher); the launcher's fallback to the last known good build, `--recover` in safe mode, diagnostics in `launcher.log`; Settings › About › Builds |
+| W10.6 Proof | Partly: the tests below; an independent review of the safeguards found eleven defects, all fixed (ROADMAP §7.6); seven have a regression test of their own, while the runtime's stop deadline, the backup, the safeguard links and verification on a clean checkout (which every task test now goes through) do not; the reference budget run not run |
+
+**Checks** (debug builds, lean settings, 2026-10-01): `cargo fmt --all --
+--check` clean; `cargo clippy --workspace --all-targets -- -D warnings` and
+with `--features automation` clean; `cargo test --workspace` 552 passed, 0
+failed, 9 ignored (live or costly runs); `python tools/check_architecture.py`
+OK (12 crates in 11 parts, 25 allowed dependencies) and its 14 tests pass; the
+companion's 7 tests pass and its type check is clean. Journeys (debug,
+`automation`): `a-build`, `a-reopen`, `a-assistant`, `c-understand` (new: the
+self-model's "About this part", a dependency and back, the development task's
+workflow in model execution), `d-daily`, `e-settings`, `h-library`,
+`i-scenarios` and `i-code` pass; `a-crash` exits 3 by design.
+
+**Not tried, or not verified**
+
+- Gate B is **unverified**: no Anthropic key on this machine. The real SDK
+  was started with a refused key (no cost) and reported exactly Agentique's
+  tools, `dontAsk` and no machine settings; the live test
+  (`live_the_sdk_reads_the_model_through_agentique_and_resumes_its_session`)
+  waits for a key.
+- A release build of Agentique itself was not made: the build pipeline is
+  tested on a stand-in workspace with the same package names, and Agentique's
+  own build needs this work committed first. "Try this build" and "Use this
+  build" were not run end to end; the launcher's fallback is tested with real
+  processes.
+- The reference budget run (§8.6) was not run: the release build needs more
+  memory and disk than this machine had free (3.1 GB of memory, 6.7 GB of
+  disk). The Inspector's "About this part" is computed when the Inspector
+  renders, like its other sections; not measured on a 10k model.
+- CI's new companion step (Node 22 from the runner's tool cache) has not run.
+- Gates A–E are the Operator's; none is claimed.

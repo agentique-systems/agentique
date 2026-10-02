@@ -598,6 +598,7 @@ impl Fields {
             let studio = self.studio.read(cx);
             studio.editable() && studio.dialog.is_none()
         };
+        let about = super::responsibility::section(&self.studio, element, cx);
         let reuse = super::reuse::section(&self.studio, element, can_edit, cx);
         let factory = super::evidence::sections(&self.studio, element, can_edit, cx);
         let studio = self.studio.read(cx);
@@ -723,6 +724,7 @@ impl Fields {
                         this.child(ui::inline_message(Tone::Warning, format!("Locked with {with}; changes ask first"), cx))
                     }),
             )
+            .children(about)
             .child(super::group("Properties", None, cx))
             .child(
                 div()

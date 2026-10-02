@@ -1,7 +1,9 @@
-//! Dogfood (Scenario I, C-20): Agentique's own architecture, read by its own
-//! language core, checked against its own crate graph by its own
-//! implementation check. The same rule `tools/check_architecture.py` has
-//! enforced in CI since Stage 0 (R-15), now through the product.
+//! Dogfood (Scenario I, C-20; Scenario C, C-51): Agentique's own
+//! architecture (`model/`, the repository's own project model), read by its
+//! own language core, checked against its own crate graph by its own
+//! implementation check (the rule `tools/check_architecture.py` has enforced
+//! in CI since Stage 0, R-15), and its workflows run in its own model
+//! execution.
 use agq_execution::{Executor, Program, Scope};
 use agq_implementation::checks::crate_boundaries;
 use agq_language::{Source, parse, validate};
@@ -10,7 +12,7 @@ use std::path::Path;
 use std::time::Duration;
 
 fn self_model() -> agq_language::Tree {
-    let folder = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../models/agentique");
+    let folder = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../model");
     let mut sources = Vec::new();
     for entry in std::fs::read_dir(&folder).unwrap() {
         let path = entry.unwrap().path();
@@ -86,4 +88,52 @@ fn agentiques_crates_follow_its_self_model() {
     );
     let simulation = tree.find("AgentiqueArchitecture::Simulation").unwrap();
     assert_eq!(check.elements, [simulation.raw()]);
+}
+
+/// The workflows of ROADMAP §2.8 C2 (an ordinary edit, an Assistant action,
+/// a development task) and their failure paths run in model execution, and
+/// every check holds: the model's account of the workflows is consistent.
+/// (The code is checked by the tests linked to each step.)
+#[test]
+fn agentiques_workflows_run_in_its_own_model_execution() {
+    use agq_simulation::{Answers, Mode, Request, RunStatus, compile, digest::model_digest, run};
+    use std::sync::Arc;
+    use std::sync::atomic::AtomicBool;
+    let tree = self_model();
+    let scenarios: Vec<_> = tree
+        .walk()
+        .into_iter()
+        .filter(|id| tree[*id].kind == agq_language::ElementKind::VerificationDef)
+        .collect();
+    assert!(scenarios.len() >= 8, "{} scenarios", scenarios.len());
+    let mut failures = Vec::new();
+    for scenario in scenarios {
+        let name = tree.qualified_name(scenario);
+        let program = match compile(&tree, scenario) {
+            Ok(program) => program,
+            Err(blockers) => {
+                failures.push(format!("{name} cannot start: {blockers:?}"));
+                continue;
+            }
+        };
+        let result = run(
+            &program,
+            model_digest(&tree, scenario),
+            &Request::new(Mode::Model),
+            Answers::StandIns,
+            Arc::new(AtomicBool::new(false)),
+        );
+        if result.status != RunStatus::Completed || !result.all_passed() {
+            failures.push(result.describe(None, 30));
+        }
+    }
+    assert!(
+        failures.is_empty(),
+        "{}",
+        failures.join(
+            "
+
+"
+        )
+    );
 }

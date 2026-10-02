@@ -20,7 +20,8 @@ file is its short working summary (ROADMAP §8.1); where they differ,
    State operations or the persistence format requires an explicit Operator
    decision, recorded in ROADMAP §7.6.
 5. **Changes that cut across parts start in the self-model.** Update
-   `models/agentique/` first. The dependency check (R-15) must stay green.
+   `model/` first (Agentique's own project model). The dependency check (R-15)
+   must stay green.
 6. **No new crate, top-level folder, register, generator or evidence format**
    without a distinct responsibility in the self-model and a reason the
    Operator can see.
@@ -77,7 +78,7 @@ code and are committed.
 | Direction, decisions and stages | `ROADMAP.md` |
 | Stage progress | `docs/stages.md` |
 | What Agentique is and how to run it | `README.md` |
-| Architecture | `models/agentique/` |
+| Architecture | `model/` (Agentique's own project model) |
 | Supported KerML/SysML constructs and deviations | `docs/subset.md`, `docs/deviations.md` |
 | Design tokens and components | the tokens module and the component gallery |
 | Settings | the settings table in code |

@@ -145,6 +145,10 @@ pub enum Dialog {
         problem: Option<String>,
         /// The patch as text, read when the review opened.
         diff: String,
+        /// The Operator chose to integrate although the verification is not
+        /// current and passed, or the patch changes the code of locked
+        /// parts; the dialog then names what and asks once more.
+        confirmed: bool,
     },
     /// "Link code…": a file, and optionally a symbol in it, for an element;
     /// `kind` indexes `LinkKind::ALL`.

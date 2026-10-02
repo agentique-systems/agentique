@@ -3,6 +3,7 @@
 //! Assistant, and ask the Operator (here: a fixed answer) about locks and
 //! questions.
 
+use agq_assistant::LoopRuntime;
 use agq_assistant::tools::{self, Prepared};
 use agq_assistant::turn::{self, MAX_MODEL_CALLS};
 use agq_assistant::{
@@ -264,6 +265,7 @@ fn a_turn_builds_an_architecture_and_ends() {
             Entry::Assistant { .. } => "assistant",
             Entry::ToolResults { .. } => "results",
             Entry::Notice { .. } => "notice",
+            Entry::Session { .. } => "session",
             Entry::Other(_) => "other",
         })
         .collect();
@@ -803,7 +805,8 @@ fn the_assistant_runs_a_turn_in_the_background() {
         reply(vec![text("Done.")], "end_turn"),
     ]);
     let conversation = asked("Add a link store.");
-    let background = BackgroundTurn::start(Box::new(model), conversation.clone());
+    let background =
+        BackgroundTurn::start(LoopRuntime::boxed(Box::new(model)), conversation.clone());
     let conversation = drive(&background, &mut studio, conversation);
 
     assert!(
@@ -826,7 +829,8 @@ fn without_an_api_key_the_background_turn_ends_with_a_notice() {
     let mut model = ClaudeModel::from_env();
     model.key = None;
     let conversation = asked("Design a URL shortener.");
-    let background = BackgroundTurn::start(Box::new(model), conversation.clone());
+    let background =
+        BackgroundTurn::start(LoopRuntime::boxed(Box::new(model)), conversation.clone());
     let conversation = drive(&background, &mut studio, conversation);
     assert_eq!(
         notices(&conversation),
@@ -857,7 +861,8 @@ impl Model for Thinking {
 fn stopping_the_assistant_ends_the_turn_at_once() {
     let mut studio = Studio::new(model_of("package UrlShortener;"));
     let conversation = asked("Build it.");
-    let background = BackgroundTurn::start(Box::new(Thinking), conversation.clone());
+    let background =
+        BackgroundTurn::start(LoopRuntime::boxed(Box::new(Thinking)), conversation.clone());
     // Wait until the model is at work, then stop.
     loop {
         if let Some(BackgroundEvent::Turn(TurnEvent::Stream(StreamEvent::Thinking(_)))) =
@@ -891,7 +896,10 @@ fn a_stop_while_a_tool_call_waits_for_the_studio_ends_the_turn() {
         ),
         reply(vec![text("never sent")], "end_turn"),
     ]);
-    let background = BackgroundTurn::start(Box::new(model), asked("Add statistics."));
+    let background = BackgroundTurn::start(
+        LoopRuntime::boxed(Box::new(model)),
+        asked("Add statistics."),
+    );
     // The question is open in the Studio: the reply channel is held, unanswered.
     let pending = loop {
         if let Some(BackgroundEvent::ToolCall { reply, .. }) = background.next_event() {

@@ -1,7 +1,7 @@
 # agq-implementation
 
 Implementation (ROADMAP §4.15; part `Implementation` in
-`models/agentique/Agentique.sysml`): what the model says about code. It
+`model/Agentique.sysml`): what the model says about code. It
 depends on the language core, Simulation (the run contract, the step
 interpreter and the check evaluator) and Execution (processes). It never
 writes code.
@@ -32,9 +32,16 @@ writes code.
 - **Tasks** (`task`): an implementation task's brief, taken from the model
   (the element as written, the contracts its ports carry, its parts, the
   scenarios it must pass, what is linked, the harness protocol and the
-  rules), and the verification of a working copy (build, the checks, the
-  brief's scenarios through the harness) that the worker and the Studio
-  both run; the Studio trusts only its own.
+  rules); its **required checks**, fixed when the Operator approves it (the
+  build, every check its links configure, every scenario of the brief, the
+  project's own commands), and what is not checked because it is not
+  configured; and the verification of a working copy that the worker and the
+  Studio both run (the Studio trusts only its own). Every required check ends
+  with an explicit outcome, a missing one is not run, and a verification
+  passes only when every required check passed and nothing else failed
+  (`Verification::verdict`, the one summary `agq_simulation::summary`). It
+  records the task commit and model digest it checked, so it is outdated as
+  soon as either changes.
 - **`CheckReport`** keeps a round of checks with the commit, the working
   tree's digest and the model digest the links reach, so freshness can be
   computed.

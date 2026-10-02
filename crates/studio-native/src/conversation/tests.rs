@@ -40,7 +40,7 @@ fn changes(id: &str, description: &str, operations: Vec<Value>) -> Value {
 /// A Studio with project `P` whose Assistant follows the script.
 fn assisted(name: &str, replies: Vec<Reply>) -> (Studio, Folder) {
     let (mut app, folder) = studio(name);
-    app.conversation.new_model = scripted(replies);
+    app.conversation.new_runtime = scripted(replies);
     app.conversation.key_missing = None;
     (app, folder)
 }
@@ -234,6 +234,8 @@ fn a_question_waits_for_the_operator_and_the_answer_returns_to_the_model() {
     say(&mut app, "Add click statistics");
     wait(&mut app, |app| app.conversation.waiting.is_some());
     assert!(app.conversation.running(), "the turn waits for the answer");
+    // The visible phase says so, and ends with the turn.
+    assert_eq!(app.conversation.phase, Some("Waiting for your answer"));
     // The options are buttons in the conversation.
     let option = match &app.conversation.waiting {
         Some(Waiting {
@@ -245,6 +247,7 @@ fn a_question_waits_for_the_operator_and_the_answer_returns_to_the_model() {
     app.answer_question(&option);
     wait(&mut app, finished);
     assert_eq!(result(&app, "t1").content, "Inside the API");
+    assert_eq!(app.conversation.phase, None);
 
     // A message typed while a question is open answers it.
     say(&mut app, "Should it cache?");
@@ -327,7 +330,7 @@ fn retry_and_edit_and_resend_keep_the_conversation_valid() {
         [Entry::Operator { text }, Entry::Notice { .. }] if text == "Build it"
     ));
 
-    app.conversation.new_model = scripted(vec![reply(vec![text("Done.")], "end_turn")]);
+    app.conversation.new_runtime = scripted(vec![reply(vec![text("Done.")], "end_turn")]);
     app.retry();
     wait(&mut app, finished);
     assert!(matches!(
@@ -341,7 +344,7 @@ fn retry_and_edit_and_resend_keep_the_conversation_valid() {
     app.edit_last_message();
     assert_eq!(app.conversation.input, "Build it");
     app.conversation.input = "Build it smaller".into();
-    app.conversation.new_model = scripted(vec![
+    app.conversation.new_runtime = scripted(vec![
         reply(
             vec![changes("t1", "Add api", vec![create("api")])],
             "tool_use",

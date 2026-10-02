@@ -1,7 +1,7 @@
 # agq-assistant
 
 The Assistant (ROADMAP §4.1, §4.10, part `Assistant` in
-`models/agentique/Agentique.sysml`): the AI agent the Operator works with in
+`model/Agentique.sysml`): the AI agent the Operator works with in
 the Conversation. It depends on the System State, the language core and
 Providers (`agq-providers`), which talks to model providers through rig. Its
 hand-written Claude client still uses the network directly until W5.7.

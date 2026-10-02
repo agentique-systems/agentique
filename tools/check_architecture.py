@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """Check the Cargo crate graph against the SysML architecture model (ROADMAP R-15, R-41).
 
-models/agentique/*.sysml maps every workspace crate to a part definition
-(`part 'agq-language' : Crate;` inside `part def LanguageCore`) and lists every allowed
-dependency between parts (`dependency from Studio to SystemState;`). A crate may use
-crates of its own part and of the parts its part depends on directly. Normal and build
-dependencies count; dev-dependencies are ignored.
+model/*.sysml (the repository's own project model, ROADMAP §4.6) maps every workspace
+crate to a part definition (`part 'agq-language' : Crate;` inside `part def
+LanguageCore`) and lists every allowed dependency between parts (`dependency from
+Studio to SystemState;`). A crate may use crates of its own part and of the parts its
+part depends on directly. Normal and build dependencies count; dev-dependencies are
+ignored. Everything else in the model (items, ports, behaviour, requirements,
+scenarios) is read past, as R-41 says: the model is validated in full by Agentique's
+own language core (crates/implementation/tests/dogfood.rs).
 """
 
 import json
@@ -15,7 +18,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-MODEL_DIR = ROOT / "models" / "agentique"
+MODEL_DIR = ROOT / "model"
 LANGUAGE_CORE = "LanguageCore"  # depends on no other part
 CORE_PARTS = ("LanguageCore", "SystemState", "History")  # locked core (R-16)
 # Parts that must not use UI or network libraries: the locked core; the Library (C-49),
@@ -41,22 +44,22 @@ TEMPORARY_LIBRARY_USES = {
     ("agq-assistant", "reqwest"): "W5.7",  # the hand-written Claude client
 }
 
-# Whitespace, comments and `doc /* ... */` are skipped; names, words and punctuation kept.
-TOKEN = re.compile(r"(\s+|//[^\n]*|/\*.*?\*/|doc\s*/\*.*?\*/)|('[^']*'|\w+|[{};:.~])|(.)", re.S)
+# Whitespace, comments and `doc /* ... */` are skipped; quoted names, strings, words and
+# single punctuation characters are kept.
+TOKEN = re.compile(r"""(\s+|//[^\n]*|/\*.*?\*/|doc\s*/\*.*?\*/)|('[^']*'|"[^"]*"|\w+|\S)""", re.S)
 
 
 class ModelError(Exception):
-    """The model uses syntax this check does not understand."""
+    """The model's structure is not what this check reads (unbalanced braces, a
+    malformed `dependency`)."""
 
 
 def tokenize(text, source):
     tokens = []
     for match in TOKEN.finditer(text):
-        _, token, bad = match.groups()
-        if token or bad:
+        _, token = match.groups()
+        if token:
             line = text.count("\n", 0, match.start()) + 1
-            if bad:
-                raise ModelError(f"{source}:{line}: unexpected {bad!r}")
             tokens.append((token, f"{source}:{line}"))
     return tokens
 
@@ -69,8 +72,11 @@ def read_block(tokens, pos=0, nested=False):
         token, where = tokens[pos]
         pos += 1
         if token == "}":
-            if head or not nested:
+            if not nested:
                 raise ModelError(f"{where}: unexpected '}}'")
+            if head:
+                # The last statement of a body may go without `;` (an expression).
+                statements.append(([word for word, _ in head], None, head[0][1]))
             return statements, pos
         if token in (";", "{"):
             if not head:
@@ -88,15 +94,10 @@ def read_block(tokens, pos=0, nested=False):
 
 
 def crates_in(body):
-    """Crates named by `part 'name' : Crate;` inside a part def. Other typed part
-    usages (`part studio : Studio;`) describe composition and map no crate."""
-    crates = []
-    for words, inner, where in body:
-        if words[0] != "part" or len(words) != 4 or words[2] != ":" or inner:
-            raise ModelError(f"{where}: unsupported in a part def: {' '.join(words)}")
-        if words[3] == "Crate":
-            crates.append(words[1].strip("'"))
-    return crates
+    """Crates named by `part 'name' : Crate;` inside a part def. Everything else in a
+    part def (other part usages, ports, attributes, behaviour) maps no crate."""
+    return [words[1].strip("'") for words, _inner, _where in body
+            if len(words) == 4 and words[0] == "part" and words[2] == ":" and words[3] == "Crate"]
 
 
 def parse_model(texts):
@@ -112,10 +113,12 @@ def parse_model(texts):
                     if words[2] in parts:
                         raise ModelError(f"{where}: part def {words[2]} is defined twice")
                     parts[words[2]] = crates_in(inner or [])
-                elif words[0] == "dependency" and len(words) == 5 and words[1::2] == ["from", "to"] and not inner:
+                elif words[0] == "dependency":
+                    if len(words) != 5 or words[1::2] != ["from", "to"]:
+                        raise ModelError(f"{where}: expected 'dependency from A to B': {' '.join(words)}")
                     dependencies.append((words[2], words[4]))
-                else:
-                    raise ModelError(f"{where}: unsupported in a package: {' '.join(words)}")
+                # Anything else (items, ports, requirements, scenarios, usages) is
+                # read past: it allows no dependency and maps no crate.
     for client, supplier in dependencies:
         for name in (client, supplier):
             if name not in parts:
