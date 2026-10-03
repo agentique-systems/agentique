@@ -17,9 +17,15 @@ package UrlShortener {
     }
 
     enum def Decision {
-        enum allow;
-        enum review;
-        enum block;
+        enum allow {
+            doc /* An ordinary link: it may go live. */
+        }
+        enum review {
+            doc /* Unsure, or the site looks risky: a person reviews it before it goes live. */
+        }
+        enum block {
+            doc /* Known abuse, such as malware or phishing: it is not stored. */
+        }
     }
 
     enum def ResolveOutcome {
@@ -122,6 +128,16 @@ package UrlShortener {
         :>> minConfidence = 0.8;
         :>> maxLatencyMs = 500;
         part : BlocklistScreening :>> fallback;
+    }
+
+    part def TypedLinkScreening :> LinkScreening {
+        doc /* Decides whether a new short link may go live, from its URL and host
+             * alone: allow an ordinary link, review when unsure or when the site
+             * looks risky, and block known abuse (malware, phishing). Answered as
+             * one typed choice among the decisions, whose confidence is the model's
+             * own claim; it gives no reason.
+             */
+        :>> model = "jev-1.13.0";
     }
 
     part def BlocklistScreening :> Screening {
@@ -383,6 +399,35 @@ package UrlShortener {
         then accept link : ShortLink via service.shorten;
         then assert constraint isBlocked {
             link.status == LinkStatus::blocked
+        }
+    }
+
+    verification def TypedScreeningCases {
+        doc /* The evaluation cases of ScreeningCases for the screening agent answered
+             * by a typed decision model (C-52): replayed from recordings or as a live
+             * evaluation; there are no stand-ins. The chat agent stays as it is, for
+             * comparison.
+             */
+        subject screening : TypedLinkScreening;
+        send new LinkCandidate(longUrl = "https://en.wikipedia.example/wiki/Rust", host = "en.wikipedia.example") via screening.check;
+        then accept encyclopedia : Verdict via screening.check;
+        then assert constraint encyclopediaIsAllowed {
+            encyclopedia.decision == Decision::allow
+        }
+        then send new LinkCandidate(longUrl = "http://free-gift-cards.example/claim?wallet=seed", host = "free-gift-cards.example") via screening.check;
+        then accept giftCards : Verdict via screening.check;
+        then assert constraint giftCardScamIsNotAllowed {
+            giftCards.decision != Decision::allow
+        }
+        then send new LinkCandidate(longUrl = "https://paypa1-login.example/verify-account", host = "paypa1-login.example") via screening.check;
+        then accept lookalike : Verdict via screening.check;
+        then assert constraint lookalikeLoginIsNotAllowed {
+            lookalike.decision != Decision::allow
+        }
+        then send new LinkCandidate(longUrl = "https://docs.rust-lang.example/book/", host = "docs.rust-lang.example") via screening.check;
+        then accept documentation : Verdict via screening.check;
+        then assert constraint documentationIsAllowed {
+            documentation.decision == Decision::allow
         }
     }
 
