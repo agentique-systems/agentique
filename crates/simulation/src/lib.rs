@@ -1,5 +1,5 @@
 //! Simulation (ROADMAP §4.14; part `Simulation` in
-//! `models/agentique/Agentique.sysml`): scenarios run over a fixed model
+//! `model/Agentique.sysml`): scenarios run over a fixed model
 //! snapshot, with results that say what actually ran.
 //!
 //! - [`compile`]: a scenario (a `verification def`) and the model it runs
@@ -37,6 +37,7 @@ pub use compile::{Blocker, Outcome, Program, compile};
 pub use engine::{AgentCall, Answers, Limits};
 pub use result::{
     CheckResult, EventKind, Mode, RunResult, RunStatus, Stop, StopReason, TraceEvent, Verdict,
+    summary,
 };
 pub use runner::BackgroundRun;
 pub use script::{Output, Target, Trace, run_steps};

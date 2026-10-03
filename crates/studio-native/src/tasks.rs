@@ -1,17 +1,22 @@
-//! Implementation tasks in the Studio (ROADMAP §4.15, W8.4): the Operator
-//! (or the Assistant, after the Operator agrees) asks a worker to implement
-//! an element. Each task is a job in the project's app data, with its own
-//! git worktree; the worker runs on its own thread; when it ends, the
-//! Studio verifies the worktree itself and the Operator reviews the patch,
-//! then integrates it (the repository must not have moved) or discards it.
-//! A task the app did not see end is found on the next open as
-//! interrupted, with what it wrote still there to review.
+//! Implementation tasks in the Studio (ROADMAP §4.15, W8.4, W10.1): the
+//! Operator (or the Assistant, after the Operator agrees) asks a worker to
+//! implement an element. Each task is a job in the project's app data, with
+//! its own git worktree and the checks it must pass, fixed when it starts.
+//! The worker runs on its own thread; when it ends, the Studio commits the
+//! worktree (the task commit), verifies that commit itself, and the
+//! Operator reviews it, then integrates exactly that commit (only while the
+//! verification is current and passed, or after saying so explicitly) or
+//! discards it. A task the app did not see end is found on the next open
+//! as interrupted, with what it wrote still there to review.
 use crate::studio::{Dirty, Studio};
 use agq_assistant::worker::{self, Worker};
 use agq_execution::jobs::{Job, JobState, JobStore};
 use agq_execution::{Executor, Scope, git};
 use agq_implementation::Link;
-use agq_implementation::task::{Verification, brief, verify};
+use agq_implementation::task::{
+    ALWAYS_PROTECTED, Brief, Checked, RequiredCheck, Verification, brief, brief_digest,
+    not_configured, required_checks, verify,
+};
 use agq_language::ElementId;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -29,6 +34,9 @@ pub struct TaskOutcome {
     pub worktree: String,
     pub branch: String,
     pub base: String,
+    /// The task commit: what was verified, reviewed and is integrated.
+    #[serde(default)]
+    pub commit: String,
     /// The worker's own words.
     pub summary: Option<String>,
     pub proposed: Vec<Link>,
@@ -48,6 +56,19 @@ pub struct TaskOutcome {
     pub cost_usd: Option<f64>,
 }
 
+/// What a task changed in the model, for its review.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ModelChanges {
+    pub created: Vec<String>,
+    pub updated: Vec<String>,
+    pub deleted: Vec<String>,
+    /// Problems in the task's model, and in its base.
+    pub problems: usize,
+    pub problems_before: usize,
+    /// Why it may not be integrated, if it may not.
+    pub refused: Option<String>,
+}
+
 /// A task in progress.
 pub struct ActiveTask {
     pub job: String,
@@ -56,12 +77,15 @@ pub struct ActiveTask {
     pub started: Instant,
     /// The worker's latest steps, newest last.
     pub progress: Vec<String>,
+    /// What the worker is doing now (its latest tool's phase).
+    pub phase: &'static str,
     events: Receiver<TaskEvent>,
     cancel: Arc<AtomicBool>,
 }
 
 enum TaskEvent {
     Progress(String),
+    Phase(&'static str),
     Done(Box<TaskOutcome>),
 }
 
@@ -109,11 +133,44 @@ impl Studio {
                 repository.display()
             ));
         }
+        // The worktree starts from the last commit: with the model in the
+        // repository, the model (its locks included) must be committed, or
+        // the worker would work on an older one.
+        if self.model_folder_in(&repository).is_some()
+            && self
+                .project
+                .as_ref()
+                .is_some_and(|p| p.has_uncommitted_changes().unwrap_or(true))
+        {
+            return Some("The model has changes since the last checkpoint. Make a checkpoint first (Ctrl+S): the task starts from the last commit, and your changes, locks included, would not be in it.".into());
+        }
         // The worker uses the Assistant's model.
         if let Some(missing) = &self.conversation.key_missing {
             return Some(missing.clone());
         }
         None
+    }
+
+    /// The checks a task on `element` would have to pass, and what would not
+    /// be checked because it is not configured, for the Operator to see
+    /// before starting it.
+    pub fn task_checks(&self, element: ElementId) -> (Vec<String>, Vec<String>) {
+        let Some(project) = self.project.as_ref() else {
+            return (Vec::new(), Vec::new());
+        };
+        let Ok(links) = self.implementation_links() else {
+            return (Vec::new(), Vec::new());
+        };
+        match brief(project.state().tree(), &links, element, "") {
+            Ok(brief) => (
+                required_checks(&links, &brief, &self.project_checks().commands)
+                    .iter()
+                    .map(RequiredCheck::label)
+                    .collect(),
+                not_configured(&links, &brief),
+            ),
+            Err(why) => (Vec::new(), vec![why]),
+        }
     }
 
     /// Starts a task: a job, a worktree, and the worker on its thread.
@@ -134,21 +191,27 @@ impl Studio {
             .ok_or("The project has no code folder.")?;
         // The model is the Operator's: when the code shares the project's
         // folder, its model folder is never written by a task.
-        if let (Ok(code), Ok(model)) = (
-            repository.canonicalize(),
-            project.folder().join("model").canonicalize(),
-        ) && let Ok(inside) = model.strip_prefix(&code)
-        {
-            brief
-                .protected
-                .push(inside.to_string_lossy().replace('\\', "/"));
+        if let Some(model) = self.model_folder_in(&repository) {
+            brief.protected.push(model);
         }
+        // The checks it must pass, fixed now (§4.15): the worker can add
+        // checks, never remove these.
+        brief.required = required_checks(&links, &brief, &self.project_checks().commands);
+        brief.text.push_str("\n\n");
+        brief
+            .text
+            .push_str(&agq_implementation::task::checks_section(&brief.required));
         let store = self.job_store().ok_or("No project is open.")?;
         let mut job = store
             .create(
                 "implement",
                 &brief.title,
-                serde_json::json!({ "element": element.raw(), "instructions": instructions }),
+                serde_json::json!({
+                    "element": element.raw(),
+                    "instructions": instructions,
+                    "required": brief.required,
+                    "notConfigured": not_configured(&links, &brief),
+                }),
             )
             .map_err(|e| e.to_string())?;
         let data = crate::conversation::project_data(&self.session_path, project.folder());
@@ -174,6 +237,7 @@ impl Studio {
         job.detail["branch"] = serde_json::json!(worktree.branch.clone());
         job.detail["base"] = serde_json::json!(worktree.base.clone());
         job.detail["repository"] = serde_json::json!(repository.display().to_string());
+        job.detail["brief"] = serde_json::to_value(&brief).unwrap_or_default();
         let _ = store.set_state(&mut job, JobState::Running, None);
         self.run_worker_in(job, element, worktree, repository, tree, links, brief, &[])
     }
@@ -221,15 +285,19 @@ impl Studio {
             found.detail["instructions"].as_str().unwrap_or_default()
         );
         let mut brief = brief(&tree, &links, element, &instructions)?;
+        // The checks fixed when it was approved, not worked out again.
+        brief.required =
+            match serde_json::from_value::<Vec<RequiredCheck>>(found.detail["required"].clone()) {
+                Ok(required) if !required.is_empty() => required,
+                _ => required_checks(&links, &brief, &self.project_checks().commands),
+            };
+        brief.text.push_str("\n\n");
+        brief
+            .text
+            .push_str(&agq_implementation::task::checks_section(&brief.required));
         let repository = PathBuf::from(found.detail["repository"].as_str().unwrap_or_default());
-        if let (Ok(code), Ok(model)) = (
-            repository.canonicalize(),
-            project.folder().join("model").canonicalize(),
-        ) && let Ok(inside) = model.strip_prefix(&code)
-        {
-            brief
-                .protected
-                .push(inside.to_string_lossy().replace('\\', "/"));
+        if let Some(model) = self.model_folder_in(&repository) {
+            brief.protected.push(model);
         }
         let carried: Vec<Link> =
             serde_json::from_value::<TaskOutcome>(found.detail["outcome"].clone())
@@ -279,25 +347,45 @@ impl Studio {
         let data = crate::conversation::project_data(&self.session_path, project.folder());
         let choice = self.execution_choice();
         let target = data.join("targets").join(&job.id);
-        let make_executor = {
-            let root = worktree.path.clone();
+        // Stop ends whatever the worker or the verification is running.
+        let cancel = Arc::new(AtomicBool::new(false));
+        let flag = cancel.clone();
+        let make_executor_at = {
             let protected = brief.protected.clone();
-            move || -> Result<Executor, String> {
+            let allowed = project_programs(&brief.required);
+            let cancel = cancel.clone();
+            move |root: &std::path::Path| -> Result<Executor, String> {
                 let protected: Vec<&str> = protected.iter().map(String::as_str).collect();
-                let scope = Scope::writable(&root, &[""], &protected).map_err(|e| e.to_string())?;
+                let scope = Scope::writable(root, &[""], &protected).map_err(|e| e.to_string())?;
                 Ok(Executor::new(scope)
                     .trusted(choice.trusted)
                     .network(choice.network)
-                    .target_dir(target.clone()))
+                    .target_dir(target.clone())
+                    .allow(allowed.clone())
+                    .cancel_flag(cancel.clone()))
             }
         };
+        let make_executor = {
+            let root = worktree.path.clone();
+            let at = make_executor_at.clone();
+            move || at(&root)
+        };
+        let verify_name = format!("{}-verify", job.id);
         let executor = make_executor()?;
         let carried = carried.to_vec();
-        let mut model = (self.conversation.new_model)();
-        let cancel = Arc::new(AtomicBool::new(false));
-        let flag = cancel.clone();
+        // The worker's own copy of the model: the project folder in its
+        // worktree, when the project's model is in the repository.
+        let working_model = self.model_folder_in(&repository).and_then(|model| {
+            worktree
+                .path
+                .join(model)
+                .parent()
+                .map(std::path::Path::to_path_buf)
+        });
+        let mut runtime = (self.conversation.new_runtime)();
         let (sender, events) = std::sync::mpsc::channel();
         let title = brief.title.clone();
+        let commit_message = format!("{title} (Agentique task {})", job.id);
         let outcome_base = TaskOutcome {
             element: brief.element,
             repository: repository.display().to_string(),
@@ -311,10 +399,13 @@ impl Studio {
             .spawn(move || {
                 let mut worker =
                     Worker::new(tree.clone(), links, brief.clone(), executor, flag.clone());
+                if let Some(folder) = working_model {
+                    worker = worker.with_model(folder);
+                }
                 // Links an earlier attempt proposed stay proposed.
                 worker.proposed = carried;
                 let progress = sender.clone();
-                let author = model.model();
+                let author = runtime.model();
                 let mut usage = agq_assistant::Usage::default();
                 // Each call by its tool and what it was about, as it ends.
                 let mut calls: std::collections::HashMap<String, (String, String)> =
@@ -323,6 +414,7 @@ impl Studio {
                     agq_assistant::TurnEvent::Stream(
                         agq_assistant::StreamEvent::ToolCallStarted { id, name },
                     ) => {
+                        let _ = progress.send(TaskEvent::Phase(agq_assistant::phase(&name)));
                         calls.insert(id, (name, String::new()));
                     }
                     agq_assistant::TurnEvent::Stream(agq_assistant::StreamEvent::ToolInput {
@@ -371,28 +463,86 @@ impl Studio {
                     _ => {}
                 };
                 let conversation =
-                    worker::run_worker(model.as_mut(), &mut worker, &mut on_event, &flag);
+                    worker::run_worker(runtime.as_mut(), &mut worker, &mut on_event, &flag);
+                // The model the task is checked against: its own copy, if
+                // the worker used it.
+                let task_tree = worker.close_model();
                 let cost_usd = author.as_ref().and_then(|m| usage.cost_usd(m));
                 let model_name = author.map(|m| format!("{}/{}", m.provider.id(), m.model));
                 let notice = conversation.entries.iter().rev().find_map(|e| match e {
                     agq_assistant::Entry::Notice { text } => Some(text.clone()),
                     _ => None,
                 });
+                // The task commit: verification, review and integration all
+                // refer to it, so what is integrated is what was checked.
+                // Cargo first writes its lock file (a build would write it
+                // after the commit and make the verification outdated at once).
+                let worktree_path = std::path::Path::new(&outcome_base.worktree);
+                if let Ok(executor) = make_executor() {
+                    let _ = executor.run(
+                        &agq_execution::Program::cargo(&[
+                            "metadata",
+                            "--offline",
+                            "--format-version",
+                            "1",
+                        ]),
+                        "",
+                        std::time::Duration::from_secs(300),
+                    );
+                }
+                let commit = match git::commit_worktree(worktree_path, &commit_message) {
+                    Ok(commit) => commit,
+                    Err(refusal) => {
+                        let _ = sender.send(TaskEvent::Progress(format!(
+                            "✗ The worktree could not be committed: {refusal}"
+                        )));
+                        String::new()
+                    }
+                };
                 let _ = sender.send(TaskEvent::Progress(
-                    "The Studio checks the worktree itself…".into(),
+                    "The Studio checks the task commit itself…".into(),
                 ));
-                // Never the worker's word: the Studio's own verification.
-                let verification = match make_executor() {
-                    Ok(executor) => verify(&tree, &worker.links(), &brief, &executor, flag.clone()),
+                // Never the worker's word: the Studio's own verification, of
+                // exactly the task commit: a clean checkout of it, so files the
+                // commit does not hold (ignored ones the worker wrote) count
+                // for nothing.
+                let repository_path = std::path::Path::new(&outcome_base.repository);
+                let clean = std::path::PathBuf::from(format!("{}-verify", outcome_base.worktree));
+                let _ = git::remove_worktree(repository_path, &verify_name);
+                let checked_out = !commit.is_empty()
+                    && git::checkout_worktree(repository_path, &verify_name, &clean, &commit)
+                        .is_ok();
+                let verifier = if checked_out {
+                    make_executor_at(&clean)
+                } else {
+                    Err("The task commit could not be checked out to be verified.".to_string())
+                };
+                let mut verification = match verifier {
+                    Ok(executor) => verify(
+                        task_tree.as_ref().unwrap_or(&tree),
+                        &worker.links(),
+                        &brief,
+                        &executor,
+                        flag.clone(),
+                    ),
                     Err(error) => Verification {
                         build_errors: error,
+                        required: brief.required.clone(),
                         ..Default::default()
                     },
                 };
-                let files = git::patch(
-                    std::path::Path::new(&outcome_base.worktree),
-                    &outcome_base.base,
-                )
+                if checked_out {
+                    let _ = git::remove_worktree(repository_path, &verify_name);
+                }
+                verification.checked = Some(Checked {
+                    commit: commit.clone(),
+                    model_digest: brief_digest(&tree, &brief),
+                });
+                let files = if commit.is_empty() {
+                    git::patch(worktree_path, &outcome_base.base)
+                } else {
+                    git::patch_of(worktree_path, &outcome_base.base, &commit)
+                }
                 .map(|p| {
                     p.files
                         .into_iter()
@@ -414,6 +564,7 @@ impl Studio {
                     },
                     model: model_name,
                     cost_usd,
+                    commit,
                     ..outcome_base
                 };
                 let _ = sender.send(TaskEvent::Done(Box::new(outcome)));
@@ -425,6 +576,7 @@ impl Studio {
             title: title.clone(),
             started: Instant::now(),
             progress: Vec::new(),
+            phase: "Starting",
             events,
             cancel,
         });
@@ -470,6 +622,10 @@ impl Studio {
                     }
                     changed = true;
                 }
+                Ok(TaskEvent::Phase(phase)) => {
+                    changed |= task.phase != phase;
+                    task.phase = phase;
+                }
                 Ok(TaskEvent::Done(outcome)) => {
                     done = Some(outcome);
                     break;
@@ -503,8 +659,9 @@ impl Studio {
             };
             let note = outcome.notice.clone().or_else(|| {
                 Some(format!(
-                    "{} file(s) changed; {} failing or not verified",
+                    "{} file(s) changed; verification {} ({} failing or not verified)",
                     outcome.files.len(),
+                    outcome.verification.verdict().label(),
                     outcome.verification.failures()
                 ))
             });
@@ -518,9 +675,10 @@ impl Studio {
             )
         } else {
             format!(
-                "{} is ready for review: {} file(s), {} failing or not verified.",
+                "{} is ready for review: {} file(s); verification {}, {} failing or not verified.",
                 task.title,
                 outcome.files.len(),
+                outcome.verification.verdict().label(),
                 outcome.verification.failures()
             )
         };
@@ -535,9 +693,16 @@ impl Studio {
         Some((job, outcome))
     }
 
-    /// The patch of a task's worktree as text, at most `lines` lines.
+    /// The patch of a task as text, at most `lines` lines: its task commit,
+    /// or (for a task interrupted before it had one) its worktree.
     pub fn task_diff(outcome: &TaskOutcome, lines: usize) -> String {
-        let text = git::patch(std::path::Path::new(&outcome.worktree), &outcome.base)
+        let worktree = std::path::Path::new(&outcome.worktree);
+        let patch = if outcome.commit.is_empty() {
+            git::patch(worktree, &outcome.base)
+        } else {
+            git::patch_of(worktree, &outcome.base, &outcome.commit)
+        };
+        let text = patch
             .map(|p| p.text())
             .unwrap_or_else(|refusal| format!("The patch cannot be read: {refusal}"));
         let total = text.lines().count();
@@ -556,6 +721,7 @@ impl Studio {
                     job: job.to_string(),
                     problem: None,
                     diff: Self::task_diff(&outcome, 1_500),
+                    confirmed: false,
                 });
                 self.mark(Dirty::OVERLAY);
             }
@@ -593,6 +759,7 @@ impl Studio {
                         job: job.to_string(),
                         problem: None,
                         diff: Self::task_diff(&outcome, 1_500),
+                        confirmed: false,
                     });
                     self.mark(Dirty::OVERLAY);
                 }
@@ -600,49 +767,318 @@ impl Studio {
         }
     }
 
-    /// Integrates a reviewed patch: commits it to the repository (if its
-    /// head has not moved) and adds the proposed links to the model.
-    pub fn integrate_task(&mut self, job: &str) -> Result<String, String> {
+    /// Whether a task's verification still describes it: the same task
+    /// commit with nothing uncommitted since, and the same model.
+    pub fn task_freshness(&self, job: &Job, outcome: &TaskOutcome) -> agq_simulation::Freshness {
+        let worktree = std::path::Path::new(&outcome.worktree);
+        let commit = git::head(worktree).map(|h| h.commit).unwrap_or_default();
+        match git::changed_files(worktree) {
+            Ok(changed) if !changed.is_empty() => {
+                return agq_simulation::Freshness::Outdated(format!(
+                    "the working copy changed after it was checked ({})",
+                    changed.join(", ")
+                ));
+            }
+            Err(refusal) => {
+                return agq_simulation::Freshness::Outdated(format!(
+                    "the working copy cannot be read: {refusal}"
+                ));
+            }
+            Ok(_) => {}
+        }
+        let uncommitted = false;
+        let digest = match (
+            self.project.as_ref(),
+            serde_json::from_value::<Brief>(job.detail["brief"].clone()),
+        ) {
+            (Some(project), Ok(brief)) => brief_digest(project.state().tree(), &brief),
+            _ => String::new(),
+        };
+        outcome
+            .verification
+            .freshness(&commit, uncommitted, &digest)
+    }
+
+    /// Why a task cannot be integrated as it stands: its verification did
+    /// not pass, or no longer describes the task. `None` when it can.
+    pub fn integration_blocker(&self, job: &Job, outcome: &TaskOutcome) -> Option<String> {
+        if outcome.commit.is_empty() {
+            return Some(
+                "The task has no task commit: the Studio did not check it. Continue the task to have it checked.".into(),
+            );
+        }
+        if let agq_simulation::Freshness::Outdated(why) = self.task_freshness(job, outcome) {
+            return Some(format!(
+                "The verification is outdated: {why}. Continue the task to check it again."
+            ));
+        }
+        let verification = &outcome.verification;
+        if !verification.passed() {
+            let not_passed: Vec<String> = verification
+                .outcomes()
+                .into_iter()
+                .filter(|o| o.verdict != agq_simulation::Verdict::Passed)
+                .map(|o| format!("{} ({})", o.name, o.verdict.label()))
+                .collect();
+            return Some(format!(
+                "The verification did not pass: {}.",
+                not_passed.join(", ")
+            ));
+        }
+        None
+    }
+
+    /// Integrates a reviewed task: exactly its task commit, into the
+    /// repository's branch (if it has not moved), writing only the task's
+    /// files; then adds the proposed links to the model. Refused while the
+    /// verification is not current and passed, or while the patch changes
+    /// the code of locked parts, unless the Operator `confirmed` after seeing
+    /// why. Each step is journaled, so an interruption is finished by
+    /// integrating again, never repeated.
+    pub fn integrate_task(&mut self, job: &str, confirmed: bool) -> Result<String, String> {
         let (mut found, outcome) = self
             .task_outcome(job)
             .ok_or("The task has nothing to integrate.")?;
-        let message = format!("{} (Agentique task {})", found.title, found.id);
+        let blocker = self.integration_blocker(&found, &outcome);
+        if let Some(why) = &blocker
+            && (!confirmed || outcome.commit.is_empty())
+        {
+            return Err(format!("Not integrated. {why}"));
+        }
+        let locked = self.locked_code(&outcome);
+        if !locked.is_empty() && !confirmed {
+            return Err(format!(
+                "Not integrated: it changes the code of locked parts ({}). Confirm to integrate it.",
+                locked.join(", ")
+            ));
+        }
         let repository = PathBuf::from(&outcome.repository);
-        let commit = match git::integrate(
-            &repository,
-            std::path::Path::new(&outcome.worktree),
-            &outcome.base,
-            &message,
-        ) {
-            Ok(Ok(commit)) => commit,
-            Ok(Err(conflict)) => return Err(format!("Not integrated: {conflict}.")),
-            Err(refusal) => return Err(format!("Not integrated: {refusal}")),
-        };
-        if !outcome.proposed.is_empty() {
+        let store = self.job_store().ok_or("No project is open.")?;
+        let mut protected: Vec<String> = ALWAYS_PROTECTED.iter().map(|p| p.to_string()).collect();
+        protected.extend(self.implementation_links()?.protected);
+        // The task's model changes are checked again here, whatever the
+        // worker did: through operations, no locked element, the same locks.
+        let model_changes = self.task_model_changes(&outcome);
+        if let Some(changes) = &model_changes
+            && let Some(why) = &changes.refused
+        {
+            return Err(format!("Not integrated: {why}"));
+        }
+        let seq = store
+            .begin(
+                &mut found,
+                "integrate",
+                &format!("Integrate the task commit {}", short(&outcome.commit)),
+                true,
+            )
+            .map_err(|e| e.to_string())?;
+        let commit =
+            match git::integrate_commit(&repository, &outcome.base, &outcome.commit, &protected) {
+                Ok(Ok(commit)) => commit,
+                Ok(Err(conflict)) => {
+                    let _ = store.end(&mut found, seq, false, Some(conflict.to_string()));
+                    return Err(format!("Not integrated: {conflict}."));
+                }
+                Err(refusal) => {
+                    let _ = store.end(&mut found, seq, false, Some(refusal.to_string()));
+                    return Err(format!("Not integrated: {refusal}"));
+                }
+            };
+        // The accepted model is now the task's: read it again from disk
+        // before anything is saved through it.
+        if model_changes.is_some()
+            && let Some(folder) = self.project.as_ref().map(|p| p.folder().to_path_buf())
+        {
+            self.open_project(&folder);
+        }
+        let _ = store.end(
+            &mut found,
+            seq,
+            true,
+            Some({
+                let mut note = format!("integrated {}", short(&commit));
+                if blocker.is_some() {
+                    note.push_str(" without a passing verification");
+                }
+                if !locked.is_empty() {
+                    note.push_str(&format!(
+                        "; the Operator confirmed its changes to the code of locked parts ({})",
+                        locked.join(", ")
+                    ));
+                }
+                note
+            }),
+        );
+        if !outcome.proposed.is_empty() && found.completed("links").is_none() {
+            let seq = store
+                .begin(
+                    &mut found,
+                    "links",
+                    "Add the proposed links to the model",
+                    true,
+                )
+                .map_err(|e| e.to_string())?;
             let mut links = self.implementation_links()?;
             for link in outcome.proposed {
                 if !links.links.contains(&link) {
                     links.links.push(link);
                 }
             }
-            self.save_implementation_links(&links)?;
+            let saved = self.save_implementation_links(&links);
+            let _ = store.end(&mut found, seq, saved.is_ok(), saved.clone().err());
+            saved?;
         }
         let _ = git::remove_worktree(&repository, &found.id);
-        if let Some(store) = self.job_store() {
-            let _ = store.set_state(
-                &mut found,
-                JobState::Done,
-                Some(format!("integrated as {}", &commit[..commit.len().min(10)])),
-            );
-        }
+        let _ = store.set_state(
+            &mut found,
+            JobState::Done,
+            Some(format!("integrated as {}", short(&commit))),
+        );
         self.refresh_check_freshness();
         self.status = format!(
-            "{} integrated as {}. Run the checks to see the code as it is now.",
+            "{} integrated: the task commit {} is on the branch. Run the checks to see the code as it is now.",
             found.title,
-            &commit[..commit.len().min(10)]
+            short(&commit)
         );
         self.mark(Dirty::STATUS | Dirty::MODEL | Dirty::LAYOUT);
         Ok(commit)
+    }
+
+    /// What a task changed in the model (by element identity, from its base
+    /// to its task commit), and why it may not be integrated if it may not.
+    /// `None` when the task commit leaves the model folder as it was.
+    pub fn task_model_changes(&self, outcome: &TaskOutcome) -> Option<ModelChanges> {
+        let project = self.project.as_ref()?;
+        let model = self.model_folder_in(std::path::Path::new(&outcome.repository))?;
+        if outcome.commit.is_empty()
+            || !outcome
+                .files
+                .iter()
+                .any(|(path, ..)| agq_execution::within(path, &model))
+        {
+            return None;
+        }
+        let read = |commit: &str| -> Result<agq_system_state::SystemState, String> {
+            let tree = project.tree_at(commit).map_err(|e| e.to_string())?;
+            let locks = project.locks_at(commit).map_err(|e| e.to_string())?;
+            Ok(agq_system_state::SystemState::new(tree, locks))
+        };
+        let (before, after) = match (read(&outcome.base), read(&outcome.commit)) {
+            (Ok(before), Ok(after)) => (before, after),
+            (Err(why), _) | (_, Err(why)) => {
+                return Some(ModelChanges {
+                    refused: Some(format!("the task's model cannot be read ({why})")),
+                    ..ModelChanges::default()
+                });
+            }
+        };
+        let difference = agq_system_state::compare(before.tree(), after.tree());
+        let names = |state: &agq_system_state::SystemState, ids: &[ElementId]| -> Vec<String> {
+            ids.iter()
+                .map(|id| state.tree().qualified_name(*id))
+                .collect()
+        };
+        // A created element's own members (its doc, its features) are part
+        // of it: only the outermost are listed.
+        let outermost: Vec<ElementId> = difference
+            .created
+            .iter()
+            .copied()
+            .filter(|id| {
+                after
+                    .tree()
+                    .get(*id)
+                    .and_then(agq_language::Element::owner)
+                    .is_none_or(|owner| !difference.created.contains(&owner))
+            })
+            .collect();
+        let mut changes = ModelChanges {
+            created: names(&after, &outermost),
+            updated: names(&after, &difference.updated),
+            deleted: names(&before, &difference.deleted),
+            problems: after.diagnostics().len(),
+            problems_before: before.diagnostics().len(),
+            refused: None,
+        };
+        // Locked at the task's base, or now (a lock set since).
+        let locked: Vec<String> = difference
+            .updated
+            .iter()
+            .chain(&difference.deleted)
+            .filter(|id| before.is_locked(**id) || project.state().is_locked(**id))
+            .map(|id| before.tree().qualified_name(*id))
+            .collect();
+        // Only model documents and identities change through a task; the
+        // links (with the protected paths) and the rest are the Operator's.
+        let others: Vec<&str> = outcome
+            .files
+            .iter()
+            .map(|(path, ..)| path.as_str())
+            .filter(|path| agq_execution::within(path, &model))
+            .filter(|path| {
+                let name = path.rsplit('/').next().unwrap_or_default();
+                !(name.ends_with(".sysml") || name == "agentique.json")
+            })
+            .collect();
+        if !others.is_empty() {
+            changes.refused = Some(format!(
+                "the task changed {}, which only you change",
+                others.join(", ")
+            ));
+        } else if before.locks() != after.locks() {
+            changes.refused = Some(
+                "the task changed the model's locks, which only you change, in the Studio".into(),
+            );
+        } else if !locked.is_empty() {
+            changes.refused = Some(format!(
+                "the task changed locked elements ({}); a task never changes a locked element",
+                locked.join(", ")
+            ));
+        }
+        Some(changes)
+    }
+
+    /// The locked parts whose linked code a task's patch changes (by the
+    /// implementation links, a linked folder covering its files): integrating
+    /// it needs the Operator's explicit confirmation.
+    pub fn locked_code(&self, outcome: &TaskOutcome) -> Vec<String> {
+        let (Some(project), Ok(links)) = (self.project.as_ref(), self.implementation_links())
+        else {
+            return Vec::new();
+        };
+        let state = project.state();
+        let mut names: Vec<String> = links
+            .links
+            .iter()
+            .filter(|l| {
+                outcome
+                    .files
+                    .iter()
+                    .any(|(path, ..)| agq_execution::within(path, &l.path))
+            })
+            .filter_map(|l| state.lock_of(ElementId::from_raw(l.element)))
+            .map(|lock| state.tree().qualified_name(lock))
+            .collect();
+        names.sort();
+        names.dedup();
+        names
+    }
+
+    /// Whether a task's worker gets its own copy of the model: the model is
+    /// in the code repository.
+    pub fn task_model_in_repository(&self) -> bool {
+        self.implementation_repository()
+            .is_some_and(|repository| self.model_folder_in(&repository).is_some())
+    }
+
+    /// The project's model folder relative to `repository`, when the code
+    /// shares the project's folder: written only through the System State.
+    fn model_folder_in(&self, repository: &std::path::Path) -> Option<String> {
+        let project = self.project.as_ref()?;
+        let code = repository.canonicalize().ok()?;
+        let model = project.folder().join("model").canonicalize().ok()?;
+        let inside = model.strip_prefix(&code).ok()?;
+        Some(inside.to_string_lossy().replace('\\', "/"))
     }
 
     /// Discards a task's worktree and patch.
@@ -678,6 +1114,23 @@ impl Studio {
             );
         }
     }
+}
+
+/// The project commands among a task's required checks, as programs the
+/// task's executor may run exactly as written.
+fn project_programs(required: &[RequiredCheck]) -> Vec<agq_execution::Program> {
+    required
+        .iter()
+        .filter_map(|check| match check {
+            RequiredCheck::Command { program, .. } => agq_execution::Program::from_list(program),
+            _ => None,
+        })
+        .collect()
+}
+
+/// The first ten characters of a commit id.
+fn short(commit: &str) -> &str {
+    &commit[..commit.len().min(10)]
 }
 
 #[cfg(test)]
@@ -741,7 +1194,7 @@ mod tests {
         let tree = app.project.as_ref().unwrap().state().tree();
         let store = tree.find("UrlShortener::LinkStore").unwrap();
         let status = "//! The URL shortener.\n\n/// UrlShortener::LinkStatus\n#[derive(Clone, Copy, Debug, PartialEq, Eq)]\npub enum LinkStatus {\n    Active,\n    Held,\n    Blocked,\n}\n";
-        app.conversation.new_model = crate::conversation::scripted(vec![
+        app.conversation.new_runtime = crate::conversation::scripted(vec![
             reply(vec![tool(
                 "a",
                 "write_code",
@@ -781,12 +1234,30 @@ mod tests {
             "{}",
             outcome.verification.describe()
         );
-        assert_eq!(
-            outcome.verification.failures(),
-            0,
-            "{}",
-            outcome.verification.describe()
+        // No harness is linked: the six scenarios that guard the link store
+        // cannot run against the code. They were said to be not checked when
+        // the task started, and the verification still shows each as not
+        // run instead of leaving it out (ROADMAP §5.6 item 1); the required
+        // check (the build) passed.
+        let described = outcome.verification.describe();
+        let unchecked = found.detail["notConfigured"].to_string();
+        assert!(
+            unchecked.contains("No harness is linked: the 6 scenario(s)"),
+            "{unchecked}"
         );
+        assert!(outcome.verification.passed(), "{described}");
+        assert!(
+            described.contains("Also checked (not required)"),
+            "{described}"
+        );
+        assert_eq!(
+            described
+                .matches("no harness is linked, so it cannot run against the code")
+                .count(),
+            6,
+            "{described}"
+        );
+        assert!(!outcome.commit.is_empty(), "the task commit");
         assert!(
             outcome.files.iter().any(|f| f.0 == "src/lib.rs"),
             "{:?}",
@@ -802,7 +1273,8 @@ mod tests {
         assert!(
             matches!(&app.dialog, Some(crate::edit::Dialog::ReviewTask { diff, .. }) if diff.contains("+pub enum LinkStatus"))
         );
-        let commit = app.integrate_task(&job).expect("integrated");
+        let commit = app.integrate_task(&job, false).expect("integrated");
+        assert_eq!(commit, outcome.commit, "exactly the reviewed commit");
         assert_eq!(git::head(&code).unwrap().commit, commit);
         assert!(
             std::fs::read_to_string(code.join("src/lib.rs"))
@@ -836,7 +1308,7 @@ mod tests {
         let store = tree.find("UrlShortener::LinkStore").unwrap();
         // A worker that writes and then never answers again: the app
         // "closes" while it runs.
-        app.conversation.new_model = crate::conversation::scripted(vec![reply(vec![tool(
+        app.conversation.new_runtime = crate::conversation::scripted(vec![reply(vec![tool(
             "a",
             "write_code",
             json!({ "path": "src/store.rs", "text": "pub struct Store;\n" }),
@@ -865,7 +1337,7 @@ mod tests {
         );
         app.dialog = None;
         // Continue it: the same worktree, and the worktree is not made again.
-        app.conversation.new_model = crate::conversation::scripted(vec![
+        app.conversation.new_runtime = crate::conversation::scripted(vec![
             reply(vec![tool(
                 "b",
                 "read_code",
@@ -907,6 +1379,527 @@ mod tests {
         let _ = folder;
     }
 
+    /// Runs the task in progress to its end.
+    fn finish(app: &mut Studio) {
+        let started = Instant::now();
+        while app.implementation.task.is_some() {
+            app.poll_task();
+            assert!(
+                started.elapsed() < Duration::from_secs(900),
+                "the task ends"
+            );
+            std::thread::sleep(Duration::from_millis(20));
+        }
+    }
+
+    /// Regression (ROADMAP §5.6 item 4): Stop did not reach the processes a
+    /// task ran; a required check still running ran on to its timeout. Now
+    /// Stop ends it, and it is reported as not run, not as a pass.
+    #[test]
+    fn stop_ends_the_checks_a_task_is_running() {
+        let (mut app, _folder, _code) = project("task-stop");
+        app.save_project_checks(&agq_implementation::task::ProjectChecks {
+            format: agq_implementation::task::ProjectChecks::FORMAT,
+            commands: vec![agq_implementation::task::ProjectCommand {
+                id: "slow".into(),
+                label: "A slow check".into(),
+                program: ["python", "-c", "import time; time.sleep(120)"]
+                    .map(String::from)
+                    .to_vec(),
+            }],
+        })
+        .unwrap();
+        let store = app
+            .project
+            .as_ref()
+            .unwrap()
+            .state()
+            .tree()
+            .find("UrlShortener::LinkStore")
+            .unwrap();
+        app.conversation.new_runtime = crate::conversation::scripted(vec![
+            reply(vec![tool(
+                "a",
+                "write_code",
+                json!({ "path": "src/lib.rs", "text": "//! The URL shortener, edited.\n" }),
+            )]),
+            reply(vec![tool(
+                "b",
+                "finish_implementation",
+                json!({ "summary": "Edited." }),
+            )]),
+            reply(vec![json!({ "type": "text", "text": "Done." })]),
+        ]);
+        let job = app.start_implementation(store, "").unwrap();
+        // Wait until the slow check is running, then stop.
+        let started = Instant::now();
+        while !app.implementation.task.as_ref().is_some_and(|t| {
+            t.progress
+                .iter()
+                .any(|p| p.contains("checks the task commit"))
+        }) {
+            app.poll_task();
+            assert!(started.elapsed() < Duration::from_secs(300));
+            std::thread::sleep(Duration::from_millis(20));
+        }
+        std::thread::sleep(Duration::from_secs(3));
+        let stopped = Instant::now();
+        app.stop_task();
+        finish(&mut app);
+        assert!(
+            stopped.elapsed() < Duration::from_secs(60),
+            "Stop ended the check: {:?}",
+            stopped.elapsed()
+        );
+        let (_, outcome) = app.task_outcome(&job).unwrap();
+        let slow = outcome
+            .verification
+            .outcomes()
+            .into_iter()
+            .find(|o| o.name == "A slow check")
+            .expect("the required check has an outcome");
+        assert_eq!(
+            slow.verdict,
+            agq_simulation::Verdict::NotRun,
+            "{}",
+            slow.message
+        );
+        assert!(!outcome.verification.passed());
+        // Integrating is refused while a required check has not passed…
+        let refused = app.integrate_task(&job, false).unwrap_err();
+        assert!(refused.contains("did not pass"), "{refused}");
+        assert!(refused.contains("A slow check (not run)"), "{refused}");
+        // …and the Operator may still integrate it, explicitly; the task's
+        // record says so.
+        let commit = app.integrate_task(&job, true).expect("integrated");
+        assert_eq!(commit, outcome.commit, "exactly the reviewed commit");
+        let journal = app.job_store().unwrap().load(&job).unwrap();
+        assert!(
+            journal.steps.iter().any(|s| s.key == "integrate"
+                && s.note
+                    .as_deref()
+                    .is_some_and(|r| r.contains("without a passing verification"))),
+            "{:?}",
+            journal.steps
+        );
+    }
+
+    /// A verification describes its task commit: a worktree changed after
+    /// it was checked makes it outdated, and integration waits.
+    #[test]
+    fn a_verification_of_another_commit_is_outdated() {
+        let (mut app, _folder, _code) = project("task-outdated");
+        let store = app
+            .project
+            .as_ref()
+            .unwrap()
+            .state()
+            .tree()
+            .find("UrlShortener::LinkStore")
+            .unwrap();
+        app.conversation.new_runtime = crate::conversation::scripted(vec![
+            reply(vec![tool(
+                "a",
+                "write_code",
+                json!({ "path": "src/lib.rs", "text": "//! The URL shortener, edited.\n" }),
+            )]),
+            reply(vec![json!({ "type": "text", "text": "Done." })]),
+        ]);
+        let job = app.start_implementation(store, "").unwrap();
+        finish(&mut app);
+        let (found, outcome) = app.task_outcome(&job).unwrap();
+        assert!(matches!(
+            app.task_freshness(&found, &outcome),
+            agq_simulation::Freshness::Current
+        ));
+        std::fs::write(
+            std::path::Path::new(&outcome.worktree).join("src/lib.rs"),
+            "//! Changed after the check.\n",
+        )
+        .unwrap();
+        assert!(matches!(
+            app.task_freshness(&found, &outcome),
+            agq_simulation::Freshness::Outdated(_)
+        ));
+        let blocked = app.integration_blocker(&found, &outcome).unwrap();
+        assert!(blocked.contains("outdated"), "{blocked}");
+    }
+
+    /// With everything configured (the sample with its code: links, a
+    /// harness, linked tests), a task's verification can pass: every
+    /// required check passes, and the task integrates without an override.
+    #[test]
+    fn a_fully_checked_task_passes_and_integrates() {
+        let (mut app, folder) = studio("task-passes");
+        app.create_sample(
+            &folder.0.join("Shortener"),
+            "Shortener",
+            Sample::ScreeningWithCode,
+        );
+        let code = folder.0.join("Shortener-code");
+        let mut choice = app.execution_choice();
+        choice.trusted = true;
+        app.set_execution_choice(choice);
+        app.conversation.key_missing = None;
+        let store = app
+            .project
+            .as_ref()
+            .unwrap()
+            .state()
+            .tree()
+            .find("Shortener::LinkStore")
+            .unwrap();
+        let api = std::fs::read_to_string(code.join("src/api.rs")).unwrap();
+        app.conversation.new_runtime = crate::conversation::scripted(vec![
+            reply(vec![tool(
+                "a",
+                "write_code",
+                json!({ "path": "src/api.rs", "text": format!("{api}\n// Reviewed.\n") }),
+            )]),
+            reply(vec![tool(
+                "b",
+                "finish_implementation",
+                json!({ "summary": "A comment." }),
+            )]),
+            reply(vec![json!({ "type": "text", "text": "Done." })]),
+        ]);
+        let job = app.start_implementation(store, "").unwrap();
+        finish(&mut app);
+        let (found, outcome) = app.task_outcome(&job).unwrap();
+        let described = outcome.verification.describe();
+        assert!(outcome.verification.passed(), "{described}");
+        assert!(
+            outcome
+                .verification
+                .outcomes()
+                .iter()
+                .any(|o| matches!(o.check, RequiredCheck::Scenario { .. })),
+            "{described}"
+        );
+        assert_eq!(app.integration_blocker(&found, &outcome), None);
+        let commit = app.integrate_task(&job, false).expect("integrated");
+        assert_eq!(commit, outcome.commit);
+        assert!(
+            std::fs::read_to_string(code.join("src/api.rs"))
+                .unwrap()
+                .contains("// Reviewed.")
+        );
+    }
+
+    /// A project whose model and code share one repository (as Agentique's
+    /// own does), with the link store locked; the path is that folder.
+    fn one_repository(name: &str) -> (Studio, crate::edit::app_tests::Folder, PathBuf) {
+        let (mut app, folder) = studio(name);
+        let project = folder.0.join("Shortener");
+        app.create_sample(&project, "Shortener", Sample::ScreeningWithCode);
+        // The code moves into the project folder: one repository.
+        let code = folder.0.join("Shortener-code");
+        let mut pending = vec![code.clone()];
+        while let Some(dir) = pending.pop() {
+            for entry in std::fs::read_dir(&dir).unwrap().flatten() {
+                let path = entry.path();
+                let relative = path.strip_prefix(&code).unwrap().to_path_buf();
+                if relative.starts_with(".git") || relative.starts_with("target") {
+                    continue;
+                }
+                if path.is_dir() {
+                    std::fs::create_dir_all(project.join(&relative)).unwrap();
+                    pending.push(path);
+                } else {
+                    std::fs::copy(&path, project.join(&relative)).unwrap();
+                }
+            }
+        }
+        let mut links = app.implementation_links().unwrap();
+        links.repository = ".".into();
+        app.save_implementation_links(&links).unwrap();
+        let store = app
+            .project
+            .as_ref()
+            .unwrap()
+            .state()
+            .tree()
+            .find("Shortener::LinkStore")
+            .unwrap();
+        let outcome = app.apply_change(agq_system_state::Change::new(
+            agq_system_state::Actor::Operator,
+            "Lock the link store",
+            vec![agq_system_state::Operation::Lock { element: store }],
+        ));
+        assert!(matches!(outcome, crate::edit::Outcome::Applied(_)));
+        agq_execution::git::init_and_commit(&project, "Model and code in one repository").unwrap();
+        let mut choice = app.execution_choice();
+        choice.trusted = true;
+        app.set_execution_choice(choice);
+        app.conversation.key_missing = None;
+        (app, folder, project)
+    }
+
+    /// W10.4: a worker changes the model of its working copy through System
+    /// State operations only (a locked element is refused); the review lists
+    /// the model changes beside the code; integration brings exactly the
+    /// task commit, and the Studio reads the accepted model again.
+    #[test]
+    fn a_tasks_model_changes_are_reviewed_and_integrated_with_its_code() {
+        let (mut app, _folder, project) = one_repository("task-model");
+        let tree = app.project.as_ref().unwrap().state().tree().clone();
+        let store = tree.find("Shortener::LinkStore").unwrap();
+        let api = std::fs::read_to_string(project.join("src/api.rs")).unwrap();
+        app.conversation.new_runtime = crate::conversation::scripted(vec![
+            reply(vec![tool(
+                "a",
+                "apply_changes",
+                json!({ "description": "Rename the locked store", "operations": [
+                    { "op": "rename", "element": "Shortener::LinkStore", "name": "Links" }
+                ] }),
+            )]),
+            reply(vec![tool(
+                "b",
+                "apply_changes",
+                json!({ "description": "Add a cache", "operations": [
+                    { "op": "create", "parent": "Shortener", "kind": "part def", "name": "LinkCache", "doc": "Keeps recent links." }
+                ] }),
+            )]),
+            reply(vec![tool(
+                "c",
+                "write_code",
+                json!({ "path": "src/api.rs", "text": format!("{api}\n// With a cache, later.\n") }),
+            )]),
+            // A proposed link: saved through the model read again after
+            // integration, not the one the task's files replaced.
+            reply(vec![tool(
+                "l",
+                "link_code",
+                json!({ "element": "Shortener::LinkApi", "kind": "test", "path": "tests/behaviour.rs", "symbol": "a_confident_allow_redirects" }),
+            )]),
+            reply(vec![tool(
+                "d",
+                "finish_implementation",
+                json!({ "summary": "Added the cache to the model." }),
+            )]),
+            reply(vec![json!({ "type": "text", "text": "Done." })]),
+        ]);
+        let job = app.start_implementation(store, "").unwrap();
+        finish(&mut app);
+        let (found, outcome) = app.task_outcome(&job).unwrap();
+        // The accepted model is untouched until integration.
+        let accepted = app.project.as_ref().unwrap().state().tree();
+        assert!(accepted.find("Shortener::LinkCache").is_none());
+        assert!(
+            outcome
+                .files
+                .iter()
+                .any(|(path, ..)| path.starts_with("model/")),
+            "{:?}",
+            outcome.files
+        );
+        let changes = app.task_model_changes(&outcome).expect("model changes");
+        assert_eq!(
+            changes.created,
+            vec!["Shortener::LinkCache".to_string()],
+            "{changes:?}"
+        );
+        assert!(changes.refused.is_none(), "{changes:?}");
+        assert!(
+            !changes.updated.iter().any(|n| n.contains("LinkStore")),
+            "the locked store was not renamed: {changes:?}"
+        );
+        assert!(
+            outcome.verification.passed(),
+            "{}",
+            outcome.verification.describe()
+        );
+        assert_eq!(app.integration_blocker(&found, &outcome), None);
+        let commit = app.integrate_task(&job, false).expect("integrated");
+        assert_eq!(commit, outcome.commit);
+        let state = app.project.as_ref().unwrap().state();
+        assert!(
+            state.tree().find("Shortener::LinkCache").is_some(),
+            "read again"
+        );
+        assert_eq!(state.tree().find("Shortener::LinkStore"), Some(store));
+        assert!(state.is_locked(store));
+        let links = app.implementation_links().unwrap();
+        assert!(
+            links.links.iter().any(|l| l.name == "Shortener::LinkApi"
+                && l.symbol.as_deref() == Some("a_confident_allow_redirects")),
+            "the proposed link was saved"
+        );
+    }
+
+    /// Fail closed: a task commit that changed a locked element without the
+    /// System State (here, by editing the model text) is never integrated.
+    #[test]
+    fn a_task_commit_that_changes_a_locked_element_is_refused() {
+        let (app, folder, project) = one_repository("task-locked");
+        let base = git::head(&project).unwrap().commit;
+        let worktree = folder.0.join("bypass");
+        git::checkout_worktree(&project, "bypass", &worktree, &base).unwrap();
+        let document = std::fs::read_dir(worktree.join("model"))
+            .unwrap()
+            .flatten()
+            .map(|e| e.path())
+            .find(|p| p.extension().is_some_and(|e| e == "sysml"))
+            .unwrap();
+        let text = std::fs::read_to_string(&document).unwrap();
+        let changed = text.replacen(
+            "part def LinkStore {",
+            "part def LinkStore {\n        attribute bypassed : Boolean;",
+            1,
+        );
+        assert_ne!(text, changed, "the sample has the link store");
+        std::fs::write(&document, changed).unwrap();
+        let commit = git::commit_worktree(&worktree, "Bypass").unwrap();
+        let relative = document
+            .strip_prefix(&worktree)
+            .unwrap()
+            .to_string_lossy()
+            .replace('\\', "/");
+        let outcome = TaskOutcome {
+            repository: project.display().to_string(),
+            worktree: worktree.display().to_string(),
+            base,
+            commit,
+            files: vec![(relative, "modified".into(), 1, 0)],
+            ..Default::default()
+        };
+        let changes = app.task_model_changes(&outcome).expect("model changes");
+        let refused = changes.refused.expect("refused");
+        assert!(refused.contains("Shortener::LinkStore"), "{refused}");
+    }
+
+    /// A lock set since the last checkpoint counts too: a task cannot start
+    /// from a model without it, and integration checks the locks of now.
+    #[test]
+    fn a_lock_set_since_the_last_checkpoint_holds_for_tasks() {
+        let (mut app, folder, project) = one_repository("task-new-lock");
+        assert_eq!(app.task_blocker(), None);
+        let base = git::head(&project).unwrap().commit;
+        // A task commit (made by hand) changes the API part's text…
+        let worktree = folder.0.join("bypass");
+        git::checkout_worktree(&project, "bypass", &worktree, &base).unwrap();
+        let document = std::fs::read_dir(worktree.join("model"))
+            .unwrap()
+            .flatten()
+            .map(|e| e.path())
+            .find(|p| p.extension().is_some_and(|e| e == "sysml"))
+            .unwrap();
+        let text = std::fs::read_to_string(&document).unwrap();
+        let changed = text.replacen(
+            "part def LinkApi {",
+            "part def LinkApi {\n        attribute bypassed : Boolean;",
+            1,
+        );
+        assert_ne!(text, changed, "the sample has the API");
+        std::fs::write(&document, changed).unwrap();
+        // …and links.json, which only the Operator changes.
+        let links = worktree.join("model/links.json");
+        let without = std::fs::read_to_string(&links)
+            .unwrap()
+            .replace("tests/behaviour.rs", "tests/other.rs");
+        std::fs::write(&links, without).unwrap();
+        let commit = git::commit_worktree(&worktree, "Bypass").unwrap();
+        let relative = |path: &std::path::Path| {
+            path.strip_prefix(&worktree)
+                .unwrap()
+                .to_string_lossy()
+                .replace('\\', "/")
+        };
+        let outcome = TaskOutcome {
+            repository: project.display().to_string(),
+            worktree: worktree.display().to_string(),
+            base,
+            commit,
+            files: vec![(relative(&document), "modified".into(), 1, 0)],
+            ..Default::default()
+        };
+        // The Operator locks the API now, without a checkpoint.
+        let api = app
+            .project
+            .as_ref()
+            .unwrap()
+            .state()
+            .tree()
+            .find("Shortener::LinkApi")
+            .unwrap();
+        let outcome_of_lock = app.apply_change(agq_system_state::Change::new(
+            agq_system_state::Actor::Operator,
+            "Lock the API",
+            vec![agq_system_state::Operation::Lock { element: api }],
+        ));
+        assert!(matches!(outcome_of_lock, crate::edit::Outcome::Applied(_)));
+        let blocked = app
+            .task_blocker()
+            .expect("no task from an uncommitted model");
+        assert!(blocked.contains("checkpoint"), "{blocked}");
+        let refused = app
+            .task_model_changes(&outcome)
+            .and_then(|c| c.refused)
+            .expect("refused");
+        assert!(refused.contains("Shortener::LinkApi"), "{refused}");
+        // The links file in the same commit is refused on its own.
+        let with_links = TaskOutcome {
+            files: vec![
+                (relative(&document), "modified".into(), 1, 0),
+                (relative(&links), "modified".into(), 1, 1),
+            ],
+            ..outcome
+        };
+        let refused = app
+            .task_model_changes(&with_links)
+            .and_then(|c| c.refused)
+            .expect("refused");
+        assert!(refused.contains("links.json"), "{refused}");
+    }
+
+    /// Code linked to a locked part changes only with the Operator's explicit
+    /// confirmation at integration, which the task's record keeps.
+    #[test]
+    fn changing_the_code_of_a_locked_part_asks_at_integration() {
+        let (mut app, _folder, project) = one_repository("task-locked-code");
+        let links = app.implementation_links().unwrap();
+        let path = links
+            .links
+            .iter()
+            .find(|l| l.name == "Shortener::LinkStore" && l.path.ends_with(".rs"))
+            .map(|l| l.path.clone())
+            .expect("the store's code is linked");
+        let tree = app.project.as_ref().unwrap().state().tree().clone();
+        let api = tree.find("Shortener::LinkApi").unwrap();
+        let text = std::fs::read_to_string(project.join(&path)).unwrap();
+        app.conversation.new_runtime = crate::conversation::scripted(vec![
+            reply(vec![tool(
+                "a",
+                "write_code",
+                json!({ "path": path, "text": format!("{text}\n// Touched.\n") }),
+            )]),
+            reply(vec![tool(
+                "b",
+                "finish_implementation",
+                json!({ "summary": "A comment in the store." }),
+            )]),
+            reply(vec![json!({ "type": "text", "text": "Done." })]),
+        ]);
+        let job = app.start_implementation(api, "").unwrap();
+        finish(&mut app);
+        let (_, outcome) = app.task_outcome(&job).unwrap();
+        assert_eq!(
+            app.locked_code(&outcome),
+            vec!["Shortener::LinkStore".to_string()]
+        );
+        let refused = app.integrate_task(&job, false).unwrap_err();
+        assert!(refused.contains("locked parts"), "{refused}");
+        app.integrate_task(&job, true)
+            .expect("integrated once confirmed");
+        let record = app.job_store().unwrap().load(&job).unwrap();
+        assert!(
+            serde_json::to_string(&record)
+                .unwrap()
+                .contains("the Operator confirmed its changes to the code of locked parts"),
+            "{record:?}"
+        );
+    }
+
     /// I4 for real: a worker on a real model implements the link store of
     /// the URL shortener from its model, in a worktree; the Studio checks
     /// it, the patch is integrated, and the scenarios run against the code.
@@ -944,7 +1937,8 @@ mod tests {
             model_choice.missing_key_message()
         );
         println!("MODEL {}", model_choice.label());
-        app.conversation.new_model = Box::new(move || model_choice.start());
+        app.conversation.new_runtime =
+            Box::new(move || agq_assistant::LoopRuntime::boxed(model_choice.start()));
         app.conversation.key_missing = None;
         let store = app
             .project
@@ -992,7 +1986,7 @@ mod tests {
             println!("NOT INTEGRATED: the Studio's check failed");
             return;
         }
-        let commit = app.integrate_task(&job).expect("integrated");
+        let commit = app.integrate_task(&job, false).expect("integrated");
         println!("INTEGRATED {commit}");
         let tree = app.project.as_ref().unwrap().state().tree();
         let scenarios: Vec<ElementId> = tree

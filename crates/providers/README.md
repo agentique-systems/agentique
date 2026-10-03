@@ -1,7 +1,7 @@
 # agq-providers
 
 Providers (ROADMAP §4.7, §4.8; part `Providers` in
-`models/agentique/Agentique.sysml`): talks to model providers through rig,
+`model/Agentique.sysml`): talks to model providers through rig,
 reads keys, knows each model's capabilities and reports usage. It is the only
 crate that depends on rig, tokio or reqwest (R-21, R-41); none of their types
 appear in its API.

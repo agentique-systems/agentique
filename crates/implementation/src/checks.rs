@@ -29,6 +29,10 @@ pub enum CheckKind {
     ContractShape,
     LinkedTest,
     Scenario,
+    /// The working copy's build, when it did not run (a refusal or Stop).
+    Build,
+    /// One of the project's own check commands.
+    Command,
 }
 
 impl CheckKind {
@@ -38,6 +42,8 @@ impl CheckKind {
             CheckKind::ContractShape => "Contract shape",
             CheckKind::LinkedTest => "Linked test",
             CheckKind::Scenario => "Scenario against the implementation",
+            CheckKind::Build => "Build",
+            CheckKind::Command => "Project check",
         }
     }
 
@@ -59,6 +65,10 @@ impl CheckKind {
             CheckKind::Scenario => {
                 "The scenario's steps and checks through the harness, with the named dependencies \
                  replaced by stand-ins. Checks that read internal state are not evaluated."
+            }
+            CheckKind::Build => "Whether the working copy compiles, tests included.",
+            CheckKind::Command => {
+                "Whatever the project's command checks (its exit code), and nothing beyond it."
             }
         }
     }
@@ -82,6 +92,32 @@ pub struct ImplementationCheck {
 }
 
 impl ImplementationCheck {
+    /// The required check this result answers (matched by its key).
+    pub fn required_check(&self) -> crate::task::RequiredCheck {
+        use crate::task::RequiredCheck;
+        let element = self.elements.first().copied().unwrap_or_default();
+        let location = self.location.clone().unwrap_or_default();
+        match self.kind {
+            CheckKind::Build => RequiredCheck::Build,
+            CheckKind::DependencyBoundaries => RequiredCheck::DependencyBoundaries,
+            CheckKind::ContractShape => RequiredCheck::ContractShape { element, location },
+            CheckKind::LinkedTest => RequiredCheck::LinkedTest { element, location },
+            CheckKind::Scenario => RequiredCheck::Scenario {
+                element,
+                name: self
+                    .name
+                    .strip_prefix("Scenario ")
+                    .unwrap_or(&self.name)
+                    .to_string(),
+            },
+            CheckKind::Command => RequiredCheck::Command {
+                id: location,
+                label: self.name.clone(),
+                program: Vec::new(),
+            },
+        }
+    }
+
     fn new(kind: CheckKind, name: impl Into<String>, elements: Vec<ElementId>) -> Self {
         ImplementationCheck {
             kind,
@@ -595,43 +631,63 @@ pub fn linked_tests(
                 check.verdict = Verdict::NotRun;
                 check.message = "cancelled".into();
             }
-            Ok(run) => {
-                let line = run
-                    .stdout
-                    .lines()
-                    .find(|l| l.starts_with("test ") && l.contains(&format!("{symbol} ...")));
-                match line {
-                    Some(line) if line.ends_with(" ok") => {
-                        check.verdict = Verdict::Passed;
-                        check.message = "the test passed".into();
-                    }
-                    Some(line) if line.ends_with("FAILED") => {
-                        check.verdict = Verdict::Failed;
-                        check.message = "the test failed".into();
-                        check.details = failure_of(&run.stdout, &symbol);
-                    }
-                    Some(line) => {
-                        check.verdict = Verdict::NotRun;
-                        check.message = format!(
-                            "the test did not run: {}",
-                            line.rsplit(" ... ").next().unwrap_or("")
-                        );
-                    }
-                    None if !run.success && !run.stdout.contains("running ") => {
-                        check.verdict = Verdict::Failed;
-                        check.message = "the tests did not build".into();
-                        check.details = vec![agq_execution::process::last_lines(&run.stderr, 20)];
-                    }
-                    None => {
-                        check.verdict = Verdict::Failed;
-                        check.message = format!("no test called `{symbol}` ran");
-                    }
+            Ok(run) => match result_line(&run.stdout, &symbol) {
+                Some(line) if line.ends_with(" ok") => {
+                    check.verdict = Verdict::Passed;
+                    check.message = "the test passed".into();
                 }
-            }
+                Some(line) if line.ends_with("FAILED") => {
+                    check.verdict = Verdict::Failed;
+                    check.message = "the test failed".into();
+                    check.details = failure_of(&run.stdout, &symbol);
+                }
+                Some(line) => {
+                    check.verdict = Verdict::NotRun;
+                    check.message = format!(
+                        "the test did not run: {}",
+                        line.rsplit(" ... ").next().unwrap_or("")
+                    );
+                }
+                None if !run.success && !run.stdout.contains("running ") => {
+                    check.verdict = Verdict::Failed;
+                    check.message = "the tests did not build".into();
+                    check.details = vec![agq_execution::process::last_lines(&run.stderr, 20)];
+                }
+                None => {
+                    check.verdict = Verdict::Failed;
+                    check.message = format!("no test called `{symbol}` ran");
+                }
+            },
         }
         out.push(check);
     }
     out
+}
+
+/// The line that decides a linked test's result: of every test run under
+/// its name (a unit test and an integration test may share one), a failure
+/// first, then one that did not run, then a pass.
+fn result_line<'a>(stdout: &'a str, symbol: &str) -> Option<&'a str> {
+    let lines: Vec<&str> = stdout.lines().filter(|l| names_test(l, symbol)).collect();
+    lines
+        .iter()
+        .find(|l| l.ends_with("FAILED"))
+        .or_else(|| lines.iter().find(|l| !l.ends_with(" ok")))
+        .or(lines.first())
+        .copied()
+}
+
+/// Whether a line of `cargo test`'s output (`test path::name ... ok`) is
+/// about the test `symbol`: its whole name, or its last path segments, never
+/// a longer name that merely ends with the same letters.
+fn names_test(line: &str, symbol: &str) -> bool {
+    let Some(name) = line
+        .strip_prefix("test ")
+        .and_then(|rest| rest.split(" ... ").next())
+    else {
+        return false;
+    };
+    name == symbol || name.ends_with(&format!("::{symbol}"))
 }
 
 /// The failure output `cargo test` printed for one test.
@@ -671,4 +727,35 @@ pub fn drift(checks: &[ImplementationCheck]) -> BTreeMap<ElementId, Vec<&Impleme
         }
     }
     out
+}
+
+#[cfg(test)]
+mod tests {
+    /// Regression (ROADMAP §5.6 item 1): a link to `foo` was answered by the
+    /// result of `not_foo` (a substring match).
+    #[test]
+    fn a_test_is_found_by_its_whole_name() {
+        assert!(super::names_test("test foo ... ok", "foo"));
+        assert!(super::names_test(
+            "test store::tests::foo ... FAILED",
+            "foo"
+        ));
+        assert!(super::names_test(
+            "test store::tests::foo ... ok",
+            "tests::foo"
+        ));
+        assert!(!super::names_test("test not_foo ... ok", "foo"));
+        assert!(!super::names_test("test store::not_foo ... ok", "foo"));
+        // Two tests of that name, in the library and in an integration test:
+        // the failing one decides, whichever ran first.
+        let stdout = "test store::foo ... ok\ntest other ... ok\ntest foo ... FAILED\n";
+        assert_eq!(
+            super::result_line(stdout, "foo"),
+            Some("test foo ... FAILED")
+        );
+        assert_eq!(
+            super::result_line("test foo ... ignored\ntest a::foo ... ok\n", "foo"),
+            Some("test foo ... ignored")
+        );
+    }
 }

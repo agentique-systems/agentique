@@ -204,6 +204,13 @@ pub struct Studio {
     pub conversation: crate::conversation::ConversationPanel,
     /// Scenarios, runs and their traces (C-50).
     pub runs: crate::runs::RunsState,
+    /// The Claude Agent runtime's setup and health check (C-51).
+    pub runtime: crate::agent_runtime::RuntimeState,
+    /// Started in safe mode (`--safe-mode`, the launcher's recovery): the
+    /// Claude Agent runtime is not used, whatever Settings say.
+    pub safe_mode: bool,
+    /// Agentique's own builds: building, trying, adopting (C-51).
+    pub develop: crate::develop::BuildsState,
     /// Implementation links, checks and drift (C-50).
     pub implementation: crate::implementation::ImplementationState,
     last_saved: Instant,
@@ -251,6 +258,7 @@ impl Studio {
             .expect("an empty scene always builds");
         let conversation =
             crate::conversation::ConversationPanel::with_choice(settings.model_choice());
+        let args_safe_mode = args.safe_mode;
         let mut studio = Self {
             spatial: Rc::new(SpatialIndex::build(&scene)),
             lookup: Rc::new(SceneLookup::build(&scene)),
@@ -309,11 +317,16 @@ impl Studio {
             surface_size: None,
             conversation,
             runs: Default::default(),
+            runtime: Default::default(),
+            safe_mode: args_safe_mode,
+            develop: Default::default(),
             implementation: Default::default(),
             last_saved: Instant::now(),
             dirty: Dirty::ALL,
         };
         studio.apply_appearance();
+        studio.apply_runtime_choice();
+        studio.note_recovery();
         #[cfg(feature = "automation")]
         if studio.args.scenario.as_deref() == Some("a-assistant") {
             crate::automation::script_assistant(&mut studio);
@@ -325,6 +338,12 @@ impl Studio {
         if let Some(name) = studio.args.fixture.clone() {
             studio.show_fixture(&name);
         } else if let Some(folder) = studio.args.project.clone() {
+            #[cfg(feature = "automation")]
+            if studio.args.scenario.as_deref() == Some("c-understand")
+                && let Err(why) = crate::automation::copy_self_model(&folder)
+            {
+                studio.status = why;
+            }
             if !studio.args.creates_project() {
                 studio.open_project(&folder);
             }
@@ -1186,6 +1205,7 @@ impl Studio {
                     folder: String::new(),
                 })
             }
+            DevelopAgentique => self.develop_agentique(),
             // The appearance commands change the setting, so Settings shows
             // it and it holds at the next start.
             Theme => {
@@ -1424,7 +1444,7 @@ impl Studio {
             .set("assistant.provider", serde_json::json!(provider));
         let _ = self.settings.set("assistant.model", serde_json::json!(""));
         let _ = self.settings.set("assistant.effort", serde_json::json!(""));
-        self.conversation.use_choice(self.settings.model_choice());
+        self.apply_runtime_choice();
     }
 
     /// The Assistant is working without needing the Operator.

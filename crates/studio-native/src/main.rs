@@ -6,12 +6,14 @@
 #[cfg(feature = "automation")]
 mod automation;
 // Asserted by the stress harness (feature `automation`); its tests run in every build.
+mod agent_runtime;
 #[cfg_attr(not(feature = "automation"), allow(dead_code))]
 mod budgets;
 mod commands;
 mod conversation;
 mod conversation_view;
 mod cost;
+mod develop;
 mod dialogs;
 mod edit;
 mod gallery;
@@ -80,9 +82,23 @@ pub struct Args {
     /// Start without reopening the last project.
     #[arg(long)]
     no_restore: bool,
-    /// Drive the UI through a scripted journey (a-build, a-crash, a-reopen, a-assistant, d-daily, e-settings, h-library, i-scenarios, i-code), the camera benchmark (stress) or the Conversation benchmark (chat, in a new project at `--project`).
+    /// Start without the Claude Agent runtime, whatever Settings say (the
+    /// launcher's recovery start).
+    #[arg(long)]
+    safe_mode: bool,
+    /// Write this file once the window is up (the launcher waits for it).
+    #[arg(long)]
+    ready_file: Option<PathBuf>,
+    /// The launcher started this build because that one did not start.
+    #[arg(long)]
+    recovered_from: Option<String>,
+    /// Print what this build is (its data formats and companion) as JSON,
+    /// and end.
+    #[arg(long)]
+    describe: bool,
+    /// Drive the UI through a scripted journey (a-build, a-crash, a-reopen, a-assistant, c-understand, d-daily, e-settings, h-library, i-scenarios, i-code), the camera benchmark (stress) or the Conversation benchmark (chat, in a new project at `--project`).
     #[cfg(feature = "automation")]
-    #[arg(long, value_parser = ["a-build", "a-crash", "a-reopen", "a-assistant", "d-daily", "e-settings", "h-library", "i-scenarios", "i-code", "stress", "chat"])]
+    #[arg(long, value_parser = ["a-build", "a-crash", "a-reopen", "a-assistant", "c-understand", "d-daily", "e-settings", "h-library", "i-scenarios", "i-code", "stress", "chat"])]
     scenario: Option<String>,
     /// Write the scenario report (JSON) to this path.
     #[cfg(feature = "automation")]
@@ -137,6 +153,10 @@ impl Args {
 fn main() {
     timing::mark_process_start();
     let args = Args::parse();
+    if args.describe {
+        println!("{}", develop::describe());
+        return;
+    }
     gpui_platform::application()
         .with_assets(ui::icon::Assets)
         .run(move |cx: &mut App| {

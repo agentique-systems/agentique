@@ -185,6 +185,12 @@ impl Workspace {
     /// Runs every frame-length; does nothing when nothing runs.
     fn tick(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         self.ticks += 1;
+        // Handed over to the launcher (Use this build): end, so it can start
+        // the build; the session and the project are saved.
+        if self.studio.read(cx).develop.quit {
+            cx.quit();
+            return;
+        }
         let studio = self.studio.read(cx);
         let running = studio.conversation.running();
         let waiting_dialog = studio.conversation.waiting.is_some();
@@ -221,9 +227,15 @@ impl Workspace {
             || studio.runs.playing
             || studio.implementation.checking()
             || studio.implementation.task.is_some()
+            || studio.runtime.work.is_some()
+            || studio.develop.work.is_some()
         {
             self.studio.act(cx, |studio| {
-                let finished = studio.poll_runs() | studio.poll_checks() | studio.poll_task();
+                let finished = studio.poll_runs()
+                    | studio.poll_checks()
+                    | studio.poll_task()
+                    | studio.poll_runtime()
+                    | studio.poll_build();
                 let moved = studio.playback_tick();
                 if finished || moved {
                     studio.mark(Dirty::MODEL | Dirty::LAYOUT | Dirty::STATUS);
@@ -589,6 +601,7 @@ pub fn command_icon(id: CommandId) -> Option<IconName> {
         Unpin => IconName::PinOff,
         NewProject => IconName::FolderPlus,
         OpenProject => IconName::FolderOpen,
+        DevelopAgentique => IconName::Agent,
         Palette => IconName::Command,
         Theme => IconName::Moon,
         Contrast => IconName::Eye,
@@ -768,7 +781,12 @@ impl Render for Workspace {
             root.child(
                 gpui::canvas(
                     |_, _, _| {},
-                    move |_, _, _, cx| studio.update(cx, |studio, _| studio.timing.first_paint()),
+                    move |_, _, _, cx| {
+                        studio.update(cx, |studio, _| {
+                            studio.timing.first_paint();
+                            studio.mark_ready();
+                        })
+                    },
                 )
                 .absolute()
                 .size_0(),

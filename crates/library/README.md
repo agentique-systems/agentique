@@ -1,7 +1,7 @@
 # agq-library
 
 The Library of building blocks (ROADMAP C-49, §4.13; part `Library` in
-`models/agentique/Agentique.sysml`). A building block is any reusable
+`model/Agentique.sysml`). A building block is any reusable
 definition, from three scopes: the built-in blocks in
 [`blocks/Library.sysml`](blocks/Library.sysml) (plus the standard
 `ScalarValues`), the open project's own definitions, and My Library, the

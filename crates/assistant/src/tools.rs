@@ -44,6 +44,7 @@ pub const RUN_SCENARIO: &str = "run_scenario";
 pub const STOP_RUN: &str = "stop_run";
 pub const READ_RUN: &str = "read_run";
 pub const READ_CODE_LINKS: &str = "read_code_links";
+pub const EXPLAIN_ELEMENT: &str = "explain_element";
 pub const CHECK_IMPLEMENTATION: &str = "check_implementation";
 pub const PROPOSE_IMPLEMENTATION: &str = "propose_implementation";
 
@@ -132,7 +133,46 @@ pub enum Prepared {
     Invalid(String),
 }
 
+/// What the Assistant (or a worker) is doing while it calls `tool`, as the
+/// Operator sees it: the visible phase of a turn or a task.
+pub fn phase(tool: &str) -> &'static str {
+    match tool {
+        "apply_changes" | "use_library_block" | "save_to_library" => "Changing the model",
+        "propose_implementation" => "Proposing a task for your approval",
+        "ask_operator" => "Waiting for your answer",
+        "run_scenario" | "stop_run" | "check_implementation" | "run_checks" | "run_program" => {
+            "Running checks"
+        }
+        "write_code" | "edit_code" => "Editing the working copy",
+        "finish" => "Presenting the result",
+        "list_files" | "read_code" | "search_code" => "Reading the code",
+        _ => "Inspecting the model",
+    }
+}
+
 /// The tool definitions sent to the model (JSON Schema per tool).
+/// Whether a tool only reads: no change to the model, the code, a run or a
+/// file (an annotation for runtimes that may run such calls together; the
+/// Studio still carries them out one at a time).
+pub fn read_only(name: &str) -> bool {
+    matches!(
+        name,
+        "read_model"
+            | "find_elements"
+            | "get_problems"
+            | "inspect_behaviour"
+            | "list_scenarios"
+            | "read_run"
+            | "read_code_links"
+            | "explain_element"
+            | "search_library"
+            | "read_library_block"
+            | "list_files"
+            | "read_code"
+            | "search_code"
+    )
+}
+
 pub fn definitions() -> Value {
     let kinds: Vec<&str> = KINDS.iter().map(|kind| kind.keyword()).collect();
     let library_kinds: Vec<&str> = library::KINDS.iter().map(|kind| kind.keyword()).collect();
@@ -292,6 +332,16 @@ pub fn definitions() -> Value {
             }
         },
         {
+            "name": EXPLAIN_ELEMENT,
+            "description": "Explain a part (a part def, or a part by its type) as the Operator reads it in the Inspector: what it is and why it exists, what it owns, its contract (ports and the items they carry), what it may use and what depends on it, where it is implemented and tested (implementation links), the requirements and scenarios that cover it, and what changing it affects. Everything comes from the model and its links; it says where they say nothing. Cite the qualified names and code locations it gives.",
+            "input_schema": {
+                "type": "object",
+                "properties": { "element": name("Qualified name of a part def or part.") },
+                "required": ["element"],
+                "additionalProperties": false
+            }
+        },
+        {
             "name": CHECK_IMPLEMENTATION,
             "description": "Run the implementation checks and wait for them: module boundaries against the model's dependencies, contract shapes (Rust types against item and enum defs) and the linked tests. Builds and tests run only when the Operator allowed trusted-local execution; otherwise the tests are reported as not run.",
             "input_schema": { "type": "object", "properties": {}, "additionalProperties": false }
@@ -390,6 +440,7 @@ pub fn prepare(state: &SystemState, library: &Library, tool: &str, input: &Value
         | STOP_RUN
         | READ_RUN
         | READ_CODE_LINKS
+        | EXPLAIN_ELEMENT
         | CHECK_IMPLEMENTATION
         | PROPOSE_IMPLEMENTATION => {
             factory::studio_request(state.tree(), tool, input).map(Prepared::Studio)

@@ -108,13 +108,32 @@ class CheckTest(unittest.TestCase):
             {"name": "ui", "kind": "dev"}]}]}
         self.assertEqual(crates_from_metadata(metadata), {"state": ["core", "gen"]})
 
-    def test_unexpected_syntax_is_rejected(self):
-        for text in ("package P { part def A { dependency from A to A; } }",
-                     "package P { part def A :> B; }",
-                     "package P { part def A { port p : P; } }",
+    def test_a_malformed_structure_is_rejected(self):
+        for text in ("package P { dependency from A; }",
+                     "package P { dependency A to B; }",
                      "package P { part def A { part 'a' : Crate; }"):
             with self.assertRaises(ModelError, msg=text):
                 parse_model({"Bad.sysml": text})
+
+    def test_constructs_the_check_does_not_need_are_read_past(self):
+        # R-41: ports, items, behaviour, requirements and scenarios allow nothing.
+        model = MODEL.rstrip()[:-1] + """
+    item def Change { attribute madeBy : Actor; }
+    port def ChangePort { in item change : Change; }
+    part def Assistant {
+        part 'assistant' : Crate;
+        port turn : ~ChangePort;
+        attribute revision : Natural = 0 { doc /* A counter. */ }
+        exhibit state s { entry; then ready; state ready;
+            transition t first ready accept c : Change via turn if c.madeBy == Actor::operator do send new Change(madeBy = c.madeBy) via turn then ready; }
+    }
+    requirement def R { subject s : Studio; }
+    verification def V { subject s : Studio; send new Change() via s.p; then assert constraint c { 1 == 1 } }
+}
+"""
+        parts, dependencies = parse_model({"Example.sysml": model})
+        self.assertEqual(parts["Assistant"], ["assistant"])
+        self.assertEqual(len(dependencies), 4)
 
 
 if __name__ == "__main__":

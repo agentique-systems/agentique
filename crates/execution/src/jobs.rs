@@ -97,7 +97,7 @@ pub struct Job {
     pub outcome: Option<String>,
 }
 
-const FORMAT: u32 = 1;
+pub const FORMAT: u32 = 1;
 
 impl Job {
     /// The step with `key` that completed, if any: resume skips it.

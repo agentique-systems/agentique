@@ -13,12 +13,12 @@
 //! taken on trust.
 
 use crate::conversation::{Conversation, Entry, ToolResult};
-use crate::model::Model;
-use crate::turn::{ToolCall, Toolset, TurnEvent, run_with};
+use crate::turn::{ToolCall, Toolset, TurnEvent};
 use agq_execution::Executor;
 use agq_implementation::task::{Brief, verify};
 use agq_implementation::{Link, LinkKind, Links};
 use agq_language::Tree;
+use agq_simulation::Verdict;
 use serde_json::{Value, json};
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
@@ -30,6 +30,12 @@ pub const RUN_CHECKS: &str = "run_checks";
 pub const LINK_CODE: &str = "link_code";
 pub const REQUEST_CONTRACT_CHANGE: &str = "request_contract_change";
 pub const FINISH_IMPLEMENTATION: &str = "finish_implementation";
+pub const SEARCH_CODE: &str = "search_code";
+pub const EDIT_CODE: &str = "edit_code";
+pub const RUN_PROGRAM: &str = "run_program";
+
+/// Hits `search_code` returns at most.
+const SEARCH_LIMIT: usize = 200;
 
 /// Rounds of checks a task may take.
 pub const MAX_ROUNDS: usize = 6;
@@ -50,8 +56,37 @@ pub fn definitions() -> Value {
         },
         {
             "name": READ_CODE,
-            "description": "A file's text.",
-            "input_schema": { "type": "object", "properties": { "path": name("Relative to the repository root, e.g. \"src/store.rs\".") }, "required": ["path"], "additionalProperties": false }
+            "description": "A file's text, or the lines from `from_line` to `to_line` (1-based, inclusive) with their numbers. Read a range of a long file instead of all of it.",
+            "input_schema": { "type": "object", "properties": {
+                "path": name("Relative to the repository root, e.g. \"src/store.rs\"."),
+                "from_line": { "type": "number", "description": "First line to read (1-based)." },
+                "to_line": { "type": "number", "description": "Last line to read (inclusive)." }
+            }, "required": ["path"], "additionalProperties": false }
+        },
+        {
+            "name": SEARCH_CODE,
+            "description": "Find a text in the repository's files (not build output or installed packages): each hit as path:line: the line. At most 200 hits; narrow by folder.",
+            "input_schema": { "type": "object", "properties": {
+                "text": name("The text to find, as written."),
+                "folder": name("A folder to search in; empty for the whole repository."),
+                "ignore_case": { "type": "boolean", "description": "Match without regard to case." }
+            }, "required": ["text"], "additionalProperties": false }
+        },
+        {
+            "name": EDIT_CODE,
+            "description": "Replace one passage of a file: `old_text` must occur exactly once (include enough lines to make it unique); it becomes `new_text`. Protected paths cannot be changed.",
+            "input_schema": { "type": "object", "properties": {
+                "path": name("Relative to the repository root."),
+                "old_text": name("The passage as it is now, exactly."),
+                "new_text": name("What it becomes.")
+            }, "required": ["path", "old_text", "new_text"], "additionalProperties": false }
+        },
+        {
+            "name": RUN_PROGRAM,
+            "description": "Run one program in the repository for diagnostics: a Cargo build, check, test (with a filter), clippy or fmt, or one of the project's own check commands exactly as listed in the brief. It runs with the Operator's trusted-local permission, offline and without secrets. Says how it ended and the last lines of its output.",
+            "input_schema": { "type": "object", "properties": {
+                "program": { "type": "array", "items": { "type": "string" }, "description": "The program and its arguments, e.g. [\"cargo\", \"test\", \"-p\", \"agq-execution\", \"--offline\"]." }
+            }, "required": ["program"], "additionalProperties": false }
         },
         {
             "name": WRITE_CODE,
@@ -91,11 +126,30 @@ pub fn definitions() -> Value {
     ])
 }
 
-/// The worker's system prompt and tools.
+/// The worker's system prompt and tools: its own, and the Assistant's model
+/// tools (the same schemas) for the working copy's model.
 pub fn toolset() -> Toolset {
+    let mut definitions = definitions();
+    let model_tools = [
+        crate::tools::READ_MODEL,
+        crate::tools::FIND_ELEMENTS,
+        crate::tools::GET_PROBLEMS,
+        crate::tools::APPLY_CHANGES,
+    ];
+    if let (Some(own), Some(assistant)) = (
+        definitions.as_array_mut(),
+        crate::tools::definitions().as_array(),
+    ) {
+        own.extend(
+            assistant
+                .iter()
+                .filter(|d| model_tools.contains(&d["name"].as_str().unwrap_or_default()))
+                .cloned(),
+        );
+    }
     Toolset {
         system: include_str!("../skills/worker.md").to_string(),
-        definitions: definitions(),
+        definitions,
     }
 }
 
@@ -114,6 +168,16 @@ pub struct Worker {
     pub rounds: usize,
     best: Option<usize>,
     stale: usize,
+    /// The working copy's model, changed only through System State
+    /// operations (the worker cannot write model files): its changes are
+    /// proposed, reviewed with the code, and integrated with it.
+    model: Option<WorkingModel>,
+}
+
+/// The project folder of the working copy, and its model once opened.
+struct WorkingModel {
+    folder: std::path::PathBuf,
+    project: Option<agq_system_state::Project>,
 }
 
 impl Worker {
@@ -137,7 +201,67 @@ impl Worker {
             rounds: 0,
             best: None,
             stale: 0,
+            model: None,
         }
+    }
+
+    /// Lets the worker read and change the model of the working copy at
+    /// `folder` (the worktree's project folder) with the Assistant's model
+    /// tools. Locked elements are refused, as for any unconfirmed change.
+    pub fn with_model(mut self, folder: impl Into<std::path::PathBuf>) -> Worker {
+        self.model = Some(WorkingModel {
+            folder: folder.into(),
+            project: None,
+        });
+        self
+    }
+
+    /// A model tool on the working copy's model.
+    fn model_tool(&mut self, call: &ToolCall) -> ToolResult {
+        use crate::conversation::ToolResult as R;
+        use crate::tools::{Prepared, prepare};
+        let Some(model) = &mut self.model else {
+            return R::error(
+                "This task has no model of its own to change: use request_contract_change.",
+            );
+        };
+        if model.project.is_none() {
+            match agq_system_state::Project::open(&model.folder) {
+                Ok(project) => model.project = Some(project),
+                Err(error) => {
+                    return R::error(format!(
+                        "The working copy's model cannot be opened: {error}"
+                    ));
+                }
+            }
+        }
+        let project = model.project.as_mut().expect("opened above");
+        let library = agq_library::Library::default();
+        match prepare(project.state(), &library, &call.name, &call.input) {
+            Prepared::Answer(text) => R::answer(crate::tools::cap(text)),
+            Prepared::Change(mut change) => {
+                change.actor = agq_system_state::Actor::Assistant;
+                change.confirmed.clear();
+                match project.apply(change) {
+                    Ok(event) => R::applied(project.state(), &event),
+                    Err(agq_system_state::ApplyError::Rejection(rejection)) => {
+                        R::rejected(project.state(), &rejection)
+                    }
+                    Err(error) => R::error(format!("Not applied: {error}")),
+                }
+            }
+            Prepared::Invalid(message) => R::error(message),
+            _ => R::error(format!("`{}` is not available to a task", call.name)),
+        }
+    }
+
+    /// Closes the working copy's model (its files are saved with each
+    /// change; this releases its lock before the task commit), and returns
+    /// it if the worker read or changed it: the model the task is checked
+    /// against.
+    pub fn close_model(&mut self) -> Option<Tree> {
+        let project = self.model.as_mut()?.project.take()?;
+        Some(project.state().tree().clone())
     }
 
     /// The links with those it proposed.
@@ -170,16 +294,74 @@ impl Worker {
                 Err(refusal) => ToolResult::error(refusal.to_string()),
             },
             READ_CODE => match self.executor.read(&text("path")) {
-                Ok(code) => ToolResult::answer(crate::tools::cap(code)),
+                Ok(code) => {
+                    let line = |field: &str| call.input.get(field).and_then(Value::as_u64);
+                    match (line("from_line"), line("to_line")) {
+                        (None, None) => ToolResult::answer(crate::tools::cap(code)),
+                        (from, to) => {
+                            let from = from.unwrap_or(1).max(1) as usize;
+                            let to = to.map_or(usize::MAX, |t| t as usize);
+                            let total = code.lines().count();
+                            let shown: Vec<String> = code
+                                .lines()
+                                .enumerate()
+                                .skip(from - 1)
+                                .take(to.saturating_sub(from - 1))
+                                .map(|(i, l)| format!("{:>5} {l}", i + 1))
+                                .collect();
+                            ToolResult::answer(crate::tools::cap(format!(
+                                "{} (lines {from} to {} of {total})\n{}",
+                                text("path"),
+                                (from - 1 + shown.len()).max(from),
+                                shown.join("\n")
+                            )))
+                        }
+                    }
+                }
                 Err(refusal) => ToolResult::error(refusal.to_string()),
             },
+            SEARCH_CODE => self.search(
+                &text("text"),
+                &text("folder"),
+                call.input
+                    .get("ignore_case")
+                    .and_then(Value::as_bool)
+                    .unwrap_or(false),
+            ),
+            EDIT_CODE => {
+                let path = text("path");
+                if self.executor.scope().is_protected(&path) {
+                    return ToolResult::error(format!("Not changed: `{path}` is protected."));
+                }
+                let current = match self.executor.read(&path) {
+                    Ok(current) => current,
+                    Err(refusal) => return ToolResult::error(format!("Not changed: {refusal}")),
+                };
+                let (old, new) = (text("old_text"), text("new_text"));
+                match current.matches(old.as_str()).count() {
+                    0 => ToolResult::error(format!(
+                        "Not changed: the passage is not in {path}; read it again."
+                    )),
+                    1 if !old.is_empty() => {
+                        match self.executor.write(&path, &current.replacen(&old, &new, 1)) {
+                            Ok(()) => ToolResult::answer(format!(
+                                "Changed {path}: {} line(s) became {} line(s).",
+                                old.lines().count(),
+                                new.lines().count()
+                            )),
+                            Err(refusal) => ToolResult::error(format!("Not changed: {refusal}")),
+                        }
+                    }
+                    n => ToolResult::error(format!(
+                        "Not changed: the passage occurs {n} times in {path}; include more lines so it occurs once."
+                    )),
+                }
+            }
+            RUN_PROGRAM => self.run_program(call),
             WRITE_CODE => {
                 let path = text("path");
                 let body = text("text");
-                if self.brief.protected.iter().any(|p| {
-                    let path = path.replace('\\', "/");
-                    path == *p || path.starts_with(&format!("{p}/"))
-                }) {
+                if self.executor.scope().is_protected(&path) {
                     return ToolResult::error(format!("Not written: `{path}` is protected."));
                 }
                 match self.executor.write(&path, &body) {
@@ -191,6 +373,10 @@ impl Worker {
                 }
             }
             RUN_CHECKS => self.run_checks(),
+            crate::tools::READ_MODEL
+            | crate::tools::FIND_ELEMENTS
+            | crate::tools::GET_PROBLEMS
+            | crate::tools::APPLY_CHANGES => self.model_tool(call),
             LINK_CODE => self.link(call),
             REQUEST_CONTRACT_CHANGE => {
                 let element = text("element");
@@ -214,6 +400,80 @@ impl Worker {
         }
     }
 
+    /// Lines of the repository's files that contain `needle`.
+    fn search(&self, needle: &str, folder: &str, ignore_case: bool) -> ToolResult {
+        if needle.is_empty() {
+            return ToolResult::error("Nothing to find: give the text to search for.");
+        }
+        let files = match self.executor.list(folder, 20_000) {
+            Ok(files) => files,
+            Err(refusal) => return ToolResult::error(refusal.to_string()),
+        };
+        let wanted = if ignore_case {
+            needle.to_lowercase()
+        } else {
+            needle.to_string()
+        };
+        let mut hits = Vec::new();
+        'files: for file in files {
+            let Ok(text) = self.executor.read(&file) else {
+                continue; // not text
+            };
+            for (number, line) in text.lines().enumerate() {
+                let found = if ignore_case {
+                    line.to_lowercase().contains(&wanted)
+                } else {
+                    line.contains(&wanted)
+                };
+                if found {
+                    let shown: String = line.trim().chars().take(200).collect();
+                    hits.push(format!("{file}:{}: {shown}", number + 1));
+                    if hits.len() >= SEARCH_LIMIT {
+                        hits.push(format!(
+                            "… stopped at {SEARCH_LIMIT} hits: narrow the search by folder or text"
+                        ));
+                        break 'files;
+                    }
+                }
+            }
+        }
+        if hits.is_empty() {
+            ToolResult::answer(format!("`{needle}` is not in the files searched."))
+        } else {
+            ToolResult::answer(crate::tools::cap(hits.join("\n")))
+        }
+    }
+
+    /// One allowed program, for diagnostics (not a verification).
+    fn run_program(&mut self, call: &ToolCall) -> ToolResult {
+        let list: Vec<String> = call
+            .input
+            .get("program")
+            .and_then(Value::as_array)
+            .into_iter()
+            .flatten()
+            .filter_map(|v| v.as_str().map(str::to_string))
+            .collect();
+        let Some(program) = agq_execution::Program::from_list(&list) else {
+            return ToolResult::error("Not run: give the program and its arguments.");
+        };
+        match self
+            .executor
+            .run(&program, "", std::time::Duration::from_secs(900))
+        {
+            Err(refusal) => ToolResult::error(format!("Not run: {refusal}")),
+            Ok(finished) => {
+                let output = format!("{}\n{}", finished.stdout, finished.stderr);
+                ToolResult::answer(crate::tools::cap(format!(
+                    "`{}` {}\n{}",
+                    program.display(),
+                    finished.summary(),
+                    agq_execution::process::last_lines(output.trim(), 60)
+                )))
+            }
+        }
+    }
+
     fn run_checks(&mut self) -> ToolResult {
         if self.rounds >= MAX_ROUNDS {
             return ToolResult::error(format!(
@@ -228,14 +488,38 @@ impl Worker {
             &self.executor,
             self.cancel.clone(),
         );
-        let failures = verification.failures();
+        // What the worker can repair: what failed or is blocked. Checks that
+        // could not run here (nothing configured for them) are reported, and
+        // stay not run in the Studio's own verification; they are no pass.
+        let outcomes = verification.outcomes();
+        let failures = outcomes
+            .iter()
+            .filter(|o| matches!(o.verdict, Verdict::Failed | Verdict::Blocked))
+            .count()
+            + verification
+                .extra()
+                .iter()
+                .filter(|c| c.verdict == Verdict::Failed)
+                .count();
         let mut text = format!(
             "Round {} of {MAX_ROUNDS}.\n{}",
             self.rounds,
             verification.describe()
         );
         if failures == 0 {
-            text.push_str("\nEverything passes: call finish_implementation with a summary.");
+            if verification.passed() {
+                text.push_str("\nEverything passes: call finish_implementation with a summary.");
+            } else {
+                let not_run: Vec<String> = outcomes
+                    .iter()
+                    .filter(|o| o.verdict != Verdict::Passed)
+                    .map(|o| format!("{} ({})", o.name, o.message))
+                    .collect();
+                text.push_str(&format!(
+                    "\nNothing that ran fails, but these required checks did not run: {}. You cannot make them run from here. Call finish_implementation and say plainly that they were not verified.",
+                    not_run.join("; ")
+                ));
+            }
             return ToolResult::answer(text);
         }
         if self.best.is_none_or(|best| failures < best) {
@@ -291,7 +575,7 @@ impl Worker {
 /// Runs the task: the brief is the first message, and the worker calls its
 /// tools until it finishes, is stopped, or runs out of model calls.
 pub fn run_worker(
-    model: &mut dyn Model,
+    runtime: &mut dyn crate::Runtime,
     worker: &mut Worker,
     on_event: &mut dyn FnMut(TurnEvent),
     stop: &AtomicBool,
@@ -300,11 +584,12 @@ pub fn run_worker(
     conversation.entries.push(Entry::Operator {
         text: worker.brief.text.clone(),
     });
+    let toolset = toolset();
     let mut execute = |call: &ToolCall| worker.execute(call);
-    run_with(
-        model,
+    let mut execute = crate::runtime::checked(&toolset.definitions, &mut execute);
+    runtime.run(
         &mut conversation,
-        &toolset(),
+        &toolset,
         MAX_WORKER_CALLS,
         &mut execute,
         on_event,

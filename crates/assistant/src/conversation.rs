@@ -61,6 +61,15 @@ pub enum Entry {
     /// Something the Operator should see that is not part of the exchange
     /// with the model: an error, a stop, a missing API key.
     Notice { text: String },
+    /// A runtime that keeps its own context (the Claude Agent runtime, C-51)
+    /// started, resumed or was handed a session for the turn that follows:
+    /// its session id, so the next turn can resume it. Never sent to a model.
+    Session {
+        runtime: String,
+        id: String,
+        /// `started`, `resumed` or `handed over`.
+        event: String,
+    },
     /// An entry of a kind this version does not know (a later stage's), kept
     /// as it is, shown as a notice and never sent to a model.
     Other(Value),
@@ -84,6 +93,11 @@ enum Known {
     Notice {
         text: String,
     },
+    Session {
+        runtime: String,
+        id: String,
+        event: String,
+    },
 }
 
 impl From<Value> for Entry {
@@ -93,6 +107,7 @@ impl From<Value> for Entry {
             Ok(Known::Assistant { model, parts }) => Entry::Assistant { model, parts },
             Ok(Known::ToolResults { results }) => Entry::ToolResults { results },
             Ok(Known::Notice { text }) => Entry::Notice { text },
+            Ok(Known::Session { runtime, id, event }) => Entry::Session { runtime, id, event },
             Err(_) => Entry::Other(value),
         }
     }
@@ -106,6 +121,7 @@ impl From<Entry> for Value {
             Entry::Assistant { model, parts } => Known::Assistant { model, parts },
             Entry::ToolResults { results } => Known::ToolResults { results },
             Entry::Notice { text } => Known::Notice { text },
+            Entry::Session { runtime, id, event } => Known::Session { runtime, id, event },
         };
         serde_json::to_value(known).expect("entries are plain JSON")
     }
@@ -250,7 +266,10 @@ impl Conversation {
                     push(&mut messages, "assistant", blocks.clone());
                     let answered = matches!(
                         entries[index + 1..].iter().find(|entry| {
-                            !matches!(entry, Entry::Notice { .. } | Entry::Other(_))
+                            !matches!(
+                                entry,
+                                Entry::Notice { .. } | Entry::Session { .. } | Entry::Other(_)
+                            )
                         }),
                         Some(Entry::ToolResults { .. })
                     );
@@ -276,7 +295,7 @@ impl Conversation {
                         push(&mut messages, "user", content);
                     }
                 }
-                Entry::Notice { .. } | Entry::Other(_) => {}
+                Entry::Notice { .. } | Entry::Session { .. } | Entry::Other(_) => {}
             }
         }
         messages

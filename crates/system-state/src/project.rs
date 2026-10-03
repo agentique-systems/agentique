@@ -295,6 +295,13 @@ impl Project {
         Ok(read(&files, self.state.tree().next_id().raw())?.tree)
     }
 
+    /// The locks at a checkpoint (or any commit of the repository), to check
+    /// a task's model against the accepted one before integrating it.
+    pub fn locks_at(&self, checkpoint: &str) -> Result<BTreeSet<ElementId>, ProjectError> {
+        let files = self.history.load_commit(checkpoint)?;
+        Ok(read(&files, self.state.tree().next_id().raw())?.locks)
+    }
+
     pub fn branches(&self) -> Result<Vec<String>, ProjectError> {
         Ok(self.history.branches()?)
     }

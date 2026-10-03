@@ -22,9 +22,19 @@ pub struct Program {
     pub args: Vec<String>,
 }
 
-/// Cargo subcommands a task may run: build, check, test, run (the harness)
-/// and metadata. Nothing that publishes, installs or changes the toolchain.
-const CARGO_ALLOWED: [&str; 6] = ["build", "check", "test", "run", "metadata", "--version"];
+/// Cargo subcommands a task may run: build, check, test, run (the harness),
+/// metadata, and the formatter and linter. Nothing that publishes, installs
+/// or changes the toolchain.
+const CARGO_ALLOWED: [&str; 8] = [
+    "build",
+    "check",
+    "test",
+    "run",
+    "metadata",
+    "fmt",
+    "clippy",
+    "--version",
+];
 
 impl Program {
     pub fn new(name: &str, args: &[&str]) -> Program {
@@ -63,9 +73,10 @@ impl Program {
                 .is_some_and(|sub| CARGO_ALLOWED.contains(&sub.as_str()))
             && !self.args.iter().any(|a| {
                 a.starts_with("--config")
-                    || a == "-Z"
+                    || a.starts_with("-Z")
                     || a.starts_with("+")
-                    || a == "--manifest-path"
+                    || a.starts_with("--manifest-path")
+                    || a == "--fix"
             });
         if allowed {
             Ok(())
@@ -123,7 +134,7 @@ fn command(program: &Program, cwd: &Path, env: &[(String, String)]) -> Command {
 }
 
 /// Ends a process and every process it started.
-pub(crate) fn kill_tree(child: &mut Child) {
+pub fn kill_tree(child: &mut Child) {
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;

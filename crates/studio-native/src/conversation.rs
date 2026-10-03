@@ -16,8 +16,8 @@
 //! entry.
 use crate::{edit::Outcome, studio::Studio};
 use agq_assistant::{
-    BackgroundEvent, BackgroundTurn, Conversation, Entry, Model, ModelChoice, Prepared,
-    StreamEvent, ToolCall, ToolResult, TurnEvent, Usage, tools,
+    BackgroundEvent, BackgroundTurn, Conversation, Entry, ModelChoice, Prepared, StreamEvent,
+    ToolCall, ToolResult, TurnEvent, Usage, tools,
 };
 use agq_language::ElementId;
 use agq_studio_scene::SceneTarget;
@@ -27,8 +27,9 @@ use std::path::{Path, PathBuf};
 use std::sync::mpsc::Sender;
 use std::time::{Duration, Instant};
 
-/// Makes the model for each turn.
-pub type ModelSource = Box<dyn Fn() -> Box<dyn Model + Send>>;
+/// Makes the runtime for each turn (ROADMAP §4.10): the loop over the
+/// chosen model, or the Claude Agent runtime.
+pub type RuntimeSource = Box<dyn Fn() -> Box<dyn agq_assistant::Runtime>>;
 
 /// The Conversation panel's state.
 pub struct ConversationPanel {
@@ -54,6 +55,9 @@ pub struct ConversationPanel {
     /// The reply streaming in, until it is added to the conversation.
     pub live: Vec<Live>,
     pub thinking: bool,
+    /// What the Assistant is doing now, from its latest step (the visible
+    /// phase of the turn).
+    pub phase: Option<&'static str>,
     /// Tokens used in this session.
     pub usage: Usage,
     /// The running or last turn's model and tokens, for its estimated cost.
@@ -63,7 +67,7 @@ pub struct ConversationPanel {
     pub model_name: String,
     /// What to tell the Operator while no key is set for the model.
     pub key_missing: Option<String>,
-    pub new_model: ModelSource,
+    pub new_runtime: RuntimeSource,
     /// Why the saved conversation could not be read; shown until another
     /// project is opened.
     pub read_error: Option<String>,
@@ -163,12 +167,13 @@ impl ConversationPanel {
             results: HashMap::new(),
             live: Vec::new(),
             thinking: false,
+            phase: None,
             usage: Usage::default(),
             turn_model: None,
             turn_usage: Usage::default(),
             model_name: choice.label(),
             key_missing: (!choice.has_key()).then(|| choice.missing_key_message()),
-            new_model: Box::new(move || choice.start()),
+            new_runtime: Box::new(move || agq_assistant::LoopRuntime::boxed(choice.start())),
             read_error: None,
             save_error: None,
             shown: true,
@@ -183,7 +188,15 @@ impl ConversationPanel {
     pub fn use_choice(&mut self, choice: ModelChoice) {
         self.model_name = choice.label();
         self.key_missing = (!choice.has_key()).then(|| choice.missing_key_message());
-        self.new_model = Box::new(move || choice.start());
+        self.new_runtime = Box::new(move || agq_assistant::LoopRuntime::boxed(choice.start()));
+    }
+
+    /// Another runtime for the next turns (the Claude Agent runtime): its
+    /// label, what keeps it from working if anything, and how to make it.
+    pub fn use_runtime(&mut self, label: String, problem: Option<String>, source: RuntimeSource) {
+        self.model_name = label;
+        self.key_missing = problem;
+        self.new_runtime = source;
     }
 
     pub fn running(&self) -> bool {
@@ -431,10 +444,10 @@ impl Studio {
             applied: Vec::new(),
             failed: false,
         });
-        let model = (panel.new_model)();
-        panel.turn_model = model.model();
+        let runtime = (panel.new_runtime)();
+        panel.turn_model = runtime.model();
         panel.turn_usage = Usage::default();
-        panel.turn = Some(BackgroundTurn::start(model, panel.conversation.clone()));
+        panel.turn = Some(BackgroundTurn::start(runtime, panel.conversation.clone()));
     }
 
     /// Takes the running turn's events. Called every frame; never blocks.
@@ -473,6 +486,7 @@ impl Studio {
             BackgroundEvent::Turn(TurnEvent::Stream(stream)) => match stream {
                 StreamEvent::Text(text) => {
                     panel.thinking = false;
+                    panel.phase = Some("Writing the answer");
                     match panel.live.last_mut() {
                         Some(Live::Text(live)) => live.push_str(&text),
                         _ => panel.live.push(Live::Text(text)),
@@ -496,6 +510,7 @@ impl Studio {
                 }
                 StreamEvent::ToolCallStarted { id, name } => {
                     panel.thinking = false;
+                    panel.phase = Some(agq_assistant::phase(&name));
                     panel.live.push(Live::Tool {
                         id,
                         name,
@@ -543,6 +558,7 @@ impl Studio {
                 panel.turn = None;
                 panel.live.clear();
                 panel.thinking = false;
+                panel.phase = None;
                 let failed = matches!(
                     panel.conversation.entries.last(),
                     Some(Entry::Notice { .. })
@@ -724,6 +740,26 @@ impl Studio {
             panel.stopped = true;
         }
         self.close_waiting(Some("Not run: stopped by the Operator."));
+        // Every other request the turn waits on is closed too (fail closed,
+        // ROADMAP §5.6 item 4): a task it proposed is not started by a later
+        // click, and runs or checks it asked for answer no one.
+        if self.implementation.proposal.is_some() {
+            if matches!(self.dialog, Some(crate::edit::Dialog::Implement { .. })) {
+                self.dialog = None;
+            }
+            self.answer_proposal(Err("the Operator stopped the Assistant".into()));
+        }
+        for reply in [
+            self.runs.assistant.take(),
+            self.implementation.assistant.take(),
+        ]
+        .into_iter()
+        .flatten()
+        {
+            let _ = reply.send(ToolResult::error(
+                "Not waited for: the Operator stopped the Assistant. Whatever was started goes on, and its result is in the Studio.",
+            ));
+        }
     }
 
     /// Closes the call waiting for the Operator, answering it with `reply`
@@ -952,10 +988,10 @@ fn merged(events: &[ChangeEvent]) -> Option<ChangeEvent> {
 /// A scripted stand-in for the Claude API, shared by the turns of one
 /// Studio: for tests and scripted journeys, never the network.
 #[cfg(any(test, feature = "automation"))]
-pub fn scripted(replies: Vec<agq_assistant::Reply>) -> ModelSource {
+pub fn scripted(replies: Vec<agq_assistant::Reply>) -> RuntimeSource {
     use std::sync::{Arc, Mutex};
     struct Shared(Arc<Mutex<agq_assistant::ScriptedModel>>);
-    impl Model for Shared {
+    impl agq_assistant::Model for Shared {
         fn send(
             &mut self,
             request: &agq_assistant::Request,
@@ -969,7 +1005,7 @@ pub fn scripted(replies: Vec<agq_assistant::Reply>) -> ModelSource {
         }
     }
     let shared = Arc::new(Mutex::new(agq_assistant::ScriptedModel::new(replies)));
-    Box::new(move || Box::new(Shared(shared.clone())))
+    Box::new(move || agq_assistant::LoopRuntime::boxed(Box::new(Shared(shared.clone()))))
 }
 
 #[cfg(test)]

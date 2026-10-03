@@ -1,5 +1,5 @@
 //! Execution (ROADMAP §4.15; part `Execution` in
-//! `models/agentique/Agentique.sysml`): every side effect outside the System
+//! `model/Agentique.sysml`): every side effect outside the System
 //! State, as typed operations with a scope.
 //!
 //! - [`Scope`]: the repository root, where writes may go (a task's
@@ -149,15 +149,50 @@ impl Scope {
         Ok(joined)
     }
 
+    /// Whether `relative` is a protected path or inside one. Paths are
+    /// compared without regard to case, as Windows resolves them, both as
+    /// written and as they resolve on disk (through links), so no spelling
+    /// of a protected path reaches it.
+    pub fn is_protected(&self, relative: &str) -> bool {
+        let written = normalise(relative);
+        let on_disk = self
+            .resolve(relative)
+            .ok()
+            .and_then(|absolute| self.real_relative(&absolute));
+        self.protected.iter().any(|p| {
+            [Some(&written), on_disk.as_ref()]
+                .into_iter()
+                .flatten()
+                .any(|path| within(path, p))
+        })
+    }
+
+    /// The path of `absolute` relative to the root as it is on disk: the
+    /// nearest existing ancestor canonicalised (its real spelling), then the
+    /// rest as written.
+    fn real_relative(&self, absolute: &Path) -> Option<String> {
+        let mut existing = absolute;
+        let mut rest = Vec::new();
+        while !existing.exists() {
+            rest.push(existing.file_name()?.to_string_lossy().into_owned());
+            existing = existing.parent()?;
+        }
+        let real = dunce_canonical(existing).ok()?;
+        let mut relative = normalise(&real.strip_prefix(&self.root).ok()?.to_string_lossy());
+        for part in rest.into_iter().rev() {
+            if !relative.is_empty() {
+                relative.push('/');
+            }
+            relative.push_str(&part);
+        }
+        Some(relative)
+    }
+
     /// `relative` in canonical `/` form, if it may be written.
     pub fn check_write(&self, relative: &str) -> Result<PathBuf, Refusal> {
         let absolute = self.resolve(relative)?;
         let normal = normalise(relative);
-        if self
-            .protected
-            .iter()
-            .any(|p| normal == *p || normal.starts_with(&format!("{p}/")))
-        {
+        if self.is_protected(relative) {
             return Err(Refusal::Protected(normal));
         }
         if !self
@@ -171,8 +206,14 @@ impl Scope {
     }
 }
 
+/// Whether `path` is `protected` or inside it, ignoring case.
+pub fn within(path: &str, protected: &str) -> bool {
+    let (path, protected) = (path.to_lowercase(), normalise(protected).to_lowercase());
+    path == protected || path.starts_with(&format!("{protected}/"))
+}
+
 /// `a\b/./c` → `a/b/c`.
-fn normalise(path: &str) -> String {
+pub fn normalise(path: &str) -> String {
     path.replace('\\', "/")
         .split('/')
         .filter(|s| !s.is_empty() && *s != ".")
@@ -242,6 +283,10 @@ pub struct Executor {
     /// Where Cargo builds (shared by a project's tasks, outside the repository).
     target_dir: Option<PathBuf>,
     cancel: Arc<AtomicBool>,
+    /// The project's own check commands, allowed exactly as written (the
+    /// Operator's `checks.json`), besides the Cargo commands every task may
+    /// run.
+    allowed: Vec<Program>,
 }
 
 /// Environment variables passed to commands; everything else is dropped.
@@ -286,7 +331,15 @@ impl Executor {
             network: false,
             target_dir: None,
             cancel: Arc::new(AtomicBool::new(false)),
+            allowed: Vec::new(),
         }
+    }
+
+    /// Allows these commands exactly as written: a project's own checks,
+    /// which the Operator keeps outside the repository a task writes.
+    pub fn allow(mut self, programs: Vec<Program>) -> Executor {
+        self.allowed = programs;
+        self
     }
 
     /// Turns trusted-local execution on (the Operator's choice, per project).
@@ -339,7 +392,7 @@ impl Executor {
             entries.sort();
             for entry in entries.into_iter().rev() {
                 let name = entry.file_name().and_then(|n| n.to_str()).unwrap_or("");
-                if matches!(name, "target" | ".git" | ".agentique") {
+                if matches!(name, "target" | ".git" | ".agentique" | "node_modules") {
                     continue;
                 }
                 if entry.is_dir() {
@@ -413,7 +466,9 @@ impl Executor {
         if !self.trusted {
             return Err(Refusal::NotTrusted);
         }
-        program.check()?;
+        if !self.allowed.contains(program) {
+            program.check()?;
+        }
         if folder.is_empty() || folder == "." {
             Ok(self.scope.root.clone())
         } else {
@@ -502,6 +557,48 @@ mod tests {
         assert!(whole.write("../escape.rs", "x").is_err());
     }
 
+    /// Regression (ROADMAP §5.6 item 2): protected paths were compared by
+    /// case, which Windows paths are not, so `Tests/Contract.rs` reached the
+    /// protected `tests/contract.rs`.
+    #[test]
+    fn a_protected_path_is_protected_whatever_its_case() {
+        let (dir, scope) = scope();
+        let executor = Executor::new(scope);
+        for variant in [
+            "Tests/Contract.rs",
+            "TESTS/contract.rs",
+            "tests/CONTRACT.RS",
+        ] {
+            assert!(
+                matches!(
+                    executor.write(variant, "// weakened"),
+                    Err(Refusal::Protected(_))
+                ),
+                "{variant:?} was written"
+            );
+        }
+        assert_eq!(
+            std::fs::read_to_string(dir.path().join("tests/contract.rs")).unwrap(),
+            "// protected"
+        );
+    }
+
+    /// Regression (§5.6 item 2): `--manifest-path=` and `-Zflag` slipped
+    /// past the argument check.
+    #[test]
+    fn joined_forms_of_refused_arguments_are_refused_too() {
+        for args in [
+            &["build", "--manifest-path=../other/Cargo.toml"][..],
+            &["build", "-Zunstable-options"][..],
+            &["build", "--config=build.rustflags=['-C','x']"][..],
+        ] {
+            assert!(
+                matches!(Program::cargo(args).check(), Err(Refusal::NotAllowed(_))),
+                "{args:?} was allowed"
+            );
+        }
+    }
+
     #[test]
     fn commands_need_trusted_local_execution_and_an_allowed_program() {
         let (_dir, scope) = scope();
@@ -522,6 +619,26 @@ mod tests {
         let publish = Program::cargo(&["publish"]);
         assert!(matches!(
             executor.run(&publish, "", Duration::from_secs(5)),
+            Err(Refusal::NotAllowed(_))
+        ));
+    }
+
+    /// A project's own command runs only exactly as the Operator allowed it.
+    #[test]
+    fn a_project_command_runs_only_as_written() {
+        let (_dir, scope) = scope();
+        let version = Program::new("rustc", &["--version"]);
+        let executor = Executor::new(scope.clone()).trusted(true);
+        assert!(matches!(
+            executor.run(&version, "", Duration::from_secs(60)),
+            Err(Refusal::NotAllowed(_))
+        ));
+        let executor = executor.allow(vec![version.clone()]);
+        let finished = executor.run(&version, "", Duration::from_secs(60)).unwrap();
+        assert!(finished.stdout.starts_with("rustc "), "{finished:?}");
+        let other = Program::new("rustc", &["--print", "sysroot"]);
+        assert!(matches!(
+            executor.run(&other, "", Duration::from_secs(60)),
             Err(Refusal::NotAllowed(_))
         ));
     }

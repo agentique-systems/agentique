@@ -129,6 +129,8 @@ impl Render for Welcome {
         let key = studio.conversation.key_missing.is_none();
         let model = studio.conversation.model_name.clone();
         let recent = studio.session.recent.clone();
+        // Agentique's own repository, when this Agentique knows where it is.
+        let own = studio.agentique_repository();
         let sample = {
             let studio = self.studio.clone();
             move |_: &ClickEvent, _: &mut Window, cx: &mut App| {
@@ -205,7 +207,22 @@ impl Render for Welcome {
                                 .icon(IconName::FolderOpen)
                                 .shortcut("Ctrl+O")
                                 .on_click(run(CommandId::OpenProject)),
-                        ),
+                        )
+                        .when_some(own.clone(), |this, folder| {
+                            this.child(
+                                Button::new("start-develop", "Develop Agentique")
+                                    .large()
+                                    .icon(IconName::Agent)
+                                    .tooltip(
+                                        format!(
+                                            "Open Agentique's own repository ({}): its architecture, workflows, code and checks",
+                                            folder.display()
+                                        ),
+                                        None,
+                                    )
+                                    .on_click(run(CommandId::DevelopAgentique)),
+                            )
+                        }),
                 )
                 .child(
                     div()

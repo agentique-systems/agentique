@@ -92,6 +92,29 @@ impl Verdict {
     }
 }
 
+/// The one summary of several verdicts, shared by runs, tasks and
+/// implementation checks: passed only when there is at least one and every
+/// one passed; failed when any failed; otherwise the first of blocked, not
+/// run, unsupported and inconclusive found. Nothing is a pass by default.
+pub fn summary(verdicts: impl IntoIterator<Item = Verdict>) -> Verdict {
+    let verdicts: Vec<Verdict> = verdicts.into_iter().collect();
+    if verdicts.is_empty() {
+        return Verdict::NotRun;
+    }
+    if verdicts.contains(&Verdict::Failed) {
+        return Verdict::Failed;
+    }
+    [
+        Verdict::Blocked,
+        Verdict::NotRun,
+        Verdict::Unsupported,
+        Verdict::Inconclusive,
+    ]
+    .into_iter()
+    .find(|v| verdicts.contains(v))
+    .unwrap_or(Verdict::Passed)
+}
+
 /// Why a run stopped before completing.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -361,8 +384,7 @@ impl RunResult {
     /// the Studio may show as green. Never true for a walkthrough.
     pub fn all_passed(&self) -> bool {
         self.status == RunStatus::Completed
-            && !self.checks.is_empty()
-            && self.checks.iter().all(|c| c.verdict == Verdict::Passed)
+            && summary(self.checks.iter().map(|c| c.verdict)) == Verdict::Passed
     }
 
     /// The result in plain words, for the Assistant and for reports: how it

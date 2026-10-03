@@ -92,7 +92,7 @@ enum Item {
         text: String,
         retry: bool,
     },
-    Working(&'static str),
+    Working(String),
     Undo(Undo),
 }
 
@@ -407,6 +407,7 @@ impl ConversationView {
             _ => None,
         };
         let thinking = panel.thinking;
+        let phase = panel.phase;
         let undoable = state.and_then(|state| panel.undoable(state));
         let tree = state.map(|s| s.tree().clone());
         let mut items = Vec::new();
@@ -544,6 +545,15 @@ impl ConversationView {
                     text: text.clone(),
                     retry: index + 1 == entries.len() && failed && !running,
                 }),
+                // Which runtime took over the turn, and whether its earlier
+                // context carried over.
+                Entry::Session { event, .. } => items.push(Item::Notice {
+                    text: match event.as_str() {
+                        "resumed" => "The Claude Agent runtime continued its session.".to_string(),
+                        _ => "The Claude Agent runtime started a session: it was given the visible history as text; nothing hidden carried over.".to_string(),
+                    },
+                    retry: false,
+                }),
                 // A later version's entry: kept, shown plainly.
                 Entry::Other(value) => {
                     let kind = value["type"].as_str().unwrap_or("unknown");
@@ -580,12 +590,11 @@ impl ConversationView {
             }
         }
         if running && question.is_none() {
-            items.push(Item::Working(if let Some(waiting) = waiting_text {
-                waiting
-            } else if thinking {
-                "Thinking…"
-            } else {
-                "Working…"
+            items.push(Item::Working(match (waiting_text, thinking, phase) {
+                (Some(waiting), ..) => waiting.to_string(),
+                (None, true, _) => "Thinking…".to_string(),
+                (None, false, Some(phase)) => format!("{phase}…"),
+                (None, false, None) => "Working…".to_string(),
             }));
         }
         if let Some(undo) = undoable {
@@ -1279,7 +1288,7 @@ fn render_item(ctx: &Rc<Ctx>, item: &Item, cx: &App) -> AnyElement {
             .text_size(r(theme::text::SM))
             .text_color(theme.info.text)
             .child(ui::spinner("working", 14.0, theme.info.text))
-            .child(*text)
+            .child(text.clone())
             .into_any_element(),
         Item::Undo(undo) => cards::undo_card(ctx, *undo, cx),
     };

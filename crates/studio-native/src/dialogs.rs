@@ -369,14 +369,30 @@ impl DialogsView {
                     studio.answer_proposal(started);
                 }
                 Dialog::ReviewTask {
-                    ref job, ref diff, ..
+                    ref job,
+                    ref diff,
+                    confirmed,
+                    ..
                 } => {
                     let (job, diff) = (job.clone(), diff.clone());
-                    if let Err(problem) = studio.integrate_task(&job) {
+                    let asks = studio.task_outcome(&job).is_some_and(|(found, outcome)| {
+                        studio.integration_blocker(&found, &outcome).is_some()
+                            || !studio.locked_code(&outcome).is_empty()
+                    });
+                    if asks && !confirmed {
+                        // First the Operator sees what was not verified.
+                        studio.dialog = Some(Dialog::ReviewTask {
+                            job,
+                            problem: None,
+                            diff,
+                            confirmed: true,
+                        });
+                    } else if let Err(problem) = studio.integrate_task(&job, confirmed) {
                         studio.dialog = Some(Dialog::ReviewTask {
                             job,
                             problem: Some(problem),
                             diff,
+                            confirmed,
                         });
                     }
                 }
@@ -1246,6 +1262,7 @@ impl Render for DialogsView {
                     })
                     .unwrap_or_default();
                 let blocker = studio.task_blocker();
+                let (required, unchecked) = studio.task_checks(*element);
                 let model = studio.conversation.model_name.clone();
                 let repository = studio
                     .implementation_repository()
@@ -1261,12 +1278,31 @@ impl Render for DialogsView {
                             "The worker reads the model's contracts and scenarios, writes code there and links it".into(),
                             format!("It builds and checks at most {} times, and stops sooner when it makes no progress", agq_assistant::worker::MAX_ROUNDS),
                             "If the model is wrong or not enough, it asks you instead of working around it".into(),
+                            if studio.task_model_in_repository() {
+                                "It may propose model changes in its worktree's copy of the model (never a locked element); you review them with the code".into()
+                            } else {
+                                "It does not change the model (the model is outside the code repository)".into()
+                            },
                             "The Studio then checks the worktree itself and shows you the patch".into(),
                             format!("Model: {model}; it costs what its calls cost"),
                         ],
                         IconName::Patch,
                         cx,
                     ))
+                    .child(plain_list(
+                        "Checks it must pass (fixed when it starts)",
+                        required,
+                        IconName::Requirement,
+                        cx,
+                    ))
+                    .when(!unchecked.is_empty(), |this| {
+                        this.child(plain_list(
+                            "Not checked, because it is not configured",
+                            unchecked.clone(),
+                            IconName::Warning,
+                            cx,
+                        ))
+                    })
                     .child(field(
                         "Instructions",
                         self.first.as_ref().map(|s| {
@@ -1281,12 +1317,22 @@ impl Render for DialogsView {
                     .footer(confirm_button("Start the task", blocker.is_none()))
                     .into_any_element()
             }
-            Dialog::ReviewTask { job, problem, diff } => {
+            Dialog::ReviewTask {
+                job,
+                problem,
+                diff,
+                confirmed,
+            } => {
                 let Some((found, outcome)) = studio.task_outcome(job) else {
                     return div().into_any_element();
                 };
                 let verification = &outcome.verification;
-                let failures = verification.failures();
+                let blocker = studio.integration_blocker(&found, &outcome);
+                // Code of locked parts it changes: integrating asks explicitly.
+                let locked = studio.locked_code(&outcome);
+                // What it proposes for the model (its own copy, by element
+                // identity), reviewed with the code.
+                let model_changes = studio.task_model_changes(&outcome);
                 // The model elements whose code the patch changes, by the
                 // links (the ones it proposes included).
                 let touched: Vec<String> = {
@@ -1349,13 +1395,39 @@ impl Render for DialogsView {
                                     .flex_col()
                                     .gap(r(12.0))
                                     .child(ui::Banner::new(
-                                        if failures == 0 { ui::Tone::Success } else { ui::Tone::Warning },
-                                        if failures == 0 {
-                                            "The Studio checked the worktree itself: it builds and nothing it checked fails.".to_string()
-                                        } else {
-                                            format!("The Studio checked the worktree itself: {failures} failing or not verified.")
+                                        if blocker.is_none() { ui::Tone::Success } else { ui::Tone::Warning },
+                                        match &blocker {
+                                            None => format!(
+                                                "The Studio checked the task commit {} itself: every required check passed, and nothing has changed since.",
+                                                &outcome.commit[..outcome.commit.len().min(10)]
+                                            ),
+                                            Some(why) => why.clone(),
                                         },
                                     ))
+                                    .when(!locked.is_empty(), |this| {
+                                        this.child(ui::inline_message(
+                                            ui::Tone::Warning,
+                                            format!(
+                                                "It changes the code of locked parts: {}. Integrating it asks you once more.",
+                                                locked.join(", ")
+                                            ),
+                                            cx,
+                                        ))
+                                    })
+                                    .when(*confirmed && blocker.is_some(), |this| {
+                                        this.child(ui::inline_message(
+                                            ui::Tone::Danger,
+                                            "You are about to integrate a task whose verification is not current and passed. Do it only if you have checked what is listed here yourself; the task's record will say so.",
+                                            cx,
+                                        ))
+                                    })
+                                    .when(*confirmed && !locked.is_empty(), |this| {
+                                        this.child(ui::inline_message(
+                                            ui::Tone::Danger,
+                                            "You are about to change the code of locked parts. The task's record will say that you confirmed it.",
+                                            cx,
+                                        ))
+                                    })
                                     .when_some(outcome.notice.clone(), |this, notice| {
                                         this.child(ui::inline_message(ui::Tone::Neutral, notice, cx))
                                     })
@@ -1369,6 +1441,30 @@ impl Render for DialogsView {
                                             IconName::Warning,
                                             cx,
                                         ))
+                                    })
+                                    .when_some(model_changes.clone(), |this, changes| {
+                                        let mut lines: Vec<String> = Vec::new();
+                                        lines.extend(changes.created.iter().map(|n| format!("added {n}")));
+                                        lines.extend(changes.updated.iter().map(|n| format!("changed {n}")));
+                                        lines.extend(changes.deleted.iter().map(|n| format!("deleted {n}")));
+                                        lines.push(format!(
+                                            "{} problem(s) in its model ({} before)",
+                                            changes.problems, changes.problems_before
+                                        ));
+                                        let this = this.child(plain_list(
+                                            "It changes the model (in its working copy; the model files are in the patch below)",
+                                            lines,
+                                            IconName::Part,
+                                            cx,
+                                        ));
+                                        match changes.refused {
+                                            Some(why) => this.child(ui::inline_message(
+                                                ui::Tone::Danger,
+                                                format!("This task cannot be integrated: {why}."),
+                                                cx,
+                                            )),
+                                            None => this,
+                                        }
                                     })
                                     .when(!touched.is_empty(), |this| {
                                         this.child(plain_list(
@@ -1433,7 +1529,15 @@ impl Render for DialogsView {
                             })
                             .footer(discard)
                             .footer(later)
-                            .footer(confirm_button("Integrate", !outcome.files.is_empty())),
+                            .footer(confirm_button(
+                                match (&blocker, locked.is_empty(), *confirmed) {
+                                    (None, true, _) => "Integrate",
+                                    (_, _, false) => "Integrate anyway…",
+                                    (Some(_), _, true) => "Integrate without a passing verification",
+                                    (None, false, true) => "Integrate the changes to locked parts",
+                                },
+                                !outcome.files.is_empty() && !outcome.commit.is_empty(),
+                            )),
                     )
                     .into_any_element()
             }

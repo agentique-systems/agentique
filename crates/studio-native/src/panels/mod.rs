@@ -10,6 +10,7 @@ pub mod library;
 mod outline;
 mod problems;
 mod requirements;
+mod responsibility;
 mod reuse;
 pub mod run;
 pub mod scenarios;

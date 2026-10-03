@@ -106,6 +106,16 @@ pub const SETTINGS: &[Setting] = &[
         invalid: "Choose system, on or off.",
     },
     Setting {
+        id: "assistant.runtime",
+        label: "Runtime",
+        description: "What runs the Assistant's turns: Agentique's own loop, with any provider, or the Claude Agent SDK's loop (Anthropic only, with Agentique's tools only).",
+        synonyms: &["sdk", "agent sdk", "claude agent", "loop", "engine"],
+        default: DefaultValue::Text("loop"),
+        scope: Scope::App,
+        allowed: Allowed::Choice(&["loop", "claude-agent"]),
+        invalid: "Choose loop or claude-agent.",
+    },
+    Setting {
         id: "assistant.provider",
         label: "Provider",
         description: "The model provider the Assistant uses; empty picks the first provider with a key.",

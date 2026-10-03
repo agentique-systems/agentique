@@ -1,0 +1,751 @@
+{
+  "format": 1,
+  "repository": ".",
+  "language": "rust",
+  "links": [
+    {
+      "element": 866,
+      "name": "AgentiqueArchitecture::LanguageCore",
+      "kind": "crate",
+      "path": "crates/language"
+    },
+    {
+      "element": 870,
+      "name": "AgentiqueArchitecture::SystemState",
+      "kind": "crate",
+      "path": "crates/system-state"
+    },
+    {
+      "element": 884,
+      "name": "AgentiqueArchitecture::SystemState::live::refuseLocked",
+      "kind": "symbol",
+      "path": "crates/system-state/src/lib.rs",
+      "symbol": "unconfirmed_locks"
+    },
+    {
+      "element": 884,
+      "name": "AgentiqueArchitecture::SystemState::live::refuseLocked",
+      "kind": "test",
+      "path": "crates/system-state/tests/operations.rs",
+      "symbol": "locked_parts_change_only_with_confirmation"
+    },
+    {
+      "element": 887,
+      "name": "AgentiqueArchitecture::SystemState::live::apply",
+      "kind": "symbol",
+      "path": "crates/system-state/src/lib.rs",
+      "symbol": "SystemState::apply"
+    },
+    {
+      "element": 887,
+      "name": "AgentiqueArchitecture::SystemState::live::apply",
+      "kind": "test",
+      "path": "crates/system-state/tests/operations.rs",
+      "symbol": "a_rejected_change_leaves_model_and_locks_untouched"
+    },
+    {
+      "element": 887,
+      "name": "AgentiqueArchitecture::SystemState::live::apply",
+      "kind": "test",
+      "path": "crates/system-state/tests/operations.rs",
+      "symbol": "rename_keeps_references_bound"
+    },
+    {
+      "element": 890,
+      "name": "AgentiqueArchitecture::SystemState::live::applied",
+      "kind": "symbol",
+      "path": "crates/system-state/src/project.rs",
+      "symbol": "Project::apply"
+    },
+    {
+      "element": 895,
+      "name": "AgentiqueArchitecture::SystemState::live::notSaved",
+      "kind": "symbol",
+      "path": "crates/system-state/src/project.rs",
+      "symbol": "Project::apply"
+    },
+    {
+      "element": 895,
+      "name": "AgentiqueArchitecture::SystemState::live::notSaved",
+      "kind": "test",
+      "path": "crates/system-state/tests/project.rs",
+      "symbol": "a_change_that_could_not_be_saved_is_not_redoable"
+    },
+    {
+      "element": 898,
+      "name": "AgentiqueArchitecture::SystemState::live::undo",
+      "kind": "symbol",
+      "path": "crates/system-state/src/lib.rs",
+      "symbol": "SystemState::undo"
+    },
+    {
+      "element": 901,
+      "name": "AgentiqueArchitecture::SystemState::live::undone",
+      "kind": "test",
+      "path": "crates/system-state/tests/operations.rs",
+      "symbol": "undo_and_redo_restore_the_model_and_report_what_changed"
+    },
+    {
+      "element": 906,
+      "name": "AgentiqueArchitecture::SystemState::live::reopen",
+      "kind": "symbol",
+      "path": "crates/system-state/src/project.rs",
+      "symbol": "Project::open"
+    },
+    {
+      "element": 909,
+      "name": "AgentiqueArchitecture::SystemState::live::opened",
+      "kind": "test",
+      "path": "crates/system-state/tests/project.rs",
+      "symbol": "renames_and_moves_keep_identities_through_reopen_and_checkpoints"
+    },
+    {
+      "element": 909,
+      "name": "AgentiqueArchitecture::SystemState::live::opened",
+      "kind": "test",
+      "path": "crates/system-state/tests/project.rs",
+      "symbol": "reopening_restores_the_model_its_identities_and_locks"
+    },
+    {
+      "element": 914,
+      "name": "AgentiqueArchitecture::History",
+      "kind": "crate",
+      "path": "crates/history"
+    },
+    {
+      "element": 923,
+      "name": "AgentiqueArchitecture::History::keeping::save",
+      "kind": "symbol",
+      "path": "crates/history/src/folder.rs",
+      "symbol": "save_until"
+    },
+    {
+      "element": 923,
+      "name": "AgentiqueArchitecture::History::keeping::save",
+      "kind": "test",
+      "path": "crates/history/tests/repository.rs",
+      "symbol": "an_edit_made_outside_the_app_is_never_overwritten"
+    },
+    {
+      "element": 923,
+      "name": "AgentiqueArchitecture::History::keeping::save",
+      "kind": "test",
+      "path": "crates/system-state/tests/project.rs",
+      "symbol": "an_interrupted_save_opens_to_the_old_or_the_new_state"
+    },
+    {
+      "element": 926,
+      "name": "AgentiqueArchitecture::History::keeping::load",
+      "kind": "symbol",
+      "path": "crates/history/src/lib.rs",
+      "symbol": "History::open"
+    },
+    {
+      "element": 929,
+      "name": "AgentiqueArchitecture::Library",
+      "kind": "crate",
+      "path": "crates/library"
+    },
+    {
+      "element": 932,
+      "name": "AgentiqueArchitecture::Studio",
+      "kind": "crate",
+      "path": "crates/studio-native"
+    },
+    {
+      "element": 932,
+      "name": "AgentiqueArchitecture::Studio",
+      "kind": "crate",
+      "path": "crates/studio-scene"
+    },
+    {
+      "element": 965,
+      "name": "AgentiqueArchitecture::Studio::working::edit",
+      "kind": "symbol",
+      "path": "crates/studio-native/src/edit.rs",
+      "symbol": "Studio::rename"
+    },
+    {
+      "element": 968,
+      "name": "AgentiqueArchitecture::Studio::working::shown",
+      "kind": "symbol",
+      "path": "crates/studio-native/src/studio.rs",
+      "symbol": "Studio::changed"
+    },
+    {
+      "element": 971,
+      "name": "AgentiqueArchitecture::Studio::working::askLock",
+      "kind": "symbol",
+      "path": "crates/studio-native/src/edit.rs",
+      "symbol": "Studio::apply_change"
+    },
+    {
+      "element": 971,
+      "name": "AgentiqueArchitecture::Studio::working::askLock",
+      "kind": "test",
+      "path": "crates/studio-native/src/edit.rs",
+      "symbol": "a_locked_change_asks_and_applies_only_when_confirmed"
+    },
+    {
+      "element": 974,
+      "name": "AgentiqueArchitecture::Studio::working::notDone",
+      "kind": "test",
+      "path": "crates/studio-native/src/edit.rs",
+      "symbol": "a_change_that_cannot_be_saved_is_reported_and_not_applied"
+    },
+    {
+      "element": 977,
+      "name": "AgentiqueArchitecture::Studio::working::confirmed",
+      "kind": "symbol",
+      "path": "crates/studio-native/src/edit.rs",
+      "symbol": "Studio::answer"
+    },
+    {
+      "element": 977,
+      "name": "AgentiqueArchitecture::Studio::working::confirmed",
+      "kind": "test",
+      "path": "crates/studio-native/src/edit.rs",
+      "symbol": "a_confirmation_given_after_the_model_changed_is_asked_again"
+    },
+    {
+      "element": 983,
+      "name": "AgentiqueArchitecture::Studio::working::undo",
+      "kind": "symbol",
+      "path": "crates/studio-native/src/edit.rs",
+      "symbol": "Studio::undo_redo"
+    },
+    {
+      "element": 983,
+      "name": "AgentiqueArchitecture::Studio::working::undo",
+      "kind": "test",
+      "path": "crates/studio-native/src/edit.rs",
+      "symbol": "undo_and_redo_go_through_the_project_and_update_the_surface"
+    },
+    {
+      "element": 986,
+      "name": "AgentiqueArchitecture::Studio::working::reopen",
+      "kind": "symbol",
+      "path": "crates/studio-native/src/studio.rs",
+      "symbol": "Studio::open_project"
+    },
+    {
+      "element": 989,
+      "name": "AgentiqueArchitecture::Studio::working::ask",
+      "kind": "symbol",
+      "path": "crates/studio-native/src/conversation.rs",
+      "symbol": "Studio::start_turn"
+    },
+    {
+      "element": 992,
+      "name": "AgentiqueArchitecture::Studio::working::read",
+      "kind": "symbol",
+      "path": "crates/studio-native/src/conversation.rs",
+      "symbol": "Studio::carry_out"
+    },
+    {
+      "element": 995,
+      "name": "AgentiqueArchitecture::Studio::working::assistantChange",
+      "kind": "symbol",
+      "path": "crates/assistant/src/tools.rs",
+      "symbol": "prepare_change"
+    },
+    {
+      "element": 998,
+      "name": "AgentiqueArchitecture::Studio::working::assistantApplied",
+      "kind": "symbol",
+      "path": "crates/studio-native/src/conversation.rs",
+      "symbol": "Studio::assistant_change_done"
+    },
+    {
+      "element": 1015,
+      "name": "AgentiqueArchitecture::Studio::working::reported",
+      "kind": "symbol",
+      "path": "crates/studio-native/src/conversation.rs",
+      "symbol": "Studio::poll_conversation"
+    },
+    {
+      "element": 1018,
+      "name": "AgentiqueArchitecture::Studio::working::approve",
+      "kind": "symbol",
+      "path": "crates/implementation/src/task.rs",
+      "symbol": "required_checks"
+    },
+    {
+      "element": 1018,
+      "name": "AgentiqueArchitecture::Studio::working::approve",
+      "kind": "symbol",
+      "path": "crates/studio-native/src/tasks.rs",
+      "symbol": "Studio::start_implementation"
+    },
+    {
+      "element": 1024,
+      "name": "AgentiqueArchitecture::Studio::working::brief",
+      "kind": "symbol",
+      "path": "crates/implementation/src/task.rs",
+      "symbol": "brief"
+    },
+    {
+      "element": 1027,
+      "name": "AgentiqueArchitecture::Studio::working::check",
+      "kind": "symbol",
+      "path": "crates/implementation/src/task.rs",
+      "symbol": "verify"
+    },
+    {
+      "element": 1027,
+      "name": "AgentiqueArchitecture::Studio::working::check",
+      "kind": "test",
+      "path": "crates/studio-native/src/tasks.rs",
+      "symbol": "stop_ends_the_checks_a_task_is_running"
+    },
+    {
+      "element": 1033,
+      "name": "AgentiqueArchitecture::Studio::working::review",
+      "kind": "symbol",
+      "path": "crates/studio-native/src/tasks.rs",
+      "symbol": "Studio::poll_task"
+    },
+    {
+      "element": 1038,
+      "name": "AgentiqueArchitecture::Studio::working::integrate",
+      "kind": "symbol",
+      "path": "crates/studio-native/src/tasks.rs",
+      "symbol": "Studio::integrate_task"
+    },
+    {
+      "element": 1038,
+      "name": "AgentiqueArchitecture::Studio::working::integrate",
+      "kind": "test",
+      "path": "crates/studio-native/src/tasks.rs",
+      "symbol": "a_fully_checked_task_passes_and_integrates"
+    },
+    {
+      "element": 1041,
+      "name": "AgentiqueArchitecture::Studio::working::notIntegrated",
+      "kind": "symbol",
+      "path": "crates/studio-native/src/tasks.rs",
+      "symbol": "Studio::integration_blocker"
+    },
+    {
+      "element": 1041,
+      "name": "AgentiqueArchitecture::Studio::working::notIntegrated",
+      "kind": "test",
+      "path": "crates/studio-native/src/tasks.rs",
+      "symbol": "a_verification_of_another_commit_is_outdated"
+    },
+    {
+      "element": 1059,
+      "name": "AgentiqueArchitecture::Assistant",
+      "kind": "crate",
+      "path": "crates/assistant"
+    },
+    {
+      "element": 1059,
+      "name": "AgentiqueArchitecture::Assistant",
+      "kind": "symbol",
+      "path": "crates/assistant/src/runtime.rs",
+      "symbol": "Runtime"
+    },
+    {
+      "element": 1059,
+      "name": "AgentiqueArchitecture::Assistant",
+      "kind": "symbol",
+      "path": "crates/assistant/src/runtime.rs",
+      "symbol": "checked"
+    },
+    {
+      "element": 1059,
+      "name": "AgentiqueArchitecture::Assistant",
+      "kind": "symbol",
+      "path": "crates/assistant/src/turn.rs",
+      "symbol": "run_with"
+    },
+    {
+      "element": 1059,
+      "name": "AgentiqueArchitecture::Assistant",
+      "kind": "test",
+      "path": "crates/assistant/tests/claude_agent.rs",
+      "symbol": "a_call_that_does_not_fit_its_schema_never_reaches_the_studio"
+    },
+    {
+      "element": 1063,
+      "name": "AgentiqueArchitecture::ClaudeAgentRuntime",
+      "kind": "config",
+      "path": "claude-agent/src/policy.ts",
+      "symbol": "sdkOptions"
+    },
+    {
+      "element": 1063,
+      "name": "AgentiqueArchitecture::ClaudeAgentRuntime",
+      "kind": "entryPoint",
+      "path": "claude-agent/src/main.ts"
+    },
+    {
+      "element": 1063,
+      "name": "AgentiqueArchitecture::ClaudeAgentRuntime",
+      "kind": "symbol",
+      "path": "crates/assistant/src/claude_agent.rs",
+      "symbol": "ClaudeAgent"
+    },
+    {
+      "element": 1063,
+      "name": "AgentiqueArchitecture::ClaudeAgentRuntime",
+      "kind": "test",
+      "path": "crates/assistant/tests/claude_agent.rs",
+      "symbol": "a_stop_ends_the_turn_and_its_waiting_call_is_not_run"
+    },
+    {
+      "element": 1063,
+      "name": "AgentiqueArchitecture::ClaudeAgentRuntime",
+      "kind": "test",
+      "path": "crates/assistant/tests/claude_agent.rs",
+      "symbol": "an_sdk_that_did_not_start_as_configured_is_stopped_before_anything_runs"
+    },
+    {
+      "element": 1063,
+      "name": "AgentiqueArchitecture::ClaudeAgentRuntime",
+      "kind": "test",
+      "path": "crates/assistant/tests/claude_agent.rs",
+      "symbol": "the_companion_gets_the_key_and_nothing_else_of_the_environment"
+    },
+    {
+      "element": 1063,
+      "name": "AgentiqueArchitecture::ClaudeAgentRuntime",
+      "kind": "test",
+      "path": "crates/assistant/tests/claude_agent.rs",
+      "symbol": "the_real_sdk_starts_with_agentiques_tools_only_and_a_refused_key_stops_it"
+    },
+    {
+      "element": 1065,
+      "name": "AgentiqueArchitecture::Providers",
+      "kind": "crate",
+      "path": "crates/providers"
+    },
+    {
+      "element": 1069,
+      "name": "AgentiqueArchitecture::Simulation",
+      "kind": "crate",
+      "path": "crates/simulation"
+    },
+    {
+      "element": 1072,
+      "name": "AgentiqueArchitecture::Implementation",
+      "kind": "crate",
+      "path": "crates/implementation"
+    },
+    {
+      "element": 1080,
+      "name": "AgentiqueArchitecture::Implementation::judging::everyRequiredCheckPassed",
+      "kind": "symbol",
+      "path": "crates/implementation/src/task.rs",
+      "symbol": "Verification::verdict"
+    },
+    {
+      "element": 1080,
+      "name": "AgentiqueArchitecture::Implementation::judging::everyRequiredCheckPassed",
+      "kind": "test",
+      "path": "crates/implementation/src/task.rs",
+      "symbol": "required_checks_are_accounted_for_one_by_one"
+    },
+    {
+      "element": 1083,
+      "name": "AgentiqueArchitecture::Implementation::judging::aRequiredCheckDidNotPass",
+      "kind": "test",
+      "path": "crates/implementation/src/task.rs",
+      "symbol": "a_check_that_did_not_pass_is_never_counted_as_a_pass"
+    },
+    {
+      "element": 1083,
+      "name": "AgentiqueArchitecture::Implementation::judging::aRequiredCheckDidNotPass",
+      "kind": "test",
+      "path": "crates/implementation/src/task.rs",
+      "symbol": "every_scenario_of_the_brief_has_an_explicit_outcome"
+    },
+    {
+      "element": 1086,
+      "name": "AgentiqueArchitecture::Execution",
+      "kind": "crate",
+      "path": "crates/execution"
+    },
+    {
+      "element": 1094,
+      "name": "AgentiqueArchitecture::Execution::running::makeWorktree",
+      "kind": "symbol",
+      "path": "crates/execution/src/git.rs",
+      "symbol": "create_worktree"
+    },
+    {
+      "element": 1097,
+      "name": "AgentiqueArchitecture::Execution::running::runChecks",
+      "kind": "symbol",
+      "path": "crates/execution/src/lib.rs",
+      "symbol": "Executor::run"
+    },
+    {
+      "element": 1097,
+      "name": "AgentiqueArchitecture::Execution::running::runChecks",
+      "kind": "test",
+      "path": "crates/execution/src/lib.rs",
+      "symbol": "a_project_command_runs_only_as_written"
+    },
+    {
+      "element": 1097,
+      "name": "AgentiqueArchitecture::Execution::running::runChecks",
+      "kind": "test",
+      "path": "crates/execution/src/lib.rs",
+      "symbol": "a_protected_path_is_protected_whatever_its_case"
+    },
+    {
+      "element": 1100,
+      "name": "AgentiqueArchitecture::Execution::running::integrate",
+      "kind": "symbol",
+      "path": "crates/execution/src/git.rs",
+      "symbol": "integrate_commit"
+    },
+    {
+      "element": 1100,
+      "name": "AgentiqueArchitecture::Execution::running::integrate",
+      "kind": "test",
+      "path": "crates/execution/src/git.rs",
+      "symbol": "exactly_the_task_commit_is_integrated_and_a_repeat_finishes_or_does_nothing"
+    },
+    {
+      "element": 1100,
+      "name": "AgentiqueArchitecture::Execution::running::integrate",
+      "kind": "test",
+      "path": "crates/execution/src/git.rs",
+      "symbol": "integration_leaves_the_operators_staged_work_alone"
+    },
+    {
+      "element": 1119,
+      "name": "AgentiqueArchitecture::Agentique",
+      "kind": "test",
+      "path": "crates/implementation/tests/dogfood.rs",
+      "symbol": "agentiques_crates_follow_its_self_model"
+    },
+    {
+      "element": 1119,
+      "name": "AgentiqueArchitecture::Agentique",
+      "kind": "test",
+      "path": "crates/implementation/tests/dogfood.rs",
+      "symbol": "agentiques_own_model_is_valid_under_its_own_core"
+    },
+    {
+      "element": 1211,
+      "name": "AgentiqueArchitecture::RenameAPart",
+      "kind": "test",
+      "path": "crates/implementation/tests/dogfood.rs",
+      "symbol": "agentiques_workflows_run_in_its_own_model_execution"
+    },
+    {
+      "element": 1106,
+      "name": "AgentiqueArchitecture::Launcher",
+      "kind": "crate",
+      "path": "crates/launcher"
+    },
+    {
+      "element": 1106,
+      "name": "AgentiqueArchitecture::Launcher",
+      "kind": "test",
+      "path": "crates/launcher/src/lib.rs",
+      "symbol": "a_manifest_says_whether_its_executables_are_the_ones_built"
+    },
+    {
+      "element": 1113,
+      "name": "AgentiqueArchitecture::Launcher::launching::startsNew",
+      "kind": "symbol",
+      "path": "crates/launcher/src/lib.rs",
+      "symbol": "start"
+    },
+    {
+      "element": 1113,
+      "name": "AgentiqueArchitecture::Launcher::launching::startsNew",
+      "kind": "test",
+      "path": "crates/launcher/src/lib.rs",
+      "symbol": "a_released_lock_lets_the_handover_go_on"
+    },
+    {
+      "element": 1116,
+      "name": "AgentiqueArchitecture::Launcher::launching::fallsBack",
+      "kind": "symbol",
+      "path": "crates/launcher/src/lib.rs",
+      "symbol": "start"
+    },
+    {
+      "element": 1116,
+      "name": "AgentiqueArchitecture::Launcher::launching::fallsBack",
+      "kind": "test",
+      "path": "crates/launcher/tests/fallback.rs",
+      "symbol": "a_build_that_does_not_start_falls_back_to_the_last_known_good_one"
+    },
+    {
+      "element": 1047,
+      "name": "AgentiqueArchitecture::Studio::working::build",
+      "kind": "symbol",
+      "path": "crates/studio-native/src/develop.rs",
+      "symbol": "Studio::build_agentique"
+    },
+    {
+      "element": 1050,
+      "name": "AgentiqueArchitecture::Studio::working::built",
+      "kind": "symbol",
+      "path": "crates/studio-native/src/develop.rs",
+      "symbol": "Studio::poll_build"
+    },
+    {
+      "element": 1053,
+      "name": "AgentiqueArchitecture::Studio::working::adopt",
+      "kind": "symbol",
+      "path": "crates/studio-native/src/develop.rs",
+      "symbol": "Studio::use_build"
+    },
+    {
+      "element": 1053,
+      "name": "AgentiqueArchitecture::Studio::working::adopt",
+      "kind": "symbol",
+      "path": "crates/studio-native/src/develop.rs",
+      "symbol": "Studio::adoption_blocker"
+    },
+    {
+      "element": 1053,
+      "name": "AgentiqueArchitecture::Studio::working::adopt",
+      "kind": "test",
+      "path": "crates/studio-native/src/develop.rs",
+      "symbol": "the_backup_keeps_the_app_datas_own_files_only"
+    },
+    {
+      "element": 1056,
+      "name": "AgentiqueArchitecture::Studio::working::running",
+      "kind": "symbol",
+      "path": "crates/studio-native/src/develop.rs",
+      "symbol": "Studio::note_recovery"
+    },
+    {
+      "element": 1103,
+      "name": "AgentiqueArchitecture::Execution::running::build",
+      "kind": "symbol",
+      "path": "crates/execution/src/git.rs",
+      "symbol": "checkout_worktree"
+    },
+    {
+      "element": 1103,
+      "name": "AgentiqueArchitecture::Execution::running::build",
+      "kind": "test",
+      "path": "crates/execution/src/git.rs",
+      "symbol": "a_worktree_at_a_commit_holds_exactly_that_commit"
+    },
+    {
+      "element": 1301,
+      "name": "AgentiqueArchitecture::ADevelopmentTask",
+      "kind": "test",
+      "path": "crates/studio-native/src/tasks.rs",
+      "symbol": "a_fully_checked_task_passes_and_integrates"
+    },
+    {
+      "element": 1337,
+      "name": "AgentiqueArchitecture::ANewBuildThatDoesNotStart",
+      "kind": "test",
+      "path": "crates/launcher/tests/fallback.rs",
+      "symbol": "a_build_that_does_not_start_falls_back_to_the_last_known_good_one"
+    },
+    {
+      "element": 1033,
+      "name": "AgentiqueArchitecture::Studio::working::review",
+      "kind": "symbol",
+      "path": "crates/studio-native/src/tasks.rs",
+      "symbol": "Studio::task_model_changes"
+    },
+    {
+      "element": 1033,
+      "name": "AgentiqueArchitecture::Studio::working::review",
+      "kind": "test",
+      "path": "crates/studio-native/src/tasks.rs",
+      "symbol": "a_tasks_model_changes_are_reviewed_and_integrated_with_its_code"
+    },
+    {
+      "element": 1041,
+      "name": "AgentiqueArchitecture::Studio::working::notIntegrated",
+      "kind": "test",
+      "path": "crates/studio-native/src/tasks.rs",
+      "symbol": "a_task_commit_that_changes_a_locked_element_is_refused"
+    },
+    {
+      "element": 1059,
+      "name": "AgentiqueArchitecture::Assistant",
+      "kind": "symbol",
+      "path": "crates/assistant/src/worker.rs",
+      "symbol": "Worker::with_model"
+    },
+    {
+      "element": 1038,
+      "name": "AgentiqueArchitecture::Studio::working::integrate",
+      "kind": "symbol",
+      "path": "crates/studio-native/src/tasks.rs",
+      "symbol": "Studio::locked_code"
+    },
+    {
+      "element": 1038,
+      "name": "AgentiqueArchitecture::Studio::working::integrate",
+      "kind": "test",
+      "path": "crates/studio-native/src/tasks.rs",
+      "symbol": "changing_the_code_of_a_locked_part_asks_at_integration"
+    },
+    {
+      "element": 1047,
+      "name": "AgentiqueArchitecture::Studio::working::build",
+      "kind": "test",
+      "path": "crates/studio-native/src/develop.rs",
+      "symbol": "a_build_is_made_from_exactly_one_commit_with_its_manifest"
+    },
+    {
+      "element": 1063,
+      "name": "AgentiqueArchitecture::ClaudeAgentRuntime",
+      "kind": "config",
+      "path": "claude-agent"
+    },
+    {
+      "element": 1063,
+      "name": "AgentiqueArchitecture::ClaudeAgentRuntime",
+      "kind": "symbol",
+      "path": "crates/assistant/src/runtime.rs",
+      "symbol": "checked"
+    },
+    {
+      "element": 1072,
+      "name": "AgentiqueArchitecture::Implementation",
+      "kind": "symbol",
+      "path": "crates/studio-native/src/tasks.rs",
+      "symbol": "Studio::integrate_task"
+    },
+    {
+      "element": 1072,
+      "name": "AgentiqueArchitecture::Implementation",
+      "kind": "symbol",
+      "path": "crates/studio-native/src/tasks.rs",
+      "symbol": "Studio::task_model_changes"
+    },
+    {
+      "element": 1072,
+      "name": "AgentiqueArchitecture::Implementation",
+      "kind": "symbol",
+      "path": "crates/assistant/src/worker.rs",
+      "symbol": "Worker::model_tool"
+    },
+    {
+      "element": 1106,
+      "name": "AgentiqueArchitecture::Launcher",
+      "kind": "symbol",
+      "path": "crates/studio-native/src/develop.rs",
+      "symbol": "Studio::use_build"
+    }
+  ],
+  "protected": [
+    ".github",
+    "Agentique-Specification-v0.1.html",
+    "KerML.pdf",
+    "SysAPI.pdf",
+    "SysML.pdf",
+    "standards",
+    "tools/check_architecture.py"
+  ]
+}

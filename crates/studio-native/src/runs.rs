@@ -158,7 +158,7 @@ pub struct RunsState {
     /// Which kind of step the Run panel's "Add" offers.
     pub adding: usize,
     /// The Assistant waits for the run in progress (`run_scenario`).
-    assistant: Option<std::sync::mpsc::Sender<agq_assistant::ToolResult>>,
+    pub(crate) assistant: Option<std::sync::mpsc::Sender<agq_assistant::ToolResult>>,
 }
 
 impl RunsState {
@@ -790,6 +790,12 @@ impl Studio {
                     )),
                 };
                 let _ = reply.send(answer);
+            }
+            StudioRequest::Explain { element } => {
+                let _ = reply.send(match self.explain(element) {
+                    Some(text) => ToolResult::answer(text),
+                    None => ToolResult::error("Only a part def or a part can be explained."),
+                });
             }
             StudioRequest::ReadCodeLinks { element } => {
                 let _ = reply.send(match self.describe_links(element) {

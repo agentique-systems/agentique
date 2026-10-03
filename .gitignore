@@ -1,5 +1,6 @@
 /target/
 /node_modules/
+/claude-agent/node_modules/
 /console/dist/
 /.workspaces/
 /.cache/

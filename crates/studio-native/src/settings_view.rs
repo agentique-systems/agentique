@@ -126,6 +126,8 @@ fn choice_label(choice: &str) -> String {
         "on" => "On".into(),
         "off" => "Off".into(),
         "" => "Automatic".into(),
+        "loop" => "Agentique".into(),
+        "claude-agent" => "Claude Agent".into(),
         other => other.to_string(),
     }
 }
@@ -257,9 +259,7 @@ impl SettingsView {
             if studio.settings.set(id, value).is_ok() {
                 match id.split('.').next() {
                     Some("appearance") => studio.apply_appearance(),
-                    Some("assistant") => studio
-                        .conversation
-                        .use_choice(studio.settings.model_choice()),
+                    Some("assistant") => studio.apply_runtime_choice(),
                     _ => {}
                 }
             }
@@ -631,6 +631,397 @@ fn row(
         )
 }
 
+impl SettingsView {
+    /// The Claude Agent runtime: what it is, whether it is ready, and the
+    /// Install and Check actions (ROADMAP §4.7).
+    fn runtime_card(&mut self, query: Option<&str>, cx: &mut Context<Self>) -> Option<AnyElement> {
+        const TITLE: &str = "Claude Agent runtime";
+        const ABOUT: &str = "The Claude Agent SDK runs the Assistant's loop in a companion process, with Agentique's tools only: every model change still goes through the System State, every command through Execution, and every approval through you. Anthropic only; it needs Node.js and an Anthropic API key.";
+        if query
+            .is_some_and(|q| !matches(q, &[TITLE, ABOUT, "sdk", "node", "install", "claude agent"]))
+        {
+            return None;
+        }
+        let theme = cx.theme().clone();
+        let studio = self.studio.read(cx);
+        let busy = studio.runtime.work.is_some();
+        let installing = studio.installing_runtime();
+        let message = studio.runtime.message.clone();
+        let confirm = studio.runtime.confirm_install;
+        let safe_mode = studio.safe_mode;
+        let key = agq_providers::key_status(Provider::Anthropic);
+        let lines = studio
+            .runtime
+            .health
+            .as_ref()
+            .map(|h| h.lines(&key))
+            .unwrap_or_default();
+        let studio_entity = self.studio.clone();
+        let act = move |f: fn(&mut Studio)| {
+            let studio = studio_entity.clone();
+            move |_: &ClickEvent, _: &mut Window, cx: &mut App| studio.act(cx, f)
+        };
+        let mut rows: Vec<AnyElement> = vec![
+            div()
+                .px(r(16.0))
+                .py(r(12.0))
+                .flex()
+                .flex_col()
+                .gap(r(6.0))
+                .child(
+                    div()
+                        .text_size(r(theme::text::SM))
+                        .line_height(r(17.0))
+                        .text_color(theme.text_muted)
+                        .child(highlighted(ABOUT, query, cx)),
+                )
+                .child(
+                    div()
+                        .text_size(r(theme::text::SM))
+                        .line_height(r(17.0))
+                        .text_color(theme.text_muted)
+                        .child("These controls decide which tools the agent can call. They are not an operating-system sandbox: the runtime runs with your rights and reaches Anthropic's API."),
+                )
+                .into_any_element(),
+        ];
+        if safe_mode {
+            rows.push(
+                div()
+                    .px(r(16.0))
+                    .py(r(8.0))
+                    .child(ui::inline_message(
+                        Tone::Warning,
+                        "Agentique started in safe mode: the Claude Agent runtime is not used until it starts normally.",
+                        cx,
+                    ))
+                    .into_any_element(),
+            );
+        }
+        if !lines.is_empty() {
+            rows.push(
+                div()
+                    .px(r(16.0))
+                    .py(r(10.0))
+                    .flex()
+                    .flex_col()
+                    .gap(r(6.0))
+                    .children(lines.into_iter().map(|(fine, text)| {
+                        div()
+                            .flex()
+                            .items_start()
+                            .gap(r(8.0))
+                            .child(
+                                icon(if fine {
+                                    IconName::Check
+                                } else {
+                                    IconName::Warning
+                                })
+                                .size(14.0)
+                                .color(if fine {
+                                    theme.success.text
+                                } else {
+                                    theme.warning.text
+                                }),
+                            )
+                            .child(
+                                div()
+                                    .flex_1()
+                                    .min_w_0()
+                                    .text_size(r(theme::text::SM))
+                                    .line_height(r(17.0))
+                                    .child(text),
+                            )
+                    }))
+                    .into_any_element(),
+            );
+        }
+        if let Some(message) = message {
+            rows.push(
+                div()
+                    .px(r(16.0))
+                    .py(r(8.0))
+                    .child(ui::inline_message(Tone::Neutral, message, cx))
+                    .into_any_element(),
+            );
+        }
+        let mut actions = div()
+            .px(r(16.0))
+            .py(r(12.0))
+            .flex()
+            .items_center()
+            .gap(r(8.0));
+        if confirm {
+            actions = actions
+                .child(
+                    div()
+                        .flex_1()
+                        .min_w_0()
+                        .text_size(r(theme::text::SM))
+                        .child(format!(
+                            "Download the Claude Agent SDK {} and its Claude Code binary (about 300 MB) from the npm registry into {}?",
+                            agq_assistant::claude_agent::SDK_VERSION,
+                            agq_assistant::claude_agent::Installation::default_root().display()
+                        )),
+                )
+                .child(
+                    Button::new("runtime-install-confirm", "Download and install")
+                        .primary()
+                        .on_click(act(|studio| studio.install_runtime())),
+                )
+                .child(Button::new("runtime-install-cancel", "Cancel").on_click(act(|studio| {
+                    studio.runtime.confirm_install = false;
+                    studio.mark(Dirty::LAYOUT);
+                })));
+        } else if installing {
+            actions = actions.child(div().flex_1()).child(
+                Button::new("runtime-install-stop", "Cancel the installation")
+                    .on_click(act(|studio| studio.cancel_runtime_install())),
+            );
+        } else {
+            actions = actions
+                .child(div().flex_1())
+                .child(
+                    Button::new("runtime-check", "Check")
+                        .disabled(busy)
+                        .on_click(act(|studio| studio.check_runtime())),
+                )
+                .child(
+                    Button::new("runtime-install", "Install…")
+                        .disabled(busy)
+                        .on_click(act(|studio| {
+                            studio.runtime.confirm_install = true;
+                            studio.mark(Dirty::LAYOUT);
+                        })),
+                );
+        }
+        rows.push(actions.into_any_element());
+        Some(group(Some(TITLE), rows, cx).into_any_element())
+    }
+}
+
+impl SettingsView {
+    /// Agentique's own builds (C-51, ROADMAP §4.15): this version, building
+    /// the repository's commit, trying a build as a test instance, using one
+    /// (the launcher takes over and falls back if it does not start), and
+    /// how to recover.
+    fn builds_card(&mut self, cx: &mut Context<Self>) -> AnyElement {
+        let theme = cx.theme().clone();
+        let studio = self.studio.read(cx);
+        let running = studio.running_build();
+        let repository = studio.agentique_repository();
+        let head = repository
+            .as_ref()
+            .and_then(|r| agq_execution::git::head(r).ok())
+            .map(|h| h.commit);
+        let building = studio.develop.work.is_some();
+        let message = studio.develop.message.clone();
+        let recovered = studio.develop.recovered.clone();
+        let confirm = studio.develop.confirm_use.clone();
+        let root = studio.builds_root();
+        let builds: Vec<(agq_launcher::Entry, Option<String>)> = studio
+            .builds()
+            .map(|r| r.builds)
+            .unwrap_or_default()
+            .into_iter()
+            .take(8)
+            .map(|entry| {
+                let blocker = studio.adoption_blocker(&entry.id);
+                (entry, blocker)
+            })
+            .collect();
+        let entity = self.studio.clone();
+        let act = move |f: Box<dyn Fn(&mut Studio)>| {
+            let studio = entity.clone();
+            move |_: &ClickEvent, _: &mut Window, cx: &mut App| studio.act(cx, |s| f(s))
+        };
+        let text = |t: String| {
+            div()
+                .text_size(r(theme::text::SM))
+                .line_height(r(17.0))
+                .text_color(theme.text_secondary)
+                .child(t)
+        };
+        let mut rows: Vec<AnyElement> = vec![
+            div()
+                .px(r(16.0))
+                .py(r(12.0))
+                .flex()
+                .flex_col()
+                .gap(r(4.0))
+                .child(div().font_weight(theme::MEDIUM).child(match &running {
+                    Some(id) => format!("This version: build {id}"),
+                    None => "This version was built outside Agentique (not from its builds).".to_string(),
+                }))
+                .child(text(
+                    "Build the repository's integrated commit, try the build as a test instance with its own data, then use it: Agentique restarts in it, and returns to the last known good version if it does not start.".into(),
+                ))
+                .into_any_element(),
+        ];
+        if let Some((failed, reason)) = recovered {
+            rows.push(
+                div()
+                    .px(r(16.0))
+                    .py(r(8.0))
+                    .child(ui::inline_message(
+                        Tone::Warning,
+                        format!("The build {failed} did not start ({reason}); this is the last known good version."),
+                        cx,
+                    ))
+                    .into_any_element(),
+            );
+        }
+        if let Some(message) = message {
+            rows.push(
+                div()
+                    .px(r(16.0))
+                    .py(r(8.0))
+                    .child(ui::inline_message(Tone::Neutral, message, cx))
+                    .into_any_element(),
+            );
+        }
+        let mut actions = div()
+            .px(r(16.0))
+            .py(r(10.0))
+            .flex()
+            .items_center()
+            .gap(r(8.0))
+            .child(div().flex_1());
+        if running.is_none() {
+            actions = actions.child(
+                Button::new("builds-keep", "Keep this version to return to")
+                    .tooltip("Copies this running Agentique into the builds folder as the last known good version", None)
+                    .on_click(act(Box::new(|s: &mut Studio| {
+                        s.develop.message = Some(match s.keep_this_version() {
+                            Ok(id) => format!("Kept this version as {id}."),
+                            Err(why) => format!("Not kept: {why}"),
+                        });
+                        s.mark(Dirty::LAYOUT);
+                    }))),
+            );
+        }
+        actions = if building {
+            actions.child(
+                Button::new("builds-stop", "Stop the build")
+                    .on_click(act(Box::new(|s: &mut Studio| s.cancel_build()))),
+            )
+        } else {
+            actions.child(
+                Button::new(
+                    "builds-build",
+                    match &head {
+                        Some(commit) => format!("Build {}", &commit[..commit.len().min(10)]),
+                        None => "Build".to_string(),
+                    },
+                )
+                .primary()
+                .disabled(repository.is_none())
+                .tooltip(
+                    "A release build of the repository's current commit, in a worktree of its own",
+                    None,
+                )
+                .on_click(act(Box::new(|s: &mut Studio| s.build_agentique()))),
+            )
+        };
+        rows.push(actions.into_any_element());
+        for (index, (entry, blocker)) in builds.into_iter().enumerate() {
+            let id = entry.id.clone();
+            let state = match &entry.state {
+                agq_launcher::State::Built => "built".to_string(),
+                agq_launcher::State::Started => "started".to_string(),
+                agq_launcher::State::Failed { reason } => format!("did not start: {reason}"),
+            };
+            let current = running.as_deref() == Some(id.as_str());
+            let asking = confirm.as_deref() == Some(id.as_str());
+            let try_id = id.clone();
+            let use_id = id.clone();
+            let mut row = div()
+                .id(("build-row", index))
+                .px(r(16.0))
+                .py(r(8.0))
+                .flex()
+                .items_center()
+                .gap(r(10.0))
+                .child(
+                    div()
+                        .flex_1()
+                        .min_w_0()
+                        .flex()
+                        .flex_col()
+                        .child(
+                            div()
+                                .font_family(theme::MONO)
+                                .text_size(r(theme::text::SM))
+                                .child(id.clone()),
+                        )
+                        .child(
+                            div()
+                                .text_size(r(theme::text::XS))
+                                .text_color(theme.text_muted)
+                                .child(format!(
+                                    "{} · {}{}",
+                                    if entry.commit.is_empty() {
+                                        "built outside Agentique".to_string()
+                                    } else {
+                                        format!(
+                                            "commit {}",
+                                            &entry.commit[..entry.commit.len().min(10)]
+                                        )
+                                    },
+                                    state,
+                                    if current { " · running now" } else { "" }
+                                )),
+                        ),
+                );
+            if !current {
+                row = row
+                    .child(
+                        Button::new(("build-try", index), "Try")
+                            .small()
+                            .tooltip("Start it as a test instance: its own data, on its own copy of the repository", None)
+                            .on_click(act(Box::new(move |s: &mut Studio| s.try_build(&try_id)))),
+                    )
+                    .child(if asking {
+                        let id = use_id.clone();
+                        Button::new(("build-use-confirm", index), "Restart in it")
+                            .small()
+                            .primary()
+                            .tooltip("Saves your session and project, backs up the app data, and restarts Agentique in this build through the launcher", None)
+                            .on_click(act(Box::new(move |s: &mut Studio| {
+                                if let Err(why) = s.use_build(&id) {
+                                    s.develop.message = Some(why);
+                                }
+                                s.develop.confirm_use = None;
+                                s.mark(Dirty::LAYOUT);
+                            })))
+                    } else {
+                        let id = use_id.clone();
+                        Button::new(("build-use", index), "Use this build…")
+                            .small()
+                            .disabled(blocker.is_some())
+                            .tooltip(blocker.clone().unwrap_or_else(|| "Restart Agentique in this build".into()), None)
+                            .on_click(act(Box::new(move |s: &mut Studio| {
+                                s.develop.confirm_use = Some(id.clone());
+                                s.mark(Dirty::LAYOUT);
+                            })))
+                    });
+            }
+            rows.push(row.into_any_element());
+        }
+        rows.push(
+            div()
+                .px(r(16.0))
+                .py(r(10.0))
+                .child(text(format!(
+                    "If a build does not start, the launcher returns to the last known good one by itself. To start that one by hand, in safe mode (without the Claude Agent runtime): {} --recover. Its log: {}.",
+                    root.join(agq_launcher::LAUNCHER).display(),
+                    root.join("launcher.log").display()
+                )))
+                .into_any_element(),
+        );
+        group(Some("Builds"), rows, cx).into_any_element()
+    }
+}
+
 /// A card of rows separated by hairlines.
 fn group(title: Option<&'static str>, rows: Vec<AnyElement>, cx: &App) -> impl IntoElement {
     let theme = cx.theme();
@@ -897,7 +1288,7 @@ impl SettingsView {
         let models = state.models.clone();
         let note = match provider {
             Provider::Anthropic => Some(
-                "The Assistant reads Anthropic's key from ANTHROPIC_API_KEY until Anthropic moves onto the provider layer (W5.7); a key saved here is tested and kept for then.",
+                "The Claude Agent runtime uses the key saved here. Agentique's own loop reads Anthropic's key from ANTHROPIC_API_KEY until Anthropic moves onto the provider layer (W5.7).",
             ),
             Provider::TypeSafe => Some(
                 "Jev answers typed questions for fast agents; it is never the Assistant's model.",
@@ -1260,11 +1651,20 @@ impl Render for SettingsView {
                     (!cards.is_empty()).then(|| div().flex().flex_col().gap(r(12.0)).children(cards).into_any_element())
                 }
                 Section::Assistant => {
-                    let rows: Vec<AnyElement> = ["assistant.provider", "assistant.model", "assistant.effort", "assistant.showCost"]
+                    let rows: Vec<AnyElement> = ["assistant.runtime", "assistant.provider", "assistant.model", "assistant.effort", "assistant.showCost"]
                         .into_iter()
                         .filter_map(|id| self.setting_row(id, query, window, cx))
                         .collect();
-                    (!rows.is_empty()).then(|| group(None, rows, cx).into_any_element())
+                    let card = self.runtime_card(query, cx);
+                    (!rows.is_empty() || card.is_some()).then(|| {
+                        div()
+                            .flex()
+                            .flex_col()
+                            .gap(r(16.0))
+                            .when(!rows.is_empty(), |this| this.child(group(None, rows, cx)))
+                            .children(card)
+                            .into_any_element()
+                    })
                 }
                 Section::Appearance => {
                     let rows: Vec<AnyElement> = ["appearance.theme", "appearance.uiScale", "appearance.reducedMotion"]
@@ -1419,7 +1819,7 @@ impl Render for SettingsView {
                                                             view.studio.act(cx, |studio| {
                                                                 if studio.settings.reset_all() {
                                                                     studio.apply_appearance();
-                                                                    studio.conversation.use_choice(studio.settings.model_choice());
+                                                                    studio.apply_runtime_choice();
                                                                 }
                                                                 studio.mark(Dirty::ALL);
                                                             });
@@ -1443,7 +1843,7 @@ impl Render for SettingsView {
                     )
                 }
                 Section::About => Some(
-                    group(
+                    div().flex().flex_col().gap(r(16.0)).child(group(
                         None,
                         vec![
                             div().px(r(16.0)).py(r(12.0)).flex().flex_col().gap(r(4.0))
@@ -1458,7 +1858,8 @@ impl Render for SettingsView {
                                 .into_any_element(),
                         ],
                         cx,
-                    )
+                    ))
+                    .child(self.builds_card(cx))
                     .into_any_element(),
                 ),
             };

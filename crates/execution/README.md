@@ -1,7 +1,7 @@
 # agq-execution
 
 Execution (ROADMAP §4.15; part `Execution` in
-`models/agentique/Agentique.sysml`): every side effect outside the System
+`model/Agentique.sysml`): every side effect outside the System
 State, as typed operations with a scope. It depends on no other part of
 Agentique.
 
@@ -18,9 +18,12 @@ let finished = executor.run(&Program::cargo(&["test", "--offline"]), "", timeout
   under the allowed paths (an empty entry: anywhere in the root, as for a
   task's worktree) and never under protected ones (contract tests,
   scenarios, evaluation cases, the model folder), so a task cannot make a
-  failing check pass by weakening it.
-- **Commands.** Cargo only, and only `build`, `check`, `test`, `run`,
-  `metadata`; no `--config`, toolchain overrides or manifest redirection.
+  failing check pass by weakening it. Protected paths are compared without
+  regard to case, as written and as they resolve on disk (W10.1).
+- **Commands.** Cargo's `build`, `check`, `test`, `run`, `metadata`, `fmt`
+  and `clippy`, with no `--config`, `-Z`, toolchain overrides or manifest
+  redirection in any spelling; and a project's own check commands, exactly
+  as the Operator allowed them (`Executor::allow`), nothing else.
   The environment is rebuilt from a short list (PATH, temporary folders,
   Cargo and rustup homes, ...) and anything that looks like a key, token,
   secret, password or credential is dropped. Cargo runs offline unless the
@@ -30,9 +33,14 @@ let finished = executor.run(&Program::cargo(&["test", "--offline"]), "", timeout
   sandbox. Nothing runs unless the Operator turned trusted-local execution on
   for the project. A worktree isolates edits, not processes.
 - **Git** (`git`): a task's worktree on its own branch from a base commit;
-  the patch it made; integration that refuses when the head moved or when a
-  patched file has uncommitted changes, and never touches other uncommitted
-  work. Uses the same embedded git as History, without network features.
+  the task commit (`commit_worktree`) and its patch (`patch_of`);
+  integration of exactly that commit (`integrate_commit`): refused when the
+  branch moved, when a file the commit changes has uncommitted or staged
+  changes, or when it changes a protected path; only the commit's files are
+  written, everything else staged or not stays as it was, and the branch
+  moves to the reviewed commit itself. Running it again after an
+  interruption finishes it; after it is done, does nothing. Uses the same
+  embedded git as History, without network features.
 - **Jobs** (`jobs`): stable ids, states (pending, running, waiting for you,
   done, failed, refused, cancelled, interrupted) and a journal written before
   and after each side effect. Opening a project marks jobs left running as

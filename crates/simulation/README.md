@@ -1,7 +1,7 @@
 # agq-simulation
 
 Simulation (ROADMAP §4.14; part `Simulation` in
-`models/agentique/Agentique.sysml`): scenarios run over a fixed snapshot of
+`model/Agentique.sysml`): scenarios run over a fixed snapshot of
 the model, with results that say what actually ran. It depends on the
 language core only: it never changes the System State and never reaches a
 provider, a process or the network by itself.

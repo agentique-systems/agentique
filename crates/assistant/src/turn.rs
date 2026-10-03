@@ -361,9 +361,10 @@ pub enum BackgroundEvent {
 }
 
 impl BackgroundTurn {
-    /// Starts a turn on a new thread with its own copy of the conversation.
+    /// Starts a turn on a new thread with its own copy of the conversation,
+    /// run by `runtime` with the Assistant's tools.
     pub fn start(
-        mut model: Box<dyn Model + Send>,
+        mut runtime: Box<dyn crate::Runtime>,
         mut conversation: Conversation,
     ) -> BackgroundTurn {
         let (sender, events) = mpsc::channel();
@@ -399,10 +400,15 @@ impl BackgroundTurn {
             let mut on_event = |event| {
                 let _ = turn_events.send(BackgroundEvent::Turn(event));
             };
+            let toolset = Toolset::assistant();
+            // Whatever runtime made a call, its input is checked here before
+            // the Studio sees it.
+            let mut execute = crate::runtime::checked(&toolset.definitions, &mut execute);
             let finished = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                run(
-                    model.as_mut(),
+                runtime.run(
                     &mut conversation,
+                    &toolset,
+                    MAX_MODEL_CALLS,
                     &mut execute,
                     &mut on_event,
                     &flag,

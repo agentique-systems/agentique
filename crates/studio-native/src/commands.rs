@@ -37,6 +37,7 @@ pub enum CommandId {
     History,
     NewProject,
     OpenProject,
+    DevelopAgentique,
     Palette,
     Theme,
     Contrast,
@@ -304,6 +305,13 @@ pub const COMMANDS: &[Command] = &[
         shortcut: "Ctrl+O",
         description: "Open a project folder",
         key: Some("ctrl-o"),
+    },
+    Command {
+        id: CommandId::DevelopAgentique,
+        label: "Develop Agentique",
+        shortcut: "",
+        description: "Open Agentique's own repository as a project: its architecture, workflows, code and checks",
+        key: None,
     },
     Command {
         id: CommandId::Palette,

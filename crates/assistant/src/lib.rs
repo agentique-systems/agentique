@@ -16,16 +16,22 @@
 //!   tests.
 //! - [`worker`]: an implementation worker, the same loop with code tools
 //!   in one worktree (C-50).
+//! - [`runtime`]: what runs a turn ([`Runtime`]): the loop above over a
+//!   model ([`LoopRuntime`]), or [`claude_agent`]: the Claude Agent SDK's
+//!   loop in a companion process, with Agentique's tools only (C-51).
 #![forbid(unsafe_code)]
 
 pub mod choice;
 pub mod claude;
+pub mod claude_agent;
 pub mod conversation;
 pub mod model;
 pub mod provider_model;
+pub mod runtime;
 pub mod skills;
 pub mod sysml_text;
 pub mod tools;
+pub use tools::phase;
 pub mod turn;
 pub mod worker;
 
@@ -34,6 +40,7 @@ pub use claude::ClaudeModel;
 pub use conversation::{ChangeSummary, Conversation, Entry, ToolResult};
 pub use model::{Model, ModelError, Reply, Request, ScriptedModel, StreamEvent, Usage};
 pub use provider_model::ProviderModel;
+pub use runtime::{LoopRuntime, Runtime};
 pub use skills::system_prompt;
 pub use tools::Prepared;
 pub use turn::{BackgroundEvent, BackgroundTurn, ToolCall, TurnEvent};

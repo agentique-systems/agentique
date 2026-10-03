@@ -1,7 +1,7 @@
 # agq-system-state
 
 The System State: the live, authoritative model of one project
-(ROADMAP §4.1, part `SystemState` in `models/agentique/Agentique.sysml`).
+(ROADMAP §4.1, part `SystemState` in `model/Agentique.sysml`).
 It holds an `agq-language` element tree, and the Surface and the Assistant
 change it through the same typed operations (ROADMAP §4.2).
 
@@ -10,7 +10,7 @@ let mut state = SystemState::new(tree, locks);
 let event = state.apply(Change::new(Actor::Operator, "Rename the store", vec![
     Operation::Rename { element: store, name: "Warehouse".into() },
 ]))?;
-// event.created / updated / deleted name the elements to redraw.
+// event.created / updated / deleted name the elements the change touched.
 state.undo();
 ```
 
@@ -33,7 +33,9 @@ state.undo();
   every change made after a revision, such as the Assistant's work (R-12).
 - **Stale changes**: `Change::with_base(revision)` rejects the change if the
   model moved on after it was prepared.
-- **Change events**: every apply, undo, redo and load returns a `ChangeEvent`.
+- **Change events**: every apply, undo, redo and load returns a `ChangeEvent`
+  to its caller (nothing subscribes). The Studio uses it to highlight and
+  frame what changed, and builds its scene input from the tree.
 
 One edit on a 2,000-element model (apply, relink, validate, event) takes
 about 47 ms in a debug build and 8 ms in release (`tests/performance.rs`).

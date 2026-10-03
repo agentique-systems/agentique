@@ -40,6 +40,12 @@
   not pass. When a check fails, read why, find the element, and propose a
   fix to the model or the scenario; do not weaken a check to make it pass
   unless the Operator agrees the check was wrong.
+- To explain a part (what it is and why, what it owns, its contract, what
+  it may use and what depends on it, where it is implemented and tested,
+  what covers it and what changing it affects), use `explain_element`: it
+  answers from the model and its links, as the Inspector does, and says
+  where they say nothing. Cite the qualified names and code locations it
+  gives; never fill a gap with a guess.
 - The code: `read_code_links` shows which files implement, define or test
   which elements, and the drift the newest checks found;
   `check_implementation` runs module boundaries, contract shapes and the

@@ -105,7 +105,7 @@ fn a_worker_implements_links_and_finishes_and_the_studio_verifies() {
         cancel.clone(),
     );
     let code = "//! Jobs.\n\n/// Jobs::Priority\n#[derive(Clone, Copy, Debug, PartialEq, Eq)]\npub enum Priority {\n    Low,\n    High,\n}\n\n/// Jobs::Job\n#[derive(Clone, Debug, PartialEq)]\npub struct Job {\n    pub size: i64,\n    pub priority: Priority,\n}\n";
-    let mut model = ScriptedModel::new([
+    let model = ScriptedModel::new([
         reply(vec![tool("t1", worker::LIST_FILES, json!({}))]),
         reply(vec![
             tool(
@@ -151,7 +151,7 @@ fn a_worker_implements_links_and_finishes_and_the_studio_verifies() {
     ]);
     let mut results = Vec::new();
     let conversation = worker::run_worker(
-        &mut model,
+        &mut agq_assistant::LoopRuntime(Box::new(model)),
         &mut w,
         &mut |event| {
             if let agq_assistant::TurnEvent::ToolFinished(result) = event {
@@ -177,11 +177,17 @@ fn a_worker_implements_links_and_finishes_and_the_studio_verifies() {
     assert_eq!(w.proposed.len(), 3);
     let checks = &results[7];
     assert!(
-        checks.content.contains("Build: it builds."),
+        checks.content.contains("- Build: passed."),
         "{}",
         checks.content
     );
-    assert!(checks.content.contains("0 failing"), "{}", checks.content);
+    assert!(
+        checks
+            .content
+            .contains("Passed: every one of the 4 required check(s) passed."),
+        "{}",
+        checks.content
+    );
     assert_eq!(w.summary.as_deref(), Some("Job and Priority, checked."));
     // The Studio verifies the working copy itself.
     let verified = verify(
@@ -275,10 +281,10 @@ fn a_wrong_contract_goes_back_to_the_operator_and_repair_is_bounded() {
         json!({ "path": "src/lib.rs", "text": "late" }),
     )]));
     script.push(reply(vec![json!({ "type": "text", "text": "Stopped." })]));
-    let mut model = ScriptedModel::new(script);
+    let model = ScriptedModel::new(script);
     let mut results = Vec::new();
     worker::run_worker(
-        &mut model,
+        &mut agq_assistant::LoopRuntime(Box::new(model)),
         &mut w,
         &mut |event| {
             if let agq_assistant::TurnEvent::ToolFinished(result) = event {
@@ -312,5 +318,103 @@ fn a_wrong_contract_goes_back_to_the_operator_and_repair_is_bounded() {
     assert_eq!(
         std::fs::read_to_string(worktree.path.join("src/lib.rs")).unwrap(),
         wrong
+    );
+}
+
+/// The coding tools (W10.4): a search, a ranged read, an exact edit (refused
+/// when the passage is not unique, and on a protected path in any
+/// spelling), and one allowed program for diagnostics (another is refused).
+#[test]
+fn the_coding_tools_search_read_ranges_edit_exactly_and_run_only_allowed_programs() {
+    let (_folder, _repo, worktree) = repository("tools");
+    std::fs::write(
+        worktree.path.join("src/lib.rs"),
+        "//! Jobs.\npub fn size() -> u32 { 1 }\npub fn other() -> u32 { 1 }\n",
+    )
+    .unwrap();
+    let tree = tree();
+    let element = tree.find("Jobs::Worker").unwrap();
+    let mut brief = brief(&tree, &Links::default(), element, "").unwrap();
+    brief.protected.push("README.md".into());
+    let target = worktree.path.join("../target");
+    let cancel = Arc::new(AtomicBool::new(false));
+    let mut w = Worker::new(
+        tree,
+        Links::default(),
+        brief.clone(),
+        executor(&worktree.path, &brief.protected, &target),
+        cancel,
+    );
+    let call = |name: &str, input: Value| agq_assistant::turn::ToolCall {
+        id: "x".into(),
+        name: name.into(),
+        input,
+    };
+    let found = w.execute(&call(worker::SEARCH_CODE, json!({ "text": "pub fn" })));
+    assert!(
+        found.content.contains("src/lib.rs:2: pub fn size()"),
+        "{}",
+        found.content
+    );
+    assert!(found.content.contains("src/lib.rs:3:"), "{}", found.content);
+    let range = w.execute(&call(
+        worker::READ_CODE,
+        json!({ "path": "src/lib.rs", "from_line": 2, "to_line": 2 }),
+    ));
+    assert!(
+        range.content.contains("    2 pub fn size()"),
+        "{}",
+        range.content
+    );
+    assert!(!range.content.contains("other"), "{}", range.content);
+    // Not unique: refused, nothing changed.
+    let ambiguous = w.execute(&call(
+        worker::EDIT_CODE,
+        json!({ "path": "src/lib.rs", "old_text": "{ 1 }", "new_text": "{ 2 }" }),
+    ));
+    assert!(
+        ambiguous.is_error && ambiguous.content.contains("occurs 2 times"),
+        "{}",
+        ambiguous.content
+    );
+    let edited = w.execute(&call(
+        worker::EDIT_CODE,
+        json!({ "path": "src/lib.rs", "old_text": "size() -> u32 { 1 }", "new_text": "size() -> u32 { 2 }" }),
+    ));
+    assert!(!edited.is_error, "{}", edited.content);
+    assert!(
+        std::fs::read_to_string(worktree.path.join("src/lib.rs"))
+            .unwrap()
+            .contains("size() -> u32 { 2 }")
+    );
+    // A protected path, in another spelling: refused.
+    let protected = w.execute(&call(
+        worker::EDIT_CODE,
+        json!({ "path": "readme.MD", "old_text": "Protected.", "new_text": "Weakened." }),
+    ));
+    assert!(
+        protected.is_error && protected.content.contains("protected"),
+        "{}",
+        protected.content
+    );
+    let written = w.execute(&call(
+        worker::WRITE_CODE,
+        json!({ "path": "README.md", "text": "Weakened." }),
+    ));
+    assert!(written.is_error, "{}", written.content);
+    // An allowed program runs; another is refused.
+    let version = w.execute(&call(
+        worker::RUN_PROGRAM,
+        json!({ "program": ["cargo", "--version"] }),
+    ));
+    assert!(version.content.contains("succeeded"), "{}", version.content);
+    let shell = w.execute(&call(
+        worker::RUN_PROGRAM,
+        json!({ "program": ["cmd", "/c", "dir"] }),
+    ));
+    assert!(
+        shell.is_error && shell.content.contains("not a command this task may run"),
+        "{}",
+        shell.content
     );
 }

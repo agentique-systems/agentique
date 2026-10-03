@@ -1,5 +1,5 @@
 //! Implementation (ROADMAP §4.15; part `Implementation` in
-//! `models/agentique/Agentique.sysml`): what the model says about code.
+//! `model/Agentique.sysml`): what the model says about code.
 //!
 //! - [`links`]: implementation links in `model/links.json`, by element
 //!   identity, many to many; model to code and code to model.
@@ -10,8 +10,11 @@
 //!   project's harness, with the same step interpreter and checks as model
 //!   execution.
 //! - [`rust`]: just enough reading of Rust source for those checks.
-//! - [`task`]: an implementation task's brief, from the model, and the
-//!   verification of a working copy the worker and the Studio both run.
+//! - [`task`]: an implementation task's brief, from the model, its required
+//!   checks, and the verification of a working copy the worker and the
+//!   Studio both run.
+//! - [`responsibility`]: a part as the Operator and the Assistant read it
+//!   (purpose, what it owns, contract, dependencies, code, checks, impact).
 //! - [`CheckReport`]: a set of check results with the code and model they
 //!   saw, kept with the run results in the app's data.
 //!
@@ -21,6 +24,7 @@
 pub mod checks;
 pub mod harness;
 pub mod links;
+pub mod responsibility;
 pub mod rust;
 pub mod task;
 

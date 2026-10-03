@@ -21,6 +21,11 @@ jobs:
         run: |
           python3 -m unittest discover -s tools -p test_check_architecture.py
           python3 tools/check_architecture.py
+      - name: The Claude Agent companion's tests (Node 22 from the runner's tool cache)
+        run: |
+          NODE_BIN=$(ls -d /opt/hostedtoolcache/node/22.*/x64/bin | sort -V | tail -1)
+          "$NODE_BIN/node" --version
+          "$NODE_BIN/node" --experimental-strip-types --no-warnings --test "claude-agent/test/*.test.ts"
       - name: Native windowing and TLS libraries
         run: |
           sudo apt-get update
