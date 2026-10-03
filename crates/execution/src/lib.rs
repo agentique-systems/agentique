@@ -27,7 +27,7 @@ pub mod process;
 
 pub use process::{Finished, Interactive, Program};
 
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
@@ -115,26 +115,14 @@ impl Scope {
 
     /// The absolute path for a relative one inside the scope. Refuses
     /// absolute paths, drive or UNC prefixes, `..`, alternate data streams,
-    /// reserved device names, and anything a link would lead out of.
+    /// reserved device names, and anything a link would lead out of. The
+    /// path is read the same way on every host ([`relative_parts`]), so a
+    /// Windows form is refused on Linux too, not taken as one odd name.
     pub fn resolve(&self, relative: &str) -> Result<PathBuf, Refusal> {
         let refuse = || Refusal::OutsideScope(relative.to_string());
-        if relative.trim().is_empty() || relative.contains('\0') {
-            return Err(refuse());
-        }
-        let path = Path::new(relative);
         let mut joined = self.root.clone();
-        for component in path.components() {
-            match component {
-                Component::Normal(part) => {
-                    let text = part.to_str().ok_or_else(refuse)?;
-                    if !plain_name(text) {
-                        return Err(refuse());
-                    }
-                    joined.push(part);
-                }
-                Component::CurDir => {}
-                _ => return Err(refuse()),
-            }
+        for part in relative_parts(relative).ok_or_else(refuse)? {
+            joined.push(part);
         }
         // The nearest existing ancestor must stay inside the root once links
         // are followed.
@@ -219,6 +207,28 @@ pub fn normalise(path: &str) -> String {
         .filter(|s| !s.is_empty() && *s != ".")
         .collect::<Vec<_>>()
         .join("/")
+}
+
+/// The names in a relative path, read the same way on every host: `/` and
+/// `\` both separate (as [`normalise`] reads them) and `.` is skipped. `None`
+/// for anything that is not plainly inside the root: an empty path, a NUL,
+/// a rooted path (`/etc`, `\x`, and so UNC `\\server\share` and device
+/// paths `\\?\`, `\\.\`), a drive or stream (`C:`, `file:stream`: any `:`),
+/// `..`, and a name that is not plain. `.` alone is the root itself.
+fn relative_parts(relative: &str) -> Option<Vec<&str>> {
+    if relative.trim().is_empty() || relative.contains('\0') || relative.starts_with(['/', '\\']) {
+        return None;
+    }
+    let mut parts = Vec::new();
+    for part in relative.split(['/', '\\']) {
+        match part {
+            "" | "." => {}
+            ".." => return None,
+            name if plain_name(name) => parts.push(name),
+            _ => return None,
+        }
+    }
+    Some(parts)
 }
 
 /// A file or folder name that means only itself on Windows and elsewhere.
@@ -519,6 +529,107 @@ mod tests {
         }
         assert!(scope.resolve("src/lib.rs").is_ok());
         assert!(scope.resolve("./src/./lib.rs").is_ok());
+    }
+
+    /// Regression (CI at `f3d0dae2`, Linux): `\\server\share\x` was one
+    /// plain name on Linux and was accepted. Every host now reads Windows
+    /// and Unix forms alike, so none of these depends on the host.
+    #[test]
+    fn windows_and_unix_forms_are_refused_on_every_host() {
+        let (_dir, scope) = scope();
+        for bad in [
+            r"\\?\C:\Windows\win.ini",
+            r"\\.\pipe\agentique",
+            r"\\server\share",
+            "//server/share/x",
+            r"\rooted.txt",
+            "/",
+            r"\",
+            "C:/Windows/win.ini",
+            "C:",
+            r"src\..\..\outside.txt",
+            r"src\..\lib.rs",
+            r"..\outside.txt",
+            "src/file.rs::$DATA",
+            r"src\AUX",
+            "src/lpt9.log",
+            "src/COM1.txt",
+            "src/a?b",
+            "src/a*b",
+            "src/a|b",
+            "src/\"quoted\"",
+            "src/trailing.",
+            "src\0nul",
+            "   ",
+        ] {
+            assert!(
+                matches!(scope.resolve(bad), Err(Refusal::OutsideScope(_))),
+                "{bad:?} was not refused"
+            );
+        }
+    }
+
+    /// Relative paths keep working, in either separator, and land at the
+    /// same place on every host.
+    #[test]
+    fn relative_paths_resolve_alike_whatever_their_separators() {
+        let (_dir, scope) = scope();
+        let expected = scope.root().join("src").join("lib.rs");
+        for good in [
+            "src/lib.rs",
+            r"src\lib.rs",
+            r".\src\lib.rs",
+            "./src/./lib.rs",
+            "src//lib.rs",
+            r"src\\lib.rs",
+            "src/lib.rs/",
+        ] {
+            assert_eq!(scope.resolve(good).unwrap(), expected, "{good:?}");
+        }
+        assert_eq!(scope.resolve(".").unwrap(), scope.root());
+        assert_eq!(
+            scope.resolve("src/new folder/mod.rs").unwrap(),
+            scope.root().join("src").join("new folder").join("mod.rs")
+        );
+        // A protected path written with the other separator is still protected.
+        let executor = Executor::new(scope);
+        assert_eq!(
+            executor.write(r"tests\contract.rs", "// weakened"),
+            Err(Refusal::Protected("tests/contract.rs".into()))
+        );
+    }
+
+    /// A link inside the scope that leads out of it is refused, for reads
+    /// and writes alike (a symbolic link on Unix, a junction on Windows,
+    /// which needs no extra rights).
+    #[test]
+    fn a_link_out_of_the_scope_is_refused() {
+        let (dir, scope) = scope();
+        let outside = tempfile::tempdir().unwrap();
+        std::fs::write(outside.path().join("secret.txt"), "outside").unwrap();
+        let link = dir.path().join("src").join("out");
+        #[cfg(unix)]
+        std::os::unix::fs::symlink(outside.path(), &link).unwrap();
+        #[cfg(windows)]
+        {
+            let made = std::process::Command::new("cmd")
+                .args(["/C", "mklink", "/J"])
+                .arg(&link)
+                .arg(outside.path())
+                .output()
+                .unwrap();
+            assert!(made.status.success(), "{made:?}");
+        }
+        for bad in ["src/out", "src/out/secret.txt", r"src\out\new.rs"] {
+            assert!(
+                matches!(scope.resolve(bad), Err(Refusal::OutsideScope(_))),
+                "{bad:?} was not refused"
+            );
+        }
+        let executor = Executor::new(scope);
+        assert!(executor.read("src/out/secret.txt").is_err());
+        assert!(executor.write("src/out/new.rs", "x").is_err());
+        assert!(!outside.path().join("new.rs").exists());
     }
 
     #[test]
