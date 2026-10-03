@@ -31,6 +31,8 @@ use std::time::Duration;
 const ANSWER: Duration = Duration::from_secs(660);
 /// The longest request line.
 const LINE: u64 = 1 << 20;
+/// How long a connection may wait before its first request with the token.
+const FIRST: Duration = Duration::from_secs(10);
 /// Connections at once.
 const CONNECTIONS: usize = 8;
 
@@ -123,9 +125,13 @@ fn serve(stream: TcpStream, token: &str, sender: Sender<Request>) {
     let Ok(mut writer) = stream.try_clone() else {
         return;
     };
-    if stream.set_read_timeout(Some(ANSWER)).is_err() {
+    if stream.set_read_timeout(Some(FIRST)).is_err() {
         return;
     }
+    let Ok(timeouts) = stream.try_clone() else {
+        return;
+    };
+    let mut trusted = false;
     let mut reader = BufReader::new(stream);
     loop {
         let mut line = String::new();
@@ -150,6 +156,11 @@ fn serve(stream: TcpStream, token: &str, sender: Sender<Request>) {
                 json!({ "ok": false, "error": "refused: wrong or missing token" })
             }
             Ok(mut body) => {
+                if !trusted {
+                    // Shown the token: it may now wait as long as an answer.
+                    trusted = true;
+                    let _ = timeouts.set_read_timeout(Some(ANSWER));
+                }
                 if let Some(object) = body.as_object_mut() {
                     object.remove("token");
                 }
@@ -226,13 +237,13 @@ mod tests {
         assert_eq!(refused["ok"], false);
         assert!(refused["error"].as_str().unwrap().contains("refused"));
         assert_ne!(random_hex(32), random_hex(32));
-        // A line without end is refused at 1 MB, not read into memory.
+        // A line without end is refused at 1 MB, not read into memory
+        // (exactly 1 MB is sent, so nothing unread makes the connection
+        // reset before the answer arrives).
         let mut stream = TcpStream::connect(("127.0.0.1", endpoint.port)).unwrap();
         let chunk = vec![b'x'; 64 * 1024];
-        for _ in 0..17 {
-            if stream.write_all(&chunk).is_err() {
-                break;
-            }
+        for _ in 0..16 {
+            stream.write_all(&chunk).unwrap();
         }
         let mut answer = String::new();
         let _ = BufReader::new(stream).read_line(&mut answer);

@@ -573,7 +573,7 @@ const WHILE_TYPING: &[CommandId] = &[
 ];
 
 /// Further keys for commands that have a shortcut of their own.
-const ALIASES: &[(&str, CommandId)] = &[
+pub const ALIASES: &[(&str, CommandId)] = &[
     ("home", CommandId::Fit),
     ("shift-=", CommandId::ZoomIn),
     ("+", CommandId::ZoomIn),

@@ -170,7 +170,7 @@ impl Studio {
     /// --release` into the builds folder's own target folder, then the
     /// executables, their digests and the manifest.
     pub fn build_agentique(&mut self) {
-        if self.develop.work.is_some() {
+        if self.develop.work.is_some() || self.refused_to_agents("building Agentique") {
             return;
         }
         let Some(repository) = self.agentique_repository() else {
@@ -248,6 +248,9 @@ impl Studio {
     /// sessions and builds folder, on its own copy of the repository at the
     /// build's commit. The running Agentique and its data are untouched.
     pub fn try_build(&mut self, id: &str) {
+        if self.refused_to_agents("trying a build") {
+            return;
+        }
         let result = (|| -> Result<PathBuf, String> {
             let folder = self.builds_root().join(id);
             let manifest = Manifest::load(&folder)?;
@@ -336,6 +339,9 @@ impl Studio {
     /// on the same project, and falls back to the last known good build if
     /// it does not start. This process then ends.
     pub fn use_build(&mut self, id: &str) -> Result<(), String> {
+        if self.refused_to_agents("restarting in another build") {
+            return Err("restarting in another build is the Operator's own".into());
+        }
         if let Some(why) = self.adoption_blocker(id) {
             return Err(format!("{id} cannot be used: {why}."));
         }

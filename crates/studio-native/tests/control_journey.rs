@@ -332,6 +332,33 @@ fn an_agent_drives_the_visible_studio_through_the_control_interface() {
         locked["error"].as_str().unwrap().contains("Operator"),
         "{locked}"
     );
+    // Other spellings and routes reach the same refusal: a key GPUI reads
+    // as ctrl-i, and the palette choosing an Operator-only command.
+    let now = studio.observe();
+    let spelled = studio.act(
+        &now,
+        json!({ "kind": "key", "keys": "secondary-i" }),
+        "insert the selection into the Operator's message",
+    );
+    assert_eq!(spelled["ok"], false, "{spelled}");
+    studio.must(
+        json!({ "kind": "command", "id": "palette" }),
+        "open the palette",
+    );
+    // Its search box is no field an agent may type into; commands are run
+    // as commands (and an Operator-only one is refused where it acts).
+    let now = studio.observe();
+    let typed = studio.act(
+        &now,
+        json!({ "kind": "type", "text": "New conversation" }),
+        "find a command in the palette",
+    );
+    assert_eq!(typed["ok"], false, "{typed}");
+    studio.must(
+        json!({ "kind": "key", "keys": "escape" }),
+        "close the palette",
+    );
+    let surface = studio.observe();
     let button = surface["controls"]
         .as_array()
         .unwrap()

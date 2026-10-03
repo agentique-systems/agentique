@@ -50,6 +50,12 @@ fn main() {
         std::thread::sleep(std::time::Duration::from_millis(1500));
         std::process::exit(1);
     }
+    if folder.join("crash-late-then-broken").exists() {
+        // Crash after settling, and fail to start the next time.
+        std::fs::rename(folder.join("crash-late-then-broken"), folder.join("broken")).unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(1500));
+        std::process::exit(1);
+    }
     if folder.join("handover-without-file").exists() {
         let _ = std::fs::remove_file(folder.join("handover-without-file"));
         std::process::exit(75);
@@ -316,4 +322,32 @@ fn an_exit_to_hand_over_without_a_handover_counts_as_a_crash() {
         log.contains("asked to hand over, but there is no handover"),
         "{log}"
     );
+}
+
+#[test]
+fn a_build_whose_restart_fails_gives_way_to_the_build_before_it() {
+    let dir = tempfile::tempdir().unwrap();
+    let Some(studio) = compile(dir.path()) else {
+        eprintln!("rustc is not available: skipped");
+        return;
+    };
+    let root = dir.path().join("builds");
+    install(&root, &studio, "good");
+    install(&root, &studio, "new");
+    set_current(&root, "good");
+    mark(&root, "good", "handover-to", "new");
+    // "new" settles, then crashes; its restart does not start at all.
+    mark(&root, "new", "crash-late-then-broken", "");
+    assert_eq!(
+        supervise(&root, &[], WITHIN, Duration::from_secs(1)),
+        Supervised::Closed {
+            last: "good".into()
+        }
+    );
+    let good = starts(&root, "good");
+    assert_eq!(good.len(), 2, "{good:?}");
+    assert!(good[1].contains("--recovered-from new"), "{good:?}");
+    assert!(!good[1].contains("--adopted"), "{good:?}");
+    let registry = Registry::load(&root).unwrap();
+    assert_eq!(registry.last_known_good.as_deref(), Some("good"));
 }

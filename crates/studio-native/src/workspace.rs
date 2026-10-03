@@ -223,6 +223,9 @@ impl Workspace {
                 });
                 std::process::exit(code);
             }
+            self.studio.update(cx, |studio, _| {
+                studio.stop_work(std::time::Duration::from_secs(20));
+            });
             cx.quit();
             return;
         }

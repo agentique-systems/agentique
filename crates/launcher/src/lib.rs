@@ -627,6 +627,12 @@ pub fn supervise(
             Ok(started) => started,
             Err(reason) => return Supervised::Failed { reason, log },
         };
+        if running != id {
+            // It fell back: the build that runs got the recovery's arguments,
+            // never the failed build's adoption.
+            extra = without_adoption(&without_recovery(&extra));
+            extra.extend(["--recovered-from".to_string(), id.clone()]);
+        }
         let since = Instant::now();
         let status = child.wait();
         let code = status.as_ref().ok().and_then(|s| s.code());
@@ -660,10 +666,18 @@ pub fn supervise(
                     restarted = false;
                 }
                 if since.elapsed() >= settled && !restarted {
-                    // A crash after it had settled: once more, as it was.
+                    // A crash after it had settled: once more, as it was. If
+                    // that start fails, the build known good before it is
+                    // the one to return to, not itself.
                     restarted = true;
                     id = running.clone();
                     extra = without_recovery(&extra);
+                    if let Some(prior) = prior.clone().filter(|p| *p != running)
+                        && let Ok(mut registry) = Registry::load(root)
+                    {
+                        registry.last_known_good = Some(prior);
+                        let _ = registry.save(root);
+                    }
                 } else {
                     // It crashes again, or soon after starting: back to the
                     // last known good build, which says what happened.

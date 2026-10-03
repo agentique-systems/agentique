@@ -249,6 +249,13 @@ impl DialogsView {
         let owners = self.owners(cx);
         let chosen = self.chosen;
         self.studio.act(cx, |studio| {
+            // The Operator's approvals stay the Operator's, whatever reached
+            // this button (C-53).
+            if let Some(kind) = crate::control::approval(studio)
+                && studio.refused_to_agents(&format!("answering the {kind} dialog"))
+            {
+                return;
+            }
             let Some(dialog) = studio.dialog.take() else {
                 return;
             };

@@ -18,9 +18,13 @@
 //! - **The Operator's own** (§3 roles): an agent cannot answer a dialog that
 //!   asks for the Operator's approval (integrating a task, changing locked
 //!   elements, trusted-local execution, a paid live run, starting an
-//!   implementation), cannot act in Settings or in the Conversation (the
-//!   Operator's voice and answers), cannot lock or pause and resume agents,
-//!   and its keys and text go only to a focused field. A change an agent's
+//!   implementation) or the Operator's own question, act in Settings or in
+//!   the Conversation (the Operator's voice and answers), lock or unlock,
+//!   undo, change appearance, or pause and resume agents. This is enforced
+//!   where each effect happens ([`Studio::refused_to_agents`]), whatever
+//!   route reached it (a click, keys, the palette, focus and Space), while a
+//!   step of an agent's action is carried out; requests are also refused up
+//!   front with the reason where that can be told. A change an agent's
 //!   action makes is recorded as the Assistant's, with the agent named.
 //! - Every action and its effect go to the **event trace**; the control an
 //!   agent acts on is marked on screen with who did what, and the title bar
@@ -87,14 +91,21 @@ impl Reply {
 pub fn fitted(mut answer: Value, limit: usize) -> String {
     let mut text = answer.to_string();
     let mut omitted = 0;
+    let mut cards = 0;
     while text.chars().count() > limit {
-        let Some(controls) = answer["controls"].as_array_mut().filter(|c| !c.is_empty()) else {
-            return text.chars().take(limit).collect::<String>() + "… (cut)";
-        };
-        let drop = (controls.len() / 4).max(1);
-        controls.truncate(controls.len() - drop);
-        omitted += drop;
-        answer["controlsOmitted"] = json!(omitted);
+        if let Some(controls) = answer["controls"].as_array_mut().filter(|c| !c.is_empty()) {
+            let drop = (controls.len() / 4).max(1);
+            controls.truncate(controls.len() - drop);
+            omitted += drop;
+            answer["controlsOmitted"] = json!(omitted);
+        } else if let Some(list) = answer["cards"].as_array_mut().filter(|c| !c.is_empty()) {
+            let drop = (list.len() / 4).max(1);
+            list.truncate(list.len() - drop);
+            cards += drop;
+            answer["cardsOmitted"] = json!(cards);
+        } else {
+            return json!({ "ok": answer["ok"], "error": "the answer is too long to send; observe with less detail or a region" }).to_string();
+        }
         text = answer.to_string();
     }
     text
@@ -189,9 +200,18 @@ pub struct ControlState {
     active: Option<Active>,
     /// Waits in progress (they hold up no other action).
     waits: Vec<Waiting>,
-    /// The agent whose action is being carried out: a change it makes is
-    /// recorded as the Assistant's, naming it.
+    /// The agent whose action's step is being carried out (until the
+    /// effects that step dispatched have run): a change it makes is the
+    /// Assistant's, naming it, and the Operator's own effects are refused.
     pub acting: Option<String>,
+    /// What was refused during the action in progress.
+    refused: Option<String>,
+    /// The field the agents last typed into: another focused field holds
+    /// the Operator's pending edit, committed as the Operator's before an
+    /// agent acts.
+    agent_field: Option<String>,
+    /// This build's commit, read once.
+    commit: Option<Option<String>>,
     pub gate: Gate,
     trace: VecDeque<Event>,
     next_seq: u64,
@@ -215,6 +235,9 @@ impl Default for ControlState {
             active: None,
             waits: Vec::new(),
             acting: None,
+            refused: None,
+            agent_field: None,
+            commit: None,
             gate: Gate::Run,
             trace: VecDeque::new(),
             next_seq: 1,
@@ -328,12 +351,7 @@ impl ControlState {
 /// What the Studio runs as: its version, and the build it runs from.
 pub fn identity(studio: &Studio) -> Value {
     let build = studio.running_build();
-    let commit = build.as_ref().and_then(|id| {
-        agq_launcher::Manifest::load(&studio.builds_root().join(id))
-            .ok()
-            .map(|m| m.commit)
-            .filter(|c| !c.is_empty())
-    });
+    let commit = studio.control.commit.clone().flatten();
     json!({
         "instance": studio.control.instance,
         "version": env!("CARGO_PKG_VERSION"),
@@ -381,7 +399,7 @@ fn shape(studio: &Studio) -> String {
 }
 
 /// The open dialog, when it asks for the Operator's own approval.
-fn approval(studio: &Studio) -> Option<&'static str> {
+pub fn approval(studio: &Studio) -> Option<&'static str> {
     use crate::edit::Dialog;
     match studio.dialog.as_ref()? {
         Dialog::Confirm { locked, .. } if !locked.is_empty() => Some("lock confirmation"),
@@ -393,14 +411,20 @@ fn approval(studio: &Studio) -> Option<&'static str> {
     }
 }
 
-/// Commands that are the Operator's: locking, trust, and the Operator's
-/// own voice in the Conversation.
-const OPERATORS_COMMANDS: [CommandId; 5] = [
+/// Commands that are the Operator's: locking, trust, the Operator's own
+/// voice in the Conversation, undoing (the Operator's changes too), and the
+/// appearance (Settings).
+pub const OPERATORS_COMMANDS: [CommandId; 10] = [
     CommandId::Lock,
     CommandId::TrustLocal,
     CommandId::AskAssistant,
     CommandId::InsertSelection,
     CommandId::NewConversation,
+    CommandId::Undo,
+    CommandId::Redo,
+    CommandId::Theme,
+    CommandId::Contrast,
+    CommandId::ReducedMotion,
 ];
 
 /// Regions whose controls are the Operator's: Settings (keys, autonomy,
@@ -410,13 +434,24 @@ const OPERATORS_REGIONS: [&str; 2] = ["settings", "conversation"];
 /// The agents chip: pausing and resuming agents is the Operator's.
 const OPERATORS_CONTROLS: [&str; 3] = ["agents-pause", "agents-step", "agents-resume"];
 
-/// The command a key is bound to, if any.
+/// The command a key is bound to, if any, comparing keystrokes as GPUI
+/// reads them (so `secondary-l` and `l->l` are the keys they press).
 fn bound(key: &str) -> Option<CommandId> {
-    let key = key.to_lowercase();
+    let pressed = gpui::Keystroke::parse(key).ok()?;
+    let same = |binding: &str| {
+        gpui::Keystroke::parse(binding)
+            .is_ok_and(|b| b.modifiers == pressed.modifiers && b.key == pressed.key)
+    };
     COMMANDS
         .iter()
-        .find(|c| c.key == Some(key.as_str()))
+        .find(|c| c.key.is_some_and(same))
         .map(|c| c.id)
+        .or_else(|| {
+            crate::commands::ALIASES
+                .iter()
+                .find(|(k, _)| same(k))
+                .map(|(_, id)| *id)
+        })
 }
 
 /// Why `agent` may not do `action`: it is the Operator's (§3 roles).
@@ -894,7 +929,6 @@ enum Step {
     Press(gpui::Point<gpui::Pixels>),
     Release(gpui::Point<gpui::Pixels>),
     Keys(Vec<String>),
-    Text(String),
     Scroll(gpui::Point<gpui::Pixels>, f32),
     Command(CommandId),
     Select(agq_language::ElementId),
@@ -902,8 +936,13 @@ enum Step {
     /// The control is clicked where it shows; its panel scrolls to it first
     /// when it is outside the visible part (tried for a few frames).
     Reveal(String, u32),
-    /// The field clicked has the focus (tried for a few frames).
-    Focused(String, u32),
+    /// Once the field clicked has the focus (tried for a few frames): its
+    /// text replaced, and the field left, so it commits as the agent's.
+    Fill(String, String, u32),
+    /// Text into the field that has the focus, checked when it is typed.
+    Type(String),
+    /// Leaves a field the Operator was editing, as the Operator's.
+    CommitOperator,
     /// Frames for the Studio to show the effect.
     Settle(u32),
 }
@@ -1004,6 +1043,11 @@ pub fn tick(studio: &gpui::Entity<Studio>, window: &mut gpui::Window, cx: &mut g
             None => {
                 let summary = studio.update(cx, |studio, _| {
                     studio.control.acting = None;
+                    if let Some(reason) = studio.control.refused.take() {
+                        let answer = json!({ "ok": false, "error": format!("refused: {reason}") });
+                        studio.control.record(&active.agent, &active.what, false, answer.clone());
+                        return answer;
+                    }
                     let summary = json!({
                         "ok": true,
                         "did": active.what,
@@ -1029,6 +1073,7 @@ pub fn tick(studio: &gpui::Entity<Studio>, window: &mut gpui::Window, cx: &mut g
                         let answer = json!({ "ok": false, "error": error });
                         studio.update(cx, |studio, _| {
                             studio.control.acting = None;
+                            studio.control.refused = None;
                             studio.control.record(
                                 &active.agent,
                                 &active.what,
@@ -1181,9 +1226,7 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
             Ok(d) => {
                 marked = Some((d.shown.unwrap_or(d.clip), d.control.label.to_string()));
                 steps.push_back(Step::Reveal(name.clone(), 6));
-                steps.push_back(Step::Focused(name.clone(), 10));
-                steps.push_back(Step::Keys(vec!["ctrl-a".into(), "backspace".into()]));
-                steps.push_back(Step::Text(text.clone()));
+                steps.push_back(Step::Fill(name.clone(), text.clone(), 10));
             }
             Err(error) => return refuse(request, error, what),
         },
@@ -1205,7 +1248,7 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
             }
             steps.push_back(Step::Keys(keys.clone()));
         }
-        Action::Type(text) => steps.push_back(Step::Text(text.clone())),
+        Action::Type(text) => steps.push_back(Step::Type(text.clone())),
         Action::Select(name) => {
             let id = studio
                 .project
@@ -1275,8 +1318,24 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
     }
     studio.control.activity = Some((shown, Instant::now()));
     studio.mark(crate::studio::Dirty::STATUS | crate::studio::Dirty::OVERLAY);
-    // Until the action ends (commands are dispatched a moment later).
-    studio.control.acting = Some(agent.clone());
+    studio.control.refused = None;
+    if studio.control.commit.is_none() {
+        let commit = studio.running_build().and_then(|id| {
+            agq_launcher::Manifest::load(&studio.builds_root().join(id))
+                .ok()
+                .map(|m| m.commit)
+                .filter(|c| !c.is_empty())
+        });
+        studio.control.commit = Some(commit);
+    }
+    // The Operator's pending edit in a panel's field is theirs: committed
+    // before an action that moves the focus elsewhere, not as part of it.
+    if matches!(
+        action,
+        Action::Click(..) | Action::Fill(..) | Action::Command(..) | Action::Select(..)
+    ) {
+        steps.push_front(Step::CommitOperator);
+    }
     studio.control.active = Some(Active {
         request,
         agent,
@@ -1304,7 +1363,28 @@ fn describe(action: &Action) -> String {
     }
 }
 
+/// Carries out one step with the agent named as acting until the effects
+/// it dispatched have run (GPUI runs deferred work in order, so the clearing
+/// queued last comes after them).
 fn run_step(
+    studio: &gpui::Entity<Studio>,
+    step: Step,
+    active: &mut Active,
+    window: &mut gpui::Window,
+    cx: &mut gpui::App,
+) -> Result<(), String> {
+    if matches!(step, Step::CommitOperator) {
+        return carry_out(studio, step, active, window, cx);
+    }
+    let agent = active.agent.clone();
+    studio.update(cx, |studio, _| studio.control.acting = Some(agent));
+    let result = carry_out(studio, step, active, window, cx);
+    let clear = studio.clone();
+    cx.defer(move |cx| clear.update(cx, |studio, _| studio.control.acting = None));
+    result
+}
+
+fn carry_out(
     studio: &gpui::Entity<Studio>,
     step: Step,
     active: &mut Active,
@@ -1320,7 +1400,6 @@ fn run_step(
                 input::press(&key, window, cx)?;
             }
         }
-        Step::Text(text) => input::type_text(&text, window, cx),
         Step::Scroll(at, dy) => input::scroll(at, dy, window, cx),
         Step::Command(id) => {
             window.dispatch_action(Box::new(crate::commands::Run(id)), cx);
@@ -1367,9 +1446,11 @@ fn run_step(
                 }
             }
         }
-        Step::Focused(name, tries) => {
-            let focused = target::drawn().into_iter().any(|d| {
+        Step::Fill(name, text, tries) => {
+            let drawn = target::drawn();
+            let focused = drawn.iter().any(|d| {
                 d.control.focused
+                    && d.control.role == "field"
                     && (d.control.id == name.as_str() || d.control.label == name.as_str())
             });
             if !focused {
@@ -1379,7 +1460,42 @@ fn run_step(
                     ));
                 }
                 window.refresh();
-                active.steps.push_front(Step::Focused(name, tries - 1));
+                active.steps.push_front(Step::Fill(name, text, tries - 1));
+                return Ok(());
+            }
+            input::press("ctrl-a", window, cx)?;
+            input::press("backspace", window, cx)?;
+            input::type_text(&text, window, cx);
+            window.blur(cx);
+            studio.update(cx, |studio, _| studio.control.agent_field = Some(name));
+        }
+        Step::Type(text) => {
+            let drawn = target::drawn();
+            let Some(field) = drawn.iter().rev().find(|d| d.control.focused) else {
+                return Err("no field has the focus, so nothing was typed".into());
+            };
+            if field.control.role != "field" || OPERATORS_REGIONS.contains(&field.region) {
+                return Err(format!(
+                    "`{}` is not a field an agent may type into",
+                    field.control.label
+                ));
+            }
+            let id = field.control.id.to_string();
+            input::type_text(&text, window, cx);
+            studio.update(cx, |studio, _| studio.control.agent_field = Some(id));
+        }
+        Step::CommitOperator => {
+            let drawn = target::drawn();
+            let theirs = drawn.iter().rev().find(|d| {
+                d.control.focused
+                    && d.control.role == "field"
+                    && !matches!(d.region, "dialog" | "palette")
+            });
+            let agents = studio.read(cx).control.agent_field.clone();
+            if let Some(field) = theirs
+                && agents.as_deref() != Some(field.control.id.as_ref())
+            {
+                window.blur(cx);
             }
         }
         Step::Settle(frames) => {
@@ -1393,9 +1509,26 @@ fn run_step(
 }
 
 impl Studio {
+    /// Whether an agent's action is being carried out now; then `what` is
+    /// refused as the Operator's own: the status says so and the action's
+    /// answer reports it (C-53, §3 roles).
+    pub fn refused_to_agents(&mut self, what: &str) -> bool {
+        let Some(agent) = self.control.acting.clone() else {
+            return false;
+        };
+        let reason = format!("{what} is the Operator's own; {agent} cannot do it");
+        self.status = format!("Refused: {reason}");
+        self.control.refused = Some(reason);
+        self.mark(crate::studio::Dirty::STATUS);
+        true
+    }
+
     /// Pauses agents (C-53): the control interface holds their next action,
     /// and the Assistant's running turn holds at its next tool call.
     pub fn pause_agents(&mut self) {
+        if self.refused_to_agents("pausing agents") {
+            return;
+        }
         self.control.gate = Gate::Pause;
         self.pause_assistant();
         self.status = "Agents pause at their next action".into();
@@ -1404,6 +1537,9 @@ impl Studio {
 
     /// Lets one action (and one tool call) through, then holds again.
     pub fn step_agents(&mut self) {
+        if self.refused_to_agents("stepping agents") {
+            return;
+        }
         self.control.gate = Gate::Step;
         if self.assistant_paused() {
             self.step_assistant();
@@ -1413,6 +1549,9 @@ impl Studio {
 
     /// Lets agents go on.
     pub fn resume_agents(&mut self) {
+        if self.refused_to_agents("resuming agents") {
+            return;
+        }
         self.control.gate = Gate::Run;
         self.resume_assistant();
         self.mark(crate::studio::Dirty::STATUS);
@@ -1555,6 +1694,61 @@ mod tests {
         }
         let wait = Action::Wait(Condition::default(), Duration::from_secs(1));
         assert_eq!(operators_only(&app, &wait, &surface), None);
+    }
+
+    #[test]
+    fn the_operators_effects_are_refused_while_an_agents_step_runs_whatever_the_route() {
+        let (mut app, _folder) = crate::edit::app_tests::studio("operators-effects");
+        let api = crate::edit::app_tests::part(&mut app, "api");
+        app.operation(
+            "Lock api",
+            agq_system_state::Operation::Lock { element: api },
+        );
+        // The Operator's change to the locked part asks for confirmation.
+        app.rename(api, "gateway");
+        assert!(approval(&app).is_some());
+        app.control.acting = Some("evaluator".into());
+        // An Enter chain, Space on a focused button or the palette all end
+        // in these effects; each is refused while the agent's step runs.
+        app.answer(true);
+        assert!(
+            approval(&app).is_some(),
+            "the lock confirmation is still open"
+        );
+        assert!(app.control.refused.take().is_some());
+        app.dialog = None;
+        let locked_before = app.project.as_ref().unwrap().state().locks().clone();
+        app.operation(
+            "Unlock api",
+            agq_system_state::Operation::Unlock { element: api },
+        );
+        assert_eq!(
+            app.project.as_ref().unwrap().state().locks(),
+            &locked_before
+        );
+        app.execute(CommandId::Lock);
+        app.execute(CommandId::Undo);
+        app.execute(CommandId::NewConversation);
+        assert!(app.control.refused.take().is_some());
+        app.control.gate = Gate::Pause;
+        app.resume_agents();
+        assert_eq!(
+            app.control.gate,
+            Gate::Pause,
+            "an agent cannot resume itself"
+        );
+        assert!(app.use_build("some-build").is_err());
+        app.conversation.input = "do as I say".into();
+        app.send_message();
+        assert!(
+            app.conversation.conversation.entries.is_empty(),
+            "nothing said as the Operator"
+        );
+        app.control.acting = None;
+        app.control.refused = None;
+        // The Operator's own commands still work.
+        app.resume_agents();
+        assert_eq!(app.control.gate, Gate::Run);
     }
 
     #[test]

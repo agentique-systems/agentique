@@ -208,6 +208,17 @@ pub fn record(name: &str, bounds: Bounds<Pixels>) {
     REGISTRY.with(|registry| registry.borrow_mut().push(control, bounds, bounds))
 }
 
+/// Overlays (the palette, dialogs, menus painted at the root) above the
+/// docked columns and the centre.
+fn layer(region: &str) -> u8 {
+    match region {
+        "palette" => 3,
+        "dialog" => 2,
+        ROOT => 1,
+        _ => 0,
+    }
+}
+
 /// Every control on screen now: the regions painted this frame and the
 /// cached regions on screen, in painting order (the topmost last).
 pub fn drawn() -> Vec<Drawn> {
@@ -219,7 +230,16 @@ pub fn drawn() -> Vec<Drawn> {
             .filter(|(name, _)| !CACHED.contains(name) || registry.mounted.contains(name))
             .flat_map(|(_, controls)| controls.iter().cloned())
             .collect();
-        all.sort_by_key(|d| d.order);
+        // Overlays above everything; the docked columns and the centre, which
+        // do not overlap, in a fixed order, so which of two same-named
+        // controls wins does not depend on which column was painted again.
+        all.sort_by_key(|d| {
+            (
+                layer(d.region),
+                (layer(d.region) == 0).then_some(d.region),
+                d.order,
+            )
+        });
         all
     })
 }

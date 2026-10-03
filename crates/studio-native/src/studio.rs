@@ -1124,6 +1124,22 @@ impl Studio {
             self.status = reason.to_string();
             return;
         }
+        // Whatever route reached it (a key, the palette, a menu), what is
+        // the Operator's own is refused to agents (C-53); opening another
+        // project would end the Assistant's own turn.
+        if crate::control::OPERATORS_COMMANDS.contains(&id)
+            && self.refused_to_agents(&format!("`{}`", crate::control::command_name(id)))
+        {
+            return;
+        }
+        if matches!(
+            id,
+            CommandId::NewProject | CommandId::OpenProject | CommandId::DevelopAgentique
+        ) && self.control.acting.as_deref() == Some("Assistant")
+            && self.refused_to_agents("opening another project (it ends your own turn)")
+        {
+            return;
+        }
         use CommandId::*;
         match id {
             Architecture => self.set_view(SurfaceView::Architecture),

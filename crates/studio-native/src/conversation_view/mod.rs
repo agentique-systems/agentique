@@ -1623,7 +1623,7 @@ impl Render for ConversationView {
                                             .tooltip("Stop the Assistant now; its changes so far stay and can be undone", None)
                                             .on_click({
                                                 let studio = self.studio.clone();
-                                                move |_: &ClickEvent, _, cx| studio.act(cx, |studio| studio.stop_assistant())
+                                                move |_: &ClickEvent, _, cx| studio.act(cx, |studio| if !studio.refused_to_agents("stopping the Assistant") { studio.stop_assistant() })
                                             })
                                             .into_any_element()
                                     } else {
@@ -1639,7 +1639,7 @@ impl Render for ConversationView {
                                     .when(running && question, |this| {
                                         this.child(Button::new("stop-question", "Stop").small().on_click({
                                             let studio = self.studio.clone();
-                                            move |_: &ClickEvent, _, cx| studio.act(cx, |studio| studio.stop_assistant())
+                                            move |_: &ClickEvent, _, cx| studio.act(cx, |studio| if !studio.refused_to_agents("stopping the Assistant") { studio.stop_assistant() })
                                         }))
                                     }),
                             ),

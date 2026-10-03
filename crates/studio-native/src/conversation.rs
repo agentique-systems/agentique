@@ -434,6 +434,9 @@ impl Studio {
     /// Sends the message in the input. While a question is open, the message
     /// answers it instead.
     pub fn send_message(&mut self) {
+        if self.refused_to_agents("speaking in the Conversation") {
+            return;
+        }
         let text = self.conversation.input.trim().to_string();
         if text.is_empty() || self.project.is_none() {
             return;
@@ -788,6 +791,9 @@ impl Studio {
     /// Answers the Assistant's open question. Returns false when no question
     /// is open or the turn that asked it is gone.
     pub fn answer_question(&mut self, answer: &str) -> bool {
+        if self.refused_to_agents("answering the Assistant") {
+            return false;
+        }
         let panel = &mut self.conversation;
         if !matches!(
             &panel.waiting,
@@ -829,6 +835,9 @@ impl Studio {
 
     /// Holds the running turn at its next tool call (C-53).
     pub fn pause_assistant(&mut self) {
+        if self.refused_to_agents("pausing the Assistant") {
+            return;
+        }
         if self.conversation.running() && self.conversation.steerable {
             self.conversation
                 .steering
@@ -839,6 +848,9 @@ impl Studio {
 
     /// Lets the paused turn take one tool call, then holds it again.
     pub fn step_assistant(&mut self) {
+        if self.refused_to_agents("stepping the Assistant") {
+            return;
+        }
         if self.conversation.running() && self.conversation.steerable {
             self.conversation.held_at = None;
             self.conversation
@@ -849,6 +861,9 @@ impl Studio {
 
     /// Lets the paused turn go on.
     pub fn resume_assistant(&mut self) {
+        if self.refused_to_agents("resuming the Assistant") {
+            return;
+        }
         if self.conversation.steerable {
             self.conversation.held_at = None;
             self.conversation
@@ -1009,6 +1024,9 @@ impl Studio {
 
     /// Starts a new conversation for this project. The model is unaffected.
     pub fn new_conversation(&mut self) {
+        if self.refused_to_agents("starting a new conversation") {
+            return;
+        }
         self.end_turn();
         let panel = &mut self.conversation;
         panel.last_turn = None;
@@ -1023,6 +1041,9 @@ impl Studio {
 
     /// Puts the selected elements' qualified names into the message.
     pub fn insert_selection(&mut self) {
+        if self.refused_to_agents("writing in the Conversation") {
+            return;
+        }
         let Some(project) = &self.project else { return };
         let tree = project.state().tree();
         let names: Vec<String> = self
