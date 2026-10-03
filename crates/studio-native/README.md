@@ -69,6 +69,11 @@ is first opened.
   deadline and on Stop; a typed decision's confidence is copied unchanged
   and grants nothing; provider failures end the evaluation, never a
   verdict. Known live cost joins the day's total; unknown cost is said.
+  `screening_evaluation` (an ignored test) is the screening evaluation of
+  the System One investigation's §7: the Operator's labelled cases through
+  the typed, chat and blocklist arms, with consent, an allowance and the
+  spend stop, observations written outside the repository for
+  `tools/screening_report.py`.
 - Journeys `i-scenarios` and `i-code` (`--features automation`).
 
 ## Conversation

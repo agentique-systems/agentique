@@ -19,7 +19,7 @@ jobs:
       - run: rustup show
       - name: Crate dependencies follow the architecture model
         run: |
-          python3 -m unittest discover -s tools -p test_check_architecture.py
+          python3 -m unittest discover -s tools -p "test_*.py"
           python3 tools/check_architecture.py
       - name: The Claude Agent companion's tests (Node 22 from the runner's tool cache)
         run: |
