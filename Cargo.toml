@@ -9,6 +9,7 @@ members = [
     "crates/execution",
     "crates/launcher",
     "crates/assistant",
+    "crates/orchestrator",
     "crates/providers",
     "crates/studio-scene",
     "crates/studio-native",

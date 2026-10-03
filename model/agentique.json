@@ -1,6 +1,6 @@
 {
   "format": 1,
-  "next": 1403,
+  "next": 1404,
   "elements": {
     "1000": "action AgentiqueArchitecture::Studio::working::assistantApplied::#1",
     "1001": "send AgentiqueArchitecture::Studio::working::assistantApplied::#1::#1",
@@ -403,6 +403,7 @@
     "1400": "doc AgentiqueArchitecture::#38::#1",
     "1401": "dependency AgentiqueArchitecture::#39",
     "1402": "doc AgentiqueArchitecture::#39::#1",
+    "1403": "part AgentiqueArchitecture::Orchestrator::'agq-orchestrator'",
     "673": "package AgentiqueArchitecture",
     "674": "doc AgentiqueArchitecture::#1",
     "675": "import AgentiqueArchitecture::#2",

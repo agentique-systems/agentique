@@ -294,6 +294,9 @@ pub struct Development {
     /// Agentique's instructions appended to the SDK's development
     /// instructions (true), or the whole system prompt (false).
     pub preset: bool,
+    /// Variables for the session's commands besides the Studio's own (the
+    /// Orchestrator's shared build folder, say); never a secret.
+    pub env: Vec<(String, String)>,
 }
 
 /// The pause gate (C-53): Pause holds the session at its next tool call,

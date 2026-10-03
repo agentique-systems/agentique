@@ -173,13 +173,7 @@ pub struct Worker {
     /// The working copy's model, changed only through System State
     /// operations (the worker cannot write model files): its changes are
     /// proposed, reviewed with the code, and integrated with it.
-    model: Option<WorkingModel>,
-}
-
-/// The project folder of the working copy, and its model once opened.
-struct WorkingModel {
-    folder: std::path::PathBuf,
-    project: Option<agq_system_state::Project>,
+    model: Option<crate::model_tools::WorkingModel>,
 }
 
 impl Worker {
@@ -211,49 +205,17 @@ impl Worker {
     /// `folder` (the worktree's project folder) with the Assistant's model
     /// tools. Locked elements are refused, as for any unconfirmed change.
     pub fn with_model(mut self, folder: impl Into<std::path::PathBuf>) -> Worker {
-        self.model = Some(WorkingModel {
-            folder: folder.into(),
-            project: None,
-        });
+        self.model = Some(crate::model_tools::WorkingModel::new(folder));
         self
     }
 
     /// A model tool on the working copy's model.
     fn model_tool(&mut self, call: &ToolCall) -> ToolResult {
-        use crate::conversation::ToolResult as R;
-        use crate::tools::{Prepared, prepare};
-        let Some(model) = &mut self.model else {
-            return R::error(
+        match &mut self.model {
+            Some(model) => model.execute(call),
+            None => crate::conversation::ToolResult::error(
                 "This task has no model of its own to change: use request_contract_change.",
-            );
-        };
-        if model.project.is_none() {
-            match agq_system_state::Project::open(&model.folder) {
-                Ok(project) => model.project = Some(project),
-                Err(error) => {
-                    return R::error(format!(
-                        "The working copy's model cannot be opened: {error}"
-                    ));
-                }
-            }
-        }
-        let project = model.project.as_mut().expect("opened above");
-        let library = agq_library::Library::default();
-        match prepare(project.state(), &library, &call.name, &call.input) {
-            Prepared::Answer(text) => R::answer(crate::tools::cap(text)),
-            Prepared::Change(mut change) => {
-                change.actor = agq_system_state::Actor::Assistant;
-                change.confirmed.clear();
-                match project.apply(change) {
-                    Ok(event) => R::applied(project.state(), &event),
-                    Err(agq_system_state::ApplyError::Rejection(rejection)) => {
-                        R::rejected(project.state(), &rejection)
-                    }
-                    Err(error) => R::error(format!("Not applied: {error}")),
-                }
-            }
-            Prepared::Invalid(message) => R::error(message),
-            _ => R::error(format!("`{}` is not available to a task", call.name)),
+            ),
         }
     }
 
@@ -262,8 +224,7 @@ impl Worker {
     /// it if the worker read or changed it: the model the task is checked
     /// against.
     pub fn close_model(&mut self) -> Option<Tree> {
-        let project = self.model.as_mut()?.project.take()?;
-        Some(project.state().tree().clone())
+        self.model.as_mut()?.close()
     }
 
     /// The links with those it proposed.

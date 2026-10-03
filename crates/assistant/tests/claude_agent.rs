@@ -400,6 +400,7 @@ fn development(dir: &Path) -> Development {
         setting_sources: vec!["project".into()],
         agents: serde_json::json!({ "reviewer": { "description": "Reviews.", "prompt": "Review." } }),
         preset: true,
+        env: Vec::new(),
     }
 }
 
