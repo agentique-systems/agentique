@@ -358,8 +358,10 @@ impl DialogsView {
                     studio.set_execution_choice(choice);
                 }
                 Dialog::ConfirmLive => {
-                    studio.runs.confirm_live = false;
-                    studio.start_run(agq_simulation::Mode::Live);
+                    if let Some(Ok(plan)) = studio.runs.live_plan.take() {
+                        studio.runs.confirmed = Some(plan);
+                        studio.start_run(agq_simulation::Mode::Live);
+                    }
                 }
                 Dialog::Implement { element, .. } => {
                     let started = studio.start_implementation(element, &first);
@@ -1143,37 +1145,40 @@ impl Render for DialogsView {
                     .into_any_element()
             }
             Dialog::ConfirmLive => {
-                let choice = crate::live::live_choice(studio);
-                let has_key = studio
+                // The plan, as it will be frozen when confirmed (C-52).
+                let plan = studio
                     .runs
-                    .selected
-                    .and_then(|scenario| crate::live::prepare(studio, scenario).ok().flatten())
-                    .is_some_and(|prepared| crate::live::live_model(&prepared).is_some());
-                let calls = studio.runs.selected.and_then(|scenario| {
-                    let store = studio.run_store()?;
-                    let result = store.latest(scenario.raw(), agq_simulation::Mode::Model)?;
-                    Some(
-                        result
-                            .trace
-                            .iter()
-                            .filter(|e| e.kind == agq_simulation::EventKind::AgentCalled)
-                            .count(),
-                    )
-                });
-                let samples = agq_simulation::Request::new(agq_simulation::Mode::Live)
-                    .samples
-                    .max(5);
-                let model = choice
-                    .as_ref()
-                    .map(|(p, m)| format!("{}/{m}", p.id()))
-                    .unwrap_or_else(|| "no model".into());
-                let calls_line = match calls {
-                    Some(n) => format!(
-                        "About {} model call(s): {samples} samples × {n} agent call(s) in the model run",
-                        samples as usize * n.max(1)
-                    ),
-                    None => format!(
-                        "{samples} samples; run the scenario in model mode first to see how many calls each makes"
+                    .live_plan
+                    .clone()
+                    .unwrap_or(Err("Choose a scenario to run.".to_string()));
+                let (ready, body) = match &plan {
+                    Ok(plan) => {
+                        let (run, sent, meaning) = plan.lines();
+                        (
+                            plan.has_key,
+                            div()
+                                .flex()
+                                .flex_col()
+                                .gap(r(crate::tokens::space::PANEL_PADDING))
+                                .child(plain_list("What runs", run, IconName::Agent, cx))
+                                .child(plain_list("What leaves this computer", sent, IconName::Agent, cx))
+                                .child(plain_list("What the answers mean", meaning, IconName::Agent, cx))
+                                .when(!plan.has_key, |this| {
+                                    this.child(ui::inline_message(
+                                        ui::Tone::Warning,
+                                        &format!(
+                                            "No key of {}'s own is set: add one in Settings › Providers. Another provider's key is never used.",
+                                            plan.model.provider.name()
+                                        ),
+                                        cx,
+                                    ))
+                                })
+                                .into_any_element(),
+                        )
+                    }
+                    Err(why) => (
+                        false,
+                        ui::inline_message(ui::Tone::Warning, why, cx).into_any_element(),
                     ),
                 };
                 div()
@@ -1182,28 +1187,11 @@ impl Render for DialogsView {
                     .size_full()
                     .child(
                         ui::Dialog::new("confirm-live", "Evaluate live")
-                            .width(500.0)
-                            .description("Agents answer from a real model instead of the scenario's stand-ins. Each call is sent to the provider and costs money.")
-                            .child(plain_list(
-                                "What will be sent",
-                                vec![
-                                    format!("Model: {model}"),
-                                    calls_line,
-                                    "Each agent's instructions and the item it is asked about".into(),
-                                    "The cost is estimated from the provider's usage; it is shown with the result".into(),
-                                ],
-                                IconName::Agent,
-                                cx,
-                            ))
-                            .when(!has_key, |this| {
-                                this.child(ui::inline_message(
-                                    ui::Tone::Warning,
-                                    "No key is set for this provider: add one in Settings › Providers.",
-                                    cx,
-                                ))
-                            })
+                            .width(560.0)
+                            .description("Agents answer from a real model instead of the scenario's stand-ins. Each call is sent to the provider and costs money; this plan is fixed when you confirm it, and a change to the model stops it.")
+                            .child(body)
                             .footer(cancel_button)
-                            .footer(confirm_button("Evaluate live", has_key)),
+                            .footer(confirm_button("Evaluate live", ready)),
                     )
                     .into_any_element()
             }

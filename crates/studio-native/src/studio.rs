@@ -744,6 +744,7 @@ impl Studio {
         // Results and checks describe a version of the model: say so when
         // it changed, or changed back (undo).
         if self.project.is_some() {
+            self.supersede_live_run();
             self.refresh_run_freshness();
             self.refresh_check_freshness_for_model();
         }
@@ -1260,7 +1261,11 @@ impl Studio {
             RunScenario => {
                 let mode = self.runs.mode();
                 if mode == agq_simulation::Mode::Live {
-                    self.runs.confirm_live = true;
+                    // The plan is shown first and frozen when confirmed.
+                    self.runs.live_plan = Some(match self.runs.selected {
+                        Some(scenario) => crate::live::plan(self, scenario),
+                        None => Err("Choose a scenario to run.".into()),
+                    });
                     self.dialog = Some(crate::edit::Dialog::ConfirmLive);
                 } else {
                     self.start_run(mode);

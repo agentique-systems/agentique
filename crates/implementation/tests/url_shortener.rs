@@ -175,19 +175,22 @@ fn the_url_shortener_keeps_its_model_and_a_break_is_found_and_repaired() {
             .map(|(n, r)| (n, r.status, &r.stop))
             .collect::<Vec<_>>()
     );
-    let (_, cases) = results.iter().find(|(n, _)| n == "ScreeningCases").unwrap();
-    assert_eq!(cases.status, RunStatus::Stopped);
-    assert!(
-        cases
-            .stop
-            .as_ref()
-            .unwrap()
-            .message
-            .contains("calls a model"),
-        "{:?}",
-        cases.stop
-    );
-    assert!(cases.checks.iter().all(|c| c.verdict == Verdict::NotRun));
+    // The chat agent's cases and the typed agent's (C-52) alike.
+    for name in ["ScreeningCases", "TypedScreeningCases"] {
+        let (_, cases) = results.iter().find(|(n, _)| n == name).unwrap();
+        assert_eq!(cases.status, RunStatus::Stopped, "{name}");
+        assert!(
+            cases
+                .stop
+                .as_ref()
+                .unwrap()
+                .message
+                .contains("calls a model"),
+            "{name}: {:?}",
+            cases.stop
+        );
+        assert!(cases.checks.iter().all(|c| c.verdict == Verdict::NotRun));
+    }
 
     // The break: a link that needs review goes live.
     repo.edit(
@@ -198,7 +201,7 @@ fn the_url_shortener_keeps_its_model_and_a_break_is_found_and_repaired() {
     let broken = repo.scenarios();
     let failing: Vec<&str> = broken
         .iter()
-        .filter(|(name, r)| name != "ScreeningCases" && !r.all_passed())
+        .filter(|(name, r)| !name.ends_with("ScreeningCases") && !r.all_passed())
         .map(|(n, _)| n.as_str())
         .collect();
     assert_eq!(

@@ -54,7 +54,21 @@ is first opened.
   worker on its own thread, the Studio's own verification, the review with
   the patch, integration (only if the repository has not moved) or discard,
   continuing a task in its worktree, and interrupted tasks found on open.
-- `live.rs`: the live model client for agents, through `agq-providers`.
+- `live.rs`: how an agent is evaluated live or replayed (C-52). `prepare`
+  admits one agent configuration and finds from the capability table how its
+  model is called: a typed choice for a known pinned decision model (one
+  required enum field with documented values, the library's confidence, one
+  input item; the declared fields sent as data), chat with the answer
+  template otherwise, or the Assistant's model, through chat, when the agent
+  names none; a model no table knows is refused, never replaced. It names the
+  binding that replay and live share. `plan` is what the Operator confirms:
+  the model and how it is asked, at most how many calls and requests, what
+  leaves the computer, a cost bound, what the confidence means and what the
+  fallback does not do; it is frozen, a change before the start refuses it
+  and a change during the run stops it. The clients stop at each call's
+  deadline and on Stop; a typed decision's confidence is copied unchanged
+  and grants nothing; provider failures end the evaluation, never a
+  verdict. Known live cost joins the day's total; unknown cost is said.
 - Journeys `i-scenarios` and `i-code` (`--features automation`).
 
 ## Conversation

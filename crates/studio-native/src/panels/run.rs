@@ -370,48 +370,9 @@ pub fn render(studio: &Entity<Studio>, cx: &mut App) -> impl IntoElement {
             top.push(check_row(studio, index, check, cx));
         }
     }
-    if let Some(live) = &result.live {
-        let failures = if live.failures.is_empty() {
-            "no agent failures".to_string()
-        } else {
-            live.failures
-                .iter()
-                .map(|(what, n)| format!("{what} {n}"))
-                .collect::<Vec<_>>()
-                .join(", ")
-        };
-        let provenance = result.provenance.live.as_ref().map(|p| {
-            format!(
-                "{}/{} · instructions {} ({})",
-                p.provider,
-                p.model,
-                &p.instructions_digest[..p.instructions_digest.len().min(10)],
-                p.instructions_source
-            )
-        });
+    if result.live.is_some() {
         top.push(super::group("Live evaluation", None, cx).into_any_element());
-        top.push(
-            detail_lines(
-                vec![
-                    format!(
-                        "{} samples, {} completed; {failures}",
-                        live.samples, live.completed
-                    ),
-                    format!(
-                        "Estimated cost {}; median latency {}",
-                        live.cost_usd
-                            .map_or("unknown".into(), |c| format!("${c:.4}")),
-                        live.latency_ms_median
-                            .map_or("unknown".into(), |ms| format!("{ms} ms"))
-                    ),
-                ]
-                .into_iter()
-                .chain(provenance)
-                .collect(),
-                cx,
-            )
-            .into_any_element(),
-        );
+        top.push(detail_lines(crate::runs::live_lines(&result), cx).into_any_element());
     }
     if let Some(code) = &result.provenance.implementation {
         top.push(super::group("Code", None, cx).into_any_element());

@@ -1079,6 +1079,7 @@ TypeSafe AI's [98]. "Not verified" means no source or test was found.
 | Server-side refusal fallbacks | no in rig (see §4.7); on `claude-opus-5` through the thin adapter in `agq-providers` (Q-18) | not applicable | not verified | not applicable | not applicable |
 | Server-side compaction | not carried through rig (unknown blocks end the stream [2]) | not verified | not applicable | not applicable | not applicable |
 | Model list | provider endpoint `GET /v1/models` [16]; not provided by rig (not verified) | not verified | public model list endpoint [100] | `GET /models`, with rig's model lister [2][105] | `GET /v1/models`; pinned versions such as `jev-1.13.0` are accepted though not listed [98] |
+| Typed decisions for an agent (C-52) | no | no | no | no | yes, for the known pinned versions in the capability table (`jev-1.13.0`); an alias such as `jev-latest` or an unknown version is not admitted |
 
 Other providers rig supports (Gemini, Ollama and local OpenAI-compatible
 servers, Mistral, xAI, Groq and more [2]) wait for a scenario need (Q-12).
@@ -1100,6 +1101,7 @@ asks the table, never the provider's name. When a capability is missing:
 | Server-side compaction | Not used for any provider: compaction is client-side (R-33) |
 | A smaller context window | Compaction thresholds scale to the window (R-33) |
 | Image input | Not used in this phase |
+| Typed decisions (C-52) | An agent whose model chats is evaluated through the answer template. An agent whose model no table knows, or whose answer a typed choice cannot fill, is refused before consent with the reason; it is never answered by another model |
 
 ### 4.9 Where settings and secrets are stored
 

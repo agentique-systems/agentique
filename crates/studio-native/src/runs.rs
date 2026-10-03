@@ -102,6 +102,10 @@ pub struct ActiveRun {
     pub scenario: ElementId,
     pub mode: Mode,
     pub started: Instant,
+    /// The digest of the scenario's model slice when it started.
+    digest: String,
+    /// A live evaluation's confirmed plan.
+    plan: Option<crate::live::LivePlan>,
     work: Work,
 }
 
@@ -153,12 +157,19 @@ pub struct RunsState {
     rows: Option<(u64, usize, Vec<ScenarioRow>)>,
     /// Bumped whenever a result is saved, so lists refresh.
     pub saved_generation: usize,
-    /// A live evaluation waits for the Operator to confirm it.
-    pub confirm_live: bool,
+    /// The plan a live evaluation would follow, shown for the Operator to
+    /// confirm (or why there is none).
+    pub live_plan: Option<Result<crate::live::LivePlan, String>>,
+    /// The plan the Operator confirmed; a live evaluation starts only from
+    /// it, and only while it is still the plan (C-52).
+    pub confirmed: Option<crate::live::LivePlan>,
     /// Which kind of step the Run panel's "Add" offers.
     pub adding: usize,
     /// The Assistant waits for the run in progress (`run_scenario`).
     pub(crate) assistant: Option<std::sync::mpsc::Sender<agq_assistant::ToolResult>>,
+    /// Tests: the provider layer a live evaluation calls.
+    #[cfg(test)]
+    pub(crate) test_providers: Option<agq_providers::Providers>,
 }
 
 impl RunsState {
@@ -404,7 +415,8 @@ impl Studio {
     }
 
     /// Starts a run of the selected scenario in `mode`. A live evaluation
-    /// only after the Operator confirmed it (`confirm_live`).
+    /// only from the plan the Operator confirmed (`confirmed`), and only
+    /// while it is still the plan.
     pub fn start_run(&mut self, mode: Mode) {
         let (Some(scenario), Some(project)) = (self.runs.selected, self.project.as_ref()) else {
             self.status = "Choose a scenario to run.".into();
@@ -417,6 +429,7 @@ impl Studio {
         self.runs.mode = Some(mode);
         let tree = project.state().tree();
         let digest = model_digest(tree, scenario);
+        let mut live_plan = None;
         let mut request = Request::new(mode);
         request.model_revision = project.state().revision();
         let program = match compile(tree, scenario) {
@@ -460,6 +473,23 @@ impl Studio {
                 ))
             }
             Mode::Live => {
+                let Some(confirmed) = self.runs.confirmed.take() else {
+                    self.status = "A live evaluation starts only from its confirmed plan: choose Evaluate live and confirm it.".into();
+                    return;
+                };
+                // The plan must still be the plan: the model, how the agent
+                // is called and the allowance as confirmed.
+                let current = crate::live::plan(self, scenario);
+                let still = current.as_ref().is_ok_and(|now| {
+                    confirmed.scenario == scenario
+                        && now.revision == confirmed.revision
+                        && now.binding == confirmed.binding
+                        && now.allowance == confirmed.allowance
+                });
+                if !still {
+                    self.status = "The plan changed after you confirmed it (the model, or how its agent is called): review it again.".into();
+                    return;
+                }
                 let prepared = match crate::live::prepare(self, scenario) {
                     Ok(Some(prepared)) => prepared,
                     Ok(None) => {
@@ -471,12 +501,18 @@ impl Studio {
                         return;
                     }
                 };
-                let Some(model) = crate::live::live_model(&prepared) else {
-                    self.status = "A live evaluation needs a provider key for the agent's model: add one in Settings › Providers.".into();
+                let Some(model) = crate::live::live_model(&prepared, self.live_providers()) else {
+                    self.status = format!(
+                        "A live evaluation needs a key of {}'s own for `{}`: add one in Settings › Providers.",
+                        prepared.model.provider.name(),
+                        prepared.model.model
+                    );
                     return;
                 };
-                request.samples = 5;
+                request.samples = confirmed.samples;
+                request.limits.max_live_calls = Some(confirmed.allowance);
                 request.binding = Some(prepared.run);
+                live_plan = Some(confirmed);
                 Work::Model(BackgroundRun::start(
                     program,
                     digest,
@@ -492,10 +528,17 @@ impl Studio {
                 }
             },
         };
+        let started_digest = self
+            .project
+            .as_ref()
+            .map(|p| model_digest(p.state().tree(), scenario))
+            .unwrap_or_default();
         self.runs.active = Some(ActiveRun {
             scenario,
             mode,
             started: Instant::now(),
+            digest: started_digest,
+            plan: live_plan,
             work,
         });
         self.runs.playing = false;
@@ -544,6 +587,40 @@ impl Studio {
         Ok(Work::Thread { receiver, cancel })
     }
 
+    /// The provider layer a live evaluation calls (tests point it at a
+    /// local server).
+    pub(crate) fn live_providers(&self) -> agq_providers::Providers {
+        #[cfg(test)]
+        if let Some(providers) = &self.runs.test_providers {
+            return providers.clone();
+        }
+        agq_providers::Providers::new()
+    }
+
+    /// Stops a live evaluation whose plan no longer holds: the model it ran
+    /// over, or how its agent is called, changed while it ran (C-52). Its
+    /// calls stop at once; its result comes back cancelled and outdated.
+    pub fn supersede_live_run(&mut self) {
+        let Some(active) = &self.runs.active else {
+            return;
+        };
+        let Some(plan) = &active.plan else {
+            return;
+        };
+        let (scenario, digest, binding) =
+            (active.scenario, active.digest.clone(), plan.binding.clone());
+        let model_changed = self.project.as_ref().is_none_or(|p| {
+            let tree = p.state().tree();
+            !tree.contains(scenario) || model_digest(tree, scenario) != digest
+        });
+        let binding_changed = !model_changed
+            && self.binding_now(scenario).ok().flatten().as_deref() != Some(binding.as_str());
+        if model_changed || binding_changed {
+            self.stop_run();
+            self.status = "Stopped the live evaluation: the model changed while it ran, so its result would be outdated.".into();
+        }
+    }
+
     /// Stops the run in progress; it ends as cancelled.
     pub fn stop_run(&mut self) {
         if let Some(active) = &self.runs.active {
@@ -572,6 +649,14 @@ impl Studio {
             && let Err(error) = store.save(&result)
         {
             self.status = format!("The result could not be saved: {error}");
+        }
+        // A live evaluation's known cost joins the day's total (A8); a
+        // cost that is unknown is said with the result, never counted as
+        // free.
+        if let Some(live) = &result.live
+            && let Some(cost) = live.cost_usd.or(live.known_cost_usd)
+        {
+            self.daily_cost.add(cost);
         }
         if let Some(reply) = self.runs.assistant.take() {
             let _ = reply.send(agq_assistant::ToolResult::answer(result.describe(None, 12)));
@@ -751,6 +836,69 @@ fn blocked_result(
         },
         live: None,
     }
+}
+
+/// A live evaluation's summary in plain words, for the Run panel (C-52):
+/// samples, calls and failures; the cost, with what of it is unknown; the
+/// model and how it answered; what the kept answers are.
+pub fn live_lines(result: &RunResult) -> Vec<String> {
+    let Some(live) = &result.live else {
+        return Vec::new();
+    };
+    let failures = if live.failures.is_empty() {
+        "no agent failures".to_string()
+    } else {
+        live.failures
+            .iter()
+            .map(|(what, n)| format!("{what} {n}"))
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    let cost = match (live.cost_usd, live.known_cost_usd, live.unknown_cost) {
+        (Some(c), _, _) => format!("Estimated cost ${c:.6}, from reported usage"),
+        (None, Some(c), n) => {
+            format!("Estimated cost ${c:.6} known, plus {n} call(s) whose cost is unknown")
+        }
+        (None, None, n) if n > 0 => format!("Cost unknown: {n} call(s) did not report it"),
+        (None, None, _) => "Cost unknown".to_string(),
+    };
+    let mut lines = vec![
+        format!(
+            "{} samples, {} completed, {} call(s); {failures}",
+            live.samples, live.completed, live.calls
+        ),
+        format!(
+            "{cost}; median latency {}",
+            live.latency_ms_median
+                .map_or("unknown".into(), |ms| format!("{ms} ms"))
+        ),
+    ];
+    if let Some(p) = &result.provenance.live {
+        lines.push(format!(
+            "{}/{} · instructions {} ({})",
+            p.provider,
+            p.model,
+            &p.instructions_digest[..p.instructions_digest.len().min(10)],
+            p.instructions_source
+        ));
+    }
+    if let Some(evidence) = live.answers.iter().find_map(|a| a.evidence.as_ref())
+        && let Some(model) = &evidence.model
+    {
+        let how = if evidence.estimates.is_some() {
+            "a typed choice; its confidence is the model's own measure of how concentrated its choice is, not a chance of being right"
+        } else {
+            "chat"
+        };
+        lines.push(format!("Answered by {model}, as {how}"));
+    }
+    if !live.answers.is_empty() {
+        lines.push(format!(
+            "{} distinct request(s) can be kept for replay: the first answer to each, not every sample",
+            live.answers.len()
+        ));
+    }
+    lines
 }
 
 /// One line for the status bar.
@@ -1469,7 +1617,7 @@ mod tests {
         let (mut app, _folder) = screening("runs-kept");
         let rows = app.scenario_rows();
         let names: Vec<&str> = rows.iter().map(|r| r.name.as_str()).collect();
-        assert_eq!(names.len(), 7, "{names:?}");
+        assert_eq!(names.len(), 8, "{names:?}");
         assert!(
             rows.iter().all(|r| r.latest.is_empty()),
             "nothing has run yet"

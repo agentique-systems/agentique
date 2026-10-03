@@ -31,7 +31,10 @@ mod runtime;
 
 pub use models::{KeyCheck, ModelInfo, read_models};
 
-pub use capabilities::{Capabilities, Price, PromptCache, ReasoningText, capabilities, price};
+pub use capabilities::{
+    Capabilities, DECISION_MODELS, Price, PromptCache, ReasoningText, capabilities, price,
+    resolve_model,
+};
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
