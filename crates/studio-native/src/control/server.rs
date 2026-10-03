@@ -61,6 +61,16 @@ fn same(a: &str, b: &str) -> bool {
 
 /// Starts the endpoint and writes its file (port, token, process, instance).
 pub fn start(file: &Path, instance: &str, sender: Sender<Request>) -> Result<Endpoint, String> {
+    start_with(file, instance, sender, FIRST)
+}
+
+/// [`start`], with how long a connection may wait for its first request.
+fn start_with(
+    file: &Path,
+    instance: &str,
+    sender: Sender<Request>,
+    first: Duration,
+) -> Result<Endpoint, String> {
     let listener = TcpListener::bind(("127.0.0.1", 0))
         .map_err(|e| format!("the control endpoint could not start: {e}"))?;
     let port = listener.local_addr().map_err(|e| e.to_string())?.port();
@@ -106,7 +116,7 @@ pub fn start(file: &Path, instance: &str, sender: Sender<Request>) -> Result<End
                 let started = std::thread::Builder::new()
                     .name("agentique-control-connection".into())
                     .spawn(move || {
-                        serve(stream, &token, sender);
+                        serve(stream, &token, sender, first);
                         held.fetch_sub(1, Ordering::SeqCst);
                     });
                 if started.is_err() {
@@ -121,16 +131,13 @@ pub fn start(file: &Path, instance: &str, sender: Sender<Request>) -> Result<End
     })
 }
 
-fn serve(stream: TcpStream, token: &str, sender: Sender<Request>) {
+fn serve(stream: TcpStream, token: &str, sender: Sender<Request>, first: Duration) {
     let Ok(mut writer) = stream.try_clone() else {
         return;
     };
-    if stream.set_read_timeout(Some(FIRST)).is_err() {
+    if stream.set_read_timeout(Some(first)).is_err() {
         return;
     }
-    let Ok(timeouts) = stream.try_clone() else {
-        return;
-    };
     let mut trusted = false;
     let mut reader = BufReader::new(stream);
     loop {
@@ -159,7 +166,9 @@ fn serve(stream: TcpStream, token: &str, sender: Sender<Request>) {
                 if !trusted {
                     // Shown the token: it may now wait as long as an answer.
                     trusted = true;
-                    let _ = timeouts.set_read_timeout(Some(ANSWER));
+                    // On the socket the reader reads (a cloned handle's
+                    // timeout does not reach it on Windows).
+                    let _ = reader.get_ref().set_read_timeout(Some(ANSWER));
                 }
                 if let Some(object) = body.as_object_mut() {
                     object.remove("token");
@@ -237,6 +246,43 @@ mod tests {
         assert_eq!(refused["ok"], false);
         assert!(refused["error"].as_str().unwrap().contains("refused"));
         assert_ne!(random_hex(32), random_hex(32));
+        // A connection that showed the token may then stay idle for longer
+        // than the first request was allowed to take.
+        let (quick, requests) = std::sync::mpsc::channel::<Request>();
+        std::thread::spawn(move || {
+            for request in requests {
+                request.reply.send(json!({ "ok": true }));
+            }
+        });
+        let quick_file = dir.join("quick.json");
+        let short = start_with(&quick_file, "quick", quick, Duration::from_millis(300)).unwrap();
+        let written: Value =
+            serde_json::from_str(&std::fs::read_to_string(&quick_file).unwrap()).unwrap();
+        let mut stream = TcpStream::connect(("127.0.0.1", short.port)).unwrap();
+        let mut reader = BufReader::new(stream.try_clone().unwrap());
+        let mut ask = |stream: &mut TcpStream| {
+            writeln!(
+                stream,
+                "{}",
+                json!({ "op": "observe", "token": written["token"] })
+            )
+            .unwrap();
+            let mut answer = String::new();
+            reader.read_line(&mut answer).unwrap();
+            answer
+        };
+        assert!(ask(&mut stream).contains("\"ok\":true"));
+        std::thread::sleep(Duration::from_millis(900));
+        assert!(
+            ask(&mut stream).contains("\"ok\":true"),
+            "still connected after idling"
+        );
+        // One that never shows it is dropped after the first wait.
+        let silent = TcpStream::connect(("127.0.0.1", short.port)).unwrap();
+        std::thread::sleep(Duration::from_millis(900));
+        let mut line = String::new();
+        let dropped = BufReader::new(silent).read_line(&mut line);
+        assert!(matches!(dropped, Ok(0) | Err(_)), "{line}");
         // A line without end is refused at 1 MB, not read into memory
         // (exactly 1 MB is sent, so nothing unread makes the connection
         // reset before the answer arrives).
