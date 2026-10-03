@@ -39,13 +39,17 @@ are its primary users: these rules are theirs as much as any person's.
    results honestly, including failures. Changes to the Studio or the Surface
    also run the reference budget run (ROADMAP §8.6).
 10. **Inside an objective** (C-53, ROADMAP §4.16): change the model only with
-    Agentique's tools (`apply_changes`), never by editing `model/*.sysml`,
-    `model/agentique.json` or `model/links.json` as files; write only in your
-    cycle's worktree; keep the acceptance criteria and required checks frozen
-    at the proposal; never delete, ignore or loosen a test, check or budget to
-    make it pass (a deliberate change to one is named, with its reason, for
-    the reviewer); never force-push, push to `main` or merge yourself: the
-    Orchestrator merges when the gates pass. Say what you did not verify.
+    Agentique's tools (`apply_changes`, `use_library_block`, `link_code`),
+    never by editing `model/*.sysml`, `model/agentique.json` or
+    `model/links.json` as files; work only in your cycle's worktree (the file
+    tools are held to it, and every path a change touches is checked before
+    merging); leave `.claude/`, `CLAUDE.md` and `AGENTS.md` alone unless the
+    objective names them; keep the acceptance criteria and required checks
+    frozen at the proposal; never delete, ignore or loosen a test, check or
+    budget to make it pass (a deliberate change to one is named, with its
+    reason, for the reviewer); never force-push, push to the default branch
+    (`main`) or merge yourself: the Orchestrator merges when the gates pass.
+    Say what you did not verify.
 
 ## Checks
 
@@ -82,8 +86,7 @@ code and are committed.
 - Product nouns: Studio, Surface, Panels, Conversation, Assistant,
   Orchestrator, System State, Settings, lock, scenario, simulation,
   implementation link, drift, agent, autonomy mode, objective, cycle,
-  permission policy, control interface, observation, trial instance, typed
-  decision. A new product term needs a reason and a glossary entry
+  permission policy, control interface, observation, typed decision. A new product term needs a reason and a glossary entry
   (ROADMAP §9).
 
 ## One truth per topic (ROADMAP §8.2)

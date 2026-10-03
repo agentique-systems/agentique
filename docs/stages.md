@@ -1021,7 +1021,8 @@ it waits for W5.5. Memory was not measured.
 
 Status: **in progress.** Started on 2026-10-01 under the Operator's direction
 (C-51, ROADMAP §6.6), on the branch `stage10/self-hosting`. Nothing here says
-the Operator accepted anything; gates A–E are the Operator's.
+the Operator accepted anything; gates A–E are the Operator's (C-53 replaced
+gates C and D with Stage 11's autonomous proof, W11.7).
 
 **Baseline** (`main` at `f3d0dae2`, untouched, debug builds with lean
 settings): `cargo fmt --all -- --check` clean; `python
@@ -1077,7 +1078,8 @@ workflow in model execution), `d-daily`, `e-settings`, `h-library`,
 - CI's new companion step (Node 22 from the runner's tool cache) had not run:
   on `main` CI stopped at checkout (a tracked agent worktree), repaired in
   C-52's step 0a below.
-- Gates A–E are the Operator's; none is claimed.
+- Gates A–E are the Operator's; none is claimed (C and D are replaced by
+  W11.7 under C-53).
 
 ## Scenario I's typed decisions, alongside Stage 10 (C-52)
 
@@ -1227,7 +1229,7 @@ launcher, and C-52's typed decisions, as recorded above.
 
 | Item | Pull request | State |
 |---|---|---|
-| W11.1 Direction and self-model | `stage11/governance` | C-53 recorded; Scenario J, §4.16, §6.8; `AGENTS.md` rule 10; `CLAUDE.md`; the self-model gains `Orchestrator` (locked, through a System State `Lock` change), the control and objective ports, `GatesDecide`, and the new contracts of `ClaudeAgentRuntime`, `Studio` and `Launcher` |
+| W11.1 Direction and self-model | #97 | C-53 recorded; Scenario J, §4.16, §6.8; `AGENTS.md` rule 10; `CLAUDE.md`; the self-model gains `Orchestrator` (locked, through a System State `Lock` change), the control and objective ports, `GatesDecide`, and the new contracts of `ClaudeAgentRuntime`, `Studio` and `Launcher` |
 | W11.2 The development runtime | — | not started |
 | W11.3 The control interface | — | not started |
 | W11.4 Lifecycle | — | not started |
@@ -1243,12 +1245,12 @@ CLI** (W11.2). "Before" is `main` at `f7a891da`; "Target" is C-53's.
 | Coding and reasoning model | Anthropic models with an Anthropic key only | Anthropic, or an Anthropic-compatible endpoint (DeepSeek `deepseek-v4-pro`, `deepseek-flash`) with that provider's key; effort and thinking |
 | File search (Glob, Grep) | Off | On, inside the policy's read roots |
 | File read | Off | On, inside the read roots |
-| File edit and write | Off | On, inside the write roots; model files and protected paths refused |
-| Commands (Bash, PowerShell) | Off | On; refused commands named in the policy (force-push, pushing to `main`, merging, history rewrites, global configuration) |
+| File edit and write | Off | On, inside the write roots; model files, `.claude/`, `CLAUDE.md`, `AGENTS.md` and protected paths refused |
+| Commands (Bash, PowerShell) | Off | On; refused commands named in the policy (force-push, pushing to `main`, merging, history rewrites, global configuration); not confined to a folder (no sandbox); the model's key removed from their environment |
 | Builds and tests | Only through a task worker's allowed programs | `cargo`, `python`, `node` in the session's folder, lean build settings, its own target folder |
-| Git | Integration by the Studio only | Ordinary git in the repository; commits by the Orchestrator on cycle branches |
+| Git | Integration by the Studio only | Reading git and committing in the session's own worktree; pushing and merging are the Orchestrator's |
 | GitHub | None | Pull requests opened and merged by the Orchestrator when the gates pass; read-only `gh` for agents |
-| Subagents | Off | On: the project's definitions plus reviewer, evaluator and implementer |
+| Subagents | Off | On: the SDK's own and the project's definitions; each Orchestrator role (lead, implementer, reviewer, evaluator) is its own session |
 | Custom tools | Agentique's MCP tools | Agentique's tools, the control interface and the Orchestrator's tools |
 | MCP servers | Agentique's only | Plus the project's servers the Operator enables |
 | Project instructions | Off (`CLAUDE.md` disabled) | `CLAUDE.md`, which imports `AGENTS.md` |
