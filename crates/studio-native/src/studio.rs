@@ -541,15 +541,26 @@ impl Studio {
             (Ok(a), Ok(b)) => a == b,
             _ => a == b,
         };
-        if self
+        let reopening = self
             .project
             .as_ref()
-            .is_some_and(|project| same(project.folder(), folder))
-        {
+            .is_some_and(|project| same(project.folder(), folder));
+        if reopening {
             self.save_session();
             self.project = None;
         }
-        match Project::open(folder) {
+        let mut opened = Project::open(folder);
+        // The folder's lock was this window's own. On Linux a process started
+        // at that moment by another thread holds a copy of the lock file until
+        // it has started, so the lock may outlive the project by a moment:
+        // wait for it briefly rather than call our own folder taken.
+        let deadline = Instant::now() + Duration::from_secs(2);
+        while reopening && matches!(opened, Err(ProjectError::Locked)) && Instant::now() < deadline
+        {
+            std::thread::sleep(Duration::from_millis(20));
+            opened = Project::open(folder);
+        }
+        match opened {
             Ok(project) => self.install_project(project),
             Err(ProjectError::Locked) => {
                 self.status = format!("{} is open in another Agentique window", folder.display());

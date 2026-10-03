@@ -14,5 +14,9 @@
 /verification/**/output.txt
 /verification/**/result.json
 __pycache__/
+# Agent worktrees are local working copies of this repository, never part of
+# its tree (a tracked one broke CI's checkout, which found a submodule
+# without a URL).
+/.claude/worktrees/
 
 .env
