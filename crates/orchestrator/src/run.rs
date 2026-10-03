@@ -154,6 +154,29 @@ pub fn start(setup: Setup, objective: Objective) -> Handle {
     }
 }
 
+/// Makes every file of a checkout newer than anything built before (Cargo
+/// judges freshness by file times, and the build folder is shared).
+fn freshen(folder: &Path) {
+    let now = std::time::SystemTime::now();
+    let mut pending = vec![folder.to_path_buf()];
+    while let Some(dir) = pending.pop() {
+        for entry in std::fs::read_dir(&dir).into_iter().flatten().flatten() {
+            let path = entry.path();
+            if path
+                .file_name()
+                .is_some_and(|n| n == ".git" || n == "target" || n == "node_modules")
+            {
+                continue;
+            }
+            if path.is_dir() {
+                pending.push(path);
+            } else if let Ok(file) = std::fs::File::options().write(true).open(&path) {
+                let _ = file.set_modified(now);
+            }
+        }
+    }
+}
+
 /// How many tests a test run says it ran: cargo's `test result:` lines,
 /// Node's `# pass` / `ℹ pass`, Python's `Ran N tests`; `None` when it says
 /// nothing countable.
@@ -756,6 +779,45 @@ impl Driver {
         })
     }
 
+    /// Build settings an agent's command left below the work folder
+    /// (Cargo reads every folder's `.cargo` above a checkout, the nearest
+    /// first): removed before the checks, so only the Orchestrator's own
+    /// apply.
+    fn remove_build_settings(&self) -> Result<(), String> {
+        let ours = self.setup.work.join(".cargo");
+        let mut pending = vec![self.setup.work.clone()];
+        let mut removed = Vec::new();
+        while let Some(dir) = pending.pop() {
+            for entry in std::fs::read_dir(&dir).into_iter().flatten().flatten() {
+                let path = entry.path();
+                if !path.is_dir()
+                    || path
+                        .file_name()
+                        .is_some_and(|n| n == "target" || n == ".git" || n == "node_modules")
+                {
+                    continue;
+                }
+                if path.file_name().is_some_and(|n| n == ".cargo") && path != ours {
+                    std::fs::remove_dir_all(&path)
+                        .map_err(|e| format!("{}: {e}", path.display()))?;
+                    removed.push(path.display().to_string());
+                } else if path.components().count() < self.setup.work.components().count() + 6 {
+                    pending.push(path);
+                }
+            }
+        }
+        if !removed.is_empty() {
+            self.note(
+                "orchestrator",
+                format!(
+                    "removed build settings an agent left: {}",
+                    removed.join(", ")
+                ),
+            );
+        }
+        Ok(())
+    }
+
     /// Clears dialogs standing in the way of `goal` in a test instance with
     /// typed decisions (rules where the answer is known, Jev, then the
     /// reasoning model), recording each with its cost and latency. A dialog
@@ -894,6 +956,9 @@ impl Driver {
                 .setup
                 .store
                 .once(&id, &format!("cycle-{n}/worktree"), || {
+                    // Made again if an earlier start was cut short.
+                    let _ = git::remove_worktree(&repository, &name);
+                    let _ = std::fs::remove_dir_all(&work);
                     let branch = git::create_worktree(&repository, &name, &work)
                         .map(|w| w.branch)
                         .map_err(|e| e.to_string())?;
@@ -1021,6 +1086,17 @@ impl Driver {
                     detail: "it ran no test".into(),
                 }
             }
+            Ok(finished)
+                if finished.success
+                    && format!("{}{}", finished.stdout, finished.stderr)
+                        .contains("test result: FAILED") =>
+            {
+                Outcome {
+                    name,
+                    verdict: "failed".into(),
+                    detail: "the run exited well but says tests failed".into(),
+                }
+            }
             Ok(finished) if finished.success => Outcome {
                 name,
                 verdict: "passed".into(),
@@ -1060,7 +1136,7 @@ impl Driver {
         // The build settings, as written: an agent's command may have
         // changed them.
         cargo_settings(&self.setup.work)?;
-        let verify = self.checkout("verify", &commit)?;
+        self.remove_build_settings()?;
         let proposal = self.cycle().proposal.clone().ok_or("no proposal")?;
         // Once per cycle: the command criteria on the base must fail (or
         // run no test), so that passing after shows the change.
@@ -1080,6 +1156,11 @@ impl Driver {
             self.cycle_mut().before = outcomes;
             self.save();
         }
+        // The change's checkout after the base's build, its files newer than
+        // what the shared build folder holds, so nothing of the base's build
+        // stands in for the change's.
+        let verify = self.checkout("verify", &commit)?;
+        freshen(&verify);
         let mut checks = Vec::new();
         for words in self.setup.checks.clone() {
             self.hold();
@@ -1154,13 +1235,17 @@ impl Driver {
             .iter()
             .map(|f| f.path.replace('\\', "/"))
             .collect();
-        let links: Vec<String> = [
-            verify.join("model").join("links.json"),
-            repository.join("model").join("links.json"),
-        ]
-        .iter()
-        .filter_map(|p| std::fs::read_to_string(p).ok())
-        .collect();
+        let mut links = Vec::new();
+        if let Ok(text) = std::fs::read_to_string(verify.join("model").join("links.json")) {
+            links.push(text);
+        }
+        if let Ok(shown) = forge::run(
+            &repository,
+            &["git", "show", &format!("{base}:model/links.json")],
+            Duration::from_secs(60),
+        ) {
+            links.push(shown.stdout);
+        }
         gates.push(if verify.join("model").is_dir() {
             match agq_assistant::model_tools::locked_code(
                 &verify,
@@ -1574,6 +1659,15 @@ impl Driver {
                 pr.url
             ),
         );
+        // The host has the pushed commit as the pull request's head before
+        // its checks are read (a re-push's checks, not the last ones).
+        let since = Instant::now();
+        while forge::head(&repository, pr.number).ok().as_deref() != Some(pushed.as_str()) {
+            if since.elapsed() > Duration::from_secs(180) || self.controls.stopped() {
+                return Err("the pull request does not show the pushed commit".into());
+            }
+            std::thread::sleep(Duration::from_secs(5));
+        }
         let stop = self.controls.stop.clone();
         match forge::wait_for_checks(&repository, pr.number, forge::CHECKS_WITHIN, &|| {
             stop.load(Ordering::SeqCst)

@@ -63,8 +63,9 @@ pub struct Permissions {
     /// Locked elements (qualified names) the cycles may change.
     #[serde(default)]
     pub locked: Vec<String>,
-    /// Paths of the protected agent configuration the cycles may change
-    /// (`.claude`, `CLAUDE.md`, `AGENTS.md`, `.mcp.json`).
+    /// Paths of the agent configuration (`.claude`, `CLAUDE.md`,
+    /// `AGENTS.md`, `.mcp.json`) and of Agentique's safeguards
+    /// (`gates::SAFEGUARDS`) the cycles may change.
     #[serde(default)]
     pub configuration: Vec<String>,
 }

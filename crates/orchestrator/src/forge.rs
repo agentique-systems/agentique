@@ -333,7 +333,7 @@ pub fn merge(
             before["headRefOid"]
         ));
     }
-    run(
+    let merging = run(
         repository,
         &[
             "gh",
@@ -347,7 +347,15 @@ pub fn merge(
             subject,
         ],
         Duration::from_secs(300),
-    )?;
+    );
+    if let Err(error) = merging {
+        // The host may have merged although the command failed (a time
+        // out): what it says now decides.
+        match state(3) {
+            Ok(now) if now["state"] == "MERGED" => {}
+            _ => return Err(error),
+        }
+    }
     let after = state(5)?;
     if after["state"] != "MERGED" {
         return Err(format!(
