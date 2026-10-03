@@ -157,13 +157,16 @@ pub fn find_node() -> Result<Node, String> {
     Ok(Node { path, version })
 }
 
-/// A command that opens no console window.
-fn hidden(mut command: Command) -> Command {
+/// A command that opens no console window (on Windows; elsewhere there is
+/// none to hide).
+fn hidden(command: Command) -> Command {
     #[cfg(windows)]
-    {
+    let command = {
         use std::os::windows::process::CommandExt;
+        let mut command = command;
         command.creation_flags(0x0800_0000);
-    }
+        command
+    };
     command
 }
 
