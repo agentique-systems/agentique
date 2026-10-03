@@ -1154,3 +1154,20 @@ accepts it. States: *done* (built and tested offline), *planned*,
   is bound to a provider, and "execution" already names a part.
 - 0a also carries two Linux-only CI fixes found once checkout worked again (a
   lint and a test's lock race); they were hidden behind the checkout failure.
+- Thresholds and deadlines are not in a binding (the investigation listed
+  "policy" with them): they are applied to a recorded answer on replay, and
+  the model digest already outdates results when they change; keying on them
+  would force paid re-recording without changing what the model was asked.
+- A provider failure ends a live evaluation (no later sample sends); before,
+  each later sample asked again.
+
+**Compatibility and rollback (step 3).** New data is read by the previous
+build (`main` at `219598b6`) as follows, from a run of that build's reader on
+data this build wrote (Linux, outside the repository): bound recordings are
+read and never matched (0 of 4); a result stopped as `budget-exhausted` is
+skipped (2 of 3 listed); a live cost with unknown parts reads as unknown. It
+shows a bound live or replay result as current while the model is unchanged,
+as it always did for live results. Recordings made before this build replay
+unbound requests only; in the Studio every replay is bound, so they must be
+recorded again (the stop says so). Results from before are outdated, never
+rewritten.
