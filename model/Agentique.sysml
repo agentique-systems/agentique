@@ -9,7 +9,8 @@ package AgentiqueArchitecture {
          * workflows of ROADMAP §2.8 C2 across the parts, with their failure paths.
          * Inside: one System State per project, its history in git, the Library,
          * scenarios and runs, implementation links and checks, controlled
-         * execution, the Assistant, and the builds of Agentique itself. Outside:
+         * execution, the Assistant, the builds of Agentique itself, and the
+         * Operator's objectives, which the Orchestrator runs (C-53). Outside:
          * a project's code and deployments, other people, and any sandbox the
          * host does not have. The scenarios run in model execution: they check
          * this model's account of the workflows, not the code; the code is checked
@@ -257,11 +258,43 @@ package AgentiqueArchitecture {
         attribute build : Started;
     }
 
+    item def ObjectiveRequest {
+        doc /* The Operator's objective (C-53): its intent, budgets and the permissions
+             * it carries. `cycles` is its cycle budget. */
+        attribute cycles : Natural;
+    }
+
+    item def CycleReport {
+        doc /* One cycle's outcome as the Objectives panel shows it: whether its change
+             * was merged and whether its build was adopted. */
+        attribute merged : Boolean;
+        attribute adopted : Boolean;
+    }
+
+    item def Observation {
+        doc /* The Studio's visible state as text (C-53): its identity, screen, dialog,
+             * selection, controls and commands, at a revision. */
+        attribute revision : Natural;
+    }
+
+    item def ControlAction {
+        doc /* An agent's action on the Studio: a command, input on a control, or a
+             * selection, naming the identity and revision it was observed against. */
+        attribute observedAt : Natural;
+    }
+
+    item def ActionOutcome {
+        doc /* Whether the action went through the Studio's own handlers, or was
+             * refused (stale, gone, disabled, paused) and why. */
+        attribute ok : Boolean;
+    }
+
     // The contracts: what goes in and out of each part's ports.
 
     port def OperatorPort {
         doc /* The Operator's side of the Studio: edits, undo and opening; messages to
-             * the Assistant; tasks, builds and adoption; and what the Studio shows. */
+             * the Assistant; tasks, builds and adoption; objectives and their cycles
+             * (C-53); and what the Studio shows. */
         in item edit : Edit;
         in item undo : Undo;
         in item reopen : Reopen;
@@ -271,6 +304,7 @@ package AgentiqueArchitecture {
         in item integrate : IntegrateRequest;
         in item build : BuildRequest;
         in item adopt : AdoptRequest;
+        in item goal : ObjectiveRequest;
         out item update : SurfaceUpdate;
         out item question : LockQuestion;
         out item status : StatusMessage;
@@ -279,6 +313,7 @@ package AgentiqueArchitecture {
         out item integrated : Integrated;
         out item built : Built;
         out item running : Running;
+        out item cycle : CycleReport;
     }
 
     port def ChangePort {
@@ -332,6 +367,20 @@ package AgentiqueArchitecture {
         doc /* The launcher: adopt a build, and which build runs. */
         in item adopt : AdoptRequest;
         out item running : Running;
+    }
+
+    port def ControlPort {
+        doc /* The Studio's control interface (C-53): actions in; observations and the
+             * outcome of each action out. */
+        in item request : ControlAction;
+        out item observation : Observation;
+        out item outcome : ActionOutcome;
+    }
+
+    port def ObjectivePort {
+        doc /* The Orchestrator's side: objectives in, cycle reports out. */
+        in item goal : ObjectiveRequest;
+        out item cycle : CycleReport;
     }
 
     // The parts and the crates that implement them.
@@ -424,15 +473,20 @@ package AgentiqueArchitecture {
 
     part def Studio {
         doc /* The application the Operator works in: the Surface, the Panels, the
-             * Conversation, Settings and the task review. It carries out every edit and
-             * every tool call through the System State's one change path (asking about
-             * locks), runs tasks through Execution, and decides nothing the Operator
-             * has not. Owns presentation (cameras, layouts, selection), the session,
-             * Settings and each project's app data (conversation, jobs, runs,
-             * required checks). */
+             * Conversation, Settings, the task review and the Objectives panel. It
+             * carries out every edit and every tool call through the System State's one
+             * change path (asking about locks), runs tasks through Execution, and decides
+             * nothing the Operator or an objective has not. Its control interface (C-53)
+             * gives agents what it shows as an observation and carries out their actions
+             * through the same handlers as the Operator's input, refusing stale ones, and
+             * shows which agent does what. Owns presentation (cameras, layouts,
+             * selection), the session, Settings, the control interface's event trace and
+             * each project's app data (conversation, jobs, runs, required checks). */
         part 'agq-studio-native' : Crate;
         part 'agq-studio-scene' : Crate;
         port operator : OperatorPort;
+        port control : ControlPort;
+        port objectives : ~ObjectivePort;
         port edits : ~ChangePort;
         port assistant : ~TurnPort;
         port execution : ~JobPort;
@@ -514,24 +568,33 @@ package AgentiqueArchitecture {
              * either Agentique's own loop over a provider or the Claude Agent runtime,
              * and every tool call it makes is checked against its schema and carried
              * out by the Studio on the one change path; in an implementation task it is
-             * the worker, with the coding tools in the task's worktree. Owns the tool
-             * definitions, the skills and the conversation's entries. Its behaviour
-             * comes from a model, so the scenarios stand it in. It never changes the
-             * model, the code or anything else except through those tools. */
+             * the worker, with the coding tools in the task's worktree, and in an
+             * objective its sessions are the Orchestrator's lead, implementer, reviewer
+             * and evaluator (C-53). Owns the tool definitions, the skills, the
+             * development sessions' permission policies and the conversation's entries.
+             * Its behaviour comes from a model, so the scenarios stand it in. It never
+             * changes the model except through Agentique's tools, and works on files
+             * and commands only inside its session's permission policy. */
         part 'agq-assistant' : Crate;
         port turn : TurnPort;
     }
 
     part def ClaudeAgentRuntime {
-        doc /* The Claude Agent runtime (C-51, ROADMAP §4.7): a TypeScript companion
-             * process (claude-agent/) that runs the official Claude Agent SDK's loop for
-             * the Assistant, speaking protocol 1 with the Studio on standard input and
-             * output. Owns the SDK's session files (in its own configuration folder).
-             * Contract: the agent calls only Agentique's tools, through one MCP server
-             * whose calls the Studio carries out; every built-in tool is off; nothing of
-             * the machine's Claude Code configuration is loaded. Not a sandbox: it runs
-             * with the Operator's rights and reaches Anthropic's API. No crate: its
-             * code is in claude-agent/src. A safeguard: locked. */
+        doc /* The Claude Agent runtime (C-51, C-53, ROADMAP §4.7): a TypeScript
+             * companion process (claude-agent/) that runs the official Claude Agent SDK's
+             * loop for the Assistant and the Orchestrator's agents, speaking protocol 2
+             * with the Studio on standard input and output. Owns the SDK's session files
+             * (in its own configuration folder). Contract: the SDK's own tools work
+             * under the permission policy the Studio gives each session, enforced in one
+             * pre-tool hook (what it allows runs, what it forbids is refused with the
+             * reason, anything else goes to the Studio); a model file is never written
+             * with a file tool, so the model changes only through Agentique's tools,
+             * served by one MCP server whose calls the Studio carries out; the project's
+             * configuration is loaded, never the machine's user settings; the
+             * environment carries no key but its model's. Not a sandbox: it runs with
+             * the Operator's rights and reaches its model's API (Anthropic, or an
+             * Anthropic-compatible endpoint). No crate: its code is in claude-agent/src.
+             * A safeguard: locked. */
     }
 
     part def Providers {
@@ -614,8 +677,11 @@ package AgentiqueArchitecture {
     part def Launcher {
         doc /* Starts the current build of Agentique and keeps the last known good one
              * (C-51, ROADMAP §4.15): if a new build does not start and report ready, it
-             * starts the last known good build, which says what happened. Owns the
-             * builds registry. Depends on no other part, so it works when a new build
+             * starts the last known good build, which says what happened. As the
+             * supervisor (C-53) it stays the Studio's parent: it starts the build a
+             * handover names, restarts a crashed Studio once and then falls back, and
+             * makes a build last known good only after its check after adoption. Owns
+             * the builds registry. Depends on no other part, so it works when a new build
              * does not; it never builds, downloads or deletes. A safeguard: locked. */
         part 'agq-launcher' : Crate;
         port launch : LaunchPort;
@@ -626,6 +692,26 @@ package AgentiqueArchitecture {
             transition startsNew first ready accept a : AdoptRequest via launch if a.starts do send new Running(build = Started::newBuild) via launch then ready;
             transition fallsBack first ready accept a : AdoptRequest via launch if not a.starts do send new Running(build = Started::lastKnownGood) via launch then ready;
         }
+    }
+
+    part def Orchestrator {
+        doc /* Runs the Operator's objectives (C-53, ROADMAP §4.16): each objective in
+             * cycles (propose with frozen acceptance criteria, implement in a worktree,
+             * check on a clean checkout, evaluate in a test instance through the control
+             * interface, independent review, bounded repair, merge, build, try, adopt,
+             * continue), each judgment by an agent session of the Assistant's runtime,
+             * each bounded choice in operation by a typed decision that escalates when
+             * unsure. Owns the objectives' records (app data: state, journal, sessions,
+             * results, spend, continuation). Contract: deterministic code decides the
+             * next phase from recorded results; a cycle merges only when every required
+             * check and acceptance criterion passed on the reviewed commit, the reviewer
+             * approved and the repository's checks passed, and adopts only after its
+             * test instance passed; a check that did not run is never a pass; weakening a check
+             * never counts; budgets and lack of progress stop it; resuming never repeats
+             * a completed side effect; Stop interrupts every session. Planned in W11.5:
+             * no crate yet. A safeguard: locked. */
+        port objectives : ObjectivePort;
+        port control : ~ControlPort;
     }
 
     part def Agentique {
@@ -644,6 +730,7 @@ package AgentiqueArchitecture {
         part implementation : Implementation;
         part execution : Execution;
         part launcher : Launcher;
+        part orchestrator : Orchestrator;
         connect operator to studio.operator;
         connect studio.edits to systemState.changes;
         connect systemState.storage to history.folder;
@@ -651,6 +738,8 @@ package AgentiqueArchitecture {
         connect studio.execution to execution.jobs;
         connect studio.verifying to implementation.verdict;
         connect studio.launcher to launcher.launch;
+        connect studio.objectives to orchestrator.objectives;
+        connect orchestrator.control to studio.control;
     }
 
     // Allowed dependencies, client to supplier. A crate may use crates of its own part
@@ -677,14 +766,15 @@ package AgentiqueArchitecture {
         doc /* Element identities and model types in tool calls. */
     }
     dependency from Assistant to Providers {
-        doc /* Model calls: requests, streamed replies, usage; and the Anthropic key for
-             * the Claude Agent runtime's process. */
+        doc /* Model calls: requests, streamed replies, usage; and the key of the Claude
+             * Agent runtime's model (Anthropic's, or the provider whose
+             * Anthropic-compatible endpoint it uses, C-53) for its process. */
     }
     dependency from Assistant to Library {
         doc /* The Library tools: search, read and use building blocks. */
     }
     dependency from Assistant to ClaudeAgentRuntime {
-        doc /* The Claude Agent runtime: started per turn, protocol 1 (C-51). */
+        doc /* The Claude Agent runtime: started per turn, protocol 2 (C-51, C-53). */
     }
     dependency from Studio to Simulation {
         doc /* The Scenarios tab, run controls, traces and results (C-50). */
@@ -737,7 +827,8 @@ package AgentiqueArchitecture {
     requirement def OneChangePath {
         doc /* The Surface, the Inspector, the Library and the Assistant change the model
              * only through System State changes, each one undo step; a change to a
-             * locked part applies only after the Operator confirms that change. */
+             * locked part applies only after the Operator confirms that change, or
+             * within an objective that names it (C-53). */
         subject systemState : SystemState;
     }
 
@@ -748,8 +839,10 @@ package AgentiqueArchitecture {
     }
 
     requirement def AssistantThroughTools {
-        doc /* The Assistant acts only through its tools, each checked and carried out by
-             * the Studio on the one change path, whatever runtime runs its turn. */
+        doc /* The Assistant changes the model only through Agentique's tools, each
+             * checked and carried out by the Studio on the one change path, whatever
+             * runtime runs its turn; in a development session its other side effects
+             * happen only inside the session's permission policy (C-53). */
         subject studio : Studio;
     }
 
@@ -765,11 +858,21 @@ package AgentiqueArchitecture {
         subject launcher : Launcher;
     }
 
+    requirement def GatesDecide {
+        doc /* Within an objective, a change is merged only when every required check and
+             * acceptance criterion passed on the reviewed commit, an independent review
+             * approved it and the repository's own checks passed, and a build is adopted
+             * only after its test instance passed; an agent's judgment never overrides
+             * a failing check (C-53). */
+        subject orchestrator : Orchestrator;
+    }
+
     requirement oneChangePath : OneChangePath;
     requirement savedBeforeShown : SavedBeforeShown;
     requirement assistantThroughTools : AssistantThroughTools;
     requirement requiredChecksDecide : RequiredChecksDecide;
     requirement recoverableAdoption : RecoverableAdoption;
+    requirement gatesDecide : GatesDecide;
 
     part agentique : Agentique;
 
@@ -778,6 +881,31 @@ package AgentiqueArchitecture {
     satisfy assistantThroughTools by agentique.studio;
     satisfy requiredChecksDecide by agentique.implementation;
     satisfy recoverableAdoption by agentique.launcher;
+    satisfy gatesDecide by agentique.orchestrator;
+
+    // The Orchestrator's allowed dependencies (C-53), after the earlier anonymous
+    // members so that their identities keep their places.
+
+    dependency from Studio to Orchestrator {
+        doc /* The Objectives panel starts, shows, steers and stops objectives; the control
+             * interface's types are the Orchestrator's, which drives test instances. */
+    }
+    dependency from Orchestrator to Assistant {
+        doc /* Each role is an agent session on the Assistant's runtime. */
+    }
+    dependency from Orchestrator to Execution {
+        doc /* Worktrees, commits and commands; pushing and pull requests as exact
+             * commands on Execution's existing allow-list. */
+    }
+    dependency from Orchestrator to Implementation {
+        doc /* The required checks and the one verification summary. */
+    }
+    dependency from Orchestrator to Providers {
+        doc /* Typed decisions in operation, and prices for the spend budget. */
+    }
+    dependency from Orchestrator to Launcher {
+        doc /* Builds' manifests and the registry, for trial and adoption. */
+    }
 
     // The workflows (ROADMAP §2.8 C2), with their failure paths. Each runs in model
     // execution and steps across the parts; each step's code and tests are linked.
