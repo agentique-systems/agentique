@@ -84,17 +84,36 @@ fn main() {
     let started = std::time::Instant::now();
     let result = Providers::new().decide(&request);
     let elapsed = started.elapsed();
+    // Unknown usage is logged at the worst case, never as free; a failure
+    // costs nothing only when no request was sent.
     let (cost, line) = match &result {
         Ok(reply) => {
             let cost = reply.usage.cost_usd(&model).unwrap_or(worst);
             (
                 cost,
-                json!({ "outcome": "complete", "input_tokens": reply.usage.input_tokens, "output_tokens": reply.usage.output_tokens }),
+                json!({
+                    "outcome": "complete",
+                    "input_tokens": reply.usage.input_tokens,
+                    "output_tokens": reply.usage.output_tokens,
+                    "usage_complete": reply.usage.is_complete(),
+                    "attempts": reply.attempts,
+                }),
             )
         }
-        Err(error) => (
-            0.0,
-            json!({ "outcome": "failed", "kind": format!("{:?}", error.kind) }),
+        Err(failure) => (
+            if failure.attempts == 0 {
+                0.0
+            } else {
+                failure
+                    .usage
+                    .and_then(|usage| usage.cost_usd(&model))
+                    .unwrap_or(worst * f64::from(failure.attempts))
+            },
+            json!({
+                "outcome": "failed",
+                "kind": format!("{:?}", failure.error.kind),
+                "attempts": failure.attempts,
+            }),
         ),
     };
     let mut entry = json!({
@@ -123,13 +142,23 @@ fn main() {
             for (id, answer) in &reply.answers {
                 println!("- {id}: {answer:?}");
             }
+            let count = |n: Option<u64>| n.map_or("unknown".to_string(), |n| n.to_string());
             println!(
-                "Tokens: {} in, {} out; estimated cost ${cost:.6}.",
-                reply.usage.input_tokens, reply.usage.output_tokens
+                "Tokens: {} in, {} out; estimated cost ${cost:.6}{}.",
+                count(reply.usage.input_tokens),
+                count(reply.usage.output_tokens),
+                if reply.usage.is_complete() {
+                    ""
+                } else {
+                    " (usage incomplete: logged at the worst case)"
+                }
             );
         }
-        Err(error) => {
-            println!("Failed after {elapsed:?}: {error}");
+        Err(failure) => {
+            println!(
+                "Failed after {elapsed:?} and {} request(s): {failure}",
+                failure.attempts
+            );
             std::process::exit(1);
         }
     }

@@ -9,16 +9,51 @@ use std::io::{BufRead, BufReader, Read, Write};
 use std::net::TcpListener;
 use std::sync::mpsc::{self, Receiver};
 
+/// A complete HTTP response with a JSON body.
+fn response(status: &str, headers: &str, body: &str) -> Vec<u8> {
+    format!(
+        "HTTP/1.1 {status}\r\nContent-Type: application/json\r\n{headers}Content-Length: {}\r\nConnection: close\r\n\r\n{body}",
+        body.len()
+    )
+    .into_bytes()
+}
+
+/// A response whose body is sent in these chunks (chunked encoding).
+fn chunked(status: &str, chunks: &[&[u8]]) -> Vec<u8> {
+    let mut out = format!(
+        "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n"
+    )
+    .into_bytes();
+    for chunk in chunks {
+        out.extend_from_slice(format!("{:x}\r\n", chunk.len()).as_bytes());
+        out.extend_from_slice(chunk);
+        out.extend_from_slice(b"\r\n");
+    }
+    out.extend_from_slice(b"0\r\n\r\n");
+    out
+}
+
 /// Serves `(status line, extra headers, body)` answers in order; reports
 /// each request's path, authorization header and JSON body.
 fn serve(
     answers: Vec<(&'static str, &'static str, String)>,
 ) -> (String, Receiver<(String, String, Value)>) {
+    serve_raw(
+        answers
+            .into_iter()
+            .map(|(status, headers, body)| response(status, headers, &body))
+            .collect(),
+    )
+}
+
+/// Serves raw responses in order, one connection each; the connection
+/// closes after the bytes are written.
+fn serve_raw(answers: Vec<Vec<u8>>) -> (String, Receiver<(String, String, Value)>) {
     let listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let url = format!("http://{}", listener.local_addr().unwrap());
     let (sender, requests) = mpsc::channel();
     std::thread::spawn(move || {
-        for (status, headers, body) in answers {
+        for answer in answers {
             let Ok((stream, _)) = listener.accept() else {
                 return;
             };
@@ -54,14 +89,17 @@ fn serve(
                 serde_json::from_slice(&request).unwrap_or(Value::Null),
             ));
             let mut stream = stream;
-            let _ = write!(
-                stream,
-                "HTTP/1.1 {status}\r\nContent-Type: application/json\r\n{headers}Content-Length: {}\r\nConnection: close\r\n\r\n{body}",
-                body.len()
-            );
+            let _ = stream.write_all(&answer);
+            let _ = stream.flush();
         }
     });
     (url, requests)
+}
+
+fn providers(url: String) -> Providers {
+    Providers::new()
+        .with_key(Provider::TypeSafe, "test-key")
+        .with_endpoint(Provider::TypeSafe, url)
 }
 
 fn request() -> DecisionRequest {
@@ -98,11 +136,44 @@ fn a_decision_is_asked_and_read() {
     let reply = providers.decide(&request()).unwrap();
     assert!(matches!(&reply.answers["action"], Answer::Choice { choice, .. } if choice == "hold"));
     assert_eq!(reply.request_id.as_deref(), Some("req_7"));
-    assert_eq!(reply.usage.input_tokens, 64);
+    assert_eq!(reply.usage.input_tokens, Some(64));
     let (path, authorization, body) = requests.recv().unwrap();
     assert_eq!(path, "/v1/systemone");
     assert_eq!(authorization, "Bearer test-key");
     assert_eq!(body["questions"]["action"]["type"], "choice");
+}
+
+/// Regression (A1): a successful reply was cut to 300 characters before it
+/// was parsed, so any realistic reply longer than that failed.
+#[test]
+fn a_reply_longer_than_300_characters_is_read_whole() {
+    let mut request = request();
+    request.questions.insert(
+        "risk".into(),
+        Question {
+            instructions: "How risky is the link?".into(),
+            kind: QuestionKind::Score {
+                levels: vec!["low".into(), "medium".into(), "high".into()],
+            },
+        },
+    );
+    request.questions.insert(
+        "suspicious".into(),
+        Question {
+            instructions: "Is the link likely abuse?".into(),
+            kind: QuestionKind::YesNo { meanings: None },
+        },
+    );
+    let answer = r#"{"model":"jev-1.13.0","answers":{"action":{"type":"choice","choice":"hold","probabilities":{"hold":0.91,"activate":0.09},"confidence":0.88},"risk":{"type":"score","score":1.2,"legend":{"0":"low","1":"medium","2":"high"},"probabilities":{"0":0.1,"1":0.6,"2":0.3},"confidence":0.5},"suspicious":{"type":"noul","noul":0.93}},"usage":{"input_tokens":120,"output_tokens":8}}"#;
+    assert!(answer.len() > 300, "{}", answer.len());
+    let (url, _) = serve(vec![("200 OK", "", answer.to_string())]);
+    let providers = Providers::new()
+        .with_key(Provider::TypeSafe, "test-key")
+        .with_endpoint(Provider::TypeSafe, url);
+    let reply = providers.decide(&request).unwrap();
+    assert_eq!(reply.answers.len(), 3);
+    assert!(matches!(&reply.answers["risk"], Answer::Score { score, .. } if *score == 1.2));
+    assert_eq!(reply.answers["suspicious"], Answer::YesNo { yes: 0.93 });
 }
 
 #[test]
@@ -121,9 +192,9 @@ fn overload_is_retried_and_a_refused_key_is_not() {
     let providers = Providers::new()
         .with_key(Provider::TypeSafe, "bad")
         .with_endpoint(Provider::TypeSafe, url);
-    let error = providers.decide(&request()).unwrap_err();
-    assert_eq!(error.kind, ErrorKind::KeyRefused);
-    assert!(error.message.contains("TYPESAFE_API_KEY"));
+    let failure = providers.decide(&request()).unwrap_err();
+    assert_eq!(failure.error.kind, ErrorKind::KeyRefused);
+    assert!(failure.error.message.contains("TYPESAFE_API_KEY"));
 }
 
 #[test]
@@ -147,4 +218,270 @@ fn jev_is_never_the_assistants_model() {
             break;
         }
     }
+}
+
+/// A reply sent in chunks, one splitting a two-byte character, is read
+/// whole; the option's name keeps its non-ASCII letters.
+#[test]
+fn a_chunked_reply_with_non_ascii_text_is_read_whole() {
+    let mut request = request();
+    request.questions.insert(
+        "åtgärd".into(),
+        Question {
+            instructions: "Släpp länken eller håll den för granskning?".into(),
+            kind: QuestionKind::Choice {
+                options: BTreeMap::from([
+                    ("släpp".to_string(), Some("Länken går live".to_string())),
+                    (
+                        "håll".to_string(),
+                        Some("En människa granskar den".to_string()),
+                    ),
+                ]),
+            },
+        },
+    );
+    let body = r#"{"model":"jev-1.13.0","answers":{"action":{"type":"choice","choice":"hold","probabilities":{"hold":0.91,"activate":0.09},"confidence":0.88},"åtgärd":{"type":"choice","choice":"håll","probabilities":{"håll":0.8,"släpp":0.2},"confidence":0.7}},"usage":{"input_tokens":64,"output_tokens":4}}"#;
+    let bytes = body.as_bytes();
+    let split = body.find("håll").unwrap() + 1; // inside the two-byte `å`
+    let (url, _) = serve_raw(vec![chunked(
+        "200 OK",
+        &[&bytes[..40], &bytes[40..split], &bytes[split..]],
+    )]);
+    let reply = providers(url).decide(&request).unwrap();
+    assert!(matches!(&reply.answers["åtgärd"], Answer::Choice { choice, .. } if choice == "håll"));
+}
+
+/// A successful reply over the local limit is refused, not cut and parsed,
+/// whether its length is announced or only found while reading.
+#[test]
+fn a_reply_over_the_limit_is_refused() {
+    let limit = agq_providers::jev::REPLY_LIMIT;
+    let announced = format!(
+        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{{",
+        limit + 1
+    )
+    .into_bytes();
+    let padding = vec![b' '; 64 * 1024];
+    let mut pieces: Vec<&[u8]> = vec![b"{\"model\":\"jev-1.13.0\","];
+    for _ in 0..(limit / padding.len() + 1) {
+        pieces.push(&padding);
+    }
+    let streamed = chunked("200 OK", &pieces);
+    let (url, requests) = serve_raw(vec![announced, streamed]);
+    let providers = providers(url);
+    for _ in 0..2 {
+        let failure = providers.decide(&request()).unwrap_err();
+        assert_eq!(failure.error.kind, ErrorKind::InvalidReply, "{failure}");
+        assert!(failure.error.message.contains("larger than"), "{failure}");
+    }
+    assert_eq!(requests.try_iter().count(), 2);
+}
+
+/// A reply cut off before its announced end is an unreachable provider,
+/// not an answer.
+#[test]
+fn a_reply_cut_off_while_read_is_an_error() {
+    let cut = format!(
+        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+        ANSWER.len() + 100,
+        ANSWER
+    )
+    .into_bytes();
+    let (url, _) = serve_raw(vec![cut]);
+    let failure = providers(url).decide(&request()).unwrap_err();
+    assert_eq!(failure.error.kind, ErrorKind::Unreachable, "{failure}");
+    assert!(failure.error.message.contains("cut off"), "{failure}");
+}
+
+/// An error reply is read only up to its own limit and shown as a short,
+/// single-line excerpt that never repeats the key.
+#[test]
+fn an_error_reply_is_shown_short_and_without_the_key() {
+    let mut body = String::from("{\"error\":\"denied for test-key\n\tline two\u{7}");
+    body.push_str(&"x".repeat(20_000));
+    body.push_str("\"}");
+    let (url, _) = serve(vec![("403 Forbidden", "", body)]);
+    let failure = providers(url).decide(&request()).unwrap_err();
+    assert_eq!(failure.error.kind, ErrorKind::NoAccess);
+    let message = &failure.error.message;
+    assert!(!message.contains("test-key"), "{message}");
+    assert!(!message.contains(['\n', '\t', '\u{7}']), "{message}");
+    assert!(message.contains("denied for … line two"), "{message}");
+    assert!(message.chars().count() < 450, "{}", message.chars().count());
+    assert!(message.ends_with('…'), "{message}");
+}
+
+/// A reply that arrives but does not answer the request is an error with
+/// its request counted and the usage it reported kept, never an answer.
+#[test]
+fn a_reply_that_does_not_fit_the_request_fails_with_its_usage() {
+    let wrong_model = ANSWER.replace("jev-1.13.0", "jev-1.14.0");
+    let unknown_option = ANSWER.replace("\"activate\"", "\"publish\"");
+    let (url, requests) = serve(vec![
+        ("200 OK", "x-typesafe-request-id: req_9\r\n", wrong_model),
+        ("200 OK", "", unknown_option),
+        ("200 OK", "", "not json".to_string()),
+    ]);
+    let providers = providers(url);
+    let failure = providers.decide(&request()).unwrap_err();
+    assert_eq!(failure.error.kind, ErrorKind::InvalidReply, "{failure}");
+    assert!(
+        failure.error.message.contains("`jev-1.14.0` answered"),
+        "{failure}"
+    );
+    assert_eq!(failure.attempts, 1);
+    assert_eq!(failure.request_id.as_deref(), Some("req_9"));
+    let usage = failure.usage.expect("the reply's usage is kept");
+    assert_eq!(
+        (usage.input_tokens, usage.output_tokens),
+        (Some(64), Some(4))
+    );
+    let failure = providers.decide(&request()).unwrap_err();
+    assert!(
+        failure
+            .error
+            .message
+            .contains("the option `activate` has no probability"),
+        "{failure}"
+    );
+    // A malformed success is not retried.
+    let failure = providers.decide(&request()).unwrap_err();
+    assert_eq!(failure.error.kind, ErrorKind::InvalidReply);
+    assert_eq!(failure.attempts, 1);
+    assert_eq!(failure.usage, None);
+    assert_eq!(requests.try_iter().count(), 3);
+}
+
+/// Refused, unknown and invalid requests are errors, never a semantic
+/// answer, and are not retried.
+#[test]
+fn error_statuses_are_errors_and_not_retried() {
+    for (status, kind) in [
+        ("400 Bad Request", ErrorKind::Rejected),
+        ("401 Unauthorized", ErrorKind::KeyRefused),
+        ("402 Payment Required", ErrorKind::NoAccess),
+        ("403 Forbidden", ErrorKind::NoAccess),
+        ("404 Not Found", ErrorKind::UnknownModel),
+        ("413 Payload Too Large", ErrorKind::Rejected),
+        ("422 Unprocessable Entity", ErrorKind::Rejected),
+        ("500 Internal Server Error", ErrorKind::Unavailable),
+        ("418 I'm a teapot", ErrorKind::Other),
+    ] {
+        let (url, requests) = serve(vec![
+            (status, "", "{\"error\":\"no\"}".to_string()),
+            ("200 OK", "", ANSWER.to_string()),
+        ]);
+        let failure = providers(url).decide(&request()).unwrap_err();
+        assert_eq!(failure.error.kind, kind, "{status}: {failure}");
+        assert_eq!(failure.attempts, 1, "{status}");
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        assert_eq!(requests.try_iter().count(), 1, "{status} was retried");
+    }
+}
+
+/// Rate limits and overload are retried twice at most, and a requested
+/// wait over ten seconds is not waited for.
+#[test]
+fn retries_are_bounded() {
+    let (url, requests) = serve(vec![
+        ("529 Overloaded", "retry-after-ms: 10\r\n", "{}".to_string()),
+        ("529 Overloaded", "retry-after-ms: 10\r\n", "{}".to_string()),
+        ("529 Overloaded", "retry-after-ms: 10\r\n", "{}".to_string()),
+        ("200 OK", "", ANSWER.to_string()),
+    ]);
+    let failure = providers(url).decide(&request()).unwrap_err();
+    assert_eq!(failure.error.kind, ErrorKind::Unavailable, "{failure}");
+    assert_eq!(failure.attempts, 3);
+    assert_eq!(requests.try_iter().count(), 3);
+
+    let (url, requests) = serve(vec![
+        (
+            "429 Too Many Requests",
+            "retry-after: 11\r\n",
+            "{}".to_string(),
+        ),
+        ("200 OK", "", ANSWER.to_string()),
+    ]);
+    let started = std::time::Instant::now();
+    let failure = providers(url).decide(&request()).unwrap_err();
+    assert_eq!(failure.error.kind, ErrorKind::RateLimited, "{failure}");
+    assert!(started.elapsed() < std::time::Duration::from_secs(5));
+    assert_eq!(failure.attempts, 1);
+    std::thread::sleep(std::time::Duration::from_millis(50));
+    assert_eq!(requests.try_iter().count(), 1);
+
+    let (url, _) = serve(vec![
+        (
+            "429 Too Many Requests",
+            "retry-after-ms: 20\r\n",
+            "{}".to_string(),
+        ),
+        ("200 OK", "", ANSWER.to_string()),
+    ]);
+    let reply = providers(url).decide(&request()).unwrap();
+    assert_eq!(reply.attempts, 2);
+}
+
+/// Nothing is sent without a key of TypeSafe AI's own: not a blank one,
+/// not another provider's.
+#[test]
+fn no_request_is_sent_without_its_own_key() {
+    let (url, requests) = serve(vec![("200 OK", "", ANSWER.to_string())]);
+    for providers in [
+        Providers::new().with_endpoint(Provider::TypeSafe, url.clone()),
+        Providers::new()
+            .with_key(Provider::TypeSafe, "   ")
+            .with_endpoint(Provider::TypeSafe, url.clone()),
+        Providers::new()
+            .with_key(Provider::DeepSeek, "deepseek-key")
+            .with_endpoint(Provider::TypeSafe, url.clone()),
+    ] {
+        let failure = providers.decide(&request()).unwrap_err();
+        assert_eq!(failure.error.kind, ErrorKind::MissingKey, "{failure}");
+        assert_eq!(failure.attempts, 0);
+        assert!(!format!("{providers:?}").contains("deepseek-key"));
+    }
+    std::thread::sleep(std::time::Duration::from_millis(50));
+    assert_eq!(requests.try_iter().count(), 0);
+}
+
+/// An endpoint override never receives the ambient key: run in a child
+/// process whose environment holds a TypeSafe AI key.
+#[test]
+fn an_ambient_key_never_reaches_an_endpoint_override() {
+    let child = std::process::Command::new(std::env::current_exe().unwrap())
+        .args([
+            "--exact",
+            "ambient_key_child",
+            "--ignored",
+            "--nocapture",
+            "--test-threads=1",
+        ])
+        .env("TYPESAFE_API_KEY", "ambient-secret")
+        .env("AGQ_AMBIENT_KEY_CHILD", "1")
+        .output()
+        .unwrap();
+    let out = String::from_utf8_lossy(&child.stdout);
+    assert!(child.status.success(), "{out}");
+    assert!(out.contains("1 passed"), "{out}");
+}
+
+/// The child of [`an_ambient_key_never_reaches_an_endpoint_override`].
+#[test]
+#[ignore = "run by an_ambient_key_never_reaches_an_endpoint_override in its own environment"]
+fn ambient_key_child() {
+    if std::env::var("AGQ_AMBIENT_KEY_CHILD").as_deref() != Ok("1") {
+        return;
+    }
+    let (url, requests) = serve(vec![("200 OK", "", ANSWER.to_string())]);
+    let overridden = Providers::new().with_endpoint(Provider::TypeSafe, url.clone());
+    assert!(!overridden.has_key(Provider::TypeSafe));
+    let failure = overridden.decide(&request()).unwrap_err();
+    assert_eq!(failure.error.kind, ErrorKind::MissingKey);
+    assert!(!failure.to_string().contains("ambient-secret"));
+    // An explicit key wins and is the one sent.
+    let explicit = overridden.with_key(Provider::TypeSafe, "explicit");
+    explicit.decide(&request()).unwrap();
+    let (_, authorization, _) = requests.recv().unwrap();
+    assert_eq!(authorization, "Bearer explicit");
 }

@@ -1114,11 +1114,11 @@ accepts it. States: *done* (built and tested offline), *planned*,
 | §8 0a: Linux lint (`unused_mut` in `claude_agent.rs`) | `crates/assistant/src/claude_agent.rs` | done | `cargo clippy --workspace --all-targets -D warnings` clean on Linux (WSL Ubuntu 24.04) |
 | §8 0a: Linux lock race reopening a project | `crates/studio-native/src/studio.rs` | done | the Studio's unit tests on Linux: 1 of 6 full runs failed before, 14 of 14 passed after |
 | §8 0b: host-independent scoped paths | `crates/execution/src/lib.rs` | done | historical assertion reproduced failing on Linux at `219598b6`, passing after; Windows and Unix forms and a link (junction on Windows) tested on both hosts |
-| §3.1 A1: complete bounded success bodies, bounded sanitized error excerpts | `providers/src/jev.rs` | planned (1) | >300-character fake-server regression first; UTF-8, chunked, oversize, truncated, read failure |
-| §3.1 A2 and §3.2: request-bound validation (IDs, kinds, model, options, legend, distributions, selection) | `providers/src/jev.rs` | planned (1) | malformed-reply matrix through HTTP and inline |
-| §3.1 A3: score keys canonical and exact | `providers/src/jev.rs` | planned (1) | `x`, `-1`, `00`, missing `0`, extra `n`, duplicate and colliding keys fail |
-| §3.1 A4: usage known, partial or unknown, never a false zero | `providers/src/jev.rs`; callers and summaries | planned (1, 3, 4) | omitted, partial, zero and mixed usage distinguishable |
-| §3.2 numeric tolerances with boundary fixtures, raw values kept | `providers/src/jev.rs` | planned (1) | fixtures just inside and outside each tolerance |
+| §3.1 A1: complete bounded success bodies, bounded sanitized error excerpts | `providers/src/jev.rs` | done (1) | the >300-character fake-server regression failed first ("EOF … column 300"), then passed; chunked with a split two-byte character; announced and streamed oversize refused; cut-off read; 20 KB error reply excerpted without the key |
+| §3.1 A2 and §3.2: request-bound validation (IDs, kinds, model, options, legend, distributions, selection) | `providers/src/jev.rs` | done (1) | `read_reply(request, …)`: inline matrix (envelope, noul, choice, score) and HTTP cases (wrong model, unknown option, malformed success not retried) |
+| §3.1 A3: score keys canonical and exact | `providers/src/jev.rs` | done (1) | `x`, `-1`, `01`, `00`, `+1`, missing `0`, extra `3`, duplicate keys and keys colliding once unescaped all fail |
+| §3.1 A4: usage known, partial or unknown, never a false zero | `providers/src/jev.rs`; callers and summaries | done in Providers (1); planned for summaries (3, 4) | omitted, null, partial, reported zero and invalid counts distinguishable; failures count requests sent and keep reported usage; the example logs unknown cost at the worst case |
+| §3.2 numeric tolerances with boundary fixtures, raw values kept | `providers/src/jev.rs` | done (1) | sums at ±0.01/±0.02 (hundredths) and ±1e-3; ties within 1e-6; score mean within 0.016 and 0.005; boundaries 0, 1, −0.0; NaN, infinity and 1e400 refused as JSON |
 | §3.1 A5: no silent chat for a decision model; capability-based resolution | `providers/src/capabilities.rs`, `studio-native/src/live.rs` | planned (4) | Jev dispatches only to decisions; unknown explicit ids and missing keys blocked |
 | §3.1 A6, §5.4: one monotonic deadline at the provider boundary | `providers` (2), `simulation` (3), `studio-native` (4) | planned | silent and slow servers end within the deadline and take the modelled timeout |
 | §3.1 A7, §5.5: execution identity, freshness, legacy records | `simulation`, `studio-native` | planned (3) | key mutation matrix; old and new readers; wrong digest; replay never live |
@@ -1134,11 +1134,11 @@ accepts it. States: *done* (built and tested offline), *planned*,
 | §6.1: self-model before cross-part changes | `model/Agentique.sysml` | done (G) | architecture check and dogfood test green |
 | §6.2: interface sketches as built (handle, `read_reply(request, …)`, `CallLimits`, binding, Choice mapping, both `from_json` consumers) | as above | planned (1–5) | compiled and tested |
 | §6.3: no library extraction | — | done (decision) | two consumers share fixtures, not a crate |
-| §7.2 body handling | `providers/tests/jev.rs` | planned (1) | fake HTTP server |
-| §7.2 schema and numerics | `providers/src/jev.rs` tests | planned (1) | inline and wire |
-| §7.2 status and retry | `providers/tests/jev.rs` | planned (1, 2) | dispatch counts asserted |
+| §7.2 body handling | `providers/tests/jev.rs` | done (1) | fake HTTP server (see A1) |
+| §7.2 schema and numerics | `providers/src/jev.rs` tests | done (1) | inline and wire (see A2, A3, §3.2) |
+| §7.2 status and retry | `providers/tests/jev.rs` | done without deadlines (1); planned with them (2) | 400/401/402/403/404/413/422/500/418 never answers and never retried; 529 three times stops at three requests; an 11 s wait not waited for; a 20 ms wait retried |
 | §7.2 cancellation and deadline | `providers`, `studio-native` | planned (2, 4) | silent server, stalled body, backoff, drop, races |
-| §7.2 credentials and privacy | `providers` | planned (1, 2) | dummy keys only; no secret in diagnostics or `Debug` |
+| §7.2 credentials and privacy | `providers` | done (1) | dummy keys only: no request without TypeSafe AI's own key (missing, blank, another provider's); a child process with an ambient key shows an endpoint override never gets it and an explicit key wins; no key in `Debug` or in error excerpts |
 | §7.2 routing and consent | `studio-native` | planned (4) | decide only; unknown, missing key, overrides, mixed agents, mutation after confirm |
 | §7.2 replay and freshness | `simulation`, `studio-native` | planned (3, 4) | panicking fake client in model and replay modes |
 | §7.2 scenario and code safety | model and fixture tests | planned (4, 5) | six scenarios; no held redirect; unavailable provider never allows |

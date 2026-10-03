@@ -427,6 +427,9 @@ pub enum ErrorKind {
     Unreachable,
     /// The request was not accepted (400, 413, 422).
     Rejected,
+    /// The reply arrived but cannot be used: too large, unreadable, or not
+    /// an answer to the request that was sent. Never turned into an answer.
+    InvalidReply,
     /// The caller cancelled the call.
     Cancelled,
     Other,
@@ -565,8 +568,13 @@ impl Providers {
     }
 
     /// Asks Jev typed questions about a state and waits for the answers
-    /// (fast agents, C-35). Blocking; retries rate limits and overload twice.
-    pub fn decide(&self, request: &jev::DecisionRequest) -> Result<jev::DecisionReply, Error> {
+    /// (fast agents, C-35), checked against the request. Blocking; retries
+    /// rate limits and overload twice. A failure says how many requests
+    /// were sent, since a sent request may be billed.
+    pub fn decide(
+        &self,
+        request: &jev::DecisionRequest,
+    ) -> Result<jev::DecisionReply, jev::DecisionFailure> {
         jev::decide(
             request,
             self.key(Provider::TypeSafe),
