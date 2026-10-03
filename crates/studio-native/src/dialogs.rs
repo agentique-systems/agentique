@@ -1144,7 +1144,11 @@ impl Render for DialogsView {
             }
             Dialog::ConfirmLive => {
                 let choice = crate::live::live_choice(studio);
-                let has_key = crate::live::live_model(studio).is_some();
+                let has_key = studio
+                    .runs
+                    .selected
+                    .and_then(|scenario| crate::live::prepare(studio, scenario).ok().flatten())
+                    .is_some_and(|prepared| crate::live::live_model(&prepared).is_some());
                 let calls = studio.runs.selected.and_then(|scenario| {
                     let store = studio.run_store()?;
                     let result = store.latest(scenario.raw(), agq_simulation::Mode::Model)?;

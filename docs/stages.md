@@ -1120,14 +1120,14 @@ accepts it. States: *done* (built and tested offline), *planned*,
 | §3.1 A4: usage known, partial or unknown, never a false zero | `providers/src/jev.rs`; callers and summaries | done in Providers (1); planned for summaries (3, 4) | omitted, null, partial, reported zero and invalid counts distinguishable; failures count requests sent and keep reported usage; the example logs unknown cost at the worst case |
 | §3.2 numeric tolerances with boundary fixtures, raw values kept | `providers/src/jev.rs` | done (1) | sums at ±0.01/±0.02 (hundredths) and ±1e-3; ties within 1e-6; score mean within 0.016 and 0.005; boundaries 0, 1, −0.0; NaN, infinity and 1e400 refused as JSON |
 | §3.1 A5: no silent chat for a decision model; capability-based resolution | `providers/src/capabilities.rs`, `studio-native/src/live.rs` | planned (4) | Jev dispatches only to decisions; unknown explicit ids and missing keys blocked |
-| §3.1 A6, §5.4: one monotonic deadline at the provider boundary | `providers` (2), `simulation` (3), `studio-native` (4) | done in Providers (2); planned (3, 4) | `decide_start(request, deadline)`: a silent server and a stalled body end at the deadline (within 250 ms); a late reply is a timeout; a retry is made only when its wait fits |
-| §3.1 A7, §5.5: execution identity, freshness, legacy records | `simulation`, `studio-native` | planned (3) | key mutation matrix; old and new readers; wrong digest; replay never live |
+| §3.1 A6, §5.4: one monotonic deadline at the provider boundary | `providers` (2), `simulation` (3), `studio-native` (4) | done in Providers (2), Simulation and the chat client (3); planned for decisions (4) | `decide_start(request, deadline)`: a silent server and a stalled body end at the deadline (within 250 ms); a late reply is a timeout; a retry is made only when its wait fits |
+| §3.1 A7, §5.5: execution identity, freshness, legacy records | `simulation`, `studio-native` | done (3) | `simulation/tests/identity.rs`: legacy canonical bytes unchanged; every binding part changes the key, object key order does not; legacy recordings replay unbound requests and never bound ones (the stop says why); a damaged key is not used; freshness by binding, runner and recordings; an older reader's types parse new lines and never match them. Studio: replay outdated when the Assistant's model (left to it by the agent) changes, and its recordings no longer answer; a legacy replay result is outdated |
 | §3.1 A8: honest estimates, bounded calls and attempts, known live cost in the daily total | `studio-native` | planned (4) | consent snapshot, unknown cost labels, retries counted |
-| §3.3: abort on timeout, shared client, credential precedence, replay fails closed, provider failure vs semantic failure | `providers`, `simulation` | planned (1–3): preserve | existing tests kept; connection reuse and cancel-before-error tests added |
+| §3.3: abort on timeout, shared client, credential precedence, replay fails closed, provider failure vs semantic failure | `providers`, `simulation` | done (1–3): preserved, with tests | existing tests kept; connection reuse and cancel-before-error tests added |
 | §3.4: documentation corrections (README, `live_model` comment, retry policy, capability text, prefix prices, fixture comments) | READMEs, `live.rs`, `capabilities.rs` | planned (1, 4, 5) | text matches the code |
 | §5.2: admission (one effective configuration, known pin, flat enum 2–255, confidence by identity) | `studio-native/src/live.rs`, read-only agent description in `simulation` | planned (4) | rejections before consent with their reason |
 | §5.2: state preparation and deterministic question mapping | `studio-native/src/live.rs`; enum value docs in the model | planned (4) | pure, offline, used by replay |
-| §5.3: condition table (valid, review, low confidence, deadline, invalid, provider failure, cancelled, allowance used up) | `simulation`, `studio-native` | planned (3, 4) | one test per row |
+| §5.3: condition table (valid, review, low confidence, deadline, invalid, provider failure, cancelled, allowance used up) | `simulation`, `studio-native` | done in Simulation for deadline, provider failure, stop and allowance (3); planned for the decision path (4) | one test per row |
 | §5.3: fallback is not a mandatory pre-call blocklist | `models/link-screening`, docs | planned (4) | stated where the evaluation is offered |
 | §5.6: frozen consented plan, invalidated on change; effective model, data sent, attempts, estimate, unknown usage, confidence meaning, fallback and error reasons, stale results | `runs.rs`, `dialogs.rs`, `panels/run.rs` | planned (4) | consent mutation tests; journeys `i-scenarios`, `i-code` |
 | §5.7, §8 5: real Rust client; same six scenarios; frozen-response conformance with the held-link regression | URL shortener fixture, `implementation/tests` | planned (5) | offline harness unchanged; conformance tests |
@@ -1140,7 +1140,7 @@ accepts it. States: *done* (built and tested offline), *planned*,
 | §7.2 cancellation and deadline | `providers`, `studio-native` | done in Providers (2); planned in the Studio (4) | silent server, stalled body, late reply, retry that does not fit, stop during a retry wait (result within 100 ms, no request in the next 1.8 s), drop closes the connection, a stop wins over a reply or an error already on its way, a past deadline sends nothing, connections reused across three decisions |
 | §7.2 credentials and privacy | `providers` | done (1) | dummy keys only: no request without TypeSafe AI's own key (missing, blank, another provider's); a child process with an ambient key shows an endpoint override never gets it and an explicit key wins; no key in `Debug` or in error excerpts |
 | §7.2 routing and consent | `studio-native` | planned (4) | decide only; unknown, missing key, overrides, mixed agents, mutation after confirm |
-| §7.2 replay and freshness | `simulation`, `studio-native` | planned (3, 4) | panicking fake client in model and replay modes |
+| §7.2 replay and freshness | `simulation`, `studio-native` | done (3); planned for the decision path (4) | see A7; replay never reaches a live client (no `LiveModel` exists in replay) |
 | §7.2 scenario and code safety | model and fixture tests | planned (4, 5) | six scenarios; no held redirect; unavailable provider never allows |
 | §7.2 authority boundaries | existing worker, task and Execution tests | planned (4) | a top-confidence answer calls no write, execute or integrate tool |
 | §7.3–§7.6: evaluation definitions and reporting (quality, calibration, latency, coverage, economics); proposed thresholds | evaluation example and report, outside the default tests | planned (4) | definitions committed; no dataset or measurement invented |
@@ -1154,3 +1154,20 @@ accepts it. States: *done* (built and tested offline), *planned*,
   is bound to a provider, and "execution" already names a part.
 - 0a also carries two Linux-only CI fixes found once checkout worked again (a
   lint and a test's lock race); they were hidden behind the checkout failure.
+- Thresholds and deadlines are not in a binding (the investigation listed
+  "policy" with them): they are applied to a recorded answer on replay, and
+  the model digest already outdates results when they change; keying on them
+  would force paid re-recording without changing what the model was asked.
+- A provider failure ends a live evaluation (no later sample sends); before,
+  each later sample asked again.
+
+**Compatibility and rollback (step 3).** New data is read by the previous
+build (`main` at `219598b6`) as follows, from a run of that build's reader on
+data this build wrote (Linux, outside the repository): bound recordings are
+read and never matched (0 of 4); a result stopped as `budget-exhausted` is
+skipped (2 of 3 listed); a live cost with unknown parts reads as unknown. It
+shows a bound live or replay result as current while the model is unchanged,
+as it always did for live results. Recordings made before this build replay
+unbound requests only; in the Studio every replay is bound, so they must be
+recorded again (the stop says so). Results from before are outdated, never
+rewritten.

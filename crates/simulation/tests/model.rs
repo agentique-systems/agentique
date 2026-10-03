@@ -4,8 +4,8 @@
 use agq_language::{Source, Tree, parse};
 use agq_simulation::digest::model_digest;
 use agq_simulation::{
-    Answers, EventKind, Limits, Mode, Request, RunResult, RunStatus, StopReason, Verdict, compile,
-    freshness, run,
+    Answers, EventKind, Limits, Mode, Present, Request, RunResult, RunStatus, StopReason, Verdict,
+    compile, freshness, run,
 };
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
@@ -223,11 +223,11 @@ fn runs_are_deterministic_and_isolated_from_later_edits() {
     assert_eq!(first.trace, second.trace);
     assert_eq!(second.logical_ms, 600);
     // The edit outdates the earlier result.
-    assert!(!freshness(&first, &tree).is_current());
+    assert!(!freshness(&first, &Present::model(&tree)).is_current());
     // Compiled again, the new value is used.
     let third = run_model(&tree, "Notifications::RetryThenDeliver");
     assert_eq!(third.logical_ms, 1000 + 2000);
-    assert!(freshness(&third, &tree).is_current());
+    assert!(freshness(&third, &Present::model(&tree)).is_current());
 }
 
 #[test]
@@ -239,7 +239,7 @@ fn an_unrelated_edit_keeps_a_result_current() {
     let result = run_model(&tree, "Notifications::RetryThenDeliver");
     let unrelated = tree.find("Notifications::Unrelated").unwrap();
     tree.get_mut(unrelated).unwrap().name = Some("StillUnrelated".into());
-    assert!(freshness(&result, &tree).is_current());
+    assert!(freshness(&result, &Present::model(&tree)).is_current());
 }
 
 #[test]

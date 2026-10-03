@@ -25,6 +25,12 @@ pub struct RunSummary {
     pub tally: Vec<(Verdict, usize)>,
     pub model_digest: String,
     pub all_passed: bool,
+    /// Replay and live: the binding's digest (C-52).
+    #[serde(default)]
+    pub binding: Option<String>,
+    /// Replay: the recordings' digest.
+    #[serde(default)]
+    pub recordings: Option<String>,
 }
 
 impl RunStore {
@@ -85,6 +91,8 @@ impl RunStore {
                 tally: r.tally(),
                 model_digest: r.provenance.model_digest.clone(),
                 all_passed: r.all_passed(),
+                binding: r.provenance.binding.clone(),
+                recordings: r.provenance.recordings.clone(),
             })
             .collect();
         out.sort_by(|a, b| b.started.cmp(&a.started).then(b.id.cmp(&a.id)));

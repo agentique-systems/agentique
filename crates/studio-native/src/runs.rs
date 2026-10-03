@@ -12,8 +12,8 @@ use agq_language::{
 use agq_simulation::digest::model_digest;
 use agq_simulation::store::RunSummary;
 use agq_simulation::{
-    Answers, BackgroundRun, EventKind, Freshness, Mode, Recordings, Request, RunResult, RunStatus,
-    RunStore, StopReason, TraceEvent, compile, freshness,
+    Answers, BackgroundRun, EventKind, Freshness, Mode, Present, Recordings, Request, RunResult,
+    RunStatus, RunStore, StopReason, TraceEvent, compile, freshness,
 };
 use agq_system_state::{Actor, Change, Operation};
 use std::collections::BTreeMap;
@@ -236,6 +236,11 @@ impl Studio {
         }
         let tree = project.state().tree();
         let summaries = self.run_store().map(|s| s.list()).unwrap_or_default();
+        let recordings = summaries
+            .iter()
+            .any(|s| s.mode == Mode::Replay)
+            .then(|| self.recordings_now())
+            .flatten();
         let mut rows = Vec::new();
         for id in tree.walk() {
             let element = &tree[id];
@@ -243,12 +248,23 @@ impl Studio {
                 continue;
             }
             let digest = model_digest(tree, id);
+            let mut binding = None;
             let mut latest: Vec<(Mode, RunSummary, bool)> = Vec::new();
             for summary in summaries.iter().filter(|s| s.scenario == id.raw()) {
                 if latest.iter().any(|(m, ..)| *m == summary.mode) {
                     continue;
                 }
-                let current = summary.model_digest == digest;
+                let mut current = summary.model_digest == digest;
+                // A replay or live result also depends on the binding and,
+                // for a replay, the recordings (C-52).
+                if current && matches!(summary.mode, Mode::Replay | Mode::Live) {
+                    let now = binding.get_or_insert_with(|| self.binding_now(id));
+                    current = match now {
+                        Ok(now) => summary.binding == *now,
+                        Err(_) => false,
+                    } && (summary.mode != Mode::Replay
+                        || summary.recordings == recordings);
+                }
                 latest.push((summary.mode, summary.clone(), current));
             }
             latest.sort_by_key(|(mode, ..)| Mode::ALL.iter().position(|m| m == mode));
@@ -289,11 +305,54 @@ impl Studio {
         self.show_result(result);
     }
 
+    /// The digest of the binding a replay or live run of `scenario` would
+    /// get now (C-52): `Ok(None)` when it asks no agent.
+    pub fn binding_now(&self, scenario: ElementId) -> Result<Option<String>, String> {
+        crate::live::prepare(self, scenario).map(|p| p.map(|p| p.run.binding.digest()))
+    }
+
+    /// The digest of the project's recordings now.
+    pub fn recordings_now(&self) -> Option<String> {
+        self.recordings_folder()
+            .map(|folder| Recordings::read(&folder).digest)
+    }
+
+    /// Whether a result still describes the present: the model, and for a
+    /// replay or live result the binding and (replay) the recordings.
+    pub fn freshness_of(&self, result: &RunResult) -> Freshness {
+        let Some(project) = &self.project else {
+            return Freshness::Outdated("no project is open".into());
+        };
+        let tree = project.state().tree();
+        let scenario = ElementId::from_raw(result.scenario);
+        let compared = matches!(result.mode, Mode::Replay | Mode::Live) && tree.contains(scenario);
+        let binding = if compared {
+            self.binding_now(scenario)
+        } else {
+            Err("only the model was compared".into())
+        };
+        let recordings = (compared && result.mode == Mode::Replay)
+            .then(|| self.recordings_now())
+            .flatten();
+        let binding = match &binding {
+            Ok(digest) => Ok(digest.as_deref()),
+            Err(why) => Err(why.as_str()),
+        };
+        freshness(
+            result,
+            &Present {
+                tree,
+                binding,
+                recordings: recordings.as_deref(),
+            },
+        )
+    }
+
     /// Shows a result and works out whether it is current.
     pub fn show_result(&mut self, result: Option<RunResult>) {
-        self.runs.freshness = match (&result, &self.project) {
-            (Some(result), Some(project)) => {
-                let mut fresh = freshness(result, project.state().tree());
+        self.runs.freshness = match &result {
+            Some(result) if self.project.is_some() => {
+                let mut fresh = self.freshness_of(result);
                 if fresh.is_current()
                     && result.mode == Mode::Implementation
                     && let Some(repository) = self.implementation_repository()
@@ -319,10 +378,10 @@ impl Studio {
     /// Works out again whether the shown result is current, after the model
     /// changed. Cheap: a digest of the scenario's model slice.
     pub fn refresh_run_freshness(&mut self) {
-        let (Some(result), Some(project)) = (&self.runs.result, &self.project) else {
+        let (Some(result), Some(_)) = (&self.runs.result, &self.project) else {
             return;
         };
-        let mut fresh = freshness(result, project.state().tree());
+        let mut fresh = self.freshness_of(result);
         if fresh.is_current()
             && result.mode == Mode::Implementation
             && let Some(Freshness::Outdated(why)) = &self.runs.freshness
@@ -380,6 +439,17 @@ impl Studio {
                 Answers::StandIns,
             )),
             Mode::Replay => {
+                // Replay matches requests with the binding a live run
+                // would have made them with (C-52).
+                match crate::live::prepare(self, scenario) {
+                    Ok(prepared) => request.binding = prepared.map(|p| p.run),
+                    Err(why) => {
+                        let mut result = blocked_result(tree, scenario, mode, digest, &request);
+                        result.blockers = vec![(scenario.raw(), why)];
+                        self.finish_run(result);
+                        return;
+                    }
+                }
                 let folder = self.recordings_folder().unwrap_or_default();
                 let recordings = Arc::new(Recordings::read(&folder));
                 Work::Model(BackgroundRun::start(
@@ -390,11 +460,23 @@ impl Studio {
                 ))
             }
             Mode::Live => {
-                let Some(model) = crate::live::live_model(self) else {
+                let prepared = match crate::live::prepare(self, scenario) {
+                    Ok(Some(prepared)) => prepared,
+                    Ok(None) => {
+                        self.status = "This scenario asks no agent, so there is nothing to evaluate live: run it in model execution.".into();
+                        return;
+                    }
+                    Err(why) => {
+                        self.status = why;
+                        return;
+                    }
+                };
+                let Some(model) = crate::live::live_model(&prepared) else {
                     self.status = "A live evaluation needs a provider key for the agent's model: add one in Settings › Providers.".into();
                     return;
                 };
                 request.samples = 5;
+                request.binding = Some(prepared.run);
                 Work::Model(BackgroundRun::start(
                     program,
                     digest,
@@ -665,6 +747,7 @@ fn blocked_result(
             implementation: None,
             live: None,
             recordings: None,
+            binding: None,
         },
         live: None,
     }
@@ -777,8 +860,8 @@ impl Studio {
                     .run_store()
                     .and_then(|s| s.latest(scenario.raw(), mode));
                 let answer = match (result, &self.project) {
-                    (Some(result), Some(project)) => {
-                        let why = match freshness(&result, project.state().tree()) {
+                    (Some(result), Some(_)) => {
+                        let why = match self.freshness_of(&result) {
                             Freshness::Current => None,
                             Freshness::Outdated(why) => Some(why),
                         };
@@ -1465,6 +1548,175 @@ mod tests {
         let again = run(&mut app, Mode::Model);
         assert!(!again.all_passed(), "{:?}", again.checks);
         assert!(app.result_is_current());
+    }
+
+    /// A scripted live model: blocks the scam and lookalike hosts, allows
+    /// the rest, and reports evidence like a provider.
+    struct Scripted;
+
+    impl agq_simulation::LiveModel for Scripted {
+        fn label(&self) -> String {
+            "anthropic/claude-haiku-4-5".into()
+        }
+
+        fn answer(
+            &self,
+            request: &agq_simulation::AgentRequest,
+            _: agq_simulation::CallLimits,
+            _: &AtomicBool,
+        ) -> agq_simulation::LiveAnswer {
+            let host = request.input["fields"]["host"].as_str().unwrap_or("");
+            let decision = if host.contains("gift") || host.contains("paypa1") {
+                "block"
+            } else {
+                "allow"
+            };
+            agq_simulation::LiveAnswer {
+                outcome: agq_simulation::Outcome::Answer,
+                output: Some(serde_json::json!({"decision": decision, "confidence": 0.95})),
+                latency_ms: 100,
+                cost_usd: Some(0.0001),
+                error: None,
+                evidence: None,
+            }
+        }
+    }
+
+    /// Sets the screening agent's `model` (or leaves it to the Assistant's
+    /// model with `None`).
+    fn set_agent_model(app: &mut Studio, model: Option<&str>) {
+        let tree = app.project.as_ref().unwrap().state().tree();
+        let screening = tree.find("UrlShortener::LinkScreening").unwrap();
+        let feature = tree[screening]
+            .children()
+            .iter()
+            .copied()
+            .find(|c| tree[*c].redefines.iter().any(|r| r.last_name() == "model"))
+            .unwrap();
+        app.set_property(
+            feature,
+            agq_system_state::Property::Value(model.map(|m| Literal::String(m.into()))),
+            "value",
+        );
+    }
+
+    /// C-52: a replay matches only recordings made with the binding it
+    /// would be made with now. When how the agent's model is called changes
+    /// (here the Assistant's model, which the agent leaves to it), the
+    /// result is outdated, the list says so, and the old recordings no
+    /// longer answer; a result from before bindings were recorded is never
+    /// current.
+    #[test]
+    fn replay_follows_how_the_agent_is_called() {
+        let (mut app, _folder) = screening("runs-binding");
+        app.settings
+            .set("assistant.provider", serde_json::json!("anthropic"))
+            .unwrap();
+        app.settings
+            .set("assistant.model", serde_json::json!("claude-haiku-4-5"))
+            .unwrap();
+        set_agent_model(&mut app, None);
+        let cases = scenario(&app, "ScreeningCases");
+        app.select_scenario(cases);
+        let prepared = crate::live::prepare(&app, cases).unwrap().unwrap();
+        assert_eq!(
+            prepared.model,
+            agq_providers::ModelRef::new(agq_providers::Provider::Anthropic, "claude-haiku-4-5")
+        );
+        assert_eq!(prepared.run.binding.provider, "anthropic");
+        // A scripted live run's answers, kept as the Run panel keeps them.
+        let tree = app.project.as_ref().unwrap().state().tree();
+        let program = compile(tree, cases).unwrap();
+        let mut request = Request::new(Mode::Live);
+        request.samples = 1;
+        request.binding = Some(prepared.run.clone());
+        let live = agq_simulation::run(
+            &program,
+            model_digest(tree, cases),
+            &request,
+            Answers::Live(Arc::new(Scripted)),
+            Arc::new(AtomicBool::new(false)),
+        );
+        let answers = live.live.unwrap().answers;
+        assert_eq!(answers.len(), 4);
+        Recordings::keep(&app.recordings_folder().unwrap(), &answers).unwrap();
+        let replay = run(&mut app, Mode::Replay);
+        assert_eq!(replay.status, RunStatus::Completed, "{:?}", replay.stop);
+        assert!(replay.all_passed(), "{:?}", replay.checks);
+        assert!(app.result_is_current(), "{:?}", app.runs.freshness);
+        let current = |app: &mut Studio| {
+            app.runs.rows = None;
+            let rows = app.scenario_rows();
+            let row = rows.iter().find(|r| r.id == cases).unwrap();
+            row.latest
+                .iter()
+                .find(|(m, ..)| *m == Mode::Replay)
+                .unwrap()
+                .2
+        };
+        assert!(current(&mut app));
+        // The Assistant's model changes; the model itself does not.
+        app.settings
+            .set("assistant.model", serde_json::json!("claude-opus-5"))
+            .unwrap();
+        app.show_result(app.runs.result.clone());
+        match &app.runs.freshness {
+            Some(Freshness::Outdated(why)) => {
+                assert!(why.contains("how the agent's model is called"), "{why}")
+            }
+            other => panic!("still current: {other:?}"),
+        }
+        assert!(!current(&mut app));
+        let again = run(&mut app, Mode::Replay);
+        assert_eq!(
+            again.stop.map(|s| s.reason),
+            Some(StopReason::MissingRecording)
+        );
+        // A result from before bindings were recorded is never current.
+        let mut legacy = replay.clone();
+        legacy.provenance.binding = None;
+        app.settings
+            .set("assistant.model", serde_json::json!("claude-haiku-4-5"))
+            .unwrap();
+        assert!(app.freshness_of(&replay).is_current());
+        match app.freshness_of(&legacy) {
+            Freshness::Outdated(why) => assert!(why.contains("before Agentique recorded"), "{why}"),
+            Freshness::Current => panic!("a legacy replay is current"),
+        }
+    }
+
+    /// A replay or live evaluation covers one agent configuration; a
+    /// scenario that asks two is refused before anything runs, with both.
+    #[test]
+    fn two_agent_configurations_are_not_prepared_together() {
+        let (mut app, folder) = screening("runs-two-agents");
+        let project = app.project.as_ref().unwrap().folder().to_path_buf();
+        let file = project
+            .join("model")
+            .join(format!("{}.sysml", crate::studio::SAMPLE_NAME));
+        let text = std::fs::read_to_string(&file).unwrap().replace(
+            "        part store : LinkStore;
+",
+            "        part store : LinkStore;
+        part spare : LinkScreening {
+            :>> model = \"claude-haiku-4-5\";
+        }
+",
+        );
+        assert!(text.contains("part spare"));
+        std::fs::write(&file, text).unwrap();
+        app.open_project(&project);
+        let allowed = scenario(&app, "ShortenAllowed");
+        let why = crate::live::prepare(&app, allowed).unwrap_err();
+        assert!(why.contains("one agent configuration"), "{why}");
+        assert!(why.contains("spare") && why.contains("screening"), "{why}");
+        app.select_scenario(allowed);
+        app.start_run(Mode::Replay);
+        assert!(!app.runs.running(), "nothing started");
+        let blocked = app.runs.result.clone().unwrap();
+        assert_eq!(blocked.status, RunStatus::Blocked);
+        assert!(blocked.blockers[0].1.contains("one agent configuration"));
+        drop(folder);
     }
 
     #[test]

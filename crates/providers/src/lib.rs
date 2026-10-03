@@ -41,6 +41,10 @@ use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::mpsc::{Receiver, RecvTimeoutError};
 use std::time::{Duration, Instant};
 
+/// The chat adapter and its revision, as a run's binding names it (C-52):
+/// change it when what a chat call sends or how its reply is read changes.
+pub const CHAT_ADAPTER: &str = "agq-providers chat 1";
+
 /// A model provider (C-35).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]

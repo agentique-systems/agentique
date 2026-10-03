@@ -32,9 +32,12 @@ pub mod script;
 pub mod store;
 pub mod value;
 
-pub use agents::{AgentRequest, LiveAnswer, LiveModel, Recording, Recordings};
+pub use agents::{
+    AgentRequest, Binding, CallLimits, Evidence, LiveAnswer, LiveModel, Recording, Recordings,
+    RunBinding,
+};
 pub use compile::{Blocker, Outcome, Program, compile};
-pub use engine::{AgentCall, Answers, Limits};
+pub use engine::{AgentCall, AgentInfo, AnswerField, Answers, Limits, describe_agents};
 pub use result::{
     CheckResult, EventKind, Mode, RunResult, RunStatus, Stop, StopReason, TraceEvent, Verdict,
     summary,
@@ -64,6 +67,9 @@ pub struct Request {
     pub model_revision: u64,
     /// Live evaluation: samples of the whole scenario.
     pub samples: u32,
+    /// Replay and live: the binding the Studio prepared for the scenario's
+    /// agent (C-52). Never stored; its digest is in the provenance.
+    pub binding: Option<RunBinding>,
 }
 
 impl Request {
@@ -80,6 +86,7 @@ impl Request {
             seed: 0,
             model_revision: 0,
             samples: 1,
+            binding: None,
         }
     }
 }
@@ -98,18 +105,77 @@ impl Freshness {
     }
 }
 
-/// Whether a result still describes the model: its scenario exists and its
-/// model slice is unchanged. (Implementation results also depend on code;
-/// the Implementation part compares that.)
-pub fn freshness(result: &RunResult, tree: &Tree) -> Freshness {
+/// What a result is compared with: the model now and, for replay and live
+/// results, the binding the Studio would prepare now and the digest of the
+/// recordings now (C-52).
+#[derive(Clone, Copy, Debug)]
+pub struct Present<'a> {
+    pub tree: &'a Tree,
+    /// The digest of the binding a replay or live run of the scenario would
+    /// get now: `Ok(None)` when it asks no agent, `Err(why)` when none can
+    /// be prepared.
+    pub binding: Result<Option<&'a str>, &'a str>,
+    /// The digest of the project's recordings now.
+    pub recordings: Option<&'a str>,
+}
+
+impl<'a> Present<'a> {
+    /// The model alone: enough for model runs and walkthroughs; replay and
+    /// live results compared with it are outdated.
+    pub fn model(tree: &'a Tree) -> Present<'a> {
+        Present {
+            tree,
+            binding: Err("only the model was compared"),
+            recordings: None,
+        }
+    }
+}
+
+/// Whether a result still describes the present: its scenario exists, its
+/// model slice is unchanged, this runner made it, and, for a replay or a
+/// live evaluation, the binding and (for a replay) the recordings are the
+/// same. A replay or live result without a binding was made before
+/// bindings were recorded and is never current. (Implementation results
+/// also depend on code; the Implementation part compares that.)
+pub fn freshness(result: &RunResult, present: &Present) -> Freshness {
     let scenario = ElementId::from_raw(result.scenario);
-    if !tree.contains(scenario) {
+    if !present.tree.contains(scenario) {
         return Freshness::Outdated("its scenario no longer exists".into());
     }
-    if digest::model_digest(tree, scenario) != result.provenance.model_digest {
+    if digest::model_digest(present.tree, scenario) != result.provenance.model_digest {
         return Freshness::Outdated(
             "the model it ran over has changed since (the scenario, its subject or something they use)".into(),
         );
+    }
+    let runner = format!("{RUNNER} {}", result.mode.key());
+    if result.provenance.runner != runner {
+        return Freshness::Outdated(format!(
+            "another version of the runner made it ({})",
+            result.provenance.runner
+        ));
+    }
+    if matches!(result.mode, Mode::Replay | Mode::Live) {
+        let outdated = match (&result.provenance.binding, present.binding) {
+            (_, Err(why)) => Some(format!(
+                "how the agent's model is called cannot be compared now ({why})"
+            )),
+            (None, Ok(None)) => None,
+            (Some(_), Ok(None)) => Some("the scenario no longer asks the agent it asked".into()),
+            (None, Ok(Some(_))) => Some(
+                "it was made before Agentique recorded which provider, model and mapping answered"
+                    .into(),
+            ),
+            (Some(then), Ok(Some(now))) => (then != now).then(|| {
+                "how the agent's model is called has changed since (the provider, the model, or how its answer is asked for and mapped)".into()
+            }),
+        };
+        if let Some(why) = outdated {
+            return Freshness::Outdated(why);
+        }
+    }
+    if result.mode == Mode::Replay && result.provenance.recordings.as_deref() != present.recordings
+    {
+        return Freshness::Outdated("the recordings have changed since".into());
     }
     Freshness::Current
 }
@@ -219,6 +285,10 @@ pub fn begin(
                 Answers::Recordings(recordings) => Some(recordings.digest.clone()),
                 _ => None,
             },
+            binding: match (request.mode, &request.binding) {
+                (Mode::Replay | Mode::Live, Some(prepared)) => Some(prepared.binding.digest()),
+                _ => None,
+            },
         },
         live: None,
     }
@@ -273,7 +343,14 @@ fn once(
     cancel: &Arc<AtomicBool>,
     trace: &mut Trace,
 ) -> (script::Outcome, Vec<AgentCall>, u64, u64) {
-    match engine::Engine::start(program, answers, request.limits, cancel.clone(), trace) {
+    match engine::Engine::start(
+        program,
+        answers,
+        request.limits,
+        request.binding.clone(),
+        cancel.clone(),
+        trace,
+    ) {
         Ok(mut engine) => {
             let outcome = run_steps(program, &mut engine, trace, cancel);
             let calls = std::mem::take(&mut engine.agent_calls);
@@ -367,6 +444,9 @@ fn live(
     let mut latencies = Vec::new();
     let mut cost = 0.0;
     let mut costed = false;
+    let mut unknown_cost = 0;
+    let mut made = 0;
+    let mut remaining = request.limits.max_live_calls;
     let mut completed = 0;
     let mut trace = Trace::default();
     let mut instructions = String::new();
@@ -382,13 +462,19 @@ fn live(
             format!("Sample {sample} of {samples}"),
             vec![program.scenario.element],
         );
+        // The allowance is shared by every sample.
+        let mut this = request.clone();
+        this.limits.max_live_calls = remaining;
         let (outcome, calls, logical, events) = once(
             program,
-            request,
+            &this,
             Answers::Live(model.clone()),
             cancel,
             &mut trace,
         );
+        let calls_made = calls.len() as u32;
+        made += calls_made;
+        remaining = remaining.map(|n| n.saturating_sub(calls_made));
         result.logical_ms = result.logical_ms.max(logical);
         result.events_processed += events;
         for call in &calls {
@@ -403,21 +489,39 @@ fn live(
                     outcome: call.answer.outcome,
                     output: Some(output.clone()),
                     latency_ms: call.answer.latency_ms,
-                    answered_by: label.clone(),
+                    answered_by: call
+                        .answer
+                        .evidence
+                        .as_ref()
+                        .and_then(|e| e.model.as_ref())
+                        .map(|answered| {
+                            let provider = label.split_once('/').map_or("", |(p, _)| p);
+                            format!("{provider}/{answered}")
+                        })
+                        .unwrap_or_else(|| label.clone()),
                     recorded_at: result::utc_now(),
                     run: Some(result.id.clone()),
+                    evidence: call.answer.evidence.clone(),
                 });
             }
             if instructions.is_empty() {
                 instructions = call.request.instructions.clone();
             }
             latencies.push(call.answer.latency_ms);
-            if let Some(c) = call.answer.cost_usd {
-                cost += c;
-                costed = true;
+            match call.answer.cost_usd {
+                Some(c) => {
+                    cost += c;
+                    costed = true;
+                }
+                // Never counted as free.
+                None => unknown_cost += 1,
             }
             if let Some(failure) = &call.failure {
-                let category = if call.answer.outcome != compile::Outcome::Answer {
+                let category = if call.provider_error.is_some() {
+                    "providerError".to_string()
+                } else if failure == "cancelled" {
+                    "cancelled".to_string()
+                } else if call.answer.outcome != compile::Outcome::Answer {
                     call.answer.outcome.name().to_string()
                 } else if failure.contains("below minConfidence") {
                     "lowConfidence".into()
@@ -432,13 +536,34 @@ fn live(
                 }
             }
         }
+        // A stop caused by the last call (a provider failure, a stop during
+        // the call) is already counted with that call.
+        let by_last_call = calls.last().is_some_and(|c| {
+            c.provider_error.is_some() || c.failure.as_deref() == Some("cancelled")
+        });
+        let mut ends_evaluation = None;
         if outcome.stop.is_none() {
             completed += 1;
         } else if let Some(stop) = &outcome.stop {
-            let category = stop.reason.code().to_string();
-            match failures.iter_mut().find(|(c, _)| *c == category) {
-                Some((_, n)) => *n += 1,
-                None => failures.push((category, 1)),
+            let caused = by_last_call
+                && matches!(
+                    stop.reason,
+                    StopReason::HarnessFailed | StopReason::Cancelled
+                );
+            if !caused {
+                let category = stop.reason.code().to_string();
+                match failures.iter_mut().find(|(c, _)| *c == category) {
+                    Some((_, n)) => *n += 1,
+                    None => failures.push((category, 1)),
+                }
+            }
+            // A provider that cannot be asked, or an allowance used up, ends
+            // the evaluation: no further sample sends anything (C-52).
+            if matches!(
+                stop.reason,
+                StopReason::HarnessFailed | StopReason::BudgetExhausted | StopReason::Cancelled
+            ) {
+                ends_evaluation = Some(stop.clone());
             }
         }
         for check in outcome.checks {
@@ -457,6 +582,24 @@ fn live(
                 Verdict::Failed => entry.2 += 1,
                 _ => entry.3 += 1,
             }
+        }
+        if let Some(stop) = ends_evaluation {
+            result.status = if stop.reason == StopReason::Cancelled {
+                RunStatus::Cancelled
+            } else {
+                RunStatus::Stopped
+            };
+            trace.push(
+                0,
+                EventKind::Note,
+                format!(
+                    "The evaluation ended after sample {sample} of {samples}: {}",
+                    stop.message
+                ),
+                vec![program.scenario.element],
+            );
+            result.stop = Some(stop);
+            break;
         }
     }
     latencies.sort_unstable();
@@ -496,9 +639,12 @@ fn live(
         samples,
         completed,
         failures,
-        cost_usd: costed.then_some(cost),
+        cost_usd: (costed && unknown_cost == 0).then_some(cost),
         latency_ms_median: latencies.get(latencies.len() / 2).copied(),
         answers,
+        calls: made,
+        unknown_cost,
+        known_cost_usd: (costed && unknown_cost > 0).then_some(cost),
     });
     let (provider, model_name) = label
         .split_once('/')

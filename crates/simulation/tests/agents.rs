@@ -3,7 +3,7 @@
 //! recordings without a network fallback, and a live evaluation through a
 //! model client (a scripted one here: CI never calls a provider).
 use agq_language::{Source, Tree, parse, validate};
-use agq_simulation::agents::{LiveAnswer, LiveModel, Recording, Recordings};
+use agq_simulation::agents::{CallLimits, LiveAnswer, LiveModel, Recording, Recordings};
 use agq_simulation::digest::model_digest;
 use agq_simulation::{
     AgentRequest, Answers, EventKind, Mode, Outcome, Request, RunResult, RunStatus, StopReason,
@@ -229,7 +229,7 @@ impl LiveModel for Scripted {
         "scripted/screening-1".into()
     }
 
-    fn answer(&self, request: &AgentRequest, _: &AtomicBool) -> LiveAnswer {
+    fn answer(&self, request: &AgentRequest, _: CallLimits, _: &AtomicBool) -> LiveAnswer {
         let n = self.calls.fetch_add(1, Ordering::SeqCst);
         self.seen.lock().unwrap().push(request.clone());
         let host = request.input["fields"]["host"].as_str().unwrap_or("");
@@ -247,6 +247,7 @@ impl LiveModel for Scripted {
             latency_ms: 200,
             cost_usd: Some(0.0001),
             error: None,
+            evidence: None,
         }
     }
 }
@@ -341,7 +342,10 @@ fn replay_uses_recordings_by_request_digest_and_never_falls_through() {
     let program = compile(&tree, id).unwrap();
     let mut recordings = Vec::new();
     for request in first_sample_requests(&program, live.clone()) {
-        let answer = live.answer(&request, &AtomicBool::new(false));
+        let limits = CallLimits {
+            deadline: std::time::Instant::now() + std::time::Duration::from_secs(1),
+        };
+        let answer = live.answer(&request, limits, &AtomicBool::new(false));
         recordings.push(Recording {
             digest: request.digest(),
             request,
@@ -351,6 +355,7 @@ fn replay_uses_recordings_by_request_digest_and_never_falls_through() {
             answered_by: live.label(),
             recorded_at: "2026-09-30T00:00:00Z".into(),
             run: None,
+            evidence: None,
         });
     }
     assert_eq!(Recordings::keep(folder.path(), &recordings).unwrap(), 4);
@@ -434,6 +439,7 @@ fn agent_requests_are_canonical_json_with_a_stable_digest() {
         instructions: "x".into(),
         input: json!({"b": 1, "a": 2}),
         output: Json::Null,
+        binding: None,
     };
     assert_eq!(
         request.canonical(),

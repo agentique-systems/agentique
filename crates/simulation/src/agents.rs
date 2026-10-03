@@ -4,9 +4,12 @@
 //! contract is checked the same way whatever the source.
 //!
 //! A request is canonical JSON: the agent, its mode and model, its
-//! instructions, the input item and the shape of the output it must give.
-//! Its SHA-256 is the recording key, so a replay matches exactly the request
-//! the model would have been sent, and nothing else.
+//! instructions, the input item and the shape of the output it must give,
+//! and, for a replay or a live evaluation, the [`Binding`] the Studio
+//! prepared: which provider and model answer, through which adapter and
+//! mapping (C-52). Its SHA-256 is the recording key, so a replay matches
+//! exactly the request the model would have been sent, and nothing else. A
+//! key is checked again when a recording is read.
 
 use crate::compile::{ItemType, Outcome, Types};
 use crate::digest::text_digest;
@@ -17,6 +20,7 @@ use serde_json::{Value as Json, json};
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
+use std::time::Instant;
 
 /// What an agent's model is asked.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -32,36 +36,121 @@ pub struct AgentRequest {
     /// The output item: its type and fields, with each field's type and,
     /// for enums, its values.
     pub output: Json,
+    /// How the call is made, for a replay or a live evaluation (C-52). Part
+    /// of the key, so a recording answers only the binding it was made
+    /// with. Absent for stand-ins and in recordings made before bindings
+    /// were recorded, which then answer no bound request.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub binding: Option<Binding>,
+}
+
+/// How an agent's calls are made in a replay or a live evaluation (C-52):
+/// which provider and model answer, the provider layer's adapter and the
+/// Studio's mapping with their revisions, what exactly is asked, what of the
+/// input is sent, and the adapter's own policy. Prepared by the Studio
+/// before a run, offline and the same for replay and live; strings, JSON
+/// and digests only, never a provider's type. Thresholds and deadlines are
+/// not here: they are applied to an answer after it arrives, and the model
+/// digest identifies them.
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Binding {
+    /// The provider's id, such as `typesafe` or `deepseek`.
+    pub provider: String,
+    /// The model id asked for, such as `jev-1.13.0`.
+    pub model: String,
+    /// The provider layer's adapter and its revision.
+    pub adapter: String,
+    /// The Studio's mapping between the agent's contract and the call, and
+    /// its revision.
+    pub mapping: String,
+    /// What the model is asked, in full (a question with its options, or the
+    /// answer template).
+    pub question: Json,
+    /// What of the agent's input is sent, and how.
+    pub input: Json,
+    /// The adapter's settings that shape the call (effort, output limit,
+    /// where the confidence comes from).
+    pub policy: Json,
+}
+
+impl Binding {
+    /// `provider/model`, as results show it.
+    pub fn label(&self) -> String {
+        format!("{}/{}", self.provider, self.model)
+    }
+
+    /// The binding's identity: the SHA-256 of its canonical JSON.
+    pub fn digest(&self) -> String {
+        let value = serde_json::to_value(self).expect("a binding is JSON");
+        text_digest(&canonical_json(&value))
+    }
+}
+
+/// The binding prepared for a run (C-52): the one agent configuration it
+/// was prepared for (its request without input or binding) and how that
+/// agent's calls are made. A call from any other agent or configuration
+/// stops the run instead of borrowing it.
+#[derive(Clone, Debug, PartialEq)]
+pub struct RunBinding {
+    pub agent: AgentRequest,
+    pub binding: Binding,
+}
+
+/// JSON with every object's keys sorted, printed without spaces. The keys
+/// are sorted here, whatever `serde_json` was built with: another crate in
+/// the same build may turn on its `preserve_order`, and a key must not
+/// depend on the build that made it. Arrays keep their order.
+fn canonical_json(value: &Json) -> String {
+    fn sorted(value: &Json) -> Json {
+        match value {
+            Json::Object(map) => {
+                let mut keys: Vec<&String> = map.keys().collect();
+                keys.sort();
+                let mut out = serde_json::Map::new();
+                for key in keys {
+                    out.insert(key.clone(), sorted(&map[key]));
+                }
+                Json::Object(out)
+            }
+            Json::Array(items) => Json::Array(items.iter().map(sorted).collect()),
+            other => other.clone(),
+        }
+    }
+    serde_json::to_string(&sorted(value)).expect("JSON prints")
 }
 
 impl AgentRequest {
-    /// The canonical text of the request: sorted keys, no spaces. The keys
-    /// are sorted here, whatever `serde_json` was built with: another crate
-    /// in the same build may turn on its `preserve_order`, and a recording's
-    /// key must not depend on the build that made it.
+    /// The canonical text of the request: sorted keys, no spaces (see
+    /// [`canonical_json`]). Without a binding it is exactly the text
+    /// recordings were keyed by before bindings existed.
     pub fn canonical(&self) -> String {
-        fn sorted(value: &Json) -> Json {
-            match value {
-                Json::Object(map) => {
-                    let mut keys: Vec<&String> = map.keys().collect();
-                    keys.sort();
-                    let mut out = serde_json::Map::new();
-                    for key in keys {
-                        out.insert(key.clone(), sorted(&map[key]));
-                    }
-                    Json::Object(out)
-                }
-                Json::Array(items) => Json::Array(items.iter().map(sorted).collect()),
-                other => other.clone(),
-            }
-        }
         let value = serde_json::to_value(self).expect("a request is JSON");
-        serde_json::to_string(&sorted(&value)).expect("JSON prints")
+        canonical_json(&value)
     }
 
     /// The recording key.
     pub fn digest(&self) -> String {
         text_digest(&self.canonical())
+    }
+
+    /// The same request without its binding: the key a recording made
+    /// before bindings were recorded would have.
+    pub fn unbound(&self) -> AgentRequest {
+        AgentRequest {
+            binding: None,
+            ..self.clone()
+        }
+    }
+
+    /// Whether `other` asks the same agent in the same configuration (its
+    /// name, mode, model, instructions and output), whatever the input.
+    pub fn same_agent(&self, other: &AgentRequest) -> bool {
+        self.agent == other.agent
+            && self.mode == other.mode
+            && self.model == other.model
+            && self.instructions == other.instructions
+            && self.output == other.output
     }
 }
 
@@ -106,6 +195,8 @@ pub struct AgentAnswer {
     /// `recording 3fa2…`, `live deepseek/deepseek-flash`.
     pub source: String,
     pub cost_usd: Option<f64>,
+    /// What the provider reported beside the answer (live and replay).
+    pub evidence: Option<Evidence>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -114,13 +205,25 @@ pub enum AnswerOutput {
     Json(Json),
 }
 
+/// The limits of one live call, never stored (C-52).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct CallLimits {
+    /// When the call must be over (monotonic): the nearer of the agent's
+    /// `maxLatencyMs` from the call and the run's wall-clock limit. A client
+    /// stops waiting then, sends nothing more, and answers
+    /// [`Outcome::Timeout`] without an error.
+    pub deadline: Instant,
+}
+
 /// A live model client for live evaluations. The Studio implements it with
 /// the provider layer; Simulation never reaches a provider by itself.
 pub trait LiveModel: Send + Sync {
     /// `provider/model`, for provenance.
     fn label(&self) -> String;
-    /// Asks the model once. `cancel` is set when the run is cancelled.
-    fn answer(&self, request: &AgentRequest, cancel: &AtomicBool) -> LiveAnswer;
+    /// Asks the model once, by `limits.deadline`. `cancel` is set when the
+    /// run is cancelled; the client then stops at once.
+    fn answer(&self, request: &AgentRequest, limits: CallLimits, cancel: &AtomicBool)
+    -> LiveAnswer;
 }
 
 /// What a live model answered.
@@ -129,10 +232,55 @@ pub struct LiveAnswer {
     pub outcome: Outcome,
     pub output: Option<Json>,
     pub latency_ms: u64,
+    /// The call's cost when known: `Some(0.0)` when nothing was sent;
+    /// `None` when it is unknown (usage not reported in full, or a sent
+    /// request that failed), never a guess.
     pub cost_usd: Option<f64>,
     /// A provider error (not the model's answer), such as a refused key or
     /// no network: a failure of the evaluation, not of the agent.
     pub error: Option<String>,
+    /// What the provider reported beside the answer, kept with a recording.
+    pub evidence: Option<Evidence>,
+}
+
+/// What a provider reported beside an agent's answer (C-52), so its mapping
+/// can be audited. Not part of the agent's output, and never read by its
+/// contract.
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Evidence {
+    /// The model that answered, as the provider reported it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+    /// The provider's own result before it was mapped (for a typed choice:
+    /// the selection, the probabilities and the confidence), unchanged.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub estimates: Option<Json>,
+    /// Tokens as reported; a count not reported is absent, never zero.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub usage: Option<Tokens>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub request_id: Option<String>,
+    /// Requests sent, retries included.
+    #[serde(default)]
+    pub attempts: u32,
+}
+
+/// Token counts as a provider reported them.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Tokens {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub input: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output: Option<u64>,
+}
+
+impl Tokens {
+    /// Every count was reported.
+    pub fn complete(&self) -> bool {
+        self.input.is_some() && self.output.is_some()
+    }
 }
 
 /// One kept answer: a line of `recordings/<agent>.jsonl`.
@@ -151,6 +299,9 @@ pub struct Recording {
     /// The live evaluation it was kept from.
     #[serde(default)]
     pub run: Option<String>,
+    /// What the provider reported beside the answer (C-52).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub evidence: Option<Evidence>,
 }
 
 /// The recordings of a project: `<project>/recordings/*.jsonl`, keyed by
@@ -192,6 +343,15 @@ impl Recordings {
                     continue;
                 }
                 match serde_json::from_str::<Recording>(line) {
+                    // The key is worked out again: an edited or damaged
+                    // line never answers a request it does not match.
+                    Ok(recording) if recording.request.digest() != recording.digest => {
+                        recordings.problems.push(format!(
+                            "{} line {}: its key does not match its request, so it is not used",
+                            file.display(),
+                            n + 1
+                        ));
+                    }
                     Ok(recording) => {
                         recordings
                             .by_digest
@@ -211,6 +371,14 @@ impl Recordings {
 
     pub fn get(&self, digest: &str) -> Option<&Recording> {
         self.by_digest.get(digest)
+    }
+
+    /// For a bound request with no recording: whether a recording made
+    /// before bindings were recorded matches it otherwise. It never answers
+    /// it (it cannot say which provider, model and mapping answered), but
+    /// the stop can say why.
+    pub fn has_unbound(&self, request: &AgentRequest) -> bool {
+        request.binding.is_some() && self.by_digest.contains_key(&request.unbound().digest())
     }
 
     pub fn len(&self) -> usize {

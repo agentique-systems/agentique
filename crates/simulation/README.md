@@ -10,7 +10,7 @@ provider, a process or the network by itself.
 let program = compile(&tree, scenario)?;                    // Err: what keeps it from running
 let digest = digest::model_digest(&tree, scenario);          // provenance of the model slice
 let result = run(&program, digest, &Request::new(Mode::Model), Answers::StandIns, cancel);
-assert!(freshness(&result, &tree).is_current());
+assert!(freshness(&result, &Present::model(&tree)).is_current());
 store.save(&result)?;                                        // app data, never committed
 ```
 
@@ -46,12 +46,38 @@ store.save(&result)?;                                        // app data, never 
   goes to the fallback, with the reason in the trace. A live sample may take
   minutes (a model run, ten seconds); a live result keeps its answers, to be
   kept as recordings.
+- **Execution identity** (C-52). For a replay or a live evaluation the run's
+  `Request` carries a `RunBinding` the Studio prepared: the one agent
+  configuration it covers (a call from another stops the run as
+  `unsupported`) and its `Binding` (provider, model, the provider layer's
+  adapter and the Studio's mapping with their revisions, the exact question,
+  what of the input is sent, the adapter's policy; strings and JSON only).
+  The binding goes into every `AgentRequest` and so into the recording key;
+  without one, a request has exactly the canonical bytes of the time before
+  bindings, so old recordings still replay unbound requests but never answer
+  a bound one (the stop says why). `Recordings::read` checks each key again.
+  `describe_agents` lists a compiled scenario's agents with their effective
+  settings, answer fields (the confidence found by identity) and inputs.
+- **Live calls** (C-52) get `CallLimits`: one deadline, the nearer of the
+  agent's `maxLatencyMs` and the run's wall-clock limit. A provider failure
+  is kept as a call (`providerError`, its time and unknown cost counted) and
+  ends the evaluation; a stop during a call is a stop, whatever the client
+  reported; `Limits::max_live_calls` is an allowance shared by every sample,
+  and the call beyond it is not made (`budget-exhausted`). A call of
+  unknown cost is counted (`LiveSummary::unknown_cost`): the total is then
+  absent and `known_cost_usd` holds the known part. A recording keeps the
+  provider's `Evidence` (the model that answered, its raw estimates, usage,
+  request id, attempts), apart from the agent's output.
 - **`result`** keeps the five claims apart (valid, executable, completed,
   check passed, implementation agrees) and the six verdicts;
   `RunResult::describe` says it in plain words (for the Assistant);
   **`digest`** and **`freshness`** work out whether a result still describes
-  the model.
+  the present (`Present`): the model slice and the runner, and for a replay
+  or a live result also the binding and, for a replay, the recordings. One
+  without a binding, made before bindings were recorded, is never current.
 - **`runner::BackgroundRun`** runs on its own thread; the Studio polls it.
 
 Tests: `model.rs` (the retrying dispatcher of `models/notifications`),
-`agents.rs` (the link screening of `models/link-screening`), `store.rs`.
+`agents.rs` (the link screening of `models/link-screening`), `identity.rs`
+(bindings, keys, legacy recordings, deadlines, accounting, freshness, what
+an older build reads), `store.rs`.
