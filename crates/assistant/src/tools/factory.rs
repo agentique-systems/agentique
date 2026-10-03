@@ -35,6 +35,12 @@ pub enum StudioRequest {
         element: ElementId,
         instructions: String,
     },
+    /// What the application shows now (C-53): `full` with every command
+    /// and the cards in view.
+    Observe { full: bool },
+    /// An action in the application, as the control interface reads it
+    /// (the whole input: action, expect, observed, why).
+    Act { input: Value },
 }
 
 /// The agent settings `inspect_behaviour` lists, as the Agents library
@@ -436,6 +442,12 @@ pub(super) fn studio_request(
             }
         }
         super::STOP_RUN => StudioRequest::StopRun,
+        super::OBSERVE_APP => StudioRequest::Observe {
+            full: input["detail"] == "full",
+        },
+        super::ACT_IN_APP => StudioRequest::Act {
+            input: input.clone(),
+        },
         super::READ_RUN => StudioRequest::ReadRun {
             scenario: scenario()?,
             mode: mode(Mode::Model)?,
@@ -522,6 +534,9 @@ pub fn carry_out_headless(tree: &Tree, request: &StudioRequest) -> Result<String
             Ok(result.describe(None, 12))
         }
         StudioRequest::StopRun => Ok("Nothing is running.".into()),
+        StudioRequest::Observe { .. } | StudioRequest::Act { .. } => {
+            Err("There is no application to operate here.".into())
+        }
         StudioRequest::ReadRun { .. } => Err("No results are kept here; run the scenario.".into()),
         StudioRequest::ReadCodeLinks { .. } => Ok("No code is linked here.".into()),
         StudioRequest::Explain { element } => agq_implementation::responsibility::responsibility(

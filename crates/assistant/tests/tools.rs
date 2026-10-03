@@ -53,6 +53,8 @@ fn every_tool_has_a_schema() {
             "explain_element",
             "check_implementation",
             "propose_implementation",
+            "observe_app",
+            "act_in_app",
             "search_library",
             "read_library_block",
             "use_library_block",

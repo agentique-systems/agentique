@@ -874,6 +874,9 @@ impl Studio {
             panel.stopped = true;
         }
         self.close_waiting(Some("Not run: stopped by the Operator."));
+        // Its actions in the application that have not started do not.
+        self.control
+            .cancel("Assistant", "Not run: the Operator stopped the Assistant.");
         // Every other request the turn waits on is closed too (fail closed,
         // ROADMAP §5.6 item 4): a task it proposed is not started by a later
         // click, and runs or checks it asked for answer no one.

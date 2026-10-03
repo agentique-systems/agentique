@@ -103,7 +103,11 @@ impl Workspace {
             reduced_motion: cx.reduce_motion(),
         };
         let gallery = args.fixture.as_deref() == Some("components");
-        let studio = cx.new(|_| Studio::new(args, system));
+        let studio = cx.new(|_| {
+            let mut studio = Studio::new(args, system);
+            studio.open_control_endpoint();
+            studio
+        });
         let surface = cx.new(|cx| SurfaceView::new(studio.clone(), cx));
         let outline = cx.new(|cx| LeftColumn::new(studio.clone(), window, cx));
         let inspector = cx.new(|cx| InspectorColumn::new(studio.clone(), window, cx));
@@ -143,8 +147,11 @@ impl Workspace {
             this.studio.update(cx, |studio, _| {
                 studio.end_turn();
                 studio.save_session();
+                studio.control.close_endpoint();
             });
         }));
+        // Weak: the ticker must not keep the Studio alive.
+        let controlled = studio.downgrade();
         let ticker = cx.spawn_in(window, async move |this, cx| {
             loop {
                 cx.background_executor()
@@ -153,6 +160,21 @@ impl Workspace {
                 let Ok(()) = this.update_in(cx, |this, window, cx| this.tick(window, cx)) else {
                     break;
                 };
+                // Agents' observations and actions (C-53), outside any
+                // view's update: their input goes through the window as the
+                // platform's does, and its handlers update the views.
+                let Some(controlled) = controlled.upgrade() else {
+                    break;
+                };
+                let _ = cx.update(|window, cx| {
+                    let changed = crate::control::tick(&controlled, window, cx);
+                    if changed || controlled.read(cx).control.busy() {
+                        controlled.act(cx, |studio| {
+                            studio.control.live_marks();
+                            studio.mark(Dirty::STATUS | Dirty::OVERLAY)
+                        });
+                    }
+                });
             }
         });
         let mut workspace = Workspace {
@@ -188,6 +210,16 @@ impl Workspace {
         // Handed over to the launcher (Use this build): end, so it can start
         // the build; the session and the project are saved.
         if self.studio.read(cx).develop.quit {
+            if let Some(code) = self.studio.read(cx).develop.exit {
+                // Handing over to the supervisor (C-53): the work is stopped and
+                // saved, and the exit code tells it which way to go.
+                self.studio.update(cx, |studio, _| {
+                    studio.end_turn();
+                    studio.save_session();
+                    studio.control.close_endpoint();
+                });
+                std::process::exit(code);
+            }
             cx.quit();
             return;
         }
@@ -693,15 +725,34 @@ impl Render for Workspace {
             .dialog
             .as_ref()
             .is_some_and(|dialog| !matches!(dialog, crate::edit::Dialog::Rename { .. }));
-        let center: AnyView = if let Some(gallery) = gallery {
-            gallery.into()
+        let (center, center_region): (AnyView, &'static str) = if let Some(gallery) = gallery {
+            (gallery.into(), "gallery")
         } else if settings_open {
-            self.settings.clone().into()
+            (self.settings.clone().into(), "settings")
         } else if welcome {
-            self.welcome.clone().into()
+            (self.welcome.clone().into(), "welcome")
         } else {
-            self.surface.clone().into()
+            (self.surface.clone().into(), "surface")
         };
+        // What is on screen, for the control interface (C-53): the cached
+        // columns shown keep their records until they are painted again.
+        let mounted: Vec<&'static str> = [
+            (show_outline, "outline"),
+            (show_inspector, "inspector"),
+            (show_conversation, "conversation"),
+        ]
+        .into_iter()
+        .filter_map(|(shown, name)| shown.then_some(name))
+        .collect();
+        ui::target::begin_frame(&mounted);
+        let now = std::time::Instant::now();
+        let marks: Vec<crate::control::Mark> = studio
+            .control
+            .marks
+            .iter()
+            .filter(|m| m.until > now)
+            .cloned()
+            .collect();
         let root = div()
             .id("workspace")
             .key_context("Workspace")
@@ -715,7 +766,9 @@ impl Render for Workspace {
             .text_size(r(theme::text::BASE))
             .on_action(cx.listener(Self::run))
             .on_drag_move(cx.listener(Self::resize))
+            .child(ui::target::region("title"))
             .child(self.title_bar(window, cx))
+            .child(ui::target::region_end())
             .child(
                 div()
                     .flex()
@@ -740,7 +793,9 @@ impl Render for Workspace {
                             .min_w_0()
                             .h_full()
                             .bg(theme.canvas)
-                            .child(center),
+                            .child(ui::target::region(center_region))
+                            .child(center)
+                            .child(ui::target::region_end()),
                     )
                     .when(show_inspector, |this| {
                         this.child(splitter(Dock::Inspector, cx)).child(dock_column(
@@ -762,9 +817,20 @@ impl Render for Workspace {
                             ))
                     }),
             )
+            .child(ui::target::region("status"))
             .child(self.status_bar(cx))
-            .when(dialog_open, |this| this.child(self.dialogs.clone()))
-            .when_some(palette, |this, palette| this.child(palette))
+            .child(ui::target::region_end())
+            .when(dialog_open, |this| {
+                this.child(ui::target::region("dialog"))
+                    .child(self.dialogs.clone())
+                    .child(ui::target::region_end())
+            })
+            .when_some(palette, |this, palette| {
+                this.child(ui::target::region("palette"))
+                    .child(palette)
+                    .child(ui::target::region_end())
+            })
+            .children(agent_marks(&marks, &theme))
             .when_some(context_menu, |this, (position, menu)| {
                 this.child(
                     deferred(
@@ -825,6 +891,42 @@ fn dock_column(dock: Dock, width: f32, view: AnyView, animate: bool, cx: &App) -
             spring,
             |this, width: f32| this.w(r(width)),
         )
+}
+
+/// Where agents acted (C-53): a ring on the control and who did what, for
+/// a moment after the action.
+fn agent_marks(marks: &[crate::control::Mark], theme: &ui::theme::Theme) -> Vec<gpui::AnyElement> {
+    marks
+        .iter()
+        .map(|mark| {
+            let b = mark.bounds;
+            div()
+                .absolute()
+                .left(b.origin.x - px(3.0))
+                .top(b.origin.y - px(3.0))
+                .w(b.size.width + px(6.0))
+                .h(b.size.height + px(6.0))
+                .rounded(px(6.0))
+                .border_2()
+                .border_color(theme.accent.solid)
+                .child(
+                    div()
+                        .absolute()
+                        .bottom_full()
+                        .left_0()
+                        .mb(px(2.0))
+                        .px(px(6.0))
+                        .py(px(1.0))
+                        .rounded(px(4.0))
+                        .bg(theme.accent.solid)
+                        .text_color(theme.accent.on_solid)
+                        .text_size(px(11.0))
+                        .whitespace_nowrap()
+                        .child(mark.label.clone()),
+                )
+                .into_any_element()
+        })
+        .collect()
 }
 
 /// The hairline between the Surface and a docked column; drag it to resize
@@ -890,6 +992,18 @@ impl Workspace {
         let studio_entity = self.studio.clone();
         let shortcut = |id| Some(commands::command(id).shortcut);
         let height = 40.0;
+        // What agents are doing (C-53): the latest action, and the gate.
+        let agents_paused = studio.agents_paused();
+        let agents_shown = studio.control.busy()
+            || agents_paused
+            || (studio.conversation.running() && studio.conversation.steerable);
+        let agent_activity = studio
+            .control
+            .activity()
+            .map(str::to_string)
+            .or_else(|| studio.conversation.phase.map(|p| format!("Assistant: {p}")))
+            .unwrap_or_else(|| "Agents".to_string());
+        let held = studio.control.held();
         div()
             .id("title-bar")
             .window_control_area(WindowControlArea::Drag)
@@ -929,6 +1043,90 @@ impl Workspace {
                     }),
             )
             .child(div().flex_1().min_w_0())
+            // Agents at work (C-53): what the latest one did, Pause or
+            // Resume, and Step.
+            .when(agents_shown, |this| {
+                let studio = self.studio.clone();
+                this.child(
+                    div()
+                        .id("agents")
+                        .flex()
+                        .items_center()
+                        .gap(r(4.0))
+                        .max_w(r(420.0))
+                        .min_w_0()
+                        .px(r(8.0))
+                        .h(r(26.0))
+                        .rounded(r(crate::tokens::radius::CONTROL))
+                        .border_1()
+                        .border_color(if agents_paused {
+                            theme.warning.solid
+                        } else {
+                            theme.accent.solid
+                        })
+                        .role(gpui::Role::Status)
+                        .aria_label(agent_activity.clone())
+                        .child(icon(IconName::Agent).size(13.0).color(theme.accent.solid))
+                        .child(
+                            div()
+                                .min_w_0()
+                                .overflow_hidden()
+                                .text_ellipsis()
+                                .whitespace_nowrap()
+                                .text_size(r(theme::text::XS))
+                                .text_color(theme.text_secondary)
+                                .child(if held > 0 {
+                                    format!("{agent_activity} · {held} waiting")
+                                } else {
+                                    agent_activity.clone()
+                                }),
+                        )
+                        .child(if agents_paused {
+                            Button::new("agents-resume", "Resume")
+                                .small()
+                                .ghost()
+                                .icon(IconName::Play)
+                                .tooltip("Let agents go on", None)
+                                .on_click({
+                                    let studio = studio.clone();
+                                    move |_: &ClickEvent, _, cx| {
+                                        studio.act(cx, |studio| studio.resume_agents())
+                                    }
+                                })
+                                .into_any_element()
+                        } else {
+                            Button::new("agents-pause", "Pause")
+                                .small()
+                                .ghost()
+                                .icon(IconName::Pause)
+                                .tooltip("Hold agents at their next action or tool call", None)
+                                .on_click({
+                                    let studio = studio.clone();
+                                    move |_: &ClickEvent, _, cx| {
+                                        studio.act(cx, |studio| studio.pause_agents())
+                                    }
+                                })
+                                .into_any_element()
+                        })
+                        .when(agents_paused, |this| {
+                            this.child(
+                                Button::new("agents-step", "Step")
+                                    .small()
+                                    .ghost()
+                                    .tooltip(
+                                        "Let one action or tool call through, then hold again",
+                                        None,
+                                    )
+                                    .on_click({
+                                        let studio = studio.clone();
+                                        move |_: &ClickEvent, _, cx| {
+                                            studio.act(cx, |studio| studio.step_agents())
+                                        }
+                                    }),
+                            )
+                        }),
+                )
+            })
             // The views of the Surface.
             .when(surface_shown, |this| {
                 let studio = self.studio.clone();

@@ -211,6 +211,8 @@ pub struct Studio {
     pub safe_mode: bool,
     /// Agentique's own builds: building, trying, adopting (C-51).
     pub develop: crate::develop::BuildsState,
+    /// The control interface (C-53): observations and agents' actions.
+    pub control: crate::control::ControlState,
     /// Implementation links, checks and drift (C-50).
     pub implementation: crate::implementation::ImplementationState,
     last_saved: Instant,
@@ -320,6 +322,7 @@ impl Studio {
             runtime: Default::default(),
             safe_mode: args_safe_mode,
             develop: Default::default(),
+            control: Default::default(),
             implementation: Default::default(),
             last_saved: Instant::now(),
             dirty: Dirty::ALL,
@@ -359,6 +362,23 @@ impl Studio {
 
     /// Marks what an update changed. An update that marks nothing is taken
     /// to have changed everything.
+    /// Opens the control interface's endpoint when `--control` names a
+    /// file (C-53).
+    pub fn open_control_endpoint(&mut self) {
+        let Some(file) = self.args.control.clone() else {
+            return;
+        };
+        match crate::control::server::start(&file, &self.control.instance, self.control.sender()) {
+            Ok(endpoint) => self.control.endpoint = Some(endpoint),
+            Err(error) => self.status = error,
+        }
+    }
+
+    /// The Settings section shown, by name.
+    pub fn settings_section_name(&self) -> String {
+        format!("{:?}", self.settings_section).to_lowercase()
+    }
+
     pub fn mark(&mut self, dirty: Dirty) {
         self.dirty |= dirty;
     }

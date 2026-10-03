@@ -106,12 +106,17 @@ impl RenderOnce for TextField {
         let focused = self.state.read(cx).focus_handle(cx).is_focused(window);
         let muted = cx.theme().text_muted;
         let handle = self.state.read(cx).focus_handle(cx);
+        let value = self.state.read(cx).value();
         frame(focused, self.invalid, cx)
             .h(r(self.height))
             .w_full()
             .relative()
             .when_some(self.name, |this, name| {
-                this.child(crate::ui::target::target(name))
+                this.child(crate::ui::target::control(
+                    crate::ui::target::Control::new("field", name)
+                        .value(value)
+                        .focused(focused),
+                ))
             })
             .when(self.mono, |this| this.font_family(theme::MONO))
             .cursor_text()
@@ -163,12 +168,17 @@ impl TextArea {
 impl RenderOnce for TextArea {
     fn render(self, window: &mut Window, cx: &mut App) -> impl IntoElement {
         let focused = self.state.read(cx).focus_handle(cx).is_focused(window);
+        let value = self.state.read(cx).value();
         let area = div()
             .w_full()
             .relative()
             .child(Textarea::new(&self.state))
             .when_some(self.name, |this, name| {
-                this.child(crate::ui::target::target(name))
+                this.child(crate::ui::target::control(
+                    crate::ui::target::Control::new("field", name)
+                        .value(value)
+                        .focused(focused),
+                ))
             });
         if self.borderless {
             return div()

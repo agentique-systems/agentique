@@ -83,6 +83,8 @@ pub struct BuildsState {
     pub handover: Option<std::fs::File>,
     /// The Studio should end (after handing over).
     pub quit: bool,
+    /// The exit code when it ends: the supervisor's handover code.
+    pub exit: Option<i32>,
     /// The Operator chose "Use this build" for this build; the card asks
     /// once more.
     pub confirm_use: Option<String>,
@@ -355,6 +357,20 @@ impl Studio {
             std::fs::copy(root.join(id).join(agq_launcher::LAUNCHER), &launcher)
                 .map_err(|e| format!("the launcher could not be installed: {e}"))?;
         }
+        if self.args.supervised {
+            // The supervising launcher is this Studio's parent: it starts the
+            // build named here once this process has ended (C-53).
+            agq_launcher::Handover {
+                build: id.to_string(),
+                args: vec!["--adopted".into(), id.to_string()],
+            }
+            .save(&root)?;
+            self.develop.exit = Some(agq_launcher::HANDOVER_EXIT);
+            self.develop.quit = true;
+            self.status = format!("Handing over to {id}…");
+            self.mark(Dirty::STATUS);
+            return Ok(());
+        }
         let lock = root.join("handover.lock");
         let file = std::fs::File::create(&lock).map_err(|e| e.to_string())?;
         file.lock().map_err(|e| e.to_string())?;
@@ -435,9 +451,47 @@ impl Studio {
             return;
         }
         self.develop.ready_written = true;
+        // Started for an adoption: ready only once the check after adoption
+        // passed; otherwise end, so the launcher returns to the last known
+        // good build (C-53, ROADMAP §4.16).
+        if let Some(problem) = self.adoption_check() {
+            eprintln!("The check after adoption failed: {problem}");
+            std::process::exit(4);
+        }
         if let Some(path) = &self.args.ready_file {
             let _ = std::fs::write(path, "ready");
         }
+    }
+
+    /// The check after adoption, when started for one: this process is the
+    /// adopted build (its manifest and executables), and the project the
+    /// session names opened. `None` when it passed or was not asked for.
+    pub fn adoption_check(&self) -> Option<String> {
+        let id = self.args.adopted.as_deref()?;
+        if self.running_build().as_deref() != Some(id) {
+            return Some(format!(
+                "this process is not the build {id} (it runs {})",
+                self.running_build()
+                    .as_deref()
+                    .unwrap_or("outside the builds folder")
+            ));
+        }
+        let folder = self.builds_root().join(id);
+        if let Err(problem) = Manifest::load(&folder).and_then(|m| m.matches(&folder)) {
+            return Some(problem);
+        }
+        let expected = self.session.project.clone();
+        if let Some(expected) = expected
+            && expected.join("model").is_dir()
+            && self.project.as_ref().map(|p| p.folder().to_path_buf()) != Some(expected.clone())
+        {
+            return Some(format!(
+                "the project {} did not open: {}",
+                expected.display(),
+                self.status
+            ));
+        }
+        None
     }
 
     /// Started by the launcher after build `failed` did not start: say so.

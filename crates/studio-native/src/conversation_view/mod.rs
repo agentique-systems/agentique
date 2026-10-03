@@ -1382,7 +1382,7 @@ impl Render for ConversationView {
         let studio_entity = self.studio.clone();
         let model_menu = self.model_menu.as_ref().map(|(menu, _)| menu.clone());
         let hover_tooltip = ui::tooltip::text(hover, None);
-        div()
+        crate::ui::target::regioned("conversation", div()
             .id("conversation")
             .key_context("Conversation")
             .track_focus(&self.focus)
@@ -1644,7 +1644,7 @@ impl Render for ConversationView {
                                     }),
                             ),
                     ),
-            )
+            ))
     }
 }
 

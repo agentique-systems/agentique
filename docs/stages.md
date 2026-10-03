@@ -1231,8 +1231,8 @@ launcher, and C-52's typed decisions, as recorded above.
 |---|---|---|
 | W11.1 Direction and self-model | #97 | C-53 recorded; Scenario J, §4.16, §6.8; `AGENTS.md` rule 10; `CLAUDE.md`; the self-model gains `Orchestrator` (locked, through a System State `Lock` change), the control and objective ports, `GatesDecide`, and the new contracts of `ClaudeAgentRuntime`, `Studio` and `Launcher` |
 | W11.2 The development runtime | `stage11/dev-runtime` | Built: protocol 2, the permission policy (companion hook and Rust policy), development sessions in the Conversation for projects with implementation links, DeepSeek's endpoint, steering, activity, costs; live development session passed on `deepseek-v4-pro` |
-| W11.3 The control interface | — | not started |
-| W11.4 Lifecycle | — | not started |
+| W11.3 The control interface | `stage11/control` | Built: the per-frame control registry (regions for the cached columns), observations, actions through real input and command dispatch, stale refusal (instance, project, build, screen), the event trace, marks and the agents chip with Pause, Step, Resume, the local endpoint (`--control`), `observe_app` and `act_in_app`; the journey `control_journey` drives the real window through the endpoint |
+| W11.4 Lifecycle | `stage11/control` | Built: the supervising launcher (handover by exit code 75 and `handover.json`, crash restart once, fallback to the last known good build, which a build that crashed before it settled does not keep), `--supervised` and `--adopted` in the Studio, the check after adoption before the ready file; continuation of objectives comes with W11.5 |
 | W11.5 The Orchestrator | — | not started |
 | W11.6 Typed decisions in operation | — | not started |
 | W11.7 Proof | — | not started |

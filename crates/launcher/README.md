@@ -21,8 +21,18 @@ deletes anything.
   `--recovered-from`, so it can say what happened. If that fails too, the
   builds folder opens with `launcher.log`.
 
+- **Supervising** (`--supervise`, C-53): the launcher stays Agentique's
+  parent. A Studio it started hands over by writing `handover.json` (the
+  next build and its arguments, `--adopted <id>`) and exiting with code 75;
+  the launcher then starts that build, which reports ready only after its
+  check after adoption. A Studio that crashes after it had run 30 seconds
+  starts once more; one that crashes sooner, or again, gives way to the last
+  known good build (a build that crashed before it settled loses that mark
+  again), started with `--recovered-from`. A normal close ends supervising.
+
 ```text
 agentique-launcher [args…]                       the current build
+agentique-launcher --supervise [args…]           the current build, supervised (C-53)
 agentique-launcher --recover [args…]             the last known good build, in safe mode (no Claude Agent runtime)
 agentique-launcher --adopt <id> --wait <lock>    after the running Agentique hands over (Use this build)
 ```

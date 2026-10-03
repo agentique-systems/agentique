@@ -84,31 +84,30 @@ impl Render for LeftColumn {
             LeftTab::Library => self.library.clone().into(),
             LeftTab::Scenarios => self.scenarios.clone().into(),
         };
-        div()
-            .id("left-column")
-            .size_full()
-            .flex()
-            .flex_col()
-            .bg(theme.chrome)
-            .role(gpui::Role::Complementary)
-            .aria_label("Outline, Library and Scenarios")
-            .child(
-                div()
-                    .id("left-tabs")
-                    .flex_none()
-                    .h(r(36.0))
-                    .px(r(6.0))
-                    .relative()
-                    .flex()
-                    .items_stretch()
-                    .border_b_1()
-                    .border_color(theme.separator)
-                    .role(gpui::Role::TabList)
-                    .children(
-                        LEFT_TABS
-                            .iter()
-                            .enumerate()
-                            .map(|(i, (choice, label, glyph))| {
+        crate::ui::target::regioned(
+            "outline",
+            div()
+                .id("left-column")
+                .size_full()
+                .flex()
+                .flex_col()
+                .bg(theme.chrome)
+                .role(gpui::Role::Complementary)
+                .aria_label("Outline, Library and Scenarios")
+                .child(
+                    div()
+                        .id("left-tabs")
+                        .flex_none()
+                        .h(r(36.0))
+                        .px(r(6.0))
+                        .relative()
+                        .flex()
+                        .items_stretch()
+                        .border_b_1()
+                        .border_color(theme.separator)
+                        .role(gpui::Role::TabList)
+                        .children(LEFT_TABS.iter().enumerate().map(
+                            |(i, (choice, label, glyph))| {
                                 let chosen = *choice == tab;
                                 let studio = self.studio.clone();
                                 let choice = *choice;
@@ -155,31 +154,34 @@ impl Render for LeftColumn {
                                             .text_ellipsis()
                                             .child(*label),
                                     )
-                                    .child(ui::target::target(*label))
-                            }),
-                    )
-                    .child(
-                        div()
-                            .absolute()
-                            .bottom_0()
-                            .h(gpui::px(2.0))
-                            .w(relative(LEFT_SHARE))
-                            .px(r(10.0))
-                            .child(div().size_full().rounded_full().bg(theme.accent.solid))
-                            .with_spring(
-                                "left-tab-mark",
-                                ui::primitives::spring().to(index as f32),
-                                |this, at: f32| this.left(relative(at * LEFT_SHARE)),
-                            ),
-                    ),
-            )
-            .child(
-                div()
-                    .flex_1()
-                    .min_w_0()
-                    .min_h_0()
-                    .child(body.cached(gpui::StyleRefinement::default().size_full())),
-            )
+                                    .child(ui::target::control(
+                                        ui::target::Control::new("tab", *label).selected(chosen),
+                                    ))
+                            },
+                        ))
+                        .child(
+                            div()
+                                .absolute()
+                                .bottom_0()
+                                .h(gpui::px(2.0))
+                                .w(relative(LEFT_SHARE))
+                                .px(r(10.0))
+                                .child(div().size_full().rounded_full().bg(theme.accent.solid))
+                                .with_spring(
+                                    "left-tab-mark",
+                                    ui::primitives::spring().to(index as f32),
+                                    |this, at: f32| this.left(relative(at * LEFT_SHARE)),
+                                ),
+                        ),
+                )
+                .child(
+                    div()
+                        .flex_1()
+                        .min_w_0()
+                        .min_h_0()
+                        .child(body.cached(gpui::StyleRefinement::default().size_full())),
+                ),
+        )
     }
 }
 
@@ -241,105 +243,113 @@ impl Render for InspectorColumn {
             Panel::History => history::render(&self.studio, cx).into_any_element(),
             Panel::Problems => problems::render(&self.studio, cx).into_any_element(),
         };
-        div()
-            .id("inspector-column")
-            .size_full()
-            .flex()
-            .flex_col()
-            .bg(theme.chrome)
-            .role(gpui::Role::Complementary)
-            .aria_label("Panels")
-            .child(
-                div()
-                    .id("panel-tabs")
-                    .flex_none()
-                    .h(r(36.0))
-                    .px(r(6.0))
-                    .relative()
-                    .flex()
-                    .items_stretch()
-                    .border_b_1()
-                    .border_color(theme.separator)
-                    .role(gpui::Role::TabList)
-                    .children(TABS.iter().enumerate().map(|(i, (tab, label, glyph))| {
-                        let chosen = *tab == panel;
-                        let studio = self.studio.clone();
-                        let tab = *tab;
-                        div()
-                            .id(("panel-tab", i))
-                            .role(gpui::Role::Tab)
-                            .aria_selected(chosen)
-                            .aria_label(*label)
-                            .flex_1()
-                            .min_w_0()
-                            .flex()
-                            .items_center()
-                            .justify_center()
-                            .gap(r(5.0))
-                            .text_size(r(theme::text::SM))
-                            .font_weight(theme::MEDIUM)
-                            .text_color(if chosen { theme.text } else { theme.text_muted })
-                            .cursor_pointer()
-                            .hover(|style| style.text_color(theme.text))
-                            .on_click(move |_: &ClickEvent, _, cx| {
-                                studio.act(cx, |studio| {
-                                    studio.panel = tab;
-                                    studio.mark(Dirty::LAYOUT);
+        crate::ui::target::regioned(
+            "inspector",
+            div()
+                .id("inspector-column")
+                .size_full()
+                .flex()
+                .flex_col()
+                .bg(theme.chrome)
+                .role(gpui::Role::Complementary)
+                .aria_label("Panels")
+                .child(
+                    div()
+                        .id("panel-tabs")
+                        .flex_none()
+                        .h(r(36.0))
+                        .px(r(6.0))
+                        .relative()
+                        .flex()
+                        .items_stretch()
+                        .border_b_1()
+                        .border_color(theme.separator)
+                        .role(gpui::Role::TabList)
+                        .children(TABS.iter().enumerate().map(|(i, (tab, label, glyph))| {
+                            let chosen = *tab == panel;
+                            let studio = self.studio.clone();
+                            let tab = *tab;
+                            div()
+                                .id(("panel-tab", i))
+                                .role(gpui::Role::Tab)
+                                .aria_selected(chosen)
+                                .aria_label(*label)
+                                .flex_1()
+                                .min_w_0()
+                                .flex()
+                                .items_center()
+                                .justify_center()
+                                .gap(r(5.0))
+                                .text_size(r(theme::text::SM))
+                                .font_weight(theme::MEDIUM)
+                                .text_color(if chosen { theme.text } else { theme.text_muted })
+                                .cursor_pointer()
+                                .hover(|style| style.text_color(theme.text))
+                                .on_click(move |_: &ClickEvent, _, cx| {
+                                    studio.act(cx, |studio| {
+                                        studio.panel = tab;
+                                        studio.mark(Dirty::LAYOUT);
+                                    })
                                 })
-                            })
-                            .relative()
-                            .overflow_hidden()
-                            .whitespace_nowrap()
-                            .when(icons_only, |this| {
-                                this.child(ui::icon(*glyph).size(14.0).color(if chosen {
-                                    theme.text_secondary
-                                } else {
-                                    theme.text_faint
-                                }))
-                                .tooltip(move |window, cx| {
-                                    ui::tooltip::text(*label, None)(window, cx)
+                                .relative()
+                                .overflow_hidden()
+                                .whitespace_nowrap()
+                                .when(icons_only, |this| {
+                                    this.child(ui::icon(*glyph).size(14.0).color(if chosen {
+                                        theme.text_secondary
+                                    } else {
+                                        theme.text_faint
+                                    }))
+                                    .tooltip(
+                                        move |window, cx| {
+                                            ui::tooltip::text(*label, None)(window, cx)
+                                        },
+                                    )
                                 })
-                            })
-                            .when(!icons_only, |this| {
-                                this.child(
-                                    div()
-                                        .min_w_0()
-                                        .overflow_hidden()
-                                        .text_ellipsis()
-                                        .child(*label),
-                                )
-                            })
-                            .child(ui::target::target(*label))
-                            .when(tab == Panel::Run && running, |this| {
-                                this.child(ui::primitives::spinner(
-                                    "run-tab-spinner",
-                                    10.0,
-                                    theme.info.solid,
+                                .when(!icons_only, |this| {
+                                    this.child(
+                                        div()
+                                            .min_w_0()
+                                            .overflow_hidden()
+                                            .text_ellipsis()
+                                            .child(*label),
+                                    )
+                                })
+                                .child(ui::target::control(
+                                    ui::target::Control::new("tab", *label).selected(chosen),
                                 ))
-                            })
-                            .when(tab == Panel::Problems && problems > 0, |this| {
-                                this.child(
-                                    ui::Badge::new(problems.to_string()).tone(ui::Tone::Warning),
-                                )
-                            })
-                    }))
-                    // The sliding mark under the chosen tab.
-                    .child(
-                        div()
-                            .absolute()
-                            .bottom_0()
-                            .h(gpui::px(2.0))
-                            .w(relative(TAB_SHARE))
-                            .px(r(10.0))
-                            .child(div().size_full().rounded_full().bg(theme.accent.solid))
-                            .with_spring(
-                                "panel-tab-mark",
-                                ui::primitives::spring().to(index as f32),
-                                |this, at: f32| this.left(relative(at * TAB_SHARE)),
-                            ),
-                    ),
-            )
-            .child(div().flex_1().min_w_0().min_h_0().child(body))
+                                .when(tab == Panel::Run && running, |this| {
+                                    this.child(ui::primitives::spinner(
+                                        "run-tab-spinner",
+                                        10.0,
+                                        theme.info.solid,
+                                    ))
+                                })
+                                .when(tab == Panel::Problems && problems > 0, |this| {
+                                    this.child(
+                                        ui::Badge::new(problems.to_string())
+                                            .tone(ui::Tone::Warning),
+                                    )
+                                })
+                        }))
+                        // The sliding mark under the chosen tab.
+                        .child(
+                            div()
+                                .absolute()
+                                .bottom_0()
+                                .h(gpui::px(2.0))
+                                .w(relative(TAB_SHARE))
+                                .px(r(10.0))
+                                .child(div().size_full().rounded_full().bg(theme.accent.solid))
+                                .with_spring(
+                                    "panel-tab-mark",
+                                    ui::primitives::spring().to(index as f32),
+                                    |this, at: f32| this.left(relative(at * TAB_SHARE)),
+                                ),
+                        ),
+                )
+                .child(div().flex_1().min_w_0().min_h_0().child(body)),
+        )
     }
 }
 

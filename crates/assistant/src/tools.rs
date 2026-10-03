@@ -47,6 +47,8 @@ pub const READ_CODE_LINKS: &str = "read_code_links";
 pub const EXPLAIN_ELEMENT: &str = "explain_element";
 pub const CHECK_IMPLEMENTATION: &str = "check_implementation";
 pub const PROPOSE_IMPLEMENTATION: &str = "propose_implementation";
+pub const OBSERVE_APP: &str = "observe_app";
+pub const ACT_IN_APP: &str = "act_in_app";
 
 /// The longest tool result the model reads, in characters: about 8,000
 /// tokens (R-34). Longer results are cut with a note on narrowing the
@@ -144,7 +146,8 @@ pub fn phase(tool: &str) -> &'static str {
             "Running checks"
         }
         "write_code" | "edit_code" => "Editing the working copy",
-        "finish" => "Presenting the result",
+        "finish_implementation" => "Presenting the result",
+        "observe_app" | "act_in_app" => "Operating the application",
         "list_files" | "read_code" | "search_code" => "Reading the code",
         _ => "Inspecting the model",
     }
@@ -170,6 +173,7 @@ pub fn read_only(name: &str) -> bool {
             | "list_files"
             | "read_code"
             | "search_code"
+            | "observe_app"
     )
 }
 
@@ -360,6 +364,55 @@ pub fn definitions() -> Value {
             }
         },
         {
+            "name": OBSERVE_APP,
+            "description": "What the Agentique application shows now, as text (C-53): its identity (pass `identity.instance` back in act_in_app's `expect`), the screen and its revision (pass `screenRevision` back as `observed`), view, panels, dialog, palette, selection, status, problems, the conversation, a running task and builds, every control on screen (id, role, label, value, enabled, selected, focused, bounds) and the available commands. `full` also lists unavailable commands with why, and the cards in view. You never see pixels: work from this text.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "detail": { "type": "string", "enum": ["summary", "full"], "description": "Default summary." }
+                },
+                "additionalProperties": false
+            }
+        },
+        {
+            "name": ACT_IN_APP,
+            "description": "Act in the Agentique application as the Operator would, visibly: a command (`{kind: command, id}` from the observation's commands), a click on a control (`{kind: click, control}` by id or label), filling a field (`{kind: fill, control, text}`), keys (`{kind: key, keys: \"ctrl-s\"}`, GPUI syntax, several separated by spaces), typing into the focused field (`{kind: type, text}`), scrolling (`{kind: scroll, control, dy}`), selecting a model element (`{kind: select, element}`, qualified name), opening a project (`{kind: open_project, folder}`), or waiting (`{kind: wait, until: {dialog, screen, control, enabled, statusContains, idle}, timeoutMs}`). The action is refused as stale, and nothing happens, when `expect.instance` is not this application, or the screen changed since `observed`, or the control is gone or disabled: observe again. Answers what was done and the screen after it. Agents can be paused by the Operator; then the action waits.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "action": {
+                        "type": "object",
+                        "properties": {
+                            "kind": { "type": "string", "enum": ["command", "click", "fill", "key", "type", "scroll", "select", "open_project", "wait"] },
+                            "id": name("A command's id, for a command."),
+                            "control": name("A control's id or label."),
+                            "text": name("Text to fill or type."),
+                            "keys": name("Keys in GPUI syntax, such as ctrl-s or escape."),
+                            "dy": { "type": "number", "description": "Pixels to scroll down (negative: up)." },
+                            "element": name("A model element's qualified name, for select."),
+                            "folder": name("A project folder, for open_project."),
+                            "until": { "type": "object", "description": "For wait: dialog (a kind, or null for none), screen, control (with enabled), statusContains, idle." },
+                            "timeoutMs": { "type": "integer", "description": "For wait; default 10000, at most 600000." }
+                        },
+                        "required": ["kind"]
+                    },
+                    "expect": {
+                        "type": "object",
+                        "properties": {
+                            "instance": name("identity.instance from the observation."),
+                            "project": name("Optional: the project folder you expect open."),
+                            "build": name("Optional: the build you expect.")
+                        },
+                        "required": ["instance"]
+                    },
+                    "observed": { "type": "integer", "description": "screenRevision from the observation this action is based on." },
+                    "why": name("What the action is for, in a few words; shown to the Operator on screen.")
+                },
+                "required": ["action", "expect", "why"],
+                "additionalProperties": false
+            }
+        },
+        {
             "name": SEARCH_LIBRARY,
             "description": "Search the Library of building blocks: reusable definitions from the built-in library (neutral software concepts such as services, gateways, stores, caches, queues, workers, retries), the project's own definitions and the Operator's My Library. Use it before modelling a common concept by hand. With fits_port, only blocks with a port that can connect to that port by the model's rules. Returns one line per block: its reference, kind, source, purpose and ports.",
             "input_schema": {
@@ -442,9 +495,9 @@ pub fn prepare(state: &SystemState, library: &Library, tool: &str, input: &Value
         | READ_CODE_LINKS
         | EXPLAIN_ELEMENT
         | CHECK_IMPLEMENTATION
-        | PROPOSE_IMPLEMENTATION => {
-            factory::studio_request(state.tree(), tool, input).map(Prepared::Studio)
-        }
+        | PROPOSE_IMPLEMENTATION
+        | OBSERVE_APP
+        | ACT_IN_APP => factory::studio_request(state.tree(), tool, input).map(Prepared::Studio),
         other => Err(format!("there is no tool called `{other}`")),
     };
     result.unwrap_or_else(Prepared::Invalid)

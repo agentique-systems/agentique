@@ -7,6 +7,9 @@
 //! agentique-launcher --adopt <id> --wait <lock> [args…]
 //!                                                   after the running Agentique hands over:
 //!                                                   build <id>, falling back if it does not start
+//! agentique-launcher --supervise [args…]            stays Agentique's parent (C-53): starts the
+//!                                                   build it hands over to, restarts a crashed one
+//!                                                   once, then falls back to the last known good
 //! ```
 //!
 //! Other arguments (such as `--project <folder>`) go to the build. If no
@@ -14,7 +17,9 @@
 #![cfg_attr(windows, windows_subsystem = "windows")]
 #![forbid(unsafe_code)]
 
-use agq_launcher::{READY_WITHIN, Registry, Started, default_root, start, wait_for_release};
+use agq_launcher::{
+    READY_WITHIN, Registry, Started, Supervised, default_root, start, supervise, wait_for_release,
+};
 use std::time::Duration;
 
 fn main() {
@@ -35,6 +40,7 @@ fn main() {
         }
     };
     let recover = take("--recover", false).is_some();
+    let supervising = take("--supervise", false).is_some();
     let adopt = take("--adopt", true);
     let wait = take("--wait", true);
     let root = default_root();
@@ -56,6 +62,16 @@ fn main() {
         note(format!("no handover: {reason}"));
         open_folder(&root);
         std::process::exit(1);
+    }
+    if supervising {
+        match supervise(&root, &args, READY_WITHIN) {
+            Supervised::Closed { .. } => std::process::exit(0),
+            Supervised::Failed { reason, .. } => {
+                note(reason);
+                open_folder(&root);
+                std::process::exit(2);
+            }
+        }
     }
     let registry = match Registry::load(&root) {
         Ok(registry) => registry,

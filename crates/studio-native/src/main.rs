@@ -10,6 +10,7 @@ mod agent_runtime;
 #[cfg_attr(not(feature = "automation"), allow(dead_code))]
 mod budgets;
 mod commands;
+mod control;
 mod conversation;
 mod conversation_view;
 mod cost;
@@ -89,6 +90,18 @@ pub struct Args {
     /// Write this file once the window is up (the launcher waits for it).
     #[arg(long)]
     ready_file: Option<PathBuf>,
+    /// Open the control interface's local endpoint and describe it in this
+    /// file (port and token), so an agent can operate this Studio (C-53).
+    #[arg(long)]
+    control: Option<PathBuf>,
+    /// Started by the supervising launcher (C-53): hand over to another
+    /// build by exiting with its handover code.
+    #[arg(long)]
+    supervised: bool,
+    /// Started for the adoption of this build: report ready only after the
+    /// check after adoption (C-53, ROADMAP §4.16).
+    #[arg(long)]
+    adopted: Option<String>,
     /// The launcher started this build because that one did not start.
     #[arg(long)]
     recovered_from: Option<String>,

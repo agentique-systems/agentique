@@ -1345,6 +1345,7 @@ through Simulation, Implementation and Execution.
 | `read_code_links` | Implementation links of an element or a file, both ways, with drift and the checks that cover them | Stages 7–8 (C-50) |
 | `check_implementation` | Run the implementation checks of an element or the whole project (needs trusted-local execution) | Stages 7–8 (C-50) |
 | `propose_implementation` | Propose an implementation task (outcome, affected parts, protected boundaries, permitted writes, required checks, acceptance criteria) for the Operator's approval | Stages 7–8 (C-50); the task definition in Stage 10 (C-51) |
+| `observe_app`, `act_in_app` | The control interface (§4.16): what the application shows now, as text, and one visible action through the Studio's own handlers (a command, input on a control, a selection, opening a project, a wait), refused as stale when observed against another instance, project, build or screen | Stage 11 (C-53) |
 | `list_files`, `read_code`, `write_code`, `run_checks`, `link_code`, `request_contract_change`, `finish_implementation` | Only inside an approved implementation task: read and write within its scope in its worktree, run its required checks, link what it wrote, return a contract change to the Operator, and report the result | Stages 7–8 (C-50) |
 | `search_code`, ranged `read_code`, `edit_code`, `run_program` | Only inside an approved task: search the worktree, read a line range, replace one exact passage, and run one allowed program (a build, a test filter, a lint) for diagnostics | Stage 10 (C-51) |
 
