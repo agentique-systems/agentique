@@ -177,7 +177,7 @@ pub fn refused_commands(place: Place, push: bool, network: bool) -> Vec<RefusedC
         // working copy: only its own branch is the session's to change.
         list.push(refused(
             &format!(
-                r"{GIT}(stash\s+(drop|clear)|branch\b[^\n;&|]*(\s-[a-zA-Z]*[DfmM]\b|--delete|--force|--move)|update-ref\b|symbolic-ref\b|filter-branch|filter-repo|tag\b[^\n;&|]*(\s-d\b|--delete)|reflog\s+(expire|delete)|replace\b)"
+                r"{GIT}(stash\s+(drop|clear|pop|apply)|branch\b[^\n;&|]*(\s-[a-zA-Z]*[DfmM]\b|--delete|--force|--move)|update-ref\b|symbolic-ref\b|filter-branch|filter-repo|tag\b[^\n;&|]*(\s-d\b|--delete)|reflog\s+(expire|delete)|replace\b|worktree\s+(remove|prune|move)|config\s+(--local\s+)?[A-Za-z][\w.-]*\s+[^\s;&|]|config\b[^\n;&|]*--(unset|add|replace-all|rename-section|remove-section|edit))"
             ),
             "That changes the repository's refs, which the Operator's working copy shares; a cycle's worktree changes only its own branch.",
         ));
@@ -721,6 +721,10 @@ mod tests {
             "git branch -D feature",
             "git -C ../agentique tag -d v1",
             "git symbolic-ref HEAD refs/heads/main",
+            "git stash pop",
+            "git config core.hooksPath hooks",
+            "git config --local remote.origin.url https://example.invalid/x.git",
+            "git worktree remove ../other",
         ] {
             assert!(refused(command), "{command}");
         }
@@ -730,6 +734,9 @@ mod tests {
             "git checkout -b mine",
             "git diff HEAD~1",
             "git log --oneline",
+            "git config --get user.name",
+            "git stash list",
+            "git branch --show-current",
         ] {
             assert!(!refused(command), "{command}");
         }

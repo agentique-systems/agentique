@@ -127,10 +127,16 @@ impl TestInstance {
         // Only what a process needs (as Execution passes it): the Studio's
         // keys and tokens stay with the Studio, since a test instance runs
         // code no reviewer has read yet.
-        let environment = agq_execution::Executor::new(
+        let mut environment = agq_execution::Executor::new(
             agq_execution::Scope::read_only(repository).map_err(|e| e.to_string())?,
         )
         .environment();
+        // What a window needs on Linux.
+        for name in ["DISPLAY", "WAYLAND_DISPLAY", "XDG_RUNTIME_DIR"] {
+            if let Ok(value) = std::env::var(name) {
+                environment.push((name.to_string(), value));
+            }
+        }
         let child = Command::new(exe)
             .env_clear()
             .envs(environment)

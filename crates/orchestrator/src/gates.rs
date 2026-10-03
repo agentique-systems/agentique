@@ -26,11 +26,14 @@ const AGENT_FILES: [&str; 5] = [
 /// agents do. A cycle changes them only when the objective names them, as
 /// it names agent configuration; the code of locked parts is gated by the
 /// links besides.
-pub const SAFEGUARDS: [&str; 5] = [
+pub const SAFEGUARDS: [&str; 8] = [
     "crates/orchestrator",
     "crates/assistant/src/policy.rs",
+    "crates/assistant/src/model_tools.rs",
     "claude-agent/src/policy.ts",
     "crates/studio-native/src/control",
+    "crates/studio-native/src/objectives.rs",
+    "crates/studio-native/src/panels/objectives.rs",
     "crates/implementation/src/task.rs",
 ];
 
@@ -146,14 +149,18 @@ pub fn keys_in(what: &str, text: &str, keys: &[String]) -> Outcome {
 
 /// Whether a line of a diff holds what tests and budgets rest on: an
 /// assertion, a test, a comparison with a number, or a constant.
-fn guarded(line: &str) -> bool {
+fn guarded(line: &str, script: bool) -> bool {
     let line = line.trim();
-    let compares =
-        ['<', '>'].iter().any(|c| line.contains(*c)) && line.chars().any(|c| c.is_ascii_digit());
+    // A comparison with a number (a threshold), not an arrow or a generic.
+    let compares = [" < ", " > ", " <= ", " >= "]
+        .iter()
+        .any(|c| line.contains(c))
+        && line.chars().any(|c| c.is_ascii_digit())
+        && !line.starts_with("//");
     line.contains("assert")
         || line.contains("#[test]")
-        || line.contains("expect(")
-        || (compares && !line.starts_with("//") && !line.starts_with("use "))
+        || (script && line.contains("expect("))
+        || compares
         || (line.starts_with("const ") && line.chars().any(|c| c.is_ascii_digit()))
 }
 
@@ -212,7 +219,8 @@ fn test_changes(file: &FileChange) -> Vec<String> {
     let kept: Vec<String> = added.iter().map(|l| l[1..].trim().to_string()).collect();
     for line in &removed {
         let text = line[1..].trim();
-        if guarded(text)
+        let script = lower.ends_with(".ts") || lower.ends_with(".js") || lower.ends_with(".mjs");
+        if guarded(text, script)
             && !kept.iter().any(|k| k == text)
             && (is_test_file(&lower) || text.contains("assert"))
         {
@@ -468,6 +476,18 @@ mod tests {
             "crates/x/src/lib.rs",
             "modified",
             "+#[cfg(any())]\n #[test]",
+        );
+        let ordinary = change(
+            "crates/x/tests/c.rs",
+            "modified",
+            "-    let project = Project::open(dir).expect(\"opens\");
+-fn bytes() -> Vec<u8> { vec![1] }
++    let project = Project::open(&dir).expect(\"opens\");",
+        );
+        assert!(
+            test_changes(&ordinary).is_empty(),
+            "{:?}",
+            test_changes(&ordinary)
         );
         let moved = change(
             "crates/x/tests/b.rs",

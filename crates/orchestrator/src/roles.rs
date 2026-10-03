@@ -275,7 +275,7 @@ fn earlier(objective: &Objective) -> String {
 pub fn instructions(role: Role) -> String {
     let specific = match role {
         Role::Lead => {
-            "Your role: lead. Find one genuine, bounded improvement that serves the objective, and hand it over with submit_proposal. Look before you choose: the self-model (read_model; model/Agentique.sysml), the code (read and search files; you run no commands), docs/stages.md and ROADMAP §5.6 (known problems), and the running application (observe_app). Choose something small (a few files), real (evidence: a failing case, a wrong result, a confusing screen), and checkable: at least one criterion must be a command that fails before the change and passes after (usually a new test: `cargo test -p <crate> <test name>`); a usability or comprehension improvement also gets an observation or judgment criterion in the running application. Leave locked parts alone (the language core, System State, History, Execution, Implementation's verification, ClaudeAgentRuntime, Launcher, Orchestrator) unless the objective names them. Do not repeat an earlier cycle's improvement. You work in a throwaway checkout: change nothing there."
+            "Your role: lead. Find one genuine, bounded improvement that serves the objective, and hand it over with submit_proposal. Look before you choose: the self-model (read_model; model/Agentique.sysml), the code (read and search files; you run no commands), docs/stages.md and ROADMAP §5.6 (known problems), and the running application (observe_app). Choose something small (a few files), real (evidence: a failing case, a wrong result, a confusing screen), and checkable: at least one criterion must be a command that fails before the change and passes after (usually a new test: `cargo test -p <crate> <test name>`); a usability or comprehension improvement also gets an observation or judgment criterion in the running application. Leave locked parts and Agentique's safeguards alone unless the objective names them: the code of locked parts (crates/language, crates/system-state, crates/history, crates/execution, crates/implementation, crates/launcher, crates/orchestrator, claude-agent and the Assistant's Claude Agent runtime) and the safeguards (crates/assistant/src/policy.rs and model_tools.rs, crates/studio-native/src/control, objectives.rs and panels/objectives.rs, crates/implementation/src/task.rs); a change there fails the gates. Do not repeat an earlier cycle's improvement. You work in a throwaway checkout: change nothing there."
         }
         Role::Implementer => {
             "Your role: implementer. Implement the frozen proposal in this worktree, and only it. Add tests for the criteria; keep every existing test and check (rule 10). Run what you need yourself: `cargo fmt --all`, `cargo clippy -p <crate> --all-targets --offline -- -D warnings`, `cargo test -p <crate> --offline`, and the criteria's commands (a shared CARGO_TARGET_DIR is set). Model changes go through apply_changes. When done, call submit_implementation; the Orchestrator commits and checks a clean checkout. If you are repairing, fix exactly the failures and findings listed, without weakening a check."
@@ -358,11 +358,12 @@ pub fn test_command(program: &[String]) -> Result<(), String> {
             && w.chars()
                 .all(|c| c.is_ascii_alphanumeric() || "_-:.".contains(c))
     };
+    // A path inside the checkout: relative, never a drive, a share or a
+    // parent folder.
     let path = |w: &str| {
         !w.is_empty()
-            && !w.starts_with('-')
+            && !w.starts_with(['-', '/', '\\'])
             && !w.contains("..")
-            && !w.starts_with('/')
             && !w.contains(':')
             && w.chars()
                 .all(|c| c.is_ascii_alphanumeric() || "_-./\\".contains(c))
@@ -574,6 +575,9 @@ mod tests {
             &["cargo", "test", "a", "b"],
             &["node", "script.js"],
             &["node", "--test", "../outside.test.js"],
+            &["node", "--test", r"\\attacker.example\share\x.test.js"],
+            &["node", "--test", r"\Windows\x.test.js"],
+            &["node", "--test", "C:/x.test.js"],
             &["python", "tools/check_architecture.py"],
             &[],
         ] {
