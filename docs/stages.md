@@ -1091,17 +1091,18 @@ separate decisions; nothing here was run against a real provider.
 
 **Reviewable sequence** (each based on the one before):
 
-| Step | Branch | What |
-|---|---|---|
-| 0a | `fix/ci-untrack-worktree` | CI's baseline: the tracked agent worktree, a Linux-only lint, a Linux lock race in a Studio test |
-| 0b | `fix/execution-cross-platform-scope` | Execution reads scoped paths the same way on every host |
-| G | `scenario-i/scope-and-plan` | C-52, the persistence decision named before it is built, the self-model, this record |
-| 1 | `jev/adapter-correctness` | A1–A4 and the validation policy |
-| 2 | `jev/deadlines-cancellation` | The decision handle, one deadline, cancellation |
-| 3 | `simulation/execution-identity` | Call limits, bindings, decision evidence, freshness, legacy records |
-| 4 | `scenario-i/typed-screening` | The opt-in single-choice evaluation in the Studio |
-| 5 | `url-shortener/jev-client` | The URL shortener's real client and conformance tests |
-| U | `providers/rig-0.43` | The rig migration |
+| Step | Pull request | Branch | What |
+|---|---|---|---|
+| 0a | #87 | `fix/ci-untrack-worktree` | CI's baseline: the tracked agent worktree, a Linux-only lint, a Linux lock race in a Studio test |
+| 0b | #88 | `fix/execution-cross-platform-scope` | Execution reads scoped paths the same way on every host |
+| G | #89 | `scenario-i/scope-and-plan` | C-52, the persistence decision named before it is built, the self-model, this record |
+| 1 | #90 | `jev/adapter-correctness` | A1–A4 and the validation policy |
+| 2 | #91 | `jev/deadlines-cancellation` | The decision handle, one deadline, cancellation |
+| 3 | #92 | `simulation/execution-identity` | Call limits, bindings, decision evidence, freshness, legacy records |
+| 4 | #93 | `scenario-i/typed-screening` | The opt-in single-choice evaluation in the Studio |
+| 5 | #94 | `url-shortener/jev-client` | The URL shortener's real client and conformance tests |
+| E | #95 | `scenario-i/evaluation` | The evaluation's definitions and report |
+| U | #96 | `providers/rig-0.43` | The rig migration |
 
 **Coverage checklist.** Every implementation item of the investigation's
 §3, §5, §6, §7.2 and §8, with its owner, its state and the evidence that
@@ -1117,7 +1118,7 @@ accepts it. States: *done* (built and tested offline), *planned*,
 | §3.1 A1: complete bounded success bodies, bounded sanitized error excerpts | `providers/src/jev.rs` | done (1) | the >300-character fake-server regression failed first ("EOF … column 300"), then passed; chunked with a split two-byte character; announced and streamed oversize refused; cut-off read; 20 KB error reply excerpted without the key |
 | §3.1 A2 and §3.2: request-bound validation (IDs, kinds, model, options, legend, distributions, selection) | `providers/src/jev.rs` | done (1) | `read_reply(request, …)`: inline matrix (envelope, noul, choice, score) and HTTP cases (wrong model, unknown option, malformed success not retried) |
 | §3.1 A3: score keys canonical and exact | `providers/src/jev.rs` | done (1) | `x`, `-1`, `01`, `00`, `+1`, missing `0`, extra `3`, duplicate keys and keys colliding once unescaped all fail |
-| §3.1 A4: usage known, partial or unknown, never a false zero | `providers/src/jev.rs`; callers and summaries | done in Providers (1); planned for summaries (3, 4) | omitted, null, partial, reported zero and invalid counts distinguishable; failures count requests sent and keep reported usage; the example logs unknown cost at the worst case |
+| §3.1 A4: usage known, partial or unknown, never a false zero | `providers/src/jev.rs`; callers and summaries | done (1, 3, 4) | omitted, null, partial, reported zero and invalid counts distinguishable; failures count requests sent and keep reported usage; the example logs unknown cost at the worst case |
 | §3.2 numeric tolerances with boundary fixtures, raw values kept | `providers/src/jev.rs` | done (1) | sums at ±0.01/±0.02 (hundredths) and ±1e-3; ties within 1e-6; score mean within 0.016 and 0.005; boundaries 0, 1, −0.0; NaN, infinity and 1e400 refused as JSON |
 | §3.1 A5: no silent chat for a decision model; capability-based resolution | `providers/src/capabilities.rs`, `studio-native/src/live.rs` | done (4) | `resolve_model` and `Capabilities::{chat, decisions}` (no prefix match; known pins only); Studio: the typed agent asks only decisions; `jev-latest` and an unknown id refused, never replaced; a missing TypeSafe AI key blocks the plan and another provider's key is not borrowed |
 | §3.1 A6, §5.4: one monotonic deadline at the provider boundary | `providers` (2), `simulation` (3), `studio-native` (4) | done (2, 3, 4) | `decide_start(request, deadline)`: a silent server and a stalled body end at the deadline (within 250 ms); a late reply is a timeout; a retry is made only when its wait fits |
@@ -1129,7 +1130,7 @@ accepts it. States: *done* (built and tested offline), *planned*,
 | §5.2: state preparation and deterministic question mapping | `studio-native/src/live.rs`; enum value docs in the model | done (4) | `decision_request`: exactly `longUrl` and `host` under the item's name with a note that they are data; missing, nested or mistyped fields refused, not repaired; the same binding for replay |
 | §5.3: condition table (valid, review, low confidence, deadline, invalid, provider failure, cancelled, allowance used up) | `simulation`, `studio-native` | done (3, 4) | fake decision service: confident screening passes all four cases; unsure answers go to the fallback (`lowConfidence`); 700 ms answers time out at 500 ms (20 timeouts, no retry); 401, an unknown option and another model version end the evaluation as `providerError` with no verdict |
 | §5.3: fallback is not a mandatory pre-call blocklist | `models/link-screening`, docs | done (4) | said in the plan the Operator confirms |
-| §5.6: frozen consented plan, invalidated on change; effective model, data sent, attempts, estimate, unknown usage, confidence meaning, fallback and error reasons, stale results | `runs.rs`, `dialogs.rs`, `panels/run.rs` | done (4); journeys see below | a change after confirmation refuses the start with nothing sent; a change during the run stops it (cancelled, outdated, nothing sent after); the dialog shows `LivePlan::lines`; the Run panel `live_lines` |
+| §5.6: frozen consented plan, invalidated on change; effective model, data sent, attempts, estimate, unknown usage, confidence meaning, fallback and error reasons, stale results | `runs.rs`, `dialogs.rs`, `panels/run.rs` | done (4) | a change after confirmation refuses the start with nothing sent; a change during the run stops it (cancelled, outdated, nothing sent after); the dialog shows `LivePlan::lines`; the Run panel `live_lines`; the Inspector's Agent section says how a live evaluation asks the model (`model_call`); journeys `i-scenarios` and `i-code` pass |
 | §5.7, §8 5: real Rust client; same six scenarios; frozen-response conformance with the held-link regression | URL shortener fixture (`src/jev.rs`, `tests/jev_client.rs`, `tests/decisions.json`), `implementation/tests/url_shortener.rs`, the Studio's sample | done (5); production adoption waits for the benefit gate | `JevClient` (pinned model, the model's question and documented options, the two declared fields as data, the reply checked as in Providers, `maxLatencyMs` as the deadline, retries only when they fit; failures go to the fallback, never allow); the harness still answers with stand-ins and the six scenarios pass against the code; eight frozen replies give the same decision and decider in the code and (four of them) in the model's typed evaluation; the deliberate `review → active` break fails the linked conformance test, shown as drift at `TypedLinkScreening`; a test checks the code's question, options and pin against the model's text. No TLS in the dependency-free fixture: `PlainHttp` serves local endpoints and a deployment supplies a TLS transport |
 | §6.1: self-model before cross-part changes | `model/Agentique.sysml` | done (G) | architecture check and dogfood test green |
 | §6.2: interface sketches as built (handle, `read_reply(request, …)`, `CallLimits`, binding, Choice mapping, both `from_json` consumers) | as above | done (1–5) | the Studio's flat `{decision, confidence}` is read by `from_json` in every live test; the harness's `{type, fields}` envelope is unchanged and its six scenarios pass |
@@ -1144,8 +1145,8 @@ accepts it. States: *done* (built and tested offline), *planned*,
 | §7.2 scenario and code safety | model and fixture tests | done (4, 5) | six scenarios against the model and the code; only an active link redirects in every frozen case; timeout, unreachable, too large, 401 and 500 never allow (a blocklisted host is blocked); a confident wrong allow is shown to activate, as the fallback is no pre-call check |
 | §7.2 authority boundaries | existing worker, task and Execution tests | done (4) | after a typed evaluation of confident answers the System State revision is unchanged and no task exists; the live client has no tools; the existing worker, task and Execution tests still pass |
 | §7.3–§7.6: evaluation definitions and reporting (quality, calibration, latency, coverage, economics); proposed thresholds | `screening_evaluation` (ignored test in `studio-native/src/live.rs`), `tools/screening_report.py` | done as definitions; nothing paid was run | the runner takes the Operator's labelled cases (or the model's four smoke cases) through the typed, chat and blocklist arms with the engine's own contract, needs consent, an allowance and the spend stop, and writes observations outside the repository; the report gives confusion, exact bounds, Brier and log loss on a normalised copy, reliability bins, p50/p95 with timeouts at the deadline, coverage, unknown cost and cost per correct workflow, domain-clustered paired bootstraps, and the §7.7 gates marked PROPOSED; its arithmetic is tested on synthetic observations; the free arm ran offline end to end |
-| §7.7: go/no-go and rollback | this record, ROADMAP | planned | rollback paths tested where code exists |
-| §8 U: rig 0.43 migration, provider parity, Windows TLS, dependency review | `crates/providers`, `Cargo.lock` | planned (U) | canned providers, chat, tools, thinking; live five-task evaluation waits for consent |
+| §7.7: go/no-go and rollback | this record, ROADMAP, `tools/screening_report.py` | done as far as code goes; the decisions are the Operator's | the gates are printed as PROPOSED; rollback paths: an unbound or legacy run is never current (3), an older build reads new data safely (3), a typed agent whose model is not known is refused, never answered by another model (4), the rig change is its own pull request (U) |
+| §8 U: rig 0.43 migration, provider parity, Windows TLS, dependency review | `crates/providers` (`chat.rs`, `fallback.rs`, capabilities), `Cargo.lock`, the evaluation example | done offline (U); the live five-task evaluation on every Assistant provider waits for the Operator's consent and keys | rig-core =0.43.0 (native-tls, no default features); the canned-provider suite (Anthropic, OpenAI Responses, OpenRouter, DeepSeek: text, reasoning, tools, retries, refused keys, cut streams, cancellation, fallbacks, unreadable tool input) and the workspace pass on Windows (MSVC, schannel) and Linux; one rig-core line; added rig-http, rig-reqwest (and rig-tungstenite in the lock, not built), removed as-any, eventsource-stream, tracing-futures; no new duplicate, no rustls, ring or aws-lc in Providers' tree; all MIT. rig-typesafeai evaluated and not adopted (see the decision log). Not tried: a live TLS handshake with each vendor |
 
 **Deviations** (one line each, with the reason):
 
@@ -1171,3 +1172,44 @@ as it always did for live results. Recordings made before this build replay
 unbound requests only; in the Studio every replay is bound, so they must be
 recorded again (the stop says so). Results from before are outdated, never
 rewritten.
+
+**Checks** (2026-10-03; Windows 10 with Rust 1.97.1 MSVC, debug builds with
+lean settings; Linux is WSL Ubuntu 24.04 with Rust 1.97.1 and Node 22,
+running CI's steps on a clean checkout of each step's commit): at E, on
+Windows, `cargo fmt --all -- --check` clean, `python
+tools/check_architecture.py` OK (12 crates in 11 parts, 25 allowed
+dependencies), the tools' 21 tests pass, `cargo clippy --workspace
+--all-targets -D warnings` and with `--features automation` clean, `cargo
+test --workspace` 606 passed, 0 failed, 11 ignored (live or costly runs, and
+the evaluation runner). On Linux every step from 0b on passes CI's steps
+(tests 561 at 0b to 605 at 5); GitHub's CI ran on #87–#95: #88–#95 pass,
+budgets included; #87 alone fails only at the Linux path assertion #88
+fixes. At U on Linux: every CI step passes, 616 tests, the three CPU
+budgets. Journeys (debug, `automation`, at U): `i-scenarios` (53 steps, the
+live confirmation opens and Escape sends nothing), `i-code` (14),
+`c-understand` (9), `a-build` (74) then `a-crash` (exits 3 by design) then
+`a-reopen` (15) pass. Reference run (§8.6; release, `automation`, at U, this
+machine): warm start to first update 248 ms (budget 400); 1k pan and zoom
+frame interval p95 6.2 and 6.2 ms (8.3), input to next update 0.6 and 0.7 ms;
+10k 12.8 and 12.8 ms (16.7), input 0.6 and 0.7 ms; chat scroll 6.2 ms and
+streaming 6.5 ms p95. Every budget is met.
+
+**Not tried, or not verified**
+
+- No paid call and no live evaluation: no key was used. The typed
+  evaluation, the chat baseline and the rig upgrade's five tasks on every
+  Assistant provider wait for the Operator's consent, keys and spend stop.
+- The 30-minute soak and memory were not measured; the journeys ran on a
+  debug build; screen readers were not tried.
+- A live TLS handshake with each vendor after the rig upgrade (local
+  servers are plain HTTP).
+- Production use of the URL shortener's client: its transport has no TLS
+  (a dependency-free fixture), and adoption waits for the benefit gate.
+
+**For the Operator to decide**: the persistence change as built (§7.6);
+the C-34 exception for Jev (keep the thin client); the rig upgrade's
+changed behaviour (tool input no longer streamed; unreadable tool input
+outside Anthropic ends the reply); the screening risk and coverage
+thresholds (printed as PROPOSED); whether URL-only evidence suffices; the
+live evaluations' data, providers, attempts and spend; acceptance of
+Scenario I after use (C-15).

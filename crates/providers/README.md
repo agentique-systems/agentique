@@ -19,14 +19,21 @@ call.cancel(); // stops at once; the call ends with Finished(Err(Cancelled))
 ```
 
 - **Providers** (C-35): Anthropic, OpenAI (Responses API), OpenRouter and
-  DeepSeek, all through rig 0.42.0, pinned exactly. One generic function streams
+  DeepSeek, all through rig 0.43.0, pinned exactly. One generic function streams
   every provider; what differs (the client, reasoning and effort parameters) is
   data. rig's agent loop is not used: the Assistant's turn loop keeps
   Agentique's policy.
 - **Events** (the Assistant's event protocol): text, thinking (reasoning or
-  summaries), a tool call starting under a stream id, its input as it arrives,
-  the provider's id for the call once known, usage, and `Finished` with the
-  reply or a plain error. Every call ends with exactly one `Finished`.
+  summaries), a tool call starting under a stream id, its input (whole: rig
+  0.43 hands a call over when it closes), the provider's id for the call,
+  usage, and `Finished` with the reply or a plain error. Every call ends with
+  exactly one `Finished`. A tool call whose input is not JSON is kept with its
+  raw text for an error result; on Anthropic the adapter keeps the reply
+  going, elsewhere rig ends it there (what follows and the usage are lost).
+- **Anthropic's adapter** (`fallback.rs`, Q-18): a rig transport that removes
+  the `fallback` block's frames, records the switch so the declined model's
+  reasoning and tool calls are dropped, and holds each tool call's frames
+  until it closes to repair unreadable input.
 - **Messages** are provider-neutral (R-23): text, reasoning (kept to be sent
   back unchanged; DeepSeek refuses a history without it), tool calls and tool
   results.

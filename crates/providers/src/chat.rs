@@ -1,28 +1,37 @@
 //! One streamed model call through rig, for every provider (C-34).
 //!
 //! Every provider goes through the same code: the request is converted into
-//! rig's request once, the provider's client and its provider-specific
-//! parameters are chosen from data, and one generic function streams the
+//! rig's request once, the provider's model is built from data with the key
+//! given explicitly (rig reads no environment), and one function streams the
 //! reply into [`Event`]s. rig's own agent loop is not used: the Assistant's
 //! turn loop holds Agentique's policy (R-21).
+//!
+//! rig 0.43 hands a tool call over whole when it closes, so a call's input
+//! arrives as one [`Event::ToolInput`] (the capability table says tool input
+//! is not streamed). Reasoning is sealed to the provider that wrote it; the
+//! Assistant sends a model only its own reasoning, so every part is sealed
+//! to the provider asked. A tool call whose input is not JSON ends rig's
+//! stream; it is kept with its raw text, so the turn answers it with an
+//! error (R-22), as before.
 
 use crate::{
     AssistantPart, ChatRequest, Error, ErrorKind, Event, Message, Provider, Reasoning,
     ReasoningPart, Reply, StopReason, Usage, UserPart, capabilities, fallback, runtime,
 };
 use futures::StreamExt;
-use rig_core::client::CompletionClient;
-use rig_core::completion::{
-    CompletionError, CompletionModel, CompletionRequest, FinishReason, ToolDefinition,
-};
+use rig_core::DynModel;
+use rig_core::completion::{CompletionRequest, FinishReason, ToolDefinition};
+use rig_core::driver::Model;
+use rig_core::error::ProviderError;
 use rig_core::message::{
-    self as rig, AssistantContent, ReasoningContent, ToolCallId, ToolFunction, ToolResultContent,
-    UserContent,
+    self as rig, AssistantContent, CallId, Issuer, ReasoningContent, ToolFunction, ToolName,
+    ToolResultContent, UserContent,
 };
-use rig_core::providers::{anthropic, deepseek, openai, openrouter};
-use rig_core::streaming::{StreamedAssistantContent, ToolCallDeltaContent};
+use rig_core::operation::Completion;
+use rig_core::providers::{anthropic, openai};
+use rig_core::streaming::{Item, StreamEvent};
 use serde_json::{Value, json};
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 use std::sync::mpsc::Sender;
 use std::time::Duration;
 
@@ -69,72 +78,110 @@ async fn call(
         });
     };
     let rig_request = rig_request(request)?;
-    let model = request.model.model.clone();
-    let setup = |error: rig_core::http_client::Error| Error {
-        kind: ErrorKind::Other,
-        message: format!(
-            "Could not prepare the connection to {} ({error}).",
-            provider.name()
-        ),
-    };
-    macro_rules! stream_with {
-        ($client:ty) => {{
-            let mut builder = <$client>::builder().api_key(key);
+    let (model, fallbacks) = model(request, key, endpoint)?;
+    stream(&model, rig_request, request, sender, fallbacks.as_ref()).await
+}
+
+/// The provider's model, with the key given explicitly and the endpoint, if
+/// one is set; for Anthropic, through the fallback adapter (Q-18), whose
+/// beta header, like `fallbacks` in the request, goes only to models that
+/// use them (C-27).
+fn model(
+    request: &ChatRequest,
+    key: String,
+    endpoint: Option<String>,
+) -> Result<(DynModel<Completion>, Option<fallback::FallbackTransport>), Error> {
+    let name = request.model.model.clone();
+    Ok(match request.model.provider {
+        Provider::DeepSeek | Provider::OpenRouter => {
+            let dialect = if request.model.provider == Provider::DeepSeek {
+                &openai::wire::DEEPSEEK
+            } else {
+                &openai::wire::OPENROUTER
+            };
+            let mut config = openai::OpenAIConfig::with_key(dialect, key);
             if let Some(url) = endpoint {
-                builder = builder.base_url(url);
+                config = config.with_base_url(url);
             }
-            let client = builder.build().map_err(setup)?;
-            let model = client.completion_model(model);
-            stream(model, rig_request, request, sender, None).await
-        }};
-    }
-    match provider {
-        Provider::DeepSeek => stream_with!(deepseek::Client),
-        // Through the fallback adapter (Q-18): the beta header, like
-        // `fallbacks` in the request, only for models that use them (C-27).
-        Provider::Anthropic => {
-            let http = fallback::HttpClient::default();
-            let mut builder = anthropic::Client::builder()
-                .api_key(anthropic::client::AnthropicKey::from(key))
-                .http_client(http.clone());
-            if capabilities(&request.model).refusal_fallbacks {
-                builder = builder.anthropic_beta(fallback::BETA);
-            }
-            if let Some(url) = endpoint {
-                builder = builder.base_url(url);
-            }
-            let client = builder.build().map_err(setup)?;
-            let model = client.completion_model(model);
-            stream(model, rig_request, request, sender, Some(&http)).await
+            (config.client().chat(name).erase(), None)
         }
-        Provider::OpenAi => stream_with!(openai::Client),
-        Provider::OpenRouter => stream_with!(openrouter::Client),
-        // Refused above (no tools); kept as an error, never a panic.
-        Provider::TypeSafe => Err(Error {
-            kind: ErrorKind::Rejected,
-            message: "TypeSafe AI is not a model for the Assistant.".to_string(),
-        }),
+        Provider::OpenAi => {
+            let mut config = openai::OpenAIConfig::new(key);
+            if let Some(url) = endpoint {
+                config = config.with_base_url(url);
+            }
+            (config.client().responses(name).erase(), None)
+        }
+        Provider::Anthropic => {
+            let mut config = anthropic::AnthropicConfig::new(key);
+            if capabilities(&request.model).refusal_fallbacks {
+                config = config.with_beta(fallback::BETA);
+            }
+            if let Some(url) = endpoint {
+                config = config.with_base_url(url);
+            }
+            let plain: Model<anthropic::Messages> = config.client().completion(name);
+            let transport = fallback::FallbackTransport::new(plain.transport);
+            (
+                Model::new(plain.wire, transport.clone()).erase(),
+                Some(transport),
+            )
+        }
+        // Refused before (no tools); kept as an error, never a panic.
+        Provider::TypeSafe => {
+            return Err(Error {
+                kind: ErrorKind::Rejected,
+                message: "TypeSafe AI is not a model for the Assistant.".to_string(),
+            });
+        }
+    })
+}
+
+/// The issuer rig seals a provider's reasoning to, and sends back to it
+/// only: the wire's own name, or on OpenRouter the upstream model's.
+fn issuer(request: &ChatRequest) -> Issuer {
+    match request.model.provider {
+        Provider::Anthropic => Issuer::from("anthropic"),
+        Provider::OpenAi => Issuer::from("openai"),
+        Provider::DeepSeek => Issuer::from("deepseek"),
+        Provider::OpenRouter => Issuer::from(openai::wire::upstream_reasoning_issuer(
+            "openrouter",
+            &request.model.model,
+        )),
+        Provider::TypeSafe => Issuer::from("typesafe"),
+    }
+}
+
+fn unnamed_tool() -> Error {
+    Error {
+        kind: ErrorKind::Other,
+        message: "A tool call or result without a tool name cannot be sent.".to_string(),
     }
 }
 
 /// Converts the request into rig's, with the provider's own parameters for
 /// reasoning and effort passed through `additional_params` (R-22).
 fn rig_request(request: &ChatRequest) -> Result<CompletionRequest, Error> {
+    let issuer = issuer(request);
     let mut history = vec![rig::Message::System {
         content: request.system.clone(),
     }];
     for message in &request.messages {
         history.push(match message {
             Message::User(parts) => rig::Message::User {
-                content: parts.iter().map(user_content).collect(),
+                content: parts.iter().map(user_content).collect::<Result<_, _>>()?,
             },
             Message::Assistant(parts) => {
-                let mut content: Vec<AssistantContent> =
-                    parts.iter().map(assistant_content).collect();
+                let mut content: Vec<AssistantContent> = parts
+                    .iter()
+                    .map(|part| assistant_content(part, &issuer))
+                    .collect::<Result<_, _>>()?;
                 if needs_reasoning(request, parts) {
                     content.insert(
                         0,
-                        AssistantContent::Reasoning(rig::Reasoning::new(NO_REASONING)),
+                        AssistantContent::Reasoning(
+                            rig::Reasoning::new(NO_REASONING).sealed(issuer.clone()),
+                        ),
                     );
                 }
                 rig::Message::Assistant { id: None, content }
@@ -152,7 +199,6 @@ fn rig_request(request: &ChatRequest) -> Result<CompletionRequest, Error> {
         .collect();
     Ok(CompletionRequest {
         model: None,
-        preamble: None,
         chat_history: history,
         documents: Vec::new(),
         tools,
@@ -216,8 +262,8 @@ fn additional_params(request: &ChatRequest) -> Option<Value> {
     }
 }
 
-fn user_content(part: &UserPart) -> UserContent {
-    match part {
+fn user_content(part: &UserPart) -> Result<UserContent, Error> {
+    Ok(match part {
         UserPart::Text { text } => UserContent::Text(rig::Text::new(text.clone())),
         UserPart::ToolResult {
             call_id,
@@ -232,58 +278,68 @@ fn user_content(part: &UserPart) -> UserContent {
                 content.clone()
             };
             UserContent::ToolResult(rig::ToolResult {
-                call: ToolCallId::new_or_mint(call_id.clone()),
-                provider: rig::ProviderCallId::new(call_id.clone()),
-                name: name.clone(),
+                call: CallId::from_wire(call_id.clone()),
+                name: ToolName::new(name.clone()).map_err(|_| unnamed_tool())?,
                 content: vec![ToolResultContent::Text(rig::Text::new(text))],
             })
         }
-    }
+    })
 }
 
-fn assistant_content(part: &AssistantPart) -> AssistantContent {
-    match part {
+fn assistant_content(part: &AssistantPart, issuer: &Issuer) -> Result<AssistantContent, Error> {
+    Ok(match part {
         AssistantPart::Text { text } => AssistantContent::Text(rig::Text::new(text.clone())),
-        AssistantPart::Reasoning(reasoning) => AssistantContent::Reasoning(rig::Reasoning {
-            id: reasoning.id.clone(),
-            content: reasoning
-                .parts
-                .iter()
-                .map(|part| match part {
-                    ReasoningPart::Text { text, signature } => ReasoningContent::Text {
-                        text: text.clone(),
-                        signature: signature.clone(),
-                    },
-                    ReasoningPart::Summary { text } => ReasoningContent::Summary(text.clone()),
-                    ReasoningPart::Encrypted { data } => ReasoningContent::Encrypted(data.clone()),
-                    ReasoningPart::Redacted { data } => {
-                        ReasoningContent::Redacted { data: data.clone() }
-                    }
-                })
-                .collect(),
-        }),
-        AssistantPart::ToolCall { id, name, input } => AssistantContent::ToolCall(
-            rig::ToolCall::from_wire(id.clone(), ToolFunction::new(name.clone(), input.clone())),
+        AssistantPart::Reasoning(reasoning) => AssistantContent::Reasoning(
+            rig::Reasoning {
+                id: reasoning.id.clone(),
+                content: reasoning
+                    .parts
+                    .iter()
+                    .map(|part| match part {
+                        ReasoningPart::Text { text, signature } => ReasoningContent::Text {
+                            text: text.clone(),
+                            signature: signature.clone(),
+                        },
+                        ReasoningPart::Summary { text } => ReasoningContent::Summary(text.clone()),
+                        ReasoningPart::Encrypted { data } => {
+                            ReasoningContent::Encrypted(data.clone())
+                        }
+                        ReasoningPart::Redacted { data } => {
+                            ReasoningContent::Redacted { data: data.clone() }
+                        }
+                    })
+                    .collect(),
+            }
+            .sealed(issuer.clone()),
         ),
-    }
+        AssistantPart::ToolCall { id, name, input } => {
+            AssistantContent::ToolCall(rig::ToolCall::from_wire(
+                id.clone(),
+                ToolFunction::new(
+                    ToolName::new(name.clone()).map_err(|_| unnamed_tool())?,
+                    input.clone(),
+                ),
+            ))
+        }
+    })
 }
 
 /// Streams one call, retrying a failure (rate limit, server error, lost
 /// connection) twice as long as nothing has been streamed yet. `fallbacks`
-/// is the HTTP client of an Anthropic call, which reports a switch to a
+/// is the transport of an Anthropic call, which reports a switch to a
 /// fallback model.
-async fn stream<M: CompletionModel>(
-    model: M,
+async fn stream(
+    model: &DynModel<Completion>,
     rig_request: CompletionRequest,
     request: &ChatRequest,
     sender: &Sender<Event>,
-    fallbacks: Option<&fallback::HttpClient>,
+    fallbacks: Option<&fallback::FallbackTransport>,
 ) -> Result<Reply, Error> {
     let mut attempt = 0;
     loop {
         let mut streamed = false;
         let once = stream_once(
-            &model,
+            model,
             rig_request.clone(),
             request,
             sender,
@@ -304,179 +360,152 @@ async fn stream<M: CompletionModel>(
     }
 }
 
-async fn stream_once<M: CompletionModel>(
-    model: &M,
+async fn stream_once(
+    model: &DynModel<Completion>,
     rig_request: CompletionRequest,
     request: &ChatRequest,
     sender: &Sender<Event>,
-    fallbacks: Option<&fallback::HttpClient>,
+    fallbacks: Option<&fallback::FallbackTransport>,
     streamed: &mut bool,
 ) -> Result<Reply, Failure> {
     let provider = request.model.provider;
-    let failed = |error: CompletionError| failure(provider, &request.model.model, &error);
-    let mut response = model.stream(rig_request).await.map_err(failed)?;
-    // Tool calls by stream id: name and raw input so far.
-    let mut calls: BTreeMap<String, (String, String)> = BTreeMap::new();
-    // Stream ids in the order the calls started, and the provider's id of
-    // each call that arrived complete.
-    let mut started: Vec<String> = Vec::new();
-    let mut provider_ids: BTreeMap<String, String> = BTreeMap::new();
-    let mut unreadable = Vec::new();
+    let failed = |error: &ProviderError| failure(provider, &request.model.model, error);
+    let mut response = model.stream(rig_request).map_err(|error| failed(&error))?;
+    // The provider's ids of the tool calls, in the order they closed.
+    let mut calls_started: Vec<String> = Vec::new();
     let mut thinking_shown = BTreeSet::new();
-    let mut last = None;
+    let mut malformed = None;
     let mut send = |event| {
         *streamed = true;
         let _ = sender.send(event);
     };
+    let mut part_count = 0;
     while let Some(item) = response.next().await {
-        let item = match item {
-            Ok(item) => item,
-            // rig reports a tool call whose input is not JSON in-band and
-            // goes on; it becomes a call the turn answers with an error
-            // (R-22), never a failed reply.
-            Err(CompletionError::ResponseError(message))
-                if message.contains("arrived with malformed JSON input") =>
-            {
-                unreadable.push(message);
-                continue;
+        let event = match item {
+            Ok(Item::Event(event)) => event,
+            // A payload the decoder does not model.
+            Ok(Item::Unknown(_)) => continue,
+            // A tool call whose input is not JSON ends rig's stream; it is
+            // kept, so the turn answers it with an error (R-22).
+            Err(ProviderError::MalformedToolInput(input)) => {
+                malformed = Some(input);
+                break;
             }
-            Err(error) => return Err(failed(error)),
+            Err(error) => return Err(failed(&error)),
         };
-        match item {
-            StreamedAssistantContent::Text(text) => {
-                if !text.text.is_empty() {
-                    send(Event::Text(text.text));
+        match event {
+            StreamEvent::Text { text, .. } => {
+                if !text.is_empty() {
+                    send(Event::Text(text));
                 }
             }
-            StreamedAssistantContent::ReasoningDelta { id, reasoning, .. } => {
-                thinking_shown.insert(id);
-                send(Event::Thinking(reasoning));
+            StreamEvent::Reasoning { part, text } => {
+                thinking_shown.insert(part.index());
+                send(Event::Thinking(text));
             }
-            StreamedAssistantContent::Reasoning { id, reasoning } => {
-                // A complete block replaces its deltas; show it only if no
-                // delta did.
-                if thinking_shown.insert(id) {
-                    send(Event::Thinking(reasoning.display_text()));
-                }
-            }
-            StreamedAssistantContent::ToolCallDelta {
-                internal_call_id,
-                content,
-            } => {
-                let call = calls
-                    .entry(internal_call_id.clone())
-                    .or_insert_with(|| (String::new(), String::new()));
+            StreamEvent::End { part, content } => {
+                part_count = part_count.max(part.index() + 1);
                 match content {
-                    // Every adapter names the call before its input.
-                    ToolCallDeltaContent::Name(name) => {
-                        if call.0.is_empty() {
-                            call.0 = name.clone();
-                            started.push(internal_call_id.clone());
-                            send(Event::ToolCallStarted {
-                                stream_id: internal_call_id,
-                                name,
-                            });
+                    // A complete block shows only if no delta did.
+                    AssistantContent::Reasoning(sealed) => {
+                        if !thinking_shown.contains(&part.index()) {
+                            let issuer = sealed.issuer().clone();
+                            if let Some(reasoning) = sealed.open(&issuer) {
+                                send(Event::Thinking(reasoning.display_text()));
+                            }
                         }
                     }
-                    ToolCallDeltaContent::Delta(json) => {
-                        call.1.push_str(&json);
-                        send(Event::ToolInput {
-                            stream_id: internal_call_id,
-                            json,
-                        });
+                    AssistantContent::ToolCall(call) => {
+                        let id = call.id.wire().into_owned();
+                        calls_started.push(id.clone());
+                        announce(
+                            &mut send,
+                            part.index(),
+                            id,
+                            call.function.name.to_string(),
+                            call.function.arguments.to_string(),
+                        );
                     }
+                    AssistantContent::Text(_) | AssistantContent::Image(_) => {}
                 }
             }
-            StreamedAssistantContent::ToolCall {
-                tool_call,
-                internal_call_id,
-            } => {
-                if !calls.contains_key(&internal_call_id) {
-                    // The whole call arrived at once.
-                    started.push(internal_call_id.clone());
-                    let json = tool_call.function.arguments.to_string();
-                    send(Event::ToolCallStarted {
-                        stream_id: internal_call_id.clone(),
-                        name: tool_call.function.name.clone(),
-                    });
-                    send(Event::ToolInput {
-                        stream_id: internal_call_id.clone(),
-                        json: json.clone(),
-                    });
-                }
-                calls.remove(&internal_call_id);
-                let id = tool_call.wire_call_id().to_string();
-                provider_ids.insert(internal_call_id.clone(), id.clone());
-                send(Event::ToolCallId {
-                    stream_id: internal_call_id,
-                    id,
-                });
-            }
-            StreamedAssistantContent::Final(record) => last = Some(record),
-            _ => {}
+            StreamEvent::Start { .. } | StreamEvent::Arguments { .. } => {}
         }
     }
-    // Without the provider's terminal record the stream was cut off: nothing
-    // of it is used, whatever arrived (rig emits none on an early end).
-    let Some(last) = last else {
-        return Err(Failure {
-            error: Error {
-                kind: ErrorKind::Unreachable,
-                message: format!(
-                    "The connection to {} was lost before the reply was complete. Try again.",
-                    provider.name()
-                ),
-            },
-            retry_after: Some(0),
-        });
-    };
-    let mut content: Vec<AssistantPart> = response.choice.iter().filter_map(part).collect();
-    // Calls whose input could not be read stay in the reply with their raw
-    // text, under their stream id, so the turn answers them with an error.
-    if !unreadable.is_empty() {
-        for (stream_id, (name, raw)) in calls {
+    let (mut content, stop, usage) = match malformed {
+        Some(input) => {
+            // What arrived before the unreadable call, and the call with its
+            // raw text; rig reports no usage or stop for such a reply.
+            let partial = response.partial();
+            let mut content: Vec<AssistantPart> = partial.choice.iter().filter_map(part).collect();
+            let id = input.id.wire().into_owned();
+            calls_started.push(id.clone());
+            announce(
+                &mut send,
+                part_count,
+                id.clone(),
+                input.name.clone(),
+                input.raw.clone(),
+            );
             content.push(AssistantPart::ToolCall {
-                id: stream_id,
-                name,
-                input: serde_json::Value::String(raw),
+                id,
+                name: input.name,
+                input: Value::String(input.raw),
             });
+            (content, StopReason::ToolUse, self::usage(partial.usage))
         }
-    }
+        None => {
+            let response = response.finish().await.map_err(|error| failed(&error))?;
+            let content: Vec<AssistantPart> = response.choice.iter().filter_map(part).collect();
+            let has_calls = content
+                .iter()
+                .any(|part| matches!(part, AssistantPart::ToolCall { .. }));
+            let stop = match response.finish_reason() {
+                Some(FinishReason::ToolCalls) => StopReason::ToolUse,
+                Some(FinishReason::Length) => StopReason::MaxTokens,
+                Some(FinishReason::ContentFilter) => StopReason::Refusal,
+                Some(FinishReason::Stop) if has_calls => StopReason::ToolUse,
+                Some(FinishReason::Stop) => StopReason::EndTurn,
+                Some(FinishReason::Other(other)) => match other.as_str() {
+                    "refusal" => StopReason::Refusal,
+                    "tool_use" | "tool_calls" => StopReason::ToolUse,
+                    "end_turn" | "stop" | "stop_sequence" => StopReason::EndTurn,
+                    "max_tokens" | "length" => StopReason::MaxTokens,
+                    _ => StopReason::Other(other.clone()),
+                },
+                None if has_calls => StopReason::ToolUse,
+                None => StopReason::EndTurn,
+            };
+            (content, stop, self::usage(response.usage))
+        }
+    };
     // After a switch to a fallback model, what the declined model wrote
     // before it is not part of the reply, except its text (Q-18).
-    if let Some(switch) = fallbacks.and_then(fallback::HttpClient::switch) {
-        let calls_started: Vec<&str> = started
-            .iter()
-            .map(|stream_id| provider_ids.get(stream_id).unwrap_or(stream_id).as_str())
-            .collect();
-        switch.drop_declined(&mut content, &calls_started);
+    if let Some(switch) = fallbacks.and_then(fallback::FallbackTransport::switch) {
+        let started: Vec<&str> = calls_started.iter().map(String::as_str).collect();
+        switch.drop_declined(&mut content, &started);
     }
-    let has_calls = content
-        .iter()
-        .any(|part| matches!(part, AssistantPart::ToolCall { .. }));
-    let stop = match last.finish_reason {
-        Some(FinishReason::ToolCalls) => StopReason::ToolUse,
-        Some(FinishReason::Length) => StopReason::MaxTokens,
-        Some(FinishReason::ContentFilter) => StopReason::Refusal,
-        Some(FinishReason::Stop) if has_calls => StopReason::ToolUse,
-        Some(FinishReason::Stop) => StopReason::EndTurn,
-        Some(FinishReason::Other(other)) => match other.as_str() {
-            "refusal" => StopReason::Refusal,
-            "tool_use" | "tool_calls" => StopReason::ToolUse,
-            "end_turn" | "stop" | "stop_sequence" => StopReason::EndTurn,
-            "max_tokens" | "length" => StopReason::MaxTokens,
-            _ => StopReason::Other(other),
-        },
-        None if has_calls => StopReason::ToolUse,
-        None => StopReason::EndTurn,
-    };
-    let usage = self::usage(provider, last.usage);
     send(Event::Usage(usage));
     Ok(Reply {
         content,
         stop,
         usage,
     })
+}
+
+/// A tool call, as the Conversation's events show it: started, its whole
+/// input, the provider's id.
+fn announce(send: &mut impl FnMut(Event), part: usize, id: String, name: String, json: String) {
+    let stream_id = format!("call-{part}");
+    send(Event::ToolCallStarted {
+        stream_id: stream_id.clone(),
+        name,
+    });
+    send(Event::ToolInput {
+        stream_id: stream_id.clone(),
+        json,
+    });
+    send(Event::ToolCallId { stream_id, id });
 }
 
 fn part(content: &AssistantContent) -> Option<AssistantPart> {
@@ -486,54 +515,55 @@ fn part(content: &AssistantContent) -> Option<AssistantPart> {
             text: text.text.clone(),
         },
         AssistantContent::ToolCall(call) => AssistantPart::ToolCall {
-            id: call.wire_call_id().to_string(),
-            name: call.function.name.clone(),
+            id: call.id.wire().into_owned(),
+            name: call.function.name.to_string(),
             input: call.function.arguments.clone(),
         },
-        AssistantContent::Reasoning(reasoning) => AssistantPart::Reasoning(Reasoning {
-            id: reasoning.id.clone(),
-            parts: reasoning
-                .content
-                .iter()
-                .map(|part| match part {
-                    ReasoningContent::Text { text, signature } => ReasoningPart::Text {
-                        text: text.clone(),
-                        signature: signature.clone(),
-                    },
-                    ReasoningContent::Summary(text) => {
-                        ReasoningPart::Summary { text: text.clone() }
-                    }
-                    ReasoningContent::Encrypted(data) => {
-                        ReasoningPart::Encrypted { data: data.clone() }
-                    }
-                    ReasoningContent::Redacted { data } => {
-                        ReasoningPart::Redacted { data: data.clone() }
-                    }
-                })
-                .collect(),
-        }),
+        AssistantContent::Reasoning(sealed) => {
+            let issuer = sealed.issuer().clone();
+            let reasoning = sealed.open(&issuer)?;
+            AssistantPart::Reasoning(Reasoning {
+                id: reasoning.id.clone(),
+                parts: reasoning
+                    .content
+                    .iter()
+                    .map(|part| match part {
+                        ReasoningContent::Text { text, signature } => ReasoningPart::Text {
+                            text: text.clone(),
+                            signature: signature.clone(),
+                        },
+                        ReasoningContent::Summary(text) => {
+                            ReasoningPart::Summary { text: text.clone() }
+                        }
+                        ReasoningContent::Encrypted(data) => {
+                            ReasoningPart::Encrypted { data: data.clone() }
+                        }
+                        ReasoningContent::Redacted { data } => {
+                            ReasoningPart::Redacted { data: data.clone() }
+                        }
+                    })
+                    .collect(),
+            })
+        }
         AssistantContent::Image(_) => return None,
     })
 }
 
-/// rig's usage in Agentique's terms. OpenAI-style providers count cached
-/// input inside the input total; Anthropic counts it apart.
-fn usage(provider: Provider, usage: rig_core::completion::Usage) -> Usage {
-    let cached = usage.cached_input_tokens;
-    let input = match provider {
-        Provider::Anthropic | Provider::TypeSafe => usage.input_tokens,
-        Provider::OpenAi | Provider::DeepSeek => usage.input_tokens.saturating_sub(cached),
-        // OpenRouter's prompt count includes cache reads and writes.
-        Provider::OpenRouter => usage
-            .input_tokens
-            .saturating_sub(cached + usage.cache_creation_input_tokens),
-    };
+/// rig's usage in Agentique's terms: rig 0.43 counts cache reads and writes
+/// inside the input on every provider; Agentique keeps them apart. A count
+/// rig does not have is 0 here (chat usage has no "unknown").
+fn usage(usage: rig_core::completion::Usage) -> Usage {
+    let cached = usage.cached_input_tokens.unwrap_or(0);
+    let written = usage.cache_creation_input_tokens.unwrap_or(0);
     Usage {
-        input_tokens: input,
-        cache_write_tokens: usage.cache_creation_input_tokens,
+        input_tokens: usage
+            .input_tokens
+            .unwrap_or(0)
+            .saturating_sub(cached + written),
+        cache_write_tokens: written,
         cache_read_tokens: cached,
-        output_tokens: usage.output_tokens,
-        reasoning_tokens: usage.reasoning_tokens,
+        output_tokens: usage.output_tokens.unwrap_or(0),
+        reasoning_tokens: usage.reasoning_tokens.unwrap_or(0),
     }
 }
 
@@ -544,9 +574,17 @@ struct Failure {
 }
 
 /// The Operator-facing failure for a rig error.
-fn failure(provider: Provider, model: &str, error: &CompletionError) -> Failure {
+fn failure(provider: Provider, model: &str, error: &ProviderError) -> Failure {
     let name = provider.name();
-    let (status, body, retry_after) = http_details(error);
+    let status = error
+        .provider_response_status()
+        .map(|status| status.as_u16());
+    let body = error.provider_response_body().map(str::to_string);
+    let retry_after = error
+        .provider_response_headers()
+        .and_then(|headers| headers.get("retry-after"))
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.trim().parse().ok());
     let said = body
         .as_deref()
         .map(provider_message)
@@ -568,8 +606,17 @@ fn failure(provider: Provider, model: &str, error: &CompletionError) -> Failure 
                 format!("The {name} rate limit was reached while replying. Try again in a minute."),
                 Some(10),
             ),
-            // Connection failures and resets on a streamed request.
-            (CompletionError::HttpError(_) | CompletionError::ProviderError(_), _) => fail(
+            // The reply ended before the provider ended it: nothing of it
+            // is used, whatever arrived.
+            (ProviderError::Truncated, _) => fail(
+                ErrorKind::Unreachable,
+                format!(
+                    "The connection to {name} was lost before the reply was complete. Try again."
+                ),
+                Some(0),
+            ),
+            // Connection failures and resets.
+            (ProviderError::Http(_) | ProviderError::Provider(_), _) => fail(
                 ErrorKind::Unreachable,
                 format!(
                     "Could not reach {name} ({said}). Check the network connection and try again."
@@ -577,7 +624,7 @@ fn failure(provider: Provider, model: &str, error: &CompletionError) -> Failure 
                 Some(0),
             ),
             // The request could not be built: retrying cannot help.
-            (CompletionError::RequestError(_), _) => fail(
+            (ProviderError::Request(_) | ProviderError::Url(_), _) => fail(
                 ErrorKind::Other,
                 format!("Could not prepare the request to {name} ({said})."),
                 None,
@@ -643,37 +690,6 @@ fn failure(provider: Provider, model: &str, error: &CompletionError) -> Failure 
             format!("{name} answered with an error ({status}): {said}"),
             None,
         ),
-    }
-}
-
-/// The HTTP status, body and `Retry-After` seconds of a failed request, if
-/// the error came from an HTTP response.
-fn http_details(error: &CompletionError) -> (Option<u16>, Option<String>, Option<u64>) {
-    use rig_core::http_client::Error as Http;
-    let retry = |headers: &reqwest::header::HeaderMap| {
-        headers
-            .get("retry-after")
-            .and_then(|value| value.to_str().ok())
-            .and_then(|value| value.trim().parse().ok())
-    };
-    match error {
-        CompletionError::HttpError(Http::InvalidStatusCodeWithDetails {
-            status,
-            body,
-            headers,
-        }) => (Some(status.as_u16()), Some(body.clone()), retry(headers)),
-        CompletionError::HttpError(Http::InvalidStatusCodeWithMessage(status, body)) => {
-            (Some(status.as_u16()), Some(body.clone()), None)
-        }
-        CompletionError::HttpError(Http::InvalidStatusCode(status)) => {
-            (Some(status.as_u16()), None, None)
-        }
-        CompletionError::ProviderResponse(response) => (
-            response.status.map(|status| status.as_u16()),
-            Some(response.body.clone()),
-            response.headers.as_deref().and_then(retry),
-        ),
-        _ => (None, None, None),
     }
 }
 
@@ -761,7 +777,8 @@ mod tests {
             panic!("an assistant message");
         };
         assert!(
-            matches!(&content[0], AssistantContent::Reasoning(r) if r.display_text() == NO_REASONING)
+            matches!(&content[0], AssistantContent::Reasoning(r) if r.issuer().to_string() == "deepseek"
+                && r.open(r.issuer()).is_some_and(|r| r.display_text() == NO_REASONING))
         );
         // Other providers are sent the turn as it was.
         let mut other = request.clone();

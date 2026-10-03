@@ -3,28 +3,33 @@
 //!
 //! With `fallbacks: "default"` and the [`BETA`] header, a request the model's
 //! safety classifiers decline is continued on another model in the same
-//! stream; a content block of type `fallback` marks the switch. rig 0.42.0
+//! stream; a content block of type `fallback` marks the switch. rig 0.43.0
 //! does not know that block type and ends the stream with an error, so rig's
-//! Anthropic client is given [`HttpClient`]: reqwest, except that a streamed
-//! response passes through a [`Filter`] that removes the `fallback` block's
-//! frames before rig parses them and records the switch.
+//! Anthropic model is given [`FallbackTransport`]: rig's own transport,
+//! except that the streamed frames pass through a [`Filter`] that removes
+//! the `fallback` block's frames before rig decodes them and records the
+//! switch. rig splits the event stream into frames itself.
 //!
 //! After a switch, the declined model's reasoning and tool calls before it
 //! are not part of the reply; its text stays, as the fallback model continued
 //! from it (Anthropic's rule for sending a fallback turn back, and what
 //! `after_fallback` does in the Assistant's hand-written client).
+//!
+//! The same transport keeps a tool call whose input is not JSON from ending
+//! the reply: rig 0.43 ends a stream at such a call, which would lose what
+//! follows (after a switch, the whole fallback reply). A tool call's frames
+//! are held until the call closes (rig hands a call over whole anyway); if
+//! its input does not read as JSON, rig is given it as one JSON string of
+//! the raw text, which the turn answers with an error (R-22), as before.
 
 use crate::AssistantPart;
-use bytes::Bytes;
 use futures::StreamExt;
-use rig_core::http_client::sse::BoxedStream;
-use rig_core::http_client::{
-    self, HttpClientExt, LazyBody, MultipartForm, Request, Response, StreamingResponse,
-};
-use rig_core::wasm_compat::WasmCompatSend;
-use serde_json::Value;
-use std::collections::BTreeSet;
-use std::future::Future;
+use rig_core::driver::{Exchange, Opening, Transport};
+use rig_core::http_client::DynHttpClient;
+use rig_core::providers::anthropic;
+use rig_core::wire::{Encoded, WireFrame};
+use serde_json::{Value, json};
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::{Arc, Mutex, PoisonError};
 
 /// Enables `fallbacks: "default"`: the API picks the fallback model by the
@@ -61,103 +66,65 @@ impl Switch {
     }
 }
 
-/// rig's HTTP client for Anthropic: reqwest, with the `fallback` block's
-/// frames removed from streamed responses. Clones share what the latest
-/// streamed response said about a switch, so each call builds its own client
-/// (as `chat::call` does); a client shared between calls would mix them up.
-#[derive(Clone, Debug, Default)]
-pub(crate) struct HttpClient {
-    inner: reqwest::Client,
+/// rig's transport for Anthropic's Messages wire, with the `fallback` block's
+/// frames removed from streamed replies. Clones share what the latest
+/// streamed reply said about a switch, so each call builds its own (as
+/// `chat::call` does); one shared between calls would mix them up.
+#[derive(Clone, Debug)]
+pub(crate) struct FallbackTransport {
+    inner: DynHttpClient,
     switch: Arc<Mutex<Option<Switch>>>,
 }
 
-impl HttpClient {
-    /// The last switch in the latest streamed response, if one happened.
+impl FallbackTransport {
+    pub(crate) fn new(inner: DynHttpClient) -> FallbackTransport {
+        FallbackTransport {
+            inner,
+            switch: Arc::default(),
+        }
+    }
+
+    /// The last switch in the latest streamed reply, if one happened.
     pub(crate) fn switch(&self) -> Option<Switch> {
         *self.switch.lock().unwrap_or_else(PoisonError::into_inner)
     }
 }
 
-impl HttpClientExt for HttpClient {
-    fn send<T, U>(
-        &self,
-        req: Request<T>,
-    ) -> impl Future<Output = http_client::Result<Response<LazyBody<U>>>> + WasmCompatSend + 'static
-    where
-        T: Into<Bytes>,
-        T: WasmCompatSend,
-        U: From<Bytes>,
-        U: WasmCompatSend + 'static,
-    {
-        self.inner.send(req)
-    }
-
-    fn send_multipart<U>(
-        &self,
-        req: Request<MultipartForm>,
-    ) -> impl Future<Output = http_client::Result<Response<LazyBody<U>>>> + WasmCompatSend + 'static
-    where
-        U: From<Bytes>,
-        U: WasmCompatSend + 'static,
-    {
-        self.inner.send_multipart(req)
-    }
-
-    fn send_streaming<T>(
-        &self,
-        req: Request<T>,
-    ) -> impl Future<Output = http_client::Result<StreamingResponse>> + WasmCompatSend
-    where
-        T: Into<Bytes> + WasmCompatSend,
-    {
-        let response = self.inner.send_streaming(req);
+impl Transport<anthropic::Messages> for FallbackTransport {
+    fn send(&self, payload: Encoded, exchange: Exchange) -> Opening<WireFrame> {
+        let opening =
+            <DynHttpClient as Transport<anthropic::Messages>>::send(&self.inner, payload, exchange);
         let switch = self.switch.clone();
-        async move {
-            let response = response.await?;
+        Opening::new(async move {
+            let opened = opening.await?;
             *switch.lock().unwrap_or_else(PoisonError::into_inner) = None;
-            Ok(response.map(|body| filtered(body, switch)))
-        }
+            Ok(opened.map_frames(move |frames| {
+                let mut filter = Filter::default();
+                frames
+                    .map(move |frame| {
+                        let out = match frame {
+                            Ok(frame) => filter.pass(frame).into_iter().map(Ok).collect(),
+                            // An error is rig's to report.
+                            Err(error) => vec![Err(error)],
+                        };
+                        if filter.switch.is_some() {
+                            *switch.lock().unwrap_or_else(PoisonError::into_inner) = filter.switch;
+                        }
+                        futures::stream::iter(out)
+                    })
+                    .flatten()
+            }))
+        })
     }
 }
 
-/// `body` without the `fallback` block's frames; a switch is recorded in
-/// `switch` as soon as its frame passes.
-fn filtered(body: BoxedStream, switch: Arc<Mutex<Option<Switch>>>) -> BoxedStream {
-    let state = (body, Filter::default(), switch, false);
-    Box::pin(futures::stream::unfold(
-        state,
-        |(mut body, mut filter, switch, ended)| async move {
-            if ended {
-                return None;
-            }
-            loop {
-                let (kept, ended) = match body.next().await {
-                    Some(Ok(chunk)) => (filter.push(&chunk), false),
-                    Some(Err(error)) => return Some((Err(error), (body, filter, switch, true))),
-                    None => (filter.finish(), true),
-                };
-                if filter.switch.is_some() {
-                    *switch.lock().unwrap_or_else(PoisonError::into_inner) = filter.switch;
-                }
-                if !kept.is_empty() {
-                    return Some((Ok(Bytes::from(kept)), (body, filter, switch, ended)));
-                }
-                if ended {
-                    return None;
-                }
-            }
-        },
-    ))
-}
-
-/// Removes the `fallback` block's frames from an Anthropic event stream and
-/// counts what came before the last switch. Bytes arrive in any chunks; a
-/// frame is passed on, unchanged, once its blank line has arrived. Lines end
-/// with LF or CRLF, as Anthropic's do.
+/// Removes the `fallback` block's frames from an Anthropic event stream,
+/// counts what came before the last switch, and holds each tool call's
+/// frames until it closes.
 #[derive(Debug, Default)]
 struct Filter {
-    /// The start of a frame whose blank line has not arrived yet.
-    pending: Vec<u8>,
+    /// Tool calls not closed yet, by index: their frames and input so far.
+    calls: BTreeMap<u64, (Vec<WireFrame>, String)>,
     /// Indices of `fallback` blocks.
     fallbacks: BTreeSet<u64>,
     /// What rig makes parts of, so far.
@@ -170,29 +137,59 @@ struct Filter {
 }
 
 impl Filter {
-    /// Takes the next chunk; returns the complete frames to pass on.
-    fn push(&mut self, chunk: &[u8]) -> Vec<u8> {
-        self.pending.extend_from_slice(chunk);
-        let mut kept = Vec::new();
-        while let Some(end) = frame_end(&self.pending) {
-            let frame: Vec<u8> = self.pending.drain(..end).collect();
-            if self.keep(&frame) {
-                kept.extend_from_slice(&frame);
+    /// The frames to pass on to rig for one frame (one event's JSON): none
+    /// while a tool call is held or for the `fallback` block, the held
+    /// call's frames when it closes, the frame itself otherwise.
+    fn pass(&mut self, frame: WireFrame) -> Vec<WireFrame> {
+        let Ok(event) = serde_json::from_str::<Value>(&frame.as_str()) else {
+            return vec![frame];
+        };
+        let index = event["index"].as_u64();
+        let kind = event["type"].as_str();
+        if let Some(index) = index {
+            if kind == Some("content_block_start")
+                && event["content_block"]["type"].as_str() == Some("tool_use")
+            {
+                self.keep_event(&event);
+                self.calls.insert(index, (vec![frame], String::new()));
+                return Vec::new();
+            }
+            if let Some((frames, input)) = self.calls.get_mut(&index) {
+                if kind == Some("content_block_delta") {
+                    if let Some(json) = event["delta"]["partial_json"].as_str() {
+                        input.push_str(json);
+                    }
+                    frames.push(frame);
+                    return Vec::new();
+                }
+                if kind == Some("content_block_stop") {
+                    let (mut frames, input) = self.calls.remove(&index).expect("held");
+                    if !input.trim().is_empty() && serde_json::from_str::<Value>(&input).is_err() {
+                        // The raw text, as one JSON string.
+                        frames.truncate(1);
+                        let repaired = json!({
+                            "type": "content_block_delta",
+                            "index": index,
+                            "delta": {
+                                "type": "input_json_delta",
+                                "partial_json": serde_json::to_string(&input).expect("a string is JSON"),
+                            }
+                        });
+                        frames.push(WireFrame::Text(repaired.to_string()));
+                    }
+                    frames.push(frame);
+                    return frames;
+                }
             }
         }
-        kept
+        if self.keep_event(&event) {
+            vec![frame]
+        } else {
+            Vec::new()
+        }
     }
 
-    /// At the end of the stream: an incomplete last frame is passed on as it
-    /// is, for rig to judge.
-    fn finish(&mut self) -> Vec<u8> {
-        std::mem::take(&mut self.pending)
-    }
-
-    fn keep(&mut self, frame: &[u8]) -> bool {
-        let Some(event) = event(frame) else {
-            return true;
-        };
+    fn keep_event(&mut self, event: &Value) -> bool {
         let Some(index) = event["index"].as_u64() else {
             return true;
         };
@@ -247,50 +244,10 @@ impl Filter {
     }
 }
 
-/// The end of the first complete frame (after its blank line), if any.
-fn frame_end(bytes: &[u8]) -> Option<usize> {
-    let mut line_start = 0;
-    for (at, byte) in bytes.iter().enumerate() {
-        if *byte == b'\n' {
-            if matches!(&bytes[line_start..at], b"" | b"\r") {
-                return Some(at + 1);
-            }
-            line_start = at + 1;
-        }
-    }
-    None
-}
-
-/// A frame's JSON data, if it has any.
-fn event(frame: &[u8]) -> Option<Value> {
-    let frame = std::str::from_utf8(frame).ok()?;
-    let data: Vec<&str> = frame
-        .lines()
-        .filter_map(|line| line.strip_prefix("data:"))
-        .map(|data| data.strip_prefix(' ').unwrap_or(data))
-        .collect();
-    if data.is_empty() {
-        return None;
-    }
-    serde_json::from_str(&data.join("\n")).ok()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use serde_json::json;
-
-    fn sse(events: &[Value], line_end: &str) -> String {
-        events
-            .iter()
-            .map(|event| {
-                format!(
-                    "event: {}{line_end}data: {event}{line_end}{line_end}",
-                    event["type"].as_str().unwrap()
-                )
-            })
-            .collect()
-    }
 
     fn start(index: u64, block: Value) -> Value {
         json!({ "type": "content_block_start", "index": index, "content_block": block })
@@ -305,7 +262,7 @@ mod tests {
     }
 
     /// A reply declined after thinking, text and a tool call, continued by
-    /// the fallback model: the frames to keep, and the `fallback` block's.
+    /// the fallback model: the events to keep, and the `fallback` block's.
     fn declined_then_continued() -> (Vec<Value>, Vec<Value>) {
         let marker = vec![
             start(
@@ -357,43 +314,28 @@ mod tests {
     }
 
     #[test]
-    fn the_fallback_block_is_removed_in_any_chunking() {
+    fn the_fallback_block_is_removed_and_the_switch_counted() {
         let (all, kept) = declined_then_continued();
-        for line_end in ["\n", "\r\n"] {
-            let input = sse(&all, line_end);
-            let expected = sse(&kept, line_end);
-            for size in 1..=input.len().min(97) {
-                let mut filter = Filter::default();
-                let mut output = Vec::new();
-                for chunk in input.as_bytes().chunks(size) {
-                    output.extend(filter.push(chunk));
-                }
-                output.extend(filter.finish());
-                assert_eq!(
-                    String::from_utf8(output).unwrap(),
-                    expected,
-                    "chunks of {size}"
-                );
-                assert_eq!(
-                    filter.switch,
-                    Some(Switch {
-                        reasoning: 1,
-                        tool_calls: 1
-                    }),
-                    "chunks of {size}"
-                );
-            }
-        }
+        let mut filter = Filter::default();
+        let output: Vec<Value> = all
+            .into_iter()
+            .filter(|event| filter.keep_event(event))
+            .collect();
+        assert_eq!(output, kept);
+        assert_eq!(
+            filter.switch,
+            Some(Switch {
+                reasoning: 1,
+                tool_calls: 1
+            })
+        );
     }
 
     #[test]
     fn a_stream_without_a_switch_passes_unchanged() {
         let (_, kept) = declined_then_continued();
-        let input = sse(&kept, "\n");
         let mut filter = Filter::default();
-        let mut output = filter.push(input.as_bytes());
-        output.extend(filter.finish());
-        assert_eq!(output, input.as_bytes());
+        assert!(kept.iter().all(|event| filter.keep_event(event)));
         assert_eq!(filter.switch, None);
     }
 
@@ -408,17 +350,116 @@ mod tests {
             start(1, json!({ "type": "text", "text": "" })),
         ];
         let mut filter = Filter::default();
-        let output = filter.push(sse(&events, "\n").as_bytes());
-        assert_eq!(String::from_utf8(output).unwrap(), sse(&events[2..], "\n"));
+        let kept: Vec<bool> = events.iter().map(|e| filter.keep_event(e)).collect();
+        assert_eq!(kept, [false, false, true]);
         assert_eq!(filter.switch, Some(Switch::default()));
     }
 
     #[test]
-    fn frames_without_json_and_an_unfinished_last_frame_pass_unchanged() {
+    fn events_without_an_index_pass_unchanged() {
         let mut filter = Filter::default();
-        let input = ": keep-alive\n\nevent: ping\ndata: {\"type\": \"ping\"}\n\ndata: {\"type\"";
-        let mut output = filter.push(input.as_bytes());
-        output.extend(filter.finish());
-        assert_eq!(output, input.as_bytes());
+        for event in [
+            json!({ "type": "ping" }),
+            json!({ "type": "message_stop" }),
+            json!("not an object"),
+        ] {
+            assert!(filter.keep_event(&event));
+        }
+    }
+
+    fn frames(events: &[Value]) -> Vec<WireFrame> {
+        events
+            .iter()
+            .map(|event| WireFrame::Text(event.to_string()))
+            .collect()
+    }
+
+    fn events(frames: Vec<WireFrame>) -> Vec<Value> {
+        frames
+            .iter()
+            .map(|frame| serde_json::from_str(&frame.as_str()).unwrap())
+            .collect()
+    }
+
+    /// A tool call is held until it closes; readable input passes as sent,
+    /// unreadable input becomes one JSON string of its raw text.
+    #[test]
+    fn tool_input_is_held_and_unreadable_input_kept_as_text() {
+        let readable = [
+            start(
+                0,
+                json!({ "type": "tool_use", "id": "t1", "name": "f", "input": {} }),
+            ),
+            delta(
+                0,
+                json!({ "type": "input_json_delta", "partial_json": "{\"a\"" }),
+            ),
+            delta(
+                0,
+                json!({ "type": "input_json_delta", "partial_json": ": 1}" }),
+            ),
+            stop(0),
+        ];
+        let mut filter = Filter::default();
+        let mut out = Vec::new();
+        for (i, frame) in frames(&readable).into_iter().enumerate() {
+            let passed = filter.pass(frame);
+            if i < 3 {
+                assert!(passed.is_empty(), "held until the call closes");
+            }
+            out.extend(passed);
+        }
+        assert_eq!(events(out), readable);
+        let unreadable = [
+            start(
+                1,
+                json!({ "type": "tool_use", "id": "t2", "name": "f", "input": {} }),
+            ),
+            delta(
+                1,
+                json!({ "type": "input_json_delta", "partial_json": "{\"na" }),
+            ),
+            stop(1),
+        ];
+        let out: Vec<WireFrame> = frames(&unreadable)
+            .into_iter()
+            .flat_map(|frame| filter.pass(frame))
+            .collect();
+        let out = events(out);
+        assert_eq!(out.len(), 3);
+        assert_eq!(out[1]["delta"]["partial_json"], "\"{\\\"na\"");
+        let input: Value =
+            serde_json::from_str(out[1]["delta"]["partial_json"].as_str().unwrap()).unwrap();
+        assert_eq!(input, Value::String("{\"na".into()));
+        assert_eq!(filter.seen.tool_calls, 2);
+    }
+
+    #[test]
+    fn declined_reasoning_and_calls_are_dropped_and_text_stays() {
+        let switch = Switch {
+            reasoning: 1,
+            tool_calls: 1,
+        };
+        let mut content = vec![
+            AssistantPart::Reasoning(crate::Reasoning::default()),
+            AssistantPart::Text {
+                text: "kept".into(),
+            },
+            AssistantPart::ToolCall {
+                id: "toolu_1".into(),
+                name: "read_model".into(),
+                input: json!({}),
+            },
+            AssistantPart::Reasoning(crate::Reasoning::default()),
+            AssistantPart::ToolCall {
+                id: "toolu_2".into(),
+                name: "read_model".into(),
+                input: json!({}),
+            },
+        ];
+        switch.drop_declined(&mut content, &["toolu_1", "toolu_2"]);
+        assert_eq!(content.len(), 3);
+        assert!(matches!(&content[0], AssistantPart::Text { .. }));
+        assert!(matches!(&content[2], AssistantPart::ToolCall { id, .. } if id == "toolu_2"));
     }
 }
