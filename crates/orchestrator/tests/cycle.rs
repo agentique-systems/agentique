@@ -187,7 +187,6 @@ fn setup_with(dir: &Path, store: &Store, node: agq_assistant::claude_agent::Node
         checks: vec![vec!["git".into(), "status".into(), "--short".into()]],
         protected: Vec::new(),
         running_build: None,
-        decider: None,
     }
 }
 

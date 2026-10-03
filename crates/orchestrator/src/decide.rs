@@ -1,14 +1,15 @@
-//! Typed decisions in operation (C-53, ROADMAP §4.16; W11.6): while the
-//! Orchestrator drives a test instance, a dialog can stand in the way of a
-//! journey. Which of the dialog's controls continues toward the goal without
-//! losing work is one atomic question with typed options (System 1). Where
-//! the answer is known, deterministic code decides and no model is asked (a
-//! dialog asking for the Operator's approval is never an agent's to answer:
-//! the journey waits). Otherwise Jev answers under a deadline; a confident
-//! answer in time is used; low confidence, an invalid answer, a timeout or an
-//! unavailable provider escalates to the reasoning model (System 2). A
-//! decision only chooses what to press: it never turns a failed check into a
-//! pass.
+//! Typed decisions in operation (C-53, ROADMAP §4.16; W11.6): when a dialog
+//! stands in an application-control journey's way, which of its controls
+//! continues toward the goal without losing work is one atomic question with
+//! typed options (System 1). Where the answer is known, deterministic code
+//! decides and no model is asked: a dialog asking for the Operator's
+//! approval waits, and the Orchestrator, whose dialogs in the way are never
+//! its goal, cancels them by rule ([`Way::Cancel`]). Otherwise Jev answers
+//! under a deadline; a confident answer in time is used; low confidence, an
+//! invalid answer, a timeout or an unavailable provider escalates to the
+//! reasoning model (System 2). A decision only chooses what to press: it
+//! never turns a failed check into a pass. The ways are compared live in
+//! `tests/decisions.rs` and `tests/workflow.rs`.
 
 use agq_providers::jev::{Answer, DecisionRequest, Question, QuestionKind};
 use agq_providers::{
@@ -30,6 +31,9 @@ pub struct Choice {
     pub role: String,
     #[serde(default)]
     pub value: Option<String>,
+    /// An option that is already chosen.
+    #[serde(default)]
+    pub selected: bool,
 }
 
 /// What a decision is about: the journey's goal and the dialog in its way.
@@ -66,6 +70,7 @@ impl Situation {
                 label: c["label"].as_str().unwrap_or_default().to_string(),
                 role: c["role"].as_str().unwrap_or_default().to_string(),
                 value: c["value"].as_str().map(str::to_string),
+                selected: c["selected"] == true,
             })
             .collect();
         Some(Situation {
@@ -89,6 +94,7 @@ impl Situation {
                 let value = match (&c.value, c.role.as_str()) {
                     (Some(v), _) if !v.is_empty() => format!(", holding “{v}”"),
                     (_, "field") => ", empty".to_string(),
+                    _ if c.selected => ", already chosen".to_string(),
                     _ => String::new(),
                 };
                 (
@@ -146,6 +152,35 @@ pub struct Decision {
 
 const INSTRUCTIONS: &str = "An agent operates the Agentique application toward the goal. A dialog is open. Which control should it act on next so the journey moves toward the goal without losing work and without doing what the goal does not ask for? Act on an empty field the goal needs filled before confirming; choose a choice the goal names; confirm only when the dialog does what the goal asks; cancel a dialog the goal does not need. If the dialog asks for the Operator's approval, choose wait: an agent never answers it.";
 
+/// A decision that failed, with what it cost: a request that was sent may
+/// be billed, so its cost is unknown, never zero.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Failure {
+    pub error: String,
+    pub millis: u64,
+    pub usd: Option<f64>,
+}
+
+/// Cancel a dialog in the way (the Orchestrator's rule): an approval waits;
+/// otherwise its Cancel; a dialog without one waits.
+pub fn cancel(situation: &Situation) -> Decision {
+    let choice = if situation.approval.is_none()
+        && situation.controls.iter().any(|c| c.id == "dialog-cancel")
+    {
+        "dialog-cancel".to_string()
+    } else {
+        WAIT.to_string()
+    };
+    Decision {
+        choice,
+        source: Source::Rules,
+        confidence: None,
+        millis: 0,
+        usd: Some(0.0),
+        note: String::new(),
+    }
+}
+
 /// The deterministic baseline: an approval waits; otherwise the journey
 /// goes forward (the first empty field, else the dialog's confirm).
 pub fn rules(situation: &Situation) -> Decision {
@@ -198,7 +233,10 @@ impl Default for Decider {
 
 impl Decider {
     /// Jev alone: its choice, with its confidence.
-    pub fn jev(&self, situation: &Situation) -> Result<Decision, String> {
+    pub fn jev(&self, situation: &Situation) -> Result<Decision, Failure> {
+        if let Some(only) = only_waiting(situation) {
+            return Ok(only);
+        }
         let started = Instant::now();
         let request = DecisionRequest {
             model: self.jev_model.clone(),
@@ -237,15 +275,30 @@ impl Decider {
                         usd,
                         note: String::new(),
                     }),
-                    _ => Err("Jev's answer is not a choice".into()),
+                    _ => Err(Failure {
+                        error: "Jev's answer is not a choice".into(),
+                        millis,
+                        usd,
+                    }),
                 }
             }
-            Err(failure) => Err(format!("Jev: {failure}")),
+            Err(failure) => Err(Failure {
+                error: format!("Jev: {failure}"),
+                millis,
+                usd: if failure.attempts == 0 {
+                    Some(0.0)
+                } else {
+                    failure.usage.and_then(|u| u.cost_usd(&model))
+                },
+            }),
         }
     }
 
     /// The reasoning model alone.
-    pub fn model(&self, situation: &Situation) -> Result<Decision, String> {
+    pub fn model(&self, situation: &Situation) -> Result<Decision, Failure> {
+        if let Some(only) = only_waiting(situation) {
+            return Ok(only);
+        }
         let started = Instant::now();
         let options: Vec<String> = situation
             .options()
@@ -273,13 +326,20 @@ impl Decider {
             };
             let mut handle = self.providers.chat(request);
             let deadline = Instant::now() + Duration::from_secs(120);
+            // A request that was sent may be billed: its cost is unknown.
+            let failed = |error: String| Failure {
+                error,
+                millis: started.elapsed().as_millis() as u64,
+                usd: None,
+            };
             let reply = loop {
                 match handle.next_event(Duration::from_millis(100)) {
-                    Some(Event::Finished(result)) => break result.map_err(|e| e.to_string())?,
+                    Some(Event::Finished(Ok(reply))) => break reply,
+                    Some(Event::Finished(Err(error))) => return Err(failed(error.to_string())),
                     Some(_) => {}
                     None if Instant::now() >= deadline => {
                         handle.cancel();
-                        return Err("the model did not answer in time".into());
+                        return Err(failed("the model did not answer in time".into()));
                     }
                     None => {}
                 }
@@ -307,7 +367,11 @@ impl Decider {
                 Err(error) => problem = error,
             }
         }
-        Err(problem)
+        Err(Failure {
+            error: problem,
+            millis: started.elapsed().as_millis() as u64,
+            usd,
+        })
     }
 
     /// Known answers by rule; otherwise Jev, escalating to the model when
@@ -316,6 +380,9 @@ impl Decider {
     pub fn decide(&self, situation: &Situation) -> Decision {
         if situation.approval.is_some() {
             return rules(situation);
+        }
+        if let Some(only) = only_waiting(situation) {
+            return only;
         }
         let started = Instant::now();
         let mut usd = Some(0.0);
@@ -336,7 +403,10 @@ impl Decider {
                     decision.confidence.unwrap_or(0.0)
                 )
             }
-            Err(error) => error,
+            Err(failure) => {
+                usd = add(usd, failure.usd);
+                failure.error
+            }
         };
         match self.model(situation) {
             Ok(decision) => Decision {
@@ -346,13 +416,13 @@ impl Decider {
                 note,
                 ..decision
             },
-            Err(error) => Decision {
+            Err(failure) => Decision {
                 choice: WAIT.into(),
                 source: Source::Escalated,
                 confidence: None,
                 millis: started.elapsed().as_millis() as u64,
-                usd: None,
-                note: format!("{note}; the model failed too: {error}"),
+                usd: add(usd, failure.usd),
+                note: format!("{note}; the model failed too: {}", failure.error),
             },
         }
     }
@@ -362,17 +432,22 @@ impl Decider {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum Way {
+    /// The forward rule: an empty field, else confirm.
     Rules,
+    /// The cancelling rule: what the Orchestrator uses for a dialog in the
+    /// way, which is never its goal.
+    Cancel,
     Jev,
     Model,
-    /// What the Orchestrator uses: rules where known, Jev, then the model.
+    /// Rules where known, Jev, then the model.
     Escalating,
 }
 
 impl Decider {
-    pub fn decide_with(&self, way: Way, situation: &Situation) -> Result<Decision, String> {
+    pub fn decide_with(&self, way: Way, situation: &Situation) -> Result<Decision, Failure> {
         match way {
             Way::Rules => Ok(rules(situation)),
+            Way::Cancel => Ok(cancel(situation)),
             Way::Jev => self.jev(situation),
             Way::Model => self.model(situation),
             Way::Escalating => Ok(self.decide(situation)),
@@ -380,14 +455,27 @@ impl Decider {
     }
 }
 
+/// A dialog with nothing an agent may press: waiting, by rule (no model is
+/// paid to choose the one option).
+fn only_waiting(situation: &Situation) -> Option<Decision> {
+    situation.controls.is_empty().then(|| Decision {
+        choice: WAIT.into(),
+        source: Source::Rules,
+        confidence: None,
+        millis: 0,
+        usd: Some(0.0),
+        note: "no control to press".into(),
+    })
+}
+
 /// Clears the dialogs standing in the way of `goal` in a test instance: for
 /// each, a decision and the action it names. It stops at a dialog asking
 /// for the Operator's approval (the journey waits), at a field the goal
-/// gives no text for, or after `limit` dialogs. With `guarded`, a decision
-/// to confirm a dialog is not carried out: a dialog in the way of a goal is
-/// not the goal's to confirm, whatever a model judges (deterministic code
-/// has the last word). Returns the decisions made (also when it stops), and
-/// whether the way is clear.
+/// gives no text for, or after `limit` decisions. With `guarded`, only a
+/// dialog's Cancel is pressed: a dialog in the way of a goal is not the
+/// goal's to answer, whatever a model judges (deterministic code has the
+/// last word). Returns the decisions made (also when it stops), and whether
+/// the way is clear.
 pub fn clear_dialogs(
     client: &mut crate::control::Client,
     decider: &Decider,
@@ -407,7 +495,7 @@ pub fn clear_dialogs(
         };
         let decision = match decider.decide_with(way, &situation) {
             Ok(decision) => decision,
-            Err(error) => return (made, Err(error)),
+            Err(failure) => return (made, Err(failure.error)),
         };
         made.push(decision.clone());
         if decision.choice == WAIT {
@@ -425,12 +513,12 @@ pub fn clear_dialogs(
                 Err(format!("`{}` is not on the dialog", decision.choice)),
             );
         };
-        if guarded && decision.choice == "dialog-confirm" {
+        if guarded && decision.choice != "dialog-cancel" {
             return (
                 made,
                 Err(format!(
-                    "the decision was to confirm the {} dialog, which is in the way, not the goal; nothing was pressed",
-                    situation.dialog
+                    "the decision was to press `{}` on the {} dialog, which is in the way, not the goal; nothing was pressed",
+                    decision.choice, situation.dialog
                 )),
             );
         }
@@ -456,19 +544,27 @@ pub fn clear_dialogs(
             Ok(_) => {}
         }
     }
-    (made, Err("dialogs kept opening".into()))
+    (
+        made,
+        Err(format!("a dialog was still open after {limit} decisions")),
+    )
 }
 
 /// The option the model's JSON names, if it is one of the options.
 fn parse_choice(said: &str, situation: &Situation) -> Result<String, String> {
-    let start = said.find('{').ok_or("the model gave no JSON")?;
-    let end = said.rfind('}').ok_or("the model gave no JSON")?;
-    let value: Value = serde_json::from_str(&said[start..=end])
-        .map_err(|e| format!("the model's JSON cannot be read: {e}"))?;
-    let choice = value["choice"]
-        .as_str()
-        .ok_or("the model named no choice")?
-        .to_string();
+    // The last JSON object in the text that names a choice.
+    let choice = said
+        .char_indices()
+        .rev()
+        .filter(|(_, c)| *c == '{')
+        .find_map(|(at, _)| {
+            let value = serde_json::Deserializer::from_str(&said[at..])
+                .into_iter::<Value>()
+                .next()?
+                .ok()?;
+            value["choice"].as_str().map(str::to_string)
+        })
+        .ok_or("the model gave no JSON naming a choice")?;
     if choice == WAIT || situation.controls.iter().any(|c| c.id == choice) {
         Ok(choice)
     } else {
@@ -493,18 +589,21 @@ mod tests {
                     label: "Checkpoint message".into(),
                     role: "field".into(),
                     value: Some(name.into()),
+                    selected: false,
                 },
                 Choice {
                     id: "dialog-cancel".into(),
                     label: "Cancel".into(),
                     role: "button".into(),
                     value: None,
+                    selected: false,
                 },
                 Choice {
                     id: "dialog-confirm".into(),
                     label: "Record checkpoint".into(),
                     role: "button".into(),
                     value: None,
+                    selected: false,
                 },
             ],
             status: String::new(),
@@ -532,11 +631,35 @@ mod tests {
     }
 
     #[test]
+    fn the_cancelling_rule_cancels_unless_approval_is_asked() {
+        assert_eq!(cancel(&situation(None, "x")).choice, "dialog-cancel");
+        assert_eq!(cancel(&situation(Some("live run"), "x")).choice, WAIT);
+        let mut bare = situation(None, "x");
+        bare.controls.clear();
+        assert_eq!(cancel(&bare).choice, WAIT);
+        // Nothing to press: no model is paid to choose waiting.
+        let decided = Decider::default().decide(&bare);
+        assert_eq!(
+            (decided.choice.as_str(), decided.source),
+            (WAIT, Source::Rules)
+        );
+    }
+
+    #[test]
     fn a_models_choice_must_be_an_option() {
         let s = situation(None, "x");
         assert_eq!(
             parse_choice("Sure: {\"choice\": \"dialog-cancel\"}", &s).unwrap(),
             "dialog-cancel"
+        );
+        // Braces in the reasoning before the answer do not hide it.
+        assert_eq!(
+            parse_choice(
+                "Options {a, b} considered. {\"choice\": \"dialog-confirm\"} done {x}",
+                &s
+            )
+            .unwrap(),
+            "dialog-confirm"
         );
         assert!(parse_choice("{\"choice\": \"delete-everything\"}", &s).is_err());
         assert!(parse_choice("no json", &s).is_err());

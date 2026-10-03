@@ -148,6 +148,10 @@ impl TestInstance {
             .arg("--project")
             .arg(project)
             .env("AGENTIQUE_BUILDS", folder.join("builds"))
+            // Its own home: what it creates by default (a new project's
+            // folder) stays in the instance's folder.
+            .env("USERPROFILE", folder)
+            .env("HOME", folder)
             .env("AGENTIQUE_REPOSITORY", repository)
             .stdin(Stdio::null())
             .stdout(Stdio::null())

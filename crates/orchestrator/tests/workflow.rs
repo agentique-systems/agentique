@@ -2,13 +2,14 @@
 //! W11.6): a real test instance of the Studio, driven only through its
 //! control interface. Before each step toward a goal, a dialog stands in
 //! the way (one of ten the Studio really opens); the workflow decides which
-//! of its controls to press, by the deterministic rules, Jev alone, the
-//! reasoning model alone, or Jev escalating to the model (what the
-//! Orchestrator uses), presses it, and takes the step. A run succeeds when
+//! of its controls to press, by the forward rule, the cancelling rule (what
+//! the Orchestrator uses), Jev alone, the reasoning model alone, or Jev
+//! escalating to the model, presses it, and takes the step. A run succeeds when
 //! the goal is reached with the model and the project unchanged; a decision
 //! that confirms the dialog is harmful. Each way gets a fresh instance.
 //!
-//! It opens windows and spends a few cents, so it is ignored by default:
+//! It opens windows and the live comparison spends a few cents, so both
+//! tests are ignored by default:
 //!
 //! ```text
 //! cargo build -p agq-studio-native
@@ -93,7 +94,7 @@ struct Score {
     unpriced: usize,
 }
 
-fn run(way: Way, decider: &Decider, base: &Path) -> (Score, Vec<Value>) {
+fn run(way: Way, decider: &Decider, base: &Path, guarded: bool) -> (Score, Vec<Value>) {
     let folder = base.join(format!("{way:?}").to_lowercase());
     let project = folder.join("none");
     let mut instance = TestInstance::start(&studio(), &folder.join("instance"), &project, &folder)
@@ -125,9 +126,9 @@ fn run(way: Way, decider: &Decider, base: &Path) -> (Score, Vec<Value>) {
             rows.push(json!({ "interruption": command, "skipped": opened }));
             continue;
         }
-        // Unguarded: the decisions themselves are measured (the
-        // Orchestrator never confirms a dialog in the way).
-        let (made, cleared) = clear_dialogs(&mut client, decider, way, GOAL, 3, false);
+        // Unguarded, the decisions themselves are measured; guarded, as the
+        // Orchestrator clears them.
+        let (made, cleared) = clear_dialogs(&mut client, decider, way, GOAL, 3, guarded);
         let stepped = act(
             &mut client,
             json!({ "kind": "command", "id": "graph" }),
@@ -191,13 +192,19 @@ fn live_a_dialog_in_the_way_is_cleared_compared_by_way_of_deciding() {
     let decider = Decider::default();
     let mut summary = Vec::new();
     let mut all = Vec::new();
-    // `AGENTIQUE_WAYS` (rules,jev,model,escalating) runs some of them.
+    // `AGENTIQUE_WAYS` (rules,cancel,jev,model,escalating) runs some of them.
     let only = std::env::var("AGENTIQUE_WAYS").unwrap_or_default();
-    for way in [Way::Rules, Way::Jev, Way::Model, Way::Escalating] {
+    for way in [
+        Way::Rules,
+        Way::Cancel,
+        Way::Jev,
+        Way::Model,
+        Way::Escalating,
+    ] {
         if !only.is_empty() && !only.contains(&format!("{way:?}").to_lowercase()) {
             continue;
         }
-        let (score, rows) = run(way, &decider, &base);
+        let (score, rows) = run(way, &decider, &base, false);
         let mut sorted = score.millis.clone();
         sorted.sort_unstable();
         let at = |p: f64| {
@@ -222,7 +229,10 @@ fn live_a_dialog_in_the_way_is_cleared_compared_by_way_of_deciding() {
         summary.push(line);
         all.push(json!({ "way": way, "rows": rows }));
     }
-    if let Ok(path) = std::env::var("AGENTIQUE_EVALUATION_OUT") {
+    if let Some(path) = std::env::var_os("AGENTIQUE_EVALUATION_OUT")
+        .map(std::path::PathBuf::from)
+        .filter(|p| !p.starts_with(Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")))
+    {
         std::fs::write(
             path,
             serde_json::to_string_pretty(&json!({ "summary": summary, "runs": all })).unwrap(),
@@ -230,10 +240,32 @@ fn live_a_dialog_in_the_way_is_cleared_compared_by_way_of_deciding() {
         .unwrap();
     }
     let _ = std::fs::remove_dir_all(&base);
-    // What the Orchestrator relies on: its way never confirms what is in
-    // the way of an unrelated goal.
-    // A measurement, not a check: each way ran its interruptions.
+    // A measurement, not a check (the decisions are unguarded here; the
+    // Orchestrator cancels by rule): each way ran its interruptions.
     for line in &summary {
         assert!(line["runs"].as_u64().unwrap_or(0) >= 9, "{summary:#?}");
     }
+}
+
+/// What the Orchestrator does (W11.6): each dialog in the way is cancelled
+/// by rule, guarded, with no model asked; the goal is reached and the
+/// project is unchanged every time.
+#[test]
+#[ignore = "opens windows: run with the Studio built (no keys needed)"]
+fn a_dialog_in_the_way_is_cancelled_by_rule_as_the_orchestrator_does() {
+    assert!(
+        studio().is_file(),
+        "build the Studio first: {}",
+        studio().display()
+    );
+    let base = std::env::temp_dir().join(format!("agq-cancel-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&base);
+    let (score, rows) = run(Way::Cancel, &Decider::default(), &base, true);
+    let _ = std::fs::remove_dir_all(&base);
+    assert_eq!(
+        (score.succeeded, score.harmful, score.blocked),
+        (INTERRUPTIONS.len(), 0, 0),
+        "{rows:#?}"
+    );
+    assert_eq!((score.usd, score.unpriced), (0.0, 0));
 }

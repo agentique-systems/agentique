@@ -6,7 +6,7 @@
 
 use crate::control::{Client, TestInstance};
 use crate::record::{
-    Attempt, Check, Continuation, Cycle, Objective, Outcome, Phase, Review, State, Store,
+    Attempt, Check, Continuation, Criterion, Cycle, Objective, Outcome, Phase, Review, State, Store,
 };
 use crate::roles::{self, Role};
 use crate::{builds, forge, gates};
@@ -79,9 +79,6 @@ pub struct Setup {
     pub protected: Vec<String>,
     /// The build this Studio runs, if it runs from the builds folder.
     pub running_build: Option<String>,
-    /// Typed decisions for dialogs in a test instance's way (W11.6); `None`
-    /// decides by rules alone.
-    pub decider: Option<crate::decide::Decider>,
 }
 
 /// A running objective, as the Studio holds it.
@@ -818,42 +815,87 @@ impl Driver {
         Ok(())
     }
 
-    /// Clears dialogs standing in the way of `goal` in a test instance with
-    /// typed decisions (rules where the answer is known, Jev, then the
-    /// reasoning model), recording each with its cost and latency. A dialog
-    /// that cannot be cleared fails the criterion; a decision never passes
-    /// one.
-    fn clear_dialogs(&mut self, client: &mut Client, goal: &str) -> Result<(), String> {
-        let rules_only = crate::decide::Decider::default();
-        let (decider, way) = match &self.setup.decider {
-            Some(decider) => (decider, crate::decide::Way::Escalating),
-            None => (&rules_only, crate::decide::Way::Rules),
-        };
-        let (made, cleared) = crate::decide::clear_dialogs(client, decider, way, goal, 4, true);
+    /// Clears dialogs a criterion's setup left in a test instance's way,
+    /// by rule (§4.16: the answer is known, so no model is asked): an
+    /// approval waits, any other dialog is cancelled. Returns what was
+    /// cleared, for the criterion's record; a dialog that cannot be cleared
+    /// is the Orchestrator's problem, not the change's.
+    fn clear_dialogs(&mut self, client: &mut Client, goal: &str) -> Result<Vec<String>, String> {
+        let decider = crate::decide::Decider::default();
+        let (made, cleared) = crate::decide::clear_dialogs(
+            client,
+            &decider,
+            crate::decide::Way::Cancel,
+            goal,
+            4,
+            true,
+        );
+        let mut what = Vec::new();
         for decision in &made {
             self.objective.spent.decisions += 1;
-            match decision.usd {
-                Some(usd) => self.objective.spent.usd += usd,
-                None => self.objective.spent.unknown = true,
-            }
-            let confidence = decision
-                .confidence
-                .map(|c| format!(", confidence {c:.2}"))
-                .unwrap_or_default();
-            let note = if decision.note.is_empty() {
-                String::new()
-            } else {
-                format!("; {}", decision.note)
-            };
+            what.push(decision.choice.clone());
             self.note(
                 "orchestrator",
-                format!(
-                    "a dialog was in the way: {} (by {:?}{confidence}, {} ms{note})",
-                    decision.choice, decision.source, decision.millis
-                ),
+                format!("a dialog was in the way: {}", decision.choice),
             );
         }
-        cleared
+        cleared.map(|_| what)
+    }
+
+    /// The dialog a test instance shows as it starts, if any: a finding
+    /// about the build, never something to clear silently.
+    fn dialog_at_start(client: &mut Client) -> Option<String> {
+        client
+            .observe(false)
+            .ok()
+            .and_then(|o| o["dialog"].as_str().map(str::to_string))
+    }
+
+    /// An observation criterion in a test instance: dialogs a previous
+    /// criterion left are cleared (and said in the detail), its setup acts,
+    /// and its expectation is observed. A setup action that fails fails the
+    /// criterion; a dialog that cannot be cleared is the Orchestrator's
+    /// error, not the change's.
+    fn observe_criterion(
+        &mut self,
+        client: &mut Client,
+        criterion: &Criterion,
+        setup: &[Value],
+        expect: &Value,
+    ) -> Result<Outcome, String> {
+        let cleared = self
+            .clear_dialogs(client, &criterion.statement)
+            .map_err(|e| format!("a dialog in the test instance could not be cleared: {e}"))?;
+        let mut result = Ok(());
+        for action in setup {
+            result = match client.act("orchestrator", &criterion.id, action.clone()) {
+                Ok(answer) if answer["ok"] == false => {
+                    Err(format!("setup action failed: {answer}"))
+                }
+                Ok(_) => Ok(()),
+                Err(error) => Err(error),
+            };
+            if result.is_err() {
+                break;
+            }
+        }
+        let result = result.and_then(|()| {
+            client
+                .observe(true)
+                .and_then(|o| crate::control::holds(&o, expect))
+        });
+        let (verdict, mut detail) = match result {
+            Ok(()) => ("passed", "observed".to_string()),
+            Err(problem) => ("failed", problem),
+        };
+        if !cleared.is_empty() {
+            detail = format!("{detail} (first cleared: {})", cleared.join(", "));
+        }
+        Ok(Outcome {
+            name: criterion.id.clone(),
+            verdict: verdict.into(),
+            detail,
+        })
     }
 
     fn policy(&self, folder: &Path, write: bool, commands: bool) -> Policy {
@@ -1347,47 +1389,16 @@ impl Driver {
         let mut instance = TestInstance::start(&exe, &self.folder("instance"), &verify, &verify)?;
         let mut client = instance.connect(Duration::from_secs(180))?;
         let mut outcomes = Vec::new();
+        if let Some(dialog) = Self::dialog_at_start(&mut client) {
+            outcomes.push(Outcome {
+                name: "no dialog when it starts".into(),
+                verdict: "failed".into(),
+                detail: format!("the {dialog} dialog is open when the test instance starts"),
+            });
+        }
         for criterion in &behavioural {
             if let Check::Observation { setup, expect } = &criterion.check {
-                let mut problem = self.clear_dialogs(&mut client, &criterion.statement).err();
-                for action in setup {
-                    if problem.is_some() {
-                        break;
-                    }
-                    match client.act("orchestrator", &criterion.id, action.clone()) {
-                        Ok(answer) if answer["ok"] == false => {
-                            problem = Some(format!("setup action failed: {answer}"));
-                            break;
-                        }
-                        Err(error) => {
-                            problem = Some(error);
-                            break;
-                        }
-                        Ok(_) => {}
-                    }
-                }
-                let outcome = match problem {
-                    Some(problem) => Outcome {
-                        name: criterion.id.clone(),
-                        verdict: "failed".into(),
-                        detail: problem,
-                    },
-                    None => match client
-                        .observe(true)
-                        .and_then(|o| crate::control::holds(&o, expect))
-                    {
-                        Ok(()) => Outcome {
-                            name: criterion.id.clone(),
-                            verdict: "passed".into(),
-                            detail: "observed".into(),
-                        },
-                        Err(problem) => Outcome {
-                            name: criterion.id.clone(),
-                            verdict: "failed".into(),
-                            detail: problem,
-                        },
-                    },
-                };
+                let outcome = self.observe_criterion(&mut client, criterion, setup, expect)?;
                 outcomes.push(outcome);
             }
         }
@@ -1833,38 +1844,19 @@ impl Driver {
                         detail: format!("it shows {}", observed["screen"]),
                     }
                 });
+                if let Some(dialog) = Self::dialog_at_start(&mut client) {
+                    outcomes.push(Outcome {
+                        name: "no dialog when it starts".into(),
+                        verdict: "failed".into(),
+                        detail: format!("the {dialog} dialog is open when the build starts"),
+                    });
+                }
                 let proposal = self.cycle().proposal.clone().ok_or("no proposal")?;
                 for criterion in &proposal.criteria {
                     if let Check::Observation { setup, expect } = &criterion.check {
-                        if let Err(problem) = self.clear_dialogs(&mut client, &criterion.statement)
-                        {
-                            outcomes.push(Outcome {
-                                name: criterion.id.clone(),
-                                verdict: "failed".into(),
-                                detail: problem,
-                            });
-                            continue;
-                        }
-                        for action in setup {
-                            let _ = client.act("orchestrator", &criterion.id, action.clone());
-                        }
-                        outcomes.push(
-                            match client
-                                .observe(true)
-                                .and_then(|o| crate::control::holds(&o, expect))
-                            {
-                                Ok(()) => Outcome {
-                                    name: criterion.id.clone(),
-                                    verdict: "passed".into(),
-                                    detail: String::new(),
-                                },
-                                Err(problem) => Outcome {
-                                    name: criterion.id.clone(),
-                                    verdict: "failed".into(),
-                                    detail: problem,
-                                },
-                            },
-                        );
+                        let outcome =
+                            self.observe_criterion(&mut client, criterion, setup, expect)?;
+                        outcomes.push(outcome);
                     }
                 }
             }

@@ -2021,18 +2021,23 @@ drawn control and makes nothing wait.
 
 **Typed decisions in operation (System 1).** Reasoning agents (System 2) plan,
 implement, diagnose, review and judge. Fast typed decisions (Jev, C-35 as
-amended by C-53) make bounded choices during operation: the Orchestrator asks
-one atomic question with explicit inputs and typed options (for example,
-which of the actions a dialog offers continues a journey toward its goal
-without losing work), under a deadline. A confident answer in time is used;
-low confidence, an invalid answer, a timeout, an unavailable provider or a
-cancellation escalates to the reasoning agent; where the answer is already
-known, deterministic code decides and no model is asked (a dialog asking for
-the Operator's approval waits). A typed decision never overrides a failing
-check, a decision to confirm a dialog that stands in a journey's way is not
-carried out, and its cost and latency are recorded with the objective. The
-first such workflow clears dialogs in a test instance's way before each
-behavioural criterion (W11.6, measured in `docs/stages.md`).
+amended by C-53) make bounded choices during operation: one atomic question
+with explicit inputs and typed options (for example, which of the actions a
+dialog offers continues a journey toward its goal without losing work),
+under a deadline. A confident answer in time is used; low confidence, an
+invalid answer, a timeout, an unavailable provider or a cancellation
+escalates to the reasoning model; where the answer is already known,
+deterministic code decides and no model is asked. A dialog asking for the
+Operator's approval waits. A dialog that stands in the Orchestrator's way is
+never its goal, so the Orchestrator cancels it by rule before a behavioural
+criterion and says so in the criterion's outcome; only Cancel is pressed, a
+build that starts with a dialog open fails its trial, and a dialog it cannot
+clear is the Orchestrator's error, not the change's. A typed decision never
+overrides a failing check, and its cost and latency (a failed call's too)
+are recorded. The first Jev-assisted application-control workflow, a dialog
+in the way of a goal in a real test instance, is measured against the rules
+and the reasoning model alone (W11.6, `docs/stages.md`); a typed decision is
+used in operation only where no rule knows the answer.
 
 **Lifecycle.** The launcher supervises (§4.15). Before a handover the
 Orchestrator writes the continuation point (the phase reached, the adopted
@@ -3079,6 +3084,7 @@ The ADRs named here are preserved at the tag `archive/pre-realignment`.
 | 2026-10-03 | Product terms under C-53 (§8.4, §9): objective, cycle, permission policy, control interface, observation, typed decision; agent roles are named lead, implementer, reviewer and evaluator; a cycle's test instance is the existing "test instance" | A term each where no plain one existed; Orchestrator was already a product noun |
 | 2026-10-03 | Under C-53: the reference machine has no Anthropic key, so the Claude Agent runtime is proven live through DeepSeek's documented Anthropic-compatible endpoint with the configured DeepSeek key (`deepseek-v4-pro`, `deepseek-flash`); a claude.ai or Claude subscription login is not used, as Anthropic's terms for the SDK require. A spike on 2026-10-03 ran the pinned SDK this way with its built-in tools, the project's `CLAUDE.md` and a pre-tool hook (4 model calls, 9 s); the SDK's own cost estimate assumes Claude's prices, so Agentique costs sessions itself | Live capability within existing authorisation; §8.7 rule 4's exception follows the key to its own provider's endpoint |
 | 2026-10-04 | The Orchestrator under C-53, after its review: a criterion's command is a test run (cargo test, node --test, python -m unittest) that must fail on the base and run at least one test after; only one commit holding the reviewed tree is pushed per review, its message and the pull request scanned for keys; the code of locked parts is gated through the links (the Orchestrator's crate is linked to its part), Agentique's safeguards and agent configuration at any depth only when the objective names them; the baseline guard lists each weakened assertion, threshold or test; the lead and the reviewer run no commands, and a worktree session is refused the commands that move the repository's shared state (stash pop and drop, branch, update-ref, tags, local config, worktrees); test instances get no keys from the Studio's environment; usage without a price counts at a high one; a merge is idempotent; a build that does not take over ends the objective | §4.16's gates hold against an agent that writes its own criteria and code; commands an implementer runs stay unconfined (as any build is), so GitHub branch protection on the default branch is recommended as the backstop |
+| 2026-10-04 | Typed decisions under C-53 (W11.6), after their review: a dialog in the Orchestrator's way is decided by rule (cancel it; an approval waits), because §4.16 puts a known answer in deterministic code and the measurements show no model does better there; Jev, the reasoning model and Jev escalating are compared live on 33 situations from the Studio's real dialogs and on a live application-control workflow, each failed call's time and cost counted (`docs/stages.md`). The comparison's reasoning model is `deepseek-v4-pro` through DeepSeek, fixed in `Decider::default` rather than taken from Settings: it is the only reasoning provider with a key on the reference machine. Test instances get their own home folder, so a new project they create by default stays in the instance's folder. |
 
 ### 7.7 The original requirements
 

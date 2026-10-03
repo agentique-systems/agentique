@@ -1,5 +1,5 @@
 {
- "about": "Typed decisions in operation (C-53, W11.6): situations from the Studio's real dialogs (captured through the control interface on 2026-10-03; the approval dialogs from their code), each with a goal and the control that continues toward it without losing work. A choice that confirms when it should not is a harmful error. `accept` lists every control that is progress toward the goal without loss (the order of naming and choosing a kind does not matter); the first live run (2026-10-03) scored only `expected`.",
+ "about": "Typed decisions in operation (C-53, W11.6): situations from the Studio's real dialogs (captured through the control interface, with which option is selected; the approval dialogs from their code), each with a goal, the control that continues toward it without losing work (`expected`) and every control that is such progress (`accept`: naming the element and choosing its kind may come in either order; pressing an option already selected is no progress). The system's folder picker is left out, as agents cannot operate it. A choice that confirms when it should not is a harmful error.",
  "tasks": [
   {
    "id": "t01",
@@ -10,7 +10,8 @@
     {
      "id": "The URL shortener",
      "label": "The URL shortener",
-     "role": "option"
+     "role": "option",
+     "selected": true
     },
     {
      "id": "With AI screening",
@@ -33,11 +34,6 @@
      "label": "Project folder",
      "role": "field",
      "value": "C:\\work\\UrlShortener"
-    },
-    {
-     "id": "browse-new",
-     "label": "Browse...",
-     "role": "button"
     },
     {
      "id": "dialog-cancel",
@@ -52,8 +48,7 @@
    ],
    "expected": "dialog-confirm",
    "accept": [
-    "dialog-confirm",
-    "The URL shortener"
+    "dialog-confirm"
    ]
   },
   {
@@ -65,7 +60,8 @@
     {
      "id": "The URL shortener",
      "label": "The URL shortener",
-     "role": "option"
+     "role": "option",
+     "selected": true
     },
     {
      "id": "With AI screening",
@@ -88,11 +84,6 @@
      "label": "Project folder",
      "role": "field",
      "value": "C:\\work\\UrlShortener"
-    },
-    {
-     "id": "browse-new",
-     "label": "Browse...",
-     "role": "button"
     },
     {
      "id": "dialog-cancel",
@@ -119,7 +110,8 @@
     {
      "id": "The URL shortener",
      "label": "The URL shortener",
-     "role": "option"
+     "role": "option",
+     "selected": true
     },
     {
      "id": "With AI screening",
@@ -142,11 +134,6 @@
      "label": "Project folder",
      "role": "field",
      "value": "C:\\work\\UrlShortener"
-    },
-    {
-     "id": "browse-new",
-     "label": "Browse...",
-     "role": "button"
     },
     {
      "id": "dialog-cancel",
@@ -173,7 +160,8 @@
     {
      "id": "The URL shortener",
      "label": "The URL shortener",
-     "role": "option"
+     "role": "option",
+     "selected": true
     },
     {
      "id": "With AI screening",
@@ -196,11 +184,6 @@
      "label": "Project folder",
      "role": "field",
      "value": "C:\\work\\UrlShortener"
-    },
-    {
-     "id": "browse-new",
-     "label": "Browse...",
-     "role": "button"
     },
     {
      "id": "dialog-cancel",
@@ -311,7 +294,8 @@
     {
      "id": "part",
      "label": "part",
-     "role": "option"
+     "role": "option",
+     "selected": true
     },
     {
      "id": "part def",
@@ -350,7 +334,8 @@
     {
      "id": "part",
      "label": "part",
-     "role": "option"
+     "role": "option",
+     "selected": true
     },
     {
      "id": "part def",
@@ -376,8 +361,7 @@
    ],
    "expected": "Name",
    "accept": [
-    "Name",
-    "part"
+    "Name"
    ]
   },
   {
@@ -389,7 +373,8 @@
     {
      "id": "part",
      "label": "part",
-     "role": "option"
+     "role": "option",
+     "selected": true
     },
     {
      "id": "part def",
@@ -415,8 +400,7 @@
    ],
    "expected": "dialog-confirm",
    "accept": [
-    "dialog-confirm",
-    "part"
+    "dialog-confirm"
    ]
   },
   {
@@ -428,7 +412,8 @@
     {
      "id": "part",
      "label": "part",
-     "role": "option"
+     "role": "option",
+     "selected": true
     },
     {
      "id": "part def",
@@ -466,7 +451,8 @@
     {
      "id": "port",
      "label": "port",
-     "role": "option"
+     "role": "option",
+     "selected": true
     },
     {
      "id": "port def",
@@ -505,7 +491,8 @@
     {
      "id": "port",
      "label": "port",
-     "role": "option"
+     "role": "option",
+     "selected": true
     },
     {
      "id": "port def",
@@ -531,8 +518,7 @@
    ],
    "expected": "dialog-confirm",
    "accept": [
-    "dialog-confirm",
-    "port"
+    "dialog-confirm"
    ]
   },
   {
@@ -828,11 +814,6 @@
      "value": ""
     },
     {
-     "id": "browse-open",
-     "label": "Browse...",
-     "role": "button"
-    },
-    {
      "id": "dialog-cancel",
      "label": "Cancel",
      "role": "button"
@@ -850,39 +831,6 @@
   },
   {
    "id": "t25",
-   "goal": "Choose the project folder with the file picker",
-   "dialog": "OpenProject",
-   "approval": null,
-   "controls": [
-    {
-     "id": "Open folder",
-     "label": "Open folder",
-     "role": "field",
-     "value": ""
-    },
-    {
-     "id": "browse-open",
-     "label": "Browse...",
-     "role": "button"
-    },
-    {
-     "id": "dialog-cancel",
-     "label": "Cancel",
-     "role": "button"
-    },
-    {
-     "id": "dialog-confirm",
-     "label": "Open",
-     "role": "button"
-    }
-   ],
-   "expected": "browse-open",
-   "accept": [
-    "browse-open"
-   ]
-  },
-  {
-   "id": "t26",
    "goal": "Keep working in this project",
    "dialog": "OpenProject",
    "approval": null,
@@ -892,11 +840,6 @@
      "label": "Open folder",
      "role": "field",
      "value": ""
-    },
-    {
-     "id": "browse-open",
-     "label": "Browse...",
-     "role": "button"
     },
     {
      "id": "dialog-cancel",
@@ -915,7 +858,7 @@
    ]
   },
   {
-   "id": "t27",
+   "id": "t26",
    "goal": "Create a new empty system named NewSystem",
    "dialog": "NewProject",
    "approval": null,
@@ -930,12 +873,7 @@
      "id": "Project folder",
      "label": "Project folder",
      "role": "field",
-     "value": "C:\\Users\\phili\\Agentique\\NewSystem"
-    },
-    {
-     "id": "browse-new",
-     "label": "Browse...",
-     "role": "button"
+     "value": "C:/work/NewSystem"
     },
     {
      "id": "dialog-cancel",
@@ -954,7 +892,7 @@
    ]
   },
   {
-   "id": "t28",
+   "id": "t27",
    "goal": "Create a new empty system named Payments",
    "dialog": "NewProject",
    "approval": null,
@@ -969,12 +907,7 @@
      "id": "Project folder",
      "label": "Project folder",
      "role": "field",
-     "value": "C:\\Users\\phili\\Agentique\\NewSystem"
-    },
-    {
-     "id": "browse-new",
-     "label": "Browse...",
-     "role": "button"
+     "value": "C:/work/NewSystem"
     },
     {
      "id": "dialog-cancel",
@@ -993,7 +926,7 @@
    ]
   },
   {
-   "id": "t29",
+   "id": "t28",
    "goal": "Add a requirement definition named Latency",
    "dialog": "Create",
    "approval": null,
@@ -1001,7 +934,8 @@
     {
      "id": "requirement",
      "label": "requirement",
-     "role": "option"
+     "role": "option",
+     "selected": true
     },
     {
      "id": "requirement def",
@@ -1032,7 +966,7 @@
    ]
   },
   {
-   "id": "t30",
+   "id": "t29",
    "goal": "Add an interface definition named LinkStorage",
    "dialog": "Create",
    "approval": null,
@@ -1060,7 +994,7 @@
    ]
   },
   {
-   "id": "t31",
+   "id": "t30",
    "goal": "Run the workspace's tests",
    "dialog": "TrustLocal",
    "approval": "trusted-local execution",
@@ -1082,7 +1016,7 @@
    ]
   },
   {
-   "id": "t32",
+   "id": "t31",
    "goal": "Run the scenario with live models",
    "dialog": "ConfirmLive",
    "approval": "live run",
@@ -1104,7 +1038,7 @@
    ]
   },
   {
-   "id": "t33",
+   "id": "t32",
    "goal": "Rename the locked part LinkStore to Links",
    "dialog": "Confirm",
    "approval": "lock confirmation",
@@ -1126,7 +1060,7 @@
    ]
   },
   {
-   "id": "t34",
+   "id": "t33",
    "goal": "Integrate the reviewed task",
    "dialog": "ReviewTask",
    "approval": "task review",
