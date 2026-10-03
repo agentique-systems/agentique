@@ -24,6 +24,13 @@ const MAX_RETRY_WAIT: Duration = Duration::from_secs(10);
 /// A decision that takes longer than this has failed (the vendor claims
 /// 70–500 ms per call).
 const TIMEOUT: Duration = Duration::from_secs(30);
+/// The largest successful reply read (a local safeguard, not a vendor
+/// limit): a larger one is refused, never cut and parsed.
+pub const REPLY_LIMIT: usize = 1 << 20;
+/// The largest error reply read; only its start is shown.
+const ERROR_LIMIT: usize = 16 * 1024;
+/// How much of an error reply the Operator sees, in characters.
+const EXCERPT: usize = 300;
 
 /// Questions about one state.
 #[derive(Clone, Debug, PartialEq)]
@@ -243,7 +250,7 @@ pub(crate) fn decide(
                 .json(&body)
                 .send()
                 .await;
-            let response = match sent {
+            let mut response = match sent {
                 Ok(response) => response,
                 Err(error) => {
                     return Err(Error {
@@ -272,17 +279,44 @@ pub(crate) fn decide(
                         .and_then(|seconds| seconds.trim().parse().ok())
                         .map(Duration::from_secs)
                 });
-            // An error body is shown to the Operator: keep it short.
-            let text: String = response
-                .text()
-                .await
-                .unwrap_or_default()
-                .chars()
-                .take(300)
-                .collect();
             if (200..300).contains(&status) {
-                return read_reply(&text, request_id);
+                // A reply announced as too large is refused before reading.
+                let (bytes, ending) = if response
+                    .content_length()
+                    .is_some_and(|n| n > REPLY_LIMIT as u64)
+                {
+                    (Vec::new(), Ending::TooLarge)
+                } else {
+                    read_body(&mut response, REPLY_LIMIT).await
+                };
+                return match ending {
+                    Ending::Complete => match std::str::from_utf8(&bytes) {
+                        Ok(text) => read_reply(text, request_id),
+                        Err(error) => Err(Error {
+                            kind: ErrorKind::InvalidReply,
+                            message: format!(
+                                "TypeSafe AI's reply could not be used: it is not UTF-8 ({error})."
+                            ),
+                        }),
+                    },
+                    Ending::TooLarge => Err(Error {
+                        kind: ErrorKind::InvalidReply,
+                        message: format!(
+                            "TypeSafe AI's reply is larger than {} KiB, the local limit, so it was not read.",
+                            REPLY_LIMIT / 1024
+                        ),
+                    }),
+                    Ending::Cut(why) => Err(Error {
+                        kind: ErrorKind::Unreachable,
+                        message: format!(
+                            "TypeSafe AI's reply was cut off while it was read ({why})."
+                        ),
+                    }),
+                };
             }
+            // An error body is shown to the Operator: only its start.
+            let (bytes, _) = read_body(&mut response, ERROR_LIMIT).await;
+            let text = excerpt(&bytes, &key);
             if matches!(status, 429 | 529) && attempt < RETRIES {
                 attempt += 1;
                 let wait = wait.unwrap_or(Duration::from_secs(u64::from(attempt)));
@@ -341,6 +375,58 @@ pub(crate) fn decide(
             },
         })
     })
+}
+
+/// How a body ended.
+enum Ending {
+    Complete,
+    /// Longer than the limit; what was read up to it is kept.
+    TooLarge,
+    /// The connection failed while reading.
+    Cut(String),
+}
+
+/// Reads a body up to `limit` bytes, completely when it fits.
+async fn read_body(response: &mut reqwest::Response, limit: usize) -> (Vec<u8>, Ending) {
+    let mut bytes = Vec::new();
+    loop {
+        match response.chunk().await {
+            Ok(Some(chunk)) => {
+                if bytes.len() + chunk.len() > limit {
+                    let room = limit - bytes.len();
+                    bytes.extend_from_slice(&chunk[..room]);
+                    return (bytes, Ending::TooLarge);
+                }
+                bytes.extend_from_slice(&chunk);
+            }
+            Ok(None) => return (bytes, Ending::Complete),
+            Err(error) => return (bytes, Ending::Cut(error.without_url().to_string())),
+        }
+    }
+}
+
+/// The start of an error reply, for the Operator: control characters and
+/// runs of white space folded to one space, at most [`EXCERPT`] characters,
+/// and never the key.
+fn excerpt(body: &[u8], key: &str) -> String {
+    let text = String::from_utf8_lossy(body);
+    let mut folded = text
+        .split(|c: char| c.is_whitespace() || c.is_control())
+        .filter(|word| !word.is_empty())
+        .collect::<Vec<_>>()
+        .join(" ");
+    if !key.trim().is_empty() {
+        folded = folded.replace(key.trim(), "…");
+    }
+    if folded.is_empty() {
+        "no details".into()
+    } else if folded.chars().count() > EXCERPT {
+        let mut short: String = folded.chars().take(EXCERPT).collect();
+        short.push('…');
+        short
+    } else {
+        folded
+    }
 }
 
 /// One HTTP client for every decision, so connections and TLS sessions are

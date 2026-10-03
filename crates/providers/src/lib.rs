@@ -427,6 +427,9 @@ pub enum ErrorKind {
     Unreachable,
     /// The request was not accepted (400, 413, 422).
     Rejected,
+    /// The reply arrived but cannot be used: too large, unreadable, or not
+    /// an answer to the request that was sent. Never turned into an answer.
+    InvalidReply,
     /// The caller cancelled the call.
     Cancelled,
     Other,
