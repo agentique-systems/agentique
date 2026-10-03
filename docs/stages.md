@@ -1230,7 +1230,7 @@ launcher, and C-52's typed decisions, as recorded above.
 | Item | Pull request | State |
 |---|---|---|
 | W11.1 Direction and self-model | #97 | C-53 recorded; Scenario J, §4.16, §6.8; `AGENTS.md` rule 10; `CLAUDE.md`; the self-model gains `Orchestrator` (locked, through a System State `Lock` change), the control and objective ports, `GatesDecide`, and the new contracts of `ClaudeAgentRuntime`, `Studio` and `Launcher` |
-| W11.2 The development runtime | — | not started |
+| W11.2 The development runtime | `stage11/dev-runtime` | Built: protocol 2, the permission policy (companion hook and Rust policy), development sessions in the Conversation for projects with implementation links, DeepSeek's endpoint, steering, activity, costs; live development session passed on `deepseek-v4-pro` |
 | W11.3 The control interface | — | not started |
 | W11.4 Lifecycle | — | not started |
 | W11.5 The Orchestrator | — | not started |
@@ -1238,29 +1238,32 @@ launcher, and C-52's typed decisions, as recorded above.
 | W11.7 Proof | — | not started |
 
 **Capability checklist: the Claude Agent runtime against the Claude Code
-CLI** (W11.2). "Before" is `main` at `f7a891da`; "Target" is C-53's.
+CLI** (W11.2). "Before" is `main` at `f7a891da`; "Now" is W11.2 as built:
+*live* means seen working against DeepSeek's endpoint through Agentique's
+runtime (`live_a_development_session_on_deepseek_works_in_the_repository_within_its_policy`,
+2026-10-03, 25 s); *tested* means the companion's or the Rust tests with a
+stand-in; *configured* means passed to the SDK and reported by it, not
+exercised by a test.
 
-| Capability (Claude Code CLI) | Before | Target |
+| Capability (Claude Code CLI) | Before | Now |
 |---|---|---|
-| Coding and reasoning model | Anthropic models with an Anthropic key only | Anthropic, or an Anthropic-compatible endpoint (DeepSeek `deepseek-v4-pro`, `deepseek-flash`) with that provider's key; effort and thinking |
-| File search (Glob, Grep) | Off | On, inside the policy's read roots |
-| File read | Off | On, inside the read roots |
-| File edit and write | Off | On, inside the write roots; model files, `.claude/`, `CLAUDE.md`, `AGENTS.md` and protected paths refused |
-| Commands (Bash, PowerShell) | Off | On; refused commands named in the policy (force-push, pushing to `main`, merging, history rewrites, global configuration); not confined to a folder (no sandbox); the model's key removed from their environment |
-| Builds and tests | Only through a task worker's allowed programs | `cargo`, `python`, `node` in the session's folder, lean build settings, its own target folder |
-| Git | Integration by the Studio only | Reading git and committing in the session's own worktree; pushing and merging are the Orchestrator's |
-| GitHub | None | Pull requests opened and merged by the Orchestrator when the gates pass; read-only `gh` for agents |
-| Subagents | Off | On: the SDK's own and the project's definitions; each Orchestrator role (lead, implementer, reviewer, evaluator) is its own session |
-| Custom tools | Agentique's MCP tools | Agentique's tools, the control interface and the Orchestrator's tools |
-| MCP servers | Agentique's only | Plus the project's servers the Operator enables |
-| Project instructions | Off (`CLAUDE.md` disabled) | `CLAUDE.md`, which imports `AGENTS.md` |
-| Skills | Off | The project's skills |
-| Hooks | One hook that denies everything else | The policy hook, plus the project's hooks |
-| Persistent context | Off | Project instructions; auto memory stays off (notes need the Operator, C-40) |
-| Compaction | The SDK's, not shown | The SDK's, shown in the activity record |
-| Resumable sessions | Each turn forks the session it continues | The same, and objective sessions resumed after a restart |
-| Long-running work | 40 model calls a turn, no background commands | Background commands and task notifications; larger bounds for objective sessions |
-| Permissions | `dontAsk`, Agentique's tools only | Policy allow, deny, or ask the Studio (objective permissions or the Operator) |
-| Web fetch and search | Off | Fetch under the network policy; search where the endpoint offers it (Anthropic) |
-| Steering | Stop only | Queued messages into a running session, Pause, Step, Resume, Stop |
-| Cost | The SDK's estimate | From usage at the model's own price |
+| Coding and reasoning model | Anthropic models with an Anthropic key only | Anthropic, or DeepSeek's Anthropic-compatible endpoint (`deepseek-v4-pro`, `deepseek-flash` for small tasks) with the DeepSeek key: *live* on `deepseek-v4-pro`; Anthropic not tried (no key) |
+| File search, read, edit, write | Off | The SDK's own tools in the repository, held to the policy's folders; model files, agent configuration, `.git` and the links' protected paths refused with the reason: *live* (edit made, model-file edit refused naming `apply_changes`) |
+| Commands (Bash, PowerShell) | Off | On with trusted-local execution; standard refusals (force-push, push to `main`, merging, repository changes on GitHub, global git configuration, key files, writing model files; in the Operator's working copy, discarding work); not confined to a folder: *live* (a `node` command), refusals *tested* in Rust and the companion |
+| Builds and tests | Only through a task worker's allowed programs | Through commands as above (Cargo, Python, Node with the Operator's toolchains and home folder): *configured*; exercised in W11.5's cycles |
+| Git and GitHub | Integration by the Studio only | Reading git and local commits; pushing refused in the Conversation; merging refused for agents; pushes and pull requests are the Orchestrator's (W11.5): *tested* |
+| Subagents | Off | The SDK's own (general-purpose, Explore, Plan) and the project's; their start and end shown in the Conversation: *tested* (stand-in), *configured* |
+| Custom tools | Agentique's MCP tools | Agentique's tools beside the SDK's, through the Studio's executor: *live* (`read_model`) |
+| MCP servers | Agentique's only | Agentique's, plus servers a policy names (none by default): *tested* |
+| Project instructions | Off | `CLAUDE.md` importing `AGENTS.md`, loaded (`settingSources: ["project"]`): *configured*; seen live in the 2026-10-03 spike |
+| Skills | Off | The project's skills (`skills: "all"` with project settings): *configured*; this repository has none yet |
+| Hooks | One hook that denies everything else | The policy's hook; the project's own hooks load with its settings (none yet), protected from changes unless an objective names them: *tested* |
+| Persistent context | Off | Project instructions; auto memory stays off (C-40): *configured* |
+| Compaction | The SDK's, not shown | The SDK's, as a notice with the token counts: *tested* |
+| Resumable sessions | Each turn forks the session it continues | The same: *live* (the second turn resumed and answered from memory) |
+| Long-running work | 40 model calls a turn, no background commands | Background commands and task notifications reported; the Conversation's bound stays 40 calls a turn (objectives set their own, W11.5): *tested* |
+| Permissions | `dontAsk`, Agentique's tools only | The policy's hook allows, refuses, or asks; a question goes to the Operator as a card with Allow / Don't allow and is recorded; objectives refuse instead of asking: *tested* |
+| Web fetch and search | Off | Fetch when the project allows the network; search only where the endpoint offers it (Anthropic; DeepSeek ignores server tools): *configured* |
+| Steering | Stop only | Queued messages ("Add" while it works), Pause before the next tool call, Step, Resume, Stop: *tested* (stand-in and companion) |
+| Keys | The Anthropic key in the companion's environment | The model's key only, kept out of the session's commands, hooks and MCP servers (`CLAUDE_CODE_SUBPROCESS_ENV_SCRUB`, measured with and without on 2026-10-03) |
+| Cost | The SDK's estimate | From usage at the model's own price (DeepSeek's dated table, peak price): *tested* |

@@ -29,6 +29,11 @@ const start: StartOptions = {
   cwd: "C:\\agent\\work",
   configDir: "C:\\agent\\config",
   home: "C:\\agent\\home",
+  policy: null,
+  settingSources: [],
+  agents: {},
+  endpoint: null,
+  preset: false,
 };
 
 test("protocol messages are decoded strictly", () => {
@@ -42,6 +47,11 @@ test("protocol messages are decoded strictly", () => {
   assert.throws(() => decode('{"type":"run_shell"}'), /unknown message type/);
   assert.throws(() => decode("[1]"), /JSON object/);
   assert.throws(() => decode('{"type":"start","options":{"prompt":"x","tools":[]}}'), /options.cwd/);
+  assert.deepEqual(decode('{"type":"permission_result","call":"p1","allow":true}'), { type: "permission_result", call: "p1", allow: true, message: "" });
+  assert.deepEqual(decode('{"type":"message","text":"Also add a test."}'), { type: "message", text: "Also add a test." });
+  assert.deepEqual(decode('{"type":"gate","mode":"step"}'), { type: "gate", mode: "step" });
+  assert.throws(() => decode('{"type":"gate","mode":"faster"}'), /gate/);
+  assert.throws(() => decode('{"type":"message","text":"  "}'), /needs text/);
   const splitter = new LineSplitter();
   assert.deepEqual(splitter.push('{"a":1}\r\n{"b"'), ['{"a":1}']);
   assert.deepEqual(splitter.push(":2}\n"), ['{"b":2}']);

@@ -58,6 +58,8 @@ pub enum PromptCache {
 
 const ANTHROPIC_EFFORTS: &[&str] = &["low", "medium", "high", "xhigh", "max"];
 const DEEPSEEK_EFFORTS: &[&str] = &["low", "high", "max"];
+/// The DeepSeek models this table knows.
+const DEEPSEEK_MODELS: &[&str] = &["deepseek-flash", "deepseek-v4-pro"];
 // OpenAI and OpenRouter effort levels for this phase's models: not verified.
 const OPENAI_EFFORTS: &[&str] = &["low", "medium", "high"];
 
@@ -163,9 +165,14 @@ pub fn capabilities(model: &ModelRef) -> Capabilities {
             prompt_cache: PromptCache::Automatic,
             cache_counts: true,
             refusal_fallbacks: false,
-            // `deepseek-flash` (GET /models, 2026-09-27).
-            context_window: (model.model == "deepseek-flash").then_some(1_048_576),
-            max_output_tokens: (model.model == "deepseek-flash").then_some(393_216),
+            // `deepseek-flash` (GET /models, 2026-09-27) and `deepseek-v4-pro`
+            // (the pricing page, 2026-10-03): 1M context, 384K output.
+            context_window: DEEPSEEK_MODELS
+                .contains(&model.model.as_str())
+                .then_some(1_048_576),
+            max_output_tokens: DEEPSEEK_MODELS
+                .contains(&model.model.as_str())
+                .then_some(393_216),
         },
     }
 }
@@ -204,6 +211,15 @@ pub fn price(model: &ModelRef) -> Option<Price> {
         // DeepSeek's pricing page (ROADMAP [105], read 2026-09-27): the
         // peak-hour price, so the estimate is never low; off-peak costs half.
         (Provider::DeepSeek, "deepseek-flash") => price(0.30, 0.30, 0.006, 1.20),
+        // The same page, read 2026-10-03 for the Claude Agent runtime on
+        // DeepSeek's Anthropic-compatible endpoint (C-53); peak price.
+        (Provider::DeepSeek, "deepseek-v4-pro") => Some(Price {
+            input: 1.32,
+            cache_write: 1.32,
+            cache_read: 0.044,
+            output: 3.96,
+            as_of: "2026-10-03",
+        }),
         // TypeSafe AI's model page (ROADMAP [98]): input only, output free;
         // for the known pinned versions only, never by a name's prefix.
         (Provider::TypeSafe, model) if DECISION_MODELS.contains(&model) => {

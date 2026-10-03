@@ -201,10 +201,18 @@ impl std::fmt::Debug for Secret {
 /// into that process's environment and nowhere else. The environment
 /// variable wins over the stored key, as for every provider (R-25).
 pub fn claude_agent_key() -> Result<Option<Secret>, String> {
-    if let Some(key) = environment_key(Provider::Anthropic) {
+    runtime_key(Provider::Anthropic)
+}
+
+/// The key for the Claude Agent runtime's process when its model answers
+/// through `provider`: Anthropic's own API, or the provider's
+/// Anthropic-compatible endpoint (DeepSeek's, C-53). The same exception to
+/// §8.7 rule 4, and the key still goes only to its own provider's endpoint.
+pub fn runtime_key(provider: Provider) -> Result<Option<Secret>, String> {
+    if let Some(key) = environment_key(provider) {
         return Ok(Some(Secret(key)));
     }
-    keys::stored(Provider::Anthropic)
+    keys::stored(provider)
         .map(|key| key.map(Secret))
         .map_err(|error| error.0)
 }

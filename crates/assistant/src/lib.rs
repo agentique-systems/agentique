@@ -18,7 +18,8 @@
 //!   in one worktree (C-50).
 //! - [`runtime`]: what runs a turn ([`Runtime`]): the loop above over a
 //!   model ([`LoopRuntime`]), or [`claude_agent`]: the Claude Agent SDK's
-//!   loop in a companion process, with Agentique's tools only (C-51).
+//!   loop in a companion process (C-51), with Agentique's tools only or, in
+//!   a development session, the SDK's tools under a [`policy`] (C-53).
 #![forbid(unsafe_code)]
 
 pub mod choice;
@@ -26,6 +27,7 @@ pub mod claude;
 pub mod claude_agent;
 pub mod conversation;
 pub mod model;
+pub mod policy;
 pub mod provider_model;
 pub mod runtime;
 pub mod skills;
@@ -43,4 +45,4 @@ pub use provider_model::ProviderModel;
 pub use runtime::{LoopRuntime, Runtime};
 pub use skills::system_prompt;
 pub use tools::Prepared;
-pub use turn::{BackgroundEvent, BackgroundTurn, ToolCall, TurnEvent};
+pub use turn::{Activity, BackgroundEvent, BackgroundTurn, TaskEvent, ToolCall, TurnEvent};

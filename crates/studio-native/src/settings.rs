@@ -108,7 +108,7 @@ pub const SETTINGS: &[Setting] = &[
     Setting {
         id: "assistant.runtime",
         label: "Runtime",
-        description: "What runs the Assistant's turns: Agentique's own loop, with any provider, or the Claude Agent SDK's loop (Anthropic only, with Agentique's tools only).",
+        description: "What runs the Assistant's turns: Agentique's own loop, with any provider, or the Claude Agent SDK's loop (Anthropic, or DeepSeek's Anthropic-compatible endpoint), which in a project with a code repository is a full development session under the project's permission policy.",
         synonyms: &["sdk", "agent sdk", "claude agent", "loop", "engine"],
         default: DefaultValue::Text("loop"),
         scope: Scope::App,
@@ -118,7 +118,7 @@ pub const SETTINGS: &[Setting] = &[
     Setting {
         id: "assistant.provider",
         label: "Provider",
-        description: "The model provider the Assistant uses; empty picks the first provider with a key.",
+        description: "The model provider the Assistant uses; empty picks the first provider with a key. For the Claude Agent runtime, DeepSeek means its Anthropic-compatible endpoint.",
         synonyms: &[
             "anthropic",
             "deepseek",

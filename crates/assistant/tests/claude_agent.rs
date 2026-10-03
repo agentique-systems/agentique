@@ -1,4 +1,4 @@
-//! The Claude Agent runtime's side of protocol 1 (ROADMAP §4.7, W10.3),
+//! The Claude Agent runtime's side of protocol 2 (ROADMAP §4.7, W10.3, C-53),
 //! against a scripted stand-in companion (`fixtures/fake-companion.mjs`, no
 //! SDK, no network, no key): tool calls go through the Studio's executor
 //! with their tool use ids and the input check; a refused key, a crash, a
@@ -7,10 +7,14 @@
 //! session is resumed or handed over; the companion's environment holds the
 //! key and nothing else. Needs Node.js on the PATH.
 
-use agq_assistant::claude_agent::{ClaudeAgent, Installation, Node, RUNTIME};
+use agq_assistant::claude_agent::{
+    ClaudeAgent, Development, Endpoint, Gate, Installation, Node, RUNTIME, Undecided,
+};
 use agq_assistant::conversation::{Conversation, Entry, ToolResult};
+use agq_assistant::policy::{Permissions, Place, Policy};
 use agq_assistant::runtime::{Runtime, checked};
 use agq_assistant::turn::{ToolCall, Toolset, TurnEvent};
+use agq_assistant::{Activity, TaskEvent};
 use agq_providers::{AssistantPart, Secret};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -190,7 +194,7 @@ fn a_tool_call_goes_through_the_studio_with_its_tool_use_id() {
         Entry::Assistant { parts, .. } if parts.iter().any(|p| matches!(p, AssistantPart::ToolCall { name, .. } if name == "read_model"))
     ));
     assert!(notices(&turn.conversation).is_empty());
-    assert!(agent.effective.as_ref().unwrap().problems().is_empty());
+    assert!(agent.effective.as_ref().unwrap().problems(None).is_empty());
 }
 
 #[test]
@@ -247,7 +251,7 @@ fn another_protocol_is_refused_before_anything_runs() {
     let script = dir.path().join("old.mjs");
     std::fs::write(
         &script,
-        "process.stdout.write(JSON.stringify({type:'ready',protocol:2})+'\\n'); setTimeout(()=>process.exit(0),2000);",
+        "process.stdout.write(JSON.stringify({type:'ready',protocol:1})+'\\n'); setTimeout(()=>process.exit(0),2000);",
     )
     .unwrap();
     let Some(mut agent) = agent(dir.path(), script) else {
@@ -371,6 +375,235 @@ fn the_companion_gets_the_key_and_nothing_else_of_the_environment() {
     assert!(said.contains("parent=none"), "{said}");
 }
 
+// --- Protocol 2: development sessions (C-53) ---------------------------------
+
+fn development(dir: &Path) -> Development {
+    let project = dir.join("project");
+    std::fs::create_dir_all(&project).unwrap();
+    Development {
+        cwd: project.clone(),
+        policy: Policy::development(
+            &project,
+            &[],
+            &[],
+            Place::WorkingCopy,
+            Permissions {
+                commands: true,
+                network: false,
+                push: false,
+                mcp_servers: Vec::new(),
+                undecided: Undecided::Ask,
+            },
+        ),
+        setting_sources: vec!["project".into()],
+        agents: serde_json::json!({ "reviewer": { "description": "Reviews.", "prompt": "Review." } }),
+        preset: true,
+    }
+}
+
+fn development_agent(dir: &Path) -> Option<ClaudeAgent> {
+    let mut agent = agent(dir, fixture())?
+        .with_development(development(dir))
+        .with_endpoint(Endpoint::deepseek());
+    agent.model = Some("deepseek-v4-pro".into());
+    Some(agent)
+}
+
+/// Runs one turn, answering every call with `answer`.
+fn run_answering(
+    agent: &mut ClaudeAgent,
+    conversation: Conversation,
+    answer: impl Fn(&ToolCall) -> ToolResult,
+) -> Turn {
+    let mut conversation = conversation;
+    let toolset = Toolset::assistant();
+    let stop = AtomicBool::new(false);
+    let calls = Arc::new(Mutex::new(Vec::new()));
+    let seen = calls.clone();
+    let mut executor = move |call: &ToolCall| {
+        seen.lock().unwrap().push(call.clone());
+        answer(call)
+    };
+    let mut execute = checked(&toolset.definitions, &mut executor);
+    let mut events = Vec::new();
+    agent.run(
+        &mut conversation,
+        &toolset,
+        40,
+        &mut execute,
+        &mut |event| events.push(event),
+        &stop,
+    );
+    let calls = calls.lock().unwrap().clone();
+    Turn {
+        conversation,
+        events,
+        calls,
+    }
+}
+
+#[test]
+fn a_development_session_carries_its_policy_endpoint_and_an_environment_without_secrets() {
+    let dir = tempfile::tempdir().unwrap();
+    let Some(mut agent) = development_agent(dir.path()) else {
+        return;
+    };
+    let turn = run(
+        &mut agent,
+        asked("scenario:development Fix the gap."),
+        false,
+    );
+    let said = texts(&turn.conversation).join(" ");
+    for expected in [
+        "undecided=ask",
+        "protectsModel=true",
+        "preset=true",
+        "endpoint=https://api.deepseek.com/anthropic",
+        "fast=deepseek-flash",
+        "sources=project",
+        "cwdIsProject=true",
+        "agents=reviewer",
+        "key=sk-test-key",
+        "path=true",
+        "manifest=kept",
+        "parent=none",
+    ] {
+        assert!(said.contains(expected), "{expected} in {said}");
+    }
+    // The SDK's own tools are what a development session is for.
+    assert!(
+        notices(&turn.conversation)
+            .iter()
+            .all(|n| !n.contains("did not start as Agentique configures it")),
+        "{:?}",
+        notices(&turn.conversation)
+    );
+    assert_eq!(
+        agent.label(),
+        "Claude Agent · deepseek-v4-pro (through DeepSeek)"
+    );
+    // Costed at DeepSeek's price, not Claude's.
+    assert_eq!(
+        agent.model().map(|m| m.provider),
+        Some(agq_providers::Provider::DeepSeek)
+    );
+}
+
+#[test]
+fn the_sdks_own_tools_subagents_and_compaction_reach_the_conversation() {
+    let dir = tempfile::tempdir().unwrap();
+    let Some(mut agent) = development_agent(dir.path()) else {
+        return;
+    };
+    let turn = run(&mut agent, asked("scenario:builtin Run the tests."), false);
+    calls_balance(&turn.events);
+    assert!(turn.calls.is_empty(), "the SDK ran its own tool");
+    let finished = turn.events.iter().find_map(|e| match e {
+        TurnEvent::ToolFinished(result) if result.tool_use_id == "toolu_b1" => Some(result.clone()),
+        _ => None,
+    });
+    let finished = finished.expect("the Bash call ended with its result");
+    assert!(finished.is_error);
+    assert!(finished.content.contains("1 failed"));
+    let tasks: Vec<_> = turn
+        .events
+        .iter()
+        .filter_map(|e| match e {
+            TurnEvent::Activity(Activity::Task { event, agent, .. }) => {
+                Some((*event, agent.clone()))
+            }
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        tasks,
+        vec![
+            (TaskEvent::Started, Some("reviewer".into())),
+            (TaskEvent::Done, Some("reviewer".into()))
+        ]
+    );
+    assert!(turn.events.iter().any(|e| matches!(
+        e,
+        TurnEvent::Activity(Activity::Compacted {
+            before: 180000,
+            after: Some(12000),
+            ..
+        })
+    )));
+    assert!(
+        notices(&turn.conversation)
+            .iter()
+            .any(|n| n.contains("summarised its context"))
+    );
+    // The conversation keeps the call and its result, well formed.
+    assert!(turn.conversation.entries.iter().any(|e| matches!(
+        e,
+        Entry::ToolResults { results } if results.iter().any(|r| r.tool_use_id == "toolu_b1")
+    )));
+}
+
+#[test]
+fn a_call_outside_the_policy_is_asked_of_the_operator_and_the_answer_applies() {
+    let dir = tempfile::tempdir().unwrap();
+    let Some(mut agent) = development_agent(dir.path()) else {
+        return;
+    };
+    let allowed = run_answering(
+        &mut agent,
+        asked("scenario:permission Read my notes."),
+        |call| {
+            assert_eq!(call.name, "ask_operator");
+            assert!(
+                call.input["question"]
+                    .as_str()
+                    .unwrap()
+                    .contains("read D:\\notes.txt")
+            );
+            ToolResult::answer("Allow")
+        },
+    );
+    assert!(
+        texts(&allowed.conversation)
+            .join(" ")
+            .contains("allow=true")
+    );
+    assert!(
+        notices(&allowed.conversation)
+            .iter()
+            .any(|n| n.starts_with("You allowed the Assistant to read"))
+    );
+    calls_balance(&allowed.events);
+    let refused = run_answering(
+        &mut agent,
+        asked("scenario:permission Read my notes."),
+        |_| ToolResult::answer("Don't allow"),
+    );
+    let said = texts(&refused.conversation).join(" ");
+    assert!(said.contains("allow=false"), "{said}");
+    assert!(said.contains("The Operator did not allow it"), "{said}");
+}
+
+#[test]
+fn queued_messages_and_the_pause_gate_reach_the_running_session() {
+    let dir = tempfile::tempdir().unwrap();
+    let Some(mut agent) = development_agent(dir.path()) else {
+        return;
+    };
+    agent.steering.queue("Also update the README.");
+    agent.steering.set_gate(Gate::Pause);
+    let turn = run(&mut agent, asked("scenario:steer Work."), false);
+    let said = texts(&turn.conversation).join(" ");
+    assert!(
+        said.contains("seen=gate:pause|message:Also update the README."),
+        "{said}"
+    );
+    assert!(turn.events.iter().any(|e| matches!(
+        e,
+        TurnEvent::Activity(Activity::Paused { tool }) if tool == "Bash"
+    )));
+    assert_eq!(agent.steering.held_at().as_deref(), Some("Bash"));
+}
+
 /// The real companion with the real SDK and Claude Code binary (installed in
 /// `claude-agent/node_modules` by `npm ci`), and a key Anthropic refuses:
 /// the SDK starts with Agentique's tools only, through Agentique's server
@@ -415,7 +648,7 @@ fn the_real_sdk_starts_with_agentiques_tools_only_and_a_refused_key_stops_it() {
         .effective
         .clone()
         .expect("the SDK reported how it started");
-    assert!(effective.problems().is_empty(), "{effective:?}");
+    assert!(effective.problems(None).is_empty(), "{effective:?}");
     let names: Vec<String> = toolset
         .definitions
         .as_array()
@@ -530,4 +763,130 @@ fn live_the_sdk_reads_the_model_through_agentique_and_resumes_its_session() {
     assert_eq!(sessions[1].1, "resumed", "{sessions:?}");
     // Each turn forks the session it continues.
     assert_ne!(sessions[0].0, sessions[1].0, "a fork of the first session");
+}
+
+/// W11.2 (C-53): a live development session through Agentique's runtime on
+/// DeepSeek's Anthropic-compatible endpoint. In a scratch repository the
+/// agent reads and edits a file with the SDK's own tools, is refused a write
+/// to a model file (the reason names apply_changes), runs a command, calls an
+/// Agentique tool through the Studio's executor, and a second turn resumes
+/// its session. Costs a few cents: runs only with `AGQ_LIVE=1`, the
+/// companion's packages installed, and a DeepSeek key
+/// (`DEEPSEEK_API_KEY` or the credential store).
+#[test]
+#[ignore = "live: costs money; set AGQ_LIVE=1 and a DeepSeek key"]
+fn live_a_development_session_on_deepseek_works_in_the_repository_within_its_policy() {
+    if std::env::var("AGQ_LIVE").as_deref() != Ok("1") {
+        eprintln!("AGQ_LIVE is not 1: skipped");
+        return;
+    }
+    let companion = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../claude-agent");
+    let key = agq_providers::runtime_key(agq_providers::Provider::DeepSeek)
+        .expect("the credential store can be read")
+        .expect("a DeepSeek key");
+    let dir = tempfile::tempdir().unwrap();
+    let project = dir.path().join("project");
+    std::fs::create_dir_all(project.join("model")).unwrap();
+    std::fs::write(project.join("notes.txt"), "The build number is 41.\n").unwrap();
+    let model = "package Shop {\n    part def Store;\n}\n";
+    std::fs::write(project.join("model/Shop.sysml"), model).unwrap();
+    let mut development = development(dir.path());
+    development.cwd = project.clone();
+    let mut agent = ClaudeAgent::new(
+        node().expect("Node.js on the PATH"),
+        Installation {
+            root: dir.path().join("runtime"),
+        },
+        dir.path().join("agent"),
+        Some(std::env::var("AGQ_LIVE_MODEL").unwrap_or_else(|_| "deepseek-v4-pro".into())),
+        None,
+        key,
+    )
+    .with_development(development)
+    .with_endpoint(Endpoint::deepseek());
+    agent.script = Some(companion.join("src/main.ts"));
+    let toolset = Toolset::assistant();
+    let mut conversation = asked(
+        "Do these steps in order, with your tools, and then report briefly: \
+         1) Change the number in notes.txt from 41 to 42 with your Edit tool. \
+         2) Try to add the line `// checked` at the end of model/Shop.sysml with your Edit tool, and tell me exactly what happened. \
+         3) Run `node -e \"console.log(require('fs').readFileSync('notes.txt','utf8').trim())\"` and quote its output. \
+         4) Call Agentique's read_model tool once and name the part defs it lists.",
+    );
+    let calls = Arc::new(Mutex::new(Vec::<ToolCall>::new()));
+    let mut all_events = Vec::new();
+    for turn in 0..2 {
+        let stop = AtomicBool::new(false);
+        let seen = calls.clone();
+        let mut executor = move |call: &ToolCall| {
+            seen.lock().unwrap().push(call.clone());
+            ToolResult::answer("package Shop\n  part def Store\n  part def Ledger\n")
+        };
+        let mut execute = checked(&toolset.definitions, &mut executor);
+        let mut events = Vec::new();
+        agent.run(
+            &mut conversation,
+            &toolset,
+            30,
+            &mut execute,
+            &mut |event| events.push(event),
+            &stop,
+        );
+        eprintln!("turn {turn}: {:#?}", conversation.entries);
+        let problems: Vec<String> = notices(&conversation)
+            .into_iter()
+            .filter(|n| !n.starts_with("Subagent") && !n.contains("summarised"))
+            .collect();
+        assert!(problems.is_empty(), "{problems:?}");
+        all_events.extend(events);
+        if turn == 0 {
+            conversation.entries.push(Entry::Operator {
+                text: "What number is in notes.txt now? Answer with the number only, from memory."
+                    .into(),
+            });
+        }
+    }
+    let effective = agent
+        .effective
+        .clone()
+        .expect("the SDK reported how it started");
+    assert!(
+        effective.problems(agent.development.as_ref()).is_empty(),
+        "{effective:?}"
+    );
+    assert!(effective.tools.iter().any(|t| t == "Edit"), "{effective:?}");
+    // The file tool's edit happened; the model file did not change.
+    let notes = std::fs::read_to_string(project.join("notes.txt")).unwrap();
+    assert!(notes.contains("42"), "{notes}");
+    assert_eq!(
+        std::fs::read_to_string(project.join("model/Shop.sysml")).unwrap(),
+        model
+    );
+    // The refusal reached the agent with its reason.
+    let refused = all_events.iter().any(|e| {
+        matches!(
+            e,
+            TurnEvent::ToolFinished(r) if r.is_error && r.content.contains("apply_changes")
+        )
+    });
+    assert!(refused, "the model file's refusal names apply_changes");
+    // An Agentique tool went through the Studio's executor.
+    assert!(calls.lock().unwrap().iter().any(|c| c.name == "read_model"));
+    let replies = texts(&conversation).join("\n");
+    assert!(replies.contains("Ledger"), "{replies}");
+    assert!(
+        texts(&conversation)
+            .last()
+            .is_some_and(|t| t.contains("42")),
+        "{replies}"
+    );
+    let sessions: Vec<&str> = conversation
+        .entries
+        .iter()
+        .filter_map(|e| match e {
+            Entry::Session { event, .. } => Some(event.as_str()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(sessions, vec!["started", "resumed"]);
 }

@@ -73,6 +73,40 @@ pub enum TurnEvent {
     ToolFinished(ToolResult),
     /// An entry was added to the conversation.
     Entry(Entry),
+    /// What the runtime does besides its reply (C-53): subagent tasks and
+    /// background commands, compaction, and the pause gate.
+    Activity(Activity),
+}
+
+/// A runtime's activity besides its reply, for the Studio to show.
+#[derive(Clone, Debug, PartialEq)]
+pub enum Activity {
+    /// A subagent or background command started, progressed or ended.
+    Task {
+        id: String,
+        event: TaskEvent,
+        description: String,
+        /// The subagent's kind, for a subagent.
+        agent: Option<String>,
+        /// How it ended (`completed`, `failed`, `stopped`).
+        status: Option<String>,
+        summary: Option<String>,
+    },
+    /// The runtime summarised its context to stay within limits.
+    Compacted {
+        trigger: String,
+        before: u64,
+        after: Option<u64>,
+    },
+    /// The session is held at a tool call (Pause).
+    Paused { tool: String },
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TaskEvent {
+    Started,
+    Progress,
+    Done,
 }
 
 /// Runs one turn: answers the conversation, whose last entry is normally the
