@@ -363,6 +363,11 @@ impl Fields {
         for (field, text) in values {
             if other || !self.focused(field, window, cx) {
                 self.set(field, text, window, cx);
+                // What an agent typed there is gone with it (C-53).
+                if let Some(target) = field.target() {
+                    self.studio
+                        .update(cx, |studio, _| studio.control.forget_typed(target));
+                }
             }
         }
         if other {

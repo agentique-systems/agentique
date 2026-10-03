@@ -639,6 +639,7 @@ impl Studio {
 
     fn install_project(&mut self, project: Project) {
         self.save_session();
+        self.control.forget_all_typed();
         let folder = project.folder().to_path_buf();
         let remembered = self.session.views.get(&folder).cloned().unwrap_or_default();
         self.fixture = None;

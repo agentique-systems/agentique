@@ -47,7 +47,8 @@
   from your latest observation and say `why`; a stale action is refused and
   nothing happens: observe again. What is the Operator's own is refused: a
   dialog asking for the Operator's approval, Settings, the Conversation,
-  locking, pausing agents; type only into a focused field (or use `fill`).
+  locking, pausing agents; type only into a focused field (or use `fill`;
+  press Enter to commit a panel's field).
   A change your action makes is recorded as yours. Prefer `apply_changes` for changes to the
   model; use the application to check what the Operator would see, to
   exercise a feature, or when the Operator asks you to show something.

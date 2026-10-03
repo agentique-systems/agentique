@@ -279,6 +279,17 @@ impl ControlState {
         }
     }
 
+    /// The field was loaded with other text: what an agent typed there is
+    /// gone, and its next commit is whoever's types next.
+    pub fn forget_typed(&mut self, field: &str) {
+        self.typed.remove(field);
+    }
+
+    /// Another project: no field holds what an agent typed.
+    pub fn forget_all_typed(&mut self) {
+        self.typed.clear();
+    }
+
     /// Removes the endpoint's file (the Studio is closing): nobody connects
     /// to a Studio that is gone.
     pub fn close_endpoint(&mut self) {
@@ -1402,6 +1413,17 @@ fn run_step(
     window: &mut gpui::Window,
     cx: &mut gpui::App,
 ) -> Result<(), String> {
+    // A dialog asking for the Operator's approval may have opened since the
+    // action started: its own controls are not an agent's either.
+    if matches!(
+        step,
+        Step::Press(..) | Step::Release(..) | Step::Keys(..) | Step::Type(..) | Step::Fill(..)
+    ) && let Some(kind) = approval(studio.read(cx))
+    {
+        return Err(format!(
+            "refused: the {kind} dialog opened; it asks for the Operator's own approval"
+        ));
+    }
     let agent = active.agent.clone();
     studio.update(cx, |studio, _| studio.control.acting = Some(agent));
     let result = carry_out(studio, step, active, window, cx);
@@ -1804,6 +1826,13 @@ mod tests {
         assert!(!app.control.begin_typed_commit(Some("Value")));
         let db = crate::edit::app_tests::part(&mut app, "db");
         assert_eq!(app.highlights[&db].1, agq_system_state::Actor::Operator);
+        // Loading other text into the field, or another project, forgets it.
+        app.control.mark_typed("Value", "inspector", "evaluator");
+        app.control.forget_typed("Value");
+        assert!(!app.control.begin_typed_commit(Some("Value")));
+        app.control.mark_typed("Guard", "inspector", "evaluator");
+        app.control.forget_all_typed();
+        assert!(!app.control.begin_typed_commit(Some("Guard")));
         // A dialog's fields are read when its confirm is pressed: not marked.
         app.control.mark_typed("Name", "dialog", "evaluator");
         assert!(!app.control.begin_typed_commit(Some("Name")));
