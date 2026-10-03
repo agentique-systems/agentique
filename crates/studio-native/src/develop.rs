@@ -33,6 +33,15 @@ pub fn is_agentique(folder: &Path) -> bool {
         && folder.join("claude-agent/package.json").is_file()
 }
 
+/// The repository the build in `folder` was built from, as its manifest
+/// says.
+fn built_from(folder: &Path) -> Option<PathBuf> {
+    Manifest::load(folder)
+        .ok()
+        .map(|m| PathBuf::from(m.repository))
+        .filter(|r| !r.as_os_str().is_empty())
+}
+
 /// The data formats this build reads and writes. A build with other
 /// formats cannot be adopted until rolling its data back is supported.
 pub fn data_formats() -> BTreeMap<String, u64> {
@@ -98,10 +107,14 @@ pub struct BuildsState {
 impl Studio {
     /// Agentique's repository, if this Agentique knows where it is: the
     /// folder named by `AGENTIQUE_REPOSITORY`, else the repository it was
-    /// built from (when that folder is still there).
+    /// built from (when that folder is still there): for an installed build,
+    /// the one its manifest names (the checkout it was compiled in is gone);
+    /// otherwise the one it was compiled in.
     pub fn agentique_repository(&self) -> Option<PathBuf> {
         let candidates = [
             std::env::var_os("AGENTIQUE_REPOSITORY").map(PathBuf::from),
+            self.running_build()
+                .and_then(|id| built_from(&self.builds_root().join(id))),
             Some(Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")),
         ];
         candidates
@@ -116,7 +129,7 @@ impl Studio {
     /// Agentique's required checks if it has none yet.
     pub fn develop_agentique(&mut self) {
         let Some(folder) = self.agentique_repository() else {
-            self.status = "This Agentique does not know where its repository is: open it with Open project…, or set AGENTIQUE_REPOSITORY.".into();
+            self.status = "This Agentique does not know where its repository is: set AGENTIQUE_REPOSITORY to the repository's folder and start it again.".into();
             self.mark(Dirty::STATUS);
             return;
         };
@@ -452,6 +465,11 @@ impl Studio {
             format: agq_launcher::FORMAT,
             id: id.clone(),
             created: agq_launcher::now(),
+            // So the build, once installed, still knows its repository.
+            repository: self
+                .agentique_repository()
+                .map(|r| r.display().to_string())
+                .unwrap_or_default(),
             toolchain: "built outside Agentique".into(),
             companion: agq_assistant::claude_agent::companion_digest(),
             packages: agq_assistant::claude_agent::packages_digest(),
@@ -659,6 +677,26 @@ fn back_up(data: &Path, backup: &Path) -> Result<(), String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn an_installed_build_knows_the_repository_its_manifest_names() {
+        let repository = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let folder = std::env::temp_dir().join(format!("agq-built-from-{}", std::process::id()));
+        std::fs::create_dir_all(&folder).unwrap();
+        Manifest {
+            id: "b1".into(),
+            repository: repository.display().to_string(),
+            ..Manifest::default()
+        }
+        .save(&folder)
+        .unwrap();
+        let named = built_from(&folder);
+        Manifest::default().save(&folder).unwrap();
+        let unnamed = built_from(&folder);
+        let _ = std::fs::remove_dir_all(&folder);
+        assert!(named.is_some_and(|r| is_agentique(&r)));
+        assert_eq!(unnamed, None);
+    }
 
     #[test]
     fn this_repository_is_agentique() {
