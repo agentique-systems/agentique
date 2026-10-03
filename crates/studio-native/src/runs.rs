@@ -970,20 +970,22 @@ impl Studio {
         match request {
             // The control interface (C-53): answered on the next tick.
             StudioRequest::Observe { full } => {
-                self.control.submit(crate::control::Request {
-                    body: serde_json::json!({ "op": "observe", "detail": if full { "full" } else { "summary" } }),
-                    reply: crate::control::Reply::Tool(reply),
-                });
+                self.control.submit(crate::control::Request::new(
+                    serde_json::json!({ "op": "observe", "detail": if full { "full" } else { "summary" } }),
+                    crate::control::Reply::Tool(reply),
+                    crate::control::TOOL_WAIT,
+                ));
                 return;
             }
             StudioRequest::Act { input } => {
                 let mut body = input;
                 body["op"] = serde_json::json!("act");
                 body["agent"] = serde_json::json!("Assistant");
-                self.control.submit(crate::control::Request {
+                self.control.submit(crate::control::Request::new(
                     body,
-                    reply: crate::control::Reply::Tool(reply),
-                });
+                    crate::control::Reply::Tool(reply),
+                    crate::control::TOOL_WAIT,
+                ));
                 return;
             }
             StudioRequest::Run { scenario, mode } => {

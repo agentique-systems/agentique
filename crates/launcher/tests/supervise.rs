@@ -6,7 +6,8 @@
 //! once, and ends when the Studio closes.
 
 use agq_launcher::{
-    Entry, HANDOVER_EXIT, Manifest, Registry, STUDIO, State, Supervised, file_digest, supervise,
+    Entry, HANDOVER_EXIT, Manifest, Registry, SETTLED, STUDIO, State, Supervised, file_digest,
+    supervise,
 };
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -32,15 +33,26 @@ fn main() {
     if let Ok(to) = std::fs::read_to_string(folder.join("handover-to")) {
         let _ = std::fs::remove_file(folder.join("handover-to"));
         let to = to.trim();
+        let project = std::fs::read_to_string(folder.join("handover-project"))
+            .map(|p| format!(",\"--project\",\"{}\"", p.trim()))
+            .unwrap_or_default();
         std::fs::write(
             root.join("handover.json"),
-            format!("{{\"build\":\"{to}\",\"args\":[\"--adopted\",\"{to}\"]}}"),
+            format!("{{\"build\":\"{to}\",\"args\":[\"--adopted\",\"{to}\"{project}]}}"),
         )
         .unwrap();
         std::process::exit(75);
     }
     if folder.join("crash").exists() {
         std::process::exit(1);
+    }
+    if folder.join("crash-late").exists() {
+        std::thread::sleep(std::time::Duration::from_millis(1500));
+        std::process::exit(1);
+    }
+    if folder.join("handover-without-file").exists() {
+        let _ = std::fs::remove_file(folder.join("handover-without-file"));
+        std::process::exit(75);
     }
 }
 "#;
@@ -116,7 +128,7 @@ fn a_handover_starts_the_named_build_which_becomes_the_last_known_good_one() {
     mark(&root, "a", "handover-to", "b");
     let args = vec!["--project".to_string(), "C:\\agentique".to_string()];
     assert_eq!(
-        supervise(&root, &args, WITHIN),
+        supervise(&root, &args, WITHIN, SETTLED),
         Supervised::Closed { last: "b".into() }
     );
     let a = starts(&root, "a");
@@ -152,7 +164,7 @@ fn a_handover_to_a_build_that_does_not_start_returns_to_the_last_known_good_one(
     set_current(&root, "good");
     mark(&root, "good", "handover-to", "bad");
     assert_eq!(
-        supervise(&root, &[], WITHIN),
+        supervise(&root, &[], WITHIN, SETTLED),
         Supervised::Closed {
             last: "good".into()
         }
@@ -184,7 +196,7 @@ fn a_build_that_crashes_soon_after_starting_falls_back() {
     mark(&root, "good", "handover-to", "new");
     mark(&root, "new", "crash", "");
     assert_eq!(
-        supervise(&root, &[], WITHIN),
+        supervise(&root, &[], WITHIN, SETTLED),
         Supervised::Closed {
             last: "good".into()
         }
@@ -200,4 +212,108 @@ fn a_build_that_crashes_soon_after_starting_falls_back() {
         registry.entry("new").unwrap().state,
         State::Failed { .. }
     ));
+}
+
+#[test]
+fn a_handover_keeps_the_project_the_studio_had_open() {
+    let dir = tempfile::tempdir().unwrap();
+    let Some(studio) = compile(dir.path()) else {
+        eprintln!("rustc is not available: skipped");
+        return;
+    };
+    let root = dir.path().join("builds");
+    install(&root, &studio, "a");
+    install(&root, &studio, "b");
+    set_current(&root, "a");
+    // The Studio switched to project B before handing over: its handover
+    // says so, and B (not the A supervising started with) opens.
+    mark(&root, "a", "handover-to", "b");
+    mark(&root, "a", "handover-project", "B");
+    let args = vec!["--project".to_string(), "A".to_string()];
+    assert_eq!(
+        supervise(&root, &args, WITHIN, SETTLED),
+        Supervised::Closed { last: "b".into() }
+    );
+    let b = starts(&root, "b");
+    assert!(b[0].contains("--adopted b --project B"), "{b:?}");
+    assert!(!b[0].contains("--project A"), "{b:?}");
+    // A handover is written in this launcher's format, and one naming
+    // something that is not a build is refused.
+    let handover = agq_launcher::Handover::new("b", Vec::new());
+    assert_eq!(handover.format, 1);
+    handover.save(&root).unwrap();
+    assert_eq!(agq_launcher::Handover::take(&root).unwrap(), handover);
+    // A handover naming something that is not a build is refused.
+    agq_launcher::Handover::new("..\\elsewhere", Vec::new())
+        .save(&root)
+        .unwrap();
+    assert!(agq_launcher::Handover::take(&root).is_err());
+    agq_launcher::Handover::new("unknown", Vec::new())
+        .save(&root)
+        .unwrap();
+    assert!(agq_launcher::Handover::take(&root).is_err());
+}
+
+#[test]
+fn a_build_that_crashes_again_after_settling_gives_way_to_the_build_before_it() {
+    let dir = tempfile::tempdir().unwrap();
+    let Some(studio) = compile(dir.path()) else {
+        eprintln!("rustc is not available: skipped");
+        return;
+    };
+    let root = dir.path().join("builds");
+    install(&root, &studio, "good");
+    install(&root, &studio, "new");
+    set_current(&root, "good");
+    mark(&root, "good", "handover-to", "new");
+    mark(&root, "new", "crash-late", "");
+    // Settled after one second: "new" crashes after it settled, starts once
+    // more, crashes again, and "good" (known good before "new") takes over.
+    assert_eq!(
+        supervise(&root, &[], WITHIN, Duration::from_secs(1)),
+        Supervised::Closed {
+            last: "good".into()
+        }
+    );
+    let new = starts(&root, "new");
+    assert_eq!(new.len(), 2, "{new:?}");
+    assert!(!new[1].contains("--recovered-from"), "{new:?}");
+    let good = starts(&root, "good");
+    assert_eq!(good.len(), 2, "{good:?}");
+    assert!(good[1].contains("--recovered-from new"), "{good:?}");
+    assert!(!good[1].contains("--adopted"), "{good:?}");
+    let registry = Registry::load(&root).unwrap();
+    assert_eq!(registry.last_known_good.as_deref(), Some("good"));
+    assert!(matches!(
+        registry.entry("new").unwrap().state,
+        State::Failed { .. }
+    ));
+}
+
+#[test]
+fn an_exit_to_hand_over_without_a_handover_counts_as_a_crash() {
+    let dir = tempfile::tempdir().unwrap();
+    let Some(studio) = compile(dir.path()) else {
+        eprintln!("rustc is not available: skipped");
+        return;
+    };
+    let root = dir.path().join("builds");
+    install(&root, &studio, "good");
+    install(&root, &studio, "odd");
+    set_current(&root, "good");
+    mark(&root, "good", "handover-to", "odd");
+    mark(&root, "odd", "handover-without-file", "");
+    assert_eq!(
+        supervise(&root, &[], WITHIN, SETTLED),
+        Supervised::Closed {
+            last: "good".into()
+        }
+    );
+    let good = starts(&root, "good");
+    assert!(good[1].contains("--recovered-from odd"), "{good:?}");
+    let log = std::fs::read_to_string(root.join("launcher.log")).unwrap();
+    assert!(
+        log.contains("asked to hand over, but there is no handover"),
+        "{log}"
+    );
 }

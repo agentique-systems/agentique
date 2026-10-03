@@ -22,13 +22,18 @@ deletes anything.
   builds folder opens with `launcher.log`.
 
 - **Supervising** (`--supervise`, C-53): the launcher stays Agentique's
-  parent. A Studio it started hands over by writing `handover.json` (the
-  next build and its arguments, `--adopted <id>`) and exiting with code 75;
-  the launcher then starts that build, which reports ready only after its
-  check after adoption. A Studio that crashes after it had run 30 seconds
-  starts once more; one that crashes sooner, or again, gives way to the last
-  known good build (a build that crashed before it settled loses that mark
-  again), started with `--recovered-from`. A normal close ends supervising.
+  parent. A Studio it started hands over by writing `handover.json` (format
+  1: the next build, which must be in the registry, and its arguments:
+  `--adopted <id>`, the session and the project open then, which replace the
+  ones supervising started with) and exiting with code 75; the launcher then
+  starts that build, which reports ready only after its check after
+  adoption. An exit with code 75 without a valid handover counts as a crash.
+  A Studio that crashes after it had run 30 seconds starts once more; one
+  that crashes sooner, or again, gives way to the build that was last known
+  good before it first started, started with `--recovered-from`. A crash an
+  hour or more after starting counts as a first one. A normal close ends
+  supervising. `--supervise` does not take `--recover` or `--adopt`; the
+  one-shot `--adopt` passes `--adopted` too.
 
 ```text
 agentique-launcher [args…]                       the current build

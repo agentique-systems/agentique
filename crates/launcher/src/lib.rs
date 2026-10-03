@@ -342,7 +342,8 @@ pub fn start(root: &Path, id: &str, args: &[String], ready_within: Duration) -> 
                     ),
                 );
             };
-            let mut recovery = args.to_vec();
+            // An adoption that failed is not the fallback's to check.
+            let mut recovery = without_adoption(args);
             recovery.extend(["--recovered-from".to_string(), id.to_string()]);
             match try_start(root, &good, &recovery, ready_within) {
                 Ok(()) => {
@@ -462,28 +463,106 @@ pub const HANDOVER: &str = "handover.json";
 /// falling back.
 pub const SETTLED: Duration = Duration::from_secs(30);
 
+/// A crash this long after the build started counts as a first one again.
+pub const STABLE: Duration = Duration::from_secs(60 * 60);
+
 /// A handover: which build starts next, and with what.
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Handover {
+    #[serde(default)]
+    pub format: u32,
     pub build: String,
     #[serde(default)]
     pub args: Vec<String>,
 }
 
 impl Handover {
+    pub fn new(build: &str, args: Vec<String>) -> Handover {
+        Handover {
+            format: FORMAT,
+            build: build.to_string(),
+            args,
+        }
+    }
+
     pub fn save(&self, root: &Path) -> Result<(), String> {
         let text = serde_json::to_string_pretty(self).map_err(|e| e.to_string())?;
         write_atomically(&root.join(HANDOVER), text.as_bytes())
     }
 
-    /// Reads and removes the handover, so it is acted on once.
+    /// Reads and removes the handover, so it is acted on once; it must name
+    /// a build of the registry, in a format this launcher reads.
     pub fn take(root: &Path) -> Result<Handover, String> {
         let path = root.join(HANDOVER);
         let text =
             std::fs::read_to_string(&path).map_err(|e| format!("there is no handover ({e})"))?;
         let _ = std::fs::remove_file(&path);
-        serde_json::from_str(&text).map_err(|e| format!("the handover cannot be read: {e}"))
+        let handover: Handover =
+            serde_json::from_str(&text).map_err(|e| format!("the handover cannot be read: {e}"))?;
+        if handover.format > FORMAT {
+            return Err(format!(
+                "the handover is in format {}, which this launcher does not read",
+                handover.format
+            ));
+        }
+        if handover.build.is_empty()
+            || handover.build.contains(['/', '\\'])
+            || handover.build.contains("..")
+        {
+            return Err(format!(
+                "the handover names no build ({:?})",
+                handover.build
+            ));
+        }
+        if Registry::load(root)?.entry(&handover.build).is_none() {
+            return Err(format!(
+                "the handover names {}, which is not one of the builds",
+                handover.build
+            ));
+        }
+        Ok(handover)
     }
+}
+
+/// `base` followed by `extra`; an option `extra` gives (`--project`,
+/// `--session`) replaces the one in `base`, so a handover keeps the project
+/// the Studio had open, not the one supervising started with.
+fn merged(base: &[String], extra: &[String]) -> Vec<String> {
+    const VALUED: [&str; 2] = ["--project", "--session"];
+    let given: Vec<&str> = extra
+        .iter()
+        .map(String::as_str)
+        .filter(|a| VALUED.contains(a))
+        .collect();
+    let mut all = Vec::new();
+    let mut skip = false;
+    for arg in base {
+        if skip {
+            skip = false;
+        } else if given.contains(&arg.as_str()) {
+            skip = true;
+        } else {
+            all.push(arg.clone());
+        }
+    }
+    all.extend(extra.iter().cloned());
+    all
+}
+
+/// `args` without a `--recovered-from <build>` pair.
+fn without_recovery(args: &[String]) -> Vec<String> {
+    let mut kept = Vec::new();
+    let mut skip = false;
+    for arg in args {
+        if skip {
+            skip = false;
+        } else if arg == "--recovered-from" {
+            skip = true;
+        } else {
+            kept.push(arg.clone());
+        }
+    }
+    kept
 }
 
 /// How supervising ended.
@@ -497,12 +576,19 @@ pub enum Supervised {
 
 /// Supervises Agentique (C-53, ROADMAP §4.15): starts the current build (or
 /// the last known good one) and stays its parent. When it exits to hand over
-/// ([`HANDOVER_EXIT`] and a [`Handover`]), the named build starts; when it
-/// crashes, it starts once more if it had run for a while, and otherwise the
-/// last known good build starts, told what happened; when it closes
-/// normally, supervising ends. A build that does not start falls back as
-/// [`start`] does.
-pub fn supervise(root: &Path, args: &[String], ready_within: Duration) -> Supervised {
+/// ([`HANDOVER_EXIT`] and a [`Handover`]), the named build starts with the
+/// handover's arguments; when it crashes, it starts once more if it had run
+/// for `settled` ([`SETTLED`]), and otherwise (or when it crashes again) the
+/// build that was last known good before it started takes over, told what
+/// happened; when it closes normally, supervising ends. An exit to hand over
+/// without a valid handover counts as a crash. A build that does not start
+/// falls back as [`start`] does.
+pub fn supervise(
+    root: &Path,
+    args: &[String],
+    ready_within: Duration,
+    settled: Duration,
+) -> Supervised {
     let log = root.join("launcher.log");
     let registry = match Registry::load(root) {
         Ok(registry) => registry,
@@ -526,14 +612,17 @@ pub fn supervise(root: &Path, args: &[String], ready_within: Duration) -> Superv
     base.push("--supervised".into());
     let mut extra: Vec<String> = Vec::new();
     let mut restarted = false;
+    // The build known to work before the running build first started (not
+    // before its restart, when it is itself already marked): a build that
+    // crashes before it settles, or again, gives the mark back to it.
+    let mut prior: Option<String> = None;
     loop {
-        let mut all = base.clone();
-        all.append(&mut extra);
-        // The build known to work before this start: a new build that crashes
-        // before it settles gives the mark back to it.
-        let prior = Registry::load(root)
-            .ok()
-            .and_then(|registry| registry.last_known_good);
+        let all = merged(&base, &extra);
+        if !restarted {
+            prior = Registry::load(root)
+                .ok()
+                .and_then(|registry| registry.last_known_good);
+        }
         let (running, mut child) = match start_and_keep(root, &id, &all, ready_within) {
             Ok(started) => started,
             Err(reason) => return Supervised::Failed { reason, log },
@@ -541,46 +630,40 @@ pub fn supervise(root: &Path, args: &[String], ready_within: Duration) -> Superv
         let since = Instant::now();
         let status = child.wait();
         let code = status.as_ref().ok().and_then(|s| s.code());
-        match code {
-            Some(0) => {
+        let handover = (code == Some(HANDOVER_EXIT)).then(|| Handover::take(root));
+        match (code, handover) {
+            (Some(0), _) => {
                 append(&log, &format!("{} {running} closed", now()));
                 return Supervised::Closed { last: running };
             }
-            Some(HANDOVER_EXIT) => match Handover::take(root) {
-                Ok(handover) => {
-                    append(
-                        &log,
-                        &format!("{} {running} handed over to {}", now(), handover.build),
-                    );
-                    id = handover.build;
-                    extra = handover.args;
-                    restarted = false;
-                }
-                Err(reason) => {
-                    append(
-                        &log,
-                        &format!(
-                            "{} {running} asked to hand over, but {reason}; it starts again",
-                            now()
-                        ),
-                    );
-                    id = running;
-                }
-            },
-            _ => {
-                let what = match &status {
-                    Ok(status) => format!("{status}"),
-                    Err(e) => e.to_string(),
+            (_, Some(Ok(handover))) => {
+                append(
+                    &log,
+                    &format!("{} {running} handed over to {}", now(), handover.build),
+                );
+                id = handover.build;
+                extra = handover.args;
+                restarted = false;
+            }
+            (_, handover) => {
+                let what = match (&handover, &status) {
+                    (Some(Err(reason)), _) => format!("it asked to hand over, but {reason}"),
+                    (_, Ok(status)) => format!("{status}"),
+                    (_, Err(e)) => e.to_string(),
                 };
                 append(
                     &log,
                     &format!("{} {running} ended unexpectedly ({what})", now()),
                 );
-                if since.elapsed() >= SETTLED && !restarted {
+                if since.elapsed() >= STABLE {
+                    // Long after it started: as a first crash.
+                    restarted = false;
+                }
+                if since.elapsed() >= settled && !restarted {
                     // A crash after it had settled: once more, as it was.
                     restarted = true;
                     id = running.clone();
-                    extra = vec!["--recovered-from".into(), running];
+                    extra = without_recovery(&extra);
                 } else {
                     // It crashes again, or soon after starting: back to the
                     // last known good build, which says what happened.
@@ -620,7 +703,8 @@ pub fn supervise(root: &Path, args: &[String], ready_within: Duration) -> Superv
                     }
                     restarted = good == running;
                     id = good;
-                    extra = vec!["--recovered-from".into(), running];
+                    extra = without_adoption(&without_recovery(&extra));
+                    extra.extend(["--recovered-from".to_string(), running]);
                 }
             }
         }

@@ -214,7 +214,10 @@ impl Workspace {
                 // Handing over to the supervisor (C-53): the work is stopped and
                 // saved, and the exit code tells it which way to go.
                 self.studio.update(cx, |studio, _| {
-                    studio.end_turn();
+                    let left = studio.stop_work(std::time::Duration::from_secs(20));
+                    if !left.is_empty() {
+                        eprintln!("Handing over while {} had not ended", left.join(", "));
+                    }
                     studio.save_session();
                     studio.control.close_endpoint();
                 });

@@ -437,8 +437,18 @@ impl Studio {
     /// Applies a change without asking about shared definitions: the one
     /// path for the Operator's and the Assistant's changes. A change to
     /// locked elements opens the confirmation; the Operator's answer
-    /// ([`answer`](Self::answer)) decides.
-    pub fn apply_change(&mut self, change: Change) -> Outcome {
+    /// ([`answer`](Self::answer)) decides. A change made while an agent's
+    /// action is carried out through the control interface is the
+    /// Assistant's, naming the agent, whatever control made it (C-53).
+    pub fn apply_change(&mut self, mut change: Change) -> Outcome {
+        if let Some(agent) = self.control.acting.clone()
+            && change.actor == Actor::Operator
+        {
+            change.actor = Actor::Assistant;
+            if agent != "Assistant" {
+                change.description = format!("{} (by {agent})", change.description);
+            }
+        }
         let Some(project) = self.project.as_mut() else {
             return Outcome::NoProject;
         };
@@ -1208,7 +1218,7 @@ pub(crate) mod app_tests {
         assert!(app.scene.nodes.len() > 5, "the sample is on the Surface");
     }
 
-    fn part(app: &mut Studio, name: &str) -> ElementId {
+    pub(crate) fn part(app: &mut Studio, name: &str) -> ElementId {
         let package = app
             .project
             .as_ref()

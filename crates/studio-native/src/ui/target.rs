@@ -9,16 +9,23 @@
 //! Records are kept per **region**. The docked columns are cached GPUI views:
 //! a column that did not change is not painted again, so its records stay;
 //! one that is painted again replaces its records; one that is not shown is
-//! left out ([`begin_frame`]). Everything else is painted every frame, so its
-//! records start afresh each frame. Recording costs one map entry per drawn
-//! control and nothing waits for it.
-use gpui::{AnyElement, Bounds, IntoElement, Pixels, SharedString, Styled};
+//! left out ([`begin_frame`]). A cached view inside a cached view is its own
+//! region, so the outer one painting again does not lose the inner one's
+//! records. Everything else is painted every frame, so its records start
+//! afresh each frame. A control records its bounds, the part of them that
+//! is visible (within its scroll area's mask) and that mask, in painting
+//! order, so the topmost of several is the last. Recording costs one map
+//! entry per drawn control and nothing waits for it.
+use gpui::{AnyElement, Bounds, IntoElement, Pixels, SharedString, Styled, Window};
 use std::cell::RefCell;
 use std::collections::BTreeMap;
 
 /// The cached regions: their records last until they are painted again or
 /// leave the screen.
-pub const CACHED: [&str; 3] = ["outline", "inspector", "conversation"];
+pub const CACHED: [&str; 4] = ["outline", "left-body", "inspector", "conversation"];
+
+/// Cached regions inside others: on screen when the outer one is.
+const NESTED: [(&str, &str); 1] = [("left-body", "outline")];
 
 /// The region of everything painted every frame that names no region.
 pub const ROOT: &str = "root";
@@ -77,7 +84,14 @@ impl Control {
 pub struct Drawn {
     pub control: Control,
     pub bounds: Bounds<Pixels>,
+    /// The part of it that is visible; none when its scroll area or column
+    /// hides it.
+    pub shown: Option<Bounds<Pixels>>,
+    /// What its scroll area or column shows: where scrolling reveals it.
+    pub clip: Bounds<Pixels>,
     pub region: &'static str,
+    /// When it was painted: later is on top.
+    pub order: u64,
 }
 
 #[derive(Default)]
@@ -87,6 +101,26 @@ struct Registry {
     stack: Vec<&'static str>,
     /// The cached regions on screen this frame.
     mounted: Vec<&'static str>,
+    /// The next control's painting order (it never goes back, so a cached
+    /// column's records stay under what is painted after them).
+    next: u64,
+}
+
+impl Registry {
+    fn push(&mut self, control: Control, bounds: Bounds<Pixels>, clip: Bounds<Pixels>) {
+        let region = self.stack.last().copied().unwrap_or(ROOT);
+        let order = self.next;
+        self.next += 1;
+        let shown = bounds.intersect(&clip);
+        self.regions.entry(region).or_default().push(Drawn {
+            control,
+            bounds,
+            shown: (!shown.is_empty()).then_some(shown),
+            clip,
+            region,
+            order,
+        });
+    }
 }
 
 thread_local! {
@@ -101,22 +135,31 @@ pub fn begin_frame(mounted: &[&'static str]) {
         let mut registry = registry.borrow_mut();
         registry.regions.retain(|name, _| CACHED.contains(name));
         registry.stack.clear();
-        registry.mounted = mounted.to_vec();
+        let mut mounted = mounted.to_vec();
+        for (inner, outer) in NESTED {
+            if mounted.contains(&outer) {
+                mounted.push(inner);
+            }
+        }
+        registry.mounted = mounted;
     });
 }
 
-fn with_canvas(record: impl Fn(Bounds<Pixels>) + 'static) -> AnyElement {
-    gpui::canvas(move |bounds, _, _| record(bounds), |_, _, _, _| {})
-        .absolute()
-        .inset_0()
-        .into_any_element()
+fn with_canvas(record: impl Fn(Bounds<Pixels>, &Window) + 'static) -> AnyElement {
+    gpui::canvas(
+        move |bounds, window, _| record(bounds, window),
+        |_, _, _, _| {},
+    )
+    .absolute()
+    .inset_0()
+    .into_any_element()
 }
 
 /// Begins a region: put it first in the region's root element (which must
 /// be `relative()`), and [`region_end`] last. Painting the region again
 /// replaces its records.
 pub fn region(name: &'static str) -> AnyElement {
-    with_canvas(move |_| {
+    with_canvas(move |_, _| {
         REGISTRY.with(|registry| {
             let mut registry = registry.borrow_mut();
             registry.regions.insert(name, Vec::new());
@@ -138,7 +181,7 @@ pub fn regioned(name: &'static str, element: impl IntoElement) -> gpui::Div {
 
 /// Ends the region begun last.
 pub fn region_end() -> AnyElement {
-    with_canvas(|_| {
+    with_canvas(|_, _| {
         REGISTRY.with(|registry| {
             registry.borrow_mut().stack.pop();
         })
@@ -148,16 +191,9 @@ pub fn region_end() -> AnyElement {
 /// A child that records its parent's bounds as `control`; the parent must
 /// be `relative()`.
 pub fn control(control: Control) -> AnyElement {
-    with_canvas(move |bounds| {
-        REGISTRY.with(|registry| {
-            let mut registry = registry.borrow_mut();
-            let region = registry.stack.last().copied().unwrap_or(ROOT);
-            registry.regions.entry(region).or_default().push(Drawn {
-                control: control.clone(),
-                bounds,
-                region,
-            });
-        })
+    with_canvas(move |bounds, window| {
+        let clip = window.content_mask().bounds;
+        REGISTRY.with(|registry| registry.borrow_mut().push(control.clone(), bounds, clip))
     })
 }
 
@@ -168,29 +204,23 @@ pub fn target(name: impl Into<SharedString>) -> AnyElement {
 
 /// Records bounds measured elsewhere (the Surface's viewport).
 pub fn record(name: &str, bounds: Bounds<Pixels>) {
-    REGISTRY.with(|registry| {
-        let mut registry = registry.borrow_mut();
-        let region = registry.stack.last().copied().unwrap_or(ROOT);
-        let name = SharedString::from(name.to_string());
-        registry.regions.entry(region).or_default().push(Drawn {
-            control: Control::new("area", name),
-            bounds,
-            region,
-        });
-    })
+    let control = Control::new("area", SharedString::from(name.to_string()));
+    REGISTRY.with(|registry| registry.borrow_mut().push(control, bounds, bounds))
 }
 
 /// Every control on screen now: the regions painted this frame and the
-/// cached regions on screen, in painting order.
+/// cached regions on screen, in painting order (the topmost last).
 pub fn drawn() -> Vec<Drawn> {
     REGISTRY.with(|registry| {
         let registry = registry.borrow();
-        registry
+        let mut all: Vec<Drawn> = registry
             .regions
             .iter()
             .filter(|(name, _)| !CACHED.contains(name) || registry.mounted.contains(name))
             .flat_map(|(_, controls)| controls.iter().cloned())
-            .collect()
+            .collect();
+        all.sort_by_key(|d| d.order);
+        all
     })
 }
 
@@ -208,11 +238,14 @@ pub fn find(name: &str) -> Option<Bounds<Pixels>> {
 mod tests {
     use super::*;
 
-    fn draw(name: &str) -> Drawn {
+    fn draw(name: &str, order: u64) -> Drawn {
         Drawn {
             control: Control::new("button", name.to_string()),
             bounds: Bounds::default(),
+            shown: None,
+            clip: Bounds::default(),
             region: ROOT,
+            order,
         }
     }
 
@@ -222,9 +255,9 @@ mod tests {
             let mut registry = registry.borrow_mut();
             registry
                 .regions
-                .insert("outline", vec![draw("Outline row")]);
-            registry.regions.insert(ROOT, vec![draw("Settings")]);
-            registry.regions.insert("dialog", vec![draw("Confirm")]);
+                .insert("outline", vec![draw("Outline row", 0)]);
+            registry.regions.insert(ROOT, vec![draw("Settings", 1)]);
+            registry.regions.insert("dialog", vec![draw("Confirm", 2)]);
         });
         begin_frame(&["outline"]);
         // The root's and the dialog's records start afresh; the outline,
@@ -243,5 +276,38 @@ mod tests {
             1,
             "and are back when it is shown again unchanged"
         );
+    }
+
+    #[test]
+    fn the_topmost_of_controls_sharing_a_name_is_found_whatever_their_regions() {
+        REGISTRY.with(|registry| {
+            let mut registry = registry.borrow_mut();
+            registry.regions.clear();
+            // A dialog (painted last) over the Surface: "dialog" sorts
+            // before "surface" by name, but it is on top.
+            registry.regions.insert("surface", vec![draw("Delete", 5)]);
+            registry.regions.insert("dialog", vec![draw("Delete", 9)]);
+            registry.regions.insert("left-body", vec![draw("Row", 1)]);
+        });
+        begin_frame(&["outline"]);
+        let all = drawn();
+        assert_eq!(
+            all.iter()
+                .map(|d| d.control.id.to_string())
+                .collect::<Vec<_>>(),
+            vec!["Row".to_string()],
+            "a frame begins: the nested cached region of a shown column stays"
+        );
+        REGISTRY.with(|registry| {
+            let mut registry = registry.borrow_mut();
+            registry.regions.insert("surface", vec![draw("Delete", 5)]);
+            registry.regions.insert("dialog", vec![draw("Delete", 9)]);
+        });
+        let topmost = drawn()
+            .into_iter()
+            .rev()
+            .find(|d| d.control.id == "Delete")
+            .map(|d| d.order);
+        assert_eq!(topmost, Some(9), "the dialog's, painted last");
     }
 }

@@ -11,9 +11,17 @@
 //!   control's bounds, so hit testing, focus, bindings and rendering run as
 //!   for the Operator; selecting an element; opening a project; waiting for a
 //!   condition. An action names the identity and the screen it was observed
-//!   against; one for another instance, project or build, a screen that
-//!   changed since, or a control that is gone or disabled is refused as
-//!   stale, and nothing happens.
+//!   against; one for another instance, project, build or session, a screen
+//!   that changed since (its screen, dialog, palette, project, settings or
+//!   selection), or a control that is gone or disabled is refused as stale,
+//!   and nothing happens.
+//! - **The Operator's own** (§3 roles): an agent cannot answer a dialog that
+//!   asks for the Operator's approval (integrating a task, changing locked
+//!   elements, trusted-local execution, a paid live run, starting an
+//!   implementation), cannot act in Settings or in the Conversation (the
+//!   Operator's voice and answers), cannot lock or pause and resume agents,
+//!   and its keys and text go only to a focused field. A change an agent's
+//!   action makes is recorded as the Assistant's, with the agent named.
 //! - Every action and its effect go to the **event trace**; the control an
 //!   agent acts on is marked on screen with who did what, and the title bar
 //!   shows the latest action. **Pause** holds actions (observing is never
@@ -21,7 +29,8 @@
 //! - Requests come from Agentique's own tools (the Assistant in this
 //!   Studio) and from the local endpoint ([`server`]), which the Orchestrator
 //!   uses to drive a test instance. They are carried out on the UI thread,
-//!   one action at a time, in the workspace's tick.
+//!   one action at a time, in the workspace's tick; waits run beside them.
+//!   A request not carried out before its deadline is dropped.
 
 pub mod input;
 pub mod server;
@@ -42,6 +51,9 @@ const MARK: Duration = Duration::from_millis(1400);
 const ACTIVITY: Duration = Duration::from_secs(6);
 /// Controls and cards listed in one observation, at most.
 const LISTED: usize = 400;
+/// How long one of the Assistant's requests may wait (while agents are
+/// paused, say) before it is dropped.
+pub const TOOL_WAIT: Duration = Duration::from_secs(15 * 60);
 
 /// Where a request's answer goes.
 pub enum Reply {
@@ -59,14 +71,7 @@ impl Reply {
             }
             Reply::Tool(sender) => {
                 let ok = answer["ok"] != false;
-                let mut text = serde_json::to_string_pretty(&answer).unwrap_or_default();
-                if text.chars().count() > agq_assistant::tools::RESULT_LIMIT {
-                    text = text
-                        .chars()
-                        .take(agq_assistant::tools::RESULT_LIMIT)
-                        .collect::<String>()
-                        + "\n… (cut: ask for less detail)";
-                }
+                let text = fitted(answer, agq_assistant::tools::RESULT_LIMIT);
                 let _ = sender.send(if ok {
                     agq_assistant::ToolResult::answer(text)
                 } else {
@@ -77,10 +82,40 @@ impl Reply {
     }
 }
 
-/// One request: what was asked, by whom, and where the answer goes.
+/// `answer` as compact JSON within `limit` characters: an observation too
+/// long loses its last controls (and says how many), not its end.
+pub fn fitted(mut answer: Value, limit: usize) -> String {
+    let mut text = answer.to_string();
+    let mut omitted = 0;
+    while text.chars().count() > limit {
+        let Some(controls) = answer["controls"].as_array_mut().filter(|c| !c.is_empty()) else {
+            return text.chars().take(limit).collect::<String>() + "… (cut)";
+        };
+        let drop = (controls.len() / 4).max(1);
+        controls.truncate(controls.len() - drop);
+        omitted += drop;
+        answer["controlsOmitted"] = json!(omitted);
+        text = answer.to_string();
+    }
+    text
+}
+
+/// One request: what was asked, by whom, where the answer goes, and until
+/// when it may be carried out (after that, nobody waits for the answer).
 pub struct Request {
     pub body: Value,
     pub reply: Reply,
+    pub deadline: Instant,
+}
+
+impl Request {
+    pub fn new(body: Value, reply: Reply, within: Duration) -> Request {
+        Request {
+            body,
+            reply,
+            deadline: Instant::now() + within,
+        }
+    }
 }
 
 /// The pause gate for agents' actions.
@@ -152,6 +187,11 @@ pub struct ControlState {
     requests: Receiver<Request>,
     waiting: VecDeque<Request>,
     active: Option<Active>,
+    /// Waits in progress (they hold up no other action).
+    waits: Vec<Waiting>,
+    /// The agent whose action is being carried out: a change it makes is
+    /// recorded as the Assistant's, naming it.
+    pub acting: Option<String>,
     pub gate: Gate,
     trace: VecDeque<Event>,
     next_seq: u64,
@@ -173,6 +213,8 @@ impl Default for ControlState {
             requests,
             waiting: VecDeque::new(),
             active: None,
+            waits: Vec::new(),
+            acting: None,
             gate: Gate::Run,
             trace: VecDeque::new(),
             next_seq: 1,
@@ -202,8 +244,8 @@ impl ControlState {
         self.waiting.push_back(request);
     }
 
-    /// Drops the actions `agent` asked for that have not started (fail
-    /// closed when its turn is stopped).
+    /// Drops the actions `agent` asked for that have not started, and its
+    /// waits (fail closed when its turn is stopped).
     pub fn cancel(&mut self, agent: &str, why: &str) {
         let mut kept = VecDeque::new();
         for request in self.waiting.drain(..) {
@@ -214,6 +256,14 @@ impl ControlState {
             }
         }
         self.waiting = kept;
+        let (cancelled, waits): (Vec<Waiting>, Vec<Waiting>) =
+            self.waits.drain(..).partition(|w| w.agent == agent);
+        self.waits = waits;
+        for wait in cancelled {
+            wait.request
+                .reply
+                .send(json!({ "ok": false, "error": why }));
+        }
     }
 
     /// Actions waiting, an action in progress, or a recent one.
@@ -277,10 +327,18 @@ impl ControlState {
 
 /// What the Studio runs as: its version, and the build it runs from.
 pub fn identity(studio: &Studio) -> Value {
+    let build = studio.running_build();
+    let commit = build.as_ref().and_then(|id| {
+        agq_launcher::Manifest::load(&studio.builds_root().join(id))
+            .ok()
+            .map(|m| m.commit)
+            .filter(|c| !c.is_empty())
+    });
     json!({
         "instance": studio.control.instance,
         "version": env!("CARGO_PKG_VERSION"),
-        "build": studio.running_build(),
+        "build": build,
+        "commit": commit,
         "project": studio.project.as_ref().map(|p| p.folder().display().to_string()),
         "session": studio.session_path.display().to_string(),
         "endpoint": studio.control.endpoint.as_ref().map(|e| e.port),
@@ -308,16 +366,119 @@ pub fn command_by_name(name: &str) -> Option<CommandId> {
         .find(|id| command_name(*id) == name)
 }
 
-/// The screen's shape: what an action's place on screen depends on.
+/// The screen's shape: what an action's place and effect depend on (a
+/// command acts on the selection).
 fn shape(studio: &Studio) -> String {
     format!(
-        "{}|{}|{}|{:?}|{}",
+        "{}|{}|{}|{:?}|{}|{:?}",
         screen(studio),
         dialog_kind(studio).unwrap_or_default(),
         studio.palette.is_some(),
         studio.project.as_ref().map(|p| p.folder().to_path_buf()),
-        studio.settings_section_name()
+        studio.settings_section_name(),
+        studio.selection.elements(&studio.scene),
     )
+}
+
+/// The open dialog, when it asks for the Operator's own approval.
+fn approval(studio: &Studio) -> Option<&'static str> {
+    use crate::edit::Dialog;
+    match studio.dialog.as_ref()? {
+        Dialog::Confirm { locked, .. } if !locked.is_empty() => Some("lock confirmation"),
+        Dialog::ReviewTask { .. } => Some("task review"),
+        Dialog::TrustLocal => Some("trusted-local execution"),
+        Dialog::ConfirmLive => Some("live run"),
+        Dialog::Implement { .. } => Some("implementation"),
+        _ => None,
+    }
+}
+
+/// Commands that are the Operator's: locking, trust, and the Operator's
+/// own voice in the Conversation.
+const OPERATORS_COMMANDS: [CommandId; 5] = [
+    CommandId::Lock,
+    CommandId::TrustLocal,
+    CommandId::AskAssistant,
+    CommandId::InsertSelection,
+    CommandId::NewConversation,
+];
+
+/// Regions whose controls are the Operator's: Settings (keys, autonomy,
+/// trust, builds) and the Conversation (messages, answers to the Assistant).
+const OPERATORS_REGIONS: [&str; 2] = ["settings", "conversation"];
+
+/// The agents chip: pausing and resuming agents is the Operator's.
+const OPERATORS_CONTROLS: [&str; 3] = ["agents-pause", "agents-step", "agents-resume"];
+
+/// The command a key is bound to, if any.
+fn bound(key: &str) -> Option<CommandId> {
+    let key = key.to_lowercase();
+    COMMANDS
+        .iter()
+        .find(|c| c.key == Some(key.as_str()))
+        .map(|c| c.id)
+}
+
+/// Why `agent` may not do `action`: it is the Operator's (§3 roles).
+fn operators_only(studio: &Studio, action: &Action, drawn: &[Drawn]) -> Option<String> {
+    if !matches!(action, Action::Wait(..) | Action::Scroll(..))
+        && let Some(kind) = approval(studio)
+    {
+        return Some(format!(
+            "the {kind} dialog asks for the Operator's own approval; an agent cannot answer it (wait until the Operator has)"
+        ));
+    }
+    let focused = drawn.iter().rev().find(|d| d.control.focused);
+    let operators_region = |d: &Drawn| {
+        OPERATORS_REGIONS.contains(&d.region).then(|| {
+            format!(
+                "the {} is the Operator's; an agent does not act there",
+                if d.region == "settings" {
+                    "Settings screen"
+                } else {
+                    "Conversation"
+                }
+            )
+        })
+    };
+    match action {
+        Action::Command(id) if OPERATORS_COMMANDS.contains(id) => {
+            Some(format!("`{}` is the Operator's to use", command_name(*id)))
+        }
+        Action::Click(name) | Action::Fill(name, _) | Action::Scroll(name, _) => {
+            let d = control_named(drawn, name)?;
+            if OPERATORS_CONTROLS.contains(&d.control.id.as_ref()) {
+                return Some("pausing and resuming agents is the Operator's".into());
+            }
+            if matches!(action, Action::Scroll(..)) {
+                return None;
+            }
+            operators_region(d)
+        }
+        Action::Key(keys) => {
+            if screen(studio) == "settings" {
+                // Leaving is all an agent may do there.
+                return (keys.iter().any(|k| k != "escape")).then(|| {
+                    "the Settings screen is the Operator's; an agent may only leave it (escape)".into()
+                });
+            }
+            if let Some(reason) = focused.and_then(operators_region) {
+                return Some(reason);
+            }
+            keys.iter().find_map(|key| {
+                let id = bound(key)?;
+                OPERATORS_COMMANDS
+                    .contains(&id)
+                    .then(|| format!("`{key}` is the shortcut of `{}`, which is the Operator's", command_name(id)))
+            })
+        }
+        Action::Type(_) => match focused {
+            None => Some("no field has the focus, so the text would go to the Studio's shortcuts; fill a field instead".into()),
+            Some(d) if d.control.role != "field" => Some(format!("`{}` is not a field", d.control.label)),
+            Some(d) => operators_region(d),
+        },
+        _ => None,
+    }
 }
 
 fn screen(studio: &Studio) -> &'static str {
@@ -383,8 +544,12 @@ fn control_json(d: &Drawn) -> Value {
         "role": c.role,
         "label": c.label.to_string(),
         "region": d.region,
-        "bounds": bounds(d.bounds),
+        "bounds": bounds(d.shown.unwrap_or(d.bounds)),
     });
+    if d.shown.is_none() {
+        // Outside the visible part of its panel: a click scrolls to it.
+        v["hidden"] = json!(true);
+    }
     if let Some(value) = &c.value {
         v["value"] = json!(value.to_string());
     }
@@ -434,11 +599,12 @@ fn cards(studio: &Studio) -> Vec<Value> {
 /// The observation: what an agent needs to act in the Studio as it is now.
 /// `full` adds every command (with why not, when unavailable) and the cards
 /// in view.
-pub fn observe(studio: &Studio, window: &gpui::Window, full: bool) -> Value {
+pub fn observe(studio: &Studio, window: &gpui::Window, full: bool, region: Option<&str>) -> Value {
     let drawn = target::drawn();
     let controls: Vec<Value> = drawn
         .iter()
         .filter(|d| d.control.role != "area")
+        .filter(|d| region.is_none_or(|r| d.region == r))
         .take(LISTED)
         .map(control_json)
         .collect();
@@ -546,8 +712,8 @@ pub fn observe(studio: &Studio, window: &gpui::Window, full: bool) -> Value {
             "held": studio.control.held(),
             "lastEvent": studio.control.next_seq - 1,
         },
-        "controls": controls,
         "commands": commands,
+        "controls": controls,
     });
     if full {
         observation["cards"] = json!(cards(studio));
@@ -634,6 +800,14 @@ pub fn stale(studio: &Studio, body: &Value) -> Option<String> {
             ));
         }
     }
+    if let Some(session) = expect.get("session") {
+        let now = studio.session_path.display().to_string();
+        if session.as_str() != Some(now.as_str()) {
+            return Some(format!(
+                "stale: observed with session {session}, but this is {now}"
+            ));
+        }
+    }
     if let Some(build) = expect.get("build") {
         let now = studio.running_build();
         if build.as_str().map(str::to_string) != now {
@@ -643,9 +817,12 @@ pub fn stale(studio: &Studio, body: &Value) -> Option<String> {
             ));
         }
     }
-    if let Some(seen) = body["observed"].as_u64()
-        && seen < studio.control.screen_revision
-    {
+    let Some(seen) = body["observed"].as_u64() else {
+        return Some(
+            "stale: say which observation you acted on (`observed`: its screenRevision)".into(),
+        );
+    };
+    if seen != studio.control.screen_revision {
         return Some(format!(
             "stale: the screen changed since you observed it (now: {}{}); observe again",
             screen(studio),
@@ -657,16 +834,26 @@ pub fn stale(studio: &Studio, body: &Value) -> Option<String> {
     None
 }
 
-/// A control on screen by id, or else by label (the topmost of those).
+/// A control on screen by id, or else by label: the topmost visible one,
+/// else one its panel hides.
 fn control_named<'a>(drawn: &'a [Drawn], name: &str) -> Option<&'a Drawn> {
-    drawn
-        .iter()
-        .rev()
-        .find(|d| d.control.id == name)
-        .or_else(|| drawn.iter().rev().find(|d| d.control.label == name))
+    let by = |visible: bool, id: bool| {
+        drawn.iter().rev().find(move |d| {
+            d.shown.is_some() == visible
+                && if id {
+                    d.control.id == name
+                } else {
+                    d.control.label == name
+                }
+        })
+    };
+    by(true, true)
+        .or_else(|| by(true, false))
+        .or_else(|| by(false, true))
+        .or_else(|| by(false, false))
 }
 
-fn holds(studio: &Studio, condition: &Condition) -> bool {
+fn holds(studio: &Studio, condition: &Condition, agent: &str) -> bool {
     if let Some(dialog) = &condition.dialog
         && dialog_kind(studio) != *dialog
     {
@@ -680,7 +867,7 @@ fn holds(studio: &Studio, condition: &Condition) -> bool {
     if let Some(name) = &condition.control {
         let drawn = target::drawn();
         match control_named(&drawn, name) {
-            Some(d) if !condition.enabled || d.control.enabled => {}
+            Some(d) if d.shown.is_some() && (!condition.enabled || d.control.enabled) => {}
             _ => return false,
         }
     }
@@ -690,7 +877,7 @@ fn holds(studio: &Studio, condition: &Condition) -> bool {
         return false;
     }
     if condition.idle
-        && (studio.conversation.running()
+        && ((agent != "Assistant" && studio.conversation.running())
             || studio.runs.running()
             || studio.implementation.task.is_some()
             || studio.implementation.checking()
@@ -712,7 +899,11 @@ enum Step {
     Command(CommandId),
     Select(agq_language::ElementId),
     Open(std::path::PathBuf),
-    Wait(Condition, Instant),
+    /// The control is clicked where it shows; its panel scrolls to it first
+    /// when it is outside the visible part (tried for a few frames).
+    Reveal(String, u32),
+    /// The field clicked has the focus (tried for a few frames).
+    Focused(String, u32),
     /// Frames for the Studio to show the effect.
     Settle(u32),
 }
@@ -723,6 +914,14 @@ struct Active {
     what: String,
     steps: VecDeque<Step>,
     started: Instant,
+}
+
+struct Waiting {
+    request: Request,
+    agent: String,
+    what: String,
+    condition: Condition,
+    until: Instant,
 }
 
 /// What the workspace does with the control interface each tick: takes new
@@ -740,6 +939,47 @@ pub fn tick(studio: &gpui::Entity<Studio>, window: &mut gpui::Window, cx: &mut g
         }
         while let Ok(request) = studio.control.requests.try_recv() {
             studio.control.waiting.push_back(request);
+        }
+        // Nobody waits for these any more: dropped, not carried out late.
+        let now = Instant::now();
+        let (expired, waiting): (Vec<Request>, Vec<Request>) = studio
+            .control
+            .waiting
+            .drain(..)
+            .partition(|r| r.deadline <= now);
+        studio.control.waiting = waiting.into();
+        for request in expired {
+            let agent = request.body["agent"].as_str().unwrap_or("an agent").to_string();
+            let answer = json!({ "ok": false, "error": "the request waited past its deadline (agents were paused) and was dropped; observe again" });
+            studio.control.record(&agent, "a request that waited too long", false, answer.clone());
+            request.reply.send(answer);
+        }
+        // Waits, beside any action.
+        let waits = std::mem::take(&mut studio.control.waits);
+        for wait in waits {
+            if holds(studio, &wait.condition, &wait.agent) {
+                let answer = json!({
+                    "ok": true,
+                    "did": wait.what,
+                    "screen": screen(studio),
+                    "screenRevision": studio.control.screen_revision,
+                    "dialog": dialog_kind(studio),
+                    "status": studio.status,
+                });
+                studio.control.record(&wait.agent, &wait.what, true, answer.clone());
+                wait.request.reply.send(answer);
+            } else if now >= wait.until {
+                let answer = json!({ "ok": false, "error": format!(
+                    "the wait timed out (screen {}, dialog {}, status “{}”)",
+                    screen(studio),
+                    dialog_kind(studio).unwrap_or_else(|| "none".into()),
+                    studio.status
+                )});
+                studio.control.record(&wait.agent, &wait.what, false, answer.clone());
+                wait.request.reply.send(answer);
+            } else {
+                studio.control.waits.push(wait);
+            }
         }
     });
     // Answers that never wait.
@@ -763,6 +1003,7 @@ pub fn tick(studio: &gpui::Entity<Studio>, window: &mut gpui::Window, cx: &mut g
         match active.steps.pop_front() {
             None => {
                 let summary = studio.update(cx, |studio, _| {
+                    studio.control.acting = None;
                     let summary = json!({
                         "ok": true,
                         "did": active.what,
@@ -787,6 +1028,7 @@ pub fn tick(studio: &gpui::Entity<Studio>, window: &mut gpui::Window, cx: &mut g
                     Err(error) => {
                         let answer = json!({ "ok": false, "error": error });
                         studio.update(cx, |studio, _| {
+                            studio.control.acting = None;
                             studio.control.record(
                                 &active.agent,
                                 &active.what,
@@ -801,26 +1043,30 @@ pub fn tick(studio: &gpui::Entity<Studio>, window: &mut gpui::Window, cx: &mut g
         }
         return changed;
     }
-    // The next action, unless the gate holds it.
+    // The next action, unless the gate holds it; a Step is used by an
+    // action that starts, not by one refused.
     let next = studio.update(cx, |studio, _| {
         if studio.control.gate == Gate::Pause {
             return None;
         }
-        let request = studio.control.waiting.pop_front()?;
-        if studio.control.gate == Gate::Step {
-            studio.control.gate = Gate::Pause;
-        }
-        Some(request)
+        studio.control.waiting.pop_front()
     });
     if let Some(request) = next {
         changed = true;
         let started = studio.act(cx, |studio| start(studio, request));
-        if let Err(refused) = started {
-            let (request, answer, agent, what) = *refused;
-            studio.update(cx, |studio, _| {
-                studio.control.record(&agent, &what, false, answer.clone())
-            });
-            request.reply.send(answer);
+        match started {
+            Ok(()) => studio.update(cx, |studio, _| {
+                if studio.control.gate == Gate::Step {
+                    studio.control.gate = Gate::Pause;
+                }
+            }),
+            Err(refused) => {
+                let (request, answer, agent, what) = *refused;
+                studio.update(cx, |studio, _| {
+                    studio.control.record(&agent, &what, false, answer.clone())
+                });
+                request.reply.send(answer);
+            }
         }
     }
     changed
@@ -831,7 +1077,12 @@ fn answer(studio: &mut Studio, body: &Value, window: &gpui::Window) -> Value {
     match body["op"].as_str().unwrap_or_default() {
         "hello" => json!({ "ok": true, "identity": identity(studio) }),
         "observe" => {
-            let mut v = observe(studio, window, body["detail"] == "full");
+            let mut v = observe(
+                studio,
+                window,
+                body["detail"] == "full",
+                body["region"].as_str(),
+            );
             v["ok"] = json!(true);
             v
         }
@@ -887,6 +1138,9 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
         return refuse(request, reason, what);
     }
     let drawn = target::drawn();
+    if let Some(reason) = operators_only(studio, &action, &drawn) {
+        return refuse(request, format!("refused: {reason}"), what);
+    }
     let find = |name: &str| -> Result<&Drawn, String> {
         match control_named(&drawn, name) {
             None => Err(format!(
@@ -911,26 +1165,30 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
         }
         Action::Click(name) => match find(name) {
             Ok(d) => {
-                let at = d.bounds.center();
-                marked = Some((d.bounds, d.control.label.to_string()));
-                steps.push_back(Step::Press(at));
-                steps.push_back(Step::Release(at));
+                marked = Some((d.shown.unwrap_or(d.clip), d.control.label.to_string()));
+                steps.push_back(Step::Reveal(name.clone(), 6));
             }
             Err(error) => return refuse(request, error, what),
         },
         Action::Fill(name, text) => match find(name) {
+            Ok(d) if d.control.role != "field" => {
+                let error = format!(
+                    "`{}` is a {}, not a field: click it instead",
+                    d.control.label, d.control.role
+                );
+                return refuse(request, error, what);
+            }
             Ok(d) => {
-                let at = d.bounds.center();
-                marked = Some((d.bounds, d.control.label.to_string()));
-                steps.push_back(Step::Press(at));
-                steps.push_back(Step::Release(at));
+                marked = Some((d.shown.unwrap_or(d.clip), d.control.label.to_string()));
+                steps.push_back(Step::Reveal(name.clone(), 6));
+                steps.push_back(Step::Focused(name.clone(), 10));
                 steps.push_back(Step::Keys(vec!["ctrl-a".into(), "backspace".into()]));
                 steps.push_back(Step::Text(text.clone()));
             }
             Err(error) => return refuse(request, error, what),
         },
         Action::Scroll(name, dy) => match find(name) {
-            Ok(d) => steps.push_back(Step::Scroll(d.bounds.center(), *dy)),
+            Ok(d) => steps.push_back(Step::Scroll(d.shown.unwrap_or(d.clip).center(), *dy)),
             Err(error) => return refuse(request, error, what),
         },
         Action::Key(keys) => {
@@ -965,6 +1223,20 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
             }
         }
         Action::OpenProject(folder) => {
+            if agent == "Assistant" {
+                return refuse(
+                    request,
+                    "refused: opening another project ends your own turn; ask the Operator to open it".into(),
+                    what,
+                );
+            }
+            if let Some(reason) = unavailable(CommandId::OpenProject, &studio.context()) {
+                return refuse(
+                    request,
+                    format!("a project cannot be opened now: {reason}"),
+                    what,
+                );
+            }
             if !folder.join("model").is_dir() {
                 return refuse(
                     request,
@@ -978,12 +1250,18 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
             steps.push_back(Step::Open(folder.clone()));
         }
         Action::Wait(condition, timeout) => {
-            steps.push_back(Step::Wait(condition.clone(), Instant::now() + *timeout));
+            // Beside any action, until it holds or times out.
+            studio.control.waits.push(Waiting {
+                request,
+                agent,
+                what,
+                condition: condition.clone(),
+                until: Instant::now() + *timeout,
+            });
+            return Ok(());
         }
     }
-    if !matches!(action, Action::Wait(..)) {
-        steps.push_back(Step::Settle(3));
-    }
+    steps.push_back(Step::Settle(3));
     let shown = match &why {
         why if why.is_empty() => format!("{agent}: {what}"),
         why => format!("{agent}: {what} — {why}"),
@@ -997,6 +1275,8 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
     }
     studio.control.activity = Some((shown, Instant::now()));
     studio.mark(crate::studio::Dirty::STATUS | crate::studio::Dirty::OVERLAY);
+    // Until the action ends (commands are dispatched a moment later).
+    studio.control.acting = Some(agent.clone());
     studio.control.active = Some(Active {
         request,
         agent,
@@ -1061,17 +1341,45 @@ fn run_step(
                 ));
             }
         }
-        Step::Wait(condition, deadline) => {
-            if !holds(studio.read(cx), &condition) {
-                if Instant::now() >= deadline {
+        Step::Reveal(name, tries) => {
+            let drawn = target::drawn();
+            let Some(d) = control_named(&drawn, &name) else {
+                return Err(format!("`{name}` is no longer on screen"));
+            };
+            match d.shown {
+                Some(shown) => {
+                    let at = shown.center();
+                    active.steps.push_front(Step::Release(at));
+                    active.steps.push_front(Step::Press(at));
+                }
+                None if tries > 0 => {
+                    // Scroll its panel by the distance to it, as the
+                    // Operator would, and look again next frame.
+                    let dy = f32::from(d.bounds.center().y - d.clip.center().y);
+                    input::scroll(d.clip.center(), dy, window, cx);
+                    window.refresh();
+                    active.steps.push_front(Step::Reveal(name, tries - 1));
+                }
+                None => {
                     return Err(format!(
-                        "the wait timed out (screen {}, dialog {}, status “{}”)",
-                        screen(studio.read(cx)),
-                        dialog_kind(studio.read(cx)).unwrap_or_else(|| "none".into()),
-                        studio.read(cx).status
+                        "`{name}` stays outside the visible part of its panel; scroll it into view"
                     ));
                 }
-                active.steps.push_front(Step::Wait(condition, deadline));
+            }
+        }
+        Step::Focused(name, tries) => {
+            let focused = target::drawn().into_iter().any(|d| {
+                d.control.focused
+                    && (d.control.id == name.as_str() || d.control.label == name.as_str())
+            });
+            if !focused {
+                if tries == 0 {
+                    return Err(format!(
+                        "`{name}` did not take the focus, so nothing was typed"
+                    ));
+                }
+                window.refresh();
+                active.steps.push_front(Step::Focused(name, tries - 1));
             }
         }
         Step::Settle(frames) => {
@@ -1149,6 +1457,7 @@ mod tests {
             Ok(Action::Key(vec!["ctrl-s".into(), "escape".into()]))
         );
         assert!(read(json!({"kind": "command", "id": "launch-missiles"})).is_err());
+        assert!(read(json!({"kind": "teleport"})).is_err());
         assert!(read(json!({"kind": "click"})).is_err());
         assert!(read(json!({})).is_err());
         let wait = read(json!({"kind": "wait", "until": {"dialog": null, "statusContains": "Saved"}, "timeoutMs": 900000})).unwrap();
@@ -1160,5 +1469,118 @@ mod tests {
             }
             other => panic!("{other:?}"),
         }
+    }
+
+    fn drawn(id: &str, role: &'static str, region: &'static str, focused: bool) -> Drawn {
+        Drawn {
+            control: target::Control::new(role, id.to_string()).focused(focused),
+            bounds: gpui::Bounds::default(),
+            shown: None,
+            clip: gpui::Bounds::default(),
+            region,
+            order: 0,
+        }
+    }
+
+    #[test]
+    fn the_operators_own_controls_are_refused_to_agents() {
+        let (mut app, _folder) = crate::edit::app_tests::studio("operators-own");
+        let surface = [drawn("dialog-confirm", "button", "dialog", false)];
+        // Ordinary actions pass.
+        assert_eq!(
+            operators_only(&app, &Action::Command(CommandId::CreatePart), &surface),
+            None
+        );
+        assert_eq!(
+            operators_only(&app, &Action::Click("dialog-confirm".into()), &surface),
+            None
+        );
+        // Locking, trust and the Operator's voice are the Operator's, and so
+        // are their shortcuts.
+        for id in [
+            CommandId::Lock,
+            CommandId::TrustLocal,
+            CommandId::AskAssistant,
+        ] {
+            assert!(
+                operators_only(&app, &Action::Command(id), &surface).is_some(),
+                "{id:?}"
+            );
+        }
+        assert!(operators_only(&app, &Action::Key(vec!["l".into()]), &surface).is_some());
+        assert!(operators_only(&app, &Action::Key(vec!["ctrl-l".into()]), &surface).is_some());
+        // The agents chip, Settings and the Conversation.
+        let chip = [drawn("agents-resume", "button", "title", false)];
+        assert!(operators_only(&app, &Action::Click("agents-resume".into()), &chip).is_some());
+        let settings = [drawn("build-use-confirm", "button", "settings", false)];
+        assert!(
+            operators_only(&app, &Action::Click("build-use-confirm".into()), &settings).is_some()
+        );
+        let composer = [drawn("Message", "field", "conversation", true)];
+        assert!(
+            operators_only(
+                &app,
+                &Action::Fill("Message".into(), "hi".into()),
+                &composer
+            )
+            .is_some()
+        );
+        assert!(operators_only(&app, &Action::Type("hi".into()), &composer).is_some());
+        assert!(operators_only(&app, &Action::Key(vec!["enter".into()]), &composer).is_some());
+        // Text goes only to a focused field.
+        assert!(operators_only(&app, &Action::Type("p".into()), &surface).is_some());
+        let field = [drawn("Checkpoint message", "field", "dialog", true)];
+        assert_eq!(
+            operators_only(&app, &Action::Type("first".into()), &field),
+            None
+        );
+        // A dialog asking for the Operator's approval: nothing but waiting.
+        let api = crate::edit::app_tests::part(&mut app, "api");
+        app.operation(
+            "Lock api",
+            agq_system_state::Operation::Lock { element: api },
+        );
+        app.rename(api, "gateway");
+        assert!(approval(&app).is_some());
+        for action in [
+            Action::Click("dialog-confirm".into()),
+            Action::Key(vec!["enter".into()]),
+            Action::Command(CommandId::Checkpoint),
+        ] {
+            let refused = operators_only(&app, &action, &surface);
+            assert!(
+                refused.as_deref().is_some_and(|r| r.contains("approval")),
+                "{action:?}: {refused:?}"
+            );
+        }
+        let wait = Action::Wait(Condition::default(), Duration::from_secs(1));
+        assert_eq!(operators_only(&app, &wait, &surface), None);
+    }
+
+    #[test]
+    fn a_change_an_agents_action_makes_is_the_assistants_naming_the_agent() {
+        let (mut app, _folder) = crate::edit::app_tests::studio("agent-author");
+        app.control.acting = Some("evaluator".into());
+        let api = crate::edit::app_tests::part(&mut app, "api");
+        app.control.acting = None;
+        assert_eq!(app.highlights[&api].1, agq_system_state::Actor::Assistant);
+        assert!(app.status.contains("(by evaluator)"), "{}", app.status);
+        // The Operator's own change stays the Operator's.
+        let db = crate::edit::app_tests::part(&mut app, "db");
+        assert_eq!(app.highlights[&db].1, agq_system_state::Actor::Operator);
+    }
+
+    #[test]
+    fn an_answer_too_long_loses_controls_not_its_end() {
+        let controls: Vec<Value> = (0..400)
+            .map(|i| json!({ "id": format!("control-{i}"), "label": "x".repeat(40) }))
+            .collect();
+        let answer =
+            json!({ "ok": true, "commands": [{ "id": "checkpoint" }], "controls": controls });
+        let text = fitted(answer, 4000);
+        assert!(text.chars().count() <= 4000);
+        let back: Value = serde_json::from_str(&text).expect("still JSON");
+        assert!(back["controlsOmitted"].as_u64().unwrap() > 0);
+        assert_eq!(back["commands"][0]["id"], "checkpoint");
     }
 }

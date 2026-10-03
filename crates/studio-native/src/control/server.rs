@@ -3,7 +3,10 @@
 //! request carries the token written, with the port, to the endpoint file
 //! (`--control <file>`, in the instance's app data); a request without it
 //! is refused. The Orchestrator drives a test instance through it; tests and
-//! tools can drive any Studio started with `--control`.
+//! tools can drive any Studio started with `--control`. A line longer than
+//! 1 MB, a connection idle for longer than an answer may take, or more than
+//! eight connections at once are refused, so a local process cannot exhaust
+//! the Studio's memory or threads before it shows a token.
 //!
 //! ```text
 //! → {"token": "…", "op": "observe", "detail": "full"}
@@ -16,14 +19,20 @@
 
 use super::{Reply, Request};
 use serde_json::{Value, json};
-use std::io::{BufRead, BufReader, Write};
+use std::io::{BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::mpsc::Sender;
 use std::time::Duration;
 
 /// How long one request may take (a wait can last up to ten minutes).
 const ANSWER: Duration = Duration::from_secs(660);
+/// The longest request line.
+const LINE: u64 = 1 << 20;
+/// Connections at once.
+const CONNECTIONS: usize = 8;
 
 /// A running endpoint.
 #[derive(Clone, Debug)]
@@ -32,24 +41,11 @@ pub struct Endpoint {
     pub file: PathBuf,
 }
 
-/// `bytes` random bytes as hex, from the operating system's randomness
-/// (each `RandomState` is seeded by it).
+/// `bytes` random bytes as hex, from the operating system's randomness.
 pub fn random_hex(bytes: usize) -> String {
-    use std::collections::hash_map::RandomState;
-    use std::hash::{BuildHasher, Hasher};
-    let mut out = String::new();
-    while out.len() < bytes * 2 {
-        let mut hasher = RandomState::new().build_hasher();
-        hasher.write_u128(
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .map(|d| d.as_nanos())
-                .unwrap_or(0),
-        );
-        out.push_str(&format!("{:016x}", hasher.finish()));
-    }
-    out.truncate(bytes * 2);
-    out
+    let mut buffer = vec![0u8; bytes];
+    getrandom::fill(&mut buffer).expect("the operating system provides randomness");
+    buffer.iter().map(|b| format!("{b:02x}")).collect()
 }
 
 /// Compares two tokens in time that does not depend on where they differ.
@@ -79,16 +75,41 @@ pub fn start(file: &Path, instance: &str, sender: Sender<Request>) -> Result<End
         std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
     }
     agq_launcher::write_atomically(file, text.as_bytes())?;
+    // The token is for this user only (Windows: the app data's own
+    // permissions).
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let _ = std::fs::set_permissions(file, std::fs::Permissions::from_mode(0o600));
+    }
     let accepted = token.clone();
+    let open = Arc::new(AtomicUsize::new(0));
     std::thread::Builder::new()
         .name("agentique-control".into())
         .spawn(move || {
             for stream in listener.incoming().flatten() {
+                if open.load(Ordering::SeqCst) >= CONNECTIONS {
+                    let mut stream = stream;
+                    let _ = writeln!(
+                        stream,
+                        "{}",
+                        json!({ "ok": false, "error": "refused: too many connections" })
+                    );
+                    continue;
+                }
+                open.fetch_add(1, Ordering::SeqCst);
                 let sender = sender.clone();
                 let token = accepted.clone();
-                let _ = std::thread::Builder::new()
+                let held = open.clone();
+                let started = std::thread::Builder::new()
                     .name("agentique-control-connection".into())
-                    .spawn(move || serve(stream, &token, sender));
+                    .spawn(move || {
+                        serve(stream, &token, sender);
+                        held.fetch_sub(1, Ordering::SeqCst);
+                    });
+                if started.is_err() {
+                    open.fetch_sub(1, Ordering::SeqCst);
+                }
             }
         })
         .map_err(|e| e.to_string())?;
@@ -102,8 +123,24 @@ fn serve(stream: TcpStream, token: &str, sender: Sender<Request>) {
     let Ok(mut writer) = stream.try_clone() else {
         return;
     };
-    for line in BufReader::new(stream).lines() {
-        let Ok(line) = line else { return };
+    if stream.set_read_timeout(Some(ANSWER)).is_err() {
+        return;
+    }
+    let mut reader = BufReader::new(stream);
+    loop {
+        let mut line = String::new();
+        match (&mut reader).take(LINE).read_line(&mut line) {
+            Ok(0) | Err(_) => return,
+            Ok(_) if !line.ends_with('\n') && line.len() as u64 >= LINE => {
+                let _ = writeln!(
+                    writer,
+                    "{}",
+                    json!({ "ok": false, "error": "refused: the request is longer than 1 MB" })
+                );
+                return;
+            }
+            Ok(_) => {}
+        }
         if line.trim().is_empty() {
             continue;
         }
@@ -116,15 +153,16 @@ fn serve(stream: TcpStream, token: &str, sender: Sender<Request>) {
                 if let Some(object) = body.as_object_mut() {
                     object.remove("token");
                 }
+                // The in-Studio Assistant's name is its own: an endpoint
+                // client cannot cancel or speak as it.
+                if body["agent"] == "Assistant" {
+                    body["agent"] = json!("Assistant (endpoint)");
+                }
                 let id = body["id"].clone();
                 let (reply, answer) = std::sync::mpsc::channel();
-                if sender
-                    .send(Request {
-                        body,
-                        reply: Reply::Channel(reply),
-                    })
-                    .is_err()
-                {
+                let request =
+                    Request::new(body, Reply::Channel(reply), ANSWER - Duration::from_secs(5));
+                if sender.send(request).is_err() {
                     return;
                 }
                 let mut answer = answer.recv_timeout(ANSWER).unwrap_or_else(
@@ -188,6 +226,17 @@ mod tests {
         assert_eq!(refused["ok"], false);
         assert!(refused["error"].as_str().unwrap().contains("refused"));
         assert_ne!(random_hex(32), random_hex(32));
+        // A line without end is refused at 1 MB, not read into memory.
+        let mut stream = TcpStream::connect(("127.0.0.1", endpoint.port)).unwrap();
+        let chunk = vec![b'x'; 64 * 1024];
+        for _ in 0..17 {
+            if stream.write_all(&chunk).is_err() {
+                break;
+            }
+        }
+        let mut answer = String::new();
+        let _ = BufReader::new(stream).read_line(&mut answer);
+        assert!(answer.contains("longer than 1 MB"), "{answer}");
         let _ = std::fs::remove_dir_all(dir);
     }
 }

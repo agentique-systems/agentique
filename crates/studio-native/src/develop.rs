@@ -359,12 +359,21 @@ impl Studio {
         }
         if self.args.supervised {
             // The supervising launcher is this Studio's parent: it starts the
-            // build named here once this process has ended (C-53).
-            agq_launcher::Handover {
-                build: id.to_string(),
-                args: vec!["--adopted".into(), id.to_string()],
+            // build named here, on this session and the project open now,
+            // once this process has ended (C-53).
+            let mut args = vec![
+                "--adopted".to_string(),
+                id.to_string(),
+                "--session".to_string(),
+                self.session_path.display().to_string(),
+            ];
+            if let Some(project) = &self.project {
+                args.extend([
+                    "--project".to_string(),
+                    project.folder().display().to_string(),
+                ]);
             }
-            .save(&root)?;
+            agq_launcher::Handover::new(id, args).save(&root)?;
             self.develop.exit = Some(agq_launcher::HANDOVER_EXIT);
             self.develop.quit = true;
             self.status = format!("Handing over to {id}…");
@@ -456,6 +465,7 @@ impl Studio {
         // good build (C-53, ROADMAP §4.16).
         if let Some(problem) = self.adoption_check() {
             eprintln!("The check after adoption failed: {problem}");
+            self.control.close_endpoint();
             std::process::exit(4);
         }
         if let Some(path) = &self.args.ready_file {
@@ -480,7 +490,8 @@ impl Studio {
         if let Err(problem) = Manifest::load(&folder).and_then(|m| m.matches(&folder)) {
             return Some(problem);
         }
-        let expected = self.session.project.clone();
+        // The project it was told to open, else the one its session names.
+        let expected = self.args.project.clone().or(self.session.project.clone());
         if let Some(expected) = expected
             && expected.join("model").is_dir()
             && self.project.as_ref().map(|p| p.folder().to_path_buf()) != Some(expected.clone())
@@ -492,6 +503,41 @@ impl Studio {
             ));
         }
         None
+    }
+
+    /// Stops everything that runs (C-53, before a handover): the
+    /// Assistant's turn, a run, the implementation task and its checks, a
+    /// build; and waits up to `within` for them to end, so the processes
+    /// they started end with them. Returns what had not ended by then.
+    pub fn stop_work(&mut self, within: Duration) -> Vec<&'static str> {
+        self.end_turn();
+        self.stop_run();
+        self.stop_task();
+        self.stop_checks();
+        self.cancel_build();
+        let started = std::time::Instant::now();
+        loop {
+            self.poll_runs();
+            self.poll_task();
+            self.poll_checks();
+            self.poll_build();
+            let running: Vec<&'static str> = [
+                (self.runs.active.is_some(), "a run"),
+                (
+                    self.implementation.task.is_some(),
+                    "the implementation task",
+                ),
+                (self.implementation.checking(), "the checks"),
+                (self.develop.work.is_some(), "a build"),
+            ]
+            .into_iter()
+            .filter_map(|(running, what)| running.then_some(what))
+            .collect();
+            if running.is_empty() || started.elapsed() >= within {
+                return running;
+            }
+            std::thread::sleep(Duration::from_millis(20));
+        }
     }
 
     /// Started by the launcher after build `failed` did not start: say so.

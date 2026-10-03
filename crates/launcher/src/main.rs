@@ -18,7 +18,8 @@
 #![forbid(unsafe_code)]
 
 use agq_launcher::{
-    READY_WITHIN, Registry, Started, Supervised, default_root, start, supervise, wait_for_release,
+    READY_WITHIN, Registry, SETTLED, Started, Supervised, default_root, start, supervise,
+    wait_for_release,
 };
 use std::time::Duration;
 
@@ -63,8 +64,13 @@ fn main() {
         open_folder(&root);
         std::process::exit(1);
     }
+    if supervising && (recover || adopt.is_some()) {
+        note("--supervise starts the current build; it does not take --recover or --adopt".into());
+        open_folder(&root);
+        std::process::exit(1);
+    }
     if supervising {
-        match supervise(&root, &args, READY_WITHIN) {
+        match supervise(&root, &args, READY_WITHIN, SETTLED) {
             Supervised::Closed { .. } => std::process::exit(0),
             Supervised::Failed { reason, .. } => {
                 note(reason);
@@ -88,6 +94,9 @@ fn main() {
             .clone()
             .or(registry.current.clone())
     } else if let Some(id) = adopt {
+        // Started for an adoption: it reports ready only after its check
+        // after adoption (C-53).
+        args.extend(["--adopted".to_string(), id.clone()]);
         Some(id)
     } else {
         registry

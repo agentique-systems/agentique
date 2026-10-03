@@ -3,7 +3,9 @@
 //! through its local endpoint, as an agent drives it: observations as text,
 //! actions by control id, label or command, and waits. It exercises input,
 //! focus, navigation, dialogs and rendering in the visible window, the
-//! refusal of stale actions, Pause and Step, and the event trace.
+//! refusal of stale actions and of what is the Operator's own (Settings,
+//! locking, text without a focused field), Pause and Step, and the event
+//! trace.
 //!
 //! It needs a desktop session (it opens a window), so it is ignored by
 //! default:
@@ -228,6 +230,22 @@ fn an_agent_drives_the_visible_studio_through_the_control_interface() {
         "{selected}"
     );
 
+    // A control below its panel's fold is listed as hidden; clicking it
+    // scrolls the panel to it first, as the Operator would. "Find usages"
+    // only reads.
+    let usages = control(&selected, "reuse-usages").expect("the Inspector offers Find usages");
+    assert_eq!(
+        usages["hidden"], true,
+        "below the Inspector's fold: {usages}"
+    );
+    studio.must(
+        json!({ "kind": "click", "control": "reuse-usages" }),
+        "find the link store's usages",
+    );
+    let after = studio.observe();
+    let now = control(&after, "reuse-usages").expect("still on screen");
+    assert!(now["hidden"].is_null(), "scrolled into view: {now}");
+
     // A command opens a dialog; its field is focused; Enter confirms.
     studio.must(
         json!({ "kind": "command", "id": "checkpoint" }),
@@ -263,14 +281,85 @@ fn an_agent_drives_the_visible_studio_through_the_control_interface() {
     );
     assert_eq!(redo["ok"], false, "{redo}");
 
-    // Settings and back, by keys.
+    // Settings and back, by keys; inside, Settings are the Operator's.
     studio.must(
         json!({ "kind": "command", "id": "settings" }),
         "open Settings",
     );
-    assert_eq!(studio.observe()["screen"], "settings");
+    let settings = studio.observe();
+    assert_eq!(settings["screen"], "settings");
+    let inside = settings["controls"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|c| c["region"] == "settings")
+        .expect("Settings has controls")["id"]
+        .clone();
+    let refused = studio.act(
+        &settings,
+        json!({ "kind": "click", "control": inside }),
+        "press something in Settings",
+    );
+    assert_eq!(refused["ok"], false, "{refused}");
+    assert!(
+        refused["error"].as_str().unwrap().contains("Operator"),
+        "{refused}"
+    );
     studio.must(json!({ "kind": "key", "keys": "escape" }), "close Settings");
-    assert_eq!(studio.observe()["screen"], "surface");
+    let surface = studio.observe();
+    assert_eq!(surface["screen"], "surface");
+
+    // Text with no field focused would reach the shortcuts: refused. So is
+    // locking (the Operator's), filling a button, and an action that does
+    // not say which observation it rests on.
+    let typed = studio.act(
+        &surface,
+        json!({ "kind": "type", "text": "p" }),
+        "type with nothing focused",
+    );
+    assert_eq!(typed["ok"], false, "{typed}");
+    assert!(
+        typed["error"].as_str().unwrap().contains("focus"),
+        "{typed}"
+    );
+    let locked = studio.act(
+        &surface,
+        json!({ "kind": "command", "id": "lock" }),
+        "lock the selection",
+    );
+    assert_eq!(locked["ok"], false, "{locked}");
+    assert!(
+        locked["error"].as_str().unwrap().contains("Operator"),
+        "{locked}"
+    );
+    let button = surface["controls"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|c| c["role"] == "button" && c["enabled"] != false)
+        .expect("a button on screen")["id"]
+        .clone();
+    let filled = studio.act(
+        &surface,
+        json!({ "kind": "fill", "control": button, "text": "x" }),
+        "fill a button",
+    );
+    assert_eq!(filled["ok"], false, "{filled}");
+    assert!(
+        filled["error"].as_str().unwrap().contains("not a field"),
+        "{filled}"
+    );
+    let unobserved = studio.call(json!({
+        "op": "act", "agent": "journey", "why": "no observation",
+        "expect": { "instance": studio.instance.clone() },
+        "action": { "kind": "command", "id": "fit" },
+    }));
+    assert_eq!(unobserved["ok"], false, "{unobserved}");
+    assert!(
+        unobserved["error"].as_str().unwrap().contains("observed"),
+        "{unobserved}"
+    );
+    assert_eq!(studio.observe()["screen"], "surface", "nothing happened");
 
     // Pause holds actions (observing goes on); Step lets one through.
     assert_eq!(
