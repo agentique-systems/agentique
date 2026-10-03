@@ -53,7 +53,12 @@ impl Json {
     }
 
     pub fn object(fields: Vec<(&str, Json)>) -> Json {
-        Json::Object(fields.into_iter().map(|(k, v)| (k.to_string(), v)).collect())
+        Json::Object(
+            fields
+                .into_iter()
+                .map(|(k, v)| (k.to_string(), v))
+                .collect(),
+        )
     }
 
     pub fn to_text(&self) -> String {
@@ -153,7 +158,10 @@ fn parse_value(chars: &[char], i: &mut usize) -> Result<Json, String> {
                 }
                 *i += 1;
                 let value = parse_value(chars, i)?;
-                map.insert(key, value);
+                // A key named twice would lose one of its values.
+                if map.insert(key.clone(), value).is_some() {
+                    return Err(format!("the key `{key}` appears twice"));
+                }
                 skip_space(chars, i);
                 match chars.get(*i) {
                     Some(',') => *i += 1,
@@ -201,9 +209,11 @@ fn parse_value(chars: &[char], i: &mut usize) -> Result<Json, String> {
                             't' => out.push('\t'),
                             'r' => out.push('\r'),
                             'u' => {
-                                let hex: String = chars[*i..(*i + 4).min(chars.len())].iter().collect();
+                                let hex: String =
+                                    chars[*i..(*i + 4).min(chars.len())].iter().collect();
                                 *i += 4;
-                                let code = u32::from_str_radix(&hex, 16).map_err(|e| e.to_string())?;
+                                let code =
+                                    u32::from_str_radix(&hex, 16).map_err(|e| e.to_string())?;
                                 out.push(char::from_u32(code).unwrap_or('?'));
                             }
                             other => out.push(other),

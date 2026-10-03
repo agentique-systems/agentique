@@ -17,8 +17,9 @@ pub enum AgentAnswer {
     ToolUnavailable,
 }
 
-/// The call to the agent's model (a provider client in production; the
-/// harness stands in for it in scenarios).
+/// The call to the agent's model: a provider client in production (`jev`
+/// for a typed decision model); the harness stands in for it in scenarios,
+/// and calls no model.
 pub trait AgentClient {
     fn ask(&mut self, instructions: &str, candidate: &LinkCandidate) -> AgentAnswer;
 }
@@ -93,7 +94,11 @@ impl<C: AgentClient> LinkScreening<C> {
 
     /// The agent's verdict if it keeps its contract.
     fn accepted(&self, answer: AgentAnswer) -> Option<Verdict> {
-        let AgentAnswer::Answer { verdict, latency_ms } = answer else {
+        let AgentAnswer::Answer {
+            verdict,
+            latency_ms,
+        } = answer
+        else {
             return None;
         };
         if latency_ms > self.policy.max_latency_ms {

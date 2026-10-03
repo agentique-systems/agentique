@@ -1519,6 +1519,10 @@ const SAMPLE_CODE: &[(&str, &str)] = &[
         include_str!("../../implementation/tests/fixtures/url-shortener/src/api.rs"),
     ),
     (
+        "src/jev.rs",
+        include_str!("../../implementation/tests/fixtures/url-shortener/src/jev.rs"),
+    ),
+    (
         "src/json.rs",
         include_str!("../../implementation/tests/fixtures/url-shortener/src/json.rs"),
     ),
@@ -1551,6 +1555,14 @@ const SAMPLE_CODE: &[(&str, &str)] = &[
     (
         "tests/behaviour.rs",
         include_str!("../../implementation/tests/fixtures/url-shortener/tests/behaviour.rs"),
+    ),
+    (
+        "tests/jev_client.rs",
+        include_str!("../../implementation/tests/fixtures/url-shortener/tests/jev_client.rs"),
+    ),
+    (
+        "tests/decisions.json",
+        include_str!("../../implementation/tests/fixtures/url-shortener/tests/decisions.json"),
     ),
 ];
 
@@ -1603,7 +1615,11 @@ impl Studio {
             ]
             .map(String::from)
             .to_vec(),
-            protected: vec!["tests/behaviour.rs".into()],
+            protected: vec![
+                "tests/behaviour.rs".into(),
+                "tests/jev_client.rs".into(),
+                "tests/decisions.json".into(),
+            ],
             ..Default::default()
         };
         for (element, kind, path, symbol) in SAMPLE_LINKS {

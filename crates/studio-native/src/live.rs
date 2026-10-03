@@ -1096,7 +1096,13 @@ mod tests {
         WrongOption,
         /// Answers as another model version.
         OtherModel,
+        /// Answers with the frozen reply for the host (`decisions.json`).
+        Frozen,
     }
+
+    /// The frozen replies the URL shortener's own client is tested with.
+    const DECISIONS: &str =
+        include_str!("../../implementation/tests/fixtures/url-shortener/tests/decisions.json");
 
     /// A local stand-in for the decision API: it checks what it is sent
     /// and answers as `how`. Counts requests; keeps their bodies.
@@ -1183,6 +1189,16 @@ mod tests {
                 "answers": {"decision": {"type": "choice", "choice": choice, "probabilities": probabilities, "confidence": confidence}},
                 "usage": {"input_tokens": 150, "output_tokens": 1},
             });
+            if how == Jev::Frozen {
+                let decisions: serde_json::Value = serde_json::from_str(DECISIONS).unwrap();
+                reply = decisions["cases"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .find(|c| c["host"] == host.as_str())
+                    .map(|c| c["reply"].clone())
+                    .unwrap_or_else(|| panic!("no frozen reply for {host}"));
+            }
             match how {
                 Jev::WrongOption => reply["answers"]["decision"]["choice"] = json!("hold"),
                 Jev::OtherModel => reply["model"] = json!("jev-1.14.0"),
@@ -1606,5 +1622,67 @@ mod tests {
                 "{how:?}: no verdict from a failure"
             );
         }
+    }
+
+    /// Conformance (C-52 step 5): the frozen replies the URL shortener's
+    /// Rust client is tested with give, through the model and its typed
+    /// evaluation, the same decisions and the same decider (the agent, or
+    /// its fallback) as through the code.
+    #[test]
+    fn frozen_replies_decide_in_the_model_as_in_the_code() {
+        let (mut app, _folder) = screening("live-frozen-replies");
+        let service = service(Jev::Frozen);
+        connect(&mut app, &service);
+        app.select_scenario(scenario(&app, "TypedScreeningCases"));
+        let result = evaluate(&mut app);
+        assert_eq!(result.status, RunStatus::Completed, "{:?}", result.stop);
+        let decisions: serde_json::Value = serde_json::from_str(DECISIONS).unwrap();
+        let samples = result.live.as_ref().unwrap().samples;
+        let mut fallbacks = 0;
+        for (case, check) in [
+            ("encyclopedia", "encyclopediaIsAllowed"),
+            ("giftCards", "giftCardScamIsNotAllowed"),
+            ("lookalike", "lookalikeLoginIsNotAllowed"),
+            ("documentation", "documentationIsAllowed"),
+        ] {
+            let case = decisions["cases"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|c| c["name"] == case)
+                .unwrap();
+            let allowed = case["decision"] == "allow";
+            let expects_allowed = check.ends_with("IsAllowed") && !check.ends_with("NotAllowed");
+            let verdict = result
+                .checks
+                .iter()
+                .find(|c| c.name == check)
+                .unwrap()
+                .verdict;
+            let expected = if allowed == expects_allowed {
+                agq_simulation::Verdict::Passed
+            } else {
+                agq_simulation::Verdict::Failed
+            };
+            assert_eq!(
+                verdict, expected,
+                "{check}: the code decides {}",
+                case["decision"]
+            );
+            if case["by"] == "fallback" {
+                fallbacks += samples as usize;
+            }
+        }
+        let handed: Vec<&str> = result
+            .trace
+            .iter()
+            .filter(|e| e.kind == agq_simulation::EventKind::Fallback)
+            .map(|e| e.text.as_str())
+            .collect();
+        assert_eq!(handed.len(), fallbacks, "{handed:#?}");
+        assert!(
+            handed.iter().all(|t| t.contains("below minConfidence")),
+            "{handed:#?}"
+        );
     }
 }

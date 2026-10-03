@@ -5,6 +5,7 @@
     ("LinkApi", "module", "src/api.rs", None),
     ("LinkStore", "module", "src/store.rs", None),
     ("LinkScreening", "module", "src/screening.rs", None),
+    ("TypedLinkScreening", "module", "src/jev.rs", None),
     ("BlocklistScreening", "module", "src/screening.rs", None),
     ("UrlShortenerService", "module", "src/service.rs", None),
     ("LinkStatus", "type", "src/model.rs", Some("LinkStatus")),
@@ -25,4 +26,5 @@
     ("UrlShortenerService", "test", "tests/behaviour.rs", Some("a_confident_allow_redirects")),
     ("reviewBeforeActivation", "test", "tests/behaviour.rs", Some("a_failed_or_unsure_screening_holds_the_link_until_approved")),
     ("screenedLinks", "test", "tests/behaviour.rs", Some("a_block_stores_nothing_and_the_blocklist_blocks_when_the_agent_refuses")),
+    ("TypedLinkScreening", "test", "tests/jev_client.rs", Some("frozen_decisions_keep_the_contract")),
 ]

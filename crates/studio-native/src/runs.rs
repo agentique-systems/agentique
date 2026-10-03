@@ -1948,7 +1948,11 @@ mod tests {
             app.status
         );
         let links = app.implementation_links().unwrap();
-        assert_eq!(links.links.len(), 23);
+        assert_eq!(
+            links.links.len(),
+            25,
+            "with the typed client and its conformance test"
+        );
         assert!(
             links
                 .dangling(app.project.as_ref().unwrap().state().tree())
