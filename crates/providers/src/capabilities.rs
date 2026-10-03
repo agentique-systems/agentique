@@ -90,7 +90,8 @@ pub fn capabilities(model: &ModelRef) -> Capabilities {
             chat: true,
             decisions: false,
             tools: true,
-            tool_input_streaming: true,
+            // rig 0.43 hands a tool call over whole when it closes.
+            tool_input_streaming: false,
             efforts: ANTHROPIC_EFFORTS,
             default_effort: Some("high"),
             reasoning_text: ReasoningText::Summary,
@@ -108,7 +109,8 @@ pub fn capabilities(model: &ModelRef) -> Capabilities {
             chat: true,
             decisions: false,
             tools: true,
-            tool_input_streaming: true,
+            // rig 0.43 hands a tool call over whole when it closes.
+            tool_input_streaming: false,
             efforts: OPENAI_EFFORTS,
             default_effort: Some("medium"),
             reasoning_text: ReasoningText::Summary,
@@ -122,7 +124,8 @@ pub fn capabilities(model: &ModelRef) -> Capabilities {
             chat: true,
             decisions: false,
             tools: true,
-            tool_input_streaming: true,
+            // rig 0.43 hands a tool call over whole when it closes.
+            tool_input_streaming: false,
             efforts: OPENAI_EFFORTS,
             default_effort: None,
             reasoning_text: ReasoningText::Full,
@@ -152,7 +155,8 @@ pub fn capabilities(model: &ModelRef) -> Capabilities {
             chat: true,
             decisions: false,
             tools: true,
-            tool_input_streaming: true,
+            // rig 0.43 hands a tool call over whole when it closes.
+            tool_input_streaming: false,
             efforts: DEEPSEEK_EFFORTS,
             default_effort: Some("high"),
             reasoning_text: ReasoningText::Full,

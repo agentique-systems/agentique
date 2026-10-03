@@ -945,10 +945,13 @@ rig (package `rig-core`, with `rig-agent` and the `rig` facade) is the
 provider layer for **every** provider, Claude included (C-34). A provider that
 released rig does not support, such as TypeSafe AI's Jev, gets a thin client
 inside `agq-providers`, behind the same boundary and with the same small types,
-until rig releases it (C-34, clarified 2026-09-27). Version 0.42.0
-was released on 2026-08-17; releases are breaking 0.x versions every two to
-three weeks, and `main` carried 110 unreleased, largely breaking commits on
-2026-09-27 [1][4]. That churn shapes where rig may go.
+until rig releases it (C-34, clarified 2026-09-27). Agentique is on 0.43.0
+(released 2026-09-30, C-52 step U); 0.42.0 was released on 2026-08-17;
+releases are breaking 0.x versions every few weeks, and `main` carried 20
+breaking commits within two days of 0.43.0 [1][4]. That churn shapes where
+rig may go. `rig-typesafeai` 0.43.0 was evaluated for Jev and not adopted
+(§7.6, 2026-10-03): the thin client stays, as compatibility code where
+upstream lacks what Agentique requires.
 
 - **Only `agq-providers` depends on rig.** rig's types never appear in its
   public API; the Assistant, the Studio and (later) simulation see Agentique's
@@ -1067,7 +1070,7 @@ TypeSafe AI's [98]. "Not verified" means no source or test was found.
 |---|---|---|---|---|---|
 | Streaming text | yes | yes | yes | yes (rig's shared chat-completions path) [2] | not applicable: one typed answer per call [98] |
 | Tool calling | yes | yes | yes | yes; a forced `tool_choice` is refused while thinking, and rig clears it [2][105] | not applicable |
-| Tool arguments streamed as partial JSON | yes | yes | yes (shared chat-completions path) | yes: the first chunk of a call carries its id and name, later chunks its arguments [105] | not applicable |
+| Tool arguments streamed as partial JSON | no since rig 0.43 (whole when the call closes) | no since rig 0.43 | no since rig 0.43 | no since rig 0.43; on the wire, the first chunk of a call carries its id and name, later chunks its arguments [105] | not applicable |
 | Parallel tool calls | not used: the Assistant runs tool calls in order by design; rig offers concurrency only in its own agent runner [2] | not used | not used | not used | not applicable |
 | Reasoning control | partial: raw `thinking` and effort through `additional_params`; no typed API (issues #1452, #951 [5]) | yes: typed effort and summary settings | partial: raw `reasoning` parameters | partial: top-level `reasoning_effort` (`low`, `high`, `max`; default `high`; no `medium`) and `thinking: {type}` through `additional_params` [105] | not applicable |
 | Reasoning text streamed | yes (summaries when requested [11]) | yes | yes | yes (`reasoning_content`, full text, not a summary) [2][105] | no |
@@ -1083,6 +1086,20 @@ TypeSafe AI's [98]. "Not verified" means no source or test was found.
 
 Other providers rig supports (Gemini, Ollama and local OpenAI-compatible
 servers, Mistral, xAI, Groq and more [2]) wait for a scenario need (Q-12).
+
+Since rig 0.43.0 (C-52 step U), verified by `agq-providers`' canned-provider
+tests and a probe against local streams: a tool call's input arrives whole when
+the call closes, on every provider (rig buffers the fragments), so the row
+"Tool arguments streamed as partial JSON" reads **no** for all four Assistant
+providers and the tool card shows "Preparing change…" until then; reasoning is
+sealed to the provider that wrote it and sent back only to it; usage counts
+cache reads and writes inside the input, which `agq-providers` takes apart
+again; Anthropic's `fallback` block still ends rig's stream (the adapter
+stays); a tool call whose input is not JSON ends rig's stream, so for
+Anthropic the adapter hands it to rig as a JSON string and the reply goes on,
+while on the chat-completions and Responses wires the reply ends at that call
+(the call is kept for an error result; what follows it and the usage are
+lost).
 
 **Capabilities are data, not code paths.** `agq-providers` holds a small table
 of capabilities per provider and model family, filled from the matrix above
@@ -2735,6 +2752,8 @@ The ADRs named here are preserved at the tag `archive/pre-realignment`.
 | 2026-10-03 | `docs/stages.md`, Stage 10: "uncommitted on the branch" corrected to merged in #86 (merging is not acceptance; gates A–E stay the Operator's) | One truth: the record had kept the development branch's wording |
 | 2026-10-03 | The C-52 persistence change as built (step 3): as named, plus `LiveSummary.knownCostUsd` (when a call's cost is unknown the total is left out, so an older build shows the cost as unknown rather than a smaller total), `LiveSummary.calls` and `unknownCost`; a provider failure, a used-up allowance or a stop ends a live evaluation. The previous build's reader (`main` at `219598b6`) was run on data this build wrote (Linux, outside the repository): it read the four bound recordings without a problem and matched none of them by its own keys; it listed two of three results and skipped the one stopped as `budget-exhausted`; it showed the live cost as unknown. So the runs format stays 1 and the data-format check of Stage 10's adoption is unchanged. One limit on returning to that build: its own freshness ignores bindings, so it shows a bound live or replay result as current while the model is unchanged, as it did for every live result | §7.6 (C-52 persistence): the format stays only if the old reader is shown to ignore, never match and safely skip; it was, with this one weaker reading named |
 | 2026-10-03 | Under C-52, the screening evaluation's definitions (the investigation's §7): the runner is an ignored test of the Studio (`screening_evaluation`), beside the existing live test, and the report is `tools/screening_report.py` (standard library only, tested on synthetic observations; CI now runs every `tools/test_*.py`). Observations and reports are written outside the repository and never committed (§8.3); the per-call observation lines are the runner's output, not a stored format of Agentique. The §7.7 thresholds are printed as PROPOSED, for the Operator to ratify; no labelled data ships and nothing paid was run | §8.1 rule 6: a reason for a new tool; the live evaluation stays the Studio's, and analysis (exact bounds, bootstraps, calibration) is where Python earns its place, as the investigation says |
+| 2026-10-03 | rig upgraded from 0.42.0 to 0.43.0 (C-52 step U; C-34; §8.7 rule 5), its own pull request: providers built from configurations with the key given explicitly (rig reads no environment), one erased model type for every provider, `ProviderError` mapped to the same plain errors, usage taken apart again (0.43 counts cache reads and writes inside the input), reasoning sealed to the provider it is sent to (the Assistant already sends a model only its own reasoning, so no conversation format change), Anthropic's fallback adapter rebuilt as a rig transport over rig's own frames. Behaviour that changed, pending the Operator: tool input is no longer streamed on any provider (the capability table and §4.8 say so; the tool card shows "Preparing change…" until the call closes); a tool call whose input is not JSON ends rig's stream, which the Anthropic adapter repairs by handing the raw text as a JSON string, while on the other wires the reply ends at that call with the call kept and its usage lost. The five-task evaluation on every Assistant provider (`RIG_UPGRADE` in the evaluation set) is prepared and was not run: it is paid and waits for the Operator's consent and keys | rig released `rig-typesafeai` 0.43 and requires rig-core 0.43; keeping the Assistant's behaviour where rig no longer offers it, without a fork |
+| 2026-10-03 | Decided in this session under C-52, pending the Operator: Jev stays on the thin client; `rig-typesafeai` 0.43.0 (evaluated from its released source and run against local servers) is not adopted. It validates the same distributions with the same tolerances the thin client now uses, but it accepts a key named twice inside `probabilities` and `legend` (the last wins), never compares the returned model with the pinned one, has no body limit, timeout or retry, loses the request id and usage when validation fails, sends a blank key, and is labelled experimental; adopting it would keep all of the thin client's transport and add a second parse. C-34's "until rig releases it" is therefore met by an evaluation, and the thin client remains a bounded exception, to be revisited when `rig-typesafeai` covers those points | C-34 asks for rig everywhere; §8.1 rule 3 and the investigation ask not to keep two layers that do one job |
 
 ### 7.7 The original requirements
 

@@ -665,6 +665,36 @@ fn a_tool_call_whose_input_is_not_json_is_kept_for_an_error_result() {
     assert_eq!(raw, Value::String("{\"name\": Store".into()));
 }
 
+/// rig 0.43 ends a chat-completions stream at a tool call whose input is
+/// not JSON: the call is kept with its raw text (the turn answers it with an
+/// error), and what the stream held before it stays. rig reports no usage
+/// for such a reply.
+#[test]
+fn an_unreadable_tool_call_on_chat_completions_is_kept_for_an_error_result() {
+    let (url, _requests) = serve(vec![ok(chunks(&[
+        delta(json!({ "role": "assistant", "content": "Looking." })),
+        delta(
+            json!({ "tool_calls": [{ "index": 0, "id": "call_9", "type": "function",
+                                       "function": { "name": "find_elements", "arguments": "{\"name\": Store" } }] }),
+        ),
+        finish("tool_calls"),
+    ]))]);
+    let (events, reply) =
+        finish_call(deepseek(&url).chat(request(Provider::DeepSeek, "deepseek-flash")));
+    let reply = reply.unwrap();
+    assert_eq!(reply.stop, StopReason::ToolUse);
+    assert!(reply.content.contains(&AssistantPart::ToolCall {
+        id: "call_9".into(),
+        name: "find_elements".into(),
+        input: Value::String("{\"name\": Store".into()),
+    }));
+    assert!(
+        events
+            .iter()
+            .any(|e| matches!(e, Event::ToolCallId { id, .. } if id == "call_9"))
+    );
+}
+
 #[test]
 fn an_environment_key_is_never_sent_to_another_endpoint() {
     let providers = Providers::new().with_endpoint(Provider::DeepSeek, "http://127.0.0.1:9");

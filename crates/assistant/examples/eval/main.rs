@@ -3,9 +3,12 @@
 //!
 //! ```text
 //! cargo run --release -p agq-assistant --example eval -- --out <folder outside the repository>
-//!     [--trials 3] [--only <task id prefix>] [--parallel 4] [--max-calls 400]
-//!     [--max-output-tokens 16000]
+//!     [--trials 3] [--only <task id prefix>[,<prefix>...]] [--parallel 4]
+//!     [--max-calls 400] [--max-output-tokens 16000]
 //! ```
+//!
+//! A rig upgrade runs [`RIG_UPGRADE`] on every Assistant provider (ROADMAP
+//! §8.7 rule 5): `--only` with those five ids, once per `AGENTIQUE_PROVIDER`.
 //!
 //! The model is chosen as in the Studio (`ModelChoice::from_env`). Every
 //! call passes the spend guard (`AGENTIQUE_SPEND_LOG`,
@@ -40,6 +43,18 @@ use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex};
 use tasks::{LockPolicy, Task};
+
+/// The five tasks a rig upgrade runs on every Assistant provider (§8.7 rule
+/// 5): a multi-step build with tools, an edit, an answer read from the
+/// model, a refused lock, and a longer change with a plan.
+#[allow(dead_code)]
+const RIG_UPGRADE: [&str; 5] = [
+    "a2-build-basic",
+    "a3-rename",
+    "a3-explain",
+    "a4-lock-refused",
+    "a8-expiring-links",
+];
 
 struct Args {
     out: PathBuf,
@@ -266,9 +281,10 @@ fn main() {
     let tasks: Vec<Task> = tasks::all()
         .into_iter()
         .filter(|task| {
-            args.only
-                .as_deref()
-                .is_none_or(|only| task.id.starts_with(only))
+            args.only.as_deref().is_none_or(|only| {
+                only.split(',')
+                    .any(|prefix| task.id.starts_with(prefix.trim()))
+            })
         })
         .collect();
     let guard = match spend::SpendGuard::start(
