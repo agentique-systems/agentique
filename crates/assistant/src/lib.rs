@@ -27,6 +27,7 @@ pub mod claude;
 pub mod claude_agent;
 pub mod conversation;
 pub mod model;
+pub mod model_tools;
 pub mod policy;
 pub mod provider_model;
 pub mod runtime;

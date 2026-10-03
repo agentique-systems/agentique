@@ -184,6 +184,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "agq-orchestrator"
+version = "0.1.0"
+dependencies = [
+ "agq-assistant",
+ "agq-execution",
+ "agq-implementation",
+ "agq-launcher",
+ "agq-providers",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "agq-providers"
 version = "0.1.0"
 dependencies = [
@@ -219,6 +233,7 @@ dependencies = [
  "agq-language",
  "agq-launcher",
  "agq-library",
+ "agq-orchestrator",
  "agq-providers",
  "agq-simulation",
  "agq-studio-scene",

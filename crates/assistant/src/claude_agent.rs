@@ -773,9 +773,10 @@ impl Companion {
         };
         let mut env = match &agent.development {
             None => base_environment(&agent.node),
-            Some(_) => {
+            Some(development) => {
                 let mut env = crate::policy::development_environment();
                 prepend_path(&mut env, &agent.node);
+                env.extend(development.env.iter().cloned());
                 env
             }
         };

@@ -145,6 +145,8 @@ impl Workspace {
         ];
         subscriptions.push(cx.on_release(|this: &mut Workspace, cx| {
             this.studio.update(cx, |studio, _| {
+                // An objective stays where it was, to continue (C-53).
+                studio.interrupt_objective(Duration::from_secs(10));
                 studio.end_turn();
                 studio.save_session();
                 studio.control.close_endpoint();
@@ -280,6 +282,11 @@ impl Workspace {
                 } else {
                     studio.mark(Dirty::STATUS);
                 }
+            });
+        }
+        if self.studio.read(cx).objectives.wants_poll() {
+            self.studio.act(cx, |studio| {
+                studio.poll_objective();
             });
         }
         self.studio
@@ -1256,7 +1263,12 @@ impl Workspace {
             .project
             .as_ref()
             .map_or(0, |p| p.state().locks().len());
-        let status = studio.status.clone();
+        // A running objective's phase and spend lead the status line (C-53).
+        let status = match studio.objective_status() {
+            Some(objective) if studio.status.is_empty() => objective,
+            Some(objective) => format!("{objective} — {}", studio.status),
+            None => studio.status.clone(),
+        };
         let working = studio.conversation.running();
         let waiting = studio.conversation.waiting.is_some();
         let view = studio.view.title();

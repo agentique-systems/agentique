@@ -1,12 +1,13 @@
 //! The docked Panels (§3.2 Panels): on the left a column with the Outline,
 //! the Library (C-49) and the Scenarios (C-50) under one tab bar, and on the
 //! right a column with the Inspector, the Run (C-50), the Requirements, the
-//! History and the Problems.
+//! History, the Problems and the Objectives (C-53).
 pub mod block_preview;
 mod evidence;
 mod history;
 mod inspector;
 pub mod library;
+mod objectives;
 mod outline;
 mod problems;
 mod requirements;
@@ -189,6 +190,7 @@ impl Render for LeftColumn {
 pub struct InspectorColumn {
     studio: Entity<Studio>,
     inspector: inspector::Fields,
+    objectives: objectives::Fields,
     _subscription: Subscription,
 }
 
@@ -208,18 +210,30 @@ impl InspectorColumn {
         });
         InspectorColumn {
             inspector: inspector::Fields::new(studio.clone(), window, cx),
+            objectives: objectives::Fields::new(window, cx),
             studio,
             _subscription: subscription,
         }
     }
 }
 
-const TABS: [(Panel, &str, IconName); 5] = [
+impl InspectorColumn {
+    pub(crate) fn objective_fields(&self) -> &objectives::Fields {
+        &self.objectives
+    }
+
+    pub(crate) fn objective_fields_mut(&mut self) -> &mut objectives::Fields {
+        &mut self.objectives
+    }
+}
+
+const TABS: [(Panel, &str, IconName); 6] = [
     (Panel::Inspector, "Inspector", IconName::Sliders),
     (Panel::Run, "Run", IconName::Play),
     (Panel::Requirements, "Requirements", IconName::Requirements),
     (Panel::History, "History", IconName::Clock),
     (Panel::Problems, "Problems", IconName::Warning),
+    (Panel::Objectives, "Objectives", IconName::Agent),
 ];
 const TAB_SHARE: f32 = 1.0 / TABS.len() as f32;
 /// Below this width per tab (in unscaled pixels) a tab shows its icon, with
@@ -242,6 +256,10 @@ impl Render for InspectorColumn {
             Panel::Requirements => requirements::render(&self.studio, cx).into_any_element(),
             Panel::History => history::render(&self.studio, cx).into_any_element(),
             Panel::Problems => problems::render(&self.studio, cx).into_any_element(),
+            Panel::Objectives => {
+                let studio = self.studio.clone();
+                self.objectives.render(&studio, window, cx)
+            }
         };
         crate::ui::target::regioned(
             "inspector",

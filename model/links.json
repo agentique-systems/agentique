@@ -544,6 +544,12 @@
       "path": "crates/launcher"
     },
     {
+      "element": 1379,
+      "name": "AgentiqueArchitecture::Orchestrator",
+      "kind": "crate",
+      "path": "crates/orchestrator"
+    },
+    {
       "element": 1106,
       "name": "AgentiqueArchitecture::Launcher",
       "kind": "test",

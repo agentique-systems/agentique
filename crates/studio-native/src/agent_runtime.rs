@@ -320,6 +320,7 @@ impl Studio {
             setting_sources: vec!["project".into()],
             agents: serde_json::json!({}),
             preset: true,
+            env: Vec::new(),
         })
     }
 

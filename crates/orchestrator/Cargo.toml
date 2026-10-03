@@ -1,0 +1,18 @@
+[package]
+name = "agq-orchestrator"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "The Orchestrator: takes an Operator's objective through improvement cycles of Agentique itself, with deterministic gates, independent review and recoverable adoption"
+
+[dependencies]
+agq-assistant = { path = "../assistant" }
+agq-execution = { path = "../execution" }
+agq-implementation = { path = "../implementation" }
+agq-providers = { path = "../providers" }
+agq-launcher = { path = "../launcher" }
+serde.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

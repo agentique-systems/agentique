@@ -24,6 +24,7 @@ mod library;
 mod live;
 mod motion;
 mod navigation;
+mod objectives;
 mod palette;
 mod panels;
 mod relationship_labels;

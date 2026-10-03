@@ -529,6 +529,9 @@ fn operators_only(studio: &Studio, action: &Action, drawn: &[Drawn]) -> Option<S
             if OPERATORS_CONTROLS.contains(&d.control.id.as_ref()) {
                 return Some("pausing and resuming agents is the Operator's".into());
             }
+            if d.control.id.starts_with("objective-") {
+                return Some("objectives are the Operator's to start, steer and stop".into());
+            }
             if matches!(action, Action::Scroll(..)) {
                 return None;
             }

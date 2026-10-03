@@ -172,6 +172,16 @@ pub fn refused_commands(place: Place, push: bool, network: bool) -> Vec<RefusedC
             "Pushing is not allowed in this session.",
         ));
     }
+    if place == Place::Worktree {
+        // A worktree shares the repository's refs with the Operator's
+        // working copy: only its own branch is the session's to change.
+        list.push(refused(
+            &format!(
+                r"{GIT}(stash\s+(drop|clear|pop|apply)|branch\b[^\n;&|]*(\s-[a-zA-Z]*[DfmM]\b|--delete|--force|--move)|update-ref\b|symbolic-ref\b|filter-branch|filter-repo|tag\b[^\n;&|]*(\s-d\b|--delete)|reflog\s+(expire|delete)|replace\b|worktree\s+(remove|prune|move)|config\s+(--local\s+)?[A-Za-z][\w.-]*\s+[^\s;&|]|config\b[^\n;&|]*--(unset|add|replace-all|rename-section|remove-section|edit))"
+            ),
+            "That changes the repository's refs, which the Operator's working copy shares; a cycle's worktree changes only its own branch.",
+        ));
+    }
     if place == Place::WorkingCopy {
         list.push(refused(
             &format!(
@@ -294,6 +304,9 @@ pub struct Development {
     /// Agentique's instructions appended to the SDK's development
     /// instructions (true), or the whole system prompt (false).
     pub preset: bool,
+    /// Variables for the session's commands besides the Studio's own (the
+    /// Orchestrator's shared build folder, say); never a secret.
+    pub env: Vec<(String, String)>,
 }
 
 /// The pause gate (C-53): Pause holds the session at its next tool call,
@@ -686,6 +699,46 @@ mod tests {
             "OTEL_EXPORTER",
         ] {
             assert!(parent_session_name(name), "{name}");
+        }
+    }
+
+    #[test]
+    fn a_worktree_session_changes_only_its_own_branch() {
+        let list = refused_commands(Place::Worktree, false, false);
+        let refused = |command: &str| {
+            list.iter().any(|r| {
+                regex::RegexBuilder::new(&r.pattern)
+                    .case_insensitive(true)
+                    .build()
+                    .unwrap()
+                    .is_match(command)
+            })
+        };
+        for command in [
+            "git update-ref refs/heads/main abc123",
+            "git stash clear",
+            "git branch -f main HEAD",
+            "git branch -D feature",
+            "git -C ../agentique tag -d v1",
+            "git symbolic-ref HEAD refs/heads/main",
+            "git stash pop",
+            "git config core.hooksPath hooks",
+            "git config --local remote.origin.url https://example.invalid/x.git",
+            "git worktree remove ../other",
+        ] {
+            assert!(refused(command), "{command}");
+        }
+        for command in [
+            "git commit -m 'x'",
+            "git status",
+            "git checkout -b mine",
+            "git diff HEAD~1",
+            "git log --oneline",
+            "git config --get user.name",
+            "git stash list",
+            "git branch --show-current",
+        ] {
+            assert!(!refused(command), "{command}");
         }
     }
 }

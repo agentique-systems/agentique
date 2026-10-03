@@ -36,6 +36,8 @@ pub enum Panel {
     Requirements,
     History,
     Problems,
+    /// Objectives: what the Orchestrator's agents do (C-53).
+    Objectives,
 }
 
 /// What changed in the Studio since the views last heard, so each view is
@@ -215,6 +217,8 @@ pub struct Studio {
     pub control: crate::control::ControlState,
     /// Implementation links, checks and drift (C-50).
     pub implementation: crate::implementation::ImplementationState,
+    /// Objectives: the Orchestrator's running objective (C-53).
+    pub objectives: crate::objectives::ObjectivesState,
     last_saved: Instant,
     /// What changed since the views last heard.
     dirty: Dirty,
@@ -324,6 +328,7 @@ impl Studio {
             develop: Default::default(),
             control: Default::default(),
             implementation: Default::default(),
+            objectives: Default::default(),
             last_saved: Instant::now(),
             dirty: Dirty::ALL,
         };

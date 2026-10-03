@@ -708,10 +708,11 @@ package AgentiqueArchitecture {
              * approved and the repository's checks passed, and adopts only after its
              * test instance passed; a check that did not run is never a pass; weakening a check
              * never counts; budgets and lack of progress stop it; resuming never repeats
-             * a completed side effect; Stop interrupts every session. Planned in W11.5:
-             * no crate yet. A safeguard: locked. */
+             * a completed side effect; Stop interrupts every session. A safeguard:
+             * locked. */
         port objectives : ObjectivePort;
         port control : ~ControlPort;
+        part 'agq-orchestrator' : Crate;
     }
 
     part def Agentique {
