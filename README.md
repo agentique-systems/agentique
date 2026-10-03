@@ -89,7 +89,14 @@ linked). Then:
   linked code and drift, checks the implementation, and starts "Implement
   with the Assistant…": a worker writes code in a worktree, the Studio checks
   it, and you review the patch before integrating it.
-- A live evaluation costs money and always asks first.
+- A live evaluation costs money and always asks first: the confirmation
+  shows the model and how it is asked, at most how many calls, what leaves
+  the computer and a cost bound, and the plan is fixed once confirmed.
+  `TypedScreeningCases` evaluates the screening agent with a typed decision
+  model (TypeSafe AI's Jev, `TypedLinkScreening`) beside the chat agent;
+  a model the provider layer does not know is refused, never replaced.
+  Replay answers only from recordings made with the same provider, model
+  and mapping.
 
 The design tokens, the generated themes and the components are shown in one
 place by the component gallery:
@@ -134,6 +141,6 @@ pull request.
 | `models/notifications/` | Scenario I's second example, a retrying notification dispatcher |
 | `docs/` | `stages.md` (progress), `subset.md` (supported SysML), `deviations.md` (departures from the standard) |
 | `standards/` | Pinned KerML 1.0 / SysML 2.0 artifacts, libraries and grammar, kept as the reference (never edited) |
-| `tools/` | The architecture check and the (rarely run) standards pinning tools |
+| `tools/` | The architecture check, the link-screening evaluation's report (`screening_report.py`), and the (rarely run) standards pinning tools |
 | `KerML.pdf`, `SysML.pdf`, `SysAPI.pdf` | The pinned OMG specifications |
 | `Agentique-Specification-v0.1.html` | The original specification, kept as history |
