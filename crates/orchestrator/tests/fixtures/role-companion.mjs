@@ -4,7 +4,7 @@
 // implementer's first attempt leaks a configured key into the change, so the
 // key gate fails and a repair round follows; the repair removes it.
 import { createInterface } from "node:readline";
-import { writeFileSync } from "node:fs";
+import { existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const KEY = "sk-fake-0123456789abcdef";
@@ -74,15 +74,32 @@ switch (role) {
       parts: ["Demo"],
       plan: ["Write IMPROVEMENT.md", "Check it is there"],
       criteria: [
-        { id: "c1", statement: "Git still works in the checkout", check: { kind: "command", program: ["git", "--version"] } },
+        { id: "c1", statement: "The note says the repository improved", check: { kind: "command", program: ["node", "--test", "note.test.mjs"] } },
       ],
     });
     out({ type: "assistant", id: "msg_end", model: "deepseek-v4-pro", content: [{ type: "text", text: `Proposed (${answer.isError ? "refused" : "accepted"}).` }] });
     break;
   }
   case "implementer": {
+    // HOLD-ONCE in the repository: the first implementer works until it is
+    // interrupted (the Operator closes Agentique), and the next goes on.
+    if (existsSync(join(o.cwd, "HOLD-ONCE")) && !existsSync(join(o.cwd, ".held"))) {
+      writeFileSync(join(o.cwd, ".held"), "");
+      out({ type: "text", text: "Working on it." });
+      for (;;) {
+        const message = await next();
+        if (message.type === "interrupt" || message.type === "eof") break;
+      }
+      out({ type: "error", kind: "interrupted", message: "stopped" });
+      setTimeout(() => process.exit(0), 50);
+      break;
+    }
     const repairing = o.prompt.includes("Repair round");
     writeFileSync(join(o.cwd, "IMPROVEMENT.md"), repairing ? "Improved.\n" : `Improved with ${KEY}.\n`);
+    writeFileSync(
+      join(o.cwd, "note.test.mjs"),
+      'import { test } from "node:test";\nimport assert from "node:assert";\nimport { readFileSync } from "node:fs";\ntest("the note says it improved", () => {\n  assert.equal(readFileSync("IMPROVEMENT.md", "utf8").trim(), "Improved.");\n});\n',
+    );
     await call("submit_implementation", { summary: repairing ? "Removed the key from the note." : "Wrote the note." });
     out({ type: "assistant", id: "msg_end", model: "deepseek-v4-pro", content: [{ type: "text", text: "Implemented." }] });
     break;

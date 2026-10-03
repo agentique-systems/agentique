@@ -1,10 +1,14 @@
 //! The repository's host (C-53, ROADMAP §4.15–§4.16): pushing a cycle's
 //! branch, opening its pull request, waiting for the repository's own
 //! checks, and merging exactly the reviewed commit, with `git` and GitHub's
-//! `gh` as exact commands on Execution's allow-list. Never a force-push,
-//! never a push to the default branch, never a bypass of the repository's
-//! rules: a merge the host refuses is a blocker, not something to work
-//! around.
+//! `gh` as exact commands on Execution's allow-list. What is pushed is one
+//! commit holding the reviewed tree on top of the last one pushed (or the
+//! base), so an earlier attempt's content (a key, a weakened test) never
+//! leaves this computer. Never a force-push, never a push to the default
+//! branch, never a bypass of the repository's rules: a merge the host
+//! refuses is a blocker, not something to work around. (GitHub's branch
+//! protection on the default branch is the backstop for everything an
+//! agent's own code could do with the Operator's credentials.)
 
 use agq_execution::process::{Finished, Program};
 use agq_execution::{Executor, Scope};
@@ -15,7 +19,11 @@ use std::time::{Duration, Instant};
 /// How long the repository's checks may take before the cycle stops.
 pub const CHECKS_WITHIN: Duration = Duration::from_secs(60 * 60);
 
-fn run(repository: &Path, words: &[&str], timeout: Duration) -> Result<Finished, String> {
+pub(crate) fn run(
+    repository: &Path,
+    words: &[&str],
+    timeout: Duration,
+) -> Result<Finished, String> {
     let program = Program::new(words[0], &words[1..]);
     let executor = Executor::new(Scope::read_only(repository).map_err(|e| e.to_string())?)
         .trusted(true)
@@ -38,19 +46,69 @@ fn run(repository: &Path, words: &[&str], timeout: Duration) -> Result<Finished,
     }
 }
 
-/// Pushes `branch` (never the default branch, never forced).
-pub fn push(repository: &Path, branch: &str, base_branch: &str) -> Result<(), String> {
+/// A new commit holding `tree`, on `parent`, with `message`.
+pub fn commit_tree(
+    repository: &Path,
+    tree: &str,
+    parent: &str,
+    message: &str,
+) -> Result<String, String> {
+    let made = run(
+        repository,
+        &["git", "commit-tree", tree, "-p", parent, "-m", message],
+        Duration::from_secs(60),
+    )?;
+    let commit = made.stdout.trim().to_string();
+    if commit.len() >= 40 && commit.chars().all(|c| c.is_ascii_hexdigit()) {
+        Ok(commit)
+    } else {
+        Err(format!("git commit-tree did not say the commit: {commit}"))
+    }
+}
+
+/// Pushes `commit` as the remote branch `branch` (never the default
+/// branch, never forced: the remote branch must be an ancestor).
+pub fn push_commit(
+    repository: &Path,
+    commit: &str,
+    branch: &str,
+    base_branch: &str,
+) -> Result<(), String> {
     if branch == base_branch
         || branch.is_empty()
         || branch.starts_with('+')
         || branch.starts_with('-')
+        || branch.contains(':')
     {
         return Err(format!("{branch} is not a branch a cycle pushes"));
     }
+    let refspec = format!("{commit}:refs/heads/{branch}");
     run(
         repository,
-        &["git", "push", "-u", "origin", branch],
+        &["git", "push", "origin", &refspec],
         Duration::from_secs(300),
+    )
+    .map(|_| ())
+}
+
+/// Whether `ancestor` is an ancestor of `commit`.
+pub fn is_ancestor(repository: &Path, ancestor: &str, commit: &str) -> Result<bool, String> {
+    let program = Program::new("git", &["merge-base", "--is-ancestor", ancestor, commit]);
+    let executor = Executor::new(Scope::read_only(repository).map_err(|e| e.to_string())?)
+        .trusted(true)
+        .allow(vec![program.clone()]);
+    let finished = executor
+        .run(&program, "", Duration::from_secs(60))
+        .map_err(|e| format!("{}: {e}", program.display()))?;
+    Ok(finished.success)
+}
+
+/// Puts a new worktree's branch at `commit` (a cycle starts at its base).
+pub fn start_at(worktree: &Path, commit: &str) -> Result<(), String> {
+    run(
+        worktree,
+        &["git", "reset", "--hard", commit],
+        Duration::from_secs(120),
     )
     .map(|_| ())
 }
@@ -226,13 +284,55 @@ pub fn merge(
     commit: &str,
     subject: &str,
 ) -> Result<String, String> {
-    let now = head(repository, number)?;
-    if now != commit {
+    let n = number.to_string();
+    // Merged already (a restart after the merge): the merge commit, if it
+    // was this commit that was merged.
+    let state = |tries: u32| -> Result<Value, String> {
+        let mut last = String::new();
+        for _ in 0..tries {
+            match run(
+                repository,
+                &[
+                    "gh",
+                    "pr",
+                    "view",
+                    &n,
+                    "--json",
+                    "state,mergeCommit,headRefOid",
+                ],
+                Duration::from_secs(120),
+            ) {
+                Ok(found) => return serde_json::from_str(&found.stdout).map_err(|e| e.to_string()),
+                Err(error) => {
+                    last = error;
+                    std::thread::sleep(Duration::from_secs(5));
+                }
+            }
+        }
+        Err(last)
+    };
+    let merged_commit = |value: &Value| -> Result<String, String> {
+        if value["headRefOid"] != commit {
+            return Err(format!(
+                "the pull request was merged at {}, not the reviewed commit {commit}",
+                value["headRefOid"]
+            ));
+        }
+        value["mergeCommit"]["oid"]
+            .as_str()
+            .map(str::to_string)
+            .ok_or_else(|| "the host did not say the merge commit".into())
+    };
+    let before = state(3)?;
+    if before["state"] == "MERGED" {
+        return merged_commit(&before);
+    }
+    if before["headRefOid"] != commit {
         return Err(format!(
-            "the pull request's head is {now}, not the reviewed commit {commit}"
+            "the pull request's head is {}, not the reviewed commit {commit}",
+            before["headRefOid"]
         ));
     }
-    let n = number.to_string();
     run(
         repository,
         &[
@@ -248,22 +348,14 @@ pub fn merge(
         ],
         Duration::from_secs(300),
     )?;
-    let merged = run(
-        repository,
-        &["gh", "pr", "view", &n, "--json", "mergeCommit,state"],
-        Duration::from_secs(120),
-    )?;
-    let value: Value = serde_json::from_str(&merged.stdout).map_err(|e| e.to_string())?;
-    if value["state"] != "MERGED" {
+    let after = state(5)?;
+    if after["state"] != "MERGED" {
         return Err(format!(
             "the pull request is {}, not merged",
-            value["state"]
+            after["state"]
         ));
     }
-    value["mergeCommit"]["oid"]
-        .as_str()
-        .map(str::to_string)
-        .ok_or_else(|| "the host did not say the merge commit".into())
+    merged_commit(&after)
 }
 
 /// Brings the merged commit into the repository's default branch here, by

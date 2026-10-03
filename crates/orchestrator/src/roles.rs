@@ -89,7 +89,7 @@ fn submit_proposal() -> Value {
                             "statement": { "type": "string", "description": "What must be true after the change." },
                             "check": {
                                 "type": "object",
-                                "description": "How it is checked: {kind: command, program: [\"cargo\", \"test\", \"-p\", \"agq-x\", \"name_of_test\"]} (must succeed in the cycle's checkout), {kind: observation, setup: [actions], expect: {screen, dialog, statusContains, selectionContains, control, labelContains, valueContains, enabled, anyLabelContains}} (in a test instance of the change), or {kind: judgment} (the evaluator decides from observations).",
+                                "description": "How it is checked: {kind: command, program: [\"cargo\", \"test\", \"-p\", \"agq-x\", \"name_of_test\"]} (a test run: cargo test with -p, --test, --features, --lib and one filter, node --test <file>.test.<ext>, or python -m unittest <module>; it must run at least one test, fail before the change and pass after), {kind: observation, setup: [actions], expect: {screen, dialog, statusContains, selectionContains, control, labelContains, valueContains, enabled, anyLabelContains}} (in a test instance of the change; at least one of these keys, and no others), or {kind: judgment} (the evaluator decides from observations).",
                                 "properties": {
                                     "kind": { "type": "string", "enum": ["command", "observation", "judgment"] },
                                     "program": { "type": "array", "items": { "type": "string" } },
@@ -186,11 +186,9 @@ pub fn tools(role: Role) -> Value {
         }
         Role::Implementer => agentique(&model_tools(true)),
         Role::Reviewer => agentique(&model_tools(false)),
-        Role::Evaluator => {
-            let mut names = model_tools(false);
-            names.extend(["observe_app", "act_in_app"]);
-            agentique(&names)
-        }
+        // The test instance has the checkout's model open (one writer at a
+        // time): the evaluator works through the application.
+        Role::Evaluator => agentique(&["observe_app", "act_in_app"]),
     };
     list.push(match role {
         Role::Lead => submit_proposal(),
@@ -277,7 +275,7 @@ fn earlier(objective: &Objective) -> String {
 pub fn instructions(role: Role) -> String {
     let specific = match role {
         Role::Lead => {
-            "Your role: lead. Find one genuine, bounded improvement that serves the objective, and hand it over with submit_proposal. Look before you choose: the self-model (read_model; model/Agentique.sysml), the code, docs/stages.md and ROADMAP §5.6 (known problems), the git log, and the running application (observe_app). Choose something small (a few files), real (evidence: a failing case, a wrong result, a confusing screen), and checkable: at least one criterion must be a command that fails before the change and passes after (usually a new test: `cargo test -p <crate> <test name>`); a usability or comprehension improvement also gets an observation or judgment criterion in the running application. Leave locked parts alone (the language core, System State, History, Execution, Implementation's verification, ClaudeAgentRuntime, Launcher, Orchestrator) unless the objective names them. Do not repeat an earlier cycle's improvement. You work in a throwaway checkout: change nothing there."
+            "Your role: lead. Find one genuine, bounded improvement that serves the objective, and hand it over with submit_proposal. Look before you choose: the self-model (read_model; model/Agentique.sysml), the code (read and search files; you run no commands), docs/stages.md and ROADMAP §5.6 (known problems), and the running application (observe_app). Choose something small (a few files), real (evidence: a failing case, a wrong result, a confusing screen), and checkable: at least one criterion must be a command that fails before the change and passes after (usually a new test: `cargo test -p <crate> <test name>`); a usability or comprehension improvement also gets an observation or judgment criterion in the running application. Leave locked parts alone (the language core, System State, History, Execution, Implementation's verification, ClaudeAgentRuntime, Launcher, Orchestrator) unless the objective names them. Do not repeat an earlier cycle's improvement. You work in a throwaway checkout: change nothing there."
         }
         Role::Implementer => {
             "Your role: implementer. Implement the frozen proposal in this worktree, and only it. Add tests for the criteria; keep every existing test and check (rule 10). Run what you need yourself: `cargo fmt --all`, `cargo clippy -p <crate> --all-targets --offline -- -D warnings`, `cargo test -p <crate> --offline`, and the criteria's commands (a shared CARGO_TARGET_DIR is set). Model changes go through apply_changes. When done, call submit_implementation; the Orchestrator commits and checks a clean checkout. If you are repairing, fix exactly the failures and findings listed, without weakening a check."
@@ -348,6 +346,99 @@ pub fn repair_context(attempt: Option<&Attempt>, findings: &[String]) -> String 
     text
 }
 
+/// Whether `program` is a test run a criterion may name: `cargo test` with
+/// packages, test targets, features and one filter; Node's test runner on a
+/// test file; Python's unittest. Nothing else runs as a criterion, so a
+/// proposal cannot run a program of its choosing.
+pub fn test_command(program: &[String]) -> Result<(), String> {
+    let words: Vec<&str> = program.iter().map(String::as_str).collect();
+    let name = |w: &str| {
+        !w.is_empty()
+            && !w.starts_with('-')
+            && w.chars()
+                .all(|c| c.is_ascii_alphanumeric() || "_-:.".contains(c))
+    };
+    let path = |w: &str| {
+        !w.is_empty()
+            && !w.starts_with('-')
+            && !w.contains("..")
+            && !w.starts_with('/')
+            && !w.contains(':')
+            && w.chars()
+                .all(|c| c.is_ascii_alphanumeric() || "_-./\\".contains(c))
+    };
+    match words.as_slice() {
+        ["cargo", "test", rest @ ..] => {
+            let mut filter = false;
+            let mut i = 0;
+            while i < rest.len() {
+                match rest[i] {
+                    "-p" | "--package" | "--test" | "--features"
+                        if rest.get(i + 1).is_some_and(|w| name(w)) =>
+                    {
+                        i += 2
+                    }
+                    "--lib" | "--doc" | "--offline" | "--locked" => i += 1,
+                    "--" => {
+                        let tail = &rest[i + 1..];
+                        if tail.iter().all(|w| {
+                            *w == "--exact"
+                                || *w == "--nocapture"
+                                || w.starts_with("--test-threads=")
+                                || (name(w) && !filter)
+                        }) {
+                            return Ok(());
+                        }
+                        return Err(format!(
+                            "`{}` after `--` is not a test option",
+                            tail.join(" ")
+                        ));
+                    }
+                    w if name(w) && !filter => {
+                        filter = true;
+                        i += 1;
+                    }
+                    w => {
+                        return Err(format!(
+                            "`{w}` is not an option a criterion's cargo test may use"
+                        ));
+                    }
+                }
+            }
+            Ok(())
+        }
+        ["node", rest @ ..] => {
+            let flags: Vec<&&str> = rest.iter().filter(|w| w.starts_with('-')).collect();
+            let files: Vec<&&str> = rest.iter().filter(|w| !w.starts_with('-')).collect();
+            let known = flags.iter().all(|f| {
+                matches!(
+                    **f,
+                    "--test" | "--experimental-strip-types" | "--no-warnings"
+                )
+            });
+            if known
+                && flags.iter().any(|f| **f == "--test")
+                && !files.is_empty()
+                && files.iter().all(|f| path(f) && f.contains(".test."))
+            {
+                Ok(())
+            } else {
+                Err("a Node criterion is `node --test <file>.test.<ext>`".into())
+            }
+        }
+        ["python", "-m", "unittest", tests @ ..]
+            if !tests.is_empty() && tests.iter().all(|t| path(t)) =>
+        {
+            Ok(())
+        }
+        [] => Err("a command check without a program".into()),
+        _ => Err(
+            "a criterion's command is a test run: cargo test, node --test or python -m unittest"
+                .into(),
+        ),
+    }
+}
+
 /// A proposal from `submit_proposal`'s input, checked: at least one
 /// criterion with a deterministic check, unique ids, commands as words.
 pub fn read_proposal(input: &Value) -> Result<Proposal, String> {
@@ -370,13 +461,12 @@ pub fn read_proposal(input: &Value) -> Result<Proposal, String> {
         if !ids.insert(criterion.id.clone()) {
             return Err(format!("the criterion id {} is used twice", criterion.id));
         }
-        if let crate::record::Check::Command { program } = &criterion.check
-            && program.is_empty()
-        {
-            return Err(format!(
-                "criterion {} has a command check without a program",
-                criterion.id
-            ));
+        match &criterion.check {
+            crate::record::Check::Command { program } => test_command(program)
+                .map_err(|problem| format!("criterion {}: {problem}", criterion.id))?,
+            crate::record::Check::Observation { expect, .. } => crate::control::expectation(expect)
+                .map_err(|problem| format!("criterion {}: {problem}", criterion.id))?,
+            crate::record::Check::Judgment => {}
         }
     }
     if !proposal.criteria.iter().any(|c| {
@@ -443,5 +533,69 @@ mod tests {
         let mut twice = base.clone();
         twice["criteria"] = json!([base["criteria"][0], base["criteria"][0]]);
         assert!(read_proposal(&twice).is_err());
+    }
+
+    #[test]
+    fn a_criterion_runs_tests_only() {
+        let words = |w: &[&str]| w.iter().map(|s| s.to_string()).collect::<Vec<_>>();
+        for allowed in [
+            &["cargo", "test", "-p", "agq-orchestrator", "a_cycle_goes"][..],
+            &[
+                "cargo", "test", "-p", "agq-x", "--test", "cycle", "--", "--exact", "name",
+            ],
+            &[
+                "cargo",
+                "test",
+                "--offline",
+                "-p",
+                "agq-studio-native",
+                "--features",
+                "automation",
+                "control::",
+            ],
+            &[
+                "node",
+                "--experimental-strip-types",
+                "--no-warnings",
+                "--test",
+                "test/policy.test.ts",
+            ],
+            &["python", "-m", "unittest", "tools.test_check_architecture"],
+        ] {
+            assert!(test_command(&words(allowed)).is_ok(), "{allowed:?}");
+        }
+        for refused in [
+            &["git", "push", "--force", "origin", "HEAD:main"][..],
+            &["powershell", "-c", "anything"],
+            &["cargo", "run", "-p", "x"],
+            &["cargo", "test", "--config", "target.x.runner='cmd'"],
+            &["cargo", "+nightly", "test"],
+            &["cargo", "test", "-Z", "unstable-options"],
+            &["cargo", "test", "a", "b"],
+            &["node", "script.js"],
+            &["node", "--test", "../outside.test.js"],
+            &["python", "tools/check_architecture.py"],
+            &[],
+        ] {
+            assert!(test_command(&words(refused)).is_err(), "{refused:?}");
+        }
+        let base = json!({
+            "title": "Fix the gap", "kind": "correctness", "why": "x.rs:3",
+            "parts": [], "plan": ["a"],
+            "criteria": [{ "id": "c1", "statement": "s", "check": { "kind": "command", "program": ["git", "push", "origin", "HEAD:main"] } }]
+        });
+        assert!(read_proposal(&base).is_err(), "a criterion cannot push");
+        let mut empty = base.clone();
+        empty["criteria"] = json!([{ "id": "c1", "statement": "s", "check": { "kind": "observation", "expect": {} } }]);
+        assert!(
+            read_proposal(&empty).is_err(),
+            "an observation must expect something"
+        );
+        let mut misspelt = base.clone();
+        misspelt["criteria"] = json!([{ "id": "c1", "statement": "s", "check": { "kind": "observation", "expect": { "status_contains": "x" } } }]);
+        assert!(
+            read_proposal(&misspelt).is_err(),
+            "unknown keys are refused"
+        );
     }
 }

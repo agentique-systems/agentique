@@ -172,6 +172,16 @@ pub fn refused_commands(place: Place, push: bool, network: bool) -> Vec<RefusedC
             "Pushing is not allowed in this session.",
         ));
     }
+    if place == Place::Worktree {
+        // A worktree shares the repository's refs with the Operator's
+        // working copy: only its own branch is the session's to change.
+        list.push(refused(
+            &format!(
+                r"{GIT}(stash\s+(drop|clear)|branch\b[^\n;&|]*(\s-[a-zA-Z]*[DfmM]\b|--delete|--force|--move)|update-ref\b|symbolic-ref\b|filter-branch|filter-repo|tag\b[^\n;&|]*(\s-d\b|--delete)|reflog\s+(expire|delete)|replace\b)"
+            ),
+            "That changes the repository's refs, which the Operator's working copy shares; a cycle's worktree changes only its own branch.",
+        ));
+    }
     if place == Place::WorkingCopy {
         list.push(refused(
             &format!(
@@ -689,6 +699,39 @@ mod tests {
             "OTEL_EXPORTER",
         ] {
             assert!(parent_session_name(name), "{name}");
+        }
+    }
+
+    #[test]
+    fn a_worktree_session_changes_only_its_own_branch() {
+        let list = refused_commands(Place::Worktree, false, false);
+        let refused = |command: &str| {
+            list.iter().any(|r| {
+                regex::RegexBuilder::new(&r.pattern)
+                    .case_insensitive(true)
+                    .build()
+                    .unwrap()
+                    .is_match(command)
+            })
+        };
+        for command in [
+            "git update-ref refs/heads/main abc123",
+            "git stash clear",
+            "git branch -f main HEAD",
+            "git branch -D feature",
+            "git -C ../agentique tag -d v1",
+            "git symbolic-ref HEAD refs/heads/main",
+        ] {
+            assert!(refused(command), "{command}");
+        }
+        for command in [
+            "git commit -m 'x'",
+            "git status",
+            "git checkout -b mine",
+            "git diff HEAD~1",
+            "git log --oneline",
+        ] {
+            assert!(!refused(command), "{command}");
         }
     }
 }

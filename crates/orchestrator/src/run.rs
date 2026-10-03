@@ -50,6 +50,9 @@ pub enum Event {
     /// A request for the running Studio's control interface (the lead
     /// observes the application).
     Control { body: Value, reply: Sender<Value> },
+    /// The default branch here moved to a merged change: a project open
+    /// from this repository must be read again.
+    Merged { repository: PathBuf },
     /// Hand over to the adopted build: the Studio saves and exits.
     Adopt {
         build: String,
@@ -83,11 +86,18 @@ pub struct Handle {
     commands: Sender<Command>,
     pub events: Receiver<Event>,
     thread: Option<std::thread::JoinHandle<()>>,
+    paused: Arc<AtomicBool>,
 }
 
 impl Handle {
     pub fn send(&self, command: Command) {
         let _ = self.commands.send(command);
+    }
+
+    /// Whether the Operator paused it (also while an agent's session holds
+    /// at its next tool call, before the record says so).
+    pub fn paused(&self) -> bool {
+        self.paused.load(Ordering::SeqCst)
     }
 
     /// Whether the driver has ended.
@@ -104,6 +114,7 @@ pub fn start(setup: Setup, objective: Objective) -> Handle {
     if objective.state == State::Paused {
         controls.apply(Command::Pause);
     }
+    let paused = controls.paused.clone();
     // The Operator's commands take effect as they arrive, also while an
     // agent works (its session reads the same steering and stop).
     let applied = controls.clone();
@@ -136,7 +147,41 @@ pub fn start(setup: Setup, objective: Objective) -> Handle {
         commands,
         events: events_received,
         thread: Some(thread),
+        paused,
     }
+}
+
+/// How many tests a test run says it ran: cargo's `test result:` lines,
+/// Node's `# pass` / `ℹ pass`, Python's `Ran N tests`; `None` when it says
+/// nothing countable.
+fn tests_ran(output: &str) -> Option<usize> {
+    let mut total = None;
+    let mut add = |n: usize| total = Some(total.unwrap_or(0) + n);
+    let number_after = |line: &str, marker: &str| -> Option<usize> {
+        let rest = &line[line.find(marker)? + marker.len()..];
+        rest.trim_start()
+            .split(|c: char| !c.is_ascii_digit())
+            .next()?
+            .parse()
+            .ok()
+    };
+    for line in output.lines() {
+        if line.contains("test result:") {
+            let passed = number_after(line, ". ").unwrap_or(0);
+            let failed = number_after(line, "passed; ").unwrap_or(0);
+            add(passed + failed);
+        } else if let Some(n) =
+            number_after(line, "# pass").or_else(|| number_after(line, "ℹ pass"))
+        {
+            add(n);
+        } else if line.starts_with("Ran ")
+            && line.contains(" test")
+            && let Some(n) = number_after(line, "Ran ")
+        {
+            add(n);
+        }
+    }
+    total
 }
 
 /// Cargo's settings for every checkout in the work folder (Cargo reads a
@@ -161,6 +206,15 @@ fn cargo_settings(work: &Path) -> Result<(), String> {
     ]
     .join("\n");
     agq_launcher::write_atomically(&folder.join("config.toml"), text.as_bytes())
+}
+
+/// Usage without a known price, at a high one ($15 a million tokens in, $75
+/// out), so an unpriced model never makes the spend budget blind.
+fn unpriced(usage: &agq_assistant::Usage) -> f64 {
+    (usage.input_tokens + usage.cache_read_input_tokens + usage.cache_creation_input_tokens) as f64
+        * 15.0
+        / 1e6
+        + usage.output_tokens as f64 * 75.0 / 1e6
 }
 
 /// The Operator's commands, as they stand.
@@ -399,7 +453,17 @@ impl Driver {
                     Ok(Some(next)) => Ok(next),
                     Err(error) => Err(error),
                 },
-                Phase::Resume => self.resume(),
+                Phase::Resume => match self.resume() {
+                    Ok(next) => Ok(next),
+                    // The adopted build did not take over: this build goes
+                    // no further on top of it.
+                    Err(problem) => {
+                        self.cycle_mut().blocker = Some(problem.clone());
+                        self.cycle_mut().phase = Phase::Failed;
+                        self.end(State::Failed, problem);
+                        return;
+                    }
+                },
                 Phase::Done | Phase::Failed => continue,
             };
             match next {
@@ -591,7 +655,12 @@ impl Driver {
                 let mut c = cost.borrow_mut();
                 match usage.cost_usd(&model) {
                     Some(usd) => c.0 += usd,
-                    None => c.2 = true,
+                    None => {
+                        // No price known: counted at a high one, so the
+                        // spend budget still stops it.
+                        c.0 += unpriced(&usage);
+                        c.2 = true;
+                    }
                 }
                 c.1 += usage.input_tokens
                     + usage.output_tokens
@@ -604,6 +673,7 @@ impl Driver {
             TurnEvent::Stream(StreamEvent::Usage(usage)) => {
                 let mut c = cost.borrow_mut();
                 c.1 += usage.input_tokens + usage.output_tokens;
+                c.0 += unpriced(&usage);
                 c.2 = true;
             }
             TurnEvent::Stream(StreamEvent::ToolCallStarted { name, .. }) => {
@@ -732,7 +802,7 @@ impl Driver {
         let base = self.cycle().base.clone().unwrap_or(head.commit);
         self.cycle_mut().base = Some(base.clone());
         let lead = self.checkout("lead", &base)?;
-        let policy = self.policy(&lead, false, true);
+        let policy = self.policy(&lead, false, false);
         let mut brief = roles::brief(Role::Lead, &self.objective, "");
         for attempt in 0..2 {
             let session = self.session(
@@ -783,9 +853,13 @@ impl Driver {
                 .setup
                 .store
                 .once(&id, &format!("cycle-{n}/worktree"), || {
-                    git::create_worktree(&repository, &name, &work)
+                    let branch = git::create_worktree(&repository, &name, &work)
                         .map(|w| w.branch)
-                        .map_err(|e| e.to_string())
+                        .map_err(|e| e.to_string())?;
+                    // At the cycle's base, whatever the repository's HEAD is
+                    // now.
+                    forge::start_at(&work, &base)?;
+                    Ok(branch)
                 })?;
             let cycle = self.cycle_mut();
             cycle.branch = Some(created);
@@ -846,8 +920,31 @@ impl Driver {
         Ok(Phase::Check)
     }
 
+    /// A criterion's test run in `folder`: it must pass and run at least
+    /// one test; a program that is no test run is refused.
+    fn criterion(&self, folder: &Path, words: &[String], timeout: Duration) -> Outcome {
+        if let Err(problem) = roles::test_command(words) {
+            return Outcome {
+                name: words.join(" "),
+                verdict: "not run".into(),
+                detail: problem,
+            };
+        }
+        self.run_command(folder, words, timeout, true)
+    }
+
     /// Runs `words` in `folder` as an exact allowed command.
     fn command(&self, folder: &Path, words: &[String], timeout: Duration) -> Outcome {
+        self.run_command(folder, words, timeout, false)
+    }
+
+    fn run_command(
+        &self,
+        folder: &Path,
+        words: &[String],
+        timeout: Duration,
+        tests: bool,
+    ) -> Outcome {
         let name = words.join(" ");
         let Some(program) = Program::from_list(words) else {
             return Outcome {
@@ -871,6 +968,18 @@ impl Driver {
             }
         };
         match executor.run(&program, "", timeout) {
+            Ok(finished)
+                if finished.success
+                    && tests
+                    && tests_ran(&format!("{}\n{}", finished.stdout, finished.stderr))
+                        == Some(0) =>
+            {
+                Outcome {
+                    name,
+                    verdict: "failed".into(),
+                    detail: "it ran no test".into(),
+                }
+            }
             Ok(finished) if finished.success => Outcome {
                 name,
                 verdict: "passed".into(),
@@ -899,7 +1008,37 @@ impl Driver {
             .and_then(|a| a.commit.clone())
             .ok_or("nothing to check")?;
         let base = self.cycle().base.clone().ok_or("the cycle has no base")?;
+        let repository = self.objective.repository.clone();
+        if !forge::is_ancestor(&repository, &base, &commit)? {
+            return Err(format!(
+                "the commit {} does not descend from the cycle's base {}",
+                builds::short(&commit),
+                builds::short(&base)
+            ));
+        }
+        // The build settings, as written: an agent's command may have
+        // changed them.
+        cargo_settings(&self.setup.work)?;
         let verify = self.checkout("verify", &commit)?;
+        let proposal = self.cycle().proposal.clone().ok_or("no proposal")?;
+        // Once per cycle: the command criteria on the base must fail (or
+        // run no test), so that passing after shows the change.
+        if self.cycle().before.is_empty() {
+            let before = self.checkout("base", &base)?;
+            let mut outcomes = Vec::new();
+            for criterion in &proposal.criteria {
+                if let Check::Command { program } = &criterion.check {
+                    let mut outcome = self.criterion(&before, program, Duration::from_secs(1800));
+                    outcome.name = criterion.id.clone();
+                    outcomes.push(outcome);
+                }
+            }
+            if self.controls.stopped() {
+                return Err("stopped".into());
+            }
+            self.cycle_mut().before = outcomes;
+            self.save();
+        }
         let mut checks = Vec::new();
         for words in self.setup.checks.clone() {
             self.hold();
@@ -909,16 +1048,18 @@ impl Driver {
             self.note("orchestrator", format!("check: {}", words.join(" ")));
             checks.push(self.command(&verify, &words, Duration::from_secs(3600)));
         }
-        let proposal = self.cycle().proposal.clone().ok_or("no proposal")?;
         let mut criteria = Vec::new();
         for criterion in &proposal.criteria {
             if let Check::Command { program } = &criterion.check {
-                let mut outcome = self.command(&verify, program, Duration::from_secs(1800));
+                let mut outcome = self.criterion(&verify, program, Duration::from_secs(1800));
                 outcome.name = format!("{}: {}", criterion.id, outcome.name);
                 criteria.push(outcome);
             }
         }
-        let repository = self.objective.repository.clone();
+        // Stopped meanwhile: nothing is recorded as a failure of the change.
+        if self.controls.stopped() {
+            return Err("stopped".into());
+        }
         let patch = git::patch_of(&repository, &base, &commit).map_err(|e| e.to_string())?;
         let mut gates = vec![
             gates::paths(
@@ -963,6 +1104,79 @@ impl Driver {
                 name: "locked elements unchanged".into(),
                 verdict: "not run".into(),
                 detail: error,
+            },
+        });
+        // The code of locked parts, by the links (the change's and the
+        // base's), unless the objective names the part.
+        let files: Vec<String> = patch
+            .files
+            .iter()
+            .map(|f| f.path.replace('\\', "/"))
+            .collect();
+        let links: Vec<String> = [
+            verify.join("model").join("links.json"),
+            repository.join("model").join("links.json"),
+        ]
+        .iter()
+        .filter_map(|p| std::fs::read_to_string(p).ok())
+        .collect();
+        gates.push(if verify.join("model").is_dir() {
+            match agq_assistant::model_tools::locked_code(
+                &verify,
+                &base,
+                &files,
+                &links,
+                &self.objective.permissions.locked,
+            ) {
+                Ok(found) if found.is_empty() => Outcome {
+                    name: "code of locked parts unchanged".into(),
+                    verdict: "passed".into(),
+                    detail: String::new(),
+                },
+                Ok(found) => Outcome {
+                    name: "code of locked parts unchanged".into(),
+                    verdict: "failed".into(),
+                    detail: format!(
+                        "the change touches the code of locked parts the objective does not name: {}",
+                        found.join(", ")
+                    ),
+                },
+                Err(error) => Outcome {
+                    name: "code of locked parts unchanged".into(),
+                    verdict: "not run".into(),
+                    detail: error,
+                },
+            }
+        } else {
+            Outcome {
+                name: "code of locked parts unchanged".into(),
+                verdict: "passed".into(),
+                detail: "no model, so nothing is locked".into(),
+            }
+        });
+        // The criteria failed before the change.
+        let already: Vec<String> = self
+            .cycle()
+            .before
+            .iter()
+            .filter(|o| o.passed())
+            .map(|o| o.name.clone())
+            .collect();
+        gates.push(Outcome {
+            name: "the criteria fail before the change".into(),
+            verdict: if already.is_empty() {
+                "passed"
+            } else {
+                "failed"
+            }
+            .into(),
+            detail: if already.is_empty() {
+                String::new()
+            } else {
+                format!(
+                    "{} already pass on the base, so they do not show the change",
+                    already.join(", ")
+                )
             },
         });
         let attempt = self.cycle_mut().attempts.last_mut().expect("an attempt");
@@ -1095,6 +1309,9 @@ impl Driver {
         }
         drop(client);
         drop(instance);
+        if self.controls.stopped() {
+            return Err("stopped".into());
+        }
         let attempt = self.cycle_mut().attempts.last_mut().expect("an attempt");
         attempt.criteria.extend(outcomes);
         if attempt.failures().is_empty() {
@@ -1140,7 +1357,7 @@ impl Driver {
             builds::short(&base),
         );
         let brief = roles::brief(Role::Reviewer, &self.objective, &context);
-        let policy = self.policy(&verify, false, true);
+        let policy = self.policy(&verify, false, false);
         let session = self.session(Role::Reviewer, &verify, policy, brief, false, None)?;
         let verdict = session.submitted.ok_or("the reviewer gave no verdict")?;
         let review = Review {
@@ -1249,18 +1466,47 @@ impl Driver {
         let id = self.id();
         let n = self.cycle().n;
         let short = builds::short(&commit).to_string();
-        let work = self
-            .cycle()
-            .worktree
-            .clone()
-            .unwrap_or_else(|| repository.clone());
-        self.setup
-            .store
-            .once(&id, &format!("cycle-{n}/push-{short}"), || {
-                forge::push(&work, &branch, &base_branch).map(|_| String::new())
-            })?;
         let proposal = self.cycle().proposal.clone().ok_or("no proposal")?;
         let body = self.pull_request_body();
+        // What leaves this computer: one commit with the reviewed tree, on
+        // the last one pushed (or the base), and the pull request's text;
+        // no configured key in any of it.
+        let base = self.cycle().base.clone().ok_or("the cycle has no base")?;
+        let parent = self.cycle().pushed.clone().unwrap_or(base);
+        let message = format!(
+            "{}\n\nObjective {id}, cycle {n}: the reviewed commit {short}.",
+            proposal.title
+        );
+        for (what, text) in [
+            ("the commit message", &message),
+            ("the pull request's title", &proposal.title),
+            ("the pull request's body", &body),
+        ] {
+            let gate = gates::keys_in(what, text, &self.setup.keys);
+            if !gate.passed() {
+                return Err(gate.detail);
+            }
+        }
+        let tree = git::tree_of(&repository, &commit).map_err(|e| e.to_string())?;
+        let pushed = self
+            .setup
+            .store
+            .once(&id, &format!("cycle-{n}/squash-{short}"), || {
+                forge::commit_tree(&repository, &tree, &parent, &message)
+            })?;
+        if git::tree_of(&repository, &pushed).map_err(|e| e.to_string())? != tree {
+            return Err("the commit to push does not hold the reviewed tree".into());
+        }
+        self.setup.store.once(
+            &id,
+            &format!("cycle-{n}/push-{}", builds::short(&pushed)),
+            || {
+                forge::push_commit(&repository, &pushed, &branch, &base_branch)
+                    .map(|_| String::new())
+            },
+        )?;
+        self.cycle_mut().pushed = Some(pushed.clone());
+        self.save();
         let pr = match self.cycle().pull_request.clone() {
             Some(pr) => pr,
             None => {
@@ -1307,7 +1553,7 @@ impl Driver {
             .setup
             .store
             .once(&id, &format!("cycle-{n}/merge-{short}"), || {
-                forge::merge(&repository, pr.number, &commit, &subject)
+                forge::merge(&repository, pr.number, &pushed, &subject)
             })?;
         self.cycle_mut().merged = Some(merged.clone());
         self.save();
@@ -1318,6 +1564,9 @@ impl Driver {
         if let Err(problem) = forge::follow(&repository, &base_branch, &merged) {
             return Err(format!("paused: {problem}"));
         }
+        let _ = self.events.send(Event::Merged {
+            repository: repository.clone(),
+        });
         if self.objective.permissions.adopt {
             Ok(Phase::Build)
         } else {
@@ -1541,5 +1790,23 @@ impl Driver {
                 running.as_deref().unwrap_or("a development build")
             ))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_test_run_says_how_many_tests_ran() {
+        let cargo = "running 0 tests\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 12 filtered out\n\ntest result: ok. 3 passed; 1 failed; 0 ignored";
+        assert_eq!(tests_ran(cargo), Some(4));
+        assert_eq!(
+            tests_ran("test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 9 filtered out"),
+            Some(0)
+        );
+        assert_eq!(tests_ran("# tests 2\n# pass 2\n# fail 0"), Some(2));
+        assert_eq!(tests_ran("Ran 5 tests in 0.010s\n\nOK"), Some(5));
+        assert_eq!(tests_ran("Compiling things"), None);
     }
 }

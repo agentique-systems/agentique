@@ -43,6 +43,12 @@ impl ObjectivesState {
         self.handle.as_ref().is_some_and(|h| !h.finished())
     }
 
+    /// Whether the Operator paused the running objective (as soon as they
+    /// did, also while an agent's session holds at its next tool call).
+    pub fn paused(&self) -> bool {
+        self.handle.as_ref().is_some_and(|h| h.paused())
+    }
+
     /// Whether the workspace's tick should poll.
     pub fn wants_poll(&self) -> bool {
         self.handle.is_some() || !self.looked
@@ -129,18 +135,20 @@ impl Studio {
             .into_iter()
             .filter_map(|p| agq_providers::runtime_key(p).ok().flatten())
             .map(|k| k.expose().to_string())
-            .filter(|k| k.len() >= 8)
+            .filter(|k| k.len() >= 12)
             .collect();
         let checks = agq_implementation::task::ProjectChecks::agentique()
             .commands
             .into_iter()
             .map(|c| c.program)
             .collect();
-        let protected = std::fs::read_to_string(repository.join("model").join("links.json"))
-            .ok()
-            .and_then(|text| agq_implementation::links::Links::parse(&text).ok())
-            .map(|links| links.protected)
-            .unwrap_or_default();
+        // The links' protected paths are part of the gates: an objective
+        // does not start without them.
+        let links = std::fs::read_to_string(repository.join("model").join("links.json"))
+            .map_err(|e| format!("the repository's model/links.json cannot be read: {e}"))?;
+        let protected = agq_implementation::links::Links::parse(&links)
+            .map_err(|e| format!("the repository's model/links.json cannot be read: {e}"))?
+            .protected;
         Ok(Setup {
             store: self.objective_store(),
             work: self.objective_work(),
@@ -301,6 +309,23 @@ impl Studio {
                         crate::control::Reply::Channel(reply),
                         Duration::from_secs(55),
                     ));
+                }
+                Event::Merged { repository } => {
+                    // The merged change moved the files under an open
+                    // project of this repository: read it again before
+                    // anything is saved through it.
+                    let open = self.project.as_ref().map(|p| p.folder().to_path_buf());
+                    let same = |a: &Path, b: &Path| {
+                        a.canonicalize()
+                            .ok()
+                            .zip(b.canonicalize().ok())
+                            .is_some_and(|(a, b)| a == b)
+                    };
+                    if let Some(folder) = open.filter(|f| same(f, &repository)) {
+                        self.open_project(&folder);
+                        self.objectives
+                            .note("orchestrator", "the project was read again after the merge");
+                    }
                 }
                 Event::Adopt { build, reply } => {
                     let result = self.use_build(&build);

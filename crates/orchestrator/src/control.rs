@@ -124,7 +124,16 @@ impl TestInstance {
         let errors = std::fs::File::create(folder.join("errors.log"))
             .map(Stdio::from)
             .unwrap_or_else(|_| Stdio::null());
+        // Only what a process needs (as Execution passes it): the Studio's
+        // keys and tokens stay with the Studio, since a test instance runs
+        // code no reviewer has read yet.
+        let environment = agq_execution::Executor::new(
+            agq_execution::Scope::read_only(repository).map_err(|e| e.to_string())?,
+        )
+        .environment();
         let child = Command::new(exe)
+            .env_clear()
+            .envs(environment)
             .arg("--no-restore")
             .arg("--session")
             .arg(folder.join("session").join("studio-session.json"))
@@ -179,12 +188,51 @@ impl Drop for TestInstance {
     }
 }
 
+/// The keys an observation criterion may use.
+const EXPECTATIONS: [&str; 9] = [
+    "screen",
+    "dialog",
+    "statusContains",
+    "selectionContains",
+    "control",
+    "labelContains",
+    "valueContains",
+    "enabled",
+    "anyLabelContains",
+];
+
+/// Whether `expect` is an observation criterion that checks something: at
+/// least one known key, no unknown one, and a control for the keys about
+/// one.
+pub fn expectation(expect: &Value) -> Result<(), String> {
+    let object = expect
+        .as_object()
+        .ok_or("an observation criterion's expect is an object")?;
+    if object.is_empty() {
+        return Err("an observation criterion must expect something".into());
+    }
+    if let Some(unknown) = object.keys().find(|k| !EXPECTATIONS.contains(&k.as_str())) {
+        return Err(format!(
+            "`{unknown}` is not something an observation can expect"
+        ));
+    }
+    if ["labelContains", "valueContains", "enabled"]
+        .iter()
+        .any(|k| object.contains_key(*k))
+        && !object.contains_key("control")
+    {
+        return Err("labelContains, valueContains and enabled are about a `control`".into());
+    }
+    Ok(())
+}
+
 /// Whether an observation shows what `expect` asks (an Observation
 /// criterion): every field given must hold. `screen`, `dialog` (a kind, or
 /// null), `statusContains`, `selectionContains`, and `control` (an id or
 /// label) with `labelContains`, `valueContains` and `enabled`. Returns what
 /// did not hold.
 pub fn holds(observation: &Value, expect: &Value) -> Result<(), String> {
+    expectation(expect)?;
     let mut problems = Vec::new();
     if let Some(screen) = expect.get("screen")
         && observation["screen"] != *screen
@@ -323,5 +371,17 @@ mod tests {
         );
         assert!(holds(&observation, &json!({ "anyLabelContains": "Use this" })).is_ok());
         assert!(holds(&observation, &json!({ "control": "Nothing" })).is_err());
+    }
+
+    #[test]
+    fn an_observation_criterion_must_check_something_it_knows() {
+        assert!(expectation(&json!({ "screen": "surface" })).is_ok());
+        assert!(expectation(&json!({})).is_err());
+        assert!(expectation(&json!({ "status_contains": "x" })).is_err());
+        assert!(
+            expectation(&json!({ "valueContains": "x" })).is_err(),
+            "about which control?"
+        );
+        assert!(holds(&json!({ "screen": "surface" }), &json!({})).is_err());
     }
 }

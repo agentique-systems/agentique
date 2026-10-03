@@ -33,7 +33,7 @@ pub struct Budgets {
     pub usd: f64,
     /// Cycles (improvements) at most.
     pub cycles: u32,
-    /// Repair rounds per cycle at most.
+    /// Attempts per cycle at most (the first and each repair).
     pub attempts: u32,
     /// Hours worked (not counting time paused) at most.
     pub hours: f64,
@@ -135,8 +135,9 @@ pub enum Check {
     /// script), as a list of words.
     Command { program: Vec<String> },
     /// What a test instance must show: every field of `expect` must hold in
-    /// its observation (`screen`, `dialog`, `status_contains`, `control`
-    /// with `label_contains`, `value_contains`, `enabled`).
+    /// its observation (`screen`, `dialog`, `statusContains`,
+    /// `selectionContains`, `control` with `labelContains`, `valueContains`,
+    /// `enabled`, and `anyLabelContains`; at least one, no others).
     Observation {
         #[serde(default)]
         setup: Vec<serde_json::Value>,
@@ -210,7 +211,9 @@ pub struct Attempt {
 
 impl Attempt {
     /// What failed, as a fingerprint: the same failures twice in a row mean
-    /// no progress.
+    /// no progress. Each failure is its check and what its output says
+    /// failed (failing tests, errors), without numbers such as timings and
+    /// counts that change from run to run.
     pub fn failures(&self) -> Vec<String> {
         self.checks
             .iter()
@@ -218,16 +221,34 @@ impl Attempt {
             .chain(&self.gates)
             .filter(|o| !o.passed())
             .map(|o| {
-                let first = o
+                let mut said: Vec<String> = o
                     .detail
                     .lines()
-                    .find(|l| !l.trim().is_empty())
-                    .unwrap_or("");
-                format!(
-                    "{}: {}",
-                    o.name,
-                    first.chars().take(160).collect::<String>()
-                )
+                    .map(str::trim)
+                    .filter(|l| {
+                        l.contains("FAILED")
+                            || l.starts_with("error")
+                            || l.starts_with("---- ")
+                            || l.contains("panicked")
+                            || l.contains(" failed")
+                    })
+                    .map(|l| {
+                        l.chars()
+                            .filter(|c| !c.is_ascii_digit())
+                            .collect::<String>()
+                    })
+                    .collect();
+                said.sort();
+                said.dedup();
+                if said.is_empty() {
+                    o.name.clone()
+                } else {
+                    format!(
+                        "{}: {}",
+                        o.name,
+                        said.join(" | ").chars().take(400).collect::<String>()
+                    )
+                }
             })
             .collect()
     }
@@ -274,6 +295,14 @@ pub struct Cycle {
     pub build: Option<String>,
     #[serde(default)]
     pub trial: Vec<Outcome>,
+    /// The command criteria on the base, before the change: each must fail
+    /// there (or run no test), so passing after shows the change.
+    #[serde(default)]
+    pub before: Vec<Outcome>,
+    /// The commit pushed for review: the reviewed tree on the last pushed
+    /// one (or the base), never the attempts that came before.
+    #[serde(default)]
+    pub pushed: Option<String>,
     #[serde(default)]
     pub adopted: bool,
     /// Why it stopped, when it did.
@@ -299,6 +328,8 @@ impl Cycle {
             merged: None,
             build: None,
             trial: Vec::new(),
+            before: Vec::new(),
+            pushed: None,
             adopted: false,
             blocker: None,
             sessions: BTreeMap::new(),

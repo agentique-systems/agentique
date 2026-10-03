@@ -68,6 +68,7 @@ impl Fields {
         let theme = cx.theme().clone();
         let state = studio.read(cx);
         let running = state.objectives.running();
+        let state_paused = state.objectives.paused();
         let current = state.objectives.current.clone();
         let message = state.objectives.message.clone();
         let activity: Vec<_> = state
@@ -104,7 +105,7 @@ impl Fields {
             body = body.child(summary(objective, running, &theme));
         }
         if running {
-            let paused = current.as_ref().is_some_and(|o| o.state == State::Paused);
+            let paused = state_paused;
             let act = |command: Command| {
                 let studio = studio.clone();
                 move |_: &ClickEvent, _: &mut Window, cx: &mut gpui::App| {

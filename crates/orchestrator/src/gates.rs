@@ -12,6 +12,28 @@ pub const ALWAYS_PROTECTED: [&str; 6] = agq_implementation::task::ALWAYS_PROTECT
 /// The agent configuration a cycle changes only when the objective names it.
 pub const AGENT_CONFIGURATION: [&str; 4] = agq_assistant::policy::AGENT_CONFIGURATION;
 
+/// Files that configure agents wherever they are (Claude Code reads them in
+/// the folder it works in).
+const AGENT_FILES: [&str; 5] = [
+    "CLAUDE.md",
+    "CLAUDE.local.md",
+    "AGENTS.md",
+    ".mcp.json",
+    ".claude",
+];
+
+/// Agentique's safeguards: the code that gates, permits and records what
+/// agents do. A cycle changes them only when the objective names them, as
+/// it names agent configuration; the code of locked parts is gated by the
+/// links besides.
+pub const SAFEGUARDS: [&str; 5] = [
+    "crates/orchestrator",
+    "crates/assistant/src/policy.rs",
+    "claude-agent/src/policy.ts",
+    "crates/studio-native/src/control",
+    "crates/implementation/src/task.rs",
+];
+
 fn outcome(name: &str, problems: Vec<String>) -> Outcome {
     if problems.is_empty() {
         Outcome {
@@ -61,12 +83,26 @@ pub fn paths(patch: &Patch, protected: &[String], configuration: &[String]) -> O
                 ));
             }
         }
+        let allowed = configuration.iter().any(|n| under(&path, n));
+        let agent_file = path
+            .split('/')
+            .find(|part| AGENT_FILES.iter().any(|f| part.eq_ignore_ascii_case(f)));
         if let Some(config) = AGENT_CONFIGURATION
             .iter()
-            .find(|c| under(&path, c) && !configuration.iter().any(|n| under(&path, n)))
+            .copied()
+            .find(|c| under(&path, c))
+            .or(agent_file)
+            && !allowed
         {
             problems.push(format!(
                 "{path} is agent configuration ({config}); the objective does not name it"
+            ));
+        }
+        if let Some(safeguard) = SAFEGUARDS.iter().find(|s| under(&path, s))
+            && !allowed
+        {
+            problems.push(format!(
+                "{path} is one of Agentique's safeguards ({safeguard}); the objective does not name it"
             ));
         }
     }
@@ -92,6 +128,47 @@ pub fn keys(patch: &Patch, keys: &[String]) -> Outcome {
         }
     }
     outcome("no key in the change", problems)
+}
+
+/// No configured key appears in a text that leaves this computer with the
+/// change (a commit message, a pull request's title and body).
+pub fn keys_in(what: &str, text: &str, keys: &[String]) -> Outcome {
+    let problems = if keys
+        .iter()
+        .any(|k| k.len() >= 12 && text.contains(k.as_str()))
+    {
+        vec![format!("{what} holds a configured key")]
+    } else {
+        Vec::new()
+    };
+    outcome(&format!("no key in {what}"), problems)
+}
+
+/// Whether a line of a diff holds what tests and budgets rest on: an
+/// assertion, a test, a comparison with a number, or a constant.
+fn guarded(line: &str) -> bool {
+    let line = line.trim();
+    let compares =
+        ['<', '>'].iter().any(|c| line.contains(*c)) && line.chars().any(|c| c.is_ascii_digit());
+    line.contains("assert")
+        || line.contains("#[test]")
+        || line.contains("expect(")
+        || (compares && !line.starts_with("//") && !line.starts_with("use "))
+        || (line.starts_with("const ") && line.chars().any(|c| c.is_ascii_digit()))
+}
+
+fn is_test_file(lower: &str) -> bool {
+    lower.contains("/tests/")
+        || lower.starts_with("tests/")
+        || lower.contains("/benches/")
+        || lower.ends_with("_test.rs")
+        || lower.ends_with("tests.rs")
+        || lower.contains(".test.")
+        || lower.contains("/test/")
+        || lower
+            .rsplit('/')
+            .next()
+            .is_some_and(|n| n.starts_with("test_"))
 }
 
 /// What a change does to tests, checks and budgets: the baseline guard's
@@ -130,21 +207,40 @@ fn test_changes(file: &FileChange) -> Vec<String> {
     {
         found.push(format!("{path}: a test is ignored or skipped"));
     }
-    let asserts_removed = count(&removed, "assert");
-    let asserts_added = count(&added, "assert");
-    if asserts_removed > asserts_added {
-        found.push(format!(
-            "{path}: {} assertion(s) fewer",
-            asserts_removed - asserts_added
-        ));
+    // Each assertion, test, threshold or constant removed or changed, line
+    // by line (a line moved unchanged is not a change).
+    let kept: Vec<String> = added.iter().map(|l| l[1..].trim().to_string()).collect();
+    for line in &removed {
+        let text = line[1..].trim();
+        if guarded(text)
+            && !kept.iter().any(|k| k == text)
+            && (is_test_file(&lower) || text.contains("assert"))
+        {
+            found.push(format!(
+                "{path}: removes or changes `{}`",
+                text.chars().take(120).collect::<String>()
+            ));
+        }
+    }
+    let gating = [
+        "#[cfg(any())]",
+        "#[cfg(all(any()))]",
+        "cfg(FALSE)",
+        "#[cfg(not(test))]",
+        "#[cfg(never)]",
+    ];
+    if added.iter().any(|l| gating.iter().any(|g| l.contains(g))) {
+        found.push(format!("{path}: code is compiled out"));
     }
     let checks = [
         "tools/check_architecture.py",
         ".github/workflows",
-        "budgets.rs",
+        "budget",
+        "performance",
+        "stress",
         "crates/implementation/src/task.rs",
     ];
-    if checks.iter().any(|c| lower.contains(c)) && file.removed > 0 {
+    if checks.iter().any(|c| lower.contains(c)) && file.added + file.removed > 0 {
         found.push(format!(
             "{path}: the checks, budgets or required checks change"
         ));
@@ -307,5 +403,100 @@ mod tests {
         };
         assert!(!keys(&patch, &["sk-abcdef0123456789".into()]).passed());
         assert!(keys(&patch, &["sk-other-0123456789".into()]).passed());
+    }
+
+    #[test]
+    fn agent_configuration_anywhere_and_the_safeguards_need_the_objective() {
+        let patch = Patch {
+            files: vec![
+                change("crates/x/CLAUDE.md", "added", "+be bold"),
+                change("crates/orchestrator/src/gates.rs", "modified", "-a\n+b"),
+                change("crates/x/src/lib.rs", "modified", "-a\n+b"),
+            ],
+        };
+        let found = paths(&patch, &[], &[]);
+        assert!(
+            found
+                .detail
+                .contains("crates/x/CLAUDE.md is agent configuration"),
+            "{}",
+            found.detail
+        );
+        assert!(found.detail.contains("safeguards"), "{}", found.detail);
+        assert!(
+            !found.detail.contains("crates/x/src/lib.rs"),
+            "{}",
+            found.detail
+        );
+        let named = paths(
+            &patch,
+            &[],
+            &["crates/x/CLAUDE.md".into(), "crates/orchestrator".into()],
+        );
+        assert!(named.passed(), "{}", named.detail);
+        assert!(
+            !keys_in(
+                "the body",
+                "uses sk-live-0123456789abcdef",
+                &["sk-live-0123456789abcdef".into()]
+            )
+            .passed()
+        );
+        assert!(
+            keys_in(
+                "the body",
+                "nothing secret",
+                &["sk-live-0123456789abcdef".into()]
+            )
+            .passed()
+        );
+    }
+
+    #[test]
+    fn the_baseline_guard_sees_each_weakened_assertion_threshold_and_gate() {
+        let swapped = change(
+            "crates/x/tests/a.rs",
+            "modified",
+            "-    assert_eq!(parse(\"1\"), 1);\n+#[test]\n+fn b() { assert!(true); }",
+        );
+        let relaxed = change(
+            "crates/system-state/tests/performance.rs",
+            "modified",
+            "-    assert!(ms < 10.0);\n+    assert!(ms < 1000.0);",
+        );
+        let gated = change(
+            "crates/x/src/lib.rs",
+            "modified",
+            "+#[cfg(any())]\n #[test]",
+        );
+        let moved = change(
+            "crates/x/tests/b.rs",
+            "modified",
+            "-    assert!(ok);\n+    assert!(ok);",
+        );
+        let found: Vec<String> = [swapped, relaxed, gated, moved]
+            .iter()
+            .flat_map(test_changes)
+            .collect();
+        assert!(
+            found
+                .iter()
+                .any(|f| f.contains("a.rs: removes or changes `assert_eq!(parse")),
+            "{found:?}"
+        );
+        assert!(
+            found
+                .iter()
+                .any(|f| f.contains("performance.rs: removes or changes `assert!(ms < 10.0)")),
+            "{found:?}"
+        );
+        assert!(
+            found.iter().any(|f| f.contains("compiled out")),
+            "{found:?}"
+        );
+        assert!(
+            !found.iter().any(|f| f.contains("tests/b.rs")),
+            "a moved line is no change: {found:?}"
+        );
     }
 }
