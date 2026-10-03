@@ -1,12 +1,13 @@
-// Protocol 1 between the Studio and the Claude Agent companion (ROADMAP
-// §4.7): one JSON object per line on standard input and output, UTF-8. The
-// Studio starts one companion per turn; it answers `ready`, then the Studio
-// sends `start` and later `tool_result`, `interrupt` or `close`. Everything
-// the companion says goes to standard output; standard error is
-// diagnostics only. Any line that is not a known message ends the turn
-// with a protocol error: the companion never guesses.
+// Protocol 2 between the Studio and the Claude Agent companion (ROADMAP
+// §4.7, C-53): one JSON object per line on standard input and output, UTF-8.
+// The Studio starts one companion per turn; it answers `ready`, then the
+// Studio sends `start` and later `tool_result`, `permission_result`,
+// `message`, `gate`, `interrupt` or `close`. Everything the companion says
+// goes to standard output; standard error is diagnostics only. Any line that
+// is not a known message ends the turn with a protocol error: the companion
+// never guesses.
 
-export const PROTOCOL = 1;
+export const PROTOCOL = 2;
 
 /** Lines longer than this are refused (a tool result is capped far below). */
 export const MAX_LINE = 4 * 1024 * 1024;
@@ -20,11 +21,61 @@ export interface ToolDefinition {
   readOnly?: boolean;
 }
 
+/** A command the policy refuses, and why (shown to the agent). */
+export interface RefusedCommand {
+  /** A JavaScript regular expression, matched case-insensitively. */
+  pattern: string;
+  reason: string;
+}
+
+/**
+ * What a development session may do (C-53): the Studio's decision, enforced
+ * in the companion's one pre-tool hook. Paths are absolute folders; the
+ * patterns in `protected` and `hidden` are relative to them (`*` matches
+ * within a name, `**` across folders, a plain path covers what is under it).
+ */
+export interface Policy {
+  /** Folders the file tools may read. */
+  read: string[];
+  /** Folders the file tools may write; each inside a read folder. */
+  write: string[];
+  /** Never written by a file tool (the model files are always among them). */
+  protected: string[];
+  /** Never read by a file tool (keys and other secrets). */
+  hidden: string[];
+  /** Whether commands may run at all (trusted-local execution). */
+  commands: boolean;
+  /** Commands refused even then. */
+  refusedCommands: RefusedCommand[];
+  /** Web fetch and search. */
+  network: boolean;
+  /** MCP servers besides Agentique's whose tools may run. */
+  mcpServers: string[];
+  /** A call the policy does not decide: ask the Studio, or refuse it. */
+  undecided: "ask" | "refuse";
+}
+
+/** An Anthropic-compatible endpoint, such as DeepSeek's (C-53). */
+export interface Endpoint {
+  baseUrl: string;
+  /** The model the SDK uses for its own small tasks; null for the main one. */
+  fastModel: string | null;
+}
+
+/** A subagent the session may delegate to (the SDK's AgentDefinition). */
+export interface AgentDefinition {
+  description: string;
+  prompt: string;
+  tools?: string[];
+  disallowedTools?: string[];
+  model?: string;
+}
+
 /** What one turn runs with. Every field is the Studio's decision. */
 export interface StartOptions {
   /** The Operator's message for this turn. */
   prompt: string;
-  /** Agentique's own instructions (its skills), the whole system prompt. */
+  /** Agentique's own instructions (its skills). */
   systemPrompt: string;
   tools: ToolDefinition[];
   /** The model id, or null for the SDK's default. */
@@ -34,17 +85,38 @@ export interface StartOptions {
   resume: string | null;
   /** A bound on the turn's model calls (the SDK's maxTurns). */
   maxTurns: number;
-  /** The agent's working folder: empty, Agentique's own. */
+  /** The agent's working folder. */
   cwd: string;
   /** The SDK's configuration folder (CLAUDE_CONFIG_DIR): its sessions. */
   configDir: string;
-  /** What the agent's process sees as its home folder. */
+  /** What the agent's process sees as its home folder (no policy only). */
   home: string;
+  /**
+   * The development policy, or null for a session with Agentique's tools
+   * only and nothing of the machine (as in protocol 1).
+   */
+  policy: Policy | null;
+  /** The project's settings to load (`project`, `local`); empty for none. */
+  settingSources: ("project" | "local")[];
+  /** Subagents besides the SDK's own and the project's. */
+  agents: Record<string, AgentDefinition>;
+  /** An Anthropic-compatible endpoint, or null for Anthropic's API. */
+  endpoint: Endpoint | null;
+  /**
+   * Whether Agentique's instructions are appended to the SDK's own
+   * development instructions (true) or are the whole system prompt.
+   */
+  preset: boolean;
 }
+
+export type GateMode = "run" | "pause" | "step";
 
 export type HostMessage =
   | { type: "start"; options: StartOptions }
   | { type: "tool_result"; call: string; content: string; isError: boolean }
+  | { type: "permission_result"; call: string; allow: boolean; message: string }
+  | { type: "message"; text: string }
+  | { type: "gate"; mode: GateMode }
   | { type: "interrupt" }
   | { type: "close" };
 
@@ -74,7 +146,7 @@ export type CompanionMessage =
   | ({ type: "init" } & Effective)
   | { type: "text"; text: string }
   | { type: "thinking"; text: string }
-  | { type: "assistant"; model: string; content: unknown[] }
+  | { type: "assistant"; id: string; model: string; content: unknown[] }
   | {
       type: "tool_call";
       call: string;
@@ -82,6 +154,23 @@ export type CompanionMessage =
       name: string;
       input: Record<string, unknown>;
     }
+  | { type: "tool_done"; toolUseId: string; isError: boolean; content: string }
+  | { type: "permission"; call: string; tool: string; input: Record<string, unknown>; reason: string }
+  | {
+      type: "task";
+      event: "started" | "progress" | "done";
+      id: string;
+      description: string;
+      agent: string | null;
+      status: string | null;
+      summary: string | null;
+    }
+  | { type: "compaction"; trigger: string; preTokens: number; postTokens: number | null }
+  | { type: "paused"; tool: string }
+  /** The turn is over: nothing more is taken from the Studio. */
+  | { type: "done" }
+  /** A message that arrived after the turn was over, not given to it. */
+  | { type: "undelivered"; text: string }
   | { type: "retry"; attempt: number; error: string; status: number | null }
   | {
       type: "result";
@@ -90,7 +179,10 @@ export type CompanionMessage =
       stopReason: string | null;
       numTurns: number;
       costUsd: number | null;
+      /** Tokens since the turn's previous result, all models together. */
       usage: Usage | null;
+      /** The same, by model. */
+      usageByModel: Record<string, Usage> | null;
       sessionId: string;
       denials: string[];
       errors: string[];
@@ -106,6 +198,51 @@ export type ErrorKind = "auth" | "runtime" | "protocol" | "interrupted";
 
 export function encode(message: CompanionMessage): string {
   return JSON.stringify(message) + "\n";
+}
+
+function strings(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((v) => typeof v === "string");
+}
+
+/** Checks a policy's shape; throws with a plain reason. */
+export function checkPolicy(value: unknown): Policy {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    throw new Error("`start` options.policy must be an object or null");
+  }
+  const p = value as Record<string, unknown>;
+  for (const field of ["read", "write", "protected", "hidden", "mcpServers"]) {
+    if (!strings(p[field])) {
+      throw new Error(`options.policy.${field} must be a list of strings`);
+    }
+  }
+  for (const field of ["commands", "network"]) {
+    if (typeof p[field] !== "boolean") {
+      throw new Error(`options.policy.${field} must be true or false`);
+    }
+  }
+  if (p.undecided !== "ask" && p.undecided !== "refuse") {
+    throw new Error("options.policy.undecided must be `ask` or `refuse`");
+  }
+  if (
+    !Array.isArray(p.refusedCommands) ||
+    !p.refusedCommands.every(
+      (r) =>
+        typeof r === "object" &&
+        r !== null &&
+        typeof (r as RefusedCommand).pattern === "string" &&
+        typeof (r as RefusedCommand).reason === "string",
+    )
+  ) {
+    throw new Error("options.policy.refusedCommands must be a list of {pattern, reason}");
+  }
+  for (const r of p.refusedCommands as RefusedCommand[]) {
+    try {
+      new RegExp(r.pattern, "i");
+    } catch {
+      throw new Error(`options.policy.refusedCommands has an invalid pattern ${JSON.stringify(r.pattern)}`);
+    }
+  }
+  return p as unknown as Policy;
 }
 
 /** Parses one line from the Studio. Throws with a plain reason. */
@@ -129,6 +266,24 @@ export function decode(line: string): HostMessage {
           throw new Error(`\`start\` needs options.${field}`);
         }
       }
+      if (options.policy !== null) {
+        checkPolicy(options.policy);
+      }
+      if (!strings(options.settingSources) || options.settingSources.some((s) => s !== "project" && s !== "local")) {
+        throw new Error("`start` options.settingSources must list `project` or `local`");
+      }
+      if (typeof options.agents !== "object" || options.agents === null || Array.isArray(options.agents)) {
+        throw new Error("`start` options.agents must be an object");
+      }
+      if (options.endpoint !== null) {
+        const e = options.endpoint as Record<string, unknown> | undefined;
+        if (!e || typeof e.baseUrl !== "string" || !/^https?:\/\//.test(e.baseUrl)) {
+          throw new Error("`start` options.endpoint needs an http(s) baseUrl");
+        }
+      }
+      if (typeof options.preset !== "boolean") {
+        throw new Error("`start` options.preset must be true or false");
+      }
       return message as unknown as HostMessage;
     }
     case "tool_result":
@@ -141,6 +296,26 @@ export function decode(line: string): HostMessage {
         content: message.content,
         isError: message.isError === true,
       };
+    case "permission_result":
+      if (typeof message.call !== "string" || typeof message.allow !== "boolean") {
+        throw new Error("`permission_result` needs a call and allow");
+      }
+      return {
+        type: "permission_result",
+        call: message.call,
+        allow: message.allow,
+        message: typeof message.message === "string" ? message.message : "",
+      };
+    case "message":
+      if (typeof message.text !== "string" || message.text.trim() === "") {
+        throw new Error("`message` needs text");
+      }
+      return { type: "message", text: message.text };
+    case "gate":
+      if (message.mode !== "run" && message.mode !== "pause" && message.mode !== "step") {
+        throw new Error("`gate` needs mode run, pause or step");
+      }
+      return { type: "gate", mode: message.mode };
     case "interrupt":
     case "close":
       return { type: message.type };

@@ -1,20 +1,57 @@
-//! The Assistant's runtime in the Studio (ROADMAP §4.7, §4.10, C-51): which
-//! runtime runs the Conversation's turns, and the Claude Agent runtime's
-//! setup and health check for Settings. The runtime itself is
-//! `agq_assistant::claude_agent`; this decides when to use it and says what
-//! it needs.
+//! The Assistant's runtime in the Studio (ROADMAP §4.7, §4.10, C-51, C-53):
+//! which runtime runs the Conversation's turns, where the Claude Agent
+//! runtime's model answers (Anthropic, or DeepSeek's Anthropic-compatible
+//! endpoint), the development session it gets in a project with a code
+//! repository, and its setup and health check for Settings. The runtime
+//! itself is `agq_assistant::claude_agent`; this decides when to use it and
+//! says what it needs.
 
 use crate::studio::{Dirty, Studio};
 use agq_assistant::claude_agent::{self, ClaudeAgent, Effective, Installation, Node, Verified};
+use agq_assistant::policy::{Development, Endpoint, Permissions, Place, Policy, Undecided};
 use agq_providers::{KeyStatus, Provider};
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::sync::mpsc::{Receiver, TryRecvError};
 
+/// `path` without Windows' verbatim prefix (`\\?\C:\x` is `C:\x`), as the
+/// SDK, Git and the session's commands expect it.
+pub fn plain(path: &std::path::Path) -> PathBuf {
+    let text = path.display().to_string();
+    match text.strip_prefix(r"\\?\UNC\") {
+        Some(rest) => PathBuf::from(format!(r"\\{rest}")),
+        None => PathBuf::from(text.strip_prefix(r"\\?\").unwrap_or(&text)),
+    }
+}
+
 /// The runtime setting's values.
 pub const LOOP: &str = "loop";
 pub const CLAUDE_AGENT: &str = "claude-agent";
+
+/// The model a development session uses on DeepSeek's endpoint when the
+/// Settings name none (its deliberate model; `deepseek-flash` does the
+/// SDK's own small tasks).
+pub const DEEPSEEK_MODEL: &str = "deepseek-v4-pro";
+
+/// Where the Claude Agent runtime's model answers, from the Settings'
+/// provider and the keys there are: Anthropic's API, or DeepSeek's
+/// Anthropic-compatible endpoint (C-53). With no provider chosen, Anthropic
+/// when its key is there, else DeepSeek when its key is.
+pub fn model_access(provider: &str) -> Option<Endpoint> {
+    let has = |p: Provider| {
+        matches!(
+            agq_providers::key_status(p),
+            KeyStatus::Stored | KeyStatus::FromEnvironment { .. }
+        )
+    };
+    match provider {
+        "deepseek" => Some(Endpoint::deepseek()),
+        "anthropic" => None,
+        _ if !has(Provider::Anthropic) && has(Provider::DeepSeek) => Some(Endpoint::deepseek()),
+        _ => None,
+    }
+}
 
 /// What Settings shows about the Claude Agent runtime.
 #[derive(Clone, Debug, Default)]
@@ -70,29 +107,27 @@ impl Health {
             None => {}
         }
         lines.push(match key {
-            KeyStatus::Stored => (true, "The Anthropic key is in the Windows Credential Manager".into()),
-            KeyStatus::FromEnvironment { variable } => (true, format!("The Anthropic key comes from {variable}")),
-            KeyStatus::Missing => (false, "No Anthropic key: add one in Settings › Providers › Anthropic. A claude.ai login is not offered: Anthropic does not allow it for other products.".into()),
+            KeyStatus::Stored => (true, "The model's key is in the Windows Credential Manager".into()),
+            KeyStatus::FromEnvironment { variable } => (true, format!("The model's key comes from {variable}")),
+            KeyStatus::Missing => (false, "No key for the runtime's model: add an Anthropic key in Settings › Providers › Anthropic, or a DeepSeek key to use DeepSeek's Anthropic-compatible endpoint. A claude.ai login is not offered: Anthropic does not allow it for other products.".into()),
             KeyStatus::Unavailable(why) => (false, format!("The credential store cannot be read: {why}")),
         });
         match &self.effective {
             Some(Ok(effective)) => {
-                let problems = effective.problems();
+                let problems = effective.problems(None);
                 if problems.is_empty() {
                     lines.push((
                         true,
                         format!(
-                            "Checked with the SDK itself: the agent can call only Agentique's {} tools, through Agentique's own server, and is never asked for permissions ({}); no settings, hooks, plugins or memory of this machine are loaded",
+                            "Checked with the SDK itself: outside a code repository the agent can call only Agentique's {} tools, through Agentique's own server, and is never asked for permissions ({}); no settings, hooks, plugins or memory of this machine are loaded",
                             effective.tools.len(),
                             effective.permission_mode
                         ),
                     ));
-                    if !effective.skills.is_empty() || !effective.agents.is_empty() {
-                        lines.push((
-                            true,
-                            "Claude Code's own skills and agents are listed by its binary but cannot be used: the Skill and Agent tools are off".into(),
-                        ));
-                    }
+                    lines.push((
+                        true,
+                        "In a project with a code repository it is a development session (C-53): the SDK's own tools (files, commands, subagents, skills) under the project's permission policy, the model files protected, commands only with trusted-local execution, and the model's key kept out of its commands".into(),
+                    ));
                 } else {
                     lines.push((
                         false,
@@ -151,11 +186,17 @@ impl Studio {
             self.conversation.use_choice(choice);
             return;
         }
-        // The model and effort chosen for Anthropic carry over; otherwise
-        // the SDK's default model.
-        let model = (choice.model.provider == Provider::Anthropic)
+        let endpoint = model_access(self.settings.text("assistant.provider").as_str());
+        let provider = endpoint
+            .as_ref()
+            .map(|e| e.provider)
+            .unwrap_or(Provider::Anthropic);
+        // The model and effort chosen for the runtime's provider carry over;
+        // otherwise its default (the SDK's for Anthropic).
+        let model = (choice.model.provider == provider)
             .then(|| choice.model.model.clone())
-            .filter(|m| !m.is_empty());
+            .filter(|m| !m.is_empty())
+            .or_else(|| endpoint.as_ref().map(|_| DEEPSEEK_MODEL.to_string()));
         let effort = choice
             .effort
             .clone()
@@ -164,40 +205,122 @@ impl Studio {
         let installation = Installation {
             root: Installation::default_root(),
         };
-        let problem = match (&node, installation.installed(), agq_providers::key_status(Provider::Anthropic)) {
+        let name = provider.name();
+        let problem = match (
+            &node,
+            installation.installed(),
+            agq_providers::key_status(provider),
+        ) {
             (Err(why), _, _) => Some(why.clone()),
-            (_, false, _) => Some("The Claude Agent runtime is not installed: Settings › Assistant › Install.".into()),
-            (_, _, KeyStatus::Missing) => Some("The Claude Agent runtime needs an Anthropic key: add it in Settings › Providers › Anthropic. Everything else works as usual.".into()),
-            (_, _, KeyStatus::Unavailable(why)) => Some(format!("The Anthropic key cannot be read: {why}")),
+            (_, false, _) => Some(
+                "The Claude Agent runtime is not installed: Settings › Assistant › Install.".into(),
+            ),
+            (_, _, KeyStatus::Missing) => Some(format!(
+                "The Claude Agent runtime needs a {name} key: add it in Settings › Providers › {name}. Everything else works as usual."
+            )),
+            (_, _, KeyStatus::Unavailable(why)) => {
+                Some(format!("The {name} key cannot be read: {why}"))
+            }
             _ => None,
         };
         let data = self.claude_agent_data();
+        let through = endpoint
+            .as_ref()
+            .map(|e| format!(" (through {})", e.provider.name()))
+            .unwrap_or_default();
         let label = match &model {
-            Some(model) => format!("Claude Agent · {model}"),
-            None => "Claude Agent".into(),
+            Some(model) => format!("Claude Agent · {model}{through}"),
+            None => format!("Claude Agent{through}"),
         };
         let node = node.ok();
+        let inputs = self.conversation.inputs.clone();
         self.conversation.use_runtime(
             label,
             problem,
             Box::new(move || -> Box<dyn agq_assistant::Runtime> {
-                match (node.clone(), agq_providers::claude_agent_key()) {
-                    (Some(node), Ok(Some(key))) => Box::new(ClaudeAgent::new(
-                        node,
-                        installation.clone(),
-                        data.clone(),
-                        model.clone(),
-                        effort.clone(),
-                        key,
-                    )),
+                match (node.clone(), agq_providers::runtime_key(provider)) {
+                    (Some(node), Ok(Some(key))) => {
+                        let mut agent = ClaudeAgent::new(
+                            node,
+                            installation.clone(),
+                            data.clone(),
+                            model.clone(),
+                            effort.clone(),
+                            key,
+                        );
+                        agent.endpoint = endpoint.clone();
+                        agent.development = inputs.borrow().development.clone();
+                        agent.steering = inputs.borrow().steering.clone().unwrap_or_default();
+                        Box::new(agent)
+                    }
                     (_, result) => Box::new(Unavailable(match result {
-                        Err(why) => format!("The Anthropic key cannot be read: {why}"),
+                        Err(why) => format!("The {} key cannot be read: {why}", provider.name()),
                         _ => "The Claude Agent runtime is not ready: see Settings › Assistant."
                             .into(),
                     })),
                 }
             }),
         );
+    }
+
+    /// The development session the Conversation's next turn gets (C-53): in
+    /// a project whose code repository is known from its implementation
+    /// links (Agentique's own repository has them), the SDK's own tools work there under
+    /// the project's permission policy: read and write in the repository,
+    /// never the model files, the agent configuration or the paths the links
+    /// protect; commands only with trusted-local execution; no pushing from
+    /// the Conversation; anything else asked of the Operator. `None` leaves
+    /// Agentique's tools only.
+    pub fn conversation_development(&self) -> Option<Development> {
+        if self.runtime_setting() != CLAUDE_AGENT || self.safe_mode {
+            return None;
+        }
+        let project = self.project.as_ref()?;
+        // Code is known only through the implementation links (Agentique's
+        // own repository has them); a modelling project's folder is no
+        // place for file tools.
+        project.links()?;
+        // Plain paths: a verbatim `\\?\` path is the same folder, but the
+        // SDK and the session's commands read the plain form.
+        let repository = plain(&self.implementation_repository()?);
+        let choice = self
+            .implementation
+            .choice
+            .unwrap_or_else(|| self.execution_file_choice());
+        let protected = self
+            .implementation_links()
+            .map(|links| links.protected)
+            .unwrap_or_default();
+        let folder = project.folder();
+        let folder = plain(
+            &folder
+                .canonicalize()
+                .unwrap_or_else(|_| folder.to_path_buf()),
+        );
+        let also_read: Vec<PathBuf> = if folder.starts_with(&repository) {
+            Vec::new()
+        } else {
+            vec![folder]
+        };
+        Some(Development {
+            cwd: repository.clone(),
+            policy: Policy::development(
+                &repository,
+                &also_read,
+                &protected,
+                Place::WorkingCopy,
+                Permissions {
+                    commands: choice.trusted,
+                    network: choice.network,
+                    push: false,
+                    mcp_servers: Vec::new(),
+                    undecided: Undecided::Ask,
+                },
+            ),
+            setting_sources: vec!["project".into()],
+            agents: serde_json::json!({}),
+            preset: true,
+        })
     }
 
     /// Checks the Claude Agent runtime on its own thread: Node, the
@@ -344,5 +467,72 @@ impl agq_assistant::Runtime for Unavailable {
         };
         conversation.entries.push(entry.clone());
         on_event(agq_assistant::TurnEvent::Entry(entry));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::edit::app_tests::studio;
+    use crate::studio::Sample;
+    use agq_assistant::policy::{MODEL_FILES, Undecided};
+
+    /// A project with its code (the screening sample "And its code") gets a
+    /// development session on the Claude Agent runtime: it works in the code
+    /// repository, reads the model folder, never writes model files or the
+    /// links' protected paths, runs commands only once trusted-local
+    /// execution is on, and asks about anything else. On the loop, in safe
+    /// mode or without a code repository it gets none.
+    #[test]
+    fn a_project_with_code_gets_a_development_session_within_its_permissions() {
+        let (mut app, folder) = studio("development-session");
+        assert!(
+            app.conversation_development().is_none(),
+            "the loop has none"
+        );
+        app.settings
+            .set("assistant.runtime", super::CLAUDE_AGENT.into())
+            .unwrap();
+        assert!(
+            app.conversation_development().is_none(),
+            "a project without a code repository has none"
+        );
+        app.create_sample(
+            &folder.0.join("Shortener"),
+            "Shortener",
+            Sample::ScreeningWithCode,
+        );
+        let code = super::plain(&folder.0.join("Shortener-code").canonicalize().unwrap());
+        assert!(
+            !code.display().to_string().starts_with(r"\\?\"),
+            "plain paths for the SDK"
+        );
+        let development = app
+            .conversation_development()
+            .expect("a development session");
+        assert_eq!(development.cwd, code);
+        assert_eq!(development.policy.write, vec![code.clone()]);
+        assert!(
+            development.policy.read.len() == 2,
+            "{:?}",
+            development.policy.read
+        );
+        for path in MODEL_FILES {
+            assert!(development.policy.protected.contains(&path.to_string()));
+        }
+        assert!(
+            !development.policy.commands,
+            "nothing runs before trusted-local execution"
+        );
+        assert_eq!(development.policy.undecided, Undecided::Ask);
+        assert_eq!(development.setting_sources, vec!["project".to_string()]);
+        let mut choice = app.execution_choice();
+        choice.trusted = true;
+        app.set_execution_choice(choice);
+        assert!(app.conversation_development().unwrap().policy.commands);
+        app.safe_mode = true;
+        assert!(
+            app.conversation_development().is_none(),
+            "safe mode has none"
+        );
     }
 }

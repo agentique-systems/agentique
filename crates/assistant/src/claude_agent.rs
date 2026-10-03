@@ -8,21 +8,29 @@
 //!   per version into the runtime folder, beside the packages installed from
 //!   the companion's lock file ([`Installation`]).
 //! - [`ClaudeAgent`] is the [`Runtime`]: one companion process per turn,
-//!   protocol 1 on its standard input and output, the session resumed from
+//!   protocol 2 on its standard input and output, the session resumed from
 //!   the conversation's last [`Entry::Session`], and an explicit handoff when
 //!   it cannot be.
+//! - A session has Agentique's tools only, or is a development session
+//!   ([`Development`], C-53) with the SDK's own tools under a permission
+//!   [`Policy`](crate::policy::Policy), the project's settings, subagents,
+//!   queued messages and the pause gate ([`Steering`]), against Anthropic's
+//!   API or an Anthropic-compatible [`Endpoint`].
 //! - [`find_node`], [`Installation::install`], [`verify`] and [`probe`] are
 //!   Settings' setup and health check.
 //!
-//! The companion gets an environment built from nothing but what it needs;
-//! the Anthropic key goes into it and nowhere else (§7.6). What the agent can
-//! call is decided in the companion's policy and by the Studio's own checks;
-//! neither is an operating-system sandbox.
+//! Without a development session the companion gets an environment built
+//! from nothing but what it needs; with one, the Studio's environment
+//! without anything that looks like a secret. The model's key goes into it
+//! and nowhere else (§7.6), and the SDK keeps it out of the session's
+//! commands. What the agent can do is decided in the companion's policy and
+//! by the Studio's own checks; neither is an operating-system sandbox.
 
 use crate::conversation::{Conversation, Entry, ToolResult};
 use crate::model::{StreamEvent, Usage};
+pub use crate::policy::{Development, Endpoint, Gate, Steering, Undecided};
 use crate::runtime::Runtime;
-use crate::turn::{ToolCall, Toolset, TurnEvent};
+use crate::turn::{Activity, TaskEvent, ToolCall, Toolset, TurnEvent};
 use agq_providers::{AssistantPart, ModelRef, Provider, Secret};
 use serde_json::{Value, json};
 use std::io::{BufRead, BufReader, Write};
@@ -33,7 +41,24 @@ use std::sync::mpsc::{self, Receiver, RecvTimeoutError};
 use std::time::{Duration, Instant};
 
 /// The protocol the companion speaks (`claude-agent/src/protocol.ts`).
-pub const PROTOCOL: u64 = 1;
+pub const PROTOCOL: u64 = 2;
+
+/// Built-in tools a development session never gets (the companion's
+/// `DEVELOPMENT_DISALLOWED`): checked against what the SDK reports.
+pub const DEVELOPMENT_DISALLOWED: [&str; 8] = [
+    "AskUserQuestion",
+    "CronCreate",
+    "CronDelete",
+    "CronList",
+    "EnterWorktree",
+    "ExitWorktree",
+    "RemoteTrigger",
+    "ScheduleWakeup",
+];
+
+/// The answers of a permission question in the Conversation.
+pub const ALLOW: &str = "Allow";
+pub const DO_NOT_ALLOW: &str = "Don't allow";
 
 /// The SDK version the lock file pins; checked against the installed one.
 pub const SDK_VERSION: &str = "0.3.287";
@@ -402,25 +427,50 @@ impl Effective {
         }
     }
 
-    /// Problems with what the agent could call: anything but Agentique's
-    /// tools, any server but Agentique's, any permission mode but `dontAsk`.
-    pub fn problems(&self) -> Vec<String> {
+    /// Problems with what the agent could call. Without a development
+    /// session: anything but Agentique's tools, any server but Agentique's,
+    /// any permission mode but `dontAsk`. In one: a tool it must never get,
+    /// a server the policy did not name, a mode other than `default` (in
+    /// which the policy's hook decides), and Agentique's tools not connected.
+    pub fn problems(&self, development: Option<&Development>) -> Vec<String> {
         let mut problems = Vec::new();
+        let allowed_servers: Vec<&str> = development
+            .map(|d| d.policy.mcp_servers.iter().map(String::as_str).collect())
+            .unwrap_or_default();
         for tool in &self.tools {
-            if !tool.starts_with("mcp__agentique__") {
+            let refused = match development {
+                None => !tool.starts_with("mcp__agentique__"),
+                Some(_) => DEVELOPMENT_DISALLOWED.contains(&tool.as_str()),
+            };
+            if refused {
                 problems.push(format!("the agent could call `{tool}`"));
             }
         }
+        let mut connected = false;
         for (server, status) in &self.mcp_servers {
-            if server != "agentique" {
+            if server == "agentique" {
+                connected = status == "connected";
+                if !connected {
+                    problems.push(format!("Agentique's tools are {status}, not connected"));
+                }
+            } else if !allowed_servers.contains(&server.as_str()) {
                 problems.push(format!("an MCP server `{server}` ({status}) was loaded"));
-            } else if status != "connected" {
-                problems.push(format!("Agentique's tools are {status}, not connected"));
             }
         }
-        if self.permission_mode != "dontAsk" {
+        if development.is_some()
+            && !connected
+            && !self.mcp_servers.iter().any(|(s, _)| s == "agentique")
+        {
+            problems.push("Agentique's tools were not loaded".into());
+        }
+        let mode = if development.is_some() {
+            "default"
+        } else {
+            "dontAsk"
+        };
+        if self.permission_mode != mode {
             problems.push(format!(
-                "the permission mode is `{}`, not `dontAsk`",
+                "the permission mode is `{}`, not `{mode}`",
                 self.permission_mode
             ));
         }
@@ -467,6 +517,22 @@ fn base_environment(node: &Node) -> Vec<(String, String)> {
     env
 }
 
+/// Node's folder first on a development environment's PATH (whatever the
+/// variable's case), so the SDK and the session's commands find this Node.
+fn prepend_path(env: &mut Vec<(String, String)>, node: &Node) {
+    let Some(folder) = node.path.parent().map(|p| p.display().to_string()) else {
+        return;
+    };
+    let separator = if cfg!(windows) { ';' } else { ':' };
+    match env
+        .iter_mut()
+        .find(|(name, _)| name.eq_ignore_ascii_case("PATH"))
+    {
+        Some((_, value)) => *value = format!("{folder}{separator}{value}"),
+        None => env.push(("PATH".into(), folder)),
+    }
+}
+
 /// The Claude Agent runtime for one conversation or task.
 pub struct ClaudeAgent {
     pub node: Node,
@@ -483,6 +549,13 @@ pub struct ClaudeAgent {
     /// Another companion script, for tests of the protocol (a scripted
     /// stand-in); `None` runs the companion as built in.
     pub script: Option<PathBuf>,
+    /// A development session (C-53): where it works and what it may do;
+    /// `None` gives Agentique's tools only.
+    pub development: Option<Development>,
+    /// An Anthropic-compatible endpoint, or `None` for Anthropic's API.
+    pub endpoint: Option<Endpoint>,
+    /// Messages queued into the running turn, and its pause gate.
+    pub steering: Steering,
 }
 
 impl ClaudeAgent {
@@ -503,11 +576,41 @@ impl ClaudeAgent {
             key,
             effective: None,
             script: None,
+            development: None,
+            endpoint: None,
+            steering: Steering::default(),
         }
     }
 
+    /// Where the agent works: the development session's folder, or the
+    /// runtime's own empty one.
+    pub fn working_folder(&self) -> PathBuf {
+        match &self.development {
+            Some(development) => development.cwd.clone(),
+            None => self.data.join("work"),
+        }
+    }
+
+    /// The same runtime as a development session.
+    pub fn with_development(mut self, development: Development) -> ClaudeAgent {
+        self.development = Some(development);
+        self
+    }
+
+    /// The same runtime against an Anthropic-compatible endpoint.
+    pub fn with_endpoint(mut self, endpoint: Endpoint) -> ClaudeAgent {
+        self.endpoint = Some(endpoint);
+        self
+    }
+
+    /// The model as costed: the endpoint's provider answers, at its prices.
     fn model_ref(&self, model: &str) -> ModelRef {
-        ModelRef::new(Provider::Anthropic, model)
+        let provider = self
+            .endpoint
+            .as_ref()
+            .map(|e| e.provider)
+            .unwrap_or(Provider::Anthropic);
+        ModelRef::new(provider, model)
     }
 }
 
@@ -518,6 +621,13 @@ impl ClaudeAgent {
 /// to it, and a conversation cut back by an edit or a retry continues from
 /// the right one.
 pub fn session_to_resume(conversation: &Conversation) -> Option<String> {
+    session_to_resume_in(conversation, None)
+}
+
+/// [`session_to_resume`] for a session working in `folder` (a development
+/// session's), since the SDK finds a session only in the folder it was made
+/// in: a session made elsewhere is handed over instead.
+pub fn session_to_resume_in(conversation: &Conversation, folder: Option<&str>) -> Option<String> {
     let entries = &conversation.entries;
     // The Operator's message for this turn is the last entry.
     let current = entries
@@ -537,7 +647,9 @@ pub fn session_to_resume(conversation: &Conversation) -> Option<String> {
         matches!(entries.get(i + 1), Some(Entry::Session { runtime, .. }) if runtime == RUNTIME)
     });
     let id = match &entries[session] {
-        Entry::Session { id, .. } => id.clone(),
+        Entry::Session {
+            id, folder: made, ..
+        } if made.as_deref() == folder => id.clone(),
         _ => return None,
     };
     (all_ours && !id.is_empty()).then_some(id)
@@ -634,7 +746,11 @@ fn blocks(content: &Value) -> Vec<Value> {
                 "name": block["name"].as_str().unwrap_or_default().trim_start_matches("mcp__agentique__"),
                 "input": block["input"],
             })),
-            "thinking" => Some(json!({ "type": "thinking", "thinking": block["thinking"] })),
+            // Thinking with no text (an endpoint that thinks without showing
+            // it) is nothing to keep.
+            "thinking" if block["thinking"].as_str().is_some_and(|t| !t.trim().is_empty()) => {
+                Some(json!({ "type": "thinking", "thinking": block["thinking"] }))
+            }
             _ => None,
         })
         .collect()
@@ -655,14 +771,21 @@ impl Companion {
             Some(script) => script.clone(),
             None => agent.installation.script()?,
         };
-        let mut env = base_environment(&agent.node);
+        let mut env = match &agent.development {
+            None => base_environment(&agent.node),
+            Some(_) => {
+                let mut env = crate::policy::development_environment();
+                prepend_path(&mut env, &agent.node);
+                env
+            }
+        };
         env.push(("ANTHROPIC_API_KEY".into(), agent.key.expose().to_string()));
         let mut child = hidden(Command::new(&agent.node.path))
             .args(["--experimental-strip-types", "--no-warnings"])
             .arg(&script)
             .env_clear()
             .envs(env)
-            .current_dir(agent.data.join("work"))
+            .current_dir(agent.working_folder())
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -729,9 +852,13 @@ impl Runtime for ClaudeAgent {
     }
 
     fn label(&self) -> String {
+        let through = match &self.endpoint {
+            Some(endpoint) => format!(" (through {})", endpoint.provider.name()),
+            None => String::new(),
+        };
         match &self.model {
-            Some(model) => format!("Claude Agent · {model}"),
-            None => "Claude Agent".into(),
+            Some(model) => format!("Claude Agent · {model}{through}"),
+            None => format!("Claude Agent{through}"),
         }
     }
 
@@ -771,7 +898,11 @@ impl Runtime for ClaudeAgent {
                 return;
             }
         }
-        let resume = session_to_resume(turn.conversation);
+        let folder = self
+            .development
+            .as_ref()
+            .map(|d| d.cwd.display().to_string());
+        let resume = session_to_resume_in(turn.conversation, folder.as_deref());
         let message = match &resume {
             Some(_) => format!(
                 "{prompt}\n\n(Agentique: this continues your earlier session. The model and the code may have changed since; read them again before you change anything.)"
@@ -813,6 +944,7 @@ impl Runtime for ClaudeAgent {
                 return;
             }
         }
+        let development = self.development.clone();
         let start = json!({
             "type": "start",
             "options": {
@@ -823,9 +955,26 @@ impl Runtime for ClaudeAgent {
                 "effort": self.effort,
                 "resume": resume,
                 "maxTurns": max_calls,
-                "cwd": self.data.join("work"),
+                "cwd": self.working_folder(),
                 "configDir": self.data.join("config"),
                 "home": self.data.join("home"),
+                "policy": development
+                    .as_ref()
+                    .map(|d| serde_json::to_value(&d.policy).unwrap_or_default()),
+                "settingSources": development
+                    .as_ref()
+                    .map(|d| d.setting_sources.clone())
+                    .unwrap_or_default(),
+                "agents": development
+                    .as_ref()
+                    .map(|d| d.agents.clone())
+                    .filter(Value::is_object)
+                    .unwrap_or_else(|| json!({})),
+                "endpoint": self
+                    .endpoint
+                    .as_ref()
+                    .map(|e| json!({ "baseUrl": e.base_url, "fastModel": e.fast_model })),
+                "preset": development.as_ref().is_some_and(|d| d.preset),
             }
         });
         if let Err(error) = companion.send(&start) {
@@ -834,6 +983,15 @@ impl Runtime for ClaudeAgent {
             ));
             return;
         }
+        let steering = self.steering.clone();
+        let mut starting = true;
+        // The SDK sends a reply's content blocks as messages of their own,
+        // with the reply's id: the results of a reply's calls are flushed
+        // only when the next reply begins.
+        let mut reply_id: Option<String> = None;
+        // The companion said the turn is over: it takes no more messages.
+        let mut over = false;
+        let mut undelivered: Vec<String> = Vec::new();
         let mut interrupted = false;
         let mut interrupted_at: Option<std::time::Instant> = None;
         let mut ended = false;
@@ -851,6 +1009,23 @@ impl Runtime for ClaudeAgent {
                     break;
                 }
             }
+            // The gate always reaches the companion; messages until it says
+            // the turn is over (it may go on after a result, for queued
+            // messages or background work).
+            if !interrupted {
+                let (messages, gate) = if over {
+                    (Vec::new(), steering.take(starting).1)
+                } else {
+                    steering.take(starting)
+                };
+                starting = false;
+                for text in messages {
+                    let _ = companion.send(&json!({ "type": "message", "text": text }));
+                }
+                if let Some(gate) = gate {
+                    let _ = companion.send(&json!({ "type": "gate", "mode": gate.as_str() }));
+                }
+            }
             let line = match companion.lines.recv_timeout(Duration::from_millis(25)) {
                 Ok(line) => line,
                 Err(RecvTimeoutError::Timeout) => continue,
@@ -865,7 +1040,7 @@ impl Runtime for ClaudeAgent {
             match message["type"].as_str().unwrap_or_default() {
                 "init" => {
                     let effective = Effective::from(&message);
-                    let problems = effective.problems();
+                    let problems = effective.problems(development.as_ref());
                     let session = message["sessionId"]
                         .as_str()
                         .unwrap_or_default()
@@ -882,6 +1057,7 @@ impl Runtime for ClaudeAgent {
                             "started"
                         }
                         .into(),
+                        folder: folder.clone(),
                     });
                     self.effective = Some(effective);
                     if !problems.is_empty() {
@@ -905,7 +1081,14 @@ impl Runtime for ClaudeAgent {
                     ));
                 }
                 "assistant" => {
-                    turn.flush_results("Not run: the runtime went on without it.");
+                    let id = message["id"]
+                        .as_str()
+                        .filter(|i| !i.is_empty())
+                        .map(str::to_string);
+                    if id.is_none() || id != reply_id {
+                        turn.flush_results("Not run: the runtime went on without it.");
+                    }
+                    reply_id = id;
                     let content = blocks(&message["content"]);
                     if !content.is_empty() {
                         for block in content.iter().filter(|b| b["type"] == "tool_use") {
@@ -953,17 +1136,156 @@ impl Runtime for ClaudeAgent {
                     }));
                     turn.finished(result);
                 }
+                "tool_done" => {
+                    // One of the SDK's own tools finished (Agentique's are
+                    // answered by the Studio, above).
+                    let id = message["toolUseId"]
+                        .as_str()
+                        .unwrap_or_default()
+                        .to_string();
+                    if turn.pending.contains(&id) {
+                        turn.finished(ToolResult {
+                            tool_use_id: id,
+                            content: message["content"].as_str().unwrap_or_default().to_string(),
+                            is_error: message["isError"] == true,
+                            change: None,
+                        });
+                    }
+                }
+                "permission" => {
+                    // A call the session's policy leaves undecided: asked of
+                    // the Operator as a question, on a card of its own.
+                    let call_id = message["call"].as_str().unwrap_or_default().to_string();
+                    let tool = message["tool"].as_str().unwrap_or_default().to_string();
+                    let what = describe_call(&tool, &message["input"]);
+                    let reason = message["reason"].as_str().unwrap_or_default();
+                    let id = format!("permission-{call_id}");
+                    let question = ToolCall {
+                        id: id.clone(),
+                        name: crate::tools::ASK_OPERATOR.into(),
+                        input: json!({
+                            "question": format!(
+                                "The Assistant wants to {what}. This is outside its permission policy ({reason}). Allow it this once?"
+                            ),
+                            "options": [ALLOW, DO_NOT_ALLOW],
+                        }),
+                    };
+                    turn.stream(StreamEvent::ToolCallStarted {
+                        id: id.clone(),
+                        name: question.name.clone(),
+                    });
+                    turn.stream(StreamEvent::ToolInput {
+                        id: id.clone(),
+                        json: question.input.to_string(),
+                    });
+                    let answer = if stop.load(Ordering::SeqCst) || interrupted {
+                        ToolResult::error("Not run: the turn was stopped.")
+                    } else {
+                        execute(&question)
+                    };
+                    let allow = !answer.is_error && answer.content.trim() == ALLOW;
+                    (turn.on_event)(TurnEvent::ToolFinished(ToolResult {
+                        tool_use_id: id,
+                        ..answer.clone()
+                    }));
+                    turn.notice(&format!(
+                        "{} the Assistant to {what}.",
+                        if allow {
+                            "You allowed"
+                        } else {
+                            "You did not allow"
+                        }
+                    ));
+                    let refusal = if allow {
+                        String::new()
+                    } else if answer.is_error {
+                        answer.content.clone()
+                    } else {
+                        format!("The Operator did not allow it: {}", answer.content.trim())
+                    };
+                    let _ = companion.send(&json!({
+                        "type": "permission_result",
+                        "call": call_id,
+                        "allow": allow,
+                        "message": refusal,
+                    }));
+                }
+                "task" => {
+                    let event = match message["event"].as_str().unwrap_or_default() {
+                        "started" => TaskEvent::Started,
+                        "done" => TaskEvent::Done,
+                        _ => TaskEvent::Progress,
+                    };
+                    let text = |field: &str| {
+                        message[field]
+                            .as_str()
+                            .filter(|t| !t.is_empty())
+                            .map(str::to_string)
+                    };
+                    (turn.on_event)(TurnEvent::Activity(Activity::Task {
+                        id: message["id"].as_str().unwrap_or_default().to_string(),
+                        event,
+                        description: message["description"]
+                            .as_str()
+                            .unwrap_or_default()
+                            .to_string(),
+                        agent: text("agent"),
+                        status: text("status"),
+                        summary: text("summary"),
+                    }));
+                }
+                "compaction" => {
+                    let before = message["preTokens"].as_u64().unwrap_or(0);
+                    let after = message["postTokens"].as_u64();
+                    turn.notice(&match after {
+                        Some(after) => format!(
+                            "The Claude Agent runtime summarised its context ({before} to {after} tokens) to stay within limits."
+                        ),
+                        None => format!(
+                            "The Claude Agent runtime summarised its context ({before} tokens before) to stay within limits."
+                        ),
+                    });
+                    (turn.on_event)(TurnEvent::Activity(Activity::Compacted {
+                        trigger: message["trigger"].as_str().unwrap_or("auto").to_string(),
+                        before,
+                        after,
+                    }));
+                }
+                "done" => over = true,
+                "undelivered" => {
+                    undelivered.push(message["text"].as_str().unwrap_or_default().to_string());
+                }
+                "paused" => {
+                    let tool = message["tool"].as_str().unwrap_or_default().to_string();
+                    steering.note_held(&tool);
+                    (turn.on_event)(TurnEvent::Activity(Activity::Paused { tool }));
+                }
                 "result" => {
                     turn.flush_results("Not run: the turn ended before this call.");
-                    let usage = &message["usage"];
-                    turn.stream(StreamEvent::Usage(Usage {
+                    let tokens = |usage: &Value| Usage {
                         input_tokens: usage["inputTokens"].as_u64().unwrap_or(0),
                         cache_creation_input_tokens: usage["cacheWriteTokens"]
                             .as_u64()
                             .unwrap_or(0),
                         cache_read_input_tokens: usage["cacheReadTokens"].as_u64().unwrap_or(0),
                         output_tokens: usage["outputTokens"].as_u64().unwrap_or(0),
-                    }));
+                    };
+                    match message["usageByModel"].as_object() {
+                        // Each model at its own price; one the tables do not
+                        // know at the turn's model's price.
+                        Some(models) => {
+                            for (model, usage) in models {
+                                let model = agq_providers::resolve_model(model)
+                                    .or_else(|| turn.author.clone())
+                                    .unwrap_or_else(|| self.model_ref(model));
+                                turn.stream(StreamEvent::ModelUsage {
+                                    model,
+                                    usage: tokens(usage),
+                                });
+                            }
+                        }
+                        None => turn.stream(StreamEvent::Usage(tokens(&message["usage"]))),
+                    }
                     if message["isError"] == true && !interrupted {
                         let errors: Vec<String> = message["errors"]
                             .as_array()
@@ -986,9 +1308,13 @@ impl Runtime for ClaudeAgent {
                 "error" => {
                     let text = message["message"].as_str().unwrap_or_default();
                     match message["kind"].as_str().unwrap_or_default() {
-                        "auth" => turn.notice(
-                            "Anthropic refused the API key. Check it in Settings › Providers › Anthropic (or ANTHROPIC_API_KEY); everything else works as usual.",
-                        ),
+                        "auth" => turn.notice(&match &self.endpoint {
+                            None => "Anthropic refused the API key. Check it in Settings › Providers › Anthropic (or ANTHROPIC_API_KEY); everything else works as usual.".to_string(),
+                            Some(endpoint) => format!(
+                                "{0} refused the API key. Check it in Settings › Providers › {0}; everything else works as usual.",
+                                endpoint.provider.name()
+                            ),
+                        }),
                         "interrupted" => turn.notice(STOPPED),
                         kind => turn.notice(&format!("The Claude Agent runtime failed ({kind}): {text}")),
                     }
@@ -999,6 +1325,15 @@ impl Runtime for ClaudeAgent {
             }
         }
         turn.flush_results("Not run: the runtime stopped.");
+        // Messages the Operator added after the turn had ended never reached
+        // it: say so, so they can be sent again.
+        undelivered.extend(steering.clear_messages());
+        if !undelivered.is_empty() {
+            turn.notice(&format!(
+                "Not delivered (the turn had ended): {}. Send it again.",
+                undelivered.join(" · ")
+            ));
+        }
         if !turn.text.trim().is_empty() {
             // Text that streamed in before the runtime stopped stays.
             let text = json!({ "type": "text", "text": turn.text.trim_end() });
@@ -1018,6 +1353,25 @@ impl Runtime for ClaudeAgent {
             }
         }
         let _ = companion.send(&json!({ "type": "close" }));
+    }
+}
+
+/// A tool call in plain words, for a permission question.
+fn describe_call(tool: &str, input: &Value) -> String {
+    let field = |name: &str| input[name].as_str().unwrap_or_default().to_string();
+    match tool {
+        "Read" => format!("read {}", field("file_path")),
+        "Write" | "Edit" | "MultiEdit" => format!("change {}", field("file_path")),
+        "Glob" | "Grep" => format!("search {}", field("path")),
+        "Bash" | "PowerShell" => format!("run `{}`", field("command")),
+        "WebFetch" => format!("fetch {}", field("url")),
+        other => {
+            let mut text = input.to_string();
+            if text.chars().count() > 200 {
+                text = text.chars().take(200).collect::<String>() + "…";
+            }
+            format!("use {other} with {text}")
+        }
     }
 }
 
@@ -1094,7 +1448,28 @@ mod tests {
             runtime: RUNTIME.into(),
             id: id.into(),
             event: "started".into(),
+            folder: None,
         }
+    }
+
+    #[test]
+    fn a_session_is_resumed_only_in_the_folder_it_was_made_in() {
+        let mut conversation = Conversation::default();
+        conversation.entries.push(operator("Begin."));
+        conversation.entries.push(Entry::Session {
+            runtime: RUNTIME.into(),
+            id: "s-repo".into(),
+            event: "started".into(),
+            folder: Some("C:/work/agentique".into()),
+        });
+        conversation.entries.push(operator("Go on."));
+        assert_eq!(
+            session_to_resume_in(&conversation, Some("C:/work/agentique")),
+            Some("s-repo".into())
+        );
+        // In another folder (or the runtime's own) it is handed over.
+        assert_eq!(session_to_resume_in(&conversation, None), None);
+        assert_eq!(session_to_resume_in(&conversation, Some("D:/other")), None);
     }
 
     fn said(text: &str) -> Entry {
@@ -1187,7 +1562,7 @@ mod tests {
             permission_mode: "default".into(),
             ..Effective::default()
         };
-        let problems = effective.problems();
+        let problems = effective.problems(None);
         assert_eq!(problems.len(), 3, "{problems:?}");
         assert!(problems[0].contains("`Bash`"));
     }

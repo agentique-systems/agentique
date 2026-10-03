@@ -649,7 +649,11 @@ impl SettingsView {
         let message = studio.runtime.message.clone();
         let confirm = studio.runtime.confirm_install;
         let safe_mode = studio.safe_mode;
-        let key = agq_providers::key_status(Provider::Anthropic);
+        let key = agq_providers::key_status(
+            crate::agent_runtime::model_access(studio.settings.text("assistant.provider").as_str())
+                .map(|e| e.provider)
+                .unwrap_or(Provider::Anthropic),
+        );
         let lines = studio
             .runtime
             .health

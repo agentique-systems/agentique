@@ -1,4 +1,4 @@
-// A scripted stand-in for the Claude Agent companion (protocol 1), for the
+// A scripted stand-in for the Claude Agent companion (protocol 2), for the
 // Assistant's tests of the runtime boundary: no SDK, no network, no key. The
 // scenario is the first word of the turn's prompt after "scenario:".
 import { createInterface } from "node:readline";
@@ -55,7 +55,7 @@ const result = (extra = {}) =>
     ...extra,
   });
 
-out({ type: "ready", protocol: 1, sdk: "test", claudeCode: "test", node: process.version });
+out({ type: "ready", protocol: 2, sdk: "test", claudeCode: "test", node: process.version });
 const start = await next();
 if (start.type !== "start") process.exit(5);
 const prompt = start.options.prompt;
@@ -135,5 +135,88 @@ switch (name) {
     ] });
     result();
     break;
+  // Protocol 2's development sessions (C-53).
+  case "development": {
+    const o = start.options;
+    init({ tools: ["Bash", "Read", "Edit", "mcp__agentique__read_model"], permissionMode: "default" });
+    out({ type: "assistant", model: "deepseek-v4-pro", content: [
+      { type: "text", text: `undecided=${o.policy?.undecided}; protectsModel=${o.policy?.protected.includes("model/*.sysml")}; preset=${o.preset}; endpoint=${o.endpoint?.baseUrl}; fast=${o.endpoint?.fastModel}; sources=${o.settingSources.join(",")}; cwdIsProject=${o.cwd.endsWith("project")}; agents=${Object.keys(o.agents).join(",")}; key=${process.env.ANTHROPIC_API_KEY}; path=${(process.env.PATH ?? process.env.Path ?? "").length > 0}; manifest=${process.env.CARGO_MANIFEST_DIR ? "kept" : "none"}; parent=${process.env.CLAUDECODE ?? "none"}` },
+    ] });
+    result();
+    break;
+  }
+  case "builtin":
+    // One of the SDK's own tools: its result comes back as tool_done.
+    init({ tools: ["Bash", "mcp__agentique__read_model"], permissionMode: "default" });
+    out({ type: "assistant", model: "deepseek-v4-pro", content: [
+      { type: "tool_use", id: "toolu_b1", name: "Bash", input: { command: "cargo test" } },
+    ] });
+    out({ type: "task", event: "started", id: "k1", description: "Review the change", agent: "reviewer", status: null, summary: null });
+    out({ type: "task", event: "done", id: "k1", description: "Review the change", agent: "reviewer", status: "completed", summary: "Looks right" });
+    out({ type: "tool_done", toolUseId: "toolu_b1", isError: true, content: "test result: FAILED. 1 failed" });
+    out({ type: "compaction", trigger: "auto", preTokens: 180000, postTokens: 12000 });
+    out({ type: "assistant", model: "deepseek-v4-pro", content: [{ type: "text", text: "One test fails." }] });
+    result();
+    break;
+  case "lingering": {
+    // The turn answers, but background work keeps it open: the Studio's
+    // pause gate still reaches it.
+    init({ tools: ["mcp__agentique__read_model"], permissionMode: "default" });
+    result();
+    let mode = "none";
+    const deadline = Date.now() + 4000;
+    while (Date.now() < deadline) {
+      const message = await Promise.race([next(), new Promise((r) => setTimeout(() => r(null), 200))]);
+      if (message && message.type === "gate") {
+        mode = message.mode;
+        break;
+      }
+    }
+    out({ type: "assistant", model: "deepseek-v4-pro", content: [{ type: "text", text: `gate=${mode}` }] });
+    out({ type: "done" });
+    break;
+  }
+  case "parallel":
+    // One reply, sent as one message per content block (as the SDK does),
+    // with two calls of the SDK's own tools that run side by side.
+    init({ tools: ["Read", "mcp__agentique__read_model"], permissionMode: "default" });
+    out({ type: "assistant", id: "msg_1", model: "deepseek-v4-pro", content: [
+      { type: "tool_use", id: "toolu_p1", name: "Read", input: { file_path: "a.rs" } },
+    ] });
+    out({ type: "assistant", id: "msg_1", model: "deepseek-v4-pro", content: [
+      { type: "tool_use", id: "toolu_p2", name: "Read", input: { file_path: "b.rs" } },
+    ] });
+    out({ type: "tool_done", toolUseId: "toolu_p1", isError: false, content: "fn a() {}" });
+    out({ type: "tool_done", toolUseId: "toolu_p2", isError: false, content: "fn b() {}" });
+    out({ type: "assistant", id: "msg_2", model: "deepseek-v4-pro", content: [{ type: "text", text: "Both read." }] });
+    result();
+    break;
+  case "permission": {
+    init({ tools: ["Read", "mcp__agentique__read_model"], permissionMode: "default" });
+    out({ type: "permission", call: "p1", tool: "Read", input: { file_path: "D:\\notes.txt" }, reason: "D:/notes.txt is outside the folders this session may read" });
+    let answer;
+    for (;;) {
+      answer = await next();
+      if (answer.type === "permission_result" || answer.type === "eof") break;
+    }
+    out({ type: "assistant", model: "deepseek-v4-pro", content: [{ type: "text", text: `allow=${answer.allow}; message=${answer.message}` }] });
+    result();
+    break;
+  }
+  case "steer": {
+    // The Studio queues a message and changes the gate while the turn runs.
+    init({ tools: ["mcp__agentique__read_model"], permissionMode: "default" });
+    const seen = [];
+    while (seen.length < 2) {
+      const message = await next();
+      if (message.type === "eof") break;
+      if (message.type === "message") seen.push(`message:${message.text}`);
+      if (message.type === "gate") seen.push(`gate:${message.mode}`);
+    }
+    out({ type: "paused", tool: "Bash" });
+    out({ type: "assistant", model: "deepseek-v4-pro", content: [{ type: "text", text: `seen=${seen.sort().join("|")}` }] });
+    result();
+    break;
+  }
 }
 setTimeout(() => process.exit(0), 50);

@@ -1323,8 +1323,12 @@ impl Render for ConversationView {
             .flatten()
             .cloned()
             .collect();
-        let can_send =
-            !panel.input.trim().is_empty() && (question || (!running && key_missing.is_none()));
+        // While a steerable turn runs, a message joins it (C-39, C-53).
+        let steering = running && panel.steerable && !question;
+        let paused = studio.assistant_paused();
+        let held_at = panel.held_at.clone();
+        let can_send = !panel.input.trim().is_empty()
+            && (question || steering || (!running && key_missing.is_none()));
         let usage = panel.usage;
         let mut model = panel.model_name.clone();
         let mut hover = format!(
@@ -1560,6 +1564,57 @@ impl Render for ConversationView {
                                         )
                                     })
                                     .child(div().flex_1().min_w_0())
+                                    .when(steering, |this| {
+                                        let studio = self.studio.clone();
+                                        this.when(can_send, |this| {
+                                            this.child(
+                                                Button::new("queue", "Add")
+                                                    .small()
+                                                    .icon(IconName::Send)
+                                                    .shortcut("Enter")
+                                                    .tooltip("Add this message to the turn that is running; the Assistant reads it at its next step", None)
+                                                    .on_click(cx.listener(|this, _: &ClickEvent, window, cx| this.send(window, cx))),
+                                            )
+                                        })
+                                        .child(if paused {
+                                            Button::new("resume", "Resume")
+                                                .small()
+                                                .icon(IconName::Play)
+                                                .tooltip(
+                                                    match &held_at {
+                                                        Some(tool) => format!("Paused before {tool}: let the Assistant go on"),
+                                                        None => "Let the Assistant go on".to_string(),
+                                                    },
+                                                    None,
+                                                )
+                                                .on_click({
+                                                    let studio = studio.clone();
+                                                    move |_: &ClickEvent, _, cx| studio.act(cx, |studio| studio.resume_assistant())
+                                                })
+                                                .into_any_element()
+                                        } else {
+                                            Button::new("pause", "Pause")
+                                                .small()
+                                                .icon(IconName::Pause)
+                                                .tooltip("Hold the Assistant before its next tool call", None)
+                                                .on_click({
+                                                    let studio = studio.clone();
+                                                    move |_: &ClickEvent, _, cx| studio.act(cx, |studio| studio.pause_assistant())
+                                                })
+                                                .into_any_element()
+                                        })
+                                        .when(paused, |this| {
+                                            this.child(
+                                                Button::new("step", "Step")
+                                                    .small()
+                                                    .tooltip("Let the Assistant take one tool call, then hold it again", None)
+                                                    .on_click({
+                                                        let studio = studio.clone();
+                                                        move |_: &ClickEvent, _, cx| studio.act(cx, |studio| studio.step_assistant())
+                                                    }),
+                                            )
+                                        })
+                                    })
                                     .child(if running && !question {
                                         Button::new("stop", "Stop")
                                             .small()

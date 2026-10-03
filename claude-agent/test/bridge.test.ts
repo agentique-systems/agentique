@@ -29,6 +29,11 @@ const start: StartOptions = {
   cwd: "C:\\agent\\work",
   configDir: "C:\\agent\\config",
   home: "C:\\agent\\home",
+  policy: null,
+  settingSources: [],
+  agents: {},
+  endpoint: null,
+  preset: false,
 };
 
 test("protocol messages are decoded strictly", () => {
@@ -42,6 +47,11 @@ test("protocol messages are decoded strictly", () => {
   assert.throws(() => decode('{"type":"run_shell"}'), /unknown message type/);
   assert.throws(() => decode("[1]"), /JSON object/);
   assert.throws(() => decode('{"type":"start","options":{"prompt":"x","tools":[]}}'), /options.cwd/);
+  assert.deepEqual(decode('{"type":"permission_result","call":"p1","allow":true}'), { type: "permission_result", call: "p1", allow: true, message: "" });
+  assert.deepEqual(decode('{"type":"message","text":"Also add a test."}'), { type: "message", text: "Also add a test." });
+  assert.deepEqual(decode('{"type":"gate","mode":"step"}'), { type: "gate", mode: "step" });
+  assert.throws(() => decode('{"type":"gate","mode":"faster"}'), /gate/);
+  assert.throws(() => decode('{"type":"message","text":"  "}'), /needs text/);
   const splitter = new LineSplitter();
   assert.deepEqual(splitter.push('{"a":1}\r\n{"b"'), ['{"a":1}']);
   assert.deepEqual(splitter.push(":2}\n"), ['{"b":2}']);
@@ -165,8 +175,8 @@ test("a turn carries tool calls to the Studio one at a time, with their tool use
     calls.map((c) => (c.type === "tool_call" ? [c.toolUseId, c.input.element] : null)),
     [["toolu_2", "Store"], ["toolu_1", "Shop"]],
   );
-  assert.deepEqual(sent.map((m) => m.type), ["init", "text", "assistant", "tool_call", "tool_call", "result"]);
-  const result = sent.at(-1);
+  assert.deepEqual(sent.map((m) => m.type), ["init", "text", "assistant", "tool_call", "tool_call", "result", "done"]);
+  const result = sent.at(-2);
   assert.equal(result?.type === "result" && result.sessionId, "s1");
 });
 
@@ -208,8 +218,8 @@ test("a refused key ends the turn at once with a plain reason", async () => {
     throw new Error("must not be reached: the turn stops at the refused key");
   });
   await new Turn((m) => sent.push(m), sdk, mcp, {}, "agentique/test").run(start);
-  assert.deepEqual(sent.map((m) => m.type), ["init", "retry", "error"]);
-  const error = sent.at(-1);
+  assert.deepEqual(sent.map((m) => m.type), ["init", "retry", "error", "done"]);
+  const error = sent.at(-2);
   assert.equal(error?.type === "error" && error.kind, "auth");
 });
 

@@ -31,6 +31,18 @@ use std::time::{Duration, Instant};
 /// chosen model, or the Claude Agent runtime.
 pub type RuntimeSource = Box<dyn Fn() -> Box<dyn agq_assistant::Runtime>>;
 
+/// What the next runtime is made with, decided by the Studio just before
+/// the turn starts (C-53): the development session for the open project, if
+/// any. Shared with the runtime source, which reads it when it makes the
+/// runtime.
+#[derive(Default)]
+pub struct RuntimeInputs {
+    pub development: Option<agq_assistant::policy::Development>,
+    /// Who steers the runtime: the Conversation's turn shares the panel's
+    /// steering; anything else (a task's worker) gets its own.
+    pub steering: Option<agq_assistant::policy::Steering>,
+}
+
 /// The Conversation panel's state.
 pub struct ConversationPanel {
     pub conversation: Conversation,
@@ -83,6 +95,16 @@ pub struct ConversationPanel {
     /// conversation, another project), after which the view forgets what it
     /// kept about them, such as selected text.
     pub epoch: u64,
+    /// The next runtime's inputs, shared with `new_runtime`.
+    pub inputs: std::rc::Rc<std::cell::RefCell<RuntimeInputs>>,
+    /// Messages queued into the running turn and its pause gate (C-53);
+    /// shared with the runtime the source makes.
+    pub steering: agq_assistant::policy::Steering,
+    /// Whether the runtime takes queued messages and the pause gate (the
+    /// Claude Agent runtime does; the loop does not).
+    pub steerable: bool,
+    /// The tool the running turn is held at, while paused.
+    pub held_at: Option<String>,
 }
 
 /// Part of the reply that is streaming in.
@@ -180,6 +202,10 @@ impl ConversationPanel {
             focus_input: false,
             input_set: 0,
             epoch: 0,
+            inputs: Default::default(),
+            steering: Default::default(),
+            steerable: false,
+            held_at: None,
         }
     }
 
@@ -189,6 +215,7 @@ impl ConversationPanel {
         self.model_name = choice.label();
         self.key_missing = (!choice.has_key()).then(|| choice.missing_key_message());
         self.new_runtime = Box::new(move || agq_assistant::LoopRuntime::boxed(choice.start()));
+        self.steerable = false;
     }
 
     /// Another runtime for the next turns (the Claude Agent runtime): its
@@ -197,6 +224,7 @@ impl ConversationPanel {
         self.model_name = label;
         self.key_missing = problem;
         self.new_runtime = source;
+        self.steerable = true;
     }
 
     pub fn running(&self) -> bool {
@@ -416,6 +444,16 @@ impl Studio {
             return;
         }
         let panel = &mut self.conversation;
+        if panel.running() && panel.steerable && panel.editing.is_none() {
+            // Steering (C-39, C-53): the message joins the running turn.
+            panel.steering.queue(&text);
+            panel.input.clear();
+            panel.input_set += 1;
+            self.add_entry(Entry::Notice {
+                text: format!("You added, while the Assistant worked: {text}"),
+            });
+            return;
+        }
         if panel.running() || panel.key_missing.is_some() {
             return;
         }
@@ -444,6 +482,18 @@ impl Studio {
             applied: Vec::new(),
             failed: false,
         });
+        panel.steering.set_gate(agq_assistant::policy::Gate::Run);
+        // Messages left from a turn that ended before taking them were said
+        // to be undelivered; they do not ride along with this one.
+        panel.steering.clear_messages();
+        panel.held_at = None;
+        let development = self.conversation_development();
+        let panel = &mut self.conversation;
+        {
+            let mut inputs = panel.inputs.borrow_mut();
+            inputs.development = development;
+            inputs.steering = Some(panel.steering.clone());
+        }
         let runtime = (panel.new_runtime)();
         panel.turn_model = runtime.model();
         panel.turn_usage = Usage::default();
@@ -535,9 +585,56 @@ impl Studio {
                         self.daily_cost.add(cost);
                     }
                 }
+                StreamEvent::ModelUsage { model, usage } => {
+                    panel.usage.add(usage);
+                    panel.turn_usage.add(usage);
+                    if let Some(cost) = usage.cost_usd(&model) {
+                        self.daily_cost.add(cost);
+                    }
+                }
             },
             BackgroundEvent::Turn(TurnEvent::ToolFinished(result)) => {
                 panel.results.insert(result.tool_use_id.clone(), result);
+            }
+            BackgroundEvent::Turn(TurnEvent::Activity(activity)) => {
+                use agq_assistant::{Activity, TaskEvent};
+                match activity {
+                    Activity::Task {
+                        event: TaskEvent::Started,
+                        description,
+                        agent,
+                        ..
+                    } => self.add_entry(Entry::Notice {
+                        text: match agent {
+                            Some(agent) => format!("Subagent {agent} started: {description}"),
+                            None => format!("Started in the background: {description}"),
+                        },
+                    }),
+                    Activity::Task {
+                        event: TaskEvent::Done,
+                        description,
+                        agent,
+                        status,
+                        summary,
+                        ..
+                    } => self.add_entry(Entry::Notice {
+                        text: format!(
+                            "{} {}: {}{}",
+                            agent
+                                .map(|a| format!("Subagent {a}"))
+                                .unwrap_or_else(|| "Background work".into()),
+                            status.as_deref().unwrap_or("ended"),
+                            description,
+                            summary.map(|s| format!(" — {s}")).unwrap_or_default()
+                        ),
+                    }),
+                    Activity::Task { .. } | Activity::Compacted { .. } => {}
+                    Activity::Paused { tool } => {
+                        self.status =
+                            format!("The Assistant is paused before {tool}: Step or Resume");
+                        self.conversation.held_at = Some(tool);
+                    }
+                }
             }
             BackgroundEvent::Turn(TurnEvent::Entry(entry)) => {
                 match &entry {
@@ -728,6 +825,43 @@ impl Studio {
             _ => ToolResult::answer(answer.trim()),
         };
         waiting.reply.send(result).is_ok()
+    }
+
+    /// Holds the running turn at its next tool call (C-53).
+    pub fn pause_assistant(&mut self) {
+        if self.conversation.running() && self.conversation.steerable {
+            self.conversation
+                .steering
+                .set_gate(agq_assistant::policy::Gate::Pause);
+            self.status = "The Assistant pauses before its next tool call".into();
+        }
+    }
+
+    /// Lets the paused turn take one tool call, then holds it again.
+    pub fn step_assistant(&mut self) {
+        if self.conversation.running() && self.conversation.steerable {
+            self.conversation.held_at = None;
+            self.conversation
+                .steering
+                .set_gate(agq_assistant::policy::Gate::Step);
+        }
+    }
+
+    /// Lets the paused turn go on.
+    pub fn resume_assistant(&mut self) {
+        if self.conversation.steerable {
+            self.conversation.held_at = None;
+            self.conversation
+                .steering
+                .set_gate(agq_assistant::policy::Gate::Run);
+            self.status = "The Assistant goes on".into();
+        }
+    }
+
+    /// Whether the running turn is paused (or will pause at its next call).
+    pub fn assistant_paused(&self) -> bool {
+        self.conversation.running()
+            && self.conversation.steering.gate() != agq_assistant::policy::Gate::Run
     }
 
     /// Stops the Assistant at once: no further model or tool call starts, a

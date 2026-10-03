@@ -382,6 +382,14 @@ impl Studio {
                 .parent()
                 .map(std::path::Path::to_path_buf)
         });
+        // The worker works through its own code tools in the task's worktree,
+        // never in the Conversation's development session.
+        {
+            let mut inputs = self.conversation.inputs.borrow_mut();
+            inputs.development = None;
+            // Its own pause gate and messages, never the Conversation's.
+            inputs.steering = None;
+        }
         let mut runtime = (self.conversation.new_runtime)();
         let (sender, events) = std::sync::mpsc::channel();
         let title = brief.title.clone();
@@ -433,9 +441,11 @@ impl Studio {
                             calls.insert(id, call);
                         }
                     }
-                    agq_assistant::TurnEvent::Stream(agq_assistant::StreamEvent::Usage(u)) => {
-                        usage.add(u)
-                    }
+                    agq_assistant::TurnEvent::Stream(agq_assistant::StreamEvent::Usage(u))
+                    | agq_assistant::TurnEvent::Stream(agq_assistant::StreamEvent::ModelUsage {
+                        usage: u,
+                        ..
+                    }) => usage.add(u),
                     agq_assistant::TurnEvent::ToolFinished(result) => {
                         let (name, input) = calls.remove(&result.tool_use_id).unwrap_or_default();
                         let path = serde_json::from_str::<serde_json::Value>(&input)

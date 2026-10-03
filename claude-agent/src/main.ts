@@ -1,6 +1,6 @@
 // The Claude Agent companion's entry point (ROADMAP §4.7; part
 // `ClaudeAgentRuntime` in Agentique's model). The Studio starts it with Node
-// (type stripping) for one turn and talks to it in protocol 1 on standard
+// (type stripping) for one turn and talks to it in protocol 2 on standard
 // input and output. Two other modes serve Settings' health check:
 //
 //   main.ts --verify   the versions, and the Claude Code binary against the
@@ -117,6 +117,11 @@ async function probe(): Promise<void> {
     cwd: base,
     configDir: join(base, "config"),
     home: base,
+    policy: null,
+    settingSources: [],
+    agents: {},
+    endpoint: null,
+    preset: false,
   });
   clearTimeout(timer);
   const init = messages.find((m) => m.type === "init");
@@ -163,6 +168,15 @@ async function serve(): Promise<void> {
           break;
         case "tool_result":
           turn?.answer(message.call, { content: message.content, isError: message.isError });
+          break;
+        case "permission_result":
+          turn?.permit(message.call, message.allow, message.message);
+          break;
+        case "message":
+          turn?.queue(message.text);
+          break;
+        case "gate":
+          turn?.setGate(message.mode);
           break;
         case "interrupt":
           void turn?.stop("stopped by the Operator");

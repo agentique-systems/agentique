@@ -1,18 +1,25 @@
 // One turn of the Claude Agent runtime (ROADMAP §4.7, §4.10): the SDK runs
 // the loop; this file only carries what happens to the Studio and the
-// Studio's answers back. Tool calls go to the Studio one at a time, each with
-// the id of the model's tool use, and wait for the Studio's result; when the
-// turn is stopped or the Studio goes away, every waiting call is answered
-// "not run" and the turn ends (fail closed).
+// Studio's answers back. Calls of Agentique's tools go to the Studio one at a
+// time, each with the id of the model's tool use, and wait for the Studio's
+// result; a call the permission policy leaves undecided is asked of the
+// Studio the same way. When the turn is stopped or the Studio goes away,
+// every waiting call is answered "not run" and the turn ends (fail closed).
+//
+// Protocol 2 adds (C-53): messages the Studio queues into the running
+// session, the pause gate (Pause holds the session at its next tool call,
+// Step lets one through), and reports of the SDK's own tool results,
+// subagent tasks and compaction, so the Studio shows what the agent does.
 
 import type {
   CompanionMessage,
   Effective,
+  GateMode,
   StartOptions,
   ToolDefinition,
   Usage,
 } from "./protocol.ts";
-import { agentEnvironment, agentiqueTool, qualified, sdkOptions } from "./policy.ts";
+import { type HookHost, agentEnvironment, agentiqueTool, qualified, sdkOptions } from "./policy.ts";
 
 /** What a tool call came back with. */
 export interface ToolAnswer {
@@ -35,6 +42,12 @@ export interface QueryLike extends AsyncIterable<Record<string, unknown>> {
   interrupt(): Promise<unknown>;
 }
 
+/** How much of a built-in tool's result the Studio is shown. */
+export const TOOL_DONE_LIMIT = 4000;
+
+/** How long a turn that has answered waits for its background work. */
+export const BACKGROUND_LIMIT_MS = 30 * 60 * 1000;
+
 /** A tool use's identity for matching: its name and canonical input. */
 function key(name: string, input: unknown): string {
   return `${name}\u0000${canonical(input)}`;
@@ -54,6 +67,24 @@ export function canonical(value: unknown): string {
   return JSON.stringify(value ?? null);
 }
 
+/** A tool result's content as plain text, cut to `limit` characters. */
+export function resultText(content: unknown, limit = TOOL_DONE_LIMIT): string {
+  let text: string;
+  if (typeof content === "string") {
+    text = content;
+  } else if (Array.isArray(content)) {
+    text = content
+      .map((block) => {
+        const b = block as Record<string, unknown>;
+        return b.type === "text" && typeof b.text === "string" ? b.text : `[${String(b.type ?? "content")}]`;
+      })
+      .join("\n");
+  } else {
+    text = content === undefined || content === null ? "" : JSON.stringify(content);
+  }
+  return text.length > limit ? `${text.slice(0, limit)}…` : text;
+}
+
 export class Turn {
   private readonly send: (message: CompanionMessage) => void;
   private readonly sdk: Sdk;
@@ -63,14 +94,37 @@ export class Turn {
   private readonly abort = new AbortController();
   /** Tool uses the model asked for, waiting for their MCP call, by key. */
   private readonly uses = new Map<string, string[]>();
-  /** Calls sent to the Studio, waiting for its answer. */
+  /** Calls and questions sent to the Studio, waiting for its answer. */
   private readonly waiting = new Map<string, (answer: ToolAnswer) => void>();
+  private readonly asking = new Map<string, (answer: { allow: boolean; message: string }) => void>();
   /** One call at a time: each waits for the one before it. */
   private chain: Promise<unknown> = Promise.resolve();
   private next = 1;
   private query: QueryLike | null = null;
   private stopped: string | null = null;
   private finish: () => void = () => {};
+  /** Messages for the session not yet given to it, and who waits for one. */
+  private readonly queued: string[] = [];
+  private wake: () => void = () => {};
+  /** User messages given to the session, and results it reported. */
+  private given = 0;
+  private results = 0;
+  /** User sends the SDK still has queued, from its latest result. */
+  private pending: number | null = null;
+  /** Background work (subagents, commands) started and not yet ended. */
+  private readonly background = new Set<string>();
+  private answered = false;
+  private backgroundTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Messages given to the SDK that no result has said it took (by the
+   * uuid each is sent with), when the SDK reports them at all. */
+  private readonly unconsumed = new Set<string>();
+  private echoes = false;
+  /** Totals by model at the previous result, for each result's own share. */
+  private totals: Record<string, Usage> = {};
+  private over_ = false;
+  /** The pause gate, and the calls held at it. */
+  private mode: GateMode = "run";
+  private readonly held: (() => void)[] = [];
 
   constructor(
     send: (message: CompanionMessage) => void,
@@ -95,19 +149,36 @@ export class Turn {
     const done = new Promise<void>((resolve) => {
       this.finish = resolve;
     });
-    // The Operator's message, then the input stays open until the turn ends
-    // (streaming input, so the turn can be interrupted).
+    // The Operator's message, then any message the Studio queues, while the
+    // input stays open until the turn ends (streaming input, so the turn can
+    // be interrupted and steered).
+    const turn = this;
     const prompt = (async function* () {
-      yield {
-        type: "user",
-        message: { role: "user", content: start.prompt },
-        parent_tool_use_id: null,
-      };
-      await done;
+      turn.given += 1;
+      yield { type: "user", uuid: turn.stamp(), message: { role: "user", content: start.prompt }, parent_tool_use_id: null };
+      for (;;) {
+        while (turn.queued.length > 0) {
+          const text = turn.queued.shift() as string;
+          turn.given += 1;
+          yield { type: "user", uuid: turn.stamp(), message: { role: "user", content: text }, parent_tool_use_id: null };
+        }
+        const woken = new Promise<void>((resolve) => {
+          turn.wake = resolve;
+        });
+        const ended = await Promise.race([done.then(() => true), woken.then(() => false)]);
+        if (ended) {
+          return;
+        }
+      }
     })();
     const env = agentEnvironment(start, this.from, this.client);
+    const host: HookHost = {
+      gate: (tool) => this.gate(tool),
+      stopped: () => this.stopped,
+      ask: (tool, input, reason, signal) => this.ask(tool, input, reason, signal),
+    };
     const options = sdkOptions(start, server, this.abort, env, (text) =>
-      this.send({ type: "log", text: String(text).trimEnd() }),
+      this.send({ type: "log", text: String(text).trimEnd() }), host,
     );
     try {
       this.query = this.sdk.query({ prompt, options: options as Record<string, unknown> });
@@ -121,12 +192,27 @@ export class Turn {
         this.send({ type: "error", kind: "runtime", message: describe(error) });
       }
     } finally {
+      if (this.backgroundTimer !== null) {
+        clearTimeout(this.backgroundTimer);
+      }
       this.release(this.stopped ?? "the turn ended");
       this.finish();
     }
     if (this.stopped !== null) {
       this.send({ type: "error", kind: "interrupted", message: this.stopped });
     }
+    this.over_ = true;
+    for (const text of this.queued.splice(0)) {
+      this.send({ type: "undelivered", text });
+    }
+    this.send({ type: "done" });
+  }
+
+  /** A uuid for a user message, remembered until a result says it was taken. */
+  private stamp(): string {
+    const uuid = crypto.randomUUID();
+    this.unconsumed.add(uuid);
+    return uuid;
   }
 
   /** The Studio's answer to a call. Unknown calls are ignored. */
@@ -136,6 +222,86 @@ export class Turn {
       this.waiting.delete(call);
       resolve(answer);
     }
+  }
+
+  /** The Studio's answer to a permission question. Unknown ones are ignored. */
+  permit(call: string, allow: boolean, message: string): void {
+    const resolve = this.asking.get(call);
+    if (resolve) {
+      this.asking.delete(call);
+      resolve({ allow, message });
+    }
+  }
+
+  /** A message the Studio queues into the running session. */
+  queue(text: string): void {
+    if (this.stopped !== null || this.over_) {
+      this.send({ type: "undelivered", text });
+      return;
+    }
+    this.answered = false;
+    this.queued.push(text);
+    this.wake();
+  }
+
+  /** Whether the turn is over: the SDK has nothing queued, nothing is
+   * queued here, and no background work is still running. */
+  private over(): boolean {
+    const pending = this.pending ?? Math.max(0, this.given - this.results);
+    const taken = !this.echoes || this.unconsumed.size === 0;
+    return this.answered && pending === 0 && taken && this.queued.length === 0 && this.background.size === 0;
+  }
+
+  /** Pause holds the session at its next tool call; Step lets one through. */
+  setGate(mode: GateMode): void {
+    if (mode === "run") {
+      this.mode = "run";
+      for (const resume of this.held.splice(0)) {
+        resume();
+      }
+    } else if (mode === "step") {
+      // One call goes on: one already held, or else the next to arrive.
+      const first = this.held.shift();
+      if (first) {
+        this.mode = "pause";
+        first();
+      } else {
+        this.mode = "step";
+      }
+    } else {
+      this.mode = "pause";
+    }
+  }
+
+  /**
+   * This result's own share of the usage: `modelUsage` is cumulative for the
+   * whole query, so each result reports what was added since the one before.
+   */
+  private share(models: unknown, main: unknown): [Usage | null, Record<string, Usage> | null] {
+    const now = byModel(models);
+    if (now === null) {
+      return [usage(undefined, main), null];
+    }
+    const delta: Record<string, Usage> = {};
+    const total = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 };
+    for (const [model, u] of Object.entries(now)) {
+      const before = this.totals[model] ?? { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 };
+      const d = {
+        inputTokens: Math.max(0, u.inputTokens - before.inputTokens),
+        outputTokens: Math.max(0, u.outputTokens - before.outputTokens),
+        cacheReadTokens: Math.max(0, u.cacheReadTokens - before.cacheReadTokens),
+        cacheWriteTokens: Math.max(0, u.cacheWriteTokens - before.cacheWriteTokens),
+      };
+      if (d.inputTokens + d.outputTokens + d.cacheReadTokens + d.cacheWriteTokens > 0) {
+        delta[model] = d;
+        total.inputTokens += d.inputTokens;
+        total.outputTokens += d.outputTokens;
+        total.cacheReadTokens += d.cacheReadTokens;
+        total.cacheWriteTokens += d.cacheWriteTokens;
+      }
+    }
+    this.totals = now;
+    return [total, delta];
   }
 
   /** Stops the turn: waiting calls are not run, and the SDK is interrupted. */
@@ -154,11 +320,49 @@ export class Turn {
     this.finish();
   }
 
-  /** Answers every waiting call "not run". */
+  /** Waits at the gate while paused; never once stopped. */
+  private gate(tool: string): Promise<void> {
+    if (this.mode === "run" || this.stopped !== null) {
+      return Promise.resolve();
+    }
+    if (this.mode === "step") {
+      this.mode = "pause";
+      return Promise.resolve();
+    }
+    this.send({ type: "paused", tool });
+    return new Promise<void>((resolve) => this.held.push(resolve));
+  }
+
+  /** Asks the Studio about a call the policy leaves undecided. */
+  private ask(
+    tool: string,
+    input: Record<string, unknown>,
+    reason: string,
+    signal?: AbortSignal,
+  ): Promise<{ allow: boolean; message: string }> {
+    if (this.stopped !== null || signal?.aborted) {
+      return Promise.resolve({ allow: false, message: `Not run: ${this.stopped ?? "the call was cancelled"}.` });
+    }
+    const call = `p${this.next++}`;
+    return new Promise((resolve) => {
+      this.asking.set(call, resolve);
+      signal?.addEventListener("abort", () => this.permit(call, false, "The call was cancelled."), { once: true });
+      this.send({ type: "permission", call, tool, input, reason });
+    });
+  }
+
+  /** Answers every waiting call and question "not run", and opens the gate. */
   private release(reason: string): void {
     for (const [call, resolve] of this.waiting) {
       resolve({ content: `Not run: ${reason}.`, isError: true });
       this.waiting.delete(call);
+    }
+    for (const [call, resolve] of this.asking) {
+      resolve({ allow: false, message: `Not run: ${reason}.` });
+      this.asking.delete(call);
+    }
+    for (const resume of this.held.splice(0)) {
+      resume();
     }
   }
 
@@ -166,6 +370,7 @@ export class Turn {
   private handle(message: Record<string, unknown>): boolean {
     const type = message.type;
     const subtype = message.subtype;
+    const top = message.parent_tool_use_id == null;
     if (type === "system" && subtype === "init") {
       this.send({ type: "init", ...effective(message) });
     } else if (type === "system" && subtype === "api_retry") {
@@ -181,12 +386,47 @@ export class Turn {
         this.send({
           type: "error",
           kind: "auth",
-          message: "Anthropic refused the API key (authentication failed).",
+          message: "The model's API refused the key (authentication failed).",
         });
         this.abort.abort();
         return true;
       }
+    } else if (type === "system" && subtype === "compact_boundary") {
+      const meta = (message.compact_metadata ?? {}) as Record<string, unknown>;
+      this.send({
+        type: "compaction",
+        trigger: String(meta.trigger ?? "auto"),
+        preTokens: Number(meta.pre_tokens ?? 0),
+        postTokens: typeof meta.post_tokens === "number" ? meta.post_tokens : null,
+      });
+    } else if (type === "system" && (subtype === "task_started" || subtype === "task_progress" || subtype === "task_notification")) {
+      if (message.ambient === true || message.skip_transcript === true) {
+        return false;
+      }
+      const id = String(message.task_id ?? "");
+      if (subtype === "task_started" && message.is_backgrounded === true) {
+        this.background.add(id);
+      } else if (subtype === "task_notification") {
+        this.background.delete(id);
+      }
+      this.send({
+        type: "task",
+        event: subtype === "task_started" ? "started" : subtype === "task_progress" ? "progress" : "done",
+        id: String(message.task_id ?? ""),
+        description: String(message.description ?? message.summary ?? ""),
+        agent: typeof message.subagent_type === "string" ? message.subagent_type : null,
+        status: typeof message.status === "string" ? message.status : null,
+        summary: typeof message.summary === "string" ? message.summary : null,
+      });
+      if (subtype === "task_notification" && this.over()) {
+        // The last background work ended after the answer: close the input,
+        // so the session ends once it has said what it wants to.
+        this.finish();
+      }
     } else if (type === "stream_event") {
+      if (!top) {
+        return false;
+      }
       const event = message.event as Record<string, unknown> | undefined;
       const delta = event?.delta as Record<string, unknown> | undefined;
       if (event?.type === "content_block_delta" && delta) {
@@ -196,7 +436,13 @@ export class Turn {
           this.send({ type: "thinking", text: delta.thinking });
         }
       }
-    } else if (type === "assistant" && message.parent_tool_use_id == null) {
+    } else if (type === "system" && subtype === "task_updated") {
+      const patch = (message.patch ?? {}) as Record<string, unknown>;
+      if (patch.is_backgrounded === true) {
+        this.background.add(String(message.task_id ?? ""));
+      }
+    } else if (type === "assistant" && top) {
+      this.answered = false;
       const inner = (message.message ?? {}) as Record<string, unknown>;
       const content = Array.isArray(inner.content) ? (inner.content as Record<string, unknown>[]) : [];
       for (const block of content) {
@@ -209,12 +455,40 @@ export class Turn {
         this.send({
           type: "error",
           kind: "auth",
-          message: "Anthropic refused the API key (authentication failed).",
+          message: "The model's API refused the key (authentication failed).",
         });
         return true;
       }
-      this.send({ type: "assistant", model: String(inner.model ?? ""), content });
+      this.send({ type: "assistant", id: String(inner.id ?? ""), model: String(inner.model ?? ""), content });
+    } else if (type === "user" && top) {
+      // The SDK's own tools' results (Agentique's are the Studio's already).
+      const inner = (message.message ?? {}) as Record<string, unknown>;
+      const content = Array.isArray(inner.content) ? (inner.content as Record<string, unknown>[]) : [];
+      for (const block of content) {
+        if (block.type === "tool_result" && typeof block.tool_use_id === "string") {
+          this.send({
+            type: "tool_done",
+            toolUseId: block.tool_use_id,
+            isError: block.is_error === true,
+            content: resultText(block.content),
+          });
+        }
+      }
     } else if (type === "result") {
+      this.results += 1;
+      this.answered = true;
+      this.pending = typeof message.queued_turn_count === "number" ? message.queued_turn_count : null;
+      const echoed = [
+        ...(Array.isArray(message.user_message_uuids) ? (message.user_message_uuids as unknown[]) : []),
+        ...(typeof message.user_message_uuid === "string" ? [message.user_message_uuid] : []),
+      ];
+      if (echoed.length > 0) {
+        this.echoes = true;
+        for (const uuid of echoed) {
+          this.unconsumed.delete(String(uuid));
+        }
+      }
+      const [share, byModel] = this.share(message.modelUsage, message.usage);
       this.send({
         type: "result",
         isError: message.is_error === true,
@@ -222,7 +496,8 @@ export class Turn {
         stopReason: typeof message.stop_reason === "string" ? message.stop_reason : null,
         numTurns: Number(message.num_turns ?? 0),
         costUsd: typeof message.total_cost_usd === "number" ? message.total_cost_usd : null,
-        usage: usage(message.usage),
+        usage: share,
+        usageByModel: byModel,
         sessionId: String(message.session_id ?? ""),
         denials: Array.isArray(message.permission_denials)
           ? (message.permission_denials as Record<string, unknown>[]).map((d) =>
@@ -231,7 +506,19 @@ export class Turn {
           : [],
         errors: Array.isArray(message.errors) ? (message.errors as unknown[]).map(String) : [],
       });
-      return true;
+      // The SDK may fold queued messages into one turn: its own count of
+      // pending sends decides, and background work still running keeps the
+      // turn open (for at most BACKGROUND_LIMIT_MS).
+      if (this.over()) {
+        return true;
+      }
+      if (this.background.size > 0 && this.backgroundTimer === null) {
+        this.backgroundTimer = setTimeout(
+          () => void this.stop("its background work took longer than the turn may wait"),
+          BACKGROUND_LIMIT_MS,
+        );
+      }
+      return false;
     }
     return false;
   }
@@ -262,8 +549,10 @@ export class Turn {
           }
           const call = `c${this.next++}`;
           this.waiting.set(call, resolve);
-          signal?.addEventListener("abort", () =>
-            this.answer(call, { content: "Not run: the call was cancelled.", isError: true }),
+          signal?.addEventListener(
+            "abort",
+            () => this.answer(call, { content: "Not run: the call was cancelled.", isError: true }),
+            { once: true },
           );
           this.send({ type: "tool_call", call, toolUseId, name, input });
         }),
@@ -295,12 +584,47 @@ export function effective(message: Record<string, unknown>): Effective {
   };
 }
 
-function usage(value: unknown): Usage | null {
-  if (value === null || typeof value !== "object") {
+/**
+ * Usage by model from the SDK's cumulative `modelUsage`, or null without it.
+ */
+export function byModel(models: unknown): Record<string, Usage> | null {
+  if (models === null || typeof models !== "object" || Object.keys(models).length === 0) {
     return null;
   }
-  const u = value as Record<string, unknown>;
   const n = (v: unknown) => (typeof v === "number" ? v : 0);
+  const out: Record<string, Usage> = {};
+  for (const [model, m] of Object.entries(models as Record<string, Record<string, unknown>>)) {
+    out[model] = {
+      inputTokens: n(m.inputTokens),
+      outputTokens: n(m.outputTokens),
+      cacheReadTokens: n(m.cacheReadInputTokens),
+      cacheWriteTokens: n(m.cacheCreationInputTokens),
+    };
+  }
+  return out;
+}
+
+/**
+ * The turn's usage. `modelUsage` covers every model the turn used
+ * (subagents, compaction, small tasks), summed; `usage` covers only the main
+ * loop and is used when `modelUsage` is absent.
+ */
+export function usage(models: unknown, main: unknown): Usage | null {
+  const n = (v: unknown) => (typeof v === "number" ? v : 0);
+  if (models !== null && typeof models === "object" && Object.keys(models).length > 0) {
+    const total = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 };
+    for (const m of Object.values(models as Record<string, Record<string, unknown>>)) {
+      total.inputTokens += n(m.inputTokens);
+      total.outputTokens += n(m.outputTokens);
+      total.cacheReadTokens += n(m.cacheReadInputTokens);
+      total.cacheWriteTokens += n(m.cacheCreationInputTokens);
+    }
+    return total;
+  }
+  if (main === null || typeof main !== "object") {
+    return null;
+  }
+  const u = main as Record<string, unknown>;
   return {
     inputTokens: n(u.input_tokens),
     outputTokens: n(u.output_tokens),

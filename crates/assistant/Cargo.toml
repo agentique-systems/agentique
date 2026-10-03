@@ -19,4 +19,6 @@ serde_json.workspace = true
 reqwest = { version = "0.12.28", default-features = false, features = ["blocking", "rustls-tls"] }
 
 [dev-dependencies]
+# Checks that the standard refused commands read the same in Rust as in the companion (already in the lock file).
+regex = "1.13.1"
 tempfile.workspace = true
