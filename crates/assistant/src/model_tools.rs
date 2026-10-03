@@ -123,9 +123,9 @@ pub fn locked_code(
         .collect();
     let mut found = Vec::new();
     for text in links {
-        let Ok(parsed) = agq_implementation::links::Links::parse(text) else {
-            continue;
-        };
+        // Links that cannot be read hide nothing: the gate fails.
+        let parsed = agq_implementation::links::Links::parse(text)
+            .map_err(|e| format!("the implementation links cannot be read: {e}"))?;
         for link in &parsed.links {
             if !files.iter().any(|f| agq_execution::within(f, &link.path)) {
                 continue;
@@ -262,5 +262,15 @@ mod tests {
         )
         .unwrap();
         assert!(named.is_empty(), "the objective names it");
+        assert!(
+            locked_code(
+                folder,
+                &base,
+                &files(&["src/store.rs"]),
+                &["not json".into()],
+                &[]
+            )
+            .is_err()
+        );
     }
 }
