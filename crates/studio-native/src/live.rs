@@ -1685,4 +1685,427 @@ mod tests {
             "{handed:#?}"
         );
     }
+
+    // ---- The screening evaluation (C-52; the investigation's §7) ----
+
+    /// One labelled case of the screening evaluation (a JSONL line of
+    /// `AGQ_EVAL_CASES`): `{"id", "longUrl", "host", "label": "harmful" |
+    /// "benign" | "ambiguous", "domain", "split": "development" |
+    /// "calibration" | "held-out"}`. Labels judge the URL and host only.
+    #[derive(Clone, Debug, serde::Deserialize)]
+    struct LabelledCase {
+        id: String,
+        #[serde(rename = "longUrl")]
+        long_url: String,
+        host: String,
+        label: String,
+        #[serde(default)]
+        domain: Option<String>,
+        #[serde(default)]
+        split: Option<String>,
+    }
+
+    /// Without a case file, the model's own four `ScreeningCases`, labelled
+    /// as their checks say: the compatibility smoke test of §7.4.
+    fn smoke_cases() -> Vec<LabelledCase> {
+        [
+            (
+                "encyclopedia",
+                "https://en.wikipedia.example/wiki/Rust",
+                "en.wikipedia.example",
+                "benign",
+            ),
+            (
+                "giftCards",
+                "http://free-gift-cards.example/claim?wallet=seed",
+                "free-gift-cards.example",
+                "harmful",
+            ),
+            (
+                "lookalike",
+                "https://paypa1-login.example/verify-account",
+                "paypa1-login.example",
+                "harmful",
+            ),
+            (
+                "documentation",
+                "https://docs.rust-lang.example/book/",
+                "docs.rust-lang.example",
+                "benign",
+            ),
+        ]
+        .into_iter()
+        .map(|(id, url, host, label)| LabelledCase {
+            id: id.into(),
+            long_url: url.into(),
+            host: host.into(),
+            label: label.into(),
+            domain: Some(host.into()),
+            split: Some("smoke".into()),
+        })
+        .collect()
+    }
+
+    /// One scenario per case, appended to the screening model: the agent of
+    /// `subject` is asked about the case once, and three checks say which
+    /// decision it reached (exactly one passes). `stand_in` makes the agent
+    /// time out, so its fallback decides (the deterministic arm).
+    fn case_scenarios(cases: &[LabelledCase], subject: &str, stand_in: bool) -> String {
+        let mut text = crate::studio::SCREENING_SAMPLE.trim_end().to_string();
+        assert!(text.ends_with('}'));
+        text.pop();
+        for (i, case) in cases.iter().enumerate() {
+            for value in [&case.long_url, &case.host] {
+                assert!(
+                    !value.contains(['"', '\\', '\n']),
+                    "case {}: quotes, backslashes and line breaks are not supported",
+                    case.id
+                );
+            }
+            let slow = if stand_in {
+                "        part slow : Scenarios::StandIn {\n            :>> target = screening;\n            :>> outcome = Scenarios::Outcome::timeout;\n        }\n"
+            } else {
+                ""
+            };
+            text.push_str(&format!(
+                "\n    verification def EvaluationCase{i} {{\n        subject screening : {subject};\n{slow}        send new LinkCandidate(longUrl = \"{}\", host = \"{}\") via screening.check;\n        then accept verdict : Verdict via screening.check;\n        then assert constraint isAllow {{\n            verdict.decision == Decision::allow\n        }}\n        then assert constraint isReview {{\n            verdict.decision == Decision::review\n        }}\n        then assert constraint isBlock {{\n            verdict.decision == Decision::block\n        }}\n    }}\n",
+                case.long_url, case.host
+            ));
+        }
+        text.push_str("}\n");
+        text
+    }
+
+    /// One observation (a line the report reads) from one run of one case.
+    fn observation(
+        arm: &str,
+        case: &LabelledCase,
+        repeat: u32,
+        deadline: Option<u64>,
+        result: &RunResult,
+    ) -> serde_json::Value {
+        let decision = ["allow", "review", "block"].into_iter().find(|d| {
+            let name = format!("is{}{}", d[..1].to_uppercase(), &d[1..]);
+            result
+                .checks
+                .iter()
+                .any(|c| c.name == name && c.verdict == agq_simulation::Verdict::Passed)
+        });
+        let fallback = result
+            .trace
+            .iter()
+            .any(|e| e.kind == agq_simulation::EventKind::Fallback);
+        let live = result.live.as_ref();
+        let first = live.and_then(|l| l.answers.first());
+        let estimates = first
+            .and_then(|a| a.evidence.as_ref())
+            .and_then(|e| e.estimates.clone());
+        let outcome = match result.stop.as_ref().map(|s| s.reason) {
+            // No model is asked: the fallback decides by its rule.
+            _ if arm == "blocklist" => "deterministic".to_string(),
+            Some(StopReason::HarnessFailed) => "providerError".to_string(),
+            Some(StopReason::BudgetExhausted) => "budgetExhausted".to_string(),
+            Some(_) => "notRun".to_string(),
+            None => live
+                .and_then(|l| l.failures.first().map(|(c, _)| c.clone()))
+                .unwrap_or_else(|| "answer".to_string()),
+        };
+        let latency = first.map(|a| a.latency_ms).or(match outcome.as_str() {
+            "timeout" => deadline,
+            _ => None,
+        });
+        json!({
+            "arm": arm,
+            "case": case.id,
+            "domain": case.domain.clone().unwrap_or_else(|| case.host.clone()),
+            "split": case.split,
+            "label": case.label,
+            "repeat": repeat,
+            "outcome": outcome,
+            "decision": decision,
+            "by": decision.map(|_| if fallback { "fallback" } else { "agent" }),
+            "latencyMs": latency,
+            "deadlineMs": deadline,
+            "costUsd": match arm {
+                "blocklist" => Some(0.0),
+                _ => live.and_then(|l| l.cost_usd),
+            },
+            "usageComplete": live.is_none_or(|l| l.unknown_cost == 0),
+            "probabilities": estimates.as_ref().map(|e| e["probabilities"].clone()),
+            "confidence": estimates.as_ref().map(|e| e["confidence"].clone()),
+            "answeredBy": first.map(|a| a.answered_by.clone()),
+        })
+    }
+
+    /// The screening evaluation of §7: labelled cases (or the four smoke
+    /// cases) through the arms asked for — `typed` (the typed decision
+    /// model, `TypedLinkScreening`), `chat` (the unchanged `LinkScreening`
+    /// on its chat model) and `blocklist` (the deterministic fallback alone,
+    /// free) — each case once per repeat, the agent's contract and fallback
+    /// applied by the engine as in any run. It writes `observations.jsonl`
+    /// and `manifest.json` to `AGQ_EVAL_OUT` (outside the repository) for
+    /// `tools/screening_report.py`. Paid arms need consent and a bound:
+    /// `AGQ_LIVE=1`, `AGQ_EVAL_MAX_CALLS`, and the spend log and stop of the
+    /// live examples (`AGENTIQUE_SPEND_LOG`, `AGENTIQUE_SPEND_STOP_USD`); it
+    /// refuses to start when their worst case would pass the stop.
+    ///
+    /// `AGQ_LIVE=1 AGQ_EVAL_OUT=<folder> [AGQ_EVAL_CASES=<cases.jsonl>]
+    /// [AGQ_EVAL_ARMS=typed,chat,blocklist] [AGQ_EVAL_REPEATS=1]
+    /// AGQ_EVAL_MAX_CALLS=<n> cargo test -p agq-studio-native
+    /// screening_evaluation -- --ignored --nocapture`
+    #[test]
+    #[ignore = "calls real models when its paid arms are asked for"]
+    fn screening_evaluation() {
+        let Ok(out) = std::env::var("AGQ_EVAL_OUT") else {
+            eprintln!("Set AGQ_EVAL_OUT to a folder outside the repository.");
+            return;
+        };
+        let out = std::path::PathBuf::from(out);
+        let repository = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .ancestors()
+            .nth(2)
+            .unwrap()
+            .canonicalize()
+            .unwrap();
+        std::fs::create_dir_all(&out).unwrap();
+        assert!(
+            !out.canonicalize().unwrap().starts_with(&repository),
+            "observations stay outside the repository"
+        );
+        let cases: Vec<LabelledCase> = match std::env::var("AGQ_EVAL_CASES") {
+            Ok(path) => std::fs::read_to_string(path)
+                .unwrap()
+                .lines()
+                .filter(|l| !l.trim().is_empty())
+                .map(|l| serde_json::from_str(l).expect("a labelled case"))
+                .collect(),
+            Err(_) => smoke_cases(),
+        };
+        for case in &cases {
+            assert!(
+                ["harmful", "benign", "ambiguous"].contains(&case.label.as_str()),
+                "case {}: label {}",
+                case.id,
+                case.label
+            );
+        }
+        let arms: Vec<String> = std::env::var("AGQ_EVAL_ARMS")
+            .unwrap_or_else(|_| "typed,blocklist".into())
+            .split(',')
+            .map(|a| a.trim().to_string())
+            .collect();
+        let repeats: u32 = std::env::var("AGQ_EVAL_REPEATS")
+            .ok()
+            .and_then(|r| r.parse().ok())
+            .unwrap_or(1);
+        let paid = arms.iter().any(|a| a == "typed" || a == "chat");
+        let mut allowance = u32::MAX;
+        if paid {
+            assert_eq!(
+                std::env::var("AGQ_LIVE").as_deref(),
+                Ok("1"),
+                "paid arms need AGQ_LIVE=1"
+            );
+            allowance = std::env::var("AGQ_EVAL_MAX_CALLS")
+                .ok()
+                .and_then(|n| n.parse().ok())
+                .expect("paid arms need AGQ_EVAL_MAX_CALLS");
+            let wanted = cases.len() as u32
+                * repeats
+                * arms.iter().filter(|a| *a != "blocklist").count() as u32;
+            assert!(
+                wanted <= allowance,
+                "{wanted} calls wanted; AGQ_EVAL_MAX_CALLS is {allowance}"
+            );
+            let log = std::env::var("AGENTIQUE_SPEND_LOG").expect("AGENTIQUE_SPEND_LOG");
+            let stop: f64 = std::env::var("AGENTIQUE_SPEND_STOP_USD")
+                .ok()
+                .and_then(|s| s.parse().ok())
+                .expect("AGENTIQUE_SPEND_STOP_USD");
+            let logged: f64 = std::fs::read_to_string(&log)
+                .unwrap_or_default()
+                .lines()
+                .filter_map(|l| serde_json::from_str::<serde_json::Value>(l).ok())
+                .filter_map(|e| e["cost_usd"].as_f64())
+                .sum();
+            // Worst case per call: 4 KiB of tokens at the input price, three
+            // requests, plus a chat model's whole output limit.
+            let worst: f64 = arms
+                .iter()
+                .filter_map(|arm| {
+                    let model = match arm.as_str() {
+                        "typed" => {
+                            ModelRef::new(Provider::TypeSafe, agq_providers::jev::DEFAULT_MODEL)
+                        }
+                        "chat" => ModelRef::new(Provider::DeepSeek, "deepseek-flash"),
+                        _ => return None,
+                    };
+                    let price = agq_providers::price(&model)?;
+                    Some(
+                        (cases.len() as f64 * f64::from(repeats))
+                            * f64::from(DECISION_ATTEMPTS)
+                            * (4096.0 * price.input + MAX_OUTPUT_TOKENS as f64 * price.output)
+                            / 1e6,
+                    )
+                })
+                .sum();
+            assert!(
+                logged + worst <= stop,
+                "refused: ${logged:.4} logged plus this run's worst case ${worst:.4} would pass the stop ${stop:.2}"
+            );
+        }
+        let mut lines = Vec::new();
+        let mut manifest = json!({"arms": {}, "cases": cases.len(), "repeats": repeats, "started": agq_simulation::result::utc_now(), "os": std::env::consts::OS});
+        let mut calls = 0;
+        for arm in &arms {
+            let (subject, stand_in) = match arm.as_str() {
+                "typed" => ("TypedLinkScreening", false),
+                "chat" => ("LinkScreening", false),
+                "blocklist" => ("LinkScreening", true),
+                other => panic!("unknown arm {other}"),
+            };
+            let text = case_scenarios(&cases, subject, stand_in);
+            let tree =
+                agq_language::parse(&[agq_language::Source::new("UrlShortener.sysml", &text)]);
+            for (i, case) in cases.iter().enumerate() {
+                let id = tree
+                    .find(&format!("UrlShortener::EvaluationCase{i}"))
+                    .unwrap();
+                let program = agq_simulation::compile(&tree, id).unwrap();
+                let agent = agq_simulation::describe_agents(&program).unwrap().remove(0);
+                let deadline = agent.max_latency_ms;
+                for repeat in 1..=repeats {
+                    let digest = agq_simulation::digest::model_digest(&tree, id);
+                    let result = if stand_in {
+                        agq_simulation::run(
+                            &program,
+                            digest,
+                            &agq_simulation::Request::new(Mode::Model),
+                            agq_simulation::Answers::StandIns,
+                            Arc::new(AtomicBool::new(false)),
+                        )
+                    } else {
+                        assert!(calls < allowance, "the allowance is used up");
+                        calls += 1;
+                        let (model, binding, live): (ModelRef, Binding, Arc<dyn LiveModel>) =
+                            if arm == "typed" {
+                                let model = agq_providers::resolve_model(
+                                    agent.request.model.as_deref().unwrap(),
+                                )
+                                .unwrap();
+                                let plan = choice_plan(&tree, &agent).unwrap();
+                                (
+                                    model.clone(),
+                                    decision_binding(&model, &plan),
+                                    Arc::new(DecisionLive {
+                                        providers: Providers::new(),
+                                        model,
+                                        plan,
+                                    }),
+                                )
+                            } else {
+                                let model = agq_providers::resolve_model(
+                                    agent.request.model.as_deref().unwrap(),
+                                )
+                                .unwrap();
+                                (
+                                    model.clone(),
+                                    chat_binding(&model, &agent.request),
+                                    Arc::new(ProviderLive {
+                                        providers: Providers::new(),
+                                        model,
+                                    }),
+                                )
+                            };
+                        manifest["arms"][arm.as_str()] = json!({
+                            "model": format!("{}/{}", model.provider.id(), model.model),
+                            "binding": binding.digest(),
+                            "adapter": binding.adapter,
+                            "mapping": binding.mapping,
+                        });
+                        let mut request = agq_simulation::Request::new(Mode::Live);
+                        request.samples = 1;
+                        request.limits.max_live_calls = Some(1);
+                        request.binding = Some(RunBinding {
+                            agent: agent.request.clone(),
+                            binding,
+                        });
+                        let result = agq_simulation::run(
+                            &program,
+                            digest,
+                            &request,
+                            agq_simulation::Answers::Live(live),
+                            Arc::new(AtomicBool::new(false)),
+                        );
+                        // The spend log: known cost, or the worst case when unknown.
+                        if let Ok(log) = std::env::var("AGENTIQUE_SPEND_LOG") {
+                            let known = result.live.as_ref().and_then(|l| l.cost_usd);
+                            let entry = json!({
+                                "time": agq_simulation::result::utc_now(),
+                                "purpose": "screening-evaluation",
+                                "provider": model.provider.id(),
+                                "model": model.model,
+                                "cost_usd": known.unwrap_or(0.001),
+                                "cost_known": known.is_some(),
+                            });
+                            use std::io::Write as _;
+                            let mut file = std::fs::OpenOptions::new()
+                                .create(true)
+                                .append(true)
+                                .open(log)
+                                .unwrap();
+                            writeln!(file, "{entry}").unwrap();
+                        }
+                        result
+                    };
+                    let line = observation(arm, case, repeat, deadline, &result);
+                    println!("{line}");
+                    lines.push(line.to_string());
+                }
+            }
+        }
+        manifest["finished"] = json!(agq_simulation::result::utc_now());
+        manifest["calls"] = json!(calls);
+        std::fs::write(out.join("observations.jsonl"), lines.join("\n") + "\n").unwrap();
+        std::fs::write(
+            out.join("manifest.json"),
+            serde_json::to_string_pretty(&manifest).unwrap(),
+        )
+        .unwrap();
+        println!(
+            "Wrote {} observation(s) to {}; report: python tools/screening_report.py {}",
+            lines.len(),
+            out.display(),
+            out.join("observations.jsonl").display()
+        );
+    }
+
+    /// The evaluation's free arm runs offline: the four smoke cases through
+    /// the deterministic fallback alone, and the report reads them.
+    #[test]
+    fn the_evaluation_runs_its_free_arm_offline() {
+        let cases = smoke_cases();
+        let text = case_scenarios(&cases, "LinkScreening", true);
+        let tree = agq_language::parse(&[agq_language::Source::new("UrlShortener.sysml", &text)]);
+        let mut decisions = Vec::new();
+        for (i, case) in cases.iter().enumerate() {
+            let id = tree
+                .find(&format!("UrlShortener::EvaluationCase{i}"))
+                .unwrap();
+            let program = agq_simulation::compile(&tree, id).unwrap();
+            let result = agq_simulation::run(
+                &program,
+                agq_simulation::digest::model_digest(&tree, id),
+                &agq_simulation::Request::new(Mode::Model),
+                agq_simulation::Answers::StandIns,
+                Arc::new(AtomicBool::new(false)),
+            );
+            let line = observation("blocklist", case, 1, Some(500), &result);
+            assert_eq!(line["by"], "fallback", "{line}");
+            assert_eq!(line["costUsd"], 0.0);
+            decisions.push(line["decision"].as_str().unwrap().to_string());
+        }
+        // None of these hosts is on the blocklist: everything is held.
+        assert_eq!(decisions, ["review"; 4]);
+    }
 }
