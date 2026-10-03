@@ -59,9 +59,18 @@ call.cancel(); // stops at once; the call ends with Finished(Err(Cancelled))
     key. 429 and 529 are retried twice, after `retry-after-ms` or
     `retry-after` seconds (an HTTP date is not read) or 1 s then 2 s; a wait
     over 10 s is not waited for.
-  - `decide` blocks for at most 30 seconds and cannot be cancelled yet,
-    unlike `chat` (§4.7). `cargo run -p agq-providers --example jev` makes
-    one live decision under a spend log and stop.
+  - *Deadlines and cancellation* (C-52): `decide_start(request, deadline)`
+    returns a `DecisionHandle`, like `chat`'s handle: one monotonic
+    deadline covers every request, the reading of each reply, the retries
+    and their waits (a retry is made only when its wait fits; otherwise the
+    failure says no time was left), and the result is `TimedOut` when it
+    passes. `cancel` and dropping the handle stop it at once: nothing more
+    is sent, a wait ends, the connection closes, and a reply or error that
+    arrives afterwards is never delivered (whether the provider stops
+    working or billing is not known). `decide` waits for one decision with
+    a 30-second deadline. Decisions share one HTTP client, so connections
+    are reused. `cargo run -p agq-providers --example jev` makes one live
+    decision under a spend log and stop.
 - **Capabilities** (`capabilities(&model)`) and **prices** (`price(&model)`, a
   dated table, an estimate) are data. Code outside this crate asks them, never a
   provider's name (§8.7).

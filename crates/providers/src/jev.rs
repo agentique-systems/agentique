@@ -21,7 +21,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
 use std::collections::{BTreeMap, BTreeSet};
 use std::marker::PhantomData;
-use std::time::Duration;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::time::{Duration, Instant};
 
 pub const API_URL: &str = "https://api.typesafe.ai";
 /// A fixed version, so answers do not move under a scenario's feet; the
@@ -30,9 +32,11 @@ pub const DEFAULT_MODEL: &str = "jev-1.13.0";
 /// Attempts after the first for rate limits and overload (429, 529).
 const RETRIES: u32 = 2;
 const MAX_RETRY_WAIT: Duration = Duration::from_secs(10);
-/// A decision that takes longer than this has failed (the vendor claims
-/// 70–500 ms per call).
-const TIMEOUT: Duration = Duration::from_secs(30);
+/// The longest a blocking decision ([`crate::Providers::decide`]) may take
+/// (the vendor claims 70–500 ms per call). A caller with a tighter limit,
+/// such as an agent's `maxLatencyMs`, gives its own deadline to
+/// [`crate::Providers::decide_start`].
+pub const TIMEOUT: Duration = Duration::from_secs(30);
 /// The largest successful reply read (a local safeguard, not a vendor
 /// limit): a larger one is refused, not cut and parsed.
 pub const REPLY_LIMIT: usize = 1 << 20;
@@ -642,12 +646,82 @@ fn excerpt(body: &[u8], key: &str) -> String {
     }
 }
 
-/// One decision, blocking; retries rate limits and overload twice.
-pub(crate) fn decide(
-    request: &DecisionRequest,
+/// What a running decision shares with its handle.
+pub(crate) struct Running {
+    pub(crate) result: std::sync::mpsc::Receiver<Result<DecisionReply, DecisionFailure>>,
+    pub(crate) abort: futures::future::AbortHandle,
+    pub(crate) cancelled: Arc<AtomicBool>,
+    pub(crate) attempts: Arc<AtomicU32>,
+}
+
+/// Starts one decision on the background runtime, to finish by `deadline`
+/// (monotonic): every request, read, retry and wait shares it. Retries rate
+/// limits and overload twice, and only when the wait still fits. Nothing
+/// more is sent once `cancelled` is set or the task is aborted.
+pub(crate) fn start(
+    request: DecisionRequest,
     key: Option<String>,
     endpoint: Option<String>,
+    deadline: Instant,
+) -> Running {
+    let (sender, result) = std::sync::mpsc::channel();
+    let cancelled = Arc::new(AtomicBool::new(false));
+    let attempts = Arc::new(AtomicU32::new(0));
+    let task = {
+        let (cancelled, attempts) = (cancelled.clone(), attempts.clone());
+        async move {
+            let outcome = run(request, key, endpoint, deadline, &cancelled, &attempts).await;
+            let _ = sender.send(outcome);
+        }
+    };
+    let abort = runtime::spawn(task);
+    Running {
+        result,
+        abort,
+        cancelled,
+        attempts,
+    }
+}
+
+/// The error of a decision that was stopped.
+pub(crate) fn cancelled(attempts: u32) -> DecisionFailure {
+    DecisionFailure {
+        error: Error {
+            kind: ErrorKind::Cancelled,
+            message: "Stopped.".into(),
+        },
+        attempts,
+        usage: None,
+        request_id: None,
+    }
+}
+
+/// The error of a decision that ran out of time.
+pub(crate) fn timed_out(attempts: u32, waited: Duration) -> DecisionFailure {
+    DecisionFailure {
+        error: Error {
+            kind: ErrorKind::TimedOut,
+            message: format!(
+                "TypeSafe AI did not answer within {} ms, the time this decision had.",
+                waited.as_millis()
+            ),
+        },
+        attempts,
+        usage: None,
+        request_id: None,
+    }
+}
+
+/// One decision, from checking the request to the checked reply.
+async fn run(
+    request: DecisionRequest,
+    key: Option<String>,
+    endpoint: Option<String>,
+    deadline: Instant,
+    stopped: &AtomicBool,
+    sent: &AtomicU32,
 ) -> Result<DecisionReply, DecisionFailure> {
+    let started = Instant::now();
     let key = key.filter(|key| !key.trim().is_empty()).ok_or_else(|| {
         DecisionFailure::before_sending(
             ErrorKind::MissingKey,
@@ -664,160 +738,170 @@ pub(crate) fn decide(
         "{}/v1/systemone",
         endpoint.as_deref().unwrap_or(API_URL).trim_end_matches('/')
     );
-    let request = request.clone();
-    let attempts = std::sync::Arc::new(std::sync::atomic::AtomicU32::new(0));
-    let sent = attempts.clone();
-    runtime::run(TIMEOUT, async move {
-        let client = client();
-        let failure = |error: Error, usage, request_id| DecisionFailure {
-            error,
-            attempts: sent.load(std::sync::atomic::Ordering::SeqCst),
-            usage,
-            request_id,
-        };
-        loop {
-            sent.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-            let attempt = sent.load(std::sync::atomic::Ordering::SeqCst);
-            let response = client
-                .post(&url)
-                .bearer_auth(&key)
-                .json(&body)
-                .send()
-                .await;
-            let mut response = match response {
-                Ok(response) => response,
-                Err(error) => {
-                    return Err(failure(
-                        Error {
-                            kind: ErrorKind::Unreachable,
-                            message: format!(
-                                "Could not reach TypeSafe AI ({}). Check the network connection and try again.",
-                                error.without_url()
-                            ),
-                        },
-                        None,
-                        None,
-                    ));
-                }
-            };
-            let status = response.status().as_u16();
-            let header = |name: &str| {
-                response
-                    .headers()
-                    .get(name)
-                    .and_then(|value| value.to_str().ok())
-                    .map(str::to_string)
-            };
-            let request_id = header("x-typesafe-request-id");
-            let wait = header("retry-after-ms")
-                .and_then(|ms| ms.trim().parse().ok())
-                .map(Duration::from_millis)
-                .or_else(|| {
-                    header("retry-after")
-                        .and_then(|seconds| seconds.trim().parse().ok())
-                        .map(Duration::from_secs)
-                });
-            if (200..300).contains(&status) {
-                // A reply announced as too large is refused before reading.
-                let (bytes, ending) = if response
-                    .content_length()
-                    .is_some_and(|n| n > REPLY_LIMIT as u64)
-                {
-                    (Vec::new(), Ending::TooLarge)
-                } else {
-                    read_body(&mut response, REPLY_LIMIT).await
-                };
-                return match ending {
-                    Ending::Complete => read_reply(&request, &bytes, request_id.clone(), attempt)
-                        .map_err(|error| failure(error, usage_of(&bytes), request_id)),
-                    Ending::TooLarge => Err(failure(
-                        Error {
-                            kind: ErrorKind::InvalidReply,
-                            message: format!(
-                                "TypeSafe AI's reply is larger than {} KiB, the local limit, so it was not read.",
-                                REPLY_LIMIT / 1024
-                            ),
-                        },
-                        None,
-                        request_id,
-                    )),
-                    Ending::Cut(why) => Err(failure(
-                        Error {
-                            kind: ErrorKind::Unreachable,
-                            message: format!(
-                                "TypeSafe AI's reply was cut off while it was read ({why})."
-                            ),
-                        },
-                        None,
-                        request_id,
-                    )),
-                };
-            }
-            // An error body is shown to the Operator: only its start.
-            let (bytes, _) = read_body(&mut response, ERROR_LIMIT).await;
-            let text = excerpt(&bytes, &key);
-            if matches!(status, 429 | 529) && attempt <= RETRIES {
-                let wait = wait.unwrap_or(Duration::from_secs(u64::from(attempt)));
-                if wait <= MAX_RETRY_WAIT {
-                    runtime::sleep(wait).await;
-                    continue;
-                }
-            }
-            let (kind, message) = match status {
-                401 => (
-                    ErrorKind::KeyRefused,
-                    format!(
-                        "TypeSafe AI did not accept the API key (401). Check {}.",
-                        Provider::TypeSafe.key_variable()
-                    ),
-                ),
-                402 | 403 => (
-                    ErrorKind::NoAccess,
-                    format!("This TypeSafe AI key may not make this request ({status}): {text}"),
-                ),
-                404 => (
-                    ErrorKind::UnknownModel,
-                    "TypeSafe AI does not know this model (404).".to_string(),
-                ),
-                400 | 413 | 422 => (
-                    ErrorKind::Rejected,
-                    format!("TypeSafe AI did not accept the questions ({status}): {text}"),
-                ),
-                429 => (
-                    ErrorKind::RateLimited,
-                    "The TypeSafe AI rate limit was reached (429). Try again in a minute.".into(),
-                ),
-                500..=599 => (
-                    ErrorKind::Unavailable,
-                    format!("TypeSafe AI is overloaded or unavailable ({status}). Try again in a moment."),
-                ),
-                _ => (
-                    ErrorKind::Other,
-                    format!("TypeSafe AI answered with an error ({status}): {text}"),
-                ),
-            };
-            return Err(failure(Error { kind, message }, None, request_id));
+    let client = client();
+    let until = tokio::time::Instant::from_std(deadline);
+    let attempts = || sent.load(Ordering::SeqCst);
+    let failure = |error: Error, usage, request_id| DecisionFailure {
+        error,
+        attempts: attempts(),
+        usage,
+        request_id,
+    };
+    loop {
+        // Checked right before each request: nothing is sent once stopped
+        // or out of time.
+        if stopped.load(Ordering::SeqCst) {
+            return Err(cancelled(attempts()));
         }
-    })
-    .unwrap_or_else(|failure| {
-        Err(DecisionFailure {
-            error: Error {
-                kind: ErrorKind::Unreachable,
-                message: match failure {
-                    runtime::Failure::TimedOut => format!(
-                        "TypeSafe AI did not answer within {} seconds.",
-                        TIMEOUT.as_secs()
-                    ),
-                    runtime::Failure::Crashed => {
-                        "The request to TypeSafe AI failed unexpectedly. Try again.".to_string()
-                    }
-                },
-            },
-            attempts: attempts.load(std::sync::atomic::Ordering::SeqCst),
-            usage: None,
-            request_id: None,
-        })
-    })
+        if Instant::now() >= deadline {
+            return Err(timed_out(attempts(), started.elapsed()));
+        }
+        sent.fetch_add(1, Ordering::SeqCst);
+        let attempt = attempts();
+        let response = tokio::time::timeout_at(
+            until,
+            client.post(&url).bearer_auth(&key).json(&body).send(),
+        )
+        .await;
+        let mut response = match response {
+            Err(_) => return Err(timed_out(attempt, started.elapsed())),
+            Ok(Ok(response)) => response,
+            Ok(Err(error)) => {
+                return Err(failure(
+                    Error {
+                        kind: ErrorKind::Unreachable,
+                        message: format!(
+                            "Could not reach TypeSafe AI ({}). Check the network connection and try again.",
+                            error.without_url()
+                        ),
+                    },
+                    None,
+                    None,
+                ));
+            }
+        };
+        let status = response.status().as_u16();
+        let header = |name: &str| {
+            response
+                .headers()
+                .get(name)
+                .and_then(|value| value.to_str().ok())
+                .map(str::to_string)
+        };
+        let request_id = header("x-typesafe-request-id");
+        let wait = header("retry-after-ms")
+            .and_then(|ms| ms.trim().parse().ok())
+            .map(Duration::from_millis)
+            .or_else(|| {
+                header("retry-after")
+                    .and_then(|seconds| seconds.trim().parse().ok())
+                    .map(Duration::from_secs)
+            });
+        if (200..300).contains(&status) {
+            // A reply announced as too large is refused before reading.
+            let read = if response
+                .content_length()
+                .is_some_and(|n| n > REPLY_LIMIT as u64)
+            {
+                Ok((Vec::new(), Ending::TooLarge))
+            } else {
+                tokio::time::timeout_at(until, read_body(&mut response, REPLY_LIMIT)).await
+            };
+            let Ok((bytes, ending)) = read else {
+                return Err(DecisionFailure {
+                    request_id,
+                    ..timed_out(attempt, started.elapsed())
+                });
+            };
+            // A reply that arrives after a stop is never delivered.
+            if stopped.load(Ordering::SeqCst) {
+                return Err(cancelled(attempt));
+            }
+            return match ending {
+                Ending::Complete => read_reply(&request, &bytes, request_id.clone(), attempt)
+                    .map_err(|error| failure(error, usage_of(&bytes), request_id)),
+                Ending::TooLarge => Err(failure(
+                    Error {
+                        kind: ErrorKind::InvalidReply,
+                        message: format!(
+                            "TypeSafe AI's reply is larger than {} KiB, the local limit, so it was not read.",
+                            REPLY_LIMIT / 1024
+                        ),
+                    },
+                    None,
+                    request_id,
+                )),
+                Ending::Cut(why) => Err(failure(
+                    Error {
+                        kind: ErrorKind::Unreachable,
+                        message: format!(
+                            "TypeSafe AI's reply was cut off while it was read ({why})."
+                        ),
+                    },
+                    None,
+                    request_id,
+                )),
+            };
+        }
+        // An error body is shown to the Operator: only its start.
+        let (bytes, _) = tokio::time::timeout_at(until, read_body(&mut response, ERROR_LIMIT))
+            .await
+            .unwrap_or((Vec::new(), Ending::Complete));
+        if stopped.load(Ordering::SeqCst) {
+            return Err(cancelled(attempt));
+        }
+        let text = excerpt(&bytes, &key);
+        let mut no_time = false;
+        if matches!(status, 429 | 529) && attempt <= RETRIES {
+            let wait = wait.unwrap_or(Duration::from_secs(u64::from(attempt)));
+            // A retry only when its wait fits before the deadline, leaving
+            // time to ask again.
+            if wait <= MAX_RETRY_WAIT && Instant::now() + wait < deadline {
+                runtime::sleep(wait).await;
+                continue;
+            }
+            no_time = wait <= MAX_RETRY_WAIT;
+        }
+        let (kind, mut message) = match status {
+            401 => (
+                ErrorKind::KeyRefused,
+                format!(
+                    "TypeSafe AI did not accept the API key (401). Check {}.",
+                    Provider::TypeSafe.key_variable()
+                ),
+            ),
+            402 | 403 => (
+                ErrorKind::NoAccess,
+                format!("This TypeSafe AI key may not make this request ({status}): {text}"),
+            ),
+            404 => (
+                ErrorKind::UnknownModel,
+                "TypeSafe AI does not know this model (404).".to_string(),
+            ),
+            400 | 413 | 422 => (
+                ErrorKind::Rejected,
+                format!("TypeSafe AI did not accept the questions ({status}): {text}"),
+            ),
+            429 => (
+                ErrorKind::RateLimited,
+                "The TypeSafe AI rate limit was reached (429). Try again in a minute.".into(),
+            ),
+            500..=599 => (
+                ErrorKind::Unavailable,
+                format!(
+                    "TypeSafe AI is overloaded or unavailable ({status}). Try again in a moment."
+                ),
+            ),
+            _ => (
+                ErrorKind::Other,
+                format!("TypeSafe AI answered with an error ({status}): {text}"),
+            ),
+        };
+        if no_time {
+            message.push_str(" No time was left to ask again before the decision's deadline.");
+        }
+        return Err(failure(Error { kind, message }, None, request_id));
+    }
 }
 
 /// One HTTP client for every decision, so connections and TLS sessions are
