@@ -3,7 +3,7 @@
 use agq_language::{Source, parse};
 use agq_simulation::digest::model_digest;
 use agq_simulation::{
-    Answers, BackgroundRun, Mode, Request, RunStatus, RunStore, compile, freshness, run,
+    Answers, BackgroundRun, Mode, Present, Request, RunStatus, RunStore, compile, freshness, run,
 };
 use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
@@ -36,7 +36,7 @@ fn results_are_saved_listed_and_reloaded() {
     assert_eq!(store.latest(id.raw(), Mode::Model).unwrap().id, result.id);
     assert!(store.latest(id.raw(), Mode::Replay).is_none());
     // Reopened later, it is still current until the model changes.
-    assert!(freshness(&again, &tree).is_current());
+    assert!(freshness(&again, &Present::model(&tree)).is_current());
     assert!(store.load("../escape").is_none());
     store.delete(&result.id).unwrap();
     assert!(store.list().is_empty());

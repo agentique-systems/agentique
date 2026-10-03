@@ -16,7 +16,9 @@
 //! - Limits on events, logical time, completion depth and wall-clock time,
 //!   and cancellation, end a run explicitly.
 
-use crate::agents::{AgentAnswer, AgentRequest, AnswerOutput, Recordings, from_json, shape};
+use crate::agents::{
+    AgentAnswer, AgentRequest, AnswerOutput, CallLimits, Recordings, RunBinding, from_json, shape,
+};
 use crate::compile::{
     Action, Behaviour, Instance, LinkKind, Outcome, Path, Program, StandIn, System, Transition,
     Trigger, find_instance,
@@ -39,6 +41,10 @@ pub struct Limits {
     pub max_time_ms: u64,
     pub max_depth: u32,
     pub max_wall: Duration,
+    /// Live model calls this run may still make (C-52): the evaluation's
+    /// allowance. A call beyond it is not made; the run stops
+    /// (`budget-exhausted`). `None`: no allowance applies.
+    pub max_live_calls: Option<u32>,
 }
 
 impl Default for Limits {
@@ -48,6 +54,7 @@ impl Default for Limits {
             max_time_ms: 24 * 60 * 60 * 1000,
             max_depth: 100,
             max_wall: Duration::from_secs(10),
+            max_live_calls: None,
         }
     }
 }
@@ -69,6 +76,10 @@ pub struct AgentCall {
     pub answer: AgentAnswer,
     /// Why the answer was not used, if it was not.
     pub failure: Option<String>,
+    /// The provider could not be asked or answered unusably (C-52): no
+    /// answer of the agent exists, and the run stopped. Kept so its time and
+    /// cost are counted.
+    pub provider_error: Option<String>,
 }
 
 enum Pending {
@@ -114,6 +125,10 @@ pub struct Engine<'p> {
     stand_ins: HashMap<usize, Vec<(&'p StandIn, Option<Value>)>>,
     events: u64,
     started: Instant,
+    /// The binding prepared for the run's agent (replay and live).
+    binding: Option<RunBinding>,
+    /// Live calls made by this engine.
+    live_calls: u32,
     /// The agent calls made, in order.
     pub agent_calls: Vec<AgentCall>,
 }
@@ -125,6 +140,7 @@ impl<'p> Engine<'p> {
         program: &'p Program,
         answers: Answers,
         limits: Limits,
+        binding: Option<RunBinding>,
         cancel: Arc<AtomicBool>,
         trace: &mut Trace,
     ) -> Result<Engine<'p>, Stop> {
@@ -155,6 +171,8 @@ impl<'p> Engine<'p> {
             stand_ins: HashMap::new(),
             events: 0,
             started: Instant::now(),
+            binding,
+            live_calls: 0,
             agent_calls: Vec::new(),
         };
         for (index, instance) in system.instances.iter().enumerate() {
@@ -634,8 +652,30 @@ impl<'p> Engine<'p> {
                 .output_type
                 .map(|t| shape(types, t))
                 .unwrap_or(serde_json::Value::Null),
+            binding: None,
         };
-        let answer = self.answer(instance, call, &request)?;
+        // Replay and live calls carry the binding prepared for this agent;
+        // another agent or configuration is not covered by it (C-52).
+        let mut request = request;
+        if !matches!(self.answers, Answers::StandIns)
+            && let Some(prepared) = &self.binding
+        {
+            if !prepared.agent.same_agent(&request) {
+                return Err(self.stop(
+                    StopReason::Unsupported,
+                    Some(usage),
+                    format!(
+                        "this run was prepared for `{}` with model {}; `{path}` ({}, model {}) is another agent or configuration, which it does not cover",
+                        prepared.agent.agent,
+                        prepared.agent.model.as_deref().unwrap_or("not set"),
+                        request.agent,
+                        request.model.as_deref().unwrap_or("not set"),
+                    ),
+                ));
+            }
+            request.binding = Some(prepared.binding.clone());
+        }
+        let answer = self.answer(instance, call, &request, max_latency)?;
         let event = trace.push(
             self.now,
             EventKind::AgentCalled,
@@ -691,6 +731,7 @@ impl<'p> Engine<'p> {
             request,
             answer,
             failure: result.as_ref().err().cloned(),
+            provider_error: None,
         });
         self.schedule(
             at,
@@ -709,6 +750,7 @@ impl<'p> Engine<'p> {
         instance: usize,
         call: u64,
         request: &AgentRequest,
+        max_latency: Option<u64>,
     ) -> Result<AgentAnswer, Stop> {
         let path = self.instance(instance).path.clone();
         let usage = self.instance(instance).usage;
@@ -736,16 +778,22 @@ impl<'p> Engine<'p> {
                     latency_ms: stand_in.latency_ms,
                     source: format!("stand-in {}", stand_in.name),
                     cost_usd: None,
+                    evidence: None,
                 })
             }
             Answers::Recordings(recordings) => {
                 let digest = request.digest();
                 let Some(recording) = recordings.get(&digest) else {
+                    let unbound = if recordings.has_unbound(request) {
+                        "; a recording made before Agentique recorded which provider, model and mapping answered matches it otherwise, but cannot answer it"
+                    } else {
+                        ""
+                    };
                     return Err(self.stop(
                         StopReason::MissingRecording,
                         Some(usage),
                         format!(
-                            "no recording answers this request to `{path}` (digest {}…); a replay never falls through to a live call",
+                            "no recording answers this request to `{path}` (digest {}…){unbound}; a replay never falls through to a live call",
                             &digest[..12]
                         ),
                     ));
@@ -756,25 +804,70 @@ impl<'p> Engine<'p> {
                     latency_ms: recording.latency_ms,
                     source: format!("recording {}… ({})", &digest[..12], recording.answered_by),
                     cost_usd: None,
+                    evidence: recording.evidence.clone(),
                 })
             }
             Answers::Live(model) => {
                 let model = model.clone();
-                let live = model.answer(request, &self.cancel);
+                // The evaluation's allowance is checked before the call:
+                // nothing is sent beyond it.
+                if self
+                    .limits
+                    .max_live_calls
+                    .is_some_and(|allowed| self.live_calls >= allowed)
+                {
+                    return Err(self.stop(
+                        StopReason::BudgetExhausted,
+                        Some(usage),
+                        format!(
+                            "the evaluation's allowance of {} live call(s) is used up; `{path}` was not asked",
+                            self.limits.max_live_calls.unwrap_or_default()
+                        ),
+                    ));
+                }
+                self.live_calls += 1;
+                // One deadline: the agent's own limit from now, or the run's
+                // wall-clock limit if that comes first.
+                let wall = self.started + self.limits.max_wall;
+                let deadline = max_latency
+                    .map(|ms| Instant::now() + Duration::from_millis(ms))
+                    .map_or(wall, |agent| agent.min(wall));
+                let live = model.answer(request, CallLimits { deadline }, &self.cancel);
+                let answer = AgentAnswer {
+                    outcome: live.outcome,
+                    output: live.output.map(AnswerOutput::Json),
+                    latency_ms: live.latency_ms,
+                    source: format!("live {}", model.label()),
+                    cost_usd: live.cost_usd,
+                    evidence: live.evidence,
+                };
+                // A stop that came during the call is a stop, whatever the
+                // client answered or why it failed.
+                if self.cancel.load(Ordering::SeqCst) {
+                    self.agent_calls.push(AgentCall {
+                        request: request.clone(),
+                        answer,
+                        failure: Some("cancelled".into()),
+                        provider_error: None,
+                    });
+                    return Err(self.stop(StopReason::Cancelled, None, "cancelled".into()));
+                }
                 if let Some(error) = live.error {
+                    // No answer of the agent exists; the call is kept so its
+                    // time and cost are counted.
+                    self.agent_calls.push(AgentCall {
+                        request: request.clone(),
+                        answer,
+                        failure: Some(error.clone()),
+                        provider_error: Some(error.clone()),
+                    });
                     return Err(self.stop(
                         StopReason::HarnessFailed,
                         Some(usage),
                         format!("the live model could not be asked: {error}"),
                     ));
                 }
-                Ok(AgentAnswer {
-                    outcome: live.outcome,
-                    output: live.output.map(AnswerOutput::Json),
-                    latency_ms: live.latency_ms,
-                    source: format!("live {}", model.label()),
-                    cost_usd: live.cost_usd,
-                })
+                Ok(answer)
             }
         }
     }
@@ -1572,6 +1665,157 @@ impl Env for MachineEnv<'_, '_> {
 }
 
 /// Names while attribute values are first worked out: earlier attributes.
+/// An agent of a compiled scenario as a run would ask it (C-52): its
+/// request without input or binding, its effective settings and the fields
+/// of its answer and of what it is asked about. Read-only: nothing runs.
+#[derive(Clone, Debug, PartialEq)]
+pub struct AgentInfo {
+    /// The instance path, such as `service.screening`.
+    pub path: String,
+    /// The usage it stands for.
+    pub element: ElementId,
+    /// Its requests without input or binding: the agent, its mode and model
+    /// (a usage's own values applied), its instructions and output shape.
+    pub request: AgentRequest,
+    pub min_confidence: Option<f64>,
+    pub max_latency_ms: Option<u64>,
+    /// The fields of its answer, in order.
+    pub fields: Vec<AnswerField>,
+    /// What it is asked about: each item type's name and its fields.
+    pub inputs: Vec<(String, Vec<String>)>,
+}
+
+/// A field of an agent's answer.
+#[derive(Clone, Debug, PartialEq)]
+pub struct AnswerField {
+    pub name: String,
+    pub required: bool,
+    /// The library's `AgentOutput::confidence`, found by identity, never by
+    /// name.
+    pub confidence: bool,
+    /// For an enum: its values (element, name) in their declared order.
+    pub values: Option<Vec<(ElementId, String)>>,
+    /// The declared type's name, if any.
+    pub type_name: Option<String>,
+    /// An item with fields of its own.
+    pub nested: bool,
+}
+
+/// Every agent of the scenario's system, with its effective settings.
+pub fn describe_agents(program: &Program) -> Result<Vec<AgentInfo>, Stop> {
+    let Ok(system) = program.system.as_ref() else {
+        return Ok(Vec::new());
+    };
+    let types = &program.types;
+    let library = &program.library;
+    let mut out = Vec::new();
+    for instance in &system.instances {
+        let Behaviour::Agent(agent) = &instance.behaviour else {
+            continue;
+        };
+        let mut values = Vec::with_capacity(instance.slots.len());
+        for slot in &instance.slots {
+            let value = match &slot.init {
+                Some(init) => eval(
+                    init,
+                    &SlotEnv {
+                        instance,
+                        values: &values,
+                    },
+                )
+                .map_err(|e| Stop {
+                    reason: StopReason::EvaluationError,
+                    element: Some(slot.feature.raw()),
+                    message: format!("the value of `{}.{}`: {e}", instance.path, slot.name),
+                })?,
+                None => Value::Null,
+            };
+            values.push(value);
+        }
+        let setting = |feature: Option<ElementId>| {
+            feature
+                .and_then(|f| instance.slots.iter().position(|s| s.aliases.contains(&f)))
+                .map(|i| values[i].clone())
+                .unwrap_or(Value::Null)
+        };
+        let agent_name = instance
+            .types
+            .first()
+            .map(|t| {
+                program
+                    .names
+                    .get(t)
+                    .cloned()
+                    .unwrap_or_else(|| types.name(*t))
+            })
+            .unwrap_or_else(|| instance.path.clone());
+        let request = AgentRequest {
+            agent: agent_name,
+            mode: match setting(library.mode) {
+                Value::Enum { name, .. } => Some(name),
+                _ => None,
+            },
+            model: match setting(library.model) {
+                Value::Str(s) => Some(s),
+                _ => None,
+            },
+            instructions: agent.instructions.clone(),
+            input: serde_json::Value::Null,
+            output: agent
+                .output_type
+                .map(|t| shape(types, t))
+                .unwrap_or(serde_json::Value::Null),
+            binding: None,
+        };
+        let fields = agent
+            .output_type
+            .and_then(|t| types.items.get(&t))
+            .map(|item| {
+                item.fields
+                    .iter()
+                    .map(|field| AnswerField {
+                        name: field.slot.name.clone(),
+                        required: field.required,
+                        confidence: library.confidence.is_some_and(|c| {
+                            field.slot.feature == c || field.slot.aliases.contains(&c)
+                        }),
+                        values: field.ty.and_then(|ty| types.enums.get(&ty).cloned()),
+                        type_name: field.ty.map(|ty| types.name(ty)),
+                        nested: field.ty.is_some_and(|ty| types.items.contains_key(&ty)),
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+        let inputs = instance
+            .ports
+            .iter()
+            .flat_map(|p| system.ports[*p].directed.clone())
+            .filter(|(_, direction, _)| *direction == Direction::In)
+            .filter_map(|(_, _, ty)| ty)
+            .filter_map(|ty| types.items.get(&ty))
+            .map(|item| {
+                (
+                    item.name.clone(),
+                    item.fields.iter().map(|f| f.slot.name.clone()).collect(),
+                )
+            })
+            .collect();
+        out.push(AgentInfo {
+            path: instance.path.clone(),
+            element: instance.usage,
+            request,
+            min_confidence: setting(library.min_confidence).as_f64(),
+            max_latency_ms: match setting(library.max_latency) {
+                Value::Int(n) if n >= 0 => Some(n as u64),
+                _ => None,
+            },
+            fields,
+            inputs,
+        });
+    }
+    Ok(out)
+}
+
 struct SlotEnv<'a> {
     instance: &'a Instance,
     values: &'a [Value],

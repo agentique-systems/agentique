@@ -135,6 +135,8 @@ pub enum StopReason {
     WallClockLimit,
     Cancelled,
     HarnessFailed,
+    /// A live evaluation's call allowance was used up (C-52).
+    BudgetExhausted,
 }
 
 impl StopReason {
@@ -157,6 +159,7 @@ impl StopReason {
             StopReason::WallClockLimit => "wall-clock-limit",
             StopReason::Cancelled => "cancelled",
             StopReason::HarnessFailed => "harness-failed",
+            StopReason::BudgetExhausted => "budget-exhausted",
         }
     }
 }
@@ -328,6 +331,10 @@ pub struct Provenance {
     /// Digest of the recordings file a replay used.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub recordings: Option<String>,
+    /// Replay and live: the digest of the binding the agent's calls were
+    /// made with (C-52); absent in results made before bindings existed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub binding: Option<String>,
 }
 
 /// A live evaluation's summary over its samples.
@@ -339,11 +346,28 @@ pub struct LiveSummary {
     /// Agent failures by category (`timeout`, `invalidOutput`, `refusal`,
     /// `providerError`, ...), across samples.
     pub failures: Vec<(String, u32)>,
+    /// The whole cost, only when every call's cost is known.
     pub cost_usd: Option<f64>,
     pub latency_ms_median: Option<u64>,
-    /// The model's answers, ready to keep as recordings for replay.
+    /// The model's answers, ready to keep as recordings for replay: the
+    /// first answer to each distinct request, not every sample.
     #[serde(default)]
     pub answers: Vec<crate::agents::Recording>,
+    /// Live calls made, failed and stopped ones included (C-52).
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub calls: u32,
+    /// Calls whose cost is unknown (usage not reported in full, or a sent
+    /// request that failed). `cost_usd` is then absent (so a reader that
+    /// does not know this field shows the cost as unknown, never as a
+    /// smaller total) and `known_cost_usd` holds the known part.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub unknown_cost: u32,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub known_cost_usd: Option<f64>,
+}
+
+fn is_zero(n: &u32) -> bool {
+    *n == 0
 }
 
 /// Everything a run produced.
@@ -442,14 +466,19 @@ impl RunResult {
                     .collect::<Vec<_>>()
                     .join(", ")
             };
+            let cost = match (live.cost_usd, live.known_cost_usd, live.unknown_cost) {
+                (Some(c), _, _) => format!("${c:.4}"),
+                (None, Some(c), n) => format!("${c:.4} known, plus {n} call(s) of unknown cost"),
+                (None, None, 0) => "unknown".to_string(),
+                (None, None, n) => format!("unknown ({n} call(s) of unknown cost)"),
+            };
             lines.push(format!(
-                "Live: {} samples, {} completed; agent failures: {failures}; median latency {}; cost {}.",
+                "Live: {} samples, {} completed, {} call(s); agent failures: {failures}; median latency {}; cost {cost}.",
                 live.samples,
                 live.completed,
+                live.calls,
                 live.latency_ms_median
                     .map_or("unknown".into(), |ms| format!("{ms} ms")),
-                live.cost_usd
-                    .map_or("unknown".into(), |c| format!("${c:.4}"))
             ));
         }
         let end = self

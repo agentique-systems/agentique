@@ -26,6 +26,9 @@ use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::time::{Duration, Instant};
 
 pub const API_URL: &str = "https://api.typesafe.ai";
+/// The decision adapter and its revision, as a run's binding names it
+/// (C-52): change it when what is sent or how a reply is checked changes.
+pub const ADAPTER: &str = "agq-providers decision 1";
 /// A fixed version, so answers do not move under a scenario's feet; the
 /// API accepts versioned ids whether or not its model list shows them.
 pub const DEFAULT_MODEL: &str = "jev-1.13.0";

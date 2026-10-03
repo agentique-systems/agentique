@@ -1422,7 +1422,7 @@ agent's outputs come from, and the trace records which:
 | Mode | Where outputs come from | Deterministic | For |
 |---|---|---|---|
 | Stubbed | A deterministic stand-in: schema-valid outputs or scripted answers per scenario, with **injected failures** (timeout, invalid output, low confidence, refusal, tool error) | Yes | The architecture itself: routing, ports, guardrails, fallback and human-approval paths; before any prompt or code exists (as Pydantic AI's `TestModel` and the OpenAI Agents SDK's scripted model do for code [88]) |
-| Recorded | Replays of real answers, keyed by a digest of the canonical request (model, instructions, input, schemas, settings) | Yes | Realistic regression checks at no cost. A missing recording stops the run with the reason `missing-recording`; it never falls through to a live call (VCR's `none` mode [89]) |
+| Recorded | Replays of real answers, keyed by a digest of the canonical request (model, instructions, input, schemas, settings, and the binding: provider, model, adapter and mapping, C-52) | Yes | Realistic regression checks at no cost. A missing recording stops the run with the reason `missing-recording`; it never falls through to a live call (VCR's `none` mode [89]) |
 | Live evaluation (apart from simulation) | The real model, several samples | No | Quality, real latency and cost, reported as pass rates; a good run can be kept as recordings. Temperature 0 does not make a model deterministic [90], and newer Claude models accept no temperature but 1.0 [17] |
 
 Live evaluations are not simulation: they have external effects and are not
@@ -1570,7 +1570,7 @@ from its stand-in, a recording or a live model, checked against its contract
 | Mode | What runs | Deterministic | May cause external effects |
 |---|---|---|---|
 | Model execution (`model`) | The explicit behaviour of the model snapshot, with the scenario's stand-ins | Yes | No |
-| Recorded replay (`replay`) | The model, with agents answered from recordings matched by the digest of the canonical request | Yes | No |
+| Recorded replay (`replay`) | The model, with agents answered from recordings matched by the digest of the canonical request, binding included (C-52) | Yes | No |
 | Implementation (`implementation`) | Real code through the project's harness, with the dependencies the scenario stands in for replaced by controlled stand-ins | As the code is | Only within the approved task scope (§4.15) |
 | Live evaluation (`live`) | The model, with agents answered by a real provider, several samples per scenario | No | Provider calls and their cost, started explicitly by the Operator |
 | Walkthrough (`walkthrough`) | Nothing runs: the steps are shown in order for explanation | — | No; never counted as verification |
