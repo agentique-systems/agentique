@@ -160,6 +160,9 @@ impl Studio {
         budgets: Budgets,
         permissions: Permissions,
     ) -> Result<(), String> {
+        if self.refused_to_agents("starting an objective") {
+            return Err("starting an objective is the Operator's own".into());
+        }
         if self.objectives.running() {
             return Err("an objective is running: stop it first".into());
         }
@@ -191,6 +194,9 @@ impl Studio {
     /// Continues the objective that is not finished (interrupted, or handed
     /// over to this build).
     pub fn continue_objective(&mut self) -> Result<(), String> {
+        if self.refused_to_agents("continuing an objective") {
+            return Err("continuing an objective is the Operator's own".into());
+        }
         if self.objectives.running() {
             return Ok(());
         }
@@ -208,6 +214,9 @@ impl Studio {
 
     /// Stops an objective that is not running (one interrupted earlier).
     pub fn stop_idle_objective(&mut self) {
+        if self.refused_to_agents("stopping an objective") {
+            return;
+        }
         let store = self.objective_store();
         if let Some(mut objective) = store.active() {
             objective.state = agq_orchestrator::record::State::Stopped;
@@ -220,6 +229,9 @@ impl Studio {
 
     /// The Operator's command to the running objective.
     pub fn objective_command(&mut self, command: Command) {
+        if self.refused_to_agents("steering an objective") {
+            return;
+        }
         if let Some(handle) = &self.objectives.handle {
             let what = match &command {
                 Command::Message(text) => format!("you: {text}"),
