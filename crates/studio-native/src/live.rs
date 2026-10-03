@@ -395,6 +395,31 @@ fn chat_binding(model: &ModelRef, request: &AgentRequest) -> Binding {
     }
 }
 
+/// How a live evaluation asks an agent whose `model` is `model` (C-52), in
+/// one line for the Inspector: the provider layer's tables decide, never the
+/// id's spelling. The answer's shape is checked when a scenario is
+/// prepared.
+pub fn model_call(model: Option<&str>) -> String {
+    let Some(id) = model else {
+        return "A live evaluation asks the Assistant's model, through chat, since this agent names none.".into();
+    };
+    match agq_providers::resolve_model(id) {
+        None => format!(
+            "A live evaluation refuses `{id}`: no provider's table knows it, and no other model answers in its place."
+        ),
+        Some(model) if agq_providers::capabilities(&model).decisions => format!(
+            "A live evaluation asks {}/{} one typed choice; the confidence it copies is the model's own claim.",
+            model.provider.id(),
+            model.model
+        ),
+        Some(model) => format!(
+            "A live evaluation asks {}/{} through chat, with the answer's fields as a template.",
+            model.provider.id(),
+            model.model
+        ),
+    }
+}
+
 /// The live model for a prepared evaluation, through `providers`, when its
 /// provider has a key of its own (never another provider's).
 pub fn live_model(prepared: &Prepared, providers: Providers) -> Option<Arc<dyn LiveModel>> {
@@ -1215,6 +1240,16 @@ mod tests {
             std::thread::sleep(Duration::from_millis(5));
         }
         app.runs.result.clone().unwrap()
+    }
+
+    #[test]
+    fn the_inspector_says_how_a_live_evaluation_asks_the_model() {
+        assert!(model_call(Some("jev-1.13.0")).contains("typesafe/jev-1.13.0 one typed choice"));
+        assert!(
+            model_call(Some("deepseek-flash")).contains("deepseek/deepseek-flash through chat")
+        );
+        assert!(model_call(Some("jev-latest")).contains("refuses `jev-latest`"));
+        assert!(model_call(None).contains("the Assistant's model"));
     }
 
     #[test]

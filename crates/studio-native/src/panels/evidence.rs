@@ -319,6 +319,16 @@ fn agent(studio: &Entity<Studio>, tree: &Tree, element: ElementId, cx: &App) -> 
     }
     let theme = cx.theme().clone();
     let features = semantics.features(definition);
+    // The model the agent names, if any, for how a live evaluation asks it.
+    let model = features.iter().find_map(|f| {
+        let element = tree.get(*f)?;
+        let named = semantics.name(*f) == Some("model")
+            || element.redefines.iter().any(|r| r.last_name() == "model");
+        match (&element.value, named) {
+            (Some(agq_language::Literal::String(model)), true) => Some(model.clone()),
+            _ => None,
+        }
+    });
     let mut rows = Vec::new();
     for (index, setting) in AGENT_SETTINGS.iter().enumerate() {
         let own = features.iter().copied().find(|f| {
@@ -362,6 +372,14 @@ fn agent(studio: &Entity<Studio>, tree: &Tree, element: ElementId, cx: &App) -> 
                     .child("An answer that is late, invalid or below its minimum confidence counts as a failure: the fallback answers instead, when there is one."),
             )
             .children(rows)
+            .child(
+                div()
+                    .pt(r(4.0))
+                    .text_size(r(theme::text::XS))
+                    .line_height(r(16.0))
+                    .text_color(theme.text_muted)
+                    .child(crate::live::model_call(model.as_deref())),
+            )
             .into_any_element(),
     )
 }
