@@ -211,6 +211,8 @@ pub struct Studio {
     pub safe_mode: bool,
     /// Agentique's own builds: building, trying, adopting (C-51).
     pub develop: crate::develop::BuildsState,
+    /// The control interface (C-53): observations and agents' actions.
+    pub control: crate::control::ControlState,
     /// Implementation links, checks and drift (C-50).
     pub implementation: crate::implementation::ImplementationState,
     last_saved: Instant,
@@ -320,6 +322,7 @@ impl Studio {
             runtime: Default::default(),
             safe_mode: args_safe_mode,
             develop: Default::default(),
+            control: Default::default(),
             implementation: Default::default(),
             last_saved: Instant::now(),
             dirty: Dirty::ALL,
@@ -359,6 +362,23 @@ impl Studio {
 
     /// Marks what an update changed. An update that marks nothing is taken
     /// to have changed everything.
+    /// Opens the control interface's endpoint when `--control` names a
+    /// file (C-53).
+    pub fn open_control_endpoint(&mut self) {
+        let Some(file) = self.args.control.clone() else {
+            return;
+        };
+        match crate::control::server::start(&file, &self.control.instance, self.control.sender()) {
+            Ok(endpoint) => self.control.endpoint = Some(endpoint),
+            Err(error) => self.status = error,
+        }
+    }
+
+    /// The Settings section shown, by name.
+    pub fn settings_section_name(&self) -> String {
+        format!("{:?}", self.settings_section).to_lowercase()
+    }
+
     pub fn mark(&mut self, dirty: Dirty) {
         self.dirty |= dirty;
     }
@@ -619,6 +639,7 @@ impl Studio {
 
     fn install_project(&mut self, project: Project) {
         self.save_session();
+        self.control.forget_all_typed();
         let folder = project.folder().to_path_buf();
         let remembered = self.session.views.get(&folder).cloned().unwrap_or_default();
         self.fixture = None;
@@ -1104,6 +1125,22 @@ impl Studio {
             self.status = reason.to_string();
             return;
         }
+        // Whatever route reached it (a key, the palette, a menu), what is
+        // the Operator's own is refused to agents (C-53); opening another
+        // project would end the Assistant's own turn.
+        if crate::control::OPERATORS_COMMANDS.contains(&id)
+            && self.refused_to_agents(&format!("`{}`", crate::control::command_name(id)))
+        {
+            return;
+        }
+        if matches!(
+            id,
+            CommandId::NewProject | CommandId::OpenProject | CommandId::DevelopAgentique
+        ) && self.control.acting.as_deref() == Some("Assistant")
+            && self.refused_to_agents("opening another project (it ends your own turn)")
+        {
+            return;
+        }
         use CommandId::*;
         match id {
             Architecture => self.set_view(SurfaceView::Architecture),
@@ -1455,6 +1492,9 @@ impl Studio {
     /// The model picker's choice: Settings' provider, with its default model
     /// and effort; the next turn uses it.
     pub fn choose_provider(&mut self, provider: &str) {
+        if self.refused_to_agents("choosing the Assistant's model") {
+            return;
+        }
         let _ = self
             .settings
             .set("assistant.provider", serde_json::json!(provider));

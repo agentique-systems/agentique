@@ -256,6 +256,9 @@ impl SettingsView {
 
     fn set(&mut self, id: &'static str, value: Value, cx: &mut Context<Self>) {
         self.studio.act(cx, |studio| {
+            if studio.refused_to_agents("changing Settings") {
+                return;
+            }
             if studio.settings.set(id, value).is_ok() {
                 match id.split('.').next() {
                     Some("appearance") => studio.apply_appearance(),
@@ -410,6 +413,12 @@ impl SettingsView {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        if self
+            .studio
+            .update(cx, |studio, _| studio.refused_to_agents("storing a key"))
+        {
+            return;
+        }
         let result = keys::store(provider, &key);
         let hint = keys::hint(&key);
         let state = self.provider(provider, window, cx);
@@ -437,6 +446,12 @@ impl SettingsView {
     }
 
     fn remove(&mut self, provider: Provider, window: &mut Window, cx: &mut Context<Self>) {
+        if self
+            .studio
+            .update(cx, |studio, _| studio.refused_to_agents("removing a key"))
+        {
+            return;
+        }
         let state = self.provider(provider, window, cx);
         state.confirm_remove = false;
         match keys::remove(provider) {

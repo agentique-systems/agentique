@@ -1240,6 +1240,8 @@ asks the table, never the provider's name. When a capability is missing:
 | The Claude Agent runtime's own configuration and sessions (C-51) | `claude-agent\` beside the session file | The SDK's configuration directory (`CLAUDE_CONFIG_DIR`): its session transcripts; the conversation keeps the session id | Assistant |
 | Objectives (C-53) | `%APPDATA%\Agentique\objectives\<id>\` (beside the session file) | `objective.json` (`"format": 1`: intent, budgets, permissions, cycles, session ids, results, spend, continuation; written atomically) and `journal.jsonl` (one side effect per line, before and after) | Orchestrator |
 | Builds of Agentique (C-51) | `%LOCALAPPDATA%\Agentique\builds\` | `builds.json` (`"format": 1`: current, history, last known good) and one folder per build with its executables, companion source and `build.json` manifest | Launcher (registry), Studio (building, trying, adopting) |
+| A handover to another build (C-53) | `handover.json` in the builds folder | JSON with `"format": 1`: the build to start and its arguments (`--adopted`, the session, the project); written by a supervised Studio before it exits with the handover code, read and removed once by the launcher | Studio (writes), Launcher (reads) |
+| The control endpoint (C-53) | the file `--control <file>` names (a test instance's own app data) | JSON: port, token, process, instance, version; written atomically when the Studio starts with `--control`, removed when it ends; owner-only on Unix | Studio |
 
 **Key handling contract** (R-25):
 
@@ -1345,6 +1347,7 @@ through Simulation, Implementation and Execution.
 | `read_code_links` | Implementation links of an element or a file, both ways, with drift and the checks that cover them | Stages 7–8 (C-50) |
 | `check_implementation` | Run the implementation checks of an element or the whole project (needs trusted-local execution) | Stages 7–8 (C-50) |
 | `propose_implementation` | Propose an implementation task (outcome, affected parts, protected boundaries, permitted writes, required checks, acceptance criteria) for the Operator's approval | Stages 7–8 (C-50); the task definition in Stage 10 (C-51) |
+| `observe_app`, `act_in_app` | The control interface (§4.16): what the application shows now, as text, and one visible action through the Studio's own handlers (a command, input on a control, a selection, opening a project, a wait), refused as stale when observed against another instance, project, build or screen | Stage 11 (C-53) |
 | `list_files`, `read_code`, `write_code`, `run_checks`, `link_code`, `request_contract_change`, `finish_implementation` | Only inside an approved implementation task: read and write within its scope in its worktree, run its required checks, link what it wrote, return a contract change to the Operator, and report the result | Stages 7–8 (C-50) |
 | `search_code`, ranged `read_code`, `edit_code`, `run_program` | Only inside an approved task: search the worktree, read a line range, replace one exact passage, and run one allowed program (a build, a test filter, a lint) for diagnostics | Stage 10 (C-51) |
 
@@ -1972,22 +1975,42 @@ The Operator's messages to an objective are queued into its running session.
 **The control interface** lets agents operate the real, visible Studio without
 computer vision. The Studio publishes a structured **observation**: its
 identity (instance, build and commit, project, session) and revision; the
-screen, view, panels, selection, dialog (title, fields, buttons), palette,
-status and problems; the conversation's state, tasks, builds and the
-objective; every drawn control (stable id, role, label, value, enabled,
-selected, focused, bounds); and the commands with whether they are available,
-and why not. **Actions** reach the handlers the Operator's input reaches:
-commands through the Studio's command dispatch; click, type, key and fill
-through the window's own input dispatch at the control's bounds, so focus, hit
-testing, dialogs and rendering are exercised; selecting an element; waiting
-for a condition. An action names the identity it was observed against: one for
-another instance, project, session or build, or for a control that is gone or
-disabled, is refused as stale. Every action and its effect go to an event
+screen, view, panels, selection, the dialog's kind (its fields and buttons
+are among the controls), palette, status and problems; the conversation's
+state, tasks, builds and the objective; every drawn control (stable id, role,
+label, value except a masked field's, enabled, selected, focused, and the
+bounds of its visible part, in painting order so the topmost comes last); and
+the commands with whether they are available, and why not. **Actions** reach
+the handlers the Operator's input reaches: commands through the Studio's
+command dispatch; click, type, key and fill through the window's own input
+dispatch at the control's bounds, so focus, hit testing, dialogs and
+rendering are exercised; selecting an element; waiting for a condition
+(beside other actions). An action names the identity and the observation
+(its screen revision) it rests on: one for another instance, project,
+session or build, a screen that changed since (screen, dialog, palette,
+project, settings section or selection), or a control that is gone or
+disabled is refused as stale; a request nobody waits for any more is dropped.
+**The Operator's own** stays the Operator's (§3 roles): an agent cannot
+answer a dialog that asks for the Operator's approval (integrating a task,
+changing locked elements, trusted-local execution, a paid live run, starting
+an implementation), act in Settings (it may leave them) or in the
+Conversation, lock or unlock, undo, change the appearance, or pause and
+resume agents. This holds where each of those effects happens, whatever
+route reached it (a click, keys, focus and Space, the palette), for as long
+as a step of an agent's action and the work it dispatched run; requests are
+also refused up front with the reason where that can be told, and text goes
+only to a focused field. The endpoint's holder supervises its instance: the
+endpoint's Pause, Step and Resume are the supervisor's, not an agent's. A change an agent's step makes is recorded as the
+Assistant's, with the agent named in its description, and so is what an
+agent typed into a panel's field when that field commits later, whoever
+ends the edit. Every action and its effect go to an event
 trace. Agents reach it through Agentique's tools, bound either to the
 running Studio or to a test instance; the Orchestrator reaches a test instance
 through a local endpoint (127.0.0.1, a random port, a token in that instance's
 app data). Screenshots are for the
 Operator; an observation is text, and no agent claims to have seen pixels.
+The endpoint refuses a line over 1 MB, more than eight connections, and a
+connection idle longer than an answer may take, before any token is checked.
 
 **Visible agents.** A ring and a label mark the control an agent acts on; the
 title bar shows what the objective's agents are doing; the Objectives panel
@@ -2010,8 +2033,11 @@ the objective.
 
 **Lifecycle.** The launcher supervises (§4.15). Before a handover the
 Orchestrator writes the continuation point (the phase reached, the adopted
-build, session ids, what completed), stops sessions and jobs, and the Studio
-exits with the handover code; History's lock file (`model/agentique.lock`)
+build, session ids, what completed), the Studio stops the Assistant's turn,
+runs, the implementation task, checks and builds and waits for them to end
+(test instances the Operator started stay theirs), and exits with the
+handover code; the handover names the build, the session and the project open
+now; History's lock file (`model/agentique.lock`)
 keeps one writer at a time. The **check after adoption**: the new build,
 started for an adoption, writes its ready file only after it has confirmed
 that its own manifest is the adopted build, opened the project and read the
@@ -3046,6 +3072,7 @@ The ADRs named here are preserved at the tag `archive/pre-realignment`.
 | 2026-10-03 | **C-53, the Operator's direction:** Agentique improves itself. Stage 11 (§6.8) with Scenario J (§2.11); §1.5 gains its paragraph; the §1.6 rows on an autonomous factory, spending limits, supervised implementation work and self-improvement are edited in place; §4.2 gains objectives and the permission policy; §4.7's Claude Agent runtime gets the SDK's tools under that policy, the project's configuration and Anthropic-compatible endpoints; §4.15's integration, pushing, adoption and launcher rules gain their objective forms; §4.16 describes the Orchestrator, the control interface, typed decisions in operation and the lifecycle; C-5, C-35 and C-37 are amended in place; Stage 10's "Waits" no longer holds the Orchestrator or pushing within an objective | The Operator's instruction in this session supersedes the supervised-only rules explicitly |
 | 2026-10-03 | Locked parts under C-53, named before they are built: **(1) `ClaudeAgentRuntime`**: the SDK's own tools stay on under the permission policy the Studio sends (read and write roots, protected paths with the model files always among them, refused commands, network, push and pull requests, extra MCP servers), enforced in the companion's one pre-tool hook, with undecided calls sent to the Studio; the project's settings are loaded (`settingSources: ["project"]`), never the machine's user settings or auto memory; the environment is the Studio's minus anything that looks like a key, token or secret, and the SDK keeps the model's key out of the session's commands, hooks and MCP servers (`CLAUDE_CODE_SUBPROCESS_ENV_SCRUB`); protocol 2 adds the policy, setting sources, subagent definitions and the model endpoint to `start`, and permission requests, queued messages, the pause gate and task, compaction and status events as messages; **(2) `Launcher`**: a supervising mode that stays the Studio's parent, starts the build a handover names, restarts a crashed Studio once and then falls back, and records a build as last known good only after its check after adoption; **(3) `Execution`**: unchanged in code; in a development session the SDK's own tools carry out file and command side effects under the policy, while verification, builds, integration and the Orchestrator's pushes and pull requests (exact commands on Execution's existing allow-list, no new operation) still go through Execution; **(4) persistence**: the project's format is unchanged; the Orchestrator's records are new app data (`objectives/<id>/objective.json` and `journal.jsonl`), listed among the data formats a build reports, so adoption compares them | R-16 and §8.1 rule 4 ask for an explicit decision; C-53 authorises these changes when documented, reviewed, tested and recoverable |
 | 2026-10-03 | Self-model under C-53: the part `Orchestrator` (its crate `agq-orchestrator` is added to the model with the crate) owns objectives, cycles, their records, budgets and gates; it depends on Assistant (agent sessions), Execution (git, commands, worktrees), Implementation (required checks and verification), Providers (typed decisions, prices) and Launcher (builds and adoption), and the Studio depends on it; the Studio gains the control interface (port `control`); the requirement `GatesDecide` | §8.1 rules 5 and 6: one distinct responsibility (running objectives) that no existing part has, testable without a window |
+| 2026-10-03 | The control interface under C-53, after its review: what is the Operator's own (approval dialogs and the Operator's own questions, Settings, the Conversation, locking, undo, appearance, the agents chip) is refused to agents where each effect happens, so no route (keys, focus and Space, the palette) reaches it; a change an agent's action makes is the Assistant's (`Actor::Assistant`, no new actor, so System State and History are unchanged) with the agent named; an action must name the observation it rests on, and the selection is part of the screen's shape; a supervised handover names the session and the project, and the Studio stops its work first | §3 roles and §1.6 (a visible record): an agent never gives the Operator's approvals or speaks as the Operator |
 | 2026-10-03 | Product terms under C-53 (§8.4, §9): objective, cycle, permission policy, control interface, observation, typed decision; agent roles are named lead, implementer, reviewer and evaluator; a cycle's test instance is the existing "test instance" | A term each where no plain one existed; Orchestrator was already a product noun |
 | 2026-10-03 | Under C-53: the reference machine has no Anthropic key, so the Claude Agent runtime is proven live through DeepSeek's documented Anthropic-compatible endpoint with the configured DeepSeek key (`deepseek-v4-pro`, `deepseek-flash`); a claude.ai or Claude subscription login is not used, as Anthropic's terms for the SDK require. A spike on 2026-10-03 ran the pinned SDK this way with its built-in tools, the project's `CLAUDE.md` and a pre-tool hook (4 model calls, 9 s); the SDK's own cost estimate assumes Claude's prices, so Agentique costs sessions itself | Live capability within existing authorisation; §8.7 rule 4's exception follows the key to its own provider's endpoint |
 

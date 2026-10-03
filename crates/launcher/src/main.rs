@@ -7,6 +7,9 @@
 //! agentique-launcher --adopt <id> --wait <lock> [args…]
 //!                                                   after the running Agentique hands over:
 //!                                                   build <id>, falling back if it does not start
+//! agentique-launcher --supervise [args…]            stays Agentique's parent (C-53): starts the
+//!                                                   build it hands over to, restarts a crashed one
+//!                                                   once, then falls back to the last known good
 //! ```
 //!
 //! Other arguments (such as `--project <folder>`) go to the build. If no
@@ -14,7 +17,10 @@
 #![cfg_attr(windows, windows_subsystem = "windows")]
 #![forbid(unsafe_code)]
 
-use agq_launcher::{READY_WITHIN, Registry, Started, default_root, start, wait_for_release};
+use agq_launcher::{
+    READY_WITHIN, Registry, SETTLED, Started, Supervised, default_root, start, supervise,
+    wait_for_release,
+};
 use std::time::Duration;
 
 fn main() {
@@ -35,6 +41,7 @@ fn main() {
         }
     };
     let recover = take("--recover", false).is_some();
+    let supervising = take("--supervise", false).is_some();
     let adopt = take("--adopt", true);
     let wait = take("--wait", true);
     let root = default_root();
@@ -57,6 +64,21 @@ fn main() {
         open_folder(&root);
         std::process::exit(1);
     }
+    if supervising && (recover || adopt.is_some()) {
+        note("--supervise starts the current build; it does not take --recover or --adopt".into());
+        open_folder(&root);
+        std::process::exit(1);
+    }
+    if supervising {
+        match supervise(&root, &args, READY_WITHIN, SETTLED) {
+            Supervised::Closed { .. } => std::process::exit(0),
+            Supervised::Failed { reason, .. } => {
+                note(reason);
+                open_folder(&root);
+                std::process::exit(2);
+            }
+        }
+    }
     let registry = match Registry::load(&root) {
         Ok(registry) => registry,
         Err(reason) => {
@@ -72,6 +94,9 @@ fn main() {
             .clone()
             .or(registry.current.clone())
     } else if let Some(id) = adopt {
+        // Started for an adoption: it reports ready only after its check
+        // after adoption (C-53).
+        args.extend(["--adopted".to_string(), id.clone()]);
         Some(id)
     } else {
         registry

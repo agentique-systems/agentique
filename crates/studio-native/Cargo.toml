@@ -21,6 +21,8 @@ agq-simulation = { path = "../simulation" }
 agq-implementation = { path = "../implementation" }
 agq-execution = { path = "../execution" }
 agq-launcher = { path = "../launcher" }
+# The control endpoint's token (C-53), from the operating system's randomness (already in the lock file).
+getrandom = "0.3.4"
 pulldown-cmark = { version = "0.13.4", default-features = false }
 # GPUI (C-48): a weekly snapshot of Zed's GPUI, pinned exactly, with the
 # unstyled primitives of gpui-base; the design system is the Studio's own.

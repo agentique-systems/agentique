@@ -360,7 +360,10 @@ impl RenderOnce for Segmented {
                                     theme.text_muted
                                 }))
                             })
-                            .child(crate::ui::target::target(label.clone()))
+                            .child(crate::ui::target::control(
+                                crate::ui::target::Control::new("option", label.clone())
+                                    .selected(chosen),
+                            ))
                             .child(
                                 div()
                                     .min_w_0()

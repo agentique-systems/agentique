@@ -173,6 +173,18 @@ pub struct Fields {
     _subscriptions: Vec<Subscription>,
 }
 
+impl Field {
+    /// The field's control id, for the ones agents can operate.
+    fn target(self) -> Option<&'static str> {
+        match self {
+            Field::Type => Some("Type"),
+            Field::Value => Some("Value"),
+            Field::Guard => Some("Guard"),
+            _ => None,
+        }
+    }
+}
+
 /// The model's current text for a field.
 fn current(tree: &Tree, element: ElementId, field: Field) -> String {
     let e = &tree[element];
@@ -243,7 +255,14 @@ impl Fields {
                 window,
                 move |column, _, event: &InputEvent, window, cx| match event {
                     InputEvent::PressEnter { .. } | InputEvent::Blur => {
-                        column.inspector.commit(field, window, cx)
+                        // What an agent typed here commits as its change,
+                        // whoever ends the edit (C-53).
+                        let studio = column.inspector.studio.clone();
+                        let began = studio.update(cx, |studio, _| {
+                            studio.control.begin_typed_commit(field.target())
+                        });
+                        column.inspector.commit(field, window, cx);
+                        studio.update(cx, |studio, _| studio.control.end_typed_commit(began));
                     }
                     InputEvent::Change if field == Field::Type => cx.notify(),
                     _ => {}
@@ -344,6 +363,11 @@ impl Fields {
         for (field, text) in values {
             if other || !self.focused(field, window, cx) {
                 self.set(field, text, window, cx);
+                // What an agent typed there is gone with it (C-53).
+                if let Some(target) = field.target() {
+                    self.studio
+                        .update(cx, |studio, _| studio.control.forget_typed(target));
+                }
             }
         }
         if other {

@@ -17,7 +17,7 @@
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::{Child, Command, Stdio};
 use std::time::{Duration, Instant};
 
 pub const FORMAT: u32 = 1;
@@ -342,7 +342,8 @@ pub fn start(root: &Path, id: &str, args: &[String], ready_within: Duration) -> 
                     ),
                 );
             };
-            let mut recovery = args.to_vec();
+            // An adoption that failed is not the fallback's to check.
+            let mut recovery = without_adoption(args);
             recovery.extend(["--recovered-from".to_string(), id.to_string()]);
             match try_start(root, &good, &recovery, ready_within) {
                 Ok(()) => {
@@ -391,6 +392,12 @@ fn append(log: &Path, line: &str) {
 /// time. What it wrote to its error output goes to `start-failure.log` in
 /// its folder.
 fn try_start(root: &Path, id: &str, args: &[String], ready_within: Duration) -> Result<(), String> {
+    launch(root, id, args, ready_within).map(|_| ())
+}
+
+/// Starts one build and waits until it reports ready, exits or runs out of
+/// time; the running build's process, once ready.
+fn launch(root: &Path, id: &str, args: &[String], ready_within: Duration) -> Result<Child, String> {
     let folder = root.join(id);
     let exe = folder.join(STUDIO);
     if !exe.is_file() {
@@ -415,8 +422,8 @@ fn try_start(root: &Path, id: &str, args: &[String], ready_within: Duration) -> 
     let started = Instant::now();
     loop {
         if ready.is_file() {
-            // It runs on; the launcher's work is done.
-            return Ok(());
+            // It runs on.
+            return Ok(child);
         }
         if let Ok(Some(status)) = child.try_wait() {
             let tail = std::fs::read_to_string(&errors).unwrap_or_default();
@@ -442,6 +449,350 @@ fn try_start(root: &Path, id: &str, args: &[String], ready_within: Duration) -> 
         }
         std::thread::sleep(Duration::from_millis(100));
     }
+}
+
+/// The exit code with which a supervised Studio hands over to another build
+/// (C-53): it wrote [`HANDOVER`] first, and has stopped its work and saved.
+pub const HANDOVER_EXIT: i32 = 75;
+
+/// The file a supervised Studio writes before it exits to hand over: which
+/// build starts next, and the arguments it gets.
+pub const HANDOVER: &str = "handover.json";
+
+/// A build that ran this long before it crashed is started once more before
+/// falling back.
+pub const SETTLED: Duration = Duration::from_secs(30);
+
+/// A crash this long after the build started counts as a first one again.
+pub const STABLE: Duration = Duration::from_secs(60 * 60);
+
+/// A handover: which build starts next, and with what.
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Handover {
+    #[serde(default)]
+    pub format: u32,
+    pub build: String,
+    #[serde(default)]
+    pub args: Vec<String>,
+}
+
+impl Handover {
+    pub fn new(build: &str, args: Vec<String>) -> Handover {
+        Handover {
+            format: FORMAT,
+            build: build.to_string(),
+            args,
+        }
+    }
+
+    pub fn save(&self, root: &Path) -> Result<(), String> {
+        let text = serde_json::to_string_pretty(self).map_err(|e| e.to_string())?;
+        write_atomically(&root.join(HANDOVER), text.as_bytes())
+    }
+
+    /// Reads and removes the handover, so it is acted on once; it must name
+    /// a build of the registry, in a format this launcher reads.
+    pub fn take(root: &Path) -> Result<Handover, String> {
+        let path = root.join(HANDOVER);
+        let text =
+            std::fs::read_to_string(&path).map_err(|e| format!("there is no handover ({e})"))?;
+        let _ = std::fs::remove_file(&path);
+        let handover: Handover =
+            serde_json::from_str(&text).map_err(|e| format!("the handover cannot be read: {e}"))?;
+        if handover.format > FORMAT {
+            return Err(format!(
+                "the handover is in format {}, which this launcher does not read",
+                handover.format
+            ));
+        }
+        if handover.build.is_empty()
+            || handover.build.contains(['/', '\\'])
+            || handover.build.contains("..")
+        {
+            return Err(format!(
+                "the handover names no build ({:?})",
+                handover.build
+            ));
+        }
+        if Registry::load(root)?.entry(&handover.build).is_none() {
+            return Err(format!(
+                "the handover names {}, which is not one of the builds",
+                handover.build
+            ));
+        }
+        Ok(handover)
+    }
+}
+
+/// `base` followed by `extra`; an option `extra` gives (`--project`,
+/// `--session`) replaces the one in `base`, so a handover keeps the project
+/// the Studio had open, not the one supervising started with.
+fn merged(base: &[String], extra: &[String]) -> Vec<String> {
+    const VALUED: [&str; 2] = ["--project", "--session"];
+    let given: Vec<&str> = extra
+        .iter()
+        .map(String::as_str)
+        .filter(|a| VALUED.contains(a))
+        .collect();
+    let mut all = Vec::new();
+    let mut skip = false;
+    for arg in base {
+        if skip {
+            skip = false;
+        } else if given.contains(&arg.as_str()) {
+            skip = true;
+        } else {
+            all.push(arg.clone());
+        }
+    }
+    all.extend(extra.iter().cloned());
+    all
+}
+
+/// `args` without a `--recovered-from <build>` pair.
+fn without_recovery(args: &[String]) -> Vec<String> {
+    let mut kept = Vec::new();
+    let mut skip = false;
+    for arg in args {
+        if skip {
+            skip = false;
+        } else if arg == "--recovered-from" {
+            skip = true;
+        } else {
+            kept.push(arg.clone());
+        }
+    }
+    kept
+}
+
+/// How supervising ended.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Supervised {
+    /// The Operator closed Agentique.
+    Closed { last: String },
+    /// No build could be started: what to tell the Operator.
+    Failed { reason: String, log: PathBuf },
+}
+
+/// Supervises Agentique (C-53, ROADMAP §4.15): starts the current build (or
+/// the last known good one) and stays its parent. When it exits to hand over
+/// ([`HANDOVER_EXIT`] and a [`Handover`]), the named build starts with the
+/// handover's arguments; when it crashes, it starts once more if it had run
+/// for `settled` ([`SETTLED`]), and otherwise (or when it crashes again) the
+/// build that was last known good before it started takes over, told what
+/// happened; when it closes normally, supervising ends. An exit to hand over
+/// without a valid handover counts as a crash. A build that does not start
+/// falls back as [`start`] does.
+pub fn supervise(
+    root: &Path,
+    args: &[String],
+    ready_within: Duration,
+    settled: Duration,
+) -> Supervised {
+    let log = root.join("launcher.log");
+    let registry = match Registry::load(root) {
+        Ok(registry) => registry,
+        Err(reason) => {
+            return Supervised::Failed { reason, log };
+        }
+    };
+    let Some(mut id) = registry
+        .current
+        .clone()
+        .or(registry.last_known_good.clone())
+    else {
+        return Supervised::Failed {
+            reason:
+                "there is no build to start: install one from Agentique (Settings › About › Builds)"
+                    .into(),
+            log,
+        };
+    };
+    let mut base: Vec<String> = args.to_vec();
+    base.push("--supervised".into());
+    let mut extra: Vec<String> = Vec::new();
+    let mut restarted = false;
+    // The build known to work before the running build first started (not
+    // before its restart, when it is itself already marked): a build that
+    // crashes before it settles, or again, gives the mark back to it.
+    let mut prior: Option<String> = None;
+    loop {
+        let all = merged(&base, &extra);
+        if !restarted {
+            prior = Registry::load(root)
+                .ok()
+                .and_then(|registry| registry.last_known_good);
+        }
+        let (running, mut child) = match start_and_keep(root, &id, &all, ready_within) {
+            Ok(started) => started,
+            Err(reason) => return Supervised::Failed { reason, log },
+        };
+        if running != id {
+            // It fell back: the build that runs got the recovery's arguments,
+            // never the failed build's adoption.
+            extra = without_adoption(&without_recovery(&extra));
+            extra.extend(["--recovered-from".to_string(), id.clone()]);
+        }
+        let since = Instant::now();
+        let status = child.wait();
+        let code = status.as_ref().ok().and_then(|s| s.code());
+        let handover = (code == Some(HANDOVER_EXIT)).then(|| Handover::take(root));
+        match (code, handover) {
+            (Some(0), _) => {
+                append(&log, &format!("{} {running} closed", now()));
+                return Supervised::Closed { last: running };
+            }
+            (_, Some(Ok(handover))) => {
+                append(
+                    &log,
+                    &format!("{} {running} handed over to {}", now(), handover.build),
+                );
+                id = handover.build;
+                extra = handover.args;
+                restarted = false;
+            }
+            (_, handover) => {
+                let what = match (&handover, &status) {
+                    (Some(Err(reason)), _) => format!("it asked to hand over, but {reason}"),
+                    (_, Ok(status)) => format!("{status}"),
+                    (_, Err(e)) => e.to_string(),
+                };
+                append(
+                    &log,
+                    &format!("{} {running} ended unexpectedly ({what})", now()),
+                );
+                if since.elapsed() >= STABLE {
+                    // Long after it started: as a first crash.
+                    restarted = false;
+                }
+                if since.elapsed() >= settled && !restarted {
+                    // A crash after it had settled: once more, as it was. If
+                    // that start fails, the build known good before it is
+                    // the one to return to, not itself.
+                    restarted = true;
+                    id = running.clone();
+                    extra = without_recovery(&extra);
+                    if let Some(prior) = prior.clone().filter(|p| *p != running)
+                        && let Ok(mut registry) = Registry::load(root)
+                    {
+                        registry.last_known_good = Some(prior);
+                        let _ = registry.save(root);
+                    }
+                } else {
+                    // It crashes again, or soon after starting: back to the
+                    // last known good build, which says what happened.
+                    let mut registry = match Registry::load(root) {
+                        Ok(registry) => registry,
+                        Err(reason) => return Supervised::Failed { reason, log },
+                    };
+                    // A build that did not settle was not known good after all.
+                    if prior.as_deref().is_some_and(|p| p != running) {
+                        registry.last_known_good = prior.clone();
+                    }
+                    let good = registry.last_known_good.clone();
+                    if good.as_deref() != Some(running.as_str()) {
+                        if let Some(entry) = registry.entry_mut(&running) {
+                            entry.state = State::Failed {
+                                reason: format!("it ended unexpectedly ({what})"),
+                            };
+                        }
+                        registry.current = good.clone();
+                        let _ = registry.save(root);
+                    }
+                    let Some(good) = good else {
+                        return Supervised::Failed {
+                            reason: format!(
+                                "{running} ended unexpectedly ({what}), and there is no last known good build"
+                            ),
+                            log,
+                        };
+                    };
+                    if good == running && restarted {
+                        return Supervised::Failed {
+                            reason: format!(
+                                "the last known good build {good} ended unexpectedly twice ({what})"
+                            ),
+                            log,
+                        };
+                    }
+                    restarted = good == running;
+                    id = good;
+                    extra = without_adoption(&without_recovery(&extra));
+                    extra.extend(["--recovered-from".to_string(), running]);
+                }
+            }
+        }
+    }
+}
+
+/// [`start`], keeping the running build's process: the build that runs, and
+/// its process.
+fn start_and_keep(
+    root: &Path,
+    id: &str,
+    args: &[String],
+    ready_within: Duration,
+) -> Result<(String, Child), String> {
+    let mut registry = Registry::load(root)?;
+    let log = root.join("launcher.log");
+    match launch(root, id, args, ready_within) {
+        Ok(child) => {
+            if let Some(entry) = registry.entry_mut(id) {
+                entry.state = State::Started;
+            }
+            registry.current = Some(id.to_string());
+            registry.last_known_good = Some(id.to_string());
+            let _ = registry.save(root);
+            append(
+                &log,
+                &format!("{} started {id} and it reported ready", now()),
+            );
+            Ok((id.to_string(), child))
+        }
+        Err(reason) => {
+            append(&log, &format!("{} {id} did not start: {reason}", now()));
+            if let Some(entry) = registry.entry_mut(id) {
+                entry.state = State::Failed {
+                    reason: reason.clone(),
+                };
+            }
+            let fallback = registry.last_known_good.clone().filter(|good| good != id);
+            if registry.current.as_deref() == Some(id) {
+                registry.current = fallback.clone();
+            }
+            let _ = registry.save(root);
+            let good = fallback.ok_or_else(|| {
+                format!("{id} did not start ({reason}), and there is no last known good build to return to")
+            })?;
+            // An adoption that failed is not the fallback's to check.
+            let mut recovery = without_adoption(args);
+            recovery.extend(["--recovered-from".to_string(), id.to_string()]);
+            let child = launch(root, &good, &recovery, ready_within).map_err(|second| {
+                format!("{id} did not start ({reason}), nor did the last known good build {good} ({second})")
+            })?;
+            append(
+                &log,
+                &format!("{} started the last known good build {good}", now()),
+            );
+            Ok((good, child))
+        }
+    }
+}
+
+/// `args` without an `--adopted <build>` pair.
+fn without_adoption(args: &[String]) -> Vec<String> {
+    let mut kept = Vec::new();
+    let mut skip = false;
+    for arg in args {
+        if skip {
+            skip = false;
+        } else if arg == "--adopted" {
+            skip = true;
+        } else {
+            kept.push(arg.clone());
+        }
+    }
+    kept
 }
 
 /// Waits until the process holding `lock` (the Studio handing over) has

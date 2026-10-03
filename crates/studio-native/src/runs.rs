@@ -968,6 +968,26 @@ impl Studio {
     ) {
         use agq_assistant::{ToolResult, tools::StudioRequest};
         match request {
+            // The control interface (C-53): answered on the next tick.
+            StudioRequest::Observe { full } => {
+                self.control.submit(crate::control::Request::new(
+                    serde_json::json!({ "op": "observe", "detail": if full { "full" } else { "summary" } }),
+                    crate::control::Reply::Tool(reply),
+                    crate::control::TOOL_WAIT,
+                ));
+                return;
+            }
+            StudioRequest::Act { input } => {
+                let mut body = input;
+                body["op"] = serde_json::json!("act");
+                body["agent"] = serde_json::json!("Assistant");
+                self.control.submit(crate::control::Request::new(
+                    body,
+                    crate::control::Reply::Tool(reply),
+                    crate::control::TOOL_WAIT,
+                ));
+                return;
+            }
             StudioRequest::Run { scenario, mode } => {
                 if self.runs.active.is_some() {
                     let _ = reply.send(ToolResult::error(

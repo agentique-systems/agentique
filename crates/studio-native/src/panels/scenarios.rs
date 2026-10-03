@@ -70,7 +70,15 @@ pub fn short_mode(mode: Mode) -> &'static str {
 }
 
 impl Render for ScenariosView {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        // Its own region inside the cached left column, so the column
+        // painting again does not lose this view's controls (C-53).
+        crate::ui::target::regioned("left-body", self.content(window, cx))
+    }
+}
+
+impl ScenariosView {
+    fn content(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement + use<> {
         let theme = cx.theme().clone();
         let rows: Rc<Vec<ScenarioRow>> =
             Rc::new(self.studio.update(cx, |studio, _| studio.scenario_rows()));

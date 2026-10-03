@@ -448,8 +448,8 @@ The reference run, as run here (PowerShell, from the repository root, after
 
 ```text
 target\release\agq-studio-native.exe --no-restore --session %TEMP%\agq-ref.json --frames 2 --metrics <out>\start.json
-target\release\agq-studio-native.exe --no-restore --session %TEMP%\agq-ref.json --fixture stress1000 --scenario stress --gpu-timestamps --scenario-report <out>\stress-1k.json
-target\release\agq-studio-native.exe --no-restore --session %TEMP%\agq-ref.json --fixture stress10000 --scenario stress --gpu-timestamps --scenario-report <out>\stress-10k.json
+target\release\agq-studio-native.exe --no-restore --session %TEMP%\agq-ref.json --fixture stress1000 --scenario stress --scenario-report <out>\stress-1k.json
+target\release\agq-studio-native.exe --no-restore --session %TEMP%\agq-ref.json --fixture stress10000 --scenario stress --scenario-report <out>\stress-10k.json
 ```
 
 The stress run exits 2 and names each budget it missed; at 10k it will until
@@ -1231,8 +1231,8 @@ launcher, and C-52's typed decisions, as recorded above.
 |---|---|---|
 | W11.1 Direction and self-model | #97 | C-53 recorded; Scenario J, §4.16, §6.8; `AGENTS.md` rule 10; `CLAUDE.md`; the self-model gains `Orchestrator` (locked, through a System State `Lock` change), the control and objective ports, `GatesDecide`, and the new contracts of `ClaudeAgentRuntime`, `Studio` and `Launcher` |
 | W11.2 The development runtime | `stage11/dev-runtime` | Built: protocol 2, the permission policy (companion hook and Rust policy), development sessions in the Conversation for projects with implementation links, DeepSeek's endpoint, steering, activity, costs; live development session passed on `deepseek-v4-pro` |
-| W11.3 The control interface | — | not started |
-| W11.4 Lifecycle | — | not started |
+| W11.3 The control interface | `stage11/control` | Built: the per-frame control registry (regions for the cached columns and the views inside them; controls in painting order, clipped to what is visible), observations, actions through real input and command dispatch, stale refusal (instance and the observed screen revision always; project, build and session when given; the selection is part of the screen), the Operator's own refused to agents where each effect happens (approval dialogs and the Operator's questions, Settings, the Conversation, locking, undo, appearance, the agents chip), whatever route reaches it, with an agent's changes recorded as the Assistant's, waits beside actions, expired requests dropped, the event trace, marks and the agents chip with Pause, Step, Resume, the local endpoint (`--control`; bounded lines and connections, an OS-random token), `observe_app` and `act_in_app`; the journey `control_journey` drives the real window through the endpoint, including the refusals |
+| W11.4 Lifecycle | `stage11/control` | Built: the supervising launcher (handover by exit code 75 and `handover.json`, which names a registered build, the session and the project; an exit without a valid handover counts as a crash; crash restart once, then the build that was last known good before it started; a crash an hour after starting counts as a first one), `--supervised` and `--adopted` in the Studio (also on the one-shot `--adopt` path), the check after adoption before the ready file, the Studio's work stopped before it hands over; continuation of objectives comes with W11.5 |
 | W11.5 The Orchestrator | — | not started |
 | W11.6 Typed decisions in operation | — | not started |
 | W11.7 Proof | — | not started |

@@ -120,7 +120,15 @@ impl OutlineView {
 }
 
 impl Render for OutlineView {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        // Its own region inside the cached left column, so the column
+        // painting again does not lose this view's controls (C-53).
+        crate::ui::target::regioned("left-body", self.content(window, cx))
+    }
+}
+
+impl OutlineView {
+    fn content(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement + use<> {
         self.rebuild(cx);
         let theme = cx.theme().clone();
         let rows = self.rows.clone();

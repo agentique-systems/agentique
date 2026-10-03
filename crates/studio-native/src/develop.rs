@@ -83,6 +83,8 @@ pub struct BuildsState {
     pub handover: Option<std::fs::File>,
     /// The Studio should end (after handing over).
     pub quit: bool,
+    /// The exit code when it ends: the supervisor's handover code.
+    pub exit: Option<i32>,
     /// The Operator chose "Use this build" for this build; the card asks
     /// once more.
     pub confirm_use: Option<String>,
@@ -168,7 +170,7 @@ impl Studio {
     /// --release` into the builds folder's own target folder, then the
     /// executables, their digests and the manifest.
     pub fn build_agentique(&mut self) {
-        if self.develop.work.is_some() {
+        if self.develop.work.is_some() || self.refused_to_agents("building Agentique") {
             return;
         }
         let Some(repository) = self.agentique_repository() else {
@@ -246,6 +248,9 @@ impl Studio {
     /// sessions and builds folder, on its own copy of the repository at the
     /// build's commit. The running Agentique and its data are untouched.
     pub fn try_build(&mut self, id: &str) {
+        if self.refused_to_agents("trying a build") {
+            return;
+        }
         let result = (|| -> Result<PathBuf, String> {
             let folder = self.builds_root().join(id);
             let manifest = Manifest::load(&folder)?;
@@ -334,6 +339,9 @@ impl Studio {
     /// on the same project, and falls back to the last known good build if
     /// it does not start. This process then ends.
     pub fn use_build(&mut self, id: &str) -> Result<(), String> {
+        if self.refused_to_agents("restarting in another build") {
+            return Err("restarting in another build is the Operator's own".into());
+        }
         if let Some(why) = self.adoption_blocker(id) {
             return Err(format!("{id} cannot be used: {why}."));
         }
@@ -354,6 +362,29 @@ impl Studio {
         if !launcher.is_file() {
             std::fs::copy(root.join(id).join(agq_launcher::LAUNCHER), &launcher)
                 .map_err(|e| format!("the launcher could not be installed: {e}"))?;
+        }
+        if self.args.supervised {
+            // The supervising launcher is this Studio's parent: it starts the
+            // build named here, on this session and the project open now,
+            // once this process has ended (C-53).
+            let mut args = vec![
+                "--adopted".to_string(),
+                id.to_string(),
+                "--session".to_string(),
+                self.session_path.display().to_string(),
+            ];
+            if let Some(project) = &self.project {
+                args.extend([
+                    "--project".to_string(),
+                    project.folder().display().to_string(),
+                ]);
+            }
+            agq_launcher::Handover::new(id, args).save(&root)?;
+            self.develop.exit = Some(agq_launcher::HANDOVER_EXIT);
+            self.develop.quit = true;
+            self.status = format!("Handing over to {id}…");
+            self.mark(Dirty::STATUS);
+            return Ok(());
         }
         let lock = root.join("handover.lock");
         let file = std::fs::File::create(&lock).map_err(|e| e.to_string())?;
@@ -435,8 +466,83 @@ impl Studio {
             return;
         }
         self.develop.ready_written = true;
+        // Started for an adoption: ready only once the check after adoption
+        // passed; otherwise end, so the launcher returns to the last known
+        // good build (C-53, ROADMAP §4.16).
+        if let Some(problem) = self.adoption_check() {
+            eprintln!("The check after adoption failed: {problem}");
+            self.control.close_endpoint();
+            std::process::exit(4);
+        }
         if let Some(path) = &self.args.ready_file {
             let _ = std::fs::write(path, "ready");
+        }
+    }
+
+    /// The check after adoption, when started for one: this process is the
+    /// adopted build (its manifest and executables), and the project the
+    /// session names opened. `None` when it passed or was not asked for.
+    pub fn adoption_check(&self) -> Option<String> {
+        let id = self.args.adopted.as_deref()?;
+        if self.running_build().as_deref() != Some(id) {
+            return Some(format!(
+                "this process is not the build {id} (it runs {})",
+                self.running_build()
+                    .as_deref()
+                    .unwrap_or("outside the builds folder")
+            ));
+        }
+        let folder = self.builds_root().join(id);
+        if let Err(problem) = Manifest::load(&folder).and_then(|m| m.matches(&folder)) {
+            return Some(problem);
+        }
+        // The project it was told to open, else the one its session names.
+        let expected = self.args.project.clone().or(self.session.project.clone());
+        if let Some(expected) = expected
+            && expected.join("model").is_dir()
+            && self.project.as_ref().map(|p| p.folder().to_path_buf()) != Some(expected.clone())
+        {
+            return Some(format!(
+                "the project {} did not open: {}",
+                expected.display(),
+                self.status
+            ));
+        }
+        None
+    }
+
+    /// Stops everything that runs (C-53, before a handover): the
+    /// Assistant's turn, a run, the implementation task and its checks, a
+    /// build; and waits up to `within` for them to end, so the processes
+    /// they started end with them. Returns what had not ended by then.
+    pub fn stop_work(&mut self, within: Duration) -> Vec<&'static str> {
+        self.end_turn();
+        self.stop_run();
+        self.stop_task();
+        self.stop_checks();
+        self.cancel_build();
+        let started = std::time::Instant::now();
+        loop {
+            self.poll_runs();
+            self.poll_task();
+            self.poll_checks();
+            self.poll_build();
+            let running: Vec<&'static str> = [
+                (self.runs.active.is_some(), "a run"),
+                (
+                    self.implementation.task.is_some(),
+                    "the implementation task",
+                ),
+                (self.implementation.checking(), "the checks"),
+                (self.develop.work.is_some(), "a build"),
+            ]
+            .into_iter()
+            .filter_map(|(running, what)| running.then_some(what))
+            .collect();
+            if running.is_empty() || started.elapsed() >= within {
+                return running;
+            }
+            std::thread::sleep(Duration::from_millis(20));
         }
     }
 

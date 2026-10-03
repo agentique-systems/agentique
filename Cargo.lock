@@ -224,6 +224,7 @@ dependencies = [
  "agq-studio-scene",
  "agq-system-state",
  "clap",
+ "getrandom 0.3.4",
  "gpui-base",
  "gpui-pre",
  "gpui-pre-platform",

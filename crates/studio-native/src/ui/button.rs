@@ -293,6 +293,8 @@ impl RenderOnce for Button {
                 this.child(KeyCaps::new(shortcut).on_solid(solid))
             });
         let name = self.label_for_screen_readers.clone().or(self.label.clone());
+        let id_text = self.id.to_string();
+        let (disabled, selected) = (self.disabled, self.selected);
         let mut button = gpui_base::Button::new(self.id)
             .group(group)
             .relative()
@@ -326,7 +328,12 @@ impl RenderOnce for Button {
             })
             .child(content)
             .when_some(name, |this, name| {
-                this.child(crate::ui::target::target(name))
+                this.child(crate::ui::target::control(
+                    crate::ui::target::Control::new("button", name)
+                        .id(id_text)
+                        .enabled(!disabled)
+                        .selected(selected),
+                ))
             });
         if let Some(label) = self.label_for_screen_readers.or(self.label) {
             button = button.accessibility_label(label);

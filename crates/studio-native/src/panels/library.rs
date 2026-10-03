@@ -421,6 +421,14 @@ fn marked(name: &str, positions: &[usize], colour: gpui::Hsla, mark: gpui::Hsla)
 
 impl Render for LibraryView {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        // Its own region inside the cached left column, so the column
+        // painting again does not lose this view's controls (C-53).
+        crate::ui::target::regioned("left-body", self.content(window, cx))
+    }
+}
+
+impl LibraryView {
+    fn content(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement + use<> {
         self.refresh(cx);
         // Ctrl+Shift+L and the palette ask for the search box.
         if self.studio.read(cx).library.focus_search {

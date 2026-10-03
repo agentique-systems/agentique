@@ -82,10 +82,18 @@ impl ParentElement for Dialog {
 impl RenderOnce for Dialog {
     fn render(self, _: &mut Window, cx: &mut App) -> impl IntoElement {
         let theme = cx.theme();
+        let record =
+            crate::ui::target::Control::new("dialog", self.title.clone()).id(self.id.to_string());
+        let record = match &self.description {
+            Some(text) => record.value(text.clone()),
+            None => record,
+        };
         let panel = div()
             .id(self.id.clone())
             .role(gpui::Role::Dialog)
             .aria_label(self.title.clone())
+            .relative()
+            .child(crate::ui::target::control(record))
             .occlude()
             .w(r(self.width))
             .max_w_full()

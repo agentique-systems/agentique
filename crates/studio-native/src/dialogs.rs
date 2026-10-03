@@ -230,6 +230,13 @@ impl DialogsView {
 
     fn cancel(&mut self, _: &mut Window, cx: &mut Context<Self>) {
         self.studio.act(cx, |studio| {
+            // Refusing the Operator's change, or answering the Operator's
+            // approval, is theirs too (C-53).
+            if let Some(kind) = crate::control::approval(studio)
+                && studio.refused_to_agents(&format!("answering the {kind} dialog"))
+            {
+                return;
+            }
             if matches!(studio.dialog, Some(Dialog::Confirm { .. })) {
                 // Cancel and Escape refuse the change.
                 studio.answer(false);
@@ -249,6 +256,13 @@ impl DialogsView {
         let owners = self.owners(cx);
         let chosen = self.chosen;
         self.studio.act(cx, |studio| {
+            // The Operator's approvals stay the Operator's, whatever reached
+            // this button (C-53).
+            if let Some(kind) = crate::control::approval(studio)
+                && studio.refused_to_agents(&format!("answering the {kind} dialog"))
+            {
+                return;
+            }
             let Some(dialog) = studio.dialog.take() else {
                 return;
             };
@@ -815,6 +829,11 @@ impl Render for DialogsView {
                                     Button::new("confirm-specialize", "Specialise instead")
                                         .on_click(move |_: &ClickEvent, _, cx| {
                                             studio.act(cx, |studio| {
+                                                if studio.refused_to_agents(
+                                                    "answering the Operator's own question",
+                                                ) {
+                                                    return;
+                                                }
                                                 studio.dialog = None;
                                                 studio.start_specialize(usage);
                                                 studio.mark(Dirty::ALL);

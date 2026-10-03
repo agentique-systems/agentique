@@ -396,6 +396,7 @@ impl Studio {
     /// Applies an Operator change. A change to locked elements, or to a
     /// port shared through a definition, asks for confirmation first.
     pub fn submit(&mut self, change: Change) -> Option<ChangeEvent> {
+        let change = self.attributed(change);
         if let Some(definition) = self.shared_definition()
             && let Some(port) = self.inspected_element()
             && touches(&change, port)
@@ -437,8 +438,21 @@ impl Studio {
     /// Applies a change without asking about shared definitions: the one
     /// path for the Operator's and the Assistant's changes. A change to
     /// locked elements opens the confirmation; the Operator's answer
-    /// ([`answer`](Self::answer)) decides.
+    /// ([`answer`](Self::answer)) decides. A change made while an agent's
+    /// action is carried out through the control interface is the
+    /// Assistant's, naming the agent, whatever control made it (C-53).
     pub fn apply_change(&mut self, change: Change) -> Outcome {
+        let change = self.attributed(change);
+        let locks = change
+            .operations
+            .iter()
+            .any(|o| matches!(o, Operation::Lock { .. } | Operation::Unlock { .. }));
+        if locks && self.refused_to_agents("locking and unlocking") {
+            return Outcome::NotApplied(ApplyError::Rejection(Rejection::Invalid {
+                operation: 0,
+                reason: "locking and unlocking are the Operator's own".into(),
+            }));
+        }
         let Some(project) = self.project.as_mut() else {
             return Outcome::NoProject;
         };
@@ -516,6 +530,21 @@ impl Studio {
                 Outcome::NotApplied(ApplyError::Project(error))
             }
         }
+    }
+
+    /// `change` as the Assistant's, naming the agent, when an agent's action
+    /// made it (C-53).
+    fn attributed(&self, mut change: Change) -> Change {
+        if let Some(agent) = &self.control.acting
+            && change.actor == Actor::Operator
+        {
+            change.actor = Actor::Assistant;
+            let by = format!(" (by {agent})");
+            if agent != "Assistant" && !change.description.ends_with(&by) {
+                change.description = format!("{}{by}", change.description);
+            }
+        }
+        change
     }
 
     pub fn operation(&mut self, description: &str, operation: Operation) -> Option<ChangeEvent> {
@@ -785,6 +814,15 @@ impl Studio {
     /// confirmed, at the revision it was asked at; no leaves the model as it
     /// is. For the Assistant's change, the outcome is its tool result.
     pub fn answer(&mut self, yes: bool) {
+        // A change to locked elements, and the Operator's own question, are
+        // the Operator's to confirm (C-53).
+        if yes
+            && let Some(Dialog::Confirm { change, locked, .. }) = &self.dialog
+            && (!locked.is_empty() || change.actor == Actor::Operator)
+            && self.refused_to_agents("confirming this change")
+        {
+            return;
+        }
         let Some(Dialog::Confirm {
             mut change,
             locked,
@@ -1208,7 +1246,7 @@ pub(crate) mod app_tests {
         assert!(app.scene.nodes.len() > 5, "the sample is on the Surface");
     }
 
-    fn part(app: &mut Studio, name: &str) -> ElementId {
+    pub(crate) fn part(app: &mut Studio, name: &str) -> ElementId {
         let package = app
             .project
             .as_ref()
