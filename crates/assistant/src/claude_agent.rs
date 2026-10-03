@@ -621,6 +621,13 @@ impl ClaudeAgent {
 /// to it, and a conversation cut back by an edit or a retry continues from
 /// the right one.
 pub fn session_to_resume(conversation: &Conversation) -> Option<String> {
+    session_to_resume_in(conversation, None)
+}
+
+/// [`session_to_resume`] for a session working in `folder` (a development
+/// session's), since the SDK finds a session only in the folder it was made
+/// in: a session made elsewhere is handed over instead.
+pub fn session_to_resume_in(conversation: &Conversation, folder: Option<&str>) -> Option<String> {
     let entries = &conversation.entries;
     // The Operator's message for this turn is the last entry.
     let current = entries
@@ -640,7 +647,9 @@ pub fn session_to_resume(conversation: &Conversation) -> Option<String> {
         matches!(entries.get(i + 1), Some(Entry::Session { runtime, .. }) if runtime == RUNTIME)
     });
     let id = match &entries[session] {
-        Entry::Session { id, .. } => id.clone(),
+        Entry::Session {
+            id, folder: made, ..
+        } if made.as_deref() == folder => id.clone(),
         _ => return None,
     };
     (all_ours && !id.is_empty()).then_some(id)
@@ -889,7 +898,11 @@ impl Runtime for ClaudeAgent {
                 return;
             }
         }
-        let resume = session_to_resume(turn.conversation);
+        let folder = self
+            .development
+            .as_ref()
+            .map(|d| d.cwd.display().to_string());
+        let resume = session_to_resume_in(turn.conversation, folder.as_deref());
         let message = match &resume {
             Some(_) => format!(
                 "{prompt}\n\n(Agentique: this continues your earlier session. The model and the code may have changed since; read them again before you change anything.)"
@@ -972,6 +985,10 @@ impl Runtime for ClaudeAgent {
         }
         let steering = self.steering.clone();
         let mut starting = true;
+        // The SDK sends a reply's content blocks as messages of their own,
+        // with the reply's id: the results of a reply's calls are flushed
+        // only when the next reply begins.
+        let mut reply_id: Option<String> = None;
         let mut interrupted = false;
         let mut interrupted_at: Option<std::time::Instant> = None;
         let mut ended = false;
@@ -989,7 +1006,7 @@ impl Runtime for ClaudeAgent {
                     break;
                 }
             }
-            if !interrupted {
+            if !interrupted && !ended {
                 let (messages, gate) = steering.take(starting);
                 starting = false;
                 for text in messages {
@@ -1030,6 +1047,7 @@ impl Runtime for ClaudeAgent {
                             "started"
                         }
                         .into(),
+                        folder: folder.clone(),
                     });
                     self.effective = Some(effective);
                     if !problems.is_empty() {
@@ -1053,7 +1071,14 @@ impl Runtime for ClaudeAgent {
                     ));
                 }
                 "assistant" => {
-                    turn.flush_results("Not run: the runtime went on without it.");
+                    let id = message["id"]
+                        .as_str()
+                        .filter(|i| !i.is_empty())
+                        .map(str::to_string);
+                    if id.is_none() || id != reply_id {
+                        turn.flush_results("Not run: the runtime went on without it.");
+                    }
+                    reply_id = id;
                     let content = blocks(&message["content"]);
                     if !content.is_empty() {
                         for block in content.iter().filter(|b| b["type"] == "tool_use") {
@@ -1271,6 +1296,15 @@ impl Runtime for ClaudeAgent {
             }
         }
         turn.flush_results("Not run: the runtime stopped.");
+        // Messages the Operator added after the turn had ended never reached
+        // it: say so, so they can be sent again.
+        let undelivered = steering.clear_messages();
+        if !undelivered.is_empty() {
+            turn.notice(&format!(
+                "Not delivered (the turn had ended): {}. Send it again.",
+                undelivered.join(" · ")
+            ));
+        }
         if !turn.text.trim().is_empty() {
             // Text that streamed in before the runtime stopped stays.
             let text = json!({ "type": "text", "text": turn.text.trim_end() });
@@ -1385,7 +1419,28 @@ mod tests {
             runtime: RUNTIME.into(),
             id: id.into(),
             event: "started".into(),
+            folder: None,
         }
+    }
+
+    #[test]
+    fn a_session_is_resumed_only_in_the_folder_it_was_made_in() {
+        let mut conversation = Conversation::default();
+        conversation.entries.push(operator("Begin."));
+        conversation.entries.push(Entry::Session {
+            runtime: RUNTIME.into(),
+            id: "s-repo".into(),
+            event: "started".into(),
+            folder: Some("C:/work/agentique".into()),
+        });
+        conversation.entries.push(operator("Go on."));
+        assert_eq!(
+            session_to_resume_in(&conversation, Some("C:/work/agentique")),
+            Some("s-repo".into())
+        );
+        // In another folder (or the runtime's own) it is handed over.
+        assert_eq!(session_to_resume_in(&conversation, None), None);
+        assert_eq!(session_to_resume_in(&conversation, Some("D:/other")), None);
     }
 
     fn said(text: &str) -> Entry {

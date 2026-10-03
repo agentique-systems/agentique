@@ -16,6 +16,7 @@
 // These are gates on what the agent can do; they are not an operating-system
 // sandbox, and the Studio's own checks still decide every model change.
 
+import { existsSync, realpathSync } from "node:fs";
 import type { Policy, StartOptions } from "./protocol.ts";
 
 /** The MCP server's name: tools are `mcp__agentique__<name>`. */
@@ -80,10 +81,15 @@ const SESSION_TOOLS = new Set([
   "ExitPlanMode",
   "ListMcpResourcesTool",
   "ReadMcpResourceTool",
-  "Monitor",
+  "ReadMcpResourceDir",
+  "RefreshMcpTools",
   "SendMessage",
   "ListAgents",
   "ReportFindings",
+  "TaskCreate",
+  "TaskGet",
+  "TaskUpdate",
+  "TaskList",
 ]);
 
 const READ_TOOLS: Record<string, string[]> = {
@@ -121,6 +127,37 @@ export function agentiqueTool(name: string, allowed: readonly string[]): string 
 // Paths: read the same way on every host (`/` and `\` both separate), so the
 // policy's tests mean the same on Windows and Linux.
 
+/** A Windows verbatim path (`\\?\C:\x`, `\\?\UNC\s\x`) in its ordinary form. */
+function verbatimless(path: string): string {
+  const unc = /^[\\/]{2}\?[\\/]UNC[\\/]/i;
+  if (unc.test(path)) {
+    return `\\\\${path.replace(unc, "")}`;
+  }
+  return path.replace(/^[\\/]{2}\?[\\/]/, "");
+}
+
+/**
+ * The path as the file system resolves it: the nearest part of it that
+ * exists, through links, junctions and short (8.3) names, with the rest
+ * after it. A path that cannot be resolved is left as written.
+ */
+export function real(path: string, cwd: string): string {
+  const written = normalise(path, cwd);
+  const parts = written.split("/");
+  for (let end = parts.length; end > 1; end--) {
+    const head = parts.slice(0, end).join("/") || "/";
+    try {
+      if (existsSync(head)) {
+        const resolved = normalise(realpathSync.native(head), cwd);
+        return [resolved, ...parts.slice(end)].join("/").replace(/\/+$/, "") || resolved;
+      }
+    } catch {
+      return written;
+    }
+  }
+  return written;
+}
+
 function isAbsolute(path: string): boolean {
   return /^[A-Za-z]:[\\/]/.test(path) || path.startsWith("/") || path.startsWith("\\");
 }
@@ -136,7 +173,7 @@ function foldsCase(path: string): boolean {
  * A `..` above the root stays at the root.
  */
 export function normalise(path: string, cwd: string): string {
-  const full = isAbsolute(path) ? path : `${cwd}/${path}`;
+  const full = verbatimless(isAbsolute(path) ? path : `${cwd}/${path}`);
   const drive = /^[A-Za-z]:/.test(full) ? full.slice(0, 2) : "";
   const parts: string[] = [];
   for (const part of full.slice(drive.length).split(/[\\/]+/)) {
@@ -161,12 +198,20 @@ function inside(path: string, root: string): boolean {
 /** `path` relative to the first of `roots` it is inside, or null. */
 function relativeTo(path: string, roots: string[], cwd: string): string | null {
   for (const root of roots) {
-    const r = normalise(root, cwd);
-    if (inside(path, r)) {
-      return path.slice(r.length).replace(/^\//, "");
+    for (const r of [normalise(root, cwd), real(root, cwd)]) {
+      if (inside(path, r)) {
+        return path.slice(r.length).replace(/^\//, "");
+      }
     }
   }
   return null;
+}
+
+/** A name Windows reads differently from how it is written: a stream
+ * (`a:b`), or a trailing dot or space. */
+function trickyName(path: string): string | null {
+  const parts = path.replace(/^[A-Za-z]:/, "").split(/[\\/]+/);
+  return parts.find((p) => p.includes(":") || /[. ]$/.test(p)) ?? null;
 }
 
 /** Whether a relative path matches a policy pattern (see `Policy`). */
@@ -176,7 +221,9 @@ export function matches(relative: string, pattern: string): boolean {
   if (!/[*?]/.test(p)) {
     return r === p || r.startsWith(`${p}/`);
   }
-  const source = p
+  const anywhere = p.startsWith("**/");
+  const body = anywhere ? p.slice(3) : p;
+  const source = body
     .split("**")
     .map((piece) =>
       piece
@@ -185,7 +232,7 @@ export function matches(relative: string, pattern: string): boolean {
         .join("[^/]*"),
     )
     .join(".*");
-  return new RegExp(`^${source}(/.*)?$`).test(r);
+  return new RegExp(`^${anywhere ? "(.*/)?" : ""}${source}(/.*)?$`).test(r);
 }
 
 /** What the policy says about one call. */
@@ -228,11 +275,18 @@ export function decide(
   if (tool in READ_TOOLS) {
     for (const field of READ_TOOLS[tool]) {
       const value = input[field];
-      const path = normalise(typeof value === "string" && value !== "" ? value : ".", cwd);
+      const path = real(typeof value === "string" && value !== "" ? value : ".", cwd);
       const decision = hiddenOrOutside(path, policy, cwd);
       if (decision.kind !== "allow") {
         return decision;
       }
+    }
+    // A search over hidden files is refused by the deny rules the SDK is
+    // given (they become ripgrep exclusions); a glob naming one is refused
+    // here too.
+    const pattern = typeof input.glob === "string" ? input.glob : typeof input.pattern === "string" && tool === "Glob" ? input.pattern : "";
+    if (pattern && policy.hidden.some((h) => matches(pattern.replace(/^\.\//, ""), h) || pattern.includes(h.replace(/^\*\*\//, "")))) {
+      return { kind: "deny", reason: `${pattern} names files that can hold keys; they are not read in this session` };
     }
     return allow;
   }
@@ -241,7 +295,11 @@ export function decide(
     if (typeof value !== "string" || value === "") {
       return { kind: "deny", reason: `${tool} needs a file path` };
     }
-    const path = normalise(value, cwd);
+    const tricky = trickyName(value);
+    if (tricky !== null) {
+      return { kind: "deny", reason: `${value}: the name ${tricky} is read differently by Windows; write the plain path` };
+    }
+    const path = real(value, cwd);
     const relative = relativeTo(path, policy.write, cwd);
     if (relative === null) {
       return { kind: "deny", reason: `${value} is outside the folders this session may write` };
@@ -268,14 +326,32 @@ export function decide(
   if (tool === "WebFetch" || tool === "WebSearch") {
     return policy.network ? allow : { kind: "deny", reason: "The network is off for this session" };
   }
+  if (tool === "Monitor") {
+    // Monitor runs a command or watches a socket: the same checks as those.
+    if (typeof input.command === "string" && input.command !== "") {
+      const decision = decide("Bash", { command: input.command }, policy, cwd, tools);
+      if (decision.kind !== "allow") {
+        return decision;
+      }
+    }
+    if ((typeof input.ws === "string" && input.ws !== "") || (typeof input.url === "string" && input.url !== "")) {
+      if (!policy.network) {
+        return { kind: "deny", reason: "The network is off for this session" };
+      }
+    }
+    return allow;
+  }
+  if ((tool === "Agent" || tool === "Task") && input.isolation !== undefined && input.isolation !== null) {
+    return { kind: "deny", reason: "Subagents work in this session's folder; worktrees and remote runs are the Orchestrator's" };
+  }
   if (SESSION_TOOLS.has(tool)) {
     return allow;
   }
-  const server = /^mcp__(.+?)__/.exec(tool)?.[1];
-  if (server !== undefined && server !== SERVER) {
-    return policy.mcpServers.includes(server)
+  if (tool.startsWith("mcp__")) {
+    const named = policy.mcpServers.find((s) => tool.startsWith(`mcp__${s}__`) && !tool.slice(`mcp__${s}__`.length).includes("__"));
+    return named !== undefined
       ? allow
-      : { kind: "ask", reason: `${tool} belongs to the MCP server ${server}, which this session was not given` };
+      : { kind: "ask", reason: `${tool} belongs to an MCP server this session was not given` };
   }
   return { kind: "ask", reason: `${tool} is not covered by this session's permission policy` };
 }
@@ -326,6 +402,9 @@ export function agentEnvironment(
       if (value !== undefined && !SECRET.test(name) && !PARENT_SESSION.test(name)) {
         env[name] = value;
       }
+    }
+    if (!options.policy.network) {
+      env.CARGO_NET_OFFLINE = "true";
     }
     // The model's key stays out of the environment of the session's commands,
     // hooks and MCP servers (measured on 2026-10-03: without this a command
@@ -381,6 +460,8 @@ export function deny(reason: string) {
 export interface HookHost {
   /** Waits while the session is paused; resolves when the call may go on. */
   gate(tool: string): Promise<void>;
+  /** Why the turn was stopped, or null while it runs. */
+  stopped(): string | null;
   /** Asks the Studio about a call the policy does not decide. */
   ask(tool: string, input: Record<string, unknown>, reason: string, signal?: AbortSignal): Promise<{ allow: boolean; message: string }>;
 }
@@ -395,7 +476,7 @@ export function sdkOptions(
   abort: AbortController,
   env: Record<string, string>,
   onStderr: (line: string) => void,
-  host: HookHost = { gate: async () => {}, ask: async () => ({ allow: false, message: "Nobody can answer." }) },
+  host: HookHost = { gate: async () => {}, stopped: () => null, ask: async () => ({ allow: false, message: "Nobody can answer." }) },
 ) {
   const names = start.tools.map((t) => t.name);
   const common = {
@@ -443,7 +524,8 @@ export function sdkOptions(
                   return deny(`${input.tool_name} is not one of Agentique's tools.`);
                 }
                 await host.gate(input.tool_name ?? "");
-                return { continue: true };
+                const stopped = host.stopped();
+                return stopped === null ? { continue: true } : deny(`Not run: ${stopped}.`);
               },
             ],
           },
@@ -463,8 +545,20 @@ export function sdkOptions(
   return {
     ...common,
     tools: { type: "preset" as const, preset: "claude_code" as const },
-    disallowedTools: DEVELOPMENT_DISALLOWED,
+    // Key files are also denied to the SDK's own Read rules, which its
+    // search turns into exclusions.
+    disallowedTools: [...DEVELOPMENT_DISALLOWED, ...policy.hidden.map((h) => `Read(${h})`)],
     additionalDirectories: extraRead,
+    // The highest settings layer: the project's own settings cannot turn the
+    // key scrub off or send the key elsewhere, and without trusted-local
+    // execution their hooks (commands) do not run.
+    settings: {
+      env: {
+        CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: "1",
+        ...(start.endpoint !== null ? { ANTHROPIC_BASE_URL: start.endpoint.baseUrl } : {}),
+      },
+      ...(policy.commands ? {} : { disableAllHooks: true }),
+    },
     // Everything the policy allows is allowed by the hook; the SDK asks
     // (through `canUseTool`) only about what the hook leaves undecided.
     permissionMode: "default" as const,
@@ -480,6 +574,8 @@ export function sdkOptions(
     hooks: {
       PreToolUse: [
         {
+          // Pause holds a call inside this hook: a day, not the default.
+          timeout: 86_400,
           hooks: [
             async (input: { tool_name?: string; tool_input?: unknown }) => {
               const tool = input.tool_name ?? "";
@@ -489,6 +585,11 @@ export function sdkOptions(
                 return deny(decision.reason);
               }
               await host.gate(tool);
+              // Stopped while it was held: the call does not run.
+              const stopped = host.stopped();
+              if (stopped !== null) {
+                return deny(`Not run: ${stopped}.`);
+              }
               if (decision.kind === "allow") {
                 return hookAnswer("allow", "allowed by the session's permission policy");
               }

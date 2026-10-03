@@ -5,7 +5,7 @@
 
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { type McpFactory, type Sdk, Turn, resultText } from "../src/bridge.ts";
+import { type McpFactory, type Sdk, Turn, resultText, usage } from "../src/bridge.ts";
 import {
   DEVELOPMENT_DISALLOWED,
   agentEnvironment,
@@ -21,7 +21,7 @@ const policy: Policy = {
   read: ["C:\\work\\agentique"],
   write: ["C:\\work\\agentique"],
   protected: ["model/*.sysml", "model/agentique.json", "model/links.json", ".git", "standards"],
-  hidden: [".env", "**/*.pem"],
+  hidden: ["**/.env", "**/*.pem", "**/id_rsa*"],
   commands: true,
   refusedCommands: [
     { pattern: "\\bgit\\s+push\\b[^\\n]*(--force|\\s-f\\b)", reason: "Force-pushing rewrites shared history." },
@@ -142,6 +142,7 @@ test("a development session gets the SDK's tools, the project's settings and the
   const asked: string[] = [];
   const options = sdkOptions(start, {}, new AbortController(), {}, () => {}, {
     gate: async () => {},
+    stopped: () => null,
     ask: async (tool) => {
       asked.push(tool);
       return { allow: true, message: "" };
@@ -156,7 +157,14 @@ test("a development session gets the SDK's tools, the project's settings and the
   assert.deepEqual(options.allowedTools, [qualified("read_model"), qualified("apply_changes")]);
   assert.deepEqual(Object.keys(options.agents), ["reviewer"]);
   assert.equal(options.thinking, undefined, "an endpoint gets its model's own thinking");
-  assert.deepEqual(options.disallowedTools, DEVELOPMENT_DISALLOWED);
+  assert.deepEqual(options.disallowedTools.slice(0, DEVELOPMENT_DISALLOWED.length), DEVELOPMENT_DISALLOWED);
+  assert.ok(options.disallowedTools.includes("Read(**/.env)"), "key files are denied to the SDK's own rules too");
+  assert.equal(options.settings.env.CLAUDE_CODE_SUBPROCESS_ENV_SCRUB, "1", "the project's settings cannot turn the scrub off");
+  assert.equal(options.settings.env.ANTHROPIC_BASE_URL, "https://api.deepseek.com/anthropic");
+  assert.equal(options.settings.disableAllHooks, undefined, "with trusted-local execution the project's hooks run");
+  assert.equal(options.hooks.PreToolUse[0].timeout, 86_400, "Pause can hold a call for long");
+  const untrusted = sdkOptions({ ...start, policy: { ...policy, commands: false } }, {}, new AbortController(), {}, () => {});
+  assert.equal((untrusted as { settings: { disableAllHooks?: boolean } }).settings.disableAllHooks, true, "without it, no project hook runs");
   const hook = options.hooks.PreToolUse[0].hooks[0];
   const answer = async (tool: string, input: Record<string, unknown>) =>
     ((await hook({ tool_name: tool, tool_input: input })) as { hookSpecificOutput: { permissionDecision: string } }).hookSpecificOutput.permissionDecision;
@@ -290,4 +298,104 @@ test("a call the policy leaves undecided is asked of the Studio, and its answer 
   assert.deepEqual(decision, { behavior: "deny", message: "Not today." });
   const question = sent.find((m) => m.type === "permission");
   assert.equal(question?.type === "permission" && question.tool, "Read");
+});
+
+// Regression tests from the review of PR #98.
+
+test("Monitor is judged as the command or socket it runs", () => {
+  assert.equal(decide("Monitor", { command: "cargo test" }, policy, cwd, tools).kind, "allow");
+  assert.equal(decide("Monitor", { command: "git push --force" }, policy, cwd, tools).kind, "deny");
+  assert.equal(decide("Monitor", { command: "ls" }, { ...policy, commands: false }, cwd, tools).kind, "deny");
+  assert.equal(decide("Monitor", { ws: "wss://example.com" }, policy, cwd, tools).kind, "deny", "the network is off");
+  assert.equal(decide("Monitor", { ws: "wss://example.com" }, { ...policy, network: true }, cwd, tools).kind, "allow");
+});
+
+test("Windows verbatim paths are the paths they name", () => {
+  assert.equal(normalise("\\\\?\\C:\\work\\agentique\\src\\a.rs", "D:\\"), "c:/work/agentique/src/a.rs");
+  const verbatim = { ...policy, read: ["\\\\?\\C:\\work\\agentique"], write: ["\\\\?\\C:\\work\\agentique"] };
+  assert.equal(decide("Write", { file_path: "C:\\work\\agentique\\src\\a.rs" }, verbatim, "\\\\?\\C:\\work\\agentique", tools).kind, "allow");
+  assert.equal(decide("Read", { file_path: "src/a.rs" }, verbatim, "\\\\?\\C:\\work\\agentique", tools).kind, "allow");
+});
+
+test("key files are hidden wherever they are, and names Windows reads differently are refused", () => {
+  for (const file of ["server.pem", "id_rsa", "crates/x/.env", ".env", "a/b/c.pem"]) {
+    assert.equal(decide("Read", { file_path: file }, policy, cwd, tools).kind, "deny", file);
+  }
+  assert.equal(decide("Read", { file_path: ".env.example" }, policy, cwd, tools).kind, "allow");
+  assert.equal(decide("Grep", { pattern: "KEY", glob: "**/*.pem" }, policy, cwd, tools).kind, "deny");
+  assert.equal(decide("Write", { file_path: "model\\agentique.json::$DATA" }, policy, cwd, tools).kind, "deny");
+  assert.equal(decide("Write", { file_path: "notes.txt." }, policy, cwd, tools).kind, "deny");
+  assert.equal(decide("Write", { file_path: "notes.txt " }, policy, cwd, tools).kind, "deny");
+});
+
+test("subagents stay in the session's folder, and MCP servers are named exactly", () => {
+  assert.equal(decide("Agent", { prompt: "x", isolation: "worktree" }, policy, cwd, tools).kind, "deny");
+  assert.equal(decide("Agent", { prompt: "x" }, policy, cwd, tools).kind, "allow");
+  assert.equal(decide("mcp__docs__search", {}, policy, cwd, tools).kind, "allow");
+  assert.equal(decide("mcp__docs__evil__x", {}, policy, cwd, tools).kind, "ask");
+  assert.equal(decide("TaskList", {}, policy, cwd, tools).kind, "allow");
+});
+
+test("a queued message the SDK folds into the running turn ends with that turn", async () => {
+  const sent: CompanionMessage[] = [];
+  let turn: Turn;
+  const { sdk, mcp } = standIn(async function* ({ prompt }) {
+    await prompt.next();
+    turn.queue("Also update the README.");
+    await prompt.next();
+    // One result for both messages; nothing left queued.
+    yield { type: "result", subtype: "success", is_error: false, session_id: "s1", queued_turn_count: 0 };
+    await new Promise((r) => setTimeout(r, 5000));
+    throw new Error("must not be reached: the turn ended at the folded result");
+  });
+  turn = new Turn((m) => sent.push(m), sdk, mcp, {}, "agentique/test");
+  const started = Date.now();
+  await turn.run(start);
+  assert.ok(Date.now() - started < 2000, "it did not hang");
+  assert.equal(sent.filter((m) => m.type === "result").length, 1);
+});
+
+test("background work keeps the turn open until it ends", async () => {
+  const sent: CompanionMessage[] = [];
+  const { sdk, mcp } = standIn(async function* ({ prompt }) {
+    await prompt.next();
+    yield { type: "system", subtype: "task_started", task_id: "b1", description: "Run the long tests", is_backgrounded: true };
+    yield { type: "result", subtype: "success", is_error: false, session_id: "s1", queued_turn_count: 0 };
+    yield { type: "system", subtype: "task_notification", task_id: "b1", status: "completed", summary: "All pass", output_file: "x" };
+    yield { type: "result", subtype: "success", is_error: false, session_id: "s1", queued_turn_count: 0 };
+  });
+  await new Turn((m) => sent.push(m), sdk, mcp, {}, "agentique/test").run(start);
+  assert.deepEqual(sent.map((m) => m.type), ["task", "result", "task", "result"]);
+});
+
+test("a call held at the pause gate does not run when the turn is stopped", async () => {
+  let turn: Turn;
+  let answer: unknown = null;
+  const { sdk, mcp } = standIn(async function* ({ options, prompt }) {
+    await prompt.next();
+    const hook = (options.hooks as { PreToolUse: { hooks: ((i: unknown) => Promise<unknown>)[] }[] }).PreToolUse[0].hooks[0];
+    turn.setGate("pause");
+    const held = hook({ tool_name: "Bash", tool_input: { command: "cargo test" } });
+    await new Promise((r) => setTimeout(r, 10));
+    void turn.stop("stopped by the Operator");
+    answer = await held;
+    yield { type: "result", subtype: "error_during_execution", is_error: true, session_id: "s1" };
+  });
+  turn = new Turn(() => {}, sdk, mcp, {}, "agentique/test");
+  await turn.run(start);
+  assert.equal((answer as { hookSpecificOutput: { permissionDecision: string } }).hookSpecificOutput.permissionDecision, "deny");
+});
+
+test("usage covers every model the turn used", () => {
+  assert.deepEqual(
+    usage(
+      {
+        "deepseek-v4-pro": { inputTokens: 100, outputTokens: 10, cacheReadInputTokens: 50, cacheCreationInputTokens: 0 },
+        "deepseek-flash": { inputTokens: 20, outputTokens: 5, cacheReadInputTokens: 0, cacheCreationInputTokens: 0 },
+      },
+      { input_tokens: 1, output_tokens: 1 },
+    ),
+    { inputTokens: 120, outputTokens: 15, cacheReadTokens: 50, cacheWriteTokens: 0 },
+  );
+  assert.deepEqual(usage(undefined, { input_tokens: 3, output_tokens: 2 }), { inputTokens: 3, outputTokens: 2, cacheReadTokens: 0, cacheWriteTokens: 0 });
 });

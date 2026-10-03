@@ -1248,7 +1248,7 @@ exercised by a test.
 | Capability (Claude Code CLI) | Before | Now |
 |---|---|---|
 | Coding and reasoning model | Anthropic models with an Anthropic key only | Anthropic, or DeepSeek's Anthropic-compatible endpoint (`deepseek-v4-pro`, `deepseek-flash` for small tasks) with the DeepSeek key: *live* on `deepseek-v4-pro`; Anthropic not tried (no key) |
-| File search, read, edit, write | Off | The SDK's own tools in the repository, held to the policy's folders; model files, agent configuration, `.git` and the links' protected paths refused with the reason: *live* (edit made, model-file edit refused naming `apply_changes`) |
+| File search, read, edit, write | Off | The SDK's own tools in the repository, held to the policy's folders, judged on the real path (links, junctions, short names) and refusing stream or trailing-dot names; model files, agent configuration, `.git` and the links' protected paths refused with the reason; key files hidden at any depth (also as the SDK's own Read deny rules for its search): *live* (edit made, model-file edit refused naming `apply_changes`) |
 | Commands (Bash, PowerShell) | Off | On with trusted-local execution; standard refusals (force-push, push to `main`, merging, repository changes on GitHub, global git configuration, key files, writing model files; in the Operator's working copy, discarding work); not confined to a folder: *live* (a `node` command), refusals *tested* in Rust and the companion |
 | Builds and tests | Only through a task worker's allowed programs | Through commands as above (Cargo, Python, Node with the Operator's toolchains and home folder): *configured*; exercised in W11.5's cycles |
 | Git and GitHub | Integration by the Studio only | Reading git and local commits; pushing refused in the Conversation; merging refused for agents; pushes and pull requests are the Orchestrator's (W11.5): *tested* |
@@ -1257,13 +1257,13 @@ exercised by a test.
 | MCP servers | Agentique's only | Agentique's, plus servers a policy names (none by default): *tested* |
 | Project instructions | Off | `CLAUDE.md` importing `AGENTS.md`, loaded (`settingSources: ["project"]`): *configured*; seen live in the 2026-10-03 spike |
 | Skills | Off | The project's skills (`skills: "all"` with project settings): *configured*; this repository has none yet |
-| Hooks | One hook that denies everything else | The policy's hook; the project's own hooks load with its settings (none yet), protected from changes unless an objective names them: *tested* |
+| Hooks | One hook that denies everything else | The policy's hook (it re-checks Stop after a pause, and holds a paused call for up to a day); the project's own hooks run only with trusted-local execution, and the agent configuration (`.claude/`, `.mcp.json`, `CLAUDE.md`, `AGENTS.md`) is protected unless an objective names it: *tested* |
 | Persistent context | Off | Project instructions; auto memory stays off (C-40): *configured* |
 | Compaction | The SDK's, not shown | The SDK's, as a notice with the token counts: *tested* |
 | Resumable sessions | Each turn forks the session it continues | The same: *live* (the second turn resumed and answered from memory) |
-| Long-running work | 40 model calls a turn, no background commands | Background commands and task notifications reported; the Conversation's bound stays 40 calls a turn (objectives set their own, W11.5): *tested* |
+| Long-running work | 40 model calls a turn, no background commands | Background subagents and commands keep the turn open until they end (at most 30 minutes), and their start and end are reported; queued messages may fold into the running turn (the SDK's own count of pending sends decides when it ends); the Conversation's bound stays 40 calls a turn (objectives set their own, W11.5): *tested* |
 | Permissions | `dontAsk`, Agentique's tools only | The policy's hook allows, refuses, or asks; a question goes to the Operator as a card with Allow / Don't allow and is recorded; objectives refuse instead of asking: *tested* |
 | Web fetch and search | Off | Fetch when the project allows the network; search only where the endpoint offers it (Anthropic; DeepSeek ignores server tools): *configured* |
 | Steering | Stop only | Queued messages ("Add" while it works), Pause before the next tool call, Step, Resume, Stop: *tested* (stand-in and companion) |
 | Keys | The Anthropic key in the companion's environment | The model's key only, kept out of the session's commands, hooks and MCP servers (`CLAUDE_CODE_SUBPROCESS_ENV_SCRUB`, measured with and without on 2026-10-03) |
-| Cost | The SDK's estimate | From usage at the model's own price (DeepSeek's dated table, peak price): *tested* |
+| Cost | The SDK's estimate | From the usage of every model a turn used (subagents, compaction and small tasks included), at the main model's price, which is the higher (DeepSeek's dated table, peak price): *tested* |

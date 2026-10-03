@@ -38,6 +38,9 @@ pub type RuntimeSource = Box<dyn Fn() -> Box<dyn agq_assistant::Runtime>>;
 #[derive(Default)]
 pub struct RuntimeInputs {
     pub development: Option<agq_assistant::policy::Development>,
+    /// Who steers the runtime: the Conversation's turn shares the panel's
+    /// steering; anything else (a task's worker) gets its own.
+    pub steering: Option<agq_assistant::policy::Steering>,
 }
 
 /// The Conversation panel's state.
@@ -480,10 +483,17 @@ impl Studio {
             failed: false,
         });
         panel.steering.set_gate(agq_assistant::policy::Gate::Run);
+        // Messages left from a turn that ended before taking them were said
+        // to be undelivered; they do not ride along with this one.
+        panel.steering.clear_messages();
         panel.held_at = None;
         let development = self.conversation_development();
         let panel = &mut self.conversation;
-        panel.inputs.borrow_mut().development = development;
+        {
+            let mut inputs = panel.inputs.borrow_mut();
+            inputs.development = development;
+            inputs.steering = Some(panel.steering.clone());
+        }
         let runtime = (panel.new_runtime)();
         panel.turn_model = runtime.model();
         panel.turn_usage = Usage::default();

@@ -158,6 +158,21 @@ switch (name) {
     out({ type: "assistant", model: "deepseek-v4-pro", content: [{ type: "text", text: "One test fails." }] });
     result();
     break;
+  case "parallel":
+    // One reply, sent as one message per content block (as the SDK does),
+    // with two calls of the SDK's own tools that run side by side.
+    init({ tools: ["Read", "mcp__agentique__read_model"], permissionMode: "default" });
+    out({ type: "assistant", id: "msg_1", model: "deepseek-v4-pro", content: [
+      { type: "tool_use", id: "toolu_p1", name: "Read", input: { file_path: "a.rs" } },
+    ] });
+    out({ type: "assistant", id: "msg_1", model: "deepseek-v4-pro", content: [
+      { type: "tool_use", id: "toolu_p2", name: "Read", input: { file_path: "b.rs" } },
+    ] });
+    out({ type: "tool_done", toolUseId: "toolu_p1", isError: false, content: "fn a() {}" });
+    out({ type: "tool_done", toolUseId: "toolu_p2", isError: false, content: "fn b() {}" });
+    out({ type: "assistant", id: "msg_2", model: "deepseek-v4-pro", content: [{ type: "text", text: "Both read." }] });
+    result();
+    break;
   case "permission": {
     init({ tools: ["Read", "mcp__agentique__read_model"], permissionMode: "default" });
     out({ type: "permission", call: "p1", tool: "Read", input: { file_path: "D:\\notes.txt" }, reason: "D:/notes.txt is outside the folders this session may read" });

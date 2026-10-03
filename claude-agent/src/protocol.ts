@@ -146,7 +146,7 @@ export type CompanionMessage =
   | ({ type: "init" } & Effective)
   | { type: "text"; text: string }
   | { type: "thinking"; text: string }
-  | { type: "assistant"; model: string; content: unknown[] }
+  | { type: "assistant"; id: string; model: string; content: unknown[] }
   | {
       type: "tool_call";
       call: string;

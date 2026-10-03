@@ -69,6 +69,10 @@ pub enum Entry {
         id: String,
         /// `started`, `resumed` or `handed over`.
         event: String,
+        /// The folder the session worked in (a development session's); the
+        /// SDK keeps a session's transcript per folder, so it is resumed only
+        /// there. `None` for a session in the runtime's own folder.
+        folder: Option<String>,
     },
     /// An entry of a kind this version does not know (a later stage's), kept
     /// as it is, shown as a notice and never sent to a model.
@@ -97,6 +101,8 @@ enum Known {
         runtime: String,
         id: String,
         event: String,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        folder: Option<String>,
     },
 }
 
@@ -107,7 +113,17 @@ impl From<Value> for Entry {
             Ok(Known::Assistant { model, parts }) => Entry::Assistant { model, parts },
             Ok(Known::ToolResults { results }) => Entry::ToolResults { results },
             Ok(Known::Notice { text }) => Entry::Notice { text },
-            Ok(Known::Session { runtime, id, event }) => Entry::Session { runtime, id, event },
+            Ok(Known::Session {
+                runtime,
+                id,
+                event,
+                folder,
+            }) => Entry::Session {
+                runtime,
+                id,
+                event,
+                folder,
+            },
             Err(_) => Entry::Other(value),
         }
     }
@@ -121,7 +137,17 @@ impl From<Entry> for Value {
             Entry::Assistant { model, parts } => Known::Assistant { model, parts },
             Entry::ToolResults { results } => Known::ToolResults { results },
             Entry::Notice { text } => Known::Notice { text },
-            Entry::Session { runtime, id, event } => Known::Session { runtime, id, event },
+            Entry::Session {
+                runtime,
+                id,
+                event,
+                folder,
+            } => Known::Session {
+                runtime,
+                id,
+                event,
+                folder,
+            },
         };
         serde_json::to_value(known).expect("entries are plain JSON")
     }

@@ -79,16 +79,22 @@ pub const MODEL_FILES: [&str; 4] = [
 /// The project's agent configuration: it steers later sessions and its hooks
 /// run outside the policy, so a session changes it only when an objective
 /// names it.
-pub const AGENT_CONFIGURATION: [&str; 3] = [".claude", "CLAUDE.md", "AGENTS.md"];
+pub const AGENT_CONFIGURATION: [&str; 4] = [".claude", "CLAUDE.md", "AGENTS.md", ".mcp.json"];
 
-/// Never read with a file tool: files that hold keys.
-pub const SECRET_FILES: [&str; 6] = [
-    ".env",
-    ".env.*",
+/// Never read with a file tool, wherever they are: files that hold keys.
+/// (`.env.example` and the like are templates, so they stay readable.)
+pub const SECRET_FILES: [&str; 11] = [
+    "**/.env",
+    "**/.env.local",
+    "**/.env.production",
+    "**/.env.development",
+    "**/.env.staging",
     "**/*.pem",
     "**/*.key",
     "**/.git-credentials",
     "**/id_rsa*",
+    "**/id_ed25519*",
+    "**/id_ecdsa*",
 ];
 
 /// Where a session works, which decides some of what it may do.
@@ -102,57 +108,83 @@ pub enum Place {
     Worktree,
 }
 
+/// `git` (or `git.exe`) followed, within one command (no `;`, `&`, `|` or
+/// line break in between), by the subcommand `sub`: options such as `-C .`
+/// or `-c x=y` may come between them.
+fn git(sub: &str) -> String {
+    format!(r"\bgit(\.exe)?\b[^\n;&|]*?\b{sub}\b")
+}
+
 /// The standard refused commands. Pushing is refused unless `push`; force
-/// pushes, pushes to `main`, merging pull requests, global git
+/// pushes, mirror or delete pushes, pushes to `main`, merging pull requests
+/// (also through `gh api`), changing the repository on GitHub, global git
 /// configuration, reading key files and writing model files are refused
 /// always; discarding work and rewriting history are refused in the
-/// Operator's working copy; downloads are refused without the network.
+/// Operator's working copy; downloads are refused without the network. The
+/// patterns look within one command of a line, so an earlier command on the
+/// same line does not count.
 pub fn refused_commands(place: Place, push: bool, network: bool) -> Vec<RefusedCommand> {
     let mut list = vec![
         refused(
-            r"\bgit\s+push\b[^\n]*(--force|--force-with-lease|\s-f\b|\s\+)",
-            "Force-pushing rewrites shared history; it is never done from Agentique.",
+            &format!(
+                r"{}[^\n;&|]*(--force|--force-with-lease|--mirror|--delete|\s-[a-zA-Z]*[fd]\b|\s\+|\s:)",
+                git("push")
+            ),
+            "Force, mirror or delete pushes rewrite shared history; they are never done from Agentique.",
         ),
         refused(
-            r"\bgit\s+push\b[^\n]*(\s|:)(refs/heads/)?(main|master)(\s|:|$)",
+            &format!(
+                r#"{}[^\n;&|]*(\s|:|['"])(refs/heads/)?(main|master)(['"\s:;&|)]|$)"#,
+                git("push")
+            ),
             "Nothing is pushed to the default branch directly: changes reach it through a reviewed pull request.",
         ),
         refused(
-            r"\bgh\s+pr\s+merge\b",
+            r"\bgh(\.exe)?\s+pr\s+merge\b|\bgh(\.exe)?\s+api\b[^\n;&|]*(/merges?\b|mergePullRequest|enablePullRequestAutoMerge)",
             "Merging is the Orchestrator's, after the checks and an independent review pass.",
         ),
         refused(
-            r"\bgh\s+(repo\s+(delete|edit|rename)|api\s+[^\n]*-X\s*(DELETE|PATCH|PUT))",
+            r"\bgh(\.exe)?\s+(repo\s+(delete|edit|rename|archive)\b|api\b[^\n;&|]*(-X|--method)\s*(DELETE|PATCH|PUT))",
             "Changing or deleting the repository on GitHub is the Operator's.",
         ),
         refused(
-            r"\bgit\s+config\s+[^\n]*--(global|system)\b",
+            &format!(r"{}[^\n;&|]*--(global|system)\b", git("config")),
             "Global git configuration is the Operator's.",
         ),
         refused(
-            r"(^|[\s/\\])\.env(\.|\s|$)|\.git-credentials|\bid_rsa\b",
+            r#"(^|[\s/\\'"=])\.env(\.(local|production|development|staging|test))?(['"\s;&|)]|$)|\.git-credentials|\bid_(rsa|ed25519|ecdsa)\b"#,
             "That file holds keys or credentials; it is not read in a session.",
         ),
         refused(
-            r"(>|\btee\b|\bsed\s+-i|\bperl\s+-i|Set-Content|Add-Content|Out-File|\bmv\b|\bmove\b|\bcp\b|\bcopy\b|\brm\b|\bdel\b|Remove-Item|\bgit\s+(checkout|restore)\b)[^\n]*\bmodel[\\/]+([^\s\\/]*\.sysml|agentique\.json|links\.json)",
+            &format!(
+                r#"(>|\btee\b|\bsed\s+-i|\bperl\s+-i|Set-Content|Add-Content|Out-File|\bmv\b|\bmove\b|\bcp\b|\bcopy\b|\brm\b|\bdel\b|Remove-Item|{}|{})[^\n;&|]*\bmodel[\\/]+([^\s\\/'"]*\.sysml|agentique\.json|links\.json)"#,
+                git("checkout"),
+                git("restore")
+            ),
             "The model changes only through Agentique's tools (apply_changes), never by writing its files.",
         ),
     ];
     if !push {
         list.push(refused(
-            r"\bgit\s+push\b",
+            &git("push"),
             "Pushing is not allowed in this session.",
         ));
     }
     if place == Place::WorkingCopy {
         list.push(refused(
-            r"\bgit\s+(reset\s+--hard|clean\s+-[a-zA-Z]*f|checkout\s+--\s|checkout\s+\.(\s|$)|restore\s|stash\s+(drop|clear)|branch\s+-D|rebase\b|filter-branch|filter-repo)",
+            &format!(
+                r"{}(reset\b[^\n;&|]*--hard|clean\b[^\n;&|]*(\s-[a-zA-Z]*f|--force)|checkout\b[^\n;&|]*(\s--(\s|$)|\s\.(\s|$)|\s-f\b|--force)|restore\b|switch\b[^\n;&|]*(--discard-changes|\s-f\b|--force)|stash\s+(drop|clear)|branch\b[^\n;&|]*(\s-D\b|--delete[^\n;&|]*--force|--force[^\n;&|]*--delete)|rebase\b|filter-branch|filter-repo|update-ref\b)",
+                r"\bgit(\.exe)?\b[^\n;&|]*?\b"
+            ),
             "That would discard or rewrite work in the Operator's working copy.",
         ));
     }
     if !network {
         list.push(refused(
-            r"\b(curl|wget|Invoke-WebRequest|Invoke-RestMethod|iwr|irm)\b",
+            &format!(
+                r"(^|[;&|(]\s*)(curl|wget|Invoke-WebRequest|Invoke-RestMethod|iwr|irm)\b|{}|\b(npm|pnpm|yarn)\s+(install|ci|add|i)\b|\bpip3?\s+install\b|\bcargo\s+(install|update|fetch)\b",
+                r"\bgit(\.exe)?\b[^\n;&|]*?\b(fetch|pull|clone)\b"
+            ),
             "The network is off for this session.",
         ));
     }
@@ -336,6 +368,14 @@ impl Steering {
         self.0.lock().ok().and_then(|s| s.held_at.clone())
     }
 
+    /// Drops messages no turn took (one that ended before they arrived).
+    pub fn clear_messages(&self) -> Vec<String> {
+        self.0
+            .lock()
+            .map(|mut s| s.messages.drain(..).collect())
+            .unwrap_or_default()
+    }
+
     pub(crate) fn note_held(&self, tool: &str) {
         if let Ok(mut state) = self.0.lock() {
             state.held_at = Some(tool.to_string());
@@ -369,7 +409,8 @@ impl Steering {
 /// Claude Code session that may have started the Studio. The companion
 /// filters it again (the one place is its policy).
 pub fn development_environment() -> Vec<(String, String)> {
-    std::env::vars()
+    std::env::vars_os()
+        .filter_map(|(name, value)| Some((name.into_string().ok()?, value.into_string().ok()?)))
         .filter(|(name, _)| !secret_name(name) && !parent_session_name(name))
         .collect()
 }
@@ -377,19 +418,31 @@ pub fn development_environment() -> Vec<(String, String)> {
 /// Whether a variable's name looks like a key, token or other secret.
 pub fn secret_name(name: &str) -> bool {
     let upper = name.to_ascii_uppercase();
-    [
-        "KEY",
-        "TOKEN",
-        "SECRET",
-        "PASSWORD",
-        "PASSWD",
-        "CREDENTIAL",
-        "AUTH",
-        "COOKIE",
-        "PRIVATE",
-    ]
-    .iter()
-    .any(|word| upper.contains(word))
+    // The ssh agent's socket is where git finds keys, not a key itself.
+    if upper == "SSH_AUTH_SOCK" {
+        return false;
+    }
+    let suffix = ["_PAT", "_PASS", "_PWD", "_DSN"]
+        .iter()
+        .any(|s| upper.ends_with(s));
+    let named = ["DATABASE_URL", "CONNECTION_STRING"]
+        .iter()
+        .any(|s| upper.contains(s));
+    suffix
+        || named
+        || [
+            "KEY",
+            "TOKEN",
+            "SECRET",
+            "PASSWORD",
+            "PASSWD",
+            "CREDENTIAL",
+            "AUTH",
+            "COOKIE",
+            "PRIVATE",
+        ]
+        .iter()
+        .any(|word| upper.contains(word))
 }
 
 fn parent_session_name(name: &str) -> bool {
@@ -458,6 +511,19 @@ mod tests {
     fn the_standard_refusals_hold_whatever_the_spelling() {
         let refused = |command: &str| refusal(Place::Worktree, true, true, command);
         assert!(refused("git push --force origin agentique/x").is_some());
+        assert!(refused("git -C . push --force").is_some());
+        assert!(refused("git.exe push --mirror origin").is_some());
+        assert!(refused("git push origin :agentique/x").is_some());
+        assert!(refused("git push origin 'main'").is_some());
+        assert!(refused("git push origin \"main\"").is_some());
+        assert!(refused("git push origin main;").is_some());
+        assert!(refused("git -c core.x=y push origin main && echo done").is_some());
+        assert!(refused("gh api --method PUT repos/o/r/pulls/9/merge").is_some());
+        assert!(refused("gh api -X POST repos/o/r/merges").is_some());
+        assert!(
+            refused("gh api graphql -f query='mutation { mergePullRequest(input: {}) }'").is_some()
+        );
+        assert!(refused("cat crates/x/.env.local").is_some());
         assert!(refused("git push -f").is_some());
         assert!(refused("git push origin +agentique/x").is_some());
         assert!(refused("git push origin main").is_some());
@@ -472,10 +538,38 @@ mod tests {
         assert!(refused("sed -i 's/a/b/' model/Agentique.sysml").is_some());
         assert!(refused("echo x > model\\links.json").is_some());
         assert!(refused("git checkout main -- model/agentique.json").is_some());
-        // Reading the model's text is fine.
+        // Reading the model's text is fine, also after an earlier command.
         assert!(refused("grep -n Orchestrator model/Agentique.sysml").is_none());
+        assert!(refused("cargo test 2>&1 | tee out.txt; grep foo model/Agentique.sysml").is_none());
+        assert!(refused("rm -rf target && rg x model/links.json").is_none());
+        assert!(refused("rg -n env .env.example").is_none());
         // Without push, any push; in the Operator's working copy, discarding.
         assert!(refusal(Place::Worktree, false, true, "git push -u origin x").is_some());
+        assert!(refusal(Place::Worktree, false, true, "git -C . push").is_some());
+        assert!(refusal(Place::WorkingCopy, true, true, "git -C . reset --hard").is_some());
+        assert!(refusal(Place::WorkingCopy, true, true, "git reset HEAD --hard").is_some());
+        assert!(refusal(Place::WorkingCopy, true, true, "git clean -d -f").is_some());
+        assert!(
+            refusal(
+                Place::WorkingCopy,
+                true,
+                true,
+                "git switch --discard-changes main"
+            )
+            .is_some()
+        );
+        assert!(
+            refusal(
+                Place::WorkingCopy,
+                true,
+                true,
+                "git branch --delete --force x"
+            )
+            .is_some()
+        );
+        assert!(refusal(Place::Worktree, true, false, "git fetch origin").is_some());
+        assert!(refusal(Place::Worktree, true, false, "npm install left-pad").is_some());
+        assert!(refusal(Place::Worktree, true, false, "rg -n curl crates").is_none());
         assert!(refusal(Place::WorkingCopy, true, true, "git reset --hard").is_some());
         assert!(refusal(Place::WorkingCopy, true, true, "git clean -fdx").is_some());
         assert!(refusal(Place::WorkingCopy, true, true, "git stash drop").is_some());
@@ -514,7 +608,7 @@ mod tests {
                 .count(),
             1
         );
-        assert!(policy.hidden.contains(&".env".to_string()));
+        assert!(policy.hidden.contains(&"**/.env".to_string()));
         let json = serde_json::to_value(&policy).unwrap();
         assert_eq!(json["undecided"], "ask");
         assert!(json["refusedCommands"].as_array().unwrap().len() > 5);
@@ -547,7 +641,24 @@ mod tests {
         ] {
             assert!(secret_name(name), "{name}");
         }
-        for name in ["PATH", "USERPROFILE", "CARGO_HOME", "TEMP", "ComSpec"] {
+        for name in [
+            "GITHUB_PAT",
+            "DB_PASS",
+            "ADMIN_PWD",
+            "DATABASE_URL",
+            "SENTRY_DSN",
+        ] {
+            assert!(secret_name(name), "{name}");
+        }
+        for name in [
+            "PATH",
+            "USERPROFILE",
+            "CARGO_HOME",
+            "TEMP",
+            "ComSpec",
+            "SSH_AUTH_SOCK",
+            "PWD",
+        ] {
             assert!(!secret_name(name) && !parent_session_name(name), "{name}");
         }
         for name in [

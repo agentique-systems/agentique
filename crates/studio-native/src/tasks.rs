@@ -384,7 +384,12 @@ impl Studio {
         });
         // The worker works through its own code tools in the task's worktree,
         // never in the Conversation's development session.
-        self.conversation.inputs.borrow_mut().development = None;
+        {
+            let mut inputs = self.conversation.inputs.borrow_mut();
+            inputs.development = None;
+            // Its own pause gate and messages, never the Conversation's.
+            inputs.steering = None;
+        }
         let mut runtime = (self.conversation.new_runtime)();
         let (sender, events) = std::sync::mpsc::channel();
         let title = brief.title.clone();

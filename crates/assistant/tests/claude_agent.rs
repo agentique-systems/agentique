@@ -176,7 +176,9 @@ fn a_tool_call_goes_through_the_studio_with_its_tool_use_id() {
         turn.conversation.entries
     );
     match &turn.conversation.entries[1] {
-        Entry::Session { runtime, id, event } => {
+        Entry::Session {
+            runtime, id, event, ..
+        } => {
             assert_eq!(runtime, RUNTIME);
             assert_eq!(id, "session-1");
             assert_eq!(event, "started");
@@ -889,4 +891,34 @@ fn live_a_development_session_on_deepseek_works_in_the_repository_within_its_pol
         })
         .collect();
     assert_eq!(sessions, vec!["started", "resumed"]);
+}
+
+/// Review of PR #98: the SDK sends a reply's content blocks as separate
+/// messages with the reply's id; calls of one reply that run side by side
+/// keep their real results instead of being recorded as not run.
+#[test]
+fn parallel_calls_of_one_reply_keep_their_results() {
+    let dir = tempfile::tempdir().unwrap();
+    let Some(mut agent) = development_agent(dir.path()) else {
+        return;
+    };
+    let turn = run(&mut agent, asked("scenario:parallel Read both."), false);
+    calls_balance(&turn.events);
+    let results: Vec<(String, String, bool)> = turn
+        .events
+        .iter()
+        .filter_map(|e| match e {
+            TurnEvent::ToolFinished(r) => {
+                Some((r.tool_use_id.clone(), r.content.clone(), r.is_error))
+            }
+            _ => None,
+        })
+        .collect();
+    assert_eq!(
+        results,
+        vec![
+            ("toolu_p1".to_string(), "fn a() {}".to_string(), false),
+            ("toolu_p2".to_string(), "fn b() {}".to_string(), false)
+        ]
+    );
 }

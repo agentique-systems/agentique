@@ -15,6 +15,16 @@ use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
 use std::sync::mpsc::{Receiver, TryRecvError};
 
+/// `path` without Windows' verbatim prefix (`\\?\C:\x` is `C:\x`), as the
+/// SDK, Git and the session's commands expect it.
+pub fn plain(path: &std::path::Path) -> PathBuf {
+    let text = path.display().to_string();
+    match text.strip_prefix(r"\\?\UNC\") {
+        Some(rest) => PathBuf::from(format!(r"\\{rest}")),
+        None => PathBuf::from(text.strip_prefix(r"\\?\").unwrap_or(&text)),
+    }
+}
+
 /// The runtime setting's values.
 pub const LOOP: &str = "loop";
 pub const CLAUDE_AGENT: &str = "claude-agent";
@@ -224,7 +234,6 @@ impl Studio {
         };
         let node = node.ok();
         let inputs = self.conversation.inputs.clone();
-        let steering = self.conversation.steering.clone();
         self.conversation.use_runtime(
             label,
             problem,
@@ -241,7 +250,7 @@ impl Studio {
                         );
                         agent.endpoint = endpoint.clone();
                         agent.development = inputs.borrow().development.clone();
-                        agent.steering = steering.clone();
+                        agent.steering = inputs.borrow().steering.clone().unwrap_or_default();
                         Box::new(agent)
                     }
                     (_, result) => Box::new(Unavailable(match result {
@@ -271,7 +280,9 @@ impl Studio {
         // own repository has them); a modelling project's folder is no
         // place for file tools.
         project.links()?;
-        let repository = self.implementation_repository()?;
+        // Plain paths: a verbatim `\\?\` path is the same folder, but the
+        // SDK and the session's commands read the plain form.
+        let repository = plain(&self.implementation_repository()?);
         let choice = self
             .implementation
             .choice
@@ -281,9 +292,11 @@ impl Studio {
             .map(|links| links.protected)
             .unwrap_or_default();
         let folder = project.folder();
-        let folder = folder
-            .canonicalize()
-            .unwrap_or_else(|_| folder.to_path_buf());
+        let folder = plain(
+            &folder
+                .canonicalize()
+                .unwrap_or_else(|_| folder.to_path_buf()),
+        );
         let also_read: Vec<PathBuf> = if folder.starts_with(&repository) {
             Vec::new()
         } else {
@@ -488,7 +501,11 @@ mod tests {
             "Shortener",
             Sample::ScreeningWithCode,
         );
-        let code = folder.0.join("Shortener-code").canonicalize().unwrap();
+        let code = super::plain(&folder.0.join("Shortener-code").canonicalize().unwrap());
+        assert!(
+            !code.display().to_string().starts_with(r"\\?\"),
+            "plain paths for the SDK"
+        );
         let development = app
             .conversation_development()
             .expect("a development session");
