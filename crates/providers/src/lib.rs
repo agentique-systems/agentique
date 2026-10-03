@@ -9,8 +9,10 @@
 //! and can be cancelled; the async runtime stays inside this crate.
 //!
 //! - [`Providers::chat`] streams one model call (the Assistant's turns).
-//! - [`Providers::decide`] asks TypeSafe AI's Jev typed questions (fast
-//!   agents, C-35), through a thin client until rig releases one (C-34).
+//! - [`Providers::decide_start`] asks TypeSafe AI's Jev typed questions
+//!   (fast agents, C-35) by a deadline and returns a [`DecisionHandle`]
+//!   that can be cancelled; [`Providers::decide`] waits for one. A thin
+//!   client until the migration to rig's released one (C-34, C-52).
 //! - [`capabilities`] is the capability table (§4.8): code outside this crate
 //!   asks it, never a provider's name (§8.7).
 //! - [`key_status`] says where a provider's key comes from: its environment
@@ -34,8 +36,10 @@ pub use capabilities::{Capabilities, Price, PromptCache, ReasoningText, capabili
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::mpsc::{Receiver, RecvTimeoutError};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 /// A model provider (C-35).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
@@ -432,6 +436,8 @@ pub enum ErrorKind {
     InvalidReply,
     /// The caller cancelled the call.
     Cancelled,
+    /// The call did not finish before its deadline.
+    TimedOut,
     Other,
 }
 
@@ -484,6 +490,89 @@ impl ChatHandle {
 impl Drop for ChatHandle {
     fn drop(&mut self) {
         self.cancel.abort();
+    }
+}
+
+/// A running typed decision (C-52): its result arrives once, by its
+/// deadline. [`cancel`](Self::cancel) and dropping the handle stop it at
+/// once: no further request is sent, a wait for a retry ends, the
+/// connection closes, and a reply that arrives afterwards is never
+/// delivered. (Whether the provider stops working, or billing, is not
+/// known.)
+pub struct DecisionHandle {
+    result: Receiver<Result<jev::DecisionReply, jev::DecisionFailure>>,
+    abort: futures::future::AbortHandle,
+    cancelled: Arc<AtomicBool>,
+    attempts: Arc<AtomicU32>,
+    started: Instant,
+    deadline: Instant,
+    finished: bool,
+}
+
+/// How long past its deadline a handle waits for its task before it ends
+/// the decision itself (a busy runtime must not stall a caller).
+const DEADLINE_GRACE: Duration = Duration::from_millis(250);
+
+impl DecisionHandle {
+    /// The result, waiting at most `wait`; `None` if it has not arrived.
+    /// After [`cancel`](Self::cancel) it is `Cancelled`, even when a reply
+    /// was already on its way; after the deadline, `TimedOut`. Once a
+    /// result was given, `None`.
+    pub fn next_result(
+        &mut self,
+        wait: Duration,
+    ) -> Option<Result<jev::DecisionReply, jev::DecisionFailure>> {
+        if self.finished {
+            return None;
+        }
+        let stopped = || self.cancelled.load(Ordering::SeqCst);
+        if stopped() {
+            self.finished = true;
+            return Some(Err(jev::cancelled(self.attempts())));
+        }
+        let late = self.deadline + DEADLINE_GRACE;
+        let wait = wait.min(late.saturating_duration_since(Instant::now()));
+        let result = match self.result.recv_timeout(wait) {
+            Ok(result) => result,
+            Err(RecvTimeoutError::Timeout) if Instant::now() < late => return None,
+            Err(RecvTimeoutError::Timeout) => {
+                self.abort.abort();
+                Err(jev::timed_out(self.attempts(), self.started.elapsed()))
+            }
+            Err(RecvTimeoutError::Disconnected) => Err(jev::DecisionFailure {
+                error: Error {
+                    kind: ErrorKind::Other,
+                    message: "The request to TypeSafe AI failed unexpectedly. Try again.".into(),
+                },
+                attempts: self.attempts(),
+                usage: None,
+                request_id: None,
+            }),
+        };
+        self.finished = true;
+        // A stop that came while the result was on its way wins.
+        if stopped() {
+            return Some(Err(jev::cancelled(self.attempts())));
+        }
+        Some(result)
+    }
+
+    /// Stops the decision at once.
+    pub fn cancel(&self) {
+        self.cancelled.store(true, Ordering::SeqCst);
+        self.abort.abort();
+    }
+
+    /// Requests sent so far, retries included.
+    pub fn attempts(&self) -> u32 {
+        self.attempts.load(Ordering::SeqCst)
+    }
+}
+
+impl Drop for DecisionHandle {
+    fn drop(&mut self) {
+        self.cancelled.store(true, Ordering::SeqCst);
+        self.abort.abort();
     }
 }
 
@@ -575,11 +664,34 @@ impl Providers {
         &self,
         request: &jev::DecisionRequest,
     ) -> Result<jev::DecisionReply, jev::DecisionFailure> {
-        jev::decide(
+        let mut handle = self.decide_start(request.clone(), Instant::now() + jev::TIMEOUT);
+        loop {
+            if let Some(result) = handle.next_result(Duration::from_millis(100)) {
+                return result;
+            }
+        }
+    }
+
+    /// Starts a typed decision that must finish by `deadline` (monotonic):
+    /// requests, reading replies, retries and their waits all share it, and
+    /// a retry is made only when its wait fits. The handle cancels it.
+    pub fn decide_start(&self, request: jev::DecisionRequest, deadline: Instant) -> DecisionHandle {
+        let started = Instant::now();
+        let running = jev::start(
             request,
             self.key(Provider::TypeSafe),
             self.endpoints.get(&Provider::TypeSafe).cloned(),
-        )
+            deadline,
+        );
+        DecisionHandle {
+            result: running.result,
+            abort: running.abort,
+            cancelled: running.cancelled,
+            attempts: running.attempts,
+            started,
+            deadline,
+            finished: false,
+        }
     }
 
     /// Starts one streamed model call on the background runtime.

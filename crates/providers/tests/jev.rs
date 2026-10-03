@@ -2,12 +2,15 @@
 //! API and records the request.
 
 use agq_providers::jev::{Answer, DecisionRequest, Question, QuestionKind};
-use agq_providers::{ErrorKind, Provider, Providers};
+use agq_providers::{DecisionHandle, ErrorKind, Provider, Providers};
 use serde_json::{Value, json};
 use std::collections::BTreeMap;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::net::TcpListener;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering as AtomicOrdering};
 use std::sync::mpsc::{self, Receiver};
+use std::time::{Duration, Instant};
 
 /// A complete HTTP response with a JSON body.
 fn response(status: &str, headers: &str, body: &str) -> Vec<u8> {
@@ -212,7 +215,7 @@ fn jev_is_never_the_assistants_model() {
     });
     loop {
         if let Some(agq_providers::Event::Finished(result)) =
-            call.next_event(std::time::Duration::from_secs(5))
+            call.next_event(Duration::from_secs(5))
         {
             assert_eq!(result.unwrap_err().kind, ErrorKind::Rejected);
             break;
@@ -374,7 +377,7 @@ fn error_statuses_are_errors_and_not_retried() {
         let failure = providers(url).decide(&request()).unwrap_err();
         assert_eq!(failure.error.kind, kind, "{status}: {failure}");
         assert_eq!(failure.attempts, 1, "{status}");
-        std::thread::sleep(std::time::Duration::from_millis(50));
+        std::thread::sleep(Duration::from_millis(50));
         assert_eq!(requests.try_iter().count(), 1, "{status} was retried");
     }
 }
@@ -402,12 +405,12 @@ fn retries_are_bounded() {
         ),
         ("200 OK", "", ANSWER.to_string()),
     ]);
-    let started = std::time::Instant::now();
+    let started = Instant::now();
     let failure = providers(url).decide(&request()).unwrap_err();
     assert_eq!(failure.error.kind, ErrorKind::RateLimited, "{failure}");
-    assert!(started.elapsed() < std::time::Duration::from_secs(5));
+    assert!(started.elapsed() < Duration::from_secs(5));
     assert_eq!(failure.attempts, 1);
-    std::thread::sleep(std::time::Duration::from_millis(50));
+    std::thread::sleep(Duration::from_millis(50));
     assert_eq!(requests.try_iter().count(), 1);
 
     let (url, _) = serve(vec![
@@ -441,7 +444,7 @@ fn no_request_is_sent_without_its_own_key() {
         assert_eq!(failure.attempts, 0);
         assert!(!format!("{providers:?}").contains("deepseek-key"));
     }
-    std::thread::sleep(std::time::Duration::from_millis(50));
+    std::thread::sleep(Duration::from_millis(50));
     assert_eq!(requests.try_iter().count(), 0);
 }
 
@@ -484,4 +487,334 @@ fn ambient_key_child() {
     explicit.decide(&request()).unwrap();
     let (_, authorization, _) = requests.recv().unwrap();
     assert_eq!(authorization, "Bearer explicit");
+}
+
+// ---- Deadlines and cancellation (C-52 step 2) ----
+
+/// What the local server does with one request.
+enum Act {
+    /// Writes these bytes.
+    Send(Vec<u8>),
+    /// Writes these bytes (perhaps none), then stays silent until the
+    /// client goes away, and reports when it did.
+    Hang(Vec<u8>),
+    /// Waits, then writes these bytes.
+    Later(Duration, Vec<u8>),
+}
+
+struct Server {
+    url: String,
+    /// One per request read.
+    requests: Receiver<Instant>,
+    /// When a hanging connection was closed by the client.
+    gone: Receiver<Instant>,
+    connections: Arc<AtomicUsize>,
+}
+
+/// A complete response that keeps the connection open.
+fn kept(body: &str) -> Vec<u8> {
+    format!(
+        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{body}",
+        body.len()
+    )
+    .into_bytes()
+}
+
+/// Reads one request; `false` when the connection ended first.
+fn read_request(reader: &mut BufReader<std::net::TcpStream>) -> bool {
+    let mut line = String::new();
+    if reader.read_line(&mut line).unwrap_or(0) == 0 {
+        return false;
+    }
+    let mut length = 0;
+    loop {
+        let mut header = String::new();
+        if reader.read_line(&mut header).unwrap_or(0) == 0 {
+            return false;
+        }
+        if header.trim().is_empty() {
+            break;
+        }
+        if let Some((name, value)) = header.split_once(':')
+            && name.eq_ignore_ascii_case("content-length")
+        {
+            length = value.trim().parse().unwrap();
+        }
+    }
+    let mut body = vec![0; length];
+    reader.read_exact(&mut body).is_ok()
+}
+
+/// Serves `acts` in order, several on one connection when the client
+/// keeps it open.
+fn serve_acts(acts: Vec<Act>) -> Server {
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let url = format!("http://{}", listener.local_addr().unwrap());
+    let (sender, requests) = mpsc::channel();
+    let (left, gone) = mpsc::channel();
+    let connections = Arc::new(AtomicUsize::new(0));
+    let count = connections.clone();
+    std::thread::spawn(move || {
+        let mut acts = acts.into_iter();
+        'connections: while let Ok((stream, _)) = listener.accept() {
+            count.fetch_add(1, AtomicOrdering::SeqCst);
+            let mut reader = BufReader::new(stream.try_clone().unwrap());
+            let mut stream = stream;
+            while read_request(&mut reader) {
+                let _ = sender.send(Instant::now());
+                let Some(act) = acts.next() else {
+                    break 'connections;
+                };
+                match act {
+                    Act::Send(bytes) => {
+                        let _ = stream.write_all(&bytes);
+                    }
+                    Act::Later(wait, bytes) => {
+                        std::thread::sleep(wait);
+                        let _ = stream.write_all(&bytes);
+                    }
+                    Act::Hang(bytes) => {
+                        let _ = stream.write_all(&bytes);
+                        let _ = stream.flush();
+                        let mut buffer = [0; 64];
+                        while matches!(stream.read(&mut buffer), Ok(n) if n > 0) {}
+                        let _ = left.send(Instant::now());
+                        continue 'connections;
+                    }
+                }
+            }
+        }
+    });
+    Server {
+        url,
+        requests,
+        gone,
+        connections,
+    }
+}
+
+/// Waits for a handle's result for at most `limit`.
+fn wait_for(
+    handle: &mut DecisionHandle,
+    limit: Duration,
+) -> Result<agq_providers::jev::DecisionReply, agq_providers::jev::DecisionFailure> {
+    let until = Instant::now() + limit;
+    loop {
+        if let Some(result) = handle.next_result(Duration::from_millis(10)) {
+            return result;
+        }
+        assert!(Instant::now() < until, "no result within {limit:?}");
+    }
+}
+
+/// Scheduling allowance past a deadline on a busy machine.
+const ALLOWANCE: Duration = Duration::from_millis(250);
+
+/// A server that never answers: the decision ends at its deadline as
+/// timed out, after one request, and the connection is closed.
+#[test]
+fn a_silent_server_ends_at_the_deadline() {
+    let server = serve_acts(vec![Act::Hang(Vec::new())]);
+    let providers = providers(server.url.clone());
+    let started = Instant::now();
+    let mut handle = providers.decide_start(request(), started + Duration::from_millis(300));
+    let failure = wait_for(&mut handle, Duration::from_secs(5)).unwrap_err();
+    let took = started.elapsed();
+    assert_eq!(failure.error.kind, ErrorKind::TimedOut, "{failure}");
+    assert!(took >= Duration::from_millis(290), "{took:?}");
+    assert!(took < Duration::from_millis(300) + ALLOWANCE, "{took:?}");
+    assert_eq!(failure.attempts, 1);
+    server
+        .gone
+        .recv_timeout(Duration::from_secs(2))
+        .expect("the connection was closed");
+    assert_eq!(server.requests.try_iter().count(), 1);
+}
+
+/// Headers and half a body, then silence: the read shares the deadline.
+#[test]
+fn a_stalled_body_ends_at_the_deadline() {
+    let mut half = format!(
+        "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n",
+        ANSWER.len()
+    )
+    .into_bytes();
+    half.extend_from_slice(&ANSWER.as_bytes()[..ANSWER.len() / 2]);
+    let server = serve_acts(vec![Act::Hang(half)]);
+    let providers = providers(server.url.clone());
+    let started = Instant::now();
+    let mut handle = providers.decide_start(request(), started + Duration::from_millis(300));
+    let failure = wait_for(&mut handle, Duration::from_secs(5)).unwrap_err();
+    assert_eq!(failure.error.kind, ErrorKind::TimedOut, "{failure}");
+    assert!(started.elapsed() < Duration::from_millis(300) + ALLOWANCE);
+    server
+        .gone
+        .recv_timeout(Duration::from_secs(2))
+        .expect("the connection was closed");
+}
+
+/// A reply that comes after the deadline is a timeout, not an answer.
+#[test]
+fn a_reply_after_the_deadline_is_a_timeout() {
+    let server = serve_acts(vec![Act::Later(
+        Duration::from_millis(400),
+        response("200 OK", "", ANSWER),
+    )]);
+    let providers = providers(server.url.clone());
+    let mut handle = providers.decide_start(request(), Instant::now() + Duration::from_millis(200));
+    let failure = wait_for(&mut handle, Duration::from_secs(5)).unwrap_err();
+    assert_eq!(failure.error.kind, ErrorKind::TimedOut, "{failure}");
+}
+
+/// A retry whose wait would not fit before the deadline is not made, and
+/// the failure says so at once.
+#[test]
+fn a_retry_that_would_not_fit_is_not_waited_for() {
+    let server = serve_acts(vec![
+        Act::Send(response("529 Overloaded", "retry-after-ms: 2000\r\n", "{}")),
+        Act::Send(response("200 OK", "", ANSWER)),
+    ]);
+    let providers = providers(server.url.clone());
+    let started = Instant::now();
+    let mut handle = providers.decide_start(request(), started + Duration::from_millis(500));
+    let failure = wait_for(&mut handle, Duration::from_secs(5)).unwrap_err();
+    assert_eq!(failure.error.kind, ErrorKind::Unavailable, "{failure}");
+    assert!(
+        failure.error.message.contains("No time was left"),
+        "{failure}"
+    );
+    assert!(
+        started.elapsed() < Duration::from_millis(400),
+        "{:?}",
+        started.elapsed()
+    );
+    assert_eq!(failure.attempts, 1);
+    std::thread::sleep(Duration::from_millis(100));
+    assert_eq!(server.requests.try_iter().count(), 1);
+}
+
+/// A retry that fits is made within the same deadline.
+#[test]
+fn a_retry_that_fits_is_made() {
+    let server = serve_acts(vec![
+        Act::Send(response(
+            "429 Too Many Requests",
+            "retry-after-ms: 50\r\n",
+            "{}",
+        )),
+        Act::Send(response("200 OK", "", ANSWER)),
+    ]);
+    let providers = providers(server.url.clone());
+    let mut handle = providers.decide_start(request(), Instant::now() + Duration::from_secs(5));
+    let reply = wait_for(&mut handle, Duration::from_secs(5)).unwrap();
+    assert_eq!(reply.attempts, 2);
+    assert_eq!(handle.attempts(), 2);
+}
+
+/// Stop during the wait before a retry: the result is at once a stop, and
+/// no further request is ever sent.
+#[test]
+fn a_stop_during_a_retry_wait_sends_nothing_more() {
+    let server = serve_acts(vec![
+        Act::Send(response("529 Overloaded", "retry-after-ms: 1500\r\n", "{}")),
+        Act::Send(response("200 OK", "", ANSWER)),
+    ]);
+    let providers = providers(server.url.clone());
+    let mut handle = providers.decide_start(request(), Instant::now() + Duration::from_secs(10));
+    server
+        .requests
+        .recv_timeout(Duration::from_secs(5))
+        .unwrap();
+    std::thread::sleep(Duration::from_millis(100));
+    let stopped = Instant::now();
+    handle.cancel();
+    let failure = wait_for(&mut handle, Duration::from_secs(5)).unwrap_err();
+    assert!(
+        stopped.elapsed() < Duration::from_millis(100),
+        "{:?}",
+        stopped.elapsed()
+    );
+    assert_eq!(failure.error.kind, ErrorKind::Cancelled);
+    assert_eq!(failure.attempts, 1);
+    std::thread::sleep(Duration::from_millis(1800));
+    assert_eq!(
+        server.requests.try_iter().count(),
+        0,
+        "a request after the stop"
+    );
+}
+
+/// Dropping the handle stops the request: the connection closes.
+#[test]
+fn dropping_the_handle_closes_the_connection() {
+    let server = serve_acts(vec![Act::Hang(Vec::new())]);
+    let providers = providers(server.url.clone());
+    let handle = providers.decide_start(request(), Instant::now() + Duration::from_secs(10));
+    server
+        .requests
+        .recv_timeout(Duration::from_secs(5))
+        .unwrap();
+    let dropped = Instant::now();
+    drop(handle);
+    let gone = server
+        .gone
+        .recv_timeout(Duration::from_secs(5))
+        .expect("closed");
+    assert!(gone.duration_since(dropped) < Duration::from_secs(1));
+}
+
+/// A reply already on its way when the Operator stops is never delivered;
+/// neither is a provider error: the stop wins.
+#[test]
+fn a_stop_wins_over_a_reply_or_an_error_already_on_its_way() {
+    for answer in [
+        response("200 OK", "", ANSWER),
+        response("500 Oops", "", "{}"),
+    ] {
+        let server = serve_acts(vec![Act::Send(answer)]);
+        let providers = providers(server.url.clone());
+        let mut handle =
+            providers.decide_start(request(), Instant::now() + Duration::from_secs(10));
+        server
+            .requests
+            .recv_timeout(Duration::from_secs(5))
+            .unwrap();
+        // The result has arrived; nobody has taken it yet.
+        std::thread::sleep(Duration::from_millis(300));
+        handle.cancel();
+        let failure = wait_for(&mut handle, Duration::from_secs(1)).unwrap_err();
+        assert_eq!(failure.error.kind, ErrorKind::Cancelled, "{failure}");
+        assert!(handle.next_result(Duration::from_millis(10)).is_none());
+    }
+}
+
+/// A deadline that has already passed sends nothing.
+#[test]
+fn a_deadline_already_passed_sends_nothing() {
+    let server = serve_acts(vec![Act::Send(response("200 OK", "", ANSWER))]);
+    let providers = providers(server.url.clone());
+    let mut handle = providers.decide_start(request(), Instant::now());
+    let failure = wait_for(&mut handle, Duration::from_secs(5)).unwrap_err();
+    assert_eq!(failure.error.kind, ErrorKind::TimedOut, "{failure}");
+    assert_eq!(failure.attempts, 0);
+    std::thread::sleep(Duration::from_millis(100));
+    assert_eq!(server.requests.try_iter().count(), 0);
+}
+
+/// Decisions share one client: the second goes over the first's
+/// connection, with the handle API and the blocking one alike.
+#[test]
+fn connections_are_reused() {
+    let server = serve_acts(vec![
+        Act::Send(kept(ANSWER)),
+        Act::Send(kept(ANSWER)),
+        Act::Send(kept(ANSWER)),
+    ]);
+    let providers = providers(server.url.clone());
+    providers.decide(&request()).unwrap();
+    let mut handle = providers.decide_start(request(), Instant::now() + Duration::from_secs(5));
+    wait_for(&mut handle, Duration::from_secs(5)).unwrap();
+    providers.decide(&request()).unwrap();
+    assert_eq!(server.requests.try_iter().count(), 3);
+    assert_eq!(server.connections.load(AtomicOrdering::SeqCst), 1);
 }
