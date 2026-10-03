@@ -86,8 +86,8 @@ code and are committed.
 - Product nouns: Studio, Surface, Panels, Conversation, Assistant,
   Orchestrator, System State, Settings, lock, scenario, simulation,
   implementation link, drift, agent, autonomy mode, objective, cycle,
-  permission policy, control interface, observation, typed decision. A new product term needs a reason and a glossary entry
-  (ROADMAP §9).
+  permission policy, control interface, observation, typed decision. A new
+  product term needs a reason and a glossary entry (ROADMAP §9).
 
 ## One truth per topic (ROADMAP §8.2)
 
