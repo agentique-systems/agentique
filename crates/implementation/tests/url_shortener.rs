@@ -55,7 +55,11 @@ pub fn links(tree: &Tree) -> Links {
         ]
         .map(String::from)
         .to_vec(),
-        protected: vec!["tests/behaviour.rs".into()],
+        protected: vec![
+            "tests/behaviour.rs".into(),
+            "tests/jev_client.rs".into(),
+            "tests/decisions.json".into(),
+        ],
         ..Links::default()
     };
     for (element, kind, path, symbol) in TABLE {
@@ -151,7 +155,11 @@ fn the_url_shortener_keeps_its_model_and_a_break_is_found_and_repaired() {
         assert_eq!(shape.verdict, Verdict::Passed, "{shape:#?}");
     }
     let tests = linked_tests(&repo.links, &repo.executor(), "", Duration::from_secs(600));
-    assert_eq!(tests.len(), 3);
+    assert_eq!(
+        tests.len(),
+        4,
+        "the service's three and the typed client's conformance"
+    );
     for test in &tests {
         assert_eq!(test.verdict, Verdict::Passed, "{test:#?}");
     }
@@ -225,6 +233,10 @@ fn the_url_shortener_keeps_its_model_and_a_break_is_found_and_repaired() {
         .find("UrlShortener::reviewBeforeActivation")
         .unwrap();
     assert!(drifted.contains_key(&review_requirement), "{drifted:#?}");
+    // So does the typed client's conformance to the frozen replies (C-52):
+    // its `review` verdicts no longer hold the link.
+    let typed = repo.tree.find("UrlShortener::TypedLinkScreening").unwrap();
+    assert!(drifted.contains_key(&typed), "{drifted:#?}");
     // Repaired: everything passes again.
     repo.edit(
         "src/api.rs",
@@ -249,4 +261,54 @@ fn the_url_shortener_keeps_its_model_and_a_break_is_found_and_repaired() {
     );
     let api = repo.tree.find("UrlShortener::LinkApi").unwrap();
     assert_eq!(boundaries.elements, [api.raw()]);
+}
+
+/// The typed client asks what the model says (C-52): its pinned model,
+/// question and options are the model's `TypedLinkScreening` and its
+/// `Decision` values' documentation, so a change on either side without
+/// the other fails here, where both are reviewed together.
+#[test]
+fn the_typed_client_asks_what_the_model_says() {
+    let tree = parse(&[Source::new("UrlShortener.sysml", MODEL)]);
+    let code = std::fs::read_to_string(fixture().join("src/jev.rs")).unwrap();
+    let one_line = |text: &str| text.split_whitespace().collect::<Vec<_>>().join(" ");
+    let doc = |id: agq_language::ElementId| {
+        tree[id]
+            .children()
+            .iter()
+            .find(|c| tree[**c].kind == ElementKind::Doc)
+            .and_then(|d| tree[*d].text.clone())
+            .map(|text| one_line(&text))
+            .unwrap()
+    };
+    let typed = tree.find("UrlShortener::TypedLinkScreening").unwrap();
+    assert!(
+        code.contains(&format!(
+            "pub const INSTRUCTIONS: &str = \"{}\";",
+            doc(typed)
+        )),
+        "the question is TypedLinkScreening's documentation"
+    );
+    let pinned = agq_language::print(&tree)[0]
+        .text
+        .lines()
+        .skip_while(|l| !l.contains("part def TypedLinkScreening"))
+        .find_map(|l| l.trim().strip_prefix(":>> model = \""))
+        .map(|rest| rest.trim_end_matches("\";").to_string())
+        .unwrap();
+    assert!(code.contains(&format!("pub const MODEL: &str = \"{pinned}\";")));
+    let decision = tree.find("UrlShortener::Decision").unwrap();
+    for value in tree[decision].children() {
+        if tree[*value].kind != ElementKind::Enum {
+            continue;
+        }
+        let name = tree.effective_name(*value).unwrap();
+        let text = one_line(&code);
+        let option = format!("(\"{name}\", \"{}\")", doc(*value));
+        let spaced = format!("( \"{name}\", \"{}\", )", doc(*value));
+        assert!(
+            text.contains(&option) || text.contains(&spaced),
+            "the option `{name}` is described as the model documents it"
+        );
+    }
 }

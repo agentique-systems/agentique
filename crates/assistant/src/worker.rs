@@ -2,9 +2,11 @@
 //! tools instead of architecture tools, working in one worktree for one
 //! task. It reads and writes files only inside that worktree and never in
 //! its protected paths; builds and tests go through the executor, which
-//! refuses them unless the Operator allowed trusted-local execution. It
-//! cannot change the model: when the model is wrong or not enough, it asks
-//! the Operator for a contract change and stops.
+//! refuses them unless the Operator allowed trusted-local execution. Given
+//! [`Worker::with_model`], it changes only its worktree's copy of the model,
+//! through System State operations (locked elements refused), and those
+//! changes stay proposed until the Operator integrates the task; a contract
+//! change it cannot make there goes back to the Operator, and it stops.
 //!
 //! Repair is bounded: after [`MAX_ROUNDS`] rounds of checks, or
 //! [`NO_PROGRESS`] rounds in a row without fewer failures, the checks tell

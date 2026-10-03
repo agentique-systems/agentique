@@ -22,7 +22,8 @@ impl<C: AgentClient> UrlShortenerService<C> {
     }
 
     pub fn shorten(&mut self, request: &ShortenRequest) -> ShortLink {
-        self.api.shorten(request, &mut self.screening, &mut self.store)
+        self.api
+            .shorten(request, &mut self.screening, &mut self.store)
     }
 
     pub fn resolve(&mut self, request: &ResolveRequest) -> Resolution {

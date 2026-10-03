@@ -1,0 +1,78 @@
+{
+  "doc": "Frozen replies of a typed decision model (jev-1.13.0) to TypedLinkScreening's question, with what the agent and the service make of them under LinkScreening's policy (minConfidence 0.8, maxLatencyMs 500). Shared by the URL shortener's own tests (tests/jev_client.rs) and by Agentique's evaluation tests, so the code and the model are checked against the same replies. Synthetic replies, not measurements of the model.",
+  "cases": [
+    {
+      "name": "encyclopedia",
+      "longUrl": "https://en.wikipedia.example/wiki/Rust",
+      "host": "en.wikipedia.example",
+      "reply": {"model": "jev-1.13.0", "answers": {"decision": {"type": "choice", "choice": "allow", "probabilities": {"allow": 0.92, "review": 0.06, "block": 0.02}, "confidence": 0.88}}, "usage": {"input_tokens": 160, "output_tokens": 1}},
+      "by": "agent",
+      "decision": "allow",
+      "status": "active"
+    },
+    {
+      "name": "giftCards",
+      "longUrl": "http://free-gift-cards.example/claim?wallet=seed",
+      "host": "free-gift-cards.example",
+      "reply": {"model": "jev-1.13.0", "answers": {"decision": {"type": "choice", "choice": "block", "probabilities": {"allow": 0.03, "review": 0.07, "block": 0.9}, "confidence": 0.86}}, "usage": {"input_tokens": 162, "output_tokens": 1}},
+      "by": "agent",
+      "decision": "block",
+      "status": "blocked"
+    },
+    {
+      "name": "lookalike",
+      "longUrl": "https://paypa1-login.example/verify-account",
+      "host": "paypa1-login.example",
+      "reply": {"model": "jev-1.13.0", "answers": {"decision": {"type": "choice", "choice": "review", "probabilities": {"allow": 0.1, "review": 0.7, "block": 0.2}, "confidence": 0.82}}, "usage": {"input_tokens": 161, "output_tokens": 1}},
+      "by": "agent",
+      "decision": "review",
+      "status": "held"
+    },
+    {
+      "name": "documentation",
+      "longUrl": "https://docs.rust-lang.example/book/",
+      "host": "docs.rust-lang.example",
+      "reply": {"model": "jev-1.13.0", "answers": {"decision": {"type": "choice", "choice": "allow", "probabilities": {"allow": 0.6, "review": 0.3, "block": 0.1}, "confidence": 0.55}}, "usage": {"input_tokens": 158, "output_tokens": 1}},
+      "by": "fallback",
+      "decision": "review",
+      "status": "held"
+    },
+    {
+      "name": "confidentWrongAllow",
+      "note": "A confident allow of a blocklisted host activates the link: the fallback decides only when the agent fails or is unsure; it is not a check made before the agent.",
+      "longUrl": "https://malware.example/x",
+      "host": "malware.example",
+      "reply": {"model": "jev-1.13.0", "answers": {"decision": {"type": "choice", "choice": "allow", "probabilities": {"allow": 0.95, "review": 0.03, "block": 0.02}, "confidence": 0.95}}, "usage": {"input_tokens": 150, "output_tokens": 1}},
+      "by": "agent",
+      "decision": "allow",
+      "status": "active"
+    },
+    {
+      "name": "unknownOption",
+      "longUrl": "https://blog.example/post",
+      "host": "blog.example",
+      "reply": {"model": "jev-1.13.0", "answers": {"decision": {"type": "choice", "choice": "hold", "probabilities": {"allow": 0.2, "review": 0.3, "block": 0.5}, "confidence": 0.8}}, "usage": {"input_tokens": 150, "output_tokens": 1}},
+      "by": "fallback",
+      "decision": "review",
+      "status": "held"
+    },
+    {
+      "name": "otherModel",
+      "longUrl": "https://shop.example/offer",
+      "host": "shop.example",
+      "reply": {"model": "jev-1.14.0", "answers": {"decision": {"type": "choice", "choice": "allow", "probabilities": {"allow": 0.9, "review": 0.08, "block": 0.02}, "confidence": 0.9}}, "usage": {"input_tokens": 150, "output_tokens": 1}},
+      "by": "fallback",
+      "decision": "review",
+      "status": "held"
+    },
+    {
+      "name": "blocklistedUnusable",
+      "longUrl": "https://malware.example/y",
+      "host": "malware.example",
+      "reply": {"model": "jev-1.13.0", "answers": {"decision": {"type": "choice", "choice": "allow", "probabilities": {"allow": 0.3, "review": 0.1, "block": 0.1}, "confidence": 0.9}}, "usage": {"input_tokens": 150, "output_tokens": 1}},
+      "by": "fallback",
+      "decision": "block",
+      "status": "blocked"
+    }
+  ]
+}

@@ -54,7 +54,11 @@ impl LinkApi {
     }
 
     /// The resolve port: only an active link redirects.
-    pub fn resolve(&mut self, request: &ResolveRequest, storage: &mut dyn LinkStorePort) -> Resolution {
+    pub fn resolve(
+        &mut self,
+        request: &ResolveRequest,
+        storage: &mut dyn LinkStorePort,
+    ) -> Resolution {
         let record = storage.query(LinkQuery {
             code: request.code.clone(),
         });
@@ -75,7 +79,11 @@ impl LinkApi {
     }
 
     /// The review port: approval activates, rejection blocks.
-    pub fn review(&mut self, decision: &ReviewDecision, storage: &mut dyn LinkStorePort) -> ShortLink {
+    pub fn review(
+        &mut self,
+        decision: &ReviewDecision,
+        storage: &mut dyn LinkStorePort,
+    ) -> ShortLink {
         let record = storage.change(StatusChange {
             code: decision.code.clone(),
             status: if decision.approve {
