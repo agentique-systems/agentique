@@ -175,8 +175,8 @@ test("a turn carries tool calls to the Studio one at a time, with their tool use
     calls.map((c) => (c.type === "tool_call" ? [c.toolUseId, c.input.element] : null)),
     [["toolu_2", "Store"], ["toolu_1", "Shop"]],
   );
-  assert.deepEqual(sent.map((m) => m.type), ["init", "text", "assistant", "tool_call", "tool_call", "result"]);
-  const result = sent.at(-1);
+  assert.deepEqual(sent.map((m) => m.type), ["init", "text", "assistant", "tool_call", "tool_call", "result", "done"]);
+  const result = sent.at(-2);
   assert.equal(result?.type === "result" && result.sessionId, "s1");
 });
 
@@ -218,8 +218,8 @@ test("a refused key ends the turn at once with a plain reason", async () => {
     throw new Error("must not be reached: the turn stops at the refused key");
   });
   await new Turn((m) => sent.push(m), sdk, mcp, {}, "agentique/test").run(start);
-  assert.deepEqual(sent.map((m) => m.type), ["init", "retry", "error"]);
-  const error = sent.at(-1);
+  assert.deepEqual(sent.map((m) => m.type), ["init", "retry", "error", "done"]);
+  const error = sent.at(-2);
   assert.equal(error?.type === "error" && error.kind, "auth");
 });
 

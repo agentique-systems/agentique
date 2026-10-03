@@ -115,6 +115,13 @@ export class Turn {
   private readonly background = new Set<string>();
   private answered = false;
   private backgroundTimer: ReturnType<typeof setTimeout> | null = null;
+  /** Messages given to the SDK that no result has said it took (by the
+   * uuid each is sent with), when the SDK reports them at all. */
+  private readonly unconsumed = new Set<string>();
+  private echoes = false;
+  /** Totals by model at the previous result, for each result's own share. */
+  private totals: Record<string, Usage> = {};
+  private over_ = false;
   /** The pause gate, and the calls held at it. */
   private mode: GateMode = "run";
   private readonly held: (() => void)[] = [];
@@ -148,12 +155,12 @@ export class Turn {
     const turn = this;
     const prompt = (async function* () {
       turn.given += 1;
-      yield { type: "user", message: { role: "user", content: start.prompt }, parent_tool_use_id: null };
+      yield { type: "user", uuid: turn.stamp(), message: { role: "user", content: start.prompt }, parent_tool_use_id: null };
       for (;;) {
         while (turn.queued.length > 0) {
           const text = turn.queued.shift() as string;
           turn.given += 1;
-          yield { type: "user", message: { role: "user", content: text }, parent_tool_use_id: null };
+          yield { type: "user", uuid: turn.stamp(), message: { role: "user", content: text }, parent_tool_use_id: null };
         }
         const woken = new Promise<void>((resolve) => {
           turn.wake = resolve;
@@ -194,6 +201,18 @@ export class Turn {
     if (this.stopped !== null) {
       this.send({ type: "error", kind: "interrupted", message: this.stopped });
     }
+    this.over_ = true;
+    for (const text of this.queued.splice(0)) {
+      this.send({ type: "undelivered", text });
+    }
+    this.send({ type: "done" });
+  }
+
+  /** A uuid for a user message, remembered until a result says it was taken. */
+  private stamp(): string {
+    const uuid = crypto.randomUUID();
+    this.unconsumed.add(uuid);
+    return uuid;
   }
 
   /** The Studio's answer to a call. Unknown calls are ignored. */
@@ -216,7 +235,8 @@ export class Turn {
 
   /** A message the Studio queues into the running session. */
   queue(text: string): void {
-    if (this.stopped !== null) {
+    if (this.stopped !== null || this.over_) {
+      this.send({ type: "undelivered", text });
       return;
     }
     this.answered = false;
@@ -228,7 +248,8 @@ export class Turn {
    * queued here, and no background work is still running. */
   private over(): boolean {
     const pending = this.pending ?? Math.max(0, this.given - this.results);
-    return this.answered && pending === 0 && this.queued.length === 0 && this.background.size === 0;
+    const taken = !this.echoes || this.unconsumed.size === 0;
+    return this.answered && pending === 0 && taken && this.queued.length === 0 && this.background.size === 0;
   }
 
   /** Pause holds the session at its next tool call; Step lets one through. */
@@ -250,6 +271,37 @@ export class Turn {
     } else {
       this.mode = "pause";
     }
+  }
+
+  /**
+   * This result's own share of the usage: `modelUsage` is cumulative for the
+   * whole query, so each result reports what was added since the one before.
+   */
+  private share(models: unknown, main: unknown): [Usage | null, Record<string, Usage> | null] {
+    const now = byModel(models);
+    if (now === null) {
+      return [usage(undefined, main), null];
+    }
+    const delta: Record<string, Usage> = {};
+    const total = { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 };
+    for (const [model, u] of Object.entries(now)) {
+      const before = this.totals[model] ?? { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 };
+      const d = {
+        inputTokens: Math.max(0, u.inputTokens - before.inputTokens),
+        outputTokens: Math.max(0, u.outputTokens - before.outputTokens),
+        cacheReadTokens: Math.max(0, u.cacheReadTokens - before.cacheReadTokens),
+        cacheWriteTokens: Math.max(0, u.cacheWriteTokens - before.cacheWriteTokens),
+      };
+      if (d.inputTokens + d.outputTokens + d.cacheReadTokens + d.cacheWriteTokens > 0) {
+        delta[model] = d;
+        total.inputTokens += d.inputTokens;
+        total.outputTokens += d.outputTokens;
+        total.cacheReadTokens += d.cacheReadTokens;
+        total.cacheWriteTokens += d.cacheWriteTokens;
+      }
+    }
+    this.totals = now;
+    return [total, delta];
   }
 
   /** Stops the turn: waiting calls are not run, and the SDK is interrupted. */
@@ -426,6 +478,17 @@ export class Turn {
       this.results += 1;
       this.answered = true;
       this.pending = typeof message.queued_turn_count === "number" ? message.queued_turn_count : null;
+      const echoed = [
+        ...(Array.isArray(message.user_message_uuids) ? (message.user_message_uuids as unknown[]) : []),
+        ...(typeof message.user_message_uuid === "string" ? [message.user_message_uuid] : []),
+      ];
+      if (echoed.length > 0) {
+        this.echoes = true;
+        for (const uuid of echoed) {
+          this.unconsumed.delete(String(uuid));
+        }
+      }
+      const [share, byModel] = this.share(message.modelUsage, message.usage);
       this.send({
         type: "result",
         isError: message.is_error === true,
@@ -433,7 +496,8 @@ export class Turn {
         stopReason: typeof message.stop_reason === "string" ? message.stop_reason : null,
         numTurns: Number(message.num_turns ?? 0),
         costUsd: typeof message.total_cost_usd === "number" ? message.total_cost_usd : null,
-        usage: usage(message.modelUsage, message.usage),
+        usage: share,
+        usageByModel: byModel,
         sessionId: String(message.session_id ?? ""),
         denials: Array.isArray(message.permission_denials)
           ? (message.permission_denials as Record<string, unknown>[]).map((d) =>
@@ -518,6 +582,26 @@ export function effective(message: Record<string, unknown>): Effective {
     agents: strings(message.agents),
     plugins: strings(message.plugins),
   };
+}
+
+/**
+ * Usage by model from the SDK's cumulative `modelUsage`, or null without it.
+ */
+export function byModel(models: unknown): Record<string, Usage> | null {
+  if (models === null || typeof models !== "object" || Object.keys(models).length === 0) {
+    return null;
+  }
+  const n = (v: unknown) => (typeof v === "number" ? v : 0);
+  const out: Record<string, Usage> = {};
+  for (const [model, m] of Object.entries(models as Record<string, Record<string, unknown>>)) {
+    out[model] = {
+      inputTokens: n(m.inputTokens),
+      outputTokens: n(m.outputTokens),
+      cacheReadTokens: n(m.cacheReadInputTokens),
+      cacheWriteTokens: n(m.cacheCreationInputTokens),
+    };
+  }
+  return out;
 }
 
 /**

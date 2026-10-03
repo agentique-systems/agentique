@@ -158,6 +158,24 @@ switch (name) {
     out({ type: "assistant", model: "deepseek-v4-pro", content: [{ type: "text", text: "One test fails." }] });
     result();
     break;
+  case "lingering": {
+    // The turn answers, but background work keeps it open: the Studio's
+    // pause gate still reaches it.
+    init({ tools: ["mcp__agentique__read_model"], permissionMode: "default" });
+    result();
+    let mode = "none";
+    const deadline = Date.now() + 4000;
+    while (Date.now() < deadline) {
+      const message = await Promise.race([next(), new Promise((r) => setTimeout(() => r(null), 200))]);
+      if (message && message.type === "gate") {
+        mode = message.mode;
+        break;
+      }
+    }
+    out({ type: "assistant", model: "deepseek-v4-pro", content: [{ type: "text", text: `gate=${mode}` }] });
+    out({ type: "done" });
+    break;
+  }
   case "parallel":
     // One reply, sent as one message per content block (as the SDK does),
     // with two calls of the SDK's own tools that run side by side.

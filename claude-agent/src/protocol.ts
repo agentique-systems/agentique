@@ -167,6 +167,10 @@ export type CompanionMessage =
     }
   | { type: "compaction"; trigger: string; preTokens: number; postTokens: number | null }
   | { type: "paused"; tool: string }
+  /** The turn is over: nothing more is taken from the Studio. */
+  | { type: "done" }
+  /** A message that arrived after the turn was over, not given to it. */
+  | { type: "undelivered"; text: string }
   | { type: "retry"; attempt: number; error: string; status: number | null }
   | {
       type: "result";
@@ -175,7 +179,10 @@ export type CompanionMessage =
       stopReason: string | null;
       numTurns: number;
       costUsd: number | null;
+      /** Tokens since the turn's previous result, all models together. */
       usage: Usage | null;
+      /** The same, by model. */
+      usageByModel: Record<string, Usage> | null;
       sessionId: string;
       denials: string[];
       errors: string[];

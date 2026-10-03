@@ -82,13 +82,11 @@ pub const MODEL_FILES: [&str; 4] = [
 pub const AGENT_CONFIGURATION: [&str; 4] = [".claude", "CLAUDE.md", "AGENTS.md", ".mcp.json"];
 
 /// Never read with a file tool, wherever they are: files that hold keys.
-/// (`.env.example` and the like are templates, so they stay readable.)
-pub const SECRET_FILES: [&str; 11] = [
+/// (The companion reads `.env.example`, `.sample`, `.template` and `.dist`
+/// as templates, which hold none.)
+pub const SECRET_FILES: [&str; 8] = [
     "**/.env",
-    "**/.env.local",
-    "**/.env.production",
-    "**/.env.development",
-    "**/.env.staging",
+    "**/.env.*",
     "**/*.pem",
     "**/*.key",
     "**/.git-credentials",
@@ -108,11 +106,15 @@ pub enum Place {
     Worktree,
 }
 
-/// `git` (or `git.exe`) followed, within one command (no `;`, `&`, `|` or
-/// line break in between), by the subcommand `sub`: options such as `-C .`
-/// or `-c x=y` may come between them.
+/// The start of a git command up to its subcommand: `git` (or `git.exe`)
+/// and its own options (`-C <folder>`, `-c <name>=<value>`, `--no-pager`),
+/// so the subcommand is the first word that is not an option. A word in a
+/// commit message or a path is not a subcommand.
+const GIT: &str = r"\bgit(\.exe)?(\s+(-[Cc]\s+\S+|--?[A-Za-z][\w.-]*(=\S+)?))*\s+";
+
+/// A git command whose subcommand is `sub`.
 fn git(sub: &str) -> String {
-    format!(r"\bgit(\.exe)?\b[^\n;&|]*?\b{sub}\b")
+    format!(r"{GIT}{sub}\b")
 }
 
 /// The standard refused commands. Pushing is refused unless `push`; force
@@ -173,17 +175,16 @@ pub fn refused_commands(place: Place, push: bool, network: bool) -> Vec<RefusedC
     if place == Place::WorkingCopy {
         list.push(refused(
             &format!(
-                r"{}(reset\b[^\n;&|]*--hard|clean\b[^\n;&|]*(\s-[a-zA-Z]*f|--force)|checkout\b[^\n;&|]*(\s--(\s|$)|\s\.(\s|$)|\s-f\b|--force)|restore\b|switch\b[^\n;&|]*(--discard-changes|\s-f\b|--force)|stash\s+(drop|clear)|branch\b[^\n;&|]*(\s-D\b|--delete[^\n;&|]*--force|--force[^\n;&|]*--delete)|rebase\b|filter-branch|filter-repo|update-ref\b)",
-                r"\bgit(\.exe)?\b[^\n;&|]*?\b"
+                r"{GIT}(reset\b[^\n;&|]*--hard|clean\b[^\n;&|]*(\s-[a-zA-Z]*f|--force)|checkout\b[^\n;&|]*(\s--(\s|$)|\s\.(\s|$)|\s-f\b|--force)|restore\b|switch\b[^\n;&|]*(--discard-changes|\s-f\b|--force)|stash\s+(drop|clear)|branch\b[^\n;&|]*(\s-D\b|--delete[^\n;&|]*--force|--force[^\n;&|]*--delete)|rebase\b|filter-branch|filter-repo|update-ref\b)"
             ),
-            "That would discard or rewrite work in the Operator's working copy.",
+            "That would discard or rewrite work in the Operator's working copy (to unstage a file, `git reset -- <path>` keeps the work).",
         ));
     }
     if !network {
         list.push(refused(
             &format!(
                 r"(^|[;&|(]\s*)(curl|wget|Invoke-WebRequest|Invoke-RestMethod|iwr|irm)\b|{}|\b(npm|pnpm|yarn)\s+(install|ci|add|i)\b|\bpip3?\s+install\b|\bcargo\s+(install|update|fetch)\b",
-                r"\bgit(\.exe)?\b[^\n;&|]*?\b(fetch|pull|clone)\b"
+                git("(fetch|pull|clone)")
             ),
             "The network is off for this session.",
         ));
@@ -524,6 +525,22 @@ mod tests {
             refused("gh api graphql -f query='mutation { mergePullRequest(input: {}) }'").is_some()
         );
         assert!(refused("cat crates/x/.env.local").is_some());
+        // A subcommand is the first word that is not an option: words in a
+        // message or a path are not.
+        for ordinary in [
+            "git commit -m \"Restore the old layout\"",
+            "git commit -m \"Fix rebase handling\"",
+            "git commit -m \"push the button\"",
+            "git log -- crates/rebase/x.rs",
+            "cat .git/hooks/pre-push",
+            "git --no-pager log --oneline",
+        ] {
+            assert_eq!(
+                refusal(Place::WorkingCopy, false, false, ordinary),
+                None,
+                "{ordinary}"
+            );
+        }
         assert!(refused("git push -f").is_some());
         assert!(refused("git push origin +agentique/x").is_some());
         assert!(refused("git push origin main").is_some());
@@ -609,6 +626,7 @@ mod tests {
             1
         );
         assert!(policy.hidden.contains(&"**/.env".to_string()));
+        assert!(policy.hidden.contains(&"**/.env.*".to_string()));
         let json = serde_json::to_value(&policy).unwrap();
         assert_eq!(json["undecided"], "ask");
         assert!(json["refusedCommands"].as_array().unwrap().len() > 5);

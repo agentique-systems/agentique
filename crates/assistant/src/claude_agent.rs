@@ -989,6 +989,9 @@ impl Runtime for ClaudeAgent {
         // with the reply's id: the results of a reply's calls are flushed
         // only when the next reply begins.
         let mut reply_id: Option<String> = None;
+        // The companion said the turn is over: it takes no more messages.
+        let mut over = false;
+        let mut undelivered: Vec<String> = Vec::new();
         let mut interrupted = false;
         let mut interrupted_at: Option<std::time::Instant> = None;
         let mut ended = false;
@@ -1006,8 +1009,15 @@ impl Runtime for ClaudeAgent {
                     break;
                 }
             }
-            if !interrupted && !ended {
-                let (messages, gate) = steering.take(starting);
+            // The gate always reaches the companion; messages until it says
+            // the turn is over (it may go on after a result, for queued
+            // messages or background work).
+            if !interrupted {
+                let (messages, gate) = if over {
+                    (Vec::new(), steering.take(starting).1)
+                } else {
+                    steering.take(starting)
+                };
                 starting = false;
                 for text in messages {
                     let _ = companion.send(&json!({ "type": "message", "text": text }));
@@ -1241,6 +1251,10 @@ impl Runtime for ClaudeAgent {
                         after,
                     }));
                 }
+                "done" => over = true,
+                "undelivered" => {
+                    undelivered.push(message["text"].as_str().unwrap_or_default().to_string());
+                }
                 "paused" => {
                     let tool = message["tool"].as_str().unwrap_or_default().to_string();
                     steering.note_held(&tool);
@@ -1248,15 +1262,30 @@ impl Runtime for ClaudeAgent {
                 }
                 "result" => {
                     turn.flush_results("Not run: the turn ended before this call.");
-                    let usage = &message["usage"];
-                    turn.stream(StreamEvent::Usage(Usage {
+                    let tokens = |usage: &Value| Usage {
                         input_tokens: usage["inputTokens"].as_u64().unwrap_or(0),
                         cache_creation_input_tokens: usage["cacheWriteTokens"]
                             .as_u64()
                             .unwrap_or(0),
                         cache_read_input_tokens: usage["cacheReadTokens"].as_u64().unwrap_or(0),
                         output_tokens: usage["outputTokens"].as_u64().unwrap_or(0),
-                    }));
+                    };
+                    match message["usageByModel"].as_object() {
+                        // Each model at its own price; one the tables do not
+                        // know at the turn's model's price.
+                        Some(models) => {
+                            for (model, usage) in models {
+                                let model = agq_providers::resolve_model(model)
+                                    .or_else(|| turn.author.clone())
+                                    .unwrap_or_else(|| self.model_ref(model));
+                                turn.stream(StreamEvent::ModelUsage {
+                                    model,
+                                    usage: tokens(usage),
+                                });
+                            }
+                        }
+                        None => turn.stream(StreamEvent::Usage(tokens(&message["usage"]))),
+                    }
                     if message["isError"] == true && !interrupted {
                         let errors: Vec<String> = message["errors"]
                             .as_array()
@@ -1298,7 +1327,7 @@ impl Runtime for ClaudeAgent {
         turn.flush_results("Not run: the runtime stopped.");
         // Messages the Operator added after the turn had ended never reached
         // it: say so, so they can be sent again.
-        let undelivered = steering.clear_messages();
+        undelivered.extend(steering.clear_messages());
         if !undelivered.is_empty() {
             turn.notice(&format!(
                 "Not delivered (the turn had ended): {}. Send it again.",

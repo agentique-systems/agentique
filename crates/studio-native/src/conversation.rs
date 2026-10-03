@@ -585,6 +585,13 @@ impl Studio {
                         self.daily_cost.add(cost);
                     }
                 }
+                StreamEvent::ModelUsage { model, usage } => {
+                    panel.usage.add(usage);
+                    panel.turn_usage.add(usage);
+                    if let Some(cost) = usage.cost_usd(&model) {
+                        self.daily_cost.add(cost);
+                    }
+                }
             },
             BackgroundEvent::Turn(TurnEvent::ToolFinished(result)) => {
                 panel.results.insert(result.tool_use_id.clone(), result);

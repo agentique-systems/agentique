@@ -216,7 +216,7 @@ test("the SDK's own tools, subagent tasks and compaction are reported to the Stu
     yield { type: "result", subtype: "success", is_error: false, session_id: "s1" };
   });
   await new Turn((m) => sent.push(m), sdk, mcp, {}, "agentique/test").run(start);
-  assert.deepEqual(sent.map((m) => m.type), ["assistant", "task", "task", "tool_done", "compaction", "result"]);
+  assert.deepEqual(sent.map((m) => m.type), ["assistant", "task", "task", "tool_done", "compaction", "result", "done"]);
   assert.deepEqual(sent[3], { type: "tool_done", toolUseId: "t1", isError: true, content: "1 failed" });
   assert.deepEqual(sent[4], { type: "compaction", trigger: "auto", preTokens: 180000, postTokens: 12000 });
   const done = sent[2];
@@ -365,7 +365,7 @@ test("background work keeps the turn open until it ends", async () => {
     yield { type: "result", subtype: "success", is_error: false, session_id: "s1", queued_turn_count: 0 };
   });
   await new Turn((m) => sent.push(m), sdk, mcp, {}, "agentique/test").run(start);
-  assert.deepEqual(sent.map((m) => m.type), ["task", "result", "task", "result"]);
+  assert.deepEqual(sent.map((m) => m.type), ["task", "result", "task", "result", "done"]);
 });
 
 test("a call held at the pause gate does not run when the turn is stopped", async () => {
@@ -398,4 +398,78 @@ test("usage covers every model the turn used", () => {
     { inputTokens: 120, outputTokens: 15, cacheReadTokens: 50, cacheWriteTokens: 0 },
   );
   assert.deepEqual(usage(undefined, { input_tokens: 3, output_tokens: 2 }), { inputTokens: 3, outputTokens: 2, cacheReadTokens: 0, cacheWriteTokens: 0 });
+});
+
+// Second review round of PR #98.
+
+test("Monitor's socket is an object, and still needs the network", () => {
+  assert.equal(decide("Monitor", { ws: { url: "wss://example.com" } }, policy, cwd, tools).kind, "deny");
+  assert.equal(decide("Monitor", { ws: { url: "wss://example.com" } }, { ...policy, network: true }, cwd, tools).kind, "allow");
+});
+
+test("key-file variants are hidden, templates are not, and odd read names are refused", () => {
+  const keys = { ...policy, hidden: [...policy.hidden, "**/.env.*"] };
+  for (const file of [".env.prod", "crates/x/.env.dev", ".env.test"]) {
+    assert.equal(decide("Read", { file_path: file }, keys, cwd, tools).kind, "deny", file);
+  }
+  for (const file of [".env.example", "deploy/.env.sample"]) {
+    assert.equal(decide("Read", { file_path: file }, keys, cwd, tools).kind, "allow", file);
+  }
+  assert.equal(decide("Read", { file_path: ".env." }, keys, cwd, tools).kind, "deny");
+  assert.equal(decide("Glob", { pattern: "**/*.environment.ts" }, keys, cwd, tools).kind, "allow");
+});
+
+test("a message the SDK has not taken yet keeps the turn open until a result says it took it", async () => {
+  const sent: CompanionMessage[] = [];
+  let turn: Turn;
+  let second = "";
+  const { sdk, mcp } = standIn(async function* ({ prompt }) {
+    const first = (await prompt.next()).value as { uuid: string };
+    turn.queue("Also update the README.");
+    const late = (await prompt.next()).value as { uuid: string };
+    second = late.uuid;
+    // A result taken before the SDK queued the late message: it echoes only
+    // the first, and counts nothing pending.
+    yield { type: "result", subtype: "success", is_error: false, session_id: "s1", queued_turn_count: 0, user_message_uuids: [first.uuid] };
+    yield { type: "result", subtype: "success", is_error: false, session_id: "s1", queued_turn_count: 0, user_message_uuids: [late.uuid] };
+  });
+  turn = new Turn((m) => sent.push(m), sdk, mcp, {}, "agentique/test");
+  await turn.run(start);
+  assert.ok(second !== "");
+  assert.equal(sent.filter((m) => m.type === "result").length, 2, "the turn waited for the late message's result");
+});
+
+test("each result reports its own share of the cumulative usage, by model", async () => {
+  const sent: CompanionMessage[] = [];
+  let turn: Turn;
+  const { sdk, mcp } = standIn(async function* ({ prompt }) {
+    await prompt.next();
+    turn.queue("And the tests.");
+    await prompt.next();
+    const models = (pro: number, flash: number) => ({
+      "deepseek-v4-pro": { inputTokens: pro, outputTokens: 10, cacheReadInputTokens: 0, cacheCreationInputTokens: 0 },
+      "deepseek-flash": { inputTokens: flash, outputTokens: 0, cacheReadInputTokens: 0, cacheCreationInputTokens: 0 },
+    });
+    yield { type: "result", subtype: "success", is_error: false, session_id: "s1", queued_turn_count: 1, modelUsage: models(100, 5) };
+    yield { type: "result", subtype: "success", is_error: false, session_id: "s1", queued_turn_count: 0, modelUsage: { ...models(250, 5), "deepseek-v4-pro": { inputTokens: 250, outputTokens: 30, cacheReadInputTokens: 0, cacheCreationInputTokens: 0 } } };
+  });
+  turn = new Turn((m) => sent.push(m), sdk, mcp, {}, "agentique/test");
+  await turn.run(start);
+  const results = sent.filter((m) => m.type === "result") as Extract<CompanionMessage, { type: "result" }>[];
+  assert.equal(results.length, 2);
+  assert.deepEqual(results[0].usage, { inputTokens: 105, outputTokens: 10, cacheReadTokens: 0, cacheWriteTokens: 0 });
+  // Only what was added since: flash used nothing more, so it is left out.
+  assert.deepEqual(results[1].usageByModel, { "deepseek-v4-pro": { inputTokens: 150, outputTokens: 20, cacheReadTokens: 0, cacheWriteTokens: 0 } });
+});
+
+test("a message that arrives after the turn is over is reported undelivered", async () => {
+  const sent: CompanionMessage[] = [];
+  const { sdk, mcp } = standIn(async function* ({ prompt }) {
+    await prompt.next();
+    yield { type: "result", subtype: "success", is_error: false, session_id: "s1", queued_turn_count: 0 };
+  });
+  const turn = new Turn((m) => sent.push(m), sdk, mcp, {}, "agentique/test");
+  await turn.run(start);
+  turn.queue("Too late.");
+  assert.deepEqual(sent.slice(-2), [{ type: "done" }, { type: "undelivered", text: "Too late." }]);
 });

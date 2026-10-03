@@ -922,3 +922,98 @@ fn parallel_calls_of_one_reply_keep_their_results() {
         ]
     );
 }
+
+/// Second review of PR #98: after a turn's first result the companion may
+/// keep it open (queued messages, background work); the pause gate still
+/// reaches it.
+#[test]
+fn the_pause_gate_reaches_a_turn_kept_open_after_its_result() {
+    let dir = tempfile::tempdir().unwrap();
+    let Some(mut agent) = development_agent(dir.path()) else {
+        return;
+    };
+    let steering = agent.steering.clone();
+    let pauser = std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_millis(600));
+        steering.set_gate(Gate::Pause);
+    });
+    let turn = run(&mut agent, asked("scenario:lingering Work."), false);
+    pauser.join().unwrap();
+    let said = texts(&turn.conversation).join(" ");
+    assert!(
+        said.contains("gate=pause"),
+        "{said} {:?}",
+        turn.conversation.entries
+    );
+}
+
+/// Second review of PR #98: without trusted-local execution the project's
+/// hooks are disabled (`disableAllHooks`); Agentique's own policy hook must
+/// still hold. Live, on `deepseek-flash` (a fraction of a cent): a file edit
+/// works, a model-file edit and a command are refused with their reasons.
+#[test]
+#[ignore = "live: costs money; set AGQ_LIVE=1 and a DeepSeek key"]
+fn live_without_commands_the_policy_hook_still_holds() {
+    if std::env::var("AGQ_LIVE").as_deref() != Ok("1") {
+        eprintln!("AGQ_LIVE is not 1: skipped");
+        return;
+    }
+    let companion = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../claude-agent");
+    let key = agq_providers::runtime_key(agq_providers::Provider::DeepSeek)
+        .expect("the credential store can be read")
+        .expect("a DeepSeek key");
+    let dir = tempfile::tempdir().unwrap();
+    let mut development = development(dir.path());
+    development.policy.commands = false;
+    let project = development.cwd.clone();
+    std::fs::create_dir_all(project.join("model")).unwrap();
+    std::fs::write(project.join("notes.txt"), "The build number is 41.\n").unwrap();
+    let model = "package Shop {\n    part def Store;\n}\n";
+    std::fs::write(project.join("model/Shop.sysml"), model).unwrap();
+    let mut agent = ClaudeAgent::new(
+        node().expect("Node.js on the PATH"),
+        Installation {
+            root: dir.path().join("runtime"),
+        },
+        dir.path().join("agent"),
+        Some("deepseek-flash".into()),
+        None,
+        key,
+    )
+    .with_development(development)
+    .with_endpoint(Endpoint::deepseek());
+    agent.script = Some(companion.join("src/main.ts"));
+    let turn = run_answering(
+        &mut agent,
+        asked(
+            "Do these three steps with your tools, then report what happened in each: \
+             1) Change 41 to 42 in notes.txt with your Edit tool. \
+             2) Try to add the line `// checked` at the end of model/Shop.sysml with your Edit tool. \
+             3) Try to run `echo hi` with your Bash tool.",
+        ),
+        |_| ToolResult::answer("not used"),
+    );
+    eprintln!("{:#?}", turn.conversation.entries);
+    let notes = std::fs::read_to_string(project.join("notes.txt")).unwrap();
+    assert!(notes.contains("42"), "{notes}");
+    assert_eq!(
+        std::fs::read_to_string(project.join("model/Shop.sysml")).unwrap(),
+        model
+    );
+    let refusals: Vec<String> = turn
+        .events
+        .iter()
+        .filter_map(|e| match e {
+            TurnEvent::ToolFinished(r) if r.is_error => Some(r.content.clone()),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        refusals.iter().any(|r| r.contains("apply_changes")),
+        "{refusals:?}"
+    );
+    assert!(
+        refusals.iter().any(|r| r.contains("trusted-local")),
+        "{refusals:?}"
+    );
+}

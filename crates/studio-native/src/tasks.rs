@@ -441,9 +441,11 @@ impl Studio {
                             calls.insert(id, call);
                         }
                     }
-                    agq_assistant::TurnEvent::Stream(agq_assistant::StreamEvent::Usage(u)) => {
-                        usage.add(u)
-                    }
+                    agq_assistant::TurnEvent::Stream(agq_assistant::StreamEvent::Usage(u))
+                    | agq_assistant::TurnEvent::Stream(agq_assistant::StreamEvent::ModelUsage {
+                        usage: u,
+                        ..
+                    }) => usage.add(u),
                     agq_assistant::TurnEvent::ToolFinished(result) => {
                         let (name, input) = calls.remove(&result.tool_use_id).unwrap_or_default();
                         let path = serde_json::from_str::<serde_json::Value>(&input)

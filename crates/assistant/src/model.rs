@@ -37,6 +37,13 @@ pub enum StreamEvent {
     ToolCallId { stream_id: String, id: String },
     /// The tokens the reply used, once it is complete; for showing costs.
     Usage(Usage),
+    /// Tokens one model used, for a runtime whose turn uses several (the
+    /// Claude Agent runtime's subagents and small tasks): priced at that
+    /// model's own price. Sent instead of [`StreamEvent::Usage`].
+    ModelUsage {
+        model: agq_providers::ModelRef,
+        usage: Usage,
+    },
 }
 
 /// Tokens billed for one model call. Total input is the sum of the three

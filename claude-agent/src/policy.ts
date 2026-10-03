@@ -208,11 +208,14 @@ function relativeTo(path: string, roots: string[], cwd: string): string | null {
 }
 
 /** A name Windows reads differently from how it is written: a stream
- * (`a:b`), or a trailing dot or space. */
+ * (`a:b`), or a trailing dot or space (`.` and `..` are ordinary). */
 function trickyName(path: string): string | null {
-  const parts = path.replace(/^[A-Za-z]:/, "").split(/[\\/]+/);
-  return parts.find((p) => p.includes(":") || /[. ]$/.test(p)) ?? null;
+  const parts = verbatimless(path).replace(/^[A-Za-z]:/, "").split(/[\\/]+/);
+  return parts.find((p) => p !== "." && p !== ".." && (p.includes(":") || /[. ]$/.test(p))) ?? null;
 }
+
+/** Example and template files, which hold no keys (`.env.example`). */
+const TEMPLATE = /\.(example|sample|template|dist)$/i;
 
 /** Whether a relative path matches a policy pattern (see `Policy`). */
 export function matches(relative: string, pattern: string): boolean {
@@ -248,7 +251,7 @@ function hiddenOrOutside(path: string, policy: Policy, cwd: string): Decision {
   if (relative === null) {
     return { kind: "ask", reason: `${path} is outside the folders this session may read` };
   }
-  const hidden = policy.hidden.find((h) => matches(relative, h));
+  const hidden = TEMPLATE.test(relative) ? undefined : policy.hidden.find((h) => matches(relative, h));
   if (hidden !== undefined) {
     return { kind: "deny", reason: `${relative} is not readable in this session (it can hold keys or other secrets)` };
   }
@@ -275,7 +278,12 @@ export function decide(
   if (tool in READ_TOOLS) {
     for (const field of READ_TOOLS[tool]) {
       const value = input[field];
-      const path = real(typeof value === "string" && value !== "" ? value : ".", cwd);
+      const written = typeof value === "string" && value !== "" ? value : ".";
+      const tricky = trickyName(written);
+      if (tricky !== null) {
+        return { kind: "deny", reason: `${written}: the name ${tricky} is read differently by Windows; use the plain path` };
+      }
+      const path = real(written, cwd);
       const decision = hiddenOrOutside(path, policy, cwd);
       if (decision.kind !== "allow") {
         return decision;
@@ -285,7 +293,7 @@ export function decide(
     // given (they become ripgrep exclusions); a glob naming one is refused
     // here too.
     const pattern = typeof input.glob === "string" ? input.glob : typeof input.pattern === "string" && tool === "Glob" ? input.pattern : "";
-    if (pattern && policy.hidden.some((h) => matches(pattern.replace(/^\.\//, ""), h) || pattern.includes(h.replace(/^\*\*\//, "")))) {
+    if (pattern && !TEMPLATE.test(pattern) && policy.hidden.some((h) => matches(pattern.replace(/^\.\//, ""), h))) {
       return { kind: "deny", reason: `${pattern} names files that can hold keys; they are not read in this session` };
     }
     return allow;
@@ -334,7 +342,8 @@ export function decide(
         return decision;
       }
     }
-    if ((typeof input.ws === "string" && input.ws !== "") || (typeof input.url === "string" && input.url !== "")) {
+    const socket = input.ws !== undefined && input.ws !== null && input.ws !== "";
+    if (socket || (typeof input.url === "string" && input.url !== "")) {
       if (!policy.network) {
         return { kind: "deny", reason: "The network is off for this session" };
       }
@@ -555,7 +564,12 @@ export function sdkOptions(
     settings: {
       env: {
         CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: "1",
-        ...(start.endpoint !== null ? { ANTHROPIC_BASE_URL: start.endpoint.baseUrl } : {}),
+        ANTHROPIC_BASE_URL: start.endpoint !== null ? start.endpoint.baseUrl : "https://api.anthropic.com",
+        // Where the API traffic goes stays the Studio's: a project's own
+        // settings cannot put a proxy or certificate in its way.
+        HTTPS_PROXY: env.HTTPS_PROXY ?? env.https_proxy ?? "",
+        HTTP_PROXY: env.HTTP_PROXY ?? env.http_proxy ?? "",
+        NODE_EXTRA_CA_CERTS: env.NODE_EXTRA_CA_CERTS ?? "",
       },
       ...(policy.commands ? {} : { disableAllHooks: true }),
     },

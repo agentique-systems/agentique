@@ -1257,7 +1257,7 @@ exercised by a test.
 | MCP servers | Agentique's only | Agentique's, plus servers a policy names (none by default): *tested* |
 | Project instructions | Off | `CLAUDE.md` importing `AGENTS.md`, loaded (`settingSources: ["project"]`): *configured*; seen live in the 2026-10-03 spike |
 | Skills | Off | The project's skills (`skills: "all"` with project settings): *configured*; this repository has none yet |
-| Hooks | One hook that denies everything else | The policy's hook (it re-checks Stop after a pause, and holds a paused call for up to a day); the project's own hooks run only with trusted-local execution, and the agent configuration (`.claude/`, `.mcp.json`, `CLAUDE.md`, `AGENTS.md`) is protected unless an objective names it: *tested* |
+| Hooks | One hook that denies everything else | The policy's hook (it re-checks Stop after a pause, and holds a paused call for up to a day); the project's own hooks run only with trusted-local execution, and the agent configuration (`.claude/`, `.mcp.json`, `CLAUDE.md`, `AGENTS.md`) is protected unless an objective names it; the endpoint, the key scrub and proxies are pinned above the project's settings: *tested*, and *live* with commands off (the policy hook still refused a model-file edit and a command) |
 | Persistent context | Off | Project instructions; auto memory stays off (C-40): *configured* |
 | Compaction | The SDK's, not shown | The SDK's, as a notice with the token counts: *tested* |
 | Resumable sessions | Each turn forks the session it continues | The same: *live* (the second turn resumed and answered from memory) |
@@ -1266,4 +1266,4 @@ exercised by a test.
 | Web fetch and search | Off | Fetch when the project allows the network; search only where the endpoint offers it (Anthropic; DeepSeek ignores server tools): *configured* |
 | Steering | Stop only | Queued messages ("Add" while it works), Pause before the next tool call, Step, Resume, Stop: *tested* (stand-in and companion) |
 | Keys | The Anthropic key in the companion's environment | The model's key only, kept out of the session's commands, hooks and MCP servers (`CLAUDE_CODE_SUBPROCESS_ENV_SCRUB`, measured with and without on 2026-10-03) |
-| Cost | The SDK's estimate | From the usage of every model a turn used (subagents, compaction and small tasks included), at the main model's price, which is the higher (DeepSeek's dated table, peak price): *tested* |
+| Cost | The SDK's estimate | From the usage of every model a turn used (subagents, compaction and small tasks included), each result's own share, each model at its own dated price (an unknown model at the turn's): *tested* |
