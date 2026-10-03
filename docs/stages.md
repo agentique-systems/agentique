@@ -1234,7 +1234,7 @@ launcher, and C-52's typed decisions, as recorded above.
 | W11.3 The control interface | `stage11/control` | Built: the per-frame control registry (regions for the cached columns and the views inside them; controls in painting order, clipped to what is visible), observations, actions through real input and command dispatch, stale refusal (instance and the observed screen revision always; project, build and session when given; the selection is part of the screen), the Operator's own refused to agents where each effect happens (approval dialogs and the Operator's questions, Settings, the Conversation, locking, undo, appearance, the agents chip), whatever route reaches it, with an agent's changes recorded as the Assistant's, waits beside actions, expired requests dropped, the event trace, marks and the agents chip with Pause, Step, Resume, the local endpoint (`--control`; bounded lines and connections, an OS-random token), `observe_app` and `act_in_app`; the journey `control_journey` drives the real window through the endpoint, including the refusals |
 | W11.4 Lifecycle | `stage11/control` | Built: the supervising launcher (handover by exit code 75 and `handover.json`, which names a registered build, the session and the project; an exit without a valid handover counts as a crash; crash restart once, then the build that was last known good before it started; a crash an hour after starting counts as a first one), `--supervised` and `--adopted` in the Studio (also on the one-shot `--adopt` path), the check after adoption before the ready file, the Studio's work stopped before it hands over; continuation of objectives comes with W11.5 |
 | W11.5 The Orchestrator | `stage11/orchestrator` | Built: the crate `agq-orchestrator` (record and keyed journal, the cycle's phases, gates for protected paths, agent configuration at any depth, Agentique's safeguards, keys in the change and in everything pushed, locked elements, the code of locked parts through the links, criteria that fail before the change and run tests after, and a line-level baseline guard; roles as separate Claude Agent sessions with one hand-over tool each, the lead and the reviewer running no commands, worktrees that cannot move the repository's other refs; one squashed commit of the reviewed tree pushed per review, an idempotent merge, release and debug builds, test instances without the Studio's keys driven through the control interface), budgets and no-progress stops, Pause, Step, Resume, Stop and messages that reach a working agent, interruption that leaves an objective to continue, and continuation in an adopted build (a build that does not take over ends the objective); the Studio's Objectives panel and its status line; agents may not operate the panel. Tested: unit tests, and `tests/cycle.rs` runs cycles end to end with a scripted companion (a proposal whose criterion fails on the base, a key-gate failure, a repair, checks on a clean checkout, independent review, a merge the permissions refuse; and an interruption continued to the end). Live use comes with W11.7 |
-| W11.6 Typed decisions in operation | — | not started |
+| W11.6 Typed decisions in operation | `stage11/decisions` | Built: `decide` (a situation read from an observation; the deterministic rules; Jev's typed choice under a 4 s deadline with a 0.6 confidence threshold; escalation to the reasoning model on low confidence, an invalid answer, a timeout or a failure; an approval waits by rule, without a model), and the Orchestrator clearing a dialog in a test instance's way before each behavioural criterion in Evaluate and Try, a decision to confirm never carried out, each decision's cost and latency in the objective's spend. Measured live (below); the control interface refuses the system's folder picker to agents |
 | W11.7 Proof | — | not started |
 
 **Capability checklist: the Claude Agent runtime against the Claude Code
@@ -1267,3 +1267,28 @@ exercised by a test.
 | Steering | Stop only | Queued messages ("Add" while it works), Pause before the next tool call, Step, Resume, Stop: *tested* (stand-in and companion) |
 | Keys | The Anthropic key in the companion's environment | The model's key only, kept out of the session's commands, hooks and MCP servers (`CLAUDE_CODE_SUBPROCESS_ENV_SCRUB`, measured with and without on 2026-10-03) |
 | Cost | The SDK's estimate | From the usage of every model a turn used (subagents, compaction and small tasks included), each result's own share, each model at its own dated price (an unknown model at the turn's): *tested* |
+
+
+**W11.6 measured** (live, 2026-10-04; Jev `jev-1.13.0` through TypeSafe AI, the reasoning model `deepseek-v4-pro` through DeepSeek; results kept outside the repository)
+
+Decisions on 34 situations from the Studio's real dialogs (`crates/orchestrator/tests/fixtures/decisions.json`: the goal and the controls that make progress without loss; four are approval dialogs; a harmful error confirms what should not be):
+
+| Way | Right | Harmful | Failed | Latency p50 / p95 | Cost (34) |
+|---|---|---|---|---|---|
+| Rules (forward: an empty field, else confirm; approvals wait) | 21 | 8 | 0 | 0 / 0 ms | $0 |
+| Jev alone | 28 | 0 | 0 | 228 / 309 ms | $0.0010 |
+| Reasoning model alone | 31 | 0 | 2 | 5.1 / 11.6 s | $0.053 |
+| Jev, escalating to the model (9 escalated) | 30 | 0 | 0 | 0.24 / 14.8 s | $0.016 |
+
+The first run scored only one answer per task; three tasks with two valid next steps (naming before choosing a kind) were then given both, before the second run, and the model got one retry for an unreadable answer: first run rules 18, Jev 25, model 26 (3 failed), escalating 24.
+
+The workflow: a test instance of the Studio, driven only through its control interface; ten dialogs the Studio really opens stand, one at a time, in the way of a goal ("Show the graph view of the model"); each way decides what to press, unguarded, and the step is taken. Success is the goal reached with the model and the project unchanged:
+
+| Way | Succeeded | Harmful | Blocked | Latency p50 / p95 | Cost |
+|---|---|---|---|---|---|
+| Rules | 0 of 9 | 3 | 6 | 0 / 0 ms | $0 |
+| Jev alone | 4 of 10 | 2 | 4 | 245 / 368 ms | $0.0003 |
+| Reasoning model alone | 9 of 10 | 1 | 0 | 3.5 / 30.7 s | $0.026 |
+| Jev, escalating | 8 of 10 | 1 | 1 | 3.0 / 11.4 s | $0.017 |
+
+Jev is two orders of magnitude cheaper and faster, and right when it is confident; unsure on cancelling an unrelated dialog, it escalates, so escalation keeps most of the model's success at about two thirds of its cost and a lower tail. No way is free of a harmful choice (the model and the escalating way each confirmed an empty Checkpoint dialog once), so in the Orchestrator a decision to confirm a dialog in the way is never carried out, and a judgment never passes a criterion. For dialogs unrelated to the goal, the fixed rule "cancel" would do as well; typed decisions earn their place where the dialog may serve the goal (the 34 situations).

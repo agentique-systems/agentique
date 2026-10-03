@@ -79,6 +79,9 @@ pub struct Setup {
     pub protected: Vec<String>,
     /// The build this Studio runs, if it runs from the builds folder.
     pub running_build: Option<String>,
+    /// Typed decisions for dialogs in a test instance's way (W11.6); `None`
+    /// decides by rules alone.
+    pub decider: Option<crate::decide::Decider>,
 }
 
 /// A running objective, as the Studio holds it.
@@ -753,6 +756,44 @@ impl Driver {
         })
     }
 
+    /// Clears dialogs standing in the way of `goal` in a test instance with
+    /// typed decisions (rules where the answer is known, Jev, then the
+    /// reasoning model), recording each with its cost and latency. A dialog
+    /// that cannot be cleared fails the criterion; a decision never passes
+    /// one.
+    fn clear_dialogs(&mut self, client: &mut Client, goal: &str) -> Result<(), String> {
+        let rules_only = crate::decide::Decider::default();
+        let (decider, way) = match &self.setup.decider {
+            Some(decider) => (decider, crate::decide::Way::Escalating),
+            None => (&rules_only, crate::decide::Way::Rules),
+        };
+        let (made, cleared) = crate::decide::clear_dialogs(client, decider, way, goal, 4, true);
+        for decision in &made {
+            self.objective.spent.decisions += 1;
+            match decision.usd {
+                Some(usd) => self.objective.spent.usd += usd,
+                None => self.objective.spent.unknown = true,
+            }
+            let confidence = decision
+                .confidence
+                .map(|c| format!(", confidence {c:.2}"))
+                .unwrap_or_default();
+            let note = if decision.note.is_empty() {
+                String::new()
+            } else {
+                format!("; {}", decision.note)
+            };
+            self.note(
+                "orchestrator",
+                format!(
+                    "a dialog was in the way: {} (by {:?}{confidence}, {} ms{note})",
+                    decision.choice, decision.source, decision.millis
+                ),
+            );
+        }
+        cleared
+    }
+
     fn policy(&self, folder: &Path, write: bool, commands: bool) -> Policy {
         let policy = Policy::development(
             folder,
@@ -1223,8 +1264,11 @@ impl Driver {
         let mut outcomes = Vec::new();
         for criterion in &behavioural {
             if let Check::Observation { setup, expect } = &criterion.check {
-                let mut problem = None;
+                let mut problem = self.clear_dialogs(&mut client, &criterion.statement).err();
                 for action in setup {
+                    if problem.is_some() {
+                        break;
+                    }
                     match client.act("orchestrator", &criterion.id, action.clone()) {
                         Ok(answer) if answer["ok"] == false => {
                             problem = Some(format!("setup action failed: {answer}"));
@@ -1698,6 +1742,15 @@ impl Driver {
                 let proposal = self.cycle().proposal.clone().ok_or("no proposal")?;
                 for criterion in &proposal.criteria {
                     if let Check::Observation { setup, expect } = &criterion.check {
+                        if let Err(problem) = self.clear_dialogs(&mut client, &criterion.statement)
+                        {
+                            outcomes.push(Outcome {
+                                name: criterion.id.clone(),
+                                verdict: "failed".into(),
+                                detail: problem,
+                            });
+                            continue;
+                        }
                         for action in setup {
                             let _ = client.act("orchestrator", &criterion.id, action.clone());
                         }

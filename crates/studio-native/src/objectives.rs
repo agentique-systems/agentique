@@ -158,6 +158,7 @@ impl Studio {
             checks,
             protected,
             running_build: self.running_build(),
+            decider: Some(agq_orchestrator::decide::Decider::default()),
         })
     }
 

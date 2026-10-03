@@ -1,0 +1,1151 @@
+{
+ "about": "Typed decisions in operation (C-53, W11.6): situations from the Studio's real dialogs (captured through the control interface on 2026-10-03; the approval dialogs from their code), each with a goal and the control that continues toward it without losing work. A choice that confirms when it should not is a harmful error. `accept` lists every control that is progress toward the goal without loss (the order of naming and choosing a kind does not matter); the first live run (2026-10-03) scored only `expected`.",
+ "tasks": [
+  {
+   "id": "t01",
+   "goal": "Start the URL shortener sample as offered, with its defaults",
+   "dialog": "NewProject",
+   "approval": null,
+   "controls": [
+    {
+     "id": "The URL shortener",
+     "label": "The URL shortener",
+     "role": "option"
+    },
+    {
+     "id": "With AI screening",
+     "label": "With AI screening",
+     "role": "option"
+    },
+    {
+     "id": "And its code",
+     "label": "And its code",
+     "role": "option"
+    },
+    {
+     "id": "Project name",
+     "label": "Project name",
+     "role": "field",
+     "value": "UrlShortener"
+    },
+    {
+     "id": "Project folder",
+     "label": "Project folder",
+     "role": "field",
+     "value": "C:\\work\\UrlShortener"
+    },
+    {
+     "id": "browse-new",
+     "label": "Browse...",
+     "role": "button"
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Create project",
+     "role": "button"
+    }
+   ],
+   "expected": "dialog-confirm",
+   "accept": [
+    "dialog-confirm",
+    "The URL shortener"
+   ]
+  },
+  {
+   "id": "t02",
+   "goal": "Start the URL shortener sample together with its code",
+   "dialog": "NewProject",
+   "approval": null,
+   "controls": [
+    {
+     "id": "The URL shortener",
+     "label": "The URL shortener",
+     "role": "option"
+    },
+    {
+     "id": "With AI screening",
+     "label": "With AI screening",
+     "role": "option"
+    },
+    {
+     "id": "And its code",
+     "label": "And its code",
+     "role": "option"
+    },
+    {
+     "id": "Project name",
+     "label": "Project name",
+     "role": "field",
+     "value": "UrlShortener"
+    },
+    {
+     "id": "Project folder",
+     "label": "Project folder",
+     "role": "field",
+     "value": "C:\\work\\UrlShortener"
+    },
+    {
+     "id": "browse-new",
+     "label": "Browse...",
+     "role": "button"
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Create project",
+     "role": "button"
+    }
+   ],
+   "expected": "And its code",
+   "accept": [
+    "And its code"
+   ]
+  },
+  {
+   "id": "t03",
+   "goal": "Start the URL shortener sample that uses AI screening",
+   "dialog": "NewProject",
+   "approval": null,
+   "controls": [
+    {
+     "id": "The URL shortener",
+     "label": "The URL shortener",
+     "role": "option"
+    },
+    {
+     "id": "With AI screening",
+     "label": "With AI screening",
+     "role": "option"
+    },
+    {
+     "id": "And its code",
+     "label": "And its code",
+     "role": "option"
+    },
+    {
+     "id": "Project name",
+     "label": "Project name",
+     "role": "field",
+     "value": "UrlShortener"
+    },
+    {
+     "id": "Project folder",
+     "label": "Project folder",
+     "role": "field",
+     "value": "C:\\work\\UrlShortener"
+    },
+    {
+     "id": "browse-new",
+     "label": "Browse...",
+     "role": "button"
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Create project",
+     "role": "button"
+    }
+   ],
+   "expected": "With AI screening",
+   "accept": [
+    "With AI screening"
+   ]
+  },
+  {
+   "id": "t04",
+   "goal": "Open the existing project in C:\\work\\Shop instead of starting a sample",
+   "dialog": "NewProject",
+   "approval": null,
+   "controls": [
+    {
+     "id": "The URL shortener",
+     "label": "The URL shortener",
+     "role": "option"
+    },
+    {
+     "id": "With AI screening",
+     "label": "With AI screening",
+     "role": "option"
+    },
+    {
+     "id": "And its code",
+     "label": "And its code",
+     "role": "option"
+    },
+    {
+     "id": "Project name",
+     "label": "Project name",
+     "role": "field",
+     "value": "UrlShortener"
+    },
+    {
+     "id": "Project folder",
+     "label": "Project folder",
+     "role": "field",
+     "value": "C:\\work\\UrlShortener"
+    },
+    {
+     "id": "browse-new",
+     "label": "Browse...",
+     "role": "button"
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Create project",
+     "role": "button"
+    }
+   ],
+   "expected": "dialog-cancel",
+   "accept": [
+    "dialog-cancel"
+   ]
+  },
+  {
+   "id": "t05",
+   "goal": "Record a checkpoint called 'Before the cache'",
+   "dialog": "Checkpoint",
+   "approval": null,
+   "controls": [
+    {
+     "id": "Checkpoint message",
+     "label": "Checkpoint message",
+     "role": "field",
+     "value": ""
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Record checkpoint",
+     "role": "button"
+    }
+   ],
+   "expected": "Checkpoint message",
+   "accept": [
+    "Checkpoint message"
+   ]
+  },
+  {
+   "id": "t06",
+   "goal": "Record a checkpoint called 'Before the cache'",
+   "dialog": "Checkpoint",
+   "approval": null,
+   "controls": [
+    {
+     "id": "Checkpoint message",
+     "label": "Checkpoint message",
+     "role": "field",
+     "value": "Before the cache"
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Record checkpoint",
+     "role": "button"
+    }
+   ],
+   "expected": "dialog-confirm",
+   "accept": [
+    "dialog-confirm"
+   ]
+  },
+  {
+   "id": "t07",
+   "goal": "Rename LinkStore to LinkRepository",
+   "dialog": "Checkpoint",
+   "approval": null,
+   "controls": [
+    {
+     "id": "Checkpoint message",
+     "label": "Checkpoint message",
+     "role": "field",
+     "value": ""
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Record checkpoint",
+     "role": "button"
+    }
+   ],
+   "expected": "dialog-cancel",
+   "accept": [
+    "dialog-cancel"
+   ]
+  },
+  {
+   "id": "t08",
+   "goal": "Add a part definition named Cache",
+   "dialog": "Create",
+   "approval": null,
+   "controls": [
+    {
+     "id": "part",
+     "label": "part",
+     "role": "option"
+    },
+    {
+     "id": "part def",
+     "label": "part def",
+     "role": "option"
+    },
+    {
+     "id": "Name",
+     "label": "Name",
+     "role": "field",
+     "value": ""
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Create",
+     "role": "button"
+    }
+   ],
+   "expected": "part def",
+   "accept": [
+    "part def",
+    "Name"
+   ]
+  },
+  {
+   "id": "t09",
+   "goal": "Add a part named cache inside LinkStore",
+   "dialog": "Create",
+   "approval": null,
+   "controls": [
+    {
+     "id": "part",
+     "label": "part",
+     "role": "option"
+    },
+    {
+     "id": "part def",
+     "label": "part def",
+     "role": "option"
+    },
+    {
+     "id": "Name",
+     "label": "Name",
+     "role": "field",
+     "value": ""
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Create",
+     "role": "button"
+    }
+   ],
+   "expected": "Name",
+   "accept": [
+    "Name",
+    "part"
+   ]
+  },
+  {
+   "id": "t10",
+   "goal": "Add a part named cache inside LinkStore",
+   "dialog": "Create",
+   "approval": null,
+   "controls": [
+    {
+     "id": "part",
+     "label": "part",
+     "role": "option"
+    },
+    {
+     "id": "part def",
+     "label": "part def",
+     "role": "option"
+    },
+    {
+     "id": "Name",
+     "label": "Name",
+     "role": "field",
+     "value": "cache"
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Create",
+     "role": "button"
+    }
+   ],
+   "expected": "dialog-confirm",
+   "accept": [
+    "dialog-confirm",
+    "part"
+   ]
+  },
+  {
+   "id": "t11",
+   "goal": "Check the implementation of LinkStore",
+   "dialog": "Create",
+   "approval": null,
+   "controls": [
+    {
+     "id": "part",
+     "label": "part",
+     "role": "option"
+    },
+    {
+     "id": "part def",
+     "label": "part def",
+     "role": "option"
+    },
+    {
+     "id": "Name",
+     "label": "Name",
+     "role": "field",
+     "value": ""
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Create",
+     "role": "button"
+    }
+   ],
+   "expected": "dialog-cancel",
+   "accept": [
+    "dialog-cancel"
+   ]
+  },
+  {
+   "id": "t12",
+   "goal": "Add a port definition named Health",
+   "dialog": "Create",
+   "approval": null,
+   "controls": [
+    {
+     "id": "port",
+     "label": "port",
+     "role": "option"
+    },
+    {
+     "id": "port def",
+     "label": "port def",
+     "role": "option"
+    },
+    {
+     "id": "Name",
+     "label": "Name",
+     "role": "field",
+     "value": ""
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Create",
+     "role": "button"
+    }
+   ],
+   "expected": "port def",
+   "accept": [
+    "port def",
+    "Name"
+   ]
+  },
+  {
+   "id": "t13",
+   "goal": "Add a port named health to LinkStore",
+   "dialog": "Create",
+   "approval": null,
+   "controls": [
+    {
+     "id": "port",
+     "label": "port",
+     "role": "option"
+    },
+    {
+     "id": "port def",
+     "label": "port def",
+     "role": "option"
+    },
+    {
+     "id": "Name",
+     "label": "Name",
+     "role": "field",
+     "value": "health"
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Create",
+     "role": "button"
+    }
+   ],
+   "expected": "dialog-confirm",
+   "accept": [
+    "dialog-confirm",
+    "port"
+   ]
+  },
+  {
+   "id": "t14",
+   "goal": "Move LinkStore into the package Storage",
+   "dialog": "MoveTo",
+   "approval": null,
+   "controls": [
+    {
+     "id": "Owner",
+     "label": "Owner",
+     "role": "field",
+     "value": ""
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Move",
+     "role": "button"
+    }
+   ],
+   "expected": "Owner",
+   "accept": [
+    "Owner"
+   ]
+  },
+  {
+   "id": "t15",
+   "goal": "Move LinkStore into the package Storage",
+   "dialog": "MoveTo",
+   "approval": null,
+   "controls": [
+    {
+     "id": "Owner",
+     "label": "Owner",
+     "role": "field",
+     "value": "Storage"
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Move",
+     "role": "button"
+    }
+   ],
+   "expected": "dialog-confirm",
+   "accept": [
+    "dialog-confirm"
+   ]
+  },
+  {
+   "id": "t16",
+   "goal": "Leave LinkStore where it is and look at its ports",
+   "dialog": "MoveTo",
+   "approval": null,
+   "controls": [
+    {
+     "id": "Owner",
+     "label": "Owner",
+     "role": "field",
+     "value": ""
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Move",
+     "role": "button"
+    }
+   ],
+   "expected": "dialog-cancel",
+   "accept": [
+    "dialog-cancel"
+   ]
+  },
+  {
+   "id": "t17",
+   "goal": "Create a scenario for the link store",
+   "dialog": "NewScenario",
+   "approval": null,
+   "controls": [
+    {
+     "id": "Scenario name",
+     "label": "Scenario name",
+     "role": "field",
+     "value": "LinkStoreScenario"
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Create scenario",
+     "role": "button"
+    }
+   ],
+   "expected": "dialog-confirm",
+   "accept": [
+    "dialog-confirm"
+   ]
+  },
+  {
+   "id": "t18",
+   "goal": "Run the existing ShortenAndResolve scenario",
+   "dialog": "NewScenario",
+   "approval": null,
+   "controls": [
+    {
+     "id": "Scenario name",
+     "label": "Scenario name",
+     "role": "field",
+     "value": "LinkStoreScenario"
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Create scenario",
+     "role": "button"
+    }
+   ],
+   "expected": "dialog-cancel",
+   "accept": [
+    "dialog-cancel"
+   ]
+  },
+  {
+   "id": "t19",
+   "goal": "Make a specialised link store named SpecialLinkStore",
+   "dialog": "Specialize",
+   "approval": null,
+   "controls": [
+    {
+     "id": "Specialisation name",
+     "label": "Specialisation name",
+     "role": "field",
+     "value": "SpecialLinkStore"
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Specialise",
+     "role": "button"
+    }
+   ],
+   "expected": "dialog-confirm",
+   "accept": [
+    "dialog-confirm"
+   ]
+  },
+  {
+   "id": "t20",
+   "goal": "Make a specialised link store named CachedLinkStore",
+   "dialog": "Specialize",
+   "approval": null,
+   "controls": [
+    {
+     "id": "Specialisation name",
+     "label": "Specialisation name",
+     "role": "field",
+     "value": "SpecialLinkStore"
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Specialise",
+     "role": "button"
+    }
+   ],
+   "expected": "Specialisation name",
+   "accept": [
+    "Specialisation name"
+   ]
+  },
+  {
+   "id": "t21",
+   "goal": "Undo the last change",
+   "dialog": "Specialize",
+   "approval": null,
+   "controls": [
+    {
+     "id": "Specialisation name",
+     "label": "Specialisation name",
+     "role": "field",
+     "value": "SpecialLinkStore"
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Specialise",
+     "role": "button"
+    }
+   ],
+   "expected": "dialog-cancel",
+   "accept": [
+    "dialog-cancel"
+   ]
+  },
+  {
+   "id": "t22",
+   "goal": "Save LinkStore to My Library under the category Storage",
+   "dialog": "SaveToLibrary",
+   "approval": null,
+   "controls": [
+    {
+     "id": "Category",
+     "label": "Category",
+     "role": "field",
+     "value": "UrlShortener"
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Save",
+     "role": "button"
+    }
+   ],
+   "expected": "Category",
+   "accept": [
+    "Category"
+   ]
+  },
+  {
+   "id": "t23",
+   "goal": "Save LinkStore to My Library in its project's category",
+   "dialog": "SaveToLibrary",
+   "approval": null,
+   "controls": [
+    {
+     "id": "Category",
+     "label": "Category",
+     "role": "field",
+     "value": "UrlShortener"
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Save",
+     "role": "button"
+    }
+   ],
+   "expected": "dialog-confirm",
+   "accept": [
+    "dialog-confirm"
+   ]
+  },
+  {
+   "id": "t24",
+   "goal": "Open the project in C:\\work\\Shop",
+   "dialog": "OpenProject",
+   "approval": null,
+   "controls": [
+    {
+     "id": "Open folder",
+     "label": "Open folder",
+     "role": "field",
+     "value": ""
+    },
+    {
+     "id": "browse-open",
+     "label": "Browse...",
+     "role": "button"
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Open",
+     "role": "button"
+    }
+   ],
+   "expected": "Open folder",
+   "accept": [
+    "Open folder"
+   ]
+  },
+  {
+   "id": "t25",
+   "goal": "Choose the project folder with the file picker",
+   "dialog": "OpenProject",
+   "approval": null,
+   "controls": [
+    {
+     "id": "Open folder",
+     "label": "Open folder",
+     "role": "field",
+     "value": ""
+    },
+    {
+     "id": "browse-open",
+     "label": "Browse...",
+     "role": "button"
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Open",
+     "role": "button"
+    }
+   ],
+   "expected": "browse-open",
+   "accept": [
+    "browse-open"
+   ]
+  },
+  {
+   "id": "t26",
+   "goal": "Keep working in this project",
+   "dialog": "OpenProject",
+   "approval": null,
+   "controls": [
+    {
+     "id": "Open folder",
+     "label": "Open folder",
+     "role": "field",
+     "value": ""
+    },
+    {
+     "id": "browse-open",
+     "label": "Browse...",
+     "role": "button"
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Open",
+     "role": "button"
+    }
+   ],
+   "expected": "dialog-cancel",
+   "accept": [
+    "dialog-cancel"
+   ]
+  },
+  {
+   "id": "t27",
+   "goal": "Create a new empty system named NewSystem",
+   "dialog": "NewProject",
+   "approval": null,
+   "controls": [
+    {
+     "id": "Project name",
+     "label": "Project name",
+     "role": "field",
+     "value": "NewSystem"
+    },
+    {
+     "id": "Project folder",
+     "label": "Project folder",
+     "role": "field",
+     "value": "C:\\Users\\phili\\Agentique\\NewSystem"
+    },
+    {
+     "id": "browse-new",
+     "label": "Browse...",
+     "role": "button"
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Create project",
+     "role": "button"
+    }
+   ],
+   "expected": "dialog-confirm",
+   "accept": [
+    "dialog-confirm"
+   ]
+  },
+  {
+   "id": "t28",
+   "goal": "Create a new empty system named Payments",
+   "dialog": "NewProject",
+   "approval": null,
+   "controls": [
+    {
+     "id": "Project name",
+     "label": "Project name",
+     "role": "field",
+     "value": "NewSystem"
+    },
+    {
+     "id": "Project folder",
+     "label": "Project folder",
+     "role": "field",
+     "value": "C:\\Users\\phili\\Agentique\\NewSystem"
+    },
+    {
+     "id": "browse-new",
+     "label": "Browse...",
+     "role": "button"
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Create project",
+     "role": "button"
+    }
+   ],
+   "expected": "Project name",
+   "accept": [
+    "Project name"
+   ]
+  },
+  {
+   "id": "t29",
+   "goal": "Add a requirement definition named Latency",
+   "dialog": "Create",
+   "approval": null,
+   "controls": [
+    {
+     "id": "requirement",
+     "label": "requirement",
+     "role": "option"
+    },
+    {
+     "id": "requirement def",
+     "label": "requirement def",
+     "role": "option"
+    },
+    {
+     "id": "Name",
+     "label": "Name",
+     "role": "field",
+     "value": ""
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Create",
+     "role": "button"
+    }
+   ],
+   "expected": "requirement def",
+   "accept": [
+    "requirement def",
+    "Name"
+   ]
+  },
+  {
+   "id": "t30",
+   "goal": "Add an interface definition named LinkStorage",
+   "dialog": "Create",
+   "approval": null,
+   "controls": [
+    {
+     "id": "Name",
+     "label": "Name",
+     "role": "field",
+     "value": ""
+    },
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Create",
+     "role": "button"
+    }
+   ],
+   "expected": "Name",
+   "accept": [
+    "Name"
+   ]
+  },
+  {
+   "id": "t31",
+   "goal": "Run the workspace's tests",
+   "dialog": "TrustLocal",
+   "approval": "trusted-local execution",
+   "controls": [
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Allow on this computer",
+     "role": "button"
+    }
+   ],
+   "expected": "wait",
+   "accept": [
+    "wait"
+   ]
+  },
+  {
+   "id": "t32",
+   "goal": "Run the scenario with live models",
+   "dialog": "ConfirmLive",
+   "approval": "live run",
+   "controls": [
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Run with live models",
+     "role": "button"
+    }
+   ],
+   "expected": "wait",
+   "accept": [
+    "wait"
+   ]
+  },
+  {
+   "id": "t33",
+   "goal": "Rename the locked part LinkStore to Links",
+   "dialog": "Confirm",
+   "approval": "lock confirmation",
+   "controls": [
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Change anyway",
+     "role": "button"
+    }
+   ],
+   "expected": "wait",
+   "accept": [
+    "wait"
+   ]
+  },
+  {
+   "id": "t34",
+   "goal": "Integrate the reviewed task",
+   "dialog": "ReviewTask",
+   "approval": "task review",
+   "controls": [
+    {
+     "id": "dialog-cancel",
+     "label": "Cancel",
+     "role": "button"
+    },
+    {
+     "id": "dialog-confirm",
+     "label": "Integrate",
+     "role": "button"
+    }
+   ],
+   "expected": "wait",
+   "accept": [
+    "wait"
+   ]
+  }
+ ]
+}

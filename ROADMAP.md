@@ -2027,9 +2027,12 @@ which of the actions a dialog offers continues a journey toward its goal
 without losing work), under a deadline. A confident answer in time is used;
 low confidence, an invalid answer, a timeout, an unavailable provider or a
 cancellation escalates to the reasoning agent; where the answer is already
-known, deterministic code decides and no model is asked. A typed decision
-never overrides a failing check, and its cost and latency are recorded with
-the objective.
+known, deterministic code decides and no model is asked (a dialog asking for
+the Operator's approval waits). A typed decision never overrides a failing
+check, a decision to confirm a dialog that stands in a journey's way is not
+carried out, and its cost and latency are recorded with the objective. The
+first such workflow clears dialogs in a test instance's way before each
+behavioural criterion (W11.6, measured in `docs/stages.md`).
 
 **Lifecycle.** The launcher supervises (§4.15). Before a handover the
 Orchestrator writes the continuation point (the phase reached, the adopted
