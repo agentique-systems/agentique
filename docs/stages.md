@@ -1034,7 +1034,8 @@ traced through the code (rename a part, the Assistant changing the model, an
 implementation task), who owns which state, and the corrections by priority.
 Confirmed defect: a task's verification counted a check only when it failed.
 
-**Built** (uncommitted on the branch; decisions pending the Operator are in
+**Built** (merged to `main` in #86 on 2026-10-03, which is not acceptance;
+decisions pending the Operator are in
 ROADMAP §7.6)
 
 | Item | State |
@@ -1073,5 +1074,83 @@ workflow in model execution), `d-daily`, `e-settings`, `h-library`,
   memory and disk than this machine had free (3.1 GB of memory, 6.7 GB of
   disk). The Inspector's "About this part" is computed when the Inspector
   renders, like its other sections; not measured on a 10k model.
-- CI's new companion step (Node 22 from the runner's tool cache) has not run.
+- CI's new companion step (Node 22 from the runner's tool cache) had not run:
+  on `main` CI stopped at checkout (a tracked agent worktree), repaired in
+  C-52's step 0a below.
 - Gates A–E are the Operator's; none is claimed.
+
+## Scenario I's typed decisions, alongside Stage 10 (C-52)
+
+Status: **in progress.** Started on 2026-10-03 under the Operator's direction
+(C-52, ROADMAP §6.6): the System One investigation's plan (updated after
+PR #86, baseline `219598b6`), built in dependency order as separately
+reviewable pull requests. External implementation work: it is not Stage 10's
+two-generation proof and claims none of its gates. Paid inference, live
+evaluations, production activation and the Operator's acceptance are
+separate decisions; nothing here was run against a real provider.
+
+**Reviewable sequence** (each based on the one before):
+
+| Step | Branch | What |
+|---|---|---|
+| 0a | `fix/ci-untrack-worktree` | CI's baseline: the tracked agent worktree, a Linux-only lint, a Linux lock race in a Studio test |
+| 0b | `fix/execution-cross-platform-scope` | Execution reads scoped paths the same way on every host |
+| G | `scenario-i/scope-and-plan` | C-52, the persistence decision named before it is built, the self-model, this record |
+| 1 | `jev/adapter-correctness` | A1–A4 and the validation policy |
+| 2 | `jev/deadlines-cancellation` | The decision handle, one deadline, cancellation |
+| 3 | `simulation/execution-identity` | Call limits, bindings, decision evidence, freshness, legacy records |
+| 4 | `scenario-i/typed-screening` | The opt-in single-choice evaluation in the Studio |
+| 5 | `url-shortener/jev-client` | The URL shortener's real client and conformance tests |
+| U | `providers/rig-0.43` | The rig migration |
+
+**Coverage checklist.** Every implementation item of the investigation's
+§3, §5, §6, §7.2 and §8, with its owner, its state and the evidence that
+accepts it. States: *done* (built and tested offline), *planned*,
+*not started*, *waits* (needs a decision or consent named in the row).
+
+| Item | Owner | State | Acceptance evidence |
+|---|---|---|---|
+| §8 0a: tracked worktree gitlink removed, worktrees ignored | `.gitignore`, the index | done | fresh clone: checkout's `git submodule foreach` cleanup exits 0 (128 on `main`); CI reaches its checks |
+| §8 0a: Linux lint (`unused_mut` in `claude_agent.rs`) | `crates/assistant/src/claude_agent.rs` | done | `cargo clippy --workspace --all-targets -D warnings` clean on Linux (WSL Ubuntu 24.04) |
+| §8 0a: Linux lock race reopening a project | `crates/studio-native/src/studio.rs` | done | the Studio's unit tests on Linux: 1 of 6 full runs failed before, 14 of 14 passed after |
+| §8 0b: host-independent scoped paths | `crates/execution/src/lib.rs` | done | historical assertion reproduced failing on Linux at `219598b6`, passing after; Windows and Unix forms and a link (junction on Windows) tested on both hosts |
+| §3.1 A1: complete bounded success bodies, bounded sanitized error excerpts | `providers/src/jev.rs` | planned (1) | >300-character fake-server regression first; UTF-8, chunked, oversize, truncated, read failure |
+| §3.1 A2 and §3.2: request-bound validation (IDs, kinds, model, options, legend, distributions, selection) | `providers/src/jev.rs` | planned (1) | malformed-reply matrix through HTTP and inline |
+| §3.1 A3: score keys canonical and exact | `providers/src/jev.rs` | planned (1) | `x`, `-1`, `00`, missing `0`, extra `n`, duplicate and colliding keys fail |
+| §3.1 A4: usage known, partial or unknown, never a false zero | `providers/src/jev.rs`; callers and summaries | planned (1, 3, 4) | omitted, partial, zero and mixed usage distinguishable |
+| §3.2 numeric tolerances with boundary fixtures, raw values kept | `providers/src/jev.rs` | planned (1) | fixtures just inside and outside each tolerance |
+| §3.1 A5: no silent chat for a decision model; capability-based resolution | `providers/src/capabilities.rs`, `studio-native/src/live.rs` | planned (4) | Jev dispatches only to decisions; unknown explicit ids and missing keys blocked |
+| §3.1 A6, §5.4: one monotonic deadline at the provider boundary | `providers` (2), `simulation` (3), `studio-native` (4) | planned | silent and slow servers end within the deadline and take the modelled timeout |
+| §3.1 A7, §5.5: execution identity, freshness, legacy records | `simulation`, `studio-native` | planned (3) | key mutation matrix; old and new readers; wrong digest; replay never live |
+| §3.1 A8: honest estimates, bounded calls and attempts, known live cost in the daily total | `studio-native` | planned (4) | consent snapshot, unknown cost labels, retries counted |
+| §3.3: abort on timeout, shared client, credential precedence, replay fails closed, provider failure vs semantic failure | `providers`, `simulation` | planned (1–3): preserve | existing tests kept; connection reuse and cancel-before-error tests added |
+| §3.4: documentation corrections (README, `live_model` comment, retry policy, capability text, prefix prices, fixture comments) | READMEs, `live.rs`, `capabilities.rs` | planned (1, 4, 5) | text matches the code |
+| §5.2: admission (one effective configuration, known pin, flat enum 2–255, confidence by identity) | `studio-native/src/live.rs`, read-only agent description in `simulation` | planned (4) | rejections before consent with their reason |
+| §5.2: state preparation and deterministic question mapping | `studio-native/src/live.rs`; enum value docs in the model | planned (4) | pure, offline, used by replay |
+| §5.3: condition table (valid, review, low confidence, deadline, invalid, provider failure, cancelled, allowance used up) | `simulation`, `studio-native` | planned (3, 4) | one test per row |
+| §5.3: fallback is not a mandatory pre-call blocklist | `models/link-screening`, docs | planned (4) | stated where the evaluation is offered |
+| §5.6: frozen consented plan, invalidated on change; effective model, data sent, attempts, estimate, unknown usage, confidence meaning, fallback and error reasons, stale results | `runs.rs`, `dialogs.rs`, `panels/run.rs` | planned (4) | consent mutation tests; journeys `i-scenarios`, `i-code` |
+| §5.7, §8 5: real Rust client; same six scenarios; frozen-response conformance with the held-link regression | URL shortener fixture, `implementation/tests` | planned (5) | offline harness unchanged; conformance tests |
+| §6.1: self-model before cross-part changes | `model/Agentique.sysml` | done (G) | architecture check and dogfood test green |
+| §6.2: interface sketches as built (handle, `read_reply(request, …)`, `CallLimits`, binding, Choice mapping, both `from_json` consumers) | as above | planned (1–5) | compiled and tested |
+| §6.3: no library extraction | — | done (decision) | two consumers share fixtures, not a crate |
+| §7.2 body handling | `providers/tests/jev.rs` | planned (1) | fake HTTP server |
+| §7.2 schema and numerics | `providers/src/jev.rs` tests | planned (1) | inline and wire |
+| §7.2 status and retry | `providers/tests/jev.rs` | planned (1, 2) | dispatch counts asserted |
+| §7.2 cancellation and deadline | `providers`, `studio-native` | planned (2, 4) | silent server, stalled body, backoff, drop, races |
+| §7.2 credentials and privacy | `providers` | planned (1, 2) | dummy keys only; no secret in diagnostics or `Debug` |
+| §7.2 routing and consent | `studio-native` | planned (4) | decide only; unknown, missing key, overrides, mixed agents, mutation after confirm |
+| §7.2 replay and freshness | `simulation`, `studio-native` | planned (3, 4) | panicking fake client in model and replay modes |
+| §7.2 scenario and code safety | model and fixture tests | planned (4, 5) | six scenarios; no held redirect; unavailable provider never allows |
+| §7.2 authority boundaries | existing worker, task and Execution tests | planned (4) | a top-confidence answer calls no write, execute or integrate tool |
+| §7.3–§7.6: evaluation definitions and reporting (quality, calibration, latency, coverage, economics); proposed thresholds | evaluation example and report, outside the default tests | planned (4) | definitions committed; no dataset or measurement invented |
+| §7.7: go/no-go and rollback | this record, ROADMAP | planned | rollback paths tested where code exists |
+| §8 U: rig 0.43 migration, provider parity, Windows TLS, dependency review | `crates/providers`, `Cargo.lock` | planned (U) | canned providers, chat, tools, thinking; live five-task evaluation waits for consent |
+
+**Deviations** (one line each, with the reason):
+
+- The investigation's "execution descriptor" is called a **binding** in code
+  (`AgentRequest.binding`, `Provenance.binding`): it says how an agent's call
+  is bound to a provider, and "execution" already names a part.
+- 0a also carries two Linux-only CI fixes found once checkout worked again (a
+  lint and a test's lock race); they were hidden behind the checkout failure.

@@ -538,9 +538,15 @@ package AgentiqueArchitecture {
         doc /* Talks to model providers through rig (and a thin Jev client, C-34);
              * keys in the OS credential store; model lists, capabilities, usage. The
              * only part that uses rig, tokio, reqwest or the credential-store crates
-             * (R-21, R-41). Owns the keys and the capability table. Temporary:
-             * agq-assistant still uses reqwest for its hand-written Claude client until
-             * W5.7 moves it here. */
+             * (R-21, R-41). Owns the keys, the capability table (which models chat
+             * and which make typed decisions, and which decision models are known
+             * pinned versions) and every provider call: streamed chat, and typed
+             * decisions (C-35, C-52) with replies read completely within a size
+             * limit and checked against the request that was sent, usage that says
+             * when it is unknown, one deadline for every attempt and wait, and
+             * cancellation that sends nothing more. Exposes no rig, tokio or HTTP
+             * type. Temporary: agq-assistant still uses reqwest for its hand-written
+             * Claude client until W5.7 moves it here. */
         part 'agq-providers' : Crate {
             doc /* The provider layer: one streamed model call for every provider,
                  * the capability table, keys and usage (S4.2 kept, start of W5.7). */
@@ -552,7 +558,11 @@ package AgentiqueArchitecture {
              * snapshot into disposable runtime structures and executes them with
              * stand-ins, recordings or a live model client it is given; records traces,
              * check verdicts and results with provenance, and works out freshness. Owns
-             * run results (app data). It never changes the System State and never
+             * run results (app data). It gives a live model client each call's
+             * deadline (plain std types, never stored) and carries, hashes and records
+             * the binding the Studio prepared (which provider and model answer, through
+             * which adapter and mapping), so a recording answers only the request it
+             * was made for (C-52). It never changes the System State and never
              * reaches a provider or any other service by itself. */
         part 'agq-simulation' : Crate;
     }
@@ -655,7 +665,9 @@ package AgentiqueArchitecture {
         doc /* Element identities and model types shown on the Surface. */
     }
     dependency from Studio to Providers {
-        doc /* Settings tests keys and lists models. */
+        doc /* Settings tests keys and lists models; a live evaluation's model client
+             * (the Studio's, handed to Simulation) asks the capability table how an
+             * agent's model is called and calls it through Providers (C-52). */
     }
     dependency from Studio to Library {
         doc /* The Library panel, insertion, previews and My Library. */
