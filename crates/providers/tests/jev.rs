@@ -136,7 +136,7 @@ fn a_decision_is_asked_and_read() {
     let reply = providers.decide(&request()).unwrap();
     assert!(matches!(&reply.answers["action"], Answer::Choice { choice, .. } if choice == "hold"));
     assert_eq!(reply.request_id.as_deref(), Some("req_7"));
-    assert_eq!(reply.usage.input_tokens, 64);
+    assert_eq!(reply.usage.input_tokens, Some(64));
     let (path, authorization, body) = requests.recv().unwrap();
     assert_eq!(path, "/v1/systemone");
     assert_eq!(authorization, "Bearer test-key");
@@ -192,9 +192,9 @@ fn overload_is_retried_and_a_refused_key_is_not() {
     let providers = Providers::new()
         .with_key(Provider::TypeSafe, "bad")
         .with_endpoint(Provider::TypeSafe, url);
-    let error = providers.decide(&request()).unwrap_err();
-    assert_eq!(error.kind, ErrorKind::KeyRefused);
-    assert!(error.message.contains("TYPESAFE_API_KEY"));
+    let failure = providers.decide(&request()).unwrap_err();
+    assert_eq!(failure.error.kind, ErrorKind::KeyRefused);
+    assert!(failure.error.message.contains("TYPESAFE_API_KEY"));
 }
 
 #[test]
@@ -270,9 +270,9 @@ fn a_reply_over_the_limit_is_refused() {
     let (url, requests) = serve_raw(vec![announced, streamed]);
     let providers = providers(url);
     for _ in 0..2 {
-        let error = providers.decide(&request()).unwrap_err();
-        assert_eq!(error.kind, ErrorKind::InvalidReply, "{error}");
-        assert!(error.message.contains("larger than"), "{error}");
+        let failure = providers.decide(&request()).unwrap_err();
+        assert_eq!(failure.error.kind, ErrorKind::InvalidReply, "{failure}");
+        assert!(failure.error.message.contains("larger than"), "{failure}");
     }
     assert_eq!(requests.try_iter().count(), 2);
 }
@@ -288,9 +288,9 @@ fn a_reply_cut_off_while_read_is_an_error() {
     )
     .into_bytes();
     let (url, _) = serve_raw(vec![cut]);
-    let error = providers(url).decide(&request()).unwrap_err();
-    assert_eq!(error.kind, ErrorKind::Unreachable, "{error}");
-    assert!(error.message.contains("cut off"), "{error}");
+    let failure = providers(url).decide(&request()).unwrap_err();
+    assert_eq!(failure.error.kind, ErrorKind::Unreachable, "{failure}");
+    assert!(failure.error.message.contains("cut off"), "{failure}");
 }
 
 /// An error reply is read only up to its own limit and shown as a short,
@@ -301,12 +301,187 @@ fn an_error_reply_is_shown_short_and_without_the_key() {
     body.push_str(&"x".repeat(20_000));
     body.push_str("\"}");
     let (url, _) = serve(vec![("403 Forbidden", "", body)]);
-    let error = providers(url).decide(&request()).unwrap_err();
-    assert_eq!(error.kind, ErrorKind::NoAccess);
-    let message = &error.message;
+    let failure = providers(url).decide(&request()).unwrap_err();
+    assert_eq!(failure.error.kind, ErrorKind::NoAccess);
+    let message = &failure.error.message;
     assert!(!message.contains("test-key"), "{message}");
     assert!(!message.contains(['\n', '\t', '\u{7}']), "{message}");
     assert!(message.contains("denied for … line two"), "{message}");
     assert!(message.chars().count() < 450, "{}", message.chars().count());
     assert!(message.ends_with('…'), "{message}");
+}
+
+/// A reply that arrives but does not answer the request is an error with
+/// its request counted and the usage it reported kept, never an answer.
+#[test]
+fn a_reply_that_does_not_fit_the_request_fails_with_its_usage() {
+    let wrong_model = ANSWER.replace("jev-1.13.0", "jev-1.14.0");
+    let unknown_option = ANSWER.replace("\"activate\"", "\"publish\"");
+    let (url, requests) = serve(vec![
+        ("200 OK", "x-typesafe-request-id: req_9\r\n", wrong_model),
+        ("200 OK", "", unknown_option),
+        ("200 OK", "", "not json".to_string()),
+    ]);
+    let providers = providers(url);
+    let failure = providers.decide(&request()).unwrap_err();
+    assert_eq!(failure.error.kind, ErrorKind::InvalidReply, "{failure}");
+    assert!(
+        failure.error.message.contains("`jev-1.14.0` answered"),
+        "{failure}"
+    );
+    assert_eq!(failure.attempts, 1);
+    assert_eq!(failure.request_id.as_deref(), Some("req_9"));
+    let usage = failure.usage.expect("the reply's usage is kept");
+    assert_eq!(
+        (usage.input_tokens, usage.output_tokens),
+        (Some(64), Some(4))
+    );
+    let failure = providers.decide(&request()).unwrap_err();
+    assert!(
+        failure
+            .error
+            .message
+            .contains("the option `activate` has no probability"),
+        "{failure}"
+    );
+    // A malformed success is not retried.
+    let failure = providers.decide(&request()).unwrap_err();
+    assert_eq!(failure.error.kind, ErrorKind::InvalidReply);
+    assert_eq!(failure.attempts, 1);
+    assert_eq!(failure.usage, None);
+    assert_eq!(requests.try_iter().count(), 3);
+}
+
+/// Refused, unknown and invalid requests are errors, never a semantic
+/// answer, and are not retried.
+#[test]
+fn error_statuses_are_errors_and_not_retried() {
+    for (status, kind) in [
+        ("400 Bad Request", ErrorKind::Rejected),
+        ("401 Unauthorized", ErrorKind::KeyRefused),
+        ("402 Payment Required", ErrorKind::NoAccess),
+        ("403 Forbidden", ErrorKind::NoAccess),
+        ("404 Not Found", ErrorKind::UnknownModel),
+        ("413 Payload Too Large", ErrorKind::Rejected),
+        ("422 Unprocessable Entity", ErrorKind::Rejected),
+        ("500 Internal Server Error", ErrorKind::Unavailable),
+        ("418 I'm a teapot", ErrorKind::Other),
+    ] {
+        let (url, requests) = serve(vec![
+            (status, "", "{\"error\":\"no\"}".to_string()),
+            ("200 OK", "", ANSWER.to_string()),
+        ]);
+        let failure = providers(url).decide(&request()).unwrap_err();
+        assert_eq!(failure.error.kind, kind, "{status}: {failure}");
+        assert_eq!(failure.attempts, 1, "{status}");
+        std::thread::sleep(std::time::Duration::from_millis(50));
+        assert_eq!(requests.try_iter().count(), 1, "{status} was retried");
+    }
+}
+
+/// Rate limits and overload are retried twice at most, and a requested
+/// wait over ten seconds is not waited for.
+#[test]
+fn retries_are_bounded() {
+    let (url, requests) = serve(vec![
+        ("529 Overloaded", "retry-after-ms: 10\r\n", "{}".to_string()),
+        ("529 Overloaded", "retry-after-ms: 10\r\n", "{}".to_string()),
+        ("529 Overloaded", "retry-after-ms: 10\r\n", "{}".to_string()),
+        ("200 OK", "", ANSWER.to_string()),
+    ]);
+    let failure = providers(url).decide(&request()).unwrap_err();
+    assert_eq!(failure.error.kind, ErrorKind::Unavailable, "{failure}");
+    assert_eq!(failure.attempts, 3);
+    assert_eq!(requests.try_iter().count(), 3);
+
+    let (url, requests) = serve(vec![
+        (
+            "429 Too Many Requests",
+            "retry-after: 11\r\n",
+            "{}".to_string(),
+        ),
+        ("200 OK", "", ANSWER.to_string()),
+    ]);
+    let started = std::time::Instant::now();
+    let failure = providers(url).decide(&request()).unwrap_err();
+    assert_eq!(failure.error.kind, ErrorKind::RateLimited, "{failure}");
+    assert!(started.elapsed() < std::time::Duration::from_secs(5));
+    assert_eq!(failure.attempts, 1);
+    std::thread::sleep(std::time::Duration::from_millis(50));
+    assert_eq!(requests.try_iter().count(), 1);
+
+    let (url, _) = serve(vec![
+        (
+            "429 Too Many Requests",
+            "retry-after-ms: 20\r\n",
+            "{}".to_string(),
+        ),
+        ("200 OK", "", ANSWER.to_string()),
+    ]);
+    let reply = providers(url).decide(&request()).unwrap();
+    assert_eq!(reply.attempts, 2);
+}
+
+/// Nothing is sent without a key of TypeSafe AI's own: not a blank one,
+/// not another provider's.
+#[test]
+fn no_request_is_sent_without_its_own_key() {
+    let (url, requests) = serve(vec![("200 OK", "", ANSWER.to_string())]);
+    for providers in [
+        Providers::new().with_endpoint(Provider::TypeSafe, url.clone()),
+        Providers::new()
+            .with_key(Provider::TypeSafe, "   ")
+            .with_endpoint(Provider::TypeSafe, url.clone()),
+        Providers::new()
+            .with_key(Provider::DeepSeek, "deepseek-key")
+            .with_endpoint(Provider::TypeSafe, url.clone()),
+    ] {
+        let failure = providers.decide(&request()).unwrap_err();
+        assert_eq!(failure.error.kind, ErrorKind::MissingKey, "{failure}");
+        assert_eq!(failure.attempts, 0);
+        assert!(!format!("{providers:?}").contains("deepseek-key"));
+    }
+    std::thread::sleep(std::time::Duration::from_millis(50));
+    assert_eq!(requests.try_iter().count(), 0);
+}
+
+/// An endpoint override never receives the ambient key: run in a child
+/// process whose environment holds a TypeSafe AI key.
+#[test]
+fn an_ambient_key_never_reaches_an_endpoint_override() {
+    let child = std::process::Command::new(std::env::current_exe().unwrap())
+        .args([
+            "--exact",
+            "ambient_key_child",
+            "--ignored",
+            "--nocapture",
+            "--test-threads=1",
+        ])
+        .env("TYPESAFE_API_KEY", "ambient-secret")
+        .env("AGQ_AMBIENT_KEY_CHILD", "1")
+        .output()
+        .unwrap();
+    let out = String::from_utf8_lossy(&child.stdout);
+    assert!(child.status.success(), "{out}");
+    assert!(out.contains("1 passed"), "{out}");
+}
+
+/// The child of [`an_ambient_key_never_reaches_an_endpoint_override`].
+#[test]
+#[ignore = "run by an_ambient_key_never_reaches_an_endpoint_override in its own environment"]
+fn ambient_key_child() {
+    if std::env::var("AGQ_AMBIENT_KEY_CHILD").as_deref() != Ok("1") {
+        return;
+    }
+    let (url, requests) = serve(vec![("200 OK", "", ANSWER.to_string())]);
+    let overridden = Providers::new().with_endpoint(Provider::TypeSafe, url.clone());
+    assert!(!overridden.has_key(Provider::TypeSafe));
+    let failure = overridden.decide(&request()).unwrap_err();
+    assert_eq!(failure.error.kind, ErrorKind::MissingKey);
+    assert!(!failure.to_string().contains("ambient-secret"));
+    // An explicit key wins and is the one sent.
+    let explicit = overridden.with_key(Provider::TypeSafe, "explicit");
+    explicit.decide(&request()).unwrap();
+    let (_, authorization, _) = requests.recv().unwrap();
+    assert_eq!(authorization, "Bearer explicit");
 }
