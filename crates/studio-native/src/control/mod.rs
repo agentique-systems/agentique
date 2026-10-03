@@ -32,7 +32,9 @@
 //!   held), **Step** lets one through, **Resume** goes on.
 //! - Requests come from Agentique's own tools (the Assistant in this
 //!   Studio) and from the local endpoint ([`server`]), which the Orchestrator
-//!   uses to drive a test instance. They are carried out on the UI thread,
+//!   uses to drive a test instance (the endpoint's holder supervises that
+//!   instance: its `gate` operation is the supervisor's, not an agent's
+//!   action). They are carried out on the UI thread,
 //!   one action at a time, in the workspace's tick; waits run beside them.
 //!   A request not carried out before its deadline is dropped.
 
@@ -206,10 +208,10 @@ pub struct ControlState {
     pub acting: Option<String>,
     /// What was refused during the action in progress.
     refused: Option<String>,
-    /// The field the agents last typed into: another focused field holds
-    /// the Operator's pending edit, committed as the Operator's before an
-    /// agent acts.
-    agent_field: Option<String>,
+    /// Panel fields an agent typed into, by control id, and who: the
+    /// field's commit, whenever it happens (Enter in the agent's step, or
+    /// the focus leaving later), is that agent's change.
+    typed: std::collections::BTreeMap<String, String>,
     /// This build's commit, read once.
     commit: Option<Option<String>>,
     pub gate: Gate,
@@ -236,7 +238,7 @@ impl Default for ControlState {
             waits: Vec::new(),
             acting: None,
             refused: None,
-            agent_field: None,
+            typed: Default::default(),
             commit: None,
             gate: Gate::Run,
             trace: VecDeque::new(),
@@ -249,6 +251,34 @@ impl Default for ControlState {
 }
 
 impl ControlState {
+    /// Remembers that `agent` typed into the panel field `id` (a dialog's
+    /// fields are read when its confirm is pressed).
+    fn mark_typed(&mut self, id: &str, region: &str, agent: &str) {
+        if !matches!(region, "dialog" | "palette") {
+            self.typed.insert(id.to_string(), agent.to_string());
+        }
+    }
+
+    /// A panel field commits: if an agent typed into it and no step is
+    /// running, the commit is carried out as that agent's (returns whether
+    /// it was). Call [`ControlState::end_typed_commit`] after.
+    pub fn begin_typed_commit(&mut self, field: Option<&str>) -> bool {
+        let Some(agent) = field.and_then(|f| self.typed.remove(f)) else {
+            return false;
+        };
+        if self.acting.is_some() {
+            return false;
+        }
+        self.acting = Some(agent);
+        true
+    }
+
+    pub fn end_typed_commit(&mut self, began: bool) {
+        if began {
+            self.acting = None;
+        }
+    }
+
     /// Removes the endpoint's file (the Studio is closing): nobody connects
     /// to a Studio that is gone.
     pub fn close_endpoint(&mut self) {
@@ -403,6 +433,9 @@ pub fn approval(studio: &Studio) -> Option<&'static str> {
     use crate::edit::Dialog;
     match studio.dialog.as_ref()? {
         Dialog::Confirm { locked, .. } if !locked.is_empty() => Some("lock confirmation"),
+        Dialog::Confirm { change, .. } if change.actor == agq_system_state::Actor::Operator => {
+            Some("the Operator's own question")
+        }
         Dialog::ReviewTask { .. } => Some("task review"),
         Dialog::TrustLocal => Some("trusted-local execution"),
         Dialog::ConfirmLive => Some("live run"),
@@ -937,12 +970,11 @@ enum Step {
     /// when it is outside the visible part (tried for a few frames).
     Reveal(String, u32),
     /// Once the field clicked has the focus (tried for a few frames): its
-    /// text replaced, and the field left, so it commits as the agent's.
+    /// text replaced; the field keeps the focus, so Enter reaches it (or its
+    /// dialog) next.
     Fill(String, String, u32),
     /// Text into the field that has the focus, checked when it is typed.
     Type(String),
-    /// Leaves a field the Operator was editing, as the Operator's.
-    CommitOperator,
     /// Frames for the Studio to show the effect.
     Settle(u32),
 }
@@ -1119,6 +1151,7 @@ pub fn tick(studio: &gpui::Entity<Studio>, window: &mut gpui::Window, cx: &mut g
 
 /// Answers a request that does not act.
 fn answer(studio: &mut Studio, body: &Value, window: &gpui::Window) -> Value {
+    cache_commit(studio);
     match body["op"].as_str().unwrap_or_default() {
         "hello" => json!({ "ok": true, "identity": identity(studio) }),
         "observe" => {
@@ -1153,6 +1186,19 @@ fn answer(studio: &mut Studio, body: &Value, window: &gpui::Window) -> Value {
         other => {
             json!({ "ok": false, "error": format!("there is no operation `{other}`: hello, observe, act, events or gate") })
         }
+    }
+}
+
+/// Reads this build's commit once (its manifest in the builds folder).
+fn cache_commit(studio: &mut Studio) {
+    if studio.control.commit.is_none() {
+        let commit = studio.running_build().and_then(|id| {
+            agq_launcher::Manifest::load(&studio.builds_root().join(id))
+                .ok()
+                .map(|m| m.commit)
+                .filter(|c| !c.is_empty())
+        });
+        studio.control.commit = Some(commit);
     }
 }
 
@@ -1319,23 +1365,6 @@ fn start(studio: &mut Studio, request: Request) -> Result<(), Refused> {
     studio.control.activity = Some((shown, Instant::now()));
     studio.mark(crate::studio::Dirty::STATUS | crate::studio::Dirty::OVERLAY);
     studio.control.refused = None;
-    if studio.control.commit.is_none() {
-        let commit = studio.running_build().and_then(|id| {
-            agq_launcher::Manifest::load(&studio.builds_root().join(id))
-                .ok()
-                .map(|m| m.commit)
-                .filter(|c| !c.is_empty())
-        });
-        studio.control.commit = Some(commit);
-    }
-    // The Operator's pending edit in a panel's field is theirs: committed
-    // before an action that moves the focus elsewhere, not as part of it.
-    if matches!(
-        action,
-        Action::Click(..) | Action::Fill(..) | Action::Command(..) | Action::Select(..)
-    ) {
-        steps.push_front(Step::CommitOperator);
-    }
     studio.control.active = Some(Active {
         request,
         agent,
@@ -1373,9 +1402,6 @@ fn run_step(
     window: &mut gpui::Window,
     cx: &mut gpui::App,
 ) -> Result<(), String> {
-    if matches!(step, Step::CommitOperator) {
-        return carry_out(studio, step, active, window, cx);
-    }
     let agent = active.agent.clone();
     studio.update(cx, |studio, _| studio.control.acting = Some(agent));
     let result = carry_out(studio, step, active, window, cx);
@@ -1463,11 +1489,18 @@ fn carry_out(
                 active.steps.push_front(Step::Fill(name, text, tries - 1));
                 return Ok(());
             }
+            let region = drawn
+                .iter()
+                .find(|d| d.control.focused && d.control.role == "field")
+                .map(|d| d.region)
+                .unwrap_or(target::ROOT);
             input::press("ctrl-a", window, cx)?;
             input::press("backspace", window, cx)?;
             input::type_text(&text, window, cx);
-            window.blur(cx);
-            studio.update(cx, |studio, _| studio.control.agent_field = Some(name));
+            let agent = active.agent.clone();
+            studio.update(cx, |studio, _| {
+                studio.control.mark_typed(&name, region, &agent)
+            });
         }
         Step::Type(text) => {
             let drawn = target::drawn();
@@ -1481,22 +1514,12 @@ fn carry_out(
                 ));
             }
             let id = field.control.id.to_string();
+            let region = field.region;
             input::type_text(&text, window, cx);
-            studio.update(cx, |studio, _| studio.control.agent_field = Some(id));
-        }
-        Step::CommitOperator => {
-            let drawn = target::drawn();
-            let theirs = drawn.iter().rev().find(|d| {
-                d.control.focused
-                    && d.control.role == "field"
-                    && !matches!(d.region, "dialog" | "palette")
+            let agent = active.agent.clone();
+            studio.update(cx, |studio, _| {
+                studio.control.mark_typed(&id, region, &agent)
             });
-            let agents = studio.read(cx).control.agent_field.clone();
-            if let Some(field) = theirs
-                && agents.as_deref() != Some(field.control.id.as_ref())
-            {
-                window.blur(cx);
-            }
         }
         Step::Settle(frames) => {
             if frames > 1 {
@@ -1762,6 +1785,28 @@ mod tests {
         // The Operator's own change stays the Operator's.
         let db = crate::edit::app_tests::part(&mut app, "db");
         assert_eq!(app.highlights[&db].1, agq_system_state::Actor::Operator);
+    }
+
+    #[test]
+    fn a_panel_field_an_agent_typed_into_commits_as_its_change_whoever_ends_the_edit() {
+        let (mut app, _folder) = crate::edit::app_tests::studio("typed-field");
+        // The agent typed into the Inspector's Value field; the commit comes
+        // later (the focus leaves at the next frame, or the Operator clicks
+        // away), outside the agent's step.
+        app.control.mark_typed("Value", "inspector", "evaluator");
+        let began = app.control.begin_typed_commit(Some("Value"));
+        assert!(began);
+        let api = crate::edit::app_tests::part(&mut app, "api");
+        app.control.end_typed_commit(began);
+        assert_eq!(app.highlights[&api].1, agq_system_state::Actor::Assistant);
+        assert!(app.status.contains("(by evaluator)"), "{}", app.status);
+        // Used once: the field's next commit is the Operator's.
+        assert!(!app.control.begin_typed_commit(Some("Value")));
+        let db = crate::edit::app_tests::part(&mut app, "db");
+        assert_eq!(app.highlights[&db].1, agq_system_state::Actor::Operator);
+        // A dialog's fields are read when its confirm is pressed: not marked.
+        app.control.mark_typed("Name", "dialog", "evaluator");
+        assert!(!app.control.begin_typed_commit(Some("Name")));
     }
 
     #[test]

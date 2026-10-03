@@ -539,8 +539,9 @@ impl Studio {
             && change.actor == Actor::Operator
         {
             change.actor = Actor::Assistant;
-            if agent != "Assistant" && !change.description.ends_with(')') {
-                change.description = format!("{} (by {agent})", change.description);
+            let by = format!(" (by {agent})");
+            if agent != "Assistant" && !change.description.ends_with(&by) {
+                change.description = format!("{}{by}", change.description);
             }
         }
         change

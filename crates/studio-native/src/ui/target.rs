@@ -208,13 +208,13 @@ pub fn record(name: &str, bounds: Bounds<Pixels>) {
     REGISTRY.with(|registry| registry.borrow_mut().push(control, bounds, bounds))
 }
 
-/// Overlays (the palette, dialogs, menus painted at the root) above the
-/// docked columns and the centre.
+/// Overlays above the docked columns and the centre: dialogs, the palette,
+/// and on top the menus and popovers painted at the root.
 fn layer(region: &str) -> u8 {
     match region {
-        "palette" => 3,
-        "dialog" => 2,
-        ROOT => 1,
+        ROOT => 3,
+        "palette" => 2,
+        "dialog" => 1,
         _ => 0,
     }
 }

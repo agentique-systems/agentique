@@ -1999,10 +1999,11 @@ resume agents. This holds where each of those effects happens, whatever
 route reached it (a click, keys, focus and Space, the palette), for as long
 as a step of an agent's action and the work it dispatched run; requests are
 also refused up front with the reason where that can be told, and text goes
-only to a focused field. A change an agent's step makes is recorded as the
-Assistant's, with the agent named in its description; an Operator's pending
-edit in a panel's field is committed as the Operator's before an agent's
-action moves the focus. Every action and its effect go to an event
+only to a focused field. The endpoint's holder supervises its instance: the
+endpoint's Pause, Step and Resume are the supervisor's, not an agent's. A change an agent's step makes is recorded as the
+Assistant's, with the agent named in its description, and so is what an
+agent typed into a panel's field when that field commits later, whoever
+ends the edit. Every action and its effect go to an event
 trace. Agents reach it through Agentique's tools, bound either to the
 running Studio or to a test instance; the Orchestrator reaches a test instance
 through a local endpoint (127.0.0.1, a random port, a token in that instance's

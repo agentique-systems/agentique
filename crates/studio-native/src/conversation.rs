@@ -934,6 +934,9 @@ impl Studio {
     /// Assistant's, and those of others when [`ConversationPanel::undoable`]
     /// says so. Each can be redone.
     pub fn undo_assistant_changes(&mut self) {
+        if self.refused_to_agents("undoing the turn's changes") {
+            return;
+        }
         let Some(project) = &self.project else { return };
         let Some(undo) = self.conversation.undoable(project.state()) else {
             return;
@@ -968,6 +971,9 @@ impl Studio {
     /// reply left (notices, an incomplete reply) is removed, and the turn
     /// continues from the last message or tool results.
     pub fn retry(&mut self) {
+        if self.refused_to_agents("retrying the Operator's message") {
+            return;
+        }
         if !self.conversation.can_retry() {
             return;
         }
@@ -998,6 +1004,9 @@ impl Studio {
 
     /// Puts the last Operator message into the input to edit and send again.
     pub fn edit_last_message(&mut self) {
+        if self.refused_to_agents("editing the Operator's message") {
+            return;
+        }
         let panel = &mut self.conversation;
         if panel.running() {
             return;

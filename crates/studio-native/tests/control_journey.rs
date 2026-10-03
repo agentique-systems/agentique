@@ -363,7 +363,15 @@ fn an_agent_drives_the_visible_studio_through_the_control_interface() {
         .as_array()
         .unwrap()
         .iter()
-        .find(|c| c["role"] == "button" && c["enabled"] != false)
+        .find(|c| {
+            c["role"] == "button"
+                && c["enabled"] != false
+                && c["hidden"].is_null()
+                && !matches!(
+                    c["region"].as_str(),
+                    Some("conversation" | "settings" | "title")
+                )
+        })
         .expect("a button on screen")["id"]
         .clone();
     let filled = studio.act(

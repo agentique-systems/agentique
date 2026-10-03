@@ -1491,6 +1491,9 @@ impl Studio {
     /// The model picker's choice: Settings' provider, with its default model
     /// and effort; the next turn uses it.
     pub fn choose_provider(&mut self, provider: &str) {
+        if self.refused_to_agents("choosing the Assistant's model") {
+            return;
+        }
         let _ = self
             .settings
             .set("assistant.provider", serde_json::json!(provider));
