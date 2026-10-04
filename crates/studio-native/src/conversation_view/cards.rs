@@ -124,6 +124,10 @@ pub fn title(name: &str, input: &Value) -> String {
             "Save {} to My Library",
             short(text("definition").unwrap_or("a definition"))
         ),
+        tools::PROPOSE_OBJECTIVE => match text("intent") {
+            Some(intent) => format!("Propose an objective: “{intent}”"),
+            None => "Propose an objective".into(),
+        },
         other => other.to_string(),
     }
 }
@@ -236,13 +240,7 @@ pub fn tool_card(ctx: &Rc<Ctx>, tool: &Tool, cx: &App) -> AnyElement {
         .cursor_pointer()
         .on_click(move |_: &ClickEvent, _, cx| {
             let id = id.clone();
-            view.update(cx, |view, cx| {
-                if !view.expanded.remove(&id) {
-                    view.expanded.insert(id);
-                }
-                view.dirty_items = true;
-                cx.notify();
-            })
+            view.update(cx, |view, cx| view.toggle(id, cx))
         })
         .child(status_icon(
             tool,
@@ -728,13 +726,7 @@ pub fn thinking_row(ctx: &Rc<Ctx>, key: String, text: &str, live: bool, cx: &App
                 .hover(|style| style.text_color(theme.text_secondary))
                 .on_click(move |_: &ClickEvent, _, cx| {
                     let toggle = toggle.clone();
-                    view.update(cx, |view, cx| {
-                        if !view.expanded.remove(&toggle) {
-                            view.expanded.insert(toggle);
-                        }
-                        view.dirty_items = true;
-                        cx.notify();
-                    })
+                    view.update(cx, |view, cx| view.toggle(toggle, cx))
                 })
                 .child(if live {
                     ui::spinner(

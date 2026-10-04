@@ -802,3 +802,289 @@ fn saving_to_my_library_waits_for_the_operator() {
     );
     assert_valid(&app);
 }
+
+// ---- objectives in the Conversation (C-54) ----
+
+use agq_orchestrator::record::{Budgets, Permissions, State};
+use agq_orchestrator::thread::{Author, Kind, ThreadEntry};
+
+/// An objective the Operator started, recorded beside the session as a
+/// test instance is seeded, with its thread so far; shown as the Studio
+/// finds it at start.
+fn seeded(app: &mut Studio, state: State) -> String {
+    let store = app.objective_store();
+    let mut objective = store
+        .create(
+            "Find and fix problems",
+            std::path::Path::new("C:/agentique"),
+            "main",
+            Budgets::default(),
+            Permissions::default(),
+        )
+        .unwrap();
+    objective.state = state;
+    store.save(&objective).unwrap();
+    store
+        .append_thread(
+            &objective.id,
+            ThreadEntry::new(Kind::Human, Author::Operator, "Find and fix problems"),
+        )
+        .unwrap();
+    app.poll_objective();
+    objective.id
+}
+
+/// A reply in an objective's thread goes to the objective, never to the
+/// Assistant: one that is not running keeps it in its thread for the
+/// lead's next turn. Whom the composer addresses changes only when the
+/// Operator switches.
+#[test]
+fn a_reply_goes_into_the_objectives_thread_and_never_to_the_assistant() {
+    // No replies scripted: a turn of the Assistant would fail.
+    let (mut app, _folder) = assisted("reply-objective", vec![]);
+    let id = seeded(&mut app, State::Stopped);
+    assert_eq!(app.objectives.current.as_ref().map(|o| &o.id), Some(&id));
+    assert_eq!(app.conversation.addressed, None, "the Assistant at first");
+    app.address_objective();
+    assert_eq!(app.conversation.addressed.as_ref(), Some(&id));
+    say(&mut app, "Keep the change small");
+    assert!(!app.conversation.running(), "the Assistant was not asked");
+    assert!(app.conversation.conversation.entries.is_empty());
+    assert!(app.conversation.input.is_empty(), "sent: {}", app.status);
+    let kept = app.objective_store().thread(&id, 0);
+    let reply = kept.last().unwrap();
+    assert_eq!(
+        (
+            reply.kind,
+            &reply.author,
+            reply.text.as_str(),
+            reply.to.as_deref()
+        ),
+        (
+            Kind::Human,
+            &Author::Operator,
+            "Keep the change small",
+            Some("lead")
+        )
+    );
+    assert_eq!(app.objectives.last_shown(&id), reply.seq, "shown too");
+    // Switching back is explicit; the objective's thread stays shown.
+    app.address_assistant();
+    assert_eq!(app.conversation.addressed, None);
+    assert!(app.objectives.current.is_some());
+}
+
+/// The start form opens from the message (Ctrl+Enter, "Start as
+/// objective") and from the Assistant's proposal, and starts nothing; an
+/// objective not finished keeps another from being proposed.
+#[test]
+fn the_start_form_opens_from_the_message_and_the_assistants_proposal() {
+    let (mut app, _folder) = assisted(
+        "propose-objective",
+        vec![
+            reply(
+                vec![tool(
+                    "p1",
+                    tools::PROPOSE_OBJECTIVE,
+                    json!({ "intent": "Find and fix problems in the Library panel", "explore": true, "budgets": { "usd": 2 } }),
+                )],
+                "tool_use",
+            ),
+            reply(
+                vec![text("I proposed it; start it when you are ready.")],
+                "end_turn",
+            ),
+        ],
+    );
+    app.conversation.input = "Make the Inspector clearer".into();
+    app.execute(crate::commands::CommandId::StartObjective);
+    let form = &app.objectives.form;
+    assert!(form.in_conversation);
+    let proposal = form.proposal.clone().unwrap();
+    assert_eq!(proposal.intent, "Make the Inspector clearer");
+    assert!(!proposal.by_assistant && !proposal.explore);
+    assert_eq!(
+        app.conversation.input, "Make the Inspector clearer",
+        "the message stays until the objective starts"
+    );
+    app.close_start_form();
+    app.conversation.input.clear();
+    say(&mut app, "Improve the Library panel by yourself");
+    wait(&mut app, finished);
+    let answer = result(&app, "p1");
+    assert!(
+        !answer.is_error && answer.content.contains("nothing has started"),
+        "{}",
+        answer.content
+    );
+    let proposal = app.objectives.form.proposal.clone().unwrap();
+    assert!(app.objectives.form.in_conversation && proposal.by_assistant && proposal.explore);
+    assert_eq!(proposal.budgets.usd, 2.0);
+    assert_eq!(
+        proposal.budgets.cycles, 3,
+        "three improvements when it explores"
+    );
+    assert!(app.objectives.handle.is_none() && app.objectives.current.is_none());
+    assert_valid(&app);
+    // One objective at a time: an unfinished one keeps the form closed.
+    let (mut busy, _folder) = assisted(
+        "propose-busy",
+        vec![
+            reply(
+                vec![tool(
+                    "p1",
+                    tools::PROPOSE_OBJECTIVE,
+                    json!({ "intent": "Another" }),
+                )],
+                "tool_use",
+            ),
+            reply(vec![text("It is busy.")], "end_turn"),
+        ],
+    );
+    seeded(&mut busy, State::Running);
+    assert!(busy.objectives.unfinished());
+    say(&mut busy, "Propose another");
+    wait(&mut busy, finished);
+    let refused = result(&busy, "p1");
+    assert!(
+        refused.is_error && refused.content.starts_with("Not shown"),
+        "{}",
+        refused.content
+    );
+    assert!(!busy.objectives.form.in_conversation);
+}
+
+/// Starting, steering and stopping objectives are the Operator's in the
+/// Operator's window; in a test instance an agent may reply in a thread,
+/// and starting stays the Operator's. Budgets no form accepts start
+/// nothing.
+#[test]
+fn objectives_are_the_operators_and_a_test_instance_lets_agents_reply() {
+    let (mut app, _folder) = assisted("objective-refusals", vec![]);
+    let id = seeded(&mut app, State::Stopped);
+    let before = app.objective_store().thread_last(&id);
+    app.control.acting = Some("explorer".into());
+    assert!(app.message_objective(&id, "from an agent").is_err());
+    assert!(app.status.starts_with("Refused"), "{}", app.status);
+    app.conversation.input = "An agent's intent".into();
+    app.execute(crate::commands::CommandId::StartObjective);
+    assert!(!app.objectives.form.in_conversation, "the form stays shut");
+    let request = crate::objectives::StartRequest {
+        intent: "An agent's intent".into(),
+        explore: false,
+        budgets: Budgets::default(),
+        permissions: Permissions::default(),
+    };
+    let refused = app.start_objective(request.clone()).unwrap_err();
+    assert!(refused.contains("Operator's own"), "{refused}");
+    assert_eq!(app.objective_store().thread_last(&id), before);
+    // A test instance: the agent replies; starting is still refused.
+    app.args.test_instance = true;
+    assert_eq!(app.message_objective(&id, "from an agent"), Ok(()));
+    assert_eq!(app.objective_store().thread_last(&id), before + 1);
+    assert!(app.start_objective(request.clone()).is_err());
+    app.control.acting = None;
+    // The Operator's budgets are checked before anything starts.
+    let mut wrong = request;
+    wrong.budgets.calls.insert("lead".into(), 0);
+    let problem = app.start_objective(wrong).unwrap_err();
+    assert!(problem.contains("lead"), "{problem}");
+}
+
+/// The conversation keeps when each entry was added beside its file, so
+/// threads interleave with it in time order after a restart too.
+#[test]
+fn the_conversation_keeps_when_each_entry_was_added() {
+    let (mut app, _folder) = assisted("entry-times", vec![reply(vec![text("Hello.")], "end_turn")]);
+    say(&mut app, "Hi");
+    wait(&mut app, finished);
+    let count = app.conversation.conversation.entries.len();
+    assert!(count >= 2);
+    let times: Vec<String> = (0..count)
+        .map(|i| app.conversation.time_of(i).expect("a time").to_string())
+        .collect();
+    let folder = app.project.as_ref().unwrap().folder().to_path_buf();
+    app.load_conversation(&folder);
+    assert_eq!(app.conversation.conversation.entries.len(), count);
+    for (i, time) in times.iter().enumerate() {
+        assert_eq!(app.conversation.time_of(i), Some(time.as_str()));
+    }
+    // A new conversation starts without them.
+    app.new_conversation();
+    assert_eq!(app.conversation.time_of(0), None);
+}
+
+/// A test instance's scripted stand-in (`--assistant-stand-in`): it reads
+/// the model and answers in a line, with no network, no key and no cost.
+#[test]
+fn the_stand_in_reads_the_model_and_costs_nothing() {
+    let (mut app, _folder) = crate::edit::app_tests::studio("stand-in");
+    app.conversation.use_stand_in();
+    assert_eq!(app.conversation.model_name, crate::conversation::STAND_IN);
+    assert!(app.conversation.key_missing.is_none());
+    say(&mut app, "What is in the model?");
+    wait(&mut app, finished);
+    let entries = &app.conversation.conversation.entries;
+    let called: Vec<&str> = entries
+        .iter()
+        .flat_map(|e| match e {
+            Entry::Assistant { parts, .. } => parts.as_slice(),
+            _ => &[],
+        })
+        .filter_map(|p| match p {
+            agq_providers::AssistantPart::ToolCall { name, .. } => Some(name.as_str()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(called, vec![tools::READ_MODEL]);
+    let Some(Entry::Assistant { parts, .. }) = entries.last() else {
+        panic!("a reply: {entries:#?}");
+    };
+    assert!(
+        matches!(
+            &parts[0],
+            agq_providers::AssistantPart::Text { text } if text.starts_with("I am the scripted stand-in") && text.ends_with("P (package)")
+        ),
+        "{parts:?}"
+    );
+    assert_eq!(app.conversation.spent, Some(0.0));
+    // Once more: it answers every message.
+    say(&mut app, "Again");
+    wait(&mut app, finished);
+    assert!(matches!(
+        app.conversation.conversation.entries.last(),
+        Some(Entry::Assistant { .. })
+    ));
+    assert_valid(&app);
+}
+
+/// A runtime given for the process (a journey's script, a test instance's
+/// stand-in) is never replaced when Settings or the credentials read later
+/// choose a model: a journey whose computer has a key in its credential
+/// store never reaches that model.
+#[test]
+fn a_given_runtime_survives_the_runtime_choice() {
+    let (mut app, _folder) = crate::edit::app_tests::studio("given-runtime");
+    app.conversation.use_given(scripted(vec![reply(
+        vec![text("From the script.")],
+        "end_turn",
+    )]));
+    // What the background read of the credentials does when it finds
+    // something new, and what Settings do when the model changes.
+    app.apply_runtime_choice();
+    app.read_credentials_now();
+    assert!(app.conversation.runtime_given);
+    assert_eq!(app.conversation.model_name, crate::conversation::STAND_IN);
+    assert!(app.conversation.key_missing.is_none());
+    say(&mut app, "Hello");
+    wait(&mut app, finished);
+    assert!(
+        matches!(
+            app.conversation.conversation.entries.last(),
+            Some(Entry::Assistant { model: None, parts, .. })
+                if matches!(&parts[0], agq_providers::AssistantPart::Text { text } if text == "From the script.")
+        ),
+        "{:#?}",
+        app.conversation.conversation.entries
+    );
+}

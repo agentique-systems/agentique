@@ -1,7 +1,12 @@
 //! The Conversation (§3.6): the Operator's messages and the Assistant's
 //! streamed replies as Markdown with element links, its thinking, its tool
 //! calls as compact live cards with what they changed, its questions, and
-//! the composer with Send and Stop.
+//! the composer with Send and Stop. Since C-54 it is the one place for
+//! objectives too: the composer addresses the Assistant or the objective
+//! (switched explicitly) and starts one ("Start as objective", the start
+//! form above the composer), the objective's bar has Pause, Step, Resume
+//! and Stop, and its thread (`thread.rs`) appears in time order with the
+//! conversation's entries.
 //!
 //! The list is virtualised (GPUI's `list`): only messages in view are laid
 //! out, and a reply streaming in re-measures only itself. Text is selected by
@@ -10,6 +15,7 @@
 //! copies it in order.
 mod cards;
 pub mod markdown;
+pub mod thread;
 
 use crate::{
     conversation::{Live, Undo, WaitingFor},
@@ -94,6 +100,9 @@ enum Item {
     },
     Working(String),
     Undo(Undo),
+    /// A row of an objective's thread, with its key worked out when the
+    /// rows were.
+    Thread(Rc<thread::Row>, u64),
 }
 
 impl Item {
@@ -138,6 +147,7 @@ impl Item {
             Item::Notice { text, retry } => (5u8, text, retry).hash(&mut hasher),
             Item::Working(text) => (6u8, text).hash(&mut hasher),
             Item::Undo(undo) => (7u8, format!("{undo:?}")).hash(&mut hasher),
+            Item::Thread(_, key) => (8u8, key).hash(&mut hasher),
         }
         hasher.finish()
     }
@@ -170,6 +180,14 @@ pub struct ConversationView {
     input_set: u64,
     epoch: u64,
     model_menu: Option<(Entity<Menu>, Subscription)>,
+    /// The objective's start form, shared with the Objectives panel (C-54).
+    form: Entity<crate::objective_form::ObjectiveForm>,
+    /// The shown objective's thread as rows with their keys, and what they
+    /// were worked out from (the objectives' version, `expanded_version`).
+    thread_rows: Rc<Vec<(Rc<thread::Row>, u64)>>,
+    thread_from: Option<(u64, u64)>,
+    /// Counts changes to `expanded`.
+    expanded_version: u64,
     _subscriptions: Vec<Subscription>,
 }
 
@@ -180,7 +198,12 @@ impl Focusable for ConversationView {
 }
 
 impl ConversationView {
-    pub fn new(studio: Entity<Studio>, window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(
+        studio: Entity<Studio>,
+        form: Entity<crate::objective_form::ObjectiveForm>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
         let composer = cx.new(|cx| {
             let mut state = TextareaState::new(window, cx)
                 .placeholder("Ask the Assistant, or describe a change")
@@ -222,6 +245,18 @@ impl ConversationView {
                         });
                         cx.notify();
                     }
+                    // Ctrl+Enter: the message as an objective's intent
+                    // (C-54); Enter sends it.
+                    InputEvent::PressEnter {
+                        secondary: true,
+                        shift: false,
+                    } => {
+                        this.studio.act(cx, |studio| {
+                            if studio.conversation.addressed.is_none() {
+                                studio.execute(crate::commands::CommandId::StartObjective);
+                            }
+                        });
+                    }
                     InputEvent::PressEnter { shift: false, .. } => this.send(window, cx),
                     _ => {}
                 },
@@ -246,8 +281,52 @@ impl ConversationView {
             input_set: 0,
             epoch: 0,
             model_menu: None,
+            form,
+            thread_rows: Rc::new(Vec::new()),
+            thread_from: None,
+            expanded_version: 0,
             _subscriptions: subscriptions,
         }
+    }
+
+    /// Opens or closes a card, a thread's entry or its tool calls.
+    pub(crate) fn toggle(&mut self, key: String, cx: &mut Context<Self>) {
+        if !self.expanded.remove(&key) {
+            self.expanded.insert(key);
+        }
+        self.expanded_version += 1;
+        self.dirty_items = true;
+        cx.notify();
+    }
+
+    /// The shown objective's thread as rows, worked out again only when it
+    /// or what is expanded changed.
+    fn thread_rows(&mut self, studio: &Studio) -> Rc<Vec<(Rc<thread::Row>, u64)>> {
+        let objectives = &studio.objectives;
+        let from = (objectives.version, self.expanded_version);
+        if self.thread_from != Some(from) {
+            self.thread_from = Some(from);
+            let rows = match &objectives.current {
+                Some(root) => thread::rows(
+                    root,
+                    &objectives.children,
+                    &objectives.threads,
+                    &self.expanded,
+                    &|entry| objectives.shown_chars(entry),
+                ),
+                None => Vec::new(),
+            };
+            self.thread_rows = Rc::new(
+                rows.into_iter()
+                    .map(|row| {
+                        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+                        format!("{row:?}").hash(&mut hasher);
+                        (Rc::new(row), hasher.finish())
+                    })
+                    .collect(),
+            );
+        }
+        self.thread_rows.clone()
     }
 
     /// Gives the composer the keyboard (Ctrl+L, a question arriving).
@@ -502,10 +581,25 @@ impl ConversationView {
                 .filter(|(call, _)| call == id)
                 .map(|(_, options)| options.clone()),
         };
-        if entries.is_empty() && live.is_empty() {
+        // The shown objective's thread, in time order with the entries
+        // (C-54).
+        let thread_rows = self.thread_rows(studio);
+        let times: Vec<Option<&str>> = (0..entries.len()).map(|i| panel.time_of(i)).collect();
+        let ats: Vec<&str> = thread_rows.iter().map(|(row, _)| row.at.as_str()).collect();
+        let slots = thread::merge(&times, &ats);
+        if entries.is_empty() && live.is_empty() && thread_rows.is_empty() {
             items.push(Item::Empty);
         }
-        for (index, entry) in entries.iter().enumerate() {
+        for slot in slots {
+            let index = match slot {
+                thread::Slot::Row(row) => {
+                    let (row, key) = &thread_rows[row];
+                    items.push(Item::Thread(row.clone(), *key));
+                    continue;
+                }
+                thread::Slot::Entry(index) => index,
+            };
+            let entry = &entries[index];
             match entry {
                 Entry::Operator { text } => {
                     let blocks = self.parse(text, revision);
@@ -1320,11 +1414,254 @@ fn render_item(ctx: &Rc<Ctx>, item: &Item, cx: &App) -> AnyElement {
             .child(text.clone())
             .into_any_element(),
         Item::Undo(undo) => cards::undo_card(ctx, *undo, cx),
+        Item::Thread(row, _) => thread::render_row(ctx, row, cx),
     };
     div().px(r(16.0)).pb(r(14.0)).child(body).into_any_element()
 }
 
 use gpui::AnimationExt as _;
+
+/// The composer's addressee (C-54): "To: the Assistant" or "To: the
+/// objective"; a click switches, the only way it changes.
+fn address_chip(
+    studio: &Entity<Studio>,
+    to_objective: bool,
+    objective_shown: bool,
+    cx: &App,
+) -> AnyElement {
+    let theme = cx.theme();
+    let (text, switch_to) = if to_objective {
+        ("To: the objective", "Write to the Assistant instead")
+    } else {
+        (
+            "To: the Assistant",
+            "Write to the objective's agents instead",
+        )
+    };
+    let can_switch = to_objective || objective_shown;
+    let studio = studio.clone();
+    div()
+        .id("conversation-to")
+        .flex_none()
+        .flex()
+        .items_center()
+        .gap(r(4.0))
+        .h(r(22.0))
+        .px(r(6.0))
+        .rounded(r(crate::tokens::radius::TAG + 2.0))
+        .border_1()
+        .border_color(if to_objective {
+            theme.accent.border
+        } else {
+            theme.separator
+        })
+        .text_size(r(theme::text::XS))
+        .text_color(if to_objective {
+            theme.accent.text
+        } else {
+            theme.text_muted
+        })
+        .role(gpui::Role::Button)
+        .aria_label(text)
+        .relative()
+        .child(ui::target::control(
+            ui::target::Control::new("button", text)
+                .id("conversation-to")
+                .enabled(can_switch),
+        ))
+        .when(can_switch, |this| {
+            this.cursor_pointer()
+                .hover(|style| style.bg(theme.hover))
+                .tooltip(move |window, cx| ui::tooltip::text(switch_to, None)(window, cx))
+                .on_click(move |_: &ClickEvent, _, cx| {
+                    studio.act(cx, |studio| {
+                        if to_objective {
+                            studio.address_assistant()
+                        } else {
+                            studio.address_objective()
+                        }
+                    })
+                })
+        })
+        .child(
+            icon(if to_objective {
+                IconName::Agent
+            } else {
+                IconName::Assistant
+            })
+            .size(11.0)
+            .color(if to_objective {
+                theme.accent.text
+            } else {
+                theme.text_faint
+            }),
+        )
+        .child(text)
+        .into_any_element()
+}
+
+/// The objective shown while it runs or waits to continue (C-54): its
+/// intent, where it stands and what it spent, with Pause, Step, Resume,
+/// Stop and Continue, the same commands as the Objectives panel and the
+/// palette.
+struct ObjectiveBar {
+    intent: String,
+    state: String,
+    running: bool,
+    paused: bool,
+}
+
+impl ObjectiveBar {
+    fn of(
+        objective: &agq_orchestrator::record::Objective,
+        objectives: &crate::objectives::ObjectivesState,
+    ) -> ObjectiveBar {
+        let running = objectives.running();
+        let paused = objectives.paused();
+        let cycle = objective.cycle();
+        let mut state = if running {
+            format!(
+                "cycle {} · {}",
+                cycle.map(|c| c.n).unwrap_or(0),
+                cycle.map(|c| c.phase.label()).unwrap_or("starting")
+            )
+        } else {
+            "interrupted: Continue goes on from where it was".to_string()
+        };
+        if paused {
+            state.push_str(" · paused");
+        }
+        state.push_str(&format!(
+            " · ${:.2} of ${:.2}",
+            objective.spent.usd, objective.budgets.usd
+        ));
+        if !objectives.children.is_empty() {
+            state.push_str(&format!(
+                " · {}",
+                crate::conversation::plural(
+                    objectives.children.len(),
+                    "child objective",
+                    "child objectives"
+                )
+            ));
+        }
+        ObjectiveBar {
+            intent: objective.intent.clone(),
+            state,
+            running,
+            paused,
+        }
+    }
+
+    fn render(self, studio: &Entity<Studio>, cx: &App) -> AnyElement {
+        use crate::commands::CommandId;
+        let theme = cx.theme();
+        let command = |id: CommandId| {
+            let studio = studio.clone();
+            move |_: &ClickEvent, _: &mut gpui::Window, cx: &mut App| {
+                studio.act(cx, |studio| studio.execute(id))
+            }
+        };
+        let write = {
+            let studio = studio.clone();
+            move |_: &ClickEvent, _: &mut gpui::Window, cx: &mut App| {
+                studio.act(cx, |studio| studio.address_objective())
+            }
+        };
+        div()
+            .flex_none()
+            .px(r(12.0))
+            .py(r(8.0))
+            .flex()
+            .flex_col()
+            .gap(r(6.0))
+            .border_b_1()
+            .border_color(theme.separator)
+            .bg(theme.raised)
+            .child(
+                div()
+                    .flex()
+                    .items_center()
+                    .gap(r(6.0))
+                    .child(icon(IconName::Agent).size(13.0).color(theme.accent.text))
+                    .child(
+                        div()
+                            .flex_1()
+                            .min_w_0()
+                            .overflow_hidden()
+                            .text_ellipsis()
+                            .whitespace_nowrap()
+                            .text_size(r(theme::text::SM))
+                            .font_weight(theme::MEDIUM)
+                            .child(self.intent),
+                    ),
+            )
+            .child(
+                div()
+                    .text_size(r(theme::text::XS))
+                    .text_color(theme.text_muted)
+                    .child(self.state),
+            )
+            .child(
+                div()
+                    .flex()
+                    .flex_wrap()
+                    .gap(r(4.0))
+                    .child(
+                        Button::new("conversation-to-objective", "Write to it")
+                            .small()
+                            .ghost()
+                            .icon(IconName::Enter)
+                            .tooltip("Address your messages to the objective's agents", None)
+                            .on_click(write),
+                    )
+                    .child(div().flex_1())
+                    .when(self.running && !self.paused, |this| {
+                        this.child(
+                            Button::new("objective-bar-pause", "Pause")
+                                .small()
+                                .icon(IconName::Pause)
+                                .tooltip("Its agents hold at their next tool call; the Orchestrator before its next phase", None)
+                                .on_click(command(CommandId::PauseObjective)),
+                        )
+                    })
+                    .when(self.paused, |this| {
+                        this.child(
+                            Button::new("objective-bar-step", "Step")
+                                .small()
+                                .tooltip("One tool call, or one phase, then hold again", None)
+                                .on_click(command(CommandId::StepObjective)),
+                        )
+                        .child(
+                            Button::new("objective-bar-resume", "Resume")
+                                .small()
+                                .primary()
+                                .icon(IconName::Play)
+                                .on_click(command(CommandId::ResumeObjective)),
+                        )
+                    })
+                    .when(!self.running, |this| {
+                        this.child(
+                            Button::new("objective-bar-continue", "Continue")
+                                .small()
+                                .primary()
+                                .icon(IconName::Play)
+                                .tooltip("Goes on from the phase it reached", None)
+                                .on_click(command(CommandId::ContinueObjective)),
+                        )
+                    })
+                    .child(
+                        Button::new("objective-bar-stop", "Stop")
+                            .small()
+                            .danger()
+                            .icon(IconName::Stop)
+                            .tooltip("Ends the objective and its children: their sessions stop, their records stay", None)
+                            .on_click(command(CommandId::StopObjective)),
+                    ),
+            )
+            .into_any_element()
+    }
+}
 
 impl Render for ConversationView {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
@@ -1356,8 +1693,24 @@ impl Render for ConversationView {
         let steering = running && panel.steerable && !question;
         let paused = studio.assistant_paused();
         let held_at = panel.held_at.clone();
-        let can_send = !panel.input.trim().is_empty()
-            && (question || steering || (!running && key_missing.is_none()));
+        // Whom the composer addresses (C-54): a message to the objective
+        // goes into its thread, whatever the Assistant is doing.
+        let objectives = &studio.objectives;
+        let addressed = panel.addressed.clone();
+        let addressed_intent = addressed
+            .as_deref()
+            .map(|id| objectives.objective(id).map(|o| o.intent.clone()));
+        let objective_free = !objectives.running() && !objectives.unfinished();
+        let form_here = objectives.form.in_conversation && objective_free;
+        let bar = objectives
+            .current
+            .as_ref()
+            .filter(|_| !objective_free)
+            .map(|o| ObjectiveBar::of(o, objectives));
+        let objective_shown = objectives.current.is_some();
+        let has_text = !panel.input.trim().is_empty();
+        let can_send = has_text
+            && (addressed.is_some() || question || steering || (!running && key_missing.is_none()));
         let usage = panel.usage;
         let mut model = panel.model_name.clone();
         let mut hover = format!(
@@ -1476,6 +1829,8 @@ impl Render for ConversationView {
             .when_some(model_menu, |this, menu| {
                 this.child(deferred(anchored().child(div().mt(r(38.0)).child(menu))).with_priority(2))
             })
+            // The objective shown, with its commands (C-54).
+            .when_some(bar, |this, bar| this.child(bar.render(&self.studio, cx)))
             // What to fix before the Assistant can work.
             .when_some(key_missing, |this, message| {
                 let studio = self.studio.clone();
@@ -1514,6 +1869,29 @@ impl Render for ConversationView {
                         .size_full(),
                     ),
             )
+            // The objective's start form, from the message or the
+            // Assistant's proposal (C-54): nothing starts until Start.
+            .when(form_here, |this| {
+                this.child(
+                    div().flex_none().px(r(10.0)).pt(r(8.0)).child(
+                        div()
+                            .p(r(12.0))
+                            .max_h(r(460.0))
+                            .rounded(r(crate::tokens::radius::CARD + 4.0))
+                            .bg(theme.raised)
+                            .border_1()
+                            .border_color(theme.accent.border)
+                            .shadow(theme.shadow_small())
+                            .child(
+                                div()
+                                    .id("objective-form")
+                                    .size_full()
+                                    .overflow_y_scroll()
+                                    .child(self.form.clone()),
+                            ),
+                    ),
+                )
+            })
             // The composer.
             .child(
                 div()
@@ -1528,6 +1906,24 @@ impl Render for ConversationView {
                             .border_1()
                             .border_color(if self.composer.read(cx).focus_handle(cx).is_focused(window) { theme.accent.border } else { theme.border })
                             .shadow(theme.shadow_small())
+                            // Whom it addresses, when not the Assistant.
+                            .when_some(addressed_intent.clone(), |this, intent| {
+                                this.child(
+                                    div()
+                                        .px(r(12.0))
+                                        .pt(r(8.0))
+                                        .flex()
+                                        .items_center()
+                                        .gap(r(6.0))
+                                        .text_size(r(theme::text::XS))
+                                        .text_color(theme.accent.text)
+                                        .child(icon(IconName::Agent).size(12.0).color(theme.accent.text))
+                                        .child(div().flex_1().min_w_0().overflow_hidden().text_ellipsis().whitespace_nowrap().child(match intent {
+                                            Some(intent) => format!("To the objective's agents: {intent}"),
+                                            None => "To an objective no longer shown: switch to the Assistant".to_string(),
+                                        })),
+                                )
+                            })
                             .when(editing, |this| {
                                 let studio = self.studio.clone();
                                 this.child(
@@ -1568,6 +1964,9 @@ impl Render for ConversationView {
                                     .flex()
                                     .items_center()
                                     .gap(r(6.0))
+                                    // Whom it addresses: the Assistant or the
+                                    // objective, switched only here (C-54).
+                                    .child(address_chip(&self.studio, addressed.is_some(), objective_shown, cx))
                                     // The selection, one click from the message (context chips).
                                     .when(!selection_names.is_empty(), |this| {
                                         let studio = studio_entity.clone();
@@ -1601,7 +2000,7 @@ impl Render for ConversationView {
                                         )
                                     })
                                     .child(div().flex_1().min_w_0())
-                                    .when(steering, |this| {
+                                    .when(steering && addressed.is_none(), |this| {
                                         let studio = self.studio.clone();
                                         this.when(can_send, |this| {
                                             this.child(
@@ -1652,7 +2051,46 @@ impl Render for ConversationView {
                                             )
                                         })
                                     })
-                                    .child(if running && !question {
+                                    // The message as an objective's intent (C-54).
+                                    .when(addressed.is_none() && has_text && objective_free && !form_here, |this| {
+                                        this.child(
+                                            Button::new("objective-from-message", "Start as objective")
+                                                .small()
+                                                .icon(IconName::Agent)
+                                                .shortcut("Ctrl+Enter")
+                                                .tooltip("Show the start form with this message as the intent, its budgets, permissions and each role's model; nothing starts until you press Start", None)
+                                                .on_click({
+                                                    let studio = self.studio.clone();
+                                                    move |_: &ClickEvent, _, cx| studio.act(cx, |studio| studio.execute(crate::commands::CommandId::StartObjective))
+                                                }),
+                                        )
+                                    })
+                                    .when(addressed.is_some(), |this| {
+                                        this.child(
+                                            Button::new("send", "Send")
+                                                .small()
+                                                .primary()
+                                                .icon(IconName::Send)
+                                                .shortcut("Enter")
+                                                .tooltip("Send to the objective's agents: the Orchestrator gives it to the implementer at its next tool call while it works, otherwise to the lead's next turn", None)
+                                                .disabled(!can_send)
+                                                .on_click(cx.listener(|this, _: &ClickEvent, window, cx| this.send(window, cx))),
+                                        )
+                                    })
+                                    .when(addressed.is_some() && running, |this| {
+                                        this.child(
+                                            Button::new("stop", "Stop")
+                                                .small()
+                                                .danger()
+                                                .icon(IconName::Stop)
+                                                .tooltip("Stop the Assistant now; its changes so far stay and can be undone", None)
+                                                .on_click({
+                                                    let studio = self.studio.clone();
+                                                    move |_: &ClickEvent, _, cx| studio.act(cx, |studio| if !studio.refused_in_operators_window("stopping the Assistant") { studio.stop_assistant() })
+                                                }),
+                                        )
+                                    })
+                                    .when(addressed.is_none(), |this| this.child(if running && !question {
                                         Button::new("stop", "Stop")
                                             .small()
                                             .danger()
@@ -1672,7 +2110,7 @@ impl Render for ConversationView {
                                             .disabled(!can_send)
                                             .on_click(cx.listener(|this, _: &ClickEvent, window, cx| this.send(window, cx)))
                                             .into_any_element()
-                                    })
+                                    }))
                                     .when(running && question, |this| {
                                         this.child(Button::new("stop-question", "Stop").small().on_click({
                                             let studio = self.studio.clone();

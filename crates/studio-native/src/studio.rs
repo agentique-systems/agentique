@@ -455,6 +455,10 @@ impl Studio {
                 .result
                 .as_ref()
                 .is_some_and(|r| !r.trace.is_empty()),
+            objective: self.objectives.current.is_some(),
+            objective_running: self.objectives.running(),
+            objective_paused: self.objectives.paused(),
+            objective_unfinished: self.objectives.unfinished(),
         }
     }
 
@@ -1364,13 +1368,31 @@ impl Studio {
             CreatePart | CreatePort | CreateItem | CreateAttribute | CreateInterface
             | CreateRequirement | Rename | Delete | Connect | MoveTo | Lock | Undo | Redo
             | Checkpoint => self.edit(id),
+            // Asking the Assistant addresses it (C-54: switching is explicit).
             AskAssistant => {
+                self.conversation.addressed = None;
                 self.conversation.shown = true;
                 self.conversation.focus_input = true;
             }
             InsertSelection => self.insert_selection(),
             NewConversation => self.new_conversation(),
             ShowConversation => self.conversation.shown = !self.conversation.shown,
+            // Objectives (C-54): one set of commands for the Conversation,
+            // the Objectives panel and the palette.
+            StartObjective => self.start_form_from_message(),
+            MessageObjective => self.address_objective(),
+            PauseObjective => self.objective_command(agq_orchestrator::run::Command::Pause),
+            StepObjective => self.objective_command(agq_orchestrator::run::Command::Step),
+            ResumeObjective => self.objective_command(agq_orchestrator::run::Command::Resume),
+            StopObjective if self.objectives.running() => {
+                self.objective_command(agq_orchestrator::run::Command::Stop)
+            }
+            StopObjective => self.stop_idle_objective(),
+            ContinueObjective => {
+                if let Err(problem) = self.continue_objective() {
+                    self.objectives.message = Some(format!("Not continued: {problem}"));
+                }
+            }
         }
     }
 

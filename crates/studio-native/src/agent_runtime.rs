@@ -618,6 +618,15 @@ impl Studio {
     pub fn apply_runtime_choice(&mut self) {
         let choice = self.settings.model_choice();
         self.runtime.assistant = self.route_now();
+        // A runtime given for this process (a test instance's stand-in, a
+        // journey's script), whatever Settings and credentials say.
+        if self.args.assistant_stand_in && !self.conversation.runtime_given {
+            self.conversation.use_stand_in();
+        }
+        if self.conversation.runtime_given {
+            return;
+        }
+
         if self.runtime_setting() != CLAUDE_AGENT || self.safe_mode {
             self.conversation.use_choice(choice);
             return;

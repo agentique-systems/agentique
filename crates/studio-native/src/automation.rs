@@ -955,9 +955,9 @@ pub fn script_assistant(app: &mut Studio) {
             "tool_use",
         ),
     ];
-    app.conversation.new_runtime = crate::conversation::scripted(replies);
-    app.conversation.key_missing = None;
-    app.conversation.model_name = "scripted stand-in (no network)".into();
+    // Given for the journey: credentials read later never replace it.
+    app.conversation
+        .use_given(crate::conversation::scripted(replies));
 }
 
 /// Scenario H, the Library (C-49), from the URL shortener sample.
@@ -1842,9 +1842,9 @@ pub fn script_library_assistant(app: &mut Studio) {
             "end_turn",
         ),
     ];
-    app.conversation.new_runtime = crate::conversation::scripted(replies);
-    app.conversation.key_missing = None;
-    app.conversation.model_name = "scripted stand-in (no network)".into();
+    // Given for the journey: credentials read later never replace it.
+    app.conversation
+        .use_given(crate::conversation::scripted(replies));
 }
 
 fn crash() -> Vec<Step> {

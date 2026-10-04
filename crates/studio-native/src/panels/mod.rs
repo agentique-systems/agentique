@@ -195,7 +195,14 @@ pub struct InspectorColumn {
 }
 
 impl InspectorColumn {
-    pub fn new(studio: Entity<Studio>, window: &mut Window, cx: &mut Context<Self>) -> Self {
+    /// The column, with the objective's start form it shares with the
+    /// Conversation (C-54).
+    pub fn new(
+        studio: Entity<Studio>,
+        form: Entity<crate::objective_form::ObjectiveForm>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Self {
         let subscription = cx.subscribe(&studio, |_, _, event: &StudioEvent, cx| {
             if event.0.intersects(
                 Dirty::MODEL
@@ -210,20 +217,10 @@ impl InspectorColumn {
         });
         InspectorColumn {
             inspector: inspector::Fields::new(studio.clone(), window, cx),
-            objectives: objectives::Fields::new(window, cx),
+            objectives: objectives::Fields::new(form, window, cx),
             studio,
             _subscription: subscription,
         }
-    }
-}
-
-impl InspectorColumn {
-    pub(crate) fn objective_fields(&self) -> &objectives::Fields {
-        &self.objectives
-    }
-
-    pub(crate) fn objective_fields_mut(&mut self) -> &mut objectives::Fields {
-        &mut self.objectives
     }
 }
 
