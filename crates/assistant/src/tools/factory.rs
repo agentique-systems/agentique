@@ -35,12 +35,61 @@ pub enum StudioRequest {
         element: ElementId,
         instructions: String,
     },
+    /// Show the Operator a start form for an objective (C-54): the
+    /// Assistant proposes, only the Operator starts.
+    ProposeObjective(ObjectiveProposal),
     /// What the application shows now (C-53): `full` with every command
     /// and the cards in view.
     Observe { full: bool },
     /// An action in the application, as the control interface reads it
     /// (the whole input: action, expect, observed, why).
     Act { input: Value },
+}
+
+/// An objective the Assistant proposes (`propose_objective`): its intent,
+/// whether it explores, and the budgets it suggests (none: the start
+/// form's defaults). The Studio checks the budgets when the Operator starts
+/// it; here they are only read.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct ObjectiveProposal {
+    pub intent: String,
+    pub explore: bool,
+    pub usd: Option<f64>,
+    pub cycles: Option<u32>,
+    pub attempts: Option<u32>,
+    pub hours: Option<f64>,
+    pub steps: Option<u32>,
+}
+
+impl ObjectiveProposal {
+    fn read(input: &Value) -> Result<ObjectiveProposal, String> {
+        let intent = required_str(input, "intent")?.trim().to_string();
+        let explore = match input.get("explore") {
+            None | Some(Value::Null) => false,
+            Some(Value::Bool(on)) => *on,
+            Some(_) => return Err("`explore` must be true or false".into()),
+        };
+        let budgets = &input["budgets"];
+        let number = |field: &str| budgets.get(field).and_then(Value::as_f64);
+        let whole = |field: &str| -> Result<Option<u32>, String> {
+            match number(field) {
+                None => Ok(None),
+                Some(n) if n.fract() == 0.0 && (0.0..=u32::MAX as f64).contains(&n) => {
+                    Ok(Some(n as u32))
+                }
+                Some(n) => Err(format!("`budgets.{field}` must be a whole number; got {n}")),
+            }
+        };
+        Ok(ObjectiveProposal {
+            intent,
+            explore,
+            usd: number("usd"),
+            cycles: whole("cycles")?,
+            attempts: whole("attempts")?,
+            hours: number("hours"),
+            steps: whole("steps")?,
+        })
+    }
 }
 
 /// The agent settings `inspect_behaviour` lists, as the Agents library
@@ -442,6 +491,9 @@ pub(super) fn studio_request(
             }
         }
         super::STOP_RUN => StudioRequest::StopRun,
+        super::PROPOSE_OBJECTIVE => {
+            StudioRequest::ProposeObjective(ObjectiveProposal::read(input)?)
+        }
         super::OBSERVE_APP => StudioRequest::Observe {
             full: input["detail"] == "full",
         },
@@ -549,5 +601,8 @@ pub fn carry_out_headless(tree: &Tree, request: &StudioRequest) -> Result<String
         .ok_or_else(|| "Only a part def or a part can be explained.".into()),
         StudioRequest::CheckImplementation => Err("Not run: there is no code here.".into()),
         StudioRequest::Implement { .. } => Err("Not started: there is no code folder here.".into()),
+        StudioRequest::ProposeObjective(_) => {
+            Err("Not shown: there is no Operator here to start it; nothing started.".into())
+        }
     }
 }
