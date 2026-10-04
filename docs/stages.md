@@ -1429,7 +1429,7 @@ Read against the code before any change (file:line on that commit):
 
 | Item | Pull request | State |
 |---|---|---|
-| W12.1 Direction and self-model | `stage12/direction` | C-54, Scenario K, §4.16, Stage 12, the decision log naming the locked parts before they change; the self-model's contracts (`Orchestrator`, `Studio`, `ClaudeAgentRuntime`, `Assistant`, `Providers`, the objective and control items) and four requirements (`FindingsReproduce`, `DefectShownBefore`, `ChildWorkBounded`, `OnlyGivenCredentials`); identities reconciled by `Project::open` (only new elements got ids) |
+| W12.1 Direction and self-model | #108 | C-54, Scenario K, §4.16, Stage 12, the decision log naming the locked parts before they change; the self-model's contracts (`Orchestrator`, `Studio`, `ClaudeAgentRuntime`, `Assistant`, `Providers`, the objective and control items) and four requirements (`FindingsReproduce`, `DefectShownBefore`, `ChildWorkBounded`, `OnlyGivenCredentials`); identities reconciled by `Project::open` (only new elements got ids) |
 | W12.2 Control interface, complete and observable | — | Not started |
 | W12.3 Models per role and credentials | — | Not started |
 | W12.4 Exploration and testing knowledge | — | Not started |

@@ -491,10 +491,11 @@ package AgentiqueArchitecture {
              * handlers as the Operator's input, refusing stale ones and actions by an
              * agent that does not hold the window (C-54); observer mode draws each
              * agent's typing, clicks, focus and scrolling with its goal and decisions,
-             * at the Operator's speed. Agents may enter a child objective's directive in
-             * the Objectives panel as themselves; everything else the Operator's own
-             * stays refused to them. Settings name each agent role's model, effort and
-             * fallback, and the Studio resolves them before an objective starts (C-54).
+             * at the Operator's speed. The Orchestrator may enter a lead's directive in
+             * the Objectives panel's delegation field, as the lead, and agents may undo
+             * in a test instance; everything else the Operator's own stays refused to
+             * agents. Settings name each agent role's model, effort and fallback, and
+             * the Studio resolves them before an objective starts (C-54).
              * Owns presentation (cameras, layouts, selection), the session, Settings,
              * the control interface's event trace and each project's app data
              * (conversation, jobs, runs, required checks). */
@@ -585,9 +586,9 @@ package AgentiqueArchitecture {
              * and every tool call it makes is checked against its schema and carried
              * out by the Studio on the one change path; in an implementation task it is
              * the worker, with the coding tools in the task's worktree, and in an
-             * objective its sessions are the Orchestrator's lead, implementer, reviewer,
-             * evaluator and explorer, each on its role's model (C-53, C-54). Owns the
-             * tool definitions, the skills, the
+             * objective its sessions are the Orchestrator's lead, implementer, reviewer
+             * and evaluator, each on its role's model (C-53, C-54). Owns the tool
+             * definitions, the skills, the
              * development sessions' permission policies and the conversation's entries.
              * Its behaviour comes from a model, so the scenarios stand it in. It never
              * changes the model except through Agentique's tools, and works on files
@@ -624,8 +625,8 @@ package AgentiqueArchitecture {
              * only part that uses rig, tokio, reqwest or the credential-store crates
              * (R-21, R-41). Owns the keys, the capability table (which models chat
              * and which make typed decisions, which decision models are known
-             * pinned versions, and each model's dated price) and every provider call: streamed chat, and typed
-             * decisions (C-35, C-52) with replies read completely within a size
+             * pinned versions, each model's dated price) and every provider call:
+             * streamed chat, and typed decisions (C-35, C-52) with replies read completely within a size
              * limit and checked against the request that was sent, usage that says
              * when it is unknown, one deadline for every attempt and wait, and
              * cancellation that sends nothing more. Exposes no rig, tokio or HTTP
