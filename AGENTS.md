@@ -44,8 +44,11 @@ are its primary users: these rules are theirs as much as any person's.
     `model/links.json` as files; work only in your cycle's worktree (the file
     tools are held to it, and every path a change touches is checked before
     merging); leave `.claude/`, `CLAUDE.md` and `AGENTS.md` alone unless the
-    objective names them; keep the acceptance criteria and required checks
-    frozen at the proposal; never delete, ignore or loosen a test, check or
+    objective names them; besides the SDK's subagents inside your own
+    session, hand work to another agent only as a child objective your lead
+    delegates through Agentique, within the objective's permissions and
+    budgets (C-54); keep the acceptance criteria and required checks frozen
+    at the proposal; never delete, ignore or loosen a test, check or
     budget to make it pass (a deliberate change to one is named, with its
     reason, for the reviewer); never force-push, push to the default branch
     (`main`) or merge yourself: the Orchestrator merges when the gates pass.
@@ -86,8 +89,9 @@ code and are committed.
 - Product nouns: Studio, Surface, Panels, Conversation, Assistant,
   Orchestrator, System State, Settings, lock, scenario, simulation,
   implementation link, drift, agent, autonomy mode, objective, cycle,
-  permission policy, control interface, observation, typed decision. A new
-  product term needs a reason and a glossary entry (ROADMAP §9).
+  permission policy, control interface, observation, typed decision,
+  exploration, finding, testing knowledge, child objective, observer mode. A
+  new product term needs a reason and a glossary entry (ROADMAP §9).
 
 ## One truth per topic (ROADMAP §8.2)
 
