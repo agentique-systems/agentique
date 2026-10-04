@@ -500,6 +500,238 @@ fn the_lead_delegates_a_child_within_its_budget_and_gets_its_result() {
         "{}",
         texts(&ours)
     );
+    // It explored the parent's base build, which it inherited, and counted
+    // its spend once.
+    assert_eq!(child.cycles[0].base, cycle.base);
+    assert_eq!(child.cycles[0].base_build, cycle.base_build);
+    assert_eq!(
+        child.cycles[0].explorations[0].build,
+        cycle.explorations[0].build
+    );
+    assert_eq!(directive.counted, child.spent);
+}
+
+/// Blocking review finding 1: the evidence on the base is made with each
+/// attempt's own test files. Attempt 1's test fails on the base (evidence);
+/// its repair weakens the test until it passes anywhere; the test runs on
+/// the base are made again with the repair's test files, the test passes
+/// there, and the gate fails.
+#[test]
+fn a_test_weakened_in_the_repair_has_its_evidence_made_again_and_fails() {
+    let Ok(node) = find_node() else {
+        eprintln!("Node is not available: skipped");
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let repository = repository_with(dir.path(), &["WEAKEN"]);
+    let store = Store::new(dir.path().join("objectives"));
+    let (setup, _) = setup_with(dir.path(), &store, node, true);
+    let objective = exploring(&store, &repository, "Find and fix problems", budgets());
+    let id = objective.id.clone();
+    let seen = run_to_end(setup, objective, |_, _| {});
+    let record = store.load(&id).unwrap();
+    let cycle = record.cycle().unwrap();
+    assert!(cycle.attempts.len() >= 2, "{}", texts(&seen));
+    let gate = |attempt: &agq_orchestrator::record::Attempt| {
+        attempt
+            .gates
+            .iter()
+            .find(|g| g.name == "the criteria show the defect on the base")
+            .cloned()
+            .unwrap()
+    };
+    // Attempt 1: its test failed on the base, by an assertion.
+    assert!(
+        gate(&cycle.attempts[0]).passed(),
+        "{:?}",
+        gate(&cycle.attempts[0])
+    );
+    // The repair's weakened test passes on the base: no evidence any more.
+    let repaired = &cycle.attempts[1];
+    let failed = gate(repaired);
+    assert!(!failed.passed());
+    assert!(
+        failed.detail.contains("c1 already pass on the base"),
+        "{}",
+        failed.detail
+    );
+    let evidence = cycle.evidence.as_ref().unwrap();
+    assert_eq!(Some(&evidence.commit), repaired.commit.as_ref());
+    let c1 = cycle.before.iter().find(|o| o.name == "c1").unwrap();
+    assert_eq!(c1.verdict, "passed");
+    assert!(
+        seen.iter()
+            .any(|e| e.text.starts_with("This attempt's test files differ")),
+        "{}",
+        texts(&seen)
+    );
+    // Never reviewed, never merged.
+    assert!(cycle.review.is_none());
+    assert_eq!(record.state, State::Failed);
+}
+
+/// `ChildWorkBounded`: a lead that delegates in every turn gets three
+/// children in a turn and the fourth refused, with the reason.
+#[test]
+fn a_fourth_delegation_in_a_turn_is_refused() {
+    let Ok(node) = find_node() else {
+        eprintln!("Node is not available: skipped");
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let repository = repository_with(dir.path(), &["DELEGATE-MANY"]);
+    let store = Store::new(dir.path().join("objectives"));
+    let (setup, _) = setup_with(dir.path(), &store, node, true);
+    let objective = exploring(
+        &store,
+        &repository,
+        "DELEGATE-ME: find and fix problems",
+        budgets(),
+    );
+    let id = objective.id.clone();
+    let seen = run_to_end(setup, objective, |_, _| {});
+    let record = store.load(&id).unwrap();
+    let children: Vec<_> = record
+        .directives
+        .iter()
+        .filter(|d| matches!(&d.recipient, Recipient::Child(c) if !c.is_empty()))
+        .collect();
+    assert_eq!(children.len(), 3, "{}", texts(&seen));
+    assert!(children.iter().all(|d| d.status == DirectiveStatus::Done));
+    let refused: Vec<_> = record
+        .directives
+        .iter()
+        .filter_map(|d| match &d.status {
+            DirectiveStatus::Refused { reason } => Some(reason.clone()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(refused.len(), 1, "{refused:?}");
+    assert!(
+        refused[0].contains("at most 3 children in a turn"),
+        "{refused:?}"
+    );
+    // It planned after, and the cycle went on.
+    assert!(record.cycle().unwrap().explorations.len() == 1);
+}
+
+/// `ChildWorkBounded`: what a child spent before Agentique stopped (a crash
+/// with the child running) is counted in its parent's once, when the child
+/// goes on with its parent and ends.
+#[test]
+fn a_childs_spend_before_a_restart_is_counted_once() {
+    let Ok(node) = find_node() else {
+        eprintln!("Node is not available: skipped");
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let repository = repository_with(dir.path(), &[]);
+    let store = Store::new(dir.path().join("objectives"));
+    let (setup, _) = setup_with(dir.path(), &store, node, true);
+    // The parent, as a crash left it: exploring, with a child running.
+    let mut parent = exploring(&store, &repository, "Find and fix problems", budgets());
+    let mut cycle = agq_orchestrator::record::Cycle::new(1);
+    cycle.exploring = Some(agq_orchestrator::record::Exploring::Explore);
+    parent.cycles.push(cycle.clone());
+    let child_id = format!("{}-c1", parent.id);
+    let directive = parent.direct(
+        "lead",
+        Recipient::Child(child_id.clone()),
+        agq_orchestrator::record::Scope {
+            instruction: "Look closely at the History panel".into(),
+            focus: None,
+            budgets: Some(Budgets {
+                usd: 0.5,
+                ..budgets()
+            }),
+            permissions: Some(Permissions::default()),
+        },
+        Some("cycle-1/delegation".into()),
+    );
+    store.save(&parent).unwrap();
+    let mut child = parent.clone();
+    child.id = child_id.clone();
+    child.intent = "Look closely at the History panel".into();
+    child.parent = Some(parent.id.clone());
+    child.depth = 1;
+    child.directives = Vec::new();
+    child.budgets = Budgets {
+        usd: 0.5,
+        ..budgets()
+    };
+    child.cycles = vec![cycle];
+    // What it had spent when Agentique stopped.
+    child.spent.add(
+        "lead",
+        &ModelRef::new(Provider::DeepSeek, "deepseek-v4-pro"),
+        agq_orchestrator::record::Cost {
+            usd: 0.05,
+            tokens: 5000,
+            unknown: false,
+        },
+    );
+    store.save(&child).unwrap();
+    let id = parent.id.clone();
+    let seen = run_to_end(setup, parent, |_, _| {});
+    let record = store.load(&id).unwrap();
+    let child = store.load(&child_id).unwrap();
+    assert_eq!(child.state, State::Done, "{}", texts(&seen));
+    let settled = record.directive(&directive).unwrap();
+    assert_eq!(settled.status, DirectiveStatus::Done);
+    assert_eq!(settled.counted, child.spent, "what was counted is kept");
+    // The parent's lead: the child's (the 5000 before the restart and its
+    // one planning session) and its own two sessions (planning, proposal),
+    // each session the same.
+    let child_lead = child.spent.role("lead").tokens;
+    let per_session = child_lead - 5000;
+    assert!(per_session > 0);
+    assert_eq!(
+        record.spent.role("lead").tokens,
+        child_lead + 2 * per_session,
+        "{}",
+        texts(&seen)
+    );
+    assert!(record.spent.usd >= 0.05);
+}
+
+/// A reproduced finding a failed cycle left unfixed stays eligible: a
+/// second objective whose exploration finds nothing new is offered it
+/// again, and its replay on this base is run again (it was reproduced on
+/// another build), not reused.
+#[test]
+fn a_known_finding_left_unfixed_is_offered_again() {
+    let Ok(node) = find_node() else {
+        eprintln!("Node is not available: skipped");
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let repository = repository_with(dir.path(), &[]);
+    let store = Store::new(dir.path().join("objectives"));
+    let (setup, _) = setup_with(dir.path(), &store, node.clone(), true);
+    let first = exploring(&store, &repository, "Find and fix problems", budgets());
+    run_to_end(setup, first, |_, _| {});
+    // The first stopped at the merge it may not make: the finding is open.
+    let (setup, _) = setup_with(dir.path(), &store, node, true);
+    let second = exploring(&store, &repository, "Find and fix problems", budgets());
+    let id = second.id.clone();
+    let seen = run_to_end(setup, second, |_, _| {});
+    let record = store.load(&id).unwrap();
+    let cycle = record.cycle().unwrap();
+    assert!(
+        seen.iter().any(|e| e
+            .text
+            .contains("known finding(s) not yet fixed are offered again")),
+        "{}",
+        texts(&seen)
+    );
+    assert!(cycle.proposal.as_ref().unwrap().finding.is_some());
+    let replay = cycle.before.iter().find(|o| o.name == "replay").unwrap();
+    assert_eq!(replay.verdict, "failed");
+    assert!(
+        !replay.detail.contains("when it was reproduced"),
+        "replayed again on this base: {}",
+        replay.detail
+    );
 }
 
 /// The Operator stops a child alone: its directive ends as stopped, the
@@ -616,6 +848,11 @@ fn the_operators_messages_go_to_the_implementer_at_work_and_otherwise_to_the_lea
     assert!(summary.contains("Call it Archive"), "{summary}");
 }
 
+/// A folder for an instance that is refused before it starts.
+fn dir_for_refusal() -> PathBuf {
+    std::env::temp_dir().join(format!("agq-refused-{}", std::process::id()))
+}
+
 /// The Studio built from this checkout (`cargo build -p agq-studio-native`).
 fn built_studio() -> Option<PathBuf> {
     let target = std::env::var_os("CARGO_TARGET_DIR")
@@ -646,6 +883,24 @@ fn live_test_instances_start_in_their_conditions_and_explore_by_the_rules() {
     };
     let flags = Flags::of(&exe);
     assert!(flags.test_instance && flags.control_speed, "{flags:?}");
+    // A build without the stand-in Assistant is never started unreviewed
+    // (it would read the Operator's credentials as a plain Studio).
+    if !flags.stand_in {
+        let refused = TestInstance::start_with(
+            &exe,
+            &dir_for_refusal(),
+            Path::new(env!("CARGO_MANIFEST_DIR")),
+            Path::new(env!("CARGO_MANIFEST_DIR")),
+            &Options {
+                unreviewed: true,
+                ..Options::default()
+            },
+        );
+        assert!(
+            refused.is_err_and(|e| e.contains("--assistant-stand-in")),
+            "an unreviewed build without the stand-in is not started"
+        );
+    }
     let repository = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../..")
         .canonicalize()

@@ -149,6 +149,11 @@ pub struct Options {
     pub key: Option<InstanceKey>,
     /// A stated condition ([`CONDITIONS`]).
     pub condition: Option<String>,
+    /// The build is unreviewed (a cycle's change): it starts only as a test
+    /// instance with the stand-in Assistant, never as a Studio that would
+    /// read the Operator's credentials; a build without those flags is not
+    /// started.
+    pub unreviewed: bool,
 }
 
 /// What a build's command line supports of what a test instance needs.
@@ -159,15 +164,44 @@ pub struct Flags {
     pub stand_in: bool,
 }
 
+/// How long a build may take to print its `--help`.
+const HELP_WITHIN: Duration = Duration::from_secs(20);
+
 impl Flags {
-    /// Read from `exe --help` (a build before C-54 knows none of them).
+    /// Read from `exe --help` (a build before C-54 knows none of them), run
+    /// with only what a process needs in its environment (no key or token:
+    /// the build may be unreviewed) and ended after [`HELP_WITHIN`].
     pub fn of(exe: &Path) -> Flags {
+        let folder = exe.parent().unwrap_or(Path::new("."));
+        let environment = minimal_environment(folder).unwrap_or_default();
         let help = Command::new(exe)
             .arg("--help")
+            .current_dir(folder)
+            .env_clear()
+            .envs(environment)
             .stdin(Stdio::null())
+            .stdout(Stdio::piped())
             .stderr(Stdio::null())
-            .output()
-            .map(|o| String::from_utf8_lossy(&o.stdout).into_owned())
+            .spawn()
+            .ok()
+            .and_then(|mut child| {
+                let started = Instant::now();
+                loop {
+                    match child.try_wait() {
+                        Ok(Some(_)) => break,
+                        Ok(None) if started.elapsed() < HELP_WITHIN => {
+                            std::thread::sleep(Duration::from_millis(50))
+                        }
+                        _ => {
+                            agq_execution::process::kill_tree(&mut child);
+                            return None;
+                        }
+                    }
+                }
+                let mut text = String::new();
+                std::io::Read::read_to_string(child.stdout.as_mut()?, &mut text).ok()?;
+                Some(text)
+            })
             .unwrap_or_default();
         Flags {
             test_instance: help.contains("--test-instance"),
@@ -175,6 +209,21 @@ impl Flags {
             stand_in: help.contains("--assistant-stand-in"),
         }
     }
+}
+
+/// Only what a process needs in its environment, as Execution passes it
+/// (no key, token or other secret), and what a window needs on Linux.
+fn minimal_environment(folder: &Path) -> Result<Vec<(String, String)>, String> {
+    let mut environment = agq_execution::Executor::new(
+        agq_execution::Scope::read_only(folder).map_err(|e| e.to_string())?,
+    )
+    .environment();
+    for name in ["DISPLAY", "WAYLAND_DISPLAY", "XDG_RUNTIME_DIR"] {
+        if let Ok(value) = std::env::var(name) {
+            environment.push((name.to_string(), value));
+        }
+    }
+    Ok(environment)
 }
 
 /// Prepares `folder` (a test instance's, before it starts) for a stated
@@ -326,10 +375,23 @@ impl TestInstance {
         repository: &Path,
         options: &Options,
     ) -> Result<TestInstance, String> {
+        let flags = Flags::of(exe);
+        if options.unreviewed && !(flags.test_instance && flags.stand_in) {
+            return Err(format!(
+                "this unreviewed build is not started: it does not support {}, and as a plain Studio it would read the Operator's credentials",
+                [
+                    (!flags.test_instance).then_some("--test-instance"),
+                    (!flags.stand_in).then_some("--assistant-stand-in"),
+                ]
+                .into_iter()
+                .flatten()
+                .collect::<Vec<_>>()
+                .join(" and ")
+            ));
+        }
         let _ = std::fs::remove_dir_all(folder);
         std::fs::create_dir_all(folder).map_err(|e| e.to_string())?;
         let endpoint = folder.join("control.json");
-        let flags = Flags::of(exe);
         let mut arguments = Vec::new();
         if flags.test_instance {
             arguments.push("--test-instance".to_string());
@@ -352,16 +414,7 @@ impl TestInstance {
         // Only what a process needs (as Execution passes it): the Studio's
         // keys and tokens stay with the Studio, since a test instance runs
         // code no reviewer has read yet.
-        let mut environment = agq_execution::Executor::new(
-            agq_execution::Scope::read_only(repository).map_err(|e| e.to_string())?,
-        )
-        .environment();
-        // What a window needs on Linux.
-        for name in ["DISPLAY", "WAYLAND_DISPLAY", "XDG_RUNTIME_DIR"] {
-            if let Ok(value) = std::env::var(name) {
-                environment.push((name.to_string(), value));
-            }
-        }
+        let mut environment = minimal_environment(repository)?;
         // A merged build that explores: its Assistant on the explorer's
         // provider and model, with that key in its environment only (a test
         // instance reads keys from nowhere else).
@@ -623,8 +676,24 @@ mod tests {
                 .any(|e| e.under.is_some() && e.details.is_some())
         );
         assert!(prepare(&dir.path().join("x"), "on fire").is_err());
-        // A build that knows none of the flags (or is not there) gets none.
-        assert_eq!(Flags::of(&dir.path().join("missing.exe")), Flags::default());
+        // A build that knows none of the flags (or is not there) gets none,
+        // and an unreviewed one is then not started at all.
+        let missing = dir.path().join("missing.exe");
+        assert_eq!(Flags::of(&missing), Flags::default());
+        let refused = TestInstance::start_with(
+            &missing,
+            &dir.path().join("i"),
+            dir.path(),
+            dir.path(),
+            &Options {
+                unreviewed: true,
+                ..Options::default()
+            },
+        );
+        assert!(
+            refused.err().unwrap_or_default().contains("not started"),
+            "an unreviewed build without the flags never starts"
+        );
     }
 
     #[test]

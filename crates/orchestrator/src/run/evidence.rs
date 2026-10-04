@@ -2,19 +2,24 @@
 //! "Evidence, gates and bounds", requirement `DefectShownBefore`): a cycle's
 //! criteria run on its base before the change, where none may pass and one
 //! must fail with evidence (the replay of its finding on the base build, an
-//! observation that fails there, or a test run that compiles, runs a test
-//! and fails, with the change's new and changed test files brought over);
-//! anything else there is "no evidence", with the reason. After the change,
-//! the replay must pass in a test instance of the change, and a change to
-//! user-facing code is explored briefly by the rules in the areas it
-//! touched, where no new invariant may fail.
+//! observation whose own expectation fails there, or a test run that
+//! compiles, runs a test and fails an assertion, with the change's new and
+//! changed test files brought over); anything else there (a setup that
+//! failed, a broken connection, a base that did not build, an error that is
+//! no assertion) is "no evidence", with the reason. The test runs on the
+//! base are made again whenever a later attempt's test files differ, so the
+//! evidence is always made with the checked commit's own tests. After the
+//! change, the replay must pass in a test instance of the change, started
+//! from the base's start project (the change cannot make it pass by changing
+//! its start data), and a change to user-facing code is explored briefly by
+//! the rules in the areas it touched, where no new invariant may fail.
 
-use super::{Driver, tests_ran};
+use super::{Driver, number_after, tests_ran};
 use crate::control::Options;
 use crate::explore::{self, Changes, Plan};
 use crate::findings::{self, Check as Found, Finding, Replay};
 use crate::knowledge::Knowledge;
-use crate::record::{BaseBuild, Check, Criterion, Outcome, REPLAY};
+use crate::record::{BaseBuild, Check, Criterion, Outcome, REPLAY, TestFile};
 use agq_execution::process::{Finished, Program};
 use agq_execution::{Executor, Scope};
 use std::path::Path;
@@ -35,16 +40,9 @@ const NOT_BUILT: [&str; 10] = [
 ];
 
 /// How many tests a run says failed: cargo's `test result:` lines, Node's
-/// `# fail` / `ℹ fail`, Python's `FAILED (failures=…, errors=…)`.
+/// `# fail` / `ℹ fail`, Python's `FAILED (failures=…)` (its `errors=` are
+/// exceptions, not assertions that failed).
 pub fn tests_failed(output: &str) -> Option<usize> {
-    let number_after = |line: &str, marker: &str| -> Option<usize> {
-        let rest = &line[line.find(marker)? + marker.len()..];
-        rest.trim_start()
-            .split(|c: char| !c.is_ascii_digit())
-            .next()?
-            .parse()
-            .ok()
-    };
     let mut total = None;
     for line in output.lines() {
         let n = if line.contains("test result:") {
@@ -52,10 +50,7 @@ pub fn tests_failed(output: &str) -> Option<usize> {
         } else if line.contains("# fail") || line.contains("ℹ fail") {
             number_after(line, "# fail").or_else(|| number_after(line, "ℹ fail"))
         } else if line.starts_with("FAILED (") {
-            Some(
-                number_after(line, "failures=").unwrap_or(0)
-                    + number_after(line, "errors=").unwrap_or(0),
-            )
+            Some(number_after(line, "failures=").unwrap_or(0))
         } else {
             None
         };
@@ -66,8 +61,16 @@ pub fn tests_failed(output: &str) -> Option<usize> {
     total
 }
 
+/// Whether a run's output shows an assertion that failed: cargo's
+/// `assertion failed` and `assertion `left == right` failed`, Node's and
+/// Python's `AssertionError` (`ERR_ASSERTION`). A test that ends with
+/// another error (a `TypeError`, an `unwrap` on nothing) shows none.
+fn asserted(output: &str) -> bool {
+    output.to_lowercase().contains("assertion")
+}
+
 /// A command criterion's run on the base, judged as evidence: `failed`
-/// only when it compiled, ran at least one test and a test failed;
+/// only when it compiled, ran at least one test and an assertion failed;
 /// `passed` when it passed there (the gate fails); otherwise `no evidence`
 /// with the reason.
 pub fn on_base_verdict(run: Result<Finished, String>) -> (&'static str, String) {
@@ -93,12 +96,21 @@ pub fn on_base_verdict(run: Result<Finished, String>) -> (&'static str, String) 
     }
     let failed = tests_failed(&output).unwrap_or(0);
     let ran = tests_ran(&output).unwrap_or(0).max(failed);
-    if failed > 0 {
+    if failed > 0 && asserted(&output) {
         return (
             "failed",
             format!(
-                "{failed} of its tests failed on the base: {}",
+                "{failed} of its tests failed an assertion on the base: {}",
                 agq_execution::process::last_lines(&output, 12)
+            ),
+        );
+    }
+    if failed > 0 {
+        return (
+            "no evidence",
+            format!(
+                "its tests failed on the base with an error, not an assertion: {}",
+                agq_execution::process::last_lines(&output, 8)
             ),
         );
     }
@@ -116,6 +128,39 @@ pub fn on_base_verdict(run: Result<Finished, String>) -> (&'static str, String) 
             ),
         )
     }
+}
+
+/// An observation criterion's outcome, and whether its own expectation
+/// decided it (not a setup action that failed, a broken connection, a way
+/// that could not be cleared or an instance that did not start). Outcomes
+/// that are no criterion's (a dialog open at the start) are never its own.
+pub(super) struct Observed {
+    pub outcome: Outcome,
+    pub own: bool,
+}
+
+/// An observation's outcome on the base, as evidence: its own expectation
+/// failing there is evidence, holding there passes (the gate fails), and
+/// anything else is no evidence, with the reason.
+pub fn observed_on_base(observed: &Outcome, own: bool, build: &str) -> Outcome {
+    let (verdict, detail) = match (own, observed.verdict.as_str()) {
+        (true, "failed") => (
+            "failed",
+            format!(
+                "its expectation fails on the base build {build}: {}",
+                observed.detail
+            ),
+        ),
+        (true, "passed") => ("passed", format!("it holds on the base build {build}")),
+        _ => (
+            "no evidence",
+            format!(
+                "not its expectation on the base build {build}: {}",
+                observed.detail
+            ),
+        ),
+    };
+    Outcome::new(observed.name.clone(), verdict, detail)
 }
 
 impl Driver {
@@ -195,70 +240,99 @@ impl Driver {
         Ok(built)
     }
 
-    /// Each criterion on the base, before the change (once per cycle): the
-    /// replay of its finding, its test runs with the change's test files
-    /// brought over, its observations in a test instance of the base build;
-    /// a judgment is no evidence.
-    pub(super) fn on_base(&mut self, commit: &str) -> Result<Vec<Outcome>, String> {
+    /// The test files `commit` changes against `base`, each with its blob
+    /// id (`deleted` for one it deletes), in order: what its test runs on
+    /// the base are made with.
+    pub(super) fn test_files(&self, base: &str, commit: &str) -> Result<Vec<TestFile>, String> {
+        let repository = &self.objective.repository;
+        let patch =
+            agq_execution::git::patch_of(repository, base, commit).map_err(|e| e.to_string())?;
+        let mut tests = Vec::new();
+        let mut present = Vec::new();
+        for file in patch
+            .files
+            .iter()
+            .filter(|f| crate::gates::test_path(&f.path))
+        {
+            let path = file.path.replace('\\', "/");
+            if file.status == "deleted" {
+                tests.push(TestFile {
+                    path,
+                    blob: "deleted".into(),
+                });
+            } else {
+                present.push(path);
+            }
+        }
+        if !present.is_empty() {
+            let mut words = vec!["git", "ls-tree", commit, "--"];
+            words.extend(present.iter().map(String::as_str));
+            let listed = crate::forge::run(repository, &words, Duration::from_secs(60))?;
+            for line in listed.stdout.lines() {
+                // `<mode> blob <id>\t<path>`
+                if let Some((meta, path)) = line.split_once('\t')
+                    && let Some(blob) = meta.split_whitespace().nth(2)
+                {
+                    tests.push(TestFile {
+                        path: path.to_string(),
+                        blob: blob.to_string(),
+                    });
+                }
+            }
+        }
+        tests.sort();
+        Ok(tests)
+    }
+
+    /// Each criterion on the base, before the change: the replay of its
+    /// finding, its test runs with `tests` (the commit's test files) brought
+    /// over, its observations in a test instance of the base build; a
+    /// judgment is no evidence. A base that does not build is no evidence.
+    pub(super) fn on_base(
+        &mut self,
+        commit: &str,
+        tests: &[TestFile],
+    ) -> Result<Vec<Outcome>, String> {
         let proposal = self.cycle().proposal.clone().ok_or("no proposal")?;
         let base = self.cycle().base.clone().ok_or("the cycle has no base")?;
         let mut outcomes = Vec::new();
         if let Some(finding) = self.cycle().replay.clone() {
             outcomes.push(self.replay_on_base(&finding)?);
         }
-        let commands: Vec<&Criterion> = proposal
-            .criteria
-            .iter()
-            .filter(|c| matches!(c.check, Check::Command { .. }))
-            .collect();
-        if !commands.is_empty() {
-            let folder = self.checkout("base", &base)?;
-            let brought = self.bring_tests(&folder, &base, commit)?;
-            for criterion in commands {
-                let Check::Command { program } = &criterion.check else {
-                    continue;
-                };
-                let (verdict, detail) = match crate::roles::test_command(program) {
-                    Err(problem) => ("no evidence", problem),
-                    Ok(()) => {
-                        on_base_verdict(self.execute(&folder, program, Duration::from_secs(1800)))
-                    }
-                };
-                let detail = if brought.is_empty() {
-                    detail
-                } else {
-                    format!("{detail} (with {} brought over)", brought.join(", "))
-                };
-                outcomes.push(Outcome::new(criterion.id.clone(), verdict, detail));
-                if self.controls.stopped() {
-                    return Err("stopped".into());
-                }
-            }
-        }
+        outcomes.extend(self.commands_on_base(commit, tests)?);
         let observed: Vec<&Criterion> = proposal
             .criteria
             .iter()
             .filter(|c| matches!(c.check, Check::Observation { .. }))
             .collect();
         if !observed.is_empty() {
-            let built = self.base_build()?;
-            let source = self.checkout("base", &base)?;
-            for outcome in self.observe_criteria(&built.exe, &source, &observed, "base", false)? {
-                let (verdict, detail) = match outcome.verdict.as_str() {
-                    "failed" => (
-                        "failed",
-                        format!(
-                            "it fails on the base build {}: {}",
-                            built.build, outcome.detail
-                        ),
-                    ),
-                    "passed" => (
-                        "passed",
-                        format!("it holds on the base build {}", built.build),
-                    ),
-                    _ => ("no evidence", outcome.detail.clone()),
-                };
-                outcomes.push(Outcome::new(outcome.name, verdict, detail));
+            match self.base_build() {
+                Err(error) => {
+                    for criterion in &observed {
+                        outcomes.push(Outcome::new(
+                            criterion.id.clone(),
+                            "no evidence",
+                            format!("the base could not be built: {error}"),
+                        ));
+                    }
+                }
+                Ok(built) => {
+                    let source = self.checkout("base", &base)?;
+                    let ids: Vec<&str> = observed.iter().map(|c| c.id.as_str()).collect();
+                    let template = Options {
+                        speed: Some("instant".into()),
+                        ..Options::default()
+                    };
+                    for seen in
+                        self.observe_criteria(&built.exe, &source, &observed, "base", &template)
+                    {
+                        // Only the criteria's own outcomes: a dialog open at
+                        // the start is no criterion's.
+                        if ids.contains(&seen.outcome.name.as_str()) {
+                            outcomes.push(observed_on_base(&seen.outcome, seen.own, &built.build));
+                        }
+                    }
+                }
             }
         }
         for criterion in proposal
@@ -275,49 +349,102 @@ impl Driver {
         Ok(outcomes)
     }
 
-    /// The change's new and changed test files, written into the base's
-    /// checkout `folder`, so its test runs show the defect there if they
-    /// can; returns their paths.
-    fn bring_tests(&self, folder: &Path, base: &str, commit: &str) -> Result<Vec<String>, String> {
-        let repository = &self.objective.repository;
-        let patch =
-            agq_execution::git::patch_of(repository, base, commit).map_err(|e| e.to_string())?;
-        let mut brought = Vec::new();
-        for file in patch
-            .files
+    /// The command criteria on the base, with `tests` (the checked commit's
+    /// test files) brought over into a checkout of the base of their own.
+    pub(super) fn commands_on_base(
+        &mut self,
+        commit: &str,
+        tests: &[TestFile],
+    ) -> Result<Vec<Outcome>, String> {
+        let proposal = self.cycle().proposal.clone().ok_or("no proposal")?;
+        let base = self.cycle().base.clone().ok_or("the cycle has no base")?;
+        let commands: Vec<&Criterion> = proposal
+            .criteria
             .iter()
-            .filter(|f| f.status != "deleted" && crate::gates::test_path(&f.path))
-        {
-            let path = file.path.replace('\\', "/");
+            .filter(|c| matches!(c.check, Check::Command { .. }))
+            .collect();
+        let mut outcomes = Vec::new();
+        if commands.is_empty() {
+            return Ok(outcomes);
+        }
+        // Its own checkout: the base's stays as it is, for test instances.
+        let folder = self.checkout("base-tests", &base)?;
+        let brought = self.bring_tests(&folder, commit, tests)?;
+        for criterion in commands {
+            let Check::Command { program } = &criterion.check else {
+                continue;
+            };
+            let (verdict, detail) = match crate::roles::test_command(program) {
+                Err(problem) => ("no evidence", problem),
+                Ok(()) => {
+                    on_base_verdict(self.execute(&folder, program, Duration::from_secs(1800)))
+                }
+            };
+            let detail = if brought.is_empty() {
+                detail
+            } else {
+                format!(
+                    "{detail} (with {} of {} brought over)",
+                    brought.join(", "),
+                    crate::builds::short(commit)
+                )
+            };
+            outcomes.push(Outcome::new(criterion.id.clone(), verdict, detail));
+            if self.controls.stopped() {
+                return Err("stopped".into());
+            }
+        }
+        Ok(outcomes)
+    }
+
+    /// `tests` (those `commit` has, not those it deletes) written into the
+    /// base's checkout `folder`; returns their paths.
+    fn bring_tests(
+        &self,
+        folder: &Path,
+        commit: &str,
+        tests: &[TestFile],
+    ) -> Result<Vec<String>, String> {
+        let repository = &self.objective.repository;
+        let mut brought = Vec::new();
+        for test in tests.iter().filter(|t| t.blob != "deleted") {
             let shown = crate::forge::run(
                 repository,
-                &["git", "show", &format!("{commit}:{path}")],
+                &["git", "show", &format!("{commit}:{}", test.path)],
                 Duration::from_secs(60),
             )?;
-            let to = folder.join(&path);
+            let to = folder.join(&test.path);
             if let Some(parent) = to.parent() {
                 std::fs::create_dir_all(parent).map_err(|e| e.to_string())?;
             }
             std::fs::write(&to, shown.stdout).map_err(|e| format!("{}: {e}", to.display()))?;
-            brought.push(path);
+            brought.push(test.path.clone());
         }
         Ok(brought)
     }
 
     /// The replay of the chosen finding on the base build: its reproduction
-    /// in this cycle is reused (it ran on the same build); otherwise it runs
-    /// again there.
+    /// is reused when it was made on that build (the finding's own build is
+    /// the base build, and two replays failed the same way); otherwise it
+    /// runs again there, from the base's start project. A base that does
+    /// not build is no evidence.
     fn replay_on_base(&mut self, finding: &Finding) -> Result<Outcome, String> {
-        let built = self.base_build()?;
+        let built = match self.base_build() {
+            Ok(built) => built,
+            Err(error) => {
+                return Ok(Outcome::new(
+                    REPLAY,
+                    "no evidence",
+                    format!("the base could not be built: {error}"),
+                ));
+            }
+        };
         let reproduced_here = self.cycle().findings.iter().any(|f| {
             f.identity == finding.identity
+                && f.build == built.build
                 && f.state == findings::State::Reproduced
                 && f.replays.iter().filter(|r| r.failed()).count() >= 2
-        }) && self
-            .cycle()
-            .explorations
-            .iter()
-            .any(|e| e.build == built.build);
+        });
         if reproduced_here {
             return Ok(Outcome::new(
                 REPLAY,
@@ -351,7 +478,7 @@ impl Driver {
     }
 
     /// A finding replayed in a fresh test instance of `exe`, started from
-    /// its start state in `source` (a checkout).
+    /// its start state in `source` (the base's checkout).
     fn replay_in(
         &mut self,
         exe: &Path,
@@ -370,17 +497,17 @@ impl Driver {
     }
 
     /// Observation criteria in test instances of `exe` (the project is
-    /// `source`): those without a condition share one instance, each with a
-    /// condition has its own. `stand_in` puts an unreviewed build's
-    /// Assistant on the scripted stand-in.
+    /// `source`), started as `template` says: those without a condition
+    /// share one instance, each with a condition has its own. Each outcome
+    /// says whether its own expectation decided it.
     pub(super) fn observe_criteria(
         &mut self,
         exe: &Path,
         source: &Path,
         criteria: &[&Criterion],
         name: &str,
-        stand_in: bool,
-    ) -> Result<Vec<Outcome>, String> {
+        template: &Options,
+    ) -> Vec<Observed> {
         let mut outcomes = Vec::new();
         let mut groups: Vec<(Option<String>, Vec<&Criterion>)> = Vec::new();
         for criterion in criteria {
@@ -397,10 +524,8 @@ impl Driver {
         }
         for (i, (condition, group)) in groups.into_iter().enumerate() {
             let options = Options {
-                speed: Some("instant".into()),
-                stand_in,
-                key: None,
                 condition: condition.clone(),
+                ..template.clone()
             };
             let folder = self.folder(&format!("{name}-instance-{i}"));
             let started =
@@ -413,62 +538,70 @@ impl Driver {
                 Ok(started) => started,
                 Err(problem) => {
                     for criterion in group {
-                        outcomes.push(Outcome::new(
-                            criterion.id.clone(),
-                            "not run",
-                            format!("its test instance did not start: {problem}"),
-                        ));
+                        outcomes.push(Observed {
+                            outcome: Outcome::new(
+                                criterion.id.clone(),
+                                "not run",
+                                format!("its test instance did not start: {problem}"),
+                            ),
+                            own: false,
+                        });
                     }
                     continue;
                 }
             };
             if let Some(dialog) = Self::dialog_at_start(&mut client) {
-                outcomes.push(Outcome::new(
-                    format!(
-                        "no dialog when it starts{}",
-                        match &condition {
-                            Some(c) => format!(" ({c})"),
-                            None => String::new(),
-                        }
+                outcomes.push(Observed {
+                    outcome: Outcome::new(
+                        format!(
+                            "no dialog when it starts{}",
+                            match &condition {
+                                Some(c) => format!(" ({c})"),
+                                None => String::new(),
+                            }
+                        ),
+                        "failed",
+                        format!("the {dialog} dialog is open when the test instance starts"),
                     ),
-                    "failed",
-                    format!("the {dialog} dialog is open when the test instance starts"),
-                ));
+                    own: false,
+                });
             }
             for criterion in group {
                 if let Check::Observation { setup, expect, .. } = &criterion.check {
-                    let mut outcome = self.observe_criterion(&mut client, criterion, setup, expect);
+                    let (mut outcome, own) =
+                        self.observe_criterion(&mut client, criterion, setup, expect);
                     if let Some(condition) = &condition {
                         outcome.detail = format!("{} (started {condition})", outcome.detail);
                     }
-                    outcomes.push(outcome);
+                    outcomes.push(Observed { outcome, own });
                 }
             }
             drop(client);
             drop(instance);
         }
-        Ok(outcomes)
+        outcomes
     }
 
-    /// After the change, in test instances of its build: the replay of its
-    /// finding must pass, and a change to user-facing code is explored by
-    /// the rules in the areas it touched, where no invariant that held
-    /// before may fail.
+    /// After the change, in test instances of its (unreviewed) build: the
+    /// replay of its finding must pass, started from `start` (the base's
+    /// checkout, whose start projects the change cannot alter), and a change
+    /// to user-facing code is explored by the rules in the areas it touched,
+    /// from the same start, where no invariant that held before may fail.
     pub(super) fn evaluate_by_behaviour(
         &mut self,
         exe: &Path,
-        verify: &Path,
+        start: &Path,
         user_facing: &[String],
     ) -> Vec<Outcome> {
         let mut outcomes = Vec::new();
-        let stand_in = Options {
+        let unreviewed = Options {
             speed: Some("instant".into()),
             stand_in: true,
-            key: None,
-            condition: None,
+            unreviewed: true,
+            ..Options::default()
         };
         if let Some(finding) = self.cycle().replay.clone() {
-            let outcome = match self.replay_in(exe, verify, &finding, stand_in.clone()) {
+            let outcome = match self.replay_in(exe, start, &finding, unreviewed.clone()) {
                 Replay::Passed => Outcome::new(REPLAY, "passed", "it holds on the change"),
                 Replay::Failed { message } => {
                     Outcome::new(REPLAY, "failed", format!("it still fails: {message}"))
@@ -482,7 +615,7 @@ impl Driver {
             outcomes.push(outcome);
         }
         if !user_facing.is_empty() {
-            outcomes.push(self.explore_changed(exe, verify, user_facing, stand_in));
+            outcomes.push(self.explore_changed(exe, start, user_facing, unreviewed));
         }
         outcomes
     }
@@ -493,11 +626,10 @@ impl Driver {
     fn explore_changed(
         &mut self,
         exe: &Path,
-        verify: &Path,
+        start: &Path,
         changed: &[String],
         options: Options,
     ) -> Outcome {
-        let name = "no new invariant failure in the changed areas";
         let changes = Changes {
             paths: changed.to_vec(),
             subjects: self
@@ -538,7 +670,7 @@ impl Driver {
         .unwrap_or_else(|_| Knowledge::new("unread"));
         let mut instance = self.setup.studios.instance(
             exe,
-            &verify.join(super::explore::STARTS[0]),
+            &start.join(super::explore::STARTS[0]),
             &self.folder("changed"),
             options,
         );
@@ -556,7 +688,7 @@ impl Driver {
         drop(instance);
         if run.actions == 0 {
             return Outcome::new(
-                name,
+                CHANGED_AREAS,
                 "not run",
                 format!("it did not explore: {}", run.ended),
             );
@@ -570,7 +702,7 @@ impl Driver {
             .collect();
         if new.is_empty() {
             Outcome::new(
-                name,
+                CHANGED_AREAS,
                 "passed",
                 format!(
                     "{} steps by the rules in {}; no invariant failed that held before",
@@ -579,10 +711,13 @@ impl Driver {
                 ),
             )
         } else {
-            Outcome::new(name, "failed", new.join("\n"))
+            Outcome::new(CHANGED_AREAS, "failed", new.join("\n"))
         }
     }
 }
+
+/// The outcome of the rules' exploration of a change's areas.
+pub(super) const CHANGED_AREAS: &str = "no new invariant failure in the changed areas";
 
 /// The steps of the rules' exploration of a change's areas.
 const CHANGED_STEPS: u32 = 10;
@@ -608,12 +743,12 @@ mod tests {
     }
 
     /// `DefectShownBefore`: a run on the base is evidence only if it
-    /// compiled, ran a test and a test failed.
+    /// compiled, ran a test and an assertion failed.
     #[test]
     fn a_run_on_the_base_is_evidence_only_when_a_test_ran_and_failed() {
         let failed = on_base_verdict(finished(
             false,
-            "running 2 tests\ntest a ... FAILED\ntest result: FAILED. 1 passed; 1 failed; 0 ignored",
+            "running 2 tests\ntest a ... FAILED\nthread 'a' panicked at src/lib.rs:3:5:\nassertion `left == right` failed\ntest result: FAILED. 1 passed; 1 failed; 0 ignored",
         ));
         assert_eq!(failed.0, "failed", "{}", failed.1);
         let compile = on_base_verdict(finished(
@@ -634,11 +769,14 @@ mod tests {
         assert_eq!(passed.0, "passed");
         let timeout = on_base_verdict(Err("timed out after 1800 s".into()));
         assert_eq!(timeout.0, "no evidence");
-        let node = on_base_verdict(finished(false, "# tests 2\n# pass 1\n# fail 1"));
+        let node = on_base_verdict(finished(
+            false,
+            "not ok 1 - x\n  code: 'ERR_ASSERTION'\n  name: 'AssertionError'\n# tests 2\n# pass 1\n# fail 1",
+        ));
         assert_eq!(node.0, "failed");
         let python = on_base_verdict(finished(
             false,
-            "Ran 3 tests in 0.1s\n\nFAILED (failures=1)",
+            "AssertionError: 1 != 2\nRan 3 tests in 0.1s\n\nFAILED (failures=1)",
         ));
         assert_eq!(python.0, "failed");
         let missing = on_base_verdict(finished(
@@ -651,5 +789,44 @@ mod tests {
             "running 1 test\nerror: test failed, to rerun",
         ));
         assert_eq!(crashed.0, "no evidence");
+        // An error that is no assertion shows nothing.
+        let type_error = on_base_verdict(finished(
+            false,
+            "not ok 1 - x\n  error: 'fixed is not a function'\n  name: 'TypeError'\n# tests 1\n# pass 0\n# fail 1",
+        ));
+        assert_eq!(type_error.0, "no evidence", "{}", type_error.1);
+        let python_error = on_base_verdict(finished(
+            false,
+            "NameError: name 'fixed' is not defined\nRan 1 test in 0.1s\n\nFAILED (errors=1)",
+        ));
+        assert_eq!(python_error.0, "no evidence");
+        let unwrap = on_base_verdict(finished(
+            false,
+            "thread 'a' panicked at src/lib.rs:3:5:\ncalled `Option::unwrap()` on a `None` value\ntest result: FAILED. 0 passed; 1 failed",
+        ));
+        assert_eq!(unwrap.0, "no evidence");
+    }
+
+    /// An observation on the base is evidence only when its own expectation
+    /// failed there: a setup action refused, a broken connection or an
+    /// instance that did not start is no evidence.
+    #[test]
+    fn only_an_observations_own_expectation_failing_on_the_base_is_evidence() {
+        let own = Outcome::new("c2", "failed", "no control on screen says “Archive”");
+        assert_eq!(observed_on_base(&own, true, "b1").verdict, "failed");
+        let held = Outcome::new("c2", "passed", "observed");
+        assert_eq!(observed_on_base(&held, true, "b1").verdict, "passed");
+        for (verdict, detail) in [
+            (
+                "failed",
+                "setup action failed: {\"ok\":false,\"kind\":\"gone\"}",
+            ),
+            ("failed", "the Studio is gone: connection reset"),
+            ("not run", "its test instance did not start: it ended"),
+        ] {
+            let broken = observed_on_base(&Outcome::new("c2", verdict, detail), false, "b1");
+            assert_eq!(broken.verdict, "no evidence", "{detail}");
+            assert!(broken.detail.contains(detail));
+        }
     }
 }

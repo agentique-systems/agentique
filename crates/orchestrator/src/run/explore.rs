@@ -28,6 +28,9 @@ pub const STARTS: [&str; 2] = ["models/url-shortener", "model"];
 /// The new findings a cycle reproduces at most, most severe first.
 pub const REPRODUCED: usize = 3;
 
+/// Cycles of one objective that may try to fix the same finding.
+pub const TRIES: usize = 2;
+
 /// Replays a finding's reproduction and reduction may take.
 const REPLAYS: usize = 6;
 
@@ -147,9 +150,8 @@ impl Driver {
     fn explore_options(&self) -> Options {
         Options {
             speed: Some(self.setup.speed.clone()),
-            stand_in: false,
             key: self.instance_key(),
-            condition: None,
+            ..Options::default()
         }
     }
 
@@ -157,8 +159,10 @@ impl Driver {
     /// the explorer's run in a test instance of the base build.
     pub(super) fn explore(&mut self) -> Next {
         let base = self.cycle_base()?;
-        let goal = self.plan_exploration()?;
+        // Built before the lead plans: a child it delegates explores the
+        // same build.
         let built = self.base_build()?;
+        let goal = self.plan_exploration()?;
         let checkout = self.checkout("base", &base)?;
         let repository = self.objective.repository.clone();
         let file = Knowledge::file(&self.setup.store, &repository);
@@ -193,6 +197,8 @@ impl Driver {
                         finding_line(fixed)
                     )));
                     let mut again = fixed.clone();
+                    again.build = built.build.clone();
+                    again.commit = built.commit.clone();
                     again.set_state(
                         Found::FailingAgain,
                         &format!("fails again in build {}", built.build),
@@ -309,6 +315,13 @@ impl Driver {
             .iter()
             .filter(|f| knowledge.findings.iter().all(|k| k.identity != f.identity))
             .cloned()
+            .map(|mut f| {
+                // The build it was found in, as the Orchestrator chose it:
+                // its reproduction is reused on the base only if that is it.
+                f.build = built.build.clone();
+                f.commit = built.commit.clone();
+                f
+            })
             .collect();
         let found: Vec<String> = new.iter().map(|f| f.identity.clone()).collect();
         let regressed: Vec<String> = regressions.iter().map(|f| f.identity.clone()).collect();
@@ -535,6 +548,17 @@ impl Driver {
         if reproduced > 0 {
             return Ok(Phase::Propose);
         }
+        // Nothing new: a reproduced finding that no cycle has fixed, and
+        // that this objective tried fewer than TRIES times, is offered again.
+        let untried = self.untried();
+        if !untried.is_empty() {
+            self.event(format!(
+                "Nothing new reproduced; {} known finding(s) not yet fixed are offered again",
+                untried.len()
+            ));
+            self.cycle_mut().findings.extend(untried);
+            return Ok(Phase::Propose);
+        }
         if self.empty_explorations() >= 2 {
             // The loop ends the objective: nothing new reproduced.
             return Ok(Phase::Done);
@@ -546,6 +570,44 @@ impl Driver {
         }
         self.event("Nothing reproduced within the cycle's attempts");
         Ok(Phase::Done)
+    }
+
+    /// Reproduced findings the testing knowledge keeps that no cycle has
+    /// fixed and this objective tried to fix fewer than [`TRIES`] times,
+    /// not in the cycle yet: they stay eligible after a cycle that failed.
+    pub(super) fn untried(&self) -> Vec<Finding> {
+        let repository = &self.objective.repository;
+        let Ok(knowledge) = Knowledge::load(
+            &Knowledge::file(&self.setup.store, repository),
+            &Knowledge::key(repository),
+        ) else {
+            return Vec::new();
+        };
+        let tried = |identity: &str| {
+            self.objective
+                .cycles
+                .iter()
+                .filter(|c| c.replay.as_ref().is_some_and(|r| r.identity == identity))
+                .count()
+        };
+        let here: Vec<&str> = self
+            .objective
+            .cycle()
+            .map(|c| c.findings.iter().map(|f| f.identity.as_str()).collect())
+            .unwrap_or_default();
+        knowledge
+            .findings
+            .iter()
+            .filter(|f| matches!(f.state, Found::Reproduced | Found::FailingAgain))
+            .filter(|f| !here.contains(&f.identity.as_str()) && tried(&f.identity) < TRIES)
+            .map(|f| {
+                let mut f = f.clone();
+                // Offered as reproduced; its replay on this base is run
+                // again (it was found in another build).
+                f.state = Found::Reproduced;
+                f
+            })
+            .collect()
     }
 
     /// Explorations in a row, the latest last, that reproduced no new

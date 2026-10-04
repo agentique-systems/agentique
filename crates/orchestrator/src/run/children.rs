@@ -1,20 +1,25 @@
 //! Delegation (C-54, ROADMAP §4.16 "Directives and delegation", Scenario
 //! K4, requirement `ChildWorkBounded`): the lead's `delegate` tool, which
-//! the Orchestrator validates (a budget within what is left, at most two
-//! deep, one child at a time, never more than the parent's permissions: an
-//! exploration child never pushes, merges or adopts), records as a directive
+//! the Orchestrator validates (a budget within what is left, the lead's own
+//! spend in its session counted, time left for it, at most two deep, one
+//! child at a time, three in a turn of the lead and five in a cycle, never
+//! more than the parent's permissions: an exploration child never pushes,
+//! merges or adopts), records as a directive
 //! (journaled, so a restart never makes a second child) and carries out by
 //! running the child objective inside the parent's run, on the parent's
 //! commands and events. The child's result (its findings, coverage and
 //! spend) is recorded on the directive and in both threads, and waits for
 //! the parent's lead as its next message: only that result, never a
 //! transcript. Stopping the parent stops its children; a child interrupted
-//! with its parent goes on with it; the Operator may stop a child alone.
+//! with its parent goes on with it, on the parent's base build, and what it
+//! spent is counted in the parent's once (the directive keeps what was
+//! counted); the Operator may stop a child alone.
 
 use super::{Driver, Poster, Session, With};
 use crate::findings::State as Found;
 use crate::record::{
-    Budgets, DirectiveStatus, MAX_DEPTH, Objective, Permissions, Recipient, RoleRef, Scope, State,
+    Budgets, Cycle, DirectiveStatus, Exploring, MAX_DEPTH, Objective, Permissions, Recipient,
+    RoleRef, Scope, State,
 };
 use crate::roles::Role;
 use crate::thread::{Author, Kind, ThreadEntry};
@@ -25,14 +30,58 @@ use std::path::Path;
 use std::time::Instant;
 
 /// Children a lead may delegate in one of its turns, at most.
-const DELEGATIONS: usize = 3;
+pub const DELEGATIONS: usize = 3;
+
+/// Children an objective may delegate in one cycle, at most.
+pub const PER_CYCLE: usize = 5;
+
+/// The least time a child gets: with less left, none is delegated.
+pub const CHILD_HOURS: f64 = 0.1;
+
+/// Why the lead may not delegate now, if it may not: too deep, a child
+/// running, nothing left of the spend or time budget, or as many children
+/// as a turn or a cycle may have.
+pub fn refusal(
+    depth: u8,
+    running: bool,
+    usd_left: f64,
+    hours_left: f64,
+    in_turn: usize,
+    in_cycle: usize,
+) -> Option<String> {
+    if depth >= MAX_DEPTH {
+        Some(format!(
+            "children nest at most {MAX_DEPTH} deep, and this objective is {depth} deep"
+        ))
+    } else if running {
+        Some("one child runs at a time, and one is running".into())
+    } else if usd_left <= 0.0 {
+        Some("nothing is left of the spend budget".into())
+    } else if hours_left < CHILD_HOURS {
+        Some(format!(
+            "less than {:.0} minutes of the time budget is left",
+            CHILD_HOURS * 60.0
+        ))
+    } else if in_turn >= DELEGATIONS {
+        Some(format!(
+            "a lead delegates at most {DELEGATIONS} children in a turn, and this turn has"
+        ))
+    } else if in_cycle >= PER_CYCLE {
+        Some(format!(
+            "an objective delegates at most {PER_CYCLE} children in a cycle, and this cycle has"
+        ))
+    } else {
+        None
+    }
+}
 
 /// What the lead may delegate now, as its `delegate` tool checks it.
 #[derive(Clone, Debug)]
 pub(super) struct Bounds {
     /// Why it may not delegate at all, if it may not.
     pub refused: Option<String>,
-    /// US dollars left of the objective's spend budget.
+    /// US dollars left of the objective's spend budget when the lead's
+    /// session started.
     pub usd: f64,
     /// The most steps a child's exploration may take.
     pub steps: u32,
@@ -40,11 +89,13 @@ pub(super) struct Bounds {
 
 impl Bounds {
     /// The child the lead asked for, checked: its instruction, focus,
-    /// budget and steps, or why it is refused.
-    pub(super) fn check(&self, input: &Value) -> Result<Asked, String> {
+    /// budget (within what is left after `spent_now`, the lead's own spend
+    /// in its session so far) and steps, or why it is refused.
+    pub(super) fn check(&self, input: &Value, spent_now: f64) -> Result<Asked, String> {
         if let Some(why) = &self.refused {
             return Err(why.clone());
         }
+        let left = (self.usd - spent_now).max(0.0);
         let instruction = input["instruction"].as_str().unwrap_or_default().trim();
         if instruction.is_empty() {
             return Err("a child needs an instruction".into());
@@ -52,10 +103,9 @@ impl Bounds {
         let usd = input["usd"]
             .as_f64()
             .ok_or("a child needs a budget, `usd`")?;
-        if !(usd > 0.0 && usd <= self.usd) {
+        if !(usd > 0.0 && usd <= left) {
             return Err(format!(
-                "a child's budget is more than nothing and at most what is left of this objective's: ${:.2}",
-                self.usd
+                "a child's budget is more than nothing and at most what is left of this objective's: ${left:.2}"
             ));
         }
         let steps = input["steps"].as_u64().ok_or("a child needs `steps`")? as u32;
@@ -98,25 +148,34 @@ impl Driver {
     pub(super) fn bounds(&self) -> Bounds {
         let left = (self.objective.budgets.usd - self.objective.spent.usd).max(0.0);
         let running = self.objective.directives.iter().any(|d| {
-            matches!(d.recipient, Recipient::Child(_)) && d.status == DirectiveStatus::Running
+            matches!(&d.recipient, Recipient::Child(c) if !c.is_empty())
+                && d.status == DirectiveStatus::Running
         });
-        let refused = if !self.may_delegate() {
-            Some(format!(
-                "children nest at most {MAX_DEPTH} deep, and this objective is {} deep",
-                self.objective.depth
-            ))
-        } else if running {
-            Some("one child runs at a time, and one is running".into())
-        } else if left <= 0.0 {
-            Some("nothing is left of the spend budget".into())
-        } else {
-            None
-        };
+        let in_cycle = self.objective.cycle().map_or(0, |cycle| {
+            let delegation = format!("cycle-{}/delegation", cycle.n);
+            self.objective
+                .directives
+                .iter()
+                .filter(|d| d.refers_to.as_deref() == Some(delegation.as_str()))
+                .count()
+        });
         Bounds {
-            refused,
+            refused: refusal(
+                self.objective.depth,
+                running,
+                left,
+                self.hours_left(),
+                self.delegated,
+                in_cycle,
+            ),
             usd: left,
             steps: self.objective.budgets.steps,
         }
+    }
+
+    /// Hours left of the time budget.
+    fn hours_left(&self) -> f64 {
+        self.objective.budgets.hours - self.objective.spent.seconds / 3600.0
     }
 
     /// The lead's turn: its session, and for each child it delegates, the
@@ -166,7 +225,8 @@ impl Driver {
         }
         let mut brief = brief;
         let mut resume = resume;
-        let mut delegated = 0;
+        // A new turn of the lead: its delegations are counted from none.
+        self.delegated = 0;
         loop {
             // The reproduced findings it may choose among (a child's join
             // them when it ends).
@@ -197,12 +257,17 @@ impl Driver {
             let Some(asked) = session.delegated.clone() else {
                 return Ok(session);
             };
-            delegated += 1;
+            self.delegated += 1;
             self.delegate(asked)?;
-            if self.controls.stopped() {
-                return Err("stopped".into());
+            // A budget the child used up, or a stop, ends the turn here.
+            if let Some((_, reason)) = self.over() {
+                return Err(if self.controls.stopped() {
+                    "stopped".into()
+                } else {
+                    reason
+                });
             }
-            brief = if delegated >= DELEGATIONS {
+            brief = if self.delegated >= DELEGATIONS {
                 format!(
                     "The child you delegated has ended (its result is below). You have delegated {DELEGATIONS} children in this turn, the most: go on without delegating again."
                 )
@@ -259,12 +324,13 @@ impl Driver {
             .count()
             + 1;
         let child = format!("{id}-c{k}");
+        // Within the time left (`bounds` refused one with too little), an
+        // hour at most.
         let budgets = Budgets {
             usd: asked.usd,
             cycles: 1,
             attempts: 2,
-            hours: (self.objective.budgets.hours - self.objective.spent.seconds / 3600.0)
-                .clamp(0.1, 1.0),
+            hours: self.hours_left().min(1.0),
             steps: asked.steps,
             calls: self.objective.budgets.calls.clone(),
         };
@@ -286,7 +352,9 @@ impl Driver {
                     budgets: Some(budgets.clone()),
                     permissions: Some(permissions.clone()),
                 },
-                None,
+                self.objective
+                    .cycle()
+                    .map(|c| format!("cycle-{}/delegation", c.n)),
                 format!(
                     "Delegates a child objective ({child}): {}",
                     asked.instruction
@@ -321,7 +389,19 @@ impl Driver {
     /// its spend in this objective's.
     pub(super) fn run_child(&mut self, child: &str) -> Result<(), String> {
         let objective = self.setup.store.load(child)?;
-        let spent_before = objective.spent.clone();
+        let directive = self
+            .objective
+            .directives
+            .iter()
+            .find(|d| d.recipient == Recipient::Child(child.to_string()))
+            .map(|d| d.id.clone());
+        // What of its spend is counted in this objective's already: after a
+        // restart, only the rest is added.
+        let spent_before = directive
+            .as_ref()
+            .and_then(|id| self.objective.directive(id))
+            .map(|d| d.counted.clone())
+            .unwrap_or_default();
         let controls = self.controls.child(child);
         let mut driver = Driver {
             setup: self.setup.clone(),
@@ -333,6 +413,7 @@ impl Driver {
             },
             controls,
             last: Instant::now(),
+            delegated: 0,
         };
         if driver.objective.active() {
             driver.run();
@@ -360,6 +441,11 @@ impl Driver {
                 }
             }
         }
+        if let Some(id) = &directive
+            && let Some(record) = self.objective.directives.iter_mut().find(|d| &d.id == id)
+        {
+            record.counted = ended.spent.clone();
+        }
         self.save();
         if ended.active() {
             // Interrupted with its parent: it goes on when the parent does.
@@ -376,12 +462,6 @@ impl Driver {
             }
             _ => child_result(&ended),
         };
-        let directive = self
-            .objective
-            .directives
-            .iter()
-            .find(|d| d.recipient == Recipient::Child(child.to_string()))
-            .map(|d| d.id.clone());
         if let Some(id) = &directive {
             self.objective
                 .settle(id, status.clone(), Some(result.clone()));
@@ -447,7 +527,15 @@ pub(super) fn child_objective(
     child.state = State::Running;
     child.budgets = budgets;
     child.permissions = permissions;
-    child.cycles = Vec::new();
+    // It explores the parent's base build, so what it reproduces is
+    // reproduced there.
+    let mut cycle = Cycle::new(1);
+    cycle.exploring = Some(Exploring::Explore);
+    if let Some(theirs) = parent.cycle() {
+        cycle.base = theirs.base.clone();
+        cycle.base_build = theirs.base_build.clone();
+    }
+    child.cycles = vec![cycle];
     child.spent = Default::default();
     child.continuation = None;
     child.note = None;
@@ -506,4 +594,55 @@ pub(super) fn child_result(child: &Objective) -> String {
             .map(|n| format!(" {n}"))
             .unwrap_or_default()
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// `ChildWorkBounded`: two deep at most, one child at a time, a budget
+    /// and time left, three in a turn, five in a cycle; and a child's
+    /// budget within what is left once the lead's own spend is counted.
+    #[test]
+    fn delegation_is_refused_beyond_its_bounds() {
+        assert_eq!(refusal(0, false, 1.0, 1.0, 0, 0), None);
+        assert_eq!(
+            refusal(1, false, 1.0, 1.0, 0, 0),
+            None,
+            "a child may delegate"
+        );
+        let deep = refusal(2, false, 1.0, 1.0, 0, 0).unwrap();
+        assert!(deep.contains("at most 2 deep"), "{deep}");
+        assert!(
+            refusal(0, true, 1.0, 1.0, 0, 0)
+                .unwrap()
+                .contains("one child")
+        );
+        assert!(refusal(0, false, 0.0, 1.0, 0, 0).unwrap().contains("spend"));
+        assert!(refusal(0, false, 1.0, 0.05, 0, 0).unwrap().contains("time"));
+        assert!(
+            refusal(0, false, 1.0, 1.0, DELEGATIONS, 0)
+                .unwrap()
+                .contains("in a turn")
+        );
+        assert!(
+            refusal(0, false, 1.0, 1.0, 0, PER_CYCLE)
+                .unwrap()
+                .contains("in a cycle")
+        );
+        let bounds = Bounds {
+            refused: None,
+            usd: 1.0,
+            steps: 20,
+        };
+        let asked = serde_json::json!({ "instruction": "Look", "usd": 0.6, "steps": 10 });
+        assert!(bounds.check(&asked, 0.0).is_ok());
+        let after = bounds.check(&asked, 0.5).unwrap_err();
+        assert!(
+            after.contains("$0.50"),
+            "the lead's own spend counts: {after}"
+        );
+        let too_long = serde_json::json!({ "instruction": "Look", "usd": 0.1, "steps": 30 });
+        assert!(bounds.check(&too_long, 0.0).is_err());
+    }
 }

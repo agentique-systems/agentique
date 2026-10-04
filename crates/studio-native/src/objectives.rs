@@ -834,6 +834,14 @@ impl Studio {
         while !handle.finished() && started.elapsed() < within {
             std::thread::sleep(Duration::from_millis(20));
         }
+        // Marked interrupted now, before Agentique exits, whatever the run
+        // saved by then (C-54): the next start waits for the Operator's
+        // Continue. An adoption's continuation still goes on by itself.
+        if let Some(id) = self.objectives.current.as_ref().map(|o| o.id.clone())
+            && let Err(error) = self.objective_store().mark_interrupted(&id)
+        {
+            eprintln!("The objective could not be marked interrupted: {error}");
+        }
     }
 
     /// Takes the objective's events and streams its directives in; at the

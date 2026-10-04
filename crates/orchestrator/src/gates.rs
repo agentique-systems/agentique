@@ -62,30 +62,43 @@ fn outcome(name: &str, problems: Vec<String>) -> Outcome {
 /// in a test instance whatever its other criteria.
 pub const USER_FACING: &str = "AgentiqueArchitecture::Studio";
 
-/// Whether `path` is a test's: in a `tests` folder, a test file of Node or
-/// Python, or a Rust file of tests.
+/// Whether `path` is a test's (one rule for the baseline guard, the files
+/// brought over to the base and user-facing code): in a `tests`, `test` or
+/// `benches` folder, a Node test file (`.test.`), a Python one (`test_`), or
+/// a Rust file of tests (`tests.rs`, `_test.rs`).
 pub fn test_path(path: &str) -> bool {
-    let path = path.replace('\\', "/");
-    let name = path.rsplit('/').next().unwrap_or(&path);
-    path.split('/')
-        .any(|part| part == "tests" || part == "test")
-        || name.contains(".test.")
-        || name.starts_with("test_")
-        || name == "tests.rs"
-        || name.ends_with("_tests.rs")
+    let lower = path.replace('\\', "/").to_lowercase();
+    lower.contains("/tests/")
+        || lower.starts_with("tests/")
+        || lower.contains("/benches/")
+        || lower.ends_with("_test.rs")
+        || lower.ends_with("tests.rs")
+        || lower.contains(".test.")
+        || lower.contains("/test/")
+        || lower.starts_with("test/")
+        || lower
+            .rsplit('/')
+            .next()
+            .is_some_and(|n| n.starts_with("test_"))
 }
 
 /// The files of `changed` that are user-facing code: the code of the part
-/// [`USER_FACING`] by its crate links in `links` (the text of
-/// `model/links.json`), outside tests.
-pub fn user_facing(changed: &[String], links: &str) -> Vec<String> {
-    let parsed: serde_json::Value = serde_json::from_str(links).unwrap_or_default();
-    let roots: Vec<String> = parsed["links"]
-        .as_array()
-        .into_iter()
-        .flatten()
-        .filter(|l| l["name"] == USER_FACING && l["kind"] == "crate")
-        .filter_map(|l| l["path"].as_str().map(str::to_string))
+/// [`USER_FACING`] by its crate links in any of `links` (the texts of
+/// `model/links.json`: the base's and the change's, so dropping a link does
+/// not hide the code), outside tests.
+pub fn user_facing(changed: &[String], links: &[String]) -> Vec<String> {
+    let roots: Vec<String> = links
+        .iter()
+        .flat_map(|text| {
+            let parsed: serde_json::Value = serde_json::from_str(text).unwrap_or_default();
+            parsed["links"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter(|l| l["name"] == USER_FACING && l["kind"] == "crate")
+                .filter_map(|l| l["path"].as_str().map(str::to_string))
+                .collect::<Vec<_>>()
+        })
         .collect();
     changed
         .iter()
@@ -97,11 +110,19 @@ pub fn user_facing(changed: &[String], links: &str) -> Vec<String> {
 /// The criteria's outcomes on the base show the defect (C-54, requirement
 /// `DefectShownBefore`): none passed there, and at least one failed there
 /// with evidence (a replay or observation that failed on the base build, or
-/// a test run that compiled, ran a test and failed). An outcome of `no
-/// evidence` (no test ran, it did not compile, it timed out, it was not
-/// run, a judgment) shows nothing, and is named with its reason.
-pub fn defect_shown(before: &[Outcome]) -> Outcome {
+/// a test run that compiled, ran a test and failed an assertion). An
+/// outcome of `no evidence` (no test ran, it did not compile, it timed out,
+/// it was not run, a setup failed, a judgment) shows nothing, and is named
+/// with its reason. Only the outcomes of `criteria` (the frozen criteria's
+/// ids, and the replay's) count.
+pub fn defect_shown(before: &[Outcome], criteria: &[String]) -> Outcome {
     let name = "the criteria show the defect on the base";
+    let before: Vec<Outcome> = before
+        .iter()
+        .filter(|o| criteria.contains(&o.name))
+        .cloned()
+        .collect();
+    let before = before.as_slice();
     let passed: Vec<&str> = before
         .iter()
         .filter(|o| o.passed())
@@ -243,20 +264,6 @@ fn guarded(line: &str, script: bool) -> bool {
         || (line.starts_with("const ") && line.chars().any(|c| c.is_ascii_digit()))
 }
 
-fn is_test_file(lower: &str) -> bool {
-    lower.contains("/tests/")
-        || lower.starts_with("tests/")
-        || lower.contains("/benches/")
-        || lower.ends_with("_test.rs")
-        || lower.ends_with("tests.rs")
-        || lower.contains(".test.")
-        || lower.contains("/test/")
-        || lower
-            .rsplit('/')
-            .next()
-            .is_some_and(|n| n.starts_with("test_"))
-}
-
 /// What a change does to tests, checks and budgets: the baseline guard's
 /// findings for one file.
 fn test_changes(file: &FileChange) -> Vec<String> {
@@ -301,7 +308,7 @@ fn test_changes(file: &FileChange) -> Vec<String> {
         let script = lower.ends_with(".ts") || lower.ends_with(".js") || lower.ends_with(".mjs");
         if guarded(text, script)
             && !kept.iter().any(|k| k == text)
-            && (is_test_file(&lower) || text.contains("assert"))
+            && (test_path(&lower) || text.contains("assert"))
         {
             found.push(format!(
                 "{path}: removes or changes `{}`",
@@ -377,6 +384,9 @@ mod evidence_tests {
     /// is needed, and none may pass there; no evidence shows nothing.
     #[test]
     fn the_defect_is_shown_on_the_base_only_with_evidence() {
+        let ids = |names: &[&str]| names.iter().map(|n| n.to_string()).collect::<Vec<_>>();
+        let all = ids(&["replay", "c1", "c2", "c3"]);
+        let defect_shown = |before: &[Outcome]| super::defect_shown(before, &all);
         let shown = defect_shown(&[
             on_base("replay", "failed", "the replay failed on the base build"),
             on_base("c1", "no evidence", "it did not compile"),
@@ -400,6 +410,21 @@ mod evidence_tests {
         assert!(!passing.passed());
         assert!(passing.detail.contains("c2 already pass"));
         assert!(!defect_shown(&[]).passed(), "no criterion, no evidence");
+        // Only the frozen criteria and the replay count: a made-up outcome
+        // (a dialog open at the start) is no evidence.
+        let made_up = super::defect_shown(
+            &[
+                on_base("no dialog when it starts", "failed", "a dialog was open"),
+                on_base("c1", "no evidence", "setup action failed"),
+            ],
+            &ids(&["c1"]),
+        );
+        assert!(!made_up.passed(), "{}", made_up.detail);
+        let replay_only = super::defect_shown(
+            &[on_base("replay", "failed", "it fails on the base")],
+            &ids(&["c1"]),
+        );
+        assert!(!replay_only.passed(), "no replay was frozen");
     }
 
     #[test]
@@ -421,15 +446,24 @@ mod evidence_tests {
         .map(|s| s.to_string())
         .collect();
         assert_eq!(
-            user_facing(&changed, links),
+            user_facing(&changed, &[links.to_string()]),
             vec![
                 "crates/studio-native/src/panels/library.rs".to_string(),
                 "crates/studio-scene/src/lib.rs".to_string()
             ]
         );
-        assert!(user_facing(&changed, "not json").is_empty());
+        assert!(user_facing(&changed, &["not json".to_string()]).is_empty());
+        // A change that drops the Studio's links is judged by the base's too.
+        let dropped = r#"{"format":1,"links":[]}"#.to_string();
+        assert_eq!(
+            user_facing(&changed, &[dropped, links.to_string()]).len(),
+            2
+        );
         assert!(test_path("crates/x/tests/a.rs") && test_path("tools/test_check.py"));
         assert!(!test_path("crates/x/src/testing.rs"));
+        assert!(
+            test_path("claude-agent/test/policy.test.ts") && test_path("crates/x/benches/b.rs")
+        );
     }
 }
 

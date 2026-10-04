@@ -94,7 +94,10 @@ what to change.
   instances whenever a criterion is behavioural or it touches the Studio's
   code by the links (the replay on the change, a short exploration by the
   rules of the areas it touched). Two explorations in a row with nothing new
-  reproduced end the objective. Test instances start as such
+  reproduced, with no known finding left untried, end the objective. The
+  evidence is made with each checked commit's own test files, and only a
+  criterion's own expectation or an assertion failing counts. Test
+  instances start as such
   (`--test-instance`, `--control-speed`, the stand-in Assistant for an
   unreviewed build, the explorer's key only for a merged one), in a stated
   condition when a criterion asks (`recovered`, `with an objective`); the
@@ -112,9 +115,11 @@ what to change.
   or that was running when the launcher recovered a crash, goes on by
   itself; two resumes without progress stop it (`Objective::on_start`). A
   cycle's worktrees are removed when it ends (a failed or interrupted
-  cycle's `work` is kept, the three most recent); merged branches are
-  deleted; one build at a time (`builds::lock`); test-instance folders are
-  removed after use.
+  cycle's `work` is kept, the three most recent), each by its name; merged
+  branches are deleted here and on the host; one build at a time
+  (`builds::lock`); test-instance folders are removed after use. An
+  unreviewed build starts only as a test instance with the stand-in
+  Assistant, or not at all.
 
 Budgets (spend in USD at the models' prices, usage without a price at a
 high one, kept by role and by model within it; improvements, attempts per

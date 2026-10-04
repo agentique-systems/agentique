@@ -6,7 +6,11 @@
 //   DELEGATE-ME, delegates a child (after one delegation over budget, which
 //   is refused, when DELEGATE-TOO-MUCH is there too), and plans once the
 //   child's result is back;
-// - WAIT-MESSAGE: the implementer waits for the Operator's message.
+// - DELEGATE-MANY: the planning lead delegates in every turn until the
+//   Orchestrator refuses, then plans;
+// - WAIT-MESSAGE: the implementer waits for the Operator's message;
+// - WEAKEN: the implementer's first attempt has the test but not the fix,
+//   and its repair weakens the test until it passes anywhere.
 // The lead plans the History panel, proposes to fix the first reproduced
 // finding (f1) with a test that fails on the base, and says what the
 // Operator wrote; the implementer writes the fix (FIXED, which the
@@ -81,7 +85,16 @@ const here = (file) => existsSync(join(o.cwd, file));
 
 if (role === "lead" && planning) {
   const delegating = here("DELEGATE") && o.prompt.includes("DELEGATE-ME") && !o.prompt.includes("has ended");
-  if (delegating) {
+  if (here("DELEGATE-MANY") && (o.prompt.includes("DELEGATE-ME") || o.prompt.includes("has ended"))) {
+    // Delegates in every turn until the Orchestrator refuses, then plans.
+    const answer = await call("delegate", { instruction: "Look at the History panel again", usd: 0.2, steps: 10 });
+    if (answer.isError) {
+      await call("submit_exploration", { goal: "Look at the History panel and its buttons" });
+      end("Planned.");
+    } else {
+      end("Delegated.");
+    }
+  } else if (delegating) {
     if (here("DELEGATE-TOO-MUCH")) {
       const refused = await call("delegate", { instruction: "Explore everything", usd: 999, steps: 5 });
       if (!refused.isError) process.exit(7);
@@ -126,11 +139,24 @@ if (role === "lead" && planning) {
       if (message.type === "eof" || message.type === "interrupt") process.exit(0);
     }
   }
-  writeFileSync(join(o.cwd, "FIXED"), said.length ? said.join("\n") + "\n" : "labelled\n");
-  writeFileSync(
-    join(o.cwd, "fixed.test.mjs"),
-    'import { test } from "node:test";\nimport assert from "node:assert";\nimport { existsSync } from "node:fs";\ntest("the Archive button is labelled", () => {\n  assert.ok(existsSync("FIXED"));\n});\n',
-  );
+  const repairing = o.prompt.includes("Repair round");
+  if (here("WEAKEN") && repairing) {
+    // The repair "fixes" the failing test by weakening it until it passes
+    // anywhere: the evidence on the base must be made again, and fail.
+    writeFileSync(join(o.cwd, "FIXED"), "labelled\n");
+    writeFileSync(
+      join(o.cwd, "fixed.test.mjs"),
+      'import { test } from "node:test";\nimport assert from "node:assert";\ntest("the Archive button is labelled", () => {\n  assert.ok(true);\n});\n',
+    );
+  } else {
+    if (!here("WEAKEN")) {
+      writeFileSync(join(o.cwd, "FIXED"), said.length ? said.join("\n") + "\n" : "labelled\n");
+    }
+    writeFileSync(
+      join(o.cwd, "fixed.test.mjs"),
+      'import { test } from "node:test";\nimport assert from "node:assert";\nimport { existsSync } from "node:fs";\ntest("the Archive button is labelled", () => {\n  assert.ok(existsSync("FIXED"));\n});\n',
+    );
+  }
   await call("submit_implementation", { summary: `Labelled it.${said.length ? ` Heard: ${said.join("; ")}` : ""}` });
   end("Implemented.");
 } else if (role === "reviewer") {

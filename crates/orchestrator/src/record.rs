@@ -193,6 +193,11 @@ impl Cost {
 }
 
 impl Spend {
+    /// Nothing spent.
+    pub fn is_empty(&self) -> bool {
+        self.usd == 0.0 && self.tokens == 0 && self.roles.is_empty()
+    }
+
     /// Counts `cost` of `model`'s usage by `role`, in the totals too.
     pub fn add(&mut self, role: &str, model: &agq_providers::ModelRef, cost: Cost) {
         self.usd += cost.usd;
@@ -581,6 +586,29 @@ pub struct Cycle {
     /// is the criterion [`REPLAY`].
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub replay: Option<crate::findings::Finding>,
+    /// What the criteria's outcomes on the base (`before`) were made with:
+    /// the commit whose test files were brought over, and those files. A
+    /// commit with other test files has its test runs on the base again.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub evidence: Option<Evidence>,
+}
+
+/// What a cycle's evidence on the base was made with (C-54).
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Evidence {
+    /// The commit whose test files were brought over.
+    pub commit: String,
+    /// Those test files: each changed test file of the commit against the
+    /// base, with its blob id (`deleted` for one it deletes).
+    pub tests: Vec<TestFile>,
+}
+
+/// A test file as a commit has it.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct TestFile {
+    pub path: String,
+    pub blob: String,
 }
 
 /// The criterion the Orchestrator adds for the finding a proposal fixes.
@@ -650,6 +678,7 @@ impl Cycle {
             explorations: Vec::new(),
             findings: Vec::new(),
             replay: None,
+            evidence: None,
         }
     }
 
@@ -751,9 +780,14 @@ pub struct Directive {
     /// What came of it, in a few lines.
     #[serde(default)]
     pub result: Option<String>,
-    /// The record it hands over: `cycle-<n>/proposal`, `cycle-<n>/review-<attempt>`.
+    /// The record it hands over: `cycle-<n>/proposal`, `cycle-<n>/review-<attempt>`,
+    /// `cycle-<n>/delegation` for a child.
     #[serde(default)]
     pub refers_to: Option<String>,
+    /// For a child: what of its spend is counted in the parent's so far, so
+    /// that after a restart only the rest is added.
+    #[serde(default, skip_serializing_if = "Spend::is_empty")]
+    pub counted: Spend,
     pub created: String,
     pub updated: String,
 }
@@ -883,6 +917,7 @@ impl Objective {
             status: DirectiveStatus::Running,
             result: None,
             refers_to,
+            counted: Spend::default(),
             created: now.clone(),
             updated: now,
         });
@@ -919,20 +954,18 @@ impl Objective {
     }
 
     /// What a Studio that starts does with it while it is not finished:
-    /// one handed over to an adopted build, or running when its Studio
-    /// ended unexpectedly and the launcher started one again (`recovered`),
-    /// goes on by itself; one interrupted because the Operator closed
-    /// Agentique waits for their Continue, as does any other; and one that
-    /// resumed by itself twice without getting further stops.
+    /// one handed over to an adopted build (its continuation), or running
+    /// when its Studio did not start and the launcher started the last
+    /// known good build instead (`recovered`: `--recovered-from`), goes on
+    /// by itself; one interrupted because the Operator closed Agentique
+    /// (`interrupted`, written as the Studio closes) waits for their
+    /// Continue, as does any other; and one that resumed by itself twice
+    /// without getting further stops. A plain start under the launcher is
+    /// not a recovery.
     pub fn on_start(&self, recovered: bool) -> Resuming {
         let by_itself = if self.continuation.is_some() {
             Some("Going on in the adopted build")
-        } else if self.interrupted
-            || self
-                .note
-                .as_deref()
-                .is_some_and(|n| n.starts_with("Interrupted when Agentique closed"))
-        {
+        } else if self.interrupted {
             return Resuming::Wait(
                 "Interrupted when Agentique closed: Continue goes on from where it was.".into(),
             );
@@ -1037,7 +1070,39 @@ impl Store {
         let dir = self.dir(&objective.id);
         std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
         let text = serde_json::to_string_pretty(objective).map_err(|e| e.to_string())?;
+        let _writing = self.writing(&objective.id)?;
         agq_launcher::write_atomically(&dir.join("objective.json"), text.as_bytes())
+    }
+
+    /// The lock of objective `id`'s record: one writer at a time.
+    fn writing(&self, id: &str) -> Result<std::fs::File, String> {
+        let path = self.dir(id).join("objective.lock");
+        let file = std::fs::OpenOptions::new()
+            .create(true)
+            .truncate(false)
+            .write(true)
+            .open(&path)
+            .map_err(|e| format!("{}: {e}", path.display()))?;
+        file.lock()
+            .map_err(|e| format!("{}: {e}", path.display()))?;
+        Ok(file)
+    }
+
+    /// Marks objective `id` as interrupted because the Operator closed
+    /// Agentique (C-54), as the Studio closes, whatever its run saved last:
+    /// read, marked and written under the record's lock, so no newer save
+    /// of the run is lost. One that is not going on is left alone.
+    pub fn mark_interrupted(&self, id: &str) -> Result<(), String> {
+        let mut objective = self.load(id)?;
+        let _writing = self.writing(id)?;
+        // Read again under the lock: the run may have saved meanwhile.
+        objective = self.load(id).unwrap_or(objective);
+        if !objective.active() || objective.interrupted {
+            return Ok(());
+        }
+        objective.interrupted = true;
+        let text = serde_json::to_string_pretty(&objective).map_err(|e| e.to_string())?;
+        agq_launcher::write_atomically(&self.dir(id).join("objective.json"), text.as_bytes())
     }
 
     pub fn load(&self, id: &str) -> Result<Objective, String> {
@@ -1635,6 +1700,10 @@ mod tests {
         objective.interrupted = true;
         assert!(matches!(objective.on_start(true), Resuming::Wait(why) if why.contains("closed")));
         objective.interrupted = false;
+        // Its note's wording means nothing: only the typed field does.
+        objective.note = Some("Interrupted when Agentique closed; continue it.".into());
+        assert!(matches!(objective.on_start(true), Resuming::Continue(_)));
+        objective.note = None;
         objective.continuation = Some(Continuation {
             cycle: 1,
             build: "b2".into(),
@@ -1656,6 +1725,18 @@ mod tests {
         assert!(store.active().is_none());
         store.save(&with_models()).unwrap();
         assert_eq!(store.active().unwrap().id, "objective-1");
+        // The Studio marks it interrupted as it closes, keeping what the
+        // run saved; a finished one is left alone.
+        let mut saved = with_models();
+        saved.spent.tokens = 99;
+        store.save(&saved).unwrap();
+        store.mark_interrupted("objective-1").unwrap();
+        let read = store.load("objective-1").unwrap();
+        assert!(read.interrupted && read.spent.tokens == 99);
+        saved.state = State::Done;
+        store.save(&saved).unwrap();
+        store.mark_interrupted("objective-1").unwrap();
+        assert!(!store.load("objective-1").unwrap().interrupted);
     }
 
     #[test]
