@@ -114,7 +114,7 @@ impl Fields {
                     .children(
                         children
                             .iter()
-                            .map(|child| child_line(child, running, &theme)),
+                            .map(|child| child_line(studio, child, running, &theme)),
                     );
             }
             body = body.child(
@@ -279,30 +279,63 @@ impl Fields {
 
 /// A child objective in the tree: what it does, who asked for it, where it
 /// stands and what it spent of its budget.
-fn child_line(child: &Objective, running: bool, theme: &ui::Theme) -> gpui::AnyElement {
+fn child_line(
+    studio: &Entity<Studio>,
+    child: &Objective,
+    running: bool,
+    theme: &ui::Theme,
+) -> gpui::AnyElement {
     let asked = child
         .requested_by
         .as_ref()
         .map(|r| format!("asked by the {}", r.role))
         .unwrap_or_else(|| "delegated".into());
+    // The Operator's own: refused to agents like every `objective-` control.
+    let stop = child.active().then(|| {
+        let studio = studio.clone();
+        let id = child.id.clone();
+        Button::new(
+            gpui::SharedString::from(format!("objective-stop-child-{}", child.id)),
+            "Stop",
+        )
+        .small()
+        .danger()
+        .tooltip(
+            "Ends this child objective alone; its parent's lead goes on with that",
+            None,
+        )
+        .on_click(move |_: &ClickEvent, _: &mut Window, cx: &mut gpui::App| {
+            let id = id.clone();
+            studio.act(cx, move |s| s.stop_child(&id))
+        })
+    });
     div()
         .pl(r(10.0 * f32::from(child.depth.max(1))))
         .flex()
-        .flex_col()
-        .text_size(r(theme::text::XS))
-        .line_height(r(16.0))
+        .items_start()
+        .gap(r(6.0))
         .child(
             div()
-                .text_color(theme.text_secondary)
-                .font_weight(theme::MEDIUM)
-                .child(format!("↳ {}", child.intent)),
+                .flex_1()
+                .min_w_0()
+                .flex()
+                .flex_col()
+                .text_size(r(theme::text::XS))
+                .line_height(r(16.0))
+                .child(
+                    div()
+                        .text_color(theme.text_secondary)
+                        .font_weight(theme::MEDIUM)
+                        .child(format!("↳ {}", child.intent)),
+                )
+                .child(div().text_color(theme.text_muted).child(format!(
+                    "{asked} · {} · ${:.2} of ${:.2}",
+                    state_word(child, running),
+                    child.spent.usd,
+                    child.budgets.usd
+                ))),
         )
-        .child(div().text_color(theme.text_muted).child(format!(
-            "{asked} · {} · ${:.2} of ${:.2}",
-            state_word(child, running),
-            child.spent.usd,
-            child.budgets.usd
-        )))
+        .children(stop)
         .into_any_element()
 }
 

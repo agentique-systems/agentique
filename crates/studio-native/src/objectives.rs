@@ -388,7 +388,7 @@ fn configured_keys() -> Vec<String> {
         .chain([agq_providers::Credential::ClaudeSubscription])
         .filter_map(|c| agq_providers::runtime_credential(c).ok().flatten())
         .map(|k| k.expose().to_string())
-        .filter(|k| k.len() >= 12)
+        .filter(|k| k.chars().count() >= thread::KEY_CHARS)
         .collect()
 }
 
@@ -818,6 +818,84 @@ impl Studio {
         }
         self.mark(Dirty::LAYOUT | Dirty::CONVERSATION);
         Ok(())
+    }
+
+    /// Stops child objective `id` alone (C-54): a running objective's run
+    /// stops it (`Command::StopChild`), its directive ends as stopped and
+    /// the lead goes on with that; one that is not running has the child's
+    /// record stopped here, and its directive settled, for the lead's next
+    /// turn.
+    pub fn stop_child(&mut self, id: &str) {
+        if self.refused_to_agents("stopping an objective") {
+            return;
+        }
+        let Some(child) = self
+            .objectives
+            .children
+            .iter()
+            .find(|c| c.id == id)
+            .cloned()
+        else {
+            return;
+        };
+        if !child.active() {
+            return;
+        }
+        if self.objectives.running() {
+            self.objective_command(Command::StopChild(id.to_string()));
+            return;
+        }
+        let store = self.objective_store();
+        let all = store.list();
+        let mut stopping = vec![child.clone()];
+        stopping.extend(descendants(&all, id));
+        for mut objective in stopping.into_iter().filter(Objective::active) {
+            objective.state = State::Stopped;
+            objective.note = Some("Stopped by the Operator.".into());
+            objective.settle_running(DirectiveStatus::Stopped, "stopped by the Operator");
+            let _ = store.save(&objective);
+            self.objective_entry(
+                &objective.id,
+                ThreadEntry::new(Kind::Event, Author::Operator, "Stopped"),
+            );
+        }
+        // Its parent's directive to it, and the lead's handoff.
+        if let Some(parent_id) = child.parent.clone()
+            && let Ok(mut parent) = store.load(&parent_id)
+        {
+            let directive = parent
+                .directives
+                .iter()
+                .find(|d| d.recipient == agq_orchestrator::record::Recipient::Child(id.to_string()))
+                .map(|d| d.id.clone());
+            if let Some(directive) = &directive {
+                parent.settle(
+                    directive,
+                    DirectiveStatus::Stopped,
+                    Some("stopped by the Operator".into()),
+                );
+                let _ = store.save(&parent);
+            }
+            let mut handoff = ThreadEntry::new(
+                Kind::Result,
+                Author::Agentique,
+                format!("The child objective {id} was stopped by the Operator"),
+            )
+            .with_details("stopped by the Operator")
+            .for_directive(directive.as_deref());
+            handoff.to = Some("lead".into());
+            self.objective_entry(&parent_id, handoff);
+        }
+        let all = store.list();
+        if let Some(root) = self
+            .objectives
+            .current
+            .clone()
+            .and_then(|r| store.load(&r.id).ok())
+        {
+            self.objectives.show(&store, root, &all);
+        }
+        self.mark(Dirty::LAYOUT | Dirty::CONVERSATION);
     }
 
     /// Ends the running objective's sessions and waits up to `within` for

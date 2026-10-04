@@ -107,7 +107,11 @@ if (role === "lead" && planning) {
     });
     end("Delegated.");
   } else {
-    await call("submit_exploration", { goal: "Look at the History panel and its buttons" });
+    // What the Operator wrote, given with the brief, goes into the goal.
+    const wrote = (o.prompt.match(/The Operator wrote: (.*)/) ?? [])[1];
+    await call("submit_exploration", {
+      goal: `Look at the History panel and its buttons${wrote ? ` (${wrote})` : ""}`,
+    });
     end("Planned.");
   }
 } else if (role === "lead") {

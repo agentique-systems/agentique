@@ -1827,9 +1827,13 @@ built in parallel and the Operator used the machine):
   W12.5's Orchestrator side, and a credential; the thread was exercised
   from recorded objectives and unit tests); the start form drawn in the
   Conversation was not looked at as an image (opening it is the
-  Operator's, and no input was sent for the Operator); a child objective
-  stopped alone (it needs a `Command` for one child: until then Stop acts
-  on the whole run).
+  Operator's, and no input was sent for the Operator). A child objective
+  stopped alone has its control since W12.5's reconciliation (below):
+  `objective-stop-child-<id>` on the child's row in the panel's tree and on
+  its directive in the thread, the Operator's own (refused to agents like
+  every `objective-` control), sending `Command::StopChild` to a running
+  objective and settling the records of one that is not running; tested in
+  the Orchestrator's stand-in tests and the thread's rows, not pressed live.
 
 **W12.5 built** (branch `stage12/loop`, 2026-10-04; the thread and
 directive records (Step 0) and their review fixes merged as #113 and #114;
@@ -1982,6 +1986,15 @@ the rest not merged; nothing here says the Operator accepted anything).
   for it (the Operator's messages and children's results after
   `Objective.delivered`), which is then marked delivered, with a thread
   event.
+
+**Reconciled with W12.6** (#116, rebased onto `189fba4b`): the Studio's
+start-up decision keeps W12.6's choice of the newest objective the Operator
+started and its test-instance branch first, then `Objective::on_start`
+(resume, wait or stop); `objective_setup` passes the observer speed, the
+credential source and the live Studios; the interim filters of children's
+events are gone (W12.6 nests children); a message's chip reads "given to
+the lead" once `Objective.delivered` covers it; configured keys are counted
+in characters (`thread::KEY_CHARS`).
 
 Checked for W12.5 and the delegation backend (2026-10-04):
 

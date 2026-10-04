@@ -991,3 +991,59 @@ fn live_test_instances_start_in_their_conditions_and_explore_by_the_rules() {
     drop(live);
     assert!(!folder.exists(), "the live instance's folder is removed");
 }
+
+/// With W12.6's Studio: the Operator's message to an objective that is not
+/// running is appended to its thread `to` the lead (as the Studio's
+/// `message_objective` does); when the objective continues, the lead's next
+/// session is given it, the record says it was delivered (the Studio's
+/// chip then reads "given to the lead"), and the thread says so.
+#[test]
+fn a_message_left_while_not_running_reaches_the_lead_after_continue() {
+    let Ok(node) = find_node() else {
+        eprintln!("Node is not available: skipped");
+        return;
+    };
+    let dir = tempfile::tempdir().unwrap();
+    let repository = repository_with(dir.path(), &[]);
+    let store = Store::new(dir.path().join("objectives"));
+    let (setup, _) = setup_with(dir.path(), &store, node, true);
+    let objective = exploring(&store, &repository, "Find and fix problems", budgets());
+    let id = objective.id.clone();
+    // Its thread as an earlier run left it, then the Operator's message.
+    store
+        .append_thread(
+            &id,
+            ThreadEntry::new(Kind::Human, Author::Operator, objective.intent.clone()),
+        )
+        .unwrap();
+    let left = store
+        .append_thread(
+            &id,
+            ThreadEntry::message("Look at the Archive button", "lead"),
+        )
+        .unwrap();
+    assert_eq!(left.to.as_deref(), Some("lead"));
+    let seen = run_to_end(setup, objective, |_, _| {});
+    let record = store.load(&id).unwrap();
+    assert!(record.delivered >= left.seq, "{}", texts(&seen));
+    let plan = record
+        .directives
+        .iter()
+        .find(|d| d.recipient == Recipient::Role("explorer".into()))
+        .unwrap();
+    assert!(
+        plan.scope
+            .instruction
+            .contains("Look at the Archive button"),
+        "the lead's plan took it: {}",
+        plan.scope.instruction
+    );
+    let thread = store.thread(&id, 0);
+    assert!(
+        thread
+            .iter()
+            .any(|e| e.seq > left.seq && e.text.starts_with("Gave the lead")),
+        "{}",
+        texts(&thread)
+    );
+}
