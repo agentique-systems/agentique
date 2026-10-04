@@ -1,0 +1,1072 @@
+//! Exploration, findings and testing knowledge (C-54, W12.4).
+//!
+//! The deterministic tests drive a scripted stand-in Studio (`standin`)
+//! with defects planted: each invariant fires on its defect and on nothing
+//! else; planted defects reproduce and a flaky one does not; reduction
+//! drops what does not matter; the rules prefer what is not covered and a
+//! seed changes the path; the model's answers are checked; Jev escalates in
+//! order; the run recovers and keeps to its budgets.
+//!
+//! The live measurement compares the ways of deciding on the fixed tasks of
+//! `fixtures/exploration.json` in real test instances of a debug Studio. It
+//! opens windows and spends a few cents, so it is ignored by default:
+//!
+//! ```text
+//! cargo build -p agq-studio-native
+//! cargo test -p agq-orchestrator --test exploration -- --ignored --nocapture
+//! ```
+//!
+//! It needs the TypeSafe AI and DeepSeek keys. `AGENTIQUE_STUDIO` names the
+//! Studio executable (default: this workspace's debug build),
+//! `AGENTIQUE_TASKS` and `AGENTIQUE_WAYS` choose tasks and ways,
+//! `AGENTIQUE_STEPS` overrides the step budget, and
+//! `AGENTIQUE_EVALUATION_OUT` names a file (outside the repository) for the
+//! results as JSON.
+
+use agq_orchestrator::decide::{Answers, Decider, Decision, Failure, Question, Source, Way};
+use agq_orchestrator::explore::{self, Changes, Deciding, Instance, LiveInstance, Plan, Run, Step};
+use agq_orchestrator::findings::{self, Check, Failed, Finding, Replay, State};
+use agq_orchestrator::knowledge::Knowledge;
+use agq_providers::{ModelRef, Provider};
+use serde_json::{Value, json};
+use std::cell::RefCell;
+use std::collections::{BTreeMap, BTreeSet, VecDeque};
+use std::path::{Path, PathBuf};
+
+mod common;
+mod standin;
+use common::outside_the_repository;
+use standin::{Defects, StandIn};
+
+/// A model that reads the prompt's options before it answers.
+type Reads = Box<dyn Fn(&str) -> String>;
+
+/// Jev and the models, scripted: each call takes the next answer.
+#[derive(Default)]
+struct Scripted {
+    /// Jev's choice and confidence, or its failure.
+    jev: RefCell<VecDeque<Result<(String, f64), String>>>,
+    /// What the model says, or its failure.
+    said: RefCell<VecDeque<Result<String, String>>>,
+    /// Or what the model says to a prompt, when it must read the options.
+    reads: Option<Reads>,
+    questions: RefCell<Vec<Question>>,
+    prompts: RefCell<Vec<String>>,
+}
+
+/// The id of the first option whose description holds `text`.
+fn option(prompt: &str, text: &str) -> Option<String> {
+    prompt.lines().find_map(|line| {
+        let (id, about) = line.strip_prefix("- ")?.split_once(": ")?;
+        about.contains(text).then(|| id.to_string())
+    })
+}
+
+impl Scripted {
+    fn jev(self, answers: &[Result<(&str, f64), &str>]) -> Self {
+        self.jev.borrow_mut().extend(
+            answers
+                .iter()
+                .map(|a| a.map(|(c, p)| (c.to_string(), p)).map_err(str::to_string)),
+        );
+        self
+    }
+
+    fn said(self, answers: &[Result<&str, &str>]) -> Self {
+        self.said.borrow_mut().extend(
+            answers
+                .iter()
+                .map(|a| a.map(str::to_string).map_err(str::to_string)),
+        );
+        self
+    }
+}
+
+impl Answers for Scripted {
+    fn ask_jev(&self, question: &Question) -> Result<Decision, Failure> {
+        self.questions.borrow_mut().push(question.clone());
+        match self.jev.borrow_mut().pop_front() {
+            Some(Ok((choice, confidence))) => Ok(Decision {
+                choice,
+                source: Source::Jev,
+                confidence: Some(confidence),
+                millis: 5,
+                usd: Some(0.001),
+                note: String::new(),
+            }),
+            other => Err(Failure {
+                error: other
+                    .and_then(Result::err)
+                    .unwrap_or_else(|| "Jev: no answer scripted".into()),
+                source: Source::Jev,
+                millis: 4000,
+                usd: Some(0.0),
+            }),
+        }
+    }
+
+    fn chat(
+        &self,
+        _model: &ModelRef,
+        _effort: Option<&str>,
+        prompt: &str,
+    ) -> Result<(String, Option<f64>), String> {
+        self.prompts.borrow_mut().push(prompt.to_string());
+        if let Some(reads) = &self.reads {
+            return Ok((reads(prompt), Some(0.002)));
+        }
+        match self.said.borrow_mut().pop_front() {
+            Some(Ok(text)) => Ok((text, Some(0.002))),
+            Some(Err(error)) => Err(error),
+            None => Err("no answer scripted".into()),
+        }
+    }
+}
+
+fn deciding(answers: &dyn Answers) -> Deciding<'_> {
+    Deciding {
+        answers,
+        explorer: ModelRef::new(Provider::DeepSeek, "deepseek-flash"),
+        effort: None,
+        escalation: ModelRef::new(Provider::DeepSeek, "deepseek-flash"),
+        threshold: 0.6,
+    }
+}
+
+fn plan(way: Way, seed: u64, steps: u32) -> Plan {
+    Plan {
+        goal: "Look through the history and create parts".into(),
+        way,
+        seed,
+        steps,
+        seconds: 600,
+        usd: 1.0,
+        changes: Changes::default(),
+        start: "stand-in".into(),
+    }
+}
+
+fn explore_with(
+    instance: &mut dyn Instance,
+    plan: &Plan,
+    answers: &dyn Answers,
+    knowledge: &Knowledge,
+) -> Run {
+    explore::explore(instance, plan, &deciding(answers), knowledge, &mut || true)
+}
+
+fn by_rules(instance: &mut StandIn, seed: u64, steps: u32) -> Run {
+    explore_with(
+        instance,
+        &plan(Way::Rules, seed, steps),
+        &Scripted::default(),
+        &Knowledge::new("stand-in"),
+    )
+}
+
+fn checks(run: &Run) -> BTreeSet<Check> {
+    run.findings.iter().map(|f| f.check).collect()
+}
+
+/// The stand-in and the run of the first of a few fixed seeds whose path
+/// meets the planted defect (a seed decides which way the rules go among
+/// equally good actions).
+fn found(defects: Defects) -> (StandIn, Run) {
+    for seed in 1..=8 {
+        let mut studio = StandIn::new(defects);
+        let run = by_rules(&mut studio, seed, 80);
+        if !run.findings.is_empty() {
+            return (studio, run);
+        }
+    }
+    panic!("no seed met {defects:?}");
+}
+
+#[test]
+fn a_correct_studio_gives_no_findings_and_undo_is_checked() {
+    for seed in 1..=4 {
+        let mut studio = StandIn::new(Defects::default());
+        let run = by_rules(&mut studio, seed, 60);
+        assert!(run.findings.is_empty(), "seed {seed}: {:#?}", run.findings);
+        assert_eq!(run.chosen, 60);
+        assert_eq!(run.ended, "the step budget was used");
+        assert_eq!(run.unwanted.total(), 0, "{:?}", run.unwanted);
+        assert!(run.notes.is_empty(), "{:?}", run.notes);
+        // The explorer created parts, so it checked undo and redo.
+        let checked: Vec<&str> = run
+            .steps
+            .iter()
+            .filter(|t| t.step.by == "check")
+            .map(|t| t.step.target())
+            .collect();
+        assert!(
+            checked.starts_with(&["undo", "redo"]),
+            "seed {seed}: {checked:?}"
+        );
+        // What an agent may not use was never tried.
+        assert!(
+            !studio.log.iter().any(|l| l.contains("lock-it")
+                || l.contains("Message")
+                || l.contains("window-close")),
+            "{:?}",
+            studio.log
+        );
+    }
+}
+
+#[test]
+fn each_invariant_fires_on_its_planted_defect_and_on_nothing_else() {
+    let planted: [(Defects, Check); 7] = [
+        (
+            Defects {
+                crash: true,
+                ..Defects::default()
+            },
+            Check::Answers,
+        ),
+        (
+            Defects {
+                unlabelled: true,
+                ..Defects::default()
+            },
+            Check::ReadableLabels,
+        ),
+        (
+            Defects {
+                undo: true,
+                ..Defects::default()
+            },
+            Check::UndoRestores,
+        ),
+        (
+            Defects {
+                slow: true,
+                ..Defects::default()
+            },
+            Check::ActionTime,
+        ),
+        (
+            Defects {
+                stuck_dialog: true,
+                ..Defects::default()
+            },
+            Check::DialogsClose,
+        ),
+        (
+            Defects {
+                internal_error: true,
+                ..Defects::default()
+            },
+            Check::NoInternalError,
+        ),
+        (
+            Defects {
+                refuses_offered: true,
+                ..Defects::default()
+            },
+            Check::OfferedActs,
+        ),
+    ];
+    for (defects, check) in planted {
+        // Nothing else fires, whichever way the run goes.
+        for seed in 1..=8 {
+            let run = by_rules(&mut StandIn::new(defects), seed, 80);
+            assert!(
+                checks(&run).is_subset(&BTreeSet::from([check])),
+                "{defects:?}, seed {seed}: {:#?}",
+                run.findings
+            );
+        }
+        let (_, run) = found(defects);
+        assert_eq!(checks(&run), BTreeSet::from([check]), "{defects:?}");
+        let finding = &run.findings[0];
+        assert_eq!(
+            (finding.build.as_str(), finding.commit.as_str()),
+            ("b1", "abc1234")
+        );
+        assert_eq!(finding.state, State::Open);
+        // A finding's steps start at a fresh start and end where it failed.
+        if check != Check::ReadableLabels {
+            assert!(!finding.steps.is_empty(), "{finding:#?}");
+        }
+    }
+    // Without a digest, undo that does nothing still shows: the model's
+    // revision does not move.
+    let mut studio = StandIn::new(Defects {
+        undo: true,
+        ..Defects::default()
+    });
+    studio.digest = false;
+    let run = by_rules(&mut studio, 3, 80);
+    assert_eq!(checks(&run), BTreeSet::from([Check::UndoRestores]));
+    assert!(
+        run.findings[0].message.contains("did not change"),
+        "{}",
+        run.findings[0].message
+    );
+    // An instance that ends is started again and the run goes on.
+    let mut studio = StandIn::new(Defects {
+        crash: true,
+        ..Defects::default()
+    });
+    let run = by_rules(&mut studio, 3, 80);
+    assert!(run.recoveries.iter().any(|r| r.kind == "restarted"));
+    assert_eq!(run.chosen, 80);
+    assert_eq!(
+        run.unwanted.ended as usize,
+        run.steps.iter().filter(|t| t.outcome == "ended").count()
+    );
+}
+
+#[test]
+fn undo_is_not_checked_where_it_is_the_operators() {
+    let mut studio = StandIn::new(Defects {
+        undo: true,
+        ..Defects::default()
+    });
+    studio.undo_refused = true;
+    let run = by_rules(&mut studio, 3, 60);
+    assert!(run.findings.is_empty(), "{:#?}", run.findings);
+    assert_eq!(run.notes.len(), 1, "{:?}", run.notes);
+    assert!(run.notes[0].contains("Operator's"), "{:?}", run.notes);
+}
+
+#[test]
+fn planted_defects_reproduce_and_a_flaky_one_does_not() {
+    for defects in [
+        Defects {
+            crash: true,
+            ..Defects::default()
+        },
+        Defects {
+            unlabelled: true,
+            ..Defects::default()
+        },
+        Defects {
+            undo: true,
+            ..Defects::default()
+        },
+        Defects {
+            slow: true,
+            ..Defects::default()
+        },
+        Defects {
+            stuck_dialog: true,
+            ..Defects::default()
+        },
+        Defects {
+            internal_error: true,
+            ..Defects::default()
+        },
+        Defects {
+            refuses_offered: true,
+            ..Defects::default()
+        },
+    ] {
+        let (mut studio, run) = found(defects);
+        let mut finding = run.findings[0].clone();
+        findings::reproduce(&mut studio, &mut finding, 12);
+        assert_eq!(
+            finding.state,
+            State::Reproduced,
+            "{defects:?}: {finding:#?}"
+        );
+        assert!(finding.replays.iter().take(2).all(Replay::failed));
+    }
+    let mut studio = StandIn::new(Defects {
+        flaky: true,
+        ..Defects::default()
+    });
+    let run = by_rules(&mut studio, 5, 80);
+    assert_eq!(checks(&run), BTreeSet::from([Check::Answers]));
+    let mut finding = run.findings[0].clone();
+    findings::reproduce(&mut studio, &mut finding, 12);
+    assert_eq!(finding.state, State::NotReproduced);
+    assert!(finding.note.contains("the check held"), "{}", finding.note);
+    assert_eq!(finding.reduced, None);
+}
+
+fn step(action: Value) -> Step {
+    Step {
+        key: String::new(),
+        screen: "surface".into(),
+        label: String::new(),
+        expect: None,
+        by: "explorer".into(),
+        action,
+    }
+}
+
+#[test]
+fn reduction_keeps_only_the_steps_that_still_fail() {
+    let click = |id: &str| step(json!({ "kind": "click", "control": id }));
+    let steps = vec![
+        click("Graph"),
+        click("Architecture"),
+        click("create"),
+        click("dialog-cancel"),
+        click("History"),
+        click("checkpoint"),
+        click("export"),
+    ];
+    let failed = Failed {
+        check: Check::Answers,
+        control: "export".into(),
+        message: "the instance exited".into(),
+        evidence: json!({}),
+    };
+    let mut finding = Finding::new(failed, steps, "b1", "abc1234", "stand-in");
+    let mut studio = StandIn::new(Defects {
+        crash: true,
+        ..Defects::default()
+    });
+    findings::reproduce(&mut studio, &mut finding, 16);
+    assert_eq!(finding.state, State::Reproduced, "{finding:#?}");
+    let reduced: Vec<&str> = finding
+        .reduced
+        .as_ref()
+        .expect("reduced")
+        .iter()
+        .map(Step::target)
+        .collect();
+    assert_eq!(reduced, vec!["History", "export"]);
+    // Bounded: no more replays than allowed.
+    assert!(
+        finding.replays.len() <= 2,
+        "the reduction's replays are not kept as outcomes"
+    );
+    let starts = studio.starts;
+    let mut again = finding.clone();
+    again.reduced = None;
+    findings::reduce(&mut studio, &mut again, 3);
+    assert!(studio.starts - starts <= 3);
+}
+
+#[test]
+fn a_replay_fails_on_the_build_with_the_problem_and_passes_on_one_without() {
+    for defects in [
+        Defects {
+            crash: true,
+            ..Defects::default()
+        },
+        Defects {
+            internal_error: true,
+            ..Defects::default()
+        },
+        Defects {
+            stuck_dialog: true,
+            ..Defects::default()
+        },
+    ] {
+        let (mut broken, run) = found(defects);
+        let mut finding = run.findings[0].clone();
+        findings::reproduce(&mut broken, &mut finding, 10);
+        assert!(
+            findings::replay(&mut broken, &finding).failed(),
+            "{defects:?}"
+        );
+        let mut fixed = StandIn::new(Defects::default());
+        assert_eq!(
+            findings::replay(&mut fixed, &finding),
+            Replay::Passed,
+            "{defects:?}"
+        );
+    }
+    // A step whose control is gone is no pass and no failure.
+    let mut finding = Finding::new(
+        Failed {
+            check: Check::Answers,
+            control: "export".into(),
+            message: "the instance exited".into(),
+            evidence: json!({}),
+        },
+        vec![step(json!({ "kind": "click", "control": "export" }))],
+        "b1",
+        "abc1234",
+        "stand-in",
+    );
+    let mut studio = StandIn::new(Defects {
+        crash: true,
+        ..Defects::default()
+    });
+    assert!(matches!(
+        findings::replay(&mut studio, &finding),
+        Replay::Diverged { at: 1, .. }
+    ));
+    finding
+        .steps
+        .insert(0, step(json!({ "kind": "click", "control": "History" })));
+    assert!(findings::replay(&mut studio, &finding).failed());
+}
+
+#[test]
+fn the_rules_prefer_what_is_not_covered_and_a_seed_changes_the_path() {
+    let keys = |run: &Run, n: usize| -> Vec<String> {
+        run.steps
+            .iter()
+            .filter(|t| t.chosen.is_some())
+            .take(n)
+            .map(|t| t.step.key.clone())
+            .collect()
+    };
+    let first = by_rules(&mut StandIn::new(Defects::default()), 1, 12);
+    let second = by_rules(&mut StandIn::new(Defects::default()), 2, 12);
+    // Nothing repeats while something is not covered in this run.
+    let distinct: BTreeSet<String> = keys(&first, 12).into_iter().collect();
+    assert_eq!(distinct.len(), 12, "{:?}", keys(&first, 12));
+    // Successive runs take different paths among equally good actions.
+    assert_ne!(keys(&first, 4), keys(&second, 4));
+    // The same seed takes the same path.
+    let again = by_rules(&mut StandIn::new(Defects::default()), 1, 12);
+    assert_eq!(keys(&first, 12), keys(&again, 12));
+    // What the knowledge covered comes after what it did not.
+    let mut knowledge = Knowledge::new("stand-in");
+    knowledge.add_run(&first);
+    let next = explore_with(
+        &mut StandIn::new(Defects::default()),
+        &plan(Way::Rules, 1, 6),
+        &Scripted::default(),
+        &knowledge,
+    );
+    for key in keys(&next, 3) {
+        assert_eq!(knowledge.count(&key), 0, "{key} was covered before");
+    }
+    assert_eq!(next.new_coverage.len(), next.covered.len());
+    // The goal's words come first among what is not covered.
+    let mut goal = plan(Way::Rules, 9, 1);
+    goal.goal = "Validate the model".into();
+    let run = explore_with(
+        &mut StandIn::new(Defects::default()),
+        &goal,
+        &Scripted::default(),
+        &Knowledge::new("stand-in"),
+    );
+    assert_eq!(run.steps[0].step.target(), "validate");
+}
+
+#[test]
+fn the_models_answer_must_be_an_option_with_checkable_expectations() {
+    // Unreadable, then not an option: the rules decide, and both calls'
+    // time and cost are kept.
+    let answers =
+        Scripted::default().said(&[Ok("I would click Export"), Ok(r#"{"choice": "a99"}"#)]);
+    let run = explore_with(
+        &mut StandIn::new(Defects::default()),
+        &plan(Way::Model, 1, 1),
+        &answers,
+        &Knowledge::new("stand-in"),
+    );
+    let decision = &run.steps[0].chosen.as_ref().unwrap().decision;
+    assert_eq!(decision.source, Source::Rules);
+    assert!(decision.note.contains("not an option"), "{}", decision.note);
+    assert_eq!(decision.usd, Some(0.004));
+    // The model saw only what is valid there.
+    let prompt = answers.prompts.borrow()[0].clone();
+    assert!(prompt.contains("“Create part”"), "{prompt}");
+    for never in ["Lock", "Message", "Close", "Undo", "Lock or unlock"] {
+        assert!(
+            !prompt.contains(&format!("“{never}”")),
+            "{never} offered: {prompt}"
+        );
+    }
+    // Text for a button, or an expectation nobody can check, is no answer.
+    let answers = Scripted::default().said(
+        &[
+            r#"{"choice": "a1", "input": "x"}"#,
+            r#"{"choice": "a1", "expect": {"pixels": 3}}"#,
+        ]
+        .map(Ok),
+    );
+    let run = explore_with(
+        &mut StandIn::new(Defects::default()),
+        &plan(Way::Model, 1, 1),
+        &answers,
+        &Knowledge::new("stand-in"),
+    );
+    assert_eq!(
+        run.steps[0].chosen.as_ref().unwrap().decision.source,
+        Source::Rules
+    );
+    // A valid answer is used; its expectation is checked after the action,
+    // and one that does not hold is a finding of its own kind.
+    let answers = Scripted::default().said(&[Ok(
+        r#"{"choice": "a1", "expect": {"dialog": "Nothing"}, "why": "see what opens"}"#,
+    )]);
+    let run = explore_with(
+        &mut StandIn::new(Defects::default()),
+        &plan(Way::Model, 1, 1),
+        &answers,
+        &Knowledge::new("stand-in"),
+    );
+    let chosen = run.steps[0].chosen.as_ref().unwrap();
+    assert_eq!(chosen.decision.source, Source::Model);
+    assert_eq!(chosen.why, "see what opens");
+    assert_eq!(checks(&run), BTreeSet::from([Check::Expectation]));
+    assert_eq!(
+        run.findings[0].steps[0].expect,
+        Some(json!({ "dialog": "Nothing" }))
+    );
+    // Text the model chose for a field is typed, and classed for coverage.
+    let answers = Scripted {
+        reads: Some(Box::new(|prompt: &str| {
+            match option(prompt, "into the field “Name”") {
+                Some(id) => format!(r#"{{"choice": "{id}", "input": "Größe"}}"#),
+                None => format!(
+                    r#"{{"choice": "{}"}}"#,
+                    option(prompt, "“Create part”").unwrap()
+                ),
+            }
+        })),
+        ..Scripted::default()
+    };
+    let run = explore_with(
+        &mut StandIn::new(Defects::default()),
+        &plan(Way::Model, 1, 2),
+        &answers,
+        &Knowledge::new("stand-in"),
+    );
+    let typed = &run.steps[1].step;
+    assert_eq!(typed.action["text"], "Größe");
+    assert!(typed.key.ends_with("|Name|fill|non-ascii"), "{}", typed.key);
+}
+
+#[test]
+fn jev_escalates_to_the_model_and_the_model_to_the_rules() {
+    let answers = Scripted::default()
+        .jev(&[Ok(("a2", 0.9)), Ok(("a1", 0.3)), Err("Jev: timed out")])
+        .said(&[
+            Ok(r#"{"choice": "a3", "why": "less covered"}"#),
+            Ok("??"),
+            Ok("!!"),
+        ]);
+    let run = explore_with(
+        &mut StandIn::new(Defects::default()),
+        &plan(Way::Escalating, 1, 3),
+        &answers,
+        &Knowledge::new("stand-in"),
+    );
+    let sources: Vec<Source> = run
+        .steps
+        .iter()
+        .filter_map(|t| t.chosen.as_ref())
+        .map(|c| c.decision.source)
+        .collect();
+    assert_eq!(sources, vec![Source::Jev, Source::Escalated, Source::Rules]);
+    let notes: Vec<&str> = run
+        .steps
+        .iter()
+        .filter_map(|t| t.chosen.as_ref())
+        .map(|c| c.decision.note.as_str())
+        .collect();
+    assert!(notes[1].contains("confidence 0.30"), "{notes:?}");
+    assert!(
+        notes[2].contains("timed out") && notes[2].contains("the model failed"),
+        "{notes:?}"
+    );
+    // Jev saw at most eight options, each one valid.
+    for q in answers.questions.borrow().iter() {
+        assert!((2..=8).contains(&q.options.len()), "{:?}", q.options);
+    }
+    // Every decision's time and cost count, a failed one's too.
+    assert_eq!(run.latencies[0], 5);
+    assert!((5..100).contains(&run.latencies[1]), "{:?}", run.latencies);
+    assert!(
+        (4000..4100).contains(&run.latencies[2]),
+        "{:?}",
+        run.latencies
+    );
+    assert!(
+        (run.usd - (0.001 + 0.001 + 0.002 + 0.0 + 0.004)).abs() < 1e-9,
+        "{}",
+        run.usd
+    );
+    // Jev alone: below its threshold the rules decide, and no model is asked.
+    let answers = Scripted::default().jev(&[Ok(("a1", 0.2))]);
+    let run = explore_with(
+        &mut StandIn::new(Defects::default()),
+        &plan(Way::Jev, 1, 1),
+        &answers,
+        &Knowledge::new("stand-in"),
+    );
+    assert_eq!(
+        run.steps[0].chosen.as_ref().unwrap().decision.source,
+        Source::Rules
+    );
+    assert!(answers.prompts.borrow().is_empty());
+}
+
+#[test]
+fn a_run_recovers_and_keeps_to_its_budgets() {
+    // A screen that changed by itself: observed again and retried.
+    let mut studio = StandIn::new(Defects::default());
+    studio.drift = 1;
+    let run = by_rules(&mut studio, 1, 5);
+    assert_eq!(run.unwanted.stale, 1);
+    assert!(run.recoveries.iter().any(|r| r.kind == "observed again"));
+    assert_eq!(
+        run.steps
+            .iter()
+            .filter(|t| t.chosen.is_some() && t.outcome == "ok")
+            .count(),
+        5
+    );
+    // A dialog at the start is cancelled by rule.
+    let mut studio = StandIn::new(Defects::default());
+    studio.dialog_at_start = true;
+    let run = by_rules(&mut studio, 1, 3);
+    assert_eq!(run.recoveries[0].kind, "cancelled");
+    assert_eq!(run.steps[0].step.by, "recovery");
+    // A dialog that will not close: a fresh start.
+    let mut studio = StandIn::new(Defects {
+        stuck_dialog: true,
+        ..Defects::default()
+    });
+    studio.dialog_at_start = true;
+    let run = by_rules(&mut studio, 1, 3);
+    assert!(
+        run.recoveries.iter().any(|r| r.kind == "restarted"),
+        "{:?}",
+        run.recoveries
+    );
+    // Stop, time and spend.
+    let mut asked = 0;
+    let run = explore::explore(
+        &mut StandIn::new(Defects::default()),
+        &plan(Way::Rules, 1, 50),
+        &deciding(&Scripted::default()),
+        &Knowledge::new("stand-in"),
+        &mut || {
+            asked += 1;
+            asked <= 3
+        },
+    );
+    assert_eq!((run.chosen, run.ended.as_str()), (3, "stopped"));
+    let mut quick = plan(Way::Rules, 1, 50);
+    quick.seconds = 0;
+    let run = by_plan(&quick, &Scripted::default());
+    assert_eq!(
+        (run.chosen, run.ended.as_str()),
+        (0, "the time budget was used")
+    );
+    let mut cheap = plan(Way::Jev, 1, 50);
+    cheap.usd = 0.0025;
+    let answers = Scripted::default().jev(&[
+        Ok(("a1", 0.9)),
+        Ok(("a1", 0.9)),
+        Ok(("a1", 0.9)),
+        Ok(("a1", 0.9)),
+    ]);
+    let run = by_plan(&cheap, &answers);
+    assert_eq!(
+        (run.chosen, run.ended.as_str()),
+        (3, "the spend budget was used")
+    );
+    // The cancelling rule is not a way to explore.
+    let run = by_plan(&plan(Way::Cancel, 1, 5), &Scripted::default());
+    assert_eq!(run.chosen, 0);
+    assert!(run.ended.contains("not exploration"));
+}
+
+fn by_plan(plan: &Plan, answers: &Scripted) -> Run {
+    explore_with(
+        &mut StandIn::new(Defects::default()),
+        plan,
+        answers,
+        &Knowledge::new("stand-in"),
+    )
+}
+
+#[test]
+fn a_runs_coverage_and_findings_go_into_the_testing_knowledge() {
+    let mut studio = StandIn::new(Defects {
+        crash: true,
+        ..Defects::default()
+    });
+    let run = by_rules(&mut studio, 4, 40);
+    let mut knowledge = Knowledge::new("stand-in");
+    knowledge.add_run(&run);
+    assert_eq!(knowledge.coverage.len(), run.covered.len());
+    assert_eq!(knowledge.findings.len(), 1);
+    let mut finding = knowledge.findings[0].clone();
+    findings::reproduce(&mut studio, &mut finding, 8);
+    knowledge.update(&finding);
+    assert_eq!(knowledge.findings[0].state, State::Reproduced);
+    // Fixed by a change: the next run's build replays it first and it passes.
+    knowledge.fixed(&finding.identity, "c0ffee1", Some(120));
+    let mut fixed = StandIn::new(Defects::default());
+    for finding in knowledge
+        .to_replay("b2")
+        .into_iter()
+        .cloned()
+        .collect::<Vec<_>>()
+    {
+        let replay = findings::replay(&mut fixed, &finding);
+        knowledge.replayed(&finding.identity, "b2", &replay);
+    }
+    assert_eq!(knowledge.findings[0].state, State::Fixed);
+    assert!(knowledge.to_replay("b2").is_empty());
+    let ways = knowledge.ways();
+    assert_eq!(ways[&Way::Rules].runs, 1);
+    assert_eq!(ways[&Way::Rules].findings, 1);
+}
+
+// The fixed exploration tasks and the live measurement.
+
+struct Task {
+    id: String,
+    split: String,
+    goal: String,
+    start: PathBuf,
+    steps: u32,
+    regions: Vec<String>,
+}
+
+fn repository() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
+}
+
+fn tasks() -> Vec<Task> {
+    let value: Value =
+        serde_json::from_str(include_str!("fixtures/exploration.json")).expect("JSON");
+    value["tasks"]
+        .as_array()
+        .expect("tasks")
+        .iter()
+        .map(|t| Task {
+            id: t["id"].as_str().unwrap().to_string(),
+            split: t["split"].as_str().unwrap().to_string(),
+            goal: t["goal"].as_str().unwrap().to_string(),
+            start: repository().join(t["start"].as_str().unwrap()),
+            steps: t["steps"].as_u64().unwrap() as u32,
+            regions: t["regions"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|r| r.as_str().unwrap().to_string())
+                .collect(),
+        })
+        .collect()
+}
+
+#[test]
+fn the_exploration_tasks_are_fixed_and_held_out_from_tuning() {
+    let tasks = tasks();
+    let ids: BTreeSet<&str> = tasks.iter().map(|t| t.id.as_str()).collect();
+    assert_eq!(ids.len(), tasks.len(), "ids are unique");
+    let splits: BTreeSet<&str> = tasks.iter().map(|t| t.split.as_str()).collect();
+    assert_eq!(splits, BTreeSet::from(["held-out", "tuning"]));
+    for task in &tasks {
+        assert!(
+            !task.goal.is_empty() && task.steps > 0 && !task.regions.is_empty(),
+            "{}",
+            task.id
+        );
+        let has_model = std::fs::read_dir(&task.start)
+            .unwrap_or_else(|e| panic!("{}: {e}", task.start.display()))
+            .flatten()
+            .any(|e| e.path().extension().is_some_and(|x| x == "sysml"));
+        assert!(has_model, "{}: no model files", task.id);
+    }
+}
+
+fn studio() -> PathBuf {
+    if let Some(path) = std::env::var_os("AGENTIQUE_STUDIO") {
+        return PathBuf::from(path);
+    }
+    let target = std::env::var_os("CARGO_TARGET_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| repository().join("target"));
+    target.join("debug").join(if cfg!(windows) {
+        "agq-studio-native.exe"
+    } else {
+        "agq-studio-native"
+    })
+}
+
+fn chosen(variable: &str) -> Option<BTreeSet<String>> {
+    let text = std::env::var(variable).ok()?;
+    Some(
+        text.split(',')
+            .map(|s| s.trim().to_lowercase())
+            .filter(|s| !s.is_empty())
+            .collect(),
+    )
+}
+
+/// What one way did on a split.
+#[derive(Default)]
+struct Score {
+    runs: u32,
+    useful: usize,
+    reached: usize,
+    regions: usize,
+    unwanted: u32,
+    found: usize,
+    reproduced: usize,
+    expectations: usize,
+    latencies: Vec<u64>,
+    usd: f64,
+    unpriced: u32,
+}
+
+impl Score {
+    fn percentile(&self, p: f64) -> u64 {
+        let mut sorted = self.latencies.clone();
+        sorted.sort_unstable();
+        if sorted.is_empty() {
+            return 0;
+        }
+        sorted[((sorted.len() - 1) as f64 * p).round() as usize]
+    }
+}
+
+#[test]
+#[ignore = "live: opens windows, needs the TypeSafe AI and DeepSeek keys, spends a few cents"]
+fn live_exploration_compared_by_way_of_deciding() {
+    let exe = studio();
+    assert!(exe.is_file(), "build the Studio first: {}", exe.display());
+    let tasks_wanted = chosen("AGENTIQUE_TASKS");
+    let ways_wanted = chosen("AGENTIQUE_WAYS");
+    let steps: Option<u32> = std::env::var("AGENTIQUE_STEPS")
+        .ok()
+        .and_then(|s| s.parse().ok());
+    let decider = Decider {
+        model: ModelRef::new(Provider::DeepSeek, "deepseek-flash"),
+        ..Decider::default()
+    };
+    let deciding = Deciding {
+        answers: &decider,
+        explorer: ModelRef::new(Provider::DeepSeek, "deepseek-flash"),
+        effort: Some("low".into()),
+        escalation: ModelRef::new(Provider::DeepSeek, "deepseek-flash"),
+        threshold: decider.threshold,
+    };
+    let base = std::env::temp_dir().join(format!("agq-explore-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&base);
+    let mut scores: BTreeMap<(Way, String), Score> = BTreeMap::new();
+    let mut rows = Vec::new();
+    let mut spent = 0.0;
+    for task in tasks() {
+        if tasks_wanted.as_ref().is_some_and(|w| !w.contains(&task.id)) {
+            continue;
+        }
+        for (n, way) in [Way::Rules, Way::Jev, Way::Model, Way::Escalating]
+            .into_iter()
+            .enumerate()
+        {
+            if ways_wanted
+                .as_ref()
+                .is_some_and(|w| !w.contains(&format!("{way:?}").to_lowercase()))
+            {
+                continue;
+            }
+            assert!(spent < 0.5, "the measurement's spend passed $0.50: stopped");
+            let folder = base.join(format!("{}-{way:?}", task.id).to_lowercase());
+            let mut instance = LiveInstance::new(&exe, &task.start, &folder);
+            let plan = Plan {
+                goal: task.goal.clone(),
+                way,
+                seed: 17 + n as u64,
+                steps: steps.unwrap_or(task.steps),
+                seconds: 900,
+                usd: 0.15,
+                changes: Changes::default(),
+                start: task
+                    .start
+                    .file_name()
+                    .unwrap()
+                    .to_string_lossy()
+                    .into_owned(),
+            };
+            let knowledge = Knowledge::new("agentique");
+            let mut run =
+                explore::explore(&mut instance, &plan, &deciding, &knowledge, &mut || true);
+            // Each finding reproduced (a few, within a bounded number of
+            // replays each).
+            for finding in run.findings.iter_mut().take(4) {
+                findings::reproduce(&mut instance, finding, 6);
+            }
+            drop(instance);
+            let reached: Vec<&String> = task
+                .regions
+                .iter()
+                .filter(|r| run.areas.contains(*r))
+                .collect();
+            let score = scores.entry((way, task.split.clone())).or_default();
+            score.runs += 1;
+            score.useful += run.new_coverage.len();
+            score.reached += reached.len();
+            score.regions += task.regions.len();
+            score.unwanted += run.unwanted.total();
+            score.found += run.findings.len();
+            score.reproduced += run
+                .findings
+                .iter()
+                .filter(|f| f.state == State::Reproduced)
+                .count();
+            score.expectations += run
+                .findings
+                .iter()
+                .filter(|f| f.check == Check::Expectation)
+                .count();
+            score.latencies.extend(&run.latencies);
+            score.usd += run.usd;
+            score.unpriced += run.unpriced;
+            spent += run.usd;
+            eprintln!(
+                "{} {way:?}: {} steps, {} new keys, reached {reached:?}, unwanted {:?}, findings {:?}, ${:.4}, ended: {}",
+                task.id,
+                run.chosen,
+                run.new_coverage.len(),
+                run.unwanted,
+                run.findings
+                    .iter()
+                    .map(|f| (f.identity.clone(), f.state))
+                    .collect::<Vec<_>>(),
+                run.usd,
+                run.ended
+            );
+            rows.push(json!({ "task": task.id, "split": task.split, "way": way, "reached": reached, "run": run }));
+            let _ = std::fs::remove_dir_all(&folder);
+        }
+    }
+    let mut summary = Vec::new();
+    eprintln!(
+        "way        split     runs useful progress unwanted findings(reproduced, expectation) p50ms p95ms usd"
+    );
+    for ((way, split), s) in &scores {
+        let line = json!({
+            "way": way, "split": split, "runs": s.runs, "usefulCoverage": s.useful,
+            "progress": format!("{}/{}", s.reached, s.regions), "unwanted": s.unwanted,
+            "findings": s.found, "reproduced": s.reproduced, "expectationFindings": s.expectations,
+            "latencyP50Ms": s.percentile(0.5), "latencyP95Ms": s.percentile(0.95),
+            "usd": s.usd, "unpriced": s.unpriced,
+        });
+        eprintln!(
+            "{:<10} {:<9} {:>4} {:>6} {:>8} {:>8} {:>3} ({}, {}) {:>6} {:>6} {:.4}",
+            format!("{way:?}"),
+            split,
+            s.runs,
+            s.useful,
+            format!("{}/{}", s.reached, s.regions),
+            s.unwanted,
+            s.found,
+            s.reproduced,
+            s.expectations,
+            s.percentile(0.5),
+            s.percentile(0.95),
+            s.usd
+        );
+        summary.push(line);
+    }
+    if let Some(path) = outside_the_repository("AGENTIQUE_EVALUATION_OUT") {
+        std::fs::write(
+            path,
+            serde_json::to_string_pretty(&json!({ "summary": summary, "runs": rows })).unwrap(),
+        )
+        .unwrap();
+    }
+    let _ = std::fs::remove_dir_all(&base);
+    // A measurement, not a check: each way ran.
+    assert!(!scores.is_empty());
+}
