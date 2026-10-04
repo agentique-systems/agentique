@@ -1437,6 +1437,6 @@ Read against the code before any change (file:line on that commit):
 | W12.2 Control interface, complete and observable | — | Not started |
 | W12.3 Models per role and credentials | — | Not started |
 | W12.4 Exploration and testing knowledge | — | Not started |
-| W12.5 Exploration in cycles, stronger gates, bounds | — | Not started |
-| W12.6 Delegation | — | Not started |
+| W12.5 Exploration in cycles, stronger gates, bounds, a continuing loop | — | Not started |
+| W12.6 The Conversation as the one window: threads, directives, delegation | — | Not started; the Operator clarified on 2026-10-04 that the Conversation is the one window for intent, agent communication and steering, with the Objectives panel a dashboard of the same records (ROADMAP §4.16, §7.6) |
 | W12.7 Proof | — | Not started |
