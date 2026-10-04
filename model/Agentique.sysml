@@ -273,10 +273,10 @@ package AgentiqueArchitecture {
     item def Directive {
         doc /* One agent's instruction to another (C-54): its author, recipient,
              * parent objective, scope and status; created only by a tool the
-             * Orchestrator validates, shown in the objective's thread. `depth` is the
-             * depth of the child objective it starts, or 0 for a handoff within a
-             * cycle. */
-        attribute depth : Natural;
+             * Orchestrator validates, shown in the objective's thread. `delegates`
+             * says whether it starts a child objective, rather than handing work to
+             * another role within a cycle. */
+        attribute delegates : Boolean;
     }
 
     item def CycleReport {
@@ -504,7 +504,7 @@ package AgentiqueArchitecture {
              * agent's typing, clicks, focus and scrolling with its goal and decisions,
              * at the Operator's speed; in a test instance agents may also operate the
              * Conversation and undo, and everything else the Operator's own stays
-             * refused to them. The Conversation is the one window for intent and every
+             * refused to them. The Conversation is the one place for intent and every
              * objective's thread (the Operator's messages, agents' directives and
              * results, system events), and the Objectives panel a dashboard of the same
              * records, both through the same commands. Settings name each agent role's
@@ -937,8 +937,9 @@ package AgentiqueArchitecture {
     // members so that their identities keep their places.
 
     dependency from Studio to Orchestrator {
-        doc /* The Objectives panel starts, shows, steers and stops objectives; the control
-             * interface's types are the Orchestrator's, which drives test instances. */
+        doc /* The Conversation and the Objectives panel start, show, steer and stop
+             * objectives; the control interface's types are the Orchestrator's, which
+             * drives test instances. */
     }
     dependency from Orchestrator to Assistant {
         doc /* Each role is an agent session on the Assistant's runtime. */

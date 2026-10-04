@@ -45,8 +45,8 @@ are its primary users: these rules are theirs as much as any person's.
     tools are held to it, and every path a change touches is checked before
     merging); leave `.claude/`, `CLAUDE.md` and `AGENTS.md` alone unless the
     objective names them; besides the SDK's subagents inside your own
-    session, hand work to another agent only as a child objective your lead
-    delegates through Agentique, within the objective's permissions and
+    session, hand work to another agent only as a directive (the lead's
+    `delegate` tool, never text alone) within the objective's permissions and
     budgets (C-54); keep the acceptance criteria and required checks frozen
     at the proposal; never delete, ignore or loosen a test, check or
     budget to make it pass (a deliberate change to one is named, with its
@@ -90,8 +90,9 @@ code and are committed.
   Orchestrator, System State, Settings, lock, scenario, simulation,
   implementation link, drift, agent, autonomy mode, objective, cycle,
   permission policy, control interface, observation, typed decision,
-  exploration, finding, testing knowledge, child objective, observer mode. A
-  new product term needs a reason and a glossary entry (ROADMAP §9).
+  exploration, finding, testing knowledge, child objective, observer mode,
+  directive, thread. A new product term needs a reason and a glossary entry
+  (ROADMAP §9).
 
 ## One truth per topic (ROADMAP §8.2)
 
