@@ -177,9 +177,12 @@ impl Studio {
         if intent.trim().is_empty() {
             return Err("say what to improve".into());
         }
-        let repository = self
-            .agentique_repository()
-            .ok_or("this Agentique does not know where its repository is")?;
+        let repository = self.agentique_repository().ok_or_else(|| {
+            format!(
+                "this Agentique does not know where its repository is: {}",
+                crate::develop::UNKNOWN_REPOSITORY
+            )
+        })?;
         let store = self.objective_store();
         if let Some(active) = store.active() {
             return Err(format!(
