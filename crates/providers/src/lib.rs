@@ -32,7 +32,7 @@ mod runtime;
 pub use models::{KeyCheck, ModelInfo, read_models};
 
 pub use capabilities::{
-    Capabilities, DECISION_MODELS, Price, PromptCache, ReasoningText, capabilities, price,
+    Capabilities, DECISION_MODELS, Price, PromptCache, ReasoningText, base_id, capabilities, price,
     resolve_model,
 };
 

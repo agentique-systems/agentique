@@ -449,6 +449,13 @@ export function agentEnvironment(
       env.ANTHROPIC_SMALL_FAST_MODEL = fast;
     }
   }
+  // The subagents' model (C-54): a subagent that names none runs on the
+  // session's own model, on its endpoint and credential (measured
+  // 2026-10-04: the general-purpose and Explore subagents of a Sonnet 5.5
+  // session on the subscription token reported only claude-sonnet-5-5).
+  if (options.model) {
+    env.CLAUDE_CODE_SUBAGENT_MODEL = options.model;
+  }
   return {
     ...env,
     CLAUDE_CONFIG_DIR: options.configDir,
@@ -796,6 +803,8 @@ export function sdkOptions(
       env: {
         ...credentialSettings(env).env,
         CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: "1",
+        // A project's settings cannot move the subagents to another model.
+        ...(start.model ? { CLAUDE_CODE_SUBAGENT_MODEL: start.model } : {}),
         ANTHROPIC_BASE_URL: start.endpoint !== null ? start.endpoint.baseUrl : "https://api.anthropic.com",
         // Where the API traffic goes stays the Studio's: a project's own
         // settings cannot put a proxy or certificate in its way.

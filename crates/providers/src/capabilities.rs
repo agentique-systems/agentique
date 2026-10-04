@@ -88,6 +88,23 @@ pub fn resolve_model(id: &str) -> Option<ModelRef> {
         })
 }
 
+/// A model's documented base id. Anthropic names a dated snapshot of a
+/// model `<id>-YYYYMMDD` (`claude-haiku-4-5-20251001` is `claude-haiku-4-5`),
+/// and usage may report it by either; that date is the only suffix taken
+/// off, and only for Anthropic, so the tables price and describe a snapshot
+/// as its model. Every other id is taken as written.
+pub fn base_id(model: &ModelRef) -> &str {
+    let id = model.model.as_str();
+    if model.provider == Provider::Anthropic
+        && let Some((base, date)) = id.rsplit_once('-')
+        && date.len() == 8
+        && date.bytes().all(|b| b.is_ascii_digit())
+    {
+        return base;
+    }
+    id
+}
+
 /// The capabilities of `model`.
 pub fn capabilities(model: &ModelRef) -> Capabilities {
     match model.provider {
@@ -99,7 +116,7 @@ pub fn capabilities(model: &ModelRef) -> Capabilities {
             tool_input_streaming: false,
             efforts: ANTHROPIC_EFFORTS,
             // Claude Opus 5.5 thinks at medium unless asked (ROADMAP [109]).
-            default_effort: Some(if model.model == "claude-opus-5-5" {
+            default_effort: Some(if base_id(model) == "claude-opus-5-5" {
                 "medium"
             } else {
                 "high"
@@ -111,7 +128,7 @@ pub fn capabilities(model: &ModelRef) -> Capabilities {
             cache_counts: true,
             // On Claude Opus 5 (C-27), through the Q-18 adapter; the
             // Assistant's hand-written client asks for them on it alone too.
-            refusal_fallbacks: model.model == "claude-opus-5",
+            refusal_fallbacks: base_id(model) == "claude-opus-5",
             agent_runtime: true,
             context_window: None,
             max_output_tokens: None,
@@ -213,12 +230,14 @@ pub fn price(model: &ModelRef) -> Option<Price> {
             as_of: "2026-09-27",
         })
     };
-    match (model.provider, model.model.as_str()) {
+    match (model.provider, base_id(model)) {
         // Anthropic's pricing page (ROADMAP [10]; claude-opus-5 from Stage 3's
         // README); cache writes at 1.25 times and reads at a tenth of the
         // input price (not verified per model).
         (Provider::Anthropic, "claude-opus-5") => price(5.0, 6.25, 0.5, 25.0),
-        // Claude Opus 5.5 and Sonnet 5.5, read 2026-10-04 (ROADMAP [109]).
+        // Claude Opus 5.5 and Sonnet 5.5: input, output and cache reads read
+        // 2026-10-04 (ROADMAP [109]); cache writes derived at 1.25 times the
+        // input price, as above (not read there).
         (Provider::Anthropic, "claude-opus-5-5") => Some(Price {
             input: 4.0,
             cache_write: 5.0,
@@ -337,6 +356,35 @@ mod tests {
             ..crate::Usage::default()
         };
         assert!((usage.cost_usd(&opus).unwrap() - 0.0002).abs() < 1e-12);
+    }
+
+    /// A dated Anthropic snapshot (as usage may report a subagent's model)
+    /// is priced as its documented base id; nothing else is guessed.
+    #[test]
+    fn a_dated_snapshot_is_its_model() {
+        let dated = ModelRef::new(Provider::Anthropic, "claude-haiku-4-5-20251001");
+        assert_eq!(base_id(&dated), "claude-haiku-4-5");
+        assert_eq!(
+            price(&dated),
+            price(&ModelRef::new(Provider::Anthropic, "claude-haiku-4-5"))
+        );
+        assert_eq!(resolve_model("claude-haiku-4-5-20251001"), Some(dated));
+        assert_eq!(
+            capabilities(&ModelRef::new(
+                Provider::Anthropic,
+                "claude-opus-5-5-20261001"
+            ))
+            .default_effort,
+            Some("medium")
+        );
+        // Not a date, another provider, or an unknown model: as written.
+        for (provider, id) in [
+            (Provider::Anthropic, "claude-haiku-4-5-2025"),
+            (Provider::Anthropic, "claude-mystery-20251001"),
+            (Provider::DeepSeek, "deepseek-flash-20251001"),
+        ] {
+            assert_eq!(price(&ModelRef::new(provider, id)), None, "{id}");
+        }
     }
 
     #[test]

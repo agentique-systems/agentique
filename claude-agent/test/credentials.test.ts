@@ -322,3 +322,16 @@ test("an SDK that does not start is a runtime failure with its cause, and nothin
   assert.equal(error?.type === "error" && error.kind, "runtime");
   assert.match(error?.type === "error" ? error.message : "", /did not start.*exited with code 3/);
 });
+
+test("a session's subagents run on its own model unless they name one", () => {
+  const env = agentEnvironment(start, KEY, "agentique/test");
+  assert.equal(env.CLAUDE_CODE_SUBAGENT_MODEL, "claude-sonnet-5-5");
+  assert.equal(agentEnvironment({ ...start, model: null }, KEY, "t").CLAUDE_CODE_SUBAGENT_MODEL, undefined);
+  // A development session pins it above the project's settings.
+  const policy = { read: [], write: [], protected: [], hidden: [], commands: false, refusedCommands: [], network: false, mcpServers: [], undecided: "refuse" as const };
+  const development = { ...start, policy };
+  const options = sdkOptions(development, {}, new AbortController(), agentEnvironment(development, KEY, "t"), () => {}) as unknown as {
+    settings: { env: Record<string, string> };
+  };
+  assert.equal(options.settings.env.CLAUDE_CODE_SUBAGENT_MODEL, "claude-sonnet-5-5");
+});
