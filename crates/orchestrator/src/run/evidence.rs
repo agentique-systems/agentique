@@ -164,13 +164,58 @@ fn python_failures(output: &str) -> Failures {
     }
 }
 
-/// The failing tests of a run's output, each judged by its own block.
-pub fn failures(output: &str, folder: Option<&Path>) -> Failures {
-    let (cargo, node, python) = (
-        cargo_failures(output, folder),
-        node_failures(output),
-        python_failures(output),
-    );
+/// Which test runner a criterion's command is, so its output is read only
+/// by that runner's rules (another language's markers printed by a test
+/// never count).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Runner {
+    Cargo,
+    Node,
+    Python,
+}
+
+impl Runner {
+    /// The runner of a test command (`roles::test_command` allows only
+    /// these three).
+    pub fn of(program: &[String]) -> Option<Runner> {
+        let first = program.first()?.to_ascii_lowercase();
+        let name = first
+            .rsplit(['/', '\\'])
+            .next()
+            .unwrap_or(&first)
+            .trim_end_matches(".exe");
+        match name {
+            "cargo" => Some(Runner::Cargo),
+            "node" => Some(Runner::Node),
+            "python" | "python3" | "py" => Some(Runner::Python),
+            _ => None,
+        }
+    }
+}
+
+/// The failing tests of a run's output, each judged by its own block, by
+/// the rules of `runner` (all three when it is not known).
+pub fn failures(output: &str, folder: Option<&Path>, runner: Option<Runner>) -> Failures {
+    let none = Failures {
+        assertions: 0,
+        errors: 0,
+    };
+    let only = |wanted: Runner| runner.is_none_or(|r| r == wanted);
+    let cargo = if only(Runner::Cargo) {
+        cargo_failures(output, folder)
+    } else {
+        none
+    };
+    let node = if only(Runner::Node) {
+        node_failures(output)
+    } else {
+        none
+    };
+    let python = if only(Runner::Python) {
+        python_failures(output)
+    } else {
+        none
+    };
     Failures {
         assertions: cargo.assertions + node.assertions + python.assertions,
         errors: cargo.errors + node.errors + python.errors,
@@ -181,10 +226,13 @@ pub fn failures(output: &str, folder: Option<&Path>) -> Failures {
 /// only when it compiled, ran at least one test and a failing test's own
 /// output shows an assertion that failed; `passed` when it passed there
 /// (the gate fails); otherwise `no evidence` with the reason. `folder` is
-/// the checkout it ran in (where an `expect` that panicked is read).
+/// the checkout it ran in (where an `expect` that panicked is read);
+/// `program` the criterion's command, whose runner decides how its output
+/// is read.
 pub fn on_base_verdict(
     run: Result<Finished, String>,
     folder: Option<&Path>,
+    program: Option<&[String]>,
 ) -> (&'static str, String) {
     let finished = match run {
         Ok(finished) => finished,
@@ -206,7 +254,7 @@ pub fn on_base_verdict(
             format!("it did not compile or load on the base: {}", line.trim()),
         );
     }
-    let failed = failures(&output, folder);
+    let failed = failures(&output, folder, program.and_then(Runner::of));
     let ran = tests_ran(&output)
         .unwrap_or(0)
         .max(failed.assertions + failed.errors);
@@ -494,6 +542,7 @@ impl Driver {
                 Ok(()) => on_base_verdict(
                     self.execute(&folder, program, Duration::from_secs(1800)),
                     Some(&folder),
+                    Some(program),
                 ),
             };
             let detail = if brought.is_empty() {
@@ -863,7 +912,7 @@ mod tests {
     /// assertion that failed.
     #[test]
     fn a_run_on_the_base_is_evidence_only_when_a_test_failed_an_assertion() {
-        let verdict = |success, out: &str| on_base_verdict(finished(success, out), None).0;
+        let verdict = |success, out: &str| on_base_verdict(finished(success, out), None, None).0;
         // Cargo: `assert!` with a message only (this repository's style),
         // `assert_eq!`, a plain panic are assertions.
         let cargo = |body: &str| {
@@ -903,6 +952,7 @@ mod tests {
         let expected = on_base_verdict(
             finished(false, &cargo("a label: NotFound")),
             Some(folder.path()),
+            None,
         );
         assert_eq!(expected.0, "no evidence", "{}", expected.1);
         // A passing test named for assertions, or a log line, does not turn
@@ -965,7 +1015,7 @@ mod tests {
             "passed"
         );
         assert_eq!(
-            on_base_verdict(Err("timed out after 1800 s".into()), None).0,
+            on_base_verdict(Err("timed out after 1800 s".into()), None, None).0,
             "no evidence"
         );
         assert_eq!(
@@ -979,6 +1029,36 @@ mod tests {
             verdict(false, "running 1 test\nerror: test failed, to rerun"),
             "no evidence"
         );
+    }
+
+    /// A run's output is read by its own runner's rules: another
+    /// language's failure marker printed by a test never counts.
+    #[test]
+    fn a_runs_output_is_read_by_its_own_runners_rules() {
+        let program = |words: &[&str]| words.iter().map(|w| w.to_string()).collect::<Vec<_>>();
+        assert_eq!(
+            Runner::of(&program(&["cargo", "test"])),
+            Some(Runner::Cargo)
+        );
+        assert_eq!(
+            Runner::of(&program(&["C:\\Tools\\node.exe", "--test"])),
+            Some(Runner::Node)
+        );
+        assert_eq!(
+            Runner::of(&program(&["python3", "-m", "unittest"])),
+            Some(Runner::Python)
+        );
+        assert_eq!(Runner::of(&program(&["make"])), None);
+        // A cargo test that failed on an `unwrap` but printed Python's
+        // marker: no evidence when read as cargo, which it is.
+        let out = "running 1 test\ntest tests::label ... FAILED\n\nfailures:\n\n---- tests::label stdout ----\nFAIL: looks like an assertion\nthread 'tests::label' panicked at crates/x/src/lib.rs:3:5:\ncalled `Option::unwrap()` on a `None` value\n\nfailures:\n    tests::label\n\ntest result: FAILED. 0 passed; 1 failed; 0 ignored";
+        let cargo = program(&["cargo", "test", "-p", "x", "label"]);
+        assert_eq!(
+            on_base_verdict(finished(false, out), None, Some(&cargo)).0,
+            "no evidence"
+        );
+        assert_eq!(failures(out, None, Some(Runner::Python)).assertions, 1);
+        assert_eq!(failures(out, None, Some(Runner::Cargo)).assertions, 0);
     }
 
     /// An observation on the base is evidence only when its own expectation
