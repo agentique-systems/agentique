@@ -141,6 +141,14 @@ pub(crate) fn route_edges(
         .filter_map(|edge| {
             let source = shown_end(edge.source, &nodes, &ports, hidden)?;
             let target = shown_end(edge.target, &nodes, &ports, hidden)?;
+            // Links whose ends both hide inside one collapsed container map to
+            // that container's card; they are not loops on it and stay hidden.
+            // A self-loop on a card that is itself shown is still drawn.
+            let self_loop =
+                edge.source.node == edge.target.node && nodes.contains_key(&edge.source.node);
+            if source.node == target.node && !self_loop {
+                return None;
+            }
             Some((edge, source, target))
         })
         .collect();
