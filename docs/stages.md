@@ -1534,7 +1534,7 @@ the flag tier blanked them. The general-purpose and Explore subagents of a
 | W12.3 Models per role and credentials | — | Built on `stage12/models` (not merged): Settings › Agents, each role resolved and recorded before an objective starts, its sessions on its own model, effort and credential, spend by role and model, typed decisions from the `escalation` and `decisions` roles; the Claude subscription token as Anthropic's second credential; the companion's credential check and `claude auth status` probe; Claude 5.5 prices |
 | W12.4 Exploration and testing knowledge | #112 | Built, not yet in cycles (W12.5): `explore` (the explorer's run behind an `Instance` boundary: a test instance started fresh from a copy of the start project inside its own folder, or a stand-in; the actions valid there that the observation offers to agents, fields with fixed input classes and the Conversation's composer with fixed request classes; the rules, Jev among the rules' best eight, the explorer's model with its answer checked, or Jev escalating; recovery from stale refusals, dialogs in the way, dead ends, exits and hangs), `findings` (the checks `answers`, `offered-acts`, `readable-labels`, `undo-restores`, `dialogs-close`, `action-time`, `no-internal-error`, `turn-ends`, `turn-stops` and the explorer's `expectation`; identities normalised; `replay`, `reproduce` by two replays, `reduce` within a bound) and `knowledge` (`testing/<project>/knowledge.json`, format 1, atomic, bounded); `decide` asks one typed question for dialogs and exploration, the dialog decisions unchanged; fixed exploration tasks, tuning and held-out (`tests/fixtures/exploration.json`); measured live, preliminary (below) |
 | W12.5 Exploration in cycles, stronger gates, bounds, a continuing loop | — | Not started |
-| W12.6 The Conversation as the one window: threads, directives, delegation | — | Not started; the Operator clarified on 2026-10-04 that the Conversation is the one window for intent, agent communication and steering, with the Objectives panel a dashboard of the same records (ROADMAP §4.16, §7.6) |
+| W12.6 The Conversation as the one window: threads, directives, delegation | — | The Studio's side built on `stage12/conversation` (not merged; below): one set of objective commands for the Conversation, the Objectives panel and the palette; one start form (in the Conversation from the message or the Assistant's `propose_objective`, else in the panel) with explore, budgets, permissions and each role's model; the objective's thread in the Conversation in time order (messages with where each went, directives with their recorded status, results, events, tool calls folded with diffs, children nested, directives streaming at the observer speed); replies through the composer addressed explicitly; the panel as a dashboard; agents operate it in test instances (`--assistant-stand-in`), never in the Operator's window. The `delegate` tool, child objectives and the routing of messages are W12.5's |
 | W12.7 Proof | — | Not started |
 
 **W12.4 measured, preliminary** (live, 2026-10-04, on `stage12/explore` at the code of `2e56d6dc`, as rebased onto `c563d23a`; a debug Studio built from that branch, before W12.2's control-interface changes; Jev `jev-1.13.0` through TypeSafe AI with threshold 0.6 and a 4 s deadline; the explorer's model and the escalation both DeepSeek's `deepseek-flash` at effort `low`, to compare like with like; results kept outside the repository)
@@ -1678,3 +1678,155 @@ agents built in parallel):
   alike, with frame intervals as long in the steady phase, which has no
   input at all; W11.7's 16.3 ms was measured on a quieter machine. It is not
   met here and is to be measured again on a quiet machine.
+
+**W12.6 built, the Studio's side** (branch `stage12/conversation`,
+2026-10-04, on `main` at `813068e4`; not merged; the Orchestrator's side,
+the lead's `delegate` tool, child objectives and the routing of messages,
+is W12.5's; nothing here says the Operator accepted anything).
+
+- **One set of commands** (`commands.rs`): `start-objective` ("Start as
+  objective…"), `message-objective` ("Write to the objective"),
+  `pause-objective`, `step-objective`, `resume-objective`,
+  `stop-objective` and `continue-objective`, in the palette, behind the
+  Conversation's buttons and the Objectives panel's alike; all are the
+  Operator's (`control::OPERATORS_COMMANDS`), except that in a test
+  instance an agent may address the objective and reply in its thread.
+- **One start form** (`objective_form.rs`), drawn above the composer when
+  the message (Ctrl+Enter or "Start as objective") or the Assistant's
+  proposal opened it, else in the Objectives panel: the intent, whether it
+  explores (three improvements by default when it does), the spend,
+  improvements, attempts, hours and exploration steps, merge and adopt,
+  and each role's model with its fallback, credential and who pays (the
+  explorer, escalation and typed decisions needed only when it explores).
+  `start_objective` checks the budgets (`Budgets::check`; a record whose
+  budgets fail it does not continue either), resolves the models with
+  `explore`, records `Objective.explore`, and stays the Operator's own.
+- **The Assistant proposes** (`propose_objective { intent, explore?,
+  budgets? }`, in `agq-assistant`): the Studio opens the same form with
+  the proposal and answers that nothing started; with an objective not
+  finished it answers "Not shown". The tool cannot start anything.
+- **The thread in the Conversation** (`conversation_view/thread.rs`): the
+  objective shown (the running one, else the newest the Operator started,
+  finished or not; a test instance shows its recorded one and never runs
+  it: starting and continuing are refused there) and its
+  child objectives are read from their records once, from the tail (the
+  latest 2,000 entries each, `Store::thread_last`), then followed as
+  `Event::Thread` and `Event::Changed` arrive. Its rows go among the
+  conversation's entries in time order: the time each entry was added is
+  kept beside the conversation with the objectives started while it was
+  open (`projects/<folder>/conversation.objectives.json`, a new app-data
+  file; `conversation.json` and its format 2 are unchanged), and rows
+  never go before an entry an earlier build added. A conversation shows
+  the thread of an objective started while it was open that still goes on
+  or ran in this Studio; otherwise the objective in one line with the
+  Objectives panel a click away (a new conversation starts empty).
+  The Operator's messages ("you → the objective", with a chip saying where
+  each went: "to the implementer, at its next tool call", "waits for the
+  lead's next turn", or "the objective's intent"), directives (author →
+  recipient with its model, a status chip read from the record: running,
+  done, failed, stopped, refused with the reason; a child's focus and
+  budgets), results and Agentique's events are drawn differently; tool
+  calls fold under their step (`under`, or the entry before them in older
+  threads) as "N tool calls", each one's diff (removed and added lines
+  coloured) or command line a click further; a child objective's thread
+  is nested under the directive that started it; a directive that arrives
+  while shown streams in at the observer speed (`control.speed`: about 30
+  characters a second at `observe`, 240 at `fast`, at once at `instant`,
+  each within six seconds). The thread is never in the Assistant's
+  conversation, so no model receives it. Rows are worked out again only
+  when the objectives, what is expanded or the conversation change, keyed
+  by their fields; a directive streaming in updates only its own row, and
+  only the Conversation is drawn again for it.
+- **Steering in the thread:** the composer addresses the Assistant or the
+  objective ("To: the Assistant" / "To: the objective", a line above the
+  message naming the objective); only the Operator's click, Ctrl+L ("Ask
+  the Assistant"), "Write to the objective" or a step's Reply switches it.
+  A reply goes through `Studio::message_objective`, the panel's message
+  field's path too: to a running objective's handle (the Orchestrator
+  records where it went, `ThreadEntry.to`), or, for one waiting to
+  continue, into its thread with `to: "lead"` for the lead's next turn; an
+  objective that has ended takes no message and cannot be addressed. An
+  open question of the Assistant's is answered first, whomever the
+  composer addresses.
+  Messages go to the objective the Operator started; a child is steered
+  through it. The Studio's own entries (notes, replies, the intent written
+  for an earlier build's record) pass through `thread::redacted` with the
+  configured keys and token. The objective's bar above the list has its
+  phase, spend and children, and Write to it, Pause, Step, Resume, Stop and
+  Continue.
+- **The Objectives panel as a dashboard:** the record (phase, budgets,
+  each role's model and spend), the tree of child objectives (who asked,
+  state, spend of budget), the same commands, the message field, the
+  latest eight steps and "Show its thread in the Conversation"; the start
+  form when no objective is unfinished and the form is not open in the
+  Conversation.
+- **Self-testability:** every new control has a readable label and a
+  stable id (`thread-<objective>-<n>`, `thread-fold-…`, `thread-reply-…`,
+  `conversation-to`, `conversation-to-objective`, `objective-from-message`,
+  `objective-bar-…`, the form's `objective-…`). In a test instance agents
+  read the thread with its text, expand rows, reply and switch the
+  composer through the real input handlers; in the Operator's window the
+  rows read "Directive, entry 3, by lead", without text, and all of it is
+  refused. The observation gains `objective` (state, phase, spend,
+  children, the start form, the thread's size and last entry, the text
+  and intent only in a test instance) and `conversation.addressed`; the
+  values of `objective-…` fields are observed only in a test instance.
+  `--assistant-stand-in` (a test instance only; refused otherwise) runs
+  the instance's Assistant on a scripted stand-in in every build: no
+  network, no key, no cost; it reads the model and answers in a line,
+  shown as "scripted stand-in (no network)".
+- **A scripted Assistant stays scripted:** a runtime given for the process
+  (`ConversationPanel::use_given`: the journeys' scripts and
+  `--assistant-stand-in`) is never replaced when Settings change or the
+  credentials read at start find a key. Before this, since W12.3, the
+  background read of the credentials replaced the `a-assistant` and
+  `h-library` journeys' scripts with the model of a key in the Credential
+  Manager: on the reference machine one such run of `a-assistant` made a
+  live DeepSeek call (`deepseek-flash`, estimated $0.005) and failed at
+  step 7. A unit test fails without the rule.
+
+Measured for W12.6 (2026-10-04, the reference machine, while another agent
+built in parallel and the Operator used the machine):
+
+- **Checks:** `cargo fmt --check`; `cargo clippy --workspace --all-targets
+  -D warnings`, and for `agq-studio-native` with `--features automation`;
+  the workspace tests (780 passed, 24 ignored; after the review's fixes
+  785 passed, 24 ignored, `agq-studio-native` 182 and 1, with 5 and 5
+  ignored); `python tools/check_architecture.py`; `control_journey`
+  on real windows (5 of 5, two new: the test instance with a recorded
+  objective and the stand-in Assistant, and the Operator's window);
+  `a-assistant`, `h-library` and `d-daily` (release with `automation`,
+  every provider key variable removed from their environment) passed,
+  with no spend.
+- **Reference run, the Conversation** (release with `automation`, `chat`:
+  200 messages, scrolled 180 frames, a reply streamed at about 100 tokens a
+  second; two runs each): without an objective, the first frame after
+  loading 8.5–8.6 ms (budget 150), scroll p95 6.18–6.20 ms and streaming
+  p95 6.53–6.55 ms (budget 8.3), frame CPU p95 2.6–3.5 ms; with a
+  recorded objective of 1,981 thread entries (180 steps of a directive,
+  eight tool calls with diffs, a result and an event) below the 200
+  messages, scroll p95 6.19–6.22 ms, streaming p95 6.46–6.56 ms, frame CPU
+  p95 2.7–2.9 ms. Not compared with a baseline build of `main` this time
+  (disk); G3 measured scroll and streaming p95 6.23 and 6.25 ms. These
+  runs were before the review's fixes, when every Conversation showed the
+  thread.
+- **After the review's fixes** (directives streaming update only their
+  rows): the release build was killed while building (the parallel
+  agent's build, and free disk down to 2.5 GB), so it was measured in a
+  debug build with `automation` (two runs each; debug frames are slower
+  throughout): `chat` without an objective, streaming p95 22.6–24.5 ms
+  (CPU p95 20.6–22.1, median 17.3–17.4); with the 1,981-entry objective's
+  thread shown (720 rows) and seven directives streaming into it during
+  the reply's stream, streaming p95 24.8–27.6 ms (CPU p95 22.6–25.3,
+  median 18.8–20.3), scroll p95 23.6–26.0 ms against 23.3–23.9. The work
+  per stream step, timed alone in a debug test build on those 720 rows:
+  0.5 % of before (0.019 ms against 3.8 ms for all rows and their Debug
+  text), and 2.3 ms for a full rebuild with field keys. Not measured in a
+  release build after the fixes.
+- **Not tried:** a live objective running in the Conversation (it needs
+  W12.5's Orchestrator side, and a credential; the thread was exercised
+  from recorded objectives and unit tests); the start form drawn in the
+  Conversation was not looked at as an image (opening it is the
+  Operator's, and no input was sent for the Operator); a child objective
+  stopped alone (it needs a `Command` for one child: until then Stop acts
+  on the whole run).

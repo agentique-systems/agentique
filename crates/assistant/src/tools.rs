@@ -19,7 +19,7 @@
 mod factory;
 mod library;
 
-pub use factory::{StudioRequest, carry_out_headless};
+pub use factory::{ObjectiveProposal, StudioRequest, carry_out_headless};
 
 use agq_language::{
     Direction, Element, ElementId, ElementKind, Literal, Multiplicity, Parent, Reference, Tree,
@@ -47,6 +47,7 @@ pub const READ_CODE_LINKS: &str = "read_code_links";
 pub const EXPLAIN_ELEMENT: &str = "explain_element";
 pub const CHECK_IMPLEMENTATION: &str = "check_implementation";
 pub const PROPOSE_IMPLEMENTATION: &str = "propose_implementation";
+pub const PROPOSE_OBJECTIVE: &str = "propose_objective";
 pub const OBSERVE_APP: &str = "observe_app";
 pub const ACT_IN_APP: &str = "act_in_app";
 
@@ -141,6 +142,7 @@ pub fn phase(tool: &str) -> &'static str {
     match tool {
         "apply_changes" | "use_library_block" | "save_to_library" => "Changing the model",
         "propose_implementation" => "Proposing a task for your approval",
+        "propose_objective" => "Proposing an objective for you to start",
         "ask_operator" => "Waiting for your answer",
         "run_scenario" | "stop_run" | "check_implementation" | "run_checks" | "run_program" => {
             "Running checks"
@@ -364,6 +366,31 @@ pub fn definitions() -> Value {
             }
         },
         {
+            "name": PROPOSE_OBJECTIVE,
+            "description": "Propose an objective: autonomous work on Agentique's own repository that the Orchestrator's agents (a lead, an implementer, a reviewer, an evaluator, and an explorer when it explores) carry through cycles of proposing, implementing, checking, reviewing, merging and adopting an improvement. Use it when the Operator asks Agentique to improve or test itself, not for changes to the open project's model (make those yourself). The Operator sees a start form with your intent and budgets, the permissions and each role's model, and starts it or not; you cannot start it, and nothing has started when this answers.",
+            "input_schema": {
+                "type": "object",
+                "properties": {
+                    "intent": name("What the objective should achieve, in the Operator's terms, e.g. \"Find and fix problems in the Library panel\"."),
+                    "explore": { "type": "boolean", "description": "Whether its cycles first explore the running application in a test instance to find problems (default false)." },
+                    "budgets": {
+                        "type": "object",
+                        "description": "Suggested budgets; the Operator may change them. Leave out what you have no reason to suggest.",
+                        "properties": {
+                            "usd": { "type": "number", "description": "Spend at most, in USD ($0.05 to $100)." },
+                            "cycles": { "type": "integer", "description": "Improvements at most (1 to 10)." },
+                            "attempts": { "type": "integer", "description": "Attempts per improvement (1 to 10)." },
+                            "hours": { "type": "number", "description": "Hours worked at most (0.1 to 48)." },
+                            "steps": { "type": "integer", "description": "Actions an exploration may take (1 to 500)." }
+                        },
+                        "additionalProperties": false
+                    }
+                },
+                "required": ["intent"],
+                "additionalProperties": false
+            }
+        },
+        {
             "name": OBSERVE_APP,
             "description": "What the Agentique application shows now, as text (C-53): its identity (pass `identity.instance` back in act_in_app's `expect`), the screen and its revision (pass `screenRevision` back as `observed`), view, panels, dialog, palette, selection, status, problems, the conversation, a running task and builds, every control on screen (id, role, label, value, enabled, selected, focused, bounds, and `operatorOnly` where agents may not act on it), the available commands (likewise marked), and the project's revision. `full` also gives the project's `digest` (a hash of the model's text: undo restores it exactly), and lists unavailable commands with why, and the cards in view. You never see pixels: work from this text.",
             "input_schema": {
@@ -497,6 +524,7 @@ pub fn prepare(state: &SystemState, library: &Library, tool: &str, input: &Value
         | EXPLAIN_ELEMENT
         | CHECK_IMPLEMENTATION
         | PROPOSE_IMPLEMENTATION
+        | PROPOSE_OBJECTIVE
         | OBSERVE_APP
         | ACT_IN_APP => factory::studio_request(state.tree(), tool, input).map(Prepared::Studio),
         other => Err(format!("there is no tool called `{other}`")),

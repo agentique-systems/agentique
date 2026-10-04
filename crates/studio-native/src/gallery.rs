@@ -151,7 +151,9 @@ impl Gallery {
             .min_width(220.0)
         });
         studio.update(cx, |studio, _| sample_conversation(studio));
-        let conversation = cx.new(|cx| ConversationView::new(studio.clone(), window, cx));
+        let form =
+            cx.new(|cx| crate::objective_form::ObjectiveForm::new(studio.clone(), window, cx));
+        let conversation = cx.new(|cx| ConversationView::new(studio.clone(), form, window, cx));
         let library = cx.new(|cx| LibraryView::new(studio.clone(), window, cx));
         let ghost = cx.new(|_| {
             DragGhost::new(LibraryDrag {

@@ -46,6 +46,91 @@ pub struct RuntimeInputs {
 /// How the notice of a message the Operator added to a running turn begins.
 pub const STEERED: &str = "You added, while the Assistant worked: ";
 
+/// What the Conversation names the scripted stand-in Assistant.
+pub const STAND_IN: &str = "scripted stand-in (no network)";
+
+/// The scripted stand-in a test instance's Assistant runs on
+/// (`--assistant-stand-in`, C-54, ROADMAP §4.16 "Credentials of test
+/// instances"): deterministic, with no network and no key, in every build.
+/// To a message it reads the model (`read_model`), then answers in a line
+/// naming what it read, so a turn, its tool card and a streamed reply can
+/// be exercised and observed. It costs nothing.
+struct StandIn;
+
+impl agq_assistant::Model for StandIn {
+    fn send(
+        &mut self,
+        request: &agq_assistant::Request,
+        on_event: &mut dyn FnMut(StreamEvent),
+        stop: &std::sync::atomic::AtomicBool,
+    ) -> Result<agq_assistant::Reply, agq_assistant::ModelError> {
+        use serde_json::json;
+        // What its read returned, when the last message answers it.
+        let read = request
+            .messages
+            .last()
+            .and_then(|message| message["content"].as_array())
+            .and_then(|blocks| blocks.iter().find(|b| b["type"] == "tool_result"))
+            .map(|block| block["content"].as_str().unwrap_or_default().to_string());
+        let reply = match read {
+            None => agq_assistant::Reply {
+                content: vec![json!({
+                    "type": "tool_use",
+                    "id": format!("stand-in-{}", request.messages.len()),
+                    "name": tools::READ_MODEL,
+                    "input": {},
+                })],
+                stop_reason: "tool_use".into(),
+            },
+            Some(result) => {
+                // Its first line that is not a heading.
+                let first: String = result
+                    .lines()
+                    .map(str::trim)
+                    .find(|line| !line.is_empty() && !line.ends_with(':'))
+                    .unwrap_or("nothing")
+                    .chars()
+                    .take(160)
+                    .collect();
+                agq_assistant::Reply {
+                    content: vec![json!({
+                        "type": "text",
+                        "text": format!("I am the scripted stand-in, with no model behind me. I read the model; it begins: {first}"),
+                    })],
+                    stop_reason: "end_turn".into(),
+                }
+            }
+        };
+        agq_assistant::ScriptedModel::new([reply]).send(request, on_event, stop)
+    }
+}
+
+/// What a conversation keeps beside its file for objectives (C-54):
+/// `conversation.objectives.json`, format 1.
+fn beside_path(conversation: &Path) -> PathBuf {
+    conversation.with_file_name("conversation.objectives.json")
+}
+
+/// The entry times and the objectives started kept beside a conversation;
+/// none when the file is missing or unreadable (its entries then have no
+/// known time, and it shows no objective's thread).
+fn load_beside(conversation: &Path) -> (Vec<String>, Vec<String>) {
+    let file = std::fs::read_to_string(beside_path(conversation))
+        .ok()
+        .and_then(|text| serde_json::from_str::<serde_json::Value>(&text).ok())
+        .filter(|file| file["format"] == 1)
+        .unwrap_or_default();
+    let strings = |field: &str| -> Vec<String> {
+        file[field]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .map(|t| t.as_str().unwrap_or_default().to_string())
+            .collect()
+    };
+    (strings("times"), strings("objectives"))
+}
+
 /// The Conversation panel's state.
 pub struct ConversationPanel {
     pub conversation: Conversation,
@@ -111,6 +196,23 @@ pub struct ConversationPanel {
     pub steerable: bool,
     /// The tool the running turn is held at, while paused.
     pub held_at: Option<String>,
+    /// Whom the composer addresses (C-54): the Assistant (`None`), or the
+    /// objective with this id. Only the Operator's explicit choice changes
+    /// it.
+    pub addressed: Option<String>,
+    /// The Assistant's runtime was given for this process (a test
+    /// instance's stand-in, a journey's script): Settings and credentials
+    /// read later never replace it, so it never reaches a real model.
+    pub runtime_given: bool,
+    /// When each entry of the conversation was added (RFC 3339, empty when
+    /// not known), kept beside the conversation file
+    /// (`conversation.objectives.json`), so objectives' threads interleave
+    /// with it in time order; the conversation file itself is unchanged.
+    times: Vec<String>,
+    /// The objectives started while this conversation was open (from it or
+    /// the Objectives panel), kept beside it too: it shows their threads
+    /// (C-54); a new conversation starts without them.
+    pub started: Vec<String>,
 }
 
 /// Part of the reply that is streaming in.
@@ -213,7 +315,41 @@ impl ConversationPanel {
             steering: Default::default(),
             steerable: false,
             held_at: None,
+            addressed: None,
+            runtime_given: false,
+            times: Vec::new(),
+            started: Vec::new(),
         }
+    }
+
+    /// The Assistant for this process is the scripted stand-in
+    /// (`--assistant-stand-in`, test instances only): no network, no key.
+    pub fn use_stand_in(&mut self) {
+        self.use_given(Box::new(|| {
+            agq_assistant::LoopRuntime::boxed(Box::new(StandIn))
+        }));
+    }
+
+    /// The Assistant for this process is `source`, a stand-in with no
+    /// network: Settings and credentials do not replace it.
+    pub fn use_given(&mut self, source: RuntimeSource) {
+        self.model_name = STAND_IN.into();
+        self.key_missing = None;
+        self.new_runtime = source;
+        self.steerable = false;
+        self.runtime_given = true;
+    }
+
+    /// When entry `index` was added, if known (times of entries removed
+    /// since, by an edit, a retry or a new conversation, are not theirs).
+    pub fn time_of(&self, index: usize) -> Option<&str> {
+        if index >= self.conversation.entries.len() {
+            return None;
+        }
+        self.times
+            .get(index)
+            .map(String::as_str)
+            .filter(|t| !t.is_empty())
     }
 
     /// The model the next turn uses (Settings changed it); a running turn
@@ -387,6 +523,13 @@ impl Studio {
                 Conversation::default()
             }
         };
+        // When its entries were added and the objectives started from it,
+        // if this build kept them.
+        (panel.times, panel.started) = if panel.read_error.is_none() && read == path {
+            load_beside(&path)
+        } else {
+            Default::default()
+        };
         panel.index_results();
         panel.epoch += 1;
     }
@@ -421,7 +564,7 @@ impl Studio {
         panel.epoch += 1;
     }
 
-    fn save_conversation(&mut self) {
+    pub(crate) fn save_conversation(&mut self) {
         let panel = &mut self.conversation;
         let Some(path) = &panel.path else { return };
         let saved = path
@@ -431,10 +574,26 @@ impl Studio {
         panel.save_error = saved
             .err()
             .map(|error| format!("The conversation could not be saved: {error}"));
+        // The entries' times, for the order of objectives' threads beside
+        // them, and the objectives started from it; a time not kept only
+        // moves a thread's entries later.
+        if panel.save_error.is_none() {
+            let count = panel.conversation.entries.len().min(panel.times.len());
+            let file = serde_json::json!({
+                "format": 1,
+                "times": &panel.times[..count],
+                "objectives": &panel.started,
+            });
+            let _ = agq_launcher::write_atomically(&beside_path(path), file.to_string().as_bytes());
+        }
     }
 
     fn add_entry(&mut self, entry: Entry) {
-        self.conversation.conversation.entries.push(entry);
+        let panel = &mut self.conversation;
+        let index = panel.conversation.entries.len();
+        panel.times.resize(index, String::new());
+        panel.times.push(agq_launcher::now());
+        panel.conversation.entries.push(entry);
         self.save_conversation();
     }
 
@@ -448,9 +607,25 @@ impl Studio {
         if text.is_empty() || self.project.is_none() {
             return;
         }
+        // An open question of the Assistant's is answered first, whomever
+        // the composer addresses.
         if self.answer_question(&text) {
             self.conversation.input.clear();
             self.conversation.input_set += 1;
+            return;
+        }
+        // Addressed to an objective (C-54): a reply in its thread, the same
+        // command as the Objectives panel's message field. Never the
+        // Assistant's.
+        if let Some(id) = self.conversation.addressed.clone() {
+            match self.message_objective(&id, &text) {
+                Ok(()) => {
+                    self.conversation.input.clear();
+                    self.conversation.input_set += 1;
+                    self.status = "Sent to the objective".into();
+                }
+                Err(problem) => self.status = format!("Not sent: {problem}"),
+            }
             return;
         }
         let panel = &mut self.conversation;
@@ -1057,10 +1232,47 @@ impl Studio {
         panel.editing = None;
         panel.conversation = Conversation::default();
         panel.results.clear();
+        // Objectives started from the earlier one are not this one's.
+        panel.started.clear();
         panel.epoch += 1;
         panel.shown = true;
         panel.focus_input = true;
         self.save_conversation();
+    }
+
+    /// Addresses the composer to the Assistant (C-54): the Operator's
+    /// explicit switch.
+    pub fn address_assistant(&mut self) {
+        if self.refused_in_operators_window("writing in the Conversation") {
+            return;
+        }
+        let panel = &mut self.conversation;
+        panel.addressed = None;
+        panel.shown = true;
+        panel.focus_input = true;
+        self.mark(crate::studio::Dirty::CONVERSATION | crate::studio::Dirty::OVERLAY);
+    }
+
+    /// Addresses the composer to the objective shown (C-54): what is sent
+    /// is a reply in its thread, for its agents.
+    pub fn address_objective(&mut self) {
+        if self.refused_in_operators_window("writing in the Conversation") {
+            return;
+        }
+        let Some(id) = self.objectives.current.as_ref().map(|o| o.id.clone()) else {
+            self.status = "No objective is shown to write to".into();
+            return;
+        };
+        // A message would reach no agent of an objective that has ended.
+        if !self.objectives.takes_messages() {
+            self.status = "The objective has ended: no agent would read a message".into();
+            return;
+        }
+        let panel = &mut self.conversation;
+        panel.addressed = Some(id);
+        panel.shown = true;
+        panel.focus_input = true;
+        self.mark(crate::studio::Dirty::CONVERSATION | crate::studio::Dirty::OVERLAY);
     }
 
     /// Puts the selected elements' qualified names into the message.

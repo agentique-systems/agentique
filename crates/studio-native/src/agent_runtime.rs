@@ -390,6 +390,8 @@ impl Studio {
         if read != self.runtime.credentials {
             self.runtime.credentials = read;
             self.apply_runtime_choice();
+            // Keys never reach an objective's thread: the list is read again.
+            self.objectives.read_keys();
         }
     }
 
@@ -413,6 +415,7 @@ impl Studio {
             self.runtime.credentials = read;
             self.runtime.node = Some(node);
             self.apply_runtime_choice();
+            self.objectives.read_keys();
             self.mark(Dirty::LAYOUT | Dirty::STATUS);
         }
         changed
@@ -618,6 +621,15 @@ impl Studio {
     pub fn apply_runtime_choice(&mut self) {
         let choice = self.settings.model_choice();
         self.runtime.assistant = self.route_now();
+        // A runtime given for this process (a test instance's stand-in, a
+        // journey's script), whatever Settings and credentials say.
+        if self.args.assistant_stand_in && !self.conversation.runtime_given {
+            self.conversation.use_stand_in();
+        }
+        if self.conversation.runtime_given {
+            return;
+        }
+
         if self.runtime_setting() != CLAUDE_AGENT || self.safe_mode {
             self.conversation.use_choice(choice);
             return;

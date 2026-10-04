@@ -1075,6 +1075,17 @@ impl Studio {
                 });
                 self.mark(Dirty::OVERLAY);
             }
+            // The Assistant proposes an objective (C-54): the Operator sees
+            // the start form and starts it, or not.
+            StudioRequest::ProposeObjective(proposed) => {
+                let proposal = crate::objectives::Proposal::from_assistant(&proposed);
+                let _ = reply.send(match self.open_start_form(proposal) {
+                    Ok(()) => ToolResult::answer(
+                        "Shown to the Operator as a start form with your intent and budgets, the permissions and each role's model. Only the Operator starts it; nothing has started.",
+                    ),
+                    Err(problem) => ToolResult::error(format!("Not shown: {problem}")),
+                });
+            }
             StudioRequest::CheckImplementation => {
                 if self.implementation.checking() {
                     let _ = reply.send(ToolResult::error("The checks are already running."));

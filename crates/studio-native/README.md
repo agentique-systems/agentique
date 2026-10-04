@@ -1,10 +1,10 @@
 # agq-studio-native
 
 The Studio (ROADMAP §4.6, part `Studio` in `model/Agentique.sysml`):
-the Surface, the Panels (Outline, Inspector, Requirements, History, Problems)
-and the Conversation with the Assistant, drawn with GPUI (C-48: the pinned
-snapshot `gpui-pre`, with the unstyled `gpui-base` primitives for text fields
-and focus). Every model change is a System State change. The Operator's
+the Surface, the Panels (Outline, Inspector, Requirements, History, Problems,
+Objectives) and the Conversation with the Assistant and objectives'
+threads, drawn with GPUI (C-48: the pinned snapshot `gpui-pre`, with the
+unstyled `gpui-base` primitives for text fields and focus). Every model change is a System State change. The Operator's
 edits, the Assistant's and the Library's go through one Studio path
 (`Studio::apply_change` in `edit.rs`), so locks ask and each is one undo
 step; undo, redo and opening go through `Project` directly; the project
@@ -28,8 +28,12 @@ is first opened.
   layers, only what is in view, by level of detail; `minimap.rs`),
   `panels/` (Outline, Library, Scenarios, Inspector and its fields with the
   Behaviour, Stand-in, Agent, Evidence and Implementation sections in
-  `evidence.rs`, Run, Requirements, History, Problems), `conversation_view/`
-  (the list, cards, Markdown and selection),
+  `evidence.rs`, Run, Requirements, History, Problems, and Objectives: a
+  dashboard of the objective the Conversation shows, its record, child
+  objectives, the same commands and its latest steps), `conversation_view/`
+  (the list, cards, Markdown, selection and objectives' threads),
+  `objective_form.rs` (the objective's start form, shared by the
+  Conversation and the Objectives panel),
   `palette.rs`, `dialogs.rs`, `welcome.rs`, `settings_view.rs`, `gallery.rs`.
 - **Keys** (`commands.rs`): every command has its GPUI keystroke; shortcuts
   that type letters apply in the workspace except while a text field has the
@@ -127,6 +131,48 @@ the tool, question and thinking cards, `markdown.rs` the messages).
   cost" hides it.
 - **Thinking** shows as a collapsed row per step with its first line
   (R-31): Claude's summaries, or the reasoning of models that show it.
+- **Objectives** (C-54, ROADMAP §3.6, §4.16: the Conversation is the one
+  place for intent, agent communication, observation and steering). The
+  composer addresses the Assistant or the objective shown ("To: the
+  Assistant" / "To: the objective"; only the Operator's click, Ctrl+L or
+  "Write to the objective" switches it). "Start as objective" beside Send
+  (Ctrl+Enter in the message) shows the start form above the composer with
+  the message as the intent: whether it explores, budgets (spend,
+  improvements, attempts, hours, exploration steps), merge and adopt, and
+  each role's model with any fallback, credential and who pays; nothing
+  starts until Start (`objective_form.rs`, the same form the Objectives
+  panel shows when it is not open here). The Assistant's
+  `propose_objective` opens the same form; only the Operator starts it.
+  While an objective runs or waits to continue, a bar above the list has
+  its phase, spend and children with Write to it, Pause, Step, Resume,
+  Stop and Continue: the palette's commands (`start-objective`,
+  `message-objective`, `pause-objective`, `step-objective`,
+  `resume-objective`, `stop-objective`, `continue-objective`), also the
+  panel's buttons. The objective's thread (`conversation_view/thread.rs`,
+  read from `objectives/<id>/thread.jsonl` from its tail, then followed
+  as entries arrive) is in the list in time order with the conversation's
+  entries, never sent to the Assistant's model: the Operator's messages
+  ("you → the objective", with where each went: to the implementer at its
+  next tool call, or waiting for the lead's next turn), directives (author
+  → recipient with its model, a status chip from the record, a child's
+  focus and budgets), results and Agentique's events, each agent's entry
+  with its role and model; tool calls fold under their step ("12 tool
+  calls"), each one's diff or command line a click further; a child
+  objective's thread is nested under the directive that started it; a
+  directive arriving while shown streams in at the observer speed
+  (`control.speed`, within six seconds). A reply goes to the objective
+  through the same path as the panel's message field
+  (`Studio::message_objective`): a running objective records where it
+  went; one waiting to continue keeps it in its thread for the lead's next
+  turn; one that has ended takes none (no agent would read it), and the
+  composer cannot address it. A conversation shows the thread of an
+  objective started while it was open (from it or the panel) that still
+  goes on or ran in this Studio; otherwise the objective in one line, the
+  Objectives panel a click away, and a new conversation starts empty. The
+  time each entry was added and the objectives started are kept beside the
+  conversation (`conversation.objectives.json`, format 1); the conversation
+  file (format 2) is unchanged. A directive streaming in updates only its
+  own row, and only the Conversation is drawn again for it.
 - **Selecting text** (`conversation_view/markdown.rs`): dragging over the messages selects
   across paragraphs, code blocks and messages; past the top or bottom of the
   list it scrolls. The selection is kept by place in the text (message,
@@ -332,7 +378,32 @@ test instance's local endpoint (`--control <file>`: a port and a token on
   instance: in the Operator's own window an observation could reach an
   agent's provider, so its items read "Message 2 from you", "Reply 3, part
   2", "Tool call 4" or "Tool error 4", "A question for you", numbered by
-  their own count, with their ids unchanged.
+  their own count, with their ids unchanged. An objective's thread is in
+  the Conversation too (C-54): its rows are items (`thread-<objective>-<n>`,
+  folds `thread-fold-<objective>-<n>`, a click opens one), the composer's
+  addressee is `conversation-to`, a step's Reply `thread-reply-…`; in a
+  test instance agents read, expand and reply in it as a person would,
+  while starting, steering and stopping objectives (`objective-…`
+  controls and commands) stay the Operator's everywhere; in the
+  Operator's window its rows read "Directive, entry 3, by lead" without
+  their text. The observation's `objective` gives the objective shown: its
+  state, phase, spend, children, whether the start form is open, and its
+  thread's size and last entry (kind, author, where it went; its text and
+  the intent only in a test instance); `conversation.addressed` says whom
+  the composer addresses. The values of the objective's fields
+  (`objective-…`: the intent, the message to the agents) are observed only
+  in a test instance too; Cancel on the form in the Conversation clears
+  the intent it took from the draft. A test instance never runs an
+  objective: starting and continuing are refused there, and a recorded
+  objective handed over to a build is shown, not continued.
+  `--assistant-stand-in` (a test instance only)
+  runs its Assistant on a scripted stand-in: no network, no key, no cost;
+  it reads the model and answers in a line, so a turn can be started and
+  observed where no credential may be given. A runtime given for the
+  process like this (or a journey's scripted Assistant,
+  `ConversationPanel::use_given`) is never replaced when Settings change
+  or the credentials are read again, so a scripted run never reaches a
+  real model whatever keys the computer holds.
 - **One agent at a time.** The first agent to act holds the window until it
   sends `op: release` or has been idle for 30 s (`control::IDLE`); another
   agent's action is refused with "the window is in use by <agent>; act in

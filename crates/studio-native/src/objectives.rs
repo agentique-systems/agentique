@@ -1,39 +1,134 @@
-//! Objectives in the Studio (C-53, ROADMAP §4.16): the Operator gives an
-//! intent with budgets and permissions in the Objectives panel; the
-//! Orchestrator (`agq-orchestrator`) takes it through its cycles on its own
-//! thread, and the Studio shows its record and its thread (C-54: read from
-//! the objective's records, then followed as entries are added), carries its
+//! Objectives in the Studio (C-53, C-54, ROADMAP §4.16): the Operator
+//! starts an objective from the Conversation or the Objectives panel with
+//! one start form (its intent, whether it explores, budgets, permissions
+//! and each role's model, shown before Start), or the Assistant proposes
+//! one and the Operator starts it; the Orchestrator (`agq-orchestrator`)
+//! takes it through its cycles on its own thread. The Studio shows its
+//! record, its child objectives and their threads (read from the
+//! objectives' records once, then followed as entries arrive), carries its
 //! requests (an observation of this Studio for the lead, the handover to an
 //! adopted build), and passes on the Operator's Pause, Step, Resume, Stop
-//! and messages. An objective the adopted build is to continue starts again
-//! by itself; one interrupted when Agentique closed waits for Continue.
-//! Before an objective starts, the Studio resolves each role's model from
-//! Settings and the credentials (C-54) and records it in the objective; the
-//! Orchestrator builds every session of a role on that model, effort and
-//! credential, and never moves a role to another.
+//! and messages: the same application commands from the Conversation, the
+//! panel and the palette. An objective the adopted build is to continue
+//! starts again by itself; one interrupted when Agentique closed waits for
+//! Continue. Before an objective starts, the Studio resolves each role's
+//! model from Settings and the credentials and records it in the
+//! objective; the Orchestrator builds every session of a role on that
+//! model, effort and credential, and never moves a role to another.
 
 use crate::studio::{Dirty, Studio};
 use agq_assistant::claude_agent::{self, Installation};
-use agq_orchestrator::record::{Access, Budgets, Objective, Permissions, Store};
+use agq_orchestrator::record::{
+    Access, Budgets, DirectiveStatus, Objective, Permissions, State, Store,
+};
 use agq_orchestrator::run::{self, Command, Event, Handle, RuntimeFactory, Setup};
-use agq_orchestrator::thread::{Author, Kind, ThreadEntry};
+use agq_orchestrator::thread::{self, Author, Kind, ThreadEntry};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::{Path, PathBuf};
-use std::time::Duration;
+use std::sync::mpsc::Receiver;
+use std::time::{Duration, Instant};
 
-/// The latest entries of the shown objective's thread kept in memory (the
+/// The latest entries of each shown objective's thread kept in memory (the
 /// thread itself is in its records).
-const SHOWN: usize = 1000;
+const SHOWN: usize = 2000;
+
+/// The longest a directive's text takes to stream in, whatever its length.
+const STREAM_AT_MOST: Duration = Duration::from_secs(6);
+
+/// What the Operator starts: the start form's fields (C-54).
+#[derive(Clone, Debug, PartialEq)]
+pub struct StartRequest {
+    pub intent: String,
+    /// Its cycles explore the running application first.
+    pub explore: bool,
+    pub budgets: Budgets,
+    pub permissions: Permissions,
+}
+
+/// What the start form shows when it opens: the composer's message, or
+/// what the Assistant proposed (`propose_objective`).
+#[derive(Clone, Debug, PartialEq)]
+pub struct Proposal {
+    pub intent: String,
+    pub explore: bool,
+    pub budgets: Budgets,
+    /// The Assistant proposed it.
+    pub by_assistant: bool,
+}
+
+impl Proposal {
+    /// `intent` with the start form's defaults: three improvements for an
+    /// objective that explores (it explores, fixes and explores again), one
+    /// otherwise.
+    pub fn new(intent: &str, explore: bool) -> Proposal {
+        Proposal {
+            intent: intent.trim().to_string(),
+            explore,
+            budgets: Budgets {
+                usd: 5.0,
+                cycles: if explore { 3 } else { 1 },
+                ..Budgets::default()
+            },
+            by_assistant: false,
+        }
+    }
+
+    /// What the Assistant proposed, on the defaults where it said nothing.
+    pub fn from_assistant(proposed: &agq_assistant::tools::ObjectiveProposal) -> Proposal {
+        let mut proposal = Proposal::new(&proposed.intent, proposed.explore);
+        let budgets = &mut proposal.budgets;
+        budgets.usd = proposed.usd.unwrap_or(budgets.usd);
+        budgets.cycles = proposed.cycles.unwrap_or(budgets.cycles);
+        budgets.attempts = proposed.attempts.unwrap_or(budgets.attempts);
+        budgets.hours = proposed.hours.unwrap_or(budgets.hours);
+        budgets.steps = proposed.steps.unwrap_or(budgets.steps);
+        proposal.by_assistant = true;
+        proposal
+    }
+}
+
+/// The one start form (C-54): open in the Conversation (from the composer
+/// or the Assistant's proposal) or else in the Objectives panel, and what
+/// it was last given to show.
+#[derive(Default)]
+pub struct StartForm {
+    pub in_conversation: bool,
+    pub proposal: Option<Proposal>,
+    /// Counts the proposals given, so the form takes each once.
+    pub given: u64,
+}
 
 #[derive(Default)]
 pub struct ObjectivesState {
     pub handle: Option<Handle>,
-    /// The objective shown: the running one, or the last one.
+    /// The objective shown: the running one, or the newest one the
+    /// Operator started (never a child).
     pub current: Option<Objective>,
-    /// The latest entries of its thread, in order.
-    pub thread: Vec<ThreadEntry>,
+    /// Its child objectives and theirs, as their records say.
+    pub children: Vec<Objective>,
+    /// The latest entries of the shown objectives' threads, by objective,
+    /// each in order.
+    pub threads: BTreeMap<String, Vec<ThreadEntry>>,
+    /// Directives that arrived while shown, streaming in: when each
+    /// arrived and how many of its characters show.
+    pub streaming: HashMap<(String, u64), (Instant, usize)>,
+    /// Counts changes to what is shown, so views rebuild only then.
+    pub version: u64,
+    /// Counts steps of the directives streaming in: a view updates only
+    /// their rows.
+    pub stream_version: u64,
+    /// The objectives run in this Studio since it started (started or
+    /// continued here): the Conversation shows their threads once they end
+    /// too.
+    pub ran: HashSet<String>,
+    /// The configured keys, for redacting the Studio's own entries: read on
+    /// a thread of their own, never per entry on the window's thread.
+    keys: Option<Vec<String>>,
+    reading_keys: Option<Receiver<Vec<String>>>,
     /// Why the last start or command did not happen.
     pub message: Option<String>,
-    /// Looked at start for an objective to continue.
+    pub form: StartForm,
+    /// Looked at start for an objective to show or continue.
     looked: bool,
 }
 
@@ -45,48 +140,274 @@ impl ObjectivesState {
     /// Whether the Operator paused the running objective (as soon as they
     /// did, also while an agent's session holds at its next tool call).
     pub fn paused(&self) -> bool {
-        self.handle.as_ref().is_some_and(|h| h.paused())
+        self.running() && self.handle.as_ref().is_some_and(|h| h.paused())
+    }
+
+    /// Not finished and not running: interrupted, waiting for Continue.
+    pub fn unfinished(&self) -> bool {
+        !self.running() && self.current.as_ref().is_some_and(Objective::active)
+    }
+
+    /// Whether a message to the objective shown can reach an agent: it runs,
+    /// or waits to continue (a finished one has no lead left to read it).
+    pub fn takes_messages(&self) -> bool {
+        self.running() || self.unfinished()
+    }
+
+    /// An entry of a shown thread, by its objective and number.
+    pub fn entry(&self, objective: &str, seq: u64) -> Option<&ThreadEntry> {
+        self.threads
+            .get(objective)?
+            .iter()
+            .rev()
+            .find(|e| e.seq == seq)
+    }
+
+    /// The configured keys as last read: read again on a thread of their
+    /// own when they may have changed ([`ObjectivesState::read_keys`]);
+    /// read here, once, only before the first reading arrives.
+    fn keys(&mut self) -> Vec<String> {
+        if let Some(read) = self.reading_keys.as_ref().and_then(|r| r.try_recv().ok()) {
+            self.keys = Some(read);
+            self.reading_keys = None;
+        }
+        self.keys.get_or_insert_with(configured_keys).clone()
+    }
+
+    /// Reads the configured keys again, on a thread of its own (a key or
+    /// the token was saved or removed, or an objective is shown).
+    pub fn read_keys(&mut self) {
+        let (sender, receiver) = std::sync::mpsc::channel();
+        std::thread::spawn(move || {
+            let _ = sender.send(configured_keys());
+        });
+        self.reading_keys = Some(receiver);
     }
 
     /// Whether the workspace's tick should poll.
     pub fn wants_poll(&self) -> bool {
-        self.handle.is_some() || !self.looked
+        self.handle.is_some() || !self.looked || !self.streaming.is_empty()
     }
 
-    /// Shows `entry` of the thread in its place (entries can arrive out of
-    /// order from the Orchestrator's thread and the Studio's own), each
-    /// once; an entry that could not be kept (number 0) stays where it
-    /// arrived, after what was shown then.
-    pub fn add(&mut self, entry: ThreadEntry) {
-        if entry.seq != 0 && self.thread.iter().any(|e| e.seq == entry.seq) {
+    /// The shown objective or one of its children, by id.
+    pub fn objective(&self, id: &str) -> Option<&Objective> {
+        self.current
+            .iter()
+            .chain(&self.children)
+            .find(|o| o.id == id)
+    }
+
+    /// Shows `entry` in its objective's thread, in its place (entries can
+    /// arrive out of order from the Orchestrator's thread and the Studio's
+    /// own), each once; an entry that could not be kept (number 0) stays
+    /// where it arrived, after what was shown then. A directive that
+    /// arrives `live` streams in.
+    pub fn add(&mut self, entry: ThreadEntry, live: bool) {
+        let thread = self.threads.entry(entry.objective.clone()).or_default();
+        if entry.seq != 0 && thread.iter().any(|e| e.seq == entry.seq) {
             return;
         }
+        if live && entry.kind == Kind::Directive && entry.seq != 0 {
+            self.streaming
+                .insert((entry.objective.clone(), entry.seq), (Instant::now(), 0));
+        }
         let at = if entry.seq == 0 {
-            self.thread.len()
+            thread.len()
         } else {
-            let mut at = self
-                .thread
+            let mut at = thread
                 .iter()
                 .rposition(|e| e.seq != 0 && e.seq < entry.seq)
                 .map_or(0, |i| i + 1);
-            while self.thread.get(at).is_some_and(|e| e.seq == 0) {
+            while thread.get(at).is_some_and(|e| e.seq == 0) {
                 at += 1;
             }
             at
         };
-        self.thread.insert(at, entry);
-        if self.thread.len() > SHOWN {
-            self.thread.drain(..self.thread.len() - SHOWN);
+        thread.insert(at, entry);
+        if thread.len() > SHOWN {
+            thread.drain(..thread.len() - SHOWN);
+        }
+        self.version += 1;
+    }
+
+    /// The number of the last entry shown of objective `id`'s thread.
+    pub fn last_shown(&self, id: &str) -> u64 {
+        self.threads
+            .get(id)
+            .and_then(|t| t.iter().map(|e| e.seq).max())
+            .unwrap_or(0)
+    }
+
+    /// How many characters of `entry`'s text show now: all (`None`), unless
+    /// it is streaming in.
+    pub fn shown_chars(&self, entry: &ThreadEntry) -> Option<usize> {
+        self.streaming
+            .get(&(entry.objective.clone(), entry.seq))
+            .map(|(_, shown)| *shown)
+    }
+
+    /// Moves the directives streaming in on to `now`, at `per_second`
+    /// characters a second (none: at once), each within
+    /// [`STREAM_AT_MOST`]. Returns whether anything shows more.
+    pub fn stream(&mut self, now: Instant, per_second: Option<f64>) -> bool {
+        if self.streaming.is_empty() {
+            return false;
+        }
+        let threads = &self.threads;
+        let length = |(objective, seq): &(String, u64)| {
+            threads
+                .get(objective)
+                .and_then(|t| t.iter().find(|e| e.seq == *seq))
+                .map_or(0, |e| e.text.chars().count())
+        };
+        let mut changed = false;
+        self.streaming.retain(|key, (arrived, shown)| {
+            let length = length(key);
+            let now_shown = streamed(length, now.duration_since(*arrived), per_second);
+            if now_shown != *shown {
+                *shown = now_shown;
+                changed = true;
+            }
+            now_shown < length
+        });
+        // Only the rows streaming change: views update just them.
+        if changed {
+            self.stream_version += 1;
+        }
+        changed
+    }
+
+    /// Shows `objective` (one the Operator started) and reads its thread
+    /// and its children's from their records (`all`, the records read).
+    fn show(&mut self, store: &Store, objective: Objective, all: &[Objective]) {
+        self.threads.clear();
+        self.streaming.clear();
+        self.children = descendants(all, &objective.id);
+        let ids: Vec<String> = std::iter::once(objective.id.clone())
+            .chain(self.children.iter().map(|c| c.id.clone()))
+            .collect();
+        for id in ids {
+            self.read_tail(store, &id);
+        }
+        self.current = Some(objective);
+        self.version += 1;
+    }
+
+    /// Reads the latest [`SHOWN`] entries of objective `id`'s thread from
+    /// its records, from the end; later ones arrive as events.
+    fn read_tail(&mut self, store: &Store, id: &str) {
+        let since = store.thread_last(id).saturating_sub(SHOWN as u64);
+        for entry in store.thread(id, since) {
+            self.add(entry, false);
         }
     }
 
-    /// Reads the thread of objective `id` from its records.
-    fn read(&mut self, store: &Store, id: &str) {
-        self.thread.clear();
-        for entry in store.thread(id, 0) {
-            self.add(entry);
+    /// Takes a record the Orchestrator changed: the objective shown, or a
+    /// child of it (a new child's thread so far is read from its records).
+    fn changed(&mut self, store: &Store, objective: Objective) {
+        if self.current.as_ref().is_some_and(|c| c.id == objective.id) {
+            self.current = Some(objective);
+        } else if let Some(known) = self.children.iter_mut().find(|c| c.id == objective.id) {
+            *known = objective;
+        } else if objective
+            .parent
+            .as_deref()
+            .is_some_and(|p| self.objective(p).is_some())
+        {
+            let id = objective.id.clone();
+            self.children.push(objective);
+            self.read_tail(store, &id);
+        }
+        self.version += 1;
+    }
+}
+
+/// Where an objective stands, in a word or two (`running` when its run is
+/// going on in this Studio).
+pub fn state_word(objective: &Objective, running: bool) -> &'static str {
+    match objective.state {
+        State::Running if running => "running",
+        State::Running => "interrupted",
+        State::Paused if running => "paused",
+        State::Paused => "paused, not running",
+        State::Stopped => "stopped",
+        State::Done => "done",
+        State::Failed => "ended without finishing",
+    }
+}
+
+/// How many of `length` characters show `elapsed` after a directive
+/// arrived, at `per_second` (none: all at once), all within
+/// [`STREAM_AT_MOST`].
+pub fn streamed(length: usize, elapsed: Duration, per_second: Option<f64>) -> usize {
+    let Some(rate) = per_second else {
+        return length;
+    };
+    let rate = rate.max(length as f64 / STREAM_AT_MOST.as_secs_f64());
+    ((elapsed.as_secs_f64() * rate) as usize).min(length)
+}
+
+/// The characters a second a directive streams in at the Operator's
+/// observer speed (C-54): at `observe` about as fast as one reads, at
+/// `fast` quickly, at `instant` at once.
+fn stream_rate(speed: crate::control::Speed) -> Option<f64> {
+    use crate::control::Speed;
+    match speed {
+        Speed::Instant => None,
+        Speed::Fast => Some(240.0),
+        Speed::Observe => Some(30.0),
+    }
+}
+
+/// The child objectives of `root` in `all`, and theirs, in the order they
+/// were created.
+fn descendants(all: &[Objective], root: &str) -> Vec<Objective> {
+    let mut found: Vec<Objective> = Vec::new();
+    let mut parents = vec![root.to_string()];
+    while let Some(parent) = parents.pop() {
+        for child in all
+            .iter()
+            .filter(|o| o.parent.as_deref() == Some(parent.as_str()))
+        {
+            if child.id != root && !found.iter().any(|f| f.id == child.id) {
+                parents.push(child.id.clone());
+                found.push(child.clone());
+            }
         }
     }
+    found.sort_by(|a, b| a.created.cmp(&b.created));
+    found
+}
+
+/// The configured keys and the Claude subscription token: never in a
+/// change, and never in a thread ([`thread::redacted`]).
+fn configured_keys() -> Vec<String> {
+    agq_providers::Provider::ALL
+        .into_iter()
+        .map(agq_providers::Credential::Key)
+        .chain([agq_providers::Credential::ClaudeSubscription])
+        .filter_map(|c| agq_providers::runtime_credential(c).ok().flatten())
+        .map(|k| k.expose().to_string())
+        .filter(|k| k.len() >= 12)
+        .collect()
+}
+
+/// The Studio's own `entry` (an Operator's message, a note quoting an
+/// error) with every configured key in it replaced by a hint: keys never
+/// reach a thread.
+fn redacted(mut entry: ThreadEntry, keys: &[String]) -> ThreadEntry {
+    entry.text = thread::redacted(&entry.text, keys);
+    entry.details = entry.details.map(|d| thread::redacted(&d, keys));
+    entry
+}
+
+/// The objective the Operator started that is not finished, if any (its
+/// children are not finished then either, and are not it).
+fn active_root(store: &Store) -> Option<Objective> {
+    store
+        .list()
+        .into_iter()
+        .find(|o| o.active() && o.parent.is_none())
 }
 
 impl Studio {
@@ -150,14 +471,8 @@ impl Studio {
                 model.effort.clone(),
             )
         });
-        let keys = agq_providers::Provider::ALL
-            .into_iter()
-            .map(agq_providers::Credential::Key)
-            .chain([agq_providers::Credential::ClaudeSubscription])
-            .filter_map(|c| agq_providers::runtime_credential(c).ok().flatten())
-            .map(|k| k.expose().to_string())
-            .filter(|k| k.len() >= 12)
-            .collect();
+        // Read now, at the Operator's Start or Continue.
+        let keys = configured_keys();
         let checks = agq_implementation::task::ProjectChecks::agentique()
             .commands
             .into_iter()
@@ -182,22 +497,25 @@ impl Studio {
         })
     }
 
-    /// Starts an objective for `intent` on Agentique's own repository.
-    pub fn start_objective(
-        &mut self,
-        intent: &str,
-        budgets: Budgets,
-        permissions: Permissions,
-    ) -> Result<(), String> {
+    /// Starts an objective on Agentique's own repository as the start form
+    /// asks (C-54): its budgets are checked and each role's model resolved
+    /// (an objective that explores also needs the explorer, escalation and
+    /// typed decisions) and recorded before anything starts.
+    pub fn start_objective(&mut self, request: StartRequest) -> Result<(), String> {
         if self.refused_to_agents("starting an objective") {
             return Err("starting an objective is the Operator's own".into());
         }
+        self.runs_objectives()?;
         if self.objectives.running() {
             return Err("an objective is running: stop it first".into());
         }
-        if intent.trim().is_empty() {
+        if request.intent.trim().is_empty() {
             return Err("say what to improve".into());
         }
+        request
+            .budgets
+            .check()
+            .map_err(|problems| problems.join("; "))?;
         let repository = self.agentique_repository().ok_or_else(|| {
             format!(
                 "this Agentique does not know where its repository is: {}",
@@ -205,7 +523,7 @@ impl Studio {
             )
         })?;
         let store = self.objective_store();
-        if let Some(active) = store.active() {
+        if let Some(active) = active_root(&store) {
             return Err(format!(
                 "the objective “{}” is not finished: continue or stop it first",
                 active.intent
@@ -213,26 +531,82 @@ impl Studio {
         }
         let setup = self.objective_setup(&repository)?;
         // Each role's model, resolved now from the credentials read now and
-        // recorded (C-54): nothing it needs is left unresolved. An objective
-        // does not explore yet (W12.5), so the explorer, escalation and
-        // typed decisions are recorded but not needed. Whether this
+        // recorded (C-54): nothing it needs is left unresolved. Whether this
         // computer has a Claude login is said when it is known.
         self.read_credentials_now();
         let resolved = self
-            .agent_models(false)
+            .agent_models(request.explore)
             .map_err(|problems| problems.join("; "))?;
-        let mut objective = store.create(intent, &repository, "main", budgets, permissions)?;
+        let mut objective = store.create(
+            &request.intent,
+            &repository,
+            "main",
+            request.budgets,
+            request.permissions,
+        )?;
+        objective.explore = request.explore;
         objective.models = resolved.models;
         objective.roles_unavailable = resolved.unavailable.into_iter().collect();
         store.save(&objective)?;
+        // The open conversation shows its thread (C-54).
+        if self.project.is_some() {
+            self.conversation.started.push(objective.id.clone());
+            self.save_conversation();
+        }
         // Its thread starts with the intent and each role's model, written
         // by the Orchestrator as it starts.
-        self.objectives.thread.clear();
-        self.objectives.current = Some(objective.clone());
-        self.objectives.handle = Some(run::start(setup, objective));
-        self.objectives.message = None;
-        self.mark(Dirty::LAYOUT | Dirty::STATUS);
+        let state = &mut self.objectives;
+        state.ran.insert(objective.id.clone());
+        state.threads.clear();
+        state.streaming.clear();
+        state.children.clear();
+        state.current = Some(objective.clone());
+        state.version += 1;
+        state.handle = Some(run::start(setup, objective));
+        state.message = None;
+        state.form.in_conversation = false;
+        self.mark(Dirty::LAYOUT | Dirty::STATUS | Dirty::CONVERSATION);
         Ok(())
+    }
+
+    /// Opens the start form in the Conversation with `proposal` (C-54):
+    /// nothing starts until the Operator presses Start.
+    pub fn open_start_form(&mut self, proposal: Proposal) -> Result<(), String> {
+        // The reason goes to the Assistant's model too: it names no
+        // objective.
+        if self.objectives.running() || self.objectives.unfinished() {
+            return Err(
+                "an objective is not finished, and one runs at a time; the Operator sees it in the Objectives panel"
+                    .into(),
+            );
+        }
+        let form = &mut self.objectives.form;
+        form.proposal = Some(proposal);
+        form.given += 1;
+        form.in_conversation = true;
+        self.objectives.message = None;
+        self.conversation.shown = true;
+        self.mark(Dirty::LAYOUT | Dirty::CONVERSATION);
+        Ok(())
+    }
+
+    /// "Start as objective" (C-54): the message being written becomes the
+    /// intent of the start form shown in the Conversation; the message
+    /// stays in the composer until the objective starts.
+    pub fn start_form_from_message(&mut self) {
+        if self.refused_to_agents("starting an objective") {
+            return;
+        }
+        let intent = self.conversation.input.clone();
+        if let Err(problem) = self.open_start_form(Proposal::new(&intent, false)) {
+            self.status = format!("Not shown: {problem}");
+        }
+    }
+
+    /// Puts the start form back in the Objectives panel.
+    pub fn close_start_form(&mut self) {
+        self.objectives.form.in_conversation = false;
+        self.mark(Dirty::LAYOUT | Dirty::CONVERSATION);
     }
 
     /// Continues the objective that is not finished (interrupted, or handed
@@ -241,11 +615,18 @@ impl Studio {
         if self.refused_to_agents("continuing an objective") {
             return Err("continuing an objective is the Operator's own".into());
         }
+        self.runs_objectives()?;
         if self.objectives.running() {
             return Ok(());
         }
         let store = self.objective_store();
-        let mut objective = store.active().ok_or("there is no objective to continue")?;
+        let mut objective = active_root(&store).ok_or("there is no objective to continue")?;
+        // A record whose budgets no start form would accept (a role that
+        // may make no model call, say) does not run.
+        objective
+            .budgets
+            .check()
+            .map_err(|problems| format!("its budgets cannot run: {}", problems.join("; ")))?;
         let setup = self.objective_setup(&objective.repository)?;
         // The models it started with stay its models (C-54); a record
         // without them (an earlier build saved it) gets them now, from the
@@ -254,7 +635,7 @@ impl Studio {
         if resolved_now {
             self.read_credentials_now();
             let resolved = self
-                .agent_models(false)
+                .agent_models(objective.explore)
                 .map_err(|problems| problems.join("; "))?;
             objective.models = resolved.models;
             objective.roles_unavailable = resolved.unavailable.into_iter().collect();
@@ -262,16 +643,32 @@ impl Studio {
         }
         // A record an earlier build saved has no thread yet: it starts with
         // the intent, as the Operator gave it.
+        let keys = self.objectives.keys();
         if store.thread_last(&objective.id) == 0
             && let Err(error) = store.append_thread(
                 &objective.id,
-                ThreadEntry::new(Kind::Human, Author::Operator, objective.intent.clone()),
+                redacted(
+                    ThreadEntry::new(Kind::Human, Author::Operator, objective.intent.clone()),
+                    &keys,
+                ),
             )
         {
             self.objectives.message = Some(format!("The objective's thread: {error}"));
         }
-        self.objectives.read(&store, &objective.id);
-        self.objectives.current = Some(objective.clone());
+        // Shown already when it was found at start: its thread is not read
+        // again, only its record taken.
+        if self
+            .objectives
+            .current
+            .as_ref()
+            .is_some_and(|c| c.id == objective.id)
+            && store.thread_last(&objective.id) <= self.objectives.last_shown(&objective.id)
+        {
+            self.objectives.current = Some(objective.clone());
+        } else {
+            let all = store.list();
+            self.objectives.show(&store, objective.clone(), &all);
+        }
         if resolved_now {
             self.objective_note(
                 Author::Agentique,
@@ -284,30 +681,55 @@ impl Studio {
                 );
             }
         }
+        self.objectives.ran.insert(objective.id.clone());
         self.objectives.handle = Some(run::start(setup, objective));
         self.objectives.message = None;
-        self.mark(Dirty::LAYOUT | Dirty::STATUS);
+        self.mark(Dirty::LAYOUT | Dirty::STATUS | Dirty::CONVERSATION);
         Ok(())
     }
 
-    /// Stops an objective that is not running (one interrupted earlier).
+    /// Whether this Studio may run objectives: a test instance never does
+    /// (C-54). Its objectives are recorded ones, there to be observed and
+    /// operated; running one would start an Orchestrator with its record's
+    /// permissions inside an instance that is itself under test.
+    fn runs_objectives(&self) -> Result<(), String> {
+        if self.args.test_instance {
+            return Err(
+                "a test instance runs no objective: it shows recorded ones to observe and operate"
+                    .into(),
+            );
+        }
+        Ok(())
+    }
+
+    /// Stops an objective that is not running (one interrupted earlier),
+    /// and its children.
     pub fn stop_idle_objective(&mut self) {
         if self.refused_to_agents("stopping an objective") {
             return;
         }
         let store = self.objective_store();
-        if let Some(mut objective) = store.active() {
-            objective.state = agq_orchestrator::record::State::Stopped;
-            objective.note = Some("Stopped by the Operator.".into());
-            objective.settle_running(
-                agq_orchestrator::record::DirectiveStatus::Stopped,
-                "stopped by the Operator",
-            );
-            let _ = store.save(&objective);
-            self.objectives.current = Some(objective);
-            self.objective_note(Author::Operator, "Stopped");
-            self.mark(Dirty::LAYOUT);
+        let Some(mut objective) = active_root(&store) else {
+            return;
+        };
+        let all = store.list();
+        for mut child in descendants(&all, &objective.id)
+            .into_iter()
+            .filter(Objective::active)
+        {
+            child.state = State::Stopped;
+            child.note = Some("Stopped with its parent by the Operator.".into());
+            child.settle_running(DirectiveStatus::Stopped, "stopped by the Operator");
+            let _ = store.save(&child);
         }
+        objective.state = State::Stopped;
+        objective.note = Some("Stopped by the Operator.".into());
+        objective.settle_running(DirectiveStatus::Stopped, "stopped by the Operator");
+        let _ = store.save(&objective);
+        let all = store.list();
+        self.objectives.show(&store, objective, &all);
+        self.objective_note(Author::Operator, "Stopped");
+        self.mark(Dirty::LAYOUT | Dirty::CONVERSATION);
     }
 
     /// Adds an event to the shown objective's thread and shows it: the
@@ -317,17 +739,25 @@ impl Studio {
         let Some(id) = self.objectives.current.as_ref().map(|o| o.id.clone()) else {
             return;
         };
-        let entry = ThreadEntry::new(Kind::Event, author, text);
+        self.objective_entry(&id, ThreadEntry::new(Kind::Event, author, text));
+    }
+
+    /// Adds `entry` to objective `id`'s thread and shows it, saying so when
+    /// it could not be kept.
+    fn objective_entry(&mut self, id: &str, entry: ThreadEntry) {
+        let keys = self.objectives.keys();
+        let entry = redacted(entry, &keys);
         let shown = self
             .objective_store()
-            .append_thread(&id, entry.clone())
+            .append_thread(id, entry.clone())
             .unwrap_or_else(|error| ThreadEntry {
-                objective: id,
+                objective: id.to_string(),
                 at: agq_launcher::now(),
                 text: format!("{} (not kept in the thread: {error})", entry.text),
                 ..entry
             });
-        self.objectives.add(shown);
+        self.objectives.add(shown, false);
+        self.mark(Dirty::LAYOUT | Dirty::CONVERSATION);
     }
 
     /// The Operator's command to the running objective.
@@ -338,8 +768,48 @@ impl Studio {
         // The Orchestrator puts it in the thread as it takes it.
         if let Some(handle) = &self.objectives.handle {
             handle.send(command);
-            self.mark(Dirty::LAYOUT);
+            self.mark(Dirty::LAYOUT | Dirty::CONVERSATION);
         }
+    }
+
+    /// The Operator's message to objective `id` (C-54): a reply in its
+    /// thread in the Conversation or the panel's message field, one path.
+    /// A running objective takes it and records where it went (the
+    /// implementer at its next tool call while it works, otherwise the
+    /// lead's next turn); one that is not running keeps it in its thread
+    /// for the lead's next turn when it continues. Messages go to the
+    /// objective the Operator started; its children are steered through it.
+    pub fn message_objective(&mut self, id: &str, text: &str) -> Result<(), String> {
+        if self.refused_in_operators_window("messaging an objective") {
+            return Err(
+                "messaging an objective in the Operator's window is the Operator's own".into(),
+            );
+        }
+        let text = text.trim();
+        if text.is_empty() {
+            return Err("write a message first".into());
+        }
+        if self.objectives.current.as_ref().is_none_or(|o| o.id != id) {
+            return Err(
+                "a message goes to the objective you started; its children are steered through it"
+                    .into(),
+            );
+        }
+        // Kept for no one: a finished objective's lead takes no more turns.
+        if !self.objectives.takes_messages() {
+            return Err(
+                "the objective has ended, so no agent would read it; start a new objective".into(),
+            );
+        }
+        if self.objectives.running() {
+            if let Some(handle) = &self.objectives.handle {
+                handle.send(Command::Message(text.to_string()));
+            }
+        } else {
+            self.objective_entry(id, ThreadEntry::message(text, "lead"));
+        }
+        self.mark(Dirty::LAYOUT | Dirty::CONVERSATION);
+        Ok(())
     }
 
     /// Ends the running objective's sessions and waits up to `within` for
@@ -358,43 +828,59 @@ impl Studio {
         }
     }
 
-    /// Takes the objective's events; at the first call, continues an
-    /// objective handed over to this build. Returns whether anything
-    /// changed.
+    /// Takes the objective's events and streams its directives in; at the
+    /// first call, shows the newest objective the Operator started (finished
+    /// or not) and continues one handed over to this build. Returns whether
+    /// anything changed.
     pub fn poll_objective(&mut self) -> bool {
         let mut changed = false;
         if !self.objectives.looked {
             self.objectives.looked = true;
             let store = self.objective_store();
-            if let Some(active) = store.active() {
-                self.objectives.read(&store, &active.id);
-                self.objectives.current = Some(active.clone());
+            let all = store.list();
+            let roots: Vec<&Objective> = all.iter().filter(|o| o.parent.is_none()).collect();
+            let shown = roots
+                .iter()
+                .find(|o| o.active())
+                .or(roots.first())
+                .map(|o| (*o).clone());
+            if let Some(objective) = shown {
+                let active = objective.active();
+                let continues = objective.continuation.is_some();
+                self.objectives.show(&store, objective, &all);
+                self.objectives.read_keys();
                 changed = true;
-                if active.continuation.is_some() && !self.safe_mode {
+                if active && self.args.test_instance {
+                    self.objectives.message = Some(
+                        "A recorded objective: this test instance shows it and does not run it."
+                            .into(),
+                    );
+                } else if active && continues && !self.safe_mode {
                     if let Err(problem) = self.continue_objective() {
                         self.objectives.message =
                             Some(format!("The objective could not continue: {problem}"));
                     }
-                } else {
+                } else if active {
                     self.objectives.message = Some(
                         "An objective is not finished: Continue goes on from where it was.".into(),
                     );
                 }
             }
         }
-        let Some(handle) = self.objectives.handle.as_ref() else {
-            return changed;
-        };
         let mut events = Vec::new();
-        while let Ok(event) = handle.events.try_recv() {
-            events.push(event);
+        let mut finished = false;
+        if let Some(handle) = self.objectives.handle.as_ref() {
+            while let Ok(event) = handle.events.try_recv() {
+                events.push(event);
+            }
+            finished = handle.finished() && events.is_empty();
         }
-        let finished = handle.finished() && events.is_empty();
+        let store = self.objective_store();
         for event in events {
             changed = true;
             match event {
-                Event::Changed(objective) => self.objectives.current = Some(*objective),
-                Event::Thread(entry) => self.objectives.add(entry),
+                Event::Changed(objective) => self.objectives.changed(&store, *objective),
+                Event::Thread(entry) => self.objectives.add(entry, true),
                 Event::Control { body, reply } => {
                     self.control.submit(crate::control::Request::new(
                         body,
@@ -432,10 +918,17 @@ impl Studio {
         }
         if finished {
             self.objectives.handle = None;
+            self.objectives.version += 1;
             changed = true;
         }
         if changed {
-            self.mark(Dirty::LAYOUT | Dirty::STATUS);
+            self.mark(Dirty::LAYOUT | Dirty::STATUS | Dirty::CONVERSATION);
+        }
+        // Directives streaming in change the Conversation alone.
+        let rate = stream_rate(self.control_speed());
+        if self.objectives.stream(Instant::now(), rate) {
+            self.mark(Dirty::CONVERSATION);
+            changed = true;
         }
         changed
     }
@@ -461,50 +954,121 @@ impl Studio {
 mod tests {
     use super::*;
 
-    fn entry(seq: u64, text: &str) -> ThreadEntry {
-        ThreadEntry {
-            seq,
-            ..ThreadEntry::event(text)
-        }
+    fn entry(objective: &str, seq: u64, kind: Kind, text: &str) -> ThreadEntry {
+        let mut entry = ThreadEntry::new(kind, Author::Agentique, text);
+        entry.seq = seq;
+        entry.objective = objective.into();
+        entry.at = format!("2026-10-04T10:00:{seq:02}Z");
+        entry
     }
 
-    /// The thread as shown: in order whatever order entries arrive in (the
-    /// Orchestrator's thread and the Studio's own), each once, one that
-    /// could not be kept (number 0) where it arrived, and at most the latest
-    /// [`SHOWN`].
+    /// Entries take their place by number, whatever order they arrive in,
+    /// each objective's apart; one arriving twice shows once.
     #[test]
-    fn the_thread_shown_is_in_order_once_and_bounded() {
+    fn entries_take_their_place_in_their_objectives_thread() {
         let mut state = ObjectivesState::default();
-        for seq in [2, 1, 4, 3, 3, 2] {
-            state.add(entry(seq, &seq.to_string()));
+        for (objective, seq) in [("o", 2), ("o", 1), ("c", 1), ("o", 3), ("o", 2)] {
+            state.add(entry(objective, seq, Kind::Event, "x"), false);
         }
-        state.add(entry(0, "not kept"));
-        state.add(entry(5, "5"));
-        let shown: Vec<(u64, String)> = state
-            .thread
-            .iter()
-            .map(|e| (e.seq, e.text.clone()))
+        let seqs = |state: &ObjectivesState, id: &str| {
+            state.threads[id].iter().map(|e| e.seq).collect::<Vec<_>>()
+        };
+        assert_eq!(seqs(&state, "o"), vec![1, 2, 3]);
+        assert_eq!(seqs(&state, "c"), vec![1]);
+        // One that could not be kept stays where it arrived.
+        state.add(entry("o", 0, Kind::Event, "not kept"), false);
+        state.add(entry("o", 4, Kind::Event, "x"), false);
+        assert_eq!(seqs(&state, "o"), vec![1, 2, 3, 0, 4]);
+        // At most the latest SHOWN.
+        for seq in 5..(SHOWN as u64 + 50) {
+            state.add(entry("o", seq, Kind::Event, "x"), false);
+        }
+        assert_eq!(state.threads["o"].len(), SHOWN);
+        assert_eq!(state.last_shown("o"), SHOWN as u64 + 49);
+        // The oldest went: 1, 2, 3, the one not kept, and 4 to 49.
+        assert_eq!(state.threads["o"].first().map(|e| e.seq), Some(50));
+        assert!(state.threads["o"].iter().all(|e| e.seq >= 50));
+    }
+
+    /// A directive that arrives while shown streams in at the observer
+    /// speed, within six seconds; one read from the records shows whole.
+    #[test]
+    fn a_directive_streams_in_at_the_observer_speed() {
+        let mut state = ObjectivesState::default();
+        let directive = entry("o", 1, Kind::Directive, "Implement the label fix");
+        state.add(directive.clone(), true);
+        state.add(entry("o", 2, Kind::Directive, "Read earlier"), false);
+        assert_eq!(state.shown_chars(&directive), Some(0));
+        assert_eq!(state.shown_chars(&state.threads["o"][1].clone()), None);
+        let (arrived, _) = state.streaming[&("o".to_string(), 1)];
+        let version = state.version;
+        assert!(state.stream(arrived + Duration::from_millis(300), Some(30.0)));
+        // Only the streaming rows change: the rest is not worked out again.
+        assert_eq!(state.version, version);
+        assert_eq!(state.stream_version, 1);
+        assert_eq!(state.shown_chars(&directive), Some(9));
+        // Done: it shows whole and no longer streams.
+        assert!(state.stream(arrived + Duration::from_secs(5), Some(30.0)));
+        assert_eq!(state.shown_chars(&directive), None);
+        assert!(!state.stream(arrived + Duration::from_secs(9), Some(30.0)));
+        // At `instant` at once; a long one within six seconds.
+        assert_eq!(streamed(23, Duration::ZERO, None), 23);
+        assert_eq!(streamed(1200, Duration::from_secs(3), Some(30.0)), 600);
+        assert_eq!(streamed(1200, Duration::from_secs(7), Some(30.0)), 1200);
+    }
+
+    /// The tree under an objective: its children and theirs, not others.
+    #[test]
+    fn the_tree_holds_children_and_grandchildren() {
+        let dir = std::env::temp_dir().join(format!("agq-tree-{}", std::process::id()));
+        let store = Store::new(&dir);
+        let make = |id: &str, parent: Option<&str>, created: &str| {
+            let mut o = store
+                .create(
+                    "x",
+                    Path::new("C:/agentique"),
+                    "main",
+                    Budgets::default(),
+                    Permissions::default(),
+                )
+                .unwrap();
+            o.id = id.into();
+            o.parent = parent.map(str::to_string);
+            o.created = created.into();
+            o
+        };
+        let all = vec![
+            make("root", None, "1"),
+            make("child-b", Some("root"), "3"),
+            make("child-a", Some("root"), "2"),
+            make("grandchild", Some("child-a"), "4"),
+            make("other", None, "5"),
+            make("other-child", Some("other"), "6"),
+        ];
+        let _ = std::fs::remove_dir_all(&dir);
+        let ids: Vec<String> = descendants(&all, "root")
+            .into_iter()
+            .map(|o| o.id)
             .collect();
-        assert_eq!(
-            shown,
-            vec![
-                (1, "1".to_string()),
-                (2, "2".into()),
-                (3, "3".into()),
-                (4, "4".into()),
-                (0, "not kept".into()),
-                (5, "5".into()),
-            ]
-        );
-        for seq in 6..(SHOWN as u64 + 50) {
-            state.add(entry(seq, "x"));
-        }
-        assert_eq!(state.thread.len(), SHOWN);
-        assert_eq!(
-            state.thread.last().map(|e| e.seq),
-            Some(SHOWN as u64 + 49),
-            "the latest are kept"
-        );
-        assert!(state.thread.iter().all(|e| e.seq > 5 || e.seq == 0));
+        assert_eq!(ids, vec!["child-a", "child-b", "grandchild"]);
+    }
+
+    /// The Assistant's proposal fills the form; what it left out takes the
+    /// form's defaults, three improvements when it explores.
+    #[test]
+    fn a_proposal_takes_the_forms_defaults_where_it_says_nothing() {
+        let proposed = agq_assistant::tools::ObjectiveProposal {
+            intent: "Find and fix problems".into(),
+            explore: true,
+            usd: Some(2.0),
+            ..Default::default()
+        };
+        let proposal = Proposal::from_assistant(&proposed);
+        assert!(proposal.by_assistant && proposal.explore);
+        assert_eq!(proposal.budgets.usd, 2.0);
+        assert_eq!(proposal.budgets.cycles, 3);
+        assert_eq!(proposal.budgets.attempts, Budgets::default().attempts);
+        assert_eq!(Proposal::new(" Tidy ", false).budgets.cycles, 1);
+        assert_eq!(Proposal::new(" Tidy ", false).intent, "Tidy");
     }
 }

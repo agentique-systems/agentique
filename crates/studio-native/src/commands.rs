@@ -69,6 +69,13 @@ pub enum CommandId {
     TraceLast,
     CheckImplementation,
     TrustLocal,
+    StartObjective,
+    MessageObjective,
+    PauseObjective,
+    StepObjective,
+    ResumeObjective,
+    StopObjective,
+    ContinueObjective,
 }
 
 pub struct Command {
@@ -530,6 +537,58 @@ pub const COMMANDS: &[Command] = &[
         description: "Allow or stop builds, tests and the harness running on this computer for this project",
         key: None,
     },
+    // Objectives (C-54): the same commands in the Conversation, the
+    // Objectives panel and the palette.
+    Command {
+        id: CommandId::StartObjective,
+        label: "Start as objective…",
+        // Ctrl+Enter works in the message only, so no shortcut is shown.
+        shortcut: "",
+        description: "Show the start form in the Conversation with your message as the intent, its budgets, permissions and each role's model; nothing starts until you press Start (Ctrl+Enter in the message)",
+        key: None,
+    },
+    Command {
+        id: CommandId::MessageObjective,
+        label: "Write to the objective",
+        shortcut: "",
+        description: "Address your messages to the objective's agents instead of the Assistant; they go into its thread",
+        key: None,
+    },
+    Command {
+        id: CommandId::PauseObjective,
+        label: "Pause the objective",
+        shortcut: "",
+        description: "Its agents hold at their next tool call, the Orchestrator before its next phase",
+        key: None,
+    },
+    Command {
+        id: CommandId::StepObjective,
+        label: "Step the objective",
+        shortcut: "",
+        description: "Let the paused objective take one tool call, or one phase, then hold again",
+        key: None,
+    },
+    Command {
+        id: CommandId::ResumeObjective,
+        label: "Resume the objective",
+        shortcut: "",
+        description: "Let the paused objective go on",
+        key: None,
+    },
+    Command {
+        id: CommandId::StopObjective,
+        label: "Stop the objective",
+        shortcut: "",
+        description: "End the objective and its child objectives: their sessions stop, their records stay",
+        key: None,
+    },
+    Command {
+        id: CommandId::ContinueObjective,
+        label: "Continue the objective",
+        shortcut: "",
+        description: "Go on with the objective that is not finished, from the phase it reached",
+        key: None,
+    },
 ];
 
 /// Runs a command: the one action every shortcut, menu and palette row
@@ -652,6 +711,12 @@ pub struct CommandContext {
     pub running: bool,
     /// A result with a trace is shown.
     pub trace: bool,
+    /// An objective is shown (running, or the last one), running, paused
+    /// (or about to be), or not finished and not running (C-54).
+    pub objective: bool,
+    pub objective_running: bool,
+    pub objective_paused: bool,
+    pub objective_unfinished: bool,
 }
 
 /// Why a command cannot run now, in plain words; `None` when it can.
@@ -659,7 +724,18 @@ pub fn unavailable(id: CommandId, context: &CommandContext) -> Option<&'static s
     use CommandId::*;
     match id {
         _ if context.busy
-            && !matches!(id, Palette | Theme | Contrast | ReducedMotion | Settings) =>
+            && !matches!(
+                id,
+                Palette
+                    | Theme
+                    | Contrast
+                    | ReducedMotion
+                    | Settings
+                    | PauseObjective
+                    | StepObjective
+                    | ResumeObjective
+                    | StopObjective
+            ) =>
         {
             Some("Finish or cancel the open dialog first")
         }
@@ -703,6 +779,24 @@ pub fn unavailable(id: CommandId, context: &CommandContext) -> Option<&'static s
         StopRun if !context.running => Some("Nothing is running"),
         TraceFirst | TraceBack | TracePlay | TraceForward | TraceLast if !context.trace => {
             Some("Run a scenario first")
+        }
+        StartObjective if context.objective_running || context.objective_unfinished => {
+            Some("An objective is not finished: one runs at a time")
+        }
+        MessageObjective if !context.objective => Some("No objective is shown"),
+        MessageObjective if !context.project => {
+            Some("Open or create a project to use the Conversation")
+        }
+        PauseObjective if !context.objective_running => Some("No objective is running"),
+        PauseObjective if context.objective_paused => Some("The objective is paused"),
+        StepObjective | ResumeObjective if !context.objective_paused => {
+            Some("The objective is not paused")
+        }
+        StopObjective if !context.objective_running && !context.objective_unfinished => {
+            Some("No objective is running")
+        }
+        ContinueObjective if !context.objective_unfinished => {
+            Some("No objective waits to continue")
         }
         _ => None,
     }

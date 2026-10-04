@@ -838,9 +838,10 @@ pub fn approval(studio: &Studio) -> Option<&'static str> {
 }
 
 /// Commands that are the Operator's: locking, trust, the Operator's own
-/// voice in the Conversation, undoing (the Operator's changes too), and the
-/// appearance (Settings).
-pub const OPERATORS_COMMANDS: [CommandId; 10] = [
+/// voice in the Conversation, undoing (the Operator's changes too), the
+/// appearance (Settings), and starting, steering and stopping objectives
+/// (C-54).
+pub const OPERATORS_COMMANDS: [CommandId; 17] = [
     CommandId::Lock,
     CommandId::TrustLocal,
     CommandId::AskAssistant,
@@ -851,6 +852,13 @@ pub const OPERATORS_COMMANDS: [CommandId; 10] = [
     CommandId::Theme,
     CommandId::Contrast,
     CommandId::ReducedMotion,
+    CommandId::StartObjective,
+    CommandId::MessageObjective,
+    CommandId::PauseObjective,
+    CommandId::StepObjective,
+    CommandId::ResumeObjective,
+    CommandId::StopObjective,
+    CommandId::ContinueObjective,
 ];
 
 /// Regions whose controls are the Operator's: Settings (keys, autonomy,
@@ -858,12 +866,14 @@ pub const OPERATORS_COMMANDS: [CommandId; 10] = [
 const OPERATORS_REGIONS: [&str; 2] = ["settings", "conversation"];
 
 /// What agents may also do in a test instance, which holds no work of the
-/// Operator's: use the Conversation, and undo and redo.
-const TEST_INSTANCE_COMMANDS: [CommandId; 4] = [
+/// Operator's: use the Conversation (replying in an objective's thread
+/// too), and undo and redo.
+const TEST_INSTANCE_COMMANDS: [CommandId; 5] = [
     CommandId::Undo,
     CommandId::Redo,
     CommandId::AskAssistant,
     CommandId::InsertSelection,
+    CommandId::MessageObjective,
 ];
 
 /// Whether `id` is the Operator's to use here.
@@ -1144,7 +1154,12 @@ fn control_json(studio: &Studio, d: &Drawn) -> Value {
     if private && let Some(label) = conversation_label(studio, d) {
         v["label"] = json!(label);
     }
-    if let Some(value) = c.value.as_ref().filter(|_| !private) {
+    // An objective's fields hold the Operator's words (an intent taken from
+    // the composer's draft, a message to the agents) wherever they are
+    // drawn: their values too only in a test instance.
+    let objective_field =
+        c.role == "field" && c.id.starts_with("objective-") && !studio.args.test_instance;
+    if let Some(value) = c.value.as_ref().filter(|_| !private && !objective_field) {
         v["value"] = json!(value.to_string());
     }
     if !c.enabled {
@@ -1171,6 +1186,12 @@ fn conversation_label(studio: &Studio, d: &Drawn) -> Option<String> {
     use agq_providers::AssistantPart;
     let id = d.control.id.as_ref();
     let panel = &studio.conversation;
+    // An objective's thread (C-54): what each row is and who wrote it.
+    if id.starts_with("thread-") {
+        return crate::conversation_view::thread::private_name(id, |objective, seq| {
+            studio.objectives.entry(objective, seq)
+        });
+    }
     let entries = &panel.conversation.entries;
     let text_parts = |parts: &[AssistantPart]| -> Vec<usize> {
         parts
@@ -1383,6 +1404,60 @@ fn conversation_error(
         .map(|e| bounded(e, 300))
 }
 
+/// The objective shown (C-54): where it stands, its children, and its
+/// thread's size and last entry (the Operator's text only in a test
+/// instance).
+fn objective_json(studio: &Studio, text_shown: bool) -> Value {
+    let state = &studio.objectives;
+    let Some(objective) = &state.current else {
+        return Value::Null;
+    };
+    let running = state.running();
+    // This objective's tree only.
+    let entries: usize = std::iter::once(objective)
+        .chain(&state.children)
+        .filter_map(|o| state.threads.get(&o.id))
+        .map(Vec::len)
+        .sum();
+    let last = state.threads.get(&objective.id).and_then(|t| t.last());
+    let children: Vec<Value> = state
+        .children
+        .iter()
+        .map(|c| {
+            json!({
+                "id": c.id,
+                "state": crate::objectives::state_word(c, running),
+                "depth": c.depth,
+                "requestedBy": c.requested_by.as_ref().map(|r| r.role.clone()),
+            })
+        })
+        .collect();
+    json!({
+        "id": objective.id,
+        "intent": text_shown.then(|| bounded(&objective.intent, 200)),
+        "state": crate::objectives::state_word(objective, running),
+        "running": running,
+        "paused": state.paused(),
+        "explore": objective.explore,
+        "cycle": objective.cycle().map(|c| c.n),
+        "phase": objective.cycle().map(|c| c.phase.label()),
+        "usd": (objective.spent.usd * 1e6).round() / 1e6,
+        "budget": objective.budgets.usd,
+        "children": children,
+        "startForm": state.form.in_conversation,
+        "thread": {
+            "entries": entries,
+            "last": last.map(|e| json!({
+                "seq": e.seq,
+                "kind": e.kind,
+                "author": crate::conversation_view::thread::author(&e.author),
+                "to": e.to,
+                "text": text_shown.then(|| bounded(&e.text, 300)),
+            })),
+        },
+    })
+}
+
 /// The observation: what an agent needs to act in the Studio as it is now.
 /// `full` adds every command (with why not, when unavailable) and the cards
 /// in view.
@@ -1516,7 +1591,11 @@ pub fn observe(studio: &Studio, window: &gpui::Window, full: bool, region: Optio
             // null when some of it is unpriced.
             "usd": panel.spent.map(|usd| (usd * 1e6).round() / 1e6),
             "keyMissing": panel.key_missing,
+            // Whom the composer addresses (C-54): null for the Assistant,
+            // or the objective's id.
+            "addressed": panel.addressed,
         },
+        "objective": objective_json(studio, text_shown),
         "task": studio.implementation.task.as_ref().map(|t| json!({
             "job": t.job, "title": t.title, "phase": t.phase, "progress": t.progress,
         })),
@@ -3423,6 +3502,118 @@ mod tests {
     /// In the Operator's own window the Conversation's items are named
     /// without their text, and no value (the Operator's draft) is observed;
     /// a test instance observes them as they are.
+    #[test]
+    fn an_objectives_fields_are_observed_without_their_text_in_the_operators_window() {
+        let (mut app, _folder) = crate::edit::app_tests::studio("objective-fields");
+        let field = |id: &str, region: &'static str, value: &str| {
+            let mut d = drawn(id, "field", region, false);
+            d.control = d.control.value(value.to_string());
+            d
+        };
+        // The intent taken from the composer's draft, in the panel, and the
+        // message to the agents: the Operator's words.
+        let intent = field("objective-intent", "inspector", "my unsent draft");
+        let message = field("objective-message", "inspector", "a note for the lead");
+        let mut merge = drawn("objective-merge", "switch", "inspector", false);
+        merge.control = merge.control.value("on");
+        let name = field("Name", "inspector", "LinkStore");
+        for d in [&intent, &message] {
+            let observed = control_json(&app, d);
+            assert!(observed["value"].is_null(), "{observed}");
+            assert_eq!(observed["operatorOnly"], true);
+        }
+        assert_eq!(
+            control_json(&app, &merge)["value"],
+            "on",
+            "a switch's state stays"
+        );
+        assert_eq!(
+            control_json(&app, &name)["value"],
+            "LinkStore",
+            "other fields stay"
+        );
+        app.args.test_instance = true;
+        assert_eq!(control_json(&app, &intent)["value"], "my unsent draft");
+        assert_eq!(control_json(&app, &message)["value"], "a note for the lead");
+    }
+
+    #[test]
+    fn an_objectives_thread_is_the_operators_except_in_a_test_instance() {
+        use agq_orchestrator::thread::{Author, Kind, ThreadEntry};
+        let (mut app, _folder) = crate::edit::app_tests::studio("thread-labels");
+        let mut entry =
+            ThreadEntry::new(Kind::Directive, Author::agent("lead", None), "Secret plan");
+        entry.seq = 3;
+        entry.objective = "objective-1".into();
+        app.objectives.add(entry, false);
+        let row = Drawn {
+            control: target::Control::new(
+                "item",
+                "Directive from lead to implementer: Secret plan",
+            )
+            .id("thread-objective-1-3"),
+            ..drawn("thread-objective-1-3", "item", "conversation", false)
+        };
+        // The Operator's own window: named without its text, and theirs.
+        let observed = control_json(&app, &row);
+        assert_eq!(observed["label"], "Directive, entry 3, by lead");
+        assert_eq!(observed["operatorOnly"], true);
+        let replies = [
+            ("thread-fold-objective-1-3", "item"),
+            ("thread-reply-objective-1-3", "button"),
+            ("conversation-to", "button"),
+            ("conversation-to-objective", "button"),
+        ];
+        for (id, role) in replies {
+            assert!(
+                operator_only(&app, &drawn(id, role, "conversation", false)),
+                "{id}"
+            );
+        }
+        let write = Action::Command(CommandId::MessageObjective);
+        assert!(operators_only(&app, &write, &[]).is_some());
+        // A test instance: its text, and agents may expand and reply.
+        app.args.test_instance = true;
+        assert_eq!(
+            control_json(&app, &row)["label"],
+            "Directive from lead to implementer: Secret plan"
+        );
+        for (id, role) in replies {
+            assert!(
+                !operator_only(&app, &drawn(id, role, "conversation", false)),
+                "{id}"
+            );
+        }
+        assert_eq!(operators_only(&app, &write, &[]), None);
+        // Starting, steering and stopping stay the Operator's there too.
+        for id in [
+            CommandId::StartObjective,
+            CommandId::PauseObjective,
+            CommandId::StepObjective,
+            CommandId::ResumeObjective,
+            CommandId::StopObjective,
+            CommandId::ContinueObjective,
+        ] {
+            assert!(
+                operators_only(&app, &Action::Command(id), &[]).is_some(),
+                "{id:?}"
+            );
+        }
+        for (id, role) in [
+            ("objective-from-message", "button"),
+            ("objective-start", "button"),
+            ("objective-intent", "field"),
+            ("objective-explore", "switch"),
+            ("objective-bar-pause", "button"),
+            ("objective-bar-stop", "button"),
+        ] {
+            assert!(
+                operator_only(&app, &drawn(id, role, "conversation", false)),
+                "{id}"
+            );
+        }
+    }
+
     #[test]
     fn the_operators_conversation_is_observed_without_its_text() {
         use agq_providers::AssistantPart;

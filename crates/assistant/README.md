@@ -29,7 +29,10 @@ hand-written Claude client still uses the network directly until W5.7.
   checks, state machines with transitions); `inspect_behaviour` and
   `list_scenarios` read them; `run_scenario`, `stop_run`, `read_run`,
   `read_code_links`, `check_implementation` and `propose_implementation`
-  are carried out by the Studio with its own services (`Prepared::Studio`).
+  are carried out by the Studio with its own services (`Prepared::Studio`),
+  and so is `propose_objective` (C-54): the Studio shows the Operator the
+  objective's start form with the proposed intent, exploration and budgets;
+  only the Operator starts it.
   A live evaluation is the Operator's to start; code runs only with
   trusted-local execution.
 - `turn`: the tool-use loop for one turn of the Conversation, with a

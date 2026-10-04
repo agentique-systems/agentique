@@ -24,6 +24,7 @@ mod library;
 mod live;
 mod motion;
 mod navigation;
+mod objective_form;
 mod objectives;
 mod palette;
 mod panels;
@@ -101,6 +102,12 @@ pub struct Args {
     /// environment, never from the Operator's credential store.
     #[arg(long)]
     test_instance: bool,
+    /// The Assistant of this test instance is a scripted stand-in (C-54):
+    /// it reads the model and answers in a line, with no network and no
+    /// key, so the Conversation can be exercised where no credential may
+    /// be given (an unreviewed build). Only with `--test-instance`.
+    #[arg(long)]
+    assistant_stand_in: bool,
     /// How fast agents' actions are carried out and shown in this window
     /// (observer mode, C-54), whatever Settings say: instant, fast or
     /// observe. Test instances are started with it.
@@ -139,6 +146,9 @@ impl Args {
     /// A test instance runs on app data of its own (C-54): its session
     /// file, and the settings and data beside it, are never the Operator's.
     fn checked(&self) -> Result<(), String> {
+        if self.assistant_stand_in && !self.test_instance {
+            return Err("--assistant-stand-in is for a test instance only (with --test-instance): the Operator's own window keeps its Assistant".into());
+        }
         if !self.test_instance {
             return Ok(());
         }
@@ -296,5 +306,37 @@ mod tests {
         let beside = default.with_file_name("other.json");
         let beside = parse(&["--test-instance", "--session", beside.to_str().unwrap()]).checked();
         assert!(beside.is_err(), "a file beside the Operator's");
+    }
+
+    /// The scripted stand-in Assistant is for a test instance only, and
+    /// such an instance's Conversation runs on it whatever Settings say.
+    #[test]
+    fn the_stand_in_assistant_is_for_a_test_instance_only() {
+        let parse = |options: &[&str]| {
+            Args::parse_from(std::iter::once("studio").chain(options.iter().copied()))
+        };
+        let refused = parse(&["--assistant-stand-in"]).checked().unwrap_err();
+        assert!(refused.contains("--test-instance"), "{refused}");
+        let folder = std::env::temp_dir().join(format!("agq-stand-in-{}", std::process::id()));
+        let session = folder.join("session.json");
+        let session = session.to_str().unwrap();
+        let args = parse(&[
+            "--test-instance",
+            "--assistant-stand-in",
+            "--no-restore",
+            "--session",
+            session,
+        ]);
+        assert_eq!(args.checked(), Ok(()));
+        let app = studio::Studio::new(
+            args,
+            studio::System {
+                dark: true,
+                reduced_motion: false,
+            },
+        );
+        assert_eq!(app.conversation.model_name, conversation::STAND_IN);
+        assert!(app.conversation.key_missing.is_none());
+        let _ = std::fs::remove_dir_all(&folder);
     }
 }

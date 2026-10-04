@@ -110,8 +110,13 @@ impl Workspace {
         });
         let surface = cx.new(|cx| SurfaceView::new(studio.clone(), cx));
         let outline = cx.new(|cx| LeftColumn::new(studio.clone(), window, cx));
-        let inspector = cx.new(|cx| InspectorColumn::new(studio.clone(), window, cx));
-        let conversation = cx.new(|cx| ConversationView::new(studio.clone(), window, cx));
+        // One start form for objectives, in the Conversation or the
+        // Objectives panel (C-54).
+        let form =
+            cx.new(|cx| crate::objective_form::ObjectiveForm::new(studio.clone(), window, cx));
+        let inspector = cx.new(|cx| InspectorColumn::new(studio.clone(), form.clone(), window, cx));
+        let conversation =
+            cx.new(|cx| ConversationView::new(studio.clone(), form.clone(), window, cx));
         let settings = cx.new(|cx| SettingsView::new(studio.clone(), window, cx));
         let dialogs = cx.new(|cx| DialogsView::new(studio.clone(), cx));
         let welcome = cx.new(|cx| Welcome::new(studio.clone(), cx));
@@ -438,7 +443,7 @@ impl Workspace {
         let id = action.0;
         self.studio.act(cx, |studio| studio.execute(id));
         match id {
-            CommandId::AskAssistant | CommandId::InsertSelection => {
+            CommandId::AskAssistant | CommandId::InsertSelection | CommandId::MessageObjective => {
                 self.conversation
                     .update(cx, |view, cx| view.focus_input(window, cx));
             }
@@ -683,6 +688,11 @@ pub fn command_icon(id: CommandId) -> Option<IconName> {
         TraceLast => IconName::SkipForward,
         CheckImplementation => IconName::Drift,
         TrustLocal => IconName::Terminal,
+        StartObjective | MessageObjective => IconName::Agent,
+        PauseObjective => IconName::Pause,
+        StepObjective => IconName::SkipForward,
+        ResumeObjective | ContinueObjective => IconName::Play,
+        StopObjective => IconName::Stop,
     })
 }
 

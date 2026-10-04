@@ -4,7 +4,8 @@
 
 use agq_assistant::Prepared;
 use agq_assistant::tools::{
-    self, APPLY_CHANGES, INSPECT_BEHAVIOUR, LIST_SCENARIOS, READ_RUN, RUN_SCENARIO, StudioRequest,
+    self, APPLY_CHANGES, INSPECT_BEHAVIOUR, LIST_SCENARIOS, ObjectiveProposal, PROPOSE_OBJECTIVE,
+    READ_RUN, RUN_SCENARIO, StudioRequest,
 };
 use agq_language::{Source, parse, print};
 use agq_library::Library;
@@ -250,4 +251,58 @@ fn factory_inputs_are_checked_against_their_schemas() {
         matches!(bad, Prepared::Invalid(ref m) if m.contains("cannot be read")),
         "{bad:?}"
     );
+}
+
+/// C-54: the Assistant proposes an objective; only the Studio can show it
+/// to the Operator, who starts it or not. Headless, nothing is shown and
+/// nothing starts.
+#[test]
+fn the_assistant_proposes_an_objective_and_starts_nothing() {
+    let state = screening();
+    let proposed = prepare(
+        &state,
+        PROPOSE_OBJECTIVE,
+        json!({ "intent": "  Find and fix problems in the Library panel ", "explore": true,
+                "budgets": { "usd": 2.5, "cycles": 3, "steps": 40 } }),
+    );
+    let expected = ObjectiveProposal {
+        intent: "Find and fix problems in the Library panel".into(),
+        explore: true,
+        usd: Some(2.5),
+        cycles: Some(3),
+        attempts: None,
+        hours: None,
+        steps: Some(40),
+    };
+    assert_eq!(
+        proposed,
+        Prepared::Studio(StudioRequest::ProposeObjective(expected.clone()))
+    );
+    // Only the intent is needed; the start form has the rest.
+    assert_eq!(
+        prepare(
+            &state,
+            PROPOSE_OBJECTIVE,
+            json!({ "intent": "Tidy the Inspector" })
+        ),
+        Prepared::Studio(StudioRequest::ProposeObjective(ObjectiveProposal {
+            intent: "Tidy the Inspector".into(),
+            ..ObjectiveProposal::default()
+        }))
+    );
+    // An empty intent, or an improvement and a half, is refused (the
+    // turn's input check refuses the second first).
+    let half = json!({ "intent": "x", "budgets": { "cycles": 1.5 } });
+    assert!(tools::check_input(PROPOSE_OBJECTIVE, &half).is_err());
+    for input in [json!({ "intent": " " }), half] {
+        let refused = tools::prepare(&state, &Library::built_in_only(), PROPOSE_OBJECTIVE, &input);
+        assert!(matches!(refused, Prepared::Invalid(_)), "{refused:?}");
+    }
+    assert!(
+        tools::check_input(PROPOSE_OBJECTIVE, &json!({ "intent": "x", "start": true })).is_err(),
+        "there is no way to start it"
+    );
+    let headless =
+        tools::carry_out_headless(state.tree(), &StudioRequest::ProposeObjective(expected));
+    assert!(headless.unwrap_err().contains("nothing started"));
 }

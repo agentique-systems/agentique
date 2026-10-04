@@ -362,6 +362,9 @@ pub struct Chat {
     stream_cpu: Samples,
     stream_started: Option<Instant>,
     streamed_chars: usize,
+    /// Directives streamed into a recorded objective's thread (W12.6): only
+    /// when the session holds one.
+    directives: usize,
 }
 
 impl Chat {
@@ -450,6 +453,12 @@ impl Chat {
                 })
                 .sum();
             studio.act(cx, |studio| {
+                // A recorded objective beside the session (W12.6): its thread
+                // shows below the messages, as one started from them.
+                if let Some(id) = studio.objectives.current.as_ref().map(|o| o.id.clone()) {
+                    studio.conversation.started.push(id);
+                    studio.objectives.version += 1;
+                }
                 studio.conversation.conversation.entries = entries;
                 studio.conversation.results = results
                     .into_iter()
@@ -477,6 +486,28 @@ impl Chat {
                 window,
                 cx,
             );
+        }
+        // With a recorded objective, a directive arrives every 45 frames of
+        // the stream and streams into its thread at the observer speed.
+        if CHAT_STREAM.contains(&self.frame) && (self.frame - CHAT_STREAM.start).is_multiple_of(45)
+        {
+            let added = studio.act(cx, |studio| {
+                let id = studio.objectives.current.as_ref()?.id.clone();
+                let mut entry = agq_orchestrator::thread::ThreadEntry::new(
+                    agq_orchestrator::thread::Kind::Directive,
+                    agq_orchestrator::thread::Author::agent("lead", None),
+                    "Implement the change to the Library panel's labels, run the panel's tests, and say what changed and why.",
+                );
+                entry.seq = studio.objectives.last_shown(&id) + 1;
+                entry.objective = id;
+                entry.at = agq_launcher::now();
+                studio.objectives.add(entry, true);
+                studio.mark(Dirty::CONVERSATION);
+                Some(())
+            });
+            if added.is_some() {
+                self.directives += 1;
+            }
         }
         if CHAT_STREAM.contains(&self.frame) {
             // About 100 tokens a second, at about four characters a token.
@@ -535,6 +566,7 @@ impl Chat {
             "stream": {
                 "tokens_per_second": 100,
                 "streamed_chars": self.streamed_chars,
+                "objective_directives": self.directives,
                 "frame_interval_ms": self.stream.summary(),
                 "frame_cpu_ms": self.stream_cpu.summary(),
             },
