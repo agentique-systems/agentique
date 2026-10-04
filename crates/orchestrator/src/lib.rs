@@ -15,11 +15,13 @@
 //! - [`builds`]: release builds for adoption, debug builds for test instances.
 //! - [`control`]: test instances and the client of their control interface.
 //! - [`roles`]: what each agent is told and which tools it has.
+//! - [`decide`]: typed decisions in operation (System 1) with escalation.
 //! - [`run`]: the driver.
 #![forbid(unsafe_code)]
 
 pub mod builds;
 pub mod control;
+pub mod decide;
 pub mod forge;
 pub mod gates;
 pub mod record;
