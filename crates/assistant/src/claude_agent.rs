@@ -447,13 +447,14 @@ impl Effective {
         }
     }
 
-    /// The credential, in a few words for Settings and the activity: the
-    /// token's source with a subscription token, else the key's.
+    /// The credential as the SDK named it, for Settings and the activity:
+    /// the token's source with a subscription token, else the key's, and
+    /// the API kind it reported (`firstParty` also for an
+    /// Anthropic-compatible endpoint).
     pub fn credential(&self) -> String {
         let api = match self.api_provider.as_str() {
             "" => String::new(),
-            "firstParty" => ", Anthropic's API".into(),
-            other => format!(", {other}"),
+            other => format!(" ({other})"),
         };
         match (self.token_source.as_str(), self.api_key_source.as_str()) {
             ("" | "none", "") => "not reported".into(),
