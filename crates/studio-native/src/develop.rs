@@ -26,6 +26,10 @@ use std::sync::atomic::AtomicBool;
 use std::sync::mpsc::{Receiver, TryRecvError};
 use std::time::Duration;
 
+/// What to do when this Agentique does not know where its repository is.
+pub const UNKNOWN_REPOSITORY: &str =
+    "set AGENTIQUE_REPOSITORY to the repository's folder and start it again";
+
 /// Whether `folder` is Agentique's repository: its self-model and workspace.
 pub fn is_agentique(folder: &Path) -> bool {
     folder.join("model/Agentique.sysml").is_file()
@@ -33,13 +37,25 @@ pub fn is_agentique(folder: &Path) -> bool {
         && folder.join("claude-agent/package.json").is_file()
 }
 
-/// The repository the build in `folder` was built from, as its manifest
-/// says.
-fn built_from(folder: &Path) -> Option<PathBuf> {
-    Manifest::load(folder)
-        .ok()
+/// Agentique's repository: `variable` (`AGENTIQUE_REPOSITORY`) if it names
+/// one, else the one the manifest in `build` (the running build's folder)
+/// names, else the folder it was `compiled` in (gone for an installed build,
+/// whose checkout is removed after building).
+fn repository_from(
+    variable: Option<PathBuf>,
+    build: Option<&Path>,
+    compiled: &Path,
+) -> Option<PathBuf> {
+    let built_from = build
+        .and_then(|folder| Manifest::load(folder).ok())
         .map(|m| PathBuf::from(m.repository))
-        .filter(|r| !r.as_os_str().is_empty())
+        .filter(|r| !r.as_os_str().is_empty());
+    [variable, built_from, Some(compiled.to_path_buf())]
+        .into_iter()
+        .flatten()
+        .filter(|folder| is_agentique(folder))
+        .find_map(|folder| folder.canonicalize().ok())
+        .map(plain_path)
 }
 
 /// The data formats this build reads and writes. A build with other
@@ -102,6 +118,8 @@ pub struct BuildsState {
     /// once more.
     pub confirm_use: Option<String>,
     ready_written: bool,
+    /// Agentique's repository, found once.
+    repository: std::cell::OnceCell<Option<PathBuf>>,
 }
 
 impl Studio {
@@ -111,25 +129,27 @@ impl Studio {
     /// the one its manifest names (the checkout it was compiled in is gone);
     /// otherwise the one it was compiled in.
     pub fn agentique_repository(&self) -> Option<PathBuf> {
-        let candidates = [
-            std::env::var_os("AGENTIQUE_REPOSITORY").map(PathBuf::from),
-            self.running_build()
-                .and_then(|id| built_from(&self.builds_root().join(id))),
-            Some(Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")),
-        ];
-        candidates
-            .into_iter()
-            .flatten()
-            .filter(|folder| is_agentique(folder))
-            .find_map(|folder| folder.canonicalize().ok())
-            .map(plain_path)
+        self.develop
+            .repository
+            .get_or_init(|| {
+                repository_from(
+                    std::env::var_os("AGENTIQUE_REPOSITORY").map(PathBuf::from),
+                    self.running_build()
+                        .map(|id| self.builds_root().join(id))
+                        .as_deref(),
+                    &Path::new(env!("CARGO_MANIFEST_DIR")).join("../.."),
+                )
+            })
+            .clone()
     }
 
     /// Opens Agentique's own repository as the project, and gives it
     /// Agentique's required checks if it has none yet.
     pub fn develop_agentique(&mut self) {
         let Some(folder) = self.agentique_repository() else {
-            self.status = "This Agentique does not know where its repository is: set AGENTIQUE_REPOSITORY to the repository's folder and start it again.".into();
+            self.status = format!(
+                "This Agentique does not know where its repository is: {UNKNOWN_REPOSITORY}."
+            );
             self.mark(Dirty::STATUS);
             return;
         };
@@ -191,8 +211,9 @@ impl Studio {
             return;
         }
         let Some(repository) = self.agentique_repository() else {
-            self.develop.message =
-                Some("This Agentique does not know where its repository is.".into());
+            self.develop.message = Some(format!(
+                "This Agentique does not know where its repository is: {UNKNOWN_REPOSITORY}."
+            ));
             self.mark(Dirty::LAYOUT);
             return;
         };
@@ -465,11 +486,6 @@ impl Studio {
             format: agq_launcher::FORMAT,
             id: id.clone(),
             created: agq_launcher::now(),
-            // So the build, once installed, still knows its repository.
-            repository: self
-                .agentique_repository()
-                .map(|r| r.display().to_string())
-                .unwrap_or_default(),
             toolchain: "built outside Agentique".into(),
             companion: agq_assistant::claude_agent::companion_digest(),
             packages: agq_assistant::claude_agent::packages_digest(),
@@ -680,22 +696,45 @@ mod tests {
 
     #[test]
     fn an_installed_build_knows_the_repository_its_manifest_names() {
-        let repository = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
-        let folder = std::env::temp_dir().join(format!("agq-built-from-{}", std::process::id()));
-        std::fs::create_dir_all(&folder).unwrap();
+        let here = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let repository = plain_path(here.canonicalize().unwrap());
+        let base = std::env::temp_dir().join(format!("agq-repository-from-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&base);
+        // An installed build: its manifest names the repository; the folder
+        // it was compiled in is gone.
+        let build = base.join("builds").join("b1");
+        std::fs::create_dir_all(&build).unwrap();
         Manifest {
             id: "b1".into(),
             repository: repository.display().to_string(),
             ..Manifest::default()
         }
-        .save(&folder)
+        .save(&build)
         .unwrap();
-        let named = built_from(&folder);
-        Manifest::default().save(&folder).unwrap();
-        let unnamed = built_from(&folder);
-        let _ = std::fs::remove_dir_all(&folder);
-        assert!(named.is_some_and(|r| is_agentique(&r)));
+        let gone = base.join("src").join("b1");
+        let installed = repository_from(None, Some(&build), &gone);
+        // The variable still comes first.
+        let other = base.join("other");
+        for file in [
+            "model/Agentique.sysml",
+            "Cargo.toml",
+            "claude-agent/package.json",
+        ] {
+            std::fs::create_dir_all(other.join(file).parent().unwrap()).unwrap();
+            std::fs::write(other.join(file), "").unwrap();
+        }
+        let named = repository_from(Some(other.clone()), Some(&build), &gone);
+        // A manifest without a repository (a build kept from outside
+        // Agentique) leaves the folder it was compiled in.
+        Manifest::default().save(&build).unwrap();
+        let unnamed = repository_from(None, Some(&build), &gone);
+        let compiled = repository_from(None, Some(&build), &here);
+        let other = plain_path(other.canonicalize().unwrap());
+        let _ = std::fs::remove_dir_all(&base);
+        assert_eq!(installed, Some(repository.clone()));
+        assert_eq!(named, Some(other));
         assert_eq!(unnamed, None);
+        assert_eq!(compiled, Some(repository));
     }
 
     #[test]
