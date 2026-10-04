@@ -2025,6 +2025,23 @@ mod tests {
     }
 
     #[test]
+    fn check_the_implementation_says_why_the_links_cannot_be_read() {
+        let (mut app, folder) = screening("runs-links-format");
+        let project = app.project.as_ref().unwrap().folder().to_path_buf();
+        let file = project.join("model").join("links.json");
+        std::fs::write(&file, r#"{"format": 2, "repository": "."}"#).unwrap();
+        app.open_project(&project);
+        app.start_checks();
+        assert!(app.status.contains("format 2"), "{}", app.status);
+        assert!(
+            !app.status.contains("Open a project with linked code"),
+            "{}",
+            app.status
+        );
+        drop(folder);
+    }
+
+    #[test]
     fn library_blocks_carry_their_behaviour_and_scenarios() {
         let (mut app, _folder) = studio("runs-library");
         let tree = app.project.as_ref().unwrap().state().tree();
