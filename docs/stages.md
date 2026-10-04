@@ -1707,14 +1707,19 @@ is W12.5's; nothing here says the Operator accepted anything).
   finished it answers "Not shown". The tool cannot start anything.
 - **The thread in the Conversation** (`conversation_view/thread.rs`): the
   objective shown (the running one, else the newest the Operator started,
-  finished or not, as a test instance seeded with one shows it) and its
+  finished or not; a test instance shows its recorded one and never runs
+  it: starting and continuing are refused there) and its
   child objectives are read from their records once, from the tail (the
   latest 2,000 entries each, `Store::thread_last`), then followed as
   `Event::Thread` and `Event::Changed` arrive. Its rows go among the
   conversation's entries in time order: the time each entry was added is
-  kept beside the conversation (`projects/<folder>/conversation.times.json`,
-  a new app-data file; `conversation.json` and its format 2 are
-  unchanged), and rows never go before an entry an earlier build added.
+  kept beside the conversation with the objectives started while it was
+  open (`projects/<folder>/conversation.objectives.json`, a new app-data
+  file; `conversation.json` and its format 2 are unchanged), and rows
+  never go before an entry an earlier build added. A conversation shows
+  the thread of an objective started while it was open that still goes on
+  or ran in this Studio; otherwise the objective in one line with the
+  Objectives panel a click away (a new conversation starts empty).
   The Operator's messages ("you → the objective", with a chip saying where
   each went: "to the implementer, at its next tool call", "waits for the
   lead's next turn", or "the objective's intent"), directives (author →
@@ -1729,15 +1734,20 @@ is W12.5's; nothing here says the Operator accepted anything).
   characters a second at `observe`, 240 at `fast`, at once at `instant`,
   each within six seconds). The thread is never in the Assistant's
   conversation, so no model receives it. Rows are worked out again only
-  when the objectives or what is expanded change.
+  when the objectives, what is expanded or the conversation change, keyed
+  by their fields; a directive streaming in updates only its own row, and
+  only the Conversation is drawn again for it.
 - **Steering in the thread:** the composer addresses the Assistant or the
   objective ("To: the Assistant" / "To: the objective", a line above the
   message naming the objective); only the Operator's click, Ctrl+L ("Ask
   the Assistant"), "Write to the objective" or a step's Reply switches it.
   A reply goes through `Studio::message_objective`, the panel's message
   field's path too: to a running objective's handle (the Orchestrator
-  records where it went, `ThreadEntry.to`), or, for one not running, into
-  its thread with `to: "lead"` for the lead's next turn when it continues.
+  records where it went, `ThreadEntry.to`), or, for one waiting to
+  continue, into its thread with `to: "lead"` for the lead's next turn; an
+  objective that has ended takes no message and cannot be addressed. An
+  open question of the Assistant's is answered first, whomever the
+  composer addresses.
   Messages go to the objective the Operator started; a child is steered
   through it. The Studio's own entries (notes, replies, the intent written
   for an earlier build's record) pass through `thread::redacted` with the
@@ -1759,7 +1769,8 @@ is W12.5's; nothing here says the Operator accepted anything).
   rows read "Directive, entry 3, by lead", without text, and all of it is
   refused. The observation gains `objective` (state, phase, spend,
   children, the start form, the thread's size and last entry, the text
-  and intent only in a test instance) and `conversation.addressed`.
+  and intent only in a test instance) and `conversation.addressed`; the
+  values of `objective-…` fields are observed only in a test instance.
   `--assistant-stand-in` (a test instance only; refused otherwise) runs
   the instance's Assistant on a scripted stand-in in every build: no
   network, no key, no cost; it reads the model and answers in a line,
@@ -1779,8 +1790,9 @@ built in parallel and the Operator used the machine):
 
 - **Checks:** `cargo fmt --check`; `cargo clippy --workspace --all-targets
   -D warnings`, and for `agq-studio-native` with `--features automation`;
-  the workspace tests (780 passed, 24 ignored; `agq-studio-native` 177
-  and 1, with 5 and 5 ignored); `python tools/check_architecture.py`; `control_journey`
+  the workspace tests (780 passed, 24 ignored; after the review's fixes
+  785 passed, 24 ignored, `agq-studio-native` 182 and 1, with 5 and 5
+  ignored); `python tools/check_architecture.py`; `control_journey`
   on real windows (5 of 5, two new: the test instance with a recorded
   objective and the stand-in Assistant, and the Operator's window);
   `a-assistant`, `h-library` and `d-daily` (release with `automation`,
@@ -1795,7 +1807,22 @@ built in parallel and the Operator used the machine):
   eight tool calls with diffs, a result and an event) below the 200
   messages, scroll p95 6.19–6.22 ms, streaming p95 6.46–6.56 ms, frame CPU
   p95 2.7–2.9 ms. Not compared with a baseline build of `main` this time
-  (disk); G3 measured scroll and streaming p95 6.23 and 6.25 ms.
+  (disk); G3 measured scroll and streaming p95 6.23 and 6.25 ms. These
+  runs were before the review's fixes, when every Conversation showed the
+  thread.
+- **After the review's fixes** (directives streaming update only their
+  rows): the release build was killed while building (the parallel
+  agent's build, and free disk down to 2.5 GB), so it was measured in a
+  debug build with `automation` (two runs each; debug frames are slower
+  throughout): `chat` without an objective, streaming p95 22.6–24.5 ms
+  (CPU p95 20.6–22.1, median 17.3–17.4); with the 1,981-entry objective's
+  thread shown (720 rows) and seven directives streaming into it during
+  the reply's stream, streaming p95 24.8–27.6 ms (CPU p95 22.6–25.3,
+  median 18.8–20.3), scroll p95 23.6–26.0 ms against 23.3–23.9. The work
+  per stream step, timed alone in a debug test build on those 720 rows:
+  0.5 % of before (0.019 ms against 3.8 ms for all rows and their Debug
+  text), and 2.3 ms for a full rebuild with field keys. Not measured in a
+  release build after the fixes.
 - **Not tried:** a live objective running in the Conversation (it needs
   W12.5's Orchestrator side, and a credential; the thread was exercised
   from recorded objectives and unit tests); the start form drawn in the

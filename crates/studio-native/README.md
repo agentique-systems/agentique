@@ -163,10 +163,16 @@ the tool, question and thinking cards, `markdown.rs` the messages).
   (`control.speed`, within six seconds). A reply goes to the objective
   through the same path as the panel's message field
   (`Studio::message_objective`): a running objective records where it
-  went; one not running keeps it in its thread for the lead's next turn.
-  To interleave threads, the time each entry was added is kept beside the
-  conversation (`conversation.times.json`); the conversation file
-  (format 2) is unchanged.
+  went; one waiting to continue keeps it in its thread for the lead's next
+  turn; one that has ended takes none (no agent would read it), and the
+  composer cannot address it. A conversation shows the thread of an
+  objective started while it was open (from it or the panel) that still
+  goes on or ran in this Studio; otherwise the objective in one line, the
+  Objectives panel a click away, and a new conversation starts empty. The
+  time each entry was added and the objectives started are kept beside the
+  conversation (`conversation.objectives.json`, format 1); the conversation
+  file (format 2) is unchanged. A directive streaming in updates only its
+  own row, and only the Conversation is drawn again for it.
 - **Selecting text** (`conversation_view/markdown.rs`): dragging over the messages selects
   across paragraphs, code blocks and messages; past the top or bottom of the
   list it scrolls. The selection is kept by place in the text (message,
@@ -384,7 +390,13 @@ test instance's local endpoint (`--control <file>`: a port and a token on
   state, phase, spend, children, whether the start form is open, and its
   thread's size and last entry (kind, author, where it went; its text and
   the intent only in a test instance); `conversation.addressed` says whom
-  the composer addresses. `--assistant-stand-in` (a test instance only)
+  the composer addresses. The values of the objective's fields
+  (`objective-…`: the intent, the message to the agents) are observed only
+  in a test instance too; Cancel on the form in the Conversation clears
+  the intent it took from the draft. A test instance never runs an
+  objective: starting and continuing are refused there, and a recorded
+  objective handed over to a build is shown, not continued.
+  `--assistant-stand-in` (a test instance only)
   runs its Assistant on a scripted stand-in: no network, no key, no cost;
   it reads the model and answers in a line, so a turn can be started and
   observed where no credential may be given. A runtime given for the
