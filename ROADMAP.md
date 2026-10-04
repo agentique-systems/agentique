@@ -211,6 +211,24 @@ is kept to return to (§4.16, Stage 11 in §6.8). Self-development becomes
 understand → propose → implement → check → review → merge → build → try →
 adopt → continue, run by the Orchestrator with the Operator watching.
 
+**Agentique tests and improves itself (C-54, 2026-10-04).** The Operator
+directed the next stage: from one intent, Agentique **explores its own running
+application**, reproduces what it finds, carries a reproduced problem through
+a cycle to adoption, and explores the adopted version again with what it
+learned, so the loop becomes intent → exploration → reproduced finding →
+proposal → implementation → independent checks and review → merge → build,
+try, adopt → exploration informed by the last run. Each agent role runs on
+the model suited to it (C-54), agents may visibly delegate work to other
+agents within the Operator's permissions and budgets, and the Operator
+watches agents type, click and decide in visible windows. Progress is
+measured, not assumed: coverage reached, findings reproduced, fixes adopted,
+and the cost and latency of each way of deciding. Exploration finds problems
+only through deterministic checks that fail and reproduce, never through a
+model's opinion alone; a fix counts only when its regression fails on the
+original implementation (§4.16, Scenario K in §2.12, Stage 12 in §6.9).
+External Claude Code bootstraps this stage and is not needed afterwards for
+ordinary development, testing, orchestration or adoption.
+
 **Ambition in the outcome, simplicity in the mechanism.** Every item in this
 document names the scenario step, decision or recommendation it serves (§8.1).
 The discipline of §1.3 applies to Agentique's own design first.
@@ -226,7 +244,7 @@ decisions named in each row.
 | A tool where users read or write SysML text; SysML sits entirely beneath the Surface and the agents | Never |
 | A multi-user, collaborative or cloud-hosted service | Not now; one Operator on one machine |
 | The home of a project's source code or deployments | Never; Agentique links to them |
-| An autonomous multi-agent factory for arbitrary projects | Not yet; the Orchestrator runs objectives on Agentique's own repository first (C-5, C-53) |
+| An autonomous multi-agent factory for arbitrary projects | Not yet; the Orchestrator runs objectives on Agentique's own repository first (C-5, C-53); agents delegate child objectives only within one objective's permissions and budgets (C-54) |
 | A physics or physical-systems simulator | Not the aim; simulation tests architecture and contracts (C-16) |
 | A generator of verification paperwork for its own sake | Never; proof is working software the Operator uses (C-15) |
 | An agent framework or runtime for other people's code | Not a goal; agents in designed systems are implemented in the project's own code (C-46) |
@@ -476,6 +494,24 @@ objective and watches; agents do the work in the visible application.
 | J8 | **Continue.** The next cycle starts from the adopted version, until the objective is met, a budget is used up, or the Operator stops it. | Progress, spend and outcomes accumulate in one record; Pause, Step and Resume take effect at the next action or tool call, and Stop interrupts at once. | Repeated failure or lack of progress stops the objective with a report, never a loop. |
 
 **Stage mapping.** Scenario J is Stage 11 (§6.8).
+
+### 2.12 Scenario K: Agentique tests and improves itself (C-54)
+
+Agentique's own repository is open. The Operator gives one broad intent and
+watches; agents explore, delegate, fix and adopt in visible windows.
+
+| Step | What happens | Observable success | Failure and recovery behaviour |
+|---|---|---|---|
+| K1 | **Intent.** The Operator writes one broad objective ("Find and fix problems in …") with exploration on, budgets and permissions, and starts it. | Before any agent starts, the panel shows each role's effective model, why a fallback was chosen, the credential and who is billed. | A role with neither its model nor a fallback available, or a credential Agentique may not use, is named; nothing starts half-configured. |
+| K2 | **Explore.** An explorer operates a test instance of the running build through the control interface. Each action is chosen from the observation, the intent, what is not yet covered, earlier findings and recent changes, among the actions that are valid there; fast typed decisions choose where they can and escalate when unsure. | The test instance's window shows the typing, clicks, focus and scrolling, the agent, its goal, each decision and its outcome, at the speed the Operator set; Pause, Step, Resume and Stop respond at once. | A crash, a hang, an unexpected dialog or a refused stale action is recovered from (restart from the same start, cancel by rule, observe again) and recorded; it never ends the run silently. |
+| K3 | **Reproduce.** A finding is a deterministic check that failed: an invariant of the application or an expectation stated before the action. It is replayed from a fresh start of the same build and reduced to the steps that still reproduce it. | Each finding shows its check, its steps, the build and whether it reproduced; only reproduced findings go on. | A finding that does not reproduce is kept as such and proposes nothing. |
+| K4 | **Delegate.** The lead may delegate a child objective (for example, to explore one area further) by a directive entered in the Objectives panel, as that agent. | The Operator sees who asked whom, the child's budget and permissions within the parent's, its progress and its result returning to the parent. | A child that would exceed the parent's permissions, budget or depth is refused with the reason. |
+| K5 | **Propose.** The lead chooses one reproduced finding and proposes an improvement; the finding's replay is among its frozen criteria. | The replay fails on the original build before any change is made. | A proposal whose regression does not fail on the original implementation is refused as no evidence. |
+| K6 | **Implement, check, evaluate, review.** As J3–J5; a user-facing change is verified in a test instance. | Every criterion has an explicit outcome on the change, the replay among them. | As J3–J5. |
+| K7 | **Merge, build, try, adopt.** As J6–J7. | As J6–J7. | As J6–J7. |
+| K8 | **Continue informed.** The next exploration runs in the adopted build: it first replays the fixed finding, then prefers behaviour not yet covered and areas just changed. | The record shows coverage growing across runs, the fixed finding passing, and what each run cost. | A fixed finding that fails again is reported as a regression. |
+
+**Stage mapping.** Scenario K is Stage 12 (§6.9).
 
 ---
 
@@ -2057,6 +2093,99 @@ build, which records the failure in the objective and continues from the
 saved point. Data formats are compared
 before adoption; a build that changes one is not adopted.
 
+**Models per role (C-54).** Settings name, for each role, a provider and
+model, an effort and a fallback: the Assistant, the lead, the implementer, the
+reviewer, the evaluator, the explorer, escalation (the reasoning model a typed
+decision escalates to) and typed decisions. The defaults follow the work:
+Claude Opus 5.5 (`claude-opus-5-5`) for the lead, review and escalation;
+Claude Sonnet 5.5 (`claude-sonnet-5-5`) for the implementer, the evaluator and
+the Assistant; DeepSeek's `deepseek-flash` for exploration; Jev for typed
+decisions; DeepSeek's models as the fallbacks. Before an objective starts,
+each role's **effective model** is resolved: its own model when that
+provider has a credential Agentique may use, otherwise its fallback, with the
+reason; a role with neither stops the objective from starting. No role takes
+another's model by default. A role's session, effort, permission policy,
+SDK subagents and spend stay that role's; the record and the Objectives
+panel show the effective model, any fallback and why, and spend per role.
+
+**Credentials.** A Claude Agent runtime session uses only a credential the
+Studio gives it: a key from the credential store or the environment, for
+Anthropic or an Anthropic-compatible endpoint. Its own configuration folder
+keeps the machine's Claude login out of reach, and the companion checks the
+credential source the SDK reports before the first model call, stopping a
+session that would use any other. A local Claude login is detected with the
+documented `claude auth status` and shown with the reason it is not used:
+Anthropic does not allow products built on the Agent SDK to offer claude.ai
+login without its approval [106][108]. Settings show which credential each
+provider uses and who is billed (the key's Console organisation, DeepSeek,
+TypeSafe AI). Nothing falls back to another paid account silently.
+
+**Exploration.** An explorer's run has a test instance of one build, a goal,
+the testing knowledge, budgets (steps, time, spend) and a way of deciding.
+Each step: observe; check the invariants; list the actions that are valid
+there (enabled, visible controls and available commands an agent may use,
+with typed inputs from fixed input classes: a valid name, empty, long,
+non-ASCII, a duplicate, a keyword); choose one (by rule, by Jev, by the
+explorer's model, or by Jev escalating when unsure); act; record. A
+**finding** is a deterministic check that failed: an invariant (the instance
+exits or stops answering; a listed, enabled control is refused; an
+interactive control has no readable label; undo does not restore the model;
+a dialog cannot be closed; an action takes longer than its budget; the
+status line reports an internal error) or an expectation the explorer stated
+as a checkable predicate before acting. A model's opinion alone is never a
+finding. A finding is **reproduced** by replaying its steps from a fresh
+start of the same build (actions re-based on fresh observations, no model
+asked), twice, and **reduced** by dropping steps while it still reproduces;
+its identity is its check, control and normalised message. A crash, a hang
+or an unexpected dialog is recovered from by restarting from the same start
+or cancelling by rule, and recorded.
+
+**Testing knowledge.** The Orchestrator keeps a testing record per project
+in its app data (`testing/`): coverage (screen, region, control, action and
+input class, with counts and the build last seen), findings (steps, state,
+the cycle and pull request that fixed them) and runs (way of deciding, new
+coverage, findings, latency, cost). Exploration prefers what is not yet
+covered and the areas changed since the last run, and first replays the
+findings fixed since. A change to how exploration or a typed decision
+chooses is adopted only on evidence from fixed exploration tasks held out
+from its tuning; the tasks that judge it are never weakened to let it pass.
+
+**Delegation.** A role may delegate a **child objective**: a directive, a
+budget within what the parent has left, and permissions within the parent's
+(an exploration child never merges or adopts). The Orchestrator enters the
+directive in the Objectives panel's delegation field through the control
+interface, as that agent and at observer speed, and the Studio starts the
+child with its parent named. A child counts against its parent's budgets,
+children nest at most two deep, one runs at a time per parent, and its result
+returns to the parent's lead, which continues. Agents still cannot start,
+steer or stop the Operator's own objectives, answer the Operator's approvals
+or speak in the Conversation as the Operator; what an agent entered is shown
+as that agent's, never as the Operator's.
+
+**Control ownership and observer mode.** One agent acts in a window at a
+time: the first to act holds it until it is idle for a while or finishes, and
+another agent's action is refused with who holds it; each explorer and
+evaluator has its own test instance. Typing appears character by character
+at the speed the Operator sets (instant for tests); clicks, focus, scrolling,
+the acting agent, its goal, its last decision and the outcome are drawn in the
+window; Pause, Step and Resume take effect between characters, and Stop at
+once.
+
+**Evidence, gates and bounds added (C-54).** A criterion shows a defect on
+the original implementation only by behaviour: a replay or observation that
+fails on the base build, or a test that compiles and runs on the base (new
+test files brought over) and fails there. No tests, a compile error or a
+broken setup on the base is no evidence, and a cycle needs at least one
+criterion with evidence. A change to the Studio's user-facing code needs a
+behavioural criterion and an evaluation in a test instance, whatever its other
+criteria. A judgment's failure is identified by its criterion and verdict, not
+its wording. Attempts, time, steps and model calls per role are budgets the
+Operator sets; a cycle's worktrees are removed when it ends (a failed or
+interrupted cycle's work is kept, at most a few); one build runs at a time;
+merged branches are deleted. A test instance can be started in a stated
+condition (for example, recovered from a failed build), so criteria about
+such states are testable.
+
 ---
 
 ## 5. Current-state alignment
@@ -2804,6 +2933,62 @@ decisions in Providers.
 **Waits:** objectives on other projects; remote workers; a sandbox the host
 does not offer; spending limits on the Operator's own conversation.
 
+### 6.9 Stage 12: Agentique tests and improves itself (C-54)
+
+Brought forward by the Operator on 2026-10-04 (C-54). It builds on Stage 11's
+Orchestrator, control interface, typed decisions and launcher; Stage 11's
+gate (the Operator's own run and acceptance) stands and is met by the same
+run if the Operator accepts it.
+
+**Outcome.** Scenario K (§2.12, K1–K8).
+
+**Work items** (in dependency order, each integrated as a working slice):
+
+- **W12.1 Direction and self-model:** C-54 in this document, `AGENTS.md`, the
+  self-model's contracts (`Orchestrator`, `Studio`, `ClaudeAgentRuntime`,
+  `Assistant`, `Providers`) and its new requirements.
+- **W12.2 The control interface, complete and observable** (§4.16): every
+  interactive control observed with a readable label (palette rows and its
+  search field, switches, the Inspector's and Settings' fields, the title
+  bar's controls), schemas checked as declared, title-bar buttons that answer
+  operating-system clicks, control ownership, and observer mode.
+- **W12.3 Models per role and credentials** (§4.16): the routing in Settings,
+  effective models with fallbacks and reasons, effort, spend per role, the
+  credential check and the detection of a local Claude login.
+- **W12.4 Exploration and testing knowledge** (§4.16): the explorer's run,
+  invariants, findings, reproduction and reduction, the testing record, and
+  the ways of deciding (rules, Jev, the explorer's model, Jev escalating)
+  compared on fixed, held-out exploration tasks for useful coverage,
+  progress, unwanted actions, latency and cost.
+- **W12.5 Exploration in cycles and stronger gates** (§4.16): Explore and
+  Reproduce before Propose, the replay as a criterion that must fail on the
+  original build, evidence on the base, evaluation of user-facing changes,
+  failure identity, configurable budgets, test instances in a stated
+  condition, activity with diffs kept in the record, and the bounds on
+  worktrees, builds and branches.
+- **W12.6 Delegation** (§4.16): child objectives entered visibly in the
+  Objectives panel, within the parent's permissions and budgets, with their
+  results returned to the parent.
+- **W12.7 Proof:** from one intent, with no external Claude Code after the
+  bootstrap: explorers take materially different paths from real
+  observations; agents enter directives and delegate visibly; exploration
+  reaches behaviour not covered before and recovers from an unexpected state;
+  at least one discovered problem goes through implementation, independent
+  checks, review, pull request, merge, build and adoption; the next
+  exploration uses what the previous one learned; interruption and resume, a
+  failed check repaired, a stale action recovered and a launcher fallback,
+  shown on purpose. Naturally found problems are kept apart from injected
+  faults. The repository's checks, the Windows journeys and the reference run
+  on the final `main`.
+
+**Gates** (the Operator's, C-15): the Operator gives an intent, watches
+Agentique explore, delegate, fix and adopt through K1–K8, and accepts the
+result.
+
+**Depends on:** Stage 11 (built, pending acceptance).
+**Waits:** exploration of projects other than Agentique; claude.ai login in
+Agentique (needs Anthropic's approval, §4.16); remote test machines.
+
 ---
 
 ## 7. Decisions and open questions
@@ -2873,6 +3058,7 @@ Confirmed in the interview of 2026-09-27:
 | C-51 | **Agentique builds Agentique.** Stage 10 (Scenario C) is brought forward as the last externally driven bootstrap, with three inseparable outcomes: Agentique becomes understandable again (its self-model explains a working product), its Assistant gains a runtime on the official Claude Agent SDK, and it can produce, validate and adopt its next version and recover from a bad one, proven over two generations by the Operator (amended by C-53: the two generations are proven autonomously, Stage 11). Authorises the bounded milestone and the SDK runtime it needs, including an SDK-owned agent loop for that runtime only, with the exception to C-34 and R-21 recorded; it does not authorise an unrelated rewrite, weakening protected guarantees, or declaring the Operator's acceptance (the Operator's direction, 2026-10-01) |
 | C-52 | **Typed decisions for Scenario I, alongside Stage 10.** The System One investigation's plan (updated 2026-10-03 after PR #86) is brought forward beside Stage 10 as explicitly reprioritised work: restoring CI, correcting the Execution safeguard's paths, making the Jev adapter correct (complete bounded replies, request-bound validation, explicit usage), end-to-end deadlines and cancellation, exact execution identity in the existing run records, the opt-in single-choice `LinkScreening` evaluation in the Studio, a real Rust `LinkScreening` client in the URL shortener's code with frozen-response conformance tests, and a separate, deliberate rig migration (C-34). Authorises those designs and their necessary supporting changes, including the additive persistence change recorded in §7.6. It does not authorise paid inference, live evaluations, production activation, Jev for the Assistant (C-35 stands), a router, registry, new runtime or library extraction; it changes no Stage 10 gate, does not count as its two-generation proof and declares no acceptance (the Operator's direction, 2026-10-03) |
 | C-53 | **Agentique improves itself.** Autonomous, self-improving development through Agentique: AI agents are its primary users; the Operator supplies intent as objectives, observes activity and outcomes visually, and steers or stops the work. Agentique builds, runs, tests and evaluates Agentique and adopts a new version when the objective's acceptance criteria pass, with no routine approvals and no terminal repair. Supersedes the rules that required supervised-only development, the Operator's approval of every development cycle and integration, "Agentique never pushes", the postponement of the Orchestrator, the Claude Agent runtime's restriction to Agentique's own tools, Jev never serving Agentique's own operation (C-35) and the absence of budgets for autonomous work (C-37). Authorises the necessary changes to locked parts (the Claude Agent runtime, the launcher, Execution's use, the companion protocol) when they are documented, reviewed, tested and recoverable, each named in §7.6. Keeps: model changes through the one operation boundary with validation and identity (C-2); locks (an objective may name locked elements it may change); deterministic checks and independent review decide, and an agent's or a typed decision's judgment never overrides a failing check; weakening a check never counts as improvement; Stop and recovery always work; the host's permissions, credentials, repository rules and configured budgets are respected; no force-push, no bypassed branch protection; unrelated guarantees stand (the Operator's direction, 2026-10-03) |
+| C-54 | **Agentique tests and improves itself.** From one intent, Agentique explores its own running application through the real GUI, reproduces what it finds, carries a reproduced problem through a cycle (C-53) to adoption, and explores the adopted version again with what it learned; testing knowledge, scenarios, skills and decision policies improve only on measured evidence. Each agent role runs on its own configured model: Claude Opus 5.5 for the lead, independent review, difficult reasoning and escalation; Claude Sonnet 5.5 for implementation, the Assistant and most behavioural evaluation; DeepSeek's `deepseek-flash` for exploration; Jev for bounded typed decisions; every fallback explicit and shown with its reason. Agents may delegate child objectives visibly through the Objectives panel within the parent's permissions and budgets, replacing the blanket refusal of the Objectives panel to agents with that scoped delegation. Authorises the necessary changes to the Orchestrator, the Claude Agent runtime, the control interface, the Studio's rules for agents, Settings and the testing contracts, each named in §7.6. Keeps everything C-53 keeps, and adds: a claude.ai subscription login is never used by Agentique without Anthropic's approval and no credential is extracted or copied; a finding is a deterministic check that failed and reproduced, never a model's opinion alone; a fix counts only when its regression fails on the original implementation; user-facing changes are verified in the GUI; the tasks that judge testing knowledge and decision policies are fixed and held out; external Claude Code bootstraps the stage and does not steer its proof (the Operator's direction, 2026-10-04) |
 
 ### 7.2 Recommendations
 
@@ -3087,6 +3273,9 @@ The ADRs named here are preserved at the tag `archive/pre-realignment`.
 | 2026-10-04 | The Orchestrator under C-53, after its review: a criterion's command is a test run (cargo test, node --test, python -m unittest) that must fail on the base and run at least one test after; only one commit holding the reviewed tree is pushed per review, its message and the pull request scanned for keys; the code of locked parts is gated through the links (the Orchestrator's crate is linked to its part), Agentique's safeguards and agent configuration at any depth only when the objective names them; the baseline guard lists each weakened assertion, threshold or test; the lead and the reviewer run no commands, and a worktree session is refused the commands that move the repository's shared state (stash pop and drop, branch, update-ref, tags, local config, worktrees); test instances get no keys from the Studio's environment; usage without a price counts at a high one; a merge is idempotent; a build that does not take over ends the objective | §4.16's gates hold against an agent that writes its own criteria and code; commands an implementer runs stay unconfined (as any build is), so GitHub branch protection on the default branch is recommended as the backstop |
 | 2026-10-04 | Typed decisions under C-53 (W11.6), after their review: a dialog in the Orchestrator's way is decided by rule (cancel it; an approval waits); Jev, the reasoning model and Jev escalating are compared live on 33 situations from the Studio's real dialogs and on a live application-control workflow (`docs/stages.md`); the comparison's reasoning model is `deepseek-v4-pro` through DeepSeek, fixed in `Decider::default` rather than taken from Settings. | §4.16 puts a known answer in deterministic code, and the measurements show no model does better there; DeepSeek is the only reasoning provider with a key on the reference machine. The self-model's Orchestrator doc ("each bounded choice in operation by a typed decision") is read with §4.16's rule for known answers; the locked part is unchanged. |
 | 2026-10-04 | W11.7 under C-53, run live with an AI agent standing in for the Operator: after the bootstrap (and #103, a bootstrap fix made before the proof: an installed build did not know its repository), Agentique merged and adopted three of its own improvements (#104, #105, #106) from objectives entered in its window, each started in the build the previous one adopted or recovered to; interruption and resume, a failing gate repaired, a stale action and a failed launch with recovery were shown on purpose; what was not done (the Windows journeys and the reference run on the final `main`) and what the proof found are listed in `docs/stages.md` | The record of the run; the gate needs the Operator's own run and acceptance (§6.8, §8.3) |
+| 2026-10-04 | **C-54, the Operator's direction:** Agentique tests and improves itself. Stage 12 (§6.9) with Scenario K (§2.12); §1.5 gains its paragraph; the §1.6 row on a multi-agent factory gains delegation within one objective; §4.16 gains models per role, credentials, exploration, testing knowledge, delegation, control ownership and observer mode, and the added evidence, gates and bounds; the glossary gains exploration, finding, testing knowledge, child objective and observer mode | The Operator's instruction in this session; Stage 11's loop is complete but is fed objectives from outside and judges command-only changes without the GUI |
+| 2026-10-04 | Locked parts under C-54, named before they are built: **(1) `Orchestrator`**: models per role resolved before an objective starts and recorded with their reasons; the phases Explore and Reproduce before Propose when an objective explores; the criterion kind `replay` (a reproduced finding's steps and check, run on the base build, where it must fail, and on the change); evidence on the base as §4.16 states; evaluation of user-facing changes whatever the other criteria; failure identity by criterion and verdict; budgets for attempts, time, steps and model calls per role; child objectives within the parent's permissions and budgets, at most two deep; a cycle's worktrees removed when it ends; one build at a time; merged branches deleted; the escalation model taken from Settings. **(2) `ClaudeAgentRuntime`**: the credential source the SDK reports is checked against the credential the Studio gave before the first model call, and a session that would use another stops with an `auth` error; `accountInfo()` and the source are reported in `init`; a status probe runs the bundled `claude auth status` with the Operator's configuration folder to report whether a local Claude login exists and of which kind, never its token, email or organisation; effort, the subagents' model and a spend ceiling (`maxBudgetUsd`) are passed per session. **(3) The Studio's rules for agents**: the Objectives panel's delegation field accepts an objective's agent's directive, entered through the control interface and recorded as that agent's; every other Operator-own rule stands. **(4) Persistence**: the project's format is unchanged; the Orchestrator's testing record is new app data (`testing/<project>/knowledge.json`) and an objective's activity is kept beside its record (`objectives/<id>/activity.jsonl`); `objective.json` gains optional fields only, so its format stays 1 if, and only if, the previous build's reader is shown to ignore them, otherwise the format changes and adoption is blocked until data rollback is supported; both new files are listed among the data formats a build reports. The launcher and Execution are unchanged | R-16 and §8.1 rule 4 ask for an explicit decision; C-54 authorises these changes when documented, reviewed, tested and recoverable |
+| 2026-10-04 | Under C-54, credentials as found on the reference machine: the Operator's machine has a claude.ai login (Claude Max) and no Anthropic API key, Console profile or cloud-provider credentials; Agentique does not use the claude.ai login (the SDK's documentation requires Anthropic's prior approval for products offering it [108]), so the Claude models of the role defaults cannot be tried live here, and each role falls back explicitly to DeepSeek's models with the reason shown. The capability table's `claude-opus-5-5` cache-read price is corrected from $0.40 to $0.20 and `claude-sonnet-5-5` is added [109] | §4.16 credentials; report a provider limit as it is, never as a pass |
 
 ### 7.7 The original requirements
 
@@ -3137,7 +3326,9 @@ on `main` at `6fc90b78`; its retained content is in this document (§4.2, §4.5,
     Agentique's tools; an agent works only in its cycle's worktree (file tools
     are held to it, and the change is checked path by path before merging);
     the agent configuration (`.claude/`, `CLAUDE.md`, `AGENTS.md`) changes only
-    when the objective names it; the
+    when the objective names it; work goes to another agent only as a child
+    objective through Agentique's delegation, within the objective's
+    permissions and budgets (C-54); the
     acceptance criteria and required checks stay frozen at the proposal; no
     test, check or budget is deleted, ignored or loosened to make it pass (a
     deliberate change is named, with its reason, for the reviewer); no
@@ -3211,7 +3402,8 @@ on `main` at `6fc90b78`; its retained content is in this document (§4.2, §4.5,
   stand-in, recording, implementation task, job, trusted-local execution
   (C-50), runtime, build, test instance, launcher (C-51), objective, cycle,
   permission policy, control interface, observation, typed decision
-  (C-53).
+  (C-53), exploration, finding, testing knowledge, child objective,
+  observer mode (C-54); the explorer joins the agent roles.
 - A new product term needs a reason that no standard term fits, and an entry in
   the glossary (§9).
 
@@ -3272,7 +3464,7 @@ on `main` at `6fc90b78`; its retained content is in this document (§4.2, §4.5,
 | **Panels** | Side panels for detail (Outline, Inspector, Requirements, Problems, History, the Run panel, the Objectives panel) |
 | **Conversation** | Chat with the Assistant |
 | **Assistant** | The AI agent the Operator works with, with tools and skills; its sessions also do an objective's work for the Orchestrator |
-| **Orchestrator** | The part that runs objectives: it directs the Assistant's agent sessions (lead, implementer, reviewer, evaluator) through cycles, while deterministic checks and review decide (C-53) |
+| **Orchestrator** | The part that runs objectives: it directs the Assistant's agent sessions (lead, implementer, reviewer, evaluator, explorer) through cycles, while deterministic checks and review decide (C-53, C-54) |
 | **System State** | The live, authoritative KerML/SysML description of the system being built |
 | **Lock** | A mark on a part meaning it changes only with the Operator's confirmation, or within an objective that names it (C-53) |
 | **Settings** | The Studio view for the Operator's choices: providers and keys, models, the Assistant's behaviour, appearance, keyboard, projects |
@@ -3323,6 +3515,11 @@ on `main` at `6fc90b78`; its retained content is in this document (§4.2, §4.5,
 | **Observation** | A text snapshot of the Studio's visible state (identity, screen, dialog, selection, controls, commands, tasks) that actions are checked against; not to be confused with a run's results, which are observations of a system under stated conditions |
 | **Objectives panel** | The Studio's panel where the Operator writes an objective and follows, steers, pauses or stops it |
 | **Typed decision** | One atomic question with explicit inputs and typed options answered by a fast decision model (Jev) under a deadline; uncertain or failed answers escalate (C-52, C-53) |
+| **Exploration** | An explorer agent operating a test instance through the control interface toward a goal, choosing each action among the valid ones from what it observes and what is not yet covered, while invariants are checked after every action (C-54) |
+| **Finding** | A deterministic check that failed during exploration (an invariant, or an expectation stated before the action), with the steps and build that produced it; reproduced when its replay from a fresh start fails the same way (C-54) |
+| **Testing knowledge** | The Orchestrator's record per project of what exploration has covered, the findings and their state, and how each run did, used to choose the next tests (C-54) |
+| **Child objective** | An objective an agent delegated within its parent objective's permissions and budgets, entered visibly in the Objectives panel as that agent; its result returns to the parent (C-54) |
+| **Observer mode** | The Studio drawing agents' input as it happens (typing character by character, clicks, focus, scrolling) with the agent, its goal and its decisions, at a speed the Operator sets (C-54) |
 | **Archive tag** | `archive/pre-realignment`, the preserved state before Stage 0 |
 
 ---
@@ -3466,3 +3663,8 @@ text depends on them.
 
 106. Claude Agent SDK (read 2026-10-01): overview, including that third-party products may not offer claude.ai login https://code.claude.com/docs/en/agent-sdk/overview ; TypeScript reference https://code.claude.com/docs/en/agent-sdk/typescript ; permissions and their order of evaluation https://code.claude.com/docs/en/agent-sdk/permissions ; sessions https://code.claude.com/docs/en/agent-sdk/sessions ; custom tools https://code.claude.com/docs/en/agent-sdk/custom-tools ; the package `@anthropic-ai/claude-agent-sdk` 0.3.287 on npm, its `sdk.d.ts` (`Options`: `tools`, `settingSources`, `permissionMode`, `strictMcpConfig`, `env`) and `manifest.json` (Claude Code 2.1.287 and the binaries' checksums)
 107. Claude Code environment variables (read 2026-10-01): `CLAUDE_CONFIG_DIR`, `CLAUDE_CODE_DISABLE_AUTO_MEMORY`, `CLAUDE_CODE_DISABLE_CLAUDE_MDS`, `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`, `DISABLE_TELEMETRY`, `ANTHROPIC_API_KEY` https://code.claude.com/docs/en/env-vars
+
+**Stage 12 (C-54)**
+
+108. Claude Code authentication and the Agent SDK's credentials (read 2026-10-04): the order in which credentials are chosen (cloud providers, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_API_KEY`, `apiKeyHelper`, `CLAUDE_CODE_OAUTH_TOKEN`, Anthropic profiles, the `/login` subscription), where they are stored (`%USERPROFILE%\.claude\.credentials.json`, or under `CLAUDE_CONFIG_DIR`) https://code.claude.com/docs/en/authentication ; the Agent SDK quickstart's note that, unless previously approved, third-party products built on the SDK may not offer claude.ai login https://code.claude.com/docs/en/agent-sdk/quickstart ; `claude auth status` (JSON; `authMethod` is one of `none`, `claude.ai`, `oauth_token`, `api_key`, `api_key_helper`, `third_party`; exit 0 when logged in) https://code.claude.com/docs/en/cli-reference ; `Query.accountInfo()` https://code.claude.com/docs/en/agent-sdk/typescript and, in `@anthropic-ai/claude-agent-sdk` 0.3.287's `sdk.d.ts`, `AccountInfo` (`subscriptionType`, `tokenSource`, `apiKeySource`, `apiProvider`) and the init message's `apiKeySource` (`'none'` for a claude.ai login)
+109. Claude models and prices (read 2026-10-04): `claude-opus-5-5` $4 input, $20 output, $0.20 cache reads per million tokens, effort `low` to `max` with `medium` the default, thinking always on; `claude-sonnet-5-5` $2 / $10, cache reads $0.20, effort default `high`; `claude-haiku-4-5` $1 / $5 https://platform.claude.com/docs/en/about-claude/models/overview and https://claude.com/pricing ; DeepSeek's `GET https://api.deepseek.com/models` (read 2026-10-04: `deepseek-flash`, DeepSeek-V4.1-Flash, and `deepseek-v4-pro`, efforts `low`, `high`, `max`)

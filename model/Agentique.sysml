@@ -259,14 +259,22 @@ package AgentiqueArchitecture {
     }
 
     item def ObjectiveRequest {
-        doc /* The Operator's objective (C-53): its intent, budgets and the permissions
-             * it carries. `cycles` is its cycle budget. */
+        doc /* The Operator's objective (C-53), or a child objective an agent delegated
+             * within its parent's permissions and budgets (C-54): its intent, budgets
+             * and the permissions it carries. `cycles` is its cycle budget; `explore`
+             * says whether its cycles start by exploring the running application;
+             * `depth` is 0 for the Operator's and one more than its parent's for a
+             * child (at most 2). */
         attribute cycles : Natural;
+        attribute explore : Boolean;
+        attribute depth : Natural;
     }
 
     item def CycleReport {
-        doc /* One cycle's outcome as the Objectives panel shows it: whether its change
-             * was merged and whether its build was adopted. */
+        doc /* One cycle's outcome as the Objectives panel shows it: the findings its
+             * exploration reproduced (C-54), whether its change was merged and
+             * whether its build was adopted. */
+        attribute reproduced : Natural;
         attribute merged : Boolean;
         attribute adopted : Boolean;
     }
@@ -279,7 +287,8 @@ package AgentiqueArchitecture {
 
     item def ControlAction {
         doc /* An agent's action on the Studio: a command, input on a control, or a
-             * selection, naming the identity and revision it was observed against. */
+             * selection, naming the agent, the identity and revision it was observed
+             * against, and its goal and reason for observer mode (C-54). */
         attribute observedAt : Natural;
     }
 
@@ -477,11 +486,18 @@ package AgentiqueArchitecture {
              * carries out every edit and every tool call through the System State's one
              * change path (asking about locks), runs tasks through Execution, and decides
              * nothing the Operator or an objective has not. Its control interface (C-53)
-             * gives agents what it shows as an observation and carries out their actions
-             * through the same handlers as the Operator's input, refusing stale ones, and
-             * shows which agent does what. Owns presentation (cameras, layouts,
-             * selection), the session, Settings, the control interface's event trace and
-             * each project's app data (conversation, jobs, runs, required checks). */
+             * gives agents what it shows as an observation, every interactive control
+             * with a readable label, and carries out their actions through the same
+             * handlers as the Operator's input, refusing stale ones and actions by an
+             * agent that does not hold the window (C-54); observer mode draws each
+             * agent's typing, clicks, focus and scrolling with its goal and decisions,
+             * at the Operator's speed. Agents may enter a child objective's directive in
+             * the Objectives panel as themselves; everything else the Operator's own
+             * stays refused to them. Settings name each agent role's model, effort and
+             * fallback, and the Studio resolves them before an objective starts (C-54).
+             * Owns presentation (cameras, layouts, selection), the session, Settings,
+             * the control interface's event trace and each project's app data
+             * (conversation, jobs, runs, required checks). */
         part 'agq-studio-native' : Crate;
         part 'agq-studio-scene' : Crate;
         port operator : OperatorPort;
@@ -569,8 +585,9 @@ package AgentiqueArchitecture {
              * and every tool call it makes is checked against its schema and carried
              * out by the Studio on the one change path; in an implementation task it is
              * the worker, with the coding tools in the task's worktree, and in an
-             * objective its sessions are the Orchestrator's lead, implementer, reviewer
-             * and evaluator (C-53). Owns the tool definitions, the skills, the
+             * objective its sessions are the Orchestrator's lead, implementer, reviewer,
+             * evaluator and explorer, each on its role's model (C-53, C-54). Owns the
+             * tool definitions, the skills, the
              * development sessions' permission policies and the conversation's entries.
              * Its behaviour comes from a model, so the scenarios stand it in. It never
              * changes the model except through Agentique's tools, and works on files
@@ -591,7 +608,11 @@ package AgentiqueArchitecture {
              * with a file tool, so the model changes only through Agentique's tools,
              * served by one MCP server whose calls the Studio carries out; the project's
              * configuration is loaded, never the machine's user settings; the
-             * environment carries no key but its model's. Not a sandbox: it runs with
+             * environment carries no key but its model's, and a session runs only on
+             * the credential the Studio gave it: the source the SDK reports is checked
+             * before the first model call, and a session that would use another, such
+             * as the machine's claude.ai login, stops (C-54). It can report whether a
+             * local Claude login exists, never its token. Not a sandbox: it runs with
              * the Operator's rights and reaches its model's API (Anthropic, or an
              * Anthropic-compatible endpoint). No crate: its code is in claude-agent/src.
              * A safeguard: locked. */
@@ -602,8 +623,8 @@ package AgentiqueArchitecture {
              * keys in the OS credential store; model lists, capabilities, usage. The
              * only part that uses rig, tokio, reqwest or the credential-store crates
              * (R-21, R-41). Owns the keys, the capability table (which models chat
-             * and which make typed decisions, and which decision models are known
-             * pinned versions) and every provider call: streamed chat, and typed
+             * and which make typed decisions, which decision models are known
+             * pinned versions, and each model's dated price) and every provider call: streamed chat, and typed
              * decisions (C-35, C-52) with replies read completely within a size
              * limit and checked against the request that was sent, usage that says
              * when it is unknown, one deadline for every attempt and wait, and
@@ -695,20 +716,28 @@ package AgentiqueArchitecture {
     }
 
     part def Orchestrator {
-        doc /* Runs the Operator's objectives (C-53, ROADMAP §4.16): each objective in
-             * cycles (propose with frozen acceptance criteria, implement in a worktree,
-             * check on a clean checkout, evaluate in a test instance through the control
+        doc /* Runs the Operator's objectives (C-53, C-54, ROADMAP §4.16): each objective
+             * in cycles (explore the running application and reproduce what fails,
+             * propose with frozen acceptance criteria, implement in a worktree, check on
+             * a clean checkout, evaluate in a test instance through the control
              * interface, independent review, bounded repair, merge, build, try, adopt,
-             * continue), each judgment by an agent session of the Assistant's runtime,
-             * each bounded choice in operation by a typed decision that escalates when
-             * unsure. Owns the objectives' records (app data: state, journal, sessions,
-             * results, spend, continuation). Contract: deterministic code decides the
-             * next phase from recorded results; a cycle merges only when every required
-             * check and acceptance criterion passed on the reviewed commit, the reviewer
-             * approved and the repository's checks passed, and adopts only after its
-             * test instance passed; a check that did not run is never a pass; weakening a check
-             * never counts; budgets and lack of progress stop it; resuming never repeats
-             * a completed side effect; Stop interrupts every session. A safeguard:
+             * continue), each judgment by an agent session of the Assistant's runtime on
+             * its role's resolved model, each bounded choice in operation by a rule
+             * where the answer is known, otherwise by a typed decision that escalates
+             * when unsure; child objectives an agent delegated run within their
+             * parent's permissions and budgets. Owns the objectives' records (app data:
+             * state, journal, sessions, effective models, results, spend per role,
+             * activity, continuation) and each project's testing knowledge (coverage,
+             * findings with their replays, runs). Contract: deterministic code decides
+             * the next phase from recorded results; a finding is a deterministic check
+             * that failed and reproduced; a cycle merges only when every required check
+             * and acceptance criterion passed on the reviewed commit, one criterion
+             * showed the defect on the original implementation, a user-facing change
+             * was evaluated in a test instance, the reviewer approved and the
+             * repository's checks passed, and adopts only after its test instance
+             * passed; a check that did not run is never a pass; weakening a check never
+             * counts; budgets and lack of progress stop it; resuming never repeats a
+             * completed side effect; Stop interrupts every session. A safeguard:
              * locked. */
         port objectives : ObjectivePort;
         port control : ~ControlPort;
@@ -907,6 +936,53 @@ package AgentiqueArchitecture {
     dependency from Orchestrator to Launcher {
         doc /* Builds' manifests and the registry, for trial and adoption. */
     }
+
+    // C-54's guarantees, after the earlier anonymous members so that their
+    // identities keep their places.
+
+    requirement def FindingsReproduce {
+        doc /* A finding is recorded only when a deterministic check failed during
+             * exploration (an invariant of the running application, or an expectation
+             * stated before the action) and its replay from a fresh start of the same
+             * build fails the same way; a model's opinion alone is never a finding
+             * (C-54). */
+        subject orchestrator : Orchestrator;
+    }
+
+    requirement def DefectShownBefore {
+        doc /* A cycle's change counts only when one of its frozen criteria fails on the
+             * original implementation by its behaviour (a replay or observation on the
+             * base build, or a test that compiles and runs there) and passes on the
+             * change; no tests, a compile error or a broken setup on the base is no
+             * evidence; a change to user-facing code is evaluated in a test instance
+             * (C-54). */
+        subject orchestrator : Orchestrator;
+    }
+
+    requirement def ChildWorkBounded {
+        doc /* Work an agent delegates has at most its parent's permissions, counts
+             * against the parent's budgets, nests at most two deep and is entered
+             * visibly as that agent; an agent never grants itself a permission or
+             * answers the Operator's approvals (C-54). */
+        subject orchestrator : Orchestrator;
+    }
+
+    requirement def OnlyGivenCredentials {
+        doc /* A Claude Agent runtime session uses only the credential the Studio gave
+             * it; one that would use another, such as the machine's claude.ai login,
+             * stops before its first model call (C-54). */
+        subject claudeAgent : ClaudeAgentRuntime;
+    }
+
+    requirement findingsReproduce : FindingsReproduce;
+    requirement defectShownBefore : DefectShownBefore;
+    requirement childWorkBounded : ChildWorkBounded;
+    requirement onlyGivenCredentials : OnlyGivenCredentials;
+
+    satisfy findingsReproduce by agentique.orchestrator;
+    satisfy defectShownBefore by agentique.orchestrator;
+    satisfy childWorkBounded by agentique.orchestrator;
+    satisfy onlyGivenCredentials by agentique.claudeAgent;
 
     // The workflows (ROADMAP §2.8 C2), with their failure paths. Each runs in model
     // execution and steps across the parts; each step's code and tests are linked.

@@ -1356,3 +1356,83 @@ The workflow (`crates/orchestrator/tests/workflow.rs`): a test instance of the S
 | Jev, escalating | 8 of 10 | 1 | 1 | 3.7 / 25.6 s | $0.029 |
 
 (The forward rule's run had nine: one dialog did not open after an earlier confirmation changed the model.) Every way that asks a model made one harmful choice: the model confirmed the Checkpoint dialog, and Jev and the escalating way confirmed Save to library. Jev is unsure about most dialogs unrelated to the goal, so the escalating way paid for both and here cost more than the model alone; an earlier run gave the model 8 of 10 for $0.069 (p95 92 s) and escalation 8 of 10 for $0.021. For a dialog unrelated to the goal the answer is known, and the cancelling rule beats every model at no cost; so the Orchestrator cancels by rule (§4.16), and typed decisions are left for questions no rule answers, where the first table shows Jev escalating keeps most of the model's accuracy at a fraction of its cost. No judgment passes a criterion either way.
+
+## Stage 12: Agentique tests and improves itself (C-54)
+
+Status: **in progress.** Started on 2026-10-04 under the Operator's direction
+(C-54, ROADMAP §6.9): from one intent, Agentique explores its own running
+application, reproduces what it finds, fixes and adopts, and explores the
+adopted version with what it learned. Nothing here says the Operator accepted
+anything.
+
+**Baseline** (`main` at `388b5dba`; CI green; the adopted build `ce5408a8`).
+Read against the code before any change (file:line on that commit):
+
+- One provider and model for every role: `objective_setup` builds one runtime
+  factory that ignores the role (`studio-native/src/objectives.rs:94-133`);
+  on DeepSeek every role is `deepseek-v4-pro`, effort unset; the Settings
+  model choice is used only by the Conversation.
+- `act_in_app` is refused to every model: its `observed` field is declared
+  `integer`, which the tool-input checker does not know
+  (`assistant/src/tools.rs:534-541`), so "`input.observed` must be integer"
+  answers integers and text alike. The endpoint path skips the checker, which
+  is why the journeys and the Orchestrator's own client worked; in the W11.7
+  proof the evaluator agent could not act (its "a model that sent it as text"
+  diagnosis was incomplete).
+- Title-bar buttons ignore operating-system clicks (physical or injected): the
+  bar is one `WindowControlArea::Drag` with the buttons inside it, and GPUI
+  answers `WM_NCHITTEST` with the first window-control hitbox under the
+  pointer, the bar's, so the press becomes a window move
+  (`workspace.rs:1021-1022`; gpui-pre 0.3.7 `window.rs:1947-1957`). The
+  control interface's clicks bypass `WM_NCHITTEST`, so they worked.
+- Not in observations: the palette's rows and search field, every switch
+  (the Objectives panel's merge and adopt switches, Settings' toggles), the
+  Inspector's Name, Multiplicity and Docs fields, the outline filter,
+  Settings' text and key fields, the title bar's search and window controls.
+  No test asserts that controls have readable labels.
+- Typing by agents is applied in one frame; there is no speed setting; the
+  event trace is in memory only.
+- Agents are refused the Objectives panel (`control/mod.rs:537-539`) and the
+  Conversation (`control/mod.rs:476`); no agent can delegate.
+- Command-only objectives skip evaluation in a test instance
+  (`orchestrator/src/run.rs:1378-1386`); nothing requires a behavioural
+  criterion for a user-facing change.
+- "Fails before the change" accepts any outcome but "passed" on the base:
+  zero tests, a compile error and "not run" all count
+  (`run.rs:1332-1355`, `1110-1165`).
+- Failure identity is the text of failing lines with digits removed; a
+  judgment worded differently each time escapes "the same failures twice".
+- Jev is not used in operation: dialogs are cancelled by rule, and the
+  escalation model is fixed to `deepseek-v4-pro` in `Decider::default`.
+- No testing knowledge persists across objectives; activity lines are kept
+  in memory only (300) and show no diffs.
+- Worktrees (`base`, `verify`, `trial`, `work`, instances) and branches are
+  never removed (16 worktrees registered now); old builds are never pruned;
+  the Orchestrator's builds and the Studio's are not serialised.
+- Attempts (4) and hours (6) cannot be set; model calls per role are fixed
+  (lead 80, implementer 160, reviewer 60, evaluator 80).
+- Test instances cannot start in a stated condition (no `--recovered-from`),
+  which made objective 3 of W11.7 unmeetable.
+- Credentials: every runtime session sets `CLAUDE_CONFIG_DIR` to the
+  runtime's own folder and passes an explicit key, so the machine's
+  claude.ai login is not read today, but nothing checks the source the SDK
+  reports (`apiKeySource` is forwarded and ignored); Settings' runtime card
+  still says "Anthropic only". The reference machine has a claude.ai login
+  (Max) and no Anthropic API key, Console profile or cloud credentials.
+- Prices: `claude-opus-5-5`'s cache read is $0.40 in the table (it is $0.20);
+  `claude-sonnet-5-5` is missing.
+- Local checks on the baseline: `python tools/check_architecture.py` OK (13
+  crates, 12 parts, 31 dependencies); the companion's 31 tests pass (Node
+  22.11). The workspace's Rust checks passed in CI on `388b5dba`.
+
+**Work items**
+
+| Item | Pull request | State |
+|---|---|---|
+| W12.1 Direction and self-model | `stage12/direction` | C-54, Scenario K, §4.16, Stage 12, the decision log naming the locked parts before they change; the self-model's contracts (`Orchestrator`, `Studio`, `ClaudeAgentRuntime`, `Assistant`, `Providers`, the objective and control items) and four requirements (`FindingsReproduce`, `DefectShownBefore`, `ChildWorkBounded`, `OnlyGivenCredentials`); identities reconciled by `Project::open` (only new elements got ids) |
+| W12.2 Control interface, complete and observable | — | Not started |
+| W12.3 Models per role and credentials | — | Not started |
+| W12.4 Exploration and testing knowledge | — | Not started |
+| W12.5 Exploration in cycles, stronger gates, bounds | — | Not started |
+| W12.6 Delegation | — | Not started |
+| W12.7 Proof | — | Not started |
