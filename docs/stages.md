@@ -1418,7 +1418,11 @@ Read against the code before any change (file:line on that commit):
   claude.ai login is not read today, but nothing checks the source the SDK
   reports (`apiKeySource` is forwarded and ignored); Settings' runtime card
   still says "Anthropic only". The reference machine has a claude.ai login
-  (Max) and no Anthropic API key, Console profile or cloud credentials.
+  (Max) and no Anthropic API key, Console profile or cloud credentials; on
+  2026-10-04 the Operator added their own subscription token
+  (`CLAUDE_CODE_OAUTH_TOKEN`) for Agentique's use (C-54 amended), and a live
+  check through the pinned SDK answered on `claude-opus-5-5` and
+  `claude-sonnet-5-5`.
 - Prices: `claude-opus-5-5`'s cache read is $0.40 in the table (it is $0.20);
   `claude-sonnet-5-5` is missing.
 - Local checks on the baseline: `python tools/check_architecture.py` OK (13

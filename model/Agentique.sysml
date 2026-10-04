@@ -610,9 +610,10 @@ package AgentiqueArchitecture {
              * served by one MCP server whose calls the Studio carries out; the project's
              * configuration is loaded, never the machine's user settings; the
              * environment carries no key but its model's, and a session runs only on
-             * the credential the Studio gave it: the source the SDK reports is checked
-             * before the first model call, and a session that would use another, such
-             * as the machine's claude.ai login, stops (C-54). It can report whether a
+             * the credential the Studio gave it (a key, or the Operator's own
+             * subscription token): the source the SDK reports is checked before the
+             * first prompt, and a session that would use another, such as the
+             * machine's claude.ai login, stops (C-54). It can report whether a
              * local Claude login exists, never its token. Not a sandbox: it runs with
              * the Operator's rights and reaches its model's API (Anthropic, or an
              * Anthropic-compatible endpoint). No crate: its code is in claude-agent/src.
