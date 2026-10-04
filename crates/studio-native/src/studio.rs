@@ -1147,7 +1147,7 @@ impl Studio {
         // Whatever route reached it (a key, the palette, a menu), what is
         // the Operator's own is refused to agents (C-53); opening another
         // project would end the Assistant's own turn.
-        if crate::control::OPERATORS_COMMANDS.contains(&id)
+        if crate::control::operators_command(self, id)
             && self.refused_to_agents(&format!("`{}`", crate::control::command_name(id)))
         {
             return;

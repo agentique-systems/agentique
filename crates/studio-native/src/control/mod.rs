@@ -35,6 +35,12 @@
 //!   character through; **Resume** goes on; **Stop** ends the action in
 //!   progress at once, drops those waiting and refuses agents' actions
 //!   until Resume. Each is the Operator's.
+//! - **A test instance** (`--test-instance`: started by the Orchestrator,
+//!   with its own app data and no work of the Operator's): agents may also
+//!   use the Conversation (focus the composer, type, send, answer, stop the
+//!   Assistant's turn, expand cards, scroll) and undo and redo, so
+//!   exploration can test them as a user would. Everything else that is the
+//!   Operator's stays refused there too.
 //! - **One agent acts in a window at a time** (C-54): the first to act holds
 //!   it until it releases it (`release`) or has been idle for [`IDLE`];
 //!   another agent's action meanwhile is refused with who holds it. Observing
@@ -755,6 +761,39 @@ pub const OPERATORS_COMMANDS: [CommandId; 10] = [
 /// trust, builds) and the Conversation (messages, answers to the Assistant).
 const OPERATORS_REGIONS: [&str; 2] = ["settings", "conversation"];
 
+/// What agents may also do in a test instance, which holds no work of the
+/// Operator's: use the Conversation, and undo and redo.
+const TEST_INSTANCE_COMMANDS: [CommandId; 4] = [
+    CommandId::Undo,
+    CommandId::Redo,
+    CommandId::AskAssistant,
+    CommandId::InsertSelection,
+];
+
+/// The Conversation's controls that stay the Operator's in a test instance
+/// too: steering the Assistant's turn (Pause, Step and Resume are the
+/// supervisor's), retrying or editing a message, a new conversation, and
+/// the model (as Settings).
+const CONVERSATION_OPERATORS: [&str; 6] = [
+    "pause",
+    "resume",
+    "step",
+    "retry",
+    "new-conversation",
+    "model-picker",
+];
+
+/// Whether `id` is the Operator's to use here.
+pub fn operators_command(studio: &Studio, id: CommandId) -> bool {
+    OPERATORS_COMMANDS.contains(&id)
+        && !(studio.args.test_instance && TEST_INSTANCE_COMMANDS.contains(&id))
+}
+
+/// Whether the region `region` is the Operator's here.
+fn operators_region(studio: &Studio, region: &str) -> bool {
+    OPERATORS_REGIONS.contains(&region) && !(studio.args.test_instance && region == "conversation")
+}
+
 /// The agents chip: pausing, stopping and resuming agents is the Operator's.
 const OPERATORS_CONTROLS: [&str; 4] = [
     "agents-pause",
@@ -816,7 +855,7 @@ fn operators_only(studio: &Studio, action: &Action, drawn: &[Drawn]) -> Option<S
     }
     let focused = drawn.iter().rev().find(|d| d.control.focused);
     let operators_region = |d: &Drawn| {
-        OPERATORS_REGIONS.contains(&d.region).then(|| {
+        operators_region(studio, d.region).then(|| {
             format!(
                 "the {} is the Operator's; an agent does not act there",
                 if d.region == "settings" {
@@ -828,7 +867,7 @@ fn operators_only(studio: &Studio, action: &Action, drawn: &[Drawn]) -> Option<S
         })
     };
     match action {
-        Action::Command(id) if OPERATORS_COMMANDS.contains(id) => {
+        Action::Command(id) if operators_command(studio, *id) => {
             Some(format!("`{}` is the Operator's to use", command_name(*id)))
         }
         Action::Click(name) | Action::Fill(name, _) | Action::Scroll(name, _) => {
@@ -853,9 +892,19 @@ fn operators_only(studio: &Studio, action: &Action, drawn: &[Drawn]) -> Option<S
                 return Some("minimizing, maximizing and closing the window are the Operator's".into());
             }
             if let Some(id) = runs_command(&d.control.id)
-                && OPERATORS_COMMANDS.contains(&id)
+                && operators_command(studio, id)
             {
                 return Some(format!("`{}` is the Operator's to use", command_name(id)));
+            }
+            if d.region == "conversation"
+                && (CONVERSATION_OPERATORS.contains(&d.control.id.as_ref())
+                    || d.control.id.starts_with("edit-")
+                    || d.control.id.starts_with("model-"))
+            {
+                return Some(format!(
+                    "`{}` in the Conversation is the Operator's",
+                    d.control.label
+                ));
             }
             operators_region(d)
         }
@@ -871,8 +920,7 @@ fn operators_only(studio: &Studio, action: &Action, drawn: &[Drawn]) -> Option<S
             }
             keys.iter().find_map(|key| {
                 let id = bound(key)?;
-                OPERATORS_COMMANDS
-                    .contains(&id)
+                operators_command(studio, id)
                     .then(|| format!("`{key}` is the shortcut of `{}`, which is the Operator's", command_name(id)))
             })
         }
@@ -1014,6 +1062,82 @@ fn cards(studio: &Studio) -> Vec<Value> {
         .collect()
 }
 
+/// `text`'s first `limit` characters, and an ellipsis when there were more.
+fn bounded(text: &str, limit: usize) -> String {
+    let mut short: String = text.chars().take(limit).collect();
+    if text.chars().count() > limit {
+        short.push('…');
+    }
+    short
+}
+
+/// The tool calls of the turn running, or else of the last one (since the
+/// last message to the Assistant): each tool and how it stands, a failure
+/// with the start of its message; the last 12.
+fn turn_tools(panel: &crate::conversation::ConversationPanel) -> Value {
+    const SHOWN: usize = 12;
+    let entries = &panel.conversation.entries;
+    let since = entries
+        .iter()
+        .rposition(|e| matches!(e, agq_assistant::Entry::Operator { .. }))
+        .map_or(0, |at| at + 1);
+    let mut calls: Vec<(&str, &str)> = Vec::new();
+    for entry in &entries[since..] {
+        if let agq_assistant::Entry::Assistant { parts, .. } = entry {
+            for part in parts {
+                if let agq_providers::AssistantPart::ToolCall { id, name, .. } = part {
+                    calls.push((id, name));
+                }
+            }
+        }
+    }
+    for live in &panel.live {
+        if let crate::conversation::Live::Tool { id, name, .. } = live {
+            calls.push((id, name));
+        }
+    }
+    let omitted = calls.len().saturating_sub(SHOWN);
+    let listed: Vec<Value> = calls[omitted..]
+        .iter()
+        .map(|(id, name)| match panel.results.get(*id) {
+            Some(result) if result.is_error => json!({
+                "tool": name, "state": "failed", "error": bounded(&result.content, 160),
+            }),
+            Some(_) => json!({ "tool": name, "state": "done" }),
+            None if panel.running() => json!({ "tool": name, "state": "running" }),
+            None => json!({ "tool": name, "state": "not run" }),
+        })
+        .collect();
+    if omitted > 0 {
+        json!({ "omitted": omitted, "calls": listed })
+    } else {
+        json!(listed)
+    }
+}
+
+/// What the Conversation says stands in the way: a missing key, or the
+/// latest notice since the last message (an error, a stop), or a file that
+/// could not be read or saved.
+fn notice(panel: &crate::conversation::ConversationPanel) -> Option<String> {
+    if let Some(missing) = &panel.key_missing {
+        return Some(bounded(missing, 300));
+    }
+    let entries = &panel.conversation.entries;
+    let since = entries
+        .iter()
+        .rposition(|e| matches!(e, agq_assistant::Entry::Operator { .. }))
+        .map_or(0, |at| at + 1);
+    entries[since..]
+        .iter()
+        .rev()
+        .find_map(|e| match e {
+            agq_assistant::Entry::Notice { text } => Some(bounded(text, 300)),
+            _ => None,
+        })
+        .or_else(|| panel.read_error.as_deref().map(|e| bounded(e, 300)))
+        .or_else(|| panel.save_error.as_deref().map(|e| bounded(e, 300)))
+}
+
 /// The observation: what an agent needs to act in the Studio as it is now.
 /// `full` adds every command (with why not, when unavailable) and the cards
 /// in view.
@@ -1076,6 +1200,15 @@ pub fn observe(studio: &Studio, window: &gpui::Window, full: bool, region: Optio
             }),
             _ => None,
         });
+    let last_message = panel
+        .conversation
+        .entries
+        .iter()
+        .rev()
+        .find_map(|e| match e {
+            agq_assistant::Entry::Operator { text } => Some(bounded(text, 200)),
+            _ => None,
+        });
     let waiting = panel.waiting.as_ref().map(|w| match &w.kind {
         crate::conversation::WaitingFor::Question { question, options } => {
             json!({ "kind": "question", "question": question, "options": options })
@@ -1120,7 +1253,13 @@ pub fn observe(studio: &Studio, window: &gpui::Window, full: bool, region: Optio
             "phase": panel.phase,
             "waiting": waiting,
             "entries": panel.conversation.entries.len(),
+            "lastMessage": last_message,
             "lastReply": last_reply,
+            // The current or last turn's tool calls, and what stands in
+            // the way (no key, an error), so an agent that asked can tell
+            // whether it was answered.
+            "toolCalls": turn_tools(panel),
+            "notice": notice(panel),
             "keyMissing": panel.key_missing,
         },
         "task": studio.implementation.task.as_ref().map(|t| json!({
@@ -2082,7 +2221,7 @@ fn carry_out(
             let Some(field) = drawn.iter().rev().find(|d| d.control.focused) else {
                 return Err("no field has the focus, so nothing was typed".into());
             };
-            if field.control.role != "field" || OPERATORS_REGIONS.contains(&field.region) {
+            if field.control.role != "field" || operators_region(studio.read(cx), field.region) {
                 return Err(format!(
                     "`{}` is not a field an agent may type into",
                     field.control.label
@@ -2161,6 +2300,12 @@ impl Studio {
         self.control.refused = Some(reason);
         self.mark(crate::studio::Dirty::STATUS);
         true
+    }
+
+    /// [`Studio::refused_to_agents`], in the Operator's own window only: in
+    /// a test instance an agent may do `what` (the Conversation, undo).
+    pub fn refused_in_operators_window(&mut self, what: &str) -> bool {
+        !self.args.test_instance && self.refused_to_agents(what)
     }
 
     /// How fast agents' actions are carried out and shown: this process's
@@ -2706,6 +2851,151 @@ mod tests {
         assert_eq!(whole(&json!(7.0)), Some(7));
         assert_eq!(whole(&json!(7.5)), None);
         assert_eq!(whole(&json!("7")), None);
+    }
+
+    #[test]
+    fn in_a_test_instance_agents_may_also_use_the_conversation_and_undo() {
+        let (mut app, _folder) = crate::edit::app_tests::studio("test-instance");
+        let composer = [drawn("Message", "field", "conversation", true)];
+        let send = [drawn("send", "button", "conversation", false)];
+        let fill = Action::Fill("Message".into(), "Add a cache".into());
+        let typed = Action::Type("Add a cache".into());
+        let enter = Action::Key(vec!["enter".into()]);
+        let undo = Action::Command(CommandId::Undo);
+        // The Operator's own window: all of it is the Operator's.
+        assert!(operators_only(&app, &fill, &composer).is_some());
+        assert!(operators_only(&app, &typed, &composer).is_some());
+        assert!(operators_only(&app, &undo, &composer).is_some());
+        assert!(operator_only(&app, &send[0]));
+        // A test instance: the Conversation and undo are the agents' too,
+        // and the observation says so.
+        app.args.test_instance = true;
+        assert_eq!(operators_only(&app, &fill, &composer), None);
+        assert_eq!(operators_only(&app, &typed, &composer), None);
+        assert_eq!(operators_only(&app, &enter, &composer), None);
+        assert_eq!(operators_only(&app, &undo, &composer), None);
+        assert_eq!(
+            operators_only(&app, &Action::Command(CommandId::Redo), &composer),
+            None
+        );
+        assert!(!operator_only(&app, &send[0]));
+        assert!(!operator_only(
+            &app,
+            &drawn("stop", "button", "conversation", false)
+        ));
+        assert!(!operator_only(
+            &app,
+            &drawn("tool-t1", "item", "conversation", false)
+        ));
+        // What stays the Operator's there too.
+        for (id, role, region) in [
+            ("pause", "button", "conversation"),
+            ("step", "button", "conversation"),
+            ("retry", "button", "conversation"),
+            ("edit-4", "button", "conversation"),
+            ("new-conversation", "button", "conversation"),
+            ("model-picker", "button", "conversation"),
+            ("model-deepseek", "item", "conversation"),
+            ("settings-save", "button", "settings"),
+            ("agents-pause", "button", "title"),
+            ("agents-stop", "button", "title"),
+            ("objective-intent", "field", "inspector"),
+        ] {
+            assert!(operator_only(&app, &drawn(id, role, region, false)), "{id}");
+        }
+        for id in [
+            CommandId::Lock,
+            CommandId::TrustLocal,
+            CommandId::NewConversation,
+            CommandId::Theme,
+        ] {
+            assert!(
+                operators_only(&app, &Action::Command(id), &[]).is_some(),
+                "{id:?}"
+            );
+        }
+        // Where the effects happen, too: an agent's step may send, and undo.
+        let api = crate::edit::app_tests::part(&mut app, "api");
+        let exists = |app: &Studio| {
+            app.project
+                .as_ref()
+                .unwrap()
+                .state()
+                .tree()
+                .get(api)
+                .is_some()
+        };
+        app.control.acting = Some("explorer".into());
+        app.execute(CommandId::Undo);
+        assert!(app.control.refused.take().is_none());
+        assert!(!exists(&app), "undone");
+        app.execute(CommandId::Redo);
+        assert!(exists(&app), "redone");
+        app.conversation.input = "Add a cache".into();
+        app.conversation.key_missing = Some("needs a key".into());
+        app.send_message();
+        assert!(app.control.refused.take().is_none(), "not refused");
+        app.operation(
+            "Lock api",
+            agq_system_state::Operation::Lock { element: api },
+        );
+        assert!(
+            app.control.refused.take().is_some(),
+            "locking stays the Operator's"
+        );
+        app.control.acting = None;
+    }
+
+    #[test]
+    fn the_conversation_says_what_the_turn_did_in_a_few_lines() {
+        let (mut app, _folder) = crate::edit::app_tests::studio("turn-tools");
+        use agq_providers::AssistantPart;
+        let call = |id: &str, name: &str| AssistantPart::ToolCall {
+            id: id.into(),
+            name: name.into(),
+            input: json!({}),
+        };
+        let entries = &mut app.conversation.conversation.entries;
+        entries.push(agq_assistant::Entry::Operator {
+            text: "An earlier request".into(),
+        });
+        entries.push(agq_assistant::Entry::Assistant {
+            model: None,
+            parts: vec![call("old", "read_model")],
+        });
+        entries.push(agq_assistant::Entry::Operator {
+            text: "Add a cache in front of the link store".into(),
+        });
+        entries.push(agq_assistant::Entry::Assistant {
+            model: None,
+            parts: vec![call("t1", "read_model"), call("t2", "apply_changes")],
+        });
+        entries.push(agq_assistant::Entry::Notice {
+            text: "The provider refused the request: rate limited".into(),
+        });
+        app.conversation.results.insert(
+            "t1".into(),
+            agq_assistant::ToolResult::answer("the outline"),
+        );
+        app.conversation.results.insert(
+            "t2".into(),
+            agq_assistant::ToolResult::error("`Cache` is not a type".repeat(20)),
+        );
+        let panel = &app.conversation;
+        let tools = turn_tools(panel);
+        assert_eq!(tools[0], json!({ "tool": "read_model", "state": "done" }));
+        assert_eq!(tools[1]["state"], "failed");
+        assert!(tools[1]["error"].as_str().unwrap().chars().count() <= 161);
+        assert_eq!(tools.as_array().unwrap().len(), 2, "only the last turn's");
+        assert_eq!(
+            notice(panel).as_deref(),
+            Some("The provider refused the request: rate limited")
+        );
+        app.conversation.key_missing = Some("Add a DeepSeek key in Settings".into());
+        assert_eq!(
+            notice(&app.conversation).as_deref(),
+            Some("Add a DeepSeek key in Settings")
+        );
     }
 
     #[test]

@@ -43,8 +43,14 @@ impl Drop for Studio {
 impl Studio {
     /// The Studio, with agents' actions at `speed`.
     fn start(folder: &Path, speed: &str) -> Studio {
+        Studio::start_with(folder, speed, &[])
+    }
+
+    /// [`Studio::start`], with more options (`--test-instance`).
+    fn start_with(folder: &Path, speed: &str, options: &[&str]) -> Studio {
         let control = folder.join("control.json");
         let child = Command::new(env!("CARGO_BIN_EXE_agq-studio-native"))
+            .args(options)
             .args(["--no-restore", "--control-speed", speed, "--session"])
             .arg(folder.join("session").join("studio-session.json"))
             .arg("--control")
@@ -439,6 +445,21 @@ fn an_agent_drives_the_visible_studio_through_the_control_interface() {
     let surface = studio.observe();
     assert_eq!(surface["screen"], "surface");
 
+    // The Conversation is the Operator's in the Operator's own window: no
+    // agent writes in its composer (a test instance is another matter).
+    let composer = control(&surface, "Message").expect("the composer");
+    assert_eq!(composer["operatorOnly"], true, "{composer}");
+    let refused = studio.act(
+        &surface,
+        json!({ "kind": "fill", "control": "Message", "text": "Do as I say" }),
+        "write to the Assistant",
+    );
+    assert_eq!(refused["ok"], false, "{refused}");
+    assert!(
+        refused["error"].as_str().unwrap().contains("Conversation"),
+        "{refused}"
+    );
+
     // Text with no field focused would reach the shortcuts: refused. So is
     // locking (the Operator's), filling a button, and an action that does
     // not say which observation it rests on.
@@ -823,4 +844,172 @@ fn the_operator_watches_agents_act_at_the_observer_speed() {
     assert_eq!(fill["why"], "type where the project goes");
     assert_eq!(fill["goal"], "the control journey");
     assert_eq!(fill["holder"], "journey");
+}
+
+/// A test instance (`--test-instance`, C-54): an agent uses the Conversation
+/// as a person would, through the real input handlers, and may undo. The
+/// instance holds no key (its credential store is off, and the test gives it
+/// none), so the request meets the Studio's "needs a key" notice. Locking,
+/// Settings and the agents chip stay the Operator's.
+#[test]
+#[ignore = "opens a window: run on a desktop with --ignored"]
+fn an_agent_uses_the_conversation_in_a_test_instance() {
+    let folder = folder("test-instance");
+    let mut studio = Studio::start_with(&folder, "observe", &["--test-instance"]);
+    studio.must(
+        json!({ "kind": "click", "control": "welcome-sample" }),
+        "open the sample's dialog",
+    );
+    let project = folder.join("Shortener");
+    studio.must(
+        json!({ "kind": "fill", "control": "Project folder", "text": project.display().to_string() }),
+        "say where the project goes",
+    );
+    studio.must(
+        json!({ "kind": "click", "control": "dialog-confirm" }),
+        "create the project",
+    );
+    studio.must(
+        json!({ "kind": "wait", "until": { "dialog": null, "screen": "surface" }, "timeoutMs": 30000 }),
+        "wait for the project",
+    );
+    // The journey set it up; the explorer acts from here.
+    let released = studio.call(json!({ "op": "release", "agent": "journey" }));
+    assert_eq!(released["released"], true, "{released}");
+    let surface = studio.observe();
+    assert_eq!(surface["panels"]["conversation"], true, "{surface}");
+    assert_readable(&surface, "the Surface with the Conversation");
+    let composer = control(&surface, "Message").expect("the composer");
+    assert!(composer["operatorOnly"].is_null(), "{composer}");
+    assert!(
+        surface["conversation"]["notice"].is_string(),
+        "no key in a test instance: {}",
+        surface["conversation"]
+    );
+    // Typing into the composer appears character by character.
+    let request = "Add a cache in front of the link store";
+    let typing = studio.beside(studio.body(
+        "explorer",
+        &surface,
+        json!({ "kind": "fill", "control": "Message", "text": request }),
+        "ask the Assistant for a cache",
+    ));
+    std::thread::sleep(Duration::from_millis(1400));
+    let midway = studio.observe();
+    let part = control(&midway, "Message").unwrap()["value"]
+        .as_str()
+        .unwrap_or_default()
+        .chars()
+        .count();
+    assert!(part > 0 && part < request.len(), "part typed: {part}");
+    let (answer, _) = typing.join().unwrap();
+    assert_eq!(answer["ok"], true, "{answer}");
+    // Sent with Enter, as a person sends it: no key, so nothing goes out,
+    // and the observation says why.
+    let written = studio.observe();
+    assert_eq!(control(&written, "Message").unwrap()["value"], request);
+    let send = control(&written, "send").expect("the Send button");
+    assert_eq!(
+        send["enabled"], false,
+        "nothing can be sent without a key: {send}"
+    );
+    let entries = written["conversation"]["entries"].clone();
+    let answer = studio.act_as(
+        "explorer",
+        &written,
+        json!({ "kind": "key", "keys": "enter" }),
+        "send it",
+    );
+    assert_eq!(answer["ok"], true, "Enter is not refused: {answer}");
+    let after = studio.observe();
+    assert_eq!(
+        after["conversation"]["entries"], entries,
+        "nothing was sent"
+    );
+    assert_eq!(after["conversation"]["running"], false);
+    let notice = after["conversation"]["notice"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
+    assert!(notice.to_lowercase().contains("key"), "{notice}");
+    eprintln!("the Conversation says: {notice}");
+
+    // Undo is the agents' too in a test instance: a change and its undo
+    // leave the model's text as it was.
+    let undo = after["commands"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|c| c["id"] == "undo");
+    assert!(undo.is_none_or(|c| c["operatorOnly"].is_null()), "{undo:?}");
+    let digest = after["project"]["digest"].clone();
+    for (action, why) in [
+        (
+            json!({ "kind": "command", "id": "create-part" }),
+            "create a part",
+        ),
+        (json!({ "kind": "type", "text": "Cache" }), "name it"),
+        (json!({ "kind": "key", "keys": "enter" }), "create it"),
+    ] {
+        let now = studio.observe();
+        let answer = studio.act_as("explorer", &now, action, why);
+        assert_eq!(answer["ok"], true, "{why}: {answer}");
+    }
+    let changed = studio.observe();
+    assert_ne!(
+        changed["project"]["digest"], digest,
+        "{}",
+        changed["status"]
+    );
+    let undone = studio.act_as(
+        "explorer",
+        &changed,
+        json!({ "kind": "command", "id": "undo" }),
+        "undo it",
+    );
+    assert_eq!(undone["ok"], true, "{undone}");
+    assert_eq!(
+        studio.observe()["project"]["digest"],
+        digest,
+        "undo restores the model's text exactly"
+    );
+
+    // What stays the Operator's in a test instance too.
+    let now = studio.observe();
+    let locked = studio.act_as(
+        "explorer",
+        &now,
+        json!({ "kind": "command", "id": "lock" }),
+        "lock",
+    );
+    assert_eq!(locked["ok"], false, "{locked}");
+    let new = studio.act_as(
+        "explorer",
+        &now,
+        json!({ "kind": "click", "control": "new-conversation" }),
+        "start again",
+    );
+    assert_eq!(new["ok"], false, "{new}");
+    let opened = studio.act_as(
+        "explorer",
+        &now,
+        json!({ "kind": "command", "id": "settings" }),
+        "open Settings",
+    );
+    assert_eq!(opened["ok"], true, "{opened}");
+    let settings = studio.observe();
+    let inside = settings["controls"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|c| c["region"] == "settings")
+        .unwrap()["id"]
+        .clone();
+    let refused = studio.act_as(
+        "explorer",
+        &settings,
+        json!({ "kind": "click", "control": inside }),
+        "press something in Settings",
+    );
+    assert_eq!(refused["ok"], false, "{refused}");
 }

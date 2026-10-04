@@ -759,6 +759,7 @@ impl ConversationView {
                 MenuItem::action("Automatic", move |_, cx| {
                     studio_entity.act(cx, |studio| studio.choose_provider(""))
                 })
+                .id("model-automatic")
                 .checked(current.is_empty()),
             );
             for provider in agq_assistant::ModelChoice::usable_providers() {
@@ -772,6 +773,7 @@ impl ConversationView {
                             studio_entity.act(cx, |studio| studio.choose_provider(&id))
                         },
                     )
+                    .id(format!("model-{}", provider.id()))
                     .checked(current == provider.id()),
                 );
             }
@@ -782,6 +784,7 @@ impl ConversationView {
             MenuItem::action("More in Settings…", move |_, cx| {
                 studio_entity.act(cx, |studio| studio.show_settings(Section::Assistant))
             })
+            .id("model-settings")
             .icon(IconName::Settings),
         );
         let menu = cx.new(|cx| Menu::new(items, cx).min_width(260.0).owner("conversation"));
@@ -812,6 +815,17 @@ fn reply_markdown(parts: &[AssistantPart]) -> String {
 /// What a screen reader says for a message: who, then its plain text.
 fn message_name(who: &str, blocks: &[Block]) -> String {
     format!("{who}: {}", markdown::plain_text(blocks))
+}
+
+/// A long text as a control's label for agents: its first 120 characters.
+pub(crate) fn control_label(text: String) -> String {
+    const LABEL: usize = 120;
+    if text.chars().count() <= LABEL {
+        return text;
+    }
+    let mut short: String = text.chars().take(LABEL).collect();
+    short.push('…');
+    short
 }
 
 /// The runs of a text block: its styles, its links, and the selection.
@@ -1218,6 +1232,11 @@ fn render_item(ctx: &Rc<Ctx>, item: &Item, cx: &App) -> AnyElement {
                 .id(SharedString::from(format!("operator-{}", place.0)))
                 .role(gpui::Role::Article)
                 .aria_label(SharedString::from(message_name("You", blocks)))
+                .relative()
+                .child(ui::target::control(
+                    ui::target::Control::new("item", control_label(message_name("You", blocks)))
+                        .id(format!("operator-{}", place.0)),
+                ))
                 .child(
                     div()
                         .max_w(gpui::relative(0.92))
@@ -1249,6 +1268,11 @@ fn render_item(ctx: &Rc<Ctx>, item: &Item, cx: &App) -> AnyElement {
                 .id(SharedString::from(format!("assistant-{}-{}", place.0, place.1)))
                 .role(gpui::Role::Article)
                 .aria_label(SharedString::from(message_name("Assistant", blocks)))
+                .relative()
+                .child(ui::target::control(
+                    ui::target::Control::new("item", control_label(message_name("Assistant", blocks)))
+                        .id(format!("assistant-{}-{}", place.0, place.1)),
+                ))
                 .child(message(ctx, *place, blocks, cx))
                 .when(*streaming, |this| {
                     this.child(
@@ -1423,6 +1447,10 @@ impl Render for ConversationView {
                             .hover(|style| style.bg(theme.hover).text_color(theme.text_secondary))
                             .role(gpui::Role::Button)
                             .aria_label("Model")
+                            .relative()
+                            .child(ui::target::control(
+                                ui::target::Control::new("button", format!("Model: {model}")).id("model-picker"),
+                            ))
                             .tooltip(move |window, cx| hover_tooltip(window, cx))
                             .on_click(cx.listener(|this, _: &ClickEvent, window, cx| this.open_model_menu(window, cx)))
                             .child(icon(IconName::Model).size(12.0).color(theme.text_faint))
@@ -1557,6 +1585,10 @@ impl Render for ConversationView {
                                                 .hover(|style| style.bg(theme.hover).text_color(theme.text))
                                                 .role(gpui::Role::Button)
                                                 .aria_label("Insert selection")
+                                                .relative()
+                                                .child(ui::target::control(
+                                                    ui::target::Control::new("button", "Insert selection").id("insert-selection"),
+                                                ))
                                                 .on_click(move |_: &ClickEvent, _, cx| studio.act(cx, |studio| studio.insert_selection()))
                                                 .child(icon(IconName::Plus).size(11.0).color(theme.text_faint))
                                                 .child(div().min_w_0().overflow_hidden().text_ellipsis().whitespace_nowrap().font_family(theme::MONO).child(selection_names.join(", ")))
@@ -1623,7 +1655,7 @@ impl Render for ConversationView {
                                             .tooltip("Stop the Assistant now; its changes so far stay and can be undone", None)
                                             .on_click({
                                                 let studio = self.studio.clone();
-                                                move |_: &ClickEvent, _, cx| studio.act(cx, |studio| if !studio.refused_to_agents("stopping the Assistant") { studio.stop_assistant() })
+                                                move |_: &ClickEvent, _, cx| studio.act(cx, |studio| if !studio.refused_in_operators_window("stopping the Assistant") { studio.stop_assistant() })
                                             })
                                             .into_any_element()
                                     } else {
@@ -1639,7 +1671,7 @@ impl Render for ConversationView {
                                     .when(running && question, |this| {
                                         this.child(Button::new("stop-question", "Stop").small().on_click({
                                             let studio = self.studio.clone();
-                                            move |_: &ClickEvent, _, cx| studio.act(cx, |studio| if !studio.refused_to_agents("stopping the Assistant") { studio.stop_assistant() })
+                                            move |_: &ClickEvent, _, cx| studio.act(cx, |studio| if !studio.refused_in_operators_window("stopping the Assistant") { studio.stop_assistant() })
                                         }))
                                     }),
                             ),

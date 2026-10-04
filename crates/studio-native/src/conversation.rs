@@ -434,7 +434,7 @@ impl Studio {
     /// Sends the message in the input. While a question is open, the message
     /// answers it instead.
     pub fn send_message(&mut self) {
-        if self.refused_to_agents("speaking in the Conversation") {
+        if self.refused_in_operators_window("speaking in the Conversation") {
             return;
         }
         let text = self.conversation.input.trim().to_string();
@@ -791,7 +791,7 @@ impl Studio {
     /// Answers the Assistant's open question. Returns false when no question
     /// is open or the turn that asked it is gone.
     pub fn answer_question(&mut self, answer: &str) -> bool {
-        if self.refused_to_agents("answering the Assistant") {
+        if self.refused_in_operators_window("answering the Assistant") {
             return false;
         }
         let panel = &mut self.conversation;
@@ -934,7 +934,7 @@ impl Studio {
     /// Assistant's, and those of others when [`ConversationPanel::undoable`]
     /// says so. Each can be redone.
     pub fn undo_assistant_changes(&mut self) {
-        if self.refused_to_agents("undoing the turn's changes") {
+        if self.refused_in_operators_window("undoing the turn's changes") {
             return;
         }
         let Some(project) = &self.project else { return };
@@ -1050,7 +1050,7 @@ impl Studio {
 
     /// Puts the selected elements' qualified names into the message.
     pub fn insert_selection(&mut self) {
-        if self.refused_to_agents("writing in the Conversation") {
+        if self.refused_in_operators_window("writing in the Conversation") {
             return;
         }
         let Some(project) = &self.project else { return };

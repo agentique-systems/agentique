@@ -95,6 +95,12 @@ pub struct Args {
     /// file (port and token), so an agent can operate this Studio (C-53).
     #[arg(long)]
     control: Option<PathBuf>,
+    /// A test instance, started by the Orchestrator with its own app data
+    /// and no work of the Operator's (C-54): agents may also use the
+    /// Conversation, and undo and redo; keys come only from the
+    /// environment, never from the Operator's credential store.
+    #[arg(long)]
+    test_instance: bool,
     /// How fast agents' actions are carried out and shown in this window
     /// (observer mode, C-54), whatever Settings say: instant, fast or
     /// observe. Test instances are started with it.
@@ -172,6 +178,11 @@ impl Args {
 fn main() {
     timing::mark_process_start();
     let args = Args::parse();
+    // A test instance holds no key of the Operator's that its supervisor
+    // did not give it (C-54).
+    if args.test_instance {
+        agq_providers::keys::without_store();
+    }
     if args.describe {
         println!("{}", develop::describe());
         return;
