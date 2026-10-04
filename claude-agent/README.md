@@ -58,21 +58,28 @@ review and adoption.
   (Anthropic's API only, with no key beside it, since a key would take
   precedence). Before the first prompt is given to the SDK, the companion
   reads which credential the SDK uses (`initializationResult().account`):
-  for a key its `apiKeySource` must be `ANTHROPIC_API_KEY`; for the token its
-  `tokenSource` must be `CLAUDE_CODE_OAUTH_TOKEN` on `firstParty`. Anything
-  else (`none` from the machine's claude.ai login, an `apiKeyHelper` from a
-  project's settings) ends the session with an `auth` error naming the
-  source, and nothing reaches the model; the init message is checked again
-  (`policy.ts`, `credentialProblem` and `initProblem`). The SDK keeps its
+  for a key its `apiKeySource` must be `ANTHROPIC_API_KEY` and it may name
+  no token; for the token its `tokenSource` must be
+  `CLAUDE_CODE_OAUTH_TOKEN` on `firstParty` and it may name no key. Anything
+  else (`none` from the machine's claude.ai login, an `apiKeyHelper` or
+  `ANTHROPIC_AUTH_TOKEN` from a project's settings) ends the session with an
+  `auth` error naming the source, and nothing reaches the model; the init
+  message is checked again (`policy.ts`, `credentialProblem` and
+  `initProblem`). The flag tier of the settings blanks every credential the
+  session was not given and the credential helpers (`credentialSettings`),
+  and a project's settings that bring a credential of their own keep the
+  session from starting (`projectCredentialProblem`); a key replaced under
+  `ANTHROPIC_API_KEY` in a project's settings while a key session runs is
+  the one case the SDK's report cannot show (`docs/stages.md`, W12.3). The SDK keeps its
   own configuration folder, so the machine's own `/login` is never read, and
   `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` keeps the credential out of the
   session's commands (measured live for the token on 2026-10-04). A refused
   key or token ends the turn at once; a Claude plan's usage limit ends it
   with the reason (kind `limit`) and never moves to a key. Subagents stay on
-  the session's endpoint and credential: on an Anthropic-compatible endpoint
-  every model alias (`opus`, `sonnet`, `haiku`) names its models, on
-  Anthropic's API they are Claude models through the same credential, and
-  their usage is reported by model. Agentique costs sessions from their
+  the session's endpoint and credential and, unless they name a model, run
+  on the session's (`CLAUDE_CODE_SUBAGENT_MODEL`, pinned in the flag tier);
+  on an Anthropic-compatible endpoint every model alias (`opus`, `sonnet`,
+  `haiku`) names its models; their usage is reported by model. Agentique costs sessions from their
   usage at the model's own price (on the subscription, what the API would
   have charged); the SDK's own estimate assumes Claude's prices, so a
   session's spend ceiling (`maxBudgetUsd`) is given only on Anthropic's own

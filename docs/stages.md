@@ -1439,8 +1439,15 @@ model offers, and a fallback with its effort; the defaults are C-54's
 `claude-sonnet-5-5`, and Settings show its route and why when it is not the
 configured one. `agq_orchestrator::models::resolve` takes each role to its
 own model when its provider has a credential Agentique may use for that
-kind of role, else its fallback with the reason, else names the role and
-what is missing, and the objective does not start. Anthropic has two
+kind of role, else its fallback with the reason, else none; a credential
+store that cannot be read is one candidate's problem, so a key in the
+environment still counts. A role the objective needs with no model is named
+with what is missing, and the objective does not start: the lead,
+implementer, reviewer and evaluator always; the explorer, escalation and
+typed decisions only for an objective that explores (W12.5 adds that flag;
+until then they are recorded as without a model, never a reason not to
+start, so an Operator with only an Anthropic key starts objectives as
+before). Anthropic has two
 credentials (the Operator's decision, 2026-10-04): an API key, billed per
 token, and the Operator's own Claude subscription token from
 `claude setup-token` (`CLAUDE_CODE_OAUTH_TOKEN`, or the Credential Manager
@@ -1455,25 +1462,49 @@ evaluator on Sonnet 5.5 through the subscription, the explorer on
 `deepseek-flash`, decisions on Jev, and escalation on `deepseek-v4-pro`
 because Opus 5.5 there would need an API key. The objective records each
 role's model, effort, credential kind and source, who pays and any
-fallback's reason (`objective.json` stays format 1: optional fields, read by
-the previous build's reader as a test shows); a continued objective keeps
-them, and a credential that is gone stops the session instead of moving it
-to another. The Orchestrator's runtime factory builds every session of a
-role on its record; spend is kept by role and by model within it, so SDK
-subagents' models show (usage on the subscription is priced at API rates,
-shown as API-equivalent, and the USD budget applies to it); typed decisions
-take Jev's model and the escalation model with its effort from the
-`decisions` and `escalation` roles (`models::decider`). A session gets
-exactly one credential; the companion holds the prompt until the SDK has
-answered its start and gives it only when the SDK reports that credential
-(`apiKeySource` `ANTHROPIC_API_KEY` for a key; `tokenSource`
-`CLAUDE_CODE_OAUTH_TOKEN` on `firstParty` for the token), checks the init
-message again, reports the source in `init`, ends a session at a Claude
-plan's usage limit without moving to a key, and passes a spend ceiling
-(`maxBudgetUsd`, what is left of the budget) on Anthropic's own API. SDK
-subagents stay on the session's endpoint and credential: on DeepSeek's
-endpoint every alias names its models, on Anthropic's API they use Claude
-models through the same credential, and their usage shows under the role.
+fallback's reason, and the roles it does not need that had no model
+(`objective.json` stays format 1: optional fields, read by the previous
+build's reader as a test shows); a continued objective keeps them (one
+whose record has none, saved by an earlier build, gets them from the
+current Settings, and the activity says so), and a credential that is gone
+stops the session instead of moving it to another. The Orchestrator's
+runtime factory builds every session of a role on its record; spend is kept
+by role and by model within it, so SDK subagents' models show (usage on the
+subscription is priced at API rates, shown as API-equivalent, and the USD
+budget applies to it; a dated Claude snapshot such as
+`claude-haiku-4-5-20251001` is priced as its model). `models::decider`
+builds typed decisions from the `decisions` and `escalation` roles (Jev's
+model, and the escalation model with its effort) instead of
+`Decider::default`; nothing calls it yet: W12.5's exploring objectives use
+it. A session gets exactly one credential; the companion holds the prompt
+until the SDK has answered its start (within 60 s, else a runtime failure
+with its cause) and gives it only when both sides of the SDK's report are
+that credential: for a key, `apiKeySource` `ANTHROPIC_API_KEY` and no
+token; for the token, `tokenSource` `CLAUDE_CODE_OAUTH_TOKEN` on
+`firstParty` and no key (the bundled Claude Code reports the token whenever
+its variable is set, yet uses a key or an `apiKeyHelper` instead when one
+is in effect). The flag tier of the SDK's settings, which a project's
+settings cannot override, blanks every credential the session was not
+given (`ANTHROPIC_AUTH_TOKEN`, the other of the key and token, the cloud
+switches) and the credential helpers, and a project's `.claude/settings.json`
+(and `settings.local.json` when loaded) that brings a credential of its own
+or cannot be read keeps the session from starting, with the reason. One
+hole remains, stated here: a key session whose project settings are
+changed while it runs (by a command, since file tools may not write
+`.claude/`) to put another key in `ANTHROPIC_API_KEY` would report the same
+source; the next session refuses those settings, and the Orchestrator's
+path gate refuses a change to `.claude/` unless the objective names it. The
+companion also checks the init message again, reports the source in
+`init`, ends a session at a Claude plan's usage limit without moving to a
+key, and passes a spend ceiling (`maxBudgetUsd`, what is left of the
+budget) on Anthropic's own API. SDK subagents stay on the session's
+endpoint and credential and, unless they name a model, run on the role's
+(`CLAUDE_CODE_SUBAGENT_MODEL`, pinned in the flag tier); their usage shows
+under the role. Settings and the Objectives panel draw from the credentials
+as last read (when the Studio starts, when Settings or the Objectives panel
+opens, when a key or the token is saved or removed, and before an objective
+starts), so drawing reads no store; the login probe runs on its own thread
+beside other setup work and never blocks the window.
 `main.ts --login` runs the SDK's Claude Code binary's `claude auth status`
 with the Operator's configuration and keeps only `loggedIn`, `authMethod`,
 `apiProvider` and `subscriptionType`; Settings say the claude.ai login is
@@ -1484,7 +1515,12 @@ Sonnet 5.5 to high. Measured live on 2026-10-04: the probe reported
 effort max) passed the check with `ANTHROPIC_API_KEY`; a development
 session on `claude-sonnet-5-5` on the subscription token passed it with
 `CLAUDE_CODE_OAUTH_TOKEN` (`firstParty`), and its Bash command saw neither
-the token nor a key. Anthropic with an API key is not tried (no key).
+the token nor a key. With fake credentials and no prompt (nothing sent to a
+model), the real SDK reported a project's key, `ANTHROPIC_AUTH_TOKEN`,
+token or `apiKeyHelper` beside the given credential, and none of them once
+the flag tier blanked them. The general-purpose and Explore subagents of a
+`claude-sonnet-5-5` session on the token reported only
+`claude-sonnet-5-5`. Anthropic with an API key is not tried (no key).
 
 **Work items**
 
