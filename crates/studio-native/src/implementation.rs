@@ -259,9 +259,7 @@ impl Studio {
         if self.implementation.active.is_some() {
             return;
         }
-        let (Some(project), Some(repository)) =
-            (self.project.as_ref(), self.implementation_repository())
-        else {
+        let Some(project) = self.project.as_ref() else {
             self.status = "Open a project with linked code to check it.".into();
             return;
         };
@@ -271,6 +269,10 @@ impl Studio {
                 self.status = error;
                 return;
             }
+        };
+        let Some(repository) = self.implementation_repository() else {
+            self.status = "Open a project with linked code to check it.".into();
+            return;
         };
         if links.links.is_empty() {
             self.status =
