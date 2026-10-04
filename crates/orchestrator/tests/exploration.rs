@@ -952,10 +952,9 @@ fn live_exploration_compared_by_way_of_deciding() {
         if tasks_wanted.as_ref().is_some_and(|w| !w.contains(&task.id)) {
             continue;
         }
-        for (n, way) in [Way::Rules, Way::Jev, Way::Model, Way::Escalating]
-            .into_iter()
-            .enumerate()
-        {
+        // The same start and seed for every way: they differ only in how
+        // they decide.
+        for way in [Way::Rules, Way::Jev, Way::Model, Way::Escalating] {
             if ways_wanted
                 .as_ref()
                 .is_some_and(|w| !w.contains(&format!("{way:?}").to_lowercase()))
